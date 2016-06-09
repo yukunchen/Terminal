@@ -11,11 +11,26 @@
 // Windows Header Files:
 #include <windows.h>
 
+typedef long NTSTATUS;
+#define STATUS_SUCCESS (DWORD)0x0
+//#include <ntstatus.h>
+
+#include <winioctl.h>
+
 // C RunTime Header Files
 #include <stdlib.h>
 #include <malloc.h>
 #include <memory.h>
 #include <tchar.h>
 
+// C++ header files
+#include <stdexcept>
+#include <thread>
+
 
 // TODO: reference additional headers your program requires here
+
+
+// private dependencies
+#include <Console\conapi.h>
+#include <Console\condrv.h>
