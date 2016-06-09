@@ -32,5 +32,5 @@ typedef long NTSTATUS;
 
 
 // private dependencies
-#include <Console\conapi.h>
-#include <Console\condrv.h>
+#include <..\PrivateDependencies\Console\conapi.h>
+#include <..\PrivateDependencies\Console\condrv.h>
