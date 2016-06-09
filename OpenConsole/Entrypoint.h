@@ -1,4 +1,7 @@
 #pragma once
 
-_declspec(dllexport)
-NTSTATUS ConsoleCreateIoThread(_In_ HANDLE Server);
+extern "C"
+{
+    _declspec(dllexport)
+        NTSTATUS ConsoleCreateIoThread(_In_ HANDLE Server);
+}
