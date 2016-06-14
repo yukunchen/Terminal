@@ -14,6 +14,7 @@
 typedef long NTSTATUS;
 #define STATUS_SUCCESS ((DWORD)0x0)
 #define STATUS_UNSUCCESSFUL ((DWORD)0xC0000001L)
+#define STATUS_ILLEGAL_FUNCTION ((DWORD)0xC00000AFL)
 //#include <ntstatus.h>
 
 #include <winioctl.h>
