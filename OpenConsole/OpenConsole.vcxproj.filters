@@ -36,6 +36,15 @@
     <ClInclude Include="DeviceProtocol.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="IApiResponders.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ApiDispatchers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ApiResponderEmpty.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -48,6 +57,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DeviceProtocol.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ApiDispatchers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ApiResponderEmpty.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

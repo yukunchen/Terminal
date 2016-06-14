@@ -7,7 +7,6 @@ DeviceProtocol::DeviceProtocol(_In_ DeviceComm* const pComm) :
 {
 }
 
-
 DeviceProtocol::~DeviceProtocol()
 {
 }

@@ -24,11 +24,24 @@ DWORD DeviceComm::SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pSer
 DWORD DeviceComm::ReadIo(_In_opt_ CD_IO_COMPLETE* const pCompletion,
                          _Out_ CONSOLE_API_MSG* const pMessage) const
 {
-    return _CallIoctl(IOCTL_CONDRV_READ_IO,
-                      pCompletion,
-                      pCompletion == nullptr ? 0 : sizeof(*pCompletion),
-                      &pMessage->Descriptor,
-                      sizeof(CONSOLE_API_MSG) - FIELD_OFFSET(CONSOLE_API_MSG, Descriptor));
+    DWORD result =  _CallIoctl(IOCTL_CONDRV_READ_IO,
+                               pCompletion,
+                               pCompletion == nullptr ? 0 : sizeof(*pCompletion),
+                               &pMessage->Descriptor,
+                               sizeof(CONSOLE_API_MSG) - FIELD_OFFSET(CONSOLE_API_MSG, Descriptor));
+
+    if (result == ERROR_IO_PENDING)
+    {
+        WaitForSingleObjectEx(_server, 0, FALSE);
+        result = pMessage->IoStatus.Status;
+    }
+
+    if (result == STATUS_PIPE_DISCONNECTED)
+    {
+        result = ERROR_PIPE_NOT_CONNECTED;
+    }
+
+    return result;
 }
 
 DWORD DeviceComm::CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const

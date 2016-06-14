@@ -3,6 +3,9 @@
 #include "DeviceComm.h"
 #include "DeviceProtocol.h"
 
+#include "IApiResponders.h"
+#include "ApiResponderEmpty.h"
+
 using namespace std;
 
 DWORD DoConnect(_In_ DeviceProtocol* Server, _In_ CD_IO_DESCRIPTOR* const pMsg)
@@ -22,7 +25,7 @@ DWORD DoDefault(_In_ DeviceProtocol* Server, _In_ CD_IO_DESCRIPTOR* const pMsg)
     return Server->SendCompletion(pMsg, STATUS_UNSUCCESSFUL, nullptr, 0);
 }
 
-typedef NTSTATUS(*PCONSOLE_API_ROUTINE) (_Inout_ PCONSOLE_API_MSG m);
+typedef NTSTATUS(*PCONSOLE_API_ROUTINE) (_In_ IApiResponders* const pResponders, _Inout_ PCONSOLE_API_MSG m);
 
 struct ApiDescriptor
 {
@@ -45,8 +48,9 @@ struct ApiLayerDescriptor
     ULONG const Count;
 };
 
-NTSTATUS ServeUnimplementedApi(_Inout_ PCONSOLE_API_MSG m)
+NTSTATUS ServeUnimplementedApi(_In_ IApiResponders* const pResponders, _Inout_ PCONSOLE_API_MSG m)
 {
+    UNREFERENCED_PARAMETER(pResponders);
     UNREFERENCED_PARAMETER(m);
 
     DebugBreak();
@@ -54,9 +58,9 @@ NTSTATUS ServeUnimplementedApi(_Inout_ PCONSOLE_API_MSG m)
     return STATUS_UNSUCCESSFUL;
 }
 
-NTSTATUS ServeDeprecatedApi(_Inout_ PCONSOLE_API_MSG m)
+NTSTATUS ServeDeprecatedApi(_In_ IApiResponders* const pResponders, _Inout_ PCONSOLE_API_MSG m)
 {
-    return ServeUnimplementedApi(m);
+    return ServeUnimplementedApi(pResponders, m);
 }
 
 const ApiDescriptor ConsoleApiLayer1[] = {
@@ -151,7 +155,7 @@ const ApiLayerDescriptor ConsoleApiLayerTable[] = {
     ApiLayerDescriptor(ConsoleApiLayer3, RTL_NUMBER_OF(ConsoleApiLayer3)),
 };
 
-DWORD DoApiCall(_In_ DeviceProtocol* Server, _In_ CONSOLE_API_MSG* const pMsg)
+DWORD DoApiCall(_In_ DeviceProtocol* Server, _In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)
 {
     ULONG const LayerNumber = (pMsg->msgHeader.ApiNumber >> 24) - 1;
     ULONG const ApiNumber = (pMsg->msgHeader.ApiNumber & 0xffffff);
@@ -180,7 +184,7 @@ DWORD DoApiCall(_In_ DeviceProtocol* Server, _In_ CONSOLE_API_MSG* const pMsg)
             pMsg->State.WriteOffset = pMsg->msgHeader.ApiDescriptorSize;
             pMsg->State.ReadOffset = pMsg->msgHeader.ApiDescriptorSize + sizeof(CONSOLE_MSG_HEADER);
 
-            Status = (*Descriptor->Routine) (pMsg);
+            Status = (*Descriptor->Routine) (pResponders, pMsg);
 
             Status = Server->SendCompletion(&pMsg->Descriptor,
                                             Status,
@@ -196,6 +200,7 @@ void IoLoop(_In_ HANDLE Server)
 {
     DeviceComm Comm(Server);
     DeviceProtocol Prot(&Comm);
+    ApiResponderEmpty Responder;
 
     bool fExiting = false;
 
@@ -203,8 +208,6 @@ void IoLoop(_In_ HANDLE Server)
     {
         CONSOLE_API_MSG ReceiveMsg;
         DWORD Error = Prot.GetReadIo(&ReceiveMsg);
-
-        // TODO: Wait for pending
 
         if (ERROR_PIPE_NOT_CONNECTED == Error)
         {
@@ -221,7 +224,7 @@ void IoLoop(_In_ HANDLE Server)
         {
         case CONSOLE_IO_USER_DEFINED:
         {
-            DoApiCall(&Prot, &ReceiveMsg);
+            DoApiCall(&Prot, &Responder, &ReceiveMsg);
             break;
         }
         case CONSOLE_IO_CONNECT:
