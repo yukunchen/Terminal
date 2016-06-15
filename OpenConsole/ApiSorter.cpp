@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ApiSorter.h"
+#include "ApiDispatchers.h"
 
 typedef NTSTATUS(*PCONSOLE_API_ROUTINE) (_In_ IApiResponders* const pResponders, _Inout_ PCONSOLE_API_MSG m);
 
@@ -58,7 +59,7 @@ const ApiDescriptor ConsoleApiLayer2[] = {
     ApiDescriptor(ServeUnimplementedApi, 0),                                          // SetConsoleActiveScreenBuffer
     ApiDescriptor(ServeUnimplementedApi, 0),                                               // FlushConsoleInputBuffer
     ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SETCP_MSG)),                                  // SetConsoleCP
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETCURSORINFO_MSG)),                  // GetConsoleCursorInfo
+    ApiDescriptor(ApiDispatchers::ServeGetConsoleCursorInfo, sizeof(CONSOLE_GETCURSORINFO_MSG)),                  // GetConsoleCursorInfo
     ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SETCURSORINFO_MSG)),                  // SetConsoleCursorInfo
     ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SCREENBUFFERINFO_MSG)),         // GetConsoleScreenBufferInfo
     ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SCREENBUFFERINFO_MSG)),                // SetScreenBufferInfo
@@ -102,10 +103,10 @@ const ApiDescriptor ConsoleApiLayer3[] = {
     ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETALIASEXESLENGTH_MSG)), // GetConsoleAliasExesLength
     ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETALIASES_MSG)), // GetConsoleAlises
     ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETALIASEXES_MSG)), // GetConsoleAliasExes
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_EXPUNGECOMMANDHISTORY_MSG)), // ExpungeConsoleCommandHistory
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SETNUMBEROFCOMMANDS_MSG)), // SetConsoleNumberOfCommands
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETCOMMANDHISTORYLENGTH_MSG)), // GetConsoleCommandHistoryLength
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETCOMMANDHISTORY_MSG)), // GetConsoleCommandHistory
+    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_EXPUNGECOMMANDHISTORY_MSG)), // ExpungeConsoleCommandHistory <unpublished, private doskey utility only>
+    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SETNUMBEROFCOMMANDS_MSG)), // SetConsoleNumberOfCommands <unpublished, private doskey utility only>
+    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETCOMMANDHISTORYLENGTH_MSG)), // GetConsoleCommandHistoryLength <unpublished, private doskey utility only>
+    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETCOMMANDHISTORY_MSG)), // GetConsoleCommandHistory <unpublished, private doskey utility only>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
