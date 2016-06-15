@@ -45,6 +45,9 @@
     <ClInclude Include="ApiResponderEmpty.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ApiSorter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -63,6 +66,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ApiResponderEmpty.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ApiSorter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
