@@ -528,7 +528,7 @@ DWORD ApiResponderEmpty::ReadConsoleOutputA(_In_ HANDLE const OutContext,
     UNREFERENCED_PARAMETER(pTextBufferSize);
     UNREFERENCED_PARAMETER(pTextBufferTargetOrigin);
     UNREFERENCED_PARAMETER(pSourceRectangle);
-    *pReadRectangle = { 0 };
+    *pReadRectangle = { 0, 0, -1, -1}; // because inclusive rects, an empty has right and bottom at -1
     return 0;
 }
 
@@ -544,7 +544,7 @@ DWORD ApiResponderEmpty::ReadConsoleOutputW(_In_ HANDLE const OutContext,
     UNREFERENCED_PARAMETER(pTextBufferSize);
     UNREFERENCED_PARAMETER(pTextBufferTargetOrigin);
     UNREFERENCED_PARAMETER(pSourceRectangle);
-    *pReadRectangle = { 0 };
+    *pReadRectangle = { 0, 0, -1, -1 }; // because inclusive rects, an empty has right and bottom at -1
     return 0;
 }
 

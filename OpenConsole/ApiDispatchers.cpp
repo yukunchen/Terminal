@@ -168,6 +168,12 @@ NTSTATUS ApiDispatchers::ServeFillConsoleOutput(_In_ IApiResponders* const pResp
     case CONSOLE_FALSE_UNICODE:
     {
         Result = pResponders->FillConsoleOutputCharacterWImpl(h, a->Element, a->Length, a->WriteCoord, &ElementsWritten);
+        break;
+    }
+    default:
+    {
+        Result = STATUS_UNSUCCESSFUL;
+        break;
     }
     }
 
@@ -278,150 +284,476 @@ NTSTATUS ApiDispatchers::ServeSetConsoleScreenBufferInfo(_In_ IApiResponders* co
 
 NTSTATUS ApiDispatchers::ServeSetConsoleScreenBufferSize(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_SETSCREENBUFFERSIZE_MSG* const a = &m->u.consoleMsgL2.SetConsoleScreenBufferSize;
+
+    return pResponders->SetConsoleScreenBufferSizeImpl(h, &a->Size);
 }
 
 NTSTATUS ApiDispatchers::ServeSetConsoleCursorPosition(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_SETCURSORPOSITION_MSG* const a = &m->u.consoleMsgL2.SetConsoleCursorPosition;
+
+    return pResponders->SetConsoleCursorPositionImpl(h, &a->CursorPosition);
 }
 
 NTSTATUS ApiDispatchers::ServeGetLargestConsoleWindowSize(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a = &m->u.consoleMsgL2.GetLargestConsoleWindowSize;
+
+    return pResponders->GetLargestConsoleWindowSizeImpl(h, &a->Size);
 }
 
 NTSTATUS ApiDispatchers::ServeScrollConsoleScreenBuffer(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_SCROLLSCREENBUFFER_MSG* const a = &m->u.consoleMsgL2.ScrollConsoleScreenBufferW;
+
+    DWORD Result = 0;
+
+    SMALL_RECT* pClipRectangle = a->Clip ? &a->ClipRectangle : nullptr;
+
+    if (a->Unicode)
+    {
+        Result = pResponders->ScrollConsoleScreenBufferWImpl(h, &a->ScrollRectangle, &a->DestinationOrigin, pClipRectangle, &a->Fill);
+    }
+    else
+    {
+        Result = pResponders->ScrollConsoleScreenBufferAImpl(h, &a->ScrollRectangle, &a->DestinationOrigin, pClipRectangle, &a->Fill);
+    }
+    
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeSetConsoleTextAttribute(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_SETTEXTATTRIBUTE_MSG* const a = &m->u.consoleMsgL2.SetConsoleTextAttribute;
+
+    return pResponders->SetConsoleTextAttributeImpl(h, a->Attributes);
 }
 
 NTSTATUS ApiDispatchers::ServeSetConsoleWindowInfo(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_SETWINDOWINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleWindowInfo;
+    
+    return pResponders->SetConsoleWindowInfoImpl(h, a->Absolute, &a->Window);
 }
 
 NTSTATUS ApiDispatchers::ServeReadConsoleOutputString(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_READCONSOLEOUTPUTSTRING_MSG* const a = &m->u.consoleMsgL2.ReadConsoleOutputString;
+
+    DWORD Result = 0;
+
+    switch (a->StringType)
+    {
+    case CONSOLE_ATTRIBUTE:
+    {
+        Result = pResponders->ReadConsoleOutputAttributeImpl(h, &a->ReadCoord, nullptr, 0, &a->NumRecords);
+        break;
+    }
+    case CONSOLE_ASCII:
+    {
+        Result = pResponders->ReadConsoleOutputCharacterAImpl(h, &a->ReadCoord, nullptr, 0, &a->NumRecords);
+        break;
+    }
+    case CONSOLE_REAL_UNICODE:
+    case CONSOLE_FALSE_UNICODE:
+    {
+        Result = pResponders->ReadConsoleOutputCharacterWImpl(h, &a->ReadCoord, nullptr, 0, &a->NumRecords);
+        break;
+    }
+    default:
+    {
+        Result = STATUS_UNSUCCESSFUL;
+        break;
+    }
+    }
+
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeWriteConsoleInput(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_WRITECONSOLEINPUT_MSG* const a = &m->u.consoleMsgL2.WriteConsoleInputW;
+
+    DWORD Result = 0;
+    DWORD Read = 0;
+
+    if (a->Unicode)
+    {
+        Result = pResponders->WriteConsoleInputWImpl(h, nullptr, 0, &Read);
+    }
+    else
+    {
+        Result = pResponders->WriteConsoleInputAImpl(h, nullptr, 0, &Read);
+    }
+
+    a->NumRecords = SUCCEEDED(Result) ? Read : 0;
+
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeWriteConsoleOutput(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_WRITECONSOLEOUTPUT_MSG* const a = &m->u.consoleMsgL2.WriteConsoleOutputW;
+
+    DWORD Result = 0;
+
+    COORD TextBufferSize = { 0 };
+    COORD TextBufferSourceOrigin = { 0 };
+    SMALL_RECT TargetRectangle = { 0 };
+    SMALL_RECT AffectedRectangle;
+
+    if (a->Unicode)
+    {
+        Result = pResponders->WriteConsoleOutputWImpl(h, nullptr, &TextBufferSize, &TextBufferSourceOrigin, &TargetRectangle, &AffectedRectangle);
+    }
+    else
+    {
+        Result = pResponders->WriteConsoleOutputAImpl(h, nullptr, &TextBufferSize, &TextBufferSourceOrigin, &TargetRectangle, &AffectedRectangle);
+    }
+
+    a->CharRegion = { 0, 0, -1, -1 };
+    if (SUCCEEDED(Result))
+    {
+        a->CharRegion = AffectedRectangle;
+    }
+
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeWriteConsoleOutputString(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a = &m->u.consoleMsgL2.WriteConsoleOutputString;
+
+    DWORD Result = 0;
+
+    switch (a->StringType)
+    {
+    case CONSOLE_ATTRIBUTE:
+    {
+        Result = pResponders->WriteConsoleOutputAttributeImpl(h, nullptr, 0, &a->WriteCoord, &a->NumRecords);
+        break;
+    }
+    case CONSOLE_ASCII:
+    {
+        Result = pResponders->WriteConsoleOutputCharacterAImpl(h, nullptr, 0, &a->WriteCoord, &a->NumRecords);
+        break;
+    }
+    case CONSOLE_REAL_UNICODE:
+    case CONSOLE_FALSE_UNICODE:
+    {
+        Result = pResponders->WriteConsoleOutputCharacterWImpl(h, nullptr, 0, &a->WriteCoord, &a->NumRecords);
+        break;
+    }
+    default:
+    {
+        Result = STATUS_UNSUCCESSFUL;
+        break;
+    }
+    }
+
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeReadConsoleOutput(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_READCONSOLEOUTPUT_MSG* const a = &m->u.consoleMsgL2.ReadConsoleOutputW;
+
+    DWORD Result = 0;
+
+    COORD TextBufferSize = { 0 };
+    COORD TextBufferTargetOrigin = { 0 };
+    SMALL_RECT SourceRectangle = { 0 };
+    SMALL_RECT ReadRectangle;
+
+    if (a->Unicode)
+    {
+        Result = pResponders->ReadConsoleOutputW(h, nullptr, &TextBufferSize, &TextBufferTargetOrigin, &SourceRectangle, &ReadRectangle);
+    }
+    else
+    {
+        Result = pResponders->ReadConsoleOutputA(h, nullptr, &TextBufferSize, &TextBufferTargetOrigin, &SourceRectangle, &ReadRectangle);
+    }
+
+    a->CharRegion = { 0, 0, -1, -1 };
+    if (SUCCEEDED(Result))
+    {
+        a->CharRegion = ReadRectangle;
+    }
+
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeGetConsoleTitle(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_GETTITLE_MSG* const a = &m->u.consoleMsgL2.GetConsoleTitleW;
+
+    DWORD Result = 0;
+
+    if (a->Unicode)
+    {
+        if (a->Original)
+        {
+            Result = pResponders->GetConsoleOriginalTitleWImpl(h, nullptr, 0);
+        }
+        else
+        {
+            Result = pResponders->GetConsoleTitleWImpl(h, nullptr, 0);
+        }
+    }
+    else
+    {
+        if (a->Original)
+        {
+            Result = pResponders->GetConsoleOriginalTitleAImpl(h, nullptr, 0);
+        }
+        else
+        {
+            Result = pResponders->GetConsoleTitleAImpl(h, nullptr, 0);
+        }
+    }
+
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeSetConsoleTitle(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_SETTITLE_MSG* const a = &m->u.consoleMsgL2.SetConsoleTitleW;
+
+    DWORD Result = 0;
+
+    if (a->Unicode)
+    {
+        Result = pResponders->SetConsoleTitleWImpl(h, nullptr, 0);
+    }
+    else
+    {
+        Result = pResponders->SetConsoleTitleAImpl(h, nullptr, 0);
+    }
+
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeGetConsoleMouseInfo(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_GETMOUSEINFO_MSG* const a = &m->u.consoleMsgL3.GetConsoleMouseInfo;
+
+    return pResponders->GetNumberOfConsoleMouseButtonsImpl(&a->NumButtons);
 }
 
 NTSTATUS ApiDispatchers::ServeGetConsoleFontSize(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_GETFONTSIZE_MSG* const a = &m->u.consoleMsgL3.GetConsoleFontSize;
+
+    return pResponders->GetConsoleFontSizeImpl(h, a->FontIndex, &a->FontSize);
 }
 
 NTSTATUS ApiDispatchers::ServeGetConsoleCurrentFont(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_CURRENTFONT_MSG* const a = &m->u.consoleMsgL3.GetCurrentConsoleFont;
+
+    CONSOLE_FONT_INFOEX FontInfo = { 0 };
+    FontInfo.cbSize = sizeof(FontInfo);
+
+    DWORD Result = pResponders->GetCurrentConsoleFontExImpl(h, a->MaximumWindow, &FontInfo);
+
+    if (SUCCEEDED(Result))
+    {
+        CopyMemory(a->FaceName, FontInfo.FaceName, RTL_NUMBER_OF_V2(a->FaceName));
+        a->FontFamily = FontInfo.FontFamily;
+        a->FontIndex = FontInfo.nFont;
+        a->FontSize = FontInfo.dwFontSize;
+        a->FontWeight = FontInfo.FontWeight;
+    }
+
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeSetConsoleDisplayMode(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_SETDISPLAYMODE_MSG* const a = &m->u.consoleMsgL3.SetConsoleDisplayMode;
+
+    return pResponders->SetConsoleDisplayModeImpl(h, a->dwFlags, &a->ScreenBufferDimensions);
 }
 
 NTSTATUS ApiDispatchers::ServeGetConsoleDisplayMode(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_GETDISPLAYMODE_MSG* const a = &m->u.consoleMsgL3.GetConsoleDisplayMode;
+
+    return pResponders->GetConsoleDisplayModeImpl(h, &a->ModeFlags);
 }
 
 NTSTATUS ApiDispatchers::ServeAddConsoleAlias(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_ADDALIAS_MSG* const a = &m->u.consoleMsgL3.AddConsoleAliasW;
+
+    DWORD Result = 0;
+
+    if (a->Unicode)
+    {
+        Result = pResponders->AddConsoleAliasWImpl(nullptr, 0, nullptr, 0, nullptr, 0);
+    }
+    else
+    {
+        Result = pResponders->AddConsoleAliasAImpl(nullptr, 0, nullptr, 0, nullptr, 0);
+    }
+
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeGetConsoleAlias(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_GETALIAS_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasW;
+
+    DWORD Result = 0;
+
+    if (a->Unicode)
+    {
+        Result = pResponders->GetConsoleAliasWImpl(nullptr, 0, nullptr, 0, nullptr, 0);
+    }
+    else
+    {
+        Result = pResponders->GetConsoleAliasAImpl(nullptr, 0, nullptr, 0, nullptr, 0);
+    }
+
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeGetConsoleAliasesLength(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_GETALIASESLENGTH_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasesLengthW;
+
+    DWORD Result = 0;
+
+    if (a->Unicode)
+    {
+        Result = pResponders->GetConsoleAliasesLengthWImpl(nullptr, 0, &a->AliasesLength);
+    }
+    else
+    {
+        Result = pResponders->GetConsoleAliasesLengthAImpl(nullptr, 0, &a->AliasesLength);
+    }
+
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeGetConsoleAliasExesLength(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_GETALIASEXESLENGTH_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasExesLengthW;
+
+    DWORD Result = 0;
+
+    if (a->Unicode)
+    {
+        Result = pResponders->GetConsoleAliasExesLengthWImpl(&a->AliasExesLength);
+    }
+    else
+    {
+        Result = pResponders->GetConsoleAliasExesLengthAImpl(&a->AliasExesLength);
+    }
+
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeGetConsoleAliases(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_GETALIASES_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasesW;
+
+    DWORD Result = 0;
+
+    if (a->Unicode)
+    {
+        Result = pResponders->GetConsoleAliasesWImpl(nullptr, 0, nullptr, 0);
+    }
+    else
+    {
+        Result = pResponders->GetConsoleAliasesAImpl(nullptr, 0, nullptr, 0);
+    }
+
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeGetConsoleAliasExes(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_GETALIASEXES_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasExesW;
+
+    DWORD Result = 0;
+
+    if (a->Unicode)
+    {
+        Result = pResponders->GetConsoleAliasExesWImpl(nullptr, 0);
+    }
+    else
+    {
+        Result = pResponders->GetConsoleAliasExesAImpl(nullptr, 0);
+    }
+
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeGetConsoleWindow(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_GETCONSOLEWINDOW_MSG* const a = &m->u.consoleMsgL3.GetConsoleWindow;
+
+    return pResponders->GetConsoleWindowImpl(&a->hwnd);
 }
 
 NTSTATUS ApiDispatchers::ServeGetConsoleSelectionInfo(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_GETSELECTIONINFO_MSG* const a = &m->u.consoleMsgL3.GetConsoleSelectionInfo;
+
+    return pResponders->GetConsoleSelectionInfoImpl(&a->SelectionInfo);
 }
 
 NTSTATUS ApiDispatchers::ServeGetConsoleProcessList(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_GETCONSOLEPROCESSLIST_MSG* const a = &m->u.consoleMsgL3.GetConsoleProcessList;
+
+    return pResponders->GetConsoleProcessListImpl(nullptr, 0);
 }
 
 NTSTATUS ApiDispatchers::ServeGetConsoleHistory(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_HISTORY_MSG* const a = &m->u.consoleMsgL3.GetConsoleHistory;
+
+    CONSOLE_HISTORY_INFO Info;
+    Info.cbSize = sizeof(Info);
+
+    DWORD Result = pResponders->GetConsoleHistoryInfoImpl(&Info);
+
+    if (SUCCEEDED(Result))
+    {
+        a->HistoryBufferSize = Info.HistoryBufferSize;
+        a->NumberOfHistoryBuffers = Info.NumberOfHistoryBuffers;
+        a->dwFlags = Info.dwFlags;
+    }
+    
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeSetConsoleHistory(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_HISTORY_MSG* const a = &m->u.consoleMsgL3.SetConsoleHistory;
+
+    CONSOLE_HISTORY_INFO Info;
+    Info.cbSize = sizeof(Info);
+    Info.dwFlags = a->dwFlags;
+    Info.HistoryBufferSize = a->HistoryBufferSize;
+    Info.NumberOfHistoryBuffers = a->NumberOfHistoryBuffers;
+
+    return pResponders->SetConsoleHistoryInfoImpl(&Info);
 }
 
 NTSTATUS ApiDispatchers::ServeSetConsoleCurrentFont(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    return 0;
+    CONSOLE_CURRENTFONT_MSG* const a = &m->u.consoleMsgL3.SetCurrentConsoleFont;
+
+    CONSOLE_FONT_INFOEX Info;
+    Info.cbSize = sizeof(Info);
+    Info.dwFontSize = a->FontSize;
+    CopyMemory(Info.FaceName, a->FaceName, RTL_NUMBER_OF_V2(Info.FaceName));
+    Info.FontFamily = a->FontFamily;
+    Info.FontWeight = a->FontWeight;
+
+    return pResponders->SetCurrentConsoleFontExImpl(h, a->MaximumWindow, &Info);
 }

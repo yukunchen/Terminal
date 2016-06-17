@@ -2,6 +2,8 @@
 #include "ApiSorter.h"
 #include "ApiDispatchers.h"
 
+using namespace ApiDispatchers;
+
 typedef NTSTATUS(*PCONSOLE_API_ROUTINE) (_In_ IApiResponders* const pResponders, _Inout_ PCONSOLE_API_MSG m);
 
 NTSTATUS ServeUnimplementedApi(_In_ IApiResponders* const pResponders, _Inout_ PCONSOLE_API_MSG m)
@@ -41,68 +43,68 @@ struct ApiLayerDescriptor
 };
 
 const ApiDescriptor ConsoleApiLayer1[] = {
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETCP_MSG)),                      // GetConsoleCP
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_MODE_MSG)),                       // GetConsoleMode
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_MODE_MSG)),                       // SetConsoleMode
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETNUMBEROFINPUTEVENTS_MSG)),     // GetNumberOfInputEvents
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETCONSOLEINPUT_MSG)),            // GetConsoleInput
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_READCONSOLE_MSG)),                // ReadConsole
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_WRITECONSOLE_MSG)),               // WriteConsole
+    ApiDescriptor(ServeGetConsoleCP, sizeof(CONSOLE_GETCP_MSG)),                      // GetConsoleCP
+    ApiDescriptor(ServeGetConsoleMode, sizeof(CONSOLE_MODE_MSG)),                       // GetConsoleMode
+    ApiDescriptor(ServeSetConsoleMode, sizeof(CONSOLE_MODE_MSG)),                       // SetConsoleMode
+    ApiDescriptor(ServeGetNumberOfInputEvents, sizeof(CONSOLE_GETNUMBEROFINPUTEVENTS_MSG)),     // GetNumberOfInputEvents
+    ApiDescriptor(ServeGetConsoleInput, sizeof(CONSOLE_GETCONSOLEINPUT_MSG)),            // GetConsoleInput
+    ApiDescriptor(ServeReadConsole, sizeof(CONSOLE_READCONSOLE_MSG)),                // ReadConsole
+    ApiDescriptor(ServeWriteConsole, sizeof(CONSOLE_WRITECONSOLE_MSG)),               // WriteConsole
     ApiDescriptor(ServeDeprecatedApi, 0),                                              // <reserved>
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_LANGID_MSG)),                     // GetConsoleLangId
+    ApiDescriptor(ServeGetConsoleLangId, sizeof(CONSOLE_LANGID_MSG)),                     // GetConsoleLangId
     ApiDescriptor(ServeDeprecatedApi, 0),                                              // <reserved>
 };
 
 const ApiDescriptor ConsoleApiLayer2[] = {
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_FILLCONSOLEOUTPUT_MSG)),                 // FillConsoleOutput
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_CTRLEVENT_MSG)),                  // GenerateConsoleCtrlEvent
-    ApiDescriptor(ServeUnimplementedApi, 0),                                          // SetConsoleActiveScreenBuffer
-    ApiDescriptor(ServeUnimplementedApi, 0),                                               // FlushConsoleInputBuffer
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SETCP_MSG)),                                  // SetConsoleCP
-    ApiDescriptor(ApiDispatchers::ServeGetConsoleCursorInfo, sizeof(CONSOLE_GETCURSORINFO_MSG)),                  // GetConsoleCursorInfo
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SETCURSORINFO_MSG)),                  // SetConsoleCursorInfo
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SCREENBUFFERINFO_MSG)),         // GetConsoleScreenBufferInfo
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SCREENBUFFERINFO_MSG)),                // SetScreenBufferInfo
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SETSCREENBUFFERSIZE_MSG)),      // SetConsoleScreenBufferSize
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SETCURSORPOSITION_MSG)),          // SetConsoleCursorPosition
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETLARGESTWINDOWSIZE_MSG)),    // GetLargestConsoleWindowSize
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SCROLLSCREENBUFFER_MSG)),        // ScrollConsoleScreenBuffer
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SETTEXTATTRIBUTE_MSG)),            // SetConsoleTextAttribute
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SETWINDOWINFO_MSG)),                  // SetConsoleWindowInfo
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_READCONSOLEOUTPUTSTRING_MSG)),     // ReadConsoleOutputString
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_WRITECONSOLEINPUT_MSG)),                 // WriteConsoleInput
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_WRITECONSOLEOUTPUT_MSG)),               // WriteConsoleOutput
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG)),   // WriteConsoleOutputString
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_READCONSOLEOUTPUT_MSG)),                 // ReadConsoleOutput
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETTITLE_MSG)),                            // GetConsoleTitle
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SETTITLE_MSG)),                            // SetConsoleTitle
+    ApiDescriptor(ServeFillConsoleOutput, sizeof(CONSOLE_FILLCONSOLEOUTPUT_MSG)),                 // FillConsoleOutput
+    ApiDescriptor(ServeGenerateConsoleCtrlEvent, sizeof(CONSOLE_CTRLEVENT_MSG)),                  // GenerateConsoleCtrlEvent
+    ApiDescriptor(ServeSetConsoleActiveScreenBuffer, 0),                                          // SetConsoleActiveScreenBuffer
+    ApiDescriptor(ServeFlushConsoleInputBuffer, 0),                                               // FlushConsoleInputBuffer
+    ApiDescriptor(ServeSetConsoleCP, sizeof(CONSOLE_SETCP_MSG)),                                  // SetConsoleCP
+    ApiDescriptor(ServeGetConsoleCursorInfo, sizeof(CONSOLE_GETCURSORINFO_MSG)),                  // GetConsoleCursorInfo
+    ApiDescriptor(ServeSetConsoleCursorInfo, sizeof(CONSOLE_SETCURSORINFO_MSG)),                  // SetConsoleCursorInfo
+    ApiDescriptor(ServeGetConsoleScreenBufferInfo, sizeof(CONSOLE_SCREENBUFFERINFO_MSG)),         // GetConsoleScreenBufferInfo
+    ApiDescriptor(ServeSetConsoleScreenBufferInfo, sizeof(CONSOLE_SCREENBUFFERINFO_MSG)),                // SetScreenBufferInfo
+    ApiDescriptor(ServeSetConsoleScreenBufferSize, sizeof(CONSOLE_SETSCREENBUFFERSIZE_MSG)),      // SetConsoleScreenBufferSize
+    ApiDescriptor(ServeSetConsoleCursorPosition, sizeof(CONSOLE_SETCURSORPOSITION_MSG)),          // SetConsoleCursorPosition
+    ApiDescriptor(ServeGetLargestConsoleWindowSize, sizeof(CONSOLE_GETLARGESTWINDOWSIZE_MSG)),    // GetLargestConsoleWindowSize
+    ApiDescriptor(ServeScrollConsoleScreenBuffer, sizeof(CONSOLE_SCROLLSCREENBUFFER_MSG)),        // ScrollConsoleScreenBuffer
+    ApiDescriptor(ServeSetConsoleTextAttribute, sizeof(CONSOLE_SETTEXTATTRIBUTE_MSG)),            // SetConsoleTextAttribute
+    ApiDescriptor(ServeSetConsoleWindowInfo, sizeof(CONSOLE_SETWINDOWINFO_MSG)),                  // SetConsoleWindowInfo
+    ApiDescriptor(ServeReadConsoleOutputString, sizeof(CONSOLE_READCONSOLEOUTPUTSTRING_MSG)),     // ReadConsoleOutputString
+    ApiDescriptor(ServeWriteConsoleInput, sizeof(CONSOLE_WRITECONSOLEINPUT_MSG)),                 // WriteConsoleInput
+    ApiDescriptor(ServeWriteConsoleOutput, sizeof(CONSOLE_WRITECONSOLEOUTPUT_MSG)),               // WriteConsoleOutput
+    ApiDescriptor(ServeWriteConsoleOutputString, sizeof(CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG)),   // WriteConsoleOutputString
+    ApiDescriptor(ServeReadConsoleOutput, sizeof(CONSOLE_READCONSOLEOUTPUT_MSG)),                 // ReadConsoleOutput
+    ApiDescriptor(ServeGetConsoleTitle, sizeof(CONSOLE_GETTITLE_MSG)),                            // GetConsoleTitle
+    ApiDescriptor(ServeSetConsoleTitle, sizeof(CONSOLE_SETTITLE_MSG)),                            // SetConsoleTitle
 };
 
 const ApiDescriptor ConsoleApiLayer3[] = {
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETMOUSEINFO_MSG)), // GetConsoleMouseInfo
+    ApiDescriptor(ServeGetConsoleMouseInfo, sizeof(CONSOLE_GETMOUSEINFO_MSG)), // GetConsoleMouseInfo
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETFONTSIZE_MSG)), // GetConsoleFontSize
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_CURRENTFONT_MSG)), // GetConsoleCurrentFont
-    ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
-    ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
+    ApiDescriptor(ServeGetConsoleFontSize, sizeof(CONSOLE_GETFONTSIZE_MSG)), // GetConsoleFontSize
+    ApiDescriptor(ServeGetConsoleCurrentFont, sizeof(CONSOLE_CURRENTFONT_MSG)), // GetConsoleCurrentFont
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SETDISPLAYMODE_MSG)), // SetConsoleDisplayMode
+    ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
+    ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
+    ApiDescriptor(ServeSetConsoleDisplayMode, sizeof(CONSOLE_SETDISPLAYMODE_MSG)), // SetConsoleDisplayMode
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETDISPLAYMODE_MSG)), // GetConsoleDisplayMode
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_ADDALIAS_MSG)), // AddConsoleAlias
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETALIAS_MSG)), // GetConsoleAlias
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETALIASESLENGTH_MSG)), // GetConsoleAliasesLength
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETALIASEXESLENGTH_MSG)), // GetConsoleAliasExesLength
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETALIASES_MSG)), // GetConsoleAlises
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETALIASEXES_MSG)), // GetConsoleAliasExes
+    ApiDescriptor(ServeGetConsoleDisplayMode, sizeof(CONSOLE_GETDISPLAYMODE_MSG)), // GetConsoleDisplayMode
+    ApiDescriptor(ServeAddConsoleAlias, sizeof(CONSOLE_ADDALIAS_MSG)), // AddConsoleAlias
+    ApiDescriptor(ServeGetConsoleAlias, sizeof(CONSOLE_GETALIAS_MSG)), // GetConsoleAlias
+    ApiDescriptor(ServeGetConsoleAliasesLength, sizeof(CONSOLE_GETALIASESLENGTH_MSG)), // GetConsoleAliasesLength
+    ApiDescriptor(ServeGetConsoleAliasExesLength, sizeof(CONSOLE_GETALIASEXESLENGTH_MSG)), // GetConsoleAliasExesLength
+    ApiDescriptor(ServeGetConsoleAliases, sizeof(CONSOLE_GETALIASES_MSG)), // GetConsoleAlises
+    ApiDescriptor(ServeGetConsoleAliasExes, sizeof(CONSOLE_GETALIASEXES_MSG)), // GetConsoleAliasExes
     ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_EXPUNGECOMMANDHISTORY_MSG)), // ExpungeConsoleCommandHistory <unpublished, private doskey utility only>
     ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_SETNUMBEROFCOMMANDS_MSG)), // SetConsoleNumberOfCommands <unpublished, private doskey utility only>
     ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETCOMMANDHISTORYLENGTH_MSG)), // GetConsoleCommandHistoryLength <unpublished, private doskey utility only>
@@ -110,7 +112,7 @@ const ApiDescriptor ConsoleApiLayer3[] = {
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETCONSOLEWINDOW_MSG)), // GetConsoleWindow
+    ApiDescriptor(ServeGetConsoleWindow, sizeof(CONSOLE_GETCONSOLEWINDOW_MSG)), // GetConsoleWindow
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
@@ -119,11 +121,11 @@ const ApiDescriptor ConsoleApiLayer3[] = {
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
     ApiDescriptor(ServeDeprecatedApi, 0), // <reserved>
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETSELECTIONINFO_MSG)), // GetConsoleSelectionInfo
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_GETCONSOLEPROCESSLIST_MSG)), // GetConsoleProcessList
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_HISTORY_MSG)), // GetConsoleHistory
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_HISTORY_MSG)), // SetConsoleHistory
-    ApiDescriptor(ServeUnimplementedApi, sizeof(CONSOLE_CURRENTFONT_MSG)), // SetConsoleCurrentFont
+    ApiDescriptor(ServeGetConsoleSelectionInfo, sizeof(CONSOLE_GETSELECTIONINFO_MSG)), // GetConsoleSelectionInfo
+    ApiDescriptor(ServeGetConsoleProcessList, sizeof(CONSOLE_GETCONSOLEPROCESSLIST_MSG)), // GetConsoleProcessList
+    ApiDescriptor(ServeGetConsoleHistory, sizeof(CONSOLE_HISTORY_MSG)), // GetConsoleHistory
+    ApiDescriptor(ServeSetConsoleHistory, sizeof(CONSOLE_HISTORY_MSG)), // SetConsoleHistory
+    ApiDescriptor(ServeSetConsoleCurrentFont, sizeof(CONSOLE_CURRENTFONT_MSG)), // SetConsoleCurrentFont
 };
 
 const ApiLayerDescriptor ConsoleApiLayerTable[] = {
