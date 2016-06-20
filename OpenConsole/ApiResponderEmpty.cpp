@@ -553,8 +553,10 @@ DWORD ApiResponderEmpty::GetConsoleTitleAImpl(_In_ HANDLE const OutContext,
                                               _In_ ULONG const TextBufferSize)
 {
     UNREFERENCED_PARAMETER(OutContext);
-    UNREFERENCED_PARAMETER(TextBufferSize);
-    *pTextBuffer = '\0';
+	if (TextBufferSize > 0)
+	{
+		*pTextBuffer = '\0';
+	}
     return 0;
 }
 
@@ -563,8 +565,10 @@ DWORD ApiResponderEmpty::GetConsoleTitleWImpl(_In_ HANDLE const OutContext,
                                               _In_ ULONG const TextBufferSize)
 {
     UNREFERENCED_PARAMETER(OutContext);
-    UNREFERENCED_PARAMETER(TextBufferSize);
-    *pTextBuffer = L'\0';
+	if (TextBufferSize > 0)
+	{
+		*pTextBuffer = '\0';
+	}
     return 0;
 }
 
@@ -573,8 +577,10 @@ DWORD ApiResponderEmpty::GetConsoleOriginalTitleAImpl(_In_ HANDLE const OutConte
                                                       _In_ ULONG const TextBufferSize)
 {
     UNREFERENCED_PARAMETER(OutContext);
-    UNREFERENCED_PARAMETER(TextBufferSize);
-    *pTextBuffer = '\0';
+	if (TextBufferSize > 0)
+	{
+		*pTextBuffer = '\0';
+	}
     return 0;
 }
 
@@ -583,8 +589,10 @@ DWORD ApiResponderEmpty::GetConsoleOriginalTitleWImpl(_In_ HANDLE const OutConte
                                                       _In_ ULONG const TextBufferSize)
 {
     UNREFERENCED_PARAMETER(OutContext);
-    UNREFERENCED_PARAMETER(TextBufferSize);
-    *pTextBuffer = L'\0';
+	if (TextBufferSize > 0)
+	{
+		*pTextBuffer = '\0';
+	}
     return 0;
 }
 
