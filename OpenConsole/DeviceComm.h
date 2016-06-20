@@ -10,6 +10,8 @@ public:
                  _Out_ CONSOLE_API_MSG* const pMessage) const;
     DWORD CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const;
 
+	DWORD ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const;
+
 private:
 
     DWORD _CallIoctl(_In_ DWORD dwIoControlCode,

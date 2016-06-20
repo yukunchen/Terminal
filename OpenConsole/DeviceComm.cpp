@@ -53,6 +53,14 @@ DWORD DeviceComm::CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const
                       0);
 }
 
+DWORD DeviceComm::ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const
+{
+	return _CallIoctl(IOCTL_CONDRV_READ_INPUT,
+					  pIoOperation,
+					  sizeof(*pIoOperation),
+					  nullptr,
+					  0);
+}
 
 DWORD DeviceComm::_CallIoctl(_In_ DWORD dwIoControlCode,
                             _In_reads_bytes_opt_(nInBufferSize) LPVOID lpInBuffer,

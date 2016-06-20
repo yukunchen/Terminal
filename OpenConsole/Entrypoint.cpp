@@ -51,9 +51,14 @@ void IoLoop(_In_ HANDLE Server)
         // Route function to handler
         switch (ReceiveMsg.Descriptor.Function)
         {
+		case CONSOLE_IO_RAW_READ:
+		{
+			DoRawReadCall(&Prot, &Responder, &ReceiveMsg);
+			break;
+		}
         case CONSOLE_IO_USER_DEFINED:
         {
-            DoApiCall(&Prot, &Responder, &ReceiveMsg);
+            LookupAndDoApiCall(&Prot, &Responder, &ReceiveMsg);
             break;
         }
         case CONSOLE_IO_CONNECT:

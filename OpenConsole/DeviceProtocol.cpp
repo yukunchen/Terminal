@@ -45,6 +45,54 @@ DWORD DeviceProtocol::GetReadIo(_Out_ CONSOLE_API_MSG* const pMessage) const
                           pMessage);
 }
 
+DWORD DeviceProtocol::GetInputBuffer(_In_ CONSOLE_API_MSG* const pMessage, _Outptr_result_bytebuffer_(*pBufferSize) void** const ppBuffer, _Out_ ULONG* const pBufferSize)
+{
+	DWORD Status = STATUS_SUCCESS;
+
+	// Initialize the buffer if it hasn't been initialized yet.
+	if (pMessage->State.InputBuffer == nullptr)
+	{
+		if (pMessage->State.ReadOffset > pMessage->Descriptor.InputSize)
+		{
+			Status = STATUS_UNSUCCESSFUL;
+		}
+
+		if (SUCCEEDED(Status))
+		{
+			ULONG const ReadSize = pMessage->Descriptor.InputSize - pMessage->State.ReadOffset;
+
+			BYTE* const Payload = new BYTE[ReadSize];
+			if (Payload == nullptr)
+			{
+				Status = STATUS_INSUFFICIENT_RESOURCES;
+			}
+
+			if (SUCCEEDED(Status))
+			{
+				Status = _GetInputOperation(pMessage, 0, Payload, ReadSize);
+				if (SUCCEEDED(Status))
+				{
+					pMessage->State.InputBuffer = Payload;
+					pMessage->State.InputBufferSize = ReadSize;
+				}
+				else
+				{
+					delete[] Payload;
+				}
+			}
+		}
+	}
+
+	if (SUCCEEDED(Status))
+	{
+		// Return the buffer.
+		*ppBuffer = pMessage->State.InputBuffer;
+		*pBufferSize = pMessage->State.InputBufferSize;
+	}
+
+	return Status;
+}
+
 DWORD DeviceProtocol::SendCompletion(_In_ const CD_IO_DESCRIPTOR* const pAssociatedMessage,
                                      _In_ NTSTATUS const status,
                                      _In_reads_bytes_(nDataSize) LPVOID pData,
@@ -59,4 +107,18 @@ DWORD DeviceProtocol::SendCompletion(_In_ const CD_IO_DESCRIPTOR* const pAssocia
     Completion.Write.Size = nDataSize;
 
     return _pComm->CompleteIo(&Completion);
+}
+
+DWORD DeviceProtocol::_GetInputOperation(_In_ CONSOLE_API_MSG* const pAssociatedMessage,
+										 _In_ ULONG const Offset,
+										 _Out_writes_bytes_(BufferSize) void* const pBuffer,
+										 _In_ ULONG const BufferSize) const
+{
+	CD_IO_OPERATION Op;
+	Op.Identifier = pAssociatedMessage->Descriptor.Identifier;
+	Op.Buffer.Offset = pAssociatedMessage->State.ReadOffset + Offset;
+	Op.Buffer.Data = pBuffer;
+	Op.Buffer.Size = BufferSize;
+
+	return _pComm->ReadInput(&Op);
 }

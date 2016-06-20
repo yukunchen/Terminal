@@ -4,10 +4,11 @@
 
 using namespace ApiDispatchers;
 
-typedef NTSTATUS(*PCONSOLE_API_ROUTINE) (_In_ IApiResponders* const pResponders, _Inout_ PCONSOLE_API_MSG m);
+typedef NTSTATUS(*PCONSOLE_API_ROUTINE) (_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ PCONSOLE_API_MSG m);
 
-NTSTATUS ServeUnimplementedApi(_In_ IApiResponders* const pResponders, _Inout_ PCONSOLE_API_MSG m)
+NTSTATUS ServeUnimplementedApi(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ PCONSOLE_API_MSG m)
 {
+	UNREFERENCED_PARAMETER(pProtocol);
     UNREFERENCED_PARAMETER(pResponders);
     UNREFERENCED_PARAMETER(m);
 
@@ -16,9 +17,9 @@ NTSTATUS ServeUnimplementedApi(_In_ IApiResponders* const pResponders, _Inout_ P
     return STATUS_UNSUCCESSFUL;
 }
 
-NTSTATUS ServeDeprecatedApi(_In_ IApiResponders* const pResponders, _Inout_ PCONSOLE_API_MSG m)
+NTSTATUS ServeDeprecatedApi(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ PCONSOLE_API_MSG m)
 {
-    return ServeUnimplementedApi(pResponders, m);
+    return ServeUnimplementedApi(pProtocol, pResponders, m);
 }
 
 struct ApiDescriptor
@@ -42,13 +43,16 @@ struct ApiLayerDescriptor
     ULONG const Count;
 };
 
+const ApiDescriptor RawReadDescriptor(ServeReadConsole, sizeof(CONSOLE_READCONSOLE_MSG));
+
 const ApiDescriptor ConsoleApiLayer1[] = {
     ApiDescriptor(ServeGetConsoleCP, sizeof(CONSOLE_GETCP_MSG)),                      // GetConsoleCP
     ApiDescriptor(ServeGetConsoleMode, sizeof(CONSOLE_MODE_MSG)),                       // GetConsoleMode
     ApiDescriptor(ServeSetConsoleMode, sizeof(CONSOLE_MODE_MSG)),                       // SetConsoleMode
     ApiDescriptor(ServeGetNumberOfInputEvents, sizeof(CONSOLE_GETNUMBEROFINPUTEVENTS_MSG)),     // GetNumberOfInputEvents
     ApiDescriptor(ServeGetConsoleInput, sizeof(CONSOLE_GETCONSOLEINPUT_MSG)),            // GetConsoleInput
-    ApiDescriptor(ServeReadConsole, sizeof(CONSOLE_READCONSOLE_MSG)),                // ReadConsole
+    //ApiDescriptor(ServeReadConsole, sizeof(CONSOLE_READCONSOLE_MSG)),                // ReadConsole
+	RawReadDescriptor,
     ApiDescriptor(ServeWriteConsole, sizeof(CONSOLE_WRITECONSOLE_MSG)),               // WriteConsole
     ApiDescriptor(ServeDeprecatedApi, 0),                                              // <reserved>
     ApiDescriptor(ServeGetConsoleLangId, sizeof(CONSOLE_LANGID_MSG)),                     // GetConsoleLangId
@@ -134,43 +138,62 @@ const ApiLayerDescriptor ConsoleApiLayerTable[] = {
     ApiLayerDescriptor(ConsoleApiLayer3, RTL_NUMBER_OF(ConsoleApiLayer3)),
 };
 
-DWORD DoApiCall(_In_ DeviceProtocol* Server, _In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)
+DWORD DoApiCall(_In_ ApiDescriptor const* Descriptor, _In_ DeviceProtocol* Server, _In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg);
+
+DWORD LookupAndDoApiCall(_In_ DeviceProtocol* Server, _In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)
 {
-    ULONG const LayerNumber = (pMsg->msgHeader.ApiNumber >> 24) - 1;
-    ULONG const ApiNumber = (pMsg->msgHeader.ApiNumber & 0xffffff);
+	ULONG const LayerNumber = (pMsg->msgHeader.ApiNumber >> 24) - 1;
+	ULONG const ApiNumber = (pMsg->msgHeader.ApiNumber & 0xffffff);
 
-    NTSTATUS Status = STATUS_SUCCESS;
-    if ((LayerNumber >= RTL_NUMBER_OF(ConsoleApiLayerTable)) || (ApiNumber >= ConsoleApiLayerTable[LayerNumber].Count))
-    {
-        Status = STATUS_ILLEGAL_FUNCTION;
-    }
+	NTSTATUS Status = STATUS_SUCCESS;
+	if ((LayerNumber >= RTL_NUMBER_OF(ConsoleApiLayerTable)) || (ApiNumber >= ConsoleApiLayerTable[LayerNumber].Count))
+	{
+		Status = STATUS_ILLEGAL_FUNCTION;
+	}
 
-    if (Status == STATUS_SUCCESS)
-    {
-        ApiDescriptor const *Descriptor = &ConsoleApiLayerTable[LayerNumber].Descriptor[ApiNumber];
+	if (Status == STATUS_SUCCESS)
+	{
+		ApiDescriptor const *Descriptor = &ConsoleApiLayerTable[LayerNumber].Descriptor[ApiNumber];
 
-        // Validate the argument size and call the API.
-        if ((pMsg->Descriptor.InputSize < sizeof(CONSOLE_MSG_HEADER)) ||
-            (pMsg->msgHeader.ApiDescriptorSize > sizeof(pMsg->u)) ||
-            (pMsg->msgHeader.ApiDescriptorSize > pMsg->Descriptor.InputSize - sizeof(CONSOLE_MSG_HEADER)) ||
-            (pMsg->msgHeader.ApiDescriptorSize < Descriptor->RequiredSize))
-        {
-            Status = STATUS_ILLEGAL_FUNCTION;
-        }
+		// Validate the argument size and call the API.
+		if ((pMsg->Descriptor.InputSize < sizeof(CONSOLE_MSG_HEADER)) ||
+			(pMsg->msgHeader.ApiDescriptorSize > sizeof(pMsg->u)) ||
+			(pMsg->msgHeader.ApiDescriptorSize > pMsg->Descriptor.InputSize - sizeof(CONSOLE_MSG_HEADER)) ||
+			(pMsg->msgHeader.ApiDescriptorSize < Descriptor->RequiredSize))
+		{
+			Status = STATUS_ILLEGAL_FUNCTION;
+		}
 
-        if (Status == STATUS_SUCCESS)
-        {
-            pMsg->State.WriteOffset = pMsg->msgHeader.ApiDescriptorSize;
-            pMsg->State.ReadOffset = pMsg->msgHeader.ApiDescriptorSize + sizeof(CONSOLE_MSG_HEADER);
+		if (Status == STATUS_SUCCESS)
+		{
+			pMsg->State.WriteOffset = pMsg->msgHeader.ApiDescriptorSize;
+			pMsg->State.ReadOffset = pMsg->msgHeader.ApiDescriptorSize + sizeof(CONSOLE_MSG_HEADER);
 
-            Status = (*Descriptor->Routine) (pResponders, pMsg);
+			Status = DoApiCall(Descriptor, Server, pResponders, pMsg);
+		}
+	}
 
-            Status = Server->SendCompletion(&pMsg->Descriptor,
-                                            Status,
-                                            &pMsg->u,
-                                            pMsg->msgHeader.ApiDescriptorSize);
-        }
-    }
+	return Status;
+}
 
-    return Status;
+DWORD DoRawReadCall(_In_ DeviceProtocol* Server, _In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)
+{
+	pMsg->u.consoleMsgL1.ReadConsoleW.ProcessControlZ = TRUE;
+
+	return DoApiCall(&RawReadDescriptor, Server, pResponders, pMsg);
+}
+
+DWORD DoApiCall(_In_ ApiDescriptor const* Descriptor, _In_ DeviceProtocol* Server, _In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)
+{
+	DWORD Status = (*Descriptor->Routine) (Server, pResponders, pMsg);
+
+	if (ERROR_IO_PENDING != Status)
+	{
+		Status = Server->SendCompletion(&pMsg->Descriptor,
+										Status,
+										&pMsg->u,
+										pMsg->msgHeader.ApiDescriptorSize);
+	}
+
+	return Status;
 }
