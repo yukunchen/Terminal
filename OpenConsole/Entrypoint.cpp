@@ -56,11 +56,6 @@ void IoLoop(_In_ HANDLE Server)
         // Route function to handler
         switch (ReceiveMsg.Descriptor.Function)
         {
-		case CONSOLE_IO_RAW_READ:
-		{
-			DoRawReadCall(&Prot, &Responder, &ReceiveMsg);
-			break;
-		}
         case CONSOLE_IO_USER_DEFINED:
         {
             LookupAndDoApiCall(&Prot, &Responder, &ReceiveMsg);
@@ -71,6 +66,41 @@ void IoLoop(_In_ HANDLE Server)
             DoConnect(&Prot, &ReceiveMsg.Descriptor);
             break;
         }
+		case CONSOLE_IO_DISCONNECT:
+		{
+			// TODO.
+			DoDefault(&Prot, &ReceiveMsg.Descriptor);
+			break;
+		}
+		case CONSOLE_IO_CREATE_OBJECT:
+		{
+			// TODO.
+			DoDefault(&Prot, &ReceiveMsg.Descriptor);
+			break;
+		}
+		case CONSOLE_IO_CLOSE_OBJECT:
+		{
+			// TODO.
+			DoDefault(&Prot, &ReceiveMsg.Descriptor);
+			break;
+		}
+		case CONSOLE_IO_RAW_WRITE:
+		{
+			// TODO.
+			DoDefault(&Prot, &ReceiveMsg.Descriptor);
+			break;
+		}
+		case CONSOLE_IO_RAW_READ:
+		{
+			DoRawReadCall(&Prot, &Responder, &ReceiveMsg);
+			break;
+		}
+		case CONSOLE_IO_RAW_FLUSH:
+		{
+			// TODO.
+			DoDefault(&Prot, &ReceiveMsg.Descriptor);
+			break;
+		}
         default:
         {
             DoDefault(&Prot, &ReceiveMsg.Descriptor);
