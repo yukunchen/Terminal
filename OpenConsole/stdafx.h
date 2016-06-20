@@ -12,6 +12,7 @@
 #include <windows.h>
 
 typedef long NTSTATUS;
+#define NT_SUCCESS(Status)  (((NTSTATUS)(Status)) >= 0)
 #define STATUS_SUCCESS ((DWORD)0x0)
 #define STATUS_UNSUCCESSFUL ((DWORD)0xC0000001L)
 #define STATUS_INSUFFICIENT_RESOURCES ((DWORD)0xC000009AL)
@@ -38,3 +39,9 @@ typedef long NTSTATUS;
 // private dependencies
 #include <Console\conapi.h>
 #include <Console\condrv.h>
+
+// in Win32Control.cpp only
+//extern "C"
+//{
+//#include <Win32K\winuserk.h>
+//}

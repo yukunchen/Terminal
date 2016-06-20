@@ -6,6 +6,7 @@
 #include "IApiResponders.h"
 #include "ApiResponderEmpty.h"
 #include "ApiSorter.h"
+#include "Win32Control.h"
 
 using namespace std;
 
@@ -16,6 +17,10 @@ DWORD DoConnect(_In_ DeviceProtocol* Server, _In_ CD_IO_DESCRIPTOR* const pMsg)
     
     // TODO: These are junk handles for now to various info that we want to get back when other calls come in.
     result = Server->SetConnectionInformation(pMsg, 0x14, 0x18, 0x1a);
+
+	// Notify Win32k that this process is attached to a special console application type.
+	// TODO: Don't do this for AttachConsole case (they already are a Win32 app type.)
+	Win32Control::NotifyConsoleTypeApplication((HANDLE)pMsg->Process);
 
     return result;
 }
