@@ -31,6 +31,7 @@ typedef long NTSTATUS;
 // C++ header files
 #include <stdexcept>
 #include <thread>
+#include <vector>
 
 
 // TODO: reference additional headers your program requires here
