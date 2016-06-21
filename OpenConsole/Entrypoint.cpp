@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Entrypoint.h"
 
-#include "IoThread.h"
+#include "..\ServerBase\IoThread.h"
 
 extern "C"
 {
