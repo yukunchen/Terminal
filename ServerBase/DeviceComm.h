@@ -11,6 +11,9 @@ public:
     DWORD CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const;
 
 	DWORD ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const;
+	DWORD WriteOutput(_In_ CD_IO_OPERATION* const pIoOperation) const;
+
+	DWORD AllowUIAccess() const;
 
 private:
 

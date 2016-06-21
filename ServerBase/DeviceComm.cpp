@@ -62,6 +62,24 @@ DWORD DeviceComm::ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const
 					  0);
 }
 
+DWORD DeviceComm::WriteOutput(_In_ CD_IO_OPERATION* const pIoOperation) const
+{
+	return _CallIoctl(IOCTL_CONDRV_WRITE_OUTPUT,
+					  pIoOperation,
+					  sizeof(*pIoOperation),
+					  nullptr,
+					  0);
+}
+
+DWORD DeviceComm::AllowUIAccess() const
+{
+	return _CallIoctl(IOCTL_CONDRV_ALLOW_VIA_UIACCESS,
+					  nullptr,
+					  0,
+					  nullptr,
+					  0);
+}
+
 DWORD DeviceComm::_CallIoctl(_In_ DWORD dwIoControlCode,
                             _In_reads_bytes_opt_(nInBufferSize) LPVOID lpInBuffer,
                             _In_ DWORD nInBufferSize,
