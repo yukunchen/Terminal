@@ -19,8 +19,6 @@ typedef long NTSTATUS;
 #define STATUS_ILLEGAL_FUNCTION ((DWORD)0xC00000AFL)
 #define STATUS_PIPE_DISCONNECTED ((DWORD)0xC00000B0L)
 
-#define OffsetToPointer(B,O)  ((PCHAR)( ((PCHAR)(B)) + ((ULONG_PTR)(O))  ))
-
 //#include <ntstatus.h>
 
 #include <winioctl.h>

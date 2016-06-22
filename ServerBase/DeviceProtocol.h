@@ -9,37 +9,38 @@ public:
     ~DeviceProtocol();
 
     DWORD SetInputAvailableEvent(_In_ HANDLE Event) const;
-    DWORD SetConnectionInformation(_In_ const CD_IO_DESCRIPTOR* const pAssociatedMessage,
+    DWORD SetConnectionInformation(_In_ CONSOLE_API_MSG* const pMessage,
                                    _In_ ULONG_PTR ProcessDataHandle,
                                    _In_ ULONG_PTR InputHandle,
                                    _In_ ULONG_PTR OutputHandle) const;
 
-    DWORD GetReadIo(_Out_ CONSOLE_API_MSG* const pMessage) const;
+    DWORD GetApiCall(_Out_ CONSOLE_API_MSG* const pMessage) const;
+	DWORD CompleteApiCall(_In_ CONSOLE_API_MSG* const pMessage) const;
 
 	// Auto-reads input
-	DWORD GetInputBuffer(_In_ CONSOLE_API_MSG* const pMessage, _Outptr_result_bytebuffer_(*pBufferSize) void** const ppBuffer, _Out_ ULONG* const pBufferSize);
+	DWORD GetInputBuffer(_In_ CONSOLE_API_MSG* const pMessage) const;
 
 	// You must write output when done filling buffer.
-	DWORD GetOutputBuffer(_In_ CONSOLE_API_MSG* const pMessage, _Outptr_result_bytebuffer_(*pBufferSize) void** const ppBuffer, _Out_ ULONG* const pBufferSize);
+	DWORD GetOutputBuffer(_In_ CONSOLE_API_MSG* const pMessage) const;
 
 	
 
-    DWORD SendCompletion(_In_ const CD_IO_DESCRIPTOR* const pAssociatedMessage,
-                         _In_ NTSTATUS const status,
-                         _In_reads_bytes_(nDataSize) LPVOID pData,
-                         _In_ DWORD nDataSize) const;
-
-	DWORD WriteOutputOperation(_In_ const CONSOLE_API_MSG* const pAssociatedMessage,
-								_In_ ULONG const Offset,
-								_In_reads_bytes_(BufferSize) void* const pBuffer,
-								_In_ ULONG const BufferSize) const;
-
+	DWORD SetCompletionStatus(_In_ CONSOLE_API_MSG* const pMessage, 
+							  _In_ DWORD const Status) const;
+	
 private:
 
-	DWORD _ReadInputOperation(_In_ const CONSOLE_API_MSG* const pAssociatedMessage,
-							 _In_ ULONG const Offset,
-							 _Out_writes_bytes_(BufferSize) void* const pBuffer,
-							 _In_ ULONG const BufferSize) const;
+	DWORD _SetCompletionPayload(_In_ CONSOLE_API_MSG* const pMessage,
+								_In_reads_bytes_(nDataSize) LPVOID pData,
+								_In_ DWORD nDataSize) const;
+
+	DWORD _ReadInputOperation(_In_ CONSOLE_API_MSG* const pMessage) const;
+
+	DWORD _WriteOutputOperation(_In_ CONSOLE_API_MSG* const pMessage) const;
+
+	DWORD _SendCompletion(_In_ CONSOLE_API_MSG* const pMessage) const;
+
+	DWORD _FreeBuffers(_In_ CONSOLE_API_MSG* const pMessage) const;
 
     DeviceComm* const _pComm;
 

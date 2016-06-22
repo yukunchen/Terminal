@@ -3,53 +3,7 @@
 
 HANDLE h = INVALID_HANDLE_VALUE; // look up handle again based on what's in message
 
-// Routine Description:
-// - This routine validates a string buffer and returns the pointers of where the strings start within the buffer.
-// Arguments:
-// - Unicode - Supplies a boolean that is TRUE if the buffer contains Unicode strings, FALSE otherwise.
-// - Buffer - Supplies the buffer to be validated.
-// - Size - Supplies the size, in bytes, of the buffer to be validated.
-// - Count - Supplies the expected number of strings in the buffer.
-// ... - Supplies a pair of arguments per expected string. The first one is the expected size, in bytes, of the string
-//       and the second one receives a pointer to where the string starts.
-// Return Value:
-// - TRUE if the buffer is valid, FALSE otherwise.
-BOOLEAN UnpackInputBuffer(_In_ BOOLEAN Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...)
-{
-	va_list Marker;
-	va_start(Marker, Count);
-
-	while (Count > 0)
-	{
-		ULONG const StringSize = va_arg(Marker, ULONG);
-		PVOID* StringStart = va_arg(Marker, PVOID *);
-
-		// Make sure the string fits in the supplied buffer and that it is properly aligned.
-		if (StringSize > Size)
-		{
-			break;
-		}
-
-		if ((Unicode != FALSE) && ((StringSize % sizeof(WCHAR)) != 0))
-		{
-			break;
-		}
-
-		*StringStart = Buffer;
-
-		// Go to the next string.
-		
-		Buffer = OffsetToPointer(Buffer, StringSize);
-		Size -= StringSize;
-		Count -= 1;
-	}
-
-	va_end(Marker);
-
-	return Count == 0;
-}
-
-NTSTATUS ApiDispatchers::ServeGetConsoleCP(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleCP(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETCP_MSG* const a = &m->u.consoleMsgL1.GetConsoleCP;
 
@@ -67,7 +21,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleCP(_In_ DeviceProtocol* const pProtocol,
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleMode(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleMode(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.GetConsoleMode;
 
@@ -87,7 +41,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleMode(_In_ DeviceProtocol* const pProtoco
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeSetConsoleMode(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeSetConsoleMode(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.SetConsoleMode;
 
@@ -107,14 +61,14 @@ NTSTATUS ApiDispatchers::ServeSetConsoleMode(_In_ DeviceProtocol* const pProtoco
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeGetNumberOfInputEvents(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetNumberOfInputEvents(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETNUMBEROFINPUTEVENTS_MSG* const a = &m->u.consoleMsgL1.GetNumberOfConsoleInputEvents;
 
     return pResponders->GetNumberOfConsoleInputEventsImpl(h, &a->ReadyEvents);
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleInput(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleInput(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETCONSOLEINPUT_MSG* const a = &m->u.consoleMsgL1.GetConsoleInput;
 
@@ -135,7 +89,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleInput(_In_ DeviceProtocol* const pProtoc
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeReadConsole(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeReadConsole(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_READCONSOLE_MSG* const a = &m->u.consoleMsgL1.ReadConsoleW;
 
@@ -164,20 +118,24 @@ NTSTATUS ApiDispatchers::ServeReadConsole(_In_ DeviceProtocol* const pProtocol, 
 	return ERROR_IO_PENDING;
 }
 
-NTSTATUS ApiDispatchers::ServeWriteConsole(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeWriteConsole(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_WRITECONSOLE_MSG* const a = &m->u.consoleMsgL1.WriteConsoleW;
 
     DWORD Result = 0;
     DWORD Written = 0;
 
-	void* Buffer;
-	ULONG BufferSize;
-
-	Result = pProtocol->GetInputBuffer(m, &Buffer, &BufferSize);
+	// ensure we have the input buffer
+	if (m->State.InputBuffer == nullptr)
+	{
+		Result = STATUS_INVALID_PARAMETER;
+	}
 
 	if (SUCCEEDED(Result))
 	{
+		void* const Buffer = m->State.InputBuffer;
+		ULONG BufferSize = m->State.InputBufferSize;
+
 		if (a->Unicode)
 		{
 			Result = pResponders->WriteConsoleWImpl(h, (WCHAR*)Buffer, BufferSize, &Written);
@@ -195,7 +153,7 @@ NTSTATUS ApiDispatchers::ServeWriteConsole(_In_ DeviceProtocol* const pProtocol,
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleLangId(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleLangId(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_LANGID_MSG* const a = &m->u.consoleMsgL1.GetConsoleLangId;
 
@@ -203,7 +161,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleLangId(_In_ DeviceProtocol* const pProto
     return pResponders->GetConsoleLangId(h, &a->LangId);
 }
 
-NTSTATUS ApiDispatchers::ServeFillConsoleOutput(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeFillConsoleOutput(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_FILLCONSOLEOUTPUT_MSG* const a = &m->u.consoleMsgL2.FillConsoleOutput;
 
@@ -240,24 +198,24 @@ NTSTATUS ApiDispatchers::ServeFillConsoleOutput(_In_ DeviceProtocol* const pProt
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeGenerateConsoleCtrlEvent(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGenerateConsoleCtrlEvent(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_CTRLEVENT_MSG* const a = &m->u.consoleMsgL2.GenerateConsoleCtrlEvent;
 
     return pResponders->GenerateConsoleCtrlEventImpl(a->ProcessGroupId, a->CtrlEvent);
 }
 
-NTSTATUS ApiDispatchers::ServeSetConsoleActiveScreenBuffer(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeSetConsoleActiveScreenBuffer(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     return pResponders->SetConsoleActiveScreenBufferImpl(h);
 }
 
-NTSTATUS ApiDispatchers::ServeFlushConsoleInputBuffer(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeFlushConsoleInputBuffer(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     return pResponders->FlushConsoleInputBuffer(h);
 }
 
-NTSTATUS ApiDispatchers::ServeSetConsoleCP(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeSetConsoleCP(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SETCP_MSG* const a = &m->u.consoleMsgL2.SetConsoleCP;
 
@@ -275,21 +233,21 @@ NTSTATUS ApiDispatchers::ServeSetConsoleCP(_In_ DeviceProtocol* const pProtocol,
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleCursorInfo(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleCursorInfo(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETCURSORINFO_MSG* const a = &m->u.consoleMsgL2.GetConsoleCursorInfo;
 
     return pResponders->GetConsoleCursorInfoImpl(h, &a->CursorSize, &a->Visible);
 }
 
-NTSTATUS ApiDispatchers::ServeSetConsoleCursorInfo(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeSetConsoleCursorInfo(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SETCURSORINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleCursorInfo;
 
     return pResponders->SetConsoleCursorInfoImpl(h, a->CursorSize, a->Visible);
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleScreenBufferInfo(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleScreenBufferInfo(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SCREENBUFFERINFO_MSG* const a = &m->u.consoleMsgL2.GetConsoleScreenBufferInfo;
 
@@ -317,7 +275,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleScreenBufferInfo(_In_ DeviceProtocol* co
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeSetConsoleScreenBufferInfo(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeSetConsoleScreenBufferInfo(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SCREENBUFFERINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleScreenBufferInfo;
 
@@ -340,28 +298,28 @@ NTSTATUS ApiDispatchers::ServeSetConsoleScreenBufferInfo(_In_ DeviceProtocol* co
     return pResponders->SetConsoleScreenBufferInfoExImpl(h, &ex);
 }
 
-NTSTATUS ApiDispatchers::ServeSetConsoleScreenBufferSize(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeSetConsoleScreenBufferSize(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SETSCREENBUFFERSIZE_MSG* const a = &m->u.consoleMsgL2.SetConsoleScreenBufferSize;
 
     return pResponders->SetConsoleScreenBufferSizeImpl(h, &a->Size);
 }
 
-NTSTATUS ApiDispatchers::ServeSetConsoleCursorPosition(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeSetConsoleCursorPosition(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SETCURSORPOSITION_MSG* const a = &m->u.consoleMsgL2.SetConsoleCursorPosition;
 
     return pResponders->SetConsoleCursorPositionImpl(h, &a->CursorPosition);
 }
 
-NTSTATUS ApiDispatchers::ServeGetLargestConsoleWindowSize(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetLargestConsoleWindowSize(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a = &m->u.consoleMsgL2.GetLargestConsoleWindowSize;
 
     return pResponders->GetLargestConsoleWindowSizeImpl(h, &a->Size);
 }
 
-NTSTATUS ApiDispatchers::ServeScrollConsoleScreenBuffer(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeScrollConsoleScreenBuffer(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SCROLLSCREENBUFFER_MSG* const a = &m->u.consoleMsgL2.ScrollConsoleScreenBufferW;
 
@@ -381,21 +339,21 @@ NTSTATUS ApiDispatchers::ServeScrollConsoleScreenBuffer(_In_ DeviceProtocol* con
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeSetConsoleTextAttribute(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeSetConsoleTextAttribute(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SETTEXTATTRIBUTE_MSG* const a = &m->u.consoleMsgL2.SetConsoleTextAttribute;
 
     return pResponders->SetConsoleTextAttributeImpl(h, a->Attributes);
 }
 
-NTSTATUS ApiDispatchers::ServeSetConsoleWindowInfo(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeSetConsoleWindowInfo(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SETWINDOWINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleWindowInfo;
     
     return pResponders->SetConsoleWindowInfoImpl(h, a->Absolute, &a->Window);
 }
 
-NTSTATUS ApiDispatchers::ServeReadConsoleOutputString(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeReadConsoleOutputString(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_READCONSOLEOUTPUTSTRING_MSG* const a = &m->u.consoleMsgL2.ReadConsoleOutputString;
 
@@ -429,7 +387,7 @@ NTSTATUS ApiDispatchers::ServeReadConsoleOutputString(_In_ DeviceProtocol* const
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeWriteConsoleInput(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeWriteConsoleInput(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_WRITECONSOLEINPUT_MSG* const a = &m->u.consoleMsgL2.WriteConsoleInputW;
 
@@ -450,7 +408,7 @@ NTSTATUS ApiDispatchers::ServeWriteConsoleInput(_In_ DeviceProtocol* const pProt
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeWriteConsoleOutput(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeWriteConsoleOutput(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_WRITECONSOLEOUTPUT_MSG* const a = &m->u.consoleMsgL2.WriteConsoleOutputW;
 
@@ -479,7 +437,7 @@ NTSTATUS ApiDispatchers::ServeWriteConsoleOutput(_In_ DeviceProtocol* const pPro
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeWriteConsoleOutputString(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeWriteConsoleOutputString(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a = &m->u.consoleMsgL2.WriteConsoleOutputString;
 
@@ -513,7 +471,7 @@ NTSTATUS ApiDispatchers::ServeWriteConsoleOutputString(_In_ DeviceProtocol* cons
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeReadConsoleOutput(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeReadConsoleOutput(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_READCONSOLEOUTPUT_MSG* const a = &m->u.consoleMsgL2.ReadConsoleOutputW;
 
@@ -542,7 +500,7 @@ NTSTATUS ApiDispatchers::ServeReadConsoleOutput(_In_ DeviceProtocol* const pProt
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleTitle(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleTitle(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETTITLE_MSG* const a = &m->u.consoleMsgL2.GetConsoleTitleW;
 
@@ -574,7 +532,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleTitle(_In_ DeviceProtocol* const pProtoc
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeSetConsoleTitle(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeSetConsoleTitle(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SETTITLE_MSG* const a = &m->u.consoleMsgL2.SetConsoleTitleW;
 
@@ -592,21 +550,21 @@ NTSTATUS ApiDispatchers::ServeSetConsoleTitle(_In_ DeviceProtocol* const pProtoc
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleMouseInfo(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleMouseInfo(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETMOUSEINFO_MSG* const a = &m->u.consoleMsgL3.GetConsoleMouseInfo;
 
     return pResponders->GetNumberOfConsoleMouseButtonsImpl(&a->NumButtons);
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleFontSize(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleFontSize(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETFONTSIZE_MSG* const a = &m->u.consoleMsgL3.GetConsoleFontSize;
 
     return pResponders->GetConsoleFontSizeImpl(h, a->FontIndex, &a->FontSize);
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleCurrentFont(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleCurrentFont(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_CURRENTFONT_MSG* const a = &m->u.consoleMsgL3.GetCurrentConsoleFont;
 
@@ -627,21 +585,21 @@ NTSTATUS ApiDispatchers::ServeGetConsoleCurrentFont(_In_ DeviceProtocol* const p
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeSetConsoleDisplayMode(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeSetConsoleDisplayMode(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SETDISPLAYMODE_MSG* const a = &m->u.consoleMsgL3.SetConsoleDisplayMode;
 
     return pResponders->SetConsoleDisplayModeImpl(h, a->dwFlags, &a->ScreenBufferDimensions);
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleDisplayMode(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleDisplayMode(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETDISPLAYMODE_MSG* const a = &m->u.consoleMsgL3.GetConsoleDisplayMode;
 
     return pResponders->GetConsoleDisplayModeImpl(h, &a->ModeFlags);
 }
 
-NTSTATUS ApiDispatchers::ServeAddConsoleAlias(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeAddConsoleAlias(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_ADDALIAS_MSG* const a = &m->u.consoleMsgL3.AddConsoleAliasW;
 
@@ -659,74 +617,63 @@ NTSTATUS ApiDispatchers::ServeAddConsoleAlias(_In_ DeviceProtocol* const pProtoc
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleAlias(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleAlias(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETALIAS_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasW;
 
     DWORD Result = 0;
 
-	// This will be allocated on our behalf in GetInputBuffer. We must free it.
-	void* InBuffer;
-	ULONG InBufferSize;
-
-	Result = pProtocol->GetInputBuffer(m, &InBuffer, &InBufferSize);
+	// Check if input and output buffers are available to us
+	if (!m->State.IsInputBufferAvailable() || !m->State.IsOutputBufferAvailable())
+	{
+		Result = STATUS_INVALID_PARAMETER;
+	}
 
 	if (SUCCEEDED(Result))
 	{
-		// These are pointers to within the allocated buffer above. No need to free.
-		void* ExeBuffer;
-		void* SourceBuffer;
-		Result = UnpackInputBuffer(a->Unicode, InBuffer, InBufferSize, 2, a->ExeLength, ExeBuffer, a->SourceLength, SourceBuffer);
+		// Divide input buffer into the two input strings
+		void* ExeBuffer = nullptr;
+		ULONG const ExeBufferSize = a->ExeLength;
+		void* SourceBuffer = nullptr;
+		ULONG const SourceBufferSize = a->SourceLength;;
+		
+		Result = m->State.UnpackInputBuffer(a->Unicode, 2, ExeBufferSize, ExeBuffer, SourceBufferSize, SourceBuffer);
+
+		// Get pointers to the output result buffer
+		void* const OutBuffer = m->State.OutputBuffer;
+		ULONG const OutBufferSize = m->State.OutputBufferSize;
 
 		if (SUCCEEDED(Result))
 		{
-			// This will be allocated on our behalf in GetOutputBuffer. We must free it.
-			void* OutBuffer;
-			ULONG OutBufferSize;
-			Result = pProtocol->GetOutputBuffer(m, &OutBuffer, &OutBufferSize);
+			// The buffers we created were measured in byte values but could be holding either Unicode (UCS-2, a subset of UTF-16) 
+			//   or ASCII (which includes single and multibyte codepages and UTF-8) strings.
+			// Cast and recalculate lengths to convert from raw byte length into appropriate string types/lengths.
 
-			if (SUCCEEDED(Result))
+			if (a->Unicode)
 			{
-				// The buffers we created were measured in byte values but could be holding either Unicode (UCS-2, a subset of UTF-16) 
-				//   or ASCII (which includes single and multibyte codepages and UTF-8) strings.
-				// Cast and recalculate lengths to convert from raw byte length into appropriate string types/lengths.
-
-				if (a->Unicode)
-				{
-					Result = pResponders->GetConsoleAliasWImpl(static_cast<wchar_t*>(SourceBuffer), 
-															   a->SourceLength / sizeof(wchar_t), 
-															   static_cast<wchar_t*>(OutBuffer),
-															   OutBufferSize / sizeof(wchar_t), 
-															   static_cast<wchar_t*>(ExeBuffer),
-															   a->ExeLength / sizeof(wchar_t));
-				}
-				else
-				{
-					Result = pResponders->GetConsoleAliasAImpl(static_cast<char*>(SourceBuffer),
-															   a->SourceLength / sizeof(char), 
-															   static_cast<char*>(OutBuffer), 
-															   OutBufferSize / sizeof(char),
-															   static_cast<char*>(ExeBuffer), 
-															   a->ExeLength / sizeof(char));
-				}
-
-				if (SUCCEEDED(Result))
-				{
-					pProtocol->WriteOutputOperation(m, 0, OutBuffer, OutBufferSize);
-				}
-
-				delete[] OutBuffer;
+				Result = pResponders->GetConsoleAliasWImpl(static_cast<wchar_t*>(SourceBuffer), 
+															SourceBufferSize / sizeof(wchar_t), 
+															static_cast<wchar_t*>(OutBuffer),
+															OutBufferSize / sizeof(wchar_t), 
+															static_cast<wchar_t*>(ExeBuffer),
+															ExeBufferSize / sizeof(wchar_t));
 			}
-
+			else
+			{
+				Result = pResponders->GetConsoleAliasAImpl(static_cast<char*>(SourceBuffer),
+															SourceBufferSize / sizeof(char), 
+															static_cast<char*>(OutBuffer), 
+															OutBufferSize / sizeof(char),
+															static_cast<char*>(ExeBuffer), 
+															ExeBufferSize / sizeof(char));
+			}
 		}
-
-		delete[] InBuffer;
 	}
 
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleAliasesLength(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleAliasesLength(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETALIASESLENGTH_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasesLengthW;
 
@@ -744,7 +691,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleAliasesLength(_In_ DeviceProtocol* const
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleAliasExesLength(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleAliasExesLength(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETALIASEXESLENGTH_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasExesLengthW;
 
@@ -762,7 +709,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleAliasExesLength(_In_ DeviceProtocol* con
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleAliases(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleAliases(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETALIASES_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasesW;
 
@@ -780,7 +727,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleAliases(_In_ DeviceProtocol* const pProt
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleAliasExes(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleAliasExes(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETALIASEXES_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasExesW;
 
@@ -798,28 +745,28 @@ NTSTATUS ApiDispatchers::ServeGetConsoleAliasExes(_In_ DeviceProtocol* const pPr
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleWindow(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleWindow(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETCONSOLEWINDOW_MSG* const a = &m->u.consoleMsgL3.GetConsoleWindow;
 
     return pResponders->GetConsoleWindowImpl(&a->hwnd);
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleSelectionInfo(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleSelectionInfo(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETSELECTIONINFO_MSG* const a = &m->u.consoleMsgL3.GetConsoleSelectionInfo;
 
     return pResponders->GetConsoleSelectionInfoImpl(&a->SelectionInfo);
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleProcessList(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleProcessList(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETCONSOLEPROCESSLIST_MSG* const a = &m->u.consoleMsgL3.GetConsoleProcessList;
 
     return pResponders->GetConsoleProcessListImpl(nullptr, 0);
 }
 
-NTSTATUS ApiDispatchers::ServeGetConsoleHistory(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeGetConsoleHistory(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_HISTORY_MSG* const a = &m->u.consoleMsgL3.GetConsoleHistory;
 
@@ -838,7 +785,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleHistory(_In_ DeviceProtocol* const pProt
     return Result;
 }
 
-NTSTATUS ApiDispatchers::ServeSetConsoleHistory(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeSetConsoleHistory(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_HISTORY_MSG* const a = &m->u.consoleMsgL3.SetConsoleHistory;
 
@@ -851,7 +798,7 @@ NTSTATUS ApiDispatchers::ServeSetConsoleHistory(_In_ DeviceProtocol* const pProt
     return pResponders->SetConsoleHistoryInfoImpl(&Info);
 }
 
-NTSTATUS ApiDispatchers::ServeSetConsoleCurrentFont(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
+NTSTATUS ApiDispatchers::ServeSetConsoleCurrentFont(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_CURRENTFONT_MSG* const a = &m->u.consoleMsgL3.SetCurrentConsoleFont;
 

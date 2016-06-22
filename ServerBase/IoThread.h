@@ -13,8 +13,8 @@ public:
 	void IoLoop();
 
 private:
-	DWORD _IoConnect(_In_ DeviceProtocol* Server, _In_ CD_IO_DESCRIPTOR* const pMsg);
-	DWORD _IoDefault(_In_ DeviceProtocol* Server, _In_ CD_IO_DESCRIPTOR* const pMsg);
+	DWORD _IoConnect(_In_ DeviceProtocol* Server, _In_ CONSOLE_API_MSG* const pMsg);
+	DWORD _IoDefault();
 
 	HANDLE _Server;
 	std::thread _Thread;

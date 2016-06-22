@@ -36,80 +36,91 @@ void IoThread::IoLoop()
 
 	while (!fExiting)
 	{
+		// Attempt to read API call from wire
 		CONSOLE_API_MSG ReceiveMsg;
-		DWORD Error = Prot.GetReadIo(&ReceiveMsg);
+		DWORD Result = Prot.GetApiCall(&ReceiveMsg);
 
-		if (ERROR_PIPE_NOT_CONNECTED == Error)
+		if (ERROR_PIPE_NOT_CONNECTED == Result)
 		{
 			fExiting = true;
 			continue;
 		}
-		else if (S_OK != Error)
+		else if (S_OK != Result)
 		{
 			DebugBreak();
 		}
+
+		// Retrieve additional input/output buffer data if available
+		// TODO: determine what to do with errors from here.
+		Prot.GetInputBuffer(&ReceiveMsg);
+		Prot.GetOutputBuffer(&ReceiveMsg);
 
 		// Route function to handler
 		switch (ReceiveMsg.Descriptor.Function)
 		{
 		case CONSOLE_IO_USER_DEFINED:
 		{
-			LookupAndDoApiCall(&Prot, &Responder, &ReceiveMsg);
+			Result = LookupAndDoApiCall(&Responder, &ReceiveMsg);
 			break;
 		}
 		case CONSOLE_IO_CONNECT:
 		{
-			_IoConnect(&Prot, &ReceiveMsg.Descriptor);
+			Result = _IoConnect(&Prot, &ReceiveMsg);
 			break;
 		}
 		case CONSOLE_IO_DISCONNECT:
 		{
 			// TODO.
-			_IoDefault(&Prot, &ReceiveMsg.Descriptor);
+			Result = _IoDefault();
 			break;
 		}
 		case CONSOLE_IO_CREATE_OBJECT:
 		{
 			// TODO.
-			_IoDefault(&Prot, &ReceiveMsg.Descriptor);
+			Result = _IoDefault();
 			break;
 		}
 		case CONSOLE_IO_CLOSE_OBJECT:
 		{
 			// TODO.
-			_IoDefault(&Prot, &ReceiveMsg.Descriptor);
+			Result = _IoDefault();
 			break;
 		}
 		case CONSOLE_IO_RAW_WRITE:
 		{
 			// TODO.
-			_IoDefault(&Prot, &ReceiveMsg.Descriptor);
+			Result = _IoDefault();
 			break;
 		}
 		case CONSOLE_IO_RAW_READ:
 		{
-			DoRawReadCall(&Prot, &Responder, &ReceiveMsg);
+			Result = DoRawReadCall(&Responder, &ReceiveMsg);
 			break;
 		}
 		case CONSOLE_IO_RAW_FLUSH:
 		{
 			// TODO.
-			_IoDefault(&Prot, &ReceiveMsg.Descriptor);
+			Result = _IoDefault();
 			break;
 		}
 		default:
 		{
-			_IoDefault(&Prot, &ReceiveMsg.Descriptor);
+			Result = _IoDefault();
 			break;
 		}
 		}
 
+		// Return whatever status code we got back to the caller.
+		Prot.SetCompletionStatus(&ReceiveMsg, Result);
+
+		// Write reply message signaling API call is complete.
+		Prot.CompleteApiCall(&ReceiveMsg);
 	}
 
 	ExitProcess(STATUS_SUCCESS);
 }
 
-DWORD IoThread::_IoConnect(_In_ DeviceProtocol* Server, _In_ CD_IO_DESCRIPTOR* const pMsg)
+DWORD IoThread::_IoConnect(_In_ DeviceProtocol* Server, _In_ CONSOLE_API_MSG* const pMsg)
 {
 	HANDLE InputEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
 	DWORD result = Server->SetInputAvailableEvent(InputEvent);
@@ -119,12 +130,12 @@ DWORD IoThread::_IoConnect(_In_ DeviceProtocol* Server, _In_ CD_IO_DESCRIPTOR* c
 
 	// Notify Win32k that this process is attached to a special console application type.
 	// TODO: Don't do this for AttachConsole case (they already are a Win32 app type.)
-	Win32Control::NotifyConsoleTypeApplication((HANDLE)pMsg->Process);
+	Win32Control::NotifyConsoleTypeApplication((HANDLE)pMsg->Descriptor.Process);
 
 	return result;
 }
 
-DWORD IoThread::_IoDefault(_In_ DeviceProtocol* Server, _In_ CD_IO_DESCRIPTOR* const pMsg)
+DWORD IoThread::_IoDefault()
 {
-	return Server->SendCompletion(pMsg, STATUS_UNSUCCESSFUL, nullptr, 0);
+	return STATUS_UNSUCCESSFUL;
 }
