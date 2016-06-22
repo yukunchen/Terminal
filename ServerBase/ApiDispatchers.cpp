@@ -3,6 +3,52 @@
 
 HANDLE h = INVALID_HANDLE_VALUE; // look up handle again based on what's in message
 
+// Routine Description:
+// - This routine validates a string buffer and returns the pointers of where the strings start within the buffer.
+// Arguments:
+// - Unicode - Supplies a boolean that is TRUE if the buffer contains Unicode strings, FALSE otherwise.
+// - Buffer - Supplies the buffer to be validated.
+// - Size - Supplies the size, in bytes, of the buffer to be validated.
+// - Count - Supplies the expected number of strings in the buffer.
+// ... - Supplies a pair of arguments per expected string. The first one is the expected size, in bytes, of the string
+//       and the second one receives a pointer to where the string starts.
+// Return Value:
+// - TRUE if the buffer is valid, FALSE otherwise.
+BOOLEAN UnpackInputBuffer(_In_ BOOLEAN Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...)
+{
+	va_list Marker;
+	va_start(Marker, Count);
+
+	while (Count > 0)
+	{
+		ULONG const StringSize = va_arg(Marker, ULONG);
+		PVOID* StringStart = va_arg(Marker, PVOID *);
+
+		// Make sure the string fits in the supplied buffer and that it is properly aligned.
+		if (StringSize > Size)
+		{
+			break;
+		}
+
+		if ((Unicode != FALSE) && ((StringSize % sizeof(WCHAR)) != 0))
+		{
+			break;
+		}
+
+		*StringStart = Buffer;
+
+		// Go to the next string.
+		
+		Buffer = OffsetToPointer(Buffer, StringSize);
+		Size -= StringSize;
+		Count -= 1;
+	}
+
+	va_end(Marker);
+
+	return Count == 0;
+}
+
 NTSTATUS ApiDispatchers::ServeGetConsoleCP(_In_ DeviceProtocol* const pProtocol, _In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETCP_MSG* const a = &m->u.consoleMsgL1.GetConsoleCP;
@@ -128,18 +174,21 @@ NTSTATUS ApiDispatchers::ServeWriteConsole(_In_ DeviceProtocol* const pProtocol,
 	void* Buffer;
 	ULONG BufferSize;
 
-	pProtocol->GetInputBuffer(m, &Buffer, &BufferSize);
+	Result = pProtocol->GetInputBuffer(m, &Buffer, &BufferSize);
 
-	// validate text?
+	if (SUCCEEDED(Result))
+	{
+		if (a->Unicode)
+		{
+			Result = pResponders->WriteConsoleWImpl(h, (WCHAR*)Buffer, BufferSize, &Written);
+		}
+		else
+		{
+			Result = pResponders->WriteConsoleAImpl(h, nullptr, 0, &Written);
+		}
 
-    if (a->Unicode)
-    {
-        Result = pResponders->WriteConsoleWImpl(h, (WCHAR*)Buffer, BufferSize, &Written);
-    }
-    else
-    {
-        Result = pResponders->WriteConsoleAImpl(h, nullptr, 0, &Written);
-    }
+		delete[] Buffer;
+	}
 
     a->NumBytes = SUCCEEDED(Result) ? Written : 0;
 
@@ -616,14 +665,63 @@ NTSTATUS ApiDispatchers::ServeGetConsoleAlias(_In_ DeviceProtocol* const pProtoc
 
     DWORD Result = 0;
 
-    if (a->Unicode)
-    {
-        Result = pResponders->GetConsoleAliasWImpl(nullptr, 0, nullptr, 0, nullptr, 0);
-    }
-    else
-    {
-        Result = pResponders->GetConsoleAliasAImpl(nullptr, 0, nullptr, 0, nullptr, 0);
-    }
+	// This will be allocated on our behalf in GetInputBuffer. We must free it.
+	void* InBuffer;
+	ULONG InBufferSize;
+
+	Result = pProtocol->GetInputBuffer(m, &InBuffer, &InBufferSize);
+
+	if (SUCCEEDED(Result))
+	{
+		// These are pointers to within the allocated buffer above. No need to free.
+		void* ExeBuffer;
+		void* SourceBuffer;
+		Result = UnpackInputBuffer(a->Unicode, InBuffer, InBufferSize, 2, a->ExeLength, ExeBuffer, a->SourceLength, SourceBuffer);
+
+		if (SUCCEEDED(Result))
+		{
+			// This will be allocated on our behalf in GetOutputBuffer. We must free it.
+			void* OutBuffer;
+			ULONG OutBufferSize;
+			Result = pProtocol->GetOutputBuffer(m, &OutBuffer, &OutBufferSize);
+
+			if (SUCCEEDED(Result))
+			{
+				// The buffers we created were measured in byte values but could be holding either Unicode (UCS-2, a subset of UTF-16) 
+				//   or ASCII (which includes single and multibyte codepages and UTF-8) strings.
+				// Cast and recalculate lengths to convert from raw byte length into appropriate string types/lengths.
+
+				if (a->Unicode)
+				{
+					Result = pResponders->GetConsoleAliasWImpl(static_cast<wchar_t*>(SourceBuffer), 
+															   a->SourceLength / sizeof(wchar_t), 
+															   static_cast<wchar_t*>(OutBuffer),
+															   OutBufferSize / sizeof(wchar_t), 
+															   static_cast<wchar_t*>(ExeBuffer),
+															   a->ExeLength / sizeof(wchar_t));
+				}
+				else
+				{
+					Result = pResponders->GetConsoleAliasAImpl(static_cast<char*>(SourceBuffer),
+															   a->SourceLength / sizeof(char), 
+															   static_cast<char*>(OutBuffer), 
+															   OutBufferSize / sizeof(char),
+															   static_cast<char*>(ExeBuffer), 
+															   a->ExeLength / sizeof(char));
+				}
+
+				if (SUCCEEDED(Result))
+				{
+					pProtocol->WriteOutputOperation(m, 0, OutBuffer, OutBufferSize);
+				}
+
+				delete[] OutBuffer;
+			}
+
+		}
+
+		delete[] InBuffer;
+	}
 
     return Result;
 }
