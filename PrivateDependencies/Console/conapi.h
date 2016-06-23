@@ -47,10 +47,18 @@ typedef struct _CONSOLE_API_STATE
 
 typedef struct _CONSOLE_API_MSG
 {
+	// Contains the outgoing API call response
     CD_IO_COMPLETE Complete;
+
+	// Contains state information used during the servicing of the API call
     CONSOLE_API_STATE State;
+
+	// (probably) no longer used now that we're doing DeviceIoControl instead of NtDeviceIoControlFile
     IO_STATUS_BLOCK IoStatus;
+
+	// Contains the incoming API call data
     CD_IO_DESCRIPTOR Descriptor;
+
     union
     {
         struct
@@ -58,6 +66,8 @@ typedef struct _CONSOLE_API_MSG
             CD_CREATE_OBJECT_INFORMATION CreateObject;
             CONSOLE_CREATESCREENBUFFER_MSG CreateScreenBuffer;
         };
+
+		// Used for "user defined" IOCTL section (which is the majority of the console API surface)
         struct
         {
             CONSOLE_MSG_HEADER msgHeader;
