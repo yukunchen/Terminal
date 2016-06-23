@@ -111,7 +111,7 @@ void IoThread::IoLoop()
 		}
 
 		// Return whatever status code we got back to the caller.
-		Prot.SetCompletionStatus(&ReceiveMsg, Result);
+		ReceiveMsg.SetCompletionStatus(Result);
 
 		// Write reply message signaling API call is complete.
 		Prot.CompleteApiCall(&ReceiveMsg);

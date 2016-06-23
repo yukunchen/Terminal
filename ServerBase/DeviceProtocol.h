@@ -23,11 +23,6 @@ public:
 	// You must write output when done filling buffer.
 	DWORD GetOutputBuffer(_In_ CONSOLE_API_MSG* const pMessage) const;
 
-	
-
-	DWORD SetCompletionStatus(_In_ CONSOLE_API_MSG* const pMessage, 
-							  _In_ DWORD const Status) const;
-	
 private:
 
 	DWORD _SetCompletionPayload(_In_ CONSOLE_API_MSG* const pMessage,

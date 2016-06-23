@@ -164,14 +164,6 @@ DWORD DeviceProtocol::_SendCompletion(_In_ CONSOLE_API_MSG* const pMessage) cons
 	}
 }
 
-DWORD DeviceProtocol::SetCompletionStatus(_In_ CONSOLE_API_MSG* const pMessage,
-										  _In_ DWORD const Status) const
-{
-	pMessage->Complete.IoStatus.Status = Status;
-
-	return STATUS_SUCCESS;
-}
-
 DWORD DeviceProtocol::_SetCompletionPayload(_In_ CONSOLE_API_MSG* const pMessage,
 										    _In_reads_bytes_(nDataSize) LPVOID pData,
 											_In_ DWORD nDataSize) const
