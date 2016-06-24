@@ -15,6 +15,7 @@ typedef long NTSTATUS;
 #define NT_SUCCESS(Status)  (((NTSTATUS)(Status)) >= 0)
 #define STATUS_SUCCESS ((DWORD)0x0)
 #define STATUS_UNSUCCESSFUL ((DWORD)0xC0000001L)
+#define STATUS_SHARING_VIOLATION         ((NTSTATUS)0xC0000043L)
 #define STATUS_INSUFFICIENT_RESOURCES ((DWORD)0xC000009AL)
 #define STATUS_ILLEGAL_FUNCTION ((DWORD)0xC00000AFL)
 #define STATUS_PIPE_DISCONNECTED ((DWORD)0xC00000B0L)
@@ -28,6 +29,7 @@ typedef long NTSTATUS;
 #include <thread>
 #include <vector>
 #include <new>
+#include <unordered_map>
 
 // private dependencies
 #include <Console\conapi.h>

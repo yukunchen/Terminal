@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "ApiDispatchers.h"
 
-HANDLE h = INVALID_HANDLE_VALUE; // look up handle again based on what's in message
-
 NTSTATUS ApiDispatchers::ServeGetConsoleCP(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
 	CONSOLE_GETCP_MSG* const a = &m->u.consoleMsgL1.GetConsoleCP;
@@ -11,31 +9,52 @@ NTSTATUS ApiDispatchers::ServeGetConsoleCP(_In_ IApiResponders* const pResponder
 
 	if (a->Output)
 	{
-		Result = pResponders->GetConsoleOutputCodePageImpl(h, &a->CodePage);
+		Result = pResponders->GetConsoleOutputCodePageImpl(&a->CodePage);
 	}
 	else
 	{
-		Result = pResponders->GetConsoleInputCodePageImpl(h, &a->CodePage);
+		Result = pResponders->GetConsoleInputCodePageImpl(&a->CodePage);
 	}
 
 	return Result;
 }
 
+
+
 NTSTATUS ApiDispatchers::ServeGetConsoleMode(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
 	CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.GetConsoleMode;
-
-	bool IsOutputMode = true; // this needs to check the handle type in the handle data to determine which one to operate on. I haven't done handle extraction yet.
-
 	DWORD Result = 0;
 
-	if (IsOutputMode)
+	ConsoleObjectType Type;
+	Result = m->GetObjectType(&Type);
+
+	if (SUCCEEDED(Result))
 	{
-		Result = pResponders->GetConsoleOutputModeImpl(h, &a->Mode);
-	}
-	else
-	{
-		Result = pResponders->GetConsoleInputModeImpl(h, &a->Mode);
+		if (ConsoleObjectType::Output == Type)
+		{
+			IConsoleOutputObject* obj;
+			Result = m->GetOutputObject(GENERIC_READ, &obj);
+
+			if (SUCCEEDED(Result))
+			{
+				Result = pResponders->GetConsoleOutputModeImpl(obj, &a->Mode);
+			}
+		}
+		else if (ConsoleObjectType::Input == Type)
+		{
+			IConsoleInputObject* obj;
+			Result = m->GetInputObject(GENERIC_READ, &obj);
+
+			if (SUCCEEDED(Result))
+			{
+				Result = pResponders->GetConsoleInputModeImpl(obj, &a->Mode);
+			}
+		}
+		else
+		{
+			Result = STATUS_UNSUCCESSFUL;
+		}
 	}
 
 	return Result;

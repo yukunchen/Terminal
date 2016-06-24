@@ -158,6 +158,8 @@
     <ClInclude Include="ApiSorter.h" />
     <ClInclude Include="DeviceComm.h" />
     <ClInclude Include="DeviceProtocol.h" />
+    <ClInclude Include="HandleData.h" />
+    <ClInclude Include="HandleObjectHeader.h" />
     <ClInclude Include="IApiResponders.h" />
     <ClInclude Include="IoThread.h" />
     <ClInclude Include="stdafx.h" />
@@ -170,6 +172,7 @@
     <ClCompile Include="ApiSorter.cpp" />
     <ClCompile Include="DeviceComm.cpp" />
     <ClCompile Include="DeviceProtocol.cpp" />
+    <ClCompile Include="HandleData.cpp" />
     <ClCompile Include="IoThread.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

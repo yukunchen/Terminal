@@ -65,7 +65,7 @@ void IoThread::IoLoop()
 		}
 		case CONSOLE_IO_CONNECT:
 		{
-			Result = _IoConnect(&Prot, &ReceiveMsg);
+			Result = _IoConnect(&Responder, &Prot, &ReceiveMsg);
 			break;
 		}
 		case CONSOLE_IO_DISCONNECT:
@@ -120,19 +120,40 @@ void IoThread::IoLoop()
 	ExitProcess(STATUS_SUCCESS);
 }
 
-DWORD IoThread::_IoConnect(_In_ DeviceProtocol* Server, _In_ CONSOLE_API_MSG* const pMsg)
+DWORD IoThread::_IoConnect(_In_ IApiResponders* const pResponder, _In_ DeviceProtocol* Server, _In_ CONSOLE_API_MSG* const pMsg)
 {
 	HANDLE InputEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
-	DWORD result = Server->SetInputAvailableEvent(InputEvent);
+	DWORD Result = Server->SetInputAvailableEvent(InputEvent);
 
 	// TODO: These are junk handles for now to various info that we want to get back when other calls come in.
-	result = Server->SetConnectionInformation(pMsg, 0x14, 0x18, 0x1a);
+	IConsoleInputObject* pInputObj;
+	IConsoleOutputObject* pOutputObj;
+	Result = pResponder->CreateInitialObjects(&pInputObj, &pOutputObj);
 
-	// Notify Win32k that this process is attached to a special console application type.
-	// TODO: Don't do this for AttachConsole case (they already are a Win32 app type.)
-	Win32Control::NotifyConsoleTypeApplication((HANDLE)pMsg->Descriptor.Process);
+	if (SUCCEEDED(Result))
+	{
+		ConsoleHandleData* pInputHandle;
+		ConsoleHandleData* pOutputHandle;
 
-	return result;
+		Result = ConsoleHandleData::CreateHandle(pInputObj, &pInputHandle);
+		Result = ConsoleHandleData::CreateHandle(pOutputObj, &pOutputHandle);
+
+		if (SUCCEEDED(Result))
+		{
+			Result = Server->SetConnectionInformation(pMsg, 0x14,
+													  (ULONG_PTR)(pInputHandle),
+													  (ULONG_PTR)(pOutputHandle));
+		}
+	}
+
+	if (SUCCEEDED(Result))
+	{
+		// Notify Win32k that this process is attached to a special console application type.
+		// TODO: Don't do this for AttachConsole case (they already are a Win32 app type.)
+		Win32Control::NotifyConsoleTypeApplication((HANDLE)pMsg->Descriptor.Process);
+	}
+
+	return Result;
 }
 
 DWORD IoThread::_IoDefault()
