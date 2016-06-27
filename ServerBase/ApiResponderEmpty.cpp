@@ -186,14 +186,6 @@ DWORD ApiResponderEmpty::WriteConsoleWImpl(_In_ IConsoleOutputObject* const pOut
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleLangId(_In_ IConsoleOutputObject* const pOutContext,
-                                          _Out_ LANGID* const pLangId)
-{
-    UNREFERENCED_PARAMETER(pOutContext);
-    *pLangId = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
-    return 0;
-}
-
 DWORD ApiResponderEmpty::FillConsoleOutputAttributeImpl(_In_ IConsoleOutputObject* const pOutContext,
                                                         _In_ WORD const Attribute,
                                                         _In_ DWORD const LengthToWrite,
@@ -253,18 +245,14 @@ DWORD ApiResponderEmpty::FlushConsoleInputBuffer(_In_ IConsoleInputObject* const
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleInputCodePageImpl(_In_ IConsoleInputObject* const pInContext,
-                                                     _In_ ULONG const CodePage)
+DWORD ApiResponderEmpty::SetConsoleInputCodePageImpl(_In_ ULONG const CodePage)
 {
-    UNREFERENCED_PARAMETER(pInContext);
     UNREFERENCED_PARAMETER(CodePage);
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleOutputCodePageImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                      _In_ ULONG const CodePage)
+DWORD ApiResponderEmpty::SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage)
 {
-    UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(CodePage);
     return 0;
 }
@@ -572,11 +560,9 @@ DWORD ApiResponderEmpty::ReadConsoleOutputW(_In_ IConsoleOutputObject* const pOu
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleTitleAImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                              _Out_writes_(TextBufferSize) char* const pTextBuffer,
+DWORD ApiResponderEmpty::GetConsoleTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
                                               _In_ ULONG const TextBufferSize)
 {
-    UNREFERENCED_PARAMETER(pOutContext);
 	if (TextBufferSize > 0)
 	{
 		*pTextBuffer = '\0';
@@ -584,11 +570,9 @@ DWORD ApiResponderEmpty::GetConsoleTitleAImpl(_In_ IConsoleOutputObject* const p
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleTitleWImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                              _Out_writes_(TextBufferSize) wchar_t* const pTextBuffer,
+DWORD ApiResponderEmpty::GetConsoleTitleWImpl(_Out_writes_(TextBufferSize) wchar_t* const pTextBuffer,
                                               _In_ ULONG const TextBufferSize)
 {
-    UNREFERENCED_PARAMETER(pOutContext);
 	if (TextBufferSize > 0)
 	{
 		*pTextBuffer = '\0';
@@ -596,11 +580,9 @@ DWORD ApiResponderEmpty::GetConsoleTitleWImpl(_In_ IConsoleOutputObject* const p
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleOriginalTitleAImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                      _Out_writes_(TextBufferSize) char* const pTextBuffer,
+DWORD ApiResponderEmpty::GetConsoleOriginalTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
                                                       _In_ ULONG const TextBufferSize)
 {
-    UNREFERENCED_PARAMETER(pOutContext);
 	if (TextBufferSize > 0)
 	{
 		*pTextBuffer = '\0';
@@ -608,11 +590,9 @@ DWORD ApiResponderEmpty::GetConsoleOriginalTitleAImpl(_In_ IConsoleOutputObject*
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleOriginalTitleWImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                      _Out_writes_(TextBufferSize) char* const pTextBuffer,
+DWORD ApiResponderEmpty::GetConsoleOriginalTitleWImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
                                                       _In_ ULONG const TextBufferSize)
 {
-    UNREFERENCED_PARAMETER(pOutContext);
 	if (TextBufferSize > 0)
 	{
 		*pTextBuffer = '\0';
@@ -620,21 +600,17 @@ DWORD ApiResponderEmpty::GetConsoleOriginalTitleWImpl(_In_ IConsoleOutputObject*
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleTitleAImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                              _In_reads_(TextBufferSize) char* const pTextBuffer,
+DWORD ApiResponderEmpty::SetConsoleTitleAImpl(_In_reads_(TextBufferSize) char* const pTextBuffer,
                                               _In_ ULONG const TextBufferSize)
 {
-    UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pTextBuffer);
     UNREFERENCED_PARAMETER(TextBufferSize);
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleTitleWImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                              _In_reads_(TextBufferSize) wchar_t* const pTextBuffer,
+DWORD ApiResponderEmpty::SetConsoleTitleWImpl(_In_reads_(TextBufferSize) wchar_t* const pTextBuffer,
                                               _In_ ULONG const TextBufferSize)
 {
-    UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pTextBuffer);
     UNREFERENCED_PARAMETER(TextBufferSize);
     return 0;

@@ -74,11 +74,7 @@ public:
 							_In_reads_(TextBufferLength) wchar_t* const pTextBuffer,
 							_In_ ULONG const TextBufferLength,
 							_Out_ ULONG* const pTextBufferRead);
-
-	// This isn't a public API but exists to help set up the thread language state with the OS. It shouldn't be exposed as such, it should just fetch output CP.
-	DWORD GetConsoleLangId(_In_ IConsoleOutputObject* const pOutContext,
-						   _Out_ LANGID* const pLangId);
-
+	
 #pragma endregion
 
 #pragma region L2
@@ -109,11 +105,9 @@ public:
 
 	DWORD FlushConsoleInputBuffer(_In_ IConsoleInputObject* const pInContext);
 
-	DWORD SetConsoleInputCodePageImpl(_In_ IConsoleInputObject* const pInContext,
-									  _In_ ULONG const CodePage);
+	DWORD SetConsoleInputCodePageImpl(_In_ ULONG const CodePage);
 
-	DWORD SetConsoleOutputCodePageImpl(_In_ IConsoleOutputObject* const pOutContext,
-									   _In_ ULONG const CodePage);
+	DWORD SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage);
 
 	DWORD GetConsoleCursorInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
 								   _Out_ ULONG* const pCursorSize,
@@ -232,28 +226,22 @@ public:
 							 _In_ const SMALL_RECT* const pSourceRectangle,
 							 _Out_ SMALL_RECT* const pReadRectangle);
 
-	DWORD GetConsoleTitleAImpl(_In_ IConsoleOutputObject* const pOutContext,
-							   _Out_writes_(TextBufferSize) char* const pTextBuffer,
+	DWORD GetConsoleTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
 							   _In_ ULONG const TextBufferSize);
 
-	DWORD GetConsoleTitleWImpl(_In_ IConsoleOutputObject* const pOutContext,
-							   _Out_writes_(TextBufferSize) wchar_t* const pTextBuffer,
+	DWORD GetConsoleTitleWImpl(_Out_writes_(TextBufferSize) wchar_t* const pTextBuffer,
 							   _In_ ULONG const TextBufferSize);
 
-	DWORD GetConsoleOriginalTitleAImpl(_In_ IConsoleOutputObject* const pOutContext,
-									   _Out_writes_(TextBufferSize) char* const pTextBuffer,
+	DWORD GetConsoleOriginalTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
 									   _In_ ULONG const TextBufferSize);
 
-	DWORD GetConsoleOriginalTitleWImpl(_In_ IConsoleOutputObject* const pOutContext,
-									   _Out_writes_(TextBufferSize) char* const pTextBuffer,
+	DWORD GetConsoleOriginalTitleWImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
 									   _In_ ULONG const TextBufferSize);
 
-	DWORD SetConsoleTitleAImpl(_In_ IConsoleOutputObject* const pOutContext,
-							   _In_reads_(TextBufferSize) char* const pTextBuffer,
+	DWORD SetConsoleTitleAImpl(_In_reads_(TextBufferSize) char* const pTextBuffer,
 							   _In_ ULONG const TextBufferSize);
 
-	DWORD SetConsoleTitleWImpl(_In_ IConsoleOutputObject* const pOutContext,
-							   _In_reads_(TextBufferSize) wchar_t* const pTextBuffer,
+	DWORD SetConsoleTitleWImpl(_In_reads_(TextBufferSize) wchar_t* const pTextBuffer,
 							   _In_ ULONG const TextBufferSize);
 
 #pragma endregion

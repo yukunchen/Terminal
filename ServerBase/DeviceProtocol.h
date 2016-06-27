@@ -2,6 +2,8 @@
 
 #include "DeviceComm.h"
 
+#include "ApiMessage.h"
+
 class DeviceProtocol
 {
 public:

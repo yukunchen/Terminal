@@ -154,26 +154,29 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApiDispatchers.h" />
+    <ClInclude Include="ApiMessage.h" />
     <ClInclude Include="ApiResponderEmpty.h" />
     <ClInclude Include="ApiSorter.h" />
     <ClInclude Include="DeviceComm.h" />
     <ClInclude Include="DeviceProtocol.h" />
-    <ClInclude Include="HandleData.h" />
-    <ClInclude Include="HandleObjectHeader.h" />
     <ClInclude Include="IApiResponders.h" />
     <ClInclude Include="IoThread.h" />
+    <ClInclude Include="ObjectHandle.h" />
+    <ClInclude Include="ObjectHeader.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Win32Control.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApiDispatchers.cpp" />
+    <ClCompile Include="ApiMessage.cpp" />
     <ClCompile Include="ApiResponderEmpty.cpp" />
     <ClCompile Include="ApiSorter.cpp" />
     <ClCompile Include="DeviceComm.cpp" />
     <ClCompile Include="DeviceProtocol.cpp" />
-    <ClCompile Include="HandleData.cpp" />
     <ClCompile Include="IoThread.cpp" />
+    <ClCompile Include="ObjectHandle.cpp" />
+    <ClCompile Include="ObjectHeader.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

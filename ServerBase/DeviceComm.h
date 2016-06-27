@@ -1,4 +1,7 @@
 #pragma once
+
+#include "ApiMessage.h"
+
 class DeviceComm
 {
 public:

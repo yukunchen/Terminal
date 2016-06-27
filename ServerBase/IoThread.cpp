@@ -1,4 +1,8 @@
 #include "stdafx.h"
+
+#include "ApiMessage.h"
+#include "ObjectHandle.h"
+
 #include "IoThread.h"
 
 #include "DeviceComm.h"

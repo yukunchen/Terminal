@@ -4,9 +4,9 @@
 
 using namespace ApiDispatchers;
 
-typedef NTSTATUS(*PCONSOLE_API_ROUTINE) (_In_ IApiResponders* const pResponders, _Inout_ PCONSOLE_API_MSG m);
+typedef NTSTATUS(*PCONSOLE_API_ROUTINE) (_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* m);
 
-NTSTATUS ServeUnimplementedApi(_In_ IApiResponders* const pResponders, _Inout_ PCONSOLE_API_MSG m)
+NTSTATUS ServeUnimplementedApi(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* m)
 {
     UNREFERENCED_PARAMETER(pResponders);
     UNREFERENCED_PARAMETER(m);
@@ -16,7 +16,7 @@ NTSTATUS ServeUnimplementedApi(_In_ IApiResponders* const pResponders, _Inout_ P
     return STATUS_UNSUCCESSFUL;
 }
 
-NTSTATUS ServeDeprecatedApi(_In_ IApiResponders* const pResponders, _Inout_ PCONSOLE_API_MSG m)
+NTSTATUS ServeDeprecatedApi(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* m)
 {
     return ServeUnimplementedApi(pResponders, m);
 }

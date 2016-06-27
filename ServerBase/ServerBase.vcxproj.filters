@@ -48,10 +48,13 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="HandleData.h">
+    <ClInclude Include="ApiMessage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="HandleObjectHeader.h">
+    <ClInclude Include="ObjectHandle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectHeader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -80,7 +83,13 @@
     <ClCompile Include="Win32Control.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HandleData.cpp">
+    <ClCompile Include="ApiMessage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectHandle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectHeader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
