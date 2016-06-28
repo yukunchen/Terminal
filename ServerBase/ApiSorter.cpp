@@ -67,7 +67,7 @@ const ApiDescriptor ConsoleApiLayer2[] = {
     ApiDescriptor(ServeGetConsoleCursorInfo, sizeof(CONSOLE_GETCURSORINFO_MSG)),                  // GetConsoleCursorInfo
     ApiDescriptor(ServeSetConsoleCursorInfo, sizeof(CONSOLE_SETCURSORINFO_MSG)),                  // SetConsoleCursorInfo
     ApiDescriptor(ServeGetConsoleScreenBufferInfo, sizeof(CONSOLE_SCREENBUFFERINFO_MSG)),         // GetConsoleScreenBufferInfo
-    ApiDescriptor(ServeSetConsoleScreenBufferInfo, sizeof(CONSOLE_SCREENBUFFERINFO_MSG)),                // SetScreenBufferInfo
+    ApiDescriptor(ServeSetConsoleScreenBufferInfo, sizeof(CONSOLE_SCREENBUFFERINFO_MSG)),         // SetScreenBufferInfo
     ApiDescriptor(ServeSetConsoleScreenBufferSize, sizeof(CONSOLE_SETSCREENBUFFERSIZE_MSG)),      // SetConsoleScreenBufferSize
     ApiDescriptor(ServeSetConsoleCursorPosition, sizeof(CONSOLE_SETCURSORPOSITION_MSG)),          // SetConsoleCursorPosition
     ApiDescriptor(ServeGetLargestConsoleWindowSize, sizeof(CONSOLE_GETLARGESTWINDOWSIZE_MSG)),    // GetLargestConsoleWindowSize

@@ -1058,11 +1058,39 @@ NTSTATUS ApiDispatchers::ServeGetConsoleSelectionInfo(_In_ IApiResponders* const
 
 NTSTATUS ApiDispatchers::ServeGetConsoleProcessList(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
+    UNREFERENCED_PARAMETER(pResponders);
+
     CONSOLE_GETCONSOLEPROCESSLIST_MSG* const a = &m->u.consoleMsgL3.GetConsoleProcessList;
 
-    return pResponders->GetConsoleProcessListImpl(nullptr, 0);
-}
+    // This function can be serviced from the server base.
 
+    // Get output buffer we were given.
+    DWORD* pProcessList;
+    m->GetOutputBuffer<DWORD>(&pProcessList, &a->dwProcessCount);
+
+    // Get the number of processes we know are attached
+    size_t const ProcessCount = ConsoleProcessHandle::s_KnownProcesses.size();
+
+    // If it can fit in the space we were granted, fill the buffer we were given.
+    if (ProcessCount <= a->dwProcessCount)
+    {
+        // For every handle in the list
+        for (auto const& value : ConsoleProcessHandle::s_KnownProcesses)
+        {
+            // Fill the output buffer.
+            *pProcessList++ = value->GetProcessId();
+        }
+    }
+
+    // Fill the process count on output with the number we have whether we could fill the buffer or not 
+    // so the caller knows how much space to allocate if it couldn't fit.
+    a->dwProcessCount = (ULONG)ProcessCount;
+
+    // TODO: Set reply information?
+
+    return STATUS_SUCCESS; // It's always a success even if we can't fill so the client can receive the count properly.
+}
+          
 NTSTATUS ApiDispatchers::ServeGetConsoleHistory(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_HISTORY_MSG* const a = &m->u.consoleMsgL3.GetConsoleHistory;

@@ -325,9 +325,6 @@ public:
 
     virtual DWORD GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo) = 0;
 
-    virtual DWORD GetConsoleProcessListImpl(_Out_writes_(*ProcessBufferLength) DWORD* const pProcessBuffer,
-                                            _Inout_ ULONG* const pProcessBufferLength) = 0;
-
     virtual DWORD GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo) = 0;
 
     virtual DWORD SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo) = 0;

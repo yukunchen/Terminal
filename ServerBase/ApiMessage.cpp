@@ -73,3 +73,8 @@ DWORD CONSOLE_API_MSG::GetInputObject(_In_ ACCESS_MASK AccessRequested, _Out_ IC
 
     return Result;
 }
+
+ConsoleProcessHandle* CONSOLE_API_MSG::GetProcessHandle()
+{
+    return (ConsoleProcessHandle*)(Descriptor.Process);
+}

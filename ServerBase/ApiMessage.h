@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ObjectHeader.h"
+#include "ProcessHandle.h"
 
 // INTERNAL: This stuff is from the private definitions in the internal conapi.h
 
@@ -74,7 +75,7 @@ public:
         *ppBuffer = static_cast<T*>(State.OutputBuffer);
         *pBufferSize = State.OutputBufferSize / sizeof(T);
     }
-
+    
     // Routine Description:
     // - This routine validates a string buffer and returns the pointers of where the strings start within the buffer.
     // Arguments:
@@ -136,5 +137,7 @@ public:
     DWORD GetOutputObject(_In_ ACCESS_MASK AccessRequested, _Out_ IConsoleOutputObject** const ppObject);
 
     DWORD GetInputObject(_In_ ACCESS_MASK AccessRequested, _Out_ IConsoleInputObject** const ppObject);
+
+    ConsoleProcessHandle* GetProcessHandle();
 
 };

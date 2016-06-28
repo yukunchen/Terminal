@@ -29,8 +29,11 @@ typedef long NTSTATUS;
 #include <thread>
 #include <vector>
 #include <new>
+#include <memory>
 #include <unordered_map>
 #include <algorithm>
+
+using namespace std;
 
 // private dependencies
 #include <Console\conapi.h>

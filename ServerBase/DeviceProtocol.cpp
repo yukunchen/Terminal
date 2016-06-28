@@ -62,11 +62,22 @@ DWORD DeviceProtocol::GetApiCall(_Out_ CONSOLE_API_MSG* const pMessage) const
 
 DWORD DeviceProtocol::CompleteApiCall(_In_ CONSOLE_API_MSG* const pMessage) const
 {
+    DWORD Result = 0;
+
     // Send output buffer back to caller if one exists.
-    _WriteOutputOperation(pMessage);
+    if (pMessage->IsOutputBufferAvailable())
+    {
+        Result = _WriteOutputOperation(pMessage);
+
+        // If our write back succeeded, set the final information with the amount of data written.
+        if (SUCCEEDED(Result))
+        {
+            pMessage->IoStatus.Information = pMessage->State.OutputBufferSize;
+        }
+    }
 
     // Reply to caller that we're done servicing the API call.
-    DWORD Result = _SendCompletion(pMessage);
+    Result = _SendCompletion(pMessage);
 
     // Clear all buffers that were allocated for message processing
     _FreeBuffers(pMessage);

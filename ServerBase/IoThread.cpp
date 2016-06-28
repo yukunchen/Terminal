@@ -76,8 +76,7 @@ void IoThread::IoLoop()
         }
         case CONSOLE_IO_DISCONNECT:
         {
-            // TODO.
-            Result = _IoDefault();
+            Result = _IoDisconnect(&ReceiveMsg);
             break;
         }
         case CONSOLE_IO_CREATE_OBJECT:
@@ -126,40 +125,59 @@ void IoThread::IoLoop()
     ExitProcess(STATUS_SUCCESS);
 }
 
+DWORD IoThread::_IoDisconnect(_In_ CONSOLE_API_MSG* const pMsg)
+{
+    // FreeConsole called.
+
+    // NotifyWinEvent
+
+    delete pMsg->GetProcessHandle();
+
+    return STATUS_SUCCESS;
+}
+
 DWORD IoThread::_IoConnect(_In_ IApiResponders* const pResponder, _In_ DeviceProtocol* Server, _In_ CONSOLE_API_MSG* const pMsg)
 {
     DWORD Result = 0;
 
     // Retrieve connection payload
-    {
-        CONSOLE_SERVER_MSG* pServerData;
-
-
-    }
-
+    CONSOLE_SERVER_MSG* pServerData;
+    ULONG ServerDataSize;
+    pMsg->GetInputBuffer<CONSOLE_SERVER_MSG>(&pServerData, &ServerDataSize);
 
     // Input setup
+    // TODO: This handle is currently leaked.
     HANDLE InputEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
     Result = Server->SetInputAvailableEvent(InputEvent);
 
-    // Handle setup
-    IConsoleInputObject* pInputObj;
-    IConsoleOutputObject* pOutputObj;
-    Result = pResponder->CreateInitialObjects(&pInputObj, &pOutputObj);
-
     if (SUCCEEDED(Result))
     {
-        ConsoleHandleData* pInputHandle;
-        ConsoleHandleData* pOutputHandle;
-
-        Result = ConsoleHandleData::CreateHandle(pInputObj, &pInputHandle);
-        Result = ConsoleHandleData::CreateHandle(pOutputObj, &pOutputHandle);
+        // Handle setup
+        IConsoleInputObject* pInputObj;
+        IConsoleOutputObject* pOutputObj;
+        Result = pResponder->CreateInitialObjects(&pInputObj, &pOutputObj);
 
         if (SUCCEEDED(Result))
         {
-            Result = Server->SetConnectionInformation(pMsg, 0x14,
-                (ULONG_PTR)(pInputHandle),
-                                                      (ULONG_PTR)(pOutputHandle));
+            ConsoleHandleData* pInputHandle;
+            ConsoleHandleData* pOutputHandle;
+
+            Result = ConsoleHandleData::CreateHandle(pInputObj, &pInputHandle);
+            Result = ConsoleHandleData::CreateHandle(pOutputObj, &pOutputHandle);
+
+            ConsoleProcessHandle* pProcessHandle = new ConsoleProcessHandle((DWORD)pMsg->Descriptor.Process,
+                                                                            (DWORD)pMsg->Descriptor.Object,
+                                                                            pServerData->ProcessGroupId,
+                                                                            pInputHandle,
+                                                                            pOutputHandle);
+
+            if (SUCCEEDED(Result))
+            {
+                Result = Server->SetConnectionInformation(pMsg,
+                                                          (ULONG_PTR)(pProcessHandle),
+                                                          (ULONG_PTR)(pInputHandle),
+                                                          (ULONG_PTR)(pOutputHandle));
+            }
         }
     }
 
@@ -167,8 +185,12 @@ DWORD IoThread::_IoConnect(_In_ IApiResponders* const pResponder, _In_ DevicePro
     if (SUCCEEDED(Result))
     {
         // Notify Win32k that this process is attached to a special console application type.
-        // TODO: Don't do this for AttachConsole case (they already are a Win32 app type.)
-        Win32Control::NotifyConsoleTypeApplication((HANDLE)pMsg->Descriptor.Process);
+        // Don't do this for AttachConsole case (they already are a Win32 app type.)
+        // ConsoleApp == FALSE means AttachConsole instead of the initial create.
+        if (pServerData->ConsoleApp)
+        {
+            Win32Control::NotifyConsoleTypeApplication((HANDLE)pMsg->Descriptor.Process);
+        }
     }
 
     return Result;

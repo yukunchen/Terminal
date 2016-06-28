@@ -825,14 +825,6 @@ DWORD ApiResponderEmpty::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INF
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleProcessListImpl(_Out_writes_(*ProcessBufferLength) DWORD* const pProcessBuffer,
-                                                   _Inout_ ULONG* const pProcessBufferLength)
-{
-    UNREFERENCED_PARAMETER(pProcessBuffer);
-    *pProcessBufferLength = 0;
-    return 0;
-}
-
 DWORD ApiResponderEmpty::GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
 {
     pConsoleHistoryInfo->cbSize = sizeof(CONSOLE_HISTORY_INFO);
