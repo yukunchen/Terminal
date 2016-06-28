@@ -30,10 +30,17 @@ typedef long NTSTATUS;
 #include <vector>
 #include <new>
 #include <unordered_map>
+#include <algorithm>
 
 // private dependencies
 #include <Console\conapi.h>
 #include <Console\condrv.h>
+
+// in ProcessHandle class only
+//extern "C"
+//{
+//#include <DDK\wdm.h>
+//}
 
 // in Win32Control.cpp only
 //extern "C"

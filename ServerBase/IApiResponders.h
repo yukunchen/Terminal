@@ -7,8 +7,8 @@ class IApiResponders
 public:
 
 #pragma region ObjectManagement
-	virtual DWORD CreateInitialObjects(_Out_ IConsoleInputObject** const ppInputObject, 
-									   _Out_ IConsoleOutputObject** const ppOutputObject) = 0;
+    virtual DWORD CreateInitialObjects(_Out_ IConsoleInputObject** const ppInputObject,
+                                       _Out_ IConsoleOutputObject** const ppOutputObject) = 0;
 
 
 #pragma endregion
@@ -109,7 +109,7 @@ public:
 
     virtual DWORD SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage) = 0;
 
-    virtual DWORD GetConsoleCursorInfoImpl(_In_ IConsoleOutputObject* const pOutContext, 
+    virtual DWORD GetConsoleCursorInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
                                            _Out_ ULONG* const pCursorSize,
                                            _Out_ BOOLEAN* const pIsVisible) = 0;
 
@@ -317,7 +317,7 @@ public:
 
     virtual DWORD GetConsoleAliasExesAImpl(_Out_writes_(AliasExesBufferLength) char* const pAliasExesBuffer,
                                            _In_ ULONG const AliasExesBufferLength) = 0;
-    
+
     virtual DWORD GetConsoleAliasExesWImpl(_Out_writes_(AliasExesBufferLength) wchar_t* const pAliasExesBuffer,
                                            _In_ ULONG const AliasExesBufferLength) = 0;
 

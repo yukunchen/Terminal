@@ -13,30 +13,30 @@ ApiResponderEmpty::~ApiResponderEmpty()
 
 class BogusInputObject : public IConsoleInputObject
 {
-	DWORD Foo = 0xB0B0B0B0;
+    DWORD Foo = 0xB0B0B0B0;
 };
 
 class BogusOutputObject : public IConsoleOutputObject
 {
-	DWORD Bar = 0xF0F0F0F0;
+    DWORD Bar = 0xF0F0F0F0;
 };
 
 BogusInputObject* pCurrentInput;
 BogusOutputObject* pCurrentOutput;
 
 DWORD ApiResponderEmpty::CreateInitialObjects(_Out_ IConsoleInputObject** const ppInputObject,
-											  _Out_ IConsoleOutputObject** const ppOutputObject)
+                                              _Out_ IConsoleOutputObject** const ppOutputObject)
 {
-	BogusInputObject* const pNewInput = new BogusInputObject();
-	BogusOutputObject* const pNewOutput = new BogusOutputObject();
+    BogusInputObject* const pNewInput = new BogusInputObject();
+    BogusOutputObject* const pNewOutput = new BogusOutputObject();
 
-	*ppInputObject = pNewInput;
-	*ppOutputObject = pNewOutput;
+    *ppInputObject = pNewInput;
+    *ppOutputObject = pNewOutput;
 
-	pCurrentInput = pNewInput;
-	pCurrentOutput = pNewOutput;
+    pCurrentInput = pNewInput;
+    pCurrentOutput = pNewOutput;
 
-	return STATUS_SUCCESS;
+    return STATUS_SUCCESS;
 }
 
 DWORD ApiResponderEmpty::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
@@ -47,7 +47,7 @@ DWORD ApiResponderEmpty::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePag
 
 DWORD ApiResponderEmpty::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
-	*pCodePage = 437;
+    *pCodePage = 437;
     return 0;
 }
 
@@ -540,7 +540,7 @@ DWORD ApiResponderEmpty::ReadConsoleOutputA(_In_ IConsoleOutputObject* const pOu
     UNREFERENCED_PARAMETER(pTextBufferSize);
     UNREFERENCED_PARAMETER(pTextBufferTargetOrigin);
     UNREFERENCED_PARAMETER(pSourceRectangle);
-    *pReadRectangle = { 0, 0, -1, -1}; // because inclusive rects, an empty has right and bottom at -1
+    *pReadRectangle = { 0, 0, -1, -1 }; // because inclusive rects, an empty has right and bottom at -1
     return 0;
 }
 
@@ -563,40 +563,40 @@ DWORD ApiResponderEmpty::ReadConsoleOutputW(_In_ IConsoleOutputObject* const pOu
 DWORD ApiResponderEmpty::GetConsoleTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
                                               _In_ ULONG const TextBufferSize)
 {
-	if (TextBufferSize > 0)
-	{
-		*pTextBuffer = '\0';
-	}
+    if (TextBufferSize > 0)
+    {
+        *pTextBuffer = '\0';
+    }
     return 0;
 }
 
 DWORD ApiResponderEmpty::GetConsoleTitleWImpl(_Out_writes_(TextBufferSize) wchar_t* const pTextBuffer,
                                               _In_ ULONG const TextBufferSize)
 {
-	if (TextBufferSize > 0)
-	{
-		*pTextBuffer = '\0';
-	}
+    if (TextBufferSize > 0)
+    {
+        *pTextBuffer = '\0';
+    }
     return 0;
 }
 
 DWORD ApiResponderEmpty::GetConsoleOriginalTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
                                                       _In_ ULONG const TextBufferSize)
 {
-	if (TextBufferSize > 0)
-	{
-		*pTextBuffer = '\0';
-	}
+    if (TextBufferSize > 0)
+    {
+        *pTextBuffer = '\0';
+    }
     return 0;
 }
 
 DWORD ApiResponderEmpty::GetConsoleOriginalTitleWImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
                                                       _In_ ULONG const TextBufferSize)
 {
-	if (TextBufferSize > 0)
-	{
-		*pTextBuffer = '\0';
-	}
+    if (TextBufferSize > 0)
+    {
+        *pTextBuffer = '\0';
+    }
     return 0;
 }
 
@@ -638,7 +638,7 @@ DWORD ApiResponderEmpty::GetCurrentConsoleFontExImpl(_In_ IConsoleOutputObject* 
                                                      _In_ BOOLEAN const IsForMaximumWindowSize,
                                                      _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
-    
+
 
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(IsForMaximumWindowSize);

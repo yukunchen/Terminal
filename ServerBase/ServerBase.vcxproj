@@ -163,6 +163,7 @@
     <ClInclude Include="IoThread.h" />
     <ClInclude Include="ObjectHandle.h" />
     <ClInclude Include="ObjectHeader.h" />
+    <ClInclude Include="ProcessHandle.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Win32Control.h" />
@@ -177,6 +178,7 @@
     <ClCompile Include="IoThread.cpp" />
     <ClCompile Include="ObjectHandle.cpp" />
     <ClCompile Include="ObjectHeader.cpp" />
+    <ClCompile Include="ProcessHandle.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
