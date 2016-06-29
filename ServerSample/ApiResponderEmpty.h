@@ -1,11 +1,11 @@
 #pragma once
 
-#include "IApiResponders.h"
+#include "..\ServerBase\IApiResponders.h"
 
 class ApiResponderEmpty : public IApiResponders
 {
 public:
-    ApiResponderEmpty(_In_ IApiService* const pService);
+    ApiResponderEmpty();
     ~ApiResponderEmpty();
 
     void NotifyInput();

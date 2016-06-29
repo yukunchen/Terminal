@@ -24,9 +24,6 @@
     <ClInclude Include="ApiDispatchers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ApiResponderEmpty.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ApiSorter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -75,9 +72,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ApiDispatchers.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ApiResponderEmpty.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ApiSorter.cpp">

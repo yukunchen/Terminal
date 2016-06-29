@@ -3,8 +3,7 @@
 
 ApiResponderEmpty* g_Responder;
 
-ApiResponderEmpty::ApiResponderEmpty(_In_ IApiService* const pService) :
-    IApiResponders(pService)
+ApiResponderEmpty::ApiResponderEmpty()
 {
     g_Responder = this;
 }

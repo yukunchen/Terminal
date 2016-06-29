@@ -12,13 +12,13 @@
 #include "ProcessHandle.h"
 
 #include "IApiResponders.h"
-#include "ApiResponderEmpty.h"
 #include "ApiSorter.h"
 #include "Win32Control.h"
 
-IoThread::IoThread(_In_ HANDLE Server) :
+IoThread::IoThread(_In_ HANDLE Server, _In_ IApiResponders* const pResponder) :
     _Server(Server),
-    _Thread(s_IoLoop, this)
+    _Thread(s_IoLoop, this),
+    _pResponder(pResponder)
 {
     _Thread.detach();
 }
@@ -37,7 +37,7 @@ void IoThread::IoLoop()
 {
     DeviceComm Comm(_Server);
     DeviceProtocol Prot(&Comm);
-    IoDispatchers Dispatcher(&Prot);
+    IoDispatchers Dispatcher(&Prot, _pResponder);
 
     bool fExiting = false;
 

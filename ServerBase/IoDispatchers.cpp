@@ -12,15 +12,16 @@
 #include "ProcessHandle.h"
 
 #include "IApiResponders.h"
-#include "ApiResponderEmpty.h"
 #include "ApiSorter.h"
 #include "Win32Control.h"
 
 
-IoDispatchers::IoDispatchers(_In_ DeviceProtocol* const pProtocol) :
+IoDispatchers::IoDispatchers(_In_ DeviceProtocol* const pProtocol,
+                             _In_ IApiResponders* const pResponder) :
     _pProtocol(pProtocol),
-    _Responder(this)
+    _pResponder(pResponder)
 {
+    _pResponder->SetApiService(this);
 }
 
 IoDispatchers::~IoDispatchers()
@@ -102,12 +103,12 @@ DWORD IoDispatchers::_ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg)
     {
     case CONSOLE_IO_USER_DEFINED:
     {
-        Result = LookupAndDoApiCall(&_Responder, pMsg);
+        Result = LookupAndDoApiCall(_pResponder, pMsg);
         break;
     }
     case CONSOLE_IO_CONNECT:
     {
-        Result = _IoConnect(&_Responder, _pProtocol, pMsg);
+        Result = _IoConnect(_pResponder, _pProtocol, pMsg);
         break;
     }
     case CONSOLE_IO_DISCONNECT:
@@ -129,12 +130,12 @@ DWORD IoDispatchers::_ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg)
     }
     case CONSOLE_IO_RAW_WRITE:
     {
-        Result = DoRawWriteCall(&_Responder, pMsg);
+        Result = DoRawWriteCall(_pResponder, pMsg);
         break;
     }
     case CONSOLE_IO_RAW_READ:
     {
-        Result = DoRawReadCall(&_Responder, pMsg);
+        Result = DoRawReadCall(_pResponder, pMsg);
         break;
     }
     case CONSOLE_IO_RAW_FLUSH:

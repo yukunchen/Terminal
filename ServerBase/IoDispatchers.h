@@ -1,14 +1,15 @@
 #pragma once
 
+#include "IApiResponders.h"
 #include "IApiService.h"
 #include "ApiMessage.h"
-#include "ApiResponderEmpty.h"
 #include "DeviceProtocol.h"
 
 class IoDispatchers : public IApiService
 {
 public:
-    IoDispatchers(_In_ DeviceProtocol* const pProtocol);
+    IoDispatchers(_In_ DeviceProtocol* const pProtocol,
+                  _In_ IApiResponders* const pResponder);
     ~IoDispatchers();
 
     void ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg);
@@ -25,7 +26,7 @@ private:
     static DWORD _IoDisconnect(_In_ CONSOLE_API_MSG* const pMsg);
     static DWORD _IoDefault();
 
-    ApiResponderEmpty _Responder;
+    IApiResponders* const _pResponder;
     DeviceProtocol* const _pProtocol;
 
     mutex ioOperation;

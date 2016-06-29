@@ -7,14 +7,18 @@
 class IApiResponders
 {
 public:
-    IApiResponders(_In_ IApiService* const pService) :
-        _pService(pService)
+    IApiResponders()
     {
 
     }
 
+    void SetApiService(_In_ IApiService* const pService)
+    {
+        _pService = pService;
+    }
+
 protected:
-    IApiService* const _pService;
+    IApiService* _pService;
 
 public:
 
