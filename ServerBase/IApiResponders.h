@@ -1,8 +1,7 @@
 #pragma once
 
-#include "Console\conapi.h"
-
 #include "IApiService.h"
+#include "IConsoleObjects.h"
 
 class IApiResponders
 {

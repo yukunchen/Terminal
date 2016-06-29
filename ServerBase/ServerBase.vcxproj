@@ -160,6 +160,7 @@
     <ClInclude Include="DeviceProtocol.h" />
     <ClInclude Include="IApiResponders.h" />
     <ClInclude Include="IApiService.h" />
+    <ClInclude Include="IConsoleObjects.h" />
     <ClInclude Include="IoDispatchers.h" />
     <ClInclude Include="IoThread.h" />
     <ClInclude Include="ObjectHandle.h" />

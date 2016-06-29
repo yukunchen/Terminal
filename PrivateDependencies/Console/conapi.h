@@ -22,19 +22,5 @@ Revision History:
 #include "conmsgl2.h"
 #include "conmsg.h"
 
-class IConsoleObject
-{
-
-};
-
-class IConsoleInputObject : public IConsoleObject
-{
-
-};
-
-class IConsoleOutputObject : public IConsoleObject
-{
-
-};
 
 

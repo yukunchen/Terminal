@@ -1,4 +1,7 @@
 #pragma once
+
+#include "IConsoleObjects.h"
+
 enum ConsoleObjectType
 {
     Input = 0x1,

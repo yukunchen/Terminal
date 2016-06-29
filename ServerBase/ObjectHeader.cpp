@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ObjectHeader.h"
+#include "IConsoleObjects.h"
 
 std::unordered_map<IConsoleObject*, ConsoleObjectHeader*> ConsoleObjectHeader::_KnownObjects;
 

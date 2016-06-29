@@ -1,4 +1,7 @@
 #include "stdafx.h"
+
+#include "IConsoleObjects.h"
+
 #include "ObjectHandle.h"
 
 DWORD ConsoleHandleData::CreateHandle(_In_ IConsoleInputObject* const pInputObject,

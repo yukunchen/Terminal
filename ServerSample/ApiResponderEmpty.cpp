@@ -127,7 +127,7 @@ DWORD ApiResponderEmpty::CreateInitialObjects(_Out_ IConsoleInputObject** const 
 
     g_pThread = new thread(GoWindow);
     
-    return STATUS_SUCCESS;
+    return S_OK;
 }
 
 DWORD ApiResponderEmpty::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
@@ -252,7 +252,7 @@ DWORD ApiResponderEmpty::ReadConsoleAImpl(_In_ IConsoleInputObject* const pInCon
             pTextBuffer[8] = '\n';
             *pTextBufferWritten = 9;
             g_hasInput = false;
-            return STATUS_SUCCESS;
+            return S_OK;
         }
     }
     else
@@ -291,7 +291,7 @@ DWORD ApiResponderEmpty::ReadConsoleWImpl(_In_ IConsoleInputObject* const pInCon
             pTextBuffer[8] = L'\n';
             *pTextBufferWritten = 9;
             g_hasInput = false;
-            return STATUS_SUCCESS;
+            return S_OK;
         }
     }
     else
