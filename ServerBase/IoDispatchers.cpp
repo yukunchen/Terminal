@@ -4,14 +4,11 @@
 #include "ApiMessage.h"
 #include "ObjectHandle.h"
 
-#include "IoThread.h"
-
-#include "DeviceComm.h"
 #include "DeviceProtocol.h"
 
 #include "ProcessHandle.h"
 
-#include "IApiResponders.h"
+#include "..\ServerBaseApi\IApiResponders.h"
 #include "ApiSorter.h"
 #include "Win32Control.h"
 

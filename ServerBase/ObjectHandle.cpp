@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-#include "IConsoleObjects.h"
+#include "..\ServerBaseApi\IConsoleObjects.h"
 
 #include "ObjectHandle.h"
 

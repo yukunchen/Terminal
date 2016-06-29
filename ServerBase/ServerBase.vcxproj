@@ -158,9 +158,6 @@
     <ClInclude Include="ApiSorter.h" />
     <ClInclude Include="DeviceComm.h" />
     <ClInclude Include="DeviceProtocol.h" />
-    <ClInclude Include="IApiResponders.h" />
-    <ClInclude Include="IApiService.h" />
-    <ClInclude Include="IConsoleObjects.h" />
     <ClInclude Include="IoDispatchers.h" />
     <ClInclude Include="IoThread.h" />
     <ClInclude Include="ObjectHandle.h" />
@@ -190,6 +187,11 @@
     </ClCompile>
     <ClCompile Include="WaitQueue.cpp" />
     <ClCompile Include="Win32Control.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ServerBaseApi\ServerBaseApi.vcxproj">
+      <Project>{75d376a3-eeb4-4fa9-a2cf-118fc9eae3cd}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

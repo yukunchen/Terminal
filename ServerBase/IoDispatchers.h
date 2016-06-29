@@ -1,7 +1,7 @@
 #pragma once
 
-#include "IApiResponders.h"
-#include "IApiService.h"
+#include "..\ServerBaseApi\IApiResponders.h"
+#include "..\ServerBaseApi\IApiService.h"
 #include "ApiMessage.h"
 #include "DeviceProtocol.h"
 

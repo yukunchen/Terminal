@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IApiResponders.h"
+#include "..\ServerBaseApi\IApiResponders.h"
 // replace with interface to retrieve additional data
 #include "DeviceProtocol.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IApiResponders.h"
+#include "..\ServerBaseApi\IApiResponders.h"
 #include "DeviceProtocol.h"
 
 DWORD PendingPermitted(_In_ CONSOLE_API_MSG* const pMsg);

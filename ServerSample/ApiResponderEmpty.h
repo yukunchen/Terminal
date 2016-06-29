@@ -1,6 +1,6 @@
 #pragma once
 
-#include "..\ServerBase\IApiResponders.h"
+#include "..\ServerBaseApi\IApiResponders.h"
 
 class ApiResponderEmpty : public IApiResponders
 {

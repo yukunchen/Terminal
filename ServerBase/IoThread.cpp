@@ -1,7 +1,6 @@
 #include "stdafx.h"
 
 #include "ApiMessage.h"
-#include "ObjectHandle.h"
 
 #include "IoThread.h"
 #include "IoDispatchers.h"
@@ -9,11 +8,7 @@
 #include "DeviceComm.h"
 #include "DeviceProtocol.h"
 
-#include "ProcessHandle.h"
-
-#include "IApiResponders.h"
-#include "ApiSorter.h"
-#include "Win32Control.h"
+#include "..\ServerBaseApi\IApiResponders.h"
 
 IoThread::IoThread(_In_ HANDLE Server, _In_ IApiResponders* const pResponder) :
     _Server(Server),

@@ -33,9 +33,6 @@
     <ClInclude Include="DeviceProtocol.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IApiResponders.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="IoThread.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -61,12 +58,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="IoDispatchers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IApiService.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IConsoleObjects.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

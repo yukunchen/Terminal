@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IConsoleObjects.h"
+#include "..\ServerBaseApi\IConsoleObjects.h"
 
 enum ConsoleObjectType
 {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "DeviceProtocol.h"
-#include "IApiResponders.h"
+#include "..\ServerBaseApi\IApiResponders.h"
 
 class IoThread
 {
