@@ -160,12 +160,15 @@
     <ClInclude Include="DeviceComm.h" />
     <ClInclude Include="DeviceProtocol.h" />
     <ClInclude Include="IApiResponders.h" />
+    <ClInclude Include="IApiService.h" />
+    <ClInclude Include="IoDispatchers.h" />
     <ClInclude Include="IoThread.h" />
     <ClInclude Include="ObjectHandle.h" />
     <ClInclude Include="ObjectHeader.h" />
     <ClInclude Include="ProcessHandle.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="WaitQueue.h" />
     <ClInclude Include="Win32Control.h" />
   </ItemGroup>
   <ItemGroup>
@@ -175,6 +178,7 @@
     <ClCompile Include="ApiSorter.cpp" />
     <ClCompile Include="DeviceComm.cpp" />
     <ClCompile Include="DeviceProtocol.cpp" />
+    <ClCompile Include="IoDispatchers.cpp" />
     <ClCompile Include="IoThread.cpp" />
     <ClCompile Include="ObjectHandle.cpp" />
     <ClCompile Include="ObjectHeader.cpp" />
@@ -185,6 +189,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="WaitQueue.cpp" />
     <ClCompile Include="Win32Control.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

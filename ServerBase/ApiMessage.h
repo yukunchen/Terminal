@@ -25,6 +25,9 @@ typedef struct _CONSOLE_API_STATE
 class CONSOLE_API_MSG
 {
 public:
+
+    // TODO: This needs proper copy semantics for when messages are banked and queued for later.
+
     // Contains the outgoing API call response
     CD_IO_COMPLETE Complete;
 

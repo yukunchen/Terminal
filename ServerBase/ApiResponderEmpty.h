@@ -5,8 +5,10 @@
 class ApiResponderEmpty : public IApiResponders
 {
 public:
-    ApiResponderEmpty();
+    ApiResponderEmpty(_In_ IApiService* const pService);
     ~ApiResponderEmpty();
+
+    void NotifyInput();
 
 #pragma region ObjectManagement
     DWORD CreateInitialObjects(_Out_ IConsoleInputObject** const ppInputObject,

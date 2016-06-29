@@ -5,13 +5,13 @@
 
 extern "C"
 {
-	std::vector<IoThread*> ioThreads;
+    std::vector<IoThread*> ioThreads;
 
     _declspec(dllexport)
         NTSTATUS ConsoleCreateIoThread(_In_ HANDLE Server)
     {
-		IoThread* const pNewThread = new IoThread(Server);
-		ioThreads.push_back(pNewThread);
+        IoThread* const pNewThread = new IoThread(Server);
+        ioThreads.push_back(pNewThread);
 
         return STATUS_SUCCESS;
     }

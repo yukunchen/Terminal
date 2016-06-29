@@ -28,8 +28,10 @@ typedef long NTSTATUS;
 #include <stdexcept>
 #include <thread>
 #include <vector>
+#include <queue>
 #include <new>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <algorithm>
 
@@ -38,6 +40,7 @@ using namespace std;
 // private dependencies
 #include <Console\conapi.h>
 #include <Console\condrv.h>
+#include <Console\ntcon.h>
 
 // in ProcessHandle class only
 //extern "C"

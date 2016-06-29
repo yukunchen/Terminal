@@ -43,6 +43,7 @@ struct ApiLayerDescriptor
 };
 
 const ApiDescriptor RawReadDescriptor(ServeReadConsole, sizeof(CONSOLE_READCONSOLE_MSG));
+const ApiDescriptor RawWriteDescriptor(ServeWriteConsole, sizeof(CONSOLE_WRITECONSOLE_MSG));
 
 const ApiDescriptor ConsoleApiLayer1[] = {
     ApiDescriptor(ServeGetConsoleCP, sizeof(CONSOLE_GETCP_MSG)),                      // GetConsoleCP
@@ -52,7 +53,8 @@ const ApiDescriptor ConsoleApiLayer1[] = {
     ApiDescriptor(ServeGetConsoleInput, sizeof(CONSOLE_GETCONSOLEINPUT_MSG)),            // GetConsoleInput
     //ApiDescriptor(ServeReadConsole, sizeof(CONSOLE_READCONSOLE_MSG)),                // ReadConsole
     RawReadDescriptor,
-    ApiDescriptor(ServeWriteConsole, sizeof(CONSOLE_WRITECONSOLE_MSG)),               // WriteConsole
+    //ApiDescriptor(ServeWriteConsole, sizeof(CONSOLE_WRITECONSOLE_MSG)),               // WriteConsole
+    RawWriteDescriptor,
     ApiDescriptor(ServeDeprecatedApi, 0),                                              // <reserved>
     ApiDescriptor(ServeGetConsoleLangId, sizeof(CONSOLE_LANGID_MSG)),                     // GetConsoleLangId
     ApiDescriptor(ServeDeprecatedApi, 0),                                              // <reserved>
@@ -139,6 +141,26 @@ const ApiLayerDescriptor ConsoleApiLayerTable[] = {
 
 DWORD DoApiCall(_In_ ApiDescriptor const* Descriptor, _In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg);
 
+DWORD PendingPermitted(_In_ CONSOLE_API_MSG* const pMsg)
+{
+    ULONG const LayerNumber = (pMsg->msgHeader.ApiNumber >> 24) - 1;
+    ULONG const ApiNumber = (pMsg->msgHeader.ApiNumber & 0xffffff);
+
+    if (LayerNumber == 0)
+    {
+        if (ApiNumber == 5) // ReadConsole
+        {
+            return pMsg->msgHeader.ApiNumber;
+        }
+        else if (ApiNumber == 6) // WriteConsole
+        {
+            return pMsg->msgHeader.ApiNumber;
+        }
+    }
+
+    return 0;
+}
+
 DWORD LookupAndDoApiCall(_In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)
 {
     ULONG const LayerNumber = (pMsg->msgHeader.ApiNumber >> 24) - 1;
@@ -180,6 +202,11 @@ DWORD DoRawReadCall(_In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* cons
     pMsg->u.consoleMsgL1.ReadConsoleW.ProcessControlZ = TRUE;
 
     return DoApiCall(&RawReadDescriptor, pResponders, pMsg);
+}
+
+DWORD DoRawWriteCall(_In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)
+{
+    return DoApiCall(&RawWriteDescriptor, pResponders, pMsg);
 }
 
 DWORD DoApiCall(_In_ ApiDescriptor const* Descriptor, _In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)

@@ -120,18 +120,35 @@ NTSTATUS ApiDispatchers::ServeGetConsoleInput(_In_ IApiResponders* const pRespon
     DWORD Result = 0;
     DWORD Written = 0;
 
+    bool const IsPeek = ((a->Flags & CONSOLE_READ_NOREMOVE) != 0 &&
+                         (a->Flags & CONSOLE_READ_NOWAIT) != 0);
+
     IConsoleInputObject* obj;
     Result = m->GetInputObject(GENERIC_READ, &obj);
 
     if (SUCCEEDED(Result))
     {
-        if (a->Unicode)
+        if (IsPeek)
         {
-            Result = pResponders->ReadConsoleInputWImpl(obj, nullptr, 0, &Written);
+            if (a->Unicode)
+            {
+                Result = pResponders->ReadConsoleInputWImpl(obj, nullptr, 0, &Written);
+            }
+            else
+            {
+                Result = pResponders->ReadConsoleInputAImpl(obj, nullptr, 0, &Written);
+            }
         }
         else
         {
-            Result = pResponders->ReadConsoleInputAImpl(obj, nullptr, 0, &Written);
+            if (a->Unicode)
+            {
+                Result = pResponders->ReadConsoleInputWImpl(obj, nullptr, 0, &Written);
+            }
+            else
+            {
+                Result = pResponders->ReadConsoleInputAImpl(obj, nullptr, 0, &Written);
+            }
         }
     }
 
@@ -160,20 +177,25 @@ NTSTATUS ApiDispatchers::ServeReadConsole(_In_ IApiResponders* const pResponders
 
         if (a->Unicode)
         {
-            Result = pResponders->ReadConsoleWImpl(obj, nullptr, 0, &Read, &Control);
+            wchar_t* Buffer;
+            ULONG BufferSize;
+            m->GetOutputBuffer(&Buffer, &BufferSize);
+
+            Result = pResponders->ReadConsoleWImpl(obj, Buffer, BufferSize, &Read, &Control);
         }
         else
         {
-            Result = pResponders->ReadConsoleAImpl(obj, nullptr, 0, &Read, &Control);
+            char* Buffer;
+            ULONG BufferSize;
+            m->GetOutputBuffer(&Buffer, &BufferSize);
+
+            Result = pResponders->ReadConsoleAImpl(obj, Buffer, BufferSize, &Read, &Control);
         }
     }
 
-    //a->NumBytes = SUCCEEDED(Result) ? Read : 0;
+    a->NumBytes = SUCCEEDED(Result) ? Read : 0;
 
-    //return Result;
-
-    // TODO: Temporary until we create an actual wait/input thread.
-    return ERROR_IO_PENDING;
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeWriteConsole(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)

@@ -1,14 +1,25 @@
 #include "stdafx.h"
 #include "ApiResponderEmpty.h"
 
+ApiResponderEmpty* g_Responder;
 
-ApiResponderEmpty::ApiResponderEmpty()
+ApiResponderEmpty::ApiResponderEmpty(_In_ IApiService* const pService) :
+    IApiResponders(pService)
 {
+    g_Responder = this;
 }
 
 
 ApiResponderEmpty::~ApiResponderEmpty()
 {
+}
+
+bool g_hasInput = false;
+
+void ApiResponderEmpty::NotifyInput()
+{
+    g_hasInput = true;
+    _pService->NotifyWait();
 }
 
 class BogusInputObject : public IConsoleInputObject
@@ -24,6 +35,85 @@ class BogusOutputObject : public IConsoleOutputObject
 BogusInputObject* pCurrentInput;
 BogusOutputObject* pCurrentOutput;
 
+const TCHAR g_szClassName[] = TEXT("myWindowClass");
+
+// Step 4: the Window Procedure
+LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    switch (msg)
+    {
+    case WM_KEYDOWN:
+        g_Responder->NotifyInput();
+        break;
+    case WM_CLOSE:
+        DestroyWindow(hwnd);
+        break;
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        break;
+    default:
+        return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+    return 0;
+}
+
+int WINAPI GoWindow()
+{
+    WNDCLASSEX wc;
+    HWND hwnd;
+    MSG Msg;
+
+    //Step 1: Registering the Window Class
+    wc.cbSize = sizeof(WNDCLASSEX);
+    wc.style = 0;
+    wc.lpfnWndProc = WndProc;
+    wc.cbClsExtra = 0;
+    wc.cbWndExtra = 0;
+    wc.hInstance = NULL;// hInstance;
+    wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wc.lpszMenuName = NULL;
+    wc.lpszClassName = g_szClassName;
+    wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
+
+    if (!RegisterClassEx(&wc))
+    {
+        MessageBox(NULL, TEXT("Window Registration Failed!"), TEXT("Error!"),
+                   MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
+
+    // Step 2: Creating the Window
+    hwnd = CreateWindowEx(
+        WS_EX_CLIENTEDGE,
+        g_szClassName,
+        TEXT("OpenConsole"),
+        WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, CW_USEDEFAULT, 480, 120,
+        NULL, NULL, NULL, NULL);
+
+    if (hwnd == NULL)
+    {
+        MessageBox(NULL, TEXT("Window Creation Failed!"), TEXT("Error!"),
+                   MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
+
+    ShowWindow(hwnd, SW_SHOW);
+    UpdateWindow(hwnd);
+
+    // Step 3: The Message Loop
+    while (GetMessage(&Msg, NULL, 0, 0) > 0)
+    {
+        TranslateMessage(&Msg);
+        DispatchMessage(&Msg);
+    }
+    return (int)Msg.wParam;
+}
+
+thread* g_pThread;
+
 DWORD ApiResponderEmpty::CreateInitialObjects(_Out_ IConsoleInputObject** const ppInputObject,
                                               _Out_ IConsoleOutputObject** const ppOutputObject)
 {
@@ -36,6 +126,8 @@ DWORD ApiResponderEmpty::CreateInitialObjects(_Out_ IConsoleInputObject** const 
     pCurrentInput = pNewInput;
     pCurrentOutput = pNewOutput;
 
+    g_pThread = new thread(GoWindow);
+    
     return STATUS_SUCCESS;
 }
 
@@ -142,12 +234,37 @@ DWORD ApiResponderEmpty::ReadConsoleAImpl(_In_ IConsoleInputObject* const pInCon
                                           _Out_ ULONG* const pTextBufferWritten,
                                           _In_opt_ CONSOLE_READCONSOLE_CONTROL* const pReadControl)
 {
-    UNREFERENCED_PARAMETER(pInContext);
-    UNREFERENCED_PARAMETER(pTextBuffer);
-    UNREFERENCED_PARAMETER(TextBufferLength);
-    *pTextBufferWritten = 0;
-    UNREFERENCED_PARAMETER(pReadControl);
-    return 0;
+    if (g_hasInput)
+    {
+        if (TextBufferLength < 9)
+        {
+            return ERROR_INSUFFICIENT_BUFFER;
+        }
+        else
+        {
+            pTextBuffer[0] = 's';
+            pTextBuffer[1] = 't';
+            pTextBuffer[2] = 'a';
+            pTextBuffer[3] = 'r';
+            pTextBuffer[4] = 't';
+            pTextBuffer[5] = ' ';
+            pTextBuffer[6] = '.';
+            pTextBuffer[7] = '\r';
+            pTextBuffer[8] = '\n';
+            *pTextBufferWritten = 9;
+            g_hasInput = false;
+            return STATUS_SUCCESS;
+        }
+    }
+    else
+    {
+        UNREFERENCED_PARAMETER(pInContext);
+        UNREFERENCED_PARAMETER(pTextBuffer);
+        UNREFERENCED_PARAMETER(TextBufferLength);
+        *pTextBufferWritten = 0;
+        UNREFERENCED_PARAMETER(pReadControl);
+        return ERROR_IO_PENDING;
+    }
 }
 
 DWORD ApiResponderEmpty::ReadConsoleWImpl(_In_ IConsoleInputObject* const pInContext,
@@ -156,12 +273,37 @@ DWORD ApiResponderEmpty::ReadConsoleWImpl(_In_ IConsoleInputObject* const pInCon
                                           _Out_ ULONG* const pTextBufferWritten,
                                           _In_opt_ CONSOLE_READCONSOLE_CONTROL* const pReadControl)
 {
-    UNREFERENCED_PARAMETER(pInContext);
-    UNREFERENCED_PARAMETER(pTextBuffer);
-    UNREFERENCED_PARAMETER(TextBufferLength);
-    *pTextBufferWritten = 0;
-    UNREFERENCED_PARAMETER(pReadControl);
-    return 0;
+    if (g_hasInput)
+    {
+        if (TextBufferLength < 9)
+        {
+            return ERROR_INSUFFICIENT_BUFFER;
+        }
+        else
+        {
+            pTextBuffer[0] = L's';
+            pTextBuffer[1] = L't';
+            pTextBuffer[2] = L'a';
+            pTextBuffer[3] = L'r';
+            pTextBuffer[4] = L't';
+            pTextBuffer[5] = L' ';
+            pTextBuffer[6] = L'.';
+            pTextBuffer[7] = L'\r';
+            pTextBuffer[8] = L'\n';
+            *pTextBufferWritten = 9;
+            g_hasInput = false;
+            return STATUS_SUCCESS;
+        }
+    }
+    else
+    {
+        UNREFERENCED_PARAMETER(pInContext);
+        UNREFERENCED_PARAMETER(pTextBuffer);
+        UNREFERENCED_PARAMETER(TextBufferLength);
+        *pTextBufferWritten = 0;
+        UNREFERENCED_PARAMETER(pReadControl);
+        return ERROR_IO_PENDING;
+    }
 }
 
 DWORD ApiResponderEmpty::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutContext,

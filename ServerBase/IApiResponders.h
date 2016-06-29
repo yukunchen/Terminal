@@ -2,8 +2,20 @@
 
 #include "Console\conapi.h"
 
+#include "IApiService.h"
+
 class IApiResponders
 {
+public:
+    IApiResponders(_In_ IApiService* const pService) :
+        _pService(pService)
+    {
+
+    }
+
+protected:
+    IApiService* const _pService;
+
 public:
 
 #pragma region ObjectManagement
