@@ -19,7 +19,7 @@ bool g_hasInput = false;
 void ApiResponderEmpty::NotifyInput()
 {
     g_hasInput = true;
-    _pService->NotifyWait();
+    _pService->NotifyInputReadWait();
 }
 
 class BogusInputObject : public IConsoleInputObject
