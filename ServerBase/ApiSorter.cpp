@@ -29,7 +29,6 @@ struct ApiDescriptor
 
     PCONSOLE_API_ROUTINE const Routine;
     ULONG const RequiredSize;
-
 };
 
 struct ApiLayerDescriptor

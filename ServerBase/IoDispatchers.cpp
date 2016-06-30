@@ -67,6 +67,7 @@ void IoDispatchers::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg)
         // Try to service the operation.
         DWORD Result = _ServiceIoOperation(pMsg);
 
+        // TODO: This has to know too much about the sorting of APIs. Move it to sort side?
         // If the call was pending, push it to be serviced later.
         if (Result == ERROR_IO_PENDING)
         {

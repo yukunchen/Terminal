@@ -95,9 +95,6 @@
     <ClCompile Include="ProcessHandle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WaitQueue.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="IoDispatchers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
