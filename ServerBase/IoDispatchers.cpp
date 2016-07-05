@@ -182,10 +182,10 @@ DWORD IoDispatchers::_IoConnect(_In_ IApiResponders* const pResponder, _In_ Devi
     ULONG ServerDataSize;
     pMsg->GetInputBuffer<CONSOLE_SERVER_MSG>(&pServerData, &ServerDataSize);
 
-    // Input setup
-    // TODO: This handle is currently leaked.
-    HANDLE InputEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
-    Result = Server->SetInputAvailableEvent(InputEvent);
+    //// Input setup
+    //// TODO: This handle is currently leaked.
+    //HANDLE InputEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+    //Result = Server->SetInputAvailableEvent(InputEvent);
 
     if (SUCCEEDED(Result))
     {
