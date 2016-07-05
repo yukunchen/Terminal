@@ -40,7 +40,7 @@ NTSTATUS CallConsoleControl(CONSOLECONTROL Command, PVOID ConsoleInformation, DW
     return Status;
 }
 
-DWORD Win32Control::NotifyConsoleTypeApplication(_In_ HANDLE const ProcessHandle)
+NTSTATUS Win32Control::NotifyConsoleTypeApplication(_In_ HANDLE const ProcessHandle)
 {
     CONSOLE_PROCESS_INFO cpi;
     cpi.dwProcessID = HandleToUlong(ProcessHandle);
@@ -48,7 +48,7 @@ DWORD Win32Control::NotifyConsoleTypeApplication(_In_ HANDLE const ProcessHandle
     return CallConsoleControl(ConsoleNotifyConsoleApplication, &cpi, sizeof(cpi));
 }
 
-DWORD Win32Control::NotifyWindowOwner(_In_ HANDLE const ProcessHandle, _In_ HANDLE const ThreadHandle, _In_ HWND const WindowHandle)
+NTSTATUS Win32Control::NotifyWindowOwner(_In_ HANDLE const ProcessHandle, _In_ HANDLE const ThreadHandle, _In_ HWND const WindowHandle)
 {
     CONSOLEWINDOWOWNER cwo;
     cwo.ProcessId = HandleToULong(ProcessHandle);
@@ -57,7 +57,7 @@ DWORD Win32Control::NotifyWindowOwner(_In_ HANDLE const ProcessHandle, _In_ HAND
     return CallConsoleControl(ConsoleSetWindowOwner, &cwo, sizeof(cwo));
 }
 
-DWORD Win32Control::NotifyForegroundProcess(_In_ HANDLE const ProcessHandle, _In_ BOOL IsForeground)
+NTSTATUS Win32Control::NotifyForegroundProcess(_In_ HANDLE const ProcessHandle, _In_ BOOL IsForeground)
 {
     CONSOLESETFOREGROUND csf;
     csf.hProcess = ProcessHandle;
@@ -65,7 +65,7 @@ DWORD Win32Control::NotifyForegroundProcess(_In_ HANDLE const ProcessHandle, _In
     return CallConsoleControl(ConsoleSetForeground, &csf, sizeof(csf));
 }
 
-DWORD Win32Control::NotifyCaretPosition(_In_ HWND const WindowHandle, _In_ RECT const CursorPixelsInClientArea)
+NTSTATUS Win32Control::NotifyCaretPosition(_In_ HWND const WindowHandle, _In_ RECT const CursorPixelsInClientArea)
 {
     CONSOLE_CARET_INFO cci;
     cci.hwnd = WindowHandle;
@@ -73,10 +73,10 @@ DWORD Win32Control::NotifyCaretPosition(_In_ HWND const WindowHandle, _In_ RECT 
     return CallConsoleControl(ConsoleSetCaretInfo, &cci, sizeof(cci));
 }
 
-DWORD Win32Control::NotifyEndTask(_In_ HANDLE const ProcessHandle,
-                                  _In_ HWND const WindowHandle,
-                                  _In_ ULONG const EventType,
-                                  _In_ ULONG const EventFlags)
+NTSTATUS Win32Control::NotifyEndTask(_In_ HANDLE const ProcessHandle,
+                                     _In_ HWND const WindowHandle,
+                                     _In_ ULONG const EventType,
+                                     _In_ ULONG const EventFlags)
 {
     CONSOLEENDTASK cet;
     cet.ProcessId = ProcessHandle;

@@ -5,6 +5,7 @@
 #include "DeviceComm.h"
 #include "DeviceProtocol.h"
 
+#include <wil\resource.h>
 
 class IoThread
 {
@@ -17,13 +18,13 @@ public:
     void IoLoop();
 
 private:
-    HANDLE const _Server;
     IApiResponders* const _pResponder;
 
     DeviceComm _Comm;
     DeviceProtocol _Prot;
     //IoDispatchers _Dispatcher;
 
+    wil::unique_event const _InputEvent;
     std::thread _Thread;
 };
 

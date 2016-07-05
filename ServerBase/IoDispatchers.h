@@ -19,19 +19,19 @@ public:
 
 private:
 
-    void _NotifyWait(_In_ queue<CONSOLE_API_MSG>* const pQueue);
+    void _NotifyWait(_In_ std::queue<CONSOLE_API_MSG>* const pQueue);
 
-    DWORD _ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg);
-    static DWORD _IoConnect(_In_ IApiResponders* const pResponder, _In_ DeviceProtocol* Server, _In_ CONSOLE_API_MSG* const pMsg);
-    static DWORD _IoDisconnect(_In_ CONSOLE_API_MSG* const pMsg);
-    static DWORD _IoDefault();
+    NTSTATUS _ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg);
+    static NTSTATUS _IoConnect(_In_ IApiResponders* const pResponder, _In_ DeviceProtocol* Server, _In_ CONSOLE_API_MSG* const pMsg);
+    static NTSTATUS _IoDisconnect(_In_ CONSOLE_API_MSG* const pMsg);
+    static NTSTATUS _IoDefault();
 
     IApiResponders* const _pResponder;
     DeviceProtocol* const _pProtocol;
 
-    mutex ioOperation;
-    queue<CONSOLE_API_MSG> _QueuedReadInput;
-    queue<CONSOLE_API_MSG> _QueuedWriteOutput;
+    std::mutex ioOperation;
+    std::queue<CONSOLE_API_MSG> _QueuedReadInput;
+    std::queue<CONSOLE_API_MSG> _QueuedWriteOutput;
 
 };
 

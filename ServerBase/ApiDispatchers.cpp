@@ -5,7 +5,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleCP(_In_ IApiResponders* const pResponder
 {
     CONSOLE_GETCP_MSG* const a = &m->u.consoleMsgL1.GetConsoleCP;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     if (a->Output)
     {
@@ -22,10 +22,9 @@ NTSTATUS ApiDispatchers::ServeGetConsoleCP(_In_ IApiResponders* const pResponder
 NTSTATUS ApiDispatchers::ServeGetConsoleMode(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.GetConsoleMode;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
-    ConsoleObjectType Type;
-    Result = m->GetObjectType(&Type);
+    ConsoleObjectType const Type = m->GetObjectType();
 
     if (SUCCEEDED(Result))
     {
@@ -61,37 +60,32 @@ NTSTATUS ApiDispatchers::ServeGetConsoleMode(_In_ IApiResponders* const pRespond
 NTSTATUS ApiDispatchers::ServeSetConsoleMode(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.SetConsoleMode;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
-    ConsoleObjectType Type;
-    Result = m->GetObjectType(&Type);
-
-    if (SUCCEEDED(Result))
+    ConsoleObjectType const Type = m->GetObjectType();
+    if (ConsoleObjectType::Output == Type)
     {
-        if (ConsoleObjectType::Output == Type)
-        {
-            IConsoleOutputObject* obj;
-            Result = m->GetOutputObject(GENERIC_WRITE, &obj);
+        IConsoleOutputObject* obj;
+        Result = m->GetOutputObject(GENERIC_WRITE, &obj);
 
-            if (SUCCEEDED(Result))
-            {
-                Result = pResponders->SetConsoleOutputModeImpl(obj, a->Mode);
-            }
-        }
-        else if (ConsoleObjectType::Input == Type)
+        if (SUCCEEDED(Result))
         {
-            IConsoleInputObject* obj;
-            Result = m->GetInputObject(GENERIC_WRITE, &obj);
+            Result = pResponders->SetConsoleOutputModeImpl(obj, a->Mode);
+        }
+    }
+    else if (ConsoleObjectType::Input == Type)
+    {
+        IConsoleInputObject* obj;
+        Result = m->GetInputObject(GENERIC_WRITE, &obj);
 
-            if (SUCCEEDED(Result))
-            {
-                Result = pResponders->SetConsoleInputModeImpl(obj, a->Mode);
-            }
-        }
-        else
+        if (SUCCEEDED(Result))
         {
-            Result = STATUS_UNSUCCESSFUL;
+            Result = pResponders->SetConsoleInputModeImpl(obj, a->Mode);
         }
+    }
+    else
+    {
+        Result = STATUS_UNSUCCESSFUL;
     }
 
     return Result;
@@ -100,7 +94,7 @@ NTSTATUS ApiDispatchers::ServeSetConsoleMode(_In_ IApiResponders* const pRespond
 NTSTATUS ApiDispatchers::ServeGetNumberOfInputEvents(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETNUMBEROFINPUTEVENTS_MSG* const a = &m->u.consoleMsgL1.GetNumberOfConsoleInputEvents;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleInputObject* obj;
     Result = m->GetInputObject(GENERIC_READ, &obj);
@@ -117,7 +111,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleInput(_In_ IApiResponders* const pRespon
 {
     CONSOLE_GETCONSOLEINPUT_MSG* const a = &m->u.consoleMsgL1.GetConsoleInput;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
     DWORD Written = 0;
 
     bool const IsPeek = ((a->Flags & CONSOLE_READ_NOREMOVE) != 0 &&
@@ -161,7 +155,7 @@ NTSTATUS ApiDispatchers::ServeReadConsole(_In_ IApiResponders* const pResponders
 {
     CONSOLE_READCONSOLE_MSG* const a = &m->u.consoleMsgL1.ReadConsoleW;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
     DWORD Read = 0;
 
     IConsoleInputObject* obj;
@@ -202,7 +196,7 @@ NTSTATUS ApiDispatchers::ServeWriteConsole(_In_ IApiResponders* const pResponder
 {
     CONSOLE_WRITECONSOLE_MSG* const a = &m->u.consoleMsgL1.WriteConsoleW;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
     DWORD Written = 0;
 
     // ensure we have the input buffer
@@ -251,7 +245,7 @@ NTSTATUS ApiDispatchers::ServeWriteConsole(_In_ IApiResponders* const pResponder
 NTSTATUS ApiDispatchers::ServeGetConsoleLangId(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_LANGID_MSG* const a = &m->u.consoleMsgL1.GetConsoleLangId;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     DWORD CodePage;
 
@@ -291,7 +285,7 @@ NTSTATUS ApiDispatchers::ServeFillConsoleOutput(_In_ IApiResponders* const pResp
 {
     CONSOLE_FILLCONSOLEOUTPUT_MSG* const a = &m->u.consoleMsgL2.FillConsoleOutput;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
     DWORD ElementsWritten = 0;
 
     IConsoleOutputObject* obj;
@@ -339,7 +333,7 @@ NTSTATUS ApiDispatchers::ServeGenerateConsoleCtrlEvent(_In_ IApiResponders* cons
 
 NTSTATUS ApiDispatchers::ServeSetConsoleActiveScreenBuffer(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_WRITE, &obj);
@@ -354,7 +348,7 @@ NTSTATUS ApiDispatchers::ServeSetConsoleActiveScreenBuffer(_In_ IApiResponders* 
 
 NTSTATUS ApiDispatchers::ServeFlushConsoleInputBuffer(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleInputObject* obj;
     Result = m->GetInputObject(GENERIC_WRITE, &obj);
@@ -371,7 +365,7 @@ NTSTATUS ApiDispatchers::ServeSetConsoleCP(_In_ IApiResponders* const pResponder
 {
     CONSOLE_SETCP_MSG* const a = &m->u.consoleMsgL2.SetConsoleCP;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     if (a->Output)
     {
@@ -389,7 +383,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleCursorInfo(_In_ IApiResponders* const pR
 {
     CONSOLE_GETCURSORINFO_MSG* const a = &m->u.consoleMsgL2.GetConsoleCursorInfo;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_READ, &obj);
@@ -406,7 +400,7 @@ NTSTATUS ApiDispatchers::ServeSetConsoleCursorInfo(_In_ IApiResponders* const pR
 {
     CONSOLE_SETCURSORINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleCursorInfo;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_WRITE, &obj);
@@ -426,7 +420,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleScreenBufferInfo(_In_ IApiResponders* co
     CONSOLE_SCREEN_BUFFER_INFOEX ex = { 0 };
     ex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_READ, &obj);
@@ -458,7 +452,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleScreenBufferInfo(_In_ IApiResponders* co
 NTSTATUS ApiDispatchers::ServeSetConsoleScreenBufferInfo(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SCREENBUFFERINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleScreenBufferInfo;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     CONSOLE_SCREEN_BUFFER_INFOEX ex = { 0 };
     ex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
@@ -490,7 +484,7 @@ NTSTATUS ApiDispatchers::ServeSetConsoleScreenBufferInfo(_In_ IApiResponders* co
 NTSTATUS ApiDispatchers::ServeSetConsoleScreenBufferSize(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SETSCREENBUFFERSIZE_MSG* const a = &m->u.consoleMsgL2.SetConsoleScreenBufferSize;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_WRITE, &obj);
@@ -506,7 +500,7 @@ NTSTATUS ApiDispatchers::ServeSetConsoleScreenBufferSize(_In_ IApiResponders* co
 NTSTATUS ApiDispatchers::ServeSetConsoleCursorPosition(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SETCURSORPOSITION_MSG* const a = &m->u.consoleMsgL2.SetConsoleCursorPosition;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_WRITE, &obj);
@@ -522,7 +516,7 @@ NTSTATUS ApiDispatchers::ServeSetConsoleCursorPosition(_In_ IApiResponders* cons
 NTSTATUS ApiDispatchers::ServeGetLargestConsoleWindowSize(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a = &m->u.consoleMsgL2.GetLargestConsoleWindowSize;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_WRITE, &obj);
@@ -538,7 +532,7 @@ NTSTATUS ApiDispatchers::ServeGetLargestConsoleWindowSize(_In_ IApiResponders* c
 NTSTATUS ApiDispatchers::ServeScrollConsoleScreenBuffer(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SCROLLSCREENBUFFER_MSG* const a = &m->u.consoleMsgL2.ScrollConsoleScreenBufferW;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_WRITE, &obj);
@@ -563,7 +557,7 @@ NTSTATUS ApiDispatchers::ServeScrollConsoleScreenBuffer(_In_ IApiResponders* con
 NTSTATUS ApiDispatchers::ServeSetConsoleTextAttribute(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SETTEXTATTRIBUTE_MSG* const a = &m->u.consoleMsgL2.SetConsoleTextAttribute;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_WRITE, &obj);
@@ -579,7 +573,7 @@ NTSTATUS ApiDispatchers::ServeSetConsoleTextAttribute(_In_ IApiResponders* const
 NTSTATUS ApiDispatchers::ServeSetConsoleWindowInfo(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SETWINDOWINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleWindowInfo;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_WRITE, &obj);
@@ -595,7 +589,7 @@ NTSTATUS ApiDispatchers::ServeSetConsoleWindowInfo(_In_ IApiResponders* const pR
 NTSTATUS ApiDispatchers::ServeReadConsoleOutputString(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_READCONSOLEOUTPUTSTRING_MSG* const a = &m->u.consoleMsgL2.ReadConsoleOutputString;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_READ, &obj);
@@ -635,7 +629,7 @@ NTSTATUS ApiDispatchers::ServeWriteConsoleInput(_In_ IApiResponders* const pResp
 {
     CONSOLE_WRITECONSOLEINPUT_MSG* const a = &m->u.consoleMsgL2.WriteConsoleInputW;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
     DWORD Read = 0;
 
     IConsoleInputObject* obj;
@@ -661,7 +655,7 @@ NTSTATUS ApiDispatchers::ServeWriteConsoleInput(_In_ IApiResponders* const pResp
 NTSTATUS ApiDispatchers::ServeWriteConsoleOutput(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_WRITECONSOLEOUTPUT_MSG* const a = &m->u.consoleMsgL2.WriteConsoleOutputW;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     a->CharRegion = { 0, 0, -1, -1 };
 
@@ -696,7 +690,7 @@ NTSTATUS ApiDispatchers::ServeWriteConsoleOutput(_In_ IApiResponders* const pRes
 NTSTATUS ApiDispatchers::ServeWriteConsoleOutputString(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a = &m->u.consoleMsgL2.WriteConsoleOutputString;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_WRITE, &obj);
@@ -735,7 +729,7 @@ NTSTATUS ApiDispatchers::ServeWriteConsoleOutputString(_In_ IApiResponders* cons
 NTSTATUS ApiDispatchers::ServeReadConsoleOutput(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_READCONSOLEOUTPUT_MSG* const a = &m->u.consoleMsgL2.ReadConsoleOutputW;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     a->CharRegion = { 0, 0, -1, -1 };
 
@@ -772,7 +766,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleTitle(_In_ IApiResponders* const pRespon
 {
     CONSOLE_GETTITLE_MSG* const a = &m->u.consoleMsgL2.GetConsoleTitleW;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     if (a->Unicode)
     {
@@ -804,7 +798,7 @@ NTSTATUS ApiDispatchers::ServeSetConsoleTitle(_In_ IApiResponders* const pRespon
 {
     CONSOLE_SETTITLE_MSG* const a = &m->u.consoleMsgL2.SetConsoleTitleW;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     if (a->Unicode)
     {
@@ -828,7 +822,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleMouseInfo(_In_ IApiResponders* const pRe
 NTSTATUS ApiDispatchers::ServeGetConsoleFontSize(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETFONTSIZE_MSG* const a = &m->u.consoleMsgL3.GetConsoleFontSize;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_READ, &obj);
@@ -844,7 +838,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleFontSize(_In_ IApiResponders* const pRes
 NTSTATUS ApiDispatchers::ServeGetConsoleCurrentFont(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_CURRENTFONT_MSG* const a = &m->u.consoleMsgL3.GetCurrentConsoleFont;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_READ, &obj);
@@ -872,7 +866,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleCurrentFont(_In_ IApiResponders* const p
 NTSTATUS ApiDispatchers::ServeSetConsoleDisplayMode(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_SETDISPLAYMODE_MSG* const a = &m->u.consoleMsgL3.SetConsoleDisplayMode;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_WRITE, &obj);
@@ -888,7 +882,7 @@ NTSTATUS ApiDispatchers::ServeSetConsoleDisplayMode(_In_ IApiResponders* const p
 NTSTATUS ApiDispatchers::ServeGetConsoleDisplayMode(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_GETDISPLAYMODE_MSG* const a = &m->u.consoleMsgL3.GetConsoleDisplayMode;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_READ, &obj);
@@ -905,7 +899,7 @@ NTSTATUS ApiDispatchers::ServeAddConsoleAlias(_In_ IApiResponders* const pRespon
 {
     CONSOLE_ADDALIAS_MSG* const a = &m->u.consoleMsgL3.AddConsoleAliasW;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     if (a->Unicode)
     {
@@ -923,7 +917,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleAlias(_In_ IApiResponders* const pRespon
 {
     CONSOLE_GETALIAS_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasW;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     // Check if input and output buffers are available to us
     if (!m->IsInputBufferAvailable() || !m->IsOutputBufferAvailable())
@@ -996,7 +990,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleAliasesLength(_In_ IApiResponders* const
 {
     CONSOLE_GETALIASESLENGTH_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasesLengthW;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     if (a->Unicode)
     {
@@ -1014,7 +1008,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleAliasExesLength(_In_ IApiResponders* con
 {
     CONSOLE_GETALIASEXESLENGTH_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasExesLengthW;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     if (a->Unicode)
     {
@@ -1032,7 +1026,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleAliases(_In_ IApiResponders* const pResp
 {
     CONSOLE_GETALIASES_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasesW;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     if (a->Unicode)
     {
@@ -1050,7 +1044,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleAliasExes(_In_ IApiResponders* const pRe
 {
     CONSOLE_GETALIASEXES_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasExesW;
 
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     if (a->Unicode)
     {
@@ -1120,7 +1114,7 @@ NTSTATUS ApiDispatchers::ServeGetConsoleHistory(_In_ IApiResponders* const pResp
     CONSOLE_HISTORY_INFO Info;
     Info.cbSize = sizeof(Info);
 
-    DWORD Result = pResponders->GetConsoleHistoryInfoImpl(&Info);
+    NTSTATUS Result = pResponders->GetConsoleHistoryInfoImpl(&Info);
 
     if (SUCCEEDED(Result))
     {
@@ -1148,7 +1142,7 @@ NTSTATUS ApiDispatchers::ServeSetConsoleHistory(_In_ IApiResponders* const pResp
 NTSTATUS ApiDispatchers::ServeSetConsoleCurrentFont(_In_ IApiResponders* const pResponders, _Inout_ CONSOLE_API_MSG* const m)
 {
     CONSOLE_CURRENTFONT_MSG* const a = &m->u.consoleMsgL3.SetCurrentConsoleFont;
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     IConsoleOutputObject* obj;
     Result = m->GetOutputObject(GENERIC_WRITE, &obj);

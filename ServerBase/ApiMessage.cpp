@@ -13,26 +13,25 @@ bool CONSOLE_API_MSG::IsOutputBufferAvailable() const
     return State.OutputBuffer != nullptr;
 }
 
-void CONSOLE_API_MSG::SetCompletionStatus(_In_ DWORD const Status)
+void CONSOLE_API_MSG::SetCompletionStatus(_In_ NTSTATUS const Status)
 {
     Complete.IoStatus.Status = Status;
 }
 
-
-DWORD CONSOLE_API_MSG::_GetConsoleObject(_In_ ConsoleObjectType const Type,
-                                         _In_ ACCESS_MASK AccessRequested,
-                                         _Out_ IConsoleObject** const ppObject)
+NTSTATUS CONSOLE_API_MSG::_GetConsoleObject(_In_ ConsoleObjectType const Type,
+                                            _In_ ACCESS_MASK AccessRequested,
+                                            _Out_ IConsoleObject** const ppObject) const
 {
     ConsoleHandleData* const pHandleData = (ConsoleHandleData*)Descriptor.Object;
 
-    DWORD Result = STATUS_SUCCESS;
+    NTSTATUS Result = STATUS_SUCCESS;
 
     if (pHandleData == nullptr)
     {
         Result = STATUS_INVALID_HANDLE;
     }
 
-    if (SUCCEEDED(Result))
+    if (NT_SUCCESS(Result))
     {
         Result = pHandleData->GetConsoleObject(Type, AccessRequested, ppObject);
     }
@@ -40,17 +39,17 @@ DWORD CONSOLE_API_MSG::_GetConsoleObject(_In_ ConsoleObjectType const Type,
     return Result;
 }
 
-DWORD CONSOLE_API_MSG::GetObjectType(_Out_ ConsoleObjectType* pType)
+ConsoleObjectType CONSOLE_API_MSG::GetObjectType() const
 {
-    ConsoleHandleData* const pHandleData = (ConsoleHandleData*)Descriptor.Object;
-    return pHandleData->GetObjectType(pType);
+    const ConsoleHandleData* const pHandleData = reinterpret_cast<ConsoleHandleData*>(Descriptor.Object);
+    return pHandleData->GetObjectType();
 }
 
-DWORD CONSOLE_API_MSG::GetOutputObject(_In_ ACCESS_MASK AccessRequested, _Out_ IConsoleOutputObject** const ppObject)
+NTSTATUS CONSOLE_API_MSG::GetOutputObject(_In_ ACCESS_MASK AccessRequested, _Out_ IConsoleOutputObject** const ppObject) const
 {
     IConsoleObject* pObject;
 
-    DWORD Result = _GetConsoleObject(ConsoleObjectType::Output, AccessRequested, &pObject);
+    NTSTATUS const Result = _GetConsoleObject(ConsoleObjectType::Output, AccessRequested, &pObject);
 
     if (SUCCEEDED(Result))
     {
@@ -60,11 +59,11 @@ DWORD CONSOLE_API_MSG::GetOutputObject(_In_ ACCESS_MASK AccessRequested, _Out_ I
     return Result;
 }
 
-DWORD CONSOLE_API_MSG::GetInputObject(_In_ ACCESS_MASK AccessRequested, _Out_ IConsoleInputObject** const ppObject)
+NTSTATUS CONSOLE_API_MSG::GetInputObject(_In_ ACCESS_MASK AccessRequested, _Out_ IConsoleInputObject** const ppObject) const
 {
     IConsoleObject* pObject;
 
-    DWORD Result = _GetConsoleObject(ConsoleObjectType::Input, AccessRequested, &pObject);
+    NTSTATUS const Result = _GetConsoleObject(ConsoleObjectType::Input, AccessRequested, &pObject);
 
     if (SUCCEEDED(Result))
     {
@@ -74,7 +73,7 @@ DWORD CONSOLE_API_MSG::GetInputObject(_In_ ACCESS_MASK AccessRequested, _Out_ IC
     return Result;
 }
 
-ConsoleProcessHandle* CONSOLE_API_MSG::GetProcessHandle()
+ConsoleProcessHandle* CONSOLE_API_MSG::GetProcessHandle() const
 {
-    return (ConsoleProcessHandle*)(Descriptor.Process);
+    return reinterpret_cast<ConsoleProcessHandle*>(Descriptor.Process);
 }

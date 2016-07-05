@@ -138,9 +138,7 @@ const ApiLayerDescriptor ConsoleApiLayerTable[] = {
     ApiLayerDescriptor(ConsoleApiLayer3, RTL_NUMBER_OF(ConsoleApiLayer3)),
 };
 
-DWORD DoApiCall(_In_ ApiDescriptor const* Descriptor, _In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg);
-
-DWORD PendingPermitted(_In_ CONSOLE_API_MSG* const pMsg)
+ULONG ApiSorter::PendingPermitted(_In_ CONSOLE_API_MSG* const pMsg)
 {
     ULONG const LayerNumber = (pMsg->msgHeader.ApiNumber >> 24) - 1;
     ULONG const ApiNumber = (pMsg->msgHeader.ApiNumber & 0xffffff);
@@ -160,7 +158,12 @@ DWORD PendingPermitted(_In_ CONSOLE_API_MSG* const pMsg)
     return 0;
 }
 
-DWORD LookupAndDoApiCall(_In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)
+NTSTATUS DoApiCall(_In_ ApiDescriptor const* Descriptor, _In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)
+{
+    return (*Descriptor->Routine) (pResponders, pMsg);
+}
+
+NTSTATUS ApiSorter::LookupAndDoApiCall(_In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)
 {
     ULONG const LayerNumber = (pMsg->msgHeader.ApiNumber >> 24) - 1;
     ULONG const ApiNumber = (pMsg->msgHeader.ApiNumber & 0xffffff);
@@ -196,19 +199,15 @@ DWORD LookupAndDoApiCall(_In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG*
     return Status;
 }
 
-DWORD DoRawReadCall(_In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)
+NTSTATUS ApiSorter::DoRawReadCall(_In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)
 {
     pMsg->u.consoleMsgL1.ReadConsoleW.ProcessControlZ = TRUE;
 
     return DoApiCall(&RawReadDescriptor, pResponders, pMsg);
 }
 
-DWORD DoRawWriteCall(_In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)
+NTSTATUS ApiSorter::DoRawWriteCall(_In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)
 {
     return DoApiCall(&RawWriteDescriptor, pResponders, pMsg);
 }
 
-DWORD DoApiCall(_In_ ApiDescriptor const* Descriptor, _In_ IApiResponders* pResponders, _In_ CONSOLE_API_MSG* const pMsg)
-{
-    return (*Descriptor->Routine) (pResponders, pMsg);
-}

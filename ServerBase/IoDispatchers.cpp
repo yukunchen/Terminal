@@ -35,7 +35,7 @@ void IoDispatchers::NotifyOutputWriteWait()
     _NotifyWait(&_QueuedWriteOutput);
 }
 
-void IoDispatchers::_NotifyWait(_In_ queue<CONSOLE_API_MSG>* const pQueue)
+void IoDispatchers::_NotifyWait(_In_ std::queue<CONSOLE_API_MSG>* const pQueue)
 {
     ioOperation.lock();
     {
@@ -65,13 +65,13 @@ void IoDispatchers::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg)
     ioOperation.lock();
     {
         // Try to service the operation.
-        DWORD Result = _ServiceIoOperation(pMsg);
+        NTSTATUS Result = _ServiceIoOperation(pMsg);
 
         // TODO: This has to know too much about the sorting of APIs. Move it to sort side?
         // If the call was pending, push it to be serviced later.
         if (Result == ERROR_IO_PENDING)
         {
-            DWORD PendingCode = PendingPermitted(pMsg);
+            ULONG PendingCode = ApiSorter::PendingPermitted(pMsg);
 
             // Queue pending calls to be serviced later when we're notified.
             // Copy the contents of pMsg when storing.
@@ -92,16 +92,16 @@ void IoDispatchers::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg)
     ioOperation.unlock();
 }
 
-DWORD IoDispatchers::_ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg)
+NTSTATUS IoDispatchers::_ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg)
 {
-    DWORD Result = 0;
+    NTSTATUS Result = 0;
 
     // Route function to handler
     switch (pMsg->Descriptor.Function)
     {
     case CONSOLE_IO_USER_DEFINED:
     {
-        Result = LookupAndDoApiCall(_pResponder, pMsg);
+        Result = ApiSorter::LookupAndDoApiCall(_pResponder, pMsg);
         break;
     }
     case CONSOLE_IO_CONNECT:
@@ -128,12 +128,12 @@ DWORD IoDispatchers::_ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg)
     }
     case CONSOLE_IO_RAW_WRITE:
     {
-        Result = DoRawWriteCall(_pResponder, pMsg);
+        Result = ApiSorter::DoRawWriteCall(_pResponder, pMsg);
         break;
     }
     case CONSOLE_IO_RAW_READ:
     {
-        Result = DoRawReadCall(_pResponder, pMsg);
+        Result = ApiSorter::DoRawReadCall(_pResponder, pMsg);
         break;
     }
     case CONSOLE_IO_RAW_FLUSH:
@@ -153,7 +153,7 @@ DWORD IoDispatchers::_ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg)
     pMsg->SetCompletionStatus(Result);
 
     // Do not reply to pending calls.
-    if (Result != ERROR_IO_PENDING)
+    if (Result != ERROR_IO_PENDING && Result != STATUS_PENDING)
     {
         // Write reply message signaling API call is complete.
         _pProtocol->CompleteApiCall(pMsg);
@@ -162,7 +162,7 @@ DWORD IoDispatchers::_ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg)
     return Result;
 }
 
-DWORD IoDispatchers::_IoDisconnect(_In_ CONSOLE_API_MSG* const pMsg)
+NTSTATUS IoDispatchers::_IoDisconnect(_In_ CONSOLE_API_MSG* const pMsg)
 {
     // FreeConsole called.
 
@@ -173,7 +173,7 @@ DWORD IoDispatchers::_IoDisconnect(_In_ CONSOLE_API_MSG* const pMsg)
     return STATUS_SUCCESS;
 }
 
-DWORD IoDispatchers::_IoConnect(_In_ IApiResponders* const pResponder, _In_ DeviceProtocol* Server, _In_ CONSOLE_API_MSG* const pMsg)
+NTSTATUS IoDispatchers::_IoConnect(_In_ IApiResponders* const pResponder, _In_ DeviceProtocol* Server, _In_ CONSOLE_API_MSG* const pMsg)
 {
     DWORD Result = 0;
 
@@ -233,7 +233,7 @@ DWORD IoDispatchers::_IoConnect(_In_ IApiResponders* const pResponder, _In_ Devi
     return Result;
 }
 
-DWORD IoDispatchers::_IoDefault()
+NTSTATUS IoDispatchers::_IoDefault()
 {
     return STATUS_UNSUCCESSFUL;
 }

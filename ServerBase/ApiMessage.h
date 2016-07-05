@@ -65,7 +65,7 @@ public:
 
     bool IsOutputBufferAvailable() const;
 
-    void SetCompletionStatus(_In_ DWORD const Status);
+    void SetCompletionStatus(_In_ NTSTATUS const Status);
 
     template <typename T> void GetInputBuffer(_Outptr_ T** const ppBuffer, _Out_ ULONG* const pBufferSize)
     {
@@ -78,7 +78,7 @@ public:
         *ppBuffer = static_cast<T*>(State.OutputBuffer);
         *pBufferSize = State.OutputBufferSize / sizeof(T);
     }
-    
+
     // Routine Description:
     // - This routine validates a string buffer and returns the pointers of where the strings start within the buffer.
     // Arguments:
@@ -90,7 +90,7 @@ public:
     //       and the second one receives a pointer to where the string starts.
     // Return Value:
     // - TRUE if the buffer is valid, FALSE otherwise.
-    template <typename T> DWORD UnpackInputBuffer(_In_ ULONG Count, ...)
+    template <typename T> NTSTATUS UnpackInputBuffer(_In_ ULONG Count, ...)
     {
         PVOID Buffer = State.InputBuffer;
         ULONG Size = State.InputBufferSize;
@@ -131,16 +131,16 @@ public:
         return Count == 0 ? STATUS_SUCCESS : STATUS_INVALID_PARAMETER;
     }
 
-    DWORD _GetConsoleObject(_In_ ConsoleObjectType const Type,
-                            _In_ ACCESS_MASK AccessRequested,
-                            _Out_ IConsoleObject** const ppObject);
+    NTSTATUS _GetConsoleObject(_In_ ConsoleObjectType const Type,
+                               _In_ ACCESS_MASK AccessRequested,
+                               _Out_ IConsoleObject** const ppObject) const;
 
-    DWORD GetObjectType(_Out_ ConsoleObjectType* pType);
+    ConsoleObjectType GetObjectType() const;
 
-    DWORD GetOutputObject(_In_ ACCESS_MASK AccessRequested, _Out_ IConsoleOutputObject** const ppObject);
+    NTSTATUS GetOutputObject(_In_ ACCESS_MASK AccessRequested, _Out_ IConsoleOutputObject** const ppObject) const;
 
-    DWORD GetInputObject(_In_ ACCESS_MASK AccessRequested, _Out_ IConsoleInputObject** const ppObject);
+    NTSTATUS GetInputObject(_In_ ACCESS_MASK AccessRequested, _Out_ IConsoleInputObject** const ppObject) const;
 
-    ConsoleProcessHandle* GetProcessHandle();
+    ConsoleProcessHandle* GetProcessHandle() const;
 
 };

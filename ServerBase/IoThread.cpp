@@ -8,17 +8,15 @@
 #include "..\ServerBaseApi\IApiResponders.h"
 
 IoThread::IoThread(_In_ HANDLE Server, _In_ IApiResponders* const pResponder) :
-    _Server(Server),
     _Thread(s_IoLoop, this),
     _pResponder(pResponder),
-    _Comm(_Server),
-    _Prot(&_Comm)
+    _Comm(Server),
+    _Prot(&_Comm),
+    _InputEvent(CreateEventW(nullptr, TRUE, FALSE, nullptr))
 {
-    // Input setup
-    // TODO: This handle is currently leaked.
-    HANDLE InputEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
-    NTSTATUS Result = _Prot.SetInputAvailableEvent(InputEvent);
+    THROW_IF_NTSTATUS_FAILED(_Prot.SetInputAvailableEvent(_InputEvent.get()));
 
+    // TODO: is this necessary? there's some weird thread handling going on here...
     _Thread.detach();
 }
 
@@ -42,7 +40,7 @@ void IoThread::IoLoop()
     {
         // Attempt to read API call from wire
         CONSOLE_API_MSG ReceiveMsg;
-        DWORD Result = _Prot.GetApiCall(&ReceiveMsg);
+        HRESULT Result = _Prot.GetApiCall(&ReceiveMsg);
 
         // If we're disconnected or something goes wrong, bail
         if (ERROR_PIPE_NOT_CONNECTED == Result)

@@ -29,7 +29,7 @@ ConsoleProcessHandle::~ConsoleProcessHandle()
     // If it's not the last one, swap it to the last one to make removal more efficient.
     if (it != s_KnownProcesses.end())
     {
-        swap(*it, s_KnownProcesses.back());
+        std::swap(*it, s_KnownProcesses.back());
     }
 
     // Remove the last element.

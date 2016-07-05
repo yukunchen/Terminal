@@ -35,8 +35,6 @@ typedef long NTSTATUS;
 #include <unordered_map>
 #include <algorithm>
 
-using namespace std;
-
 // private dependencies
 #include <Console\conapi.h>
 #include <Console\condrv.h>
@@ -53,3 +51,8 @@ using namespace std;
 //{
 //#include <Win32K\winuserk.h>
 //}
+
+
+// wil - Windows Internal Library - Header based library to make working with Win32/WinNT easier.
+#include <wil\common.h>
+#include <wil\resource.h>

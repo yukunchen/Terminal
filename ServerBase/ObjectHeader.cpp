@@ -21,13 +21,13 @@ ConsoleObjectHeader::~ConsoleObjectHeader()
     _KnownObjects.erase(this->pObject);
 }
 
-DWORD ConsoleObjectHeader::AllocateHandleToObject(_In_ ACCESS_MASK const AccessDesired,
+NTSTATUS ConsoleObjectHeader::AllocateHandleToObject(_In_ ACCESS_MASK const AccessDesired,
                                                   _In_ ULONG const ShareMode,
                                                   _In_ ConsoleObjectType const Type,
                                                   _In_ IConsoleObject* const pObject,
                                                   _Out_ ConsoleObjectHeader** const ppHeader)
 {
-    DWORD Result = STATUS_SUCCESS;
+    NTSTATUS Status = STATUS_SUCCESS;
 
     // Create or retrieve the header for the given object type.
     ConsoleObjectHeader* pHeader;
@@ -37,45 +37,45 @@ DWORD ConsoleObjectHeader::AllocateHandleToObject(_In_ ACCESS_MASK const AccessD
 
         if (Type != pHeader->HandleType)
         {
-            Result = STATUS_ASSERTION_FAILURE;
+            Status = STATUS_ASSERTION_FAILURE;
         }
     }
     else
     {
-        Result = _CreateHeader(Type, pObject, &pHeader);
+        Status = _CreateHeader(Type, pObject, &pHeader);
     }
 
-    if (SUCCEEDED(Result))
+    if (NT_SUCCESS(Status))
     {
         // If we're ok, attempt to mark the header with the handle's required access.
-        Result = pHeader->_AllocateHandleRequest(AccessDesired, ShareMode);
+        Status = pHeader->_AllocateHandleRequest(AccessDesired, ShareMode);
 
-        if (SUCCEEDED(Result))
+        if (NT_SUCCESS(Status))
         {
             // If the access was OK and we've been recorded, give the header back.
             *ppHeader = pHeader;
         }
     }
 
-    return Result;
+    return Status;
 }
 
-DWORD ConsoleObjectHeader::FreeHandleToObject(_In_ ACCESS_MASK const Access,
+NTSTATUS ConsoleObjectHeader::FreeHandleToObject(_In_ ACCESS_MASK const Access,
                                               _In_ ULONG const ShareMode)
 {
     return _FreeHandleRequest(Access, ShareMode);
 }
 
-DWORD ConsoleObjectHeader::GetConsoleObject(_In_ ConsoleObjectType const Type, _Out_ IConsoleObject** const ppObject)
+NTSTATUS ConsoleObjectHeader::GetConsoleObject(_In_ ConsoleObjectType const Type, _Out_ IConsoleObject** const ppObject) const
 {
-    DWORD Result = STATUS_SUCCESS;
+    NTSTATUS Result = STATUS_SUCCESS;
 
     if ((HandleType & Type) == 0)
     {
         Result = STATUS_INVALID_HANDLE;
     }
 
-    if (SUCCEEDED(Result))
+    if (NT_SUCCESS(Result))
     {
         *ppObject = pObject;
     }
@@ -83,16 +83,15 @@ DWORD ConsoleObjectHeader::GetConsoleObject(_In_ ConsoleObjectType const Type, _
     return Result;
 }
 
-DWORD ConsoleObjectHeader::GetObjectType(_Out_ ConsoleObjectType* pType)
+ConsoleObjectType ConsoleObjectHeader::GetObjectType() const
 {
-    *pType = HandleType;
-    return STATUS_SUCCESS;
+    return HandleType;
 }
 
-DWORD ConsoleObjectHeader::_AllocateHandleRequest(_In_ ACCESS_MASK const AccessDesired,
+NTSTATUS ConsoleObjectHeader::_AllocateHandleRequest(_In_ ACCESS_MASK const AccessDesired,
                                                   _In_ ULONG const ShareMode)
 {
-    DWORD Result = STATUS_SUCCESS;
+    NTSTATUS Status = STATUS_SUCCESS;
 
     // Determine modes requested
     BOOLEAN const ReadRequested = (AccessDesired & GENERIC_READ) != 0;
@@ -107,11 +106,11 @@ DWORD ConsoleObjectHeader::_AllocateHandleRequest(_In_ ACCESS_MASK const AccessD
         ((WriteRequested != FALSE) && (OpenCount > WriteShareCount)) ||
         ((WriteShared == FALSE) && (WriterCount > 0)))
     {
-        Result = STATUS_SHARING_VIOLATION;
+        Status = STATUS_SHARING_VIOLATION;
     }
 
     // If valid, increment counts to mark that a handle has been given to this object
-    if (SUCCEEDED(Result))
+    if (NT_SUCCESS(Status))
     {
         OpenCount++;
 
@@ -136,11 +135,11 @@ DWORD ConsoleObjectHeader::_AllocateHandleRequest(_In_ ACCESS_MASK const AccessD
         }
     }
 
-    return Result;
+    return Status;
 }
 
-DWORD ConsoleObjectHeader::_FreeHandleRequest(_In_ ACCESS_MASK const Access,
-                                              _In_ ULONG const ShareMode)
+NTSTATUS ConsoleObjectHeader::_FreeHandleRequest(_In_ ACCESS_MASK const Access,
+                                                 _In_ ULONG const ShareMode)
 {
     BOOLEAN const ReadRequested = (Access & GENERIC_READ) != 0;
     BOOLEAN const ReadShared = (ShareMode & FILE_SHARE_READ) != 0;
@@ -173,30 +172,30 @@ DWORD ConsoleObjectHeader::_FreeHandleRequest(_In_ ACCESS_MASK const Access,
     return STATUS_SUCCESS;
 }
 
-DWORD ConsoleObjectHeader::_CreateHeader(_In_ ConsoleObjectType const Type, _In_ IConsoleObject* const pObject, _Out_ ConsoleObjectHeader** const ppHeader)
+NTSTATUS ConsoleObjectHeader::_CreateHeader(_In_ ConsoleObjectType const Type, _In_ IConsoleObject* const pObject, _Out_ ConsoleObjectHeader** const ppHeader)
 {
-    DWORD Result = STATUS_SUCCESS;
+    NTSTATUS Status = STATUS_SUCCESS;
 
     // If we already have a header for this object, we can't make another one.
     if (_KnownObjects.count(pObject) == 1)
     {
-        Result = STATUS_ASSERTION_FAILURE;
+        Status = STATUS_ASSERTION_FAILURE;
     }
 
-    if (SUCCEEDED(Result))
+    if (NT_SUCCESS(Status))
     {
         ConsoleObjectHeader* const pNewHeader = new ConsoleObjectHeader(Type, pObject);
 
         if (pNewHeader == nullptr)
         {
-            Result = STATUS_NO_MEMORY;
+            Status = STATUS_NO_MEMORY;
         }
 
-        if (SUCCEEDED(Result))
+        if (NT_SUCCESS(Status))
         {
             *ppHeader = pNewHeader;
         }
     }
 
-    return Result;
+    return Status;
 }

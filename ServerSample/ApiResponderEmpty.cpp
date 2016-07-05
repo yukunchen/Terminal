@@ -113,8 +113,8 @@ int WINAPI GoWindow()
 
 thread* g_pThread;
 
-DWORD ApiResponderEmpty::CreateInitialObjects(_Out_ IConsoleInputObject** const ppInputObject,
-                                              _Out_ IConsoleOutputObject** const ppOutputObject)
+NTSTATUS ApiResponderEmpty::CreateInitialObjects(_Out_ IConsoleInputObject** const ppInputObject,
+                                                 _Out_ IConsoleOutputObject** const ppOutputObject)
 {
     BogusInputObject* const pNewInput = new BogusInputObject();
     BogusOutputObject* const pNewOutput = new BogusOutputObject();
@@ -126,63 +126,63 @@ DWORD ApiResponderEmpty::CreateInitialObjects(_Out_ IConsoleInputObject** const 
     pCurrentOutput = pNewOutput;
 
     g_pThread = new thread(GoWindow);
-    
+
     return S_OK;
 }
 
-DWORD ApiResponderEmpty::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
+NTSTATUS ApiResponderEmpty::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
     *pCodePage = 437;
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
+NTSTATUS ApiResponderEmpty::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
     *pCodePage = 437;
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleInputModeImpl(_In_ IConsoleInputObject* const pInContext,
-                                                 _Out_ ULONG* const pMode)
+NTSTATUS ApiResponderEmpty::GetConsoleInputModeImpl(_In_ IConsoleInputObject* const pInContext,
+                                                    _Out_ ULONG* const pMode)
 {
     UNREFERENCED_PARAMETER(pInContext);
     *pMode = 0;
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleOutputModeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                  _Out_ ULONG* const pMode)
+NTSTATUS ApiResponderEmpty::GetConsoleOutputModeImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                     _Out_ ULONG* const pMode)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     *pMode = 0;
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleInputModeImpl(IConsoleInputObject* const pInContext, ULONG const Mode)
+NTSTATUS ApiResponderEmpty::SetConsoleInputModeImpl(IConsoleInputObject* const pInContext, ULONG const Mode)
 {
     UNREFERENCED_PARAMETER(pInContext);
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleOutputModeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                  _In_ ULONG const Mode)
+NTSTATUS ApiResponderEmpty::SetConsoleOutputModeImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                     _In_ ULONG const Mode)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetNumberOfConsoleInputEventsImpl(_In_ IConsoleInputObject* const pInContext,
-                                                           _Out_ ULONG* const pEvents)
+NTSTATUS ApiResponderEmpty::GetNumberOfConsoleInputEventsImpl(_In_ IConsoleInputObject* const pInContext,
+                                                              _Out_ ULONG* const pEvents)
 {
     UNREFERENCED_PARAMETER(pInContext);
     *pEvents = 0;
     return 0;
 }
 
-DWORD ApiResponderEmpty::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                               _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
-                                               _In_ ULONG const InputRecordsBufferLength,
-                                               _Out_ ULONG* const pRecordsWritten)
+NTSTATUS ApiResponderEmpty::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
+                                                  _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
+                                                  _In_ ULONG const InputRecordsBufferLength,
+                                                  _Out_ ULONG* const pRecordsWritten)
 {
     UNREFERENCED_PARAMETER(pInContext);
     UNREFERENCED_PARAMETER(pInputRecordsBuffer);
@@ -191,10 +191,10 @@ DWORD ApiResponderEmpty::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const p
     return 0;
 }
 
-DWORD ApiResponderEmpty::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                               _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
-                                               _In_ ULONG const InputRecordsBufferLength,
-                                               _Out_ ULONG* const pRecordsWritten)
+NTSTATUS ApiResponderEmpty::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
+                                                  _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
+                                                  _In_ ULONG const InputRecordsBufferLength,
+                                                  _Out_ ULONG* const pRecordsWritten)
 {
     UNREFERENCED_PARAMETER(pInContext);
     UNREFERENCED_PARAMETER(pInputRecordsBuffer);
@@ -203,10 +203,10 @@ DWORD ApiResponderEmpty::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const p
     return 0;
 }
 
-DWORD ApiResponderEmpty::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                               _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
-                                               _In_ ULONG const InputRecordsBufferLength,
-                                               _Out_ ULONG* const pRecordsWritten)
+NTSTATUS ApiResponderEmpty::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
+                                                  _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
+                                                  _In_ ULONG const InputRecordsBufferLength,
+                                                  _Out_ ULONG* const pRecordsWritten)
 {
     UNREFERENCED_PARAMETER(pInContext);
     UNREFERENCED_PARAMETER(pInputRecordsBuffer);
@@ -215,10 +215,10 @@ DWORD ApiResponderEmpty::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const p
     return 0;
 }
 
-DWORD ApiResponderEmpty::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                               _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
-                                               _In_ ULONG const InputRecordsBufferLength,
-                                               _Out_ ULONG* const pRecordsWritten)
+NTSTATUS ApiResponderEmpty::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
+                                                  _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
+                                                  _In_ ULONG const InputRecordsBufferLength,
+                                                  _Out_ ULONG* const pRecordsWritten)
 {
     UNREFERENCED_PARAMETER(pInContext);
     UNREFERENCED_PARAMETER(pInputRecordsBuffer);
@@ -227,11 +227,11 @@ DWORD ApiResponderEmpty::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const p
     return 0;
 }
 
-DWORD ApiResponderEmpty::ReadConsoleAImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_writes_to_(TextBufferLength, *pTextBufferWritten) char* const pTextBuffer,
-                                          _In_ ULONG const TextBufferLength,
-                                          _Out_ ULONG* const pTextBufferWritten,
-                                          _In_opt_ CONSOLE_READCONSOLE_CONTROL* const pReadControl)
+NTSTATUS ApiResponderEmpty::ReadConsoleAImpl(_In_ IConsoleInputObject* const pInContext,
+                                             _Out_writes_to_(TextBufferLength, *pTextBufferWritten) char* const pTextBuffer,
+                                             _In_ ULONG const TextBufferLength,
+                                             _Out_ ULONG* const pTextBufferWritten,
+                                             _In_opt_ CONSOLE_READCONSOLE_CONTROL* const pReadControl)
 {
     if (g_hasInput)
     {
@@ -262,15 +262,15 @@ DWORD ApiResponderEmpty::ReadConsoleAImpl(_In_ IConsoleInputObject* const pInCon
         UNREFERENCED_PARAMETER(TextBufferLength);
         *pTextBufferWritten = 0;
         UNREFERENCED_PARAMETER(pReadControl);
-        return ERROR_IO_PENDING;
+        return STATUS_PENDING;
     }
 }
 
-DWORD ApiResponderEmpty::ReadConsoleWImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_writes_to_(TextBufferLength, *pTextBufferWritten) wchar_t* const pTextBuffer,
-                                          _In_ ULONG const TextBufferLength,
-                                          _Out_ ULONG* const pTextBufferWritten,
-                                          _In_opt_ CONSOLE_READCONSOLE_CONTROL* const pReadControl)
+NTSTATUS ApiResponderEmpty::ReadConsoleWImpl(_In_ IConsoleInputObject* const pInContext,
+                                             _Out_writes_to_(TextBufferLength, *pTextBufferWritten) wchar_t* const pTextBuffer,
+                                             _In_ ULONG const TextBufferLength,
+                                             _Out_ ULONG* const pTextBufferWritten,
+                                             _In_opt_ CONSOLE_READCONSOLE_CONTROL* const pReadControl)
 {
     if (g_hasInput)
     {
@@ -305,10 +305,10 @@ DWORD ApiResponderEmpty::ReadConsoleWImpl(_In_ IConsoleInputObject* const pInCon
     }
 }
 
-DWORD ApiResponderEmpty::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                           _In_reads_(TextBufferLength) char* const pTextBuffer,
-                                           _In_ ULONG const TextBufferLength,
-                                           _Out_ ULONG* const pTextBufferRead)
+NTSTATUS ApiResponderEmpty::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                              _In_reads_(TextBufferLength) char* const pTextBuffer,
+                                              _In_ ULONG const TextBufferLength,
+                                              _Out_ ULONG* const pTextBufferRead)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pTextBuffer);
@@ -316,10 +316,10 @@ DWORD ApiResponderEmpty::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOut
     return 0;
 }
 
-DWORD ApiResponderEmpty::WriteConsoleWImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                           _In_reads_(TextBufferLength) wchar_t* const pTextBuffer,
-                                           _In_ ULONG const TextBufferLength,
-                                           _Out_ ULONG* const pTextBufferRead)
+NTSTATUS ApiResponderEmpty::WriteConsoleWImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                              _In_reads_(TextBufferLength) wchar_t* const pTextBuffer,
+                                              _In_ ULONG const TextBufferLength,
+                                              _Out_ ULONG* const pTextBufferRead)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pTextBuffer);
@@ -327,11 +327,11 @@ DWORD ApiResponderEmpty::WriteConsoleWImpl(_In_ IConsoleOutputObject* const pOut
     return 0;
 }
 
-DWORD ApiResponderEmpty::FillConsoleOutputAttributeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                        _In_ WORD const Attribute,
-                                                        _In_ DWORD const LengthToWrite,
-                                                        _In_ COORD const StartingCoordinate,
-                                                        _Out_ DWORD* const pCellsModified)
+NTSTATUS ApiResponderEmpty::FillConsoleOutputAttributeImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                           _In_ WORD const Attribute,
+                                                           _In_ DWORD const LengthToWrite,
+                                                           _In_ COORD const StartingCoordinate,
+                                                           _Out_ DWORD* const pCellsModified)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(Attribute);
@@ -340,11 +340,11 @@ DWORD ApiResponderEmpty::FillConsoleOutputAttributeImpl(_In_ IConsoleOutputObjec
     return 0;
 }
 
-DWORD ApiResponderEmpty::FillConsoleOutputCharacterAImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                         _In_ char const Character,
-                                                         _In_ DWORD const LengthToWrite,
-                                                         _In_ COORD const StartingCoordinate,
-                                                         _Out_ DWORD* const pCellsModified)
+NTSTATUS ApiResponderEmpty::FillConsoleOutputCharacterAImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                            _In_ char const Character,
+                                                            _In_ DWORD const LengthToWrite,
+                                                            _In_ COORD const StartingCoordinate,
+                                                            _Out_ DWORD* const pCellsModified)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(Character);
@@ -353,11 +353,11 @@ DWORD ApiResponderEmpty::FillConsoleOutputCharacterAImpl(_In_ IConsoleOutputObje
     return 0;
 }
 
-DWORD ApiResponderEmpty::FillConsoleOutputCharacterWImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                         _In_ wchar_t const Character,
-                                                         _In_ DWORD const LengthToWrite,
-                                                         _In_ COORD const StartingCoordinate,
-                                                         _Out_ DWORD* const pCellsModified)
+NTSTATUS ApiResponderEmpty::FillConsoleOutputCharacterWImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                            _In_ wchar_t const Character,
+                                                            _In_ DWORD const LengthToWrite,
+                                                            _In_ COORD const StartingCoordinate,
+                                                            _Out_ DWORD* const pCellsModified)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(Character);
@@ -366,41 +366,41 @@ DWORD ApiResponderEmpty::FillConsoleOutputCharacterWImpl(_In_ IConsoleOutputObje
     return 0;
 }
 
-DWORD ApiResponderEmpty::GenerateConsoleCtrlEventImpl(_In_ ULONG const ProcessGroupFilter,
-                                                      _In_ ULONG const ControlEvent)
+NTSTATUS ApiResponderEmpty::GenerateConsoleCtrlEventImpl(_In_ ULONG const ProcessGroupFilter,
+                                                         _In_ ULONG const ControlEvent)
 {
     UNREFERENCED_PARAMETER(ProcessGroupFilter);
     UNREFERENCED_PARAMETER(ControlEvent);
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleActiveScreenBufferImpl(_In_ HANDLE const NewOutContext)
+NTSTATUS ApiResponderEmpty::SetConsoleActiveScreenBufferImpl(_In_ HANDLE const NewOutContext)
 {
     UNREFERENCED_PARAMETER(NewOutContext);
     return 0;
 }
 
-DWORD ApiResponderEmpty::FlushConsoleInputBuffer(_In_ IConsoleInputObject* const pInContext)
+NTSTATUS ApiResponderEmpty::FlushConsoleInputBuffer(_In_ IConsoleInputObject* const pInContext)
 {
     UNREFERENCED_PARAMETER(pInContext);
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleInputCodePageImpl(_In_ ULONG const CodePage)
+NTSTATUS ApiResponderEmpty::SetConsoleInputCodePageImpl(_In_ ULONG const CodePage)
 {
     UNREFERENCED_PARAMETER(CodePage);
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage)
+NTSTATUS ApiResponderEmpty::SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage)
 {
     UNREFERENCED_PARAMETER(CodePage);
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleCursorInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                  _Out_ ULONG* const pCursorSize,
-                                                  _Out_ BOOLEAN* const pIsVisible)
+NTSTATUS ApiResponderEmpty::GetConsoleCursorInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                     _Out_ ULONG* const pCursorSize,
+                                                     _Out_ BOOLEAN* const pIsVisible)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     *pCursorSize = 60;
@@ -408,9 +408,9 @@ DWORD ApiResponderEmpty::GetConsoleCursorInfoImpl(_In_ IConsoleOutputObject* con
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleCursorInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                  _In_ ULONG const CursorSize,
-                                                  _In_ BOOLEAN const IsVisible)
+NTSTATUS ApiResponderEmpty::SetConsoleCursorInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                     _In_ ULONG const CursorSize,
+                                                     _In_ BOOLEAN const IsVisible)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(CursorSize);
@@ -418,8 +418,8 @@ DWORD ApiResponderEmpty::SetConsoleCursorInfoImpl(_In_ IConsoleOutputObject* con
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleScreenBufferInfoExImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                          _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
+NTSTATUS ApiResponderEmpty::GetConsoleScreenBufferInfoExImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                             _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     pScreenBufferInfoEx->cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
@@ -455,32 +455,32 @@ DWORD ApiResponderEmpty::GetConsoleScreenBufferInfoExImpl(_In_ IConsoleOutputObj
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleScreenBufferInfoExImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                          _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
+NTSTATUS ApiResponderEmpty::SetConsoleScreenBufferInfoExImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                             _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pScreenBufferInfoEx);
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleScreenBufferSizeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                        _In_ const COORD* const pSize)
+NTSTATUS ApiResponderEmpty::SetConsoleScreenBufferSizeImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                           _In_ const COORD* const pSize)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pSize);
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleCursorPositionImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                      _In_ const COORD* const pCursorPosition)
+NTSTATUS ApiResponderEmpty::SetConsoleCursorPositionImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                         _In_ const COORD* const pCursorPosition)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pCursorPosition);
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetLargestConsoleWindowSizeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                         _Out_ COORD* const pSize)
+NTSTATUS ApiResponderEmpty::GetLargestConsoleWindowSizeImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                            _Out_ COORD* const pSize)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     pSize->X = 120;
@@ -488,11 +488,11 @@ DWORD ApiResponderEmpty::GetLargestConsoleWindowSizeImpl(_In_ IConsoleOutputObje
     return 0;
 }
 
-DWORD ApiResponderEmpty::ScrollConsoleScreenBufferAImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                        _In_ const SMALL_RECT* const pSourceRectangle,
-                                                        _In_ const COORD* const pTargetOrigin,
-                                                        _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                                        _In_ const CHAR_INFO* const pFill)
+NTSTATUS ApiResponderEmpty::ScrollConsoleScreenBufferAImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                           _In_ const SMALL_RECT* const pSourceRectangle,
+                                                           _In_ const COORD* const pTargetOrigin,
+                                                           _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
+                                                           _In_ const CHAR_INFO* const pFill)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pSourceRectangle);
@@ -502,11 +502,11 @@ DWORD ApiResponderEmpty::ScrollConsoleScreenBufferAImpl(_In_ IConsoleOutputObjec
     return 0;
 }
 
-DWORD ApiResponderEmpty::ScrollConsoleScreenBufferWImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                        _In_ const SMALL_RECT* const pSourceRectangle,
-                                                        _In_ const COORD* const pTargetOrigin,
-                                                        _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                                        _In_ const CHAR_INFO* const pFill)
+NTSTATUS ApiResponderEmpty::ScrollConsoleScreenBufferWImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                           _In_ const SMALL_RECT* const pSourceRectangle,
+                                                           _In_ const COORD* const pTargetOrigin,
+                                                           _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
+                                                           _In_ const CHAR_INFO* const pFill)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pSourceRectangle);
@@ -516,17 +516,17 @@ DWORD ApiResponderEmpty::ScrollConsoleScreenBufferWImpl(_In_ IConsoleOutputObjec
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleTextAttributeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                     _In_ WORD const Attribute)
+NTSTATUS ApiResponderEmpty::SetConsoleTextAttributeImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                        _In_ WORD const Attribute)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(Attribute);
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleWindowInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                  _In_ BOOLEAN const IsAbsoluteRectangle,
-                                                  _In_ const SMALL_RECT* const pWindowRectangle)
+NTSTATUS ApiResponderEmpty::SetConsoleWindowInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                     _In_ BOOLEAN const IsAbsoluteRectangle,
+                                                     _In_ const SMALL_RECT* const pWindowRectangle)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(IsAbsoluteRectangle);
@@ -534,11 +534,11 @@ DWORD ApiResponderEmpty::SetConsoleWindowInfoImpl(_In_ IConsoleOutputObject* con
     return 0;
 }
 
-DWORD ApiResponderEmpty::ReadConsoleOutputAttributeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                        _In_ const COORD* const pSourceOrigin,
-                                                        _Out_writes_to_(AttributeBufferLength, *pAttributeBufferWritten) WORD* const pAttributeBuffer,
-                                                        _In_ ULONG const AttributeBufferLength,
-                                                        _Out_ ULONG* const pAttributeBufferWritten)
+NTSTATUS ApiResponderEmpty::ReadConsoleOutputAttributeImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                           _In_ const COORD* const pSourceOrigin,
+                                                           _Out_writes_to_(AttributeBufferLength, *pAttributeBufferWritten) WORD* const pAttributeBuffer,
+                                                           _In_ ULONG const AttributeBufferLength,
+                                                           _Out_ ULONG* const pAttributeBufferWritten)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pSourceOrigin);
@@ -548,11 +548,11 @@ DWORD ApiResponderEmpty::ReadConsoleOutputAttributeImpl(_In_ IConsoleOutputObjec
     return 0;
 }
 
-DWORD ApiResponderEmpty::ReadConsoleOutputCharacterAImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                         _In_ const COORD* const pSourceOrigin,
-                                                         _Out_writes_to_(TextBufferLength, *pTextBufferWritten) char* const pTextBuffer,
-                                                         _In_ ULONG const TextBufferLength,
-                                                         _Out_ ULONG* const pTextBufferWritten)
+NTSTATUS ApiResponderEmpty::ReadConsoleOutputCharacterAImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                            _In_ const COORD* const pSourceOrigin,
+                                                            _Out_writes_to_(TextBufferLength, *pTextBufferWritten) char* const pTextBuffer,
+                                                            _In_ ULONG const TextBufferLength,
+                                                            _Out_ ULONG* const pTextBufferWritten)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pSourceOrigin);
@@ -562,11 +562,11 @@ DWORD ApiResponderEmpty::ReadConsoleOutputCharacterAImpl(_In_ IConsoleOutputObje
     return 0;
 }
 
-DWORD ApiResponderEmpty::ReadConsoleOutputCharacterWImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                         _In_ const COORD* const pSourceOrigin,
-                                                         _Out_writes_to_(TextBufferLength, *pTextBufferWritten) wchar_t* const pTextBuffer,
-                                                         _In_ ULONG const TextBufferLength,
-                                                         _Out_ ULONG* const pTextBufferWritten)
+NTSTATUS ApiResponderEmpty::ReadConsoleOutputCharacterWImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                            _In_ const COORD* const pSourceOrigin,
+                                                            _Out_writes_to_(TextBufferLength, *pTextBufferWritten) wchar_t* const pTextBuffer,
+                                                            _In_ ULONG const TextBufferLength,
+                                                            _Out_ ULONG* const pTextBufferWritten)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pSourceOrigin);
@@ -576,10 +576,10 @@ DWORD ApiResponderEmpty::ReadConsoleOutputCharacterWImpl(_In_ IConsoleOutputObje
     return 0;
 }
 
-DWORD ApiResponderEmpty::WriteConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                                _In_reads_(InputBufferLength) const INPUT_RECORD* const pInputBuffer,
-                                                _In_ ULONG const InputBufferLength,
-                                                _Out_ ULONG* const pInputBufferRead)
+NTSTATUS ApiResponderEmpty::WriteConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
+                                                   _In_reads_(InputBufferLength) const INPUT_RECORD* const pInputBuffer,
+                                                   _In_ ULONG const InputBufferLength,
+                                                   _Out_ ULONG* const pInputBufferRead)
 {
     UNREFERENCED_PARAMETER(pInContext);
     UNREFERENCED_PARAMETER(pInputBuffer);
@@ -587,10 +587,10 @@ DWORD ApiResponderEmpty::WriteConsoleInputAImpl(_In_ IConsoleInputObject* const 
     return 0;
 }
 
-DWORD ApiResponderEmpty::WriteConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                                _In_reads_(InputBufferLength) const INPUT_RECORD* const pInputBuffer,
-                                                _In_ ULONG const InputBufferLength,
-                                                _Out_ ULONG* const pInputBufferRead)
+NTSTATUS ApiResponderEmpty::WriteConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
+                                                   _In_reads_(InputBufferLength) const INPUT_RECORD* const pInputBuffer,
+                                                   _In_ ULONG const InputBufferLength,
+                                                   _Out_ ULONG* const pInputBufferRead)
 {
     UNREFERENCED_PARAMETER(pInContext);
     UNREFERENCED_PARAMETER(pInputBuffer);
@@ -598,12 +598,12 @@ DWORD ApiResponderEmpty::WriteConsoleInputWImpl(_In_ IConsoleInputObject* const 
     return 0;
 }
 
-DWORD ApiResponderEmpty::WriteConsoleOutputAImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                 _In_reads_(pTextBufferSize->X * pTextBufferSize->Y) const CHAR_INFO* const pTextBuffer,
-                                                 _In_ const COORD* const pTextBufferSize,
-                                                 _In_ const COORD* const pTextBufferSourceOrigin,
-                                                 _In_ const SMALL_RECT* const pTargetRectangle,
-                                                 _Out_ SMALL_RECT* const pAffectedRectangle)
+NTSTATUS ApiResponderEmpty::WriteConsoleOutputAImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                    _In_reads_(pTextBufferSize->X * pTextBufferSize->Y) const CHAR_INFO* const pTextBuffer,
+                                                    _In_ const COORD* const pTextBufferSize,
+                                                    _In_ const COORD* const pTextBufferSourceOrigin,
+                                                    _In_ const SMALL_RECT* const pTargetRectangle,
+                                                    _Out_ SMALL_RECT* const pAffectedRectangle)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pTextBuffer);
@@ -614,12 +614,12 @@ DWORD ApiResponderEmpty::WriteConsoleOutputAImpl(_In_ IConsoleOutputObject* cons
     return 0;
 }
 
-DWORD ApiResponderEmpty::WriteConsoleOutputWImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                 _In_reads_(pTextBufferSize->X * pTextBufferSize->Y) const CHAR_INFO* const pTextBuffer,
-                                                 _In_ const COORD* const pTextBufferSize,
-                                                 _In_ const COORD* const pTextBufferSourceOrigin,
-                                                 _In_ const SMALL_RECT* const pTargetRectangle,
-                                                 _Out_ SMALL_RECT* const pAffectedRectangle)
+NTSTATUS ApiResponderEmpty::WriteConsoleOutputWImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                    _In_reads_(pTextBufferSize->X * pTextBufferSize->Y) const CHAR_INFO* const pTextBuffer,
+                                                    _In_ const COORD* const pTextBufferSize,
+                                                    _In_ const COORD* const pTextBufferSourceOrigin,
+                                                    _In_ const SMALL_RECT* const pTargetRectangle,
+                                                    _Out_ SMALL_RECT* const pAffectedRectangle)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pTextBuffer);
@@ -630,11 +630,11 @@ DWORD ApiResponderEmpty::WriteConsoleOutputWImpl(_In_ IConsoleOutputObject* cons
     return 0;
 }
 
-DWORD ApiResponderEmpty::WriteConsoleOutputAttributeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                         _In_reads_(AttributeBufferLength) const WORD* const pAttributeBuffer,
-                                                         _In_ ULONG const AttributeBufferLength,
-                                                         _In_ const COORD* const pTargetOrigin,
-                                                         _Out_ ULONG* const pAttributeBufferRead)
+NTSTATUS ApiResponderEmpty::WriteConsoleOutputAttributeImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                            _In_reads_(AttributeBufferLength) const WORD* const pAttributeBuffer,
+                                                            _In_ ULONG const AttributeBufferLength,
+                                                            _In_ const COORD* const pTargetOrigin,
+                                                            _Out_ ULONG* const pAttributeBufferRead)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pAttributeBuffer);
@@ -643,11 +643,11 @@ DWORD ApiResponderEmpty::WriteConsoleOutputAttributeImpl(_In_ IConsoleOutputObje
     return 0;
 }
 
-DWORD ApiResponderEmpty::WriteConsoleOutputCharacterAImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                          _In_reads_(TextBufferLength) const char* const pTextBuffer,
-                                                          _In_ ULONG const TextBufferLength,
-                                                          _In_ const COORD* const pTargetOrigin,
-                                                          _Out_ ULONG* const pTextBufferRead)
+NTSTATUS ApiResponderEmpty::WriteConsoleOutputCharacterAImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                             _In_reads_(TextBufferLength) const char* const pTextBuffer,
+                                                             _In_ ULONG const TextBufferLength,
+                                                             _In_ const COORD* const pTargetOrigin,
+                                                             _Out_ ULONG* const pTextBufferRead)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pTextBuffer);
@@ -656,11 +656,11 @@ DWORD ApiResponderEmpty::WriteConsoleOutputCharacterAImpl(_In_ IConsoleOutputObj
     return 0;
 }
 
-DWORD ApiResponderEmpty::WriteConsoleOutputCharacterWImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                          _In_reads_(TextBufferLength) const wchar_t* const pTextBuffer,
-                                                          _In_ ULONG const TextBufferLength,
-                                                          _In_ const COORD* const pTargetOrigin,
-                                                          _Out_ ULONG* const pTextBufferRead)
+NTSTATUS ApiResponderEmpty::WriteConsoleOutputCharacterWImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                             _In_reads_(TextBufferLength) const wchar_t* const pTextBuffer,
+                                                             _In_ ULONG const TextBufferLength,
+                                                             _In_ const COORD* const pTargetOrigin,
+                                                             _Out_ ULONG* const pTextBufferRead)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pTextBuffer);
@@ -669,12 +669,12 @@ DWORD ApiResponderEmpty::WriteConsoleOutputCharacterWImpl(_In_ IConsoleOutputObj
     return 0;
 }
 
-DWORD ApiResponderEmpty::ReadConsoleOutputA(_In_ IConsoleOutputObject* const pOutContext,
-                                            _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,
-                                            _In_ const COORD* const pTextBufferSize,
-                                            _In_ const COORD* const pTextBufferTargetOrigin,
-                                            _In_ const SMALL_RECT* const pSourceRectangle,
-                                            _Out_ SMALL_RECT* const pReadRectangle)
+NTSTATUS ApiResponderEmpty::ReadConsoleOutputA(_In_ IConsoleOutputObject* const pOutContext,
+                                               _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,
+                                               _In_ const COORD* const pTextBufferSize,
+                                               _In_ const COORD* const pTextBufferTargetOrigin,
+                                               _In_ const SMALL_RECT* const pSourceRectangle,
+                                               _Out_ SMALL_RECT* const pReadRectangle)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pTextBuffer);
@@ -685,12 +685,12 @@ DWORD ApiResponderEmpty::ReadConsoleOutputA(_In_ IConsoleOutputObject* const pOu
     return 0;
 }
 
-DWORD ApiResponderEmpty::ReadConsoleOutputW(_In_ IConsoleOutputObject* const pOutContext,
-                                            _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,
-                                            _In_ const COORD* const pTextBufferSize,
-                                            _In_ const COORD* const pTextBufferTargetOrigin,
-                                            _In_ const SMALL_RECT* const pSourceRectangle,
-                                            _Out_ SMALL_RECT* const pReadRectangle)
+NTSTATUS ApiResponderEmpty::ReadConsoleOutputW(_In_ IConsoleOutputObject* const pOutContext,
+                                               _Out_writes_(pTextBufferSize->X * pTextBufferSize->Y) CHAR_INFO* const pTextBuffer,
+                                               _In_ const COORD* const pTextBufferSize,
+                                               _In_ const COORD* const pTextBufferTargetOrigin,
+                                               _In_ const SMALL_RECT* const pSourceRectangle,
+                                               _Out_ SMALL_RECT* const pReadRectangle)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pTextBuffer);
@@ -701,8 +701,8 @@ DWORD ApiResponderEmpty::ReadConsoleOutputW(_In_ IConsoleOutputObject* const pOu
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
-                                              _In_ ULONG const TextBufferSize)
+NTSTATUS ApiResponderEmpty::GetConsoleTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
+                                                 _In_ ULONG const TextBufferSize)
 {
     if (TextBufferSize > 0)
     {
@@ -711,8 +711,8 @@ DWORD ApiResponderEmpty::GetConsoleTitleAImpl(_Out_writes_(TextBufferSize) char*
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleTitleWImpl(_Out_writes_(TextBufferSize) wchar_t* const pTextBuffer,
-                                              _In_ ULONG const TextBufferSize)
+NTSTATUS ApiResponderEmpty::GetConsoleTitleWImpl(_Out_writes_(TextBufferSize) wchar_t* const pTextBuffer,
+                                                 _In_ ULONG const TextBufferSize)
 {
     if (TextBufferSize > 0)
     {
@@ -721,8 +721,8 @@ DWORD ApiResponderEmpty::GetConsoleTitleWImpl(_Out_writes_(TextBufferSize) wchar
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleOriginalTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
-                                                      _In_ ULONG const TextBufferSize)
+NTSTATUS ApiResponderEmpty::GetConsoleOriginalTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
+                                                         _In_ ULONG const TextBufferSize)
 {
     if (TextBufferSize > 0)
     {
@@ -731,8 +731,8 @@ DWORD ApiResponderEmpty::GetConsoleOriginalTitleAImpl(_Out_writes_(TextBufferSiz
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleOriginalTitleWImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
-                                                      _In_ ULONG const TextBufferSize)
+NTSTATUS ApiResponderEmpty::GetConsoleOriginalTitleWImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
+                                                         _In_ ULONG const TextBufferSize)
 {
     if (TextBufferSize > 0)
     {
@@ -741,31 +741,31 @@ DWORD ApiResponderEmpty::GetConsoleOriginalTitleWImpl(_Out_writes_(TextBufferSiz
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleTitleAImpl(_In_reads_(TextBufferSize) char* const pTextBuffer,
-                                              _In_ ULONG const TextBufferSize)
+NTSTATUS ApiResponderEmpty::SetConsoleTitleAImpl(_In_reads_(TextBufferSize) char* const pTextBuffer,
+                                                 _In_ ULONG const TextBufferSize)
 {
     UNREFERENCED_PARAMETER(pTextBuffer);
     UNREFERENCED_PARAMETER(TextBufferSize);
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleTitleWImpl(_In_reads_(TextBufferSize) wchar_t* const pTextBuffer,
-                                              _In_ ULONG const TextBufferSize)
+NTSTATUS ApiResponderEmpty::SetConsoleTitleWImpl(_In_reads_(TextBufferSize) wchar_t* const pTextBuffer,
+                                                 _In_ ULONG const TextBufferSize)
 {
     UNREFERENCED_PARAMETER(pTextBuffer);
     UNREFERENCED_PARAMETER(TextBufferSize);
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons)
+NTSTATUS ApiResponderEmpty::GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons)
 {
     *pButtons = 2;
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleFontSizeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                _In_ DWORD const FontIndex,
-                                                _Out_ COORD* const pFontSize)
+NTSTATUS ApiResponderEmpty::GetConsoleFontSizeImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                   _In_ DWORD const FontIndex,
+                                                   _Out_ COORD* const pFontSize)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(FontIndex);
@@ -775,9 +775,9 @@ DWORD ApiResponderEmpty::GetConsoleFontSizeImpl(_In_ IConsoleOutputObject* const
 }
 
 // driver will pare down for non-Ex method
-DWORD ApiResponderEmpty::GetCurrentConsoleFontExImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                     _In_ BOOLEAN const IsForMaximumWindowSize,
-                                                     _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
+NTSTATUS ApiResponderEmpty::GetCurrentConsoleFontExImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                        _In_ BOOLEAN const IsForMaximumWindowSize,
+                                                        _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
 
 
@@ -793,9 +793,9 @@ DWORD ApiResponderEmpty::GetCurrentConsoleFontExImpl(_In_ IConsoleOutputObject* 
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleDisplayModeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                   _In_ ULONG const Flags,
-                                                   _Out_ COORD* const pNewScreenBufferSize)
+NTSTATUS ApiResponderEmpty::SetConsoleDisplayModeImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                      _In_ ULONG const Flags,
+                                                      _Out_ COORD* const pNewScreenBufferSize)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(Flags);
@@ -804,20 +804,20 @@ DWORD ApiResponderEmpty::SetConsoleDisplayModeImpl(_In_ IConsoleOutputObject* co
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleDisplayModeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                   _Out_ ULONG* const pFlags)
+NTSTATUS ApiResponderEmpty::GetConsoleDisplayModeImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                      _Out_ ULONG* const pFlags)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     *pFlags = 0;
     return 0;
 }
 
-DWORD ApiResponderEmpty::AddConsoleAliasAImpl(_In_reads_(SourceBufferLength) const char* const pSourceBuffer,
-                                              _In_ ULONG const SourceBufferLength,
-                                              _In_reads_(TargetBufferLength) const char* const pTargetBuffer,
-                                              _In_ ULONG const TargetBufferLength,
-                                              _In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
-                                              _In_ ULONG const ExeNameBufferLength)
+NTSTATUS ApiResponderEmpty::AddConsoleAliasAImpl(_In_reads_(SourceBufferLength) const char* const pSourceBuffer,
+                                                 _In_ ULONG const SourceBufferLength,
+                                                 _In_reads_(TargetBufferLength) const char* const pTargetBuffer,
+                                                 _In_ ULONG const TargetBufferLength,
+                                                 _In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
+                                                 _In_ ULONG const ExeNameBufferLength)
 {
     UNREFERENCED_PARAMETER(pSourceBuffer);
     UNREFERENCED_PARAMETER(SourceBufferLength);
@@ -828,12 +828,12 @@ DWORD ApiResponderEmpty::AddConsoleAliasAImpl(_In_reads_(SourceBufferLength) con
     return 0;
 }
 
-DWORD ApiResponderEmpty::AddConsoleAliasWImpl(_In_reads_(SourceBufferLength) const wchar_t* const pSourceBuffer,
-                                              _In_ ULONG const SourceBufferLength,
-                                              _In_reads_(TargetBufferLength) const wchar_t* const pTargetBuffer,
-                                              _In_ ULONG const TargetBufferLength,
-                                              _In_reads_(ExeNameBufferLength) const wchar_t* const pExeNameBuffer,
-                                              _In_ ULONG const ExeNameBufferLength)
+NTSTATUS ApiResponderEmpty::AddConsoleAliasWImpl(_In_reads_(SourceBufferLength) const wchar_t* const pSourceBuffer,
+                                                 _In_ ULONG const SourceBufferLength,
+                                                 _In_reads_(TargetBufferLength) const wchar_t* const pTargetBuffer,
+                                                 _In_ ULONG const TargetBufferLength,
+                                                 _In_reads_(ExeNameBufferLength) const wchar_t* const pExeNameBuffer,
+                                                 _In_ ULONG const ExeNameBufferLength)
 {
     UNREFERENCED_PARAMETER(pSourceBuffer);
     UNREFERENCED_PARAMETER(SourceBufferLength);
@@ -844,12 +844,12 @@ DWORD ApiResponderEmpty::AddConsoleAliasWImpl(_In_reads_(SourceBufferLength) con
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleAliasAImpl(_In_reads_(SourceBufferLength) const char* const pSourceBuffer,
-                                              _In_ ULONG const SourceBufferLength,
-                                              _Out_writes_(TargetBufferLength) char* const pTargetBuffer,
-                                              _In_ ULONG const TargetBufferLength,
-                                              _In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
-                                              _In_ ULONG const ExeNameBufferLength)
+NTSTATUS ApiResponderEmpty::GetConsoleAliasAImpl(_In_reads_(SourceBufferLength) const char* const pSourceBuffer,
+                                                 _In_ ULONG const SourceBufferLength,
+                                                 _Out_writes_(TargetBufferLength) char* const pTargetBuffer,
+                                                 _In_ ULONG const TargetBufferLength,
+                                                 _In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
+                                                 _In_ ULONG const ExeNameBufferLength)
 {
     UNREFERENCED_PARAMETER(pSourceBuffer);
     UNREFERENCED_PARAMETER(SourceBufferLength);
@@ -860,12 +860,12 @@ DWORD ApiResponderEmpty::GetConsoleAliasAImpl(_In_reads_(SourceBufferLength) con
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleAliasWImpl(_In_reads_(SourceBufferLength) const wchar_t* const pSourceBuffer,
-                                              _In_ ULONG const SourceBufferLength,
-                                              _Out_writes_(TargetBufferLength) wchar_t* const pTargetBuffer,
-                                              _In_ ULONG const TargetBufferLength,
-                                              _In_reads_(ExeNameBufferLength) const wchar_t* const pExeNameBuffer,
-                                              _In_ ULONG const ExeNameBufferLength)
+NTSTATUS ApiResponderEmpty::GetConsoleAliasWImpl(_In_reads_(SourceBufferLength) const wchar_t* const pSourceBuffer,
+                                                 _In_ ULONG const SourceBufferLength,
+                                                 _Out_writes_(TargetBufferLength) wchar_t* const pTargetBuffer,
+                                                 _In_ ULONG const TargetBufferLength,
+                                                 _In_reads_(ExeNameBufferLength) const wchar_t* const pExeNameBuffer,
+                                                 _In_ ULONG const ExeNameBufferLength)
 {
     UNREFERENCED_PARAMETER(pSourceBuffer);
     UNREFERENCED_PARAMETER(SourceBufferLength);
@@ -876,9 +876,9 @@ DWORD ApiResponderEmpty::GetConsoleAliasWImpl(_In_reads_(SourceBufferLength) con
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleAliasesLengthAImpl(_In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
-                                                      _In_ ULONG const ExeNameBufferLength,
-                                                      _Out_ ULONG* const pAliasesBufferRequired)
+NTSTATUS ApiResponderEmpty::GetConsoleAliasesLengthAImpl(_In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
+                                                         _In_ ULONG const ExeNameBufferLength,
+                                                         _Out_ ULONG* const pAliasesBufferRequired)
 {
     UNREFERENCED_PARAMETER(pExeNameBuffer);
     UNREFERENCED_PARAMETER(ExeNameBufferLength);
@@ -886,9 +886,9 @@ DWORD ApiResponderEmpty::GetConsoleAliasesLengthAImpl(_In_reads_(ExeNameBufferLe
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleAliasesLengthWImpl(_In_reads_(ExeNameBufferLength) const wchar_t* const pExeNameBuffer,
-                                                      _In_ ULONG const ExeNameBufferLength,
-                                                      _Out_ ULONG* const pAliasesBufferRequired)
+NTSTATUS ApiResponderEmpty::GetConsoleAliasesLengthWImpl(_In_reads_(ExeNameBufferLength) const wchar_t* const pExeNameBuffer,
+                                                         _In_ ULONG const ExeNameBufferLength,
+                                                         _Out_ ULONG* const pAliasesBufferRequired)
 {
     UNREFERENCED_PARAMETER(pExeNameBuffer);
     UNREFERENCED_PARAMETER(ExeNameBufferLength);
@@ -896,22 +896,22 @@ DWORD ApiResponderEmpty::GetConsoleAliasesLengthWImpl(_In_reads_(ExeNameBufferLe
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleAliasExesLengthAImpl(_Out_ ULONG* const pAliasExesBufferRequired)
+NTSTATUS ApiResponderEmpty::GetConsoleAliasExesLengthAImpl(_Out_ ULONG* const pAliasExesBufferRequired)
 {
     *pAliasExesBufferRequired = 0;
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pAliasExesBufferRequired)
+NTSTATUS ApiResponderEmpty::GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pAliasExesBufferRequired)
 {
     *pAliasExesBufferRequired = 0;
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleAliasesAImpl(_In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
-                                                _In_ ULONG const ExeNameBufferLength,
-                                                _Out_writes_(AliasBufferLength) char* const pAliasBuffer,
-                                                _In_ ULONG const AliasBufferLength)
+NTSTATUS ApiResponderEmpty::GetConsoleAliasesAImpl(_In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
+                                                   _In_ ULONG const ExeNameBufferLength,
+                                                   _Out_writes_(AliasBufferLength) char* const pAliasBuffer,
+                                                   _In_ ULONG const AliasBufferLength)
 {
     UNREFERENCED_PARAMETER(pExeNameBuffer);
     UNREFERENCED_PARAMETER(ExeNameBufferLength);
@@ -920,10 +920,10 @@ DWORD ApiResponderEmpty::GetConsoleAliasesAImpl(_In_reads_(ExeNameBufferLength) 
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleAliasesWImpl(_In_reads_(ExeNameBufferLength) const wchar_t* const pExeNameBuffer,
-                                                _In_ ULONG const ExeNameBufferLength,
-                                                _Out_writes_(AliasBufferLength) wchar_t* const pAliasBuffer,
-                                                _In_ ULONG const AliasBufferLength)
+NTSTATUS ApiResponderEmpty::GetConsoleAliasesWImpl(_In_reads_(ExeNameBufferLength) const wchar_t* const pExeNameBuffer,
+                                                   _In_ ULONG const ExeNameBufferLength,
+                                                   _Out_writes_(AliasBufferLength) wchar_t* const pAliasBuffer,
+                                                   _In_ ULONG const AliasBufferLength)
 {
     UNREFERENCED_PARAMETER(pExeNameBuffer);
     UNREFERENCED_PARAMETER(ExeNameBufferLength);
@@ -932,29 +932,29 @@ DWORD ApiResponderEmpty::GetConsoleAliasesWImpl(_In_reads_(ExeNameBufferLength) 
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleAliasExesAImpl(_Out_writes_(AliasExesBufferLength) char* const pAliasExesBuffer,
-                                                  _In_ ULONG const AliasExesBufferLength)
+NTSTATUS ApiResponderEmpty::GetConsoleAliasExesAImpl(_Out_writes_(AliasExesBufferLength) char* const pAliasExesBuffer,
+                                                     _In_ ULONG const AliasExesBufferLength)
 {
     UNREFERENCED_PARAMETER(pAliasExesBuffer);
     UNREFERENCED_PARAMETER(AliasExesBufferLength);
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleAliasExesWImpl(_Out_writes_(AliasExesBufferLength) wchar_t* const pAliasExesBuffer,
-                                                  _In_ ULONG const AliasExesBufferLength)
+NTSTATUS ApiResponderEmpty::GetConsoleAliasExesWImpl(_Out_writes_(AliasExesBufferLength) wchar_t* const pAliasExesBuffer,
+                                                     _In_ ULONG const AliasExesBufferLength)
 {
     UNREFERENCED_PARAMETER(pAliasExesBuffer);
     UNREFERENCED_PARAMETER(AliasExesBufferLength);
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
+NTSTATUS ApiResponderEmpty::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
 {
     *pHwnd = (HWND)INVALID_HANDLE_VALUE; // sure, why not.
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo)
+NTSTATUS ApiResponderEmpty::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo)
 {
     pConsoleSelectionInfo->dwFlags = 0;
     pConsoleSelectionInfo->dwSelectionAnchor.X = 0;
@@ -966,7 +966,7 @@ DWORD ApiResponderEmpty::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INF
     return 0;
 }
 
-DWORD ApiResponderEmpty::GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
+NTSTATUS ApiResponderEmpty::GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
 {
     pConsoleHistoryInfo->cbSize = sizeof(CONSOLE_HISTORY_INFO);
     pConsoleHistoryInfo->dwFlags = 0;
@@ -975,15 +975,15 @@ DWORD ApiResponderEmpty::GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* c
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
+NTSTATUS ApiResponderEmpty::SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
 {
     UNREFERENCED_PARAMETER(pConsoleHistoryInfo);
     return 0;
 }
 
-DWORD ApiResponderEmpty::SetCurrentConsoleFontExImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                     _In_ BOOLEAN const IsForMaximumWindowSize,
-                                                     _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
+NTSTATUS ApiResponderEmpty::SetCurrentConsoleFontExImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                                        _In_ BOOLEAN const IsForMaximumWindowSize,
+                                                        _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(IsForMaximumWindowSize);

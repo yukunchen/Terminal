@@ -11,45 +11,45 @@ DeviceProtocol::~DeviceProtocol()
 {
 }
 
-DWORD DeviceProtocol::SetInputAvailableEvent(_In_ HANDLE Event) const
+HRESULT DeviceProtocol::SetInputAvailableEvent(_In_ HANDLE Event) const
 {
     CD_IO_SERVER_INFORMATION serverInfo;
     serverInfo.InputAvailableEvent = Event;
     return _pComm->SetServerInformation(&serverInfo);
 }
 
-DWORD DeviceProtocol::SetConnectionInformation(_In_ CONSOLE_API_MSG* const pMessage,
+HRESULT DeviceProtocol::SetConnectionInformation(_In_ CONSOLE_API_MSG* const pMessage,
                                                _In_ ULONG_PTR ProcessDataHandle,
                                                _In_ ULONG_PTR InputHandle,
                                                _In_ ULONG_PTR OutputHandle) const
 {
-    DWORD Result = STATUS_SUCCESS;
+    HRESULT Result = S_OK;
 
     CD_CONNECTION_INFORMATION* const pConnectionInfo = new CD_CONNECTION_INFORMATION();
 
     if (pConnectionInfo == nullptr)
     {
-        Result = STATUS_NO_MEMORY;
+        Result = E_OUTOFMEMORY;
     }
 
-    if (NT_SUCCESS(Result))
+    if (SUCCEEDED(Result))
     {
         pConnectionInfo->Process = ProcessDataHandle;
         pConnectionInfo->Input = InputHandle;
         pConnectionInfo->Output = OutputHandle;
-        _SetCompletionPayload(pMessage, pConnectionInfo, sizeof(*pConnectionInfo));
+        Result = _SetCompletionPayload(pMessage, pConnectionInfo, sizeof(*pConnectionInfo));
     }
 
     return Result;
 }
 
-DWORD DeviceProtocol::GetApiCall(_Out_ CONSOLE_API_MSG* const pMessage) const
+HRESULT DeviceProtocol::GetApiCall(_Out_ CONSOLE_API_MSG* const pMessage) const
 {
     // Clear out receive message
     ZeroMemory(pMessage, sizeof(*pMessage));
 
     // For optimization, we could be returning completions here on the next read.
-    DWORD Status = _pComm->ReadIo(nullptr, pMessage);
+    HRESULT Result = _pComm->ReadIo(nullptr, pMessage);
 
     // Prepare completion structure by matching the identifiers.
     // Various calls might fill the rest of this structure if they would like to say something while replying.
@@ -57,12 +57,12 @@ DWORD DeviceProtocol::GetApiCall(_Out_ CONSOLE_API_MSG* const pMessage) const
     pMessage->Complete.Identifier = pMessage->Descriptor.Identifier;
     pMessage->Complete.IoStatus.Status = STATUS_SUCCESS;
 
-    return Status;
+    return Result;
 }
 
-DWORD DeviceProtocol::CompleteApiCall(_In_ CONSOLE_API_MSG* const pMessage) const
+HRESULT DeviceProtocol::CompleteApiCall(_In_ CONSOLE_API_MSG* const pMessage) const
 {
-    DWORD Result = 0;
+    HRESULT Result = S_OK;
 
     // Send output buffer back to caller if one exists.
     if (pMessage->IsOutputBufferAvailable())
@@ -85,64 +85,64 @@ DWORD DeviceProtocol::CompleteApiCall(_In_ CONSOLE_API_MSG* const pMessage) cons
     return Result;
 }
 
-DWORD DeviceProtocol::GetInputBuffer(_In_ CONSOLE_API_MSG* const pMessage) const
+HRESULT DeviceProtocol::GetInputBuffer(_In_ CONSOLE_API_MSG* const pMessage) const
 {
-    DWORD Status = STATUS_SUCCESS;
+    HRESULT Result = S_OK;
 
     // Initialize the buffer if it hasn't been initialized yet.
     if (pMessage->State.InputBuffer == nullptr)
     {
         if (pMessage->State.ReadOffset > pMessage->Descriptor.InputSize)
         {
-            Status = STATUS_UNSUCCESSFUL;
+            Result = E_INVALIDARG;
         }
 
-        if (SUCCEEDED(Status))
+        if (SUCCEEDED(Result))
         {
             ULONG const PayloadSize = pMessage->Descriptor.InputSize - pMessage->State.ReadOffset;
 
             BYTE* const Payload = new BYTE[PayloadSize];
             if (Payload == nullptr)
             {
-                Status = STATUS_INSUFFICIENT_RESOURCES;
+                Result = E_OUTOFMEMORY;
             }
 
-            if (SUCCEEDED(Status))
+            if (SUCCEEDED(Result))
             {
                 pMessage->State.InputBuffer = Payload;
                 pMessage->State.InputBufferSize = PayloadSize;
 
-                Status = _ReadInputOperation(pMessage);
+                Result = _ReadInputOperation(pMessage);
             }
         }
     }
 
-    return Status;
+    return Result;
 }
 
-DWORD DeviceProtocol::GetOutputBuffer(_In_ CONSOLE_API_MSG* const pMessage) const
+HRESULT DeviceProtocol::GetOutputBuffer(_In_ CONSOLE_API_MSG* const pMessage) const
 {
-    DWORD Status = STATUS_SUCCESS;
+    HRESULT Result = S_OK;
 
     // Initialize the buffer if it hasn't been initialized yet.
     if (pMessage->State.OutputBuffer == nullptr)
     {
         if (pMessage->State.WriteOffset > pMessage->Descriptor.OutputSize)
         {
-            Status = STATUS_UNSUCCESSFUL;
+            Result = E_INVALIDARG;
         }
 
-        if (SUCCEEDED(Status))
+        if (SUCCEEDED(Result))
         {
             ULONG const PayloadSize = pMessage->Descriptor.OutputSize - pMessage->State.WriteOffset;
 
             BYTE* const Payload = new BYTE[PayloadSize];
             if (Payload == nullptr)
             {
-                Status = STATUS_INSUFFICIENT_RESOURCES;
+                Result = E_OUTOFMEMORY;
             }
 
-            if (SUCCEEDED(Status))
+            if (SUCCEEDED(Result))
             {
                 pMessage->State.OutputBuffer = Payload;
                 pMessage->State.OutputBufferSize = PayloadSize;
@@ -154,22 +154,22 @@ DWORD DeviceProtocol::GetOutputBuffer(_In_ CONSOLE_API_MSG* const pMessage) cons
         }
     }
 
-    return Status;
+    return Result;
 }
 
-DWORD DeviceProtocol::_SendCompletion(_In_ CONSOLE_API_MSG* const pMessage) const
+HRESULT DeviceProtocol::_SendCompletion(_In_ CONSOLE_API_MSG* const pMessage) const
 {
-    if (ERROR_IO_PENDING != pMessage->Complete.IoStatus.Status)
-    {
-        return _pComm->CompleteIo(&pMessage->Complete);
-    }
-    else
+    if (STATUS_PENDING == pMessage->Complete.IoStatus.Status)
     {
         return ERROR_IO_PENDING;
     }
+    else
+    {
+        return _pComm->CompleteIo(&pMessage->Complete);
+    }
 }
 
-DWORD DeviceProtocol::_SetCompletionPayload(_In_ CONSOLE_API_MSG* const pMessage,
+HRESULT DeviceProtocol::_SetCompletionPayload(_In_ CONSOLE_API_MSG* const pMessage,
                                             _In_reads_bytes_(nDataSize) LPVOID pData,
                                             _In_ DWORD nDataSize) const
 {
@@ -181,10 +181,10 @@ DWORD DeviceProtocol::_SetCompletionPayload(_In_ CONSOLE_API_MSG* const pMessage
     pMessage->Complete.Write.Offset = 0;
     pMessage->Complete.Write.Size = nDataSize;
 
-    return STATUS_SUCCESS;
+    return S_OK;
 }
 
-DWORD DeviceProtocol::_ReadInputOperation(_In_ CONSOLE_API_MSG* const pMessage) const
+HRESULT DeviceProtocol::_ReadInputOperation(_In_ CONSOLE_API_MSG* const pMessage) const
 {
     CD_IO_OPERATION Op;
     Op.Identifier = pMessage->Descriptor.Identifier;
@@ -195,7 +195,7 @@ DWORD DeviceProtocol::_ReadInputOperation(_In_ CONSOLE_API_MSG* const pMessage) 
     return _pComm->ReadInput(&Op);
 }
 
-DWORD DeviceProtocol::_WriteOutputOperation(_In_ CONSOLE_API_MSG* const pMessage) const
+HRESULT DeviceProtocol::_WriteOutputOperation(_In_ CONSOLE_API_MSG* const pMessage) const
 {
     CD_IO_OPERATION Op;
     Op.Identifier = pMessage->Descriptor.Identifier;
@@ -206,7 +206,7 @@ DWORD DeviceProtocol::_WriteOutputOperation(_In_ CONSOLE_API_MSG* const pMessage
     return _pComm->WriteOutput(&Op);
 }
 
-DWORD DeviceProtocol::_FreeBuffers(_In_ CONSOLE_API_MSG* const pMessage) const
+HRESULT DeviceProtocol::_FreeBuffers(_In_ CONSOLE_API_MSG* const pMessage) const
 {
     if (nullptr != pMessage->Complete.Write.Data)
     {
@@ -226,5 +226,5 @@ DWORD DeviceProtocol::_FreeBuffers(_In_ CONSOLE_API_MSG* const pMessage) const
         pMessage->State.OutputBuffer = nullptr;
     }
 
-    return STATUS_SUCCESS;
+    return S_OK;
 }
