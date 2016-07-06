@@ -12,12 +12,8 @@
 #include <windows.h>
 
 typedef long NTSTATUS;
-#define NT_SUCCESS(Status)  (((NTSTATUS)(Status)) >= 0)
-#define STATUS_SUCCESS ((DWORD)0x0)
 
 // C++ header files
-#include <thread>
-#include <vector>
 #include <new>
 
 // private dependencies

@@ -1,3 +1,5 @@
+#pragma once
+
 // POBJECT_ATTRIBUTES
 
 //

@@ -1,43 +1,21 @@
 #include "stdafx.h"
 #include "Win32Control.h"
 
-// in Win32Control.cpp only
-extern "C"
+Win32Control::Win32Control() : 
+    _User32Dll(THROW_LAST_ERROR_IF_NULL(LoadLibraryW(L"user32.dll"))),
+    _ConsoleControl(reinterpret_cast<PfnConsoleControl>(THROW_LAST_ERROR_IF_NULL(GetProcAddress(_User32Dll.get(), "ConsoleControl"))))
 {
-#include <Win32K\winuserk.h>
 }
 
-typedef NTSTATUS(CALLBACK* PfnConsoleControl)(CONSOLECONTROL, PVOID, DWORD);
-
-NTSTATUS CallConsoleControl(CONSOLECONTROL Command, PVOID ConsoleInformation, DWORD ConsoleInformationLength)
+Win32Control::~Win32Control()
 {
-    NTSTATUS Status = STATUS_SUCCESS;
 
-    // TODO: cache this, use direct link, something.
-    HMODULE hModule = LoadLibraryW(L"user32.dll");
-    if (hModule == nullptr)
-    {
-        Status = GetLastError();
-    }
+}
 
-    if (NT_SUCCESS(Status))
-    {
-        PfnConsoleControl pfn = (PfnConsoleControl)GetProcAddress(hModule, "ConsoleControl");
-
-        if (pfn == nullptr)
-        {
-            Status = GetLastError();
-        }
-
-        if (NT_SUCCESS(Status))
-        {
-            Status = pfn(Command, ConsoleInformation, ConsoleInformationLength);
-        }
-
-        FreeLibrary(hModule);
-    }
-
-    return Status;
+Win32Control& Win32Control::GetInstance()
+{
+    static Win32Control Instance;
+    return Instance;
 }
 
 NTSTATUS Win32Control::NotifyConsoleTypeApplication(_In_ HANDLE const ProcessHandle)
@@ -45,7 +23,7 @@ NTSTATUS Win32Control::NotifyConsoleTypeApplication(_In_ HANDLE const ProcessHan
     CONSOLE_PROCESS_INFO cpi;
     cpi.dwProcessID = HandleToUlong(ProcessHandle);
     cpi.dwFlags = CPI_NEWPROCESSWINDOW;
-    return CallConsoleControl(ConsoleNotifyConsoleApplication, &cpi, sizeof(cpi));
+    return GetInstance()._ConsoleControl(ConsoleNotifyConsoleApplication, &cpi, sizeof(cpi));
 }
 
 NTSTATUS Win32Control::NotifyWindowOwner(_In_ HANDLE const ProcessHandle, _In_ HANDLE const ThreadHandle, _In_ HWND const WindowHandle)
@@ -54,7 +32,7 @@ NTSTATUS Win32Control::NotifyWindowOwner(_In_ HANDLE const ProcessHandle, _In_ H
     cwo.ProcessId = HandleToULong(ProcessHandle);
     cwo.ThreadId = HandleToULong(ThreadHandle);
     cwo.hwnd = WindowHandle;
-    return CallConsoleControl(ConsoleSetWindowOwner, &cwo, sizeof(cwo));
+    return GetInstance()._ConsoleControl(ConsoleSetWindowOwner, &cwo, sizeof(cwo));
 }
 
 NTSTATUS Win32Control::NotifyForegroundProcess(_In_ HANDLE const ProcessHandle, _In_ BOOL IsForeground)
@@ -62,7 +40,7 @@ NTSTATUS Win32Control::NotifyForegroundProcess(_In_ HANDLE const ProcessHandle, 
     CONSOLESETFOREGROUND csf;
     csf.hProcess = ProcessHandle;
     csf.bForeground = IsForeground;
-    return CallConsoleControl(ConsoleSetForeground, &csf, sizeof(csf));
+    return GetInstance()._ConsoleControl(ConsoleSetForeground, &csf, sizeof(csf));
 }
 
 NTSTATUS Win32Control::NotifyCaretPosition(_In_ HWND const WindowHandle, _In_ RECT const CursorPixelsInClientArea)
@@ -70,7 +48,7 @@ NTSTATUS Win32Control::NotifyCaretPosition(_In_ HWND const WindowHandle, _In_ RE
     CONSOLE_CARET_INFO cci;
     cci.hwnd = WindowHandle;
     cci.rc = CursorPixelsInClientArea;
-    return CallConsoleControl(ConsoleSetCaretInfo, &cci, sizeof(cci));
+    return GetInstance()._ConsoleControl(ConsoleSetCaretInfo, &cci, sizeof(cci));
 }
 
 NTSTATUS Win32Control::NotifyEndTask(_In_ HANDLE const ProcessHandle,
@@ -83,5 +61,5 @@ NTSTATUS Win32Control::NotifyEndTask(_In_ HANDLE const ProcessHandle,
     cet.hwnd = WindowHandle;
     cet.ConsoleEventCode = EventType;
     cet.ConsoleFlags = EventFlags;
-    return CallConsoleControl(ConsoleEndTask, &cet, sizeof(cet));
+    return GetInstance()._ConsoleControl(ConsoleEndTask, &cet, sizeof(cet));
 }

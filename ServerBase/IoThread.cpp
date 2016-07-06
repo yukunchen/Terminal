@@ -43,7 +43,7 @@ void IoThread::IoLoop()
         HRESULT Result = _Prot.GetApiCall(&ReceiveMsg);
 
         // If we're disconnected or something goes wrong, bail
-        if (ERROR_PIPE_NOT_CONNECTED == Result)
+        if (HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED) == Result)
         {
             fExiting = true;
             continue;

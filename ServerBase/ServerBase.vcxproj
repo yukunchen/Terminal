@@ -157,6 +157,7 @@
     <ClInclude Include="ApiMessage.h" />
     <ClInclude Include="ApiSorter.h" />
     <ClInclude Include="DeviceComm.h" />
+    <ClInclude Include="DeviceHandle.h" />
     <ClInclude Include="DeviceProtocol.h" />
     <ClInclude Include="IoDispatchers.h" />
     <ClInclude Include="IoThread.h" />
@@ -167,13 +168,16 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="WaitQueue.h" />
     <ClInclude Include="Win32Control.h" />
+    <ClInclude Include="WinNTControl.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApiDispatchers.cpp" />
     <ClCompile Include="ApiMessage.cpp" />
     <ClCompile Include="ApiSorter.cpp" />
     <ClCompile Include="DeviceComm.cpp" />
+    <ClCompile Include="DeviceHandle.cpp" />
     <ClCompile Include="DeviceProtocol.cpp" />
+    <ClCompile Include="Entrypoints.cpp" />
     <ClCompile Include="IoDispatchers.cpp" />
     <ClCompile Include="IoThread.cpp" />
     <ClCompile Include="ObjectHandle.cpp" />
@@ -186,6 +190,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Win32Control.cpp" />
+    <ClCompile Include="WinNTControl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ServerBaseApi\ServerBaseApi.vcxproj">

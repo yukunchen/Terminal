@@ -110,6 +110,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\ServerBase\Entrypoints.h" />
     <ClInclude Include="IApiResponders.h" />
     <ClInclude Include="IApiService.h" />
     <ClInclude Include="IConsoleObjects.h" />
