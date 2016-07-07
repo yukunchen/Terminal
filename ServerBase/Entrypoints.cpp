@@ -6,13 +6,13 @@
 
 #include <NT\winbasep.h>
 
-std::vector<IoThread*> ioThreads;
+std::vector<std::unique_ptr<IoThread>> ioThreads;
 
 NTSTATUS Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle,
                                                   _In_ IApiResponders* const pResponder)
 {
-    IoThread* const pNewThread = new IoThread(ServerHandle, pResponder);
-    ioThreads.push_back(pNewThread);
+    std::unique_ptr<IoThread> pNewThread = std::make_unique<IoThread>(ServerHandle, pResponder);
+    ioThreads.push_back(std::move(pNewThread));
 
     return STATUS_SUCCESS;
 }
@@ -24,51 +24,46 @@ NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR CmdLine,
     // This scope will ensure all C++ objects and smart pointers get a chance to destruct before ExitThread is called.
     {
         // Create the server and reference handles and create the console object.
-        //wil::unique_handle ServerHandle;
-        HANDLE ServerHandle;
-        RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateServerHandle(&ServerHandle, FALSE));
+        wil::unique_handle ServerHandle;
+        RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateServerHandle(ServerHandle.addressof(), FALSE));
 
-        //wil::unique_handle ReferenceHandle;
-        HANDLE ReferenceHandle;
-        RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateClientHandle(&ReferenceHandle,
-                                                                   ServerHandle,
+        wil::unique_handle ReferenceHandle;
+        RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateClientHandle(ReferenceHandle.addressof(),
+                                                                   ServerHandle.get(),
                                                                    L"\\Reference",
                                                                    FALSE));
 
-        RETURN_IF_NTSTATUS_FAILED(Entrypoints::StartConsoleForServerHandle(ServerHandle, pResponder));
+        RETURN_IF_NTSTATUS_FAILED(Entrypoints::StartConsoleForServerHandle(ServerHandle.get(), pResponder));
 
-        // If the console server took the handle, it owns it now, not us. Release.
-        //ServerHandle.release();
+        // If we get to here, we have transferred ownership of the server handle to the console, so release it.
+        // Keep a copy of the value so we can open the client handles even though we're no longer the owner.
+        HANDLE hServer = ServerHandle.release();
 
         // Now that the console object was created, we're in a state that lets us
         // create the default io objects.
-        //wil::unique_handle ClientHandle[3];
-        HANDLE ClientHandle[3];
-
+        wil::unique_handle ClientHandle[3];
 
         // Input
         RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateClientHandle(
-            //ClientHandle[0].addressof(),
-            &ClientHandle[0],
-            ServerHandle,
+            ClientHandle[0].addressof(),
+            hServer,
             L"\\Input",
             TRUE));
 
         // Output
         RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateClientHandle(
-            //ClientHandle[1].addressof(),
-            &ClientHandle[1],
-            ServerHandle,
+            ClientHandle[1].addressof(),
+            hServer,
             L"\\Output",
             TRUE));
 
+        ServerHandle.release();
+
         // Error is a copy of Output
         RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
-                                                   //ClientHandle[1].get(),
-                                                   ClientHandle[1],
+                                                   ClientHandle[1].get(),
                                                    GetCurrentProcess(),
-                                                   //ClientHandle[2].addressof(),
-                                                   &ClientHandle[2],
+                                                   ClientHandle[2].addressof(),
                                                    0,
                                                    TRUE,
                                                    DUPLICATE_SAME_ACCESS));
@@ -80,13 +75,9 @@ NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR CmdLine,
         STARTUPINFOEX StartupInformation = { 0 };
         StartupInformation.StartupInfo.cb = sizeof(STARTUPINFOEX);
         StartupInformation.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
-        //StartupInformation.StartupInfo.hStdInput = ClientHandle[0].get();
-        //StartupInformation.StartupInfo.hStdOutput = ClientHandle[1].get();
-        //StartupInformation.StartupInfo.hStdError = ClientHandle[2].get();
-
-        StartupInformation.StartupInfo.hStdInput = ClientHandle[0];
-        StartupInformation.StartupInfo.hStdOutput = ClientHandle[1];
-        StartupInformation.StartupInfo.hStdError = ClientHandle[2];
+        StartupInformation.StartupInfo.hStdInput = ClientHandle[0].get();
+        StartupInformation.StartupInfo.hStdOutput = ClientHandle[1].get();
+        StartupInformation.StartupInfo.hStdError = ClientHandle[2].get();
 
         // Create the extended attributes list that will pass the console server information into the child process.
 
@@ -98,9 +89,8 @@ NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR CmdLine,
                                           &AttributeListSize);
 
         // Alloc space
-        //std::unique_ptr<BYTE[]> AttributeList = std::make_unique<BYTE[]>(AttributeListSize);
-        //StartupInformation.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(AttributeList.get());
-        StartupInformation.lpAttributeList = (PPROC_THREAD_ATTRIBUTE_LIST)new BYTE[AttributeListSize];
+        std::unique_ptr<BYTE[]> AttributeList = std::make_unique<BYTE[]>(AttributeListSize);
+        StartupInformation.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(AttributeList.get());
 
         // Call second time to actually initialize space.
         RETURN_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(StartupInformation.lpAttributeList,
@@ -116,16 +106,23 @@ NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR CmdLine,
         RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(StartupInformation.lpAttributeList,
                                                              0,
                                                              PROC_THREAD_ATTRIBUTE_CONSOLE_REFERENCE,
-                                                             &ReferenceHandle,
+                                                             ReferenceHandle.addressof(),
                                                              sizeof(HANDLE),
                                                              NULL,
                                                              NULL));
+        
+        // UpdateProcThreadAttributes wants this as a bare array of handles and doesn't like our smart structures, 
+        // so set it up for its temporary use.
+        HANDLE HandleList[3];
+        HandleList[0] = StartupInformation.StartupInfo.hStdInput;
+        HandleList[1] = StartupInformation.StartupInfo.hStdOutput;
+        HandleList[2] = StartupInformation.StartupInfo.hStdError;
 
         RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(StartupInformation.lpAttributeList,
                                                              0,
                                                              PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
-                                                             &ClientHandle[0],
-                                                             sizeof ClientHandle,
+                                                             &HandleList[0],
+                                                             sizeof HandleList,
                                                              NULL,
                                                              NULL));
 
@@ -145,8 +142,7 @@ NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR CmdLine,
 
 
 
-        //wil::unique_process_information ProcessInformation;
-        PROCESS_INFORMATION ProcessInformation;
+        wil::unique_process_information ProcessInformation;
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(NULL,
                                                   CmdLineMutable.get(),
                                                   NULL,
@@ -156,8 +152,7 @@ NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR CmdLine,
                                                   NULL,
                                                   NULL,
                                                   &StartupInformation.StartupInfo,
-                                                  &ProcessInformation));
-        //ProcessInformation.addressof()));
+                                                  ProcessInformation.addressof()));
     }
 
     // Exit the thread so the CRT won't clean us up and kill. The IO thread owns the lifetime now.
