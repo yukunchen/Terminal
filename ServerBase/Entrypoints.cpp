@@ -44,18 +44,16 @@ NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR CmdLine,
         wil::unique_handle ClientHandle[3];
 
         // Input
-        RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateClientHandle(
-            ClientHandle[0].addressof(),
-            hServer,
-            L"\\Input",
-            TRUE));
+        RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateClientHandle(ClientHandle[0].addressof(),
+                                                                   hServer,
+                                                                   L"\\Input",
+                                                                   TRUE));
 
         // Output
-        RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateClientHandle(
-            ClientHandle[1].addressof(),
-            hServer,
-            L"\\Output",
-            TRUE));
+        RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateClientHandle(ClientHandle[1].addressof(),
+                                                                   hServer,
+                                                                   L"\\Output",
+                                                                   TRUE));
 
         ServerHandle.release();
 
@@ -110,7 +108,7 @@ NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR CmdLine,
                                                              sizeof(HANDLE),
                                                              NULL,
                                                              NULL));
-        
+
         // UpdateProcThreadAttributes wants this as a bare array of handles and doesn't like our smart structures, 
         // so set it up for its temporary use.
         HANDLE HandleList[3];
