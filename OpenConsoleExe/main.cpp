@@ -2,12 +2,9 @@
 //
 
 #include "stdafx.h"
-#include "OpenConsoleExe.h"
 
 #include "..\ServerBaseApi\Entrypoints.h"
 #include "..\ServerSample\ApiResponderEmpty.h"
-
-#include <processthreadsapi.h>
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                       _In_opt_ HINSTANCE hPrevInstance,

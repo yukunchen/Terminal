@@ -96,7 +96,8 @@ NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR CmdLine,
                                                                      0,
                                                                      &AttributeListSize));
         // Set cleanup data for ProcThreadAttributeList when successful.
-        auto CleanupProcThreadAttribute = wil::ScopeExit([StartupInformation] {
+        auto CleanupProcThreadAttribute = wil::ScopeExit([StartupInformation]
+        {
             DeleteProcThreadAttributeList(StartupInformation.lpAttributeList);
         });
 
@@ -136,9 +137,6 @@ NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR CmdLine,
 
         wcscpy_s(CmdLineMutable.get(), length, CmdLine);
         CmdLineMutable[length - 1] = L'\0';
-
-
-
 
         wil::unique_process_information ProcessInformation;
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(NULL,
