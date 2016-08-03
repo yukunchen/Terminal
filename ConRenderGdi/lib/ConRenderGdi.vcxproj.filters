@@ -15,17 +15,31 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IApiResponders.h">
+    <ClInclude Include="..\precomp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IApiService.h">
+    <ClInclude Include="..\targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IConsoleObjects.h">
+    <ClInclude Include="..\gdirenderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Entrypoints.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\precomp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\invalidate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\math.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\paint.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\state.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

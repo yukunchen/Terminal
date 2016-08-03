@@ -15,17 +15,37 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IApiResponders.h">
+    <ClInclude Include="..\precomp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IApiService.h">
+    <ClInclude Include="..\targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IConsoleObjects.h">
+    <ClInclude Include="..\conpropsp.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Entrypoints.h">
+    <ClInclude Include="..\RegistrySerialization.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\ShortcutSerialization.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\TrueTypeFontList.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\precomp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RegistrySerialization.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ShortcutSerialization.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\TrueTypeFontList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -1,0 +1,537 @@
+/********************************************************
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
+
+#include "precomp.h"
+
+#include "outputStream.hpp"
+
+#include "_stream.h"
+#include "stream.h"
+#include "_output.h"
+#include "misc.h"
+#include "getset.h"
+#include "directio.h"
+#include "cursor.h"
+
+#pragma hdrstop
+
+WriteBuffer::WriteBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo) : _dcsi(pScreenInfo)
+{
+}
+
+// Routine Description:
+// - Handles the print action from the state machine
+// Arguments:
+// - wch - The character to be printed.
+// Return Value:
+// - <none>
+void WriteBuffer::Print(_In_ wchar_t const wch)
+{
+    _DefaultCase(wch);
+}
+
+// Routine Description:
+// - Handles the print action from the state machine
+// Arguments:
+// - wch - The character to be printed.
+// Return Value:
+// - <none>
+void WriteBuffer::PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+{
+    _DefaultStringCase(rgwch, cch);
+}
+
+// Routine Description:
+// - Handles the execute action from the state machine
+// Arguments:
+// - wch - The C0 control character to be executed.
+// Return Value:
+// - <none>
+void WriteBuffer::Execute(_In_ wchar_t const wch)
+{
+    _DefaultCase(wch);
+}
+
+// Routine Description:
+// - Default text editing/printing handler for all characters that were not routed elsewhere by other state machine intercepts.
+// Arguments:
+// - wch - The character to be processed by our default text editing/printing mechanisms.
+// Return Value:
+// - <none>
+void WriteBuffer::_DefaultCase(_In_ wchar_t const wch)
+{
+    _DefaultStringCase(const_cast<wchar_t*>(&wch), 1); // WriteCharsLegacy wants mutable chars, so we'll givve it mutable chars.
+}
+
+// Routine Description:
+// - Default text editing/printing handler for all characters that were not routed elsewhere by other state machine intercepts.
+// Arguments:
+// - wch - The character to be processed by our default text editing/printing mechanisms.
+// Return Value:
+// - <none>
+void WriteBuffer::_DefaultStringCase(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+{
+    PWCHAR buffer = &(rgwch[0]);
+
+    DWORD dwNumBytes = (DWORD)(cch * sizeof(wchar_t));
+
+    _dcsi->TextInfo->GetCursor()->SetIsOn(TRUE);
+
+    _ntstatus = WriteCharsLegacy(_dcsi, 
+                                 buffer, 
+                                 buffer, 
+                                 buffer, 
+                                 &dwNumBytes, 
+                                 nullptr, 
+                                 _dcsi->TextInfo->GetCursor()->GetPosition().X, 
+                                 WC_NONDESTRUCTIVE_TAB | WC_DELAY_EOL_WRAP, 
+                                 nullptr);
+}
+
+// Routine Description:
+// - Sets our pointer to the screen buffer we're attached to. This is used by UseAlternateBuffer and UseMainBuffer
+//     because they share one InternalGetSet and WriteBuffer
+// Return Value: 
+// <none>
+void WriteBuffer::SetActiveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo)
+{
+    this->_dcsi = pScreenInfo;
+}
+
+ConhostInternalGetSet::ConhostInternalGetSet(_In_ SCREEN_INFORMATION* const pScreenInfo, 
+                                             _In_ INPUT_INFORMATION* const pInputInfo) :
+                                             _pScreenInfo(pScreenInfo), 
+                                             _pInputInfo(pInputInfo)
+{
+}
+
+// Routine Description:
+// - Connects the GetConsoleScreenBufferInfoEx API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - pConsoleScreenBufferInfoEx - Pointer to structure to hold screen buffer information like the public API call.
+// Return Value:
+// - TRUE if successful (see DoSrvGetConsoleScreenBufferInfo). FALSE otherwise.
+BOOL ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const 
+{
+    BOOL fSuccess = pConsoleScreenBufferInfoEx->cbSize == sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+
+    if (fSuccess)
+    {
+        CONSOLE_SCREENBUFFERINFO_MSG msg;
+
+        fSuccess = NT_SUCCESS(DoSrvGetConsoleScreenBufferInfo(_pScreenInfo, &msg));
+
+        if (fSuccess)
+        {
+            pConsoleScreenBufferInfoEx->bFullscreenSupported = msg.FullscreenSupported;
+
+            memcpy(pConsoleScreenBufferInfoEx->ColorTable, msg.ColorTable, sizeof(msg.ColorTable));
+
+            pConsoleScreenBufferInfoEx->dwCursorPosition = msg.CursorPosition;
+            pConsoleScreenBufferInfoEx->dwMaximumWindowSize = msg.MaximumWindowSize;
+            pConsoleScreenBufferInfoEx->dwSize = msg.Size;
+            pConsoleScreenBufferInfoEx->srWindow.Left = msg.ScrollPosition.X;
+            pConsoleScreenBufferInfoEx->srWindow.Top = msg.ScrollPosition.Y;
+            pConsoleScreenBufferInfoEx->srWindow.Right = pConsoleScreenBufferInfoEx->srWindow.Left + msg.CurrentWindowSize.X;
+            pConsoleScreenBufferInfoEx->srWindow.Bottom = pConsoleScreenBufferInfoEx->srWindow.Top + msg.CurrentWindowSize.Y;
+            pConsoleScreenBufferInfoEx->wAttributes = msg.Attributes;
+            pConsoleScreenBufferInfoEx->wPopupAttributes = msg.PopupAttributes;
+        }
+    }
+
+    return fSuccess;
+}
+
+// Routine Description:
+// - Connects the SetConsoleScreenBufferInfoEx API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - pConsoleScreenBufferInfoEx - Pointer to structure containing screen buffer information like the public API call.
+// Return Value:
+// - TRUE if successful (see DoSrvSetConsoleScreenBufferInfo). FALSE otherwise.
+BOOL ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const 
+{
+    BOOL fSuccess = pConsoleScreenBufferInfoEx->cbSize == sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    if (fSuccess)
+    {        
+        CONSOLE_SCREENBUFFERINFO_MSG msg;
+        msg.FullscreenSupported = !!pConsoleScreenBufferInfoEx->bFullscreenSupported;
+
+        memcpy(msg.ColorTable, pConsoleScreenBufferInfoEx->ColorTable, sizeof(pConsoleScreenBufferInfoEx->ColorTable));
+
+        msg.CursorPosition    = pConsoleScreenBufferInfoEx->dwCursorPosition;
+        msg.MaximumWindowSize = pConsoleScreenBufferInfoEx->dwMaximumWindowSize;
+        msg.Size              = pConsoleScreenBufferInfoEx->dwSize ;
+        msg.ScrollPosition.X  = pConsoleScreenBufferInfoEx->srWindow.Left;
+        msg.ScrollPosition.Y  = pConsoleScreenBufferInfoEx->srWindow.Top;
+        msg.CurrentWindowSize.X = pConsoleScreenBufferInfoEx->srWindow.Right  - pConsoleScreenBufferInfoEx->srWindow.Left;
+        msg.CurrentWindowSize.Y = pConsoleScreenBufferInfoEx->srWindow.Bottom - pConsoleScreenBufferInfoEx->srWindow.Top;
+        msg.Attributes         = pConsoleScreenBufferInfoEx->wAttributes;
+        msg.PopupAttributes    = pConsoleScreenBufferInfoEx->wPopupAttributes;
+        fSuccess = NT_SUCCESS(DoSrvSetScreenBufferInfo(_pScreenInfo, &msg));
+    }
+
+    return fSuccess;
+}
+
+// Routine Description:
+// - Connects the SetConsoleCursorPosition API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - coordCursorPosition - new cursor position to set like the public API call.
+// Return Value:
+// - TRUE if successful (see DoSrvSetConsoleCursorPosition). FALSE otherwise.
+BOOL ConhostInternalGetSet::SetConsoleCursorPosition(_In_ COORD const coordCursorPosition)
+{
+    CONSOLE_SETCURSORPOSITION_MSG msg;
+    msg.CursorPosition = coordCursorPosition;
+
+    BOOL fSuccess = NT_SUCCESS(DoSrvSetConsoleCursorPosition(_pScreenInfo, &msg));
+
+    return fSuccess;
+}
+
+// Routine Description:
+// - Connects the GetConsoleCursorInfo API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - pConsoleCursorInfo - Pointer to structure to receive console cursor rendering info
+// Return Value: 
+// - TRUE if successful (see DoSrvGetConsoleCursorInfo). FALSE otherwise.
+BOOL ConhostInternalGetSet::GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) const 
+{
+    CONSOLE_GETCURSORINFO_MSG msg;
+
+    BOOL fSuccess = NT_SUCCESS(DoSrvGetConsoleCursorInfo(_pScreenInfo, &msg));
+
+    if (fSuccess)
+    {
+        pConsoleCursorInfo->bVisible = msg.Visible;
+        pConsoleCursorInfo->dwSize = msg.CursorSize;
+    }
+
+    return fSuccess;
+}
+
+// Routine Description:
+// - Connects the SetConsoleCursorInfo API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - pConsoleCursorInfo - Updated size/visibility information to modify the cursor rendering behavior.
+// Return Value: 
+// - TRUE if successful (see DoSrvSetConsoleCursorInfo). FALSE otherwise.
+BOOL ConhostInternalGetSet::SetConsoleCursorInfo(_In_ const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo)
+{
+    CONSOLE_SETCURSORINFO_MSG msg;
+    msg.CursorSize = pConsoleCursorInfo->dwSize;
+    msg.Visible = (BOOLEAN)pConsoleCursorInfo->bVisible;
+
+    BOOL fSuccess = NT_SUCCESS(DoSrvSetConsoleCursorInfo(_pScreenInfo, &msg));
+
+    return fSuccess;
+}
+
+// Routine Description:
+// - Connects the FillConsoleOutputCharacter API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - wch - Character to use for filling the buffer
+// - nLength - The length of the fill run in characters (depending on mode, will wrap at the window edge so multiple lines are the sum of the total length)
+// - dwWriteCoord - The first fill character's coordinate position in the buffer (writes continue rightward and possibly down from there)
+// - pNumberOfCharsWritten - Pointer to memory location to hold the total number of characters written into the buffer
+// Return Value: 
+// - TRUE if successful (see DoSrvFillConsoleOutput). FALSE otherwise.
+BOOL ConhostInternalGetSet::FillConsoleOutputCharacterW(_In_ WCHAR const wch, _In_ DWORD const nLength, _In_ COORD const dwWriteCoord, _Out_ DWORD* const pNumberOfCharsWritten)
+{
+    return _FillConsoleOutput(wch, CONSOLE_REAL_UNICODE, nLength, dwWriteCoord, pNumberOfCharsWritten);
+}
+
+// Routine Description:
+// - Connects the FillConsoleOutputAttribute API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - wAttribute - Text attribute (colors/font style) for filling the buffer
+// - nLength - The length of the fill run in characters (depending on mode, will wrap at the window edge so multiple lines are the sum of the total length)
+// - dwWriteCoord - The first fill character's coordinate position in the buffer (writes continue rightward and possibly down from there)
+// - pNumberOfCharsWritten - Pointer to memory location to hold the total number of text attributes written into the buffer
+// Return Value: 
+// - TRUE if successful (see DoSrvFillConsoleOutput). FALSE otherwise.
+BOOL ConhostInternalGetSet::FillConsoleOutputAttribute(_In_ WORD const wAttribute, _In_ DWORD const nLength, _In_ COORD const dwWriteCoord, _Out_ DWORD* const pNumberOfAttrsWritten)
+{
+    return _FillConsoleOutput(wAttribute, CONSOLE_ATTRIBUTE, nLength, dwWriteCoord, pNumberOfAttrsWritten);
+}
+
+// Routine Description:
+// - Helper to consolidate FillConsole calls into the same internal message/API call pattern.
+// Arguments:
+// - usElement - Variable element type to fill the console with (characters, attributes)
+// - ulElementType - Flag to specify which type of fill to perform with usElement variable.
+// - nLength - The length of the fill run in characters (depending on mode, will wrap at the window edge so multiple lines are the sum of the total length)
+// - dwWriteCoord - The first fill character's coordinate position in the buffer (writes continue rightward and possibly down from there)
+// - pNumberOfCharsWritten - Pointer to memory location to hold the total number of elements written into the buffer
+// Return Value: 
+// - TRUE if successful (see DoSrvFillConsoleOutput). FALSE otherwise.
+BOOL ConhostInternalGetSet::_FillConsoleOutput(_In_ USHORT const usElement, _In_ ULONG const ulElementType, _In_ DWORD const nLength, _In_ COORD const dwWriteCoord, _Out_ DWORD* const pNumberWritten)
+{
+    CONSOLE_FILLCONSOLEOUTPUT_MSG msg;
+    msg.Element = usElement;
+    msg.ElementType = ulElementType;
+    msg.WriteCoord = dwWriteCoord;
+    msg.Length = nLength;
+
+    BOOL fSuccess = NT_SUCCESS(DoSrvFillConsoleOutput(_pScreenInfo, &msg));
+
+    if (fSuccess)
+    {
+        *pNumberWritten = msg.Length; // the length value is replaced when exiting with the number written.
+    }
+
+    return fSuccess;
+}
+
+// Routine Description:
+// - Connects the SetConsoleTextAttribute API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - wAttr - new color/graphical attributes to apply as default within the console text buffer
+// Return Value: 
+// - TRUE if successful (see DoSrvSetConsoleTextAttribute). FALSE otherwise.
+BOOL ConhostInternalGetSet::SetConsoleTextAttribute(_In_ WORD const wAttr)
+{
+    CONSOLE_SETTEXTATTRIBUTE_MSG msg;
+    msg.Attributes = wAttr;
+
+    BOOL fSuccess = NT_SUCCESS(DoSrvSetConsoleTextAttribute(_pScreenInfo, &msg));
+
+    return fSuccess;
+}
+
+// Routine Description:
+// - Connects the WriteConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - rgInputRecords - An array of input records to be copied into the the head of the input buffer for the underlying attached process
+// - nLength - The number of records in the rgInputRecords array
+// - pNumberOfEventsWritten - Pointer to memory location to hold the total number of elements written into the buffer
+// Return Value: 
+// - TRUE if successful (see DoSrvWriteConsoleInput). FALSE otherwise.
+BOOL ConhostInternalGetSet::WriteConsoleInputW(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords, _In_ DWORD const nLength, _Out_ DWORD* const pNumberOfEventsWritten)
+{
+    CONSOLE_WRITECONSOLEINPUT_MSG msg;
+    msg.Append = false;
+    msg.NumRecords = nLength;
+    msg.Unicode = true;
+
+    BOOL fSuccess = NT_SUCCESS(DoSrvWriteConsoleInput(_pInputInfo, &msg, rgInputRecords));
+
+    *pNumberOfEventsWritten = msg.NumRecords;
+
+    return fSuccess;
+}
+
+// Routine Description:
+// - Connects the ScrollConsoleScreenBuffer API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - pScrollRectangle - The region to "cut" from the existing buffer text
+// - pClipRectangle - The bounding rectangle within which all modifications should happen. Any modification outside this RECT should be clipped.
+// - coordDestinationOrigin - The top left corner of the "paste" from pScrollREctangle
+// - pFill - The text/attribute pair to fill all remaining space behind after the "cut" operation (bounded by clip, of course.)
+// Return Value: 
+// - TRUE if successful (see DoSrvScrollConsoleScreenBuffer). FALSE otherwise.
+BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pScrollRectangle, _In_opt_ const SMALL_RECT* pClipRectangle, _In_ COORD coordDestinationOrigin, _In_ const CHAR_INFO* pFill)
+{
+    CONSOLE_SCROLLSCREENBUFFER_MSG msg;
+    
+    if (pClipRectangle != nullptr)
+    {
+        msg.ClipRectangle = *pClipRectangle;
+        msg.Clip = TRUE;
+    }
+    else
+    {
+        msg.ClipRectangle = { 0 };
+        msg.Clip = FALSE;
+    }
+
+    msg.DestinationOrigin = coordDestinationOrigin;
+    msg.Fill = *pFill;
+    msg.ScrollRectangle = *pScrollRectangle;
+    msg.Unicode = TRUE;
+
+    return NT_SUCCESS(DoSrvScrollConsoleScreenBuffer(_pScreenInfo, &msg));
+}
+
+// Routine Description:
+// - Connects the SetConsoleWindowInfo API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - bAbsolute - Should the window be moved to an absolute position? If false, the movement is relative to the current pos.
+// - lpConsoleWindow - Info about how to move the viewport
+// Return Value: 
+// - TRUE if successful (see DoSrvSetConsoleWindowInfo). FALSE otherwise.
+BOOL ConhostInternalGetSet::SetConsoleWindowInfo(_In_ BOOL const bAbsolute, _In_ const SMALL_RECT* const lpConsoleWindow)
+{
+    CONSOLE_SETWINDOWINFO_MSG msg;
+    msg.Absolute = !!bAbsolute;
+    msg.Window = *lpConsoleWindow;
+
+    return NT_SUCCESS(DoSrvSetConsoleWindowInfo(_pScreenInfo, &msg));
+}
+
+// Routine Description:
+// - Connects the PrivateSetCursorKeysMode call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateSetCursorKeysMode is an internal-only "API" call that the vt commands can execute, 
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - fApplicationMode - set to true to enable Application Mode Input, false for Normal Mode.
+// Return Value: 
+// - TRUE if successful (see DoSrvPrivateSetCursorKeysMode). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateSetCursorKeysMode(_In_ bool const fApplicationMode)
+{
+    return NT_SUCCESS(DoSrvPrivateSetCursorKeysMode(fApplicationMode));
+}
+
+// Routine Description:
+// - Connects the PrivateSetKeypadMode call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateSetKeypadMode is an internal-only "API" call that the vt commands can execute, 
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - fApplicationMode - set to true to enable Application Mode Input, false for Numeric Mode.
+// Return Value: 
+// - TRUE if successful (see DoSrvPrivateSetKeypadMode). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateSetKeypadMode(_In_ bool const fApplicationMode)
+{
+    return NT_SUCCESS(DoSrvPrivateSetKeypadMode(fApplicationMode));
+}
+
+// Routine Description:
+// - Connects the PrivateAllowCursorBlinking call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateAllowCursorBlinking is an internal-only "API" call that the vt commands can execute, 
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - fEnable - set to true to enable blinking, false to disable
+// Return Value: 
+// - TRUE if successful (see DoSrvPrivateAllowCursorBlinking). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateAllowCursorBlinking(_In_ bool const fEnable)
+{
+    return NT_SUCCESS(DoSrvPrivateAllowCursorBlinking(_pScreenInfo, fEnable));
+}
+
+// Routine Description:
+// - Connects the PrivateSetScrollingRegion call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateSetScrollingRegion is an internal-only "API" call that the vt commands can execute, 
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - psrScrollMargins - The bounds of the region to be the scrolling region of the viewport.
+// Return Value: 
+// - TRUE if successful (see DoSrvPrivateSetScrollingRegion). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateSetScrollingRegion(_In_ const SMALL_RECT* const psrScrollMargins)
+{
+    return NT_SUCCESS(DoSrvPrivateSetScrollingRegion(_pScreenInfo, psrScrollMargins));
+}
+
+// Routine Description:
+// - Connects the PrivateReverseLineFeed call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateReverseLineFeed is an internal-only "API" call that the vt commands can execute, 
+//     but it is not represented as a function call on out public API surface.
+// Return Value: 
+// - TRUE if successful (see DoSrvPrivateReverseLineFeed). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateReverseLineFeed()
+{
+    return NT_SUCCESS(DoSrvPrivateReverseLineFeed(_pScreenInfo));
+}
+
+// Routine Description:
+// - Connects the SetConsoleTitleW API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - pwchWindowTitle - The null-terminated string to set as the window title 
+// - sCchTitleLength - the number of characters in the title
+// Return Value: 
+// - TRUE if successful (see DoSrvSetConsoleTitle). FALSE otherwise.
+BOOL ConhostInternalGetSet::SetConsoleTitleW(_In_ const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength)
+{
+    ULONG cbOriginalLength;
+    if (SUCCEEDED(ULongMult(sCchTitleLength, sizeof(WCHAR), &cbOriginalLength)))
+    {
+        return DoSrvSetConsoleTitle((PVOID)pwchWindowTitle, cbOriginalLength, TRUE);
+    }    
+
+    return FALSE;
+}
+
+// Routine Description:
+// - Connects the PrivateUseAlternateScreenBuffer call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateUseAlternateScreenBuffer is an internal-only "API" call that the vt commands can execute, 
+//     but it is not represented as a function call on out public API surface.
+// Return Value: 
+// - TRUE if successful (see DoSrvPrivateUseAlternateScreenBuffer). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateUseAlternateScreenBuffer()
+{
+    return NT_SUCCESS(DoSrvPrivateUseAlternateScreenBuffer(_pScreenInfo));
+}
+
+// Routine Description:
+// - Connects the PrivateUseMainScreenBuffer call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateUseMainScreenBuffer is an internal-only "API" call that the vt commands can execute, 
+//     but it is not represented as a function call on out public API surface.
+// Return Value: 
+// - TRUE if successful (see DoSrvPrivateUseMainScreenBuffer). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateUseMainScreenBuffer()
+{
+    return NT_SUCCESS(DoSrvPrivateUseMainScreenBuffer(_pScreenInfo));
+}
+
+// Routine Description:
+// - Sets our pointer to the screen buffer we're attached to. This is used by UseAlternateBuffer and UseMainBuffer
+//     because they share one InternalGetSet and WriteBuffer
+// Return Value: 
+// <none>
+void ConhostInternalGetSet::SetActiveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo)
+{
+    this->_pScreenInfo = pScreenInfo;
+}
+
+// - Connects the PrivateHorizontalTabSet call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateHorizontalTabSet is an internal-only "API" call that the vt commands can execute, 
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// <none>
+// Return Value: 
+// - TRUE if successful (see PrivateHorizontalTabSet). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateHorizontalTabSet()
+{
+    return NT_SUCCESS(DoSrvPrivateHorizontalTabSet());    
+}
+
+// Routine Description:
+// - Connects the PrivateForwardTab call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateForwardTab is an internal-only "API" call that the vt commands can execute, 
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - sNumTabs - the number of tabs to execute
+// Return Value: 
+// - TRUE if successful (see PrivateForwardTab). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateForwardTab(_In_ SHORT const sNumTabs)
+{
+    return NT_SUCCESS(DoSrvPrivateForwardTab(sNumTabs));
+}
+
+// Routine Description:
+// - Connects the PrivateBackwardsTab call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateBackwardsTab is an internal-only "API" call that the vt commands can execute, 
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - sNumTabs - the number of tabs to execute
+// Return Value: 
+// - TRUE if successful (see PrivateBackwardsTab). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateBackwardsTab(_In_ SHORT const sNumTabs)
+{
+    return NT_SUCCESS(DoSrvPrivateBackwardsTab(sNumTabs));
+}
+
+// Routine Description:
+// - Connects the PrivateTabClear call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateTabClear is an internal-only "API" call that the vt commands can execute, 
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - fClearAll - set to true to enable blinking, false to disable
+// Return Value: 
+// - TRUE if successful (see PrivateTabClear). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateTabClear(_In_ bool const fClearAll)
+{
+    return NT_SUCCESS(DoSrvPrivateTabClear(fClearAll));
+}

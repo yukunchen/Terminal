@@ -1,0 +1,209 @@
+/*++
+Copyright (c) Microsoft Corporation
+
+Module Name:
+- telemetry.hpp
+
+Abstract:
+- This module is used for recording all telemetry feedback from the console
+
+Author(s):
+- Evan Wirt       (EvanWi)    09-Jul-2014
+- Kourosh Mehrain (KMehrain)  09-Jul-2014
+- Stephen Somuah  (StSomuah)  09-Jul-2014
+- Anup Manandhar  (AnupM)     09-Jul-2014
+--*/
+#pragma once
+
+class Telemetry
+{
+public:
+    // Implement this as a singleton class.
+    static Telemetry& Instance()
+    {
+        static Telemetry s_Instance;
+        return s_Instance;
+    }
+
+    void SetUserInteractive();
+    void SetWindowSizeChanged();
+    void SetContextMenuUsed();
+    void SetKeyboardTextSelectionUsed();
+    void SetKeyboardTextEditingUsed();
+    void SetCtrlPgUpPgDnUsed();
+
+    void LogFindDialogNextClicked(_In_ const unsigned int iStringLength, _In_ const bool fDirectionDown, _In_ const bool fMatchCase);
+    void LogProcessConnected(_In_ const HANDLE hProcess);
+    void FindDialogClosed();
+    void WriteFinalTraceLog();
+
+    void LogAssert(_In_z_ const char* pszSourceText, _In_z_ const char* pszFileName, _In_ const int iLineNumber) const;
+    void LogRipMessage(_In_z_ const char* pszMessage, ...) const;
+
+    // Names are from the external API call names.  Note that some names can be different
+    // than the internal API calls.
+    // Don't worry about the following APIs, because they are external to our conhost codebase and hard to track through
+    // telemetry: GetStdHandle, SetConsoleCtrlHandler, SetStdHandle
+    // We can't differentiate between these apis, so just log the "-Ex" versions: GetConsoleScreenBufferInfo / GetConsoleScreenBufferInfoEx,
+    // GetCurrentConsoleFontEx / GetCurrentConsoleFont
+    enum ApiCall
+    {
+        AddConsoleAlias = 0,
+        AllocConsole,
+        AttachConsole,
+        CreateConsoleScreenBuffer,
+        FillConsoleOutputAttribute,
+        FillConsoleOutputCharacter,
+        FlushConsoleInputBuffer,
+        FreeConsole,
+        GenerateConsoleCtrlEvent,
+        GetConsoleAlias,
+        GetConsoleAliases,
+        GetConsoleAliasesLength,
+        GetConsoleAliasExes,
+        GetConsoleAliasExesLength,
+        GetConsoleCP,
+        GetConsoleCursorInfo,
+        GetConsoleDisplayMode,
+        GetConsoleFontSize,
+        GetConsoleHistoryInfo,
+        GetConsoleMode,
+        GetConsoleLangId,
+        GetConsoleOriginalTitle,
+        GetConsoleOutputCP,
+        GetConsoleProcessList,
+        GetConsoleScreenBufferInfoEx,
+        GetConsoleSelectionInfo,
+        GetConsoleTitle,
+        GetConsoleWindow,
+        GetCurrentConsoleFontEx,
+        GetLargestConsoleWindowSize,
+        GetNumberOfConsoleInputEvents,
+        GetNumberOfConsoleMouseButtons,
+        PeekConsoleInput,
+        ReadConsole,
+        ReadConsoleInput,
+        ReadConsoleOutput,
+        ReadConsoleOutputAttribute,
+        ReadConsoleOutputCharacter,
+        ScrollConsoleScreenBuffer,
+        SetConsoleActiveScreenBuffer,
+        SetConsoleCP,
+        SetConsoleCursorInfo,
+        SetConsoleCursorPosition,
+        SetConsoleDisplayMode,
+        SetConsoleHistoryInfo,
+        SetConsoleMode,
+        SetConsoleOutputCP,
+        SetConsoleScreenBufferInfoEx,
+        SetConsoleScreenBufferSize,
+        SetConsoleTextAttribute,
+        SetConsoleTitle,
+        SetConsoleWindowInfo,
+        SetCurrentConsoleFontEx,
+        WriteConsole,
+        WriteConsoleInput,
+        WriteConsoleOutput,
+        WriteConsoleOutputAttribute,
+        WriteConsoleOutputCharacter,
+        // Only use this last enum as a count of the number of api enums.
+        NUMBER_OF_APIS
+    };
+    void LogApiCall(_In_ ApiCall const api);
+    void LogApiCall(_In_ ApiCall const api, _In_ BOOLEAN const fUnicode);
+
+private:
+    // Used to prevent multiple instances
+    Telemetry();
+    ~Telemetry();
+    Telemetry(Telemetry const&);
+    void operator=(Telemetry const&);
+
+    bool FindProcessName(_In_ const WCHAR* pszProcessName, _Out_ size_t *iPosition) const;
+    void TotalCodesForPreviousProcess();
+
+    static const int c_iMaxProcessesConnected = 100;
+
+    TraceLoggingActivity<g_hConhostV2EventTraceProvider> _activity;
+
+    float _fpFindStringLengthAverage;
+    float _fpDirectionDownAverage;
+    float _fpMatchCaseAverage;
+    unsigned int _uiFindNextClickedTotal;
+    time_t _tStartedAt;
+    WCHAR const * const c_pwszBashExeName = L"bash.exe";
+
+    // The current recommendation is to keep telemetry events 4KB or less, so let's keep our array at less than 2KB (1000 * 2 bytes).
+    WCHAR _wchProcessFileNames[1000];
+    // Index into our specially packed string, where to insert the next string.
+    size_t _iProcessFileNamesNext;
+    // Index for the currently connected process.
+    size_t _iProcessConnectedCurrently;
+    // An array of indexes into the _wchProcessFileNames array, which point to the individual process names.
+    size_t _rgiProccessFileNameIndex[c_iMaxProcessesConnected];
+    // Number of times each process has connected to the console.
+    unsigned int _rguiProcessFileNamesCount[c_iMaxProcessesConnected];
+    // To speed up searching the Process Names, create an alphabetically sorted index.
+    size_t _rgiAlphabeticalIndex[c_iMaxProcessesConnected];
+    // Total of how many codes each process used
+    unsigned int _rguiProcessFileNamesCodesCount[c_iMaxProcessesConnected];
+    // Total of how many failed codes each process used
+    unsigned int _rguiProcessFileNamesFailedCodesCount[c_iMaxProcessesConnected];
+    // Total of how many failed codes each process used outside the valid range.
+    unsigned int _rguiProcessFileNamesFailedOutsideCodesCount[c_iMaxProcessesConnected];
+    unsigned int _rguiTimesApiUsed[NUMBER_OF_APIS];
+    // Most of this array will be empty, and is only used if an API has an ansi specific variant.
+    unsigned int _rguiTimesApiUsedAnsi[NUMBER_OF_APIS];
+    // Total number of file names we've added.
+    UINT16 _uiNumberProcessFileNames;
+
+    bool _fBashUsed;
+    bool _fKeyboardTextEditingUsed;
+    bool _fKeyboardTextSelectionUsed;
+    bool _fUserInteractiveForTelemetry;
+    bool _fCtrlPgUpPgDnUsed;
+};
+
+#ifdef ASSERT
+#undef ASSERT
+#endif
+
+// Why switch to ASSERT instead of NT_ASSERT:
+// ASSERT is a more "recent" version of NT_ASSERT, but it can place some information (like source file name and line number) 
+// in the pdb file instead of the binary file.  While this is fine when you have a debugger attached, with telemetry we need
+// access to that information live in the binary file, so we can log it.  We're also seeing NT_ASSERT crash the console
+// when a debugger isn't attached.  This could be considered a "feature" (we get Watson data based on the crash), but we'd
+// rather get the telemetry data instead.  The one downside to this is now a chk console could continue on and log telemetry
+// instead of crashing and the console could be in a bad state, but if that were the case, we shouldn't be using asserts
+// that can be ignored, and should be using some sort of RIP macro to purposely stop the console.
+
+#ifdef DBG
+// Log the assert through telemetry, and also through a normal assertion.
+// Is a drop-in substitute for the ASSERT macro from \internal\sdk\inc\ntrtl_x.h
+#define ASSERT( exp ) \
+  ((!(exp)) ? \
+    (Telemetry::Instance().LogAssert(#exp, __FILE__, __LINE__), assert(#exp), FALSE) : \
+    TRUE)
+#else
+#define ASSERT( exp )         ((void) 0)
+#endif
+
+// Create a "fre" assert that acts like a normal ASSERT on chk, but on fre still sends telemetry.
+#ifdef DBG
+#define ASSERT_FRE ASSERT
+#else
+#define ASSERT_FRE( exp ) \
+  ((!(exp)) ? \
+    (Telemetry::Instance().LogAssert(#exp, __FILE__, __LINE__), FALSE) : \
+    TRUE)
+#endif
+
+
+// Log the RIPMSG through telemetry, and also through a normal OutputDebugStringW call.
+// These are drop-in substitutes for the RIPMSG0-4 macros from \windows\Core\ntcon2\conhost\consrv.h
+// TODO: OutputDebugString needs some form of string format for the params.
+#define RIPMSG0(flags, msg) Telemetry::Instance().LogRipMessage(msg);OutputDebugStringA(msg);
+#define RIPMSG1(flags, msg, a) Telemetry::Instance().LogRipMessage(msg, a);OutputDebugStringA(msg);
+#define RIPMSG2(flags, msg, a, b) Telemetry::Instance().LogRipMessage(msg, a, b);OutputDebugStringA(msg);
+#define RIPMSG3(flags, msg, a, b, c) Telemetry::Instance().LogRipMessage(msg, a, b, c);OutputDebugStringA(msg);
+#define RIPMSG4(flags, msg, a, b, c, d) Telemetry::Instance().LogRipMessage(msg, a, b, c, d);OutputDebugStringA(msg);

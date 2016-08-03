@@ -1,3 +1,5 @@
+#pragma once
+
 typedef struct _IO_STATUS_BLOCK {
     union {
         NTSTATUS Status;
