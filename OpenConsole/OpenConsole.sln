@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenConsole", "OpenConsole.vcxproj", "{B35FBF39-E08B-46C5-A9AE-79B41AAA888E}"
 EndProject
@@ -9,9 +9,15 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ServerBase", "..\ServerBase
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ServerSample", "..\ServerSample\ServerSample.vcxproj", "{44858DB9-40A7-4CFC-9B78-F9DB183A89D6}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ServerBaseApi", "..\ServerBaseApi\ServerBaseApi.vcxproj", "{75D376A3-EEB4-4FA9-A2CF-118FC9EAE3CD}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenConsoleExe", "..\OpenConsoleExe\OpenConsoleExe.vcxproj", "{93092D9C-EEE0-47E8-888F-447AAA613095}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ServerBaseApi", "ServerBaseApi", "{D2DBD6E0-6989-441C-A99B-5EE96AE7CCDE}"
+	ProjectSection(SolutionItems) = preProject
+		..\ServerBaseApi\Entrypoints.h = ..\ServerBaseApi\Entrypoints.h
+		..\ServerBaseApi\IApiResponders.h = ..\ServerBaseApi\IApiResponders.h
+		..\ServerBaseApi\IApiService.h = ..\ServerBaseApi\IApiService.h
+		..\ServerBaseApi\IConsoleObjects.h = ..\ServerBaseApi\IConsoleObjects.h
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,14 +51,6 @@ Global
 		{44858DB9-40A7-4CFC-9B78-F9DB183A89D6}.Release|x64.Build.0 = Release|x64
 		{44858DB9-40A7-4CFC-9B78-F9DB183A89D6}.Release|x86.ActiveCfg = Release|Win32
 		{44858DB9-40A7-4CFC-9B78-F9DB183A89D6}.Release|x86.Build.0 = Release|Win32
-		{75D376A3-EEB4-4FA9-A2CF-118FC9EAE3CD}.Debug|x64.ActiveCfg = Debug|x64
-		{75D376A3-EEB4-4FA9-A2CF-118FC9EAE3CD}.Debug|x64.Build.0 = Debug|x64
-		{75D376A3-EEB4-4FA9-A2CF-118FC9EAE3CD}.Debug|x86.ActiveCfg = Debug|Win32
-		{75D376A3-EEB4-4FA9-A2CF-118FC9EAE3CD}.Debug|x86.Build.0 = Debug|Win32
-		{75D376A3-EEB4-4FA9-A2CF-118FC9EAE3CD}.Release|x64.ActiveCfg = Release|x64
-		{75D376A3-EEB4-4FA9-A2CF-118FC9EAE3CD}.Release|x64.Build.0 = Release|x64
-		{75D376A3-EEB4-4FA9-A2CF-118FC9EAE3CD}.Release|x86.ActiveCfg = Release|Win32
-		{75D376A3-EEB4-4FA9-A2CF-118FC9EAE3CD}.Release|x86.Build.0 = Release|Win32
 		{93092D9C-EEE0-47E8-888F-447AAA613095}.Debug|x64.ActiveCfg = Debug|x64
 		{93092D9C-EEE0-47E8-888F-447AAA613095}.Debug|x64.Build.0 = Debug|x64
 		{93092D9C-EEE0-47E8-888F-447AAA613095}.Debug|x86.ActiveCfg = Debug|Win32
