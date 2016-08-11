@@ -80,20 +80,11 @@
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="sources" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SampleTest.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\OpenConsole\packages\Taef.Native.5.9.14871.1000\build\native\Taef.Native.targets" Condition="Exists('..\OpenConsole\packages\Taef.Native.5.9.14871.1000\build\native\Taef.Native.targets')" />
-  </ImportGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\OpenConsole\packages\Taef.Native.5.9.14871.1000\build\native\Taef.Native.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\OpenConsole\packages\Taef.Native.5.9.14871.1000\build\native\Taef.Native.targets'))" />
-  </Target>
+  <ImportGroup Label="ExtensionTargets" />
 </Project>
