@@ -19,7 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ServerBaseApi", "ServerBase
 		..\ServerBaseApi\IConsoleObjects.h = ..\ServerBaseApi\IConsoleObjects.h
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitTest1", "..\UnitTest1\UnitTest1.vcxproj", "{FB955BD8-39A9-4BC5-B204-1B6F2729D922}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestProject1", "TestProject1\TestProject1.vcxproj", "{A1D811BA-5365-4DAE-B914-9620E5B07FF8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -61,14 +61,12 @@ Global
 		{93092D9C-EEE0-47E8-888F-447AAA613095}.Release|x64.Build.0 = Release|x64
 		{93092D9C-EEE0-47E8-888F-447AAA613095}.Release|x86.ActiveCfg = Release|Win32
 		{93092D9C-EEE0-47E8-888F-447AAA613095}.Release|x86.Build.0 = Release|Win32
-		{FB955BD8-39A9-4BC5-B204-1B6F2729D922}.Debug|x64.ActiveCfg = Debug|x64
-		{FB955BD8-39A9-4BC5-B204-1B6F2729D922}.Debug|x64.Build.0 = Debug|x64
-		{FB955BD8-39A9-4BC5-B204-1B6F2729D922}.Debug|x86.ActiveCfg = Debug|Win32
-		{FB955BD8-39A9-4BC5-B204-1B6F2729D922}.Debug|x86.Build.0 = Debug|Win32
-		{FB955BD8-39A9-4BC5-B204-1B6F2729D922}.Release|x64.ActiveCfg = Release|x64
-		{FB955BD8-39A9-4BC5-B204-1B6F2729D922}.Release|x64.Build.0 = Release|x64
-		{FB955BD8-39A9-4BC5-B204-1B6F2729D922}.Release|x86.ActiveCfg = Release|Win32
-		{FB955BD8-39A9-4BC5-B204-1B6F2729D922}.Release|x86.Build.0 = Release|Win32
+		{A1D811BA-5365-4DAE-B914-9620E5B07FF8}.Debug|x64.ActiveCfg = Debug|Win32
+		{A1D811BA-5365-4DAE-B914-9620E5B07FF8}.Debug|x86.ActiveCfg = Debug|Win32
+		{A1D811BA-5365-4DAE-B914-9620E5B07FF8}.Debug|x86.Build.0 = Debug|Win32
+		{A1D811BA-5365-4DAE-B914-9620E5B07FF8}.Release|x64.ActiveCfg = Release|Win32
+		{A1D811BA-5365-4DAE-B914-9620E5B07FF8}.Release|x86.ActiveCfg = Release|Win32
+		{A1D811BA-5365-4DAE-B914-9620E5B07FF8}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
