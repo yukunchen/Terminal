@@ -18,6 +18,7 @@ namespace TaefCppProject2
 
         TEST_METHOD(TestClass1Test1)
         {
+            VERIFY_FAIL(L"You suck");
         }
     };
 } /* namespace TaefCppProject2 */ 
