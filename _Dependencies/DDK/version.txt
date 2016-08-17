@@ -1,0 +1,7 @@
+The components in this directory have been copied from the Windows DDK. (Also known as the Windows Driver Kit - WDK)
+Version: 10.0.14393.33 (RS1 - 1607 release)
+URL: https://go.microsoft.com/fwlink/p/?LinkId=526733
+
+Installed path:
+C:\Program Files (x86)\Windows Kits\10\Testing\Runtimes\TAEF\x86
+C:\Program Files (x86)\Windows Kits\10\Testing\Runtimes\TAEF\x64
