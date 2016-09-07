@@ -4,7 +4,7 @@
 *                                                       *
 ********************************************************/
 
-#include <precomp.h>
+#include "precomp.h"
 
 #include "adaptDispatch.hpp"
 #include "conGetSet.hpp"

@@ -27,6 +27,9 @@
     <ClCompile Include="..\state.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\precomp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\gdirenderer.hpp">

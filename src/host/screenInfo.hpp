@@ -23,8 +23,8 @@ Revision History:
 #include "settings.hpp"
 
 #include "outputStream.hpp"
-#include "adaptDispatch.hpp"
-#include "stateMachine.hpp"
+#include "..\terminal\adapter\adaptDispatch.hpp"
+#include "..\terminal\parser\stateMachine.hpp"
 using namespace Microsoft::Console::VirtualTerminal;
 
 class Window; // forward decl window. circular reference

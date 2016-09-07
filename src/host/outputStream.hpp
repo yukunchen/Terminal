@@ -13,7 +13,7 @@ Author:
 
 #pragma once
 
-#include "adaptDefaults.hpp"
+#include "..\terminal\adapter\adaptDefaults.hpp"
 
 class SCREEN_INFORMATION;
 
@@ -39,7 +39,7 @@ private:
     NTSTATUS _ntstatus;
 };
 
-#include "conGetSet.hpp"
+#include "..\terminal\adapter\conGetSet.hpp"
 
 struct _INPUT_INFORMATION;
 typedef _INPUT_INFORMATION INPUT_INFORMATION;

@@ -13,7 +13,7 @@ Author(s):
 
 #pragma once
 
-#include "termDispatch.hpp"
+#include "..\parser\termDispatch.hpp"
 #include "conGetSet.hpp"
 #include "adaptDefaults.hpp"
 #include "terminalOutput.hpp"

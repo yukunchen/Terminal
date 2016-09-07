@@ -4,29 +4,28 @@ Copyright (c) 1985 - 1999, Microsoft Corporation
 
 Module Name:
 
-conmsg.h
+    conmsgl3.h
 
 Abstract:
 
-This include file defines the message formats used to communicate
-between the client and server portions of the CONSOLE portion of the
-Windows subsystem.
+    This include file defines the message formats used to communicate
+    between the client and server portions of the CONSOLE portion of the
+    Windows subsystem.
 
 Author:
 
-Therese Stowell (thereses) 10-Nov-1990
+    Therese Stowell (thereses) 10-Nov-1990
 
 Revision History:
 
-Wedson Almeida Filho (wedsonaf) 23-May-2010
-Modified the messages for use with the console driver.
+    Wedson Almeida Filho (wedsonaf) 23-May-2010
+        Modified the messages for use with the console driver.
 
 --*/
 
-#ifndef _CONMSG_H_
-#define _CONMSG_H_
+#pragma once
 
-#include "condrv.h"
+#include <winconp.h>  // need FONT_SELECT
 
 typedef struct _CONSOLE_GETNUMBEROFFONTS_MSG {
     OUT ULONG NumberOfFonts;
@@ -391,5 +390,3 @@ typedef struct _CONSOLE_MSG_L3 :
     CONSOLE_MSG_BODY_L3 u;
 } CONSOLE_MSG_L3, *PCONSOLE_MSG_L3;
 #endif  // __cplusplus
-
-#endif

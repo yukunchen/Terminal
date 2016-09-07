@@ -6,9 +6,9 @@
 
 #include "precomp.h"
 
-#include "cursor.h"
-#include "textBuffer.hpp"
-#include "conimeinfo.h"
+#include "..\..\host\cursor.h"
+#include "..\..\host\textBuffer.hpp"
+#include "..\..\host\conimeinfo.h"
 
 #include "renderer.hpp"
 

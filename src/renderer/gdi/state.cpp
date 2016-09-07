@@ -8,7 +8,7 @@
 
 #include "gdirenderer.hpp"
 
-#include "winuserp.h" // for GWL_CONSOLE_BKCOLOR
+#include <winuserp.h> // for GWL_CONSOLE_BKCOLOR
 
 #pragma hdrstop
 

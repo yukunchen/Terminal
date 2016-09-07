@@ -13,7 +13,7 @@ Author(s):
 
 #pragma once
 
-#include "IRenderer.hpp"
+#include "..\inc\IRenderer.hpp"
 
 namespace Microsoft
 {

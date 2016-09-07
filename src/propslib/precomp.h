@@ -22,10 +22,10 @@ typedef NTSTATUS *PNTSTATUS;
 #include <sal.h>
 
 #include <winconp.h>
-#include <settings.hpp>
+#include "..\host\settings.hpp"
 #include <pathcch.h>
 
-#include <conpropsp.hpp>
+#include "conpropsp.hpp"
 
 #include <wil\resource.h>
 #include <wil\result.h>

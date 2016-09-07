@@ -19,10 +19,10 @@ Revision History:
 #include "selection.hpp"
 #include "server.h"
 
-#include "IRenderData.hpp"
-#include "IRenderEngine.hpp"
-#include "IRenderer.hpp"
-#include "IFontDefaultList.hpp"
+#include "..\renderer\inc\IRenderData.hpp"
+#include "..\renderer\inc\IRenderEngine.hpp"
+#include "..\renderer\inc\IRenderer.hpp"
+#include "..\renderer\inc\IFontDefaultList.hpp"
 
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>

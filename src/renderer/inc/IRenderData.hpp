@@ -13,7 +13,7 @@ Author(s):
 
 #pragma once
 
-#include "conimeinfo.h"
+#include "..\..\host\conimeinfo.h"
 
 class TEXT_BUFFER_INFO;
 class TextAttribute;
