@@ -1,0 +1,54 @@
+﻿<?xml version='1.0' encoding='utf-8' standalone='yes'?>
+<assembly
+    xmlns="urn:schemas-microsoft-com:asm.v3"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    manifestVersion="1.0"
+    >
+  <assemblyIdentity
+      buildType="$(build.buildType)"
+      language="neutral"
+      name="Microsoft-Windows-ConsoleHostV2"
+      processorArchitecture="$(build.processorArchitecture)"
+      publicKeyToken="$(Build.WindowsPublicKeyToken)"
+      version="$(build.version)"
+      versionScope="nonSxS"
+      />
+  <dependency
+      discoverable="false"
+      optional="false"
+      resourceType="Resources"
+      >
+    <dependentAssembly>
+      <assemblyIdentity
+          buildType="$(build.buildType)"
+          language="*"
+          name="Microsoft-Windows-ConsoleHostV2.Resources"
+          processorArchitecture="$(build.processorArchitecture)"
+          publicKeyToken="$(Build.WindowsPublicKeyToken)"
+          version="$(build.version)"
+          />
+    </dependentAssembly>
+  </dependency>
+  <file
+      destinationPath="$(runtime.system32)\"
+      importPath="$(build.nttree)\"
+      name="ConhostV2.dll"
+      sourceName="ConhostV2.dll"
+      sourcePath=".\"
+      />
+  <localization>
+    <resources culture="en-US">
+      <stringTable>
+        <string
+            id="displayName0"
+            value="Microsoft-Windows-ConsoleHostV2"
+            />
+        <string
+            id="description1"
+            value="Microsoft-Windows-ConsoleHostV2"
+            />
+      </stringTable>
+    </resources>
+  </localization>
+</assembly>

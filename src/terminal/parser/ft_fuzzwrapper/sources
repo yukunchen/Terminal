@@ -1,0 +1,32 @@
+TARGETNAME                      =   ConTerm.Parser.FuzzWrapper
+TARGETTYPE                      =   PROGRAM
+UMTYPE                          =   console
+UMENTRY                         =   wmain
+TARGET_DESTINATION              =   UnitTests
+DLLDEF = 
+
+USE_MSVCRT                      =   1
+TEST_CODE                       =   1
+NT_SIGNCODE                     =   1
+
+USE_DEFAULT_WIN32_LIBS          =   0
+BUILD_FOR_CORESYSTEM            =   1
+
+C_DEFINES                       =   $(C_DEFINES) -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTING
+
+INCLUDES                        =   $(INCLUDES); \
+                                    $(MINCORE_PRIV_SDK_INC_PATH); \
+                                    $(MINWIN_PRIV_SDK_INC_PATH); \
+                                    ..; \
+
+SOURCES                         =   $(SOURCES) \
+                                    main.cpp \
+                                    echoDispatch.cpp \
+
+TARGETLIBS                      =   $(TARGETLIBS) \
+                                    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+                                    $(OBJ_PATH)\..\lib\$(O)\ConTermParser.lib \
+
+
+PRECOMPILED_CXX                 =   1
+PRECOMPILED_INCLUDE             =   precomp.h

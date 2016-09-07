@@ -1,0 +1,8 @@
+DIRS=dll \
+     lib \
+     ut_host{noncrit,!cs_xbox} \
+     ft_api{noncrit,!cs_xbox} \
+     ft_cjk{!cs_xbox} \
+     ft_resize{noncrit,!cs_xbox} \
+     ft_uia{noncrit,!cs_xbox} \
+     tools{!cs_xbox} \

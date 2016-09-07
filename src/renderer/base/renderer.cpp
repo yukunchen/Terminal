@@ -1,0 +1,924 @@
+/********************************************************
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
+
+#include "precomp.h"
+
+#include "cursor.h"
+#include "textBuffer.hpp"
+#include "conimeinfo.h"
+
+#include "renderer.hpp"
+
+#pragma hdrstop
+
+using namespace Microsoft::Console::Render;
+
+// Routine Description:
+// - Creates a new renderer controller for a console.
+// Arguments:
+// - pData - The interface to console data structures required for rendering
+// - pEngine - The output engine for targeting each rendering frame
+// Return Value:
+// - An instance of a Renderer.
+Renderer::Renderer(_In_ IRenderData* const pData, _In_ IRenderEngine* const pEngine) :
+    _pData(pData),
+    _pEngine(pEngine),
+    _pThread(nullptr)
+{
+    _srViewportPrevious = { 0 };
+}
+
+// Routine Description:
+// - Destroys an instance of a renderer
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+Renderer::~Renderer()
+{
+    if (_pThread != nullptr)
+    {
+        delete _pThread;
+    }
+}
+
+HRESULT Renderer::s_CreateInstance(_In_ IRenderData* const pData, _In_ IRenderEngine* const pEngine, _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
+{
+    HRESULT hr = S_OK;
+
+    Renderer* pNewRenderer = new Renderer(pData, pEngine);
+
+    if (pNewRenderer == nullptr)
+    {
+        hr = E_OUTOFMEMORY;
+    }
+    
+    // Attempt to create renderer thread
+    if (SUCCEEDED(hr))
+    {
+        RenderThread* pNewThread;
+
+        hr = RenderThread::s_CreateInstance(pNewRenderer, &pNewThread);
+
+        if (SUCCEEDED(hr))
+        {
+            pNewRenderer->_pThread = pNewThread;
+        }
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        *ppRenderer = pNewRenderer;
+    }
+    else
+    {
+        delete pNewRenderer;
+    }
+
+    return hr;
+}
+
+// Routine Description:
+// - Walks through the console data structures to compose a new frame based on the data that has changed since last call and outputs it to the connected rendering engine.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::PaintFrame()
+{
+    assert(_pEngine != nullptr);
+
+    // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
+    _CheckViewportAndScroll();
+
+    if (_pEngine->StartPaint())
+    {
+        // A. Prep Colors
+        _UpdateDrawingBrushes(_pData->GetDefaultBrushColors(), true);
+
+        // B. Clear Overlays
+        _ClearOverlays();
+
+        // C. Perform Scroll Operations
+        _PerformScrolling();
+
+        // 1. Paint Background
+        _PaintBackground();
+
+        // 2. Paint Rows of Text
+        _PaintBufferOutput();
+
+        // 3. Paint Input
+        //_PaintCookedInput(); // unnecessary, input is also stored in the output buffer.
+
+        // 4. Paint IME composition area
+        _PaintImeCompositionString();
+
+        // 5. Paint Selection
+        _PaintSelection();
+
+        // 6. Paint Cursor
+        _PaintCursor();
+
+        // 7. Paint Gutter (if necessary, scrolling?)
+        _PaintGutter();
+
+        _pEngine->EndPaint();
+    }
+}
+
+void Renderer::_NotifyPaintFrame()
+{
+    // The thread will provide throttling for us.
+    _pThread->NotifyPaint();
+}
+
+// Routine Description:
+// - Called when the system has requested we redraw a portion of the console.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient)
+{
+    _pEngine->InvalidateSystem(prcDirtyClient);
+
+    _NotifyPaintFrame();
+}
+
+// Routine Description:
+// - Called when a particular region within the console buffer has changed.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerRedraw(_In_ const SMALL_RECT* const psrRegion)
+{
+    Viewport view(_pData->GetViewport());
+    SMALL_RECT srUpdateRegion = *psrRegion;
+
+    if (view.TrimToViewport(&srUpdateRegion))
+    {
+        view.ConvertToOrigin(&srUpdateRegion);
+        _pEngine->Invalidate(&srUpdateRegion);
+
+        _NotifyPaintFrame();
+    }
+}
+
+// Routine Description:
+// - Called when a particular coordinate within the console buffer has changed.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerRedraw(_In_ const COORD* const pcoord)
+{
+    SMALL_RECT srRegion = _RegionFromCoord(pcoord);
+    TriggerRedraw(&srRegion); // this will notify to paint if we need it.
+}
+
+// Routine Description:
+// - Called when something that changes the output state has occurred and the entire frame is now potentially invalid.
+// - NOTE: Use sparingly. Try to reduce the refresh region where possible. Only use when a global state change has occurred.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerRedrawAll()
+{
+    _pEngine->InvalidateAll();
+
+    _NotifyPaintFrame();
+}
+
+// Routine Description:
+// - Called when the selected area in the console has changed.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerSelection()
+{
+    // Get selection rectangles
+    SMALL_RECT* rgsrSelection;
+    UINT cRectsSelected;
+
+    if (NT_SUCCESS(_GetSelectionRects(&rgsrSelection, &cRectsSelected)))
+    {
+        _pEngine->InvalidateSelection(rgsrSelection, cRectsSelected);
+
+        delete[] rgsrSelection;
+
+        _NotifyPaintFrame();
+    }
+}
+
+// Routine Description:
+// - Called when we want to check if the viewport has moved and scroll accordingly if so.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if something changed and we scrolled. False otherwise.
+bool Renderer::_CheckViewportAndScroll()
+{
+    SMALL_RECT const srOldViewport = _srViewportPrevious;
+    SMALL_RECT const srNewViewport = *_pData->GetViewport();
+
+    COORD coordDelta;
+    coordDelta.X = srOldViewport.Left - srNewViewport.Left;
+    coordDelta.Y = srOldViewport.Top - srNewViewport.Top;
+
+    _pEngine->InvalidateScroll(&coordDelta);
+
+    _srViewportPrevious = srNewViewport;
+
+    return coordDelta.X != 0 || coordDelta.Y != 0;
+}
+
+// Routine Description:
+// - Called when a scroll operation has occurred by manipulating the viewport.
+// - This is a special case as calling out scrolls explicitly drastically improves performance.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerScroll()
+{
+    if (_CheckViewportAndScroll())
+    {
+        _NotifyPaintFrame();
+    }
+}
+
+// Routine Description:
+// - Called when a scroll operation wishes to explicitly adjust the frame by the given coordinate distance.
+// - This is a special case as calling out scrolls explicitly drastically improves performance.
+// - This should only be used when the viewport is not modified. It lets us know we can "scroll anyway" to save perf, 
+//   because the backing circular buffer rotated out from behind the viewport.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerScroll(_In_ const COORD* const pcoordDelta)
+{
+    _pEngine->InvalidateScroll(pcoordDelta);
+
+    _NotifyPaintFrame();
+}
+
+// Routine Description:
+// - Called when a change in font or DPI has been detected.
+// Arguments:
+// - iDpi - New DPI value
+// - pFontInfo - Pointer to font information structure that may be updated by the renderer
+// Return Value:
+// - <none>
+void Renderer::TriggerFontChange(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo)
+{
+    _pEngine->UpdateDpi(iDpi);
+    _pEngine->UpdateFont(pFontInfo);
+
+    _NotifyPaintFrame();
+}
+
+// Routine Description:
+// - Get the information on what font we would be using if we decided to create a font with the given parameters
+// - This is for use with speculative calculations.
+// Arguments:
+// - iDpi - The DPI of the target display
+// - pFontInfo - A description of the font we would like to have. Will be fixed up/filled on return with the chosen font data.
+// Return Value:
+// - <none>
+void Renderer::GetProposedFont(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo)
+{
+    _pEngine->GetProposedFont(pFontInfo, iDpi);
+}
+
+// Routine Description:
+// - Retrieves the current X by Y (in pixels) size of the font in active use for drawing
+// - NOTE: Generally the console host should avoid doing math in pixels unless absolutely necessary. Try to handle everything in character units and only let the renderer/window convert to pixels as necessary.
+// Arguments:
+// - <none>
+// Return Value:
+// - COORD representing the current pixel size of the selected font
+COORD Renderer::GetFontSize()
+{
+    return _pEngine->GetFontSize();
+}
+
+// Routine Description:
+// - Tests against the current rendering engine to see if this particular character would be considered full-width (inscribed in a square, twice as wide as a standard Western character, typically used for CJK languages) or half-width.
+// - Typically used to determine how many positions in the backing buffer a particular character should fill.
+// NOTE: This only handles 1 or 2 wide (in monospace terms) characters.
+// Arguments:
+// - wch - Character to test
+// Return Value:
+// - True if the character is full-width (two wide), false if it is half-width (one wide).
+bool Renderer::IsCharFullWidthByFont(_In_ WCHAR const wch)
+{
+    return _pEngine->IsCharFullWidthByFont(wch);
+}
+
+// Routine Description:
+// - Paint helper to fill in the background color of the invalid area within the frame.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::_PaintBackground()
+{
+    _pEngine->PaintBackground();
+}
+
+// Routine Description:
+// - Paint helper to clean off any excess text drawn in the gutter region.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::_PaintGutter()
+{
+    _pEngine->PaintGutter();
+}
+
+
+// Routine Description:
+// - Paint helper to copy the primary console buffer text onto the screen.
+// - This portion primarily handles figuring the current viewport, comparing it/trimming it versus the invalid portion of the frame, and queuing up, row by row, which pieces of text need to be further processed.
+// - See also: Helper functions that seperate out each complexity of text rendering.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::_PaintBufferOutput()
+{
+    Viewport view(_pData->GetViewport());
+
+    SMALL_RECT srDirty = _pEngine->GetDirtyRectInChars();
+    view.ConvertFromOrigin(&srDirty);
+
+    const TEXT_BUFFER_INFO* const ptbi = _pData->GetTextBuffer();
+
+    // The dirty rectangle may be larger than the backing buffer (anything, including the system, may have
+    // requested that we render under the scroll bars). To prevent issues, trim down to the max buffer size
+    // (a.k.a. ensure the viewport is between 0 and the max size of the buffer.)
+    COORD const coordBufferSize = ptbi->GetCoordBufferSize();
+    srDirty.Top = max(srDirty.Top, 0);
+    srDirty.Left = max(srDirty.Left, 0);
+    srDirty.Right = min(srDirty.Right, coordBufferSize.X - 1);
+    srDirty.Bottom = min(srDirty.Bottom, coordBufferSize.Y - 1);
+
+    Viewport viewDirty(&srDirty);
+
+    for (SHORT iRow = viewDirty.Top(); iRow <= viewDirty.BottomInclusive(); iRow++)
+    {
+        // Get row of text data
+        const ROW* const pRow = ptbi->GetRowByOffset(iRow);
+
+        // Get the requested left and right positions from the dirty rectangle.
+        size_t iLeft = viewDirty.Left();
+        size_t iRight = viewDirty.RightExclusive();
+
+        // If there's anything to draw... draw it.
+        if (iRight > iLeft)
+        {
+            // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
+            PWCHAR const pwsLine = pRow->CharRow.Chars + iLeft;
+            PBYTE const pbKAttrs = pRow->CharRow.KAttrs + iLeft; // the double byte flags corresponding to the characters above.
+            size_t const cchLine = iRight - iLeft;
+
+            // Calculate the target position in the buffer where we should start writing.
+            COORD coordTarget;
+            coordTarget.X = (SHORT)iLeft - view.Left();
+            coordTarget.Y = iRow - view.Top();
+
+            // Now draw it.
+            _PaintBufferOutputRasterFontHelper(pRow, pwsLine, pbKAttrs, cchLine, iLeft, coordTarget);
+        }
+    }
+}
+
+// Routine Description:
+// - Paint helper for raster font text. It will pass through to ColorHelper when it's done and cascade from there.
+// - This particular helper checks the current font and converts the text, if necessary, back to the original OEM codepage.
+// - This is required for raster fonts in GDI as it won't adapt them back on our behalf. 
+// - See also: All related helpers and buffer output functions.
+// Arguments:
+// - pRow - Pointer to the row structure for the current line of text
+// - pwsLine - Pointer to the first character in the string/substring to be drawn.
+// - pbKAttrsLine - Pointer to the first attribute in a sequence that is perfectly in sync with the pwsLine parameter. e.g. The first attribute here goes with the first character in pwsLine.
+// - cchLine - The length of both pwsLine and pbKAttrsLine. 
+// - iFirstAttr - Index into the row corresponding to pwsLine[0] to match up the appropriate color.
+// - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to. 
+// Return Value:
+// - <none>
+void Renderer::_PaintBufferOutputRasterFontHelper(_In_ const ROW* const pRow, 
+                                                  _In_reads_(cchLine) PCWCHAR const pwsLine, 
+                                                  _In_reads_(cchLine) PBYTE pbKAttrsLine, 
+                                                  _In_ size_t cchLine, 
+                                                  _In_ size_t iFirstAttr, 
+                                                  _In_ COORD const coordTarget)
+{
+    const FontInfo* const pFontInfo = _pData->GetFontInfo();
+
+    PWCHAR pwsConvert = nullptr;
+    PCWCHAR pwsData = pwsLine; // by default, use the line data.
+
+    // If we're not using a TrueType font, we'll have to re-interpret the line of text to make the raster font happy.
+    if (!pFontInfo->IsTrueTypeFont())
+    {
+        UINT const uiCodePage = pFontInfo->GetCodePage();
+
+        // dispatch conversion into our codepage
+
+        // Find out the bytes required
+        int const cbRequired = WideCharToMultiByte(uiCodePage, 0, pwsLine, (int)cchLine, nullptr, 0, nullptr, nullptr);
+
+        if (cbRequired != 0)
+        {
+            // Allocate buffer for MultiByte
+            PCHAR psConverted = new CHAR[cbRequired];
+
+            if (psConverted != nullptr)
+            {
+                // Attempt conversion to current codepage
+                int const cbConverted = WideCharToMultiByte(uiCodePage, 0, pwsLine, (int)cchLine, psConverted, cbRequired, nullptr, nullptr);
+
+                // If successful...
+                if (cbConverted != 0)
+                {
+                    // Now we have to convert back to Unicode but using the system ANSI codepage. Find buffer size first.
+                    int const cchRequired = MultiByteToWideChar(CP_ACP, 0, psConverted, cbRequired, nullptr, 0);
+
+                    if (cchRequired != 0)
+                    {
+                        pwsConvert = new WCHAR[cchRequired];
+
+                        if (pwsConvert != nullptr)
+                        {
+
+                            // Then do the actual conversion.
+                            int const cchConverted = MultiByteToWideChar(CP_ACP, 0, psConverted, cbRequired, pwsConvert, cchRequired);
+
+                            if (cchConverted != 0)
+                            {
+                                // If all successful, use this instead.
+                                pwsData = pwsConvert;
+                            }
+                        }
+                    }
+                }
+
+                delete[] psConverted;
+            }
+        }
+
+    }
+
+    // If we are using a TrueType font, just call the next helper down.
+    _PaintBufferOutputColorHelper(pRow, pwsData, pbKAttrsLine, cchLine, iFirstAttr, coordTarget);
+
+    if (pwsConvert != nullptr)
+    {
+        delete[] pwsConvert;
+    }
+}
+
+// Routine Description:
+// - Paint helper for primary buffer output function.
+// - This particular helper unspools the run-length-encoded color attributes, updates the brushes, and effectively substrings the text for each different color.
+// - It also identifies box drawing attributes and calls the respective helper.
+// - See also: All related helpers and buffer output functions.
+// Arguments:
+// - pRow - Pointer to the row structure for the current line of text
+// - pwsLine - Pointer to the first character in the string/substring to be drawn.
+// - pbKAttrsLine - Pointer to the first attribute in a sequence that is perfectly in sync with the pwsLine parameter. e.g. The first attribute here goes with the first character in pwsLine.
+// - cchLine - The length of both pwsLine and pbKAttrsLine. 
+// - iFirstAttr - Index into the row corresponding to pwsLine[0] to match up the appropriate color.
+// - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to. 
+// Return Value:
+// - <none>
+void Renderer::_PaintBufferOutputColorHelper(_In_ const ROW* const pRow, _In_reads_(cchLine) PCWCHAR const pwsLine, _In_reads_(cchLine) PBYTE pbKAttrsLine, _In_ size_t cchLine, _In_ size_t iFirstAttr, _In_ COORD const coordTarget)
+{
+    // We may have to write this string in several pieces based on the colors.
+ 
+    // Count up how many characters we've written so we know when we're done.
+    size_t cchWritten = 0;
+
+    // The offset from the target point starts at the target point (and may be adjusted rightward for another string segment
+    // if this attribute/color doesn't have enough 'length' to apply to all the text we want to draw.)
+    COORD coordOffset = coordTarget;
+
+    // The line segment we'll write will start at the beginning of the text.
+    PCWCHAR pwsSegment = pwsLine;
+    PBYTE pbKAttrsSegment = pbKAttrsLine; // corresponding double byte flags pointer
+
+    do
+    {
+        // First retrieve the attribute that applies starting at the target position and the length for which it applies.
+        TextAttributeRun* pRun = nullptr;
+        UINT cAttrApplies = 0;
+        pRow->AttrRow.FindAttrIndex((UINT)(iFirstAttr + cchWritten), &pRun, &cAttrApplies);
+
+        // Set the brushes in GDI to this color
+        _UpdateDrawingBrushes(pRun->GetAttributes(), false);
+
+        // The segment we'll write is the shorter of the entire segment we want to draw or the amount of applicable color (Attr applies)
+        size_t cchSegment = min(cchLine - cchWritten, cAttrApplies);
+
+        if (cchSegment <= 0)
+        {
+            // If we ever have an invalid segment length, stop looping through the rendering.
+            break;
+        }
+
+        // Draw the line via double-byte helper to strip duplicates
+        _PaintBufferOutputDoubleByteHelper(pwsSegment, pbKAttrsSegment, cchSegment, coordOffset);
+
+        // Draw the grid shapes without the double-byte helper as they need to be exactly proportional to what's in the buffer
+        if (_pData->IsGridLineDrawingAllowed())
+        {
+            // We're only allowed to draw the grid lines under certain circumstances.
+            _PaintBufferOutputGridLineHelper(pRun->GetAttributes(), cchSegment, coordOffset);
+        }
+
+        // Update how much we've written.
+        cchWritten += cchSegment;
+
+        // Update the offset and text segment pointer by moving right by the previously written segment length
+        coordOffset.X += (SHORT)cchSegment;
+        pwsSegment += cchSegment;
+        pbKAttrsSegment += cchSegment;
+
+    } while (cchWritten < cchLine);
+}
+
+// Routine Description:
+// - Paint helper for primary buffer output function.
+// - This particular helper processes full-width (sometimes called double-wide or double-byte) characters. They're typically stored twice in the backing buffer to represent their width, so this function will help strip that down to one copy each as it's passed along to the final output.
+// - See also: All related helpers and buffer output functions.
+// Arguments:
+// - pwsLine - Pointer to the first character in the string/substring to be drawn.
+// - pbKAttrsLine - Pointer to the first attribute in a sequence that is perfectly in sync with the pwsLine parameter. e.g. The first attribute here goes with the first character in pwsLine.
+// - cchLine - The length of both pwsLine and pbKAttrsLine. 
+// - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from. pwsLine[0] will be the character at position coordTarget within the original console buffer before it was prepared for this function.
+// Return Value:
+// - <none>
+void Renderer::_PaintBufferOutputDoubleByteHelper(_In_reads_(cchLine) PCWCHAR const pwsLine, _In_reads_(cchLine) PBYTE const pbKAttrsLine, _In_ size_t const cchLine, _In_ COORD const coordTarget)
+{
+    // We need the ability to move the target back to the left slightly in case we start with a trailing byte character.
+    COORD coordTargetAdjustable = coordTarget;
+    bool fTrimLeft = false;
+
+    // We need to filter out double-copies of characters that get introduced for full-width characters (sometimes "double-width" or erroneously "double-byte")
+    WCHAR* pwsSegment = new WCHAR[cchLine];
+    size_t cchSegment = 0;
+    size_t cchCharWidths = 0;
+
+    if (pwsSegment != nullptr)
+    {
+        // Walk through the line given character by character and copy necessary items into our local array.
+        for (size_t iLine = 0; iLine < cchLine; iLine++)
+        {
+            // skip copy of trailing bytes. we'll copy leading and single bytes into the final write array.
+            if ((pbKAttrsLine[iLine] & CHAR_ROW::ATTR_TRAILING_BYTE) == 0)
+            {
+                pwsSegment[cchSegment] = pwsLine[iLine];
+                cchSegment++;
+                cchCharWidths++;
+
+                // If this is a leading byte, add 1 more to width as it is double wide
+                if ((pbKAttrsLine[iLine] & CHAR_ROW::ATTR_LEADING_BYTE) != 0)
+                {
+                    cchCharWidths++;
+                }
+            }
+            else if (iLine == 0)
+            {
+                // If we are a trailing byte, but we're the first character in the run, it's a special case.
+                // Someone has asked us to redraw the right half of the character, but we can't do that. 
+                // We'll have to draw the entire thing at once which requires:
+                // 1. We have to copy the character into the segment buffer (which we normally don't do for trailing bytes)
+                // 2. We have to back the draw target up by one character width so the right half will be struck over where we expect
+                
+                // Copy character
+                pwsSegment[cchSegment] = pwsLine[iLine];
+                cchSegment++;
+
+                // This character is double-width
+                cchCharWidths += 2;
+
+                // Move the target back one so we can strike left of what we want.
+                coordTargetAdjustable.X--;
+
+                // And set the flag so the engine will trim off the extra left half of the character
+                // Clipping the left half of the character is important because leaving it there will interfere with the line drawing routines
+                // which have no knowledge of the half/fullwidthness of characters and won't necessarily restrike the lines on the left half of the character.
+                fTrimLeft = true;
+            }
+        }
+
+        // Draw the line
+        _pEngine->PaintBufferLine(pwsSegment, cchSegment, coordTargetAdjustable, cchCharWidths, fTrimLeft);
+
+        delete[] pwsSegment;
+    }
+}
+
+// Routine Description:
+// - Paint helper for primary buffer output function.
+// - This particular helper sets up the various box drawing lines that can be inscribed around any character in the buffer (left, right, top, underline).
+// - See also: All related helpers and buffer output functions.
+// Arguments:
+// - wAttr - The line/box drawing attributes to use for this particular run.
+// - cchLine - The length of both pwsLine and pbKAttrsLine. 
+// - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from.
+// Return Value:
+// - <none>
+void Renderer::_PaintBufferOutputGridLineHelper(_In_ const TextAttribute* const pAttr, _In_ size_t const cchLine, _In_ COORD const coordTarget)
+{
+    COLORREF rgb = pAttr->GetRgbForeground();
+
+    // Convert console grid line representations into rendering engine enum representations.
+    IRenderEngine::GridLines lines = IRenderEngine::GridLines::None;
+
+    if (pAttr->IsTopHorizontalDisplayed())
+    {
+        lines |= IRenderEngine::GridLines::Top;
+    }
+
+    if (pAttr->IsBottomHorizontalDisplayed())
+    {
+        lines |= IRenderEngine::GridLines::Bottom;
+    }
+
+    if (pAttr->IsLeftVerticalDisplayed())
+    {
+        lines |= IRenderEngine::GridLines::Left;
+    }
+
+    if (pAttr->IsRightVerticalDisplayed())
+    {
+        lines |= IRenderEngine::GridLines::Right;
+    }
+
+    // Draw the lines
+    _pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget);
+}
+
+// Routine Description:
+// - Paint helper to draw the cursor within the buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::_PaintCursor()
+{
+    const Cursor* const pCursor = _pData->GetCursor();
+
+    if (pCursor->IsVisible() && pCursor->IsOn())
+    {
+        // Get cursor position in buffer
+        COORD coordCursor = pCursor->GetPosition();
+
+        Viewport view(_pData->GetViewport());
+
+        SMALL_RECT srDirty = _pEngine->GetDirtyRectInChars();
+        view.ConvertFromOrigin(&srDirty);
+
+        Viewport viewDirty(&srDirty);
+
+        // Check if cursor is within dirty area
+        if (viewDirty.IsWithinViewport(&coordCursor))
+        {
+            // Determine cursor height                        
+            ULONG ulHeight = pCursor->GetSize();
+
+            // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
+            // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
+            // then we need to shrink it by half.
+            if (pCursor->IsDouble())
+            {
+                if (ulHeight > 50) // 50 because 50 percent is half of 100 percent which is the max size.
+                {
+                    ulHeight >>= 1;
+                }
+                else
+                {
+                    ulHeight <<= 1;
+                }
+            }
+
+            // Determine cursor width
+            bool const fIsDoubleWidth = !!pCursor->IsDoubleWidth();
+
+            // Adjust cursor to viewport
+            view.ConvertToOrigin(&coordCursor);
+
+            // Draw it within the viewport
+            _pEngine->PaintCursor(coordCursor, ulHeight, fIsDoubleWidth);
+        }
+    }
+}
+
+// Routine Description:
+// - Paint helper to draw the IME within the buffer.
+// - This supports composition drawing area.
+// Arguments:
+// - pAreaInfo - Special IME area screen buffer metadata
+// - pTextInfo - Text backing buffer for the special IME area.
+// Return Value:
+// - <none>
+void Renderer::_PaintIme(_In_ const CONVERSIONAREA_INFORMATION* const pAreaInfo, _In_ const TEXT_BUFFER_INFO* const pTextInfo)
+{
+    // If this conversion area isn't hidden (because it is off) or hidden for a scroll operation, then draw it.
+    if (((pAreaInfo->ConversionAreaMode & (CA_HIDDEN)) == 0))
+    {
+        // First get the screen buffer's viewport.
+        Viewport view(_pData->GetViewport());
+
+        // Now get the IME's viewport and adjust it to where it is supposed to be relative to the window.
+        // The IME's buffer is typically only one row in size. Some segments are the whole row, some are only a partial row.
+        // Then from those, there is a "view" much like there is a view into the main console buffer.
+        // Use the "window" and "view" relative to the IME-specific special buffer to figure out the coordinates to draw at within the real console buffer.
+        SMALL_RECT srCaView = pAreaInfo->CaInfo.rcViewCaWindow;
+        srCaView.Top += pAreaInfo->CaInfo.coordConView.Y;
+        srCaView.Bottom += pAreaInfo->CaInfo.coordConView.Y;
+        srCaView.Left += pAreaInfo->CaInfo.coordConView.X;
+        srCaView.Right += pAreaInfo->CaInfo.coordConView.X;
+
+        // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
+        Viewport viewConv(&srCaView);
+
+        SMALL_RECT srDirty = _pEngine->GetDirtyRectInChars();
+
+        // Dirty is an inclusive rectangle, but oddly enough the IME was an exclusive one, so correct it.
+        srDirty.Bottom++;
+        srDirty.Right++;
+
+        if (viewConv.TrimToViewport(&srDirty))
+        {
+            Viewport viewDirty(&srDirty);
+
+            for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
+            {
+                // Get row of text data
+                const ROW* const pRow = pTextInfo->GetRowByOffset(iRow - pAreaInfo->CaInfo.coordConView.Y);
+
+                // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
+                PWCHAR const pwsLine = pRow->CharRow.Chars + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X;
+                PBYTE const pbKAttrs = pRow->CharRow.KAttrs + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X; // the double byte flags corresponding to the characters above.
+                size_t const cchLine = viewDirty.Width() - 1;
+
+                // Calculate the target position in the buffer where we should start writing.
+                COORD coordTarget;
+                coordTarget.X = viewDirty.Left();
+                coordTarget.Y = iRow;
+
+                _PaintBufferOutputRasterFontHelper(pRow, pwsLine, pbKAttrs, cchLine, viewDirty.Left(), coordTarget);
+            }
+        }
+    }
+}
+
+// Routine Description:
+// - Paint helper to draw the composition string portion of the IME.
+// - This specifically is the string that appears at the cursor on the input line showing what the user is currently typing.
+// - See also: Generic Paint IME helper method.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::_PaintImeCompositionString()
+{
+    const CONSOLE_IME_INFORMATION* const pImeData = _pData->GetImeData();
+
+    PCONVERSIONAREA_INFORMATION* ppAreaInfo = pImeData->ConvAreaCompStr;
+
+    if (ppAreaInfo != nullptr)
+    {
+        for (size_t i = 0; i < pImeData->NumberOfConvAreaCompStr; i++)
+        {
+            PCONVERSIONAREA_INFORMATION pAreaInfo = ppAreaInfo[i];
+
+            if (pAreaInfo != nullptr)
+            {
+                const TEXT_BUFFER_INFO* const ptbi = _pData->GetImeCompositionStringBuffer(i);
+                _PaintIme(pAreaInfo, ptbi);
+            }
+        }
+    }
+}
+
+// Routine Description:
+// - Paint helper to draw the selected area of the window.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::_PaintSelection()
+{
+    // Get selection rectangles
+    SMALL_RECT* rgsrSelection;
+    UINT cRectsSelected;
+
+    if (NT_SUCCESS(_GetSelectionRects(&rgsrSelection, &cRectsSelected)))
+    {
+        if (cRectsSelected > 0)
+        {
+            _pEngine->PaintSelection(rgsrSelection, cRectsSelected);
+        }
+
+        delete[] rgsrSelection;
+    }
+}
+
+// Routine Description:
+// - Helper to convert the text attributes to actual RGB colors and update the rendering pen/brush within the rendering engine before the next draw operation.
+// Arguments:
+// - wTextAttributes - The 16 color foreground/background combination to set
+// - fIncludeBackground - Whether or not to include the hung window/erase window brushes in this operation. (Usually only happens when the default is changed, not when each individual color is swapped in a multi-color run.)
+// Return Value:
+// - <none>
+void Renderer::_UpdateDrawingBrushes(_In_ const TextAttribute* const pTextAttributes, _In_ bool const fIncludeBackground)
+{
+    COLORREF rgbForeground = pTextAttributes->GetRgbForeground();
+    COLORREF rgbBackground = pTextAttributes->GetRgbBackground();
+
+    // Only update if the foreground or background are different from the last time we attempted to set it.
+
+    // NOTE: Valid COLORREFs are of the pattern 0x00bbggrr. Set the initial one in the static to -1 as the highest byte of a valid color is always 0.
+    static COLORREF rgbLastForeground = 0xffffffff; 
+    static COLORREF rgbLastBackground = 0xffffffff;
+
+    // If we have to update the background too (which is due to a complete window-type change), always update.
+    // Otherwise, only update if something has changed.
+    if (fIncludeBackground || rgbForeground != rgbLastForeground || rgbBackground != rgbLastBackground)
+    {
+        _pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, fIncludeBackground);
+
+        rgbLastForeground = rgbForeground;
+        rgbLastBackground = rgbBackground;
+    }
+}
+
+// Routine Description:
+// - Helper called at the beginning of a frame to clear any overlaid text, cursors, or other items that we don't
+//   want to have included when the existing frame is scrolled
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::_ClearOverlays()
+{
+    _pEngine->ClearCursor();
+}
+
+// Routine Description:
+// - Helper called before a majority of paint operations to scroll most of the previous frame into the appropriate
+//   position before we paint the remaining invalid area.
+// - Used to save drawing time/improve performance
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::_PerformScrolling()
+{
+    _pEngine->ScrollFrame();
+}
+
+// Routine Description:
+// - Helper to determine the selected region of the buffer.
+// - NOTE: CALLER MUST FREE THE ARRAY RECEIVED IF THE SIZE WAS NON-ZERO
+// Arguments:
+// - prgsrSelection - Pointer to callee allocated array of rectangles representing the selection area, one per line of the selection.
+// - pcRectangles - Count of how many rectangles are in the above array.
+// Return Value:
+// - Success status if we managed to retrieve rectangles. Check with NT_SUCCESS.
+_Check_return_
+NTSTATUS Renderer::_GetSelectionRects(
+    _Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection,
+    _Out_ UINT* const pcRectangles) const
+{
+    NTSTATUS status = _pData->GetSelectionRects(prgsrSelection, pcRectangles);
+
+    if (NT_SUCCESS(status))
+    {
+        // Adjust rectangles to viewport
+        Viewport view(_pData->GetViewport());
+        for (UINT iRect = 0; iRect < *pcRectangles; iRect++)
+        {
+            view.ConvertToOrigin(&(*prgsrSelection)[iRect]);
+
+            // hopefully temporary, we should be receiving the right selection sizes without correction.
+            (*prgsrSelection)[iRect].Right++;
+            (*prgsrSelection)[iRect].Bottom++;
+        }
+    }
+
+    return status;
+}

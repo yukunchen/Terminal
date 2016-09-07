@@ -1,0 +1,6 @@
+DIRS=\
+     host \
+     propslib \
+     renderer \
+     terminal \
+     tsf \

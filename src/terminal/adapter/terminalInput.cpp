@@ -1,0 +1,341 @@
+/********************************************************
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
+
+#include <precomp.h>
+#include <windows.h>
+#include "terminalInput.hpp"
+
+#include "strsafe.h"
+
+using namespace Microsoft::Console::VirtualTerminal;
+
+DWORD const dwAltGrFlags = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
+
+TerminalInput::TerminalInput(_In_ WriteInputEvents const pfnWriteEvents) :
+    _pfnWriteEvents(pfnWriteEvents)
+{
+
+}
+
+TerminalInput::~TerminalInput()
+{
+
+}
+
+// See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-PC-Style-Function-Keys
+//    For the source for these tables.
+// Also refer to the values in terminfo for kcub1, kcud1, kcuf1, kcuu1, kend, khome.
+//   the 'xterm' setting lists the application mode versions of these sequences.
+const TerminalInput::_TermKeyMap TerminalInput::s_rgCursorKeysNormalMapping[] 
+{
+    { VK_UP, L"\x1b[A" },
+    { VK_DOWN, L"\x1b[B" },
+    { VK_RIGHT, L"\x1b[C" },
+    { VK_LEFT, L"\x1b[D" },
+    { VK_HOME, L"\x1b[H" },
+    { VK_END, L"\x1b[F" },
+};
+
+const TerminalInput::_TermKeyMap TerminalInput::s_rgCursorKeysApplicationMapping[] 
+{
+    { VK_UP, L"\x1bOA" },
+    { VK_DOWN, L"\x1bOB" },
+    { VK_RIGHT, L"\x1bOC" },
+    { VK_LEFT, L"\x1bOD" },
+    { VK_HOME, L"\x1bOH" },
+    { VK_END, L"\x1bOF" },
+};
+
+const TerminalInput::_TermKeyMap TerminalInput::s_rgKeypadNumericMapping[] 
+{
+    // HEY YOU. UPDATE THE MAX LENGTH DEF WHEN YOU MAKE CHANGES HERE.
+    { VK_BACK, L"\x7f"},
+    { VK_PAUSE, L"\x1a" },
+    { VK_ESCAPE, L"\x1b" },
+    { VK_INSERT, L"\x1b[2~" },
+    { VK_DELETE, L"\x1b[3~" },
+    { VK_PRIOR, L"\x1b[5~" },
+    { VK_NEXT, L"\x1b[6~" },
+    { VK_F1, L"\x1bOP" }, // also \x1b[11~, PuTTY uses \x1b\x1b[A
+    { VK_F2, L"\x1bOQ" }, // also \x1b[12~, PuTTY uses \x1b\x1b[B
+    { VK_F3, L"\x1bOR" }, // also \x1b[13~, PuTTY uses \x1b\x1b[C
+    { VK_F4, L"\x1bOS" }, // also \x1b[14~, PuTTY uses \x1b\x1b[D
+    { VK_F5, L"\x1b[15~" },
+    { VK_F6, L"\x1b[17~" },
+    { VK_F7, L"\x1b[18~" },
+    { VK_F8, L"\x1b[19~" },
+    { VK_F9, L"\x1b[20~" },
+    { VK_F10, L"\x1b[21~" },
+    { VK_F11, L"\x1b[23~" },
+    { VK_F12, L"\x1b[24~" },
+};
+
+//Application mode - Some terminals support both a "Numeric" input mode, and an "Application" mode
+//  The standards vary on what each key translates to in the various modes, so I tried to make it as close 
+//  to the VT220 standard as possible.
+//  The notable difference is in the arrow keys, which in application mode translate to "^[0A" (etc) as opposed to "^[[A" in numeric
+//Some very unclear documentation at http://invisible-island.net/xterm/ctlseqs/ctlseqs.html also suggests alternate encodings for F1-4
+//  which I have left in the comments on those entries as something to possibly add in the future, if need be.
+//It seems to me as though this was used for early numpad implementations, where presently numlock would enable 
+//  "numeric" mode, outputting the numbers on the keys, while "application" mode does things like pgup/down, arrow keys, etc.
+//These keys aren't translated at all in numeric mode, so I figured I'd leave them out of the numeric table.
+const TerminalInput::_TermKeyMap TerminalInput::s_rgKeypadApplicationMapping[] 
+{
+    // HEY YOU. UPDATE THE MAX LENGTH DEF WHEN YOU MAKE CHANGES HERE.
+    { VK_BACK, L"\x7f" },
+    { VK_PAUSE, L"\x1a" },
+    { VK_ESCAPE, L"\x1b" },
+    { VK_INSERT, L"\x1b[2~" },
+    { VK_DELETE, L"\x1b[3~" },
+    { VK_PRIOR, L"\x1b[5~" },
+    { VK_NEXT, L"\x1b[6~" },
+    { VK_F1, L"\x1bOP" }, // also \x1b[11~, PuTTY uses \x1b\x1b[A
+    { VK_F2, L"\x1bOQ" }, // also \x1b[12~, PuTTY uses \x1b\x1b[B
+    { VK_F3, L"\x1bOR" }, // also \x1b[13~, PuTTY uses \x1b\x1b[C
+    { VK_F4, L"\x1bOS" }, // also \x1b[14~, PuTTY uses \x1b\x1b[D
+    { VK_F5, L"\x1b[15~" },
+    { VK_F6, L"\x1b[17~" },
+    { VK_F7, L"\x1b[18~" },
+    { VK_F8, L"\x1b[19~" },
+    { VK_F9, L"\x1b[20~" },
+    { VK_F10, L"\x1b[21~" },
+    { VK_F11, L"\x1b[23~" },
+    { VK_F12, L"\x1b[24~" },
+    // The numpad has a variety of mappings, none of which seem standard or really configurable by the OS.
+    // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-PC-Style-Function-Keys 
+    //   to see just how convoluted this all is.
+    // PuTTY uses a set of mappings that don't work in ViM without reamapping them back to the numpad 
+    // (see http://vim.wikia.com/wiki/PuTTY_numeric_keypad_mappings#Comments)
+    // I think the best solution is to just not do any for the time being.
+    // Putty also provides configuration for choosing which of the 5 mappings it has through the settings, which is more work than we can manage now. 
+    // { VK_MULTIPLY, L"\x1bOj" },     // PuTTY: \x1bOR (I believe putty is treating the top row of the numpad as PF1-PF4)
+    // { VK_ADD, L"\x1bOk" },          // PuTTY: \x1bOl, \x1bOm (with shift)
+    // { VK_SEPARATOR, L"\x1bOl" },    // ? I'm not sure which key this is...
+    // { VK_SUBTRACT, L"\x1bOm" },     // \x1bOS
+    // { VK_DECIMAL, L"\x1bOn" },      // \x1bOn
+    // { VK_DIVIDE, L"\x1bOo" },       // \x1bOQ
+    // { VK_NUMPAD0, L"\x1bOp" },
+    // { VK_NUMPAD1, L"\x1bOq" },
+    // { VK_NUMPAD2, L"\x1bOr" },
+    // { VK_NUMPAD3, L"\x1bOs" },
+    // { VK_NUMPAD4, L"\x1bOt" },
+    // { VK_NUMPAD5, L"\x1bOu" }, // \x1b0E
+    // { VK_NUMPAD5, L"\x1bOE" }, // PuTTY \x1b[G
+    // { VK_NUMPAD6, L"\x1bOv" },
+    // { VK_NUMPAD7, L"\x1bOw" },
+    // { VK_NUMPAD8, L"\x1bOx" },
+    // { VK_NUMPAD9, L"\x1bOy" },
+    // { '=', L"\x1bOX" },      // I've also seen these codes mentioned in some documentation,
+    // { VK_SPACE, L"\x1bO " }, //  but I wasn't really sure if they should be included or not...
+    // { VK_TAB, L"\x1bOI" },   // So I left them here as a reference just in case.
+};
+
+// Sequences to send when Ctrl+ the Virtual Key is pressed
+const TerminalInput::_TermKeyMap TerminalInput::s_rgCtrlKeyMapping[] 
+{
+    // HEY YOU. UPDATE THE MAX LENGTH DEF WHEN YOU MAKE CHANGES HERE.
+    { VK_UP, L"\x1b[1;5A" },
+    { VK_DOWN, L"\x1b[1;5B" },
+    { VK_RIGHT, L"\x1b[1;5C" },  // Both C-Left and C-Right mappings come from /etc/inputrc.
+    { VK_LEFT, L"\x1b[1;5D" },   // PuTTY maps these to \x1b[OC and \x1b[OD. 
+    // Ubuntu's inputrc also defines \x1b[5C, \x1b\x1bC (and D) as 'forward/backward-word' mappings
+};
+
+// Do NOT include the null terminator in the count.
+const size_t TerminalInput::_TermKeyMap::s_cchMaxSequenceLength = 6; // UPDATE THIS DEF WHEN THE LONGEST MAPPED STRING CHANGES
+
+const size_t TerminalInput::s_cCursorKeysNormalMapping      = ARRAYSIZE(s_rgCursorKeysNormalMapping);
+const size_t TerminalInput::s_cCursorKeysApplicationMapping = ARRAYSIZE(s_rgCursorKeysApplicationMapping);
+const size_t TerminalInput::s_cKeypadNumericMapping         = ARRAYSIZE(s_rgKeypadNumericMapping);
+const size_t TerminalInput::s_cKeypadApplicationMapping     = ARRAYSIZE(s_rgKeypadApplicationMapping);
+const size_t TerminalInput::s_cCtrlKeyMapping               = ARRAYSIZE(s_rgCtrlKeyMapping);
+
+void TerminalInput::ChangeKeypadMode(_In_ bool const fApplicationMode)
+{
+    _fKeypadApplicationMode = fApplicationMode;
+}
+void TerminalInput::ChangeCursorKeysMode(_In_ bool const fApplicationMode)
+{
+    _fCursorApplicationMode = fApplicationMode;
+}
+
+bool TerminalInput::s_IsCtrlPressed(_In_ const KEY_EVENT_RECORD* const pKeyEvent)
+{
+    return (pKeyEvent->dwControlKeyState & LEFT_CTRL_PRESSED) || (pKeyEvent->dwControlKeyState & RIGHT_CTRL_PRESSED);
+}
+
+bool TerminalInput::s_IsCursorKey(_In_ const KEY_EVENT_RECORD* const pKeyEvent)
+{
+    // true iff vk in [End, Home, Left, Up, Right, Down]
+    return (pKeyEvent->wVirtualKeyCode >= VK_END) && (pKeyEvent->wVirtualKeyCode <= VK_DOWN);
+}
+
+const size_t TerminalInput::GetKeyMappingLength(_In_ const KEY_EVENT_RECORD* const pKeyEvent) const
+{
+    size_t length = 0;
+    if (s_IsCursorKey(pKeyEvent))
+    {
+        length = (_fCursorApplicationMode) ? s_cCursorKeysApplicationMapping : s_cCursorKeysNormalMapping;
+    }
+    else
+    {
+        length = (_fKeypadApplicationMode) ? s_cKeypadApplicationMapping : s_cKeypadNumericMapping;
+    }
+    return length;
+}
+
+const TerminalInput::_TermKeyMap* TerminalInput::GetKeyMapping(_In_ const KEY_EVENT_RECORD* const pKeyEvent) const
+{
+    const TerminalInput::_TermKeyMap* mapping = nullptr;
+
+    if (s_IsCursorKey(pKeyEvent))
+    {
+        mapping = (_fCursorApplicationMode) ? s_rgCursorKeysApplicationMapping : s_rgCursorKeysNormalMapping;
+    }
+    else
+    {
+        mapping = (_fKeypadApplicationMode) ? s_rgKeypadApplicationMapping : s_rgKeypadNumericMapping;
+    }
+    return mapping;
+}
+
+bool TerminalInput::_SearchKeyMapping(_In_ const KEY_EVENT_RECORD* const pKeyEvent, _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping, _In_ size_t const cKeyMapping) const
+{
+    bool fKeyHandled = false;
+    // Search mapping for matching VK, if we find one, then dispatch its sequence.
+    const _TermKeyMap* pMapFound = nullptr;
+    for (size_t i = 0; i < cKeyMapping; i++)
+    {
+        const _TermKeyMap* const pMap = &(keyMapping[i]);
+
+        if (pMap->wVirtualKey == pKeyEvent->wVirtualKeyCode)
+        {
+            pMapFound = pMap;
+            break;
+        }
+    }
+
+    if (pMapFound != nullptr)
+    {
+        _SendInputSequence(pMapFound->pwszSequence);
+        fKeyHandled = true;
+    }
+    return fKeyHandled;
+}
+
+bool TerminalInput::HandleKey(_In_ const INPUT_RECORD* const pInput) const
+{
+    // By default, we fail to handle the key
+    bool fKeyHandled = false;
+
+    // On key presses, prepare to translate to VT compatible sequences
+    if (pInput->EventType == KEY_EVENT)
+    {
+        KEY_EVENT_RECORD key = pInput->Event.KeyEvent;
+
+        // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
+        if (key.bKeyDown == TRUE)
+        {
+            // For AltGr enabled keyboards, the Windows system will emit Left Ctrl + Right Alt as the modifier keys and 
+            // will have pretranslated the UnicodeChar to the proper alternative value.
+            // Through testing with Ubuntu, PuTTY, and Emacs for Windows, it was discovered that any instance of Left Ctrl + Right Alt
+            // will strip out those two modifiers and send the unicode value straight through to the system.
+            // Holding additional modifiers in addition to Left Ctrl + Right Alt will then light those modifiers up again for the unicode value.
+            // Therefore to handle AltGr properly, our first step needs to be to check if both Left Ctrl + Right Alt are pressed...
+            // ... and if they are both pressed, strip them out of the control key state.
+            bool fAltGRPressed = (key.dwControlKeyState & dwAltGrFlags) == dwAltGrFlags;
+            if (fAltGRPressed)
+            {
+                key.dwControlKeyState &= ~(dwAltGrFlags);
+            }
+
+            // ALT is a sequence of ESC + KEY.
+            // ALT+CTRL is handled here too. 
+            // NOTE: The ALT handler must come first. For ALT+CTRL, the UnicodeChar will be pre-shifted by the system
+            //       into the proper Control Character (<0x20) and so we only need to embed it inside the ALT sequence below.
+            if (key.uChar.UnicodeChar != 0 && ((key.dwControlKeyState & LEFT_ALT_PRESSED) || (key.dwControlKeyState & RIGHT_ALT_PRESSED)))
+            {
+                WCHAR rgwchSequence[3];
+                rgwchSequence[0] = L'\x1b';
+                rgwchSequence[1] = key.uChar.UnicodeChar;
+                rgwchSequence[2] = L'\x0';
+                _SendInputSequence(rgwchSequence);
+                fKeyHandled = true;
+            }
+            else if (s_IsCtrlPressed(&key))
+            {
+                if ((key.uChar.UnicodeChar == L' ' ) || // Ctrl+Space
+                     // when Ctrl+@ comes through, the unicodechar will be '\x0', and the vkey will be VkKeyScanW(0), the vkey for null
+                     (key.uChar.UnicodeChar == L'\x0' && key.wVirtualKeyCode == LOBYTE(VkKeyScanW(0)))) 
+                {
+                    _SendNullInputSequence(key.dwControlKeyState);
+                    fKeyHandled = true;
+                }   
+                else
+                {
+                    fKeyHandled = _SearchKeyMapping(&key, s_rgCtrlKeyMapping, s_cCtrlKeyMapping);
+                }
+
+            }
+             
+            if (!fKeyHandled)
+            {
+                // For perf optimization, filter out any typically printable Virtual Keys (e.g. A-Z)
+                // This is in lieu of an O(1) sparse table or other such less-maintanable methods.
+                if (key.wVirtualKeyCode < '0' || key.wVirtualKeyCode > 'Z')
+                {
+                    fKeyHandled = _SearchKeyMapping(&key, GetKeyMapping(&key), GetKeyMappingLength(&key));
+                }
+                else
+                {
+                    WCHAR rgwchSequence[2];
+                    rgwchSequence[0] = key.uChar.UnicodeChar;
+                    rgwchSequence[1] = L'\0';
+                    _SendInputSequence(rgwchSequence);
+                    fKeyHandled = true;
+                }
+            }
+        }
+    }
+
+    return fKeyHandled;
+}
+void TerminalInput::_SendNullInputSequence(_In_ DWORD const dwControlKeyState) const
+{
+    INPUT_RECORD irInput;
+    irInput.EventType = KEY_EVENT;
+    irInput.Event.KeyEvent.bKeyDown = TRUE;
+    irInput.Event.KeyEvent.dwControlKeyState = dwControlKeyState;
+    irInput.Event.KeyEvent.wRepeatCount = 1;
+    irInput.Event.KeyEvent.wVirtualKeyCode = LOBYTE(VkKeyScanW(0));
+    irInput.Event.KeyEvent.wVirtualScanCode = 0;
+    irInput.Event.KeyEvent.uChar.UnicodeChar = L'\x0';
+    
+    _pfnWriteEvents(&irInput, 1);
+}
+void TerminalInput::_SendInputSequence(_In_ PCWSTR const pwszSequence) const
+{
+    size_t cch = 0;
+    // + 1 to max sequence length for null terminator count which is required by StringCchLengthW
+    if (SUCCEEDED(StringCchLengthW(pwszSequence, _TermKeyMap::s_cchMaxSequenceLength + 1, &cch)) && cch > 0)
+    {        
+        INPUT_RECORD rgInput[_TermKeyMap::s_cchMaxSequenceLength];
+
+        for (size_t i = 0; i < cch; i++)
+        {
+            rgInput[i].EventType = KEY_EVENT;
+            rgInput[i].Event.KeyEvent.bKeyDown = TRUE;
+            rgInput[i].Event.KeyEvent.dwControlKeyState = 0;
+            rgInput[i].Event.KeyEvent.wRepeatCount = 1;
+            rgInput[i].Event.KeyEvent.wVirtualKeyCode = 0;
+            rgInput[i].Event.KeyEvent.wVirtualScanCode = 0;
+
+            rgInput[i].Event.KeyEvent.uChar.UnicodeChar = pwszSequence[i];
+        }
+        //This cast is safe because we know that _TermKeyMap::s_cchMaxSequenceLength + 1 < MAX_DWORD
+        _pfnWriteEvents(rgInput, (DWORD)cch);
+    }
+}   

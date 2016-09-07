@@ -1,0 +1,29 @@
+MSC_WARNING_LEVEL=/W4 /WX
+W32_SB=1
+UMTYPE=console
+
+USE_UNICRT = 1
+USE_MSVCRT = 1
+USE_NATIVE_EH = 1
+USE_STL = 1
+STL_VER = STL_VER_CURRENT
+
+TARGETNAME = ConProps
+TARGETTYPE = LIBRARY
+
+INCLUDES=\
+            ..\host;                          \
+
+
+C_DEFINES= $(C_DEFINES) -DWIN32 -DNT -DUNICODE -D_UNICODE
+
+
+SOURCES =   ShortcutSerialization.cpp \
+            RegistrySerialization.cpp \
+            TrueTypeFontList.cpp \
+
+
+
+PRECOMPILED_CXX=1
+PRECOMPILED_INCLUDE=precomp.h
+

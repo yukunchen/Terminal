@@ -1,0 +1,26 @@
+!include ..\sources.inc
+
+TARGETNAME                      =   ConTerm.Adapter.Tests
+TARGETTYPE                      =   DYNLINK
+TARGET_DESTINATION              =   UnitTests
+DLLDEF = 
+
+TEST_CODE                       =   1
+NT_SIGNCODE                     =   1
+
+C_DEFINES                       =   $(C_DEFINES) -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTING
+
+INCLUDES                        =   $(INCLUDES); \
+                                    ..\..\..\inc; \
+                                    $(SDKTOOLS_INC_PATH)\WexTest\Cue; \
+
+SOURCES                         =   $(SOURCES) \
+                                    adapterTest.cpp \
+                                    inputTest.cpp \
+
+TARGETLIBS                      =   $(TARGETLIBS) \
+                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Common.lib \
+                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Logger.lib \
+                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Te.Common.lib \
+                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Mock10.lib \
+

@@ -1,0 +1,7 @@
+!include ..\sources.inc
+
+TARGETNAME = ConRenderGdi
+TARGETTYPE = LIBRARY
+
+
+

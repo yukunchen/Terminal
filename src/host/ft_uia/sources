@@ -1,0 +1,46 @@
+TARGETNAME                         =   Conhost.UIA.Tests
+TARGETTYPE                         =   DYNLINK
+TARGET_DESTINATION                 =   UnitTests
+
+MANAGED_CODE                       =   1
+TEST_CODE                          =   1
+URT_VER                            =   4.5
+
+SOURCES                            =   \
+                                       Properties\AssemblyInfo.cs \
+                                       Common\AutoHelpers.cs \
+                                       Common\CheckBoxMeta.cs \
+                                       Common\SliderMeta.cs \
+                                       Common\Globals.cs \
+                                       Common\NativeMethods.cs \
+                                       Common\RegistryHelper.cs \
+                                       Common\ShortcutHelper.cs \
+                                       Common\VersionSelector.cs \
+                                       Elements\CmdApp.cs \
+                                       Elements\PropertiesDialog.cs \
+                                       Elements\TabBase.cs \
+                                       Elements\Tabs.cs \
+                                       Elements\OptionsTab.cs \
+                                       Elements\FontTab.cs \
+                                       Elements\LayoutTab.cs \
+                                       Elements\ColorsTab.cs \
+                                       Elements\ViewportArea.cs \
+                                       ExperimentalTabTests.cs \
+                                       MiscTests.cs \
+                                       SelectionApiTests.cs \
+                                       VirtualTerminalTests.cs \
+
+
+REFERENCES                         =   $(CLR_REF_PATH)\System.metadata_dll; \
+                                       $(CLR_REF_PATH)\System.Core.metadata_dll; \
+                                       $(CLR_REF_PATH)\System.Data.metadata_dll; \
+                                       $(CLR_REF_PATH)\System.Drawing.metadata_dll; \
+                                       $(SDKTOOLS_REF_PATH)\wextest\cue\wex.common.managed.metadata_dll; \
+                                       $(SDKTOOLS_REF_PATH)\wextest\cue\wex.logger.interop.metadata_dll; \
+                                       $(SDKTOOLS_REF_PATH)\wextest\cue\te.managed.metadata_dll; \
+                                       $(SDKTOOLS_REF_PATH)\Mita.Foundation.2.0.metadata_dll; \
+                                       $(SDKTOOLS_REF_PATH)\Mita.FingerPrinting.2.0.metadata_dll; \
+                                       $(SDKTOOLS_REF_PATH)\Mita.Localization.2.0.metadata_dll; \
+                                       $(SDKTOOLS_REF_PATH)\Mita.LocalizationProvider.2.0.metadata_dll; \
+                                       $(SDKTOOLS_REF_PATH)\Mita.Modeling.2.0.metadata_dll; \
+                                       $(SDKTOOLS_REF_PATH)\Microsoft.UIAutomationAdapter.metadata_dll;

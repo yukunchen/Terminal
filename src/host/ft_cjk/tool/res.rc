@@ -1,0 +1,15 @@
+//
+//    Copyright (C) Microsoft.  All rights reserved.
+//
+#include <windows.h>
+#include <ntverp.h>
+
+#define VER_FILETYPE                    VFT_APP
+#define VER_FILESUBTYPE                 VFT_UNKNOWN
+#define VER_FILEDESCRIPTION_STR         "Console CJK test helper tool"
+#define VER_INTERNALNAME_STR            "Conhost.CJK.Tests.Tool"
+#define VER_ORIGINALFILENAME_STR        "Conhost.CJK.Tests.Tool.EXE"
+
+
+#include <common.ver>
+

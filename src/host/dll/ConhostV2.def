@@ -1,0 +1,12 @@
+;//+-------------------------------------------------------------------------
+;//
+;//  Microsoft Windows
+;//
+;//  Copyright (C) Microsoft Corporation
+;//
+;//--------------------------------------------------------------------------
+
+LIBRARY      "ConhostV2.DLL"
+
+EXPORTS
+        ConsoleCreateIoThread

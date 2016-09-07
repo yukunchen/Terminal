@@ -1,0 +1,4 @@
+DIRS= \
+     exe{!cs_xbox} \
+     lib
+

@@ -1,0 +1,52 @@
+!include ..\sources.inc
+
+TARGETNAME                      =   ConhostV2
+TARGETTYPE                      =   LIBRARY
+UMTYPE                          =   windows
+
+SOURCES                         =   $(SOURCES)\
+                                    ..\clipboard.cpp \
+                                    ..\selection.cpp \
+                                    ..\selectionInput.cpp \
+                                    ..\selectionState.cpp \
+                                    ..\scrolling.cpp \
+                                    ..\cmdline.cpp   \
+                                    ..\consoleInformation.cpp \
+                                    ..\csrutil.cpp   \
+                                    ..\cursor.cpp    \
+                                    ..\directio.cpp  \
+                                    ..\find.cpp      \
+                                    ..\getset.cpp    \
+                                    ..\globals.cpp   \
+                                    ..\handle.cpp    \
+                                    ..\input.cpp     \
+                                    ..\inputKeyInfo.cpp \
+                                    ..\inputReadHandleData.cpp \
+                                    ..\menu.cpp      \
+                                    ..\misc.cpp      \
+                                    ..\output.cpp    \
+                                    ..\srvinit.cpp   \
+                                    ..\outputStream.cpp \
+                                    ..\stream.cpp    \
+                                    ..\dbcs.cpp      \
+                                    ..\convarea.cpp  \
+                                    ..\textBuffer.cpp \
+                                    ..\screenInfo.cpp \
+                                    ..\newdelete.cpp \
+                                    ..\_output.cpp   \
+                                    ..\_stream.cpp   \
+                                    ..\utils.cpp     \
+                                    ..\telemetry.cpp \
+                                    ..\tracing.cpp   \
+                                    ..\registry.cpp  \
+                                    ..\settings.cpp  \
+                                    ..\icon.cpp      \
+                                    ..\window.cpp    \
+                                    ..\windowproc.cpp \
+                                    ..\windowdpiapi.cpp \
+                                    ..\userprivapi.cpp \
+                                    ..\renderData.cpp \
+                                    ..\renderFontDefaults.cpp \
+
+INCLUDES                        =  $(INCLUDES); \
+                                   $(OBJ_PATH)\$(O)
