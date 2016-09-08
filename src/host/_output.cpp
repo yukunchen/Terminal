@@ -820,7 +820,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             else
             {
                 CHAR CharTmp = (CHAR) wElement;
-                ConvertOutputToUnicode(Codepage, &CharTmp, 1, &wElement, 1);
+                ConvertOutputToUnicode(Codepage, &CharTmp, 1, (WCHAR*)&wElement, 1);
             }
         }
         else
@@ -831,7 +831,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             CharTmp[1] = (BYTE) wElement;
 
             pScreenInfo->FillOutDbcsLeadChar = 0;
-            ConvertOutputToUnicode(Codepage, CharTmp, 2, &wElement, 1);
+            ConvertOutputToUnicode(Codepage, CharTmp, 2, (WCHAR*)&wElement, 1);
         }
     }
 

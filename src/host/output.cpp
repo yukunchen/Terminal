@@ -576,7 +576,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         {
             SHORT CountOfAttr;
             TextAttributeRun* pAttrRun;
-            PWORD TargetPtr = BufPtr;
+            PWORD TargetPtr = (PWORD)BufPtr;
 
             while (NumRead < *pcRecords)
             {

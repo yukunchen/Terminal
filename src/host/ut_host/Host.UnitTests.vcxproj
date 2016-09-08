@@ -151,7 +151,7 @@
       <PreprocessorDefinitions>INLINE_TEST_METHOD_MARKUP;UNIT_TESTING;WIN32;_DEBUG;_WINDOWS;_USRDLL;HOSTUNITTESTS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..;$(SolutionDir)\dep\DDK\TAEF\inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\dep\Console;..\..\..\dep;..;$(SolutionDir)\dep\DDK\TAEF\inc</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
@@ -170,7 +170,7 @@
       <PreprocessorDefinitions>INLINE_TEST_METHOD_MARKUP;UNIT_TESTING;_DEBUG;_WINDOWS;_USRDLL;HOSTUNITTESTS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..;$(SolutionDir)\dep\DDK\TAEF\inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\dep\Console;..\..\..\dep;..;$(SolutionDir)\dep\DDK\TAEF\inc</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
@@ -191,7 +191,7 @@
       <PreprocessorDefinitions>INLINE_TEST_METHOD_MARKUP;UNIT_TESTING;WIN32;NDEBUG;_WINDOWS;_USRDLL;HOSTUNITTESTS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..;$(SolutionDir)\dep\DDK\TAEF\inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\dep\Console;..\..\..\dep;..;$(SolutionDir)\dep\DDK\TAEF\inc</AdditionalIncludeDirectories>
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <Link>
@@ -213,7 +213,7 @@
       <PreprocessorDefinitions>INLINE_TEST_METHOD_MARKUP;UNIT_TESTING;NDEBUG;_WINDOWS;_USRDLL;HOSTUNITTESTS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..;$(SolutionDir)\dep\DDK\TAEF\inc</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\dep\Console;..\..\..\dep;..;$(SolutionDir)\dep\DDK\TAEF\inc</AdditionalIncludeDirectories>
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <Link>

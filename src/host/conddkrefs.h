@@ -140,9 +140,9 @@ extern "C"
     // by customers.
     //
 
-#define DEVICE_TYPE ULONG
-
+#ifndef FILE_DEVICE_CONSOLE
 #define FILE_DEVICE_CONSOLE             0x00000050
+#endif
 
     //
     // Macro definition for defining IOCTL and FSCTL function control codes.  Note
@@ -150,19 +150,11 @@ extern "C"
     // 2048-4095 are reserved for customers.
     //
 
+#ifndef CTL_CODE
 #define CTL_CODE( DeviceType, Function, Method, Access ) (                 \
     ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method) \
 )
-
-    //
-    // Macro to extract device type out of the device io control code
-    //
-#define DEVICE_TYPE_FROM_CTL_CODE(ctrlCode)     (((ULONG)(ctrlCode & 0xffff0000)) >> 16)
-
-    //
-    // Macro to extract buffering method out of the device io control code
-    //
-#define METHOD_FROM_CTL_CODE(ctrlCode)          ((ULONG)(ctrlCode & 3))
+#endif
 
     //
     // Define the method codes for how buffers are passed for I/O and FS controls
@@ -171,7 +163,10 @@ extern "C"
 #define METHOD_BUFFERED                 0
 #define METHOD_IN_DIRECT                1
 #define METHOD_OUT_DIRECT               2
+
+#ifndef METHOD_NEITHER
 #define METHOD_NEITHER                  3
+#endif
 
     //
     // Define some easier to comprehend aliases:

@@ -24,7 +24,7 @@
 #include "window.hpp"
 #include "userprivapi.hpp"
 
-#include "terminalInput.hpp"
+#include "..\terminal\adapter\terminalInput.hpp"
 
 #pragma hdrstop
 

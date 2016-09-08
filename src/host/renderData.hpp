@@ -13,7 +13,7 @@ Author(s):
 
 #pragma once
 
-#include "IRenderData.hpp"
+#include "..\renderer\inc\IRenderData.hpp"
 
 using namespace Microsoft::Console::Render;
 

@@ -8,7 +8,6 @@
 #include "window.hpp"
 #include "windowdpiapi.hpp"
 #include "userprivapi.hpp"
-#include <wtsapi32apiext.h>
 
 #include "cursor.h"
 #include "dbcs.h"
@@ -25,8 +24,8 @@
 
 #include "srvinit.h"
 
-#include "renderer.hpp"
-#include "gdirenderer.hpp"
+#include "..\renderer\base\renderer.hpp"
+#include "..\renderer\gdi\gdirenderer.hpp"
 #include "renderData.hpp"
 
 // The following default masks are used in creating windows
