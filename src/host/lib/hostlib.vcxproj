@@ -117,7 +117,7 @@
     <ProjectGuid>{06EC74CB-9A12-429C-B551-8562EC954746}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>hostlib</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.10586.0</WindowsTargetPlatformVersion>
     <ProjectName>Host.LIB</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

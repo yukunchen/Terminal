@@ -22,7 +22,7 @@
     <ProjectGuid>{8CDB8850-7484-4EC7-B45B-181F85B2EE54}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>HostApiTests</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.10586.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

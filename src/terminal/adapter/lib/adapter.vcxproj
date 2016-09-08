@@ -46,7 +46,7 @@
     <ProjectGuid>{DCF55140-EF6A-4736-A403-957E4F7430BB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>adapter</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.10586.0</WindowsTargetPlatformVersion>
     <ProjectName>TerminalAdapter</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

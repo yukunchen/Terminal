@@ -38,7 +38,7 @@
     <ProjectGuid>{1C959542-BAC2-4E55-9A6D-13251914CBB9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>gdi</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.10586.0</WindowsTargetPlatformVersion>
     <ProjectName>RendererGdi</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

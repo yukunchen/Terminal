@@ -42,6 +42,9 @@
     <ClCompile Include="TfTxtevCb.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="precomp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ConsoleTSF.h">
