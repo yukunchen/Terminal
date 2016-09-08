@@ -305,6 +305,6 @@ void DoFind()
     UnlockConsole();
 
     ++g_uiDialogBoxCount;
-    DialogBoxParamW(g_hInstance, MAKEINTRESOURCE(ID_CONSOLE_FINDDLG), hwnd, FindDialogProc, (LPARAM) nullptr);
+    DialogBoxParamW(g_hInstance, MAKEINTRESOURCE(ID_CONSOLE_FINDDLG), hwnd, (DLGPROC)FindDialogProc, (LPARAM) nullptr);
     --g_uiDialogBoxCount;
 }
