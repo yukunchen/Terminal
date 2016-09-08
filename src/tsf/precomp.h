@@ -26,8 +26,8 @@ Notes:
 
 extern "C"
 {
-    #include "winuserp.h"
-    #include "immp.h"
+    #include <winuser.h>
+    #include <imm.h>
 
     #include "uxtheme.h"
     
@@ -37,20 +37,17 @@ extern "C"
     #include <limits.h>
 
     #include <ime.h>
-    #include <winconp.h>
     #include <strsafe.h>
     #include <intsafe.h>
 }
 
 #include <msctf.h>          // Cicero header
-#include <msctfp.h>         // Cicero private header
 #include <tsattrs.h>        // ITextStore standard attributes
 
 extern "C"
 {
-//    #include <winconp.h>    // Console API header
     #include "debug.h"
-    #include "contsf.h"
+    #include "..\inc\contsf.h"
     #include "globals.h"
 }
 

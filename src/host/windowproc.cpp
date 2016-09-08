@@ -8,7 +8,6 @@
 #include "window.hpp"
 #include "windowdpiapi.hpp"
 #include "userprivapi.hpp"
-#include <wtsapi32apiext.h>
 
 #include "_output.h"
 #include "output.h"
@@ -746,11 +745,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
     {
         UnlockConsole();
         Unlock = FALSE;
-        if (IsPlaySoundPresent())
-        {
-            PlaySoundW((LPCWSTR)SND_ALIAS_SYSTEMHAND, nullptr, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-        }
-        else
+        if (!PlaySoundW((LPCWSTR)SND_ALIAS_SYSTEMHAND, nullptr, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY))
         {
             Beep(800, 200);
         }

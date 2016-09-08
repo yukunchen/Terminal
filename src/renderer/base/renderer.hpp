@@ -15,13 +15,13 @@ Author(s):
 
 #pragma once
 
-#include "IRenderer.hpp"
-#include "IRenderEngine.hpp"
-#include "IRenderData.hpp"
+#include "..\inc\IRenderer.hpp"
+#include "..\inc\IRenderEngine.hpp"
+#include "..\inc\IRenderData.hpp"
 
 #include "thread.hpp"
 
-#include "textBuffer.hpp"
+#include "..\..\host\textBuffer.hpp"
 
 namespace Microsoft
 {

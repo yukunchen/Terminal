@@ -32,7 +32,6 @@ SOURCES =   contsf.cpp      \
            	TfDispAttr.cpp  \
             TfEditses.cpp   \
             TfTxtevCb.cpp   \
-            debug.c         \
             consubs.cpp     \
             imecomp.cpp     \
 

@@ -6,7 +6,7 @@
 
 #include "precomp.h"
 
-#include "FontInfo.hpp"
+#include "..\inc\FontInfo.hpp"
 
 #define DEFAULT_TT_FONT_FACENAME L"__DefaultTTFont__"
 #define DEFAULT_RASTER_FONT_FACENAME L"Terminal"

@@ -163,7 +163,7 @@ class ClipboardTests
         tempPtr = rgTempRows[0];
         tempPtr += rgsrSelection[0].Right - rgsrSelection[0].Left - 2;
         tempPtr++;
-        VERIFY_IS_NULL(wcsrchr(tempPtr, (WCHAR)L" "));
+        VERIFY_IS_NULL(wcsrchr(tempPtr, L' '));
 
         // final line of selection should not contain CR/LF
         tempPtr = rgTempRows[3];

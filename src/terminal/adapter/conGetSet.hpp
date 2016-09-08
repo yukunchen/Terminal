@@ -14,7 +14,7 @@ Author(s):
 
 #pragma once
 
-#include "termDispatch.hpp"
+#include "..\parser\termDispatch.hpp"
 
 namespace Microsoft
 {

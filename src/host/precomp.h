@@ -50,7 +50,7 @@ typedef NTSTATUS *PNTSTATUS;
 #include "conddkrefs.h"
 #include "conwinuserrefs.h"
 
-#include "condrv.h"
+#include <condrv.h>
 
 #include <conmsgl1.h>
 #include <conmsgl2.h>
@@ -64,7 +64,7 @@ typedef NTSTATUS *PNTSTATUS;
 #include "consrv.h"
 
 #include "conv.h"
-#include <immp.h>
+#include <imm.h>
 
 // STL
 #include <string>
@@ -106,7 +106,7 @@ extern "C"
 };
 
 #include <ShellScalingApi.h>
-#include <conpropsp.hpp>
+#include "..\propslib\conpropsp.hpp"
 
 BOOL IsConsoleFullWidth(_In_ HDC hDC, _In_ DWORD CodePage, _In_ WCHAR wch);
 

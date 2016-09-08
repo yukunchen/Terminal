@@ -16,7 +16,7 @@ Revision History:
 #pragma once
 
 #include "condrv.h"
-#include "contsf.h"
+#include "..\inc\contsf.h"
 #include <conmsgl3.h>
 
 typedef struct _CONSOLE_OBJECT_HEADER

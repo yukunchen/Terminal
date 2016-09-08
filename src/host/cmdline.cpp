@@ -3707,7 +3707,7 @@ del_repeat:
                     {
                         goto del_repeat;
                     }
-                END_REQUIRES_WIN8MQ_CODE_FIX}
+                }
                 break;
             default:
                 ASSERT(FALSE);

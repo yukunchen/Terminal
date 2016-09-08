@@ -16,7 +16,7 @@ Abstract:
 #include <windows.h>
 #include <wincon.h>
 
-#include "viewport.hpp"
+#include "..\..\inc\viewport.hpp"
 
 #ifndef _NTSTATUS_DEFINED
 #define _NTSTATUS_DEFINED

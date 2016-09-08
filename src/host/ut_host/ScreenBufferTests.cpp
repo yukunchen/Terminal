@@ -5,7 +5,7 @@
 ********************************************************/
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "consoletaeftemplates.hpp"
+#include "..\..\inc\consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 

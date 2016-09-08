@@ -13,7 +13,7 @@ Author(s):
 
 #pragma once
 
-#include "IFontDefaultList.hpp"
+#include "..\renderer\inc\IFontDefaultList.hpp"
 
 using namespace Microsoft::Console::Render;
 

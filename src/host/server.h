@@ -25,7 +25,7 @@ typedef _INPUT_INFORMATION INPUT_INFORMATION;
 typedef _INPUT_INFORMATION *PINPUT_INFORMATION;
 
 #include "conimeinfo.h"
-#include "terminalInput.hpp"
+#include "..\terminal\adapter\terminalInput.hpp"
 
 // Flags flags
 #define CONSOLE_IS_ICONIC               0x00000001

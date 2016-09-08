@@ -16,7 +16,7 @@ Revision History:
 
 #pragma once
 
-#include <ConsoleTAEFTemplates.hpp>
+#include "..\..\inc\consoletaeftemplates.hpp"
 
 class Common
 {

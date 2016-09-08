@@ -15,7 +15,7 @@ Revision History:
 
 #pragma once
 
-#include "conime.h"
+#include "..\inc\conime.h"
 
 class SCREEN_INFORMATION;
 

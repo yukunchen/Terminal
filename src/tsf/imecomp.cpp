@@ -38,7 +38,6 @@ void GetCompositionStr(HWND hwnd, CConsoleTable* ConTbl, LPARAM CompFlag, WPARAM
     DWORD       SizeToAlloc;
     PWCHAR      TempBuf;
     PUCHAR      TempBufA;
-    DWORD       i;
     DWORD       CursorPos;
     COPYDATASTRUCT CopyData;
     LPCONIME_UICOMPMESSAGE lpCompStrMem;

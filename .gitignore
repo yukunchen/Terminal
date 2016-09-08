@@ -212,3 +212,15 @@ _Pvt_Extensions/
 ModelManifest.xml
 *.opendb
 *.db
+
+# Windows Build System files
+build*.dbb
+build*.err
+build*.evt
+build*.log
+build*.prf
+build*.trc
+build*.rec
+build*.wrn
+build*.metadata
+
