@@ -884,7 +884,7 @@ TEXT_BUFFER_INFO::~TEXT_BUFFER_INFO()
 {
     if (this->TextRows != nullptr)
     {
-        ConsoleHeapFree(this->TextRows);
+        delete[] this->TextRows;
     }
 
     if (this->Rows != nullptr)
@@ -896,12 +896,12 @@ TEXT_BUFFER_INFO::~TEXT_BUFFER_INFO()
                 delete this->Rows[y].AttrRow.GetHead();
             }
         }
-        ConsoleHeapFree(this->Rows);
+        delete[] this->Rows;
     }
 
     if (this->KAttrRows != nullptr)
     {
-        ConsoleHeapFree(this->KAttrRows);
+        delete[] this->KAttrRows;
     }
 
     if (this->_pCursor != nullptr)
@@ -949,24 +949,16 @@ NTSTATUS TEXT_BUFFER_INFO::CreateInstance(_In_ const FontInfo* const pFontInfo,
 
             pTextBufferInfo->_coordBufferSize = coordScreenBufferSize;
 
-            const size_t cbRows = coordScreenBufferSize.Y * sizeof(ROW);
-
-            pTextBufferInfo->Rows = (ROW*)ConsoleHeapAlloc(SCREEN_TAG, cbRows);
-
+            pTextBufferInfo->Rows = new ROW[coordScreenBufferSize.Y];
             status = NT_TESTNULL(pTextBufferInfo->Rows);
             if (NT_SUCCESS(status))
             {
-                ZeroMemory(pTextBufferInfo->Rows, cbRows);
-
-                pTextBufferInfo->TextRows = (PWCHAR)ConsoleHeapAlloc(SCREEN_TAG, coordScreenBufferSize.X * coordScreenBufferSize.Y * sizeof(WCHAR));
-
+                pTextBufferInfo->TextRows = new WCHAR[coordScreenBufferSize.X * coordScreenBufferSize.Y];
                 status = NT_TESTNULL(pTextBufferInfo->TextRows);
                 if (NT_SUCCESS(status))
                 {
-                    pTextBufferInfo->KAttrRows = (PBYTE)ConsoleHeapAlloc(SCREEN_DBCS_TAG,
-                                                                         coordScreenBufferSize.X * coordScreenBufferSize.Y * sizeof(BYTE));
+                    pTextBufferInfo->KAttrRows = new BYTE[coordScreenBufferSize.X * coordScreenBufferSize.Y];
                     status = NT_TESTNULL(pTextBufferInfo->KAttrRows);
-
                     if (NT_SUCCESS(status))
                     {
                         PBYTE AttrRowPtr = pTextBufferInfo->KAttrRows;

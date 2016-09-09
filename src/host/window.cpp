@@ -1384,7 +1384,7 @@ void Window::s_PersistWindowPosition(_In_ PCWSTR pwszLinkTitle,
         if (pwszTranslatedTitle != nullptr)
         {
             Window::s_RegPersistWindowPos(pwszTranslatedTitle, IsFlagSet(dwFlags, CONSOLE_AUTO_POSITION), pWindow);
-            ConsoleHeapFree(pwszTranslatedTitle);
+            delete[] pwszTranslatedTitle;
         }
     }
     else
@@ -1403,7 +1403,7 @@ void Window::s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle, _In_ PCWSTR pwszO
         if (pwszTranslatedTitle != nullptr)
         {
             Window::s_RegPersistWindowOpacity(pwszTranslatedTitle, pWindow);
-            ConsoleHeapFree(pwszTranslatedTitle);
+            delete[] pwszTranslatedTitle;
         }
     }
     else

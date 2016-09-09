@@ -106,7 +106,7 @@ NTSTATUS AllocateConversionArea(_In_ COORD dwScreenBufferSize, _Out_ PCONVERSION
         return STATUS_UNSUCCESSFUL;
     }
 
-    PCONVERSIONAREA_INFORMATION ca = (PCONVERSIONAREA_INFORMATION) ConsoleHeapAlloc(CONVAREA_TAG, sizeof(CONVERSIONAREA_INFORMATION));
+    PCONVERSIONAREA_INFORMATION ca = new CONVERSIONAREA_INFORMATION();
     if (ca == nullptr)
     {
         return STATUS_NO_MEMORY;
@@ -134,7 +134,7 @@ NTSTATUS AllocateConversionArea(_In_ COORD dwScreenBufferSize, _Out_ PCONVERSION
     if (!NT_SUCCESS(Status))
     {
         delete ca->ScreenBuffer;
-        ConsoleHeapFree(ca);
+        delete ca;
         return Status;
     }
 
@@ -241,30 +241,6 @@ NTSTATUS CreateConvAreaUndetermine()
 {
     PCONSOLE_IME_INFORMATION const ConsoleIme = &g_ciConsoleInformation.ConsoleIme;
     
-    if (ConsoleIme->ConvAreaCompStr)
-    {
-        PCONVERSIONAREA_INFORMATION *ConvAreaCompStrTmp;
-        ConvAreaCompStrTmp = (PCONVERSIONAREA_INFORMATION *)ConsoleHeapReAlloc(0,
-                                                                               ConsoleIme->ConvAreaCompStr,
-                                                                               (ConsoleHeapSize(ConsoleIme->ConvAreaCompStr) +
-                                                                                sizeof(PCONVERSIONAREA_INFORMATION)));
-        if (ConvAreaCompStrTmp == nullptr)
-        {
-            ConsoleHeapFree(ConsoleIme->ConvAreaCompStr);
-        }
-
-        ConsoleIme->ConvAreaCompStr = ConvAreaCompStrTmp;
-    }
-    else
-    {
-        ConsoleIme->ConvAreaCompStr = (PCONVERSIONAREA_INFORMATION *) ConsoleHeapAlloc(CONVAREA_TAG, sizeof(PCONVERSIONAREA_INFORMATION));
-    }
-
-    if (ConsoleIme->ConvAreaCompStr == nullptr)
-    {
-        return STATUS_NO_MEMORY;
-    }
-
     COORD coordCaBuffer;
     coordCaBuffer = g_ciConsoleInformation.CurrentScreenBuffer->ScreenBufferSize;
     coordCaBuffer.Y = 1;
@@ -280,21 +256,26 @@ NTSTATUS CreateConvAreaUndetermine()
     coordConView.Y = 0;
 
     PCONVERSIONAREA_INFORMATION ConvAreaInfo;
-    NTSTATUS Status = SetUpConversionArea(coordCaBuffer,
-                                          rcViewCaWindow, 
-                                          coordConView, 
-                                          CA_HIDDEN, 
-                                          &ConvAreaInfo);
+    RETURN_IF_NTSTATUS_FAILED(SetUpConversionArea(coordCaBuffer,
+                                                  rcViewCaWindow,
+                                                  coordConView,
+                                                  CA_HIDDEN,
+                                                  &ConvAreaInfo));
 
-    if (!NT_SUCCESS(Status))
+    try
     {
-        return Status;
+        ConsoleIme->ConvAreaCompStr.push_back(ConvAreaInfo);
     }
-
-    ConsoleIme->ConvAreaCompStr[ConsoleIme->NumberOfConvAreaCompStr] = ConvAreaInfo;
-    ConsoleIme->NumberOfConvAreaCompStr++;
-
-    return Status;
+    catch (std::bad_alloc)
+    {
+        RETURN_NTSTATUS(STATUS_NO_MEMORY);
+    }
+    catch (...)
+    {
+        return wil::ResultFromCaughtException();
+    }
+    
+    return STATUS_SUCCESS;
 }
 
 #define LOCAL_BUFFER_SIZE 100
@@ -350,7 +331,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
     PCONVERSIONAREA_INFORMATION ConvAreaInfo;
     for (ConvAreaIndex = 0; NumChars < BufferSize; ConvAreaIndex++)
     {
-        if (ConvAreaIndex + 1 > ConsoleIme->NumberOfConvAreaCompStr)
+        if (ConvAreaIndex + 1 > ConsoleIme->ConvAreaCompStr.size())
         {
             NTSTATUS Status;
 
@@ -488,7 +469,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
 
     }
 
-    for (; ConvAreaIndex < ConsoleIme->NumberOfConvAreaCompStr; ConvAreaIndex++)
+    for (; ConvAreaIndex < ConsoleIme->ConvAreaCompStr.size(); ConvAreaIndex++)
     {
         ConvAreaInfo = ConsoleIme->ConvAreaCompStr[ConvAreaIndex];
         if (!(ConvAreaInfo->ConversionAreaMode & CA_HIDDEN))
@@ -520,19 +501,21 @@ NTSTATUS FillUndetermineChars(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo)
 
 NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
 {
+    CONSOLE_IME_INFORMATION* const pIme = &g_ciConsoleInformation.ConsoleIme;
+
     if (CompStr->dwCompStrLen == 0 || CompStr->dwResultStrLen != 0)
     {
         // Cursor turn ON.
-        if (g_ciConsoleInformation.ConsoleIme.SavedCursorVisible)
+        if (pIme->SavedCursorVisible)
         {
-            g_ciConsoleInformation.ConsoleIme.SavedCursorVisible = FALSE;
+            pIme->SavedCursorVisible = FALSE;
             g_ciConsoleInformation.CurrentScreenBuffer->SetCursorInformation(g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->GetCursor()->GetSize(), TRUE);
         }
 
         // Determine string.
-        for (UINT i = 0; i < g_ciConsoleInformation.ConsoleIme.NumberOfConvAreaCompStr; i++)
+        for (auto it = pIme->ConvAreaCompStr.begin(); it != pIme->ConvAreaCompStr.end(); ++it)
         {
-            PCONVERSIONAREA_INFORMATION const ConvAreaInfo = g_ciConsoleInformation.ConsoleIme.ConvAreaCompStr[i];
+            PCONVERSIONAREA_INFORMATION const ConvAreaInfo = *it;
             if (ConvAreaInfo && (!(ConvAreaInfo->ConversionAreaMode & CA_HIDDEN)))
             {
                 FillUndetermineChars(ConvAreaInfo);
@@ -548,10 +531,10 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
             }
         }
 
-        if (g_ciConsoleInformation.ConsoleIme.CompStrData)
+        if (pIme->CompStrData)
         {
-            ConsoleHeapFree(g_ciConsoleInformation.ConsoleIme.CompStrData);
-            g_ciConsoleInformation.ConsoleIme.CompStrData = nullptr;
+            delete[] pIme->CompStrData;
+            pIme->CompStrData = nullptr;
         }
     }
     else
@@ -563,14 +546,14 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         // Cursor turn OFF.
         if (g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->GetCursor()->IsVisible())
         {
-            g_ciConsoleInformation.ConsoleIme.SavedCursorVisible = TRUE;
+            pIme->SavedCursorVisible = TRUE;
             g_ciConsoleInformation.CurrentScreenBuffer->SetCursorInformation(g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->GetCursor()->GetSize(), FALSE);
         }
 
         // Composition string.
-        for (UINT i = 0; i < g_ciConsoleInformation.ConsoleIme.NumberOfConvAreaCompStr; i++)
+        for (auto it = pIme->ConvAreaCompStr.begin(); it != pIme->ConvAreaCompStr.end(); ++it)
         {
-            PCONVERSIONAREA_INFORMATION const ConvAreaInfo = g_ciConsoleInformation.ConsoleIme.ConvAreaCompStr[i];
+            PCONVERSIONAREA_INFORMATION const ConvAreaInfo = *it;
             if (ConvAreaInfo && (!(ConvAreaInfo->ConversionAreaMode & CA_HIDDEN)))
             {
                 FillUndetermineChars(ConvAreaInfo);
@@ -589,13 +572,15 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
 
 NTSTATUS ConsoleImeResizeCompStrView()
 {
+    CONSOLE_IME_INFORMATION* const pIme = &g_ciConsoleInformation.ConsoleIme;
+
     // Compositon string
-    LPCONIME_UICOMPMESSAGE const CompStr = g_ciConsoleInformation.ConsoleIme.CompStrData;
+    LPCONIME_UICOMPMESSAGE const CompStr = pIme->CompStrData;
     if (CompStr)
     {
-        for (UINT i = 0; i < g_ciConsoleInformation.ConsoleIme.NumberOfConvAreaCompStr; i++)
+        for (auto it = pIme->ConvAreaCompStr.begin(); it != pIme->ConvAreaCompStr.end(); ++it)
         {
-            PCONVERSIONAREA_INFORMATION const ConvAreaInfo = g_ciConsoleInformation.ConsoleIme.ConvAreaCompStr[i];
+            PCONVERSIONAREA_INFORMATION const ConvAreaInfo = *it;
             if (ConvAreaInfo && (!(ConvAreaInfo->ConversionAreaMode & CA_HIDDEN)))
             {
                 FillUndetermineChars(ConvAreaInfo);
@@ -614,10 +599,12 @@ NTSTATUS ConsoleImeResizeCompStrView()
 
 NTSTATUS ConsoleImeResizeCompStrScreenBuffer(_In_ COORD const coordNewScreenSize)
 {
-    // Compositon string
-    for (UINT i = 0; i < g_ciConsoleInformation.ConsoleIme.NumberOfConvAreaCompStr; i++)
+    CONSOLE_IME_INFORMATION* const pIme = &g_ciConsoleInformation.ConsoleIme;
+
+    // Composition string
+    for (auto it = pIme->ConvAreaCompStr.begin(); it != pIme->ConvAreaCompStr.end(); ++it)
     {
-        PCONVERSIONAREA_INFORMATION const ConvAreaInfo = g_ciConsoleInformation.ConsoleIme.ConvAreaCompStr[i];
+        PCONVERSIONAREA_INFORMATION const ConvAreaInfo = *it;
 
         if (ConvAreaInfo)
         {
@@ -798,12 +785,13 @@ NTSTATUS ConsoleImeWriteOutput(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo, _I
         ULONG NumBytes;
 
         if (FAILED(ULongMult(BufferSize.Y, BufferSize.X, &NumBytes)) ||
-            FAILED(ULongMult(NumBytes, 2, &NumBytes)) || FAILED(ULongMult(NumBytes, sizeof(CHAR_INFO), &NumBytes)))
+            FAILED(ULongMult(NumBytes, 2, &NumBytes)) || 
+            FAILED(ULongMult(NumBytes, sizeof(CHAR_INFO), &NumBytes)))
         {
             return STATUS_INVALID_PARAMETER;
         }
 
-        PCHAR_INFO TransBuffer = (PCHAR_INFO)ConsoleHeapAlloc(TMP_DBCS_TAG, NumBytes);
+        PCHAR_INFO TransBuffer = (PCHAR_INFO) new BYTE[NumBytes];
         if (TransBuffer == nullptr)
         {
             return STATUS_NO_MEMORY;
@@ -812,7 +800,7 @@ NTSTATUS ConsoleImeWriteOutput(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo, _I
         TranslateOutputToPaddingUnicode(Buffer, BufferSize, &TransBuffer[0]);
 
         Status = WriteScreenBuffer(ScreenInfo, &TransBuffer[0], &ConvRegion);
-        ConsoleHeapFree(TransBuffer);
+        delete[] TransBuffer;
     }
 
     if (NT_SUCCESS(Status))
@@ -858,10 +846,10 @@ NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct)
                 {
                     if (g_ciConsoleInformation.ConsoleIme.CompStrData)
                     {
-                        ConsoleHeapFree(g_ciConsoleInformation.ConsoleIme.CompStrData);
+                        delete[] g_ciConsoleInformation.ConsoleIme.CompStrData;
                     }
 
-                    g_ciConsoleInformation.ConsoleIme.CompStrData = (LPCONIME_UICOMPMESSAGE) ConsoleHeapAlloc(IME_TAG, CompStr->dwSize);
+                    g_ciConsoleInformation.ConsoleIme.CompStrData = (LPCONIME_UICOMPMESSAGE) new BYTE[CompStr->dwSize];
                     if (g_ciConsoleInformation.ConsoleIme.CompStrData == nullptr)
                     {
                         break;
@@ -893,7 +881,7 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
     }
 
     size_t cchLen = wcslen(lpStr) + 1;
-    PINPUT_RECORD const InputEvent = (PINPUT_RECORD) ConsoleHeapAlloc(IME_TAG, sizeof(INPUT_RECORD) * cchLen);
+    PINPUT_RECORD const InputEvent = new INPUT_RECORD[cchLen];
     if (InputEvent == nullptr)
     {
         return false;
@@ -918,7 +906,7 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
 
     fResult = true;
 
-    ConsoleHeapFree(InputEvent);
+    delete[] InputEvent;
     return fResult;
 }
 

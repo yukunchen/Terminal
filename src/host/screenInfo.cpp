@@ -1344,17 +1344,16 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSi
         return STATUS_INVALID_PARAMETER;
     }
 
-    TextRows = (PWCHAR)ConsoleHeapAlloc(SCREEN_TAG, coordNewScreenSize.X * coordNewScreenSize.Y * sizeof(WCHAR));
+    TextRows = new WCHAR[coordNewScreenSize.X * coordNewScreenSize.Y];
     if (TextRows == nullptr)
     {
         return STATUS_NO_MEMORY;
     }
 
-    TextRowsA = (PBYTE)ConsoleHeapAlloc(SCREEN_DBCS_TAG, coordNewScreenSize.X * coordNewScreenSize.Y * sizeof(BYTE));
-
+    TextRowsA = new BYTE[coordNewScreenSize.X * coordNewScreenSize.Y];
     if (TextRowsA == nullptr)
     {
-        ConsoleHeapFree(TextRows);
+        delete[] TextRows;
         return STATUS_NO_MEMORY;
     }
 
@@ -1373,16 +1372,13 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSi
 
         // resize ROWs array.  first alloc a new ROWs array. then copy the old
         // one over, resetting the FirstRow.
-        const size_t cbRows = coordNewScreenSize.Y * sizeof(ROW);
-        Temp = (ROW*)ConsoleHeapAlloc(SCREEN_TAG, cbRows);
+        Temp = new ROW[coordNewScreenSize.Y];
         if (Temp == nullptr)
         {
-            ConsoleHeapFree(TextRows);
-            ConsoleHeapFree(TextRowsA);
+            delete[] TextRows;
+            delete[] TextRowsA;
             return STATUS_NO_MEMORY;
         }
-
-        ZeroMemory(Temp, cbRows);
 
         NumToCopy = this->ScreenBufferSize.Y - TopRowIndex;
         if (NumToCopy > coordNewScreenSize.Y)
@@ -1410,14 +1406,15 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSi
                 bool fSuccess = Temp[i].AttrRow.Initialize(coordNewScreenSize.X, &this->_Attributes);
                 if (!fSuccess) 
                 {
-                    ConsoleHeapFree(TextRows);
-                    ConsoleHeapFree(Temp);
+                    delete[] TextRowsA;
+                    delete[] TextRows;
+                    delete[] Temp;
                     return STATUS_NO_MEMORY;
                 }
             }
         }
         pTextInfo->SetFirstRowIndex(0);
-        ConsoleHeapFree(pTextInfo->Rows);
+        delete[] pTextInfo->Rows;
         pTextInfo->Rows = Temp;
     }
 
@@ -1480,9 +1477,9 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSi
         pTextInfo->Rows[i].sRowId = i;
     }
 
-    ConsoleHeapFree(pTextInfo->TextRows);
+    delete[] pTextInfo->TextRows;
     pTextInfo->TextRows = TextRows;
-    ConsoleHeapFree(pTextInfo->KAttrRows);
+    delete[] pTextInfo->KAttrRows;
     pTextInfo->KAttrRows = TextRowsA;
     pTextInfo->SetCoordBufferSize(coordNewScreenSize);
 

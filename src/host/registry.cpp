@@ -199,7 +199,7 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
 
     HKEY hTitleKey;
     Status = RegistrySerialization::s_OpenKey(hConsoleKey, TranslatedConsoleTitle, &hTitleKey);
-    ConsoleHeapFree(TranslatedConsoleTitle);
+    delete[] TranslatedConsoleTitle;
     TranslatedConsoleTitle = nullptr;
 
     if (!NT_SUCCESS(Status))
@@ -214,7 +214,7 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
         }
 
         Status = RegistrySerialization::s_OpenKey(hConsoleKey, TranslatedConsoleTitle, &hTitleKey);
-        ConsoleHeapFree(TranslatedConsoleTitle);
+        delete[] TranslatedConsoleTitle;
         TranslatedConsoleTitle = nullptr;
     }
 

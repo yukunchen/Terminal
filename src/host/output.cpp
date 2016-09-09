@@ -443,14 +443,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     PWCHAR BufPtr;
     if (ulStringType == CONSOLE_ASCII)
     {
-        ULONG AllocationSize;
-
-        if (FAILED(ULongMult(*pcRecords, sizeof(WCHAR), &AllocationSize)))
-        {
-            return STATUS_INVALID_PARAMETER;
-        }
-
-        TransBuffer = (PWCHAR)ConsoleHeapAlloc(TMP_TAG, AllocationSize);
+        TransBuffer = new WCHAR[*pcRecords];
         if (TransBuffer == nullptr)
         {
             return STATUS_NO_MEMORY;
@@ -466,12 +459,12 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     PBYTE BufPtrA = nullptr;
 
     {
-        TransBufferA = (PBYTE) ConsoleHeapAlloc(TMP_DBCS_TAG, *pcRecords * sizeof(BYTE));
+        TransBufferA = new BYTE[*pcRecords];
         if (TransBufferA == nullptr)
         {
             if (TransBuffer != nullptr)
             {
-                ConsoleHeapFree(TransBuffer);
+                delete[] TransBuffer;
             }
 
             return STATUS_NO_MEMORY;
@@ -638,7 +631,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
                     if (NumRead == *pcRecords)
                     {
-                        ConsoleHeapFree(TransBufferA);
+                        delete[] TransBufferA;
                         return STATUS_SUCCESS;
                     }
 
@@ -658,7 +651,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         else
         {
             *pcRecords = 0;
-            ConsoleHeapFree(TransBufferA);
+            delete[] TransBufferA;
 
             return STATUS_INVALID_PARAMETER;
         }
@@ -670,10 +663,10 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
         NumRead = ConvertOutputToOem(Codepage, TransBuffer, NumRead, (LPSTR) pvBuffer, *pcRecords);
 
-        ConsoleHeapFree(TransBuffer);
+        delete[] TransBuffer;
     }
 
-    ConsoleHeapFree(TransBufferA);
+    delete[] TransBufferA;
 
     *pcRecords = NumRead;
     return STATUS_SUCCESS;

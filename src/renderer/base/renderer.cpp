@@ -797,19 +797,14 @@ void Renderer::_PaintImeCompositionString()
 {
     const CONSOLE_IME_INFORMATION* const pImeData = _pData->GetImeData();
 
-    PCONVERSIONAREA_INFORMATION* ppAreaInfo = pImeData->ConvAreaCompStr;
-
-    if (ppAreaInfo != nullptr)
+    for (size_t i = 0; i < pImeData->ConvAreaCompStr.size(); i++)
     {
-        for (size_t i = 0; i < pImeData->NumberOfConvAreaCompStr; i++)
-        {
-            PCONVERSIONAREA_INFORMATION pAreaInfo = ppAreaInfo[i];
+        PCONVERSIONAREA_INFORMATION pAreaInfo = pImeData->ConvAreaCompStr[i];
 
-            if (pAreaInfo != nullptr)
-            {
-                const TEXT_BUFFER_INFO* const ptbi = _pData->GetImeCompositionStringBuffer(i);
-                _PaintIme(pAreaInfo, ptbi);
-            }
+        if (pAreaInfo != nullptr)
+        {
+            const TEXT_BUFFER_INFO* const ptbi = _pData->GetImeCompositionStringBuffer(i);
+            _PaintIme(pAreaInfo, ptbi);
         }
     }
 }

@@ -66,7 +66,7 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
     SetConsoleCPInfo(FALSE);
 
     // Initialize input buffer.
-    g_ciConsoleInformation.pInputBuffer = (PINPUT_INFORMATION)ConsoleHeapAlloc(BUFFER_TAG, sizeof(INPUT_INFORMATION));
+    g_ciConsoleInformation.pInputBuffer = new INPUT_INFORMATION();
     if (g_ciConsoleInformation.pInputBuffer == nullptr)
     {
         return STATUS_NO_MEMORY;
@@ -80,7 +80,8 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
 
     InitializeObjectHeader(&g_ciConsoleInformation.pInputBuffer->Header);
 
-    g_ciConsoleInformation.Title = (PWSTR)ConsoleHeapAlloc(TITLE_TAG, cbTitle + sizeof(WCHAR));
+    // Byte count + 1 so dividing by 2 always rounds up. +1 more for trailing null guard.
+    g_ciConsoleInformation.Title = new WCHAR[((cbTitle + 1) / sizeof(WCHAR)) + 1];
     if (g_ciConsoleInformation.Title == nullptr)
     {
         Status = STATUS_NO_MEMORY;
@@ -137,11 +138,11 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
     g_ciConsoleInformation.ScreenBuffers = nullptr;
 
 ErrorExit1b:
-    ConsoleHeapFree(g_ciConsoleInformation.Title);
+    delete[] g_ciConsoleInformation.Title;
     g_ciConsoleInformation.Title = nullptr;
 
 ErrorExit1:
-    ConsoleHeapFree(g_ciConsoleInformation.OriginalTitle);
+    delete[] g_ciConsoleInformation.OriginalTitle;
     g_ciConsoleInformation.OriginalTitle = nullptr;
 
 ErrorExit2:
@@ -181,7 +182,7 @@ bool FreeConsoleHandle(_In_ HANDLE hFree)
 
     PCONSOLE_OBJECT_HEADER const Header = (PCONSOLE_OBJECT_HEADER)HandleData->ClientPointer;
 
-    ConsoleHeapFree(HandleData);
+    delete HandleData;
 
     Header->OpenCount -= 1;
 
@@ -225,7 +226,7 @@ NTSTATUS AllocateIoHandle(_In_ const ULONG ulHandleType,
     }
 
     // Allocate all necessary state.
-    PCONSOLE_HANDLE_DATA const HandleData = (PCONSOLE_HANDLE_DATA)ConsoleHeapAlloc(HANDLE_TAG, sizeof(CONSOLE_HANDLE_DATA));
+    PCONSOLE_HANDLE_DATA const HandleData = new CONSOLE_HANDLE_DATA();
     if (HandleData == nullptr)
     {
         return STATUS_NO_MEMORY;
@@ -236,7 +237,7 @@ NTSTATUS AllocateIoHandle(_In_ const ULONG ulHandleType,
         HandleData->pClientInput = new INPUT_READ_HANDLE_DATA();
         if (HandleData->pClientInput == nullptr)
         {
-            ConsoleHeapFree(HandleData);
+            delete HandleData;
             return STATUS_NO_MEMORY;
         }
     }
@@ -383,7 +384,7 @@ PCONSOLE_PROCESS_HANDLE AllocProcessData(_In_ CLIENT_ID const * const ClientId,
         }
     }
 
-    ProcessData = (PCONSOLE_PROCESS_HANDLE)ConsoleHeapAlloc(TMP_TAG | HEAP_ZERO_MEMORY, sizeof(CONSOLE_PROCESS_HANDLE));
+    ProcessData = new CONSOLE_PROCESS_HANDLE();
     if (ProcessData != nullptr)
     {
         ProcessData->ClientId = *ClientId;
@@ -441,7 +442,7 @@ void FreeProcessData(_In_ PCONSOLE_PROCESS_HANDLE pProcessData)
     }
 
     RemoveEntryList(&pProcessData->ListLink);
-    ConsoleHeapFree(pProcessData);
+    delete pProcessData;
 }
 
 void InitializeObjectHeader(_Out_ PCONSOLE_OBJECT_HEADER pObjHeader)

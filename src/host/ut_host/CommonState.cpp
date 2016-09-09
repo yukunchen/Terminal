@@ -71,14 +71,14 @@ void CommonState::CleanupGlobalScreenBuffer()
 
 void CommonState::PrepareGlobalInputBuffer()
 {
-    g_ciConsoleInformation.pInputBuffer = (PINPUT_INFORMATION)ConsoleHeapAlloc(BUFFER_TAG, sizeof(INPUT_INFORMATION));
+    g_ciConsoleInformation.pInputBuffer = new INPUT_INFORMATION();
     CreateInputBuffer(10, g_ciConsoleInformation.pInputBuffer);
 }
 
 void CommonState::CleanupGlobalInputBuffer()
 {
     FreeInputBuffer(g_ciConsoleInformation.pInputBuffer);
-    ConsoleHeapFree(g_ciConsoleInformation.pInputBuffer);
+    delete g_ciConsoleInformation.pInputBuffer;
 }
 
 void CommonState::PrepareCookedReadData()

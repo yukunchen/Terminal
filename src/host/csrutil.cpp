@@ -13,7 +13,7 @@ static BOOL ConsoleInitializeWait(_In_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
                                   _In_ PVOID pvWaitParameter,
                                   _Outptr_ PCONSOLE_WAIT_BLOCK * ppWaitBlock)
 {
-    PCONSOLE_WAIT_BLOCK const WaitBlock = (PCONSOLE_WAIT_BLOCK) ConsoleHeapAlloc(WAITBLOCK_TAG, sizeof(CONSOLE_WAIT_BLOCK));
+    PCONSOLE_WAIT_BLOCK const WaitBlock = new CONSOLE_WAIT_BLOCK();
     if (WaitBlock == nullptr)
     {
         SetReplyStatus(pWaitReplyMessage, STATUS_NO_MEMORY);
@@ -68,7 +68,7 @@ BOOL ConsoleNotifyWaitBlock(_In_ PCONSOLE_WAIT_BLOCK pWaitBlock, _In_ PLIST_ENTR
 
         RemoveEntryList(&pWaitBlock->Link);
 
-        ConsoleHeapFree(pWaitBlock);
+        delete pWaitBlock;
 
         return TRUE;
     }
@@ -172,7 +172,7 @@ NTSTATUS GetInputBuffer(_In_ PCONSOLE_API_MSG pMessage, _Outptr_result_bytebuffe
 
         ULONG const ReadSize = pMessage->Descriptor.InputSize - pMessage->State.ReadOffset;
 
-        PVOID const Payload = ConsoleHeapAlloc(PAYLOAD_TAG, ReadSize);
+        PVOID const Payload = new BYTE[ReadSize];
         if (Payload == nullptr)
         {
             return STATUS_INSUFFICIENT_RESOURCES;
@@ -181,7 +181,7 @@ NTSTATUS GetInputBuffer(_In_ PCONSOLE_API_MSG pMessage, _Outptr_result_bytebuffe
         NTSTATUS Status = ReadMessageInput(pMessage, 0, Payload, ReadSize);
         if (!NT_SUCCESS(Status))
         {
-            ConsoleHeapFree(Payload);
+            delete[] Payload;
             return Status;
         }
 
@@ -228,7 +228,7 @@ NTSTATUS GetAugmentedOutputBuffer(_Inout_ PCONSOLE_API_MSG pMessage,
         }
 
         pMessage->State.OutputBufferSize *= ulFactor;
-        pMessage->State.OutputBuffer = ConsoleHeapAlloc(PAYLOAD_TAG, pMessage->State.OutputBufferSize);
+        pMessage->State.OutputBuffer = new BYTE[pMessage->State.OutputBufferSize];
 
         if (pMessage->State.OutputBuffer == nullptr)
         {
@@ -270,7 +270,7 @@ void ReleaseMessageBuffers(_Inout_ PCONSOLE_API_MSG pMessage)
 {
     if (pMessage->State.InputBuffer != nullptr)
     {
-        ConsoleHeapFree(pMessage->State.InputBuffer);
+        delete[] pMessage->State.InputBuffer;
         pMessage->State.InputBuffer = nullptr;
     }
 
@@ -292,7 +292,7 @@ void ReleaseMessageBuffers(_Inout_ PCONSOLE_API_MSG pMessage)
                           0);
         }
 
-        ConsoleHeapFree(pMessage->State.OutputBuffer);
+        delete[] pMessage->State.OutputBuffer;
         pMessage->State.OutputBuffer = nullptr;
     }
 }

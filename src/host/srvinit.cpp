@@ -154,7 +154,7 @@ void LoadLinkInfo(_Inout_ Settings* pLinkSettings,
         if (SUCCEEDED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED)))
         {
             const size_t cbTitle = (*pdwTitleLength + 1) * sizeof(WCHAR);
-            g_ciConsoleInformation.LinkTitle = (PWSTR) ConsoleHeapAlloc(TITLE_TAG, cbTitle);
+            g_ciConsoleInformation.LinkTitle = (PWSTR) new BYTE[cbTitle];
 
             NTSTATUS Status = NT_TESTNULL(g_ciConsoleInformation.LinkTitle);
             if (NT_SUCCESS(Status))
@@ -377,18 +377,13 @@ VOID FreeConsoleIMEStuff()
     {
         ConvAreaInfoNext = ConvAreaInfo->ConvAreaNext;
         FreeConvAreaScreenBuffer(ConvAreaInfo->ScreenBuffer);
-        ConsoleHeapFree(ConvAreaInfo);
+        delete ConvAreaInfo;
         ConvAreaInfo = ConvAreaInfoNext;
-    }
-
-    if (g_ciConsoleInformation.ConsoleIme.NumberOfConvAreaCompStr)
-    {
-        ConsoleHeapFree(g_ciConsoleInformation.ConsoleIme.ConvAreaCompStr);
     }
 
     if (g_ciConsoleInformation.ConsoleIme.CompStrData)
     {
-        ConsoleHeapFree(g_ciConsoleInformation.ConsoleIme.CompStrData);
+        delete[] g_ciConsoleInformation.ConsoleIme.CompStrData;
     }
 }
 
@@ -547,7 +542,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, _In_ const BOOL fUnexp
                 }
 
                 LPWSTR TranslatedConsoleTitle;
-                Tmp = TranslatedConsoleTitle = (PWSTR)ConsoleHeapAlloc(TITLE_TAG, cbSystemRoot + cbConsoleTitle);
+                Tmp = TranslatedConsoleTitle = (PWSTR)new BYTE[cbSystemRoot + cbConsoleTitle];
                 if (TranslatedConsoleTitle == nullptr)
                 {
                     return nullptr;

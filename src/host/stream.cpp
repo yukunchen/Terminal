@@ -421,7 +421,7 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
                 PCHAR TransBuffer;
 
                 // It's ansi, so translate the string.
-                TransBuffer = (PCHAR) ConsoleHeapAlloc(TMP_DBCS_TAG, NumBytes);
+                TransBuffer = (PCHAR) new BYTE[NumBytes];
                 if (TransBuffer == nullptr)
                 {
                     RetVal = TRUE;
@@ -438,12 +438,11 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
                     a->NumBytes++;
                 }
 
-                ConsoleHeapFree(TransBuffer);
+                delete[] TransBuffer;
             }
 
             SetReplyStatus(pWaitReplyMessage, Status);
             PrepareReadConsoleCompletion(pWaitReplyMessage);
-            ConsoleHeapFree(RawReadData);
         }
 EndFinally:;
     }
@@ -874,7 +873,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
     if (!NT_SUCCESS(Status))
     {
         pCookedReadData->BytesRead = 0;
-        ConsoleHeapFree(pCookedReadData->BackupLimit);
+        delete[] pCookedReadData->BackupLimit;
         return Status;
     }
 
@@ -1093,7 +1092,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                     {
                         a->NumBytes = 1;
                         PrepareReadConsoleCompletion(pWaitReplyMessage);
-                        ConsoleHeapFree(pCookedReadData->BackupLimit);
+                        delete[] pCookedReadData->BackupLimit;
                         return STATUS_SUCCESS;
                     }
                 }
@@ -1110,12 +1109,12 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
             {
                 Status = STATUS_BUFFER_OVERFLOW;
                 ASSERT(false);
-                ConsoleHeapFree(pCookedReadData->BackupLimit);
+                delete[] pCookedReadData->BackupLimit;
                 return Status;
             }
 
             memmove(pCookedReadData->UserBuffer, pCookedReadData->BackupLimit, a->NumBytes);
-            ConsoleHeapFree(pCookedReadData->BackupLimit);
+            delete[] pCookedReadData->BackupLimit;
         }
         a->ControlKeyState = pCookedReadData->ControlKeyState;
 
@@ -1124,7 +1123,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
             // if ansi, translate string.
             PCHAR TransBuffer;
 
-            TransBuffer = (PCHAR) ConsoleHeapAlloc(TMP_DBCS_TAG, NumBytes);
+            TransBuffer = (PCHAR) new BYTE[NumBytes];
 
             if (TransBuffer == nullptr)
             {
@@ -1137,7 +1136,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
             {
                 Status = STATUS_BUFFER_OVERFLOW;
                 ASSERT(false);
-                ConsoleHeapFree(TransBuffer);
+                delete[] TransBuffer;
                 return Status;
             }
 
@@ -1147,16 +1146,16 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                 a->NumBytes++;
             }
 
-            ConsoleHeapFree(TransBuffer);
+            delete[] TransBuffer;
         }
 
         PrepareReadConsoleCompletion(pWaitReplyMessage);
-        ConsoleHeapFree(pCookedReadData->ExeName);
+        delete[] pCookedReadData->ExeName;
         if (fWaitRoutine)
         {
             g_ciConsoleInformation.lpCookedReadData = nullptr;
             CloseOutputHandle(pCookedReadData->ScreenInfo, pCookedReadData->TempHandle);
-            ConsoleHeapFree(pCookedReadData);
+            delete pCookedReadData;
         }
     }
 
@@ -1204,11 +1203,11 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
     if ((ULONG_PTR)pvSatisfyParameter & (CONSOLE_CTRL_C_SEEN | CONSOLE_CTRL_BREAK_SEEN))
     {
         SetReplyStatus(pWaitReplyMessage, STATUS_ALERTED);
-        ConsoleHeapFree(pCookedReadData->BackupLimit);
-        ConsoleHeapFree(pCookedReadData->ExeName);
+        delete[] pCookedReadData->BackupLimit;
+        delete[] pCookedReadData->ExeName;
         g_ciConsoleInformation.lpCookedReadData = nullptr;
         CloseOutputHandle(pCookedReadData->ScreenInfo, pCookedReadData->TempHandle);
-        ConsoleHeapFree(pCookedReadData);
+        delete pCookedReadData;
         return TRUE;
     }
 
@@ -1219,11 +1218,11 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
 
         // Clean up popup data structures.
         CleanUpPopups(pCookedReadData);
-        ConsoleHeapFree(pCookedReadData->BackupLimit);
-        ConsoleHeapFree(pCookedReadData->ExeName);
+        delete[] pCookedReadData->BackupLimit;
+        delete[] pCookedReadData->ExeName;
         g_ciConsoleInformation.lpCookedReadData = nullptr;
         CloseOutputHandle(pCookedReadData->ScreenInfo, pCookedReadData->TempHandle);
-        ConsoleHeapFree(pCookedReadData);
+        delete pCookedReadData;
         return TRUE;
     }
 
@@ -1237,11 +1236,11 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
 
         // Clean up popup data structures.
         CleanUpPopups(pCookedReadData);
-        ConsoleHeapFree(pCookedReadData->BackupLimit);
-        ConsoleHeapFree(pCookedReadData->ExeName);
+        delete[] pCookedReadData->BackupLimit;
+        delete[] pCookedReadData->ExeName;
         g_ciConsoleInformation.lpCookedReadData = nullptr;
         CloseOutputHandle(pCookedReadData->ScreenInfo, pCookedReadData->TempHandle);
-        ConsoleHeapFree(pCookedReadData);
+        delete pCookedReadData;
         return TRUE;
     }
 
@@ -1263,11 +1262,11 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
             Status = (Popup->PopupInputRoutine) (pCookedReadData, pWaitReplyMessage, TRUE);
             if (Status == CONSOLE_STATUS_READ_COMPLETE || (Status != CONSOLE_STATUS_WAIT && Status != CONSOLE_STATUS_WAIT_NO_BLOCK))
             {
-                ConsoleHeapFree(pCookedReadData->BackupLimit);
-                ConsoleHeapFree(pCookedReadData->ExeName);
+                delete[] pCookedReadData->BackupLimit;
+                delete[] pCookedReadData->ExeName;
                 g_ciConsoleInformation.lpCookedReadData = nullptr;
                 CloseOutputHandle(pCookedReadData->ScreenInfo, pCookedReadData->TempHandle);
-                ConsoleHeapFree(pCookedReadData);
+                delete pCookedReadData;
 
                 if (NT_SUCCESS(pWaitReplyMessage->Complete.IoStatus.Status))
                 {
@@ -1355,7 +1354,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
                 if (pHandleData->pClientInput->BytesAvailable == 0 || BufferSize == 0)
                 {
                     pHandleData->pClientInput->InputHandleFlags &= ~(HANDLE_INPUT_PENDING | HANDLE_MULTI_LINE_INPUT);
-                    ConsoleHeapFree(pHandleData->pClientInput->BufPtr);
+                    delete[] pHandleData->pClientInput->BufPtr;
                     *pdwNumBytes = 1;
                     return STATUS_SUCCESS;
                 }
@@ -1392,7 +1391,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
                 if (pHandleData->pClientInput->BytesAvailable == 0)
                 {
                     pHandleData->pClientInput->InputHandleFlags &= ~(HANDLE_INPUT_PENDING | HANDLE_MULTI_LINE_INPUT);
-                    ConsoleHeapFree(pHandleData->pClientInput->BufPtr);
+                    delete[] pHandleData->pClientInput->BufPtr;
                     *pdwNumBytes = 1;
                     return STATUS_SUCCESS;
                 }
@@ -1412,7 +1411,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
         if (pHandleData->pClientInput->BytesAvailable == 0)
         {
             pHandleData->pClientInput->InputHandleFlags &= ~(HANDLE_INPUT_PENDING | HANDLE_MULTI_LINE_INPUT);
-            ConsoleHeapFree(pHandleData->pClientInput->BufPtr);
+            delete[] pHandleData->pClientInput->BufPtr;
         }
         else
         {
@@ -1424,7 +1423,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
             // if ansi, translate string.  we allocated the capture buffer large enough to handle the translated string.
             PCHAR TransBuffer;
 
-            TransBuffer = (PCHAR) ConsoleHeapAlloc(TMP_DBCS_TAG, NumToBytes);
+            TransBuffer = (PCHAR) new BYTE[NumToBytes];
 
             if (TransBuffer == nullptr)
             {
@@ -1441,7 +1440,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
                 NumToWrite++;
             }
 
-            ConsoleHeapFree(TransBuffer);
+            delete[] TransBuffer;
         }
 
         *pdwNumBytes = NumToWrite;
@@ -1478,7 +1477,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
         // chars as will fit in the user's buffer.
 
         TempBufferSize = (BufferSize < LINE_INPUT_BUFFER_SIZE) ? LINE_INPUT_BUFFER_SIZE : BufferSize;
-        TempBuffer = (PWCHAR)ConsoleHeapAlloc(TMP_TAG, TempBufferSize);
+        TempBuffer = (PWCHAR) new BYTE[TempBufferSize];
         if (TempBuffer == nullptr)
         {
             if (Echo)
@@ -1523,7 +1522,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
         CookedReadData.HandleIndex = hIndex;
 
         ExeNameByteLength = (USHORT) (usExeNameLength * sizeof(WCHAR));
-        CookedReadData.ExeName = (PWCHAR)ConsoleHeapAlloc(HISTORY_TAG, ExeNameByteLength);
+        CookedReadData.ExeName = (PWCHAR) new BYTE[ExeNameByteLength];
 
         if (dwInitialNumBytes != 0)
         {
@@ -1674,7 +1673,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
             {
                 PCHAR TransBuffer;
 
-                TransBuffer = (PCHAR) ConsoleHeapAlloc(TMP_TAG, *pdwNumBytes);
+                TransBuffer = (PCHAR) new BYTE[*pdwNumBytes];
                 if (TransBuffer == nullptr)
                 {
                     return STATUS_NO_MEMORY;
@@ -1696,7 +1695,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
                     ++*pdwNumBytes;
                 }
 
-                ConsoleHeapFree(TransBuffer);
+                delete[] TransBuffer;
             }
         }
     }
@@ -1865,7 +1864,7 @@ BOOL WriteConsoleWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
             a->NumBytes /= sizeof(WCHAR);
         }
 
-        ConsoleHeapFree(pWaitReplyMessage->State.TransBuffer);
+        delete[] pWaitReplyMessage->State.TransBuffer;
     }
 
     SetReplyStatus(pWaitReplyMessage, Status);
@@ -1888,7 +1887,7 @@ NTSTATUS CloseInputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData, _In_ const HAND
     if (pHandleData->pClientInput->InputHandleFlags & HANDLE_INPUT_PENDING)
     {
         pHandleData->pClientInput->InputHandleFlags &= ~HANDLE_INPUT_PENDING;
-        ConsoleHeapFree(pHandleData->pClientInput->BufPtr);
+        delete[] pHandleData->pClientInput->BufPtr;
     }
 
     PINPUT_INFORMATION const InputBuffer = GetInputBufferFromHandle(pHandleData);
