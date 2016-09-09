@@ -111,7 +111,7 @@ public:
 
     COOKED_READ_DATA* lpCookedReadData;
 
-    CONSOLE_IME_INFORMATION ConsoleIme;
+    ConsoleImeInfo ConsoleIme;
 
     Microsoft::Console::VirtualTerminal::TerminalInput termInput;
 

@@ -439,7 +439,7 @@ void PropertiesUpdate(_In_ PCONSOLE_STATE_INFO pStateInfo)
     // those properties specifically from the registry in case they were changed.
     g_ciConsoleInformation.pWindow->PostUpdateExtendedEditKeys();
 
-    SetUndetermineAttribute();
+    g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
 }
 
 // Displays the properties dialog and updates the window state as necessary.

@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\clipboard.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
+    <ClCompile Include="..\conimeinfo.cpp" />
     <ClCompile Include="..\consoleInformation.cpp" />
     <ClCompile Include="..\convarea.cpp" />
     <ClCompile Include="..\csrutil.cpp" />

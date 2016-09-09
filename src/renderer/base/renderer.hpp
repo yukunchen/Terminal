@@ -75,7 +75,7 @@ namespace Microsoft
                 void _PaintSelection();
                 void _PaintCursor();
 
-                void _PaintIme(_In_ const CONVERSIONAREA_INFORMATION* const pAreaInfo, _In_ const TEXT_BUFFER_INFO* const pTextInfo);
+                void _PaintIme(_In_ const ConversionAreaInfo* const pAreaInfo, _In_ const TEXT_BUFFER_INFO* const pTextInfo);
                 void _PaintImeCompositionString();
 
                 void _UpdateDrawingBrushes(_In_ const TextAttribute* const pAttr, _In_ bool const fIncludeBackground);

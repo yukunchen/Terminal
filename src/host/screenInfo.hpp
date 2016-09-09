@@ -28,6 +28,7 @@ Revision History:
 using namespace Microsoft::Console::VirtualTerminal;
 
 class Window; // forward decl window. circular reference
+class ConversionAreaInfo;
 
 class SCREEN_INFORMATION
 {
@@ -108,7 +109,7 @@ public:
 #define VERTICAL_LINE       3
 #define BOTTOM_LEFT_CORNER  4
 #define BOTTOM_RIGHT_CORNER 5
-    struct _CONVERSIONAREA_INFORMATION *ConvScreenInfo;
+    ConversionAreaInfo* ConvScreenInfo;
     UINT ScrollScale;
 
     BOOL IsActiveScreenBuffer() const;

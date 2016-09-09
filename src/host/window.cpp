@@ -298,7 +298,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMA
                 // Modify system menu to our liking.
                 InitSystemMenu();
 
-                SetUndetermineAttribute();
+                g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
 
                 // Do WM_GETICON workaround. Must call WM_SETICON once or apps calling WM_GETICON will get null.
                 Icon::Instance().ApplyWindowMessageWorkaround();

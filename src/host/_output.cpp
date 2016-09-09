@@ -331,33 +331,7 @@ void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT *
 
     WriteRegionToScreen(pScreenInfo, &ClippedRegion);
 
-    {
-        if (!g_ciConsoleInformation.CurrentScreenBuffer->ConvScreenInfo != 0)
-        {
-            WriteConvRegionToScreen(pScreenInfo, g_ciConsoleInformation.ConsoleIme.ConvAreaRoot, psrRegion);
-        }
-        else
-        {
-            PCONVERSIONAREA_INFORMATION ConvAreaInfo = g_ciConsoleInformation.ConsoleIme.ConvAreaRoot;
-            if (ConvAreaInfo != nullptr)
-            {
-                do
-                {
-                    if (ConvAreaInfo->ScreenBuffer == pScreenInfo)
-                    {
-                        break;
-                    }
-                    ConvAreaInfo = ConvAreaInfo->ConvAreaNext;
-                }
-                while (ConvAreaInfo != nullptr);
-
-                if (ConvAreaInfo != nullptr)
-                {
-                    WriteConvRegionToScreen(pScreenInfo, ConvAreaInfo->ConvAreaNext, psrRegion);
-                }
-            }
-        }
-    }
+    WriteConvRegionToScreen(pScreenInfo, psrRegion);
 }
 
 // Routine Description:
@@ -1042,7 +1016,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             WriteRegion.Left = coordWrite.X + pScreenInfo->BufferViewport.Top + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.X;
             WriteRegion.Right = X + pScreenInfo->BufferViewport.Top + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.X;
         }
-        WriteConvRegionToScreen(g_ciConsoleInformation.CurrentScreenBuffer, pScreenInfo->ConvScreenInfo, &WriteRegion);
+        WriteConvRegionToScreen(g_ciConsoleInformation.CurrentScreenBuffer, &WriteRegion);
         *pcElements = NumWritten;
         return STATUS_SUCCESS;
     }

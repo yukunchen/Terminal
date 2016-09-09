@@ -1043,7 +1043,7 @@ NTSTATUS SetScreenColors(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ WORD Attribut
     TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
     ScreenInfo->SetAttributes(&NewPrimaryAttributes);
     ScreenInfo->SetPopupAttributes(&NewPopupAttributes);
-    SetUndetermineAttribute();
+    g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
 
     if (UpdateWholeScreen)
     {

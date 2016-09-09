@@ -1073,7 +1073,7 @@ NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
     // Set window size.
     pScreenInfo->PostUpdateWindowSize();
 
-    SetUndetermineAttribute();
+    g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
 
     // Write data to screen.
     WriteToScreen(pScreenInfo, &pScreenInfo->BufferViewport);
