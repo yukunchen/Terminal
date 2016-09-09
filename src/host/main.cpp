@@ -4,25 +4,17 @@
 *                                                       *
 ********************************************************/
 
-#include <precomp.h>
+#include "precomp.h"
 #include "newdelete.hpp"
-#include "telemetry.hpp"
 
-extern "C" BOOL DllMain(_In_ HINSTANCE hInstance, _In_ DWORD dwReason, _Reserved_ LPVOID /*lpReserved*/)
+extern "C" BOOL __stdcall DllMain(_In_ HINSTANCE hInstance, _In_ DWORD dwReason, _Reserved_ LPVOID /*lpReserved*/)
 {
-    BOOL fRet = TRUE;
     switch (dwReason)
     {
     case DLL_PROCESS_ATTACH:
         {
+            EnsureHeap();
             DisableThreadLibraryCalls(hInstance);
-            fRet = EnsureHeap();
-            break;
-        }
-
-    case DLL_PROCESS_DETACH:
-        {
-            DestroyHeap();
             break;
         }
 
@@ -32,5 +24,5 @@ extern "C" BOOL DllMain(_In_ HINSTANCE hInstance, _In_ DWORD dwReason, _Reserved
         }
     }
 
-    return fRet;
+    return TRUE;
 }

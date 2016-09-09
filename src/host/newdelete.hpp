@@ -15,5 +15,4 @@ Revision History:
 
 #pragma once
 
-BOOL EnsureHeap();
-void DestroyHeap();
+void EnsureHeap();
