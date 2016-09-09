@@ -413,15 +413,15 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
             *pcRecords >= ARRAYSIZE(rgbBufferA))
         {
 
-            TransBuffer = (PWCHAR)ConsoleHeapAlloc(TMP_DBCS_TAG, *pcRecords * 2 * sizeof(WCHAR));
+            TransBuffer = new WCHAR[*pcRecords * 2];
             if (TransBuffer == nullptr)
             {
                 return STATUS_NO_MEMORY;
             }
-            TransBufferA = (PBYTE) ConsoleHeapAlloc(TMP_DBCS_TAG, *pcRecords * 2 * sizeof(CHAR));
+            TransBufferA = new BYTE[*pcRecords * 2];
             if (TransBufferA == nullptr)
             {
-                ConsoleHeapFree(TransBuffer);
+                delete[] TransBuffer;
                 return STATUS_NO_MEMORY;
             }
 
@@ -496,16 +496,16 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
         if (*pcRecords * 2 >= ARRAYSIZE(rgwchBuffer) ||
             *pcRecords * 2 >= ARRAYSIZE(rgbBufferA))
         {
-            TransBuffer = (PWCHAR)ConsoleHeapAlloc(TMP_DBCS_TAG, *pcRecords * 2 * sizeof(WCHAR));
+            TransBuffer = new WCHAR[*pcRecords * 2];
             if (TransBuffer == nullptr)
             {
                 return STATUS_NO_MEMORY;
             }
 
-            TransBufferA = (PBYTE) ConsoleHeapAlloc(TMP_DBCS_TAG, *pcRecords * 2 * sizeof(CHAR));
+            TransBufferA = new BYTE[*pcRecords * 2];
             if (TransBufferA == nullptr)
             {
-                ConsoleHeapFree(TransBuffer);
+                delete[] TransBuffer;
                 return STATUS_NO_MEMORY;
             }
 
@@ -730,16 +730,16 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
     {
         if (fLocalHeap)
         {
-            ConsoleHeapFree(TransBuffer);
-            ConsoleHeapFree(TransBufferA);
+            delete[] TransBuffer;
+            delete[] TransBufferA;
         }
     }
     else if ((ulStringType == CONSOLE_FALSE_UNICODE) || (ulStringType == CONSOLE_REAL_UNICODE))
     {
         if (fLocalHeap)
         {
-            ConsoleHeapFree(TransBuffer);
-            ConsoleHeapFree(TransBufferA);
+            delete[] TransBuffer;
+            delete[] TransBufferA;
         }
         NumWritten = NumRecordsSavedForUnicode - (*pcRecords - NumWritten);
     }

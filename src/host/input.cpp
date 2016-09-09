@@ -112,7 +112,7 @@ NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ PINPUT_INFORMATION pInp
     }
 
     ULONG const BufferSize = sizeof(INPUT_RECORD) * (cEvents + 1);
-    pInputInfo->InputBuffer = (PINPUT_RECORD) ConsoleHeapAlloc(BUFFER_TAG, BufferSize);
+    pInputInfo->InputBuffer = (PINPUT_RECORD) new BYTE[BufferSize];
     if (pInputInfo->InputBuffer == nullptr)
     {
         return STATUS_NO_MEMORY;
@@ -128,7 +128,7 @@ NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ PINPUT_INFORMATION pInp
 
     if (!NT_SUCCESS(Status))
     {
-        ConsoleHeapFree(pInputInfo->InputBuffer);
+        delete[] pInputInfo->InputBuffer;
         return Status;
     }
 
@@ -177,7 +177,7 @@ void ReinitializeInputBuffer(_Inout_ PINPUT_INFORMATION pInputInfo)
 void FreeInputBuffer(_In_ PINPUT_INFORMATION pInputInfo)
 {
     CloseHandle(pInputInfo->InputWaitEvent);
-    ConsoleHeapFree(pInputInfo->InputBuffer);
+    delete[] pInputInfo->InputBuffer;
     pInputInfo->InputBuffer = nullptr;
 }
 
@@ -204,7 +204,7 @@ NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
 {
     if (!fWaitBlockExists)
     {
-        PVOID const WaitParameterBuffer = ConsoleHeapAlloc(WAIT_TAG, cbWaitParameter);
+        PVOID const WaitParameterBuffer = new BYTE[cbWaitParameter];
         if (WaitParameterBuffer == nullptr)
         {
             return STATUS_NO_MEMORY;
@@ -217,7 +217,7 @@ NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
 
         if (!ConsoleCreateWait(&pInputInfo->ReadWaitQueue, pfnWaitRoutine, pConsoleMsg, WaitParameterBuffer))
         {
-            ConsoleHeapFree(WaitParameterBuffer);
+            delete[] WaitParameterBuffer;
             g_ciConsoleInformation.lpCookedReadData = nullptr;
             return STATUS_NO_MEMORY;
         }
@@ -280,7 +280,7 @@ NTSTATUS FlushAllButKeys()
             return STATUS_INTEGER_OVERFLOW;
         }
 
-        PINPUT_RECORD TmpInputBuffer = (PINPUT_RECORD) ConsoleHeapAlloc(TMP_TAG, BufferSize);
+        PINPUT_RECORD TmpInputBuffer = (PINPUT_RECORD) new BYTE[BufferSize];
         if (TmpInputBuffer == nullptr)
         {
             return STATUS_NO_MEMORY;
@@ -294,7 +294,7 @@ NTSTATUS FlushAllButKeys()
 
         if (!NT_SUCCESS(Status))
         {
-            ConsoleHeapFree(TmpInputBuffer);
+            delete[] TmpInputBuffer;
             return Status;
         }
 
@@ -324,7 +324,7 @@ NTSTATUS FlushAllButKeys()
             ResetEvent(InputInformation->InputWaitEvent);
         }
 
-        ConsoleHeapFree(TmpInputBufferPtr);
+        delete[] TmpInputBufferPtr;
     }
 
     return STATUS_SUCCESS;
@@ -376,7 +376,7 @@ NTSTATUS SetInputBufferSize(_Inout_ PINPUT_INFORMATION InputInformation, _In_ UL
         return STATUS_INTEGER_OVERFLOW;
     }
 
-    PINPUT_RECORD const InputBuffer = (PINPUT_RECORD) ConsoleHeapAlloc(BUFFER_TAG, BufferSize);
+    PINPUT_RECORD const InputBuffer = (PINPUT_RECORD) new BYTE[BufferSize];
     if (InputBuffer == nullptr)
     {
         return STATUS_NO_MEMORY;
@@ -389,7 +389,7 @@ NTSTATUS SetInputBufferSize(_Inout_ PINPUT_INFORMATION InputInformation, _In_ UL
 
     if (!NT_SUCCESS(Status))
     {
-        ConsoleHeapFree(InputBuffer);
+        delete[] InputBuffer;
         return Status;
     }
     InputInformation->Out = (ULONG_PTR) InputBuffer;
@@ -400,7 +400,7 @@ NTSTATUS SetInputBufferSize(_Inout_ PINPUT_INFORMATION InputInformation, _In_ UL
     InputInformation->Last = (ULONG_PTR) InputBuffer + BufferSize;
 
     // free old input buffer
-    ConsoleHeapFree(InputInformation->InputBuffer);
+    delete[] InputInformation->InputBuffer;
     InputInformation->InputBufferSize = Size;
     InputInformation->InputBuffer = InputBuffer;
 
@@ -1076,7 +1076,7 @@ NTSTATUS PrependInputBuffer(_In_ PINPUT_INFORMATION pInputInfo, _In_ PINPUT_RECO
             return STATUS_INTEGER_OVERFLOW;
         }
 
-        pExistingEvents = (PINPUT_RECORD) ConsoleHeapAlloc(BUFFER_TAG, NumBytes);
+        pExistingEvents = (PINPUT_RECORD) new BYTE[NumBytes];
         if (pExistingEvents == nullptr)
         {
             return STATUS_NO_MEMORY;
@@ -1085,7 +1085,7 @@ NTSTATUS PrependInputBuffer(_In_ PINPUT_INFORMATION pInputInfo, _In_ PINPUT_RECO
         NTSTATUS Status = ReadBuffer(pInputInfo, pExistingEvents, NumExistingEvents, &EventsRead, FALSE, FALSE, &Dummy, TRUE);
         if (!NT_SUCCESS(Status))
         {
-            ConsoleHeapFree(pExistingEvents);
+            delete[] pExistingEvents;
             return Status;
         }
     }
@@ -1103,7 +1103,7 @@ NTSTATUS PrependInputBuffer(_In_ PINPUT_INFORMATION pInputInfo, _In_ PINPUT_RECO
     if (pExistingEvents)
     {
         WriteBuffer(pInputInfo, pExistingEvents, EventsRead, &EventsWritten, &Dummy);
-        ConsoleHeapFree(pExistingEvents);
+        delete[] pExistingEvents;
     }
 
     if (SetWaitEvent)
@@ -2363,7 +2363,7 @@ void ProcessCtrlEvents()
     }
     else
     {
-        ProcessHandleList = (PCONSOLE_PROCESS_TERMINATION_RECORD) ConsoleHeapAlloc(TMP_TAG, ProcessHandleListLength * sizeof(CONSOLE_PROCESS_TERMINATION_RECORD));
+        ProcessHandleList = new CONSOLE_PROCESS_TERMINATION_RECORD[ProcessHandleListLength];
         if (ProcessHandleList == nullptr)
         {
             g_ciConsoleInformation.UnlockConsole();
@@ -2503,6 +2503,6 @@ void ProcessCtrlEvents()
 
     if (ProcessHandleList != ProcessHandles)
     {
-        ConsoleHeapFree(ProcessHandleList);
+        delete[] ProcessHandleList;
     }
 }

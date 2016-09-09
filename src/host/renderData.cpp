@@ -61,7 +61,7 @@ const CONSOLE_IME_INFORMATION* RenderData::GetImeData()
 
 const TEXT_BUFFER_INFO* RenderData::GetImeCompositionStringBuffer(_In_ size_t iIndex)
 {
-    if (iIndex < g_ciConsoleInformation.ConsoleIme.NumberOfConvAreaCompStr)
+    if (iIndex < g_ciConsoleInformation.ConsoleIme.ConvAreaCompStr.size())
     {
         return g_ciConsoleInformation.ConsoleIme.ConvAreaCompStr[iIndex]->ScreenBuffer->TextInfo;
     }

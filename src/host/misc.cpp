@@ -56,7 +56,7 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
     
     DBGCHARS(("ConvertOutputToUnicode %d->U %.*s\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pchSource));
 
-    LPSTR const pszT = (LPSTR) ConsoleHeapAlloc(TMP_TAG, cchSource);
+    LPSTR const pszT = new CHAR[cchSource];
     if (pszT == nullptr)
     {
         return 0;
@@ -64,7 +64,7 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
 
     memmove(pszT, pchSource, cchSource);
     ULONG const Length = MultiByteToWideChar(uiCodePage, MB_USEGLYPHCHARS, pszT, cchSource, pwchTarget, cchTarget);
-    ConsoleHeapFree(pszT);
+    delete[] pszT;
     return Length;
 }
 

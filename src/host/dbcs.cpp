@@ -530,7 +530,7 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
                             _In_ const ULONG cbAnsi,
                             _Out_opt_ PINPUT_RECORD pDbcsInputRecord)
 {
-    PWCHAR const TmpUni = (PWCHAR)ConsoleHeapAlloc(TMP_DBCS_TAG, cchUnicode * sizeof(WCHAR));
+    PWCHAR const TmpUni = new WCHAR[cchUnicode];
     if (TmpUni == nullptr)
     {
         return 0;
@@ -588,6 +588,6 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
         }
     }
 
-    ConsoleHeapFree(TmpUni);
+    delete[] TmpUni;
     return j;
 }

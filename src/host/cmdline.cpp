@@ -403,7 +403,7 @@ PEXE_ALIAS_LIST AddExeAliasList(_In_ LPVOID ExeName,
                                 _In_ USHORT ExeLength, // in bytes
                                 _In_ BOOLEAN UnicodeExe)
 {
-    PEXE_ALIAS_LIST AliasList = (PEXE_ALIAS_LIST) ConsoleHeapAlloc(ALIAS_TAG, sizeof(EXE_ALIAS_LIST));
+    PEXE_ALIAS_LIST AliasList = new EXE_ALIAS_LIST();
     if (AliasList == nullptr)
     {
         return nullptr;
@@ -411,10 +411,11 @@ PEXE_ALIAS_LIST AddExeAliasList(_In_ LPVOID ExeName,
 
     if (UnicodeExe)
     {
-        AliasList->ExeName = (PWCHAR)ConsoleHeapAlloc(ALIAS_TAG, ExeLength);
+        // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
+        AliasList->ExeName = new WCHAR[(ExeLength + 1) / sizeof(WCHAR)];
         if (AliasList->ExeName == nullptr)
         {
-            ConsoleHeapFree(AliasList);
+            delete AliasList;
             return nullptr;
         }
         memmove(AliasList->ExeName, ExeName, ExeLength);
@@ -422,10 +423,10 @@ PEXE_ALIAS_LIST AddExeAliasList(_In_ LPVOID ExeName,
     }
     else
     {
-        AliasList->ExeName = (PWCHAR)ConsoleHeapAlloc(ALIAS_TAG, ExeLength * sizeof(WCHAR));
+        AliasList->ExeName = new WCHAR[ExeLength];
         if (AliasList->ExeName == nullptr)
         {
-            ConsoleHeapFree(AliasList);
+            delete AliasList;
             return nullptr;
         }
         AliasList->ExeLength = (USHORT) ConvertInputToUnicode(g_ciConsoleInformation.CP, (LPSTR) ExeName, ExeLength, AliasList->ExeName, ExeLength);
@@ -449,7 +450,7 @@ PEXE_ALIAS_LIST FindExe(_In_ LPVOID ExeName,
     }
     else
     {
-        UnicodeExeName = (PWSTR) ConsoleHeapAlloc(TMP_TAG, ExeLength * sizeof(WCHAR));
+        UnicodeExeName = new WCHAR[ExeLength];
         if (UnicodeExeName == nullptr)
             return nullptr;
         ExeLength = (USHORT) ConvertInputToUnicode(g_ciConsoleInformation.CP, (LPSTR) ExeName, ExeLength, UnicodeExeName, ExeLength);
@@ -460,11 +461,12 @@ PEXE_ALIAS_LIST FindExe(_In_ LPVOID ExeName,
     while (ListNext != ListHead)
     {
         PEXE_ALIAS_LIST const AliasList = CONTAINING_RECORD(ListNext, EXE_ALIAS_LIST, ListLink);
-        if (AliasList->ExeLength == ExeLength && !_wcsnicmp(AliasList->ExeName, UnicodeExeName, ExeLength / sizeof(WCHAR)))
+        // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
+        if (AliasList->ExeLength == ExeLength && !_wcsnicmp(AliasList->ExeName, UnicodeExeName, (ExeLength + 1) / sizeof(WCHAR)))
         {
             if (!UnicodeExe)
             {
-                ConsoleHeapFree(UnicodeExeName);
+                delete[] UnicodeExeName;
             }
             return AliasList;
         }
@@ -472,7 +474,7 @@ PEXE_ALIAS_LIST FindExe(_In_ LPVOID ExeName,
     }
     if (!UnicodeExe)
     {
-        ConsoleHeapFree(UnicodeExeName);
+        delete[] UnicodeExeName;
     }
     return nullptr;
 }
@@ -489,7 +491,8 @@ PALIAS FindAlias(_In_ PEXE_ALIAS_LIST AliasList, _In_reads_bytes_(AliasLength) c
     while (ListNext != ListHead)
     {
         PALIAS const Alias = CONTAINING_RECORD(ListNext, ALIAS, ListLink);
-        if (Alias->SourceLength == AliasLength && !_wcsnicmp(Alias->Source, AliasName, AliasLength / sizeof(WCHAR)))
+        // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
+        if (Alias->SourceLength == AliasLength && !_wcsnicmp(Alias->Source, AliasName, (AliasLength + 1) / sizeof(WCHAR)))
         {
             if (ListNext != ListHead->Flink)
             {
@@ -512,24 +515,26 @@ NTSTATUS AddAlias(_In_ PEXE_ALIAS_LIST ExeAliasList,
                   _In_reads_bytes_(TargetLength) const WCHAR *Target,
                   _In_ USHORT TargetLength)
 {
-    PALIAS const Alias = (PALIAS) ConsoleHeapAlloc(ALIAS_TAG, sizeof(ALIAS));
+    PALIAS const Alias = new ALIAS();
     if (Alias == nullptr)
     {
         return STATUS_NO_MEMORY;
     }
 
-    Alias->Source = (PWCHAR)ConsoleHeapAlloc(ALIAS_TAG, SourceLength);
+    // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
+    Alias->Source = new WCHAR[(SourceLength + 1) / sizeof(WCHAR)];
     if (Alias->Source == nullptr)
     {
-        ConsoleHeapFree(Alias);
+        delete Alias;
         return STATUS_NO_MEMORY;
     }
 
-    Alias->Target = (PWCHAR)ConsoleHeapAlloc(ALIAS_TAG, TargetLength);
+    // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
+    Alias->Target = new WCHAR[(TargetLength + 1) / sizeof(WCHAR)];
     if (Alias->Target == nullptr)
     {
-        ConsoleHeapFree(Alias->Source);
-        ConsoleHeapFree(Alias);
+        delete[] Alias->Source;
+        delete Alias;
         return STATUS_NO_MEMORY;
     }
 
@@ -546,13 +551,14 @@ NTSTATUS AddAlias(_In_ PEXE_ALIAS_LIST ExeAliasList,
 // - This routine replaces an existing target with a new target.
 NTSTATUS ReplaceAlias(_In_ PALIAS Alias, _In_reads_bytes_(TargetLength) const WCHAR *Target, _In_ USHORT TargetLength)
 {
-    WCHAR* const NewTarget = (PWCHAR)ConsoleHeapAlloc(ALIAS_TAG, TargetLength);
+    // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
+    WCHAR* const NewTarget = new WCHAR[(TargetLength + 1) / sizeof(WCHAR)];
     if (NewTarget == nullptr)
     {
         return STATUS_NO_MEMORY;
     }
 
-    ConsoleHeapFree(Alias->Target);
+    delete[] Alias->Target;
     Alias->Target = NewTarget;
     Alias->TargetLength = TargetLength;
     memmove(Alias->Target, Target, TargetLength);
@@ -566,9 +572,9 @@ NTSTATUS ReplaceAlias(_In_ PALIAS Alias, _In_reads_bytes_(TargetLength) const WC
 NTSTATUS RemoveAlias(_In_ PALIAS Alias)
 {
     RemoveEntryList(&Alias->ListLink);
-    ConsoleHeapFree(Alias->Source);
-    ConsoleHeapFree(Alias->Target);
-    ConsoleHeapFree(Alias);
+    delete[] Alias->Source;
+    delete[] Alias->Target;
+    delete Alias;
     return STATUS_SUCCESS;
 }
 
@@ -583,8 +589,8 @@ void FreeAliasList(_In_ PEXE_ALIAS_LIST ExeAliasList)
         RemoveAlias(Alias);
     }
     RemoveEntryList(&ExeAliasList->ListLink);
-    ConsoleHeapFree(ExeAliasList->ExeName);
-    ConsoleHeapFree(ExeAliasList);
+    delete[] ExeAliasList->ExeName;
+    delete ExeAliasList;
 }
 
 void FreeAliasBuffers()
@@ -660,16 +666,16 @@ NTSTATUS SrvAddConsoleAlias(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*R
     }
     else
     {
-        Source = (WCHAR*) ConsoleHeapAlloc(TMP_TAG, a->SourceLength * sizeof(WCHAR));
+        Source = new WCHAR[a->SourceLength];
         if (Source == nullptr)
         {
             UnlockConsole();
             return STATUS_NO_MEMORY;
         }
-        Target = (WCHAR*) ConsoleHeapAlloc(TMP_TAG, a->TargetLength * sizeof(WCHAR));
+        Target = new WCHAR[a->TargetLength];
         if (Target == nullptr)
         {
-            ConsoleHeapFree(Source);
+            delete[] Source;
             UnlockConsole();
             return STATUS_NO_MEMORY;
         }
@@ -721,8 +727,8 @@ NTSTATUS SrvAddConsoleAlias(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*R
     UnlockConsole();
     if (!a->Unicode)
     {
-        ConsoleHeapFree(Source);
-        ConsoleHeapFree(Target);
+        delete[] Source;
+        delete[] Target;
     }
     return Status;
 }
@@ -786,16 +792,16 @@ NTSTATUS SrvGetConsoleAlias(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*R
     }
     else
     {
-        Source = (PWSTR) ConsoleHeapAlloc(TMP_TAG, a->SourceLength * sizeof(WCHAR));
+        Source = new WCHAR[a->SourceLength];
         if (Source == nullptr)
         {
             UnlockConsole();
             return STATUS_NO_MEMORY;
         }
-        Target = (PWSTR) ConsoleHeapAlloc(TMP_TAG, a->TargetLength * sizeof(WCHAR));
+        Target = new WCHAR[a->TargetLength];
         if (Target == nullptr)
         {
-            ConsoleHeapFree(Source);
+            delete[] Source;
             UnlockConsole();
             return STATUS_NO_MEMORY;
         }
@@ -841,8 +847,8 @@ NTSTATUS SrvGetConsoleAlias(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*R
                                                     (LPSTR) OutputBuffer,
                                                     a->TargetLength);
         }
-        ConsoleHeapFree(Source);
-        ConsoleHeapFree(Target);
+        delete[] Source;
+        delete[] Target;
     }
     UnlockConsole();
 
@@ -1206,7 +1212,8 @@ NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
         return STATUS_UNSUCCESSFUL;
     }
 
-    PWCHAR const TmpBuffer = (PWCHAR)ConsoleHeapAlloc(TMP_TAG, *pcbTarget);
+    // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
+    PWCHAR const TmpBuffer = new WCHAR[(*pcbTarget + 1) / sizeof(WCHAR)];
     if (!TmpBuffer)
     {
         return STATUS_NO_MEMORY;
@@ -1390,7 +1397,7 @@ NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
         memmove(pwchTarget, TmpBuffer, NewTargetLength);
     }
 
-    ConsoleHeapFree(TmpBuffer);
+    delete[] TmpBuffer;
     *pcbTarget = NewTargetLength;
 
     return Status;
@@ -1587,7 +1594,7 @@ PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandH
         return CurrentCommandHistory;
     }
 
-    PCOMMAND_HISTORY const History = (PCOMMAND_HISTORY) ConsoleHeapAlloc(HISTORY_TAG, sizeof(COMMAND_HISTORY) + NumCommands * sizeof(PCOMMAND));
+    PCOMMAND_HISTORY const History = (PCOMMAND_HISTORY) new BYTE[sizeof(COMMAND_HISTORY) + NumCommands * sizeof(PCOMMAND)];
     if (History == nullptr)
     {
         return CurrentCommandHistory;
@@ -1608,14 +1615,14 @@ PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandH
     for (; i < CurrentCommandHistory->NumberOfCommands; i++)
     {
         #pragma prefast(suppress:6001, "Confused by 0 length array being used. This is fine until 0-size array is refactored.")
-        ConsoleHeapFree(CurrentCommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CurrentCommandHistory)]);
+        delete[](CurrentCommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CurrentCommandHistory)]);
     }
 
     RemoveEntryList(&CurrentCommandHistory->ListLink);
     InitializeListHead(&History->PopupList);
     InsertHeadList(&g_ciConsoleInformation.CommandHistoryList, &History->ListLink);
 
-    ConsoleHeapFree(CurrentCommandHistory);
+    delete[] CurrentCommandHistory;
     return History;
 }
 
@@ -1624,7 +1631,7 @@ PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, 
     PWCHAR AppNamePtr = nullptr;
     if (!Unicode)
     {
-        AppNamePtr = (PWCHAR)ConsoleHeapAlloc(TMP_TAG, AppNameLength * sizeof(WCHAR));
+        AppNamePtr = new WCHAR[AppNameLength];
         if (AppNamePtr == nullptr)
         {
             return nullptr;
@@ -1648,14 +1655,14 @@ PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, 
         {
             if (!Unicode)
             {
-                ConsoleHeapFree(AppNamePtr);
+                delete[] AppNamePtr;
             }
             return History;
         }
     }
     if (!Unicode)
     {
-        ConsoleHeapFree(AppNamePtr);
+        delete[] AppNamePtr;
     }
     return nullptr;
 }
@@ -1714,16 +1721,17 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
             return nullptr;
         }
 
-        History = (PCOMMAND_HISTORY) ConsoleHeapAlloc(HISTORY_TAG, TotalSize);
+        History = (PCOMMAND_HISTORY) new BYTE[TotalSize];
         if (History == nullptr)
         {
             return nullptr;
         }
 
-        History->AppName = (PWCHAR)ConsoleHeapAlloc(HISTORY_TAG, cbAppName);
+        // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
+        History->AppName = new WCHAR[(cbAppName + 1) / sizeof(WCHAR)];
         if (History->AppName == nullptr)
         {
-            ConsoleHeapFree(History);
+            delete[] History;
             return nullptr;
         }
 
@@ -1751,19 +1759,20 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
             SHORT i;
             if (History->AppName)
             {
-                ConsoleHeapFree(History->AppName);
+                delete[] History->AppName;
             }
 
             for (i = 0; i < History->NumberOfCommands; i++)
             {
-                ConsoleHeapFree(History->Commands[i]);
+                delete[] History->Commands[i];
             }
 
             History->NumberOfCommands = 0;
             History->LastAdded = -1;
             History->LastDisplayed = -1;
             History->FirstCommand = 0;
-            History->AppName = (PWCHAR)ConsoleHeapAlloc(HISTORY_TAG, cbAppName);
+            // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
+            History->AppName = new WCHAR[(cbAppName + 1) / sizeof(WCHAR)];
             if (History->AppName == nullptr)
             {
                 History->Flags &= ~CLE_ALLOCATED;
@@ -1812,7 +1821,7 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
     Origin.Y = (SHORT)((ScreenInfo->GetScreenWindowSizeY() - Size.Y) / 2 + ScreenInfo->BufferViewport.Top);
 
     // allocate a popup structure
-    PCLE_POPUP const Popup = (PCLE_POPUP) ConsoleHeapAlloc(TMP_TAG, sizeof(CLE_POPUP));
+    PCLE_POPUP const Popup = new CLE_POPUP();
     if (Popup == nullptr)
     {
         return STATUS_NO_MEMORY;
@@ -1820,10 +1829,10 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
 
     // allocate a buffer
     Popup->OldScreenSize = ScreenInfo->ScreenBufferSize;
-    Popup->OldContents = (PCHAR_INFO) ConsoleHeapAlloc(TMP_TAG, Popup->OldScreenSize.X * Size.Y * sizeof(CHAR_INFO));
+    Popup->OldContents = new CHAR_INFO[Popup->OldScreenSize.X * Size.Y];
     if (Popup->OldContents == nullptr)
     {
-        ConsoleHeapFree(Popup);
+        delete Popup;
         return STATUS_NO_MEMORY;
     }
 
@@ -1875,8 +1884,8 @@ NTSTATUS EndPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY Com
 
     // Free popup structure.
     RemoveEntryList(&Popup->ListLink);
-    ConsoleHeapFree(Popup->OldContents);
-    ConsoleHeapFree(Popup);
+    delete[] Popup->OldContents;
+    delete Popup;
     g_ciConsoleInformation.PopupCount--;
 
     return STATUS_SUCCESS;
@@ -2367,7 +2376,7 @@ NTSTATUS ProcessCommandListInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _
                 PCHAR TransBuffer;
 
                 // If ansi, translate string.
-                TransBuffer = (PCHAR) ConsoleHeapAlloc(TMP_TAG, a->NumBytes);
+                TransBuffer = (PCHAR) new BYTE[a->NumBytes];
                 if (TransBuffer == nullptr)
                 {
                     return STATUS_NO_MEMORY;
@@ -2379,7 +2388,7 @@ NTSTATUS ProcessCommandListInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _
                                                    TransBuffer,
                                                    a->NumBytes);
                 memmove(pCookedReadData->UserBuffer, TransBuffer, a->NumBytes);
-                ConsoleHeapFree(TransBuffer);
+                delete[] TransBuffer;
             }
 
             return CONSOLE_STATUS_READ_COMPLETE;
@@ -2927,7 +2936,7 @@ void EmptyCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory)
 
     for (SHORT i = 0; i < CommandHistory->NumberOfCommands; i++)
     {
-        ConsoleHeapFree(CommandHistory->Commands[i]);
+        delete[] CommandHistory->Commands[i];
     }
 
     CommandHistory->NumberOfCommands = 0;
@@ -4001,7 +4010,7 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
         {
             PWCHAR TransBuffer;
 
-            TransBuffer = (PWCHAR)ConsoleHeapAlloc(TMP_DBCS_TAG, lStringLength * sizeof(WCHAR));
+            TransBuffer = new WCHAR[lStringLength]; 
             if (TransBuffer == nullptr)
             {
                 return;
@@ -4009,7 +4018,7 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
 
             memmove(TransBuffer, CommandHistory->Commands[COMMAND_NUM_TO_INDEX(i, CommandHistory)]->Command, lStringLength * sizeof(WCHAR));
             WriteOutputString(ScreenInfo, TransBuffer, WriteCoord, CONSOLE_REAL_UNICODE, &lStringLength, nullptr);
-            ConsoleHeapFree(TransBuffer);
+            delete[] TransBuffer;
         }
 
         // write attributes to screen
@@ -4155,17 +4164,17 @@ void FreeCommandHistoryBuffers()
             RemoveEntryList(&History->ListLink);
             if (History->AppName)
             {
-                ConsoleHeapFree(History->AppName);
+                delete[] History->AppName;
                 History->AppName = nullptr;
             }
 
             for (SHORT i = 0; i < History->NumberOfCommands; i++)
             {
-                ConsoleHeapFree(History->Commands[i]);
+                delete[] History->Commands[i];
                 History->Commands[i] = nullptr;
             }
 
-            ConsoleHeapFree(History);
+            delete[] History;
             History = nullptr;
         }
     }
@@ -4250,7 +4259,7 @@ NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
         {
             COMMAND_IND_INC(pCmdHistory->LastAdded, pCmdHistory);
             COMMAND_IND_INC(pCmdHistory->FirstCommand, pCmdHistory);
-            ConsoleHeapFree(pCmdHistory->Commands[pCmdHistory->LastAdded]);
+            delete[] pCmdHistory->Commands[pCmdHistory->LastAdded];
             if (pCmdHistory->LastDisplayed == pCmdHistory->LastAdded)
             {
                 pCmdHistory->LastDisplayed = -1;
@@ -4273,7 +4282,7 @@ NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
         }
         else
         {
-            *ppCmd = (PCOMMAND) ConsoleHeapAlloc(HISTORY_TAG, cbCommand + sizeof(COMMAND));
+            *ppCmd = (PCOMMAND) new BYTE[cbCommand + sizeof(COMMAND)];
             if (*ppCmd == nullptr)
             {
                 COMMAND_IND_PREV(pCmdHistory->LastAdded, pCmdHistory);
@@ -4436,7 +4445,8 @@ NTSTATUS DoSrvSetConsoleTitle(_In_ PVOID const Buffer, _In_ ULONG const cbOrigin
 
     if (NT_SUCCESS(Status))
     {
-        LPWSTR const NewTitle = (PWSTR) ConsoleHeapAlloc(TITLE_TAG, cbTitleLength);
+        // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
+        LPWSTR const NewTitle = new WCHAR[(cbTitleLength + 1) / sizeof(WCHAR)];
         if (NewTitle != nullptr)
         {
             if (cbOriginalLength == 0)
@@ -4458,7 +4468,7 @@ NTSTATUS DoSrvSetConsoleTitle(_In_ PVOID const Buffer, _In_ ULONG const cbOrigin
                     NewTitle[cbOriginalLength / sizeof(WCHAR)] = 0;
                 }
             }
-            ConsoleHeapFree(g_ciConsoleInformation.Title);
+            delete[] g_ciConsoleInformation.Title;
             g_ciConsoleInformation.Title = NewTitle;
 
             if(g_ciConsoleInformation.pWindow->PostUpdateTitleWithCopy(g_ciConsoleInformation.Title))

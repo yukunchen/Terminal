@@ -45,7 +45,7 @@ ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
         return 0;
     }
 
-    PINPUT_RECORD const TmpInpRec = (PINPUT_RECORD) ConsoleHeapAlloc(TMP_DBCS_TAG, NumBytes);
+    PINPUT_RECORD const TmpInpRec = (PINPUT_RECORD) new BYTE[NumBytes];
     if (TmpInpRec == nullptr)
     {
         return 0;
@@ -120,7 +120,7 @@ ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
             ZeroMemory(DbcsLeadInpRec, sizeof(INPUT_RECORD));
         }
     }
-    ConsoleHeapFree(TmpInpRec);
+    delete[] TmpInpRec;
     return j;
 }
 
@@ -362,7 +362,7 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/, _In_ PCONSOLE_API_MSG
             SetReplyStatus(WaitReplyMessage, Status);
             SetReplyInformation(WaitReplyMessage, a->NumRecords * sizeof(INPUT_RECORD));
 
-            ConsoleHeapFree(DirectReadData);
+            delete[] DirectReadData;
         }
     }
 
@@ -566,7 +566,7 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
     {
         return STATUS_NO_MEMORY;
     }
-    PCHAR_INFO TmpBuffer = (PCHAR_INFO) ConsoleHeapAlloc(TMP_DBCS_TAG, NumBytes);
+    PCHAR_INFO TmpBuffer = (PCHAR_INFO) new BYTE[NumBytes];
     PCHAR_INFO const SaveBuffer = TmpBuffer;
     if (TmpBuffer == nullptr)
     {
@@ -619,7 +619,7 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
     }
 #pragma prefast(pop)
 
-    ConsoleHeapFree(SaveBuffer);
+    delete[] SaveBuffer;
     return STATUS_SUCCESS;
 }
 
@@ -852,7 +852,7 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
             {
                 if (SUCCEEDED(Int32Mult(cBufferResult, 2 * sizeof(CHAR_INFO), &cBufferResult)))
                 {
-                    TransBuffer = (PCHAR_INFO)ConsoleHeapAlloc(TMP_DBCS_TAG, cBufferResult);
+                    TransBuffer = (PCHAR_INFO)new BYTE[cBufferResult];
                 }
             }
             
@@ -864,7 +864,7 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
 
             TranslateOutputToPaddingUnicode(Buffer, BufferSize, &TransBuffer[0]);
             Status = WriteScreenBuffer(ScreenBufferInformation, &TransBuffer[0], &a->CharRegion);
-            ConsoleHeapFree(TransBuffer);
+            delete[] TransBuffer;
         }
         else
         {

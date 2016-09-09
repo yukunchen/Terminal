@@ -489,7 +489,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 if (pwchBuffer - pwchBufferBackupLimit > LOCAL_BUFFER_SIZE)
                 {
-                    pBuffer = (PWCHAR)ConsoleHeapAlloc(TMP_TAG, (ULONG)(pwchBuffer - pwchBufferBackupLimit) * sizeof(WCHAR));
+                    pBuffer = new WCHAR[pwchBuffer - pwchBufferBackupLimit];
                     if (pBuffer == nullptr)
                     {
                         Status = STATUS_NO_MEMORY;
@@ -531,7 +531,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 if (pBuffer != TmpBuffer)
                 {
-                    ConsoleHeapFree(pBuffer);
+                    delete[] pBuffer;
                 }
 
                 if (LastChar == UNICODE_TAB)
@@ -852,7 +852,7 @@ NTSTATUS DoWriteConsole(_In_ PCONSOLE_API_MSG m, _In_ PSCREEN_INFORMATION pScree
     {
         PWCHAR TransBuffer;
 
-        TransBuffer = (PWCHAR)ConsoleHeapAlloc(TMP_TAG, a->NumBytes);
+        TransBuffer = (PWCHAR)new BYTE[a->NumBytes];
         if (TransBuffer == nullptr)
         {
             return STATUS_NO_MEMORY;
@@ -863,7 +863,7 @@ NTSTATUS DoWriteConsole(_In_ PCONSOLE_API_MSG m, _In_ PSCREEN_INFORMATION pScree
         m->State.StackBuffer = FALSE;
         if (!ConsoleCreateWait(&g_ciConsoleInformation.OutputQueue, WriteConsoleWaitRoutine, m, pScreenInfo))
         {
-            ConsoleHeapFree(TransBuffer);
+            delete[] TransBuffer;
             m->State.TransBuffer = nullptr;
             m->State.StackBuffer = TRUE;
             return STATUS_NO_MEMORY;
@@ -912,7 +912,7 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
         if (a->NumBytes >= (ARRAYSIZE(rgwchTranslationSpace))) // >= here to allow for implicit terminator
         {
             // we require more translation space than we have on the stack, so dynamically allocate it.
-            TransBuffer = (PWCHAR)ConsoleHeapAlloc(TMP_DBCS_TAG, (a->NumBytes + 2) * sizeof(WCHAR));
+            TransBuffer = new WCHAR[a->NumBytes + 2];
             if (TransBuffer == nullptr)
             {
                 SetReplyStatus(m, STATUS_NO_MEMORY);
@@ -1039,7 +1039,7 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
         {
             if (fLocalHeap)
             {
-                ConsoleHeapFree(TransBuffer);
+                delete[] TransBuffer;
             }
 
             SetReplyStatus(m, Status);
@@ -1082,7 +1082,7 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
 
             if (!m->State.StackBuffer && fLocalHeap)
             {
-                ConsoleHeapFree(m->State.TransBuffer);
+                delete[] m->State.TransBuffer;
             }
         }
 

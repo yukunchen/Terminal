@@ -32,32 +32,6 @@ extern "C"
                             _In_ DWORD ConsoleInformationLength);
 };
 
-// TODO: Clean up tagging and memory macros. See http://osgvsowi/8394405
-#define TMP_TAG 0
-#define BMP_TAG 0
-#define ALIAS_TAG 0
-#define HISTORY_TAG 0
-#define TITLE_TAG 0
-#define HANDLE_TAG 0
-#define CONSOLE_TAG 0
-#define ICON_TAG 0
-#define BUFFER_TAG 0
-#define WAIT_TAG 0
-#define WAITBLOCK_TAG 0
-#define FONT_TAG 0
-#define SCREEN_TAG 0
-#define TMP_DBCS_TAG 0
-#define SCREEN_DBCS_TAG 0
-#define EUDC_TAG 0
-#define CONVAREA_TAG 0
-#define IME_TAG 0
-#define PAYLOAD_TAG 0
-
-#define ConsoleHeapAlloc(FlagsAndTags, Size) HeapAlloc(GetProcessHeap(), ((FlagsAndTags) & 0xF), (Size))
-#define ConsoleHeapReAlloc(FlagsAndTags, Addr, Size) HeapReAlloc(GetProcessHeap(), ((FlagsAndTags) & 0xF), (Addr), (Size))
-#define ConsoleHeapFree(Addr) HeapFree(GetProcessHeap(), 0, (Addr))
-#define ConsoleHeapSize(Addr) HeapSize(GetProcessHeap(), 0, (Addr))
-
 /*
  * Used to store some console attributes for the console.  This is a means
  * to cache the color in the extra-window-bytes, so USER/KERNEL can get

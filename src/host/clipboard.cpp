@@ -482,6 +482,9 @@ None
 --*/
 #define DATA_CHUNK_SIZE 8192
 
+// 8 is maximum number of events per char that can be generated during the paste function.
+#define MAX_EVENTS_PER_CHAR 8
+
 void Clipboard::s_DoStringPaste(_In_reads_(cchData) PCWCHAR pwchData, _In_ const size_t cchData)
 {
     if (pwchData == nullptr)
@@ -500,8 +503,7 @@ void Clipboard::s_DoStringPaste(_In_reads_(cchData) PCWCHAR pwchData, _In_ const
     }
 
     // allocate space to copy data.
-    // 8 is maximum number of events per char
-    PINPUT_RECORD const StringData = (PINPUT_RECORD)ConsoleHeapAlloc(TMP_TAG, ChunkSize * sizeof(INPUT_RECORD)* 8);
+    PINPUT_RECORD const StringData = new INPUT_RECORD[ChunkSize * MAX_EVENTS_PER_CHAR];
     if (StringData == nullptr)
     {
         return;
@@ -657,7 +659,7 @@ void Clipboard::s_DoStringPaste(_In_reads_(cchData) PCWCHAR pwchData, _In_ const
         EventsWritten = WriteInputBuffer(g_ciConsoleInformation.pInputBuffer, StringData, EventsWritten);
     }
 
-    ConsoleHeapFree(StringData);
+    delete[] StringData;
 }
 
 /*++

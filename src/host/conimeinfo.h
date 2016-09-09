@@ -16,6 +16,7 @@ Revision History:
 #pragma once
 
 #include "..\inc\conime.h"
+#include <vector>
 
 class SCREEN_INFORMATION;
 
@@ -45,8 +46,8 @@ typedef struct _CONSOLE_IME_INFORMATION
     BOOLEAN SavedCursorVisible; // whether cursor is visible (set by user)
 
     // IME compositon string information
-    ULONG NumberOfConvAreaCompStr;
-    PCONVERSIONAREA_INFORMATION *ConvAreaCompStr;
+    // There is one "composition string" per line that must be rendered on the screen
+    std::vector<PCONVERSIONAREA_INFORMATION> ConvAreaCompStr;
 
     // Root of conversion area information
     PCONVERSIONAREA_INFORMATION ConvAreaRoot;
