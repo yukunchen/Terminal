@@ -19,10 +19,7 @@ Revision History:
 
 #include "server.h"
 
-void FreeConvAreaScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo);
-
 void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
-                             _In_opt_ PCONVERSIONAREA_INFORMATION pConvAreaInfo,
                              _In_ const SMALL_RECT * const psrConvRegion);
 
 RECT GetImeSuggestionWindowPos();
@@ -30,7 +27,5 @@ RECT GetImeSuggestionWindowPos();
 NTSTATUS ConsoleImeResizeCompStrView();
 NTSTATUS ConsoleImeResizeCompStrScreenBuffer(_In_ COORD const coordNewScreenSize);
 
-void ConsoleImePaint(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo);
+void ConsoleImePaint(_In_ ConversionAreaInfo* ConvAreaInfo);
 NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct);
-
-void SetUndetermineAttribute();

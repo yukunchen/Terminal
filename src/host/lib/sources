@@ -47,6 +47,7 @@ SOURCES                         =   $(SOURCES)\
                                     ..\userprivapi.cpp \
                                     ..\renderData.cpp \
                                     ..\renderFontDefaults.cpp \
+                                    ..\conimeinfo.cpp \
 
 INCLUDES                        =  $(INCLUDES); \
                                    $(OBJ_PATH)\$(O)

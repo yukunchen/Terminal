@@ -22,10 +22,10 @@
 
 SHORT CalcWideCharToColumn(_In_ PCHAR_INFO Buffer, _In_ size_t NumberOfChars);
 
-void ConsoleImeViewInfo(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo, _In_ COORD coordConView);
-void ConsoleImeWindowInfo(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo, _In_ SMALL_RECT rcViewCaWindow);
-NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ COORD NewScreenSize, _In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo);
-NTSTATUS ConsoleImeWriteOutput(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo, _In_ PCHAR_INFO Buffer, _In_ SMALL_RECT CharRegion, _In_ BOOL fUnicode);
+void ConsoleImeViewInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ COORD coordConView);
+void ConsoleImeWindowInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ SMALL_RECT rcViewCaWindow);
+NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ COORD NewScreenSize, _In_ ConversionAreaInfo* ConvAreaInfo);
+NTSTATUS ConsoleImeWriteOutput(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ PCHAR_INFO Buffer, _In_ SMALL_RECT CharRegion, _In_ BOOL fUnicode);
 bool InsertConvertedString(_In_ LPCWSTR lpStr);
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
                                   _In_ USHORT StringLength,
@@ -68,122 +68,12 @@ RECT GetImeSuggestionWindowPos()
     return rcSuggestion;
 }
 
-void LinkConversionArea(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo)
-{
-    if (g_ciConsoleInformation.ConsoleIme.ConvAreaRoot == nullptr)
-    {
-        g_ciConsoleInformation.ConsoleIme.ConvAreaRoot = ConvAreaInfo;
-    }
-    else
-    {
-        PCONVERSIONAREA_INFORMATION PrevConvAreaInfo = g_ciConsoleInformation.ConsoleIme.ConvAreaRoot;
-        while (PrevConvAreaInfo->ConvAreaNext)
-        {
-            PrevConvAreaInfo = PrevConvAreaInfo->ConvAreaNext;
-        }
-
-        PrevConvAreaInfo->ConvAreaNext = ConvAreaInfo;
-    }
-}
-
-// Routine Description:
-// - This routine frees the memory associated with a screen buffer.
-// Arguments:
-// - ScreenInfo - screen buffer data to free.
-// Return Value:
-// Note:
-// - console handle table lock must be held when calling this routine
-void FreeConvAreaScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
-{
-    delete pScreenInfo;
-}
-
-NTSTATUS AllocateConversionArea(_In_ COORD dwScreenBufferSize, _Out_ PCONVERSIONAREA_INFORMATION * ConvAreaInfo)
-{
-    // allocate console data
-    if (g_ciConsoleInformation.CurrentScreenBuffer == nullptr)
-    {
-        return STATUS_UNSUCCESSFUL;
-    }
-
-    PCONVERSIONAREA_INFORMATION ca = new CONVERSIONAREA_INFORMATION();
-    if (ca == nullptr)
-    {
-        return STATUS_NO_MEMORY;
-    }
-
-    COORD dwWindowSize;
-    dwWindowSize.X = g_ciConsoleInformation.CurrentScreenBuffer->GetScreenWindowSizeX();
-    dwWindowSize.Y = g_ciConsoleInformation.CurrentScreenBuffer->GetScreenWindowSizeY();
-
-    CHAR_INFO Fill;
-    Fill.Attributes = g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes()->GetLegacyAttributes();
-
-    CHAR_INFO PopupFill;
-    PopupFill.Attributes = g_ciConsoleInformation.CurrentScreenBuffer->GetPopupAttributes()->GetLegacyAttributes();
-
-    const FontInfo* const pfiFont = g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->GetCurrentFont();
-
-    NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(dwWindowSize,
-                                                         pfiFont,
-                                                         dwScreenBufferSize,
-                                                         Fill,
-                                                         PopupFill,
-                                                         0, // cursor has no height because it won't be rendered for conversion areas.
-                                                         &ca->ScreenBuffer);
-    if (!NT_SUCCESS(Status))
-    {
-        delete ca->ScreenBuffer;
-        delete ca;
-        return Status;
-    }
-
-    // Suppress painting notifications for modifying a conversion area cursor as they're not actually rendered.
-    ca->ScreenBuffer->TextInfo->GetCursor()->SetIsConversionArea(TRUE);
-
-    *ConvAreaInfo = ca;
-
-    return STATUS_SUCCESS;
-}
-
-NTSTATUS SetUpConversionArea(_In_ COORD coordCaBuffer,
-                             _In_ SMALL_RECT rcViewCaWindow,
-                             _In_ COORD coordConView,
-                             _In_ DWORD dwOption,
-                             _Out_ PCONVERSIONAREA_INFORMATION * ConvAreaInfo)
-{
-    PCONVERSIONAREA_INFORMATION ca;
-    NTSTATUS Status = AllocateConversionArea(coordCaBuffer, &ca);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    ca->ConversionAreaMode = dwOption;
-    ca->CaInfo.coordCaBuffer = coordCaBuffer;
-    ca->CaInfo.rcViewCaWindow = rcViewCaWindow;
-    ca->CaInfo.coordConView = coordConView;
-
-    ca->ConvAreaNext = nullptr;
-
-    ca->ScreenBuffer->ConvScreenInfo = ca;
-
-    LinkConversionArea(ca);
-
-    SetUndetermineAttribute();
-
-    *ConvAreaInfo = ca;
-
-    return STATUS_SUCCESS;
-}
-
 bool IsValidSmallRect(_In_ PSMALL_RECT const Rect)
 {
     return (Rect->Right >= Rect->Left && Rect->Bottom >= Rect->Top);
 }
 
 void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
-                             _In_opt_ PCONVERSIONAREA_INFORMATION pConvAreaInfo,
                              _In_ const SMALL_RECT * const psrConvRegion)
 {
     if (!pScreenInfo->IsActiveScreenBuffer())
@@ -191,9 +81,13 @@ void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         return;
     }
 
-    while (pConvAreaInfo)
+    ConsoleImeInfo* const pIme = &g_ciConsoleInformation.ConsoleIme;
+
+    for (auto it = pIme->ConvAreaCompStr.begin(); it != pIme->ConvAreaCompStr.end(); ++it)
     {
-        if ((pConvAreaInfo->ConversionAreaMode & (CA_HIDDEN)) == 0)
+        ConversionAreaInfo* const pConvAreaInfo = *it;
+    
+        if (!pConvAreaInfo->IsHidden())
         {
             // Do clipping region
             SMALL_RECT Region;
@@ -232,56 +126,13 @@ void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 }
             }
         }
-
-        pConvAreaInfo = pConvAreaInfo->ConvAreaNext;
     }
-}
-
-NTSTATUS CreateConvAreaUndetermine()
-{
-    PCONSOLE_IME_INFORMATION const ConsoleIme = &g_ciConsoleInformation.ConsoleIme;
-    
-    COORD coordCaBuffer;
-    coordCaBuffer = g_ciConsoleInformation.CurrentScreenBuffer->ScreenBufferSize;
-    coordCaBuffer.Y = 1;
-
-    SMALL_RECT rcViewCaWindow;
-    rcViewCaWindow.Top = 0;
-    rcViewCaWindow.Left = 0;
-    rcViewCaWindow.Bottom = 0;
-    rcViewCaWindow.Right = 0;
-    
-    COORD coordConView; 
-    coordConView.X = 0;
-    coordConView.Y = 0;
-
-    PCONVERSIONAREA_INFORMATION ConvAreaInfo;
-    RETURN_IF_NTSTATUS_FAILED(SetUpConversionArea(coordCaBuffer,
-                                                  rcViewCaWindow,
-                                                  coordConView,
-                                                  CA_HIDDEN,
-                                                  &ConvAreaInfo));
-
-    try
-    {
-        ConsoleIme->ConvAreaCompStr.push_back(ConvAreaInfo);
-    }
-    catch (std::bad_alloc)
-    {
-        RETURN_NTSTATUS(STATUS_NO_MEMORY);
-    }
-    catch (...)
-    {
-        return wil::ResultFromCaughtException();
-    }
-    
-    return STATUS_SUCCESS;
 }
 
 #define LOCAL_BUFFER_SIZE 100
 NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE lpAtr, _In_reads_(CONIME_ATTRCOLOR_SIZE) PWORD lpAtrIdx, _In_ DWORD NumChars)
 {
-    PCONSOLE_IME_INFORMATION const ConsoleIme = &g_ciConsoleInformation.ConsoleIme;
+    ConsoleImeInfo* const ConsoleIme = &g_ciConsoleInformation.ConsoleIme;
     PSCREEN_INFORMATION const ScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
 
     COORD Position = ScreenInfo->TextInfo->GetCursor()->GetPosition();
@@ -328,14 +179,14 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
     DWORD const BufferSize = NumChars;
     NumChars = 0;
 
-    PCONVERSIONAREA_INFORMATION ConvAreaInfo;
+    ConversionAreaInfo* ConvAreaInfo;
     for (ConvAreaIndex = 0; NumChars < BufferSize; ConvAreaIndex++)
     {
         if (ConvAreaIndex + 1 > ConsoleIme->ConvAreaCompStr.size())
         {
             NTSTATUS Status;
 
-            Status = CreateConvAreaUndetermine();
+            Status = g_ciConsoleInformation.ConsoleIme.AddConversionArea();
             if (!NT_SUCCESS(Status))
             {
                 return Status;
@@ -345,7 +196,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
         PSCREEN_INFORMATION const ConvScreenInfo = ConvAreaInfo->ScreenBuffer;
         ConvScreenInfo->TextInfo->GetCursor()->SetXPosition(Position.X);
 
-        if ((ConvAreaInfo->ConversionAreaMode & CA_HIDDEN) || (UndetAreaUp))
+        if (ConvAreaInfo->IsHidden() || (UndetAreaUp))
         {
             // This conversion area need positioning onto cursor position.
             COORD CursorPosition;
@@ -440,7 +291,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                     Region.Right = (SHORT)(ConvScreenInfo->TextInfo->GetCursor()->GetPosition().X - 1);
                     ConsoleImeWindowInfo(ConvAreaInfo, Region);
 
-                    ConvAreaInfo->ConversionAreaMode &= ~CA_HIDDEN;
+                    ConvAreaInfo->SetHidden(false);
 
                     ConsoleImePaint(ConvAreaInfo);
 
@@ -472,9 +323,9 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
     for (; ConvAreaIndex < ConsoleIme->ConvAreaCompStr.size(); ConvAreaIndex++)
     {
         ConvAreaInfo = ConsoleIme->ConvAreaCompStr[ConvAreaIndex];
-        if (!(ConvAreaInfo->ConversionAreaMode & CA_HIDDEN))
+        if (!ConvAreaInfo->IsHidden())
         {
-            ConvAreaInfo->ConversionAreaMode |= CA_HIDDEN;
+            ConvAreaInfo->SetHidden(true);
             ConsoleImePaint(ConvAreaInfo);
         }
     }
@@ -482,9 +333,9 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
     return STATUS_SUCCESS;
 }
 
-NTSTATUS FillUndetermineChars(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo)
+NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* ConvAreaInfo)
 {
-    ConvAreaInfo->ConversionAreaMode |= CA_HIDDEN;
+    ConvAreaInfo->SetHidden(true);
     
     COORD Coord = { 0 };
     DWORD CharsToWrite = ConvAreaInfo->ScreenBuffer->ScreenBufferSize.X;
@@ -501,7 +352,7 @@ NTSTATUS FillUndetermineChars(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo)
 
 NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
 {
-    CONSOLE_IME_INFORMATION* const pIme = &g_ciConsoleInformation.ConsoleIme;
+    ConsoleImeInfo* const pIme = &g_ciConsoleInformation.ConsoleIme;
 
     if (CompStr->dwCompStrLen == 0 || CompStr->dwResultStrLen != 0)
     {
@@ -515,8 +366,8 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         // Determine string.
         for (auto it = pIme->ConvAreaCompStr.begin(); it != pIme->ConvAreaCompStr.end(); ++it)
         {
-            PCONVERSIONAREA_INFORMATION const ConvAreaInfo = *it;
-            if (ConvAreaInfo && (!(ConvAreaInfo->ConversionAreaMode & CA_HIDDEN)))
+            ConversionAreaInfo* const ConvAreaInfo = *it;
+            if (ConvAreaInfo && !ConvAreaInfo->IsHidden())
             {
                 FillUndetermineChars(ConvAreaInfo);
             }
@@ -553,8 +404,8 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         // Composition string.
         for (auto it = pIme->ConvAreaCompStr.begin(); it != pIme->ConvAreaCompStr.end(); ++it)
         {
-            PCONVERSIONAREA_INFORMATION const ConvAreaInfo = *it;
-            if (ConvAreaInfo && (!(ConvAreaInfo->ConversionAreaMode & CA_HIDDEN)))
+            ConversionAreaInfo* const ConvAreaInfo = *it;
+            if (ConvAreaInfo && !ConvAreaInfo->IsHidden())
             {
                 FillUndetermineChars(ConvAreaInfo);
             }
@@ -572,7 +423,7 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
 
 NTSTATUS ConsoleImeResizeCompStrView()
 {
-    CONSOLE_IME_INFORMATION* const pIme = &g_ciConsoleInformation.ConsoleIme;
+    ConsoleImeInfo* const pIme = &g_ciConsoleInformation.ConsoleIme;
 
     // Compositon string
     LPCONIME_UICOMPMESSAGE const CompStr = pIme->CompStrData;
@@ -580,8 +431,8 @@ NTSTATUS ConsoleImeResizeCompStrView()
     {
         for (auto it = pIme->ConvAreaCompStr.begin(); it != pIme->ConvAreaCompStr.end(); ++it)
         {
-            PCONVERSIONAREA_INFORMATION const ConvAreaInfo = *it;
-            if (ConvAreaInfo && (!(ConvAreaInfo->ConversionAreaMode & CA_HIDDEN)))
+            ConversionAreaInfo* const ConvAreaInfo = *it;
+            if (ConvAreaInfo && !ConvAreaInfo->IsHidden())
             {
                 FillUndetermineChars(ConvAreaInfo);
             }
@@ -599,18 +450,18 @@ NTSTATUS ConsoleImeResizeCompStrView()
 
 NTSTATUS ConsoleImeResizeCompStrScreenBuffer(_In_ COORD const coordNewScreenSize)
 {
-    CONSOLE_IME_INFORMATION* const pIme = &g_ciConsoleInformation.ConsoleIme;
+    ConsoleImeInfo* const pIme = &g_ciConsoleInformation.ConsoleIme;
 
     // Composition string
     for (auto it = pIme->ConvAreaCompStr.begin(); it != pIme->ConvAreaCompStr.end(); ++it)
     {
-        PCONVERSIONAREA_INFORMATION const ConvAreaInfo = *it;
+        ConversionAreaInfo* const ConvAreaInfo = *it;
 
         if (ConvAreaInfo)
         {
-            if (!(ConvAreaInfo->ConversionAreaMode & CA_HIDDEN))
+            if (!ConvAreaInfo->IsHidden())
             {
-                ConvAreaInfo->ConversionAreaMode |= CA_HIDDEN;
+                ConvAreaInfo->SetHidden(true);
                 ConsoleImePaint(ConvAreaInfo);
             }
 
@@ -648,7 +499,7 @@ SHORT CalcWideCharToColumn(_In_reads_(NumberOfChars) PCHAR_INFO Buffer, _In_ siz
 }
 
 
-void ConsoleImePaint(_In_ PCONVERSIONAREA_INFORMATION pConvAreaInfo)
+void ConsoleImePaint(_In_ ConversionAreaInfo* pConvAreaInfo)
 {
     if (pConvAreaInfo == nullptr)
     {
@@ -667,9 +518,9 @@ void ConsoleImePaint(_In_ PCONVERSIONAREA_INFORMATION pConvAreaInfo)
     WriteRegion.Top = ScreenInfo->BufferViewport.Top + pConvAreaInfo->CaInfo.coordConView.Y + pConvAreaInfo->CaInfo.rcViewCaWindow.Top;
     WriteRegion.Bottom = WriteRegion.Top + (pConvAreaInfo->CaInfo.rcViewCaWindow.Bottom - pConvAreaInfo->CaInfo.rcViewCaWindow.Top);
 
-    if (!(pConvAreaInfo->ConversionAreaMode & (CA_HIDDEN)))
+    if (!pConvAreaInfo->IsHidden())
     {
-        WriteConvRegionToScreen(ScreenInfo, pConvAreaInfo, &WriteRegion);
+        WriteConvRegionToScreen(ScreenInfo, &WriteRegion);
     }
     else
     {
@@ -677,10 +528,10 @@ void ConsoleImePaint(_In_ PCONVERSIONAREA_INFORMATION pConvAreaInfo)
     }
 }
 
-void ConsoleImeViewInfo(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo, _In_ COORD coordConView)
+void ConsoleImeViewInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ COORD coordConView)
 {
 
-    if (ConvAreaInfo->ConversionAreaMode & CA_HIDDEN)
+    if (ConvAreaInfo->IsHidden())
     {
         SMALL_RECT NewRegion;
         ConvAreaInfo->CaInfo.coordConView = coordConView;
@@ -711,19 +562,19 @@ void ConsoleImeViewInfo(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo, _In_ COOR
     }
 }
 
-void ConsoleImeWindowInfo(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo, _In_ SMALL_RECT rcViewCaWindow)
+void ConsoleImeWindowInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ SMALL_RECT rcViewCaWindow)
 {
     if (rcViewCaWindow.Left != ConvAreaInfo->CaInfo.rcViewCaWindow.Left ||
         rcViewCaWindow.Top != ConvAreaInfo->CaInfo.rcViewCaWindow.Top ||
         rcViewCaWindow.Right != ConvAreaInfo->CaInfo.rcViewCaWindow.Right || rcViewCaWindow.Bottom != ConvAreaInfo->CaInfo.rcViewCaWindow.Bottom)
     {
-        if (!(ConvAreaInfo->ConversionAreaMode & CA_HIDDEN))
+        if (!ConvAreaInfo->IsHidden())
         {
-            ConvAreaInfo->ConversionAreaMode |= CA_HIDDEN;
+            ConvAreaInfo->SetHidden(true);
             ConsoleImePaint(ConvAreaInfo);
 
             ConvAreaInfo->CaInfo.rcViewCaWindow = rcViewCaWindow;
-            ConvAreaInfo->ConversionAreaMode &= ~CA_HIDDEN;
+            ConvAreaInfo->SetHidden(false);
             ConsoleImePaint(ConvAreaInfo);
         }
         else
@@ -733,7 +584,7 @@ void ConsoleImeWindowInfo(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo, _In_ SM
     }
 }
 
-NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ COORD NewScreenSize, _In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo)
+NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ COORD NewScreenSize, _In_ ConversionAreaInfo* ConvAreaInfo)
 {
     NTSTATUS Status = ScreenInfo->ResizeScreenBuffer(NewScreenSize, FALSE);
     if (NT_SUCCESS(Status))
@@ -763,7 +614,7 @@ NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ 
     return Status;
 }
 
-NTSTATUS ConsoleImeWriteOutput(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo, _In_ PCHAR_INFO Buffer, _In_ SMALL_RECT CharRegion, _In_ BOOL fUnicode)
+NTSTATUS ConsoleImeWriteOutput(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ PCHAR_INFO Buffer, _In_ SMALL_RECT CharRegion, _In_ BOOL fUnicode)
 {
     NTSTATUS Status;
  
@@ -813,7 +664,7 @@ NTSTATUS ConsoleImeWriteOutput(_In_ PCONVERSIONAREA_INFORMATION ConvAreaInfo, _I
         ConvRegion.Top += (ScreenInfo->BufferViewport.Top + ConvAreaInfo->CaInfo.coordConView.Y);
         ConvRegion.Bottom += (ScreenInfo->BufferViewport.Top + ConvAreaInfo->CaInfo.coordConView.Y);
 
-        WriteConvRegionToScreen(ScreenInfo, ConvAreaInfo, &ConvRegion);
+        WriteConvRegionToScreen(ScreenInfo, &ConvRegion);
     }
 
     return Status;
@@ -908,21 +759,6 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
 
     delete[] InputEvent;
     return fResult;
-}
-
-void SetUndetermineAttribute()
-{
-    PSCREEN_INFORMATION const ScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
-    PCONVERSIONAREA_INFORMATION ConvAreaInfo = g_ciConsoleInformation.ConsoleIme.ConvAreaRoot;
-    if (ConvAreaInfo != nullptr)
-    {
-        do
-        {
-            ConvAreaInfo->ScreenBuffer->SetAttributes(ScreenInfo->GetAttributes());
-            ConvAreaInfo = ConvAreaInfo->ConvAreaNext;
-        }
-        while (ConvAreaInfo != nullptr);
-    }
 }
 
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,

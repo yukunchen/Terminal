@@ -21,34 +21,52 @@ Revision History:
 class SCREEN_INFORMATION;
 
 // Internal structures and definitions used by the conversion area.
-typedef struct _CONVERSION_AREA_BUFFER_INFO
+class ConversionAreaBufferInfo
 {
+public:
     COORD coordCaBuffer;
     SMALL_RECT rcViewCaWindow;
     COORD coordConView;
-} CONVERSION_AREA_BUFFER_INFO, *PCONVERSION_AREA_BUFFER_INFO;
 
-typedef struct _CONVERSIONAREA_INFORMATION
+    ConversionAreaBufferInfo(_In_ COORD const coordBufferSize);
+};
+
+class ConversionAreaInfo
 {
-    DWORD ConversionAreaMode;
-#define CA_HIDDEN      0x01 // Set:Hidden    Reset:Active
+public:
 
-    CONVERSION_AREA_BUFFER_INFO CaInfo;
-    SCREEN_INFORMATION *ScreenBuffer;
+    ConversionAreaBufferInfo CaInfo;
+    SCREEN_INFORMATION* const ScreenBuffer;
 
-    struct _CONVERSIONAREA_INFORMATION *ConvAreaNext;
-} CONVERSIONAREA_INFORMATION, *PCONVERSIONAREA_INFORMATION;
+    static NTSTATUS s_CreateInstance(_Outptr_ ConversionAreaInfo** const ppInfo);
 
-typedef struct _CONSOLE_IME_INFORMATION
+    bool IsHidden() const;
+    void SetHidden(_In_ bool const fIsHidden);
+
+    ~ConversionAreaInfo();
+
+private:
+    ConversionAreaInfo(_In_ COORD const coordBufferSize,
+                       _In_ SCREEN_INFORMATION* const pScreenInfo);
+
+    bool _fIsHidden;
+};
+
+class ConsoleImeInfo
 {
+public:
     // Composition String information
     LPCONIME_UICOMPMESSAGE CompStrData;
     BOOLEAN SavedCursorVisible; // whether cursor is visible (set by user)
 
     // IME compositon string information
     // There is one "composition string" per line that must be rendered on the screen
-    std::vector<PCONVERSIONAREA_INFORMATION> ConvAreaCompStr;
+    std::vector<ConversionAreaInfo*> ConvAreaCompStr;
 
-    // Root of conversion area information
-    PCONVERSIONAREA_INFORMATION ConvAreaRoot;
-} CONSOLE_IME_INFORMATION, *PCONSOLE_IME_INFORMATION;
+    ConsoleImeInfo();
+    ~ConsoleImeInfo();
+
+    void RefreshAreaAttributes();
+
+    NTSTATUS AddConversionArea();
+};

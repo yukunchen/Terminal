@@ -29,7 +29,7 @@ public:
     const TextAttribute* const GetDefaultBrushColors();
     const void GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLORREF** const ppColorTable, _Out_ size_t* const pcColors);
     const Cursor* GetCursor();
-    const CONSOLE_IME_INFORMATION* GetImeData();
+    const ConsoleImeInfo* GetImeData();
     const TEXT_BUFFER_INFO* GetImeCompositionStringBuffer(_In_ size_t iIndex);
 
     const bool IsGridLineDrawingAllowed();

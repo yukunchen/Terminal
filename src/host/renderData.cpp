@@ -54,7 +54,7 @@ const Cursor* RenderData::GetCursor()
     return g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->GetCursor();
 }
 
-const CONSOLE_IME_INFORMATION* RenderData::GetImeData() 
+const ConsoleImeInfo* RenderData::GetImeData() 
 {
     return &g_ciConsoleInformation.ConsoleIme;
 }

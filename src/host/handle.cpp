@@ -114,7 +114,7 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
 
     g_ciConsoleInformation.CurrentScreenBuffer->ScrollScale = g_ciConsoleInformation.GetScrollScale();
 
-    SetUndetermineAttribute();
+    g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
     
     CD_IO_SERVER_INFORMATION ServerInformation;
     // Tell the driver about the input available event.

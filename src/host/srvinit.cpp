@@ -368,25 +368,6 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
     return STATUS_SUCCESS;
 }
 
-VOID FreeConsoleIMEStuff()
-{
-    PCONVERSIONAREA_INFORMATION ConvAreaInfo, ConvAreaInfoNext;
-
-    ConvAreaInfo = g_ciConsoleInformation.ConsoleIme.ConvAreaRoot;
-    while (ConvAreaInfo)
-    {
-        ConvAreaInfoNext = ConvAreaInfo->ConvAreaNext;
-        FreeConvAreaScreenBuffer(ConvAreaInfo->ScreenBuffer);
-        delete ConvAreaInfo;
-        ConvAreaInfo = ConvAreaInfoNext;
-    }
-
-    if (g_ciConsoleInformation.ConsoleIme.CompStrData)
-    {
-        delete[] g_ciConsoleInformation.ConsoleIme.CompStrData;
-    }
-}
-
 NTSTATUS RemoveConsole(_In_ PCONSOLE_PROCESS_HANDLE ProcessData)
 {
     NTSTATUS Status;

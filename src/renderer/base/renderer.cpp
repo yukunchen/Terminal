@@ -733,10 +733,10 @@ void Renderer::_PaintCursor()
 // - pTextInfo - Text backing buffer for the special IME area.
 // Return Value:
 // - <none>
-void Renderer::_PaintIme(_In_ const CONVERSIONAREA_INFORMATION* const pAreaInfo, _In_ const TEXT_BUFFER_INFO* const pTextInfo)
+void Renderer::_PaintIme(_In_ const ConversionAreaInfo* const pAreaInfo, _In_ const TEXT_BUFFER_INFO* const pTextInfo)
 {
     // If this conversion area isn't hidden (because it is off) or hidden for a scroll operation, then draw it.
-    if (((pAreaInfo->ConversionAreaMode & (CA_HIDDEN)) == 0))
+    if (!pAreaInfo->IsHidden())
     {
         // First get the screen buffer's viewport.
         Viewport view(_pData->GetViewport());
@@ -795,11 +795,11 @@ void Renderer::_PaintIme(_In_ const CONVERSIONAREA_INFORMATION* const pAreaInfo,
 // - <none>
 void Renderer::_PaintImeCompositionString()
 {
-    const CONSOLE_IME_INFORMATION* const pImeData = _pData->GetImeData();
+    const ConsoleImeInfo* const pImeData = _pData->GetImeData();
 
     for (size_t i = 0; i < pImeData->ConvAreaCompStr.size(); i++)
     {
-        PCONVERSIONAREA_INFORMATION pAreaInfo = pImeData->ConvAreaCompStr[i];
+        ConversionAreaInfo* pAreaInfo = pImeData->ConvAreaCompStr[i];
 
         if (pAreaInfo != nullptr)
         {
