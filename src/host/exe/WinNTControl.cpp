@@ -25,5 +25,9 @@ NTSTATUS WinNTControl::NtOpenFile(_Out_ PHANDLE FileHandle,
                                   _In_ ULONG ShareAccess,
                                   _In_ ULONG OpenOptions)
 {
-    return GetInstance()._NtOpenFile(FileHandle, DesiredAccess, ObjectAttributes, IoStatusBlock, ShareAccess, OpenOptions);
+    try
+    {
+        return GetInstance()._NtOpenFile(FileHandle, DesiredAccess, ObjectAttributes, IoStatusBlock, ShareAccess, OpenOptions);
+    }
+    CATCH_RETURN();
 }
