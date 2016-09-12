@@ -463,6 +463,34 @@ NTSTATUS ConsoleCreateIoThread(_In_ HANDLE Server)
         return Status;
     }
 
+    // Set up and tell the driver about the input available event.
+    g_hInputEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+
+    if (g_hInputEvent == nullptr)
+    {
+        Status = NTSTATUS_FROM_WIN32(GetLastError());
+    }
+
+    if (!NT_SUCCESS(Status))
+    {
+        return Status;
+    }
+
+    CD_IO_SERVER_INFORMATION ServerInformation;
+    ServerInformation.InputAvailableEvent = g_hInputEvent;
+
+    Status = IoControlFile(g_ciConsoleInformation.Server,
+                           IOCTL_CONDRV_SET_SERVER_INFORMATION,
+                           &ServerInformation,
+                           sizeof(ServerInformation),
+                           nullptr,
+                           0);
+
+    if (!NT_SUCCESS(Status))
+    {
+        return Status;
+    }
+
     hThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ConsoleIoThread, Server, 0, nullptr);
     if (hThread == nullptr)
     {

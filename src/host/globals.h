@@ -34,6 +34,8 @@ extern UINT g_uiDialogBoxCount;
 
 extern CONSOLE_INFORMATION g_ciConsoleInformation;
 
+extern HANDLE g_hInputEvent;
+
 extern SHORT g_sVerticalScrollSize;
 extern SHORT g_sHorizontalScrollSize;
 

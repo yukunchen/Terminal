@@ -40,7 +40,7 @@ int CALLBACK wWinMain(
                                                                    hServer,
                                                                    L"\\Input",
                                                                    TRUE));
-
+ 
         // Output
         RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateClientHandle(ClientHandle[1].addressof(),
                                                                    hServer,
