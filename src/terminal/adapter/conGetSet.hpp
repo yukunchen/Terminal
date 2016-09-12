@@ -53,6 +53,9 @@ namespace Microsoft
                 virtual BOOL PrivateEnableVT200MouseMode(_In_ bool const fEnabled) = 0;
                 virtual BOOL PrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnabled) = 0;
                 virtual BOOL PrivateEnableSGRExtendedMouseMode(_In_ bool const fEnabled) = 0;
+                virtual BOOL PrivateEnableButtonEventMouseMode(_In_ bool const fEnabled) = 0;
+                virtual BOOL PrivateEnableAnyEventMouseMode(_In_ bool const fEnabled) = 0;
+                virtual BOOL PrivateEnableAlternateScroll(_In_ bool const fEnabled) = 0;
             };
         };
     };

@@ -100,6 +100,9 @@ namespace Microsoft
                 virtual bool EnableVT200MouseMode(_In_ bool const fEnabled); // ?1000
                 virtual bool EnableUTF8ExtendedMouseMode(_In_ bool const fEnabled); // ?1005
                 virtual bool EnableSGRExtendedMouseMode(_In_ bool const fEnabled); // ?1006
+                virtual bool EnableButtonEventMouseMode(_In_ bool const fEnabled); // ?1002
+                virtual bool EnableAnyEventMouseMode(_In_ bool const fEnabled); // ?1003
+                virtual bool EnableAlternateScroll(_In_ bool const fEnabled); // ?1007
 
             private:
                 AdaptDispatch(_In_ ConGetSet* const pConApi, _In_ AdaptDefaults* const pDefaults, _In_ WORD const wDefaultTextAttributes);

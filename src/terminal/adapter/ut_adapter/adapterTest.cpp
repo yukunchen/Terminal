@@ -499,7 +499,6 @@ public:
     virtual BOOL PrivateEnableVT200MouseMode(_In_ bool const fEnabled)
     {
         Log::Comment(L"PrivateEnableVT200MouseMode MOCK called...");
-
         if (_fPrivateEnableVT200MouseModeResult)
         {
             VERIFY_ARE_EQUAL(_fExpectedMouseEnabled, fEnabled);
@@ -510,7 +509,6 @@ public:
     virtual BOOL PrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnabled)
     {
         Log::Comment(L"PrivateEnableUTF8ExtendedMouseMode MOCK called...");
-
         if (_fPrivateEnableUTF8ExtendedMouseModeResult)
         {
             VERIFY_ARE_EQUAL(_fExpectedMouseEnabled, fEnabled);
@@ -521,12 +519,41 @@ public:
     virtual BOOL PrivateEnableSGRExtendedMouseMode(_In_ bool const fEnabled)
     {
         Log::Comment(L"PrivateEnableSGRExtendedMouseMode MOCK called...");
-
         if (_fPrivateEnableSGRExtendedMouseModeResult)
         {
             VERIFY_ARE_EQUAL(_fExpectedMouseEnabled, fEnabled);
         }
         return _fPrivateEnableSGRExtendedMouseModeResult;
+    }
+
+    virtual BOOL PrivateEnableButtonEventMouseMode(_In_ bool const fEnabled)
+    {
+        Log::Comment(L"PrivateEnableButtonEventMouseMode MOCK called...");
+        if (_fPrivateEnableButtonEventMouseModeResult)
+        {
+            VERIFY_ARE_EQUAL(_fExpectedMouseEnabled, fEnabled);
+        }
+        return _fPrivateEnableButtonEventMouseModeResult;
+    }
+    
+    virtual BOOL PrivateEnableAnyEventMouseMode(_In_ bool const fEnabled)
+    {
+        Log::Comment(L"PrivateEnableAnyEventMouseMode MOCK called...");
+        if (_fPrivateEnableAnyEventMouseModeResult)
+        {
+            VERIFY_ARE_EQUAL(_fExpectedMouseEnabled, fEnabled);
+        }
+        return _fPrivateEnableAnyEventMouseModeResult;
+    }
+
+    virtual BOOL PrivateEnableAlternateScroll(_In_ bool const fEnabled)
+    {
+        Log::Comment(L"PrivateEnableAlternateScroll MOCK called...");
+        if (_fPrivateEnableAlternateScrollResult)
+        {
+            VERIFY_ARE_EQUAL(_fExpectedAlternateScrollEnabled, fEnabled);
+        }
+        return _fPrivateEnableAlternateScrollResult;
     }
 
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
@@ -1101,9 +1128,13 @@ public:
     bool _fExpectedClearAll;
     
     bool _fExpectedMouseEnabled;
+    bool _fExpectedAlternateScrollEnabled;
     BOOL _fPrivateEnableVT200MouseModeResult;
     BOOL _fPrivateEnableUTF8ExtendedMouseModeResult;
     BOOL _fPrivateEnableSGRExtendedMouseModeResult;
+    BOOL _fPrivateEnableButtonEventMouseModeResult;
+    BOOL _fPrivateEnableAnyEventMouseModeResult;
+    BOOL _fPrivateEnableAlternateScrollResult;
 
     BOOL _fSetConsoleXtermTextAttributeResult;
     BOOL _fSetConsoleRGBTextAttributeResult;
@@ -2791,6 +2822,27 @@ public:
         VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(true));
         _pTest->_fExpectedMouseEnabled = false;
         VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(false));
+
+        Log::Comment(L"Test 4: Test Button-Event Mouse Mode");
+        _pTest->_fExpectedMouseEnabled = true;
+        _pTest->_fPrivateEnableButtonEventMouseModeResult = TRUE;
+        VERIFY_IS_TRUE(_pDispatch->EnableButtonEventMouseMode(true));
+        _pTest->_fExpectedMouseEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch->EnableButtonEventMouseMode(false));
+
+        Log::Comment(L"Test 5: Test Any-Event Mouse Mode");
+        _pTest->_fExpectedMouseEnabled = true;
+        _pTest->_fPrivateEnableAnyEventMouseModeResult = TRUE;
+        VERIFY_IS_TRUE(_pDispatch->EnableAnyEventMouseMode(true));
+        _pTest->_fExpectedMouseEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch->EnableAnyEventMouseMode(false));
+
+        Log::Comment(L"Test 6: Test Alt Scroll Mouse Mode");
+        _pTest->_fExpectedAlternateScrollEnabled = true;
+        _pTest->_fPrivateEnableAlternateScrollResult = TRUE;
+        VERIFY_IS_TRUE(_pDispatch->EnableAlternateScroll(true));
+        _pTest->_fExpectedAlternateScrollEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch->EnableAlternateScroll(false));
     }
 
     TEST_METHOD(Xterm256ColorTest)

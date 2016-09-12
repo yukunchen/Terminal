@@ -1039,13 +1039,22 @@ bool AdaptDispatch::_PrivateModeParamsHelper(_In_ PrivateModeParams const param,
         fSuccess = CursorVisibility(fEnable);
         break;
     case PrivateModeParams::VT200_MOUSE_MODE:
-        fSuccess = !!_pConApi->PrivateEnableVT200MouseMode(fEnable);
+        fSuccess = EnableVT200MouseMode(fEnable);
+        break;
+    case PrivateModeParams::BUTTTON_EVENT_MOUSE_MODE:
+        fSuccess = EnableButtonEventMouseMode(fEnable);
+        break;
+    case PrivateModeParams::ANY_EVENT_MOUSE_MODE:
+        fSuccess = EnableAnyEventMouseMode(fEnable);
         break;
     case PrivateModeParams::UTF8_EXTENDED_MODE:
-        fSuccess = !!_pConApi->PrivateEnableUTF8ExtendedMouseMode(fEnable);
+        fSuccess = EnableUTF8ExtendedMouseMode(fEnable);
         break;
     case PrivateModeParams::SGR_EXTENDED_MODE:
-        fSuccess = !!_pConApi->PrivateEnableSGRExtendedMouseMode(fEnable);
+        fSuccess = EnableSGRExtendedMouseMode(fEnable);
+        break;
+    case PrivateModeParams::ALTERNATE_SCROLL:
+        fSuccess = EnableAlternateScroll(fEnable);
         break;
     case PrivateModeParams::ASB_AlternateScreenBuffer:
         fSuccess = fEnable? UseAlternateScreenBuffer() : UseMainScreenBuffer();
@@ -1478,4 +1487,38 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(_In_ bool const fEnabled)
 bool AdaptDispatch::EnableSGRExtendedMouseMode(_In_ bool const fEnabled)
 {
     return !!_pConApi->PrivateEnableSGRExtendedMouseMode(fEnabled);
+}
+
+//Routine Description:
+// Enable Button Event mode - send mouse move events WITH A BUTTON PRESSED to the input.
+//Arguments:
+// - fEnabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::EnableButtonEventMouseMode(_In_ bool const fEnabled)
+{
+    return !!_pConApi->PrivateEnableButtonEventMouseMode(fEnabled);
+}
+
+//Routine Description:
+// Enable Any Event mode - send all mouse events to the input.
+//Arguments:
+// - fEnabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::EnableAnyEventMouseMode(_In_ bool const fEnabled)
+{
+    return !!_pConApi->PrivateEnableAnyEventMouseMode(fEnabled);
+}
+
+//Routine Description:
+// Enable Alternate Scroll Mode - When in the Alt Buffer, send CUP and CUD on 
+//      scroll up/down events instead of the usual sequences
+//Arguments:
+// - fEnabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::EnableAlternateScroll(_In_ bool const fEnabled)
+{
+    return !!_pConApi->PrivateEnableAlternateScroll(fEnabled);
 }

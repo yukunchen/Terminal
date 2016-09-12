@@ -603,3 +603,42 @@ BOOL ConhostInternalGetSet::PrivateEnableSGRExtendedMouseMode(_In_ bool const fE
 {
     return NT_SUCCESS(DoSrvPrivateEnableSGRExtendedMouseMode(fEnabled));
 }
+
+// Routine Description:
+// - Connects the PrivateEnableButtonEventMouseMode call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateEnableButtonEventMouseMode is an internal-only "API" call that the vt commands can execute, 
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - fEnabled - set to true to enable button-event mouse mode, false to disable
+// Return Value: 
+// - TRUE if successful (see DoSrvPrivateEnableButtonEventMouseMode). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateEnableButtonEventMouseMode(_In_ bool const fEnabled)
+{
+    return NT_SUCCESS(DoSrvPrivateEnableButtonEventMouseMode(fEnabled));
+}
+
+// Routine Description:
+// - Connects the PrivateEnableAnyEventMouseMode call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateEnableAnyEventMouseMode is an internal-only "API" call that the vt commands can execute, 
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - fEnabled - set to true to enable any-event mouse mode, false to disable
+// Return Value: 
+// - TRUE if successful (see DoSrvPrivateEnableAnyEventMouseMode). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateEnableAnyEventMouseMode(_In_ bool const fEnabled)
+{
+    return NT_SUCCESS(DoSrvPrivateEnableAnyEventMouseMode(fEnabled));
+}
+
+// Routine Description:
+// - Connects the PrivateEnableAlternateScroll call directly into our Driver Message servicing call inside Conhost.exe
+//   PrivateEnableAlternateScroll is an internal-only "API" call that the vt commands can execute, 
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - fEnabled - set to true to enable alternate scroll mode, false to disable
+// Return Value: 
+// - TRUE if successful (see DoSrvPrivateEnableAnyEventMouseMode). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateEnableAlternateScroll(_In_ bool const fEnabled)
+{
+    return NT_SUCCESS(DoSrvPrivateEnableAlternateScroll(fEnabled));
+}

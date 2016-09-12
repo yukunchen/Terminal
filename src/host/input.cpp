@@ -1969,7 +1969,7 @@ bool HandleTerminalKeyEvent(_In_ const INPUT_RECORD* const pInputRecord)
 // - pInputRecord - Input record event from the general input event handler
 // Return Value:
 // - True if the modes were appropriate for converting to a terminal sequence AND there was a matching terminal sequence for this key. False otherwise.
-bool HandleTerminalMouseEvent(_In_ const COORD cMousePosition, _In_ const unsigned int uiButton)
+bool HandleTerminalMouseEvent(_In_ const COORD cMousePosition, _In_ const unsigned int uiButton, _In_ const short sModifierKeystate, _In_ const short sWheelDelta)
 {
     // If the modes don't align, this is unhandled by default.
     bool fWasHandled = false;
@@ -1977,7 +1977,7 @@ bool HandleTerminalMouseEvent(_In_ const COORD cMousePosition, _In_ const unsign
     // Virtual terminal input mode
     if (IsInVirtualTerminalInputMode())
     {
-        fWasHandled = g_ciConsoleInformation.terminalMouseInput.HandleMouse(cMousePosition, uiButton);
+        fWasHandled = g_ciConsoleInformation.terminalMouseInput.HandleMouse(cMousePosition, uiButton, sModifierKeystate, sWheelDelta);
     }
 
     return fWasHandled;
@@ -2012,11 +2012,29 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
         return TRUE;
     }
 
-    // translate mouse position into characters, if necessary.
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/ms645617(v=vs.85).aspx
+    //  Important  Do not use the LOWORD or HIWORD macros to extract the x- and y- 
+    //  coordinates of the cursor position because these macros return incorrect 
+    //  results on systems with multiple monitors. Systems with multiple monitors 
+    //  can have negative x- and y- coordinates, and LOWORD and HIWORD treat the 
+    //  coordinates as unsigned quantities.
+    short x = GET_X_LPARAM(lParam);
+    short y = GET_Y_LPARAM(lParam);
+    
     COORD MousePosition;
-    MousePosition.X = LOWORD(lParam);
-    MousePosition.Y = HIWORD(lParam);
+    // If it's a *WHEEL event, it's in screen coordinates, not window
+    if (Message == WM_MOUSEWHEEL || Message == WM_MOUSEHWHEEL)
+    {
+        POINT coords = {x, y};
+        ScreenToClient(g_ciConsoleInformation.hWnd, &coords);
+        MousePosition = {(SHORT)coords.x, (SHORT)coords.y};
+    }
+    else
+    {
+        MousePosition = {x, y};
+    }
 
+    // translate mouse position into characters, if necessary.
     COORD ScreenFontSize = pScreenInfo->GetScreenFontSize();
     MousePosition.X /= ScreenFontSize.X;
     MousePosition.Y /= ScreenFontSize.Y;
@@ -2033,8 +2051,13 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
     //   (so that the VT handler doesn't eat any selection region updates) 
     if (!fShiftPressed && !pSelection->IsInSelectingState())
     {
-        // TODO Pass along CTRL & Meta key state (shift will be ignored/ always 0), MSFT:8329546
-        if (HandleTerminalMouseEvent(MousePosition, Message)) 
+        short sDelta = 0;
+        if (Message == WM_MOUSEWHEEL)
+        {
+            sDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
+        }
+
+        if (HandleTerminalMouseEvent(MousePosition, Message, GET_KEYSTATE_WPARAM(wParam), sDelta)) 
         {
             return FALSE;
         }
