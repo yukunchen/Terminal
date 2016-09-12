@@ -70,6 +70,7 @@ typedef NTSTATUS *PNTSTATUS;
 #include <string>
 #include <list>
 #include <vector>
+#include <memory>
 
 // WIL
 // We'll probably want to use this, but there's a conflict in utils.cpp right now.
