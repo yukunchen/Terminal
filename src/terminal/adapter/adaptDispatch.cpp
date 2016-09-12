@@ -1038,6 +1038,15 @@ bool AdaptDispatch::_PrivateModeParamsHelper(_In_ PrivateModeParams const param,
     case PrivateModeParams::DECTCEM_TextCursorEnableMode:
         fSuccess = CursorVisibility(fEnable);
         break;
+    case PrivateModeParams::VT200_MOUSE_MODE:
+        fSuccess = !!_pConApi->PrivateEnableVT200MouseMode(fEnable);
+        break;
+    case PrivateModeParams::UTF8_EXTENDED_MODE:
+        fSuccess = !!_pConApi->PrivateEnableUTF8ExtendedMouseMode(fEnable);
+        break;
+    case PrivateModeParams::SGR_EXTENDED_MODE:
+        fSuccess = !!_pConApi->PrivateEnableSGRExtendedMouseMode(fEnable);
+        break;
     case PrivateModeParams::ASB_AlternateScreenBuffer:
         fSuccess = fEnable? UseAlternateScreenBuffer() : UseMainScreenBuffer();
         break;
@@ -1434,4 +1443,39 @@ bool AdaptDispatch::SoftReset()
     if (fSuccess) fSuccess = CursorSavePosition(); // Home position.
 
     return fSuccess;
+}
+
+//Routine Description:
+// Enable VT200 Mouse Mode - Enables/disables the mouse input handler in default tracking mode.
+//Arguments:
+// - fEnabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::EnableVT200MouseMode(_In_ bool const fEnabled)
+{
+    return !!_pConApi->PrivateEnableVT200MouseMode(fEnabled);
+}
+
+//Routine Description:
+// Enable UTF-8 Extended Encoding - this changes the encoding scheme for sequences 
+//      emitted by the mouse input handler. Does not enable/disable mouse mode on it's own. 
+//Arguments:
+// - fEnabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::EnableUTF8ExtendedMouseMode(_In_ bool const fEnabled)
+{
+    return !!_pConApi->PrivateEnableUTF8ExtendedMouseMode(fEnabled);
+}
+
+//Routine Description:
+// Enable SGR Extended Encoding - this changes the encoding scheme for sequences 
+//      emitted by the mouse input handler. Does not enable/disable mouse mode on it's own. 
+//Arguments:
+// - fEnabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::EnableSGRExtendedMouseMode(_In_ bool const fEnabled)
+{
+    return !!_pConApi->PrivateEnableSGRExtendedMouseMode(fEnabled);
 }

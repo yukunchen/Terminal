@@ -1962,6 +1962,27 @@ bool HandleTerminalKeyEvent(_In_ const INPUT_RECORD* const pInputRecord)
     return fWasHandled;
 }
 
+// Routine Description:
+// - Handler for detecting whether a key-press event can be appropriately converted into a terminal sequence.
+//   Will only trigger when virtual terminal input mode is set via STDIN handle
+// Arguments:
+// - pInputRecord - Input record event from the general input event handler
+// Return Value:
+// - True if the modes were appropriate for converting to a terminal sequence AND there was a matching terminal sequence for this key. False otherwise.
+bool HandleTerminalMouseEvent(_In_ const COORD cMousePosition, _In_ const unsigned int uiButton)
+{
+    // If the modes don't align, this is unhandled by default.
+    bool fWasHandled = false;
+
+    // Virtual terminal input mode
+    if (IsInVirtualTerminalInputMode())
+    {
+        fWasHandled = g_ciConsoleInformation.terminalMouseInput.HandleMouse(cMousePosition, uiButton);
+    }
+
+    return fWasHandled;
+}
+
 
 // Routine Description:
 // - Returns TRUE if DefWindowProc should be called.
@@ -1999,6 +2020,25 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
     COORD ScreenFontSize = pScreenInfo->GetScreenFontSize();
     MousePosition.X /= ScreenFontSize.X;
     MousePosition.Y /= ScreenFontSize.Y;
+
+    const bool fShiftPressed = IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED);
+
+    // We need to try and have the virtual terminal handle the mouse's position in viewport coordinates,
+    //   not in screen buffer coordinates. It expects the top left to always be 0,0
+    //   (the TerminalMouseInput object will add (1,1) to convert to VT coords on it's own.)
+    // Mouse events with shift pressed will ignore this and fall through to the default handler.
+    //   This is in line with PuTTY's behavior and vim's own documentation:
+    //   "The xterm handling of the mouse buttons can still be used by keeping the shift key pressed." - `:help 'mouse'`, vim.
+    // Mouse events while we're selecting or have a selection will also skip this and fall though 
+    //   (so that the VT handler doesn't eat any selection region updates) 
+    if (!fShiftPressed && !pSelection->IsInSelectingState())
+    {
+        // TODO Pass along CTRL & Meta key state (shift will be ignored/ always 0), MSFT:8329546
+        if (HandleTerminalMouseEvent(MousePosition, Message)) 
+        {
+            return FALSE;
+        }
+    }
 
     MousePosition.X += pScreenInfo->BufferViewport.Left;
     MousePosition.Y += pScreenInfo->BufferViewport.Top;
@@ -2055,7 +2095,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
                 if (pSelection->IsMouseInitiatedSelection())
                 {
                     // Check for SHIFT-Mouse Down "continue previous selection" command.
-                    if (GetKeyState(VK_SHIFT) & KEY_PRESSED)
+                    if (fShiftPressed)
                     {
                         fExtendSelection = true;
                     }

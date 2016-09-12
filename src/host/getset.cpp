@@ -1680,3 +1680,43 @@ NTSTATUS DoSrvPrivateTabClear(_In_ bool const fClearAll)
     }
     return STATUS_SUCCESS;
 }
+
+
+// Routine Description:
+// - A private API call for enabling VT200 style mouse mode.
+// Parameters:
+// - fEnable - true to enable, false to disable.
+// Return value:
+// - STATUS_SUCCESS always.
+NTSTATUS DoSrvPrivateEnableVT200MouseMode(_In_ bool const fEnable)
+{
+    g_ciConsoleInformation.terminalMouseInput.Enable(fEnable);
+    
+    return STATUS_SUCCESS;
+}
+
+// Routine Description:
+// - A private API call for enabling utf8 style mouse mode.
+// Parameters:
+// - fEnable - true to enable, false to disable.
+// Return value:
+// - STATUS_SUCCESS always.
+NTSTATUS DoSrvPrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnable)
+{
+    g_ciConsoleInformation.terminalMouseInput.SetUtf8ExtendedMode(fEnable);
+    
+    return STATUS_SUCCESS;
+}
+
+// Routine Description:
+// - A private API call for enabling SGR style mouse mode.
+// Parameters:
+// - fEnable - true to enable, false to disable.
+// Return value:
+// - STATUS_SUCCESS always.
+NTSTATUS DoSrvPrivateEnableSGRExtendedMouseMode(_In_ bool const fEnable)
+{
+    g_ciConsoleInformation.terminalMouseInput.SetSGRExtendedMode(fEnable);
+    
+    return STATUS_SUCCESS;
+}

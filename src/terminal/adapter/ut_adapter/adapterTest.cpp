@@ -496,6 +496,39 @@ public:
         return TRUE;
     }
 
+    virtual BOOL PrivateEnableVT200MouseMode(_In_ bool const fEnabled)
+    {
+        Log::Comment(L"PrivateEnableVT200MouseMode MOCK called...");
+
+        if (_fPrivateEnableVT200MouseModeResult)
+        {
+            VERIFY_ARE_EQUAL(_fExpectedMouseEnabled, fEnabled);
+        }
+        return _fPrivateEnableVT200MouseModeResult;
+    }
+
+    virtual BOOL PrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnabled)
+    {
+        Log::Comment(L"PrivateEnableUTF8ExtendedMouseMode MOCK called...");
+
+        if (_fPrivateEnableUTF8ExtendedMouseModeResult)
+        {
+            VERIFY_ARE_EQUAL(_fExpectedMouseEnabled, fEnabled);
+        }
+        return _fPrivateEnableUTF8ExtendedMouseModeResult;
+    }
+    
+    virtual BOOL PrivateEnableSGRExtendedMouseMode(_In_ bool const fEnabled)
+    {
+        Log::Comment(L"PrivateEnableSGRExtendedMouseMode MOCK called...");
+
+        if (_fPrivateEnableSGRExtendedMouseModeResult)
+        {
+            VERIFY_ARE_EQUAL(_fExpectedMouseEnabled, fEnabled);
+        }
+        return _fPrivateEnableSGRExtendedMouseModeResult;
+    }
+
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {
         pcoord->X++;
@@ -1066,6 +1099,11 @@ public:
     SHORT _sExpectedNumTabs;
     BOOL _fPrivateTabClearResult;
     bool _fExpectedClearAll;
+    
+    bool _fExpectedMouseEnabled;
+    BOOL _fPrivateEnableVT200MouseModeResult;
+    BOOL _fPrivateEnableUTF8ExtendedMouseModeResult;
+    BOOL _fPrivateEnableSGRExtendedMouseModeResult;
 
     BOOL _fSetConsoleXtermTextAttributeResult;
     BOOL _fSetConsoleRGBTextAttributeResult;
@@ -2078,7 +2116,9 @@ public:
 
         _pTest->PrepData();
         _pTest->_fSetConsoleTextAttributeResult = FALSE;
-
+        // Need at least one option in order for the call to be able to fail.
+        rgOptions[0] = (TermDispatch::GraphicsOptions) 0;
+        cOptions = 1;
         VERIFY_IS_FALSE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
     }
 
@@ -2727,6 +2767,31 @@ public:
 
     }
 
+    TEST_METHOD(TestMouseModes)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Test Default Mouse Mode");
+        _pTest->_fExpectedMouseEnabled = true;
+        _pTest->_fPrivateEnableVT200MouseModeResult = TRUE;
+        VERIFY_IS_TRUE(_pDispatch->EnableVT200MouseMode(true));
+        _pTest->_fExpectedMouseEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch->EnableVT200MouseMode(false));
+
+        Log::Comment(L"Test 2: Test UTF-8 Extended Mouse Mode");
+        _pTest->_fExpectedMouseEnabled = true;
+        _pTest->_fPrivateEnableUTF8ExtendedMouseModeResult = TRUE;
+        VERIFY_IS_TRUE(_pDispatch->EnableUTF8ExtendedMouseMode(true));
+        _pTest->_fExpectedMouseEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch->EnableUTF8ExtendedMouseMode(false));
+
+        Log::Comment(L"Test 3: Test SGR Extended Mouse Mode");
+        _pTest->_fExpectedMouseEnabled = true;
+        _pTest->_fPrivateEnableSGRExtendedMouseModeResult = TRUE;
+        VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(true));
+        _pTest->_fExpectedMouseEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(false));
+    }
 
     TEST_METHOD(Xterm256ColorTest)
     {
@@ -2794,7 +2859,6 @@ public:
         _pTest->_fUsingRgbColor = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
-        
     }
 
 private:

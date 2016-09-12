@@ -97,6 +97,9 @@ namespace Microsoft
                 virtual bool TabClear(_In_ SHORT const sClearType); // TBC
                 virtual bool DesignateCharset(_In_ wchar_t const wchCharset); // DesignateCharset
                 virtual bool SoftReset(); // DECSTR
+                virtual bool EnableVT200MouseMode(_In_ bool const fEnabled); // ?1000
+                virtual bool EnableUTF8ExtendedMouseMode(_In_ bool const fEnabled); // ?1005
+                virtual bool EnableSGRExtendedMouseMode(_In_ bool const fEnabled); // ?1006
 
             private:
                 AdaptDispatch(_In_ ConGetSet* const pConApi, _In_ AdaptDefaults* const pDefaults, _In_ WORD const wDefaultTextAttributes);

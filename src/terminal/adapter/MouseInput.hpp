@@ -1,0 +1,73 @@
+/*++
+Copyright (c) Microsoft Corporation
+
+Module Name:
+- MouseInput.hpp
+
+Abstract:
+- This serves as an adapter between mouse input from a user and the virtual terminal sequences that are
+  typically emitted by an xterm-compatible console.
+
+Author(s):
+- Mike Griese (migrie) 01-Aug-2016
+--*/
+#pragma once
+
+namespace Microsoft
+{
+    namespace Console
+    {
+        namespace VirtualTerminal
+        {
+            typedef void(*WriteInputEvents)(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput);
+
+            class MouseInput sealed
+            {
+            public:
+                MouseInput(_In_ WriteInputEvents const pfnWriteEvents);
+                ~MouseInput();
+
+                bool HandleMouse(_In_ const COORD coordMousePosition, _In_ const unsigned int uiButton) const;
+
+                void SetUtf8ExtendedMode(_In_ const bool fEnable);
+                void SetSGRExtendedMode(_In_ const bool fEnable);
+                void Enable(_In_ const bool fEnable);
+
+                enum class ExtendedMode : unsigned int
+                {
+                    None,
+                    Utf8,
+                    Sgr,
+                    Urxvt
+                };
+
+            private:
+                static const int s_MaxDefaultCoordinate = 94;
+                WriteInputEvents _pfnWriteEvents;
+                bool _fEnabled;
+                
+                ExtendedMode _ExtendedMode = ExtendedMode::None;
+
+                void _SendInputSequence(_In_reads_(cchLength) const wchar_t* const pwszSequence, _In_ const size_t cchLength) const;
+                bool _GenerateDefaultSequence(_In_ const COORD coordMousePosition,
+                                              _In_ const unsigned int uiButton,
+                                              _Out_ wchar_t** const ppwchSequence,
+                                              _Out_ size_t* const pcchLength) const;
+                bool _GenerateUtf8Sequence(_In_ const COORD coordMousePosition,
+                                           _In_ const unsigned int uiButton,
+                                           _Out_ wchar_t** const ppwchSequence,
+                                           _Out_ size_t* const pcchLength) const;
+                bool _GenerateSGRSequence(_In_ const COORD coordMousePosition,
+                                          _In_ const unsigned int uiButton,
+                                          _Out_ wchar_t** const ppwchSequence,
+                                          _Out_ size_t* const pcchLength) const;
+
+                static int s_WindowsButtonToXEncoding(_In_ const unsigned int uiButton);
+                static bool s_IsButtonDown(_In_ const unsigned int uiButton);
+                static bool s_IsButtonMsg(_In_ const unsigned int uiButton);
+                static COORD s_WinToVTCoord(_In_ const COORD coordWinCoordinate);
+                static short s_EncodeDefaultCoordinate(_In_ const short sCoordinateValue);
+            };
+        };
+    };
+};
