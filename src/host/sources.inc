@@ -12,7 +12,7 @@ BUILD_FOR_CORESYSTEM            =   1
 
 _NT_TARGET_VERSION              =   $(_NT_TARGET_VERSION_LATEST)
 
-C_DEFINES                       =   $(C_DEFINES) -DUNICODE -D_UNICODE -DFE_IME 
+C_DEFINES                       =   $(C_DEFINES) -DUNICODE -D_UNICODE -DFE_IME
 
 CON_ROOT                        =   $(WINCORE_PATH)\console
 

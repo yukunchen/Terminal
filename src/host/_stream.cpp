@@ -18,6 +18,8 @@
 
 #include "outputStream.hpp"
 
+#include "utf8ToWidecharParser.hpp"
+
 #pragma hdrstop
 
 // this is probably dead too.
@@ -891,156 +893,135 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
 {
     NTSTATUS Status = STATUS_SUCCESS;
     PCONSOLE_WRITECONSOLE_MSG const a = &m->u.consoleMsgL1.WriteConsole;
-    BOOL fLocalHeap = FALSE;
     PSCREEN_INFORMATION const ScreenInfo = GetScreenBufferFromHandle(HandleData);
+    std::unique_ptr<wchar_t[]> wideCharBuffer {nullptr};
+    static Utf8ToWideCharParser parser { g_ciConsoleInformation.OutputCP };
+    // update current codepage in case it was changed from last time
+    // this was called.
+    parser.SetCodePage(g_ciConsoleInformation.OutputCP);
 
-    WCHAR rgwchTranslationSpace[128] = {0};
-
-    // if ansi, translate string. for speed, we don't allocate a capture buffer if the ansi string was < 128 chars. if
-    // it's >= 128, the translated string won't fit into the capture buffer, so reset a->BufPtr to point to a heap
-    // buffer so that we don't think the buffer is in the message.
-
-    if (!a->Unicode)
+    if (a->Unicode)
+    {
+        m->State.WriteFlags = ULONG_MAX; // ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED.
+        m->State.TransBuffer = (PWCHAR)BufPtr;
+    }
+    else if (g_ciConsoleInformation.OutputCP == CP_UTF8)
+    {
+        wideCharBuffer.release();
+        unsigned int charCount = a->NumBytes;
+        HRESULT hresult = parser.Parse(reinterpret_cast<const byte*>(BufPtr), charCount, wideCharBuffer);
+        if (wideCharBuffer.get() == nullptr || FAILED(hresult))
+        {
+            SetReplyStatus(m, Status);
+            if (NT_SUCCESS(Status))
+            {
+                SetReplyInformation(m, a->NumBytes);
+            }
+            return Status;
+        }
+        else
+        {
+            m->State.WriteFlags = ULONG_MAX; // ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED.
+            m->State.TransBuffer = reinterpret_cast<wchar_t*>(wideCharBuffer.get());
+            m->State.StackBuffer = FALSE;
+            g_ciConsoleInformation.WriteConOutNumBytesTemp = a->NumBytes;
+            a->NumBytes = g_ciConsoleInformation.WriteConOutNumBytesUnicode = charCount * sizeof(WCHAR); // WriteCharsLegacy() counts up by sizeof(WCHAR)
+        }
+    }
+    else
     {
         PWCHAR TransBuffer;
+        PWCHAR TransBufferOriginalLocation;
         DWORD Length;
-        UINT Codepage;
-        PWCHAR TmpTransBuffer;
-        ULONG NumBytes1 = 0;
-        ULONG NumBytes2 = 0;
+        ULONG dbcsNumBytes = 0;
+        ULONG BufPtrNumBytes = 0;
 
-        if (a->NumBytes >= (ARRAYSIZE(rgwchTranslationSpace))) // >= here to allow for implicit terminator
+        // (a->NumBytes + 2) I think because we might be shoving another unicode char
+        // from ScreenInfo->WriteConsoleDbcsLeadByte in front
+        TransBuffer = new WCHAR[a->NumBytes + 2];
+        if (TransBuffer == nullptr)
         {
-            // we require more translation space than we have on the stack, so dynamically allocate it.
-            TransBuffer = new WCHAR[a->NumBytes + 2];
-            if (TransBuffer == nullptr)
+            SetReplyStatus(m, STATUS_NO_MEMORY);
+            return STATUS_NO_MEMORY;
+        }
+        m->State.StackBuffer = FALSE;
+        TransBufferOriginalLocation = TransBuffer;
+
+        if (!ScreenInfo->WriteConsoleDbcsLeadByte[0] || *(PUCHAR) BufPtr < (UCHAR) ' ')
+        {
+            dbcsNumBytes = 0;
+            BufPtrNumBytes = a->NumBytes;
+        }
+        else if (a->NumBytes)
+        {
+            // there was a portion of a dbcs character stored from a previous
+            // call so we take the 2nd half from BufPtr[0], put them together
+            // and write the wide char to TransBuffer[0]
+            ScreenInfo->WriteConsoleDbcsLeadByte[1] = *(PCHAR) BufPtr;
+            dbcsNumBytes = sizeof(ScreenInfo->WriteConsoleDbcsLeadByte);
+            /*
+            * Convert the OEM characters to real Unicode according to
+            * OutputCP. First find out if any special chars are involved.
+            */
+            dbcsNumBytes = sizeof(WCHAR) * MultiByteToWideChar(g_ciConsoleInformation.OutputCP,
+                                                               0,
+                                                               (LPCCH) ScreenInfo->WriteConsoleDbcsLeadByte,
+                                                               dbcsNumBytes,
+                                                               TransBuffer,
+                                                               dbcsNumBytes);
+
+            if (dbcsNumBytes == 0)
             {
-                SetReplyStatus(m, STATUS_NO_MEMORY);
-                return STATUS_NO_MEMORY;
+                Status = STATUS_UNSUCCESSFUL;
             }
-            TmpTransBuffer = TransBuffer;
-            m->State.StackBuffer = FALSE;
-            fLocalHeap = TRUE;
-        }
-        else
-        {
-            TransBuffer = rgwchTranslationSpace;
-            TmpTransBuffer = rgwchTranslationSpace;
-        }
-
-        //a->NumBytes = ConvertOutputToUnicode(g_ciConsoleInformation.OutputCP,
-        //                        Buffer,
-        //                        a->NumBytes,
-        //                        TransBuffer,
-        //                        a->NumBytes);
-        // same as ConvertOutputToUnicode
-        if (!ScreenInfo->WriteConsoleDbcsLeadByte[0])
-        {
-            NumBytes1 = 0;
-            NumBytes2 = a->NumBytes;
-        }
-        else
-        {
-            if (*(PUCHAR) BufPtr < (UCHAR) ' ')
-            {
-                NumBytes1 = 0;
-                NumBytes2 = a->NumBytes;
-            }
-            else if (a->NumBytes)
-            {
-                ScreenInfo->WriteConsoleDbcsLeadByte[1] = *(PCHAR) BufPtr;
-                NumBytes1 = sizeof(ScreenInfo->WriteConsoleDbcsLeadByte);
-                if (g_ciConsoleInformation.OutputCP == g_uiOEMCP)
-                {
-                    /*
-                    * Convert the OEM characters to real Unicode according to
-                    * OutputCP. First find out if any special chars are involved.
-                    */
-                    NumBytes1 = sizeof(WCHAR) * MultiByteToWideChar(g_ciConsoleInformation.OutputCP,
-                                                                    0,
-                                                                    (LPCCH) ScreenInfo->WriteConsoleDbcsLeadByte,
-                                                                    NumBytes1,
-                                                                    TransBuffer,
-                                                                    NumBytes1);
-                    if (NumBytes1 == 0)
-                    {
-                        Status = STATUS_UNSUCCESSFUL;
-                    }
-                }
-                else
-                {
-                    Codepage = g_ciConsoleInformation.OutputCP;
-
-                    NumBytes1 = MultiByteToWideChar(g_ciConsoleInformation.OutputCP,
-                                                    0,
-                                                    (LPCCH) ScreenInfo->WriteConsoleDbcsLeadByte,
-                                                    NumBytes1,
-                                                    TransBuffer,
-                                                    NumBytes1);
-                    if (NumBytes1 == 0)
-                    {
-                        Status = STATUS_UNSUCCESSFUL;
-                    }
-
-                    NumBytes1 *= sizeof(WCHAR);
-                }
-                TransBuffer++;
-                BufPtr = ((PBYTE) BufPtr) + (NumBytes1 / sizeof(WCHAR));
-                NumBytes2 = a->NumBytes - 1;
-            }
-            else
-            {
-                NumBytes2 = 0;
-            }
-
-            ScreenInfo->WriteConsoleDbcsLeadByte[0] = 0;
-        }
-
-        __analysis_assume(NumBytes2 <= a->NumBytes);
-        if (NumBytes2 && CheckBisectStringA((PCHAR) BufPtr, NumBytes2, &g_ciConsoleInformation.OutputCPInfo))
-        {
-            ScreenInfo->WriteConsoleDbcsLeadByte[0] = *((PCHAR) BufPtr + NumBytes2 - 1);
-            NumBytes2--;
-        }
-
-        Length = NumBytes2;
-
-        if (Length != 0)
-        {
             if (g_ciConsoleInformation.OutputCP == g_uiOEMCP)
             {
-
-                /*
-                * Convert the OEM characters to real Unicode according to
-                * OutputCP. First find out if any special chars are involved.
-                */
-                Length = sizeof(WCHAR) * MultiByteToWideChar(g_ciConsoleInformation.OutputCP, 0, (LPCCH) BufPtr, Length, TransBuffer, Length);
-                if (Length == 0)
-                {
-                    Status = STATUS_UNSUCCESSFUL;
-                }
+                dbcsNumBytes *= sizeof(WCHAR);
             }
-            else
-            {
-                Codepage = g_ciConsoleInformation.OutputCP;
-
-
-                Length = sizeof(WCHAR) * MultiByteToWideChar(g_ciConsoleInformation.OutputCP, 0, (LPCCH) BufPtr, Length, TransBuffer, Length);
-                if (Length == 0)
-                {
-                    Status = STATUS_UNSUCCESSFUL;
-                }
-            }
+            TransBuffer++;
+            BufPtr = ((PBYTE) BufPtr) + (dbcsNumBytes / sizeof(WCHAR));
+            BufPtrNumBytes = a->NumBytes - 1;
+        }
+        else
+        {
+            // nothing in ScreenInfo->WriteConsoleDbcsLeadByte and nothing in BufPtr
+            BufPtrNumBytes = 0;
         }
 
-        NumBytes2 = Length;
+        ScreenInfo->WriteConsoleDbcsLeadByte[0] = 0;
 
-        if ((NumBytes1 + NumBytes2) == 0)
+        // if the last byte in BufPtr is a lead byte for the current code page,
+        // save it for the next time this function is called and we can piece it
+        // back together then
+        __analysis_assume(BufPtrNumBytes <= a->NumBytes);
+        if (BufPtrNumBytes && CheckBisectStringA((PCHAR) BufPtr, BufPtrNumBytes, &g_ciConsoleInformation.OutputCPInfo))
         {
-            if (fLocalHeap)
+            ScreenInfo->WriteConsoleDbcsLeadByte[0] = *((PCHAR) BufPtr + BufPtrNumBytes - 1);
+            BufPtrNumBytes--;
+        }
+
+        if (BufPtrNumBytes != 0)
+        {
+            // convert the remaining bytes in BufPtr to wide chars
+            Length = sizeof(WCHAR) * MultiByteToWideChar(g_ciConsoleInformation.OutputCP,
+                                                         0,
+                                                         (LPCCH) BufPtr,
+                                                         BufPtrNumBytes,
+                                                         TransBuffer,
+                                                         BufPtrNumBytes);
+
+            if (Length == 0)
             {
-                delete[] TransBuffer;
+                Status = STATUS_UNSUCCESSFUL;
             }
+            BufPtrNumBytes = Length;
+        }
+
+        // there's nothing to write (though we might've started with just a lead
+        // byte) so just exit
+        if ((dbcsNumBytes + BufPtrNumBytes) == 0)
+        {
+            delete[] TransBuffer;
 
             SetReplyStatus(m, Status);
             if (NT_SUCCESS(Status))
@@ -1051,14 +1032,9 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
         }
 
         g_ciConsoleInformation.WriteConOutNumBytesTemp = a->NumBytes;
-        a->NumBytes = g_ciConsoleInformation.WriteConOutNumBytesUnicode = NumBytes1 + NumBytes2;
+        a->NumBytes = g_ciConsoleInformation.WriteConOutNumBytesUnicode = dbcsNumBytes + BufPtrNumBytes;
         m->State.WriteFlags = WRITE_SPECIAL_CHARS; // ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED.
-        m->State.TransBuffer = TmpTransBuffer;
-    }
-    else
-    {
-        m->State.WriteFlags = ULONG_MAX; // ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED.
-        m->State.TransBuffer = (PWCHAR)BufPtr;
+        m->State.TransBuffer = TransBufferOriginalLocation;
     }
 
     Status = DoWriteConsole(m, ScreenInfo);
@@ -1080,7 +1056,7 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
                 a->NumBytes /= sizeof(WCHAR);
             }
 
-            if (!m->State.StackBuffer && fLocalHeap)
+            if (g_ciConsoleInformation.OutputCP != CP_UTF8)
             {
                 delete[] m->State.TransBuffer;
             }
