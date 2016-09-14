@@ -4,10 +4,10 @@
 *                                                       *
 ********************************************************/
 
-#include <precomp.h>
+#include "precomp.h"
 
 #include "echoDispatch.hpp"
-#include "stateMachine.hpp"
+#include "..\stateMachine.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
