@@ -4,9 +4,9 @@
 *                                                       *
 ********************************************************/
 
-#include <precomp.h>
+#include "precomp.h"
 #include <wextestclass.h>
-#include "ConsoleTAEFTemplates.hpp"
+#include "..\..\inc\consoletaeftemplates.hpp"
 
 #include "adaptDispatch.hpp"
 
