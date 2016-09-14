@@ -64,6 +64,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalParser.UnitTests", 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalAdapter.UnitTests", "src\terminal\adapter\ut_adapter\Adapter.UnitTests.vcxproj", "{6AF01638-84CF-4B65-9870-484DFFCAC772}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalParser.Fuzzer", "src\terminal\parser\ft_fuzzer\VTCommandFuzzer.vcxproj", "{96927B31-D6E8-4ABD-B03E-A5088A30BEBE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalParser.FuzzWrapper", "src\terminal\parser\ft_fuzzwrapper\FuzzWrapper.vcxproj", "{F210A4AE-E02A-4BFC-80BB-F50A672FE763}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -176,6 +180,22 @@ Global
 		{6AF01638-84CF-4B65-9870-484DFFCAC772}.Release|x64.Build.0 = Release|x64
 		{6AF01638-84CF-4B65-9870-484DFFCAC772}.Release|x86.ActiveCfg = Release|Win32
 		{6AF01638-84CF-4B65-9870-484DFFCAC772}.Release|x86.Build.0 = Release|Win32
+		{96927B31-D6E8-4ABD-B03E-A5088A30BEBE}.Debug|x64.ActiveCfg = Debug|x64
+		{96927B31-D6E8-4ABD-B03E-A5088A30BEBE}.Debug|x64.Build.0 = Debug|x64
+		{96927B31-D6E8-4ABD-B03E-A5088A30BEBE}.Debug|x86.ActiveCfg = Debug|Win32
+		{96927B31-D6E8-4ABD-B03E-A5088A30BEBE}.Debug|x86.Build.0 = Debug|Win32
+		{96927B31-D6E8-4ABD-B03E-A5088A30BEBE}.Release|x64.ActiveCfg = Release|x64
+		{96927B31-D6E8-4ABD-B03E-A5088A30BEBE}.Release|x64.Build.0 = Release|x64
+		{96927B31-D6E8-4ABD-B03E-A5088A30BEBE}.Release|x86.ActiveCfg = Release|Win32
+		{96927B31-D6E8-4ABD-B03E-A5088A30BEBE}.Release|x86.Build.0 = Release|Win32
+		{F210A4AE-E02A-4BFC-80BB-F50A672FE763}.Debug|x64.ActiveCfg = Debug|x64
+		{F210A4AE-E02A-4BFC-80BB-F50A672FE763}.Debug|x64.Build.0 = Debug|x64
+		{F210A4AE-E02A-4BFC-80BB-F50A672FE763}.Debug|x86.ActiveCfg = Debug|Win32
+		{F210A4AE-E02A-4BFC-80BB-F50A672FE763}.Debug|x86.Build.0 = Debug|Win32
+		{F210A4AE-E02A-4BFC-80BB-F50A672FE763}.Release|x64.ActiveCfg = Release|x64
+		{F210A4AE-E02A-4BFC-80BB-F50A672FE763}.Release|x64.Build.0 = Release|x64
+		{F210A4AE-E02A-4BFC-80BB-F50A672FE763}.Release|x86.ActiveCfg = Release|Win32
+		{F210A4AE-E02A-4BFC-80BB-F50A672FE763}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
