@@ -1869,6 +1869,9 @@ NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
         // (this is so WSL can update the TTY size when the MainSB.viewportWidth < MainSB.bufferWidth (which can happen with wrap text disabled))
         ScreenBufferSizeChange(psiNewAltBuffer->ScreenBufferSize);
 
+        // Tell the VT MouseInput handler that we're in the Alt buffer now
+        g_ciConsoleInformation.terminalMouseInput.UseAlternateScreenBuffer();
+
     }
     return Status;
 }
@@ -1902,6 +1905,9 @@ NTSTATUS SCREEN_INFORMATION::UseMainScreenBuffer()
             psiMain->_psiAlternateBuffer = nullptr;
             ::RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer 
             // deleting the alt buffer will give the GetSet back to it's main
+
+            // Tell the VT MouseInput handler that we're in the main buffer now
+            g_ciConsoleInformation.terminalMouseInput.UseMainScreenBuffer();
         }
     }
     return Status;

@@ -44,7 +44,8 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     WriteConOutNumBytesTemp(0),
     lpCookedReadData(nullptr),
     // ConsoleIme initialized below
-    termInput(HandleTerminalKeyEventCallback)
+    termInput(HandleTerminalKeyEventCallback),
+    terminalMouseInput(HandleTerminalKeyEventCallback)
 {
     ZeroMemory((void*)&ProcessHandleList, sizeof(ProcessHandleList));
     ZeroMemory((void*)&InputReadDataList, sizeof(InputReadDataList));

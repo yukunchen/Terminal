@@ -1957,6 +1957,27 @@ bool HandleTerminalKeyEvent(_In_ const INPUT_RECORD* const pInputRecord)
     return fWasHandled;
 }
 
+// Routine Description:
+// - Handler for detecting whether a key-press event can be appropriately converted into a terminal sequence.
+//   Will only trigger when virtual terminal input mode is set via STDIN handle
+// Arguments:
+// - pInputRecord - Input record event from the general input event handler
+// Return Value:
+// - True if the modes were appropriate for converting to a terminal sequence AND there was a matching terminal sequence for this key. False otherwise.
+bool HandleTerminalMouseEvent(_In_ const COORD cMousePosition, _In_ const unsigned int uiButton, _In_ const short sModifierKeystate, _In_ const short sWheelDelta)
+{
+    // If the modes don't align, this is unhandled by default.
+    bool fWasHandled = false;
+
+    // Virtual terminal input mode
+    if (IsInVirtualTerminalInputMode())
+    {
+        fWasHandled = g_ciConsoleInformation.terminalMouseInput.HandleMouse(cMousePosition, uiButton, sModifierKeystate, sWheelDelta);
+    }
+
+    return fWasHandled;
+}
+
 
 // Routine Description:
 // - Returns TRUE if DefWindowProc should be called.
@@ -1986,14 +2007,56 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
         return TRUE;
     }
 
-    // translate mouse position into characters, if necessary.
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/ms645617(v=vs.85).aspx
+    //  Important  Do not use the LOWORD or HIWORD macros to extract the x- and y- 
+    //  coordinates of the cursor position because these macros return incorrect 
+    //  results on systems with multiple monitors. Systems with multiple monitors 
+    //  can have negative x- and y- coordinates, and LOWORD and HIWORD treat the 
+    //  coordinates as unsigned quantities.
+    short x = GET_X_LPARAM(lParam);
+    short y = GET_Y_LPARAM(lParam);
+    
     COORD MousePosition;
-    MousePosition.X = LOWORD(lParam);
-    MousePosition.Y = HIWORD(lParam);
+    // If it's a *WHEEL event, it's in screen coordinates, not window
+    if (Message == WM_MOUSEWHEEL || Message == WM_MOUSEHWHEEL)
+    {
+        POINT coords = {x, y};
+        ScreenToClient(g_ciConsoleInformation.hWnd, &coords);
+        MousePosition = {(SHORT)coords.x, (SHORT)coords.y};
+    }
+    else
+    {
+        MousePosition = {x, y};
+    }
 
+    // translate mouse position into characters, if necessary.
     COORD ScreenFontSize = pScreenInfo->GetScreenFontSize();
     MousePosition.X /= ScreenFontSize.X;
     MousePosition.Y /= ScreenFontSize.Y;
+
+    const bool fShiftPressed = IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED);
+
+    // We need to try and have the virtual terminal handle the mouse's position in viewport coordinates,
+    //   not in screen buffer coordinates. It expects the top left to always be 0,0
+    //   (the TerminalMouseInput object will add (1,1) to convert to VT coords on it's own.)
+    // Mouse events with shift pressed will ignore this and fall through to the default handler.
+    //   This is in line with PuTTY's behavior and vim's own documentation:
+    //   "The xterm handling of the mouse buttons can still be used by keeping the shift key pressed." - `:help 'mouse'`, vim.
+    // Mouse events while we're selecting or have a selection will also skip this and fall though 
+    //   (so that the VT handler doesn't eat any selection region updates) 
+    if (!fShiftPressed && !pSelection->IsInSelectingState())
+    {
+        short sDelta = 0;
+        if (Message == WM_MOUSEWHEEL)
+        {
+            sDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
+        }
+
+        if (HandleTerminalMouseEvent(MousePosition, Message, GET_KEYSTATE_WPARAM(wParam), sDelta)) 
+        {
+            return FALSE;
+        }
+    }
 
     MousePosition.X += pScreenInfo->BufferViewport.Left;
     MousePosition.Y += pScreenInfo->BufferViewport.Top;
@@ -2050,7 +2113,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
                 if (pSelection->IsMouseInitiatedSelection())
                 {
                     // Check for SHIFT-Mouse Down "continue previous selection" command.
-                    if (GetKeyState(VK_SHIFT) & KEY_PRESSED)
+                    if (fShiftPressed)
                     {
                         fExtendSelection = true;
                     }
