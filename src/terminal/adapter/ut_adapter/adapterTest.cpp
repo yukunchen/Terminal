@@ -2078,7 +2078,9 @@ public:
 
         _pTest->PrepData();
         _pTest->_fSetConsoleTextAttributeResult = FALSE;
-
+        // Need at least one option in order for the call to be able to fail.
+        rgOptions[0] = (TermDispatch::GraphicsOptions) 0;
+        cOptions = 1;
         VERIFY_IS_FALSE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
     }
 
