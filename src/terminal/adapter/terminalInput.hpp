@@ -61,17 +61,27 @@ namespace Microsoft
                 static const _TermKeyMap s_rgCursorKeysApplicationMapping[];
                 static const _TermKeyMap s_rgKeypadNumericMapping[];
                 static const _TermKeyMap s_rgKeypadApplicationMapping[];
-                static const _TermKeyMap s_rgCtrlKeyMapping[];
+                static const _TermKeyMap s_rgModifierKeyMapping[];
             
                 static const size_t s_cCursorKeysNormalMapping;
                 static const size_t s_cCursorKeysApplicationMapping;
                 static const size_t s_cKeypadNumericMapping;
                 static const size_t s_cKeypadApplicationMapping;
-                static const size_t s_cCtrlKeyMapping;
+                static const size_t s_cModifierKeyMapping;
 
+                static bool s_IsShiftPressed(_In_ const KEY_EVENT_RECORD* const pKeyEvent);
+                static bool s_IsAltPressed(_In_ const KEY_EVENT_RECORD* const pKeyEvent);
                 static bool s_IsCtrlPressed(_In_ const KEY_EVENT_RECORD* const pKeyEvent);
+                static bool s_IsModifierPressed(_In_ const KEY_EVENT_RECORD* const pKeyEvent);
                 static bool s_IsCursorKey(_In_ const KEY_EVENT_RECORD* const pKeyEvent);
-                bool _SearchKeyMapping(_In_ const KEY_EVENT_RECORD* const pKeyEvent, _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping, _In_ size_t const cKeyMapping) const;
+                bool _SearchKeyMapping(_In_ const KEY_EVENT_RECORD* const pKeyEvent,
+                                       _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
+                                       _In_ size_t const cKeyMapping,
+                                       _Out_ const TerminalInput::_TermKeyMap** pMatchingMapping) const;
+                bool _TranslateDefaultMapping(_In_ const KEY_EVENT_RECORD* const pKeyEvent,
+                                              _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
+                                              _In_ size_t const cKeyMapping) const;
+                bool _SearchWithModifier(_In_ const KEY_EVENT_RECORD* const pKeyEvent) const;
 
             public:
                 const size_t GetKeyMappingLength(_In_ const KEY_EVENT_RECORD* const pKeyEvent) const;
