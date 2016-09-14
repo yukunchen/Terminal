@@ -1038,6 +1038,24 @@ bool AdaptDispatch::_PrivateModeParamsHelper(_In_ PrivateModeParams const param,
     case PrivateModeParams::DECTCEM_TextCursorEnableMode:
         fSuccess = CursorVisibility(fEnable);
         break;
+    case PrivateModeParams::VT200_MOUSE_MODE:
+        fSuccess = EnableVT200MouseMode(fEnable);
+        break;
+    case PrivateModeParams::BUTTTON_EVENT_MOUSE_MODE:
+        fSuccess = EnableButtonEventMouseMode(fEnable);
+        break;
+    case PrivateModeParams::ANY_EVENT_MOUSE_MODE:
+        fSuccess = EnableAnyEventMouseMode(fEnable);
+        break;
+    case PrivateModeParams::UTF8_EXTENDED_MODE:
+        fSuccess = EnableUTF8ExtendedMouseMode(fEnable);
+        break;
+    case PrivateModeParams::SGR_EXTENDED_MODE:
+        fSuccess = EnableSGRExtendedMouseMode(fEnable);
+        break;
+    case PrivateModeParams::ALTERNATE_SCROLL:
+        fSuccess = EnableAlternateScroll(fEnable);
+        break;
     case PrivateModeParams::ASB_AlternateScreenBuffer:
         fSuccess = fEnable? UseAlternateScreenBuffer() : UseMainScreenBuffer();
         break;
@@ -1434,4 +1452,73 @@ bool AdaptDispatch::SoftReset()
     if (fSuccess) fSuccess = CursorSavePosition(); // Home position.
 
     return fSuccess;
+}
+
+//Routine Description:
+// Enable VT200 Mouse Mode - Enables/disables the mouse input handler in default tracking mode.
+//Arguments:
+// - fEnabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::EnableVT200MouseMode(_In_ bool const fEnabled)
+{
+    return !!_pConApi->PrivateEnableVT200MouseMode(fEnabled);
+}
+
+//Routine Description:
+// Enable UTF-8 Extended Encoding - this changes the encoding scheme for sequences 
+//      emitted by the mouse input handler. Does not enable/disable mouse mode on it's own. 
+//Arguments:
+// - fEnabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::EnableUTF8ExtendedMouseMode(_In_ bool const fEnabled)
+{
+    return !!_pConApi->PrivateEnableUTF8ExtendedMouseMode(fEnabled);
+}
+
+//Routine Description:
+// Enable SGR Extended Encoding - this changes the encoding scheme for sequences 
+//      emitted by the mouse input handler. Does not enable/disable mouse mode on it's own. 
+//Arguments:
+// - fEnabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::EnableSGRExtendedMouseMode(_In_ bool const fEnabled)
+{
+    return !!_pConApi->PrivateEnableSGRExtendedMouseMode(fEnabled);
+}
+
+//Routine Description:
+// Enable Button Event mode - send mouse move events WITH A BUTTON PRESSED to the input.
+//Arguments:
+// - fEnabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::EnableButtonEventMouseMode(_In_ bool const fEnabled)
+{
+    return !!_pConApi->PrivateEnableButtonEventMouseMode(fEnabled);
+}
+
+//Routine Description:
+// Enable Any Event mode - send all mouse events to the input.
+//Arguments:
+// - fEnabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::EnableAnyEventMouseMode(_In_ bool const fEnabled)
+{
+    return !!_pConApi->PrivateEnableAnyEventMouseMode(fEnabled);
+}
+
+//Routine Description:
+// Enable Alternate Scroll Mode - When in the Alt Buffer, send CUP and CUD on 
+//      scroll up/down events instead of the usual sequences
+//Arguments:
+// - fEnabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::EnableAlternateScroll(_In_ bool const fEnabled)
+{
+    return !!_pConApi->PrivateEnableAlternateScroll(fEnabled);
 }

@@ -1680,3 +1680,81 @@ NTSTATUS DoSrvPrivateTabClear(_In_ bool const fClearAll)
     }
     return STATUS_SUCCESS;
 }
+
+// Routine Description:
+// - A private API call for enabling VT200 style mouse mode.
+// Parameters:
+// - fEnable - true to enable default tracking mode, false to disable mouse mode.
+// Return value:
+// - STATUS_SUCCESS always.
+NTSTATUS DoSrvPrivateEnableVT200MouseMode(_In_ bool const fEnable)
+{
+    g_ciConsoleInformation.terminalMouseInput.EnableDefaultTracking(fEnable);
+    
+    return STATUS_SUCCESS;
+}
+
+// Routine Description:
+// - A private API call for enabling utf8 style mouse mode.
+// Parameters:
+// - fEnable - true to enable, false to disable.
+// Return value:
+// - STATUS_SUCCESS always.
+NTSTATUS DoSrvPrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnable)
+{
+    g_ciConsoleInformation.terminalMouseInput.SetUtf8ExtendedMode(fEnable);
+    
+    return STATUS_SUCCESS;
+}
+
+// Routine Description:
+// - A private API call for enabling SGR style mouse mode.
+// Parameters:
+// - fEnable - true to enable, false to disable.
+// Return value:
+// - STATUS_SUCCESS always.
+NTSTATUS DoSrvPrivateEnableSGRExtendedMouseMode(_In_ bool const fEnable)
+{
+    g_ciConsoleInformation.terminalMouseInput.SetSGRExtendedMode(fEnable);
+    
+    return STATUS_SUCCESS;
+}
+
+// Routine Description:
+// - A private API call for enabling button-event mouse mode.
+// Parameters:
+// - fEnable - true to enable button-event mode, false to disable mouse mode.
+// Return value:
+// - STATUS_SUCCESS always.
+NTSTATUS DoSrvPrivateEnableButtonEventMouseMode(_In_ bool const fEnable)
+{
+    g_ciConsoleInformation.terminalMouseInput.EnableButtonEventTracking(fEnable);
+    
+    return STATUS_SUCCESS;
+}
+
+// Routine Description:
+// - A private API call for enabling any-event mouse mode.
+// Parameters:
+// - fEnable - true to enable any-event mode, false to disable mouse mode.
+// Return value:
+// - STATUS_SUCCESS always.
+NTSTATUS DoSrvPrivateEnableAnyEventMouseMode(_In_ bool const fEnable)
+{
+    g_ciConsoleInformation.terminalMouseInput.EnableAnyEventTracking(fEnable);
+    
+    return STATUS_SUCCESS;
+}
+
+// Routine Description:
+// - A private API call for enabling alternate scroll mode
+// Parameters:
+// - fEnable - true to enable alternate scroll mode, false to disable.
+// Return value:
+// - STATUS_SUCCESS always.
+NTSTATUS DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable)
+{
+    g_ciConsoleInformation.terminalMouseInput.EnableAlternateScroll(fEnable);
+    
+    return STATUS_SUCCESS;
+}

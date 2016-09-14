@@ -19,3 +19,6 @@ Abstract:
 
 #include "telemetry.hpp"
 #include "tracing.hpp"
+
+#define ENABLE_INTSAFE_SIGNED_FUNCTIONS
+#include <intsafe.h>

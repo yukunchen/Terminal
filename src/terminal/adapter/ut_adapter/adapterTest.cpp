@@ -496,6 +496,66 @@ public:
         return TRUE;
     }
 
+    virtual BOOL PrivateEnableVT200MouseMode(_In_ bool const fEnabled)
+    {
+        Log::Comment(L"PrivateEnableVT200MouseMode MOCK called...");
+        if (_fPrivateEnableVT200MouseModeResult)
+        {
+            VERIFY_ARE_EQUAL(_fExpectedMouseEnabled, fEnabled);
+        }
+        return _fPrivateEnableVT200MouseModeResult;
+    }
+
+    virtual BOOL PrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnabled)
+    {
+        Log::Comment(L"PrivateEnableUTF8ExtendedMouseMode MOCK called...");
+        if (_fPrivateEnableUTF8ExtendedMouseModeResult)
+        {
+            VERIFY_ARE_EQUAL(_fExpectedMouseEnabled, fEnabled);
+        }
+        return _fPrivateEnableUTF8ExtendedMouseModeResult;
+    }
+    
+    virtual BOOL PrivateEnableSGRExtendedMouseMode(_In_ bool const fEnabled)
+    {
+        Log::Comment(L"PrivateEnableSGRExtendedMouseMode MOCK called...");
+        if (_fPrivateEnableSGRExtendedMouseModeResult)
+        {
+            VERIFY_ARE_EQUAL(_fExpectedMouseEnabled, fEnabled);
+        }
+        return _fPrivateEnableSGRExtendedMouseModeResult;
+    }
+
+    virtual BOOL PrivateEnableButtonEventMouseMode(_In_ bool const fEnabled)
+    {
+        Log::Comment(L"PrivateEnableButtonEventMouseMode MOCK called...");
+        if (_fPrivateEnableButtonEventMouseModeResult)
+        {
+            VERIFY_ARE_EQUAL(_fExpectedMouseEnabled, fEnabled);
+        }
+        return _fPrivateEnableButtonEventMouseModeResult;
+    }
+    
+    virtual BOOL PrivateEnableAnyEventMouseMode(_In_ bool const fEnabled)
+    {
+        Log::Comment(L"PrivateEnableAnyEventMouseMode MOCK called...");
+        if (_fPrivateEnableAnyEventMouseModeResult)
+        {
+            VERIFY_ARE_EQUAL(_fExpectedMouseEnabled, fEnabled);
+        }
+        return _fPrivateEnableAnyEventMouseModeResult;
+    }
+
+    virtual BOOL PrivateEnableAlternateScroll(_In_ bool const fEnabled)
+    {
+        Log::Comment(L"PrivateEnableAlternateScroll MOCK called...");
+        if (_fPrivateEnableAlternateScrollResult)
+        {
+            VERIFY_ARE_EQUAL(_fExpectedAlternateScrollEnabled, fEnabled);
+        }
+        return _fPrivateEnableAlternateScrollResult;
+    }
+
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {
         pcoord->X++;
@@ -1066,6 +1126,15 @@ public:
     SHORT _sExpectedNumTabs;
     BOOL _fPrivateTabClearResult;
     bool _fExpectedClearAll;
+    
+    bool _fExpectedMouseEnabled;
+    bool _fExpectedAlternateScrollEnabled;
+    BOOL _fPrivateEnableVT200MouseModeResult;
+    BOOL _fPrivateEnableUTF8ExtendedMouseModeResult;
+    BOOL _fPrivateEnableSGRExtendedMouseModeResult;
+    BOOL _fPrivateEnableButtonEventMouseModeResult;
+    BOOL _fPrivateEnableAnyEventMouseModeResult;
+    BOOL _fPrivateEnableAlternateScrollResult;
 
     BOOL _fSetConsoleXtermTextAttributeResult;
     BOOL _fSetConsoleRGBTextAttributeResult;
@@ -2729,6 +2798,52 @@ public:
 
     }
 
+    TEST_METHOD(TestMouseModes)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Test Default Mouse Mode");
+        _pTest->_fExpectedMouseEnabled = true;
+        _pTest->_fPrivateEnableVT200MouseModeResult = TRUE;
+        VERIFY_IS_TRUE(_pDispatch->EnableVT200MouseMode(true));
+        _pTest->_fExpectedMouseEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch->EnableVT200MouseMode(false));
+
+        Log::Comment(L"Test 2: Test UTF-8 Extended Mouse Mode");
+        _pTest->_fExpectedMouseEnabled = true;
+        _pTest->_fPrivateEnableUTF8ExtendedMouseModeResult = TRUE;
+        VERIFY_IS_TRUE(_pDispatch->EnableUTF8ExtendedMouseMode(true));
+        _pTest->_fExpectedMouseEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch->EnableUTF8ExtendedMouseMode(false));
+
+        Log::Comment(L"Test 3: Test SGR Extended Mouse Mode");
+        _pTest->_fExpectedMouseEnabled = true;
+        _pTest->_fPrivateEnableSGRExtendedMouseModeResult = TRUE;
+        VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(true));
+        _pTest->_fExpectedMouseEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch->EnableSGRExtendedMouseMode(false));
+
+        Log::Comment(L"Test 4: Test Button-Event Mouse Mode");
+        _pTest->_fExpectedMouseEnabled = true;
+        _pTest->_fPrivateEnableButtonEventMouseModeResult = TRUE;
+        VERIFY_IS_TRUE(_pDispatch->EnableButtonEventMouseMode(true));
+        _pTest->_fExpectedMouseEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch->EnableButtonEventMouseMode(false));
+
+        Log::Comment(L"Test 5: Test Any-Event Mouse Mode");
+        _pTest->_fExpectedMouseEnabled = true;
+        _pTest->_fPrivateEnableAnyEventMouseModeResult = TRUE;
+        VERIFY_IS_TRUE(_pDispatch->EnableAnyEventMouseMode(true));
+        _pTest->_fExpectedMouseEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch->EnableAnyEventMouseMode(false));
+
+        Log::Comment(L"Test 6: Test Alt Scroll Mouse Mode");
+        _pTest->_fExpectedAlternateScrollEnabled = true;
+        _pTest->_fPrivateEnableAlternateScrollResult = TRUE;
+        VERIFY_IS_TRUE(_pDispatch->EnableAlternateScroll(true));
+        _pTest->_fExpectedAlternateScrollEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch->EnableAlternateScroll(false));
+    }
 
     TEST_METHOD(Xterm256ColorTest)
     {
@@ -2796,7 +2911,6 @@ public:
         _pTest->_fUsingRgbColor = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
-        
     }
 
 private:

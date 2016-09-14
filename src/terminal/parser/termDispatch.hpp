@@ -57,6 +57,12 @@ namespace Microsoft
                 virtual bool ForwardTab(_In_ SHORT const /*sNumTabs*/) { return false; } // CHT
                 virtual bool BackwardsTab(_In_ SHORT const /*sNumTabs*/) { return false; } // CBT
                 virtual bool TabClear(_In_ SHORT const /*sClearType*/) { return false; } // TBC
+                virtual bool EnableVT200MouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1000
+                virtual bool EnableUTF8ExtendedMouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1005
+                virtual bool EnableSGRExtendedMouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1006
+                virtual bool EnableButtonEventMouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1002
+                virtual bool EnableAnyEventMouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1003
+                virtual bool EnableAlternateScroll(_In_ bool const /*fEnabled*/) { return false; } // ?1007
 
                 enum class EraseType : unsigned int
                 {
@@ -127,6 +133,12 @@ namespace Microsoft
                     DECCOLM_SetNumberOfColumns = 3,
                     ATT610_StartCursorBlink = 12,
                     DECTCEM_TextCursorEnableMode = 25,
+                    VT200_MOUSE_MODE = 1000,
+                    BUTTTON_EVENT_MOUSE_MODE = 1002,
+                    ANY_EVENT_MOUSE_MODE = 1003,
+                    UTF8_EXTENDED_MODE = 1005,
+                    SGR_EXTENDED_MODE = 1006,
+                    ALTERNATE_SCROLL = 1007,
                     ASB_AlternateScreenBuffer = 1049
                 };
 
