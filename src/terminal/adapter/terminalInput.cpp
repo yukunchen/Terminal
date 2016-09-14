@@ -4,11 +4,14 @@
 *                                                       *
 ********************************************************/
 
-#include <precomp.h>
+#include "precomp.h"
 #include <windows.h>
 #include "terminalInput.hpp"
 
 #include "strsafe.h"
+
+#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
+#include <wil\Common.h>
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -133,38 +136,72 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgKeypadApplicationMapping[]
     // { VK_TAB, L"\x1bOI" },   // So I left them here as a reference just in case.
 };
 
-// Sequences to send when Ctrl+ the Virtual Key is pressed
-const TerminalInput::_TermKeyMap TerminalInput::s_rgCtrlKeyMapping[] 
+// Sequences to send when a modifier is pressed with any of these keys
+// See https://github.com/mintty/mintty/wiki/Keycodes for more details.
+// Basically, the 'm' will be replaced with a character indicating which modifier keys are pressed.
+const TerminalInput::_TermKeyMap TerminalInput::s_rgModifierKeyMapping[] 
 {
     // HEY YOU. UPDATE THE MAX LENGTH DEF WHEN YOU MAKE CHANGES HERE.
-    { VK_UP, L"\x1b[1;5A" },
-    { VK_DOWN, L"\x1b[1;5B" },
-    { VK_RIGHT, L"\x1b[1;5C" },  // Both C-Left and C-Right mappings come from /etc/inputrc.
-    { VK_LEFT, L"\x1b[1;5D" },   // PuTTY maps these to \x1b[OC and \x1b[OD. 
+    { VK_UP, L"\x1b[1;mA" },
+    { VK_DOWN, L"\x1b[1;mB" },
+    { VK_RIGHT, L"\x1b[1;mC" },  
+    { VK_LEFT, L"\x1b[1;mD" },   
+    { VK_HOME, L"\x1b[1;mH" },   
+    { VK_END, L"\x1b[1;mF" },   
+    { VK_F1, L"\x1b[1;mP" },   
+    { VK_F2, L"\x1b[1;mQ" },   
+    { VK_F3, L"\x1b[1;mR" },   
+    { VK_F4, L"\x1b[1;mS" },   
+    { VK_F5, L"\x1b[15;m~" },   
+    { VK_F6, L"\x1b[17;m~" },   
+    { VK_F7, L"\x1b[18;m~" },   
+    { VK_F8, L"\x1b[19;m~" },   
+    { VK_F9, L"\x1b[20;m~" },   
+    { VK_F10, L"\x1b[21;m~" },   
+    { VK_F11, L"\x1b[23;m~" },   
+    { VK_F12, L"\x1b[24;m~" },   
     // Ubuntu's inputrc also defines \x1b[5C, \x1b\x1bC (and D) as 'forward/backward-word' mappings
+    // I believe '\x1b\x1bC' is listed because the C1 ESC (x9B) gets encoded as 
+    //  \xC2\x9B, but then translated to \x1b\x1b if the C1 codepoint isn't supported by the current encoding 
 };
 
 // Do NOT include the null terminator in the count.
-const size_t TerminalInput::_TermKeyMap::s_cchMaxSequenceLength = 6; // UPDATE THIS DEF WHEN THE LONGEST MAPPED STRING CHANGES
+const size_t TerminalInput::_TermKeyMap::s_cchMaxSequenceLength = 7; // UPDATE THIS DEF WHEN THE LONGEST MAPPED STRING CHANGES
 
 const size_t TerminalInput::s_cCursorKeysNormalMapping      = ARRAYSIZE(s_rgCursorKeysNormalMapping);
 const size_t TerminalInput::s_cCursorKeysApplicationMapping = ARRAYSIZE(s_rgCursorKeysApplicationMapping);
 const size_t TerminalInput::s_cKeypadNumericMapping         = ARRAYSIZE(s_rgKeypadNumericMapping);
 const size_t TerminalInput::s_cKeypadApplicationMapping     = ARRAYSIZE(s_rgKeypadApplicationMapping);
-const size_t TerminalInput::s_cCtrlKeyMapping               = ARRAYSIZE(s_rgCtrlKeyMapping);
+const size_t TerminalInput::s_cModifierKeyMapping           = ARRAYSIZE(s_rgModifierKeyMapping);
 
 void TerminalInput::ChangeKeypadMode(_In_ bool const fApplicationMode)
 {
     _fKeypadApplicationMode = fApplicationMode;
 }
+
 void TerminalInput::ChangeCursorKeysMode(_In_ bool const fApplicationMode)
 {
     _fCursorApplicationMode = fApplicationMode;
 }
 
+bool TerminalInput::s_IsShiftPressed(_In_ const KEY_EVENT_RECORD* const pKeyEvent)
+{
+    return IsFlagSet(pKeyEvent->dwControlKeyState, SHIFT_PRESSED);
+}
+
+bool TerminalInput::s_IsAltPressed(_In_ const KEY_EVENT_RECORD* const pKeyEvent)
+{
+    return IsAnyFlagSet(pKeyEvent->dwControlKeyState, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
+}
+
 bool TerminalInput::s_IsCtrlPressed(_In_ const KEY_EVENT_RECORD* const pKeyEvent)
 {
-    return (pKeyEvent->dwControlKeyState & LEFT_CTRL_PRESSED) || (pKeyEvent->dwControlKeyState & RIGHT_CTRL_PRESSED);
+    return IsAnyFlagSet(pKeyEvent->dwControlKeyState, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED);
+}
+
+bool TerminalInput::s_IsModifierPressed(_In_ const KEY_EVENT_RECORD* const pKeyEvent)
+{
+    return s_IsShiftPressed(pKeyEvent) || s_IsAltPressed(pKeyEvent) || s_IsCtrlPressed(pKeyEvent);
 }
 
 bool TerminalInput::s_IsCursorKey(_In_ const KEY_EVENT_RECORD* const pKeyEvent)
@@ -202,28 +239,94 @@ const TerminalInput::_TermKeyMap* TerminalInput::GetKeyMapping(_In_ const KEY_EV
     return mapping;
 }
 
-bool TerminalInput::_SearchKeyMapping(_In_ const KEY_EVENT_RECORD* const pKeyEvent, _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping, _In_ size_t const cKeyMapping) const
+// Routine Description:
+// - Searches the s_ModifierKeyMapping for a entry corresponding to this key event. 
+//      Changes the second to last byte to correspond to the currently pressed modifier keys
+//      before sending to the input.
+// Arguments:
+// - pKeyEvent - Key event to translate
+// Return Value:
+// - True if there was a match to a key translation, and we successfully modified and sent it to the input
+bool TerminalInput::_SearchWithModifier(_In_ const KEY_EVENT_RECORD* const pKeyEvent) const
 {
-    bool fKeyHandled = false;
-    // Search mapping for matching VK, if we find one, then dispatch its sequence.
-    const _TermKeyMap* pMapFound = nullptr;
+
+    const TerminalInput::_TermKeyMap* pMatchingMapping;
+    bool fSuccess = _SearchKeyMapping(pKeyEvent,
+                                      s_rgModifierKeyMapping,
+                                      s_cModifierKeyMapping,
+                                      &pMatchingMapping);
+    if (fSuccess)
+    {
+        size_t cch = 0;
+        if (SUCCEEDED(StringCchLengthW(pMatchingMapping->pwszSequence, _TermKeyMap::s_cchMaxSequenceLength + 1, &cch)) && cch > 0)
+        {
+            wchar_t* rwchModifiedSequence = new wchar_t[cch+1];
+            if (rwchModifiedSequence != nullptr)
+            {
+                memcpy(rwchModifiedSequence, pMatchingMapping->pwszSequence, cch * sizeof(wchar_t));
+                const bool fShift = s_IsShiftPressed(pKeyEvent);
+                const bool fAlt = s_IsAltPressed(pKeyEvent);
+                const bool fCtrl = s_IsCtrlPressed(pKeyEvent);
+                rwchModifiedSequence[cch-2] = L'1' + (fShift? 1 : 0) + (fAlt? 2 : 0) + (fCtrl? 4 : 0);
+                rwchModifiedSequence[cch] = 0;
+                _SendInputSequence(rwchModifiedSequence);
+                fSuccess = true;
+                delete [] rwchModifiedSequence;
+            }
+        } 
+    }
+    return fSuccess;
+}
+
+// Routine Description:
+// - Searches the keyMapping for a entry corresponding to this key event, and returns it.
+// Arguments:
+// - pKeyEvent - Key event to translate
+// - keyMapping - Array of key mappings to search
+// - cKeyMapping - number of entries in keyMapping
+// - pMatchingMapping - Where to put the pointer to the found match
+// Return Value:
+// - True if there was a match to a key translation
+bool TerminalInput::_SearchKeyMapping(_In_ const KEY_EVENT_RECORD* const pKeyEvent,
+                                      _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
+                                      _In_ size_t const cKeyMapping,
+                                      _Out_ const TerminalInput::_TermKeyMap** pMatchingMapping) const
+{
+    bool fKeyTranslated = false;
     for (size_t i = 0; i < cKeyMapping; i++)
     {
         const _TermKeyMap* const pMap = &(keyMapping[i]);
 
         if (pMap->wVirtualKey == pKeyEvent->wVirtualKeyCode)
         {
-            pMapFound = pMap;
+            fKeyTranslated = true;
+            *pMatchingMapping = pMap;
             break;
         }
     }
+    return fKeyTranslated;
+}
 
-    if (pMapFound != nullptr)
+// Routine Description:
+// - Searches the input array of mappings, and sends it to the input if a match was found.
+// Arguments:
+// - pKeyEvent - Key event to translate
+// - keyMapping - Array of key mappings to search
+// - cKeyMapping - number of entries in keyMapping
+// Return Value:
+// - True if there was a match to a key translation, and we successfully sent it to the input
+bool TerminalInput::_TranslateDefaultMapping(_In_ const KEY_EVENT_RECORD* const pKeyEvent,
+                                             _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
+                                             _In_ size_t const cKeyMapping) const
+{
+    const TerminalInput::_TermKeyMap* pMatchingMapping;
+    bool fSuccess = _SearchKeyMapping(pKeyEvent, keyMapping, cKeyMapping, &pMatchingMapping);
+    if (fSuccess)
     {
-        _SendInputSequence(pMapFound->pwszSequence);
-        fKeyHandled = true;
+        _SendInputSequence(pMatchingMapping->pwszSequence);
+        fSuccess = true;
     }
-    return fKeyHandled;
+    return fSuccess;
 }
 
 bool TerminalInput::HandleKey(_In_ const INPUT_RECORD* const pInput) const
@@ -274,11 +377,13 @@ bool TerminalInput::HandleKey(_In_ const INPUT_RECORD* const pInput) const
                     _SendNullInputSequence(key.dwControlKeyState);
                     fKeyHandled = true;
                 }   
-                else
-                {
-                    fKeyHandled = _SearchKeyMapping(&key, s_rgCtrlKeyMapping, s_cCtrlKeyMapping);
-                }
+            }
 
+            // If a modifier key was pressed, then we need to try and send the modified sequence.
+            if (!fKeyHandled && s_IsModifierPressed(&key))
+            {
+                // Translate the key using the modifier table
+                fKeyHandled = _SearchWithModifier(&key);
             }
              
             if (!fKeyHandled)
@@ -287,7 +392,7 @@ bool TerminalInput::HandleKey(_In_ const INPUT_RECORD* const pInput) const
                 // This is in lieu of an O(1) sparse table or other such less-maintanable methods.
                 if (key.wVirtualKeyCode < '0' || key.wVirtualKeyCode > 'Z')
                 {
-                    fKeyHandled = _SearchKeyMapping(&key, GetKeyMapping(&key), GetKeyMappingLength(&key));
+                    fKeyHandled = _TranslateDefaultMapping(&key, GetKeyMapping(&key), GetKeyMappingLength(&key));
                 }
                 else
                 {
