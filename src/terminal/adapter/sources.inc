@@ -19,6 +19,7 @@ SOURCES= \
     $(SOURCES) \
     ..\adaptDispatch.cpp \
     ..\adaptDispatchGraphics.cpp \
+    ..\MouseInput.cpp \
     ..\terminalInput.cpp \
     ..\terminalOutput.cpp \
     ..\telemetry.cpp \

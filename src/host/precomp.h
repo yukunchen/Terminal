@@ -12,6 +12,9 @@ Abstract:
 #pragma once
 
 #define DEFINE_CONSOLEV2_PROPERTIES
+// Ignore checked iterators warning from VC compiler.
+#define _CRT_SECURE_NO_WARNINGS
+#define _SCL_SECURE_NO_WARNINGS
 
 // Define and then undefine WIN32_NO_STATUS because windows.h has no guard to prevent it from double defing certain statuses
 // when included with ntstatus.h
@@ -69,7 +72,10 @@ typedef NTSTATUS *PNTSTATUS;
 // STL
 #include <string>
 #include <list>
+#include <memory>
+#include <utility>
 #include <vector>
+#include <memory>
 
 // WIL
 // We'll probably want to use this, but there's a conflict in utils.cpp right now.

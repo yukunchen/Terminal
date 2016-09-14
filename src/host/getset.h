@@ -77,5 +77,14 @@ NTSTATUS DoSrvPrivateHorizontalTabSet();
 NTSTATUS DoSrvPrivateForwardTab(_In_ SHORT const sNumTabs);
 NTSTATUS DoSrvPrivateBackwardsTab(_In_ SHORT const sNumTabs);
 NTSTATUS DoSrvPrivateTabClear(_In_ bool const fClearAll);
+
+NTSTATUS DoSrvPrivateEnableVT200MouseMode(_In_ bool const fEnable);
+NTSTATUS DoSrvPrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnable);
+NTSTATUS DoSrvPrivateEnableSGRExtendedMouseMode(_In_ bool const fEnable);
+NTSTATUS DoSrvPrivateEnableButtonEventMouseMode(_In_ bool const fEnable);
+NTSTATUS DoSrvPrivateEnableAnyEventMouseMode(_In_ bool const fEnable);
+NTSTATUS DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable);
+
 NTSTATUS DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ int const iXtermTableEntry, _In_ const bool fIsForeground);
 NTSTATUS DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ COLORREF const rgbColor, _In_ const bool fIsForeground);
+

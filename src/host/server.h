@@ -26,6 +26,7 @@ typedef _INPUT_INFORMATION *PINPUT_INFORMATION;
 
 #include "conimeinfo.h"
 #include "..\terminal\adapter\terminalInput.hpp"
+#include "..\terminal\adapter\MouseInput.hpp"
 
 // Flags flags
 #define CONSOLE_IS_ICONIC               0x00000001
@@ -114,6 +115,7 @@ public:
     ConsoleImeInfo ConsoleIme;
 
     Microsoft::Console::VirtualTerminal::TerminalInput termInput;
+    Microsoft::Console::VirtualTerminal::MouseInput terminalMouseInput;
 
     void LockConsole();
     void UnlockConsole();

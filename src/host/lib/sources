@@ -47,6 +47,7 @@ SOURCES                         =   $(SOURCES)\
                                     ..\userprivapi.cpp \
                                     ..\renderData.cpp \
                                     ..\renderFontDefaults.cpp \
+                                    ..\utf8ToWideCharParser.cpp \
                                     ..\conimeinfo.cpp \
 
 INCLUDES                        =  $(INCLUDES); \

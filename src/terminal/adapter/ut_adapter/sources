@@ -17,6 +17,7 @@ INCLUDES                        =   $(INCLUDES); \
 SOURCES                         =   $(SOURCES) \
                                     adapterTest.cpp \
                                     inputTest.cpp \
+                                    MouseInputTest.cpp \
 
 TARGETLIBS                      =   $(TARGETLIBS) \
                                     $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Common.lib \
