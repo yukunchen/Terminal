@@ -137,7 +137,6 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgKeypadApplicationMapping[]
 };
 
 // Sequences to send when a modifier is pressed with any of these keys
-// See https://github.com/mintty/mintty/wiki/Keycodes for more details.
 // Basically, the 'm' will be replaced with a character indicating which modifier keys are pressed.
 const TerminalInput::_TermKeyMap TerminalInput::s_rgModifierKeyMapping[] 
 {
