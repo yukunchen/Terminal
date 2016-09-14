@@ -17,6 +17,8 @@ UINT g_uiDialogBoxCount;
 
 CONSOLE_INFORMATION g_ciConsoleInformation;
 
+HANDLE g_hInputEvent;
+
 SHORT g_sVerticalScrollSize;
 SHORT g_sHorizontalScrollSize;
 

@@ -50,6 +50,12 @@ namespace Microsoft
                 virtual BOOL PrivateForwardTab(_In_ SHORT const sNumTabs) = 0;
                 virtual BOOL PrivateBackwardsTab(_In_ SHORT const sNumTabs) = 0;
                 virtual BOOL PrivateTabClear(_In_ bool const fClearAll) = 0;
+                virtual BOOL PrivateEnableVT200MouseMode(_In_ bool const fEnabled) = 0;
+                virtual BOOL PrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnabled) = 0;
+                virtual BOOL PrivateEnableSGRExtendedMouseMode(_In_ bool const fEnabled) = 0;
+                virtual BOOL PrivateEnableButtonEventMouseMode(_In_ bool const fEnabled) = 0;
+                virtual BOOL PrivateEnableAnyEventMouseMode(_In_ bool const fEnabled) = 0;
+                virtual BOOL PrivateEnableAlternateScroll(_In_ bool const fEnabled) = 0;
             };
         };
     };

@@ -4,7 +4,7 @@
 *                                                       *
 ********************************************************/
 
-#include "termDispatch.hpp"
+#include "..\termDispatch.hpp"
 
 namespace Microsoft
 {
