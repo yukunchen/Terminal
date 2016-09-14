@@ -1,7 +1,21 @@
+/*++
+Copyright (c) Microsoft Corporation
+
+Module Name:
+- DeviceHandle.h
+
+Abstract:
+- This module helps create client and server handles for interprocess communication via the driver.
+
+Author:
+- Michael Niksa (MiNiksa) 14-Sept-2016
+
+Revision History:
+--*/
+
 #pragma once
-class DeviceHandle
+namespace DeviceHandle
 {
-public:
     static NTSTATUS
         CreateServerHandle(
             _Out_ PHANDLE Handle,
@@ -16,7 +30,6 @@ public:
             _In_ BOOLEAN Inheritable
         );
 
-private:
     static NTSTATUS
         _CreateHandle(
             _Out_ PHANDLE Handle,

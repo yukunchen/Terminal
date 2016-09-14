@@ -1,3 +1,18 @@
+/*++
+Copyright (c) Microsoft Corporation
+
+Module Name:
+- WinNTControl.h
+
+Abstract:
+- This module helps wrap methods from NTDLL.dll to avoid needing Driver Kit headers in the project.
+
+Author:
+- Michael Niksa (MiNiksa) 14-Sept-2016
+
+Revision History:
+--*/
+
 #pragma once
 
 #include <NT\ntdef.h>

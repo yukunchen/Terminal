@@ -1,3 +1,9 @@
+/********************************************************
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
+
 #include "precomp.h"
 #include "DeviceHandle.h"
 
@@ -37,23 +43,21 @@ DeviceHandle::CreateClientHandle(
                          FILE_SYNCHRONOUS_IO_NONALERT);
 }
 
+/*++
+Routine Description:
+- This routine creates a new server on the driver and returns a handle to it.
+
+Arguments:
+- Handle - Receives a handle to the new server.
+- Inheritable - Supplies a flag indicating if the handle must be inheritable.
+
+Return Value:
+- NTSTATUS indicating if the console was successfully created.
+--*/
 NTSTATUS
 DeviceHandle::CreateServerHandle(
     _Out_ PHANDLE Handle,
     _In_ BOOLEAN Inheritable)
-
-    /*++
-    Routine Description:
-    - This routine creates a new server on the driver and returns a handle to it.
-
-    Arguments:
-    - Handle - Receives a handle to the new server.
-    - Inheritable - Supplies a flag indicating if the handle must be inheritable.
-
-    Return Value:
-    - NTSTATUS indicating if the console was successfully created.
-    --*/
-
 {
     return _CreateHandle(Handle,
                          L"\\Device\\ConDrv\\Server",
@@ -92,9 +96,9 @@ DeviceHandle::_CreateHandle(
 {
     ULONG Flags = OBJ_CASE_INSENSITIVE;
 
-    if (Inheritable != FALSE) 
+    if (Inheritable) 
     {
-        Flags |= OBJ_INHERIT;
+        SetFlag(&Flags, OBJ_INHERIT);
     }
 
     UNICODE_STRING Name;

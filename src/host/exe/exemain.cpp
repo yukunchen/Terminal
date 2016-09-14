@@ -1,3 +1,9 @@
+/********************************************************
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
+
 #include "precomp.h"
 
 #include "DeviceHandle.h"
@@ -6,10 +12,21 @@
 
 NTSTATUS ConsoleCreateIoThread(_In_ HANDLE Server);
 
+// Routine Description:
+// - Main entry point for EXE version of console launching.
+//   This can be used as a debugging/diagnostics tool as well as a method of testing the console without
+//   replacing the system binary.
+// Arguments:
+// - hInstance, hPrevInstance - Unused pointers to the module instances. See wWinMain definitions @ MSDN for more details.
+// - pwszCmdLine - If passed, the command line arguments specify which process to start up and the arguments to give to it.
+//               - If not passed, we will run cmd.exe with no arguments on your behalf.
+// - nCmdShow - Unused variable specifying window show/hide state for Win32 mode applications.
+// Return value:
+// - [[noreturn]] - This function will not return. It will kill the thread we were called from and the console server threads will take over.
 int CALLBACK wWinMain(
     _In_ HINSTANCE hInstance,
     _In_ HINSTANCE hPrevInstance,
-    _In_ PWSTR CmdLine,
+    _In_ PWSTR pwszCmdLine,
     _In_ int nCmdShow)
 {
     // Create a scope because we're going to exit thread if everything goes well.
@@ -46,8 +63,6 @@ int CALLBACK wWinMain(
                                                                    hServer,
                                                                    L"\\Output",
                                                                    TRUE));
-
-        ServerHandle.release();
 
         // Error is a copy of Output
         RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
@@ -93,7 +108,6 @@ int CALLBACK wWinMain(
             DeleteProcThreadAttributeList(StartupInformation.lpAttributeList);
         });
 
-
         RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(StartupInformation.lpAttributeList,
                                                              0,
                                                              PROC_THREAD_ATTRIBUTE_CONSOLE_REFERENCE,
@@ -118,17 +132,18 @@ int CALLBACK wWinMain(
                                                              NULL));
 
         // We have to copy the command line string we're given because CreateProcessW has to be called with mutable data.
-        if (wcslen(CmdLine) == 0)
+        if (wcslen(pwszCmdLine) == 0)
         {
             // If they didn't give us one, just launch cmd.exe.
-            CmdLine = L"cmd.exe";
+            pwszCmdLine = L"cmd.exe";
         }
 
-        size_t length = wcslen(CmdLine) + 1;
-        std::unique_ptr<wchar_t[]> CmdLineMutable = std::make_unique<wchar_t[]>(length);
+        size_t cchCmdLine = wcslen(pwszCmdLine) + 1;
+        wistd::unique_ptr<wchar_t[]> CmdLineMutable = wil::make_unique_nothrow<wchar_t[]>(cchCmdLine);
+        RETURN_IF_NULL_ALLOC(CmdLineMutable);
 
-        wcscpy_s(CmdLineMutable.get(), length, CmdLine);
-        CmdLineMutable[length - 1] = L'\0';
+        wcscpy_s(CmdLineMutable.get(), cchCmdLine, pwszCmdLine);
+        CmdLineMutable[cchCmdLine - 1] = L'\0';
 
         wil::unique_process_information ProcessInformation;
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(NULL,
@@ -147,5 +162,6 @@ int CALLBACK wWinMain(
     ExitThread(STATUS_SUCCESS);
 
     // We won't hit this. The ExitThread above will kill the caller at this point.
+    assert(false);
     return STATUS_SUCCESS;
 }
