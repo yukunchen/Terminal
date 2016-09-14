@@ -16,13 +16,13 @@ Revision History:
 #pragma once
 namespace DeviceHandle
 {
-    static NTSTATUS
+    NTSTATUS
         CreateServerHandle(
             _Out_ PHANDLE Handle,
             _In_ BOOLEAN Inheritable
         );
 
-    static NTSTATUS
+    NTSTATUS
         CreateClientHandle(
             _Out_ PHANDLE Handle,
             _In_ HANDLE ServerHandle,
@@ -30,7 +30,7 @@ namespace DeviceHandle
             _In_ BOOLEAN Inheritable
         );
 
-    static NTSTATUS
+    NTSTATUS
         _CreateHandle(
             _Out_ PHANDLE Handle,
             _In_ PCWSTR DeviceName,
@@ -39,6 +39,4 @@ namespace DeviceHandle
             _In_ BOOLEAN Inheritable,
             _In_ ULONG OpenOptions
         );
-
 };
-
