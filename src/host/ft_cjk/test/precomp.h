@@ -7,7 +7,7 @@
 #include "windows.h"
 #include "wincon.h"
 #include "windowsx.h"
-#include "msctfp.h"
+#include "msctf.h"
 
 #include "WexTestClass.h"
 
