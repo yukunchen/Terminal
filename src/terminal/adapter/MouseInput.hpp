@@ -62,10 +62,6 @@ namespace Microsoft
             private:
                 static const int s_MaxDefaultCoordinate = 94;
 
-                // static const wchar_t* const s_pwchCursorUpSequence = L"\x1b[A";
-                // static const wchar_t* const s_pwchCursorDownSequence = L"\x1b[B";
-                static const size_t cchCursorSequences = 3;
-
                 WriteInputEvents _pfnWriteEvents;
                 
                 ExtendedMode _ExtendedMode = ExtendedMode::None;
