@@ -443,35 +443,57 @@ NTSTATUS ConsoleCreateIoThread(_In_ HANDLE Server)
     ConsoleCheckDebug();
 
     HANDLE hThread;
-    NTSTATUS Status;
-
-    Status = ConsoleServerInitialization(Server);
-    if (!NT_SUCCESS(Status))
+    NTSTATUS Status = ConsoleServerInitialization(Server);
+    if (NT_SUCCESS(Status))
     {
-        return Status;
+        g_hConsoleInputInitEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+        if (g_hConsoleInputInitEvent == nullptr)
+        {
+            Status = NTSTATUS_FROM_WIN32(GetLastError());
+        }
+
+        if (NT_SUCCESS(Status))
+        {
+            // Set up and tell the driver about the input available event.
+            g_hInputEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+
+            if (g_hInputEvent == nullptr)
+            {
+                Status = NTSTATUS_FROM_WIN32(GetLastError());
+            }
+
+            if (NT_SUCCESS(Status))
+            {
+
+                CD_IO_SERVER_INFORMATION ServerInformation;
+                ServerInformation.InputAvailableEvent = g_hInputEvent;
+
+                Status = IoControlFile(g_ciConsoleInformation.Server,
+                                       IOCTL_CONDRV_SET_SERVER_INFORMATION,
+                                       &ServerInformation,
+                                       sizeof(ServerInformation),
+                                       nullptr,
+                                       0);
+
+                if (NT_SUCCESS(Status))
+                {
+
+                    hThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ConsoleIoThread, Server, 0, nullptr);
+                    if (hThread == nullptr)
+                    {
+                        Status = STATUS_NO_MEMORY;
+                    }
+
+                    if (NT_SUCCESS(Status))
+                    {
+                        CloseHandle(hThread);
+                    }
+                }
+            }
+        }
     }
 
-    g_hConsoleInputInitEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
-
-    if (g_hConsoleInputInitEvent == nullptr)
-    {
-        Status = NTSTATUS_FROM_WIN32(GetLastError());
-    }
-
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    hThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ConsoleIoThread, Server, 0, nullptr);
-    if (hThread == nullptr)
-    {
-        return STATUS_NO_MEMORY;
-    }
-
-    CloseHandle(hThread);
-
-    return STATUS_SUCCESS;
+    return Status;
 }
 
 #define SYSTEM_ROOT         (L"%SystemRoot%")

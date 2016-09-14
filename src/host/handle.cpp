@@ -116,17 +116,6 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
 
     g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
     
-    CD_IO_SERVER_INFORMATION ServerInformation;
-    // Tell the driver about the input available event.
-    ServerInformation.InputAvailableEvent = g_ciConsoleInformation.pInputBuffer->InputWaitEvent;
-
-    Status = IoControlFile(g_ciConsoleInformation.Server,
-                           IOCTL_CONDRV_SET_SERVER_INFORMATION,
-                           &ServerInformation,
-                           sizeof(ServerInformation),
-                           nullptr,
-                           0);
-
     if (NT_SUCCESS(Status))
     {
         return STATUS_SUCCESS;
