@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -63,6 +63,7 @@
     <ClCompile Include="..\tracing.cpp" />
     <ClCompile Include="..\userprivapi.cpp" />
     <ClCompile Include="..\utils.cpp" />
+    <ClCompile Include="..\utf8ToWideCharParser.cpp" />
     <ClCompile Include="..\window.cpp" />
     <ClCompile Include="..\windowdpiapi.cpp" />
     <ClCompile Include="..\windowproc.cpp" />
@@ -109,6 +110,7 @@
     <ClInclude Include="..\tracing.hpp" />
     <ClInclude Include="..\userprivapi.hpp" />
     <ClInclude Include="..\utils.hpp" />
+    <ClInclude Include="..\utf8ToWideCharParser.hpp" />
     <ClInclude Include="..\window.hpp" />
     <ClInclude Include="..\windowdpiapi.hpp" />
     <ClInclude Include="..\_output.h" />

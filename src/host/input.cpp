@@ -119,13 +119,8 @@ NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ PINPUT_INFORMATION pInp
     }
 
     NTSTATUS Status = STATUS_SUCCESS;
-    pInputInfo->InputWaitEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
-
-    if (pInputInfo->InputWaitEvent == nullptr)
-    {
-        Status = NTSTATUS_FROM_WIN32(GetLastError());
-    }
-
+    pInputInfo->InputWaitEvent = g_hInputEvent;
+    
     if (!NT_SUCCESS(Status))
     {
         delete[] pInputInfo->InputBuffer;

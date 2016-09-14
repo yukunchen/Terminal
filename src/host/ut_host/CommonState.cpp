@@ -10,8 +10,6 @@
 #include "globals.h"
 #include "newdelete.hpp"
 
-BOOL g_fHeapInitialized = EnsureHeap();
-
 static const SHORT s_csWindowWidth = 80;
 static const SHORT s_csWindowHeight = 80;
 static const SHORT s_csBufferWidth = 80;

@@ -6,32 +6,17 @@
 
 #include "precomp.h"
 
-static HANDLE g_hHeap = nullptr;
-
-BOOL EnsureHeap()
+void EnsureHeap()
 {
-    BOOL fRet = (g_hHeap != nullptr);
-    if (!fRet)
-    {
-        g_hHeap = HeapCreate(0, 0, 0);
-        fRet = (g_hHeap != nullptr);
-    }
-
-    return fRet;
-}
-
-void DestroyHeap()
-{
-    if (g_hHeap)
-    {
-        HeapDestroy(g_hHeap);
-        g_hHeap = nullptr;
-    }
+    // This function exists to ensure it gets touched by the linker before the msvcrt lib.
+    // Removing this function (and the reference in the DLL's main.cpp) will cause the linker to reorder and collide this
+    // file's new/delete definitions with those in the default CRT.
+    return;
 }
 
 void * _cdecl operator new(_In_ size_t size)
 {
-    return HeapAlloc(g_hHeap, HEAP_ZERO_MEMORY, size);
+    return HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
 }
 
 void * __cdecl operator new[](_In_ size_t cb)
@@ -41,7 +26,7 @@ void * __cdecl operator new[](_In_ size_t cb)
 
 void _cdecl operator delete(_In_ void *pv)
 {
-    HeapFree(g_hHeap, 0, pv);
+    HeapFree(GetProcessHeap(), 0, pv);
 }
 
 void __cdecl operator delete[](_In_ void * p)
