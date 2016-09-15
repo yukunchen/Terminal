@@ -1,11 +1,17 @@
 @rem Run the console tests.
 
-@set TAEF=%~dp0..\dep\DDK\TAEF\x86\TE.exe
+@set TAEF=%OPENCON%\dep\DDK\TAEF\%ARCH%\TE.exe
 @if not (%1) == () (
     @call %TAEF% %1
 ) else (
-    @call %TAEF% %~dp0..\bin\x64\Debug\ConHost.Api.Tests.dll
-    @call %TAEF% %~dp0..\bin\x64\Debug\Conhost.Unit.Tests.dll
-    @rem add more binaries once they're added to project
+    @rem I couldn't come up with a good way to combine the ft and ut lists 
+    @rem    automatically, so this is manually updated for now :(
+
+    @call %TAEF% ^
+        %OPENCON%\bin\%ARCH%\Debug\ConHost.Api.Tests.dll ^
+        %OPENCON%\bin\%ARCH%\Debug\ConHost.Resize.Tests.dll ^
+        %OPENCON%\bin\%ARCH%\Debug\Conhost.Unit.Tests.dll ^
+        %OPENCON%\bin\%ARCH%\Debug\ConHost.CJK.Tests.dll ^
+        %OPENCON%\bin\%ARCH%\Debug\ConParser.Unit.Tests.dll ^
+        %OPENCON%\bin\%ARCH%\Debug\ConAdapter.Unit.Tests.dll
 )
-dir

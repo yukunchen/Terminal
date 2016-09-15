@@ -13,6 +13,18 @@
 @rem Add Opencon build scripts to path
 @set PATH=%PATH%;%~dp0;
 
+@rem add some helper envvars - The Opencon root, and also the processor arch, for output paths
+@set OPENCON_TOOLS=%~dp0
+@rem The opencon root is at .../open/tools/, without the last 6 chars ('/tools/')
+@set OPENCON=%OPENCON_TOOLS:~0,-7%
+
+@if "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
+    @set ARCH=x64
+) else (
+    @set ARCH=x86
+)
+@set TAEF=%OPENCON%\dep\DDK\TAEF\%ARCH%\TE.exe
+
 @rem call .razzlerc - for your generic razzle environment stuff
 @if exist "%~dp0\.razzlerc.bat" @call %~dp0\.razzlerc.bat
 
