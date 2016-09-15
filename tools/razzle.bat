@@ -15,7 +15,7 @@
 
 @rem add some helper envvars - The Opencon root, and also the processor arch, for output paths
 @set OPENCON_TOOLS=%~dp0
-@rem The opencon root is at .../open/tools/, without the last 6 chars ('/tools/')
+@rem The opencon root is at ...\open\tools\, without the last 6 chars ('\tools\')
 @set OPENCON=%OPENCON_TOOLS:~0,-7%
 
 @if "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
@@ -26,7 +26,11 @@
 @set TAEF=%OPENCON%\dep\DDK\TAEF\%ARCH%\TE.exe
 
 @rem call .razzlerc - for your generic razzle environment stuff
-@if exist "%~dp0\.razzlerc.bat" @call %~dp0\.razzlerc.bat
+@if exist "%OPENCON_TOOLS%\.razzlerc.bat" (
+    @call %OPENCON_TOOLS%\.razzlerc.bat
+)   else (
+    @echo @rem This is your razzlerc file. It can be used for default dev environment setup. > %OPENCON_TOOLS%\.razzlerc.bat 
+)
 
 @rem if there are args, run them. This can be used for additional env. customization,
 @rem    especially on a per shortcut basis.

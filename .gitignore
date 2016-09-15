@@ -224,3 +224,5 @@ build*.rec
 build*.wrn
 build*.metadata
 
+# .razzlerc.bat file - used by dev environment
+.razzlerc.bat
