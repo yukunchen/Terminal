@@ -152,9 +152,9 @@ void ConsoleImeInfo::RefreshAreaAttributes()
 {
     TextAttribute const Attributes = *g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes();
 
-    for (auto it = ConvAreaCompStr.begin(); it != ConvAreaCompStr.end(); ++it)
+    for (unsigned int i = 0; i < ConvAreaCompStr.size(); ++i)
     {
-        (*it)->ScreenBuffer->SetAttributes(&Attributes);
+        ConvAreaCompStr[i]->ScreenBuffer->SetAttributes(&Attributes);
     }
 }
 
