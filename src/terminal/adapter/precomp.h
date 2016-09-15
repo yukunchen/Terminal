@@ -12,6 +12,9 @@ Abstract:
 #include <wchar.h>
 #include <assert.h>
 
+#define ENABLE_INTSAFE_SIGNED_FUNCTIONS
+#include <intsafe.h>
+
 #include <sal.h>
 
 #include "telemetry.hpp"

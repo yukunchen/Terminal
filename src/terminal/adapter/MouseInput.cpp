@@ -13,6 +13,9 @@
 #include <stdlib.h>
 using namespace Microsoft::Console::VirtualTerminal;
 
+#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
+#include <wil\Common.h>
+
 // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
 #define KEY_PRESSED 0x8000
@@ -20,6 +23,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 // Alternate scroll sequences
 #define CURSOR_UP_SEQUENCE (L"\x1b[A")
 #define CURSOR_DOWN_SEQUENCE (L"\x1b[B")
+#define CCH_CURSOR_SEQUENCES (3)
 
 MouseInput::MouseInput(_In_ WriteInputEvents const pfnWriteEvents) :
     _pfnWriteEvents(pfnWriteEvents)
@@ -356,6 +360,7 @@ bool MouseInput::_GenerateUtf8Sequence(_In_ const COORD coordMousePosition,
 		wchar_t* pwchFormat = new wchar_t[7]{ L"\x1b[Mbxy" };
         if (pwchFormat != nullptr)
         {
+            // The short cast is safe because we know s_WindowsButtonToXEncoding  never returns more than xff
             pwchFormat[3] = ' ' + (short)s_WindowsButtonToXEncoding(uiButton, fIsHover, sModifierKeystate, sWheelDelta);
             pwchFormat[4] = sEncodedX;
             pwchFormat[5] = sEncodedY;
@@ -399,8 +404,8 @@ bool MouseInput::_GenerateSGRSequence(_In_ const COORD coordMousePosition,
 	#pragma warning( push )
 	#pragma warning( disable: 4996 )
 	// Disable 4996 - The _s version of _snprintf doesn't return the cch if the buffer is null, and we need the cch
-    int iNeededChars = _snprintf(nullptr, 0, "\x1b[<%d;%d;%d%c", 
-                                iXButton, coordMousePosition.X+1, coordMousePosition.Y+1, s_IsButtonDown(uiButton)? 'M' : 'm');
+    int iNeededChars = _snwprintf(nullptr, 0, L"\x1b[<%d;%d;%d%c", 
+                                iXButton, coordMousePosition.X+1, coordMousePosition.Y+1, s_IsButtonDown(uiButton)? L'M' : L'm');
 
 	#pragma warning( pop )
 
@@ -410,7 +415,7 @@ bool MouseInput::_GenerateSGRSequence(_In_ const COORD coordMousePosition,
     if (pwchFormat != nullptr)
     {
         int iTakenChars = _snwprintf_s(pwchFormat, iNeededChars, iNeededChars, L"\x1b[<%d;%d;%d%c",
-                                    iXButton, coordMousePosition.X+1, coordMousePosition.Y+1, s_IsButtonDown(uiButton)? 'M' : 'm');
+                                    iXButton, coordMousePosition.X+1, coordMousePosition.Y+1, s_IsButtonDown(uiButton)? L'M' : L'm');
         if (iTakenChars == iNeededChars-1) // again, adjust for null
         {
             *ppwchSequence = pwchFormat;
@@ -436,7 +441,7 @@ bool MouseInput::_GenerateSGRSequence(_In_ const COORD coordMousePosition,
 // <none>
 void MouseInput::SetUtf8ExtendedMode(_In_ const bool fEnable)
 {
-    _ExtendedMode = fEnable? ExtendedMode::Utf8 : ExtendedMode::None;
+    _ExtendedMode = fEnable ? ExtendedMode::Utf8 : ExtendedMode::None;
 }
 
 // Routine Description:
@@ -450,7 +455,7 @@ void MouseInput::SetUtf8ExtendedMode(_In_ const bool fEnable)
 // <none>
 void MouseInput::SetSGRExtendedMode(_In_ const bool fEnable)
 {
-    _ExtendedMode = fEnable? ExtendedMode::Sgr : ExtendedMode::None;
+    _ExtendedMode = fEnable ? ExtendedMode::Sgr : ExtendedMode::None;
 }
 
 // Routine Description:
@@ -462,7 +467,7 @@ void MouseInput::SetSGRExtendedMode(_In_ const bool fEnable)
 // <none>
 void MouseInput::EnableDefaultTracking(_In_ const bool fEnable)
 {
-    _TrackingMode = fEnable? TrackingMode::Default : TrackingMode::None;
+    _TrackingMode = fEnable ? TrackingMode::Default : TrackingMode::None;
     _coordLastPos = {-1,-1}; // Clear out the last save mouse position.
 }
 
@@ -477,7 +482,7 @@ void MouseInput::EnableDefaultTracking(_In_ const bool fEnable)
 // <none>
 void MouseInput::EnableButtonEventTracking(_In_ const bool fEnable)
 {
-    _TrackingMode = fEnable? TrackingMode::ButtonEvent : TrackingMode::None;
+    _TrackingMode = fEnable ? TrackingMode::ButtonEvent : TrackingMode::None;
     _coordLastPos = {-1,-1}; // Clear out the last save mouse position.
 }
 
@@ -492,7 +497,7 @@ void MouseInput::EnableButtonEventTracking(_In_ const bool fEnable)
 // <none>
 void MouseInput::EnableAnyEventTracking(_In_ const bool fEnable)
 {
-    _TrackingMode = fEnable? TrackingMode::AnyEvent : TrackingMode::None;
+    _TrackingMode = fEnable ? TrackingMode::AnyEvent : TrackingMode::None;
     _coordLastPos = {-1,-1}; // Clear out the last save mouse position.
 }
 
@@ -554,24 +559,24 @@ short MouseInput::s_EncodeDefaultCoordinate(_In_ const short sCoordinateValue)
 }
 
 // Routine Description:
-// - Encodes the given value as a default (or utf-8) encoding value.
-//     32 is added so that the value 0 can be emitted as the printable characher ' '.
+// - Retrieves which mouse button is currently pressed. This is needed because
+//      MOUSEMOVE events do not also tell us if any mouse buttons are pressed during the move. 
 // Parameters:
-// - sCoordinateValue - the value to encode.
+// <none>
 // Return value:
-// - the encoded value.
+// - a uiButton corresponding to any pressed mouse buttons, else WM_LBUTTONUP if none are pressed.
 unsigned int MouseInput::s_GetPressedButton()
 {
     unsigned int uiButton = WM_LBUTTONUP; // Will be treated as a release, or no button pressed.
-    if (GetKeyState(VK_LBUTTON) & KEY_PRESSED)
+    if (IsFlagSet(GetKeyState(VK_LBUTTON), KEY_PRESSED))
     {
         uiButton = WM_LBUTTONDOWN;
     }
-    else if (GetKeyState(VK_MBUTTON) & KEY_PRESSED)
+    else if (IsFlagSet(GetKeyState(VK_MBUTTON), KEY_PRESSED))
     {
         uiButton = WM_MBUTTONDOWN;
     }
-    else if (GetKeyState(VK_RBUTTON) & KEY_PRESSED)
+    else if (IsFlagSet(GetKeyState(VK_RBUTTON), KEY_PRESSED))
     {
         uiButton = WM_RBUTTONDOWN;
     }
@@ -612,6 +617,15 @@ void MouseInput::UseMainScreenBuffer()
     _fInAlternateBuffer = false;
 }
 
+// Routine Description:
+// - Returns true if we should translate the input event (uiButton, sScrollDelta)
+//      into an alternate scroll event instead of the default scroll event, 
+//      dependiong on if alternate scroll mode is enabled and we're in the alternate buffer.
+// Parameters:
+// - uiButton: The mouse event code of the input event 
+// - sScrollDelta: The scroll wheel delta of the input event 
+// Return value:
+// True iff the alternate buffer is active and alternate scroll mode is enabled and the event is a mouse wheel event.
 bool MouseInput::_ShouldSendAlternateScroll(_In_ unsigned int uiButton, _In_ short sScrollDelta) const
 {
     return _fInAlternateBuffer && 
@@ -620,11 +634,16 @@ bool MouseInput::_ShouldSendAlternateScroll(_In_ unsigned int uiButton, _In_ sho
            && sScrollDelta != 0;
 }
 
+// Routine Description:
+// - Sends a sequence to the input coresponding to cursor up / down depending on the sScrollDelta.
+// Parameters:
+// - sScrollDelta: The scroll wheel delta of the input event 
+// Return value:
+// True iff the input sequence was sent successfully.
 bool MouseInput::_SendAlternateScroll(_In_ short sScrollDelta) const
 {
-    // wchar_t* const pwchSequence = sScrollDelta > 0? s_pwchCursorUpSequence : s_pwchCursorDownSequence;
     const wchar_t* const pwchSequence = sScrollDelta > 0? CURSOR_UP_SEQUENCE : CURSOR_DOWN_SEQUENCE;
-    _SendInputSequence(pwchSequence, cchCursorSequences);
+    _SendInputSequence(pwchSequence, CCH_CURSOR_SEQUENCES);
 
     return true;    
 }
