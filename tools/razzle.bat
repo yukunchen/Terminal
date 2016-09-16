@@ -15,7 +15,7 @@
 
 @rem add some helper envvars - The Opencon root, and also the processor arch, for output paths
 @set OPENCON_TOOLS=%~dp0
-@rem The opencon root is at ...\open\tools\, without the last 6 chars ('\tools\')
+@rem The opencon root is at ...\open\tools\, without the last 7 chars ('\tools\')
 @set OPENCON=%OPENCON_TOOLS:~0,-7%
 
 @if "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
@@ -24,6 +24,7 @@
     @set ARCH=x86
 )
 @set TAEF=%OPENCON%\dep\DDK\TAEF\%ARCH%\TE.exe
+@set DEFAULT_CONFIGURATION=Debug
 
 @rem call .razzlerc - for your generic razzle environment stuff
 @if exist "%OPENCON_TOOLS%\.razzlerc.bat" (
@@ -36,7 +37,16 @@
 @rem    especially on a per shortcut basis.
 :ARGS_LOOP
 @if (%1) == () goto :POST_ARGS_LOOP
-@echo %1
+@if (%1) == (dgb) (
+    @set DEFAULT_CONFIGURATION=Debug
+    @shift
+    @goto :ARGS_LOOP
+)
+@if (%1) == (rel) (
+    @set DEFAULT_CONFIGURATION=Release
+    @shift
+    @goto :ARGS_LOOP
+)
 @if exist %1 (
     @call %1
 ) else (
@@ -46,9 +56,9 @@
 @goto :ARGS_LOOP
 :POST_ARGS_LOOP
 
+
 @rem Set this envvar so setup won't repeat itself
 @set OpenConBuild=true
-
 
 :END
 @echo The dev environment is ready to go!
