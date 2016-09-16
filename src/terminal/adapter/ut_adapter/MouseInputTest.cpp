@@ -6,7 +6,7 @@
 
 #include <precomp.h>
 #include <wextestclass.h>
-#include "ConsoleTAEFTemplates.hpp"
+#include "..\..\inc\consoletaeftemplates.hpp"
 
 #include "MouseInput.hpp"
 using namespace WEX::Common;
@@ -151,7 +151,7 @@ public:
         ClearTestBuffer();
 
         // Copy the expected output into the buffer
-        swprintf(s_pwszExpectedBuffer, pwchTestOutput, GetSgrCharFromButton(uiButton, sModifierKeystate, sScrollDelta));
+        swprintf(s_pwszExpectedBuffer, BYTE_MAX, pwchTestOutput, GetSgrCharFromButton(uiButton, sModifierKeystate, sScrollDelta));
         
         size_t cchInputExpected = 0;
         VERIFY_SUCCEEDED(StringCchLengthW(s_pwszExpectedBuffer, STRSAFE_MAX_CCH, &cchInputExpected));
