@@ -2,12 +2,12 @@
 
 These are a collection of tools and scripts to make your life building the 
 OpenConsole project easier. Many of them are designed to be functional clones of
-tools that we used to use when developing inside the windows build system.
+tools that we used to use when developing inside the Windows build system.
 
 ## Razzle
 
 This is a script that quickly sets up your environment variables so that these 
-tools can run easily. It's named after another script used by windows developers
+tools can run easily. It's named after another script used by Windows developers
 to similar effect.
  - It adds msbuild to your path.
  - It adds the tools directory to your path as well, so all these scripts are 
@@ -50,3 +50,14 @@ bcz dbg && runut /name:*<name of test>*
 Where `<name of test>` is the name of the test testing the relevant feature area 
 you're working on. For example, if I was working on the VT Mouse input support, 
 I would use `MouseInputTest` as that string, to isolate the mouse input tests.
+If you'd like to run all the tests, just ignore the `/name` param: 
+`bcz dbg && runut`
+
+To make sure your code is ready for a pull request, run the build, then launch 
+the built console, then run the tests in it. The built console will inherit all 
+of the razzle environment, so you can immediately start using the macros:
+ 1. `bcz`
+ 2. `opencon`
+ 3. `runtests` (in the new console window)
+
+If they all come out green, then you're ready for a pull request!
