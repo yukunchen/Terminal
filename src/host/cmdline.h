@@ -171,7 +171,7 @@ protected:
 
     // delete these because we don't want to accidentally get copies of the singleton
     CommandLine(CommandLine const&) = delete;
-    void operator=(CommandLine const&) = delete;
+    CommandLine& operator=(CommandLine const&) = delete;
 };
 
 NTSTATUS ProcessCommandLine(_In_ PCOOKED_READ_DATA pCookedReadData,
