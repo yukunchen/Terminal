@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="adapterTest.cpp" />
     <ClCompile Include="inputTest.cpp" />
+    <ClCompile Include="MouseInputTest.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
