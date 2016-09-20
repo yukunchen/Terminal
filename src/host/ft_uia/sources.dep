@@ -1,5 +1,8 @@
 PUBLIC_PASS1_CONSUMES= \
     onecore\redist\mspartners\taef\ref|PASS1 \
+    onecore\redist\mspartners\taef\ref\netfx4.5\te.managed|PASS1 \
+    onecore\redist\mspartners\taef\ref\netfx4.5\wex.common.managed|PASS1 \
+    onecore\redist\mspartners\taef\ref\netfx4.5\wex.logger.interop|PASS1 \
     onecoreuap\sdktools\commontest\mita2.0\fingerprinting|PASS1 \
     onecoreuap\sdktools\commontest\mita2.0\foundation|PASS1 \
     onecoreuap\sdktools\commontest\mita2.0\localization|PASS1 \
