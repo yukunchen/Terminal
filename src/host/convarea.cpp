@@ -790,6 +790,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
                 {
                     InsertedRun.SetAttributesFromLegacy(wScreenAttributes & ~COMMON_LVB_GRID_SINGLEFLAG);
                 }
+                Row->AttrRow.InsertAttrRuns(&InsertedRun, 1, TargetPoint.X + i, (SHORT)(TargetPoint.X + i + 1), ScreenInfo->ScreenBufferSize.X);
             }
 
         }
@@ -797,9 +798,10 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         {
             InsertedRun.SetLength(StringLength);
             InsertedRun.SetAttributesFromLegacy(wScreenAttributes);
+            Row->AttrRow.InsertAttrRuns(&InsertedRun, 1, TargetPoint.X, (SHORT)(TargetPoint.X + StringLength - 1), ScreenInfo->ScreenBufferSize.X);
         }
 
-        Row->AttrRow.InsertAttrRuns(&InsertedRun, 1, TargetPoint.X, (SHORT)(TargetPoint.X + StringLength - 1), ScreenInfo->ScreenBufferSize.X);
+        
 
     }
 
