@@ -790,9 +790,11 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
                 {
                     InsertedRun.SetAttributesFromLegacy(wScreenAttributes & ~COMMON_LVB_GRID_SINGLEFLAG);
                 }
+
+                // Each time around the loop, take our new 1-length attribute with the appropriate line attributes (underlines, etc.)
+                // and insert it into the existing Run-Length-Encoded attribute list.
                 Row->AttrRow.InsertAttrRuns(&InsertedRun, 1, TargetPoint.X + i, (SHORT)(TargetPoint.X + i + 1), ScreenInfo->ScreenBufferSize.X);
             }
-
         }
         else
         {
@@ -800,9 +802,6 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
             InsertedRun.SetAttributesFromLegacy(wScreenAttributes);
             Row->AttrRow.InsertAttrRuns(&InsertedRun, 1, TargetPoint.X, (SHORT)(TargetPoint.X + StringLength - 1), ScreenInfo->ScreenBufferSize.X);
         }
-
-        
-
     }
 
     ScreenInfo->ResetTextFlags(TargetPoint.X, TargetPoint.Y, TargetPoint.X + StringLength - 1, TargetPoint.Y);
