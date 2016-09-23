@@ -25,7 +25,6 @@ SHORT CalcWideCharToColumn(_In_ PCHAR_INFO Buffer, _In_ size_t NumberOfChars);
 void ConsoleImeViewInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ COORD coordConView);
 void ConsoleImeWindowInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ SMALL_RECT rcViewCaWindow);
 NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ COORD NewScreenSize, _In_ ConversionAreaInfo* ConvAreaInfo);
-NTSTATUS ConsoleImeWriteOutput(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ PCHAR_INFO Buffer, _In_ SMALL_RECT CharRegion, _In_ BOOL fUnicode);
 bool InsertConvertedString(_In_ LPCWSTR lpStr);
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
                                   _In_ USHORT StringLength,
@@ -614,62 +613,6 @@ NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ 
     return Status;
 }
 
-NTSTATUS ConsoleImeWriteOutput(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ PCHAR_INFO Buffer, _In_ SMALL_RECT CharRegion, _In_ BOOL fUnicode)
-{
-    NTSTATUS Status;
- 
-    COORD BufferSize;
-    BufferSize.X = (SHORT)(CharRegion.Right - CharRegion.Left + 1);
-    BufferSize.Y = (SHORT)(CharRegion.Bottom - CharRegion.Top + 1);
-
-    SMALL_RECT ConvRegion = CharRegion;
-
-    PSCREEN_INFORMATION const ScreenInfo = ConvAreaInfo->ScreenBuffer;
-
-    if (!fUnicode)
-    {
-        TranslateOutputToUnicode(Buffer, BufferSize);
-        Status = WriteScreenBuffer(ScreenInfo, Buffer, &ConvRegion);
-    }
-    else
-    {
-        ULONG NumBytes;
-
-        if (FAILED(ULongMult(BufferSize.Y, BufferSize.X, &NumBytes)) ||
-            FAILED(ULongMult(NumBytes, 2, &NumBytes)) || 
-            FAILED(ULongMult(NumBytes, sizeof(CHAR_INFO), &NumBytes)))
-        {
-            return STATUS_INVALID_PARAMETER;
-        }
-
-        PCHAR_INFO TransBuffer = (PCHAR_INFO) new BYTE[NumBytes];
-        if (TransBuffer == nullptr)
-        {
-            return STATUS_NO_MEMORY;
-        }
-
-        TranslateOutputToPaddingUnicode(Buffer, BufferSize, &TransBuffer[0]);
-
-        Status = WriteScreenBuffer(ScreenInfo, &TransBuffer[0], &ConvRegion);
-        delete[] TransBuffer;
-    }
-
-    if (NT_SUCCESS(Status))
-    {
-        PSCREEN_INFORMATION ScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
-
-        // cause screen to be updated
-        ConvRegion.Left += (ScreenInfo->BufferViewport.Left + ConvAreaInfo->CaInfo.coordConView.X);
-        ConvRegion.Right += (ScreenInfo->BufferViewport.Left + ConvAreaInfo->CaInfo.coordConView.X);
-        ConvRegion.Top += (ScreenInfo->BufferViewport.Top + ConvAreaInfo->CaInfo.coordConView.Y);
-        ConvRegion.Bottom += (ScreenInfo->BufferViewport.Top + ConvAreaInfo->CaInfo.coordConView.Y);
-
-        WriteConvRegionToScreen(ScreenInfo, &ConvRegion);
-    }
-
-    return Status;
-}
-
 // Routine Description:
 // - This routine handle WM_COPYDATA message.
 // Arguments:
@@ -847,17 +790,18 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
                 {
                     InsertedRun.SetAttributesFromLegacy(wScreenAttributes & ~COMMON_LVB_GRID_SINGLEFLAG);
                 }
-            }
 
+                // Each time around the loop, take our new 1-length attribute with the appropriate line attributes (underlines, etc.)
+                // and insert it into the existing Run-Length-Encoded attribute list.
+                Row->AttrRow.InsertAttrRuns(&InsertedRun, 1, TargetPoint.X + i, (SHORT)(TargetPoint.X + i + 1), ScreenInfo->ScreenBufferSize.X);
+            }
         }
         else
         {
             InsertedRun.SetLength(StringLength);
             InsertedRun.SetAttributesFromLegacy(wScreenAttributes);
+            Row->AttrRow.InsertAttrRuns(&InsertedRun, 1, TargetPoint.X, (SHORT)(TargetPoint.X + StringLength - 1), ScreenInfo->ScreenBufferSize.X);
         }
-
-        Row->AttrRow.InsertAttrRuns(&InsertedRun, 1, TargetPoint.X, (SHORT)(TargetPoint.X + StringLength - 1), ScreenInfo->ScreenBufferSize.X);
-        
     }
 
     ScreenInfo->ResetTextFlags(TargetPoint.X, TargetPoint.Y, TargetPoint.X + StringLength - 1, TargetPoint.Y);
