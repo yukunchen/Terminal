@@ -29,7 +29,7 @@ int ConvertToOem(_In_ const UINT uiCodePage,
 {
     DBGCHARS(("ConvertToOem U->%d %.*ls\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pwchSource));
 
-    return WideCharToMultiByte(uiCodePage, 0, pwchSource, cchSource, pchTarget, cchTarget, nullptr, nullptr);
+    return WideCharToMultiByte(uiCodePage, WC_NO_BEST_FIT_CHARS, pwchSource, cchSource, pchTarget, cchTarget, nullptr, nullptr);
 }
 
 // Data in the output buffer is the true unicode value.
@@ -53,7 +53,7 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
 {
     ASSERT(cchTarget > 0);
     pwchTarget[0] = L'\0';
-    
+
     DBGCHARS(("ConvertOutputToUnicode %d->U %.*s\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pchSource));
 
     LPSTR const pszT = new CHAR[cchSource];
@@ -71,8 +71,8 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
 char WcharToChar(_In_ const UINT uiCodePage, _In_ const WCHAR wch)
 {
     char ch = CHAR_NULL;
-    
-    WideCharToMultiByte(uiCodePage, 0, &wch, 1, &ch, 1, nullptr, nullptr);
+
+    WideCharToMultiByte(uiCodePage, WC_NO_BEST_FIT_CHARS, &wch, 1, &ch, 1, nullptr, nullptr);
 
     return ch;
 }
