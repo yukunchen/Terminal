@@ -120,7 +120,7 @@ NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ PINPUT_INFORMATION pInp
 
     NTSTATUS Status = STATUS_SUCCESS;
     pInputInfo->InputWaitEvent = g_hInputEvent;
-    
+
     if (!NT_SUCCESS(Status))
     {
         delete[] pInputInfo->InputBuffer;
@@ -1288,7 +1288,7 @@ void InitSideBySide(_Out_writes_(ScratchBufferSize) PWSTR ScratchBuffer, __range
     // Until then, this code block is needed when activated as the default console in the OS by the loader.
     // If the console is changed to be invoked a different way (for example if we add a main method that takes
     // a parameter to a client application instead), then this code would be unnecessary but not likely harmful.
-    
+
     // Having SxS not initialized is a problem when 3rd party IMEs attempt to inject into the process and then
     // make references to DLLs in the system that are in the SxS cache (ex. a 3rd party IME is loaded and asks for
     // comctl32.dll. The load will fail if SxS wasn't initialized.) This was bug# WIN7:681280.
@@ -1437,7 +1437,7 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
 
     // Free all resources used by this thread
     DeactivateTextServices();
-    
+
     if (hhook != nullptr)
     {
         UnhookWindowsHookEx(hhook);
@@ -2008,14 +2008,14 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
     }
 
     // https://msdn.microsoft.com/en-us/library/windows/desktop/ms645617(v=vs.85).aspx
-    //  Important  Do not use the LOWORD or HIWORD macros to extract the x- and y- 
-    //  coordinates of the cursor position because these macros return incorrect 
-    //  results on systems with multiple monitors. Systems with multiple monitors 
-    //  can have negative x- and y- coordinates, and LOWORD and HIWORD treat the 
+    //  Important  Do not use the LOWORD or HIWORD macros to extract the x- and y-
+    //  coordinates of the cursor position because these macros return incorrect
+    //  results on systems with multiple monitors. Systems with multiple monitors
+    //  can have negative x- and y- coordinates, and LOWORD and HIWORD treat the
     //  coordinates as unsigned quantities.
     short x = GET_X_LPARAM(lParam);
     short y = GET_Y_LPARAM(lParam);
-    
+
     COORD MousePosition;
     // If it's a *WHEEL event, it's in screen coordinates, not window
     if (Message == WM_MOUSEWHEEL || Message == WM_MOUSEHWHEEL)
@@ -2042,8 +2042,8 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
     // Mouse events with shift pressed will ignore this and fall through to the default handler.
     //   This is in line with PuTTY's behavior and vim's own documentation:
     //   "The xterm handling of the mouse buttons can still be used by keeping the shift key pressed." - `:help 'mouse'`, vim.
-    // Mouse events while we're selecting or have a selection will also skip this and fall though 
-    //   (so that the VT handler doesn't eat any selection region updates) 
+    // Mouse events while we're selecting or have a selection will also skip this and fall though
+    //   (so that the VT handler doesn't eat any selection region updates)
     if (!fShiftPressed && !pSelection->IsInSelectingState())
     {
         short sDelta = 0;
@@ -2052,7 +2052,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
             sDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
         }
 
-        if (HandleTerminalMouseEvent(MousePosition, Message, GET_KEYSTATE_WPARAM(wParam), sDelta)) 
+        if (HandleTerminalMouseEvent(MousePosition, Message, GET_KEYSTATE_WPARAM(wParam), sDelta))
         {
             return FALSE;
         }
@@ -2220,7 +2220,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
         if (Message != WM_MOUSEWHEEL)
         {
             // We haven't processed the mousewheel event, so don't early return in that case
-            // Otherwise, all other mouse events are done being processed. 
+            // Otherwise, all other mouse events are done being processed.
             return FALSE;
         }
     }
@@ -2539,7 +2539,10 @@ void ProcessCtrlEvents()
          * Status will be non-successful if a process attached to this console
          * vetos shutdown. In that case, we don't want to try to kill any more
          * processes, but we do need to make sure we continue looping so we
-         * can close any remaining process handles.
+         * can close any remaining process handles. The exception is if the
+         * process is inaccessible, such that we can't even open a handle for
+         * query. In this case, use best effort to send the close event but
+         * ignore any errors.
          */
         if (NT_SUCCESS(Status))
         {
@@ -2551,6 +2554,9 @@ void ProcessCtrlEvents()
             ConsoleEndTaskParams.hwnd = g_ciConsoleInformation.hWnd;
 
             Status = UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleEndTask, &ConsoleEndTaskParams, sizeof(ConsoleEndTaskParams));
+            if (ProcessHandleList[i].ProcessHandle == NULL) {
+                Status = STATUS_SUCCESS;
+            }
         }
 
         if (ProcessHandleList[i].ProcessHandle != nullptr)
