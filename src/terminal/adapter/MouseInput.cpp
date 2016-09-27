@@ -78,7 +78,7 @@ bool MouseInput::s_IsHoverMsg(_In_ const unsigned int uiButtonCode)
 }
 
 // Routine Description:
-// - Determines if the input windows message code describes a button press 
+// - Determines if the input windows message code describes a button press
 //     (either down or doubleclick)
 // Parameters:
 // - uiButton - the message to decode.
@@ -113,17 +113,17 @@ bool MouseInput::s_IsButtonDown(_In_ const unsigned int uiButton)
 //      01 - MB2 pressed (middle)
 //      10 - MB3 pressed (right)
 //      11 - released (none)
-//  Next three bits indicate modifier keys: 
+//  Next three bits indicate modifier keys:
 //      0x04 - shift (This never makes it through, as our emulator is skipped when shift is pressed.)
 //      0x08 - ctrl
 //      0x10 - meta
-//  32 (x20) is added for "hover" events: 
+//  32 (x20) is added for "hover" events:
 //     "For example, motion into cell x,y with button 1 down is reported as `CSI M @ CxCy`.
 //          ( @  = 32 + 0 (button 1) + 32 (motion indicator) ).
-//      Similarly, motion with button 3 down is reported as `CSI M B CxCy`.  
+//      Similarly, motion with button 3 down is reported as `CSI M B CxCy`.
 //          ( B  = 32 + 2 (button 3) + 32 (motion indicator) ).
-//  64 (x40) is added for wheel events.  
-//      so wheel up? is 64, and wheel down? is 65. 
+//  64 (x40) is added for wheel events.
+//      so wheel up? is 64, and wheel down? is 65.
 //
 // Parameters:
 // - uiButton - the message to decode.
@@ -167,7 +167,7 @@ int MouseInput::s_WindowsButtonToXEncoding(_In_ const unsigned int uiButton,
     // TODO: MSFT:8804719 Add an option to disable/remap shift as a bypass for VT mousemode handling
     // iXValue += (sModifierKeystate & MK_SHIFT) ? 0x04 : 0x00;
     iXValue += (sModifierKeystate & MK_CONTROL) ? 0x08 : 0x00;
-    // Unfortunately, we don't get meta/alt as a part of mouse events. Only Ctrl and Shift. 
+    // Unfortunately, we don't get meta/alt as a part of mouse events. Only Ctrl and Shift.
     // iXValue += (sModifierKeystate & MK_META) ? 0x10 : 0x00;
 
     return iXValue;
@@ -175,8 +175,8 @@ int MouseInput::s_WindowsButtonToXEncoding(_In_ const unsigned int uiButton,
 
 // Routine Description:
 // - Attempt to handle the given mouse coordinates and windows button as a VT-style mouse event.
-//     If the event should be transmitted in the selected mouse mode, then we'll try and 
-//     encode the event according to the rules of the selected ExtendedMode, and insert those characters into the input buffer. 
+//     If the event should be transmitted in the selected mouse mode, then we'll try and
+//     encode the event according to the rules of the selected ExtendedMode, and insert those characters into the input buffer.
 // Parameters:
 // - coordMousePosition - The windows coordinates (top,left = 0,0) of the mouse event
 // - uiButton - the message to decode.
@@ -217,30 +217,30 @@ bool MouseInput::HandleMouse(_In_ const COORD coordMousePosition,
                 switch (_ExtendedMode)
                 {
                     case ExtendedMode::None:
-                        fSuccess = _GenerateDefaultSequence(coordMousePosition, 
-                                                            uiRealButton, 
-                                                            fIsHover, 
-                                                            sModifierKeystate, 
-                                                            sWheelDelta, 
-                                                            &pwchSequence, 
+                        fSuccess = _GenerateDefaultSequence(coordMousePosition,
+                                                            uiRealButton,
+                                                            fIsHover,
+                                                            sModifierKeystate,
+                                                            sWheelDelta,
+                                                            &pwchSequence,
                                                             &cchSequenceLength);
                         break;
                     case ExtendedMode::Utf8:
-                        fSuccess = _GenerateUtf8Sequence(coordMousePosition, 
-                                                         uiRealButton, 
-                                                         fIsHover, 
-                                                         sModifierKeystate, 
-                                                         sWheelDelta, 
-                                                         &pwchSequence, 
+                        fSuccess = _GenerateUtf8Sequence(coordMousePosition,
+                                                         uiRealButton,
+                                                         fIsHover,
+                                                         sModifierKeystate,
+                                                         sWheelDelta,
+                                                         &pwchSequence,
                                                          &cchSequenceLength);
                         break;
                     case ExtendedMode::Sgr:
-                        fSuccess = _GenerateSGRSequence(coordMousePosition, 
-                                                        uiRealButton, 
-                                                        fIsHover, 
-                                                        sModifierKeystate, 
-                                                        sWheelDelta, 
-                                                        &pwchSequence, 
+                        fSuccess = _GenerateSGRSequence(coordMousePosition,
+                                                        uiRealButton,
+                                                        fIsHover,
+                                                        sModifierKeystate,
+                                                        sWheelDelta,
+                                                        &pwchSequence,
                                                         &cchSequenceLength);
                         break;
                     case ExtendedMode::Urxvt:
@@ -346,7 +346,7 @@ bool MouseInput::_GenerateUtf8Sequence(_In_ const COORD coordMousePosition,
     // However, a normal windows program asks for utf8 mode, then it gets the utf16 encoded result. This is not what it wanted.
     //   It was looking for \x1b[M#\xC280y and got \x1b[M#\x0080y
     // Now, I'd argue that in requesting utf8 mode, the application should be enlightened enough to not want the utf16 input stream,
-    //   and convert it the same way bash.exe does. 
+    //   and convert it the same way bash.exe does.
     // Though, the point could be made to place the utf8 bytes into the input, and read them that way.
     //   However, if we did this, bash.exe would translate those bytes thinking they're utf16, and x80->xC280->xC382C280
     //   So bash would also need to change, but how could it tell the difference between them? no real good way.
@@ -404,12 +404,13 @@ bool MouseInput::_GenerateSGRSequence(_In_ const COORD coordMousePosition,
 	#pragma warning( push )
 	#pragma warning( disable: 4996 )
 	// Disable 4996 - The _s version of _snprintf doesn't return the cch if the buffer is null, and we need the cch
-    int iNeededChars = _snwprintf(nullptr, 0, L"\x1b[<%d;%d;%d%c", 
+    #pragma prefast(suppress:28719, "Using the output of _snwprintf to determine cch. _snwprintf_s used below.")
+    int iNeededChars = _snwprintf(nullptr, 0, L"\x1b[<%d;%d;%d%c",
                                 iXButton, coordMousePosition.X+1, coordMousePosition.Y+1, s_IsButtonDown(uiButton)? L'M' : L'm');
 
 	#pragma warning( pop )
 
-	iNeededChars += 1; // for null 
+	iNeededChars += 1; // for null
 
     wchar_t* pwchFormat = new wchar_t[iNeededChars];
     if (pwchFormat != nullptr)
@@ -420,9 +421,9 @@ bool MouseInput::_GenerateSGRSequence(_In_ const COORD coordMousePosition,
         {
             *ppwchSequence = pwchFormat;
             *pcchLength = iTakenChars;
-            fSuccess = true;   
+            fSuccess = true;
         }
-        else 
+        else
         {
             delete[] pwchFormat;
         }
@@ -431,8 +432,8 @@ bool MouseInput::_GenerateSGRSequence(_In_ const COORD coordMousePosition,
 }
 
 // Routine Description:
-// - Either enables or disables UTF-8 extended mode encoding. This *should* cause 
-//      the coordinates of a mouse event to be encoded as a UTF-8 byte stream, however, because windows' input is 
+// - Either enables or disables UTF-8 extended mode encoding. This *should* cause
+//      the coordinates of a mouse event to be encoded as a UTF-8 byte stream, however, because windows' input is
 //      typically UTF-16 encoded, it emits a UTF-16 stream.
 //   Does NOT enable or disable mouse mode by itself. This matches the behavior I found in Ubuntu terminals.
 // Parameters:
@@ -445,8 +446,8 @@ void MouseInput::SetUtf8ExtendedMode(_In_ const bool fEnable)
 }
 
 // Routine Description:
-// - Either enables or disables SGR extended mode encoding. This causes the 
-//      coordinates of a mouse event to be emitted in a human readable format, 
+// - Either enables or disables SGR extended mode encoding. This causes the
+//      coordinates of a mouse event to be emitted in a human readable format,
 //      eg, x,y=203,504 -> "^[[<B;203;504M". This way, applications don't need to worry about character encoding.
 //   Does NOT enable or disable mouse mode by itself. This matches the behavior I found in Ubuntu terminals.
 // Parameters:
@@ -459,7 +460,7 @@ void MouseInput::SetSGRExtendedMode(_In_ const bool fEnable)
 }
 
 // Routine Description:
-// - Either enables or disables mouse mode handling. Leaves the extended mode alone, 
+// - Either enables or disables mouse mode handling. Leaves the extended mode alone,
 //      so if we disable then re-enable mouse mode without toggling an extended mode, the mode will persist.
 // Parameters:
 // - fEnable - either enable or disable.
@@ -472,9 +473,9 @@ void MouseInput::EnableDefaultTracking(_In_ const bool fEnable)
 }
 
 // Routine Description:
-// - Either enables or disables ButtonEvent mouse handling. Button Event mode 
+// - Either enables or disables ButtonEvent mouse handling. Button Event mode
 //      sends additional sequences when a button is pressed and the mouse changes character cells.
-//   Leaves the extended mode alone, so if we disable then re-enable mouse mode 
+//   Leaves the extended mode alone, so if we disable then re-enable mouse mode
 //      without toggling an extended mode, the mode will persist.
 // Parameters:
 // - fEnable - either enable or disable.
@@ -487,9 +488,9 @@ void MouseInput::EnableButtonEventTracking(_In_ const bool fEnable)
 }
 
 // Routine Description:
-// - Either enables or disables AnyEvent mouse handling. Any Event mode sends sequences 
+// - Either enables or disables AnyEvent mouse handling. Any Event mode sends sequences
 //      for any and every mouse event, regardless if a button is pressed or not.
-//   Leaves the extended mode alone, so if we disable then re-enable mouse mode 
+//   Leaves the extended mode alone, so if we disable then re-enable mouse mode
 //      without toggling an extended mode, the mode will persist.
 // Parameters:
 // - fEnable - either enable or disable.
@@ -514,7 +515,7 @@ void MouseInput::_SendInputSequence(_In_reads_(cchLength) const wchar_t* const p
     size_t cch = 0;
     // + 1 to max sequence length for null terminator count which is required by StringCchLengthW
     if (SUCCEEDED(StringCchLengthW(pwszSequence, cchLength + 1, &cch)) && cch > 0 && cch < DWORD_MAX)
-    {        
+    {
         INPUT_RECORD* rgInput = new INPUT_RECORD[cchLength];
         if (rgInput != nullptr)
         {
@@ -530,7 +531,7 @@ void MouseInput::_SendInputSequence(_In_reads_(cchLength) const wchar_t* const p
                 rgInput[i].Event.KeyEvent.uChar.UnicodeChar = pwszSequence[i];
             }
             _pfnWriteEvents(rgInput, (DWORD)cch);
-            delete[] rgInput;    
+            delete[] rgInput;
         }
     }
 }
@@ -560,7 +561,7 @@ short MouseInput::s_EncodeDefaultCoordinate(_In_ const short sCoordinateValue)
 
 // Routine Description:
 // - Retrieves which mouse button is currently pressed. This is needed because
-//      MOUSEMOVE events do not also tell us if any mouse buttons are pressed during the move. 
+//      MOUSEMOVE events do not also tell us if any mouse buttons are pressed during the move.
 // Parameters:
 // <none>
 // Return value:
@@ -619,25 +620,25 @@ void MouseInput::UseMainScreenBuffer()
 
 // Routine Description:
 // - Returns true if we should translate the input event (uiButton, sScrollDelta)
-//      into an alternate scroll event instead of the default scroll event, 
+//      into an alternate scroll event instead of the default scroll event,
 //      dependiong on if alternate scroll mode is enabled and we're in the alternate buffer.
 // Parameters:
-// - uiButton: The mouse event code of the input event 
-// - sScrollDelta: The scroll wheel delta of the input event 
+// - uiButton: The mouse event code of the input event
+// - sScrollDelta: The scroll wheel delta of the input event
 // Return value:
 // True iff the alternate buffer is active and alternate scroll mode is enabled and the event is a mouse wheel event.
 bool MouseInput::_ShouldSendAlternateScroll(_In_ unsigned int uiButton, _In_ short sScrollDelta) const
 {
-    return _fInAlternateBuffer && 
-           _fAlternateScroll && 
-           (uiButton == WM_MOUSEWHEEL || uiButton == WM_MOUSEHWHEEL) 
+    return _fInAlternateBuffer &&
+           _fAlternateScroll &&
+           (uiButton == WM_MOUSEWHEEL || uiButton == WM_MOUSEHWHEEL)
            && sScrollDelta != 0;
 }
 
 // Routine Description:
 // - Sends a sequence to the input coresponding to cursor up / down depending on the sScrollDelta.
 // Parameters:
-// - sScrollDelta: The scroll wheel delta of the input event 
+// - sScrollDelta: The scroll wheel delta of the input event
 // Return value:
 // True iff the input sequence was sent successfully.
 bool MouseInput::_SendAlternateScroll(_In_ short sScrollDelta) const
@@ -645,5 +646,5 @@ bool MouseInput::_SendAlternateScroll(_In_ short sScrollDelta) const
     const wchar_t* const pwchSequence = sScrollDelta > 0? CURSOR_UP_SEQUENCE : CURSOR_DOWN_SEQUENCE;
     _SendInputSequence(pwchSequence, CCH_CURSOR_SEQUENCES);
 
-    return true;    
+    return true;
 }

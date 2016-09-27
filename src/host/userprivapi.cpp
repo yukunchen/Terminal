@@ -57,7 +57,7 @@ BOOL UserPrivApi::s_EnterReaderModeHelper(_In_ HWND hwnd)
         }
     }
 
-    return STATUS_UNSUCCESSFUL;
+    return FALSE;
 #else
     return EnterReaderModeHelper(hwnd);
 #endif
@@ -81,7 +81,7 @@ BOOL UserPrivApi::s_TranslateMessageEx(_In_ const MSG *pmsg,
         }
     }
 
-    return STATUS_UNSUCCESSFUL;
+    return FALSE;
 #else
     return TranslateMessageEx(pmsg, flags);
 #endif

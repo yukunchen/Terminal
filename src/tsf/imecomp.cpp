@@ -163,10 +163,24 @@ void GetCompositionStr(HWND hwnd, CConsoleTable* ConTbl, LPARAM CompFlag, WPARAM
 
         CursorPos = ImmGetCompositionString(hIMC, GCS_CURSORPOS, NULL, 0);
         if (CursorPos == 0) {
-            TempBufA[CursorPos] |= (BYTE)0x20;     // special handling for ConSrv... 0x20 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_LVERTICAL
+            // TempBufA always has space for a single byte, so if CursorPos == 0, we can't overflow.
+            // NOTE: below comment is historical, and most likely wrong. see host\convarea.cpp for details about
+            // COMMON_LVB_GRID_SINGLEFLAG
+            TempBufA[CursorPos] |= (BYTE)0x20; // special handling for ConSrv... 0x20 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_LVERTICAL
         }
         else {
-            TempBufA[CursorPos - 1] |= (BYTE)0x10;     // special handling for ConSrv... 0x10 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_RVERTICAL
+            BYTE * const pByteToWrite = &TempBufA[CursorPos - 1]; // address to which we think we should write
+
+            // we've allocated a single contiguous blob of memory that houses three things: a CONIME_UICOMPMESSAGE
+            // (tracked in lpCompStrMem), a Unicode buffer of length lBufLen (tracked in TempBuf), and a BYTE buffer of
+            // length lBufLenAttr (tracked in TempBufA). the full size of our allocated buffer is tracked in
+            // lpCompStrMem->dwSize. ensure write into TempBufA is within bounds.
+            if (pByteToWrite >= TempBufA && pByteToWrite <= (BYTE*)(lpCompStrMem + lpCompStrMem->dwSize)) {
+                // NOTE: below comment is historical, and most likely wrong. see host\convarea.cpp for details about
+                // COMMON_LVB_GRID_SINGLEFLAG
+                // special handling for ConSrv... 0x10 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_RVERTICAL
+                *pByteToWrite |= (BYTE)0x10;
+            }
         }
 
         lpCompStrMem->dwCompStrLen = lBufLen;

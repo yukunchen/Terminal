@@ -151,8 +151,17 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
     }
 
     SHORT PosY = Position.Y;
-    ULONG NumStr;
-    NumStr = WideCharToMultiByte(CP_ACP, 0, lpString, NumChars * sizeof(WCHAR), nullptr, 0, nullptr, nullptr);
+
+    // NOTE: There are security implications for not passing WC_NO_BEST_FIT_CHARS, so don't remove it without strong
+    // cause: https://msdn.microsoft.com/en-us/library/windows/desktop/dd374047(v=vs.85).aspx#SC_char_conv_func
+    ULONG NumStr = WideCharToMultiByte(CP_ACP,
+                                       WC_NO_BEST_FIT_CHARS,
+                                       lpString,
+                                       NumChars,
+                                       nullptr,
+                                       0,
+                                       nullptr,
+                                       nullptr);
 
     int const WholeLen = (int)Position.X + (int)NumStr;
     int const WholeRow = WholeLen / ScreenInfo->GetScreenWindowSizeX();

@@ -845,7 +845,7 @@ void Settings::SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable
 }
 void Settings::SetColorTableEntry(_In_ size_t const index, _In_ COLORREF const ColorValue)
 {
-    if (index > ARRAYSIZE(_ColorTable))
+    if (index < ARRAYSIZE(_ColorTable))
     {
         this->_ColorTable[index] = ColorValue;
     }
@@ -891,14 +891,14 @@ COLORREF Settings::GetColorTableEntry(_In_ size_t const index) const
 // Routine Description:
 // - Generates a legacy attribute from the given TextAttributes.
 //     This needs to be a method on the Settings because the generated index
-//     is dependent upon the particular values of the color table at the time of reading. 
+//     is dependent upon the particular values of the color table at the time of reading.
 // Parameters:
 // - pAttributes - The TextAttributes to generate a legacy attribute for.
 // Return value:
 // - A WORD representing the entry in the color table that most closely represents the given fullcolor attributes.
 WORD Settings::GenerateLegacyAttributes(_In_ const TextAttribute* const pAttributes) const
 {
-    const WORD wLegacyOriginal = pAttributes->GetLegacyAttributes(); 
+    const WORD wLegacyOriginal = pAttributes->GetLegacyAttributes();
     if (pAttributes->IsLegacy())
     {
         return wLegacyOriginal;
@@ -916,8 +916,8 @@ WORD Settings::GenerateLegacyAttributes(_In_ const TextAttribute* const pAttribu
 
 //Routine Description:
 // Finds the "distance" between a given HSL color and an RGB color, using the HSL color space.
-//   This function is designed such that the caller would convert one RGB color to HSL ahead of time, 
-//   then compare many RGB colors to that first color. 
+//   This function is designed such that the caller would convert one RGB color to HSL ahead of time,
+//   then compare many RGB colors to that first color.
 //Arguments:
 // - phslColorA - a pointer to the first color, as a HSL color.
 // - rgbColorB - The second color to compare, in RGB color.
@@ -926,8 +926,8 @@ WORD Settings::GenerateLegacyAttributes(_In_ const TextAttribute* const pAttribu
 double Settings::s_FindDifference(_In_ const _HSL* const phslColorA, _In_ const COLORREF rgbColorB)
 {
     const _HSL hslColorB = _HSL(rgbColorB);
-    return sqrt( pow((hslColorB.h - phslColorA->h), 2) + 
-                 pow((hslColorB.s - phslColorA->s), 2) + 
+    return sqrt( pow((hslColorB.h - phslColorA->h), 2) +
+                 pow((hslColorB.s - phslColorA->s), 2) +
                  pow((hslColorB.l - phslColorA->l), 2) );
 }
 
