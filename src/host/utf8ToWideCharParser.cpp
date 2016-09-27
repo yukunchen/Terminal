@@ -92,6 +92,7 @@ HRESULT Utf8ToWideCharParser::Parse(_In_reads_(cch) const byte* const pBytes, _I
                     hr = E_FAIL;
                     _Reset();
                     wideCharCount = 0;
+                    loop = false;
                     break;
                 case _State::Finished:
                     _currentState = _State::Ready;
