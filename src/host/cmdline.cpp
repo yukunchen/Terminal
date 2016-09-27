@@ -643,7 +643,7 @@ NTSTATUS SrvAddConsoleAlias(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*R
     {
         return STATUS_INVALID_PARAMETER;
     }
-    
+
     CONSOLE_INFORMATION *Console;
     Status = RevalidateConsole(&Console);
     if (!NT_SUCCESS(Status))
@@ -809,7 +809,7 @@ NTSTATUS SrvGetConsoleAlias(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*R
         a->SourceLength = (USHORT) ConvertInputToUnicode(g_ciConsoleInformation.CP, (LPSTR) InputSource, a->SourceLength, Source, a->SourceLength);
         a->SourceLength *= 2;
     }
-    
+
     PEXE_ALIAS_LIST const ExeAliasList = FindExe(InputExe, a->ExeLength, a->Unicode);
     if (ExeAliasList)
     {
@@ -928,7 +928,7 @@ VOID ClearAliases()
 NTSTATUS SrvGetConsoleAliases(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*ReplyPending*/)
 {
     PCONSOLE_GETALIASES_MSG const a = &m->u.consoleMsgL3.GetConsoleAliasesW;
-    
+
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliases, a->Unicode);
 
     PVOID ExeName;
@@ -1037,7 +1037,7 @@ NTSTATUS SrvGetConsoleAliases(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /
 NTSTATUS SrvGetConsoleAliasExesLength(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*ReplyPending*/)
 {
     PCONSOLE_GETALIASEXESLENGTH_MSG const a = &m->u.consoleMsgL3.GetConsoleAliasExesLengthW;
-    
+
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliasExesLength, a->Unicode);
 
     CONSOLE_INFORMATION *Console;
@@ -1470,7 +1470,7 @@ NTSTATUS SrvGetConsoleCommandHistoryLength(_Inout_ PCONSOLE_API_MSG m, _In_opt_ 
     }
 
     a->CommandHistoryLength = 0;
-    
+
     PCOMMAND_HISTORY const CommandHistory = FindExeCommandHistory(ExeName, ExeNameLength, a->Unicode);
     if (CommandHistory)
     {
@@ -1492,7 +1492,7 @@ NTSTATUS SrvGetConsoleCommandHistoryLength(_Inout_ PCONSOLE_API_MSG m, _In_opt_ 
 NTSTATUS SrvGetConsoleCommandHistory(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*ReplyPending*/)
 {
     PCONSOLE_GETCOMMANDHISTORY_MSG const a = &m->u.consoleMsgL3.GetConsoleCommandHistoryW;
-    
+
     PVOID ExeName;
     ULONG ExeNameLength;
     NTSTATUS Status = GetInputBuffer(m, &ExeName, &ExeNameLength);
@@ -1643,7 +1643,7 @@ PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, 
     {
         AppNamePtr = (PWCHAR)AppName;
     }
-    
+
     PLIST_ENTRY const ListHead = &g_ciConsoleInformation.CommandHistoryList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
@@ -1921,16 +1921,6 @@ CommandLine& CommandLine::Instance()
     return c;
 }
 
-CommandLine::CommandLine(CommandLine const&)
-{
-    ASSERT(false); // we don't want copies of the singleton
-}
-
-void CommandLine::operator=(CommandLine const&)
-{
-    ASSERT(false); // we don't want copies of the singleton
-}
-
 bool CommandLine::IsEditLineEmpty() const
 {
     const COOKED_READ_DATA* const pTyped = g_ciConsoleInformation.lpCookedReadData;
@@ -2025,8 +2015,8 @@ void RedrawCommandLine(_Inout_ PCOOKED_READ_DATA const pCookedReadData)
                                            pCookedReadData->BackupLimit,
                                            &pCookedReadData->BytesRead,
                                            &pCookedReadData->NumberOfVisibleChars,
-                                           pCookedReadData->OriginalCursorPosition.X, 
-                                           WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO, 
+                                           pCookedReadData->OriginalCursorPosition.X,
+                                           WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                            &ScrollY);
         ASSERT(NT_SUCCESS(Status));
 
@@ -2034,8 +2024,8 @@ void RedrawCommandLine(_Inout_ PCOOKED_READ_DATA const pCookedReadData)
 
         // Move the cursor back to the right position
         COORD CursorPosition = pCookedReadData->OriginalCursorPosition;
-        CursorPosition.X += (SHORT)RetrieveTotalNumberOfSpaces(pCookedReadData->OriginalCursorPosition.X, 
-                                                               pCookedReadData->BackupLimit, 
+        CursorPosition.X += (SHORT)RetrieveTotalNumberOfSpaces(pCookedReadData->OriginalCursorPosition.X,
+                                                               pCookedReadData->BackupLimit,
                                                                pCookedReadData->CurrentPosition);
         if (CheckBisectStringW(pCookedReadData->BackupLimit,
                                pCookedReadData->CurrentPosition,
@@ -2417,7 +2407,7 @@ NTSTATUS ProcessCommandListInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _
 NTSTATUS ProcessCopyFromCharInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _In_ PCONSOLE_API_MSG WaitReplyMessage, _In_ BOOLEAN WaitRoutine)
 {
     PCONSOLE_HANDLE_DATA HandleData;
-    
+
     NTSTATUS Status = DereferenceIoHandleNoCheck(pCookedReadData->HandleIndex, &HandleData);
     if (!NT_SUCCESS(Status))
     {
@@ -2568,7 +2558,7 @@ NTSTATUS ProcessCopyToCharInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _I
         }
 
         EndPopup(pCookedReadData->ScreenInfo, pCookedReadData->CommandHistory);
-        
+
         // copy up to specified char
         PCOMMAND const LastCommand = GetLastCommand(pCookedReadData->CommandHistory);
         if (LastCommand)
@@ -2638,7 +2628,7 @@ NTSTATUS ProcessCommandNumberInput(_In_ PCOOKED_READ_DATA const pCookedReadData,
     {
         WCHAR Char;
         BOOLEAN CommandLinePopupKeys;
-        
+
         Status = GetChar(pCookedReadData->InputInfo,
                          &Char,
                          TRUE,
@@ -4010,7 +4000,7 @@ void DrawCommandListPopup(_In_ PCLE_POPUP const Popup,
         {
             PWCHAR TransBuffer;
 
-            TransBuffer = new WCHAR[lStringLength]; 
+            TransBuffer = new WCHAR[lStringLength];
             if (TransBuffer == nullptr)
             {
                 return;
@@ -4373,7 +4363,7 @@ NTSTATUS SrvGetConsoleTitle(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*R
         Title = g_ciConsoleInformation.Title;
         TitleLength = (ULONG) wcslen(g_ciConsoleInformation.Title);
     }
-    
+
     // a->TitleLength contains length in bytes.
     if (a->Unicode)
     {
@@ -4489,7 +4479,7 @@ NTSTATUS DoSrvSetConsoleTitle(_In_ PVOID const Buffer, _In_ ULONG const cbOrigin
     {
         Status = STATUS_INVALID_PARAMETER;
     }
-    
+
     return Status;
 }
 
