@@ -288,6 +288,7 @@ unsigned int Utf8ToWideCharParser::_ParseFullRange(_In_reads_(cb) const byte* co
     if (bufferSize == 0)
     {
         DWORD err = GetLastError();
+        LOG_WIN32(err);
         if (err == ERROR_NO_UNICODE_TRANSLATION)
         {
             _currentState = _State::BeginPartialParse;
@@ -308,6 +309,7 @@ unsigned int Utf8ToWideCharParser::_ParseFullRange(_In_reads_(cb) const byte* co
                                          bufferSize);
         if (bufferSize == 0)
         {
+            LOG_LAST_ERROR();
             _currentState = _State::Error;
         }
         _currentState = _State::Finished;
@@ -357,6 +359,7 @@ unsigned int Utf8ToWideCharParser::_InvolvedParse(_In_reads_(cb) const byte* con
                                          0);
     if (bufferSize == 0)
     {
+        LOG_LAST_ERROR();
         _currentState = _State::Error;
     }
     else
@@ -370,6 +373,7 @@ unsigned int Utf8ToWideCharParser::_InvolvedParse(_In_reads_(cb) const byte* con
                                         bufferSize);
         if (bufferSize == 0)
         {
+            LOG_LAST_ERROR();
             _currentState = _State::Error;
         }
         else if (_bytesStored > 0)
