@@ -3,6 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
+# Put Host.EXE first to set as startup project for people without preferences.
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.EXE", "src\host\exe\Host.EXE.vcxproj", "{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PropertiesLibrary", "src\propslib\propslib.vcxproj", "{345FD5A4-B32B-4F29-BD1C-B033BD2C35CC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dependencies", "Dependencies", "{81C352DB-1818-45B7-A284-18E259F1CC87}"
@@ -57,8 +60,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.Tests.Unit", "src\host\ut_host\Host.UnitTests.vcxproj", "{531C23E7-4B76-4C08-8AAD-04164CB628C9}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.Tests.Api", "src\host\ft_api\Host.ApiTests.vcxproj", "{8CDB8850-7484-4EC7-B45B-181F85B2EE54}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.EXE", "src\host\exe\Host.EXE.vcxproj", "{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalParser.UnitTests", "src\terminal\parser\ut_parser\Parser.UnitTests.vcxproj", "{12144E07-FE63-4D33-9231-748B8D8C3792}"
 EndProject
