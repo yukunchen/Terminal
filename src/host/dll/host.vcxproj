@@ -54,6 +54,7 @@
       <ModuleDefinitionFile>ConhostV2.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\..\common.build.dll.props"/>
   <Import Project="..\..\common.build.post.props"/>
 </Project>

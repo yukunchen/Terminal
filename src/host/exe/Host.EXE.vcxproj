@@ -50,6 +50,7 @@
       <AdditionalIncludeDirectories>..;..\..\..\dep;..\..\..\dep\Console;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>   
   </ItemDefinitionGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\..\common.build.exe.props"/>
   <Import Project="..\..\common.build.post.props"/>
 </Project>
