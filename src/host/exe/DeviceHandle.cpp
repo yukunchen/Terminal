@@ -103,7 +103,7 @@ DeviceHandle::_CreateHandle(
 
     UNICODE_STRING Name;
     Name.Buffer = (wchar_t*)DeviceName;
-    Name.Length = wcslen(DeviceName) * 2;
+    Name.Length = (USHORT)(wcslen(DeviceName) * 2);
     Name.MaximumLength = Name.Length + sizeof(wchar_t);
 
     OBJECT_ATTRIBUTES ObjectAttributes;

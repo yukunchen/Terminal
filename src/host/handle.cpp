@@ -381,9 +381,16 @@ PCONSOLE_PROCESS_HANDLE AllocProcessData(_In_ CLIENT_ID const * const ClientId,
 
         InitializeListHead(&ProcessData->WaitBlockQueue);
 
+        #pragma warning(push)
+        // pointer truncation due to using the HANDLE type to store a DWORD process ID.
+        // We're using the HANDLE type in the public ClientId field to store the process ID when we should
+        // be using a more appropriate type. This should be collected and replaced with the server refactor.
+        // TODO - MSFT:9115192
+        #pragma warning(disable:4311 4302) 
         ProcessData->ProcessHandle = OpenProcess(MAXIMUM_ALLOWED,
                                                  FALSE,
                                                  (DWORD)ProcessData->ClientId.UniqueProcess);
+        #pragma warning(pop)
 
         // Link this ProcessData ptr into the global list.
         InsertHeadList(&g_ciConsoleInformation.ProcessHandleList, &ProcessData->ListLink);
