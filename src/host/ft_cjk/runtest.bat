@@ -1,1 +1,1 @@
-te.exe %_NTTREE%\unittests\Conhost.CJK.Tests.dll %*
+%~dp0\..\..\..\bin\x64\Debug\OpenConsole.exe cmd.exe /K te.exe %~dp0\..\..\..\bin\x64\Debug\Conhost.CJK.Tests.dll %*
