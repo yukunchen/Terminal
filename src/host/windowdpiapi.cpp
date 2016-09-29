@@ -201,38 +201,6 @@ int WindowDpiApi::s_GetSystemMetricsForDpi(_In_ int const nIndex, _In_ UINT cons
 #endif
 }
 
-BOOL WindowDpiApi::s_SetProcessDpiAwarenessContext(_In_ DPI_AWARENESS_CONTEXT dpiContext)
-{
-#ifdef CON_DPIAPI_INDIRECT
-    HMODULE hUser32 = _Instance()._hUser32;
-
-    if (hUser32 != nullptr)
-    {
-        typedef int(*PfnSetProcessDpiAwarenessContexts)(DPI_AWARENESS_CONTEXT dpiContext);
-
-        static bool fTried = false;
-        static PfnSetProcessDpiAwarenessContexts pfn = nullptr;
-
-        if (!fTried)
-        {
-            pfn = (PfnSetProcessDpiAwarenessContexts)GetProcAddress(hUser32, "SetProcessDpiAwarenessContext");
-        }
-
-        fTried = true;
-
-        if (pfn != nullptr)
-        {
-            return pfn(dpiContext);
-        }
-
-    }
-
-    return FALSE;
-#else
-    return SetProcessDpiAwarenessContext(dpiContext);
-#endif
-}
-
 #ifdef CON_DPIAPI_INDIRECT
 WindowDpiApi::WindowDpiApi()
 {

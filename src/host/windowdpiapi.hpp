@@ -30,8 +30,6 @@ public:
 
     static int s_GetSystemMetricsForDpi(_In_ int const nIndex, _In_ UINT const dpi);
 
-    static BOOL s_SetProcessDpiAwarenessContext(_In_ DPI_AWARENESS_CONTEXT dpiContext);
-
 #ifdef CON_DPIAPI_INDIRECT
     ~WindowDpiApi();
 private:
