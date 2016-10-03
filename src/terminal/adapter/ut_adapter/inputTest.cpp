@@ -381,7 +381,7 @@ public:
                 VERIFY_SUCCEEDED(StringCchLengthW(s_pwsInputBuffer, 8, &cch));
                 if (cch > 1)
                 {
-                    bool fShift = (uiKeystate & SHIFT_PRESSED);
+                    bool fShift = !!(uiKeystate & SHIFT_PRESSED);
                     bool fAlt = (uiKeystate & LEFT_ALT_PRESSED) || (uiKeystate & RIGHT_ALT_PRESSED);
                     bool fCtrl = (uiKeystate & LEFT_CTRL_PRESSED) || (uiKeystate & RIGHT_CTRL_PRESSED);
                     s_pwsInputBuffer[cch-2] = L'1' + (fShift? 1 : 0) + (fAlt? 2 : 0) + (fCtrl? 4 : 0);

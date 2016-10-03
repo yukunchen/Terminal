@@ -215,7 +215,6 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         // this is the RECT that the system suggests.
         RECT* const prcNewScale = (RECT*)lParam;
-        UINT uiFlags = 0; 
         SIZE szNewScale;
         szNewScale.cx = RECT_WIDTH(prcNewScale);
         szNewScale.cy = RECT_HEIGHT(prcNewScale);
