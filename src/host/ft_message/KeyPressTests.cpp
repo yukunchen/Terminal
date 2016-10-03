@@ -27,7 +27,7 @@ class KeyPressTests
         // flush input buffer
         FlushConsoleInputBuffer(inputHandle);
         successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
-        VERIFY_IS_TRUE(successBool);
+        VERIFY_IS_TRUE(!!successBool);
         VERIFY_ARE_EQUAL(events, 0);
 
         // send alt-gr + q keypress (@ on german keyboard)
@@ -39,7 +39,7 @@ class KeyPressTests
         // make sure the the keypresses got processed
         events = 0;
         successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
-        VERIFY_IS_TRUE(successBool);
+        VERIFY_IS_TRUE(!!successBool);
         VERIFY_IS_GREATER_THAN(events, 0, NoThrowString().Format(L"%d", events));
         std::unique_ptr<INPUT_RECORD[]> inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
         PeekConsoleInput(inputHandle,
@@ -48,15 +48,16 @@ class KeyPressTests
                          &events);
         VERIFY_ARE_EQUAL(events, 1);
 
+        INPUT_RECORD expectedEvent;
+        expectedEvent.EventType = KEY_EVENT;
+        expectedEvent.Event.KeyEvent.bKeyDown = 1;
+        expectedEvent.Event.KeyEvent.wRepeatCount = 1;
+        expectedEvent.Event.KeyEvent.wVirtualKeyCode = 0;
+        expectedEvent.Event.KeyEvent.wVirtualScanCode = 0;
+        expectedEvent.Event.KeyEvent.uChar.UnicodeChar = 'Q';
         // compare values against those that have historically been
         // returned with the same arguments to SendMessage
-        VERIFY_ARE_EQUAL(inputBuffer[0].EventType, KEY_EVENT);
-        VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.bKeyDown, 1);
-        VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wRepeatCount, 1);
-        VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wVirtualKeyCode, 0);
-        VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wVirtualScanCode, 0);
-        VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.dwControlKeyState, 32);
-        VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.uChar.UnicodeChar, 'Q');
+        VERIFY_IS_TRUE(VerifyCompareTraits<INPUT_RECORD>::AreEqual(inputBuffer[0], expectedEvent));
     }
 
     TEST_METHOD(TestCoalesceSameKeyPress)
@@ -71,7 +72,7 @@ class KeyPressTests
         // flush input buffer
         FlushConsoleInputBuffer(inputHandle);
         successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
-        VERIFY_IS_TRUE(successBool);
+        VERIFY_IS_TRUE(!!successBool);
         VERIFY_ARE_EQUAL(events, 0);
 
         // send a bunch of 'a' keypresses to the console
@@ -88,7 +89,7 @@ class KeyPressTests
         // make sure the the keypresses got processed and coalesced
         events = 0;
         successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
-        VERIFY_IS_TRUE(successBool);
+        VERIFY_IS_TRUE(!!successBool);
         VERIFY_IS_GREATER_THAN(events, 0, NoThrowString().Format(L"%d", events));
         std::unique_ptr<INPUT_RECORD[]> inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
         PeekConsoleInput(inputHandle,
@@ -98,6 +99,5 @@ class KeyPressTests
         VERIFY_ARE_EQUAL(events, 1);
         VERIFY_ARE_EQUAL(inputBuffer[0].EventType, KEY_EVENT);
         VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wRepeatCount, messageSendCount, NoThrowString().Format(L"%d", inputBuffer[0].Event.KeyEvent.wRepeatCount));
-
     }
 };
