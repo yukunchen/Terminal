@@ -61,6 +61,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.Tests.Unit", "src\host
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.Tests.Api", "src\host\ft_api\Host.ApiTests.vcxproj", "{8CDB8850-7484-4EC7-B45B-181F85B2EE54}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.Tests.Message", "src\host\ft_message\Host.MessageTests.vcxproj", "{58CDD164-E99F-416F-B1BF-99BA2E393DDA}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalParser.UnitTests", "src\terminal\parser\ut_parser\Parser.UnitTests.vcxproj", "{12144E07-FE63-4D33-9231-748B8D8C3792}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalAdapter.UnitTests", "src\terminal\adapter\ut_adapter\Adapter.UnitTests.vcxproj", "{6AF01638-84CF-4B65-9870-484DFFCAC772}"
@@ -182,6 +184,14 @@ Global
 		{8CDB8850-7484-4EC7-B45B-181F85B2EE54}.Release|x64.Build.0 = Release|x64
 		{8CDB8850-7484-4EC7-B45B-181F85B2EE54}.Release|x86.ActiveCfg = Release|Win32
 		{8CDB8850-7484-4EC7-B45B-181F85B2EE54}.Release|x86.Build.0 = Release|Win32
+		{58CDD164-E99F-416F-B1BF-99BA2E393DDA}.Debug|x64.ActiveCfg = Debug|x64
+		{58CDD164-E99F-416F-B1BF-99BA2E393DDA}.Debug|x64.Build.0 = Debug|x64
+		{58CDD164-E99F-416F-B1BF-99BA2E393DDA}.Debug|x86.ActiveCfg = Debug|Win32
+		{58CDD164-E99F-416F-B1BF-99BA2E393DDA}.Debug|x86.Build.0 = Debug|Win32
+		{58CDD164-E99F-416F-B1BF-99BA2E393DDA}.Release|x64.ActiveCfg = Release|x64
+		{58CDD164-E99F-416F-B1BF-99BA2E393DDA}.Release|x64.Build.0 = Release|x64
+		{58CDD164-E99F-416F-B1BF-99BA2E393DDA}.Release|x86.ActiveCfg = Release|Win32
+		{58CDD164-E99F-416F-B1BF-99BA2E393DDA}.Release|x86.Build.0 = Release|Win32
 		{12144E07-FE63-4D33-9231-748B8D8C3792}.Debug|x64.ActiveCfg = Debug|x64
 		{12144E07-FE63-4D33-9231-748B8D8C3792}.Debug|x64.Build.0 = Debug|x64
 		{12144E07-FE63-4D33-9231-748B8D8C3792}.Debug|x86.ActiveCfg = Debug|Win32
