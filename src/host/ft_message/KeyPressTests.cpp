@@ -40,7 +40,7 @@ class KeyPressTests
         events = 0;
         successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
         VERIFY_IS_TRUE(!!successBool);
-        VERIFY_IS_GREATER_THAN(events, 0, NoThrowString().Format(L"%d", events));
+        VERIFY_IS_GREATER_THAN(events, static_cast<DWORD>(0), NoThrowString().Format(L"%d", events));
         std::unique_ptr<INPUT_RECORD[]> inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
         PeekConsoleInput(inputHandle,
                          inputBuffer.get(),
@@ -50,11 +50,12 @@ class KeyPressTests
 
         INPUT_RECORD expectedEvent;
         expectedEvent.EventType = KEY_EVENT;
-        expectedEvent.Event.KeyEvent.bKeyDown = 1;
+        expectedEvent.Event.KeyEvent.bKeyDown = !!true;
         expectedEvent.Event.KeyEvent.wRepeatCount = 1;
         expectedEvent.Event.KeyEvent.wVirtualKeyCode = 0;
         expectedEvent.Event.KeyEvent.wVirtualScanCode = 0;
-        expectedEvent.Event.KeyEvent.uChar.UnicodeChar = 'Q';
+        expectedEvent.Event.KeyEvent.dwControlKeyState = 32;
+        expectedEvent.Event.KeyEvent.uChar.UnicodeChar = L'Q';
         // compare values against those that have historically been
         // returned with the same arguments to SendMessage
         VERIFY_IS_TRUE(VerifyCompareTraits<INPUT_RECORD>::AreEqual(inputBuffer[0], expectedEvent));
@@ -90,7 +91,7 @@ class KeyPressTests
         events = 0;
         successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
         VERIFY_IS_TRUE(!!successBool);
-        VERIFY_IS_GREATER_THAN(events, 0, NoThrowString().Format(L"%d", events));
+        VERIFY_IS_GREATER_THAN(events, static_cast<DWORD>(0), NoThrowString().Format(L"%d", events));
         std::unique_ptr<INPUT_RECORD[]> inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
         PeekConsoleInput(inputHandle,
                          inputBuffer.get(),
