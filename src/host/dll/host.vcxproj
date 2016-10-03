@@ -10,6 +10,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\propslib\propslib.vcxproj">
@@ -36,6 +37,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ConhostV2.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Host.DLL.rc" />
   </ItemGroup>
   <PropertyGroup>
     <ProjectGuid>{E437B604-3E98-4F40-A927-E173E818EA4B}</ProjectGuid>

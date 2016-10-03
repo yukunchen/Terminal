@@ -163,8 +163,8 @@ NTSTATUS GetChar(_In_ PINPUT_INFORMATION pInputInfo,
                         if (HIBYTE(Event.Event.KeyEvent.uChar.UnicodeChar))
                         {
                             char chT[2] = {
-                                HIBYTE(Event.Event.KeyEvent.uChar.UnicodeChar),
-                                LOBYTE(Event.Event.KeyEvent.uChar.UnicodeChar),
+                                static_cast<char>(HIBYTE(Event.Event.KeyEvent.uChar.UnicodeChar)),
+                                static_cast<char>(LOBYTE(Event.Event.KeyEvent.uChar.UnicodeChar)),
                             };
                             *pwchOut = CharToWchar(chT, 2);
                         }

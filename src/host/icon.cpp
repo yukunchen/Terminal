@@ -187,7 +187,10 @@ HRESULT Icon::_Initialize()
 
     if (!_fInitialized)
     {
+        #pragma warning(push)
+        #pragma warning(disable:4302) // typecast warning from MAKEINTRESOURCE
         _hDefaultIcon = LoadIconW(nullptr, MAKEINTRESOURCE(IDI_APPLICATION));
+        #pragma warning(pop)
 
         if (_hDefaultIcon == nullptr)
         {
@@ -196,6 +199,8 @@ HRESULT Icon::_Initialize()
 
         if (SUCCEEDED(hr))
         {
+            #pragma warning(push)
+            #pragma warning(disable:4302) // typecast warning from MAKEINTRESOURCE
             _hDefaultSmIcon = (HICON)LoadImageW(nullptr, 
                                                MAKEINTRESOURCE(IDI_APPLICATION), 
                                                IMAGE_ICON, 
@@ -203,6 +208,7 @@ HRESULT Icon::_Initialize()
                                                GetSystemMetrics(SM_CYSMICON), 
                                                LR_SHARED
                                                );
+            #pragma warning(pop)
 
             if (_hDefaultSmIcon == nullptr)
             {

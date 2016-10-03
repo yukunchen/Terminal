@@ -39,6 +39,10 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
+      <TreatSpecificWarningsAsErrors>4189</TreatSpecificWarningsAsErrors>
+      <!--<WarningLevel>EnableAllWarnings</WarningLevel>-->
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DisableSpecificWarnings>4312</DisableSpecificWarnings>
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
@@ -46,6 +50,9 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>..\..\dep;..\..\dep\Console</AdditionalIncludeDirectories>
     </ClCompile>
+    <ResourceCompile>
+        <PreprocessorDefinitions>EXTERNAL_BUILD;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <SetChecksum>true</SetChecksum>
