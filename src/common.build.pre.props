@@ -50,6 +50,9 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>..\..\dep;..\..\dep\Console</AdditionalIncludeDirectories>
     </ClCompile>
+    <ResourceCompile>
+        <PreprocessorDefinitions>EXTERNAL_BUILD;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <SetChecksum>true</SetChecksum>
