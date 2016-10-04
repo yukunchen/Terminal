@@ -40,7 +40,7 @@ class KeyPressTests
         events = 0;
         successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
         VERIFY_IS_TRUE(!!successBool);
-        VERIFY_IS_GREATER_THAN(events, static_cast<DWORD>(0), NoThrowString().Format(L"%d", events));
+        VERIFY_IS_GREATER_THAN(events, 0u, NoThrowString().Format(L"%d", events));
         std::unique_ptr<INPUT_RECORD[]> inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
         PeekConsoleInput(inputHandle,
                          inputBuffer.get(),
@@ -91,7 +91,7 @@ class KeyPressTests
         events = 0;
         successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
         VERIFY_IS_TRUE(!!successBool);
-        VERIFY_IS_GREATER_THAN(events, static_cast<DWORD>(0), NoThrowString().Format(L"%d", events));
+        VERIFY_IS_GREATER_THAN(events, 0u, NoThrowString().Format(L"%d", events));
         std::unique_ptr<INPUT_RECORD[]> inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
         PeekConsoleInput(inputHandle,
                          inputBuffer.get(),
