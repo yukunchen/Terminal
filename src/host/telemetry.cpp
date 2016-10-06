@@ -252,7 +252,7 @@ void Telemetry::LogProcessConnected(_In_ const HANDLE hProcess)
                 // In order to send out a dynamic array of strings through telemetry, we have to pack the strings into a single WCHAR array.
                 // There currently aren't any helper functions for this, and we have to pack it manually.
                 // To understand the format of the single string, consult the documentation in the traceloggingprovider.h file.
-                if (!wcscpy_s(_wchProcessFileNames + _iProcessFileNamesNext, ARRAYSIZE(_wchProcessFileNames) - _iProcessFileNamesNext - 1, pwszFileName))
+                if (SUCCEEDED(StringCchCopyW(_wchProcessFileNames + _iProcessFileNamesNext, ARRAYSIZE(_wchProcessFileNames) - _iProcessFileNamesNext - 1, pwszFileName)))
                 {
                     // As each FileName comes in, it's appended to the end.  However to improve searching speed, we have an array of indexes
                     // that is alphabetically sorted.  We could call qsort, but that would be a waste in performance since we're just adding one string
