@@ -116,7 +116,8 @@ int WindowDpiApi::s_GetWindowDPI(_In_ HWND const hwnd)
 
     return USER_DEFAULT_SCREEN_DPI;
 #else
-    return GetWindowDPI(hwnd);
+    // GetDpiForWindow is the public API version (as of RS1) of GetWindowDPI
+    return GetDpiForWindow(hwnd);
 #endif
 }
 
@@ -198,6 +199,38 @@ int WindowDpiApi::s_GetSystemMetricsForDpi(_In_ int const nIndex, _In_ UINT cons
     return GetSystemMetrics(nIndex);
 #else
     return GetSystemMetricsForDpi(nIndex, dpi);
+#endif
+}
+
+BOOL WindowDpiApi::s_SetProcessDpiAwarenessContext(_In_ DPI_AWARENESS_CONTEXT dpiContext)
+{
+#ifdef CON_DPIAPI_INDIRECT
+    HMODULE hUser32 = _Instance()._hUser32;
+
+    if (hUser32 != nullptr)
+    {
+        typedef int(*PfnSetProcessDpiAwarenessContexts)(DPI_AWARENESS_CONTEXT dpiContext);
+
+        static bool fTried = false;
+        static PfnSetProcessDpiAwarenessContexts pfn = nullptr;
+
+        if (!fTried)
+        {
+            pfn = (PfnSetProcessDpiAwarenessContexts)GetProcAddress(hUser32, "SetProcessDpiAwarenessContext");
+        }
+
+        fTried = true;
+
+        if (pfn != nullptr)
+        {
+            return pfn(dpiContext);
+        }
+
+    }
+
+    return FALSE;
+#else
+    return SetProcessDpiAwarenessContext(dpiContext);
 #endif
 }
 
