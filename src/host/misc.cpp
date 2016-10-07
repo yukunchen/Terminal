@@ -21,14 +21,24 @@
 
 #define CHAR_NULL      ((char)0)
 
+// Routine Description:
+// - Converts unicode characters to ANSI given a destination codepage
+// Arguments:
+// - uiCodePage - codepage for use in conversion
+// - pwchSource - unicode string to convert
+// - cchSource - length of pwchSource in characters
+// - pchTarget - pointer to destination buffer to receive converted ANSI string
+// - cchTarget - size of destination buffer in characters
+// Return Value:
+// - Returns the number characters written to pchTarget, or 0 on failure
 int ConvertToOem(_In_ const UINT uiCodePage,
                  _In_reads_(cchSource) const WCHAR * const pwchSource,
                  _In_ const UINT cchSource,
                  _Out_writes_(cchTarget) CHAR * const pchTarget,
                  _In_ const UINT cchTarget)
 {
+    ASSERT(pwchSource != (LPWSTR) pchTarget);
     DBGCHARS(("ConvertToOem U->%d %.*ls\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pwchSource));
-
     return WideCharToMultiByte(uiCodePage, WC_NO_BEST_FIT_CHARS, pwchSource, cchSource, pchTarget, cchTarget, nullptr, nullptr);
 }
 
@@ -68,15 +78,6 @@ int ConvertOutputToUnicode(_In_ UINT uiCodePage,
     return Length;
 }
 
-char WcharToChar(_In_ const UINT uiCodePage, _In_ const WCHAR wch)
-{
-    char ch = CHAR_NULL;
-
-    WideCharToMultiByte(uiCodePage, WC_NO_BEST_FIT_CHARS, &wch, 1, &ch, 1, nullptr, nullptr);
-
-    return ch;
-}
-
 WCHAR CharToWchar(_In_reads_(cch) const char * const pch, _In_ const UINT cch)
 {
     WCHAR wc = L'\0';
@@ -86,21 +87,6 @@ WCHAR CharToWchar(_In_reads_(cch) const char * const pch, _In_ const UINT cch)
     ConvertOutputToUnicode(g_ciConsoleInformation.OutputCP, pch, cch, &wc, 1);
 
     return wc;
-}
-
-// Routine Description:
-// - Converts cchLength Unicode characters from pwchSource into not more than cchTarget uiCodepage characters at pchTarget.
-// - Returns the number characters put in pchTarget. (0 if failure)
-int ConvertOutputToOem(_In_ const UINT uicodePage,
-                       _In_reads_(cchSource) const WCHAR * const pwchSource,
-                       _In_ const UINT cchSource,
-                       _Out_writes_(cchTarget) CHAR *pchTarget,
-                       _In_ const UINT cchTarget)
-{
-
-    ASSERT(pwchSource != (LPWSTR) pchTarget);
-    DBGCHARS(("ConvertOutputToOem U->%d %.*ls\n", uicodePage, cchSource > 10 ? 10 : cchSource, pwchSource));
-    return WideCharToMultiByte(uicodePage, 0, pwchSource, cchSource, pchTarget, cchTarget, nullptr, nullptr);
 }
 
 void SetConsoleCPInfo(_In_ const BOOL fOutput)

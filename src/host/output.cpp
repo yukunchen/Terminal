@@ -41,10 +41,10 @@ NTSTATUS DoCreateScreenBuffer()
     PopupFill.Attributes = g_ciConsoleInformation.GetPopupFillAttribute();
     PopupFill.Char.UnicodeChar = UNICODE_SPACE;
 
-    FontInfo fiFont(g_ciConsoleInformation.GetFaceName(), 
-                    static_cast<BYTE>(g_ciConsoleInformation.GetFontFamily()), 
-                    g_ciConsoleInformation.GetFontWeight(), 
-                    g_ciConsoleInformation.GetFontSize(), 
+    FontInfo fiFont(g_ciConsoleInformation.GetFaceName(),
+                    static_cast<BYTE>(g_ciConsoleInformation.GetFontFamily()),
+                    g_ciConsoleInformation.GetFontWeight(),
+                    g_ciConsoleInformation.GetFontSize(),
                     g_ciConsoleInformation.GetCodePage());
 
     // For East Asian version, we want to get the code page from the registry or shell32, so we can specify console
@@ -193,7 +193,7 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
 
                 // Always copy the legacy attributes to the CHAR_INFO.
                 pciTargetPtr->Attributes |= g_ciConsoleInformation.GenerateLegacyAttributes(pTextAttr);
-                
+
                 if (fOutputTextAttributes)
                 {
                     pTargetAttributes->SetFrom(pTextAttr);
@@ -250,7 +250,7 @@ NTSTATUS _CopyRectangle(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_R
         TextAttribute* rTextAttrs = new TextAttribute[Size.X * Size.Y];
         Status = NT_TESTNULL(rTextAttrs);
         if (NT_SUCCESS(Status))
-        {   
+        {
             Status = ReadRectFromScreenBuffer(pScreenInfo, SourcePoint, rgciScrollBuffer, Size, &Target, rTextAttrs);
             if (NT_SUCCESS(Status))
             {
@@ -401,7 +401,7 @@ NTSTATUS WriteScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PCHAR_INFO
     TargetPoint.X = psrWriteRegion->Left;
     TargetPoint.Y = psrWriteRegion->Top;
 
-    return WriteRectToScreenBuffer((PBYTE) pciBuffer, SourceSize, &SourceRect, pScreenInfo, TargetPoint, nullptr); 
+    return WriteRectToScreenBuffer((PBYTE) pciBuffer, SourceSize, &SourceRect, pScreenInfo, TargetPoint, nullptr);
 }
 
 // Routine Description:
@@ -510,7 +510,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 BufPtrA = (PBYTE)((PBYTE)BufPtrA + ((pScreenInfo->ScreenBufferSize.X - X) * sizeof(CHAR)));
 
                 NumRead += pScreenInfo->ScreenBufferSize.X - X;
-                
+
                 Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
 
                 X = 0;
@@ -661,7 +661,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     {
         UINT const Codepage = g_ciConsoleInformation.OutputCP;
 
-        NumRead = ConvertOutputToOem(Codepage, TransBuffer, NumRead, (LPSTR) pvBuffer, *pcRecords);
+        NumRead = ConvertToOem(Codepage, TransBuffer, NumRead, (LPSTR) pvBuffer, *pcRecords);
 
         delete[] TransBuffer;
     }
@@ -719,7 +719,7 @@ SHORT ScrollEntireScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo, _In_ const SHO
 {
     // store index of first row
     SHORT const RowIndex = pScreenInfo->TextInfo->GetFirstRowIndex();
-    
+
     // update screen buffer
     pScreenInfo->TextInfo->SetFirstRowIndex((SHORT)((RowIndex + sScrollValue) % pScreenInfo->ScreenBufferSize.Y));
 
@@ -1038,7 +1038,7 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
                             ScrollScreen(pScreenInfo, &ScrollRectangle2, &ScrollRectangle3, TargetPoint);
                         }
                     }
-            
+
                     delete[] rTextAttrs;
                 }
 
@@ -1083,7 +1083,7 @@ NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
 
 void SetProcessFocus(_In_ HANDLE ProcessHandle, _In_ BOOL Foreground)
 {
-    SetPriorityClass(ProcessHandle, 
+    SetPriorityClass(ProcessHandle,
                      Foreground ? PROCESS_MODE_BACKGROUND_END : PROCESS_MODE_BACKGROUND_BEGIN);
 }
 
