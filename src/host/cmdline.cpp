@@ -4399,9 +4399,9 @@ NTSTATUS SrvSetConsoleTitle(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*R
         if (NT_SUCCESS(Status))
         {
             Status = DoSrvSetConsoleTitle(Buffer, cbOriginalLength, a->Unicode);
+            UnlockConsole();
         }
     }
-    UnlockConsole();
 
     return Status;
 }
