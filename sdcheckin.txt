@@ -4,7 +4,7 @@ Ver=2
 [Job]
 SDBRANCH=rs_onecore_dep_dart
 SDPORT=windowsdepot.sys-ntgroup.ntdev.microsoft.com:2016
-SDCOMMENT=MSFT:9185881 - OpenConsole Auto-submission - $(BuildNumber) $(Changes)
+SDCOMMENT=MSFT:9236190 - OpenConsole Auto-submission - $(BuildNumber) $(Changes)
 EMAILTO=miniksa@microsoft.com;dartcon@microsoft.com
 NOREVERT=True
 [MIR][ERROK]src,windows/core/console/open
