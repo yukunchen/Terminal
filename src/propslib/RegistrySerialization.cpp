@@ -191,13 +191,13 @@ NTSTATUS RegistrySerialization::s_OpenKey(_In_opt_ HKEY const hKey, _In_ PCWSTR 
 // - Deletes the value under a given key
 // Arguments:
 // - hKey - Handle to a registry key
-// - pwszSubKey - String name of value to delete under that key
+// - pwszValueName - String name of value to delete under that key
 // Return Value:
 // - STATUS_SUCCESSFUL or appropriate NTSTATUS reply for registry operations.
 _Check_return_
-NTSTATUS RegistrySerialization::s_DeleteValue(_In_ HKEY const hKey, _In_ PCWSTR const pwszSubKey)
+NTSTATUS RegistrySerialization::s_DeleteValue(_In_ HKEY const hKey, _In_ PCWSTR const pwszValueName)
 {
-    return NTSTATUS_FROM_WIN32(RegDeleteKeyValueW(hKey, nullptr, pwszSubKey));
+    return NTSTATUS_FROM_WIN32(RegDeleteKeyValueW(hKey, nullptr, pwszValueName));
 }
 
 // Routine Description:
@@ -436,9 +436,9 @@ extern "C"
     }
 
 
-    NTSTATUS RegistrySerializationDeleteValue(_In_ HKEY const hKey, _In_ PCWSTR const pwszSubKey)
+    NTSTATUS RegistrySerializationDeleteValue(_In_ HKEY const hKey, _In_ PCWSTR const pwszValueName)
     {
-        return RegistrySerialization::s_DeleteValue(hKey, pwszSubKey);
+        return RegistrySerialization::s_DeleteValue(hKey, pwszValueName);
     }
 
 
