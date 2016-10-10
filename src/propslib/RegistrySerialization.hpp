@@ -53,7 +53,7 @@ public:
     static NTSTATUS s_CreateKey(_In_ HKEY const hKey, _In_ PCWSTR const pwszSubKey, _Out_ HKEY* const phResult);
 
     _Check_return_
-    static NTSTATUS s_DeleteKey(_In_ HKEY const hKey, _In_ PCWSTR const pwszSubKey);
+    static NTSTATUS s_DeleteValue(_In_ HKEY const hKey, _In_ PCWSTR const pwszSubKey);
 
     _Check_return_
     static NTSTATUS s_SetValue(_In_ HKEY const hKey,
@@ -145,7 +145,7 @@ public:
     NTSTATUS RegistrySerializationCreateKey(_In_ HKEY const hKey, _In_ PCWSTR const pwszSubKey, _Out_ HKEY* const phResult);
 
     _Check_return_
-    NTSTATUS RegistrySerializationDeleteKey(_In_ HKEY const hKey, _In_ PCWSTR const pwszSubKey);
+    NTSTATUS RegistrySerializationDeleteValue(_In_ HKEY const hKey, _In_ PCWSTR const pwszSubKey);
 
     _Check_return_
     NTSTATUS RegistrySerializationSetValue(_In_ HKEY const hKey,
