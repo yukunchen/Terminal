@@ -197,7 +197,7 @@ NTSTATUS RegistrySerialization::s_OpenKey(_In_opt_ HKEY const hKey, _In_ PCWSTR 
 _Check_return_
 NTSTATUS RegistrySerialization::s_DeleteKey(_In_ HKEY const hKey, _In_ PCWSTR const pwszSubKey)
 {
-    return NTSTATUS_FROM_WIN32(RegDeleteKeyW(hKey, pwszSubKey));
+    return NTSTATUS_FROM_WIN32(RegDeleteKeyValueW(hKey, nullptr, pwszSubKey));
 }
 
 // Routine Description:
