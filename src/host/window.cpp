@@ -1317,7 +1317,7 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
                 // Save window position
                 if (fAutoPos)
                 {
-                    Status = RegistrySerialization::s_DeleteKey(hTitleKey, CONSOLE_REGISTRY_WINDOWPOS);
+                    Status = RegistrySerialization::s_DeleteValue(hTitleKey, CONSOLE_REGISTRY_WINDOWPOS);
                 }
                 else
                 {
