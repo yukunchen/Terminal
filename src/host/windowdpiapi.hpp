@@ -12,9 +12,6 @@ Author(s):
 --*/
 #pragma once
 
-// This type is used in an RS1 API, so we reproduce it for downlevel builds.
-#ifdef CON_DPIAPI_INDIRECT
-
 // To avoid a break when the RS1 SDK gets dropped in, don't redef.
 #ifndef _DPI_AWARENESS_CONTEXTS_
 
@@ -30,9 +27,12 @@ typedef enum DPI_AWARENESS {
 #define DPI_AWARENESS_CONTEXT_UNAWARE              ((DPI_AWARENESS_CONTEXT)-1)
 #define DPI_AWARENESS_CONTEXT_SYSTEM_AWARE         ((DPI_AWARENESS_CONTEXT)-2)
 #define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE    ((DPI_AWARENESS_CONTEXT)-3)
-#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 ((DPI_AWARENESS_CONTEXT)-4)
 
 #endif
+
+// This type is being defined in RS2 but is percolating through the tree. Def it here if it hasn't collided with our branch yet.
+#ifndef DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
+#define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 ((DPI_AWARENESS_CONTEXT)-4)
 #endif
 
 class WindowDpiApi sealed
