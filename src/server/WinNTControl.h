@@ -15,8 +15,6 @@ Revision History:
 
 #pragma once
 
-#include <NT\ntdef.h>
-
 class WinNTControl
 {
 public:

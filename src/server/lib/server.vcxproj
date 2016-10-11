@@ -1,13 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\common.build.pre.props"/>
+  <Import Project="..\..\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="..\DeviceHandle.cpp" />
+    <ClCompile Include="..\Entrypoints.cpp" />
     <ClCompile Include="..\precomp.cpp">
-      <PrecompiledHeader >Create</PrecompiledHeader>
+      <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\WinNTControl.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\DeviceHandle.h" />
+    <ClInclude Include="..\Entrypoints.h" />
     <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\WinNTControl.h" />
   </ItemGroup>
   <PropertyGroup>
     <ProjectGuid>{18D09A24-8240-42D6-8CB6-236EEE820262}</ProjectGuid>
@@ -18,10 +24,10 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\dep</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\dep;..\..\..\dep\Console</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="..\..\common.build.lib.props"/>
-  <Import Project="..\..\common.build.post.props"/>
+  <Import Project="..\..\common.build.lib.props" />
+  <Import Project="..\..\common.build.post.props" />
 </Project>

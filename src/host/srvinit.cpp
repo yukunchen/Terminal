@@ -21,6 +21,8 @@
 #include "windowdpiapi.hpp"
 #include "userprivapi.hpp"
 
+#include "..\server\Entrypoints.h"
+
 #pragma hdrstop
 
 #define CONSOLE_API_STRUCT(Routine, Struct) { Routine, sizeof(Struct) }
@@ -445,7 +447,7 @@ void ConsoleCheckDebug()
 #endif
 }
 
-NTSTATUS ConsoleCreateIoThread(_In_ HANDLE Server)
+NTSTATUS ConsoleCreateIoThreadLegacy(_In_ HANDLE Server)
 {
     ConsoleCheckDebug();
 
@@ -501,6 +503,11 @@ NTSTATUS ConsoleCreateIoThread(_In_ HANDLE Server)
     }
 
     return Status;
+}
+
+NTSTATUS ConsoleCreateIoThread(_In_ HANDLE Server)
+{
+    return Entrypoints::StartConsoleForServerHandle(Server);
 }
 
 #define SYSTEM_ROOT         (L"%SystemRoot%")
