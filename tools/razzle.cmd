@@ -1,4 +1,5 @@
 @echo off
+
 rem Open Console build environment setup
 rem Adds msbuild to your path, and adds the open\tools directory as well
 rem This recreates what it's like to be an actual windows developer!
@@ -27,14 +28,14 @@ set TAEF=%OPENCON%\dep\DDK\TAEF\%ARCH%\TE.exe
 set DEFAULT_CONFIGURATION=Debug
 
 rem call .razzlerc - for your generic razzle environment stuff
-if exist "%OPENCON_TOOLS%\.razzlerc.bat" (
-    call %OPENCON_TOOLS%\.razzlerc.bat
+if exist "%OPENCON_TOOLS%\.razzlerc.cmd" (
+    call %OPENCON_TOOLS%\.razzlerc.cmd
 )   else (
     (
         echo @echo off
         echo.
         echo rem This is your razzlerc file. It can be used for default dev environment setup.
-    ) > %OPENCON_TOOLS%\.razzlerc.bat
+    ) > %OPENCON_TOOLS%\.razzlerc.cmd
 )
 
 rem if there are args, run them. This can be used for additional env. customization,

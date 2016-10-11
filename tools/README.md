@@ -12,7 +12,7 @@ to similar effect.
  - It adds msbuild to your path.
  - It adds the tools directory to your path as well, so all these scripts are
  easily available.
- - It executes `\tools\.razzlerc.bat` to add any other personal configuration to
+ - It executes `\tools\.razzlerc.cmd` to add any other personal configuration to
  your environment as well, or creates one if it doesn't exist.
  - It sets up the default build configuration to be 'Debug'. If you'd like to
  manually specify a build configuration, pass the parameter `dbg` for Debug, and
