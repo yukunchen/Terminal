@@ -32,7 +32,7 @@ NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
 
         // If we get to here, we have transferred ownership of the server handle to the console, so release it.
         // Keep a copy of the value so we can open the client handles even though we're no longer the owner.
-        HANDLE hServer = ServerHandle.release();
+        HANDLE const hServer = ServerHandle.release();
 
         // Now that the console object was created, we're in a state that lets us
         // create the default io objects.
@@ -80,16 +80,18 @@ NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
                                           &AttributeListSize);
 
         // Alloc space
-        std::unique_ptr<BYTE[]> AttributeList = std::make_unique<BYTE[]>(AttributeListSize);
+        wistd::unique_ptr<BYTE[]> AttributeList = wil::make_unique_nothrow<BYTE[]>(AttributeListSize);
+        RETURN_IF_NULL_ALLOC(AttributeList);
+
         StartupInformation.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(AttributeList.get());
 
         // Call second time to actually initialize space.
         RETURN_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(StartupInformation.lpAttributeList,
-                                                                     2,
+                                                                     2, // This represents the length of the list. We will call UpdateProcThreadAttribute twice so this is 2.
                                                                      0,
                                                                      &AttributeListSize));
         // Set cleanup data for ProcThreadAttributeList when successful.
-        auto CleanupProcThreadAttribute = wil::ScopeExit([StartupInformation]
+        auto CleanupProcThreadAttribute = wil::ScopeExit([&]
         {
             DeleteProcThreadAttributeList(StartupInformation.lpAttributeList);
         });
@@ -104,18 +106,20 @@ NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
 
         // UpdateProcThreadAttributes wants this as a bare array of handles and doesn't like our smart structures, 
         // so set it up for its temporary use.
-        HANDLE HandleList[3];
-        HandleList[0] = StartupInformation.StartupInfo.hStdInput;
-        HandleList[1] = StartupInformation.StartupInfo.hStdOutput;
-        HandleList[2] = StartupInformation.StartupInfo.hStdError;
+        {
+            HANDLE HandleList[3];
+            HandleList[0] = StartupInformation.StartupInfo.hStdInput;
+            HandleList[1] = StartupInformation.StartupInfo.hStdOutput;
+            HandleList[2] = StartupInformation.StartupInfo.hStdError;
 
-        RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(StartupInformation.lpAttributeList,
-                                                             0,
-                                                             PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
-                                                             &HandleList[0],
-                                                             sizeof HandleList,
-                                                             NULL,
-                                                             NULL));
+            RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(StartupInformation.lpAttributeList,
+                                                                 0,
+                                                                 PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+                                                                 &HandleList[0],
+                                                                 sizeof HandleList,
+                                                                 NULL,
+                                                                 NULL));
+        }
 
         // We have to copy the command line string we're given because CreateProcessW has to be called with mutable data.
         if (wcslen(pwszCmdLine) == 0)
