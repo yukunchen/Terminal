@@ -6,7 +6,7 @@ rem    Passes any args along.
 
 if not exist %OPENCON%\bin\%ARCH%\%_LAST_BUILD_CONF%\OpenConsole.exe (
     echo Could not locate the OpenConsole.exe in %OPENCON%\bin\%ARCH%\%_LAST_BUILD_CONF%. Double check that it has been built and try again.
-    exit
+    goto :eof
 )
 
 setlocal
@@ -17,5 +17,4 @@ set copy_name=%copy_name: =%
 
 copy /Y %OPENCON%\bin\%ARCH%\%_LAST_BUILD_CONF%\OpenConsole.exe %TEMP%\%copy_name% > nul
 
-start %TEMP%\%copy_name% %* &
-
+start %TEMP%\%copy_name% %*
