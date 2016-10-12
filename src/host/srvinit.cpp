@@ -828,7 +828,7 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
     ConnectionInformation.Input = (ULONG_PTR) ProcessData->InputHandle;
     ConnectionInformation.Output = (ULONG_PTR) ProcessData->OutputHandle;
 
-    if(!SUCCEEDED(g_pDeviceComm->CompleteIo(&ReceiveMsg->Complete)))
+    if (FAILED(g_pDeviceComm->CompleteIo(&ReceiveMsg->Complete)))
     {
         FreeCommandHistory((HANDLE) ProcessData);
         FreeProcessData(ProcessData);
@@ -923,7 +923,7 @@ PCONSOLE_API_MSG ConsoleCreateObject(_In_ PCONSOLE_API_MSG Message, _Inout_ CONS
     SetReplyStatus(Message, STATUS_SUCCESS);
     SetReplyInformation(Message, (ULONG_PTR) Handle);
 
-    if (!SUCCEEDED(g_pDeviceComm->CompleteIo(&Message->Complete)))
+    if (FAILED(g_pDeviceComm->CompleteIo(&Message->Complete)))
     {
         ConsoleCloseHandle(Handle);
     }
@@ -1019,7 +1019,7 @@ DWORD ConsoleIoThread()
         
         // TODO: correct mixed NTSTATUS/HRESULT
         Status = g_pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
-        if (!SUCCEEDED(Status))
+        if (FAILED(Status))
         {
             if (Status == STATUS_PIPE_DISCONNECTED ||
                 Status == ERROR_PIPE_NOT_CONNECTED ||

@@ -38,10 +38,10 @@ public:
 private:
 
     HRESULT _CallIoctl(_In_ DWORD dwIoControlCode,
-                       _In_reads_bytes_opt_(nInBufferSize) LPVOID lpInBuffer,
-                       _In_ DWORD nInBufferSize,
-                       _Out_writes_bytes_opt_(nOutBufferSize) LPVOID lpOutBuffer,
-                       _In_ DWORD nOutBufferSize) const;
+                       _In_reads_bytes_opt_(cbInBufferSize) PVOID pInBuffer,
+                       _In_ DWORD cbInBufferSize,
+                       _Out_writes_bytes_opt_(cbOutBufferSize) PVOID pOutBuffer,
+                       _In_ DWORD cbOutBufferSize) const;
 
     wil::unique_handle _Server;
 

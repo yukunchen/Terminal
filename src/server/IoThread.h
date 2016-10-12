@@ -1,3 +1,3 @@
 #pragma once
 
-NTSTATUS ConsoleCreateIoThreadLegacy(_In_ HANDLE Server);
+HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server);
