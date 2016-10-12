@@ -26,6 +26,7 @@ SOURCES= \
     ..\DeviceComm.cpp \
     ..\DeviceHandle.cpp \
     ..\Entrypoints.cpp \
+    ..\ObjectHeader.cpp \
     ..\WinNTControl.cpp \
 
 TARGETLIBS= \

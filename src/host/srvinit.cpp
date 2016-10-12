@@ -788,7 +788,7 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
     }
 
     // Create the handles.
-    Status = AllocateIoHandle(CONSOLE_INPUT_HANDLE,
+    Status = ConsoleObjectHeader::s_AllocateIoHandle(CONSOLE_INPUT_HANDLE,
                               &ProcessData->InputHandle,
                               &g_ciConsoleInformation.pInputBuffer->Header,
                               GENERIC_READ | GENERIC_WRITE,
@@ -799,7 +799,7 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
         goto Error;
     }
 
-    Status = AllocateIoHandle(CONSOLE_OUTPUT_HANDLE,
+    Status = ConsoleObjectHeader::s_AllocateIoHandle(CONSOLE_OUTPUT_HANDLE,
                               &ProcessData->OutputHandle,
                               &g_ciConsoleInformation.CurrentScreenBuffer->GetMainBuffer()->Header,
                               GENERIC_READ | GENERIC_WRITE,
@@ -883,7 +883,7 @@ PCONSOLE_API_MSG ConsoleCreateObject(_In_ PCONSOLE_API_MSG Message, _Inout_ CONS
     switch (CreateInformation->ObjectType)
     {
         case CD_IO_OBJECT_TYPE_CURRENT_INPUT:
-            Status = AllocateIoHandle(CONSOLE_INPUT_HANDLE, &Handle, &Console->pInputBuffer->Header, CreateInformation->DesiredAccess, CreateInformation->ShareMode);
+            Status = ConsoleObjectHeader::s_AllocateIoHandle(CONSOLE_INPUT_HANDLE, &Handle, &Console->pInputBuffer->Header, CreateInformation->DesiredAccess, CreateInformation->ShareMode);
             break;
 
         case CD_IO_OBJECT_TYPE_CURRENT_OUTPUT:
@@ -896,7 +896,7 @@ PCONSOLE_API_MSG ConsoleCreateObject(_In_ PCONSOLE_API_MSG Message, _Inout_ CONS
             }
             else
             {
-                Status = AllocateIoHandle(CONSOLE_OUTPUT_HANDLE, &Handle, &ScreenInformation->Header, CreateInformation->DesiredAccess, CreateInformation->ShareMode);
+                Status = ConsoleObjectHeader::s_AllocateIoHandle(CONSOLE_OUTPUT_HANDLE, &Handle, &ScreenInformation->Header, CreateInformation->DesiredAccess, CreateInformation->ShareMode);
             }
             break;
         }

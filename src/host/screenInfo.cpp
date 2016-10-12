@@ -88,7 +88,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
     Status = NT_TESTNULL(pScreen);
     if (NT_SUCCESS(Status))
     {
-        InitializeObjectHeader(&pScreen->Header);
+        ConsoleObjectHeader::s_InitializeObjectHeader(&pScreen->Header);
 
         pScreen->ScreenBufferSize = coordScreenBufferSize;
 

@@ -27,11 +27,6 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
 void ConsoleCloseHandle(_In_ const HANDLE hClose);
 bool FreeConsoleHandle(_In_ HANDLE hFree);
 
-NTSTATUS AllocateIoHandle(_In_ const ULONG ulHandleType,
-                          _Out_ HANDLE * const hOut,
-                          _Inout_ PCONSOLE_OBJECT_HEADER pObjHeader,
-                          _In_ const ACCESS_MASK amDesired,
-                          _In_ const ULONG ulShareMode);
 NTSTATUS DereferenceIoHandleNoCheck(_In_ HANDLE hIO, _Out_ PCONSOLE_HANDLE_DATA * const ppConsoleData);
 NTSTATUS DereferenceIoHandle(_In_ HANDLE hIO,
                              _In_ const ULONG ulHandleType,
@@ -45,5 +40,3 @@ PCONSOLE_PROCESS_HANDLE AllocProcessData(_In_ CLIENT_ID const * const ClientId,
                                          _In_ ULONG const ulProcessGroupId,
                                          _In_opt_ PCONSOLE_PROCESS_HANDLE pParentProcessData);
 void FreeProcessData(_In_ PCONSOLE_PROCESS_HANDLE ProcessData);
-
-void InitializeObjectHeader(_Out_ PCONSOLE_OBJECT_HEADER pObjHeader);

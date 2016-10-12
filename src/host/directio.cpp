@@ -1104,7 +1104,7 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ PHANDLE Handle,
         goto Exit;
     }
 
-    Status = AllocateIoHandle(HandleType, Handle, &ScreenInfo->Header, Information->DesiredAccess, Information->ShareMode);
+    Status = ConsoleObjectHeader::s_AllocateIoHandle(HandleType, Handle, &ScreenInfo->Header, Information->DesiredAccess, Information->ShareMode);
 
     if (!NT_SUCCESS(Status))
     {

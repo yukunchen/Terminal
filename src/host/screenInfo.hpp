@@ -90,7 +90,7 @@ public:
     BOOL SendNotifyBeep() const;
     BOOL PostUpdateWindowSize() const;
 
-    CONSOLE_OBJECT_HEADER Header;
+    ConsoleObjectHeader Header;
     DWORD OutputMode;
     COORD ScreenBufferSize; // dimensions of buffer
     SMALL_RECT BufferViewport;  // specifies which coordinates of the screen buffer are visible in the window client (the "viewport" into the buffer)

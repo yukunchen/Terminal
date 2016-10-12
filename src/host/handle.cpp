@@ -78,7 +78,7 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
         goto ErrorExit3;
     }
 
-    InitializeObjectHeader(&g_ciConsoleInformation.pInputBuffer->Header);
+    ConsoleObjectHeader::s_InitializeObjectHeader(&g_ciConsoleInformation.pInputBuffer->Header);
 
     // Byte count + 1 so dividing by 2 always rounds up. +1 more for trailing null guard.
     g_ciConsoleInformation.Title = new WCHAR[((cbTitle + 1) / sizeof(WCHAR)) + 1];
@@ -169,7 +169,7 @@ bool FreeConsoleHandle(_In_ HANDLE hFree)
     BOOLEAN const WriteRequested = (HandleData->Access & GENERIC_WRITE) != 0;
     BOOLEAN const WriteShared = (HandleData->ShareAccess & FILE_SHARE_WRITE) != 0;
 
-    PCONSOLE_OBJECT_HEADER const Header = (PCONSOLE_OBJECT_HEADER)HandleData->ClientPointer;
+    ConsoleObjectHeader* const Header = static_cast<ConsoleObjectHeader*>(HandleData->ClientPointer);
 
     delete HandleData;
 
@@ -184,71 +184,7 @@ bool FreeConsoleHandle(_In_ HANDLE hFree)
     return Header->OpenCount == 0;
 }
 
-// Routine Description:
-// - This routine allocates an input or output handle from the process's handle table.
-// - This routine initializes all non-type specific fields in the handle data structure.
-// Arguments:
-// - ulHandleType - Flag indicating input or output handle.
-// - phOut - On return, contains allocated handle.  Handle is an index internally.  When returned to the API caller, it is translated into a handle.
-// Return Value:
-// Note:
-// - The console lock must be held when calling this routine.  The handle is allocated from the per-process handle table.  Holding the console
-//   lock serializes both threads within the calling process and any other process that shares the console.
-NTSTATUS AllocateIoHandle(_In_ const ULONG ulHandleType,
-                          _Out_ HANDLE * const phOut,
-                          _Inout_ PCONSOLE_OBJECT_HEADER pObjHeader,
-                          _In_ const ACCESS_MASK amDesired,
-                          _In_ const ULONG ulShareMode)
-{
-    // Check the share mode.
-    BOOLEAN const ReadRequested = (amDesired & GENERIC_READ) != 0;
-    BOOLEAN const ReadShared = (ulShareMode & FILE_SHARE_READ) != 0;
 
-    BOOLEAN const WriteRequested = (amDesired & GENERIC_WRITE) != 0;
-    BOOLEAN const WriteShared = (ulShareMode & FILE_SHARE_WRITE) != 0;
-
-    if (((ReadRequested != FALSE) && (pObjHeader->OpenCount > pObjHeader->ReadShareCount)) ||
-        ((ReadShared == FALSE) && (pObjHeader->ReaderCount > 0)) ||
-        ((WriteRequested != FALSE) && (pObjHeader->OpenCount > pObjHeader->WriteShareCount)) || ((WriteShared == FALSE) && (pObjHeader->WriterCount > 0)))
-    {
-        return STATUS_SHARING_VIOLATION;
-    }
-
-    // Allocate all necessary state.
-    PCONSOLE_HANDLE_DATA const HandleData = new CONSOLE_HANDLE_DATA();
-    if (HandleData == nullptr)
-    {
-        return STATUS_NO_MEMORY;
-    }
-
-    if ((ulHandleType & CONSOLE_INPUT_HANDLE) != 0)
-    {
-        HandleData->pClientInput = new INPUT_READ_HANDLE_DATA();
-        if (HandleData->pClientInput == nullptr)
-        {
-            delete HandleData;
-            return STATUS_NO_MEMORY;
-        }
-    }
-
-    // Update share/open counts and store handle information.
-    pObjHeader->OpenCount += 1;
-
-    pObjHeader->ReaderCount += ReadRequested;
-    pObjHeader->ReadShareCount += ReadShared;
-
-    pObjHeader->WriterCount += WriteRequested;
-    pObjHeader->WriteShareCount += WriteShared;
-
-    HandleData->HandleType = ulHandleType;
-    HandleData->ShareAccess = ulShareMode;
-    HandleData->Access = amDesired;
-    HandleData->ClientPointer = pObjHeader;
-
-    *phOut = (HANDLE)HandleData;
-
-    return STATUS_SUCCESS;
-}
 
 // Routine Description:
 // - This routine verifies a handle's validity, then returns a pointer to the handle data structure.
@@ -439,11 +375,6 @@ void FreeProcessData(_In_ PCONSOLE_PROCESS_HANDLE pProcessData)
 
     RemoveEntryList(&pProcessData->ListLink);
     delete pProcessData;
-}
-
-void InitializeObjectHeader(_Out_ PCONSOLE_OBJECT_HEADER pObjHeader)
-{
-    ZeroMemory(pObjHeader, sizeof(*pObjHeader));
 }
 
 // Routine Description:

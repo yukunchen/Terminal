@@ -5,6 +5,7 @@
     <ClCompile Include="..\DeviceComm.cpp" />
     <ClCompile Include="..\DeviceHandle.cpp" />
     <ClCompile Include="..\Entrypoints.cpp" />
+    <ClCompile Include="..\ObjectHeader.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -14,7 +15,11 @@
     <ClInclude Include="..\DeviceComm.h" />
     <ClInclude Include="..\DeviceHandle.h" />
     <ClInclude Include="..\Entrypoints.h" />
+    <ClInclude Include="..\ObjectHandle.h" />
+    <ClInclude Include="..\ObjectHeader.h" />
     <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\ProcessHandle.h" />
+    <ClInclude Include="..\WaitBlock.h" />
     <ClInclude Include="..\WinNTControl.h" />
   </ItemGroup>
   <PropertyGroup>
