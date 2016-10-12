@@ -23,6 +23,7 @@ INCLUDES= \
 
 SOURCES= \
     $(SOURCES) \
+    ..\DeviceComm.cpp \
     ..\DeviceHandle.cpp \
     ..\Entrypoints.cpp \
     ..\WinNTControl.cpp \
