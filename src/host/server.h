@@ -167,16 +167,7 @@ typedef struct _CONSOLE_WAIT_BLOCK
 #define CONSOLE_OUTPUT_HANDLE          0x00000002
 #define CONSOLE_GRAPHICS_OUTPUT_HANDLE 0x00000004
 
-class INPUT_READ_HANDLE_DATA;
-
-typedef struct _CONSOLE_HANDLE_DATA
-{
-    ULONG HandleType;
-    ACCESS_MASK Access;
-    ULONG ShareAccess;
-    PVOID ClientPointer; // This will be a pointer to a SCREEN_INFORMATION or INPUT_INFORMATION object.
-    INPUT_READ_HANDLE_DATA * pClientInput;
-} CONSOLE_HANDLE_DATA, *PCONSOLE_HANDLE_DATA;
+#include "..\server\ObjectHandle.h"
 
 BOOL ConsoleCreateWait(_In_ PLIST_ENTRY pWaitQueue,
                        _In_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
