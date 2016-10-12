@@ -2,5 +2,6 @@ DIRS=\
      host \
      propslib \
      renderer \
+     server \
      terminal \
      tsf \

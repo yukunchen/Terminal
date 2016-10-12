@@ -3,7 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-# Put Host.EXE first to set as startup project for people without preferences.
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.EXE", "src\host\exe\Host.EXE.vcxproj", "{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PropertiesLibrary", "src\propslib\propslib.vcxproj", "{345FD5A4-B32B-4F29-BD1C-B033BD2C35CC}"
@@ -85,6 +84,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build Common", "Build Commo
 		src\common.build.pre.props = src\common.build.pre.props
 		src\common.build.tests.props = src\common.build.tests.props
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Server", "src\server\lib\server.vcxproj", "{18D09A24-8240-42D6-8CB6-236EEE820262}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -238,6 +239,14 @@ Global
 		{707F1302-160D-414D-9B9B-F414570363E1}.Release|x64.Build.0 = Release|x64
 		{707F1302-160D-414D-9B9B-F414570363E1}.Release|x86.ActiveCfg = Release|Win32
 		{707F1302-160D-414D-9B9B-F414570363E1}.Release|x86.Build.0 = Release|Win32
+		{18D09A24-8240-42D6-8CB6-236EEE820262}.Debug|x64.ActiveCfg = Debug|x64
+		{18D09A24-8240-42D6-8CB6-236EEE820262}.Debug|x64.Build.0 = Debug|x64
+		{18D09A24-8240-42D6-8CB6-236EEE820262}.Debug|x86.ActiveCfg = Debug|Win32
+		{18D09A24-8240-42D6-8CB6-236EEE820262}.Debug|x86.Build.0 = Debug|Win32
+		{18D09A24-8240-42D6-8CB6-236EEE820262}.Release|x64.ActiveCfg = Release|x64
+		{18D09A24-8240-42D6-8CB6-236EEE820262}.Release|x64.Build.0 = Release|x64
+		{18D09A24-8240-42D6-8CB6-236EEE820262}.Release|x86.ActiveCfg = Release|Win32
+		{18D09A24-8240-42D6-8CB6-236EEE820262}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
