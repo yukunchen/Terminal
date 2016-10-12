@@ -20,10 +20,6 @@ Revision History:
 #include "settings.hpp"
 #include "window.hpp"
 
-struct _INPUT_INFORMATION;
-typedef _INPUT_INFORMATION INPUT_INFORMATION;
-typedef _INPUT_INFORMATION *PINPUT_INFORMATION;
-
 #include "conimeinfo.h"
 #include "..\terminal\adapter\terminalInput.hpp"
 #include "..\terminal\adapter\MouseInput.hpp"
@@ -178,6 +174,10 @@ void ReleaseMessageBuffers(_Inout_ PCONSOLE_API_MSG pMessage);
 void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput);
 
 NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo);
+
+struct _INPUT_INFORMATION;
+typedef _INPUT_INFORMATION INPUT_INFORMATION;
+typedef _INPUT_INFORMATION *PINPUT_INFORMATION;
 
 PINPUT_INFORMATION GetInputBufferFromHandle(const CONSOLE_HANDLE_DATA* HandleData);
 PSCREEN_INFORMATION GetScreenBufferFromHandle(const CONSOLE_HANDLE_DATA* HandleData);
