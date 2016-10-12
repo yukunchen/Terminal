@@ -274,38 +274,6 @@ extern "C"
 };
 #pragma endregion
 
-#pragma region winternl.h (public no link, DDK)
-// Modified from NtDeviceIoControlFile for now.
-FORCEINLINE
-NTSTATUS WINAPI IoControlFile(
-    _In_ HANDLE FileHandle,
-    _In_ ULONG IoControlCode,
-    _In_ PVOID InputBuffer,
-    _In_ ULONG InputBufferLength,
-    _Out_ PVOID OutputBuffer,
-    _In_ ULONG OutputBufferLength
-)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    DWORD BytesReturned;
-
-    if (FALSE == DeviceIoControl(FileHandle,
-                                 IoControlCode,
-                                 InputBuffer,
-                                 InputBufferLength,
-                                 OutputBuffer,
-                                 OutputBufferLength,
-                                 &BytesReturned,
-                                 nullptr))
-    {
-        Status = NTSTATUS_FROM_WIN32(GetLastError());
-    }
-
-    return Status;
-}
-#pragma endregion
-
 #pragma region ntifs.h (public DDK)
 
 extern "C"

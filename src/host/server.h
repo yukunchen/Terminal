@@ -76,7 +76,6 @@ public:
     Window* pWindow;
     PSCREEN_INFORMATION CurrentScreenBuffer;
     PSCREEN_INFORMATION ScreenBuffers;  // singly linked list
-    HANDLE Server;
     HWND hWnd;
     HMENU hMenu;    // handle to system menu
     HMENU hHeirMenu;    // handle to menu we append to system menu
@@ -187,7 +186,6 @@ BOOL ConsoleCreateWait(_In_ PLIST_ENTRY pWaitQueue,
 BOOL ConsoleNotifyWaitBlock(_In_ PCONSOLE_WAIT_BLOCK pWaitBlock, _In_ PLIST_ENTRY pWaitQueue, _In_ PVOID pvSatisfyParameter, _In_ BOOL fThreadDying);
 BOOL ConsoleNotifyWait(_In_ PLIST_ENTRY pWaitQueue, _In_ const BOOL fSatisfyAll, _In_ PVOID pvSatisfyParameter);
 
-NTSTATUS ConsoleComplete(_In_ HANDLE hObject, _In_ PCD_IO_COMPLETE pComplete);
 NTSTATUS ReadMessageInput(_In_ PCONSOLE_API_MSG pMessage, _In_ const ULONG ulOffset, _Out_writes_bytes_(cbSize) PVOID pvBuffer, _In_ const ULONG cbSize);
 NTSTATUS GetAugmentedOutputBuffer(_Inout_ PCONSOLE_API_MSG pMessage,
                                   _In_ const ULONG ulFactor,

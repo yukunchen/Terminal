@@ -15,8 +15,7 @@ Revision History:
 
 #pragma once
 
-#include "condrv.h"
-#include "..\inc\contsf.h"
+#include <condrv.h>
 #include <conmsgl3.h>
 
 typedef struct _CONSOLE_OBJECT_HEADER
@@ -66,4 +65,4 @@ typedef struct _CONSOLE_API_MSG
             } u;
         };
     };
-} CONSOLE_API_MSG, *PCONSOLE_API_MSG, * const PCCONSOLE_API_MSG;
+} CONSOLE_API_MSG, *PCONSOLE_API_MSG, *const PCCONSOLE_API_MSG;

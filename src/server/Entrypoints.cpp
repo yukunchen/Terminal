@@ -6,11 +6,11 @@
 
 #include "winbasep.h"
 
-NTSTATUS Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle)
+HRESULT Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle)
 {
     RETURN_IF_NTSTATUS_FAILED(ConsoleCreateIoThreadLegacy(ServerHandle));
 
-    return STATUS_SUCCESS;
+    return S_OK;
 }
 
 NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
@@ -155,9 +155,9 @@ NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
     }
 
     // Exit the thread so the CRT won't clean us up and kill. The IO thread owns the lifetime now.
-    ExitThread(STATUS_SUCCESS);
+    ExitThread(S_OK);
 
     // We won't hit this. The ExitThread above will kill the caller at this point.
     assert(false);
-    return STATUS_SUCCESS;
+    return S_OK;
 }

@@ -249,9 +249,13 @@ void LoadLinkInfo(_Inout_ Settings* pLinkSettings,
     }
 }
 
-NTSTATUS ConsoleServerInitialization(_In_ HANDLE Server)
+HRESULT ConsoleServerInitialization(_In_ HANDLE Server)
 {
-    g_ciConsoleInformation.Server = Server;
+    try
+    {
+        g_pDeviceComm = new DeviceComm(Server);
+    }
+    CATCH_RETURN();
 
     g_uiOEMCP = GetOEMCP();
 
@@ -262,10 +266,12 @@ NTSTATUS ConsoleServerInitialization(_In_ HANDLE Server)
     InitializeListHead(&g_ciConsoleInformation.MessageQueue);
 
     g_pFontDefaultList = new RenderFontDefaults();
+    RETURN_IF_NULL_ALLOC(g_pFontDefaultList);
+
     FontInfo::s_SetFontDefaultList(g_pFontDefaultList);
 
     // Removed allocation of scroll buffer here.
-    return STATUS_SUCCESS;
+    return S_OK;
 }
 
 // Calling FindProcessInList(nullptr) means you want the root process.
@@ -417,7 +423,7 @@ VOID ConsoleClientDisconnectRoutine(PCONSOLE_PROCESS_HANDLE ProcessData)
     RemoveConsole(ProcessData);
 }
 
-DWORD ConsoleIoThread(_In_ HANDLE Server);
+DWORD ConsoleIoThread();
 
 DWORD ConsoleInputThread(LPVOID lpParameter);
 
@@ -447,65 +453,28 @@ void ConsoleCheckDebug()
 #endif
 }
 
-NTSTATUS ConsoleCreateIoThreadLegacy(_In_ HANDLE Server)
+HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server)
 {
     ConsoleCheckDebug();
 
-    HANDLE hThread;
-    NTSTATUS Status = ConsoleServerInitialization(Server);
-    if (NT_SUCCESS(Status))
-    {
-        g_hConsoleInputInitEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
-        if (g_hConsoleInputInitEvent == nullptr)
-        {
-            Status = NTSTATUS_FROM_WIN32(GetLastError());
-        }
+    RETURN_IF_FAILED(ConsoleServerInitialization(Server));
+    RETURN_IF_FAILED(g_hConsoleInputInitEvent.create(wil::EventOptions::None));
 
-        if (NT_SUCCESS(Status))
-        {
-            // Set up and tell the driver about the input available event.
-            g_hInputEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+    // Set up and tell the driver about the input available event.
+    RETURN_IF_FAILED(g_hInputEvent.create(wil::EventOptions::ManualReset));
 
-            if (g_hInputEvent == nullptr)
-            {
-                Status = NTSTATUS_FROM_WIN32(GetLastError());
-            }
+    CD_IO_SERVER_INFORMATION ServerInformation;
+    ServerInformation.InputAvailableEvent = g_hInputEvent.get();
+    RETURN_IF_FAILED(g_pDeviceComm->SetServerInformation(&ServerInformation));
 
-            if (NT_SUCCESS(Status))
-            {
+    HANDLE const hThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ConsoleIoThread, 0, 0, nullptr);
+    RETURN_IF_HANDLE_NULL(hThread);
+    LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
-                CD_IO_SERVER_INFORMATION ServerInformation;
-                ServerInformation.InputAvailableEvent = g_hInputEvent;
-
-                Status = IoControlFile(g_ciConsoleInformation.Server,
-                                       IOCTL_CONDRV_SET_SERVER_INFORMATION,
-                                       &ServerInformation,
-                                       sizeof(ServerInformation),
-                                       nullptr,
-                                       0);
-
-                if (NT_SUCCESS(Status))
-                {
-
-                    hThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ConsoleIoThread, Server, 0, nullptr);
-                    if (hThread == nullptr)
-                    {
-                        Status = STATUS_NO_MEMORY;
-                    }
-
-                    if (NT_SUCCESS(Status))
-                    {
-                        CloseHandle(hThread);
-                    }
-                }
-            }
-        }
-    }
-
-    return Status;
+    return S_OK;
 }
 
-NTSTATUS ConsoleCreateIoThread(_In_ HANDLE Server)
+HRESULT ConsoleCreateIoThread(_In_ HANDLE Server)
 {
     return Entrypoints::StartConsoleForServerHandle(Server);
 }
@@ -726,12 +695,11 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         {
             // The ConsoleInputThread needs to lock the console so we must first unlock it ourselves.
             UnlockConsole();
-            WaitForSingleObject(g_hConsoleInputInitEvent, INFINITE);
+            g_hConsoleInputInitEvent.wait();
             LockConsole();
 
             CloseHandle(Thread);
-            CloseHandle(g_hConsoleInputInitEvent);
-            g_hConsoleInputInitEvent = nullptr;
+            g_hConsoleInputInitEvent.release();
 
             if (!NT_SUCCESS(g_ntstatusConsoleInputInitStatus))
             {
@@ -753,12 +721,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
              *      is only called when a window is created.
              */
 
-            IoControlFile(g_ciConsoleInformation.Server,
-                          IOCTL_CONDRV_ALLOW_VIA_UIACCESS,
-                          nullptr,
-                          0,
-                          nullptr,
-                          0);
+            LOG_IF_FAILED(g_pDeviceComm->AllowUIAccess());
         }
     }
     else
@@ -769,7 +732,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     return Status;
 }
 
-PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_In_ HANDLE Server, _Inout_ PCONSOLE_API_MSG ReceiveMsg)
+PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG ReceiveMsg)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AttachConsole);
 
@@ -865,8 +828,7 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_In_ HANDLE Server, _Inout_ PCON
     ConnectionInformation.Input = (ULONG_PTR) ProcessData->InputHandle;
     ConnectionInformation.Output = (ULONG_PTR) ProcessData->OutputHandle;
 
-    Status = ConsoleComplete(Server, &ReceiveMsg->Complete);
-    if (!NT_SUCCESS(Status))
+    if(!SUCCEEDED(g_pDeviceComm->CompleteIo(&ReceiveMsg->Complete)))
     {
         FreeCommandHistory((HANDLE) ProcessData);
         FreeProcessData(ProcessData);
@@ -961,8 +923,7 @@ PCONSOLE_API_MSG ConsoleCreateObject(_In_ PCONSOLE_API_MSG Message, _Inout_ CONS
     SetReplyStatus(Message, STATUS_SUCCESS);
     SetReplyInformation(Message, (ULONG_PTR) Handle);
 
-    Status = ConsoleComplete(Console->Server, &Message->Complete);
-    if (!NT_SUCCESS(Status))
+    if (!SUCCEEDED(g_pDeviceComm->CompleteIo(&Message->Complete)))
     {
         ConsoleCloseHandle(Handle);
     }
@@ -1038,10 +999,10 @@ Complete:
 // - This routine is the main one in the console server IO thread.
 // - It reads IO requests submitted by clients through the driver, services and completes them in a loop.
 // Arguments:
-// - Server - Supplies the console server handle.
+// - <none>
 // Return Value:
 // - This routine never returns. The process exits when no more references or clients exist.
-DWORD ConsoleIoThread(_In_ HANDLE Server)
+DWORD ConsoleIoThread()
 {
     CONSOLE_API_MSG ReceiveMsg;
     PCONSOLE_API_MSG ReplyMsg = nullptr;
@@ -1055,24 +1016,14 @@ DWORD ConsoleIoThread(_In_ HANDLE Server)
         {
             ReleaseMessageBuffers(ReplyMsg);
         }
-
-        Status = IoControlFile(Server,
-                               IOCTL_CONDRV_READ_IO,
-                               (ReplyMsg == nullptr) ? nullptr : &ReplyMsg->Complete,
-                               (ReplyMsg == nullptr) ? 0 : sizeof ReplyMsg->Complete,
-                               &ReceiveMsg.Descriptor,
-                               sizeof(CONSOLE_API_MSG) - FIELD_OFFSET(CONSOLE_API_MSG, Descriptor));
-
-        if (Status == STATUS_PENDING)
-        {
-            WaitForSingleObject(Server, INFINITE);
-            Status = ReceiveMsg.IoStatus.Status;
-        }
-
-        if (!NT_SUCCESS(Status))
+        
+        // TODO: correct mixed NTSTATUS/HRESULT
+        Status = g_pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
+        if (!SUCCEEDED(Status))
         {
             if (Status == STATUS_PIPE_DISCONNECTED ||
                 Status == ERROR_PIPE_NOT_CONNECTED ||
+                Status == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED) ||
                 Status == NTSTATUS_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
             {
                 fShouldExit = true;
@@ -1097,7 +1048,7 @@ DWORD ConsoleIoThread(_In_ HANDLE Server)
                 break;
 
             case CONSOLE_IO_CONNECT:
-                ReplyMsg = ConsoleHandleConnectionRequest(Server, &ReceiveMsg);
+                ReplyMsg = ConsoleHandleConnectionRequest(&ReceiveMsg);
                 break;
 
             case CONSOLE_IO_DISCONNECT:

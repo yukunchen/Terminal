@@ -2,7 +2,7 @@
 
 namespace Entrypoints
 {
-    NTSTATUS StartConsoleForServerHandle(_In_ HANDLE const ServerHandle);
-    NTSTATUS StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine);
+    HRESULT StartConsoleForServerHandle(_In_ HANDLE const ServerHandle);
+    HRESULT StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine);
 };
 

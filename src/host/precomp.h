@@ -129,3 +129,5 @@ BOOL IsConsoleFullWidth(_In_ HDC hDC, _In_ DWORD CodePage, _In_ WCHAR wch);
     #define CON_USERPRIVAPI_INDIRECT
     #define CON_DPIAPI_INDIRECT
 #endif
+
+#include "..\inc\contsf.h"
