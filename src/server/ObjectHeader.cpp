@@ -11,6 +11,16 @@
 
 #include "..\host\inputReadHandleData.h"
 
+ConsoleObjectHeader::ConsoleObjectHeader() :
+    OpenCount(0),
+    ReaderCount(0),
+    WriterCount(0),
+    ReadShareCount(0),
+    WriteShareCount(0)
+{
+
+}
+
 // Routine Description:
 // - This routine allocates an input or output handle from the process's handle table.
 // - This routine initializes all non-type specific fields in the handle data structure.
@@ -77,9 +87,3 @@ NTSTATUS ConsoleObjectHeader::s_AllocateIoHandle(_In_ const ULONG ulHandleType,
 
     return STATUS_SUCCESS;
 }
-
-void ConsoleObjectHeader::s_InitializeObjectHeader(_Out_ ConsoleObjectHeader* pObjHeader)
-{
-    ZeroMemory(pObjHeader, sizeof(*pObjHeader));
-}
-

@@ -78,8 +78,6 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
         goto ErrorExit3;
     }
 
-    ConsoleObjectHeader::s_InitializeObjectHeader(&g_ciConsoleInformation.pInputBuffer->Header);
-
     // Byte count + 1 so dividing by 2 always rounds up. +1 more for trailing null guard.
     g_ciConsoleInformation.Title = new WCHAR[((cbTitle + 1) / sizeof(WCHAR)) + 1];
     if (g_ciConsoleInformation.Title == nullptr)

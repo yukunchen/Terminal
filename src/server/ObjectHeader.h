@@ -19,6 +19,8 @@ Revision History:
 class ConsoleObjectHeader
 {
 public:
+    ConsoleObjectHeader();
+
     ULONG OpenCount;
     ULONG ReaderCount;
     ULONG WriterCount;
@@ -30,6 +32,4 @@ public:
                               _Inout_ ConsoleObjectHeader* pObjHeader,
                               _In_ const ACCESS_MASK amDesired,
                               _In_ const ULONG ulShareMode);
-
-    static void s_InitializeObjectHeader(_Out_ ConsoleObjectHeader* pObjHeader);
 };
