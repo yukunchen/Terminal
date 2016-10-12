@@ -71,7 +71,6 @@ public:
 
     LIST_ENTRY ProcessHandleList;
     PINPUT_INFORMATION pInputBuffer;
-    LIST_ENTRY InputReadDataList;
 
     Window* pWindow;
     PSCREEN_INFORMATION CurrentScreenBuffer;

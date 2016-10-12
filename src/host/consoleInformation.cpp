@@ -15,7 +15,6 @@
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // ProcessHandleList initialized below
     pInputBuffer(nullptr),
-    // InputReadDataList initialized below
     CurrentScreenBuffer(nullptr),
     ScreenBuffers(nullptr),
     hWnd(nullptr),
@@ -47,11 +46,20 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     terminalMouseInput(HandleTerminalKeyEventCallback)
 {
     ZeroMemory((void*)&ProcessHandleList, sizeof(ProcessHandleList));
-    ZeroMemory((void*)&InputReadDataList, sizeof(InputReadDataList));
+    InitializeListHead(&g_ciConsoleInformation.ProcessHandleList);
+
     ZeroMemory((void*)&OutputQueue, sizeof(OutputQueue));
+    InitializeListHead(&g_ciConsoleInformation.OutputQueue);
+
     ZeroMemory((void*)&CommandHistoryList, sizeof(CommandHistoryList));
+    InitializeListHead(&g_ciConsoleInformation.CommandHistoryList);
+
     ZeroMemory((void*)&ExeAliasList, sizeof(ExeAliasList));
+    InitializeListHead(&g_ciConsoleInformation.ExeAliasList);
+
     ZeroMemory((void*)&MessageQueue, sizeof(MessageQueue));
+    InitializeListHead(&g_ciConsoleInformation.MessageQueue);
+
     ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
     ZeroMemory((void*)&ConsoleIme, sizeof(ConsoleIme));

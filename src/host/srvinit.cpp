@@ -259,12 +259,6 @@ HRESULT ConsoleServerInitialization(_In_ HANDLE Server)
 
     g_uiOEMCP = GetOEMCP();
 
-    InitializeListHead(&g_ciConsoleInformation.ProcessHandleList);
-    InitializeListHead(&g_ciConsoleInformation.CommandHistoryList);
-    InitializeListHead(&g_ciConsoleInformation.OutputQueue);
-    InitializeListHead(&g_ciConsoleInformation.ExeAliasList);
-    InitializeListHead(&g_ciConsoleInformation.MessageQueue);
-
     g_pFontDefaultList = new RenderFontDefaults();
     RETURN_IF_NULL_ALLOC(g_pFontDefaultList);
 
