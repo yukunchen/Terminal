@@ -129,18 +129,7 @@ private:
 #define HANDLE_INPUT_PENDING 2
 #define HANDLE_MULTI_LINE_INPUT 4
 
-typedef struct _CONSOLE_PROCESS_HANDLE
-{
-    LIST_ENTRY ListLink;
-    HANDLE ProcessHandle;
-    ULONG TerminateCount;
-    ULONG ProcessGroupId;
-    CLIENT_ID ClientId;
-    BOOL RootProcess;
-    LIST_ENTRY WaitBlockQueue;
-    HANDLE InputHandle;
-    HANDLE OutputHandle;
-} CONSOLE_PROCESS_HANDLE, *PCONSOLE_PROCESS_HANDLE;
+#include "..\server\ProcessHandle.h"
 
 typedef BOOL(*CONSOLE_WAIT_ROUTINE) (_In_ PLIST_ENTRY pWaitQueue,
                                      _In_ PCONSOLE_API_MSG pWaitReplyMessage,
