@@ -18,7 +18,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // InputReadDataList initialized below
     CurrentScreenBuffer(nullptr),
     ScreenBuffers(nullptr),
-    Server(nullptr),
     hWnd(nullptr),
     hMenu(nullptr),
     hHeirMenu(nullptr),

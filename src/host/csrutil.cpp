@@ -64,7 +64,7 @@ BOOL ConsoleNotifyWaitBlock(_In_ PCONSOLE_WAIT_BLOCK pWaitBlock, _In_ PLIST_ENTR
 
         ReleaseMessageBuffers(&pWaitBlock->WaitReplyMessage);
 
-        ConsoleComplete(g_ciConsoleInformation.Server, &pWaitBlock->WaitReplyMessage.Complete);
+        LOG_IF_FAILED(g_pDeviceComm->CompleteIo(&pWaitBlock->WaitReplyMessage.Complete));
 
         RemoveEntryList(&pWaitBlock->Link);
 
@@ -104,23 +104,6 @@ BOOL ConsoleNotifyWait(_In_ PLIST_ENTRY pWaitQueue, _In_ const BOOL fSatisfyAll,
 }
 
 // Routine Description:
-// - This routine completes a message with the given completion descriptor.
-// Arguments:
-// - Object - Supplies the server object whose message will be completed.
-// - Complete - Supplies the completion descriptor.
-// Return Value:
-// - NTSTATUS indicating if the message was successfully completed.
-NTSTATUS ConsoleComplete(_In_ HANDLE hObject, _In_ PCD_IO_COMPLETE pComplete)
-{
-    return IoControlFile(hObject,
-                         IOCTL_CONDRV_COMPLETE_IO,
-                         pComplete,
-                         sizeof(*pComplete),
-                         nullptr,
-                         0);
-}
-
-// Routine Description:
 // - This routine reads [part of] the input payload of the given message.
 // Arguments:
 // - Message - Supplies the message whose input will be read.
@@ -140,14 +123,7 @@ NTSTATUS ReadMessageInput(_In_ PCONSOLE_API_MSG pMessage,
     IoOperation.Buffer.Data = pvBuffer;
     IoOperation.Buffer.Size = cbSize;
 
-    NTSTATUS Status = IoControlFile(g_ciConsoleInformation.Server,
-                                   IOCTL_CONDRV_READ_INPUT,
-                                   &IoOperation,
-                                   sizeof IoOperation,
-                                   nullptr,
-                                   0);
-
-    return Status;
+    return g_pDeviceComm->ReadInput(&IoOperation);
 }
 
 // Routine Description:
@@ -284,12 +260,7 @@ void ReleaseMessageBuffers(_Inout_ PCONSOLE_API_MSG pMessage)
             IoOperation.Buffer.Data = pMessage->State.OutputBuffer;
             IoOperation.Buffer.Size = (ULONG) pMessage->Complete.IoStatus.Information;
 
-            IoControlFile(g_ciConsoleInformation.Server,
-                          IOCTL_CONDRV_WRITE_OUTPUT,
-                          &IoOperation,
-                          sizeof(IoOperation),
-                          nullptr,
-                          0);
+            LOG_IF_FAILED(g_pDeviceComm->WriteOutput(&IoOperation));
         }
 
         delete[] pMessage->State.OutputBuffer;

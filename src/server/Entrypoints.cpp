@@ -1,3 +1,9 @@
+/********************************************************
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
+
 #include "precomp.h"
 #include "Entrypoints.h"
 
@@ -6,14 +12,12 @@
 
 #include "winbasep.h"
 
-NTSTATUS Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle)
+HRESULT Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle)
 {
-    RETURN_IF_NTSTATUS_FAILED(ConsoleCreateIoThreadLegacy(ServerHandle));
-
-    return STATUS_SUCCESS;
+    return ConsoleCreateIoThreadLegacy(ServerHandle);
 }
 
-NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
+HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
 {
     // Create a scope because we're going to exit thread if everything goes well.
     // This scope will ensure all C++ objects and smart pointers get a chance to destruct before ExitThread is called.
@@ -155,9 +159,9 @@ NTSTATUS Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
     }
 
     // Exit the thread so the CRT won't clean us up and kill. The IO thread owns the lifetime now.
-    ExitThread(STATUS_SUCCESS);
+    ExitThread(S_OK);
 
     // We won't hit this. The ExitThread above will kill the caller at this point.
     assert(false);
-    return STATUS_SUCCESS;
+    return S_OK;
 }

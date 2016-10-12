@@ -119,7 +119,7 @@ NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ PINPUT_INFORMATION pInp
     }
 
     NTSTATUS Status = STATUS_SUCCESS;
-    pInputInfo->InputWaitEvent = g_hInputEvent;
+    pInputInfo->InputWaitEvent = g_hInputEvent.get();
 
     if (!NT_SUCCESS(Status))
     {
@@ -1403,11 +1403,11 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
     if (!NT_SUCCESS(Status))
     {
         g_ntstatusConsoleInputInitStatus = Status;
-        SetEvent(g_hConsoleInputInitEvent);
+        g_hConsoleInputInitEvent.SetEvent();
         return Status;
     }
 
-    SetEvent(g_hConsoleInputInitEvent);
+    g_hConsoleInputInitEvent.SetEvent();
 
     for (;;)
     {

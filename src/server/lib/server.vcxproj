@@ -2,6 +2,7 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="..\DeviceComm.cpp" />
     <ClCompile Include="..\DeviceHandle.cpp" />
     <ClCompile Include="..\Entrypoints.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -10,6 +11,7 @@
     <ClCompile Include="..\WinNTControl.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\DeviceComm.h" />
     <ClInclude Include="..\DeviceHandle.h" />
     <ClInclude Include="..\Entrypoints.h" />
     <ClInclude Include="..\precomp.h" />
