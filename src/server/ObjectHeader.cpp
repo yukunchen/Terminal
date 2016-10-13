@@ -31,59 +31,52 @@ ConsoleObjectHeader::ConsoleObjectHeader() :
 // Note:
 // - The console lock must be held when calling this routine.  The handle is allocated from the per-process handle table.  Holding the console
 //   lock serializes both threads within the calling process and any other process that shares the console.
-NTSTATUS ConsoleObjectHeader::s_AllocateIoHandle(_In_ const ULONG ulHandleType,
-                          _Out_ HANDLE * const phOut,
-                          _Inout_ ConsoleObjectHeader* pObjHeader,
-                          _In_ const ACCESS_MASK amDesired,
-                          _In_ const ULONG ulShareMode)
+HRESULT ConsoleObjectHeader::AllocateIoHandle(_In_ const ULONG ulHandleType,
+                                              _In_ const ACCESS_MASK amDesired,
+                                              _In_ const ULONG ulShareMode,
+                                              _Out_ HANDLE* const phOut)
 {
     // Check the share mode.
-    BOOLEAN const ReadRequested = (amDesired & GENERIC_READ) != 0;
-    BOOLEAN const ReadShared = (ulShareMode & FILE_SHARE_READ) != 0;
+    bool const ReadRequested = IsFlagSet(amDesired, GENERIC_READ);
+    bool const ReadShared = IsFlagSet(ulShareMode, FILE_SHARE_READ);
 
-    BOOLEAN const WriteRequested = (amDesired & GENERIC_WRITE) != 0;
-    BOOLEAN const WriteShared = (ulShareMode & FILE_SHARE_WRITE) != 0;
+    bool const WriteRequested = IsFlagSet(amDesired, GENERIC_WRITE);
+    bool const WriteShared = IsFlagSet(ulShareMode, FILE_SHARE_WRITE);
 
-    if (((ReadRequested != FALSE) && (pObjHeader->OpenCount > pObjHeader->ReadShareCount)) ||
-        ((ReadShared == FALSE) && (pObjHeader->ReaderCount > 0)) ||
-        ((WriteRequested != FALSE) && (pObjHeader->OpenCount > pObjHeader->WriteShareCount)) || ((WriteShared == FALSE) && (pObjHeader->WriterCount > 0)))
+    if (((ReadRequested) && (OpenCount > ReadShareCount)) ||
+        ((!ReadShared) && (ReaderCount > 0)) ||
+        ((WriteRequested) && (OpenCount > WriteShareCount)) ||
+        ((!WriteShared) && (WriterCount > 0)))
     {
-        return STATUS_SHARING_VIOLATION;
+        RETURN_WIN32(ERROR_SHARING_VIOLATION);
     }
 
     // Allocate all necessary state.
-    PCONSOLE_HANDLE_DATA const HandleData = new CONSOLE_HANDLE_DATA();
-    if (HandleData == nullptr)
-    {
-        return STATUS_NO_MEMORY;
-    }
+    wistd::unique_ptr<CONSOLE_HANDLE_DATA> HandleData = wil::make_unique_nothrow<CONSOLE_HANDLE_DATA>();
+    RETURN_IF_NULL_ALLOC(HandleData);
 
-    if ((ulHandleType & CONSOLE_INPUT_HANDLE) != 0)
+    if (IsFlagSet(ulHandleType, CONSOLE_INPUT_HANDLE))
     {
         // TODO: resolve reference
         HandleData->pClientInput = new INPUT_READ_HANDLE_DATA();
-        if (HandleData->pClientInput == nullptr)
-        {
-            delete HandleData;
-            return STATUS_NO_MEMORY;
-        }
+        RETURN_IF_NULL_ALLOC(HandleData);
     }
 
     // Update share/open counts and store handle information.
-    pObjHeader->OpenCount += 1;
+    OpenCount += 1;
 
-    pObjHeader->ReaderCount += ReadRequested;
-    pObjHeader->ReadShareCount += ReadShared;
+    ReaderCount += ReadRequested;
+    ReadShareCount += ReadShared;
 
-    pObjHeader->WriterCount += WriteRequested;
-    pObjHeader->WriteShareCount += WriteShared;
+    WriterCount += WriteRequested;
+    WriteShareCount += WriteShared;
 
     HandleData->HandleType = ulHandleType;
     HandleData->ShareAccess = ulShareMode;
     HandleData->Access = amDesired;
-    HandleData->ClientPointer = pObjHeader;
+    HandleData->ClientPointer = this;
 
-    *phOut = (HANDLE)HandleData;
+    *phOut = static_cast<HANDLE>(HandleData.release());
 
-    return STATUS_SUCCESS;
+    return S_OK;
 }

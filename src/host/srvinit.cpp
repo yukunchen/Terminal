@@ -145,7 +145,7 @@ void LoadLinkInfo(_Inout_ Settings* pLinkSettings,
                   _In_ PCWSTR pwszCurrDir,
                   _In_ PCWSTR pwszAppName)
 {
-    WCHAR wszIconLocation[MAX_PATH] = {0};
+    WCHAR wszIconLocation[MAX_PATH] = { 0 };
     int iIconIndex = 0;
 
     pLinkSettings->SetCodePage(g_uiOEMCP);
@@ -168,7 +168,7 @@ void LoadLinkInfo(_Inout_ Settings* pLinkSettings,
 
                 if (NT_SUCCESS(Status))
                 {
-                    CONSOLE_STATE_INFO csi = {0};
+                    CONSOLE_STATE_INFO csi = { 0 };
                     csi.LinkTitle = g_ciConsoleInformation.LinkTitle;
                     WCHAR wszShortcutTitle[MAX_PATH];
                     BOOL fReadConsoleProperties;
@@ -190,7 +190,7 @@ void LoadLinkInfo(_Inout_ Settings* pLinkSettings,
                     if (wszShortcutTitle[0] != L'\0')
                     {
                         // guarantee null termination to make OACR happy.
-                        wszShortcutTitle[ARRAYSIZE(wszShortcutTitle)-1] = L'\0';
+                        wszShortcutTitle[ARRAYSIZE(wszShortcutTitle) - 1] = L'\0';
                         StringCbCopyW(pwszTitle, *pdwTitleLength, wszShortcutTitle);
 
                         // OACR complains about the use of a DWORD here, so roundtrip through a size_t
@@ -365,9 +365,9 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
     }
 
     // Now we need to actually create the console using the settings given.
-    #pragma prefast(suppress:26018, "PREfast can't detect null termination status of Title.")
+#pragma prefast(suppress:26018, "PREfast can't detect null termination status of Title.")
 
-    // Allocate console will read the global g_ciConsoleInformation for the settings we just set.
+// Allocate console will read the global g_ciConsoleInformation for the settings we just set.
     NTSTATUS Status = AllocateConsole(Title, TitleLength);
     if (!NT_SUCCESS(Status))
     {
@@ -387,7 +387,7 @@ NTSTATUS RemoveConsole(_In_ PCONSOLE_PROCESS_HANDLE ProcessData)
     Status = RevalidateConsole(&Console);
     ASSERT(NT_SUCCESS(Status));
 
-    FreeCommandHistory((HANDLE) ProcessData);
+    FreeCommandHistory((HANDLE)ProcessData);
 
     fRecomputeOwner = ProcessData->RootProcess;
     FreeProcessData(ProcessData);
@@ -566,21 +566,21 @@ NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLang
     {
         switch (uiOutputCP)
         {
-            case CP_JAPANESE:
-                *pLangId = MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT);
-                break;
-            case CP_KOREAN:
-                *pLangId = MAKELANGID(LANG_KOREAN, SUBLANG_KOREAN);
-                break;
-            case CP_CHINESE_SIMPLIFIED:
-                *pLangId = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
-                break;
-            case CP_CHINESE_TRADITIONAL:
-                *pLangId = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL);
-                break;
-            default:
-                *pLangId = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
-                break;
+        case CP_JAPANESE:
+            *pLangId = MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT);
+            break;
+        case CP_KOREAN:
+            *pLangId = MAKELANGID(LANG_KOREAN, SUBLANG_KOREAN);
+            break;
+        case CP_CHINESE_SIMPLIFIED:
+            *pLangId = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
+            break;
+        case CP_CHINESE_TRADITIONAL:
+            *pLangId = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL);
+            break;
+        default:
+            *pLangId = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+            break;
         }
     }
     Status = STATUS_SUCCESS;
@@ -735,8 +735,8 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
     LockConsole();
 
     CLIENT_ID ClientId;
-    ClientId.UniqueProcess = (HANDLE) ReceiveMsg->Descriptor.Process;
-    ClientId.UniqueThread = (HANDLE) ReceiveMsg->Descriptor.Object;
+    ClientId.UniqueProcess = (HANDLE)ReceiveMsg->Descriptor.Process;
+    ClientId.UniqueThread = (HANDLE)ReceiveMsg->Descriptor.Object;
 
     CONSOLE_API_CONNECTINFO Cac;
     NTSTATUS Status = ConsoleInitializeConnectInfo(ReceiveMsg, &Cac);
@@ -788,25 +788,24 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
     }
 
     // Create the handles.
-    Status = ConsoleObjectHeader::s_AllocateIoHandle(CONSOLE_INPUT_HANDLE,
-                              &ProcessData->InputHandle,
-                              &g_ciConsoleInformation.pInputBuffer->Header,
-                              GENERIC_READ | GENERIC_WRITE,
-                              FILE_SHARE_READ | FILE_SHARE_WRITE);
-
-    if (!NT_SUCCESS(Status))
+    if (FAILED(g_ciConsoleInformation.pInputBuffer->Header.AllocateIoHandle(CONSOLE_INPUT_HANDLE,
+                                                                            GENERIC_READ | GENERIC_WRITE,
+                                                                            FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                                            &ProcessData->InputHandle)))
     {
+        // TODO: replace with HR handling
+        Status = STATUS_UNSUCCESSFUL;
         goto Error;
     }
 
-    Status = ConsoleObjectHeader::s_AllocateIoHandle(CONSOLE_OUTPUT_HANDLE,
-                              &ProcessData->OutputHandle,
-                              &g_ciConsoleInformation.CurrentScreenBuffer->GetMainBuffer()->Header,
-                              GENERIC_READ | GENERIC_WRITE,
-                              FILE_SHARE_READ | FILE_SHARE_WRITE);
 
-    if (!NT_SUCCESS(Status))
+    if (FAILED(g_ciConsoleInformation.CurrentScreenBuffer->GetMainBuffer()->Header.AllocateIoHandle(CONSOLE_OUTPUT_HANDLE,
+                                                                                                    GENERIC_READ | GENERIC_WRITE,
+                                                                                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                                                                    &ProcessData->OutputHandle)))
     {
+        // TODO: replace with HR handling
+        Status = STATUS_UNSUCCESSFUL;
         goto Error;
     }
 
@@ -818,13 +817,13 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
     ReceiveMsg->Complete.Write.Data = &ConnectionInformation;
     ReceiveMsg->Complete.Write.Size = sizeof(CD_CONNECTION_INFORMATION);
 
-    ConnectionInformation.Process = (ULONG_PTR) ProcessData;
-    ConnectionInformation.Input = (ULONG_PTR) ProcessData->InputHandle;
-    ConnectionInformation.Output = (ULONG_PTR) ProcessData->OutputHandle;
+    ConnectionInformation.Process = (ULONG_PTR)ProcessData;
+    ConnectionInformation.Input = (ULONG_PTR)ProcessData->InputHandle;
+    ConnectionInformation.Output = (ULONG_PTR)ProcessData->OutputHandle;
 
     if (FAILED(g_pDeviceComm->CompleteIo(&ReceiveMsg->Complete)))
     {
-        FreeCommandHistory((HANDLE) ProcessData);
+        FreeCommandHistory((HANDLE)ProcessData);
         FreeProcessData(ProcessData);
     }
 
@@ -838,7 +837,7 @@ Error:
 
     if (ProcessData != nullptr)
     {
-        FreeCommandHistory((HANDLE) ProcessData);
+        FreeCommandHistory((HANDLE)ProcessData);
         FreeProcessData(ProcessData);
     }
 
@@ -882,30 +881,36 @@ PCONSOLE_API_MSG ConsoleCreateObject(_In_ PCONSOLE_API_MSG Message, _Inout_ CONS
     // Check the requested type.
     switch (CreateInformation->ObjectType)
     {
-        case CD_IO_OBJECT_TYPE_CURRENT_INPUT:
-            Status = ConsoleObjectHeader::s_AllocateIoHandle(CONSOLE_INPUT_HANDLE, &Handle, &Console->pInputBuffer->Header, CreateInformation->DesiredAccess, CreateInformation->ShareMode);
-            break;
+    case CD_IO_OBJECT_TYPE_CURRENT_INPUT:
+        Status = NTSTATUS_FROM_HRESULT(Console->pInputBuffer->Header.AllocateIoHandle(CONSOLE_INPUT_HANDLE,
+                                                                                      CreateInformation->DesiredAccess,
+                                                                                      CreateInformation->ShareMode,
+                                                                                      &Handle));
+        break;
 
-        case CD_IO_OBJECT_TYPE_CURRENT_OUTPUT:
+    case CD_IO_OBJECT_TYPE_CURRENT_OUTPUT:
+    {
+        PSCREEN_INFORMATION const ScreenInformation = g_ciConsoleInformation.CurrentScreenBuffer->GetMainBuffer();
+        if (ScreenInformation == nullptr)
         {
-            PSCREEN_INFORMATION const ScreenInformation = g_ciConsoleInformation.CurrentScreenBuffer->GetMainBuffer();
-            if (ScreenInformation == nullptr)
-            {
-                Status = STATUS_OBJECT_NAME_NOT_FOUND;
+            Status = STATUS_OBJECT_NAME_NOT_FOUND;
 
-            }
-            else
-            {
-                Status = ConsoleObjectHeader::s_AllocateIoHandle(CONSOLE_OUTPUT_HANDLE, &Handle, &ScreenInformation->Header, CreateInformation->DesiredAccess, CreateInformation->ShareMode);
-            }
-            break;
         }
-        case CD_IO_OBJECT_TYPE_NEW_OUTPUT:
-            Status = ConsoleCreateScreenBuffer(&Handle, Message, CreateInformation, &Message->CreateScreenBuffer);
-            break;
+        else
+        {
+            Status = NTSTATUS_FROM_HRESULT(ScreenInformation->Header.AllocateIoHandle(CONSOLE_OUTPUT_HANDLE,
+                                                                                      CreateInformation->DesiredAccess,
+                                                                                      CreateInformation->ShareMode,
+                                                                                      &Handle));
+        }
+        break;
+    }
+    case CD_IO_OBJECT_TYPE_NEW_OUTPUT:
+        Status = ConsoleCreateScreenBuffer(&Handle, Message, CreateInformation, &Message->CreateScreenBuffer);
+        break;
 
-        default:
-            Status = STATUS_INVALID_PARAMETER;
+    default:
+        Status = STATUS_INVALID_PARAMETER;
     }
 
     if (!NT_SUCCESS(Status))
@@ -915,7 +920,7 @@ PCONSOLE_API_MSG ConsoleCreateObject(_In_ PCONSOLE_API_MSG Message, _Inout_ CONS
 
     // Complete the request.
     SetReplyStatus(Message, STATUS_SUCCESS);
-    SetReplyInformation(Message, (ULONG_PTR) Handle);
+    SetReplyInformation(Message, (ULONG_PTR)Handle);
 
     if (FAILED(g_pDeviceComm->CompleteIo(&Message->Complete)))
     {
@@ -1010,7 +1015,7 @@ DWORD ConsoleIoThread()
         {
             ReleaseMessageBuffers(ReplyMsg);
         }
-        
+
         // TODO: correct mixed NTSTATUS/HRESULT
         Status = g_pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
         if (FAILED(Status))
@@ -1037,75 +1042,75 @@ DWORD ConsoleIoThread()
 
         switch (ReceiveMsg.Descriptor.Function)
         {
-            case CONSOLE_IO_USER_DEFINED:
-                ReplyMsg = ConsoleDispatchRequest(&ReceiveMsg);
-                break;
+        case CONSOLE_IO_USER_DEFINED:
+            ReplyMsg = ConsoleDispatchRequest(&ReceiveMsg);
+            break;
 
-            case CONSOLE_IO_CONNECT:
-                ReplyMsg = ConsoleHandleConnectionRequest(&ReceiveMsg);
-                break;
+        case CONSOLE_IO_CONNECT:
+            ReplyMsg = ConsoleHandleConnectionRequest(&ReceiveMsg);
+            break;
 
-            case CONSOLE_IO_DISCONNECT:
-                ConsoleClientDisconnectRoutine(GetMessageProcess(&ReceiveMsg));
-                SetReplyStatus(&ReceiveMsg, STATUS_SUCCESS);
-                ReplyMsg = &ReceiveMsg;
-                break;
+        case CONSOLE_IO_DISCONNECT:
+            ConsoleClientDisconnectRoutine(GetMessageProcess(&ReceiveMsg));
+            SetReplyStatus(&ReceiveMsg, STATUS_SUCCESS);
+            ReplyMsg = &ReceiveMsg;
+            break;
 
-            case CONSOLE_IO_CREATE_OBJECT:
-                ReplyMsg = ConsoleCreateObject(&ReceiveMsg, &g_ciConsoleInformation);
-                break;
+        case CONSOLE_IO_CREATE_OBJECT:
+            ReplyMsg = ConsoleCreateObject(&ReceiveMsg, &g_ciConsoleInformation);
+            break;
 
-            case CONSOLE_IO_CLOSE_OBJECT:
-                SrvCloseHandle(&ReceiveMsg);
-                SetReplyStatus(&ReceiveMsg, STATUS_SUCCESS);
-                ReplyMsg = &ReceiveMsg;
-                break;
+        case CONSOLE_IO_CLOSE_OBJECT:
+            SrvCloseHandle(&ReceiveMsg);
+            SetReplyStatus(&ReceiveMsg, STATUS_SUCCESS);
+            ReplyMsg = &ReceiveMsg;
+            break;
 
-            case CONSOLE_IO_RAW_WRITE:
-                ZeroMemory(&ReceiveMsg.u.consoleMsgL1.WriteConsole, sizeof(CONSOLE_WRITECONSOLE_MSG));
+        case CONSOLE_IO_RAW_WRITE:
+            ZeroMemory(&ReceiveMsg.u.consoleMsgL1.WriteConsole, sizeof(CONSOLE_WRITECONSOLE_MSG));
 
-                ReplyPending = FALSE;
-                Status = SrvWriteConsole(&ReceiveMsg, &ReplyPending);
-                if (ReplyPending)
-                {
-                    ReplyMsg = nullptr;
+            ReplyPending = FALSE;
+            Status = SrvWriteConsole(&ReceiveMsg, &ReplyPending);
+            if (ReplyPending)
+            {
+                ReplyMsg = nullptr;
 
-                }
-                else
-                {
-                    SetReplyStatus(&ReceiveMsg, Status);
-                    ReplyMsg = &ReceiveMsg;
-                }
-                break;
-
-            case CONSOLE_IO_RAW_READ:
-                ZeroMemory(&ReceiveMsg.u.consoleMsgL1.ReadConsole, sizeof(CONSOLE_READCONSOLE_MSG));
-                ReceiveMsg.u.consoleMsgL1.ReadConsole.ProcessControlZ = TRUE;
-                ReplyPending = FALSE;
-                Status = SrvReadConsole(&ReceiveMsg, &ReplyPending);
-                if (ReplyPending)
-                {
-                    ReplyMsg = nullptr;
-
-                }
-                else
-                {
-                    SetReplyStatus(&ReceiveMsg, Status);
-                    ReplyMsg = &ReceiveMsg;
-                }
-                break;
-
-            case CONSOLE_IO_RAW_FLUSH:
-                ReplyPending = FALSE;
-                Status = SrvFlushConsoleInputBuffer(&ReceiveMsg, &ReplyPending);
-                ASSERT(!ReplyPending);
+            }
+            else
+            {
                 SetReplyStatus(&ReceiveMsg, Status);
                 ReplyMsg = &ReceiveMsg;
-                break;
+            }
+            break;
 
-            default:
-                SetReplyStatus(&ReceiveMsg, STATUS_UNSUCCESSFUL);
+        case CONSOLE_IO_RAW_READ:
+            ZeroMemory(&ReceiveMsg.u.consoleMsgL1.ReadConsole, sizeof(CONSOLE_READCONSOLE_MSG));
+            ReceiveMsg.u.consoleMsgL1.ReadConsole.ProcessControlZ = TRUE;
+            ReplyPending = FALSE;
+            Status = SrvReadConsole(&ReceiveMsg, &ReplyPending);
+            if (ReplyPending)
+            {
+                ReplyMsg = nullptr;
+
+            }
+            else
+            {
+                SetReplyStatus(&ReceiveMsg, Status);
                 ReplyMsg = &ReceiveMsg;
+            }
+            break;
+
+        case CONSOLE_IO_RAW_FLUSH:
+            ReplyPending = FALSE;
+            Status = SrvFlushConsoleInputBuffer(&ReceiveMsg, &ReplyPending);
+            ASSERT(!ReplyPending);
+            SetReplyStatus(&ReceiveMsg, Status);
+            ReplyMsg = &ReceiveMsg;
+            break;
+
+        default:
+            SetReplyStatus(&ReceiveMsg, STATUS_UNSUCCESSFUL);
+            ReplyMsg = &ReceiveMsg;
         }
     }
 

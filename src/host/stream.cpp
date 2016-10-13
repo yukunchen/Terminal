@@ -1463,11 +1463,10 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
         BOOLEAN Echo;
 
         // We need to create a temporary handle to the current screen buffer.
-        Status = ConsoleObjectHeader::s_AllocateIoHandle(CONSOLE_OUTPUT_HANDLE, &CookedReadData.TempHandle, &pScreenInfo->Header, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE);
-        if (!NT_SUCCESS(Status))
-        {
-            return Status;
-        }
+        RETURN_IF_FAILED(pScreenInfo->Header.AllocateIoHandle(CONSOLE_OUTPUT_HANDLE,
+                                                              GENERIC_WRITE,
+                                                              FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                              &CookedReadData.TempHandle));
 
         Echo = !!(pInputInfo->InputMode & ENABLE_ECHO_INPUT);
 
