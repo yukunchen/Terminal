@@ -24,7 +24,7 @@ typedef struct _DIRECT_READ_DATA
     PINPUT_INFORMATION InputInfo;
     CONSOLE_INFORMATION *Console;
     PCONSOLE_PROCESS_HANDLE ProcessData;
-    HANDLE HandleIndex;
+    CONSOLE_HANDLE_DATA* HandleIndex;
 } DIRECT_READ_DATA, *PDIRECT_READ_DATA;
 
 #define UNICODE_DBCS_PADDING 0xffff
@@ -212,12 +212,8 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/, _In_ PCONSOLE_API_MSG
 
     BOOLEAN RetVal = TRUE;
     PDIRECT_READ_DATA DirectReadData = (PDIRECT_READ_DATA)WaitParameter;
-    PCONSOLE_HANDLE_DATA HandleData;
-    NTSTATUS Status = DereferenceIoHandleNoCheck(DirectReadData->HandleIndex, &HandleData);
-    if (!NT_SUCCESS(Status))
-    {
-        return TRUE;
-    }
+    PCONSOLE_HANDLE_DATA HandleData = DirectReadData->HandleIndex;
+    NTSTATUS Status = STATUS_SUCCESS;
 
     // If ctrl-c or ctrl-break was seen, ignore it.
     if ((ULONG_PTR) SatisfyParameter & (CONSOLE_CTRL_C_SEEN | CONSOLE_CTRL_BREAK_SEEN))
@@ -411,8 +407,8 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_INPUT_HANDLE, GENERIC_READ, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_INPUT_HANDLE, GENERIC_READ);
     if (!NT_SUCCESS(Status))
     {
         a->NumRecords = 0;
@@ -516,8 +512,8 @@ NTSTATUS SrvWriteConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_INPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_INPUT_HANDLE, GENERIC_WRITE);
     if (!NT_SUCCESS(Status))
     {
         a->NumRecords = 0;
@@ -744,8 +740,8 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_READ, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_READ);
     if (!NT_SUCCESS(Status))
     {
         // a region of zero size is indicated by the right and bottom coordinates being less than the left and top.
@@ -810,8 +806,8 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (!NT_SUCCESS(Status))
     {
         // A region of zero size is indicated by the right and bottom coordinates being less than the left and top.
@@ -915,8 +911,8 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_READ, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_READ);
     if (!NT_SUCCESS(Status))
     {
         // a region of zero size is indicated by the right and bottom coordinates being less than the left and top.
@@ -981,8 +977,8 @@ NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (!NT_SUCCESS(Status))
     {
         a->NumRecords = 0;
@@ -1037,8 +1033,8 @@ NTSTATUS SrvFillConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (!NT_SUCCESS(Status))
     {
         a->Length = 0;

@@ -26,11 +26,9 @@ NTSTATUS RevalidateConsole(_Out_ CONSOLE_INFORMATION ** const ppConsole);
 NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, _In_ const DWORD cbTitle);
 void ConsoleCloseHandle(_In_ CONSOLE_HANDLE_DATA* const pClose);
 
-NTSTATUS DereferenceIoHandleNoCheck(_In_ HANDLE hIO, _Out_ PCONSOLE_HANDLE_DATA * const ppConsoleData);
-NTSTATUS DereferenceIoHandle(_In_ HANDLE hIO,
+NTSTATUS DereferenceIoHandle(_In_ CONSOLE_HANDLE_DATA* hIO,
                              _In_ const ULONG ulHandleType,
-                             _In_ const ACCESS_MASK amRequested,
-                             _Out_ PCONSOLE_HANDLE_DATA * const ppConsoleData);
+                             _In_ const ACCESS_MASK amRequested);
 
 void InsertScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo);
 void RemoveScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo);

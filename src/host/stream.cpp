@@ -270,13 +270,9 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
     PCONSOLE_READCONSOLE_MSG const a = &pWaitReplyMessage->u.consoleMsgL1.ReadConsole;
     PRAW_READ_DATA const RawReadData = (PRAW_READ_DATA)pvWaitParameter;
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    NTSTATUS Status = DereferenceIoHandleNoCheck(RawReadData->HandleIndex, &HandleData);
-    if (!NT_SUCCESS(Status))
-    {
-        return TRUE;
-    }
-
+    PCONSOLE_HANDLE_DATA HandleData = RawReadData->HandleIndex;
+    NTSTATUS Status = STATUS_SUCCESS;
+    
     if ((ULONG_PTR)pvSatisfyParameter & CONSOLE_CTRL_C_SEEN)
     {
         return FALSE;
@@ -868,14 +864,8 @@ bs_repeat:
 
 NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MSG pWaitReplyMessage, _In_ const BOOLEAN fWaitRoutine)
 {
-    PCONSOLE_HANDLE_DATA HandleData;
-    NTSTATUS Status = DereferenceIoHandleNoCheck(pCookedReadData->HandleIndex, &HandleData);
-    if (!NT_SUCCESS(Status))
-    {
-        pCookedReadData->BytesRead = 0;
-        delete[] pCookedReadData->BackupLimit;
-        return Status;
-    }
+    PCONSOLE_HANDLE_DATA HandleData = pCookedReadData->HandleIndex;
+    NTSTATUS Status = STATUS_SUCCESS;
 
     PCONSOLE_READCONSOLE_MSG const a = &pWaitReplyMessage->u.consoleMsgL1.ReadConsole;
 
@@ -1182,12 +1172,8 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
                            _In_ void * const pvSatisfyParameter,
                            _In_ const BOOL fThreadDying)
 {
-    PCONSOLE_HANDLE_DATA HandleData;
-    NTSTATUS Status = DereferenceIoHandleNoCheck(pCookedReadData->HandleIndex, &HandleData);
-    if (!NT_SUCCESS(Status))
-    {
-        return TRUE;
-    }
+    PCONSOLE_HANDLE_DATA HandleData = pCookedReadData->HandleIndex;
+    NTSTATUS Status = STATUS_SUCCESS;
     ASSERT((HandleData->pClientInput->InputHandleFlags & HANDLE_INPUT_PENDING) == 0);
 
     // this routine should be called by a thread owning the same lock on the same console as we're reading from.
@@ -1727,8 +1713,8 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
 
     PCONSOLE_PROCESS_HANDLE const ProcessData = GetMessageProcess(m);
     
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_INPUT_HANDLE, GENERIC_READ, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_INPUT_HANDLE, GENERIC_READ);
     if (!NT_SUCCESS(Status))
     {
         a->NumBytes = 0;
@@ -1810,8 +1796,8 @@ NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
     }
 
     // Make sure we have a valid screen buffer.
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (NT_SUCCESS(Status))
     {
         Status = DoSrvWriteConsole(m, ReplyPending, Buffer, HandleData);

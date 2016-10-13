@@ -151,39 +151,22 @@ void ConsoleCloseHandle(_In_ CONSOLE_HANDLE_DATA* const pClose)
 // Routine Description:
 // - This routine verifies a handle's validity, then returns a pointer to the handle data structure.
 // Arguments:
-// - Handle - Handle to dereference.
-// - HandleData - On return, pointer to handle data structure.
-// Return Value:
-NTSTATUS DereferenceIoHandleNoCheck(_In_ HANDLE hIO, _Out_ PCONSOLE_HANDLE_DATA * const ppConsoleData)
-{
-    *ppConsoleData = (PCONSOLE_HANDLE_DATA)hIO;
-    return STATUS_SUCCESS;
-}
-
-// Routine Description:
-// - This routine verifies a handle's validity, then returns a pointer to the handle data structure.
-// Arguments:
 // - ProcessData - Pointer to per process data structure.
 // - Handle - Handle to dereference.
 // - HandleData - On return, pointer to handle data structure.
 // Return Value:
-NTSTATUS DereferenceIoHandle(_In_ HANDLE hIO,
+NTSTATUS DereferenceIoHandle(_In_ CONSOLE_HANDLE_DATA* hIO,
                              _In_ const ULONG ulHandleType,
-                             _In_ const ACCESS_MASK amRequested,
-                             _Out_ PCONSOLE_HANDLE_DATA * const ppConsoleData)
+                             _In_ const ACCESS_MASK amRequested)
 {
-    PCONSOLE_HANDLE_DATA const Data = (PCONSOLE_HANDLE_DATA)hIO;
-
     // Check the type and the granted access.
     if ((hIO == nullptr) || 
-        ((Data->Access & amRequested) == 0) || 
+        ((hIO->Access & amRequested) == 0) || 
         ((ulHandleType != 0) && 
-        ((Data->HandleType & ulHandleType) == 0)))
+        ((hIO->HandleType & ulHandleType) == 0)))
     {
         return STATUS_INVALID_HANDLE;
     }
-
-    *ppConsoleData = Data;
 
     return STATUS_SUCCESS;
 }

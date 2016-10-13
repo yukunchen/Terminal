@@ -2199,9 +2199,8 @@ NTSTATUS ProcessCommandListInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _
 {
     PCOMMAND_HISTORY const pCommandHistory = pCookedReadData->CommandHistory;
     PCLE_POPUP const Popup = CONTAINING_RECORD(pCommandHistory->PopupList.Flink, CLE_POPUP, ListLink);
-    PCONSOLE_HANDLE_DATA HandleData;
-    NTSTATUS Status = DereferenceIoHandleNoCheck(pCookedReadData->HandleIndex, &HandleData);
-    ASSERT(NT_SUCCESS(Status));
+    PCONSOLE_HANDLE_DATA HandleData = pCookedReadData->HandleIndex;
+    NTSTATUS Status = STATUS_SUCCESS;
     for (;;)
     {
         WCHAR Char;
@@ -2406,14 +2405,9 @@ NTSTATUS ProcessCommandListInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
 NTSTATUS ProcessCopyFromCharInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _In_ PCONSOLE_API_MSG WaitReplyMessage, _In_ BOOLEAN WaitRoutine)
 {
-    PCONSOLE_HANDLE_DATA HandleData;
+    PCONSOLE_HANDLE_DATA HandleData = pCookedReadData->HandleIndex;
 
-    NTSTATUS Status = DereferenceIoHandleNoCheck(pCookedReadData->HandleIndex, &HandleData);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
+    NTSTATUS Status = STATUS_SUCCESS;
     for (;;)
     {
         WCHAR Char;
@@ -2512,14 +2506,9 @@ NTSTATUS ProcessCopyFromCharInput(_In_ PCOOKED_READ_DATA const pCookedReadData, 
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
 NTSTATUS ProcessCopyToCharInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _In_ PCONSOLE_API_MSG WaitReplyMessage, _In_ BOOLEAN WaitRoutine)
 {
-    PCONSOLE_HANDLE_DATA HandleData;
+    PCONSOLE_HANDLE_DATA HandleData = pCookedReadData->HandleIndex;
 
-    NTSTATUS Status = DereferenceIoHandleNoCheck(pCookedReadData->HandleIndex, &HandleData);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
+    NTSTATUS Status = STATUS_SUCCESS;
     for (;;)
     {
         WCHAR Char;
@@ -2621,9 +2610,8 @@ NTSTATUS ProcessCommandNumberInput(_In_ PCOOKED_READ_DATA const pCookedReadData,
 {
     PCOMMAND_HISTORY const CommandHistory = pCookedReadData->CommandHistory;
     PCLE_POPUP const Popup = CONTAINING_RECORD(CommandHistory->PopupList.Flink, CLE_POPUP, ListLink);
-    PCONSOLE_HANDLE_DATA HandleData;
-    NTSTATUS Status = DereferenceIoHandleNoCheck(pCookedReadData->HandleIndex, &HandleData);
-    ASSERT(NT_SUCCESS(Status));
+    PCONSOLE_HANDLE_DATA HandleData = pCookedReadData->HandleIndex;
+    NTSTATUS Status = STATUS_SUCCESS;
     for (;;)
     {
         WCHAR Char;

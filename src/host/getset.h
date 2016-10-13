@@ -37,7 +37,7 @@ NTSTATUS SrvSetConsoleMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendin
 NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 
 NTSTATUS SrvSetConsoleActiveScreenBuffer(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS DoSrvSetConsoleActiveScreenBuffer(_In_ HANDLE hScreenBufferHandle);
+NTSTATUS DoSrvSetConsoleActiveScreenBuffer(_In_ CONSOLE_HANDLE_DATA* hScreenBufferHandle);
 
 NTSTATUS SrvFlushConsoleInputBuffer(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 NTSTATUS SrvSetConsoleScreenBufferSize(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);

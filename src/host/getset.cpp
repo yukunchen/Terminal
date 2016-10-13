@@ -43,8 +43,8 @@ NTSTATUS SrvGetConsoleMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPend
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_INPUT_HANDLE | CONSOLE_OUTPUT_HANDLE, GENERIC_READ, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_INPUT_HANDLE | CONSOLE_OUTPUT_HANDLE, GENERIC_READ);
     if (NT_SUCCESS(Status))
     {
         // Check handle type and access.
@@ -95,8 +95,8 @@ NTSTATUS SrvGetConsoleNumberOfInputEvents(_Inout_ PCONSOLE_API_MSG m, _Inout_ PB
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_INPUT_HANDLE, GENERIC_READ, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_INPUT_HANDLE, GENERIC_READ);
     if (NT_SUCCESS(Status))
     {
         GetNumberOfReadyEvents(GetInputBufferFromHandle(HandleData), &a->ReadyEvents);
@@ -119,8 +119,8 @@ NTSTATUS SrvGetConsoleScreenBufferInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_READ, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_READ);
     if (NT_SUCCESS(Status))
     {
         Status = DoSrvGetConsoleScreenBufferInfo(GetScreenBufferFromHandle(HandleData), a);
@@ -161,8 +161,8 @@ NTSTATUS SrvGetConsoleCursorInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Rep
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_READ, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_READ);
     if (NT_SUCCESS(Status))
     {
         Status = DoSrvGetConsoleCursorInfo(GetScreenBufferFromHandle(HandleData), a);
@@ -243,8 +243,8 @@ NTSTATUS SrvGetConsoleFontSize(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_READ, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_READ);
     if (NT_SUCCESS(Status))
     {
         if (a->FontIndex == 0)
@@ -278,8 +278,8 @@ NTSTATUS SrvGetConsoleCurrentFont(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Re
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_READ, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_READ);
     if (NT_SUCCESS(Status))
     {
         const SCREEN_INFORMATION* const psi = GetScreenBufferFromHandle(HandleData);
@@ -321,8 +321,8 @@ NTSTATUS SrvSetConsoleCurrentFont(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Re
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (NT_SUCCESS(Status))
     {
         SCREEN_INFORMATION* const psi = GetScreenBufferFromHandle(HandleData);
@@ -351,8 +351,8 @@ NTSTATUS SrvSetConsoleMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPend
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_INPUT_HANDLE | CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_INPUT_HANDLE | CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (!NT_SUCCESS(Status))
     {
         UnlockConsole();
@@ -582,10 +582,10 @@ NTSTATUS SrvSetConsoleActiveScreenBuffer(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBO
 
 // Most other Srv calls do some other processing of the msg once they get the screen buffer out of the message - 
 //  SetConsoleActiveScreenBuffer just sets it. So there's not a lot more to do here.
-NTSTATUS DoSrvSetConsoleActiveScreenBuffer(_In_ HANDLE hScreenBufferHandle)
+NTSTATUS DoSrvSetConsoleActiveScreenBuffer(_In_ CONSOLE_HANDLE_DATA* hScreenBufferHandle)
 {
-    PCONSOLE_HANDLE_DATA HandleData;
-    NTSTATUS Status = DereferenceIoHandle(hScreenBufferHandle, CONSOLE_GRAPHICS_OUTPUT_HANDLE | CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = hScreenBufferHandle;
+    NTSTATUS Status = DereferenceIoHandle(HandleData, CONSOLE_GRAPHICS_OUTPUT_HANDLE | CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (NT_SUCCESS(Status))
     {
         Status = SetActiveScreenBuffer(GetScreenBufferFromHandle(HandleData));
@@ -604,8 +604,8 @@ NTSTATUS SrvFlushConsoleInputBuffer(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
         return Status;
     }
     
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_INPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_INPUT_HANDLE, GENERIC_WRITE);
     if (NT_SUCCESS(Status))
     {
         FlushInputBuffer(GetInputBufferFromHandle(HandleData));
@@ -628,8 +628,8 @@ NTSTATUS SrvGetLargestConsoleWindowSize(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOO
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (NT_SUCCESS(Status))
     {
         const SCREEN_INFORMATION* const pScreenInfo = GetScreenBufferFromHandle(HandleData);
@@ -655,8 +655,8 @@ NTSTATUS SrvSetConsoleScreenBufferSize(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (NT_SUCCESS(Status))
     {
         SCREEN_INFORMATION* const pScreenInfo = GetScreenBufferFromHandle(HandleData);
@@ -711,8 +711,8 @@ NTSTATUS SrvSetScreenBufferInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Repl
         Status = RevalidateConsole(&Console);
         if (NT_SUCCESS(Status))
         {
-            PCONSOLE_HANDLE_DATA HandleData;
-            Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+            PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+            Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
             if (NT_SUCCESS(Status))
             {
                 Status = DoSrvSetScreenBufferInfo(GetScreenBufferFromHandle(HandleData), a);
@@ -772,8 +772,8 @@ NTSTATUS SrvSetConsoleCursorPosition(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (NT_SUCCESS(Status))
     {
         PSCREEN_INFORMATION ScreenInfo = GetScreenBufferFromHandle(HandleData);
@@ -847,8 +847,8 @@ NTSTATUS SrvSetConsoleCursorInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Rep
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (NT_SUCCESS(Status))
     {
         Status = DoSrvSetConsoleCursorInfo(GetScreenBufferFromHandle(HandleData), a);
@@ -887,8 +887,8 @@ NTSTATUS SrvSetConsoleWindowInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Rep
     NTSTATUS Status = RevalidateConsole(&Console);
     if (NT_SUCCESS(Status))
     {
-        PCONSOLE_HANDLE_DATA HandleData;
-        Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+        PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+        Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
         if (NT_SUCCESS(Status))
         {
             Status = DoSrvSetConsoleWindowInfo(GetScreenBufferFromHandle(HandleData), a);
@@ -957,8 +957,8 @@ NTSTATUS SrvScrollConsoleScreenBuffer(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL 
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (NT_SUCCESS(Status))
     {
         Status = DoSrvScrollConsoleScreenBuffer(GetScreenBufferFromHandle(HandleData), a);
@@ -1084,8 +1084,8 @@ NTSTATUS SrvSetConsoleTextAttribute(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (NT_SUCCESS(Status))
     {
         Status = DoSrvSetConsoleTextAttribute(GetScreenBufferFromHandle(HandleData), a);
@@ -1436,8 +1436,8 @@ NTSTATUS SrvSetConsoleDisplayMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Re
         return Status;
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE | CONSOLE_GRAPHICS_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
+    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE | CONSOLE_GRAPHICS_OUTPUT_HANDLE, GENERIC_WRITE);
     if (NT_SUCCESS(Status))
     {
         PSCREEN_INFORMATION const ScreenInfo = GetScreenBufferFromHandle(HandleData);
