@@ -134,20 +134,17 @@ ErrorExit3:
     return Status;
 }
 
-void ConsoleCloseHandle(_In_ const HANDLE hClose)
+void ConsoleCloseHandle(_In_ CONSOLE_HANDLE_DATA* const pClose)
 {
-    PCONSOLE_HANDLE_DATA HandleData;
-    NTSTATUS Status = DereferenceIoHandleNoCheck(hClose, &HandleData);
-    if (NT_SUCCESS(Status))
+    if (pClose->HandleType & CONSOLE_INPUT_HANDLE)
     {
-        if (HandleData->HandleType & CONSOLE_INPUT_HANDLE)
-        {
-            Status = CloseInputHandle(HandleData, hClose);
-        }
-        else
-        {
-            Status = CloseOutputHandle((PSCREEN_INFORMATION) HandleData->ClientPointer, hClose);
-        }
+        // TODO: Fix error handling
+        CloseInputHandle(pClose);
+    }
+    else
+    {
+        // TODO: Fix error handling
+        CloseOutputHandle(pClose);
     }
 }
 

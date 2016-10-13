@@ -122,7 +122,7 @@ BOOL WriteConsoleWaitRoutine(_In_ PLIST_ENTRY pWaitQueue,
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS CloseInputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData, _In_ const HANDLE hClose);
+NTSTATUS CloseInputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData);
 
 // Routine Description:
 // - This routine closes an output handle.  It decrements the screen buffer's
@@ -136,6 +136,6 @@ NTSTATUS CloseInputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData, _In_ const HAND
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS CloseOutputHandle(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const HANDLE hClose);
+NTSTATUS CloseOutputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData);
 
 NTSTATUS SrvCloseHandle(_In_ PCONSOLE_API_MSG m);

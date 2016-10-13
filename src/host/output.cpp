@@ -62,6 +62,11 @@ NTSTATUS DoCreateScreenBuffer()
                                                          g_ciConsoleInformation.GetCursorSize(),
                                                          &g_ciConsoleInformation.ScreenBuffers);
 
+    // TODO: This needs to be resolved. We increment it once with no handle to ensure it's never cleaned up
+    // and one always exists for the renderer (and potentially other functions.)
+    // It's currently a load-bearing piece of code. 
+    g_ciConsoleInformation.ScreenBuffers[0].Header.IncrementOriginalScreenBuffer();
+
     return Status;
 }
 

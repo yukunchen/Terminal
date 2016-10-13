@@ -1068,7 +1068,7 @@ NTSTATUS DoSrvFillConsoleOutput(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CO
 //#define CONSOLE_GRAPHICS_BUFFER 2
 //#define CONSOLE_OEMFONT_DISPLAY 4
 
-NTSTATUS ConsoleCreateScreenBuffer(_Out_ PHANDLE Handle,
+NTSTATUS ConsoleCreateScreenBuffer(_Out_ CONSOLE_HANDLE_DATA** ppHandle,
                                    _In_ PCONSOLE_API_MSG /*Message*/,
                                    _In_ PCD_CREATE_OBJECT_INFORMATION Information,
                                    _In_ PCONSOLE_CREATESCREENBUFFER_MSG a)
@@ -1107,7 +1107,7 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ PHANDLE Handle,
     if (FAILED(ScreenInfo->Header.AllocateIoHandle(HandleType,
                                                    Information->DesiredAccess,
                                                    Information->ShareMode,
-                                                   Handle)))
+                                                   ppHandle)))
     {
         // TODO: correct this function to return HRs and pass errors.
         Status = STATUS_UNSUCCESSFUL;

@@ -16,6 +16,8 @@ Revision History:
 
 #pragma once
 
+#include "ObjectHandle.h"
+
 class ConsoleObjectHeader
 {
 public:
@@ -24,11 +26,15 @@ public:
     HRESULT AllocateIoHandle(_In_ const ULONG ulHandleType,
                              _In_ const ACCESS_MASK amDesired,
                              _In_ const ULONG ulShareMode,
-                             _Out_ HANDLE * const hOut);
+                             _Out_ CONSOLE_HANDLE_DATA** const ppOut);
 
-    HRESULT FreeIoHandle(_In_ HANDLE const hFree);
+    HRESULT FreeIoHandle(_In_ CONSOLE_HANDLE_DATA* const pFree);
 
     bool HasAnyOpenHandles() const;
+
+    // TODO: come up with a better solution than this.
+    // It's currently a "load bearing" piece because things like the renderer expect there to always be a "current screen buffer"
+    void IncrementOriginalScreenBuffer();
 
 private:
     ULONG _ulOpenCount;

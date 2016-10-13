@@ -34,7 +34,7 @@ ConsoleObjectHeader::ConsoleObjectHeader() :
 HRESULT ConsoleObjectHeader::AllocateIoHandle(_In_ const ULONG ulHandleType,
                                               _In_ const ACCESS_MASK amDesired,
                                               _In_ const ULONG ulShareMode,
-                                              _Out_ HANDLE* const phOut)
+                                              _Out_ CONSOLE_HANDLE_DATA** const ppOut)
 {
     // Check the share mode.
     bool const ReadRequested = IsFlagSet(amDesired, GENERIC_READ);
@@ -76,22 +76,20 @@ HRESULT ConsoleObjectHeader::AllocateIoHandle(_In_ const ULONG ulHandleType,
     HandleData->Access = amDesired;
     HandleData->ClientPointer = this;
 
-    *phOut = static_cast<HANDLE>(HandleData.release());
+    *ppOut = HandleData.release();
 
     return S_OK;
 }
 
-HRESULT ConsoleObjectHeader::FreeIoHandle(_In_ HANDLE const hFree)
+HRESULT ConsoleObjectHeader::FreeIoHandle(_In_ CONSOLE_HANDLE_DATA* const pFree)
 {
-    PCONSOLE_HANDLE_DATA const HandleData = (PCONSOLE_HANDLE_DATA)hFree;
+    bool const ReadRequested = IsFlagSet(pFree->Access, GENERIC_READ);
+    bool const ReadShared = IsFlagSet(pFree->ShareAccess, FILE_SHARE_READ);
 
-    bool const ReadRequested = IsFlagSet(HandleData->Access, GENERIC_READ);
-    bool const ReadShared = IsFlagSet(HandleData->ShareAccess, FILE_SHARE_READ);
+    bool const WriteRequested = IsFlagSet(pFree->Access, GENERIC_WRITE);
+    bool const WriteShared = IsFlagSet(pFree->ShareAccess, FILE_SHARE_WRITE);
 
-    bool const WriteRequested = IsFlagSet(HandleData->Access, GENERIC_WRITE);
-    bool const WriteShared = IsFlagSet(HandleData->ShareAccess, FILE_SHARE_WRITE);
-
-    delete HandleData;
+    delete pFree;
 
     assert(_ulOpenCount > 0);
     _ulOpenCount -= 1;
@@ -107,5 +105,14 @@ HRESULT ConsoleObjectHeader::FreeIoHandle(_In_ HANDLE const hFree)
 
 bool ConsoleObjectHeader::HasAnyOpenHandles() const
 {
-    return _ulOpenCount == 0;
+    return _ulOpenCount != 0;
+}
+
+void ConsoleObjectHeader::IncrementOriginalScreenBuffer()
+{
+    _ulOpenCount++;
+    _ulReaderCount++;
+    _ulReadShareCount++;
+    _ulWriterCount++;
+    _ulWriteShareCount++;
 }

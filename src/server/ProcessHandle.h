@@ -16,6 +16,8 @@ Revision History:
 
 #pragma once
 
+#include "ObjectHandle.h"
+
 typedef struct _CONSOLE_PROCESS_HANDLE
 {
     LIST_ENTRY ListLink;
@@ -25,6 +27,6 @@ typedef struct _CONSOLE_PROCESS_HANDLE
     CLIENT_ID ClientId;
     BOOL RootProcess;
     LIST_ENTRY WaitBlockQueue;
-    HANDLE InputHandle;
-    HANDLE OutputHandle;
+    CONSOLE_HANDLE_DATA* InputHandle;
+    CONSOLE_HANDLE_DATA* OutputHandle;
 } CONSOLE_PROCESS_HANDLE, *PCONSOLE_PROCESS_HANDLE;

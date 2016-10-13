@@ -90,7 +90,7 @@ class COOKED_READ_DATA
 public:
     PINPUT_INFORMATION InputInfo;
     PSCREEN_INFORMATION ScreenInfo;
-    HANDLE TempHandle;
+    CONSOLE_HANDLE_DATA* TempHandle;
     ULONG UserBufferSize;   // doubled size in ansi case
     PWCHAR UserBuffer;
     ULONG BufferSize;

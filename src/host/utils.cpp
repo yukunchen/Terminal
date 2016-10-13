@@ -13,9 +13,9 @@ PCONSOLE_PROCESS_HANDLE GetMessageProcess(_In_ PCCONSOLE_API_MSG pMessage)
     return (PCONSOLE_PROCESS_HANDLE) pMessage->Descriptor.Process;
 }
 
-HANDLE GetMessageObject(_In_ PCCONSOLE_API_MSG pMessage)
+CONSOLE_HANDLE_DATA* GetMessageObject(_In_ PCCONSOLE_API_MSG pMessage)
 {
-    return (HANDLE) pMessage->Descriptor.Object;
+    return (CONSOLE_HANDLE_DATA*) pMessage->Descriptor.Object;
 }
 
 void SetReplyStatus(_Inout_ PCCONSOLE_API_MSG pMessage, _In_ const NTSTATUS Status)

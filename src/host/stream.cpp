@@ -1154,7 +1154,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
         if (fWaitRoutine)
         {
             g_ciConsoleInformation.lpCookedReadData = nullptr;
-            CloseOutputHandle(pCookedReadData->ScreenInfo, pCookedReadData->TempHandle);
+            CloseOutputHandle(pCookedReadData->TempHandle);
             delete pCookedReadData;
         }
     }
@@ -1206,7 +1206,7 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
         delete[] pCookedReadData->BackupLimit;
         delete[] pCookedReadData->ExeName;
         g_ciConsoleInformation.lpCookedReadData = nullptr;
-        CloseOutputHandle(pCookedReadData->ScreenInfo, pCookedReadData->TempHandle);
+        CloseOutputHandle(pCookedReadData->TempHandle);
         delete pCookedReadData;
         return TRUE;
     }
@@ -1221,7 +1221,7 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
         delete[] pCookedReadData->BackupLimit;
         delete[] pCookedReadData->ExeName;
         g_ciConsoleInformation.lpCookedReadData = nullptr;
-        CloseOutputHandle(pCookedReadData->ScreenInfo, pCookedReadData->TempHandle);
+        CloseOutputHandle(pCookedReadData->TempHandle);
         delete pCookedReadData;
         return TRUE;
     }
@@ -1239,7 +1239,7 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
         delete[] pCookedReadData->BackupLimit;
         delete[] pCookedReadData->ExeName;
         g_ciConsoleInformation.lpCookedReadData = nullptr;
-        CloseOutputHandle(pCookedReadData->ScreenInfo, pCookedReadData->TempHandle);
+        CloseOutputHandle(pCookedReadData->TempHandle);
         delete pCookedReadData;
         return TRUE;
     }
@@ -1265,7 +1265,7 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
                 delete[] pCookedReadData->BackupLimit;
                 delete[] pCookedReadData->ExeName;
                 g_ciConsoleInformation.lpCookedReadData = nullptr;
-                CloseOutputHandle(pCookedReadData->ScreenInfo, pCookedReadData->TempHandle);
+                CloseOutputHandle(pCookedReadData->TempHandle);
                 delete pCookedReadData;
 
                 if (NT_SUCCESS(pWaitReplyMessage->Complete.IoStatus.Status))
@@ -1481,7 +1481,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
         {
             if (Echo)
             {
-                CloseOutputHandle(pScreenInfo, CookedReadData.TempHandle);
+                CloseOutputHandle(CookedReadData.TempHandle);
             }
 
             return STATUS_NO_MEMORY;
@@ -1881,7 +1881,7 @@ BOOL WriteConsoleWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS CloseInputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData, _In_ const HANDLE hClose)
+NTSTATUS CloseInputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData)
 {
     if (pHandleData->pClientInput->InputHandleFlags & HANDLE_INPUT_PENDING)
     {
@@ -1911,7 +1911,7 @@ NTSTATUS CloseInputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData, _In_ const HAND
 
     delete pHandleData->pClientInput;
 
-    InputBuffer->Header.FreeIoHandle(hClose);
+    InputBuffer->Header.FreeIoHandle(pHandleData);
 
     if (!InputBuffer->Header.HasAnyOpenHandles())
     {
@@ -1932,9 +1932,11 @@ NTSTATUS CloseInputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData, _In_ const HAND
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS CloseOutputHandle(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const HANDLE hClose)
+NTSTATUS CloseOutputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData)
 {
-    pScreenInfo->Header.FreeIoHandle(hClose);
+    PSCREEN_INFORMATION const pScreenInfo = GetScreenBufferFromHandle(pHandleData);
+
+    pScreenInfo->Header.FreeIoHandle(pHandleData);
     if (!pScreenInfo->Header.HasAnyOpenHandles())
     {
         RemoveScreenBuffer(pScreenInfo);
