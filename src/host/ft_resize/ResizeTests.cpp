@@ -152,9 +152,9 @@ class ResizeTests
         COORD coordBufferSize;
         m_GetCurrentBufferSize(&coordBufferSize);
         const DWORD cchBuffer = coordBufferSize.X * coordBufferSize.Y;
-        Log::Comment(String().Format(L"current buffer cch: %d\n", cchBuffer));
+        Log::Comment(String().Format(L"current buffer cch: %d", cchBuffer));
 
-        PWSTR pszBuffer = new WCHAR[cchBuffer];
+        PWSTR pszBuffer = new WCHAR[cchBuffer+1];
         VERIFY_IS_NOT_NULL(pszBuffer);
 
         COORD coordOrigin;
@@ -162,9 +162,16 @@ class ResizeTests
         coordOrigin.Y = 0;
         DWORD cchRead = 0;
         VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(m_hScreenBuffer, pszBuffer, cchBuffer, coordOrigin, &cchRead));
-        VERIFY_ARE_EQUAL(cchBuffer, cchRead);
+        Log::Comment(String().Format(L"read-back buffer cch: %d", cchRead));
+
+        // each DBCS char uses two screen buffers
+        VERIFY_IS_GREATER_THAN_OR_EQUAL(cchBuffer, cchRead);
+
+        // properly terminate the buffer as C-style string
+        pszBuffer[cchRead] = L'\0';
+
         *ppszBufferText = pszBuffer;
-        *pCchBufferText = cchBuffer;
+        *pCchBufferText = cchRead;
     }
 
     TEST_METHOD_SETUP(MethodSetup)
