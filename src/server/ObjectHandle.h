@@ -23,11 +23,46 @@ Revision History:
 
 class INPUT_READ_HANDLE_DATA;
 
+struct _INPUT_INFORMATION;
+typedef _INPUT_INFORMATION INPUT_INFORMATION;
+typedef _INPUT_INFORMATION *PINPUT_INFORMATION;
+
+class SCREEN_INFORMATION;
+
 typedef struct _CONSOLE_HANDLE_DATA
 {
-    ULONG HandleType;
-    ACCESS_MASK Access;
-    ULONG ShareAccess;
-    PVOID ClientPointer; // This will be a pointer to a SCREEN_INFORMATION or INPUT_INFORMATION object.
-    INPUT_READ_HANDLE_DATA * pClientInput;
+    _CONSOLE_HANDLE_DATA(_In_ ULONG const ulHandleType,
+                         _In_ ACCESS_MASK const amAccess,
+                         _In_ ULONG const ulShareAccess,
+                         _In_ PVOID const pvClientPointer);
+
+    INPUT_INFORMATION* GetInputBuffer() const;
+    SCREEN_INFORMATION* GetScreenBuffer() const;
+
+    INPUT_READ_HANDLE_DATA* GetClientInput() const;
+
+    bool IsReadAllowed() const;
+    bool IsReadShared() const;
+    bool IsWriteAllowed() const;
+    bool IsWriteShared() const;
+
+    NTSTATUS DereferenceIoHandle(_In_ const ULONG ulHandleType,
+                                 _In_ const ACCESS_MASK amRequested);
+
+    // TODO: Temporary public access to types...
+    bool IsInputHandle() const
+    {
+        return _IsInput();
+    }
+
+private:
+    bool _IsInput() const;
+    bool _IsOutput() const;
+
+    ULONG const _ulHandleType;
+    ACCESS_MASK const _amAccess;
+    ULONG const _ulShareAccess;
+    PVOID const _pvClientPointer; // This will be a pointer to a SCREEN_INFORMATION or INPUT_INFORMATION object.
+    INPUT_READ_HANDLE_DATA* _pClientInput;
+
 } CONSOLE_HANDLE_DATA, *PCONSOLE_HANDLE_DATA;

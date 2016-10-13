@@ -289,11 +289,11 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
     __try
     {
 #ifdef DBG
-        HandleData->pClientInput->LockReadCount();
-        ASSERT(HandleData->pClientInput->GetReadCount() > 0);
-        HandleData->pClientInput->UnlockReadCount();
+        HandleData->GetClientInput()->LockReadCount();
+        ASSERT(HandleData->GetClientInput()->GetReadCount() > 0);
+        HandleData->GetClientInput()->UnlockReadCount();
 #endif
-        HandleData->pClientInput->DecrementReadCount();
+        HandleData->GetClientInput()->DecrementReadCount();
 
         // If a ctrl-c is seen, don't terminate read. If ctrl-break is seen, terminate read.
         if ((ULONG_PTR)pvSatisfyParameter & CONSOLE_CTRL_BREAK_SEEN)
@@ -314,7 +314,7 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
         // we wake up the close thread. Otherwise, we wake up any other
         // thread waiting for data.
 
-        if (HandleData->pClientInput->InputHandleFlags & HANDLE_CLOSING)
+        if (HandleData->GetClientInput()->InputHandleFlags & HANDLE_CLOSING)
         {
             Status = STATUS_ALERTED;
             __leave;
@@ -334,12 +334,12 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
         // This call to GetChar may block.
         if (!a->Unicode)
         {
-            if (GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+            if (HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
             {
                 fAddDbcsLead = TRUE;
-                *lpBuffer = GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                *lpBuffer = HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
                 RawReadData->BufferSize -= sizeof(WCHAR);
-                ZeroMemory(&GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                ZeroMemory(&HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
                 Status = STATUS_SUCCESS;
                 if (RawReadData->BufferSize == 0)
                 {
@@ -426,7 +426,7 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
 
                 lpBuffer = RawReadData->BufPtr;
 
-                a->NumBytes = TranslateUnicodeToOem(lpBuffer, a->NumBytes / sizeof(WCHAR), TransBuffer, NumBytes, &GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte);
+                a->NumBytes = TranslateUnicodeToOem(lpBuffer, a->NumBytes / sizeof(WCHAR), TransBuffer, NumBytes, &HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte);
 
                 memmove(lpBuffer, TransBuffer, a->NumBytes);
                 if (fAddDbcsLead)
@@ -1010,15 +1010,15 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
             {
                 PWSTR Tmp;
 
-                HandleData->pClientInput->InputHandleFlags |= HANDLE_MULTI_LINE_INPUT;
+                HandleData->GetClientInput()->InputHandleFlags |= HANDLE_MULTI_LINE_INPUT;
                 if (!a->Unicode)
                 {
-                    if (GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                    if (HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
                     {
                         fAddDbcsLead = TRUE;
-                        *pCookedReadData->UserBuffer++ = GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                        *pCookedReadData->UserBuffer++ = HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
                         pCookedReadData->UserBufferSize -= sizeof(WCHAR);
-                        ZeroMemory(&GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                        ZeroMemory(&HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
                     }
 
                     NumBytes = 0;
@@ -1041,12 +1041,12 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                 {
                     PWSTR Tmp;
 
-                    if (GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                    if (HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
                     {
                         fAddDbcsLead = TRUE;
-                        *pCookedReadData->UserBuffer++ = GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                        *pCookedReadData->UserBuffer++ = HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
                         pCookedReadData->UserBufferSize -= sizeof(WCHAR);
-                        ZeroMemory(&GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                        ZeroMemory(&HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
                     }
                     NumBytes = 0;
                     NumToWrite = pCookedReadData->BytesRead;
@@ -1057,10 +1057,10 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                 a->NumBytes = pCookedReadData->UserBufferSize;
             }
 
-            HandleData->pClientInput->InputHandleFlags |= HANDLE_INPUT_PENDING;
-            HandleData->pClientInput->BufPtr = pCookedReadData->BackupLimit;
-            HandleData->pClientInput->BytesAvailable = pCookedReadData->BytesRead - a->NumBytes;
-            HandleData->pClientInput->CurrentBufPtr = (PWCHAR)((PBYTE) pCookedReadData->BackupLimit + a->NumBytes);
+            HandleData->GetClientInput()->InputHandleFlags |= HANDLE_INPUT_PENDING;
+            HandleData->GetClientInput()->BufPtr = pCookedReadData->BackupLimit;
+            HandleData->GetClientInput()->BytesAvailable = pCookedReadData->BytesRead - a->NumBytes;
+            HandleData->GetClientInput()->CurrentBufPtr = (PWCHAR)((PBYTE) pCookedReadData->BackupLimit + a->NumBytes);
             __analysis_assume(a->NumBytes <= pCookedReadData->UserBufferSize);
             memmove(pCookedReadData->UserBuffer, pCookedReadData->BackupLimit, a->NumBytes);
         }
@@ -1070,13 +1070,13 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
             {
                 PWSTR Tmp;
 
-                if (GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                if (HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
                 {
                     fAddDbcsLead = TRUE;
 #pragma prefast(suppress:__WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is legit")
-                    *pCookedReadData->UserBuffer++ = GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                    *pCookedReadData->UserBuffer++ = HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
                     pCookedReadData->UserBufferSize -= sizeof(WCHAR);
-                    ZeroMemory(&GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                    ZeroMemory(&HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
 
                     if (pCookedReadData->UserBufferSize == 0)
                     {
@@ -1120,7 +1120,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                 return STATUS_NO_MEMORY;
             }
 
-            a->NumBytes = TranslateUnicodeToOem(pCookedReadData->UserBuffer, a->NumBytes / sizeof(WCHAR), TransBuffer, NumBytes, &GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte);
+            a->NumBytes = TranslateUnicodeToOem(pCookedReadData->UserBuffer, a->NumBytes / sizeof(WCHAR), TransBuffer, NumBytes, &HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte);
 
             if (a->NumBytes > pCookedReadData->UserBufferSize)
             {
@@ -1174,16 +1174,16 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
 {
     PCONSOLE_HANDLE_DATA HandleData = pCookedReadData->HandleIndex;
     NTSTATUS Status = STATUS_SUCCESS;
-    ASSERT((HandleData->pClientInput->InputHandleFlags & HANDLE_INPUT_PENDING) == 0);
+    ASSERT((HandleData->GetClientInput()->InputHandleFlags & HANDLE_INPUT_PENDING) == 0);
 
     // this routine should be called by a thread owning the same lock on the same console as we're reading from.
 #ifdef DBG
-    HandleData->pClientInput->LockReadCount();
-    ASSERT(HandleData->pClientInput->GetReadCount() > 0);
-    HandleData->pClientInput->UnlockReadCount();
+    HandleData->GetClientInput()->LockReadCount();
+    ASSERT(HandleData->GetClientInput()->GetReadCount() > 0);
+    HandleData->GetClientInput()->UnlockReadCount();
 #endif
 
-    HandleData->pClientInput->DecrementReadCount();
+    HandleData->GetClientInput()->DecrementReadCount();
 
     // if ctrl-c or ctrl-break was seen, terminate read.
     if ((ULONG_PTR)pvSatisfyParameter & (CONSOLE_CTRL_C_SEEN | CONSOLE_CTRL_BREAK_SEEN))
@@ -1216,7 +1216,7 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
     // so, we decrement the read count. If it goes to zero, we wake up the
     // close thread. Otherwise, we wake up any other thread waiting for data.
 
-    if ((HandleData->pClientInput->InputHandleFlags & HANDLE_CLOSING) != 0)
+    if ((HandleData->GetClientInput()->InputHandleFlags & HANDLE_CLOSING) != 0)
     {
         SetReplyStatus(pWaitReplyMessage, STATUS_ALERTED);
 
@@ -1315,44 +1315,44 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
     DWORD BufferSize = *pdwNumBytes;
     *pdwNumBytes = 0;
 
-    if (pHandleData->pClientInput->InputHandleFlags & HANDLE_INPUT_PENDING)
+    if (pHandleData->GetClientInput()->InputHandleFlags & HANDLE_INPUT_PENDING)
     {
         // if we have leftover input, copy as much fits into the user's
         // buffer and return.  we may have multi line input, if a macro
         // has been defined that contains the $T character.
 
-        if (pHandleData->pClientInput->InputHandleFlags & HANDLE_MULTI_LINE_INPUT)
+        if (pHandleData->GetClientInput()->InputHandleFlags & HANDLE_MULTI_LINE_INPUT)
         {
             PWSTR Tmp;
 
             if (!fUnicode)
             {
-                if (GetInputBufferFromHandle(pHandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                if (pHandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
                 {
                     fAddDbcsLead = TRUE;
-                    *pwchBuffer++ = GetInputBufferFromHandle(pHandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                    *pwchBuffer++ = pHandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
                     BufferSize -= sizeof(WCHAR);
-                    pHandleData->pClientInput->BytesAvailable -= sizeof(WCHAR);
-                    ZeroMemory(&GetInputBufferFromHandle(pHandleData)->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                    pHandleData->GetClientInput()->BytesAvailable -= sizeof(WCHAR);
+                    ZeroMemory(&pHandleData->GetInputBuffer()->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
                 }
 
-                if (pHandleData->pClientInput->BytesAvailable == 0 || BufferSize == 0)
+                if (pHandleData->GetClientInput()->BytesAvailable == 0 || BufferSize == 0)
                 {
-                    pHandleData->pClientInput->InputHandleFlags &= ~(HANDLE_INPUT_PENDING | HANDLE_MULTI_LINE_INPUT);
-                    delete[] pHandleData->pClientInput->BufPtr;
+                    pHandleData->GetClientInput()->InputHandleFlags &= ~(HANDLE_INPUT_PENDING | HANDLE_MULTI_LINE_INPUT);
+                    delete[] pHandleData->GetClientInput()->BufPtr;
                     *pdwNumBytes = 1;
                     return STATUS_SUCCESS;
                 }
                 else
                 {
-                    for (NumToWrite = 0, Tmp = pHandleData->pClientInput->CurrentBufPtr, NumToBytes = 0;
-                         NumToBytes < pHandleData->pClientInput->BytesAvailable && NumToBytes < BufferSize / sizeof(WCHAR) && *Tmp != UNICODE_LINEFEED;
+                    for (NumToWrite = 0, Tmp = pHandleData->GetClientInput()->CurrentBufPtr, NumToBytes = 0;
+                         NumToBytes < pHandleData->GetClientInput()->BytesAvailable && NumToBytes < BufferSize / sizeof(WCHAR) && *Tmp != UNICODE_LINEFEED;
                          (IsCharFullWidth(*Tmp) ? NumToBytes += 2 : NumToBytes++), Tmp++, NumToWrite += sizeof(WCHAR));
                 }
             }
 
-            for (NumToWrite = 0, Tmp = pHandleData->pClientInput->CurrentBufPtr;
-                 NumToWrite < pHandleData->pClientInput->BytesAvailable && *Tmp != UNICODE_LINEFEED; Tmp++, NumToWrite += sizeof(WCHAR));
+            for (NumToWrite = 0, Tmp = pHandleData->GetClientInput()->CurrentBufPtr;
+                 NumToWrite < pHandleData->GetClientInput()->BytesAvailable && *Tmp != UNICODE_LINEFEED; Tmp++, NumToWrite += sizeof(WCHAR));
             NumToWrite += sizeof(WCHAR);
             if (NumToWrite > BufferSize)
             {
@@ -1365,42 +1365,42 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
             {
                 PWSTR Tmp;
 
-                if (GetInputBufferFromHandle(pHandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                if (pHandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
                 {
                     fAddDbcsLead = TRUE;
-                    *pwchBuffer++ = GetInputBufferFromHandle(pHandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                    *pwchBuffer++ = pHandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
                     BufferSize -= sizeof(WCHAR);
-                    pHandleData->pClientInput->BytesAvailable -= sizeof(WCHAR);
-                    ZeroMemory(&GetInputBufferFromHandle(pHandleData)->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                    pHandleData->GetClientInput()->BytesAvailable -= sizeof(WCHAR);
+                    ZeroMemory(&pHandleData->GetInputBuffer()->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
                 }
-                if (pHandleData->pClientInput->BytesAvailable == 0)
+                if (pHandleData->GetClientInput()->BytesAvailable == 0)
                 {
-                    pHandleData->pClientInput->InputHandleFlags &= ~(HANDLE_INPUT_PENDING | HANDLE_MULTI_LINE_INPUT);
-                    delete[] pHandleData->pClientInput->BufPtr;
+                    pHandleData->GetClientInput()->InputHandleFlags &= ~(HANDLE_INPUT_PENDING | HANDLE_MULTI_LINE_INPUT);
+                    delete[] pHandleData->GetClientInput()->BufPtr;
                     *pdwNumBytes = 1;
                     return STATUS_SUCCESS;
                 }
                 else
                 {
-                    for (NumToWrite = 0, Tmp = pHandleData->pClientInput->CurrentBufPtr, NumToBytes = 0;
-                         NumToBytes < pHandleData->pClientInput->BytesAvailable && NumToBytes < BufferSize / sizeof(WCHAR);
+                    for (NumToWrite = 0, Tmp = pHandleData->GetClientInput()->CurrentBufPtr, NumToBytes = 0;
+                         NumToBytes < pHandleData->GetClientInput()->BytesAvailable && NumToBytes < BufferSize / sizeof(WCHAR);
                          (IsCharFullWidth(*Tmp) ? NumToBytes += 2 : NumToBytes++), Tmp++, NumToWrite += sizeof(WCHAR));
                 }
             }
 
-            NumToWrite = (BufferSize < pHandleData->pClientInput->BytesAvailable) ? BufferSize : pHandleData->pClientInput->BytesAvailable;
+            NumToWrite = (BufferSize < pHandleData->GetClientInput()->BytesAvailable) ? BufferSize : pHandleData->GetClientInput()->BytesAvailable;
         }
 
-        memmove(pwchBuffer, pHandleData->pClientInput->CurrentBufPtr, NumToWrite);
-        pHandleData->pClientInput->BytesAvailable -= NumToWrite;
-        if (pHandleData->pClientInput->BytesAvailable == 0)
+        memmove(pwchBuffer, pHandleData->GetClientInput()->CurrentBufPtr, NumToWrite);
+        pHandleData->GetClientInput()->BytesAvailable -= NumToWrite;
+        if (pHandleData->GetClientInput()->BytesAvailable == 0)
         {
-            pHandleData->pClientInput->InputHandleFlags &= ~(HANDLE_INPUT_PENDING | HANDLE_MULTI_LINE_INPUT);
-            delete[] pHandleData->pClientInput->BufPtr;
+            pHandleData->GetClientInput()->InputHandleFlags &= ~(HANDLE_INPUT_PENDING | HANDLE_MULTI_LINE_INPUT);
+            delete[] pHandleData->GetClientInput()->BufPtr;
         }
         else
         {
-            pHandleData->pClientInput->CurrentBufPtr = (PWCHAR)((PBYTE) pHandleData->pClientInput->CurrentBufPtr + NumToWrite);
+            pHandleData->GetClientInput()->CurrentBufPtr = (PWCHAR)((PBYTE) pHandleData->GetClientInput()->CurrentBufPtr + NumToWrite);
         }
 
         if (!fUnicode)
@@ -1415,7 +1415,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
                 return STATUS_NO_MEMORY;
             }
 
-            NumToWrite = TranslateUnicodeToOem(pwchBuffer, NumToWrite / sizeof(WCHAR), TransBuffer, NumToBytes, &GetInputBufferFromHandle(pHandleData)->ReadConInpDbcsLeadByte);
+            NumToWrite = TranslateUnicodeToOem(pwchBuffer, NumToWrite / sizeof(WCHAR), TransBuffer, NumToBytes, &pHandleData->GetInputBuffer()->ReadConInpDbcsLeadByte);
 
 #pragma prefast(suppress:__WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine but prefast can't follow it, evidently")
             memmove(pwchBuffer, TransBuffer, NumToWrite);
@@ -1568,12 +1568,12 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
             NumToWrite = 0;
             if (!fUnicode)
             {
-                if (GetInputBufferFromHandle(pHandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                if (pHandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
                 {
                     fAddDbcsLead = TRUE;
-                    *pwchBuffer++ = GetInputBufferFromHandle(pHandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                    *pwchBuffer++ = pHandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
                     BufferSize -= sizeof(WCHAR);
-                    ZeroMemory(&GetInputBufferFromHandle(pHandleData)->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                    ZeroMemory(&pHandleData->GetInputBuffer()->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
                     Status = STATUS_SUCCESS;
                     if (BufferSize == 0)
                     {
@@ -1669,7 +1669,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
                                                         NumToWrite / sizeof(WCHAR),
                                                         TransBuffer,
                                                         *pdwNumBytes,
-                                                        &GetInputBufferFromHandle(pHandleData)->ReadConInpDbcsLeadByte);
+                                                        &pHandleData->GetInputBuffer()->ReadConInpDbcsLeadByte);
 
 #pragma prefast(suppress:26053 26015, "PREfast claims read overflow. *pdwNumBytes is the exact size of TransBuffer as allocated above.")
                 memmove(pwchBuffer, TransBuffer, *pdwNumBytes);
@@ -1714,7 +1714,7 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
     PCONSOLE_PROCESS_HANDLE const ProcessData = GetMessageProcess(m);
     
     PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
-    Status = DereferenceIoHandle(HandleData, CONSOLE_INPUT_HANDLE, GENERIC_READ);
+    Status = HandleData->DereferenceIoHandle(CONSOLE_INPUT_HANDLE, GENERIC_READ);
     if (!NT_SUCCESS(Status))
     {
         a->NumBytes = 0;
@@ -1729,7 +1729,7 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
 
         if (g_ciConsoleInformation.CurrentScreenBuffer != nullptr)
         {
-            Status = ReadChars(GetInputBufferFromHandle(HandleData),
+            Status = ReadChars(HandleData->GetInputBuffer(),
                                ProcessData,
                                g_ciConsoleInformation.CurrentScreenBuffer,
                                Buffer,
@@ -1797,7 +1797,7 @@ NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
 
     // Make sure we have a valid screen buffer.
     PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
-    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
+    Status = HandleData->DereferenceIoHandle(CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (NT_SUCCESS(Status))
     {
         Status = DoSrvWriteConsole(m, ReplyPending, Buffer, HandleData);
@@ -1867,33 +1867,33 @@ BOOL WriteConsoleWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
 // - The console lock must be held when calling this routine.
 NTSTATUS CloseInputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData)
 {
-    if (pHandleData->pClientInput->InputHandleFlags & HANDLE_INPUT_PENDING)
+    if (pHandleData->GetClientInput()->InputHandleFlags & HANDLE_INPUT_PENDING)
     {
-        pHandleData->pClientInput->InputHandleFlags &= ~HANDLE_INPUT_PENDING;
-        delete[] pHandleData->pClientInput->BufPtr;
+        pHandleData->GetClientInput()->InputHandleFlags &= ~HANDLE_INPUT_PENDING;
+        delete[] pHandleData->GetClientInput()->BufPtr;
     }
 
-    PINPUT_INFORMATION const InputBuffer = GetInputBufferFromHandle(pHandleData);
+    PINPUT_INFORMATION const InputBuffer = pHandleData->GetInputBuffer();
 
     // see if there are any reads waiting for data via this handle.  if
     // there are, wake them up.  there aren't any other outstanding i/o
     // operations via this handle because the console lock is held.
 
-    pHandleData->pClientInput->LockReadCount();
-    if (pHandleData->pClientInput->GetReadCount() != 0)
+    pHandleData->GetClientInput()->LockReadCount();
+    if (pHandleData->GetClientInput()->GetReadCount() != 0)
     {
-        pHandleData->pClientInput->UnlockReadCount();
-        pHandleData->pClientInput->InputHandleFlags |= HANDLE_CLOSING;
+        pHandleData->GetClientInput()->UnlockReadCount();
+        pHandleData->GetClientInput()->InputHandleFlags |= HANDLE_CLOSING;
 
         ConsoleNotifyWait(&InputBuffer->ReadWaitQueue, TRUE, nullptr);
 
-        pHandleData->pClientInput->LockReadCount();
+        pHandleData->GetClientInput()->LockReadCount();
     }
 
-    ASSERT(pHandleData->pClientInput->GetReadCount() == 0);
-    pHandleData->pClientInput->UnlockReadCount();
+    ASSERT(pHandleData->GetClientInput()->GetReadCount() == 0);
+    pHandleData->GetClientInput()->UnlockReadCount();
 
-    delete pHandleData->pClientInput;
+    delete pHandleData->GetClientInput();
 
     InputBuffer->Header.FreeIoHandle(pHandleData);
 
@@ -1918,7 +1918,7 @@ NTSTATUS CloseInputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData)
 // - The console lock must be held when calling this routine.
 NTSTATUS CloseOutputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData)
 {
-    PSCREEN_INFORMATION const pScreenInfo = GetScreenBufferFromHandle(pHandleData);
+    PSCREEN_INFORMATION const pScreenInfo = pHandleData->GetScreenBuffer();
 
     pScreenInfo->Header.FreeIoHandle(pHandleData);
     if (!pScreenInfo->Header.HasAnyOpenHandles())

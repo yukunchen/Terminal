@@ -224,14 +224,14 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/, _In_ PCONSOLE_API_MSG
     PINPUT_RECORD Buffer = nullptr;
     if (!a->Unicode)
     {
-        if (GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+        if (HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
         {
             if (a->NumRecords == 1)
             {
                 Buffer = (PINPUT_RECORD) WaitReplyMessage->State.OutputBuffer;
-                *Buffer = GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte;
+                *Buffer = HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte;
                 if (!(a->Flags & CONSOLE_READ_NOREMOVE))
-                    ZeroMemory(&GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                    ZeroMemory(&HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
 
                 SetReplyStatus(WaitReplyMessage, STATUS_SUCCESS);
                 SetReplyInformation(WaitReplyMessage, sizeof(INPUT_RECORD));
@@ -244,11 +244,11 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/, _In_ PCONSOLE_API_MSG
     __try
     {
 #ifdef DBG
-        HandleData->pClientInput->LockReadCount();
-        ASSERT(HandleData->pClientInput->GetReadCount() > 0);
-        HandleData->pClientInput->UnlockReadCount();
+        HandleData->GetClientInput()->LockReadCount();
+        ASSERT(HandleData->GetClientInput()->GetReadCount() > 0);
+        HandleData->GetClientInput()->UnlockReadCount();
 #endif
-        HandleData->pClientInput->DecrementReadCount();
+        HandleData->GetClientInput()->DecrementReadCount();
 
         // See if called by CsrDestroyProcess or CsrDestroyThread
         // via ConsoleNotifyWaitBlock. If so, just decrement the ReadCount and return.
@@ -262,7 +262,7 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/, _In_ PCONSOLE_API_MSG
         // closed. If so, we decrement the read count. If it goes to
         // zero, we wake up the close thread. Otherwise, we wake up any
         // other thread waiting for data.
-        if (HandleData->pClientInput->InputHandleFlags & HANDLE_CLOSING)
+        if (HandleData->GetClientInput()->InputHandleFlags & HANDLE_CLOSING)
         {
             Status = STATUS_ALERTED;
             __leave;
@@ -285,7 +285,7 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/, _In_ PCONSOLE_API_MSG
         if (!a->Unicode)
         {
             // ASCII : a->NumRecords is ASCII byte count
-            if (GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+            if (HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
             {
                 // Saved DBCS Traling byte
                 if (g_ciConsoleInformation.ReadConInpNumBytesUnicode != 1)
@@ -336,7 +336,7 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/, _In_ PCONSOLE_API_MSG
         {
             if (Status == STATUS_SUCCESS && !a->Unicode)
             {
-                if (fAddDbcsLead && GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                if (fAddDbcsLead && HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
                 {
                     a->NumRecords--;
                 }
@@ -344,12 +344,12 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/, _In_ PCONSOLE_API_MSG
                 a->NumRecords = TranslateInputToOem(Buffer,
                                                     a->NumRecords,
                                                     g_ciConsoleInformation.ReadConInpNumBytesUnicode,
-                                                    a->Flags & CONSOLE_READ_NOREMOVE ? nullptr : &GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte);
-                if (fAddDbcsLead && GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                                                    a->Flags & CONSOLE_READ_NOREMOVE ? nullptr : &HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte);
+                if (fAddDbcsLead && HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
                 {
-                    *(Buffer - 1) = GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte;
+                    *(Buffer - 1) = HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte;
                     if (!(a->Flags & CONSOLE_READ_NOREMOVE))
-                        ZeroMemory(&GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                        ZeroMemory(&HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
                     a->NumRecords++;
                     Buffer--;
                 }
@@ -408,7 +408,7 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
     }
 
     PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
-    Status = DereferenceIoHandle(HandleData, CONSOLE_INPUT_HANDLE, GENERIC_READ);
+    Status = HandleData->DereferenceIoHandle(CONSOLE_INPUT_HANDLE, GENERIC_READ);
     if (!NT_SUCCESS(Status))
     {
         a->NumRecords = 0;
@@ -421,7 +421,7 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
         DWORD nBytesUnicode = a->NumRecords;
 
         // if we're reading, wait for data.  if we're peeking, don't.
-        DirectReadData.InputInfo = GetInputBufferFromHandle(HandleData);
+        DirectReadData.InputInfo = HandleData->GetInputBuffer();
         DirectReadData.ProcessData = GetMessageProcess(m);
         DirectReadData.HandleIndex = GetMessageObject(m);
 
@@ -434,12 +434,12 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
 
             nLength = &nBytesUnicode;
             // ASCII : a->NumRecords is ASCII byte count
-            if (GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+            if (HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
             {
                 // Saved DBCS Traling byte
-                *Buffer = GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte;
+                *Buffer = HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte;
                 if (!(a->Flags & CONSOLE_READ_NOREMOVE))
-                    ZeroMemory(&GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                    ZeroMemory(&HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
 
                 nBytesUnicode--;
                 Buffer++;
@@ -447,7 +447,7 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
             }
         }
 
-        Status = ReadInputBuffer(GetInputBufferFromHandle(HandleData),
+        Status = ReadInputBuffer(HandleData->GetInputBuffer(),
                                  Buffer,
                                  nLength,
                                  !!(a->Flags & CONSOLE_READ_NOREMOVE),
@@ -470,7 +470,7 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
                                                 fAddDbcsLead ?
                                                 a->NumRecords - 1 :
                                                 a->NumRecords,
-                                                nBytesUnicode, a->Flags & CONSOLE_READ_NOREMOVE ? nullptr : &GetInputBufferFromHandle(HandleData)->ReadConInpDbcsLeadByte);
+                                                nBytesUnicode, a->Flags & CONSOLE_READ_NOREMOVE ? nullptr : &HandleData->GetInputBuffer()->ReadConInpDbcsLeadByte);
             if (fAddDbcsLead)
             {
                 a->NumRecords++;
@@ -513,14 +513,14 @@ NTSTATUS SrvWriteConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
     }
 
     PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
-    Status = DereferenceIoHandle(HandleData, CONSOLE_INPUT_HANDLE, GENERIC_WRITE);
+    Status = HandleData->DereferenceIoHandle(CONSOLE_INPUT_HANDLE, GENERIC_WRITE);
     if (!NT_SUCCESS(Status))
     {
         a->NumRecords = 0;
     }
     else
     {
-        Status = DoSrvWriteConsoleInput(GetInputBufferFromHandle(HandleData), a, Buffer);
+        Status = DoSrvWriteConsoleInput(HandleData->GetInputBuffer(), a, Buffer);
     }
 
     UnlockConsole();
@@ -741,7 +741,7 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
     }
 
     PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
-    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_READ);
+    Status = HandleData->DereferenceIoHandle(CONSOLE_OUTPUT_HANDLE, GENERIC_READ);
     if (!NT_SUCCESS(Status))
     {
         // a region of zero size is indicated by the right and bottom coordinates being less than the left and top.
@@ -761,7 +761,7 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
             return STATUS_INVALID_PARAMETER;
         }
 
-        SCREEN_INFORMATION* const psi = GetScreenBufferFromHandle(HandleData);
+        SCREEN_INFORMATION* const psi = HandleData->GetScreenBuffer()->GetActiveBuffer();
 
         Status = ReadScreenBuffer(psi, Buffer, &a->CharRegion);
         if (!a->Unicode)
@@ -807,7 +807,7 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
     }
 
     PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
-    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
+    Status = HandleData->DereferenceIoHandle(CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (!NT_SUCCESS(Status))
     {
         // A region of zero size is indicated by the right and bottom coordinates being less than the left and top.
@@ -830,7 +830,7 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
             return STATUS_INVALID_PARAMETER;
         }
 
-        PSCREEN_INFORMATION const ScreenBufferInformation = GetScreenBufferFromHandle(HandleData);
+        PSCREEN_INFORMATION const ScreenBufferInformation = HandleData->GetScreenBuffer()->GetActiveBuffer();
 
         if (!a->Unicode)
         {
@@ -912,7 +912,7 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
     }
 
     PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
-    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_READ);
+    Status = HandleData->DereferenceIoHandle(CONSOLE_OUTPUT_HANDLE, GENERIC_READ);
     if (!NT_SUCCESS(Status))
     {
         // a region of zero size is indicated by the right and bottom coordinates being less than the left and top.
@@ -933,7 +933,7 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
 
         a->NumRecords /= nSize;
 
-        Status = ReadOutputString(GetScreenBufferFromHandle(HandleData), Buffer, a->ReadCoord, a->StringType, &a->NumRecords);
+        Status = ReadOutputString(HandleData->GetScreenBuffer()->GetActiveBuffer(), Buffer, a->ReadCoord, a->StringType, &a->NumRecords);
         if (NT_SUCCESS(Status))
         {
             SetReplyInformation(m, a->NumRecords * nSize);
@@ -978,7 +978,7 @@ NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
     }
 
     PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
-    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
+    Status = HandleData->DereferenceIoHandle(CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (!NT_SUCCESS(Status))
     {
         a->NumRecords = 0;
@@ -1000,7 +1000,7 @@ NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
                 a->NumRecords = BufferSize / sizeof(WCHAR);
             }
 
-            Status = WriteOutputString(GetScreenBufferFromHandle(HandleData), Buffer, a->WriteCoord, a->StringType, &a->NumRecords, nullptr);
+            Status = WriteOutputString(HandleData->GetScreenBuffer()->GetActiveBuffer(), Buffer, a->WriteCoord, a->StringType, &a->NumRecords, nullptr);
         }
     }
 
@@ -1034,14 +1034,14 @@ NTSTATUS SrvFillConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
     }
 
     PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
-    Status = DereferenceIoHandle(HandleData, CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
+    Status = HandleData->DereferenceIoHandle(CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE);
     if (!NT_SUCCESS(Status))
     {
         a->Length = 0;
     }
     else
     {
-        Status = DoSrvFillConsoleOutput(GetScreenBufferFromHandle(HandleData), a);
+        Status = DoSrvFillConsoleOutput(HandleData->GetScreenBuffer()->GetActiveBuffer(), a);
     }
 
     UnlockConsole();

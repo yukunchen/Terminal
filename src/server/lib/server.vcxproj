@@ -5,6 +5,7 @@
     <ClCompile Include="..\DeviceComm.cpp" />
     <ClCompile Include="..\DeviceHandle.cpp" />
     <ClCompile Include="..\Entrypoints.cpp" />
+    <ClCompile Include="..\ObjectHandle.cpp" />
     <ClCompile Include="..\ObjectHeader.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

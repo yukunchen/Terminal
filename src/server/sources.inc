@@ -26,6 +26,7 @@ SOURCES= \
     ..\DeviceComm.cpp \
     ..\DeviceHandle.cpp \
     ..\Entrypoints.cpp \
+    ..\ObjectHandle.cpp \
     ..\ObjectHeader.cpp \
     ..\WinNTControl.cpp \
 

@@ -2254,7 +2254,7 @@ NTSTATUS ProcessCommandListInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _
                 }
                 case VK_ESCAPE:
                     EndPopup(pCookedReadData->ScreenInfo, pCommandHistory);
-                    HandleData->pClientInput->IncrementReadCount();
+                    HandleData->GetClientInput()->IncrementReadCount();
                     return CONSOLE_STATUS_WAIT_NO_BLOCK;
                 case VK_UP:
                     UpdateCommandListPopup(-1, &Popup->CurrentCommand, pCommandHistory, Popup, pCookedReadData->ScreenInfo, 0);
@@ -2300,7 +2300,7 @@ NTSTATUS ProcessCommandListInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _
                     Index = Popup->CurrentCommand;
                     EndPopup(pCookedReadData->ScreenInfo, pCommandHistory);
                     SetCurrentCommandLine(pCookedReadData, Index);
-                    HandleData->pClientInput->IncrementReadCount();
+                    HandleData->GetClientInput()->IncrementReadCount();
                     return CONSOLE_STATUS_WAIT_NO_BLOCK;
                 default:
                     break;
@@ -2339,7 +2339,7 @@ NTSTATUS ProcessCommandListInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _
                 if (LineCount > 1)
                 {
                     PWSTR Tmp;
-                    HandleData->pClientInput->InputHandleFlags |= HANDLE_MULTI_LINE_INPUT;
+                    HandleData->GetClientInput()->InputHandleFlags |= HANDLE_MULTI_LINE_INPUT;
                     for (Tmp = pCookedReadData->BackupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
                         ASSERT(Tmp < (pCookedReadData->BackupLimit + pCookedReadData->BytesRead));
                     a->NumBytes = (ULONG) (Tmp - pCookedReadData->BackupLimit + 1) * sizeof(*Tmp);
@@ -2348,10 +2348,10 @@ NTSTATUS ProcessCommandListInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _
                 {
                     a->NumBytes = pCookedReadData->UserBufferSize;
                 }
-                HandleData->pClientInput->InputHandleFlags |= HANDLE_INPUT_PENDING;
-                HandleData->pClientInput->BufPtr = pCookedReadData->BackupLimit;
-                HandleData->pClientInput->BytesAvailable = pCookedReadData->BytesRead - a->NumBytes;
-                HandleData->pClientInput->CurrentBufPtr = (PWCHAR)((PBYTE) pCookedReadData->BackupLimit + a->NumBytes);
+                HandleData->GetClientInput()->InputHandleFlags |= HANDLE_INPUT_PENDING;
+                HandleData->GetClientInput()->BufPtr = pCookedReadData->BackupLimit;
+                HandleData->GetClientInput()->BytesAvailable = pCookedReadData->BytesRead - a->NumBytes;
+                HandleData->GetClientInput()->CurrentBufPtr = (PWCHAR)((PBYTE) pCookedReadData->BackupLimit + a->NumBytes);
                 memmove(pCookedReadData->UserBuffer, pCookedReadData->BackupLimit, a->NumBytes);
             }
             else
@@ -2441,7 +2441,7 @@ NTSTATUS ProcessCopyFromCharInput(_In_ PCOOKED_READ_DATA const pCookedReadData, 
             {
                 case VK_ESCAPE:
                     EndPopup(pCookedReadData->ScreenInfo, pCookedReadData->CommandHistory);
-                    HandleData->pClientInput->IncrementReadCount();
+                    HandleData->GetClientInput()->IncrementReadCount();
                     return CONSOLE_STATUS_WAIT_NO_BLOCK;
             }
         }
@@ -2494,7 +2494,7 @@ NTSTATUS ProcessCopyFromCharInput(_In_ PCOOKED_READ_DATA const pCookedReadData, 
             ASSERT(NT_SUCCESS(Status));
         }
 
-        HandleData->pClientInput->IncrementReadCount();
+        HandleData->GetClientInput()->IncrementReadCount();
         return CONSOLE_STATUS_WAIT_NO_BLOCK;
     }
 }
@@ -2541,7 +2541,7 @@ NTSTATUS ProcessCopyToCharInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _I
             {
                 case VK_ESCAPE:
                     EndPopup(pCookedReadData->ScreenInfo, pCookedReadData->CommandHistory);
-                    HandleData->pClientInput->IncrementReadCount();
+                    HandleData->GetClientInput()->IncrementReadCount();
                     return CONSOLE_STATUS_WAIT_NO_BLOCK;
             }
         }
@@ -2596,7 +2596,7 @@ NTSTATUS ProcessCopyToCharInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _I
             }
         }
 
-        HandleData->pClientInput->IncrementReadCount();
+        HandleData->GetClientInput()->IncrementReadCount();
         return CONSOLE_STATUS_WAIT_NO_BLOCK;
     }
 }
@@ -2726,7 +2726,7 @@ NTSTATUS ProcessCommandNumberInput(_In_ PCOOKED_READ_DATA const pCookedReadData,
             }
             SetCurrentCommandLine(pCookedReadData, COMMAND_NUM_TO_INDEX(CommandNumber, pCookedReadData->CommandHistory));
         }
-        HandleData->pClientInput->IncrementReadCount();
+        HandleData->GetClientInput()->IncrementReadCount();
         return CONSOLE_STATUS_WAIT_NO_BLOCK;
     }
 }

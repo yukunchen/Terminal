@@ -136,7 +136,7 @@ ErrorExit3:
 
 void ConsoleCloseHandle(_In_ CONSOLE_HANDLE_DATA* const pClose)
 {
-    if (pClose->HandleType & CONSOLE_INPUT_HANDLE)
+    if (pClose->IsInputHandle())
     {
         // TODO: Fix error handling
         CloseInputHandle(pClose);
@@ -146,29 +146,6 @@ void ConsoleCloseHandle(_In_ CONSOLE_HANDLE_DATA* const pClose)
         // TODO: Fix error handling
         CloseOutputHandle(pClose);
     }
-}
-
-// Routine Description:
-// - This routine verifies a handle's validity, then returns a pointer to the handle data structure.
-// Arguments:
-// - ProcessData - Pointer to per process data structure.
-// - Handle - Handle to dereference.
-// - HandleData - On return, pointer to handle data structure.
-// Return Value:
-NTSTATUS DereferenceIoHandle(_In_ CONSOLE_HANDLE_DATA* hIO,
-                             _In_ const ULONG ulHandleType,
-                             _In_ const ACCESS_MASK amRequested)
-{
-    // Check the type and the granted access.
-    if ((hIO == nullptr) || 
-        ((hIO->Access & amRequested) == 0) || 
-        ((ulHandleType != 0) && 
-        ((hIO->HandleType & ulHandleType) == 0)))
-    {
-        return STATUS_INVALID_HANDLE;
-    }
-
-    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -323,30 +300,4 @@ void FreeProcessData(_In_ PCONSOLE_PROCESS_HANDLE pProcessData)
 
     RemoveEntryList(&pProcessData->ListLink);
     delete pProcessData;
-}
-
-// Routine Description:
-// - Retieves the properly typed Input Buffer from the Handle.
-// Arguments:
-// - HandleData - The HANDLE containing the pointer to the input buffer, typically from an API call.
-// Return Value:
-// - The Input Buffer that this handle points to
-PINPUT_INFORMATION GetInputBufferFromHandle(const CONSOLE_HANDLE_DATA* HandleData)
-{
-    return ((PINPUT_INFORMATION)(HandleData->ClientPointer));
-}
-
-// Routine Description:
-// - Retieves the properly typed Screen Buffer from the Handle. If the screen
-//     buffer currently has an alternate buffer, as set through ANSI sequence
-//     ASBSET, then this returns the alternate, so that it seems as though 
-//     the same handle now points to the alternate buffer.
-// Arguments:
-// - HandleData - The HANDLE containing the pointer to the screen buffer, typically from an API call.
-// Return Value:
-// - The Screen Buffer that this handle points to.
-PSCREEN_INFORMATION GetScreenBufferFromHandle(const CONSOLE_HANDLE_DATA* HandleData)
-{
-    SCREEN_INFORMATION* psiScreenInfo = ((PSCREEN_INFORMATION)(HandleData->ClientPointer));
-    return psiScreenInfo->GetActiveBuffer();
 }

@@ -36,69 +36,81 @@ HRESULT ConsoleObjectHeader::AllocateIoHandle(_In_ const ULONG ulHandleType,
                                               _In_ const ULONG ulShareMode,
                                               _Out_ CONSOLE_HANDLE_DATA** const ppOut)
 {
-    // Check the share mode.
-    bool const ReadRequested = IsFlagSet(amDesired, GENERIC_READ);
-    bool const ReadShared = IsFlagSet(ulShareMode, FILE_SHARE_READ);
-
-    bool const WriteRequested = IsFlagSet(amDesired, GENERIC_WRITE);
-    bool const WriteShared = IsFlagSet(ulShareMode, FILE_SHARE_WRITE);
-
-    if (((ReadRequested) && (_ulOpenCount > _ulReadShareCount)) ||
-        ((!ReadShared) && (_ulReaderCount > 0)) ||
-        ((WriteRequested) && (_ulOpenCount > _ulWriteShareCount)) ||
-        ((!WriteShared) && (_ulWriterCount > 0)))
+    try
     {
-        RETURN_WIN32(ERROR_SHARING_VIOLATION);
+        // Allocate all necessary state.
+        // TODO: WARNING. This currently relies on the ConsoleObjectHeader being the FIRST portion of the console object
+        //       structure or class. If it is not the first item, the cast back to the object won't work anymore.
+        std::unique_ptr<CONSOLE_HANDLE_DATA> pHandleData = std::make_unique<CONSOLE_HANDLE_DATA>(ulHandleType,
+                                                                                                 amDesired,
+                                                                                                 ulShareMode,
+                                                                                                 this); 
+
+        // Check the share mode.
+        if (((pHandleData->IsReadAllowed()) && (_ulOpenCount > _ulReadShareCount)) ||
+            ((!pHandleData->IsReadShared()) && (_ulReaderCount > 0)) ||
+            ((pHandleData->IsWriteAllowed()) && (_ulOpenCount > _ulWriteShareCount)) ||
+            ((!pHandleData->IsWriteShared()) && (_ulWriterCount > 0)))
+        {
+            RETURN_WIN32(ERROR_SHARING_VIOLATION);
+        }
+
+        // Update share/open counts and store handle information.
+        _ulOpenCount += 1;
+
+        if (pHandleData->IsReadAllowed())
+        {
+            _ulReaderCount++;
+        }
+
+        if (pHandleData->IsReadShared())
+        {
+            _ulReadShareCount++;
+        }
+
+        if (pHandleData->IsWriteAllowed())
+        {
+            _ulWriterCount++;
+        }
+
+        if (pHandleData->IsWriteShared())
+        {
+            _ulWriteShareCount++;
+        }
+
+        *ppOut = pHandleData.release();
     }
-
-    // Allocate all necessary state.
-    wistd::unique_ptr<CONSOLE_HANDLE_DATA> HandleData = wil::make_unique_nothrow<CONSOLE_HANDLE_DATA>();
-    RETURN_IF_NULL_ALLOC(HandleData);
-
-    if (IsFlagSet(ulHandleType, CONSOLE_INPUT_HANDLE))
-    {
-        // TODO: resolve reference
-        HandleData->pClientInput = new INPUT_READ_HANDLE_DATA();
-        RETURN_IF_NULL_ALLOC(HandleData);
-    }
-
-    // Update share/open counts and store handle information.
-    _ulOpenCount += 1;
-
-    _ulReaderCount += ReadRequested;
-    _ulReadShareCount += ReadShared;
-
-    _ulWriterCount += WriteRequested;
-    _ulWriteShareCount += WriteShared;
-
-    HandleData->HandleType = ulHandleType;
-    HandleData->ShareAccess = ulShareMode;
-    HandleData->Access = amDesired;
-    HandleData->ClientPointer = this;
-
-    *ppOut = HandleData.release();
+    CATCH_RETURN();
 
     return S_OK;
 }
 
 HRESULT ConsoleObjectHeader::FreeIoHandle(_In_ CONSOLE_HANDLE_DATA* const pFree)
 {
-    bool const ReadRequested = IsFlagSet(pFree->Access, GENERIC_READ);
-    bool const ReadShared = IsFlagSet(pFree->ShareAccess, FILE_SHARE_READ);
-
-    bool const WriteRequested = IsFlagSet(pFree->Access, GENERIC_WRITE);
-    bool const WriteShared = IsFlagSet(pFree->ShareAccess, FILE_SHARE_WRITE);
-
-    delete pFree;
-
     assert(_ulOpenCount > 0);
     _ulOpenCount -= 1;
 
-    _ulReaderCount -= ReadRequested;
-    _ulReadShareCount -= ReadShared;
+    if (pFree->IsReadAllowed())
+    {
+        _ulReaderCount--;
+    }
 
-    _ulWriterCount -= WriteRequested;
-    _ulWriteShareCount -= WriteShared;
+    if (pFree->IsReadShared())
+    {
+        _ulReadShareCount--;
+    }
+
+    if (pFree->IsWriteAllowed())
+    {
+        _ulWriterCount--;
+    }
+
+    if (pFree->IsWriteShared())
+    {
+        _ulWriteShareCount--;
+    }
+
+    delete pFree;
 
     return S_OK;
 }

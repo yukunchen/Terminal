@@ -759,14 +759,14 @@ NTSTATUS ReadInputBuffer(_In_ PINPUT_INFORMATION const pInputInfo,
             return STATUS_SUCCESS;
         }
 
-        pHandleData->pClientInput->IncrementReadCount();
+        pHandleData->GetClientInput()->IncrementReadCount();
         Status = WaitForMoreToRead(pInputInfo, pConsoleMsg, pfnWaitRoutine, pvWaitParameter, cbWaitParameter, fWaitBlockExists);
         if (!NT_SUCCESS(Status))
         {
             if (Status != CONSOLE_STATUS_WAIT)
             {
                 // WaitForMoreToRead failed, restore ReadCount and bail out
-                pHandleData->pClientInput->DecrementReadCount();
+                pHandleData->GetClientInput()->DecrementReadCount();
             }
 
             *pcLength = 0;
