@@ -196,6 +196,7 @@ class ResizeTests
             do
             {
                 DWORD cchWritten = 0;
+                // The array includes a trailing NULL char, which is written to console and displays as a blank space
                 VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsole(m_hScreenBuffer, c_wszLoremIpsum, ARRAYSIZE(c_wszLoremIpsum), &cchWritten, NULL /*lpReserved*/));
                 VERIFY_ARE_EQUAL(ARRAYSIZE(c_wszLoremIpsum), cchWritten);
                 cNumWritten += (UINT)cchWritten;
@@ -281,13 +282,15 @@ class ResizeTests
             m_UnNullBuffer(pszUnresizedBuffer, cchUnresizedBuffer);
 
             // validate state
-            Log::Comment(String().Format(L"pszPreResizeBuffer:\"%s\"\n", pszPreResizeBuffer));
-            Log::Comment(String().Format(L"c_wszExpectedPreResize:\"%s\"\n", c_wszExpectedPreResize));
-            Log::Comment(String().Format(L"pszPostResizeBuffer:\"%s\"\n", pszPostResizeBuffer));
-            Log::Comment(String().Format(L"c_wszExpectedPostResize:\"%s\"\n", c_wszExpectedPostResize));
+            Log::Comment(String().Format(L"pszPreResizeBuffer:\n\"%s\"\n", pszPreResizeBuffer));
+            Log::Comment(String().Format(L"c_wszExpectedPreResize:\n\"%s\"\n", c_wszExpectedPreResize));
+            Log::Comment(String().Format(L"pszPostResizeBuffer:\n\"%s\"\n", pszPostResizeBuffer));
+            Log::Comment(String().Format(L"c_wszExpectedPostResize:\n\"%s\"\n", c_wszExpectedPostResize));
+            Log::Comment(String().Format(L"pszUnresizedBuffer:\n\"%s\"\n", pszUnresizedBuffer));
             VERIFY_ARE_EQUAL(0, memcmp(pszPreResizeBuffer, c_wszExpectedPreResize, cchPreResizeBuffer*sizeof(WCHAR)));
             VERIFY_ARE_EQUAL(0, memcmp(pszPostResizeBuffer, c_wszExpectedPostResize, cchPostResizeBuffer*sizeof(WCHAR)));
-            VERIFY_ARE_EQUAL(String(pszPreResizeBuffer), String(pszUnresizedBuffer));
+            VERIFY_ARE_EQUAL(cchPreResizeBuffer, cchUnresizedBuffer);
+            VERIFY_ARE_EQUAL(0, memcmp(pszPreResizeBuffer, pszUnresizedBuffer, cchPreResizeBuffer*sizeof(WCHAR)));
         }
         else
         {
