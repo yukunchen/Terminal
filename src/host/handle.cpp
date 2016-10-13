@@ -175,7 +175,10 @@ NTSTATUS DereferenceIoHandle(_In_ HANDLE hIO,
     PCONSOLE_HANDLE_DATA const Data = (PCONSOLE_HANDLE_DATA)hIO;
 
     // Check the type and the granted access.
-    if ((hIO == nullptr) || ((Data->Access & amRequested) == 0) || ((ulHandleType != 0) && ((Data->HandleType & ulHandleType) == 0)))
+    if ((hIO == nullptr) || 
+        ((Data->Access & amRequested) == 0) || 
+        ((ulHandleType != 0) && 
+        ((Data->HandleType & ulHandleType) == 0)))
     {
         return STATUS_INVALID_HANDLE;
     }

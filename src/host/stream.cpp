@@ -32,7 +32,7 @@ typedef struct _RAW_READ_DATA
     ULONG BufferSize;
     _Field_size_(BufferSize) PWCHAR BufPtr;
     PCONSOLE_PROCESS_HANDLE ProcessData;
-    HANDLE HandleIndex;
+    CONSOLE_HANDLE_DATA* HandleIndex;
 } RAW_READ_DATA, *PRAW_READ_DATA;
 
 DWORD ConsKbdState[] = {
@@ -1310,8 +1310,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
                    _In_ DWORD const dwCtrlWakeupMask,
                    _In_ PCONSOLE_HANDLE_DATA const pHandleData,
                    _In_ PCOMMAND_HISTORY const pCommandHistory,
-                   _In_opt_ PCONSOLE_API_MSG const pMessage,
-                   _In_ HANDLE const hIndex,
+                   _In_ PCONSOLE_API_MSG const pMessage,
                    _In_ USHORT const usExeNameLength,
                    _In_ BOOLEAN const fUnicode)
 {
@@ -1518,7 +1517,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
         CookedReadData.Processed = (pInputInfo->InputMode & ENABLE_PROCESSED_INPUT) != 0;
         CookedReadData.Line = (pInputInfo->InputMode & ENABLE_LINE_INPUT) != 0;
         CookedReadData.ProcessData = pProcessData;
-        CookedReadData.HandleIndex = hIndex;
+        CookedReadData.HandleIndex = GetMessageObject(pMessage);
 
         ExeNameByteLength = (USHORT) (usExeNameLength * sizeof(WCHAR));
         CookedReadData.ExeName = (PWCHAR) new BYTE[ExeNameByteLength];
@@ -1575,7 +1574,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
         RawReadData.BufferSize = BufferSize;
         RawReadData.BufPtr = pwchBuffer;
         RawReadData.ProcessData = pProcessData;
-        RawReadData.HandleIndex = hIndex;
+        RawReadData.HandleIndex = GetMessageObject(pMessage);
         if (*pdwNumBytes < BufferSize)
         {
             PWCHAR pwchBufferTmp = pwchBuffer;
@@ -1754,7 +1753,6 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
                                HandleData,
                                FindCommandHistory((HANDLE) ProcessData),
                                m,
-                               GetMessageObject(m),
                                a->ExeNameLength,
                                a->Unicode);
             if (Status == CONSOLE_STATUS_WAIT)
