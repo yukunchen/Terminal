@@ -1911,7 +1911,9 @@ NTSTATUS CloseInputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData, _In_ const HAND
 
     delete pHandleData->pClientInput;
 
-    if (FreeConsoleHandle(hClose))
+    InputBuffer->Header.FreeIoHandle(hClose);
+
+    if (!InputBuffer->Header.HasAnyOpenHandles())
     {
         ReinitializeInputBuffer(InputBuffer);
     }
@@ -1932,7 +1934,8 @@ NTSTATUS CloseInputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData, _In_ const HAND
 // - The console lock must be held when calling this routine.
 NTSTATUS CloseOutputHandle(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const HANDLE hClose)
 {
-    if (FreeConsoleHandle(hClose))
+    pScreenInfo->Header.FreeIoHandle(hClose);
+    if (!pScreenInfo->Header.HasAnyOpenHandles())
     {
         RemoveScreenBuffer(pScreenInfo);
     }

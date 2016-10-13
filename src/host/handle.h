@@ -25,7 +25,6 @@ void UnlockConsole();
 NTSTATUS RevalidateConsole(_Out_ CONSOLE_INFORMATION ** const ppConsole);
 NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, _In_ const DWORD cbTitle);
 void ConsoleCloseHandle(_In_ const HANDLE hClose);
-bool FreeConsoleHandle(_In_ HANDLE hFree);
 
 NTSTATUS DereferenceIoHandleNoCheck(_In_ HANDLE hIO, _Out_ PCONSOLE_HANDLE_DATA * const ppConsoleData);
 NTSTATUS DereferenceIoHandle(_In_ HANDLE hIO,

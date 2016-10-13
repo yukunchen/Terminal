@@ -104,12 +104,6 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
 
     g_ciConsoleInformation.CurrentScreenBuffer = g_ciConsoleInformation.ScreenBuffers;
 
-    g_ciConsoleInformation.CurrentScreenBuffer->Header.OpenCount = 1;
-    g_ciConsoleInformation.CurrentScreenBuffer->Header.ReaderCount = 1;
-    g_ciConsoleInformation.CurrentScreenBuffer->Header.ReadShareCount = 1;
-    g_ciConsoleInformation.CurrentScreenBuffer->Header.WriterCount = 1;
-    g_ciConsoleInformation.CurrentScreenBuffer->Header.WriteShareCount = 1;
-
     g_ciConsoleInformation.CurrentScreenBuffer->ScrollScale = g_ciConsoleInformation.GetScrollScale();
 
     g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
@@ -156,33 +150,6 @@ void ConsoleCloseHandle(_In_ const HANDLE hClose)
         }
     }
 }
-
-bool FreeConsoleHandle(_In_ HANDLE hFree)
-{
-    PCONSOLE_HANDLE_DATA const HandleData = (PCONSOLE_HANDLE_DATA)hFree;
-
-    BOOLEAN const ReadRequested = (HandleData->Access & GENERIC_READ) != 0;
-    BOOLEAN const ReadShared = (HandleData->ShareAccess & FILE_SHARE_READ) != 0;
-
-    BOOLEAN const WriteRequested = (HandleData->Access & GENERIC_WRITE) != 0;
-    BOOLEAN const WriteShared = (HandleData->ShareAccess & FILE_SHARE_WRITE) != 0;
-
-    ConsoleObjectHeader* const Header = static_cast<ConsoleObjectHeader*>(HandleData->ClientPointer);
-
-    delete HandleData;
-
-    Header->OpenCount -= 1;
-
-    Header->ReaderCount -= ReadRequested;
-    Header->ReadShareCount -= ReadShared;
-
-    Header->WriterCount -= WriteRequested;
-    Header->WriteShareCount -= WriteShared;
-
-    return Header->OpenCount == 0;
-}
-
-
 
 // Routine Description:
 // - This routine verifies a handle's validity, then returns a pointer to the handle data structure.

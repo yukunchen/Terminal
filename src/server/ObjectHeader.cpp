@@ -12,11 +12,11 @@
 #include "..\host\inputReadHandleData.h"
 
 ConsoleObjectHeader::ConsoleObjectHeader() :
-    OpenCount(0),
-    ReaderCount(0),
-    WriterCount(0),
-    ReadShareCount(0),
-    WriteShareCount(0)
+    _ulOpenCount(0),
+    _ulReaderCount(0),
+    _ulWriterCount(0),
+    _ulReadShareCount(0),
+    _ulWriteShareCount(0)
 {
 
 }
@@ -43,10 +43,10 @@ HRESULT ConsoleObjectHeader::AllocateIoHandle(_In_ const ULONG ulHandleType,
     bool const WriteRequested = IsFlagSet(amDesired, GENERIC_WRITE);
     bool const WriteShared = IsFlagSet(ulShareMode, FILE_SHARE_WRITE);
 
-    if (((ReadRequested) && (OpenCount > ReadShareCount)) ||
-        ((!ReadShared) && (ReaderCount > 0)) ||
-        ((WriteRequested) && (OpenCount > WriteShareCount)) ||
-        ((!WriteShared) && (WriterCount > 0)))
+    if (((ReadRequested) && (_ulOpenCount > _ulReadShareCount)) ||
+        ((!ReadShared) && (_ulReaderCount > 0)) ||
+        ((WriteRequested) && (_ulOpenCount > _ulWriteShareCount)) ||
+        ((!WriteShared) && (_ulWriterCount > 0)))
     {
         RETURN_WIN32(ERROR_SHARING_VIOLATION);
     }
@@ -63,13 +63,13 @@ HRESULT ConsoleObjectHeader::AllocateIoHandle(_In_ const ULONG ulHandleType,
     }
 
     // Update share/open counts and store handle information.
-    OpenCount += 1;
+    _ulOpenCount += 1;
 
-    ReaderCount += ReadRequested;
-    ReadShareCount += ReadShared;
+    _ulReaderCount += ReadRequested;
+    _ulReadShareCount += ReadShared;
 
-    WriterCount += WriteRequested;
-    WriteShareCount += WriteShared;
+    _ulWriterCount += WriteRequested;
+    _ulWriteShareCount += WriteShared;
 
     HandleData->HandleType = ulHandleType;
     HandleData->ShareAccess = ulShareMode;
@@ -79,4 +79,33 @@ HRESULT ConsoleObjectHeader::AllocateIoHandle(_In_ const ULONG ulHandleType,
     *phOut = static_cast<HANDLE>(HandleData.release());
 
     return S_OK;
+}
+
+HRESULT ConsoleObjectHeader::FreeIoHandle(_In_ HANDLE const hFree)
+{
+    PCONSOLE_HANDLE_DATA const HandleData = (PCONSOLE_HANDLE_DATA)hFree;
+
+    bool const ReadRequested = IsFlagSet(HandleData->Access, GENERIC_READ);
+    bool const ReadShared = IsFlagSet(HandleData->ShareAccess, FILE_SHARE_READ);
+
+    bool const WriteRequested = IsFlagSet(HandleData->Access, GENERIC_WRITE);
+    bool const WriteShared = IsFlagSet(HandleData->ShareAccess, FILE_SHARE_WRITE);
+
+    delete HandleData;
+
+    assert(_ulOpenCount > 0);
+    _ulOpenCount -= 1;
+
+    _ulReaderCount -= ReadRequested;
+    _ulReadShareCount -= ReadShared;
+
+    _ulWriterCount -= WriteRequested;
+    _ulWriteShareCount -= WriteShared;
+
+    return S_OK;
+}
+
+bool ConsoleObjectHeader::HasAnyOpenHandles() const
+{
+    return _ulOpenCount == 0;
 }

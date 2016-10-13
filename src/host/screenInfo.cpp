@@ -1802,12 +1802,7 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
     if (NT_SUCCESS(Status))
     {
         InsertScreenBuffer(*ppsiNewScreenBuffer);
-        (*ppsiNewScreenBuffer)->Header.OpenCount = 1;
-        (*ppsiNewScreenBuffer)->Header.ReaderCount = 1;
-        (*ppsiNewScreenBuffer)->Header.ReadShareCount = 1;
-        (*ppsiNewScreenBuffer)->Header.WriterCount = 1;
-        (*ppsiNewScreenBuffer)->Header.WriteShareCount = 1;
-
+        
         // delete the alt buffer's state machine. We don't want it.
         (*ppsiNewScreenBuffer)->_FreeOutputStateMachine(); // this has to be done before we give it a main buffer
         // we'll attach the GetSet, etc once we successfully make this buffer the active buffer.
