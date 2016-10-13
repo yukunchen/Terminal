@@ -51,6 +51,12 @@ class ResizeTests
 {
     HANDLE m_hScreenBuffer = INVALID_HANDLE_VALUE;
 
+    enum ResizeDirection
+    {
+        SizingUp,
+        SizingDown
+    };
+
     TEST_CLASS(ResizeTests);
 
     static bool s_IsRunningConhostV2WithLineWrap()
@@ -121,22 +127,22 @@ class ResizeTests
     {
         // adjust buffer size
         COORD coordBufferSize;
-        coordBufferSize.X = desiredX+1;
-        coordBufferSize.Y = desiredY+1;
+        coordBufferSize.X = desiredX;
+        coordBufferSize.Y = desiredY;
         VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleScreenBufferSize(m_hScreenBuffer, coordBufferSize));
     }
 
-    void m_ResizeWindowAndBuffer(_In_ const SHORT desiredX, _In_ const SHORT desiredY, _In_ const bool fBufferFirst) const
+    void m_ResizeWindowAndBuffer(_In_ const SHORT desiredX, _In_ const SHORT desiredY, _In_ const ResizeDirection direction) const
     {
         // when sizing down, you must change the window size before the buffer. when sizing up, the opposite is true.
-        if (!fBufferFirst)
+        if (direction == SizingDown)
         {
             m_ResizeWindow(desiredX, desiredY);
-            m_ResizeBuffer(desiredX, desiredY);
+            m_ResizeBuffer(desiredX+1, desiredY+1);
         }
         else
         {
-            m_ResizeBuffer(desiredX, desiredY);
+            m_ResizeBuffer(desiredX+1, desiredY+1);
             m_ResizeWindow(desiredX, desiredY);
         }
     }
@@ -173,7 +179,7 @@ class ResizeTests
         VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleActiveScreenBuffer(m_hScreenBuffer));
 
         m_LogCurrentConsoleScreenBufferInfo(L"BeforeInitialSizing");
-        m_ResizeWindowAndBuffer(80, 20, false);
+        m_ResizeWindowAndBuffer(80, 20, SizingDown);
         m_LogCurrentConsoleScreenBufferInfo(L"AfterInitialSizing");
 
         // write 10 rows of ~120 char sample text
@@ -246,14 +252,14 @@ class ResizeTests
         m_GetFullBufferText(&pszPreResizeBuffer, &cchPreResizeBuffer);
 
         // now resize it 5 columns smaller, and then get the text
-        m_ResizeWindowAndBuffer(75, 20, false);
+        m_ResizeWindowAndBuffer(75, 20, SizingDown);
 
         PWSTR pszPostResizeBuffer;
         size_t cchPostResizeBuffer;
         m_GetFullBufferText(&pszPostResizeBuffer, &cchPostResizeBuffer);
 
         // now resize it back to its original size
-        m_ResizeWindowAndBuffer(80, 20, true);
+        m_ResizeWindowAndBuffer(80, 20, SizingUp);
 
         PWSTR pszUnresizedBuffer;
         size_t cchUnresizedBuffer;
