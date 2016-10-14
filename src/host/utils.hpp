@@ -28,10 +28,6 @@ void SetReplyInformation(_Inout_ PCCONSOLE_API_MSG pMessage, _In_ ULONG_PTR pInf
 short CalcWindowSizeX(_In_ const SMALL_RECT * const pRect);
 short CalcWindowSizeY(_In_ const SMALL_RECT * const pRect);
 short CalcCursorYOffsetInPixels(_In_ short const sFontSizeY, _In_ ULONG const ulSize);
-bool IsFlagSet(_In_ DWORD const dwAllFlags, _In_ DWORD const dwFlagToTest);
-void SetFlag(_Inout_ DWORD* const pdwAllFlags, _In_ DWORD const dwFlagToSet);
-void UnsetFlag(_Inout_ DWORD* const pdwAllFlags, _In_ DWORD const dwFlagToUnset);
-void SetFlagBasedOnBool(_In_ bool const fCondition, _Inout_ DWORD* const pdwAllFlags, _In_ DWORD const dwFlag);
 WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwchEnd);
 
 class Utils
@@ -44,6 +40,4 @@ public:
     static void s_GetOppositeCorner(_In_ const SMALL_RECT srRectangle, _In_ const COORD coordCorner, _Out_ COORD* const pcoordOpposite);
 
     static void s_GetCurrentBufferEdges(_Out_ SMALL_RECT* const psrectEdges);
-    // TODO: Find a better way of doing this.
-    static NTSTATUS s_NtStatusFromHr(_In_ const HRESULT hr);
 };

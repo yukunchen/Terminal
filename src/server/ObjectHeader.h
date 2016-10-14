@@ -23,7 +23,7 @@ class ConsoleObjectHeader
 public:
     ConsoleObjectHeader();
 
-    HRESULT AllocateIoHandle(_In_ const ULONG ulHandleType,
+    HRESULT AllocateIoHandle(_In_ const ConsoleHandleData::HandleType ulHandleType,
                              _In_ const ACCESS_MASK amDesired,
                              _In_ const ULONG ulShareMode,
                              _Out_ ConsoleHandleData** const ppOut);
@@ -32,7 +32,7 @@ public:
 
     bool HasAnyOpenHandles() const;
 
-    // TODO: come up with a better solution than this.
+    // TODO: MSFT 9355013 come up with a better solution than this. http://osgvsowi/9355013
     // It's currently a "load bearing" piece because things like the renderer expect there to always be a "current screen buffer"
     void IncrementOriginalScreenBuffer();
 

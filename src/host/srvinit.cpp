@@ -333,7 +333,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 
     // If we weren't started from a link, this will already be set.
     // If LoadLinkInfo couldn't find anything, it will remove the flag so we can dig in the registry.
-    if (!(settings.IsStartupFlagSet(STARTF_TITLEISLINKNAME)))
+    if (!(settings.IsStartupTitleIsLinkNameSet()))
     {
         reg.LoadFromRegistry(Title);
     }
@@ -788,24 +788,25 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
     }
 
     // Create the handles.
-    if (FAILED(g_ciConsoleInformation.pInputBuffer->Header.AllocateIoHandle(CONSOLE_INPUT_HANDLE,
-                                                                            GENERIC_READ | GENERIC_WRITE,
-                                                                            FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                                            &ProcessData->InputHandle)))
+    
+    Status = NTSTATUS_FROM_HRESULT(g_ciConsoleInformation.pInputBuffer->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Input,
+                                                                                                GENERIC_READ | GENERIC_WRITE,
+                                                                                                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                                                                &ProcessData->InputHandle));
+
+    if (!NT_SUCCESS(Status))
     {
-        // TODO: replace with HR handling
-        Status = STATUS_UNSUCCESSFUL;
         goto Error;
     }
 
 
-    if (FAILED(g_ciConsoleInformation.CurrentScreenBuffer->GetMainBuffer()->Header.AllocateIoHandle(CONSOLE_OUTPUT_HANDLE,
-                                                                                                    GENERIC_READ | GENERIC_WRITE,
-                                                                                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                                                                    &ProcessData->OutputHandle)))
+    Status = NTSTATUS_FROM_HRESULT(g_ciConsoleInformation.CurrentScreenBuffer->GetMainBuffer()->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
+                                                                                                                        GENERIC_READ | GENERIC_WRITE,
+                                                                                                                        FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                                                                                        &ProcessData->OutputHandle));
+
+    if (!NT_SUCCESS(Status))
     {
-        // TODO: replace with HR handling
-        Status = STATUS_UNSUCCESSFUL;
         goto Error;
     }
 
@@ -882,7 +883,7 @@ PCONSOLE_API_MSG ConsoleCreateObject(_In_ PCONSOLE_API_MSG Message, _Inout_ CONS
     switch (CreateInformation->ObjectType)
     {
     case CD_IO_OBJECT_TYPE_CURRENT_INPUT:
-        Status = NTSTATUS_FROM_HRESULT(Console->pInputBuffer->Header.AllocateIoHandle(CONSOLE_INPUT_HANDLE,
+        Status = NTSTATUS_FROM_HRESULT(Console->pInputBuffer->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Input,
                                                                                       CreateInformation->DesiredAccess,
                                                                                       CreateInformation->ShareMode,
                                                                                       &Handle));
@@ -898,7 +899,7 @@ PCONSOLE_API_MSG ConsoleCreateObject(_In_ PCONSOLE_API_MSG Message, _Inout_ CONS
         }
         else
         {
-            Status = NTSTATUS_FROM_HRESULT(ScreenInformation->Header.AllocateIoHandle(CONSOLE_OUTPUT_HANDLE,
+            Status = NTSTATUS_FROM_HRESULT(ScreenInformation->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
                                                                                       CreateInformation->DesiredAccess,
                                                                                       CreateInformation->ShareMode,
                                                                                       &Handle));

@@ -13,9 +13,9 @@
 #include "..\host\screenInfo.hpp"
 
 ConsoleHandleData::ConsoleHandleData(_In_ ULONG const ulHandleType,
-                                           _In_ ACCESS_MASK const amAccess,
-                                           _In_ ULONG const ulShareAccess,
-                                           _In_ PVOID const pvClientPointer) :
+                                     _In_ ACCESS_MASK const amAccess,
+                                     _In_ ULONG const ulShareAccess,
+                                     _In_ PVOID const pvClientPointer) :
     _ulHandleType(ulHandleType),
     _amAccess(amAccess),
     _ulShareAccess(ulShareAccess),
@@ -29,57 +29,86 @@ ConsoleHandleData::ConsoleHandleData(_In_ ULONG const ulHandleType,
     }
 }
 
+// Routine Description:
+// - Checks if this handle represents an input type object.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if this handle is for an input object. False otherwise.
 bool ConsoleHandleData::_IsInput() const
 {
-    return IsFlagSet(_ulHandleType, CONSOLE_INPUT_HANDLE);
+    return IsFlagSet(_ulHandleType, HandleType::Input);
 }
 
+// Routine Description:
+// - Checks if this handle represents an output type object.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if this handle is for an output object. False otherwise.
 bool ConsoleHandleData::_IsOutput() const
 {
-    return IsFlagSet(_ulHandleType, CONSOLE_OUTPUT_HANDLE);
+    return IsFlagSet(_ulHandleType, HandleType::Output);
 }
 
+// Routine Description:
+// - Indicates whether this handle is allowed to be used for reading the underlying object data.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if read is permitted. False otherwise.
 bool ConsoleHandleData::IsReadAllowed() const
 {
     return IsFlagSet(_amAccess, GENERIC_READ);
 }
 
+// Routine Description:
+// - Indicates whether this handle allows multiple customers to share reading of the underlying object data.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if sharing read access is permitted. False otherwise.
 bool ConsoleHandleData::IsReadShared() const
 {
     return IsFlagSet(_ulShareAccess, FILE_SHARE_READ);
 }
 
+// Routine Description:
+// - Indicates whether this handle is allowed to be used for writing the underlying object data.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if write is permitted. False otherwise.
 bool ConsoleHandleData::IsWriteAllowed() const
 {
     return IsFlagSet(_amAccess, GENERIC_WRITE);
 }
 
+// Routine Description:
+// - Indicates whether this handle allows multiple customers to share writing of the underlying object data.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if sharing write access is permitted. False otherwise.
 bool ConsoleHandleData::IsWriteShared() const
 {
     return IsFlagSet(_ulShareAccess, FILE_SHARE_WRITE);
 }
 
 // Routine Description:
-// - This routine verifies a handle's validity, then returns a pointer to the handle data structure.
-// Arguments:
-// - ProcessData - Pointer to per process data structure.
-// - Handle - Handle to dereference.
-// - HandleData - On return, pointer to handle data structure.
-// Return Value:
-
-// Routine Description:
 // - Retieves the properly typed Input Buffer from the Handle.
 // Arguments:
-// - HandleData - The HANDLE containing the pointer to the input buffer, typically from an API call.
+// - amRequested - Access that the client would like for manipulating the buffer
+// - ppInputInfo - On success, filled with the referenced Input Buffer object
 // Return Value:
-// - The Input Buffer that this handle points to
+// - HRESULT S_OK or suitable error.
 HRESULT ConsoleHandleData::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
-                                             _Out_ INPUT_INFORMATION** const ppInputInfo) const
+                                          _Out_ INPUT_INFORMATION** const ppInputInfo) const
 {
     *ppInputInfo = nullptr;
 
     RETURN_HR_IF(E_ACCESSDENIED, IsAnyFlagClear(_amAccess, amRequested));
-    RETURN_HR_IF(E_HANDLE, IsAnyFlagClear(_ulHandleType, CONSOLE_INPUT_HANDLE));
+    RETURN_HR_IF(E_HANDLE, IsAnyFlagClear(_ulHandleType, HandleType::Input));
 
     *ppInputInfo = static_cast<INPUT_INFORMATION*>(_pvClientPointer);
 
@@ -87,30 +116,45 @@ HRESULT ConsoleHandleData::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
 }
 
 // Routine Description:
-// - Retieves the properly typed Screen Buffer from the Handle. 
+// - Retieves the properly typed Screen Buffer from the Handle.
 // Arguments:
-// - HandleData - The HANDLE containing the pointer to the screen buffer, typically from an API call.
+// - amRequested - Access that the client would like for manipulating the buffer
+// - ppInputInfo - On success, filled with the referenced Screen Buffer object
 // Return Value:
-// - The Screen Buffer that this handle points to.
+// - HRESULT S_OK or suitable error.
 HRESULT ConsoleHandleData::GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
-                                              _Out_ SCREEN_INFORMATION** const ppScreenInfo) const
+                                           _Out_ SCREEN_INFORMATION** const ppScreenInfo) const
 {
     *ppScreenInfo = nullptr;
 
     RETURN_HR_IF(E_ACCESSDENIED, IsAnyFlagClear(_amAccess, amRequested));
-    RETURN_HR_IF(E_HANDLE, IsAnyFlagClear(_ulHandleType, CONSOLE_OUTPUT_HANDLE));
+    RETURN_HR_IF(E_HANDLE, IsAnyFlagClear(_ulHandleType, HandleType::Output));
 
     *ppScreenInfo = static_cast<SCREEN_INFORMATION*>(_pvClientPointer);
 
     return S_OK;
 }
 
+// Routine Description:
+// - For input buffers only, retrieves an extra handle data structure used to save some information
+//   across multiple reads from the same handle.
+// Arguments:
+// - <none>
+// Return Value:
+// - Pointer to the input read handle data structure with the aforementioned extra info.
 INPUT_READ_HANDLE_DATA* ConsoleHandleData::GetClientInput() const
 {
     return _pClientInput;
 }
 
-// TODO: Consider making this a part of the destructor.
+// Routine Description:
+// - Closes this handle destroying memory as appropriate and freeing ref counts. 
+//   Do not use this handle after closing.
+// Arguments:
+// - <none>
+// Return Value:
+// - HRESULT S_OK or suitable error code.
+// TODO: MSFT: 9358923 Consider making this a part of the destructor. http://osgvsowi/9358923
 HRESULT ConsoleHandleData::CloseHandle()
 {
     if (_IsInput())
@@ -123,7 +167,7 @@ HRESULT ConsoleHandleData::CloseHandle()
     }
     else
     {
-        return E_NOTIMPL;
+        return E_UNEXPECTED;
     }
 }
 
@@ -132,21 +176,22 @@ HRESULT ConsoleHandleData::CloseHandle()
 //   reference count.  If it goes to zero, the buffer is reinitialized.
 //   Otherwise, the handle is removed from sharing.
 // Arguments:
-// - ProcessData - Pointer to per process data.
-// - HandleData - Pointer to handle data structure.
-// - Handle - Handle to close.
+// - <none>
 // Return Value:
+// - HRESULT S_OK or suitable error code.
 // Note:
 // - The console lock must be held when calling this routine.
 HRESULT ConsoleHandleData::_CloseInputHandle()
 {
+    assert(_IsInput());
     INPUT_INFORMATION* pInputInfo = static_cast<INPUT_INFORMATION*>(_pvClientPointer);
     INPUT_READ_HANDLE_DATA* pReadHandleData = GetClientInput();
 
-    if (pReadHandleData->InputHandleFlags & HANDLE_INPUT_PENDING)
+    if (IsFlagSet(pReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending))
     {
-        pReadHandleData->InputHandleFlags &= ~HANDLE_INPUT_PENDING;
+        ClearFlag(pReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending);
         delete[] pReadHandleData->BufPtr;
+        pReadHandleData->BufPtr = nullptr;
     }
 
     // see if there are any reads waiting for data via this handle.  if
@@ -157,7 +202,7 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
     if (pReadHandleData->GetReadCount() != 0)
     {
         pReadHandleData->UnlockReadCount();
-        pReadHandleData->InputHandleFlags |= HANDLE_CLOSING;
+        SetFlag(pReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing);
 
         ConsoleNotifyWait(&pInputInfo->ReadWaitQueue, TRUE, nullptr);
 
@@ -168,6 +213,7 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
     pReadHandleData->UnlockReadCount();
 
     delete pReadHandleData;
+    pReadHandleData = nullptr;
 
     LOG_IF_FAILED(pInputInfo->Header.FreeIoHandle(this));
 
@@ -175,6 +221,9 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
     {
         ReinitializeInputBuffer(pInputInfo);
     }
+
+    pInputInfo = nullptr;
+    _pvClientPointer = nullptr;
 
     return S_OK;
 }
@@ -184,23 +233,24 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
 //   reference count.  If it goes to zero, the buffer is freed.  Otherwise,
 //   the handle is removed from sharing.
 // Arguments:
-// - ProcessData - Pointer to per process data.
-// - Console - Pointer to console information structure.
-// - HandleData - Pointer to handle data structure.
-// - Handle - Handle to close.
+// - <none>
 // Return Value:
+// - HRESULT S_OK or suitable error code.
 // Note:
 // - The console lock must be held when calling this routine.
 HRESULT ConsoleHandleData::_CloseOutputHandle()
 {
+    assert(_IsOutput());
     SCREEN_INFORMATION* pScreenInfo = static_cast<SCREEN_INFORMATION*>(_pvClientPointer);
-    
+
     LOG_IF_FAILED(pScreenInfo->Header.FreeIoHandle(this));
     if (!pScreenInfo->Header.HasAnyOpenHandles())
     {
         SCREEN_INFORMATION::s_RemoveScreenBuffer(pScreenInfo);
     }
 
-    return S_OK;
+    pScreenInfo = nullptr;
+    _pvClientPointer = nullptr;
 
+    return S_OK;
 }

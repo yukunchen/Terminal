@@ -92,7 +92,7 @@ public:
 
     ConsoleObjectHeader Header;
 
-    // TODO: these methods should probably be a part of construction/destruction.
+    // TODO: MSFT 9355062 these methods should probably be a part of construction/destruction. http://osgvsowi/9355062
     static void s_InsertScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
     static void s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
 

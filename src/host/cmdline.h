@@ -88,9 +88,9 @@ typedef struct _COMMAND_HISTORY
 class COOKED_READ_DATA
 {
 public:
-    PINPUT_INFORMATION InputInfo;
-    PSCREEN_INFORMATION ScreenInfo;
-    ConsoleHandleData* TempHandle;
+    PINPUT_INFORMATION pInputInfo;
+    PSCREEN_INFORMATION pScreenInfo;
+    ConsoleHandleData* pTempHandle;
     ULONG UserBufferSize;   // doubled size in ansi case
     PWCHAR UserBuffer;
     ULONG BufferSize;
@@ -105,8 +105,8 @@ public:
     BOOLEAN Processed;
     BOOLEAN Line;
     BOOLEAN InsertMode;
-    PCONSOLE_PROCESS_HANDLE ProcessData;
-    INPUT_READ_HANDLE_DATA* InputReadHandleData;
+    PCONSOLE_PROCESS_HANDLE pProcessData;
+    INPUT_READ_HANDLE_DATA* pInputReadHandleData;
     PWCHAR ExeName;
     USHORT ExeNameLength;
     ULONG CtrlWakeupMask;

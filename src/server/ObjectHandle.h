@@ -17,10 +17,6 @@ Revision History:
 
 #pragma once
 
-#define CONSOLE_INPUT_HANDLE           0x00000001
-#define CONSOLE_OUTPUT_HANDLE          0x00000002
-//#define CONSOLE_GRAPHICS_OUTPUT_HANDLE 0x00000004
-
 class INPUT_READ_HANDLE_DATA;
 
 struct _INPUT_INFORMATION;
@@ -33,9 +29,9 @@ class ConsoleHandleData
 {
 public:
     ConsoleHandleData(_In_ ULONG const ulHandleType,
-                         _In_ ACCESS_MASK const amAccess,
-                         _In_ ULONG const ulShareAccess,
-                         _In_ PVOID const pvClientPointer);
+                      _In_ ACCESS_MASK const amAccess,
+                      _In_ ULONG const ulShareAccess,
+                      _In_ PVOID const pvClientPointer);
 
     HRESULT GetInputBuffer(_In_ const ACCESS_MASK amRequested,
                            _Out_ INPUT_INFORMATION** const ppInputInfo) const;
@@ -49,13 +45,19 @@ public:
     bool IsWriteAllowed() const;
     bool IsWriteShared() const;
 
-    // TODO: Temporary public access to types...
+    // TODO: MSFT 9355178 Temporary public access to types... http://osgvsowi/9355178
     bool IsInputHandle() const
     {
         return _IsInput();
     }
 
     HRESULT CloseHandle();
+
+    enum HandleType
+    {
+        Input = 0x1,
+        Output = 0x2
+    };
 
 private:
     bool _IsInput() const;
@@ -67,6 +69,8 @@ private:
     ULONG const _ulHandleType;
     ACCESS_MASK const _amAccess;
     ULONG const _ulShareAccess;
-    PVOID const _pvClientPointer; // This will be a pointer to a SCREEN_INFORMATION or INPUT_INFORMATION object.
+    PVOID _pvClientPointer; // This will be a pointer to a SCREEN_INFORMATION or INPUT_INFORMATION object.
     INPUT_READ_HANDLE_DATA* _pClientInput;
 };
+
+DEFINE_ENUM_FLAG_OPERATORS(ConsoleHandleData::HandleType);

@@ -81,8 +81,9 @@ public:
     DWORD GetHotKey() const;
     void SetHotKey(_In_ const DWORD dwHotKey);
     
+    bool IsStartupTitleIsLinkNameSet() const;
+
     DWORD GetStartupFlags() const;
-    BOOL IsStartupFlagSet(_In_ const int Flag) const;
     void SetStartupFlags(_In_ const DWORD dwStartupFlags);
     void UnsetStartupFlag(_In_ DWORD const dwFlagToUnset);
     

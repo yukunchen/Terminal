@@ -28,11 +28,11 @@
 
 typedef struct _RAW_READ_DATA
 {
-    PINPUT_INFORMATION InputInfo;
+    PINPUT_INFORMATION pInputInfo;
     ULONG BufferSize;
     _Field_size_(BufferSize) PWCHAR BufPtr;
-    PCONSOLE_PROCESS_HANDLE ProcessData;
-    INPUT_READ_HANDLE_DATA* InputReadHandleData;
+    PCONSOLE_PROCESS_HANDLE pProcessData;
+    INPUT_READ_HANDLE_DATA* pInputReadHandleData;
 } RAW_READ_DATA, *PRAW_READ_DATA;
 
 DWORD ConsKbdState[] = {
@@ -182,11 +182,11 @@ NTSTATUS GetChar(_In_ PINPUT_INFORMATION pInputInfo,
                     return STATUS_SUCCESS;
                 }
                 // Ignore Escape and Newline chars
-                else if (Event.Event.KeyEvent.bKeyDown &&   
+                else if (Event.Event.KeyEvent.bKeyDown &&
                          //if we're in VT Input, we want everything. Else, ignore Escape and newlines
-                         ( IsFlagSet(pInputInfo->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
-                           (Event.Event.KeyEvent.wVirtualKeyCode != VK_ESCAPE && Event.Event.KeyEvent.uChar.UnicodeChar != 0x0A) ) )
-                            
+                    (IsFlagSet(pInputInfo->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
+                         (Event.Event.KeyEvent.wVirtualKeyCode != VK_ESCAPE && Event.Event.KeyEvent.uChar.UnicodeChar != 0x0A)))
+
                 {
                     *pwchOut = Event.Event.KeyEvent.uChar.UnicodeChar;
                     return STATUS_SUCCESS;
@@ -207,13 +207,13 @@ NTSTATUS GetChar(_In_ PINPUT_INFORMATION pInputInfo,
                 else if ((nullptr != pfCommandLinePopupKeys) && fCommandLineEditKey)
                 {
                     *pfCommandLinePopupKeys = TRUE;
-                    *pwchOut = (CHAR) Event.Event.KeyEvent.wVirtualKeyCode;
+                    *pwchOut = (CHAR)Event.Event.KeyEvent.wVirtualKeyCode;
                     return STATUS_SUCCESS;
                 }
 
                 sTmp = VkKeyScanW(0);
 
-                #pragma prefast(suppress:26019, "Legacy. PREfast has a theoretical VK which jumps the table. Leaving.")
+#pragma prefast(suppress:26019, "Legacy. PREfast has a theoretical VK which jumps the table. Leaving.")
                 if ((LOBYTE(sTmp) == Event.Event.KeyEvent.wVirtualKeyCode) && KEYEVENTSTATE_EQUAL_WINMODS(Event, HIBYTE(sTmp)))
                 {
                     // This really is the character 0x0000
@@ -261,7 +261,7 @@ VOID PrepareReadConsoleCompletion(_Inout_ PCONSOLE_API_MSG Message)
 // - SatisfyParameter - Flags.
 // - ThreadDying - Indicates whether the thread (and process) is exiting.
 // Return Value:
-BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/, 
+BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
                         _In_ PCONSOLE_API_MSG pWaitReplyMessage,
                         _In_ PVOID pvWaitParameter,
                         _In_ PVOID pvSatisfyParameter,
@@ -271,7 +271,7 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
     PRAW_READ_DATA const RawReadData = (PRAW_READ_DATA)pvWaitParameter;
 
     NTSTATUS Status = STATUS_SUCCESS;
-    
+
     if ((ULONG_PTR)pvSatisfyParameter & CONSOLE_CTRL_C_SEEN)
     {
         return FALSE;
@@ -292,7 +292,7 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
         ASSERT(RawReadData->InputReadHandleData->GetReadCount() > 0);
         RawReadData->InputReadHandleData->UnlockReadCount();
 #endif
-        RawReadData->InputReadHandleData->DecrementReadCount();
+        RawReadData->pInputReadHandleData->DecrementReadCount();
 
         // If a ctrl-c is seen, don't terminate read. If ctrl-break is seen, terminate read.
         if ((ULONG_PTR)pvSatisfyParameter & CONSOLE_CTRL_BREAK_SEEN)
@@ -313,7 +313,7 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
         // we wake up the close thread. Otherwise, we wake up any other
         // thread waiting for data.
 
-        if (RawReadData->InputReadHandleData->InputHandleFlags & HANDLE_CLOSING)
+        if (IsFlagSet(RawReadData->pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing))
         {
             Status = STATUS_ALERTED;
             __leave;
@@ -333,12 +333,12 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
         // This call to GetChar may block.
         if (!a->Unicode)
         {
-            if (RawReadData->InputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+            if (RawReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
             {
                 fAddDbcsLead = TRUE;
-                *lpBuffer = RawReadData->InputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                *lpBuffer = RawReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
                 RawReadData->BufferSize -= sizeof(WCHAR);
-                ZeroMemory(&RawReadData->InputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                ZeroMemory(&RawReadData->pInputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
                 Status = STATUS_SUCCESS;
                 if (RawReadData->BufferSize == 0)
                 {
@@ -350,10 +350,10 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
             }
             else
             {
-                Status = GetChar(RawReadData->InputInfo,
+                Status = GetChar(RawReadData->pInputInfo,
                                  lpBuffer,
                                  TRUE,
-                                 RawReadData->InputReadHandleData,
+                                 RawReadData->pInputReadHandleData,
                                  pWaitReplyMessage,
                                  RawReadWaitRoutine,
                                  RawReadData,
@@ -367,10 +367,10 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
         }
         else
         {
-            Status = GetChar(RawReadData->InputInfo,
+            Status = GetChar(RawReadData->pInputInfo,
                              lpBuffer,
                              TRUE,
-                             RawReadData->InputReadHandleData,
+                             RawReadData->pInputReadHandleData,
                              pWaitReplyMessage,
                              RawReadWaitRoutine,
                              RawReadData,
@@ -396,7 +396,7 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
         while (a->NumBytes < RawReadData->BufferSize)
         {
             // This call to GetChar won't block.
-            Status = GetChar(RawReadData->InputInfo, lpBuffer, FALSE, nullptr, nullptr, nullptr, nullptr, 0, TRUE, nullptr, nullptr, nullptr, nullptr);
+            Status = GetChar(RawReadData->pInputInfo, lpBuffer, FALSE, nullptr, nullptr, nullptr, nullptr, 0, TRUE, nullptr, nullptr, nullptr, nullptr);
             if (!NT_SUCCESS(Status))
             {
                 Status = STATUS_SUCCESS;
@@ -406,7 +406,8 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
             lpBuffer++;
             a->NumBytes += sizeof(WCHAR);
         }
-    } __finally
+    }
+    __finally
     {
         // If the read was completed (status != wait), free the raw read data.
         if (Status != CONSOLE_STATUS_WAIT && !fSkipFinally)
@@ -425,7 +426,7 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
 
                 lpBuffer = RawReadData->BufPtr;
 
-                a->NumBytes = TranslateUnicodeToOem(lpBuffer, a->NumBytes / sizeof(WCHAR), TransBuffer, NumBytes, &RawReadData->InputInfo->ReadConInpDbcsLeadByte);
+                a->NumBytes = TranslateUnicodeToOem(lpBuffer, a->NumBytes / sizeof(WCHAR), TransBuffer, NumBytes, &RawReadData->pInputInfo->ReadConInpDbcsLeadByte);
 
                 memmove(lpBuffer, TransBuffer, a->NumBytes);
                 if (fAddDbcsLead)
@@ -439,7 +440,7 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
             SetReplyStatus(pWaitReplyMessage, Status);
             PrepareReadConsoleCompletion(pWaitReplyMessage);
         }
-EndFinally:;
+    EndFinally:;
     }
 
     return RetVal;
@@ -575,11 +576,11 @@ BOOL ProcessCookedReadInput(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ WCHAR w
         {
             fStartFromDelim = g_ciConsoleInformation.GetExtendedEditKey() && IS_WORD_DELIM(pCookedReadData->BufPtr[-1]);
 
-eol_repeat:
+        eol_repeat:
             if (pCookedReadData->Echo)
             {
                 NumToWrite = sizeof(WCHAR);
-                *pStatus = WriteCharsLegacy(pCookedReadData->ScreenInfo,
+                *pStatus = WriteCharsLegacy(pCookedReadData->pScreenInfo,
                                             pCookedReadData->BackupLimit,
                                             pCookedReadData->BufPtr,
                                             &wch,
@@ -648,7 +649,7 @@ eol_repeat:
 
                 fStartFromDelim = g_ciConsoleInformation.GetExtendedEditKey() && IS_WORD_DELIM(pCookedReadData->BufPtr[-1]);
 
-bs_repeat:
+            bs_repeat:
                 // we call writechar here so that cursor position gets updated
                 // correctly.  we also call it later if we're not at eol so
                 // that the remainder of the string can be updated correctly.
@@ -656,7 +657,7 @@ bs_repeat:
                 if (pCookedReadData->Echo)
                 {
                     NumToWrite = sizeof(WCHAR);
-                    *pStatus = WriteCharsLegacy(pCookedReadData->ScreenInfo,
+                    *pStatus = WriteCharsLegacy(pCookedReadData->pScreenInfo,
                                                 pCookedReadData->BackupLimit,
                                                 pCookedReadData->BufPtr,
                                                 &wch,
@@ -677,7 +678,7 @@ bs_repeat:
                         pCookedReadData->BufPtr + 1,
                         pCookedReadData->BytesRead - (pCookedReadData->CurrentPosition * sizeof(WCHAR)));
                 {
-                    PWCHAR buf = (PWCHAR)((PBYTE) pCookedReadData->BackupLimit + pCookedReadData->BytesRead);
+                    PWCHAR buf = (PWCHAR)((PBYTE)pCookedReadData->BackupLimit + pCookedReadData->BytesRead);
                     *buf = (WCHAR)' ';
                 }
                 NumSpaces = 0;
@@ -701,7 +702,7 @@ bs_repeat:
             // store the char
             if (wch == UNICODE_CARRIAGERETURN)
             {
-                pCookedReadData->BufPtr = (PWCHAR)((PBYTE) pCookedReadData->BackupLimit + pCookedReadData->BytesRead);
+                pCookedReadData->BufPtr = (PWCHAR)((PBYTE)pCookedReadData->BackupLimit + pCookedReadData->BytesRead);
                 *pCookedReadData->BufPtr = wch;
                 pCookedReadData->BufPtr += 1;
                 pCookedReadData->BytesRead += sizeof(WCHAR);
@@ -713,10 +714,10 @@ bs_repeat:
 
                 if (pCookedReadData->Echo)
                 {
-                    if (CheckBisectProcessW(pCookedReadData->ScreenInfo,
+                    if (CheckBisectProcessW(pCookedReadData->pScreenInfo,
                                             pCookedReadData->BackupLimit,
                                             pCookedReadData->CurrentPosition + 1,
-                                            pCookedReadData->ScreenInfo->ScreenBufferSize.X - pCookedReadData->OriginalCursorPosition.X,
+                                            pCookedReadData->pScreenInfo->ScreenBufferSize.X - pCookedReadData->OriginalCursorPosition.X,
                                             pCookedReadData->OriginalCursorPosition.X,
                                             TRUE))
                     {
@@ -752,7 +753,7 @@ bs_repeat:
             COORD CursorPosition;
 
             // save cursor position
-            CursorPosition = pCookedReadData->ScreenInfo->TextInfo->GetCursor()->GetPosition();
+            CursorPosition = pCookedReadData->pScreenInfo->TextInfo->GetCursor()->GetPosition();
             CursorPosition.X = (SHORT)(CursorPosition.X + NumSpaces);
 
             // clear the current command line from the screen
@@ -767,7 +768,7 @@ bs_repeat:
             {
                 dwFlags |= WC_KEEP_CURSOR_VISIBLE;
             }
-            *pStatus = WriteCharsLegacy(pCookedReadData->ScreenInfo,
+            *pStatus = WriteCharsLegacy(pCookedReadData->pScreenInfo,
                                         pCookedReadData->BackupLimit,
                                         pCookedReadData->BackupLimit,
                                         pCookedReadData->BackupLimit,
@@ -786,13 +787,13 @@ bs_repeat:
             // update cursor position
             if (wch != UNICODE_CARRIAGERETURN)
             {
-                if (CheckBisectProcessW(pCookedReadData->ScreenInfo,
+                if (CheckBisectProcessW(pCookedReadData->pScreenInfo,
                                         pCookedReadData->BackupLimit,
                                         pCookedReadData->CurrentPosition + 1,
-                                        pCookedReadData->ScreenInfo->ScreenBufferSize.X - pCookedReadData->OriginalCursorPosition.X,
+                                        pCookedReadData->pScreenInfo->ScreenBufferSize.X - pCookedReadData->OriginalCursorPosition.X,
                                         pCookedReadData->OriginalCursorPosition.X, TRUE))
                 {
-                    if (CursorPosition.X == (pCookedReadData->ScreenInfo->ScreenBufferSize.X - 1))
+                    if (CursorPosition.X == (pCookedReadData->pScreenInfo->ScreenBufferSize.X - 1))
                     {
                         CursorPosition.X++;
                     }
@@ -801,7 +802,7 @@ bs_repeat:
                 // adjust cursor position for WriteChars
                 pCookedReadData->OriginalCursorPosition.Y += ScrollY;
                 CursorPosition.Y += ScrollY;
-                *pStatus = AdjustCursorPosition(pCookedReadData->ScreenInfo, CursorPosition, TRUE, nullptr);
+                *pStatus = AdjustCursorPosition(pCookedReadData->pScreenInfo, CursorPosition, TRUE, nullptr);
                 ASSERT(NT_SUCCESS(*pStatus));
                 if (!NT_SUCCESS(*pStatus))
                 {
@@ -825,7 +826,7 @@ bs_repeat:
                 if (pCookedReadData->Echo)
                 {
                     NumToWrite = sizeof(WCHAR);
-                    *pStatus = WriteCharsLegacy(pCookedReadData->ScreenInfo,
+                    *pStatus = WriteCharsLegacy(pCookedReadData->pScreenInfo,
                                                 pCookedReadData->BackupLimit,
                                                 pCookedReadData->BufPtr,
                                                 pCookedReadData->BufPtr,
@@ -876,10 +877,10 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
     while (pCookedReadData->BytesRead < pCookedReadData->BufferSize)
     {
         // This call to GetChar may block.
-        Status = GetChar(pCookedReadData->InputInfo,
+        Status = GetChar(pCookedReadData->pInputInfo,
                          &Char,
                          TRUE,
-                         pCookedReadData->InputReadHandleData,
+                         pCookedReadData->pInputReadHandleData,
                          pWaitReplyMessage,
                          (CONSOLE_WAIT_ROUTINE)CookedReadWaitRoutine,
                          pCookedReadData,
@@ -904,7 +905,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
 
         if (pCookedReadData->OriginalCursorPosition.X == -1)
         {
-            pCookedReadData->OriginalCursorPosition = pCookedReadData->ScreenInfo->TextInfo->GetCursor()->GetPosition();
+            pCookedReadData->OriginalCursorPosition = pCookedReadData->pScreenInfo->TextInfo->GetCursor()->GetPosition();
         }
 
         if (CommandLineEditingKeys)
@@ -922,7 +923,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                     if (!fWaitRoutine)
                     {
                         // we have no wait block, so create one.
-                        WaitForMoreToRead(pCookedReadData->InputInfo,
+                        WaitForMoreToRead(pCookedReadData->pInputInfo,
                                           pWaitReplyMessage,
                                           (CONSOLE_WAIT_ROUTINE)CookedReadWaitRoutine,
                                           pCookedReadData,
@@ -980,15 +981,15 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                 // add to command line recall list
                 AddCommand(pCookedReadData->CommandHistory,
                            pCookedReadData->BackupLimit,
-                           (USHORT) StringLength,
+                           (USHORT)StringLength,
                            IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_HISTORY_NODUP));
 
                 // check for alias
                 i = pCookedReadData->BufferSize;
                 if (NT_SUCCESS(MatchAndCopyAlias(pCookedReadData->BackupLimit,
-                                                 (USHORT) StringLength,
+                    (USHORT)StringLength,
                                                  pCookedReadData->BackupLimit,
-                                                 (PUSHORT) & i,
+                                                 (PUSHORT)& i,
                                                  pCookedReadData->ExeName,
                                                  pCookedReadData->ExeNameLength,
                                                  &LineCount)))
@@ -1008,15 +1009,15 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
             {
                 PWSTR Tmp;
 
-                pCookedReadData->InputReadHandleData->InputHandleFlags |= HANDLE_MULTI_LINE_INPUT;
+                SetFlag(pCookedReadData->pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput);
                 if (!a->Unicode)
                 {
-                    if (pCookedReadData->InputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                    if (pCookedReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
                     {
                         fAddDbcsLead = TRUE;
-                        *pCookedReadData->UserBuffer++ = pCookedReadData->InputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                        *pCookedReadData->UserBuffer++ = pCookedReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
                         pCookedReadData->UserBufferSize -= sizeof(WCHAR);
-                        ZeroMemory(&pCookedReadData->InputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                        ZeroMemory(&pCookedReadData->pInputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
                     }
 
                     NumBytes = 0;
@@ -1031,7 +1032,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                     ASSERT(Tmp < (pCookedReadData->BackupLimit + pCookedReadData->BytesRead));
                 }
 
-                a->NumBytes = (ULONG) (Tmp - pCookedReadData->BackupLimit + 1) * sizeof(*Tmp);
+                a->NumBytes = (ULONG)(Tmp - pCookedReadData->BackupLimit + 1) * sizeof(*Tmp);
             }
             else
             {
@@ -1039,12 +1040,12 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                 {
                     PWSTR Tmp;
 
-                    if (pCookedReadData->InputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                    if (pCookedReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
                     {
                         fAddDbcsLead = TRUE;
-                        *pCookedReadData->UserBuffer++ = pCookedReadData->InputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                        *pCookedReadData->UserBuffer++ = pCookedReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
                         pCookedReadData->UserBufferSize -= sizeof(WCHAR);
-                        ZeroMemory(&pCookedReadData->InputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                        ZeroMemory(&pCookedReadData->pInputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
                     }
                     NumBytes = 0;
                     NumToWrite = pCookedReadData->BytesRead;
@@ -1055,11 +1056,11 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                 a->NumBytes = pCookedReadData->UserBufferSize;
             }
 
-            
-            pCookedReadData->InputReadHandleData->InputHandleFlags |= HANDLE_INPUT_PENDING;
-            pCookedReadData->InputReadHandleData->BufPtr = pCookedReadData->BackupLimit;
-            pCookedReadData->InputReadHandleData->BytesAvailable = pCookedReadData->BytesRead - a->NumBytes;
-            pCookedReadData->InputReadHandleData->CurrentBufPtr = (PWCHAR)((PBYTE) pCookedReadData->BackupLimit + a->NumBytes);
+
+            SetFlag(pCookedReadData->pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending);
+            pCookedReadData->pInputReadHandleData->BufPtr = pCookedReadData->BackupLimit;
+            pCookedReadData->pInputReadHandleData->BytesAvailable = pCookedReadData->BytesRead - a->NumBytes;
+            pCookedReadData->pInputReadHandleData->CurrentBufPtr = (PWCHAR)((PBYTE)pCookedReadData->BackupLimit + a->NumBytes);
             __analysis_assume(a->NumBytes <= pCookedReadData->UserBufferSize);
             memmove(pCookedReadData->UserBuffer, pCookedReadData->BackupLimit, a->NumBytes);
         }
@@ -1069,13 +1070,13 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
             {
                 PWSTR Tmp;
 
-                if (pCookedReadData->InputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                if (pCookedReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
                 {
                     fAddDbcsLead = TRUE;
 #pragma prefast(suppress:__WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is legit")
-                    *pCookedReadData->UserBuffer++ = pCookedReadData->InputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                    *pCookedReadData->UserBuffer++ = pCookedReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
                     pCookedReadData->UserBufferSize -= sizeof(WCHAR);
-                    ZeroMemory(&pCookedReadData->InputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                    ZeroMemory(&pCookedReadData->pInputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
 
                     if (pCookedReadData->UserBufferSize == 0)
                     {
@@ -1119,7 +1120,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                 return STATUS_NO_MEMORY;
             }
 
-            a->NumBytes = TranslateUnicodeToOem(pCookedReadData->UserBuffer, a->NumBytes / sizeof(WCHAR), TransBuffer, NumBytes, &pCookedReadData->InputInfo->ReadConInpDbcsLeadByte);
+            a->NumBytes = TranslateUnicodeToOem(pCookedReadData->UserBuffer, a->NumBytes / sizeof(WCHAR), TransBuffer, NumBytes, &pCookedReadData->pInputInfo->ReadConInpDbcsLeadByte);
 
             if (a->NumBytes > pCookedReadData->UserBufferSize)
             {
@@ -1143,7 +1144,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
         if (fWaitRoutine)
         {
             g_ciConsoleInformation.lpCookedReadData = nullptr;
-            pCookedReadData->TempHandle->CloseHandle();
+            pCookedReadData->pTempHandle->CloseHandle();
             delete pCookedReadData;
         }
     }
@@ -1172,7 +1173,7 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
                            _In_ const BOOL fThreadDying)
 {
     NTSTATUS Status = STATUS_SUCCESS;
-    ASSERT((pCookedReadData->InputReadHandleData->InputHandleFlags & HANDLE_INPUT_PENDING) == 0);
+    ASSERT(IsFlagClear(pCookedReadData->pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending));
 
     // this routine should be called by a thread owning the same lock on the same console as we're reading from.
 #ifdef DBG
@@ -1181,16 +1182,16 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
     pCookedReadData->InputReadHandleData->UnlockReadCount();
 #endif
 
-    pCookedReadData->InputReadHandleData->DecrementReadCount();
+    pCookedReadData->pInputReadHandleData->DecrementReadCount();
 
     // if ctrl-c or ctrl-break was seen, terminate read.
-    if ((ULONG_PTR)pvSatisfyParameter & (CONSOLE_CTRL_C_SEEN | CONSOLE_CTRL_BREAK_SEEN))
+    if (IsAnyFlagSet((ULONG_PTR)pvSatisfyParameter, (CONSOLE_CTRL_C_SEEN | CONSOLE_CTRL_BREAK_SEEN)))
     {
         SetReplyStatus(pWaitReplyMessage, STATUS_ALERTED);
         delete[] pCookedReadData->BackupLimit;
         delete[] pCookedReadData->ExeName;
         g_ciConsoleInformation.lpCookedReadData = nullptr;
-        pCookedReadData->TempHandle->CloseHandle();
+        pCookedReadData->pTempHandle->CloseHandle();
         delete pCookedReadData;
         return TRUE;
     }
@@ -1205,7 +1206,7 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
         delete[] pCookedReadData->BackupLimit;
         delete[] pCookedReadData->ExeName;
         g_ciConsoleInformation.lpCookedReadData = nullptr;
-        pCookedReadData->TempHandle->CloseHandle();
+        pCookedReadData->pTempHandle->CloseHandle();
         delete pCookedReadData;
         return TRUE;
     }
@@ -1214,7 +1215,7 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
     // so, we decrement the read count. If it goes to zero, we wake up the
     // close thread. Otherwise, we wake up any other thread waiting for data.
 
-    if ((pCookedReadData->InputReadHandleData->InputHandleFlags & HANDLE_CLOSING) != 0)
+    if (IsFlagSet(pCookedReadData->pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing))
     {
         SetReplyStatus(pWaitReplyMessage, STATUS_ALERTED);
 
@@ -1223,7 +1224,7 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
         delete[] pCookedReadData->BackupLimit;
         delete[] pCookedReadData->ExeName;
         g_ciConsoleInformation.lpCookedReadData = nullptr;
-        pCookedReadData->TempHandle->CloseHandle();
+        pCookedReadData->pTempHandle->CloseHandle();
         delete pCookedReadData;
         return TRUE;
     }
@@ -1249,7 +1250,7 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
                 delete[] pCookedReadData->BackupLimit;
                 delete[] pCookedReadData->ExeName;
                 g_ciConsoleInformation.lpCookedReadData = nullptr;
-                pCookedReadData->TempHandle->CloseHandle();
+                pCookedReadData->pTempHandle->CloseHandle();
                 delete pCookedReadData;
 
                 if (NT_SUCCESS(pWaitReplyMessage->Complete.IoStatus.Status))
@@ -1313,13 +1314,13 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
     DWORD BufferSize = *pdwNumBytes;
     *pdwNumBytes = 0;
 
-    if (pHandleData->InputHandleFlags & HANDLE_INPUT_PENDING)
+    if (IsFlagSet(pHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending))
     {
         // if we have leftover input, copy as much fits into the user's
         // buffer and return.  we may have multi line input, if a macro
         // has been defined that contains the $T character.
 
-        if (pHandleData->InputHandleFlags & HANDLE_MULTI_LINE_INPUT)
+        if (IsFlagSet(pHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput))
         {
             PWSTR Tmp;
 
@@ -1336,7 +1337,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
 
                 if (pHandleData->BytesAvailable == 0 || BufferSize == 0)
                 {
-                    pHandleData->InputHandleFlags &= ~(HANDLE_INPUT_PENDING | HANDLE_MULTI_LINE_INPUT);
+                    ClearAllFlags(pHandleData->InputHandleFlags, (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending | INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
                     delete[] pHandleData->BufPtr;
                     *pdwNumBytes = 1;
                     return STATUS_SUCCESS;
@@ -1373,7 +1374,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
                 }
                 if (pHandleData->BytesAvailable == 0)
                 {
-                    pHandleData->InputHandleFlags &= ~(HANDLE_INPUT_PENDING | HANDLE_MULTI_LINE_INPUT);
+                    ClearAllFlags(pHandleData->InputHandleFlags, (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending | INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
                     delete[] pHandleData->BufPtr;
                     *pdwNumBytes = 1;
                     return STATUS_SUCCESS;
@@ -1393,12 +1394,12 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
         pHandleData->BytesAvailable -= NumToWrite;
         if (pHandleData->BytesAvailable == 0)
         {
-            pHandleData->InputHandleFlags &= ~(HANDLE_INPUT_PENDING | HANDLE_MULTI_LINE_INPUT);
+            ClearAllFlags(pHandleData->InputHandleFlags, (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending | INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
             delete[] pHandleData->BufPtr;
         }
         else
         {
-            pHandleData->CurrentBufPtr = (PWCHAR)((PBYTE) pHandleData->CurrentBufPtr + NumToWrite);
+            pHandleData->CurrentBufPtr = (PWCHAR)((PBYTE)pHandleData->CurrentBufPtr + NumToWrite);
         }
 
         if (!fUnicode)
@@ -1430,7 +1431,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
         return STATUS_SUCCESS;
     }
 
-    if (pInputInfo->InputMode & ENABLE_LINE_INPUT)
+    if (IsFlagSet(pInputInfo->InputMode, ENABLE_LINE_INPUT))
     {
         // read in characters until the buffer is full or return is read.
         // since we may wait inside this loop, store all important variables
@@ -1446,12 +1447,17 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
         BOOLEAN Echo;
 
         // We need to create a temporary handle to the current screen buffer.
-        RETURN_IF_FAILED(pScreenInfo->Header.AllocateIoHandle(CONSOLE_OUTPUT_HANDLE,
-                                                              GENERIC_WRITE,
-                                                              FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                              &CookedReadData.TempHandle));
+        Status = NTSTATUS_FROM_HRESULT(pScreenInfo->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
+                                                                            GENERIC_WRITE,
+                                                                            FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                                            &CookedReadData.pTempHandle));
 
-        Echo = !!(pInputInfo->InputMode & ENABLE_ECHO_INPUT);
+        if (!NT_SUCCESS(Status))
+        {
+            return Status;
+        }
+
+        Echo = !!IsFlagSet(pInputInfo->InputMode, ENABLE_ECHO_INPUT);
 
 
         // to emulate OS/2 KbdStringIn, we read into our own big buffer
@@ -1464,7 +1470,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
         {
             if (Echo)
             {
-                CookedReadData.TempHandle->CloseHandle();
+                CookedReadData.pTempHandle->CloseHandle();
             }
 
             return STATUS_NO_MEMORY;
@@ -1482,8 +1488,8 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
          * ref count to prevent the ScreenInfo from going away while we're
          * waiting for the read to complete.
          */
-        CookedReadData.InputInfo = pInputInfo;
-        CookedReadData.ScreenInfo = pScreenInfo;
+        CookedReadData.pInputInfo = pInputInfo;
+        CookedReadData.pScreenInfo = pScreenInfo;
         CookedReadData.BufferSize = TempBufferSize;
         CookedReadData.BytesRead = 0;
         CookedReadData.CurrentPosition = 0;
@@ -1498,12 +1504,12 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
         CookedReadData.CommandHistory = pCommandHistory;
         CookedReadData.Echo = Echo;
         CookedReadData.InsertMode = !!g_ciConsoleInformation.GetInsertMode();
-        CookedReadData.Processed = (pInputInfo->InputMode & ENABLE_PROCESSED_INPUT) != 0;
-        CookedReadData.Line = (pInputInfo->InputMode & ENABLE_LINE_INPUT) != 0;
-        CookedReadData.ProcessData = pProcessData;
-        CookedReadData.InputReadHandleData = pHandleData;
+        CookedReadData.Processed = IsFlagSet(pInputInfo->InputMode, ENABLE_PROCESSED_INPUT);
+        CookedReadData.Line = IsFlagSet(pInputInfo->InputMode, ENABLE_LINE_INPUT);
+        CookedReadData.pProcessData = pProcessData;
+        CookedReadData.pInputReadHandleData = pHandleData;
 
-        ExeNameByteLength = (USHORT) (usExeNameLength * sizeof(WCHAR));
+        ExeNameByteLength = (USHORT)(usExeNameLength * sizeof(WCHAR));
         CookedReadData.ExeName = (PWCHAR) new BYTE[ExeNameByteLength];
 
         if (dwInitialNumBytes != 0)
@@ -1554,11 +1560,11 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
 
         RAW_READ_DATA RawReadData;
 
-        RawReadData.InputInfo = pInputInfo;
+        RawReadData.pInputInfo = pInputInfo;
         RawReadData.BufferSize = BufferSize;
         RawReadData.BufPtr = pwchBuffer;
-        RawReadData.ProcessData = pProcessData;
-        RawReadData.InputReadHandleData = pHandleData;
+        RawReadData.pProcessData = pProcessData;
+        RawReadData.pInputReadHandleData = pHandleData;
         if (*pdwNumBytes < BufferSize)
         {
             PWCHAR pwchBufferTmp = pwchBuffer;
@@ -1629,18 +1635,18 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
             while (NumToWrite < BufferSize)
             {
                 Status = GetChar(pInputInfo,
-                                    pwchBuffer,
-                                    FALSE,
-                                    nullptr,
-                                    nullptr,
-                                    nullptr,
-                                    nullptr,
-                                    0,
-                                    FALSE,
-                                    nullptr,
-                                    nullptr,
-                                    nullptr,
-                                    nullptr);
+                                 pwchBuffer,
+                                 FALSE,
+                                 nullptr,
+                                 nullptr,
+                                 nullptr,
+                                 nullptr,
+                                 0,
+                                 FALSE,
+                                 nullptr,
+                                 nullptr,
+                                 nullptr,
+                                 nullptr);
                 if (!NT_SUCCESS(Status))
                 {
                     return STATUS_SUCCESS;
@@ -1662,12 +1668,12 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
                 }
 
                 pwchBuffer = pwchBufferTmp;
-               
+
                 *pdwNumBytes = TranslateUnicodeToOem(pwchBuffer,
-                                                        NumToWrite / sizeof(WCHAR),
-                                                        TransBuffer,
-                                                        *pdwNumBytes,
-                                                        &pInputInfo->ReadConInpDbcsLeadByte);
+                                                     NumToWrite / sizeof(WCHAR),
+                                                     TransBuffer,
+                                                     *pdwNumBytes,
+                                                     &pInputInfo->ReadConInpDbcsLeadByte);
 
 #pragma prefast(suppress:26053 26015, "PREfast claims read overflow. *pdwNumBytes is the exact size of TransBuffer as allocated above.")
                 memmove(pwchBuffer, TransBuffer, *pdwNumBytes);
@@ -1695,7 +1701,7 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
 
     PWCHAR Buffer;
     // If the request is not in Unicode mode, we must allocate an output buffer that is twice as big as the actual caller buffer.
-    NTSTATUS Status = GetAugmentedOutputBuffer(m, (a->Unicode != FALSE) ? 1 : 2, (PVOID *) & Buffer, &a->NumBytes);
+    NTSTATUS Status = GetAugmentedOutputBuffer(m, (a->Unicode != FALSE) ? 1 : 2, (PVOID *)& Buffer, &a->NumBytes);
 
     if (!NT_SUCCESS(Status))
     {
@@ -1710,7 +1716,7 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
     }
 
     PCONSOLE_PROCESS_HANDLE const ProcessData = GetMessageProcess(m);
-    
+
     ConsoleHandleData* HandleData = GetMessageObject(m);
     INPUT_INFORMATION* pInputInfo;
     Status = NTSTATUS_FROM_HRESULT(HandleData->GetInputBuffer(GENERIC_READ, &pInputInfo));
@@ -1736,7 +1742,7 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
                                a->InitialNumBytes,
                                a->CtrlWakeupMask,
                                HandleData->GetClientInput(),
-                               FindCommandHistory((HANDLE) ProcessData),
+                               FindCommandHistory((HANDLE)ProcessData),
                                m,
                                a->ExeNameLength,
                                a->Unicode);
@@ -1765,7 +1771,7 @@ VOID UnblockWriteConsole(_In_ const DWORD dwReason)
 {
     g_ciConsoleInformation.Flags &= ~dwReason;
 
-    if ((g_ciConsoleInformation.Flags & (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)) == 0)
+    if (AreAllFlagsClear(g_ciConsoleInformation.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         // There is no longer any reason to suspend output, so unblock it.
         ConsoleNotifyWait(&g_ciConsoleInformation.OutputQueue, TRUE, nullptr);

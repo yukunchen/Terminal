@@ -21,10 +21,10 @@ class CONSOLE_INFORMATION;
 
 typedef struct _DIRECT_READ_DATA
 {
-    PINPUT_INFORMATION InputInfo;
-    CONSOLE_INFORMATION *Console;
-    PCONSOLE_PROCESS_HANDLE ProcessData;
-    INPUT_READ_HANDLE_DATA* InputReadHandleData;
+    PINPUT_INFORMATION pInputInfo;
+    CONSOLE_INFORMATION* pConsole;
+    PCONSOLE_PROCESS_HANDLE pProcessData;
+    INPUT_READ_HANDLE_DATA* pInputReadHandleData;
 } DIRECT_READ_DATA, *PDIRECT_READ_DATA;
 
 #define UNICODE_DBCS_PADDING 0xffff
@@ -219,7 +219,7 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
     NTSTATUS Status = STATUS_SUCCESS;
 
     // If ctrl-c or ctrl-break was seen, ignore it.
-    if ((ULONG_PTR)SatisfyParameter & (CONSOLE_CTRL_C_SEEN | CONSOLE_CTRL_BREAK_SEEN))
+    if (IsAnyFlagSet((ULONG_PTR)SatisfyParameter, (CONSOLE_CTRL_C_SEEN | CONSOLE_CTRL_BREAK_SEEN)))
     {
         return FALSE;
     }
@@ -227,14 +227,16 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
     PINPUT_RECORD Buffer = nullptr;
     if (!a->Unicode)
     {
-        if (DirectReadData->InputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+        if (DirectReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
         {
             if (a->NumRecords == 1)
             {
                 Buffer = (PINPUT_RECORD)WaitReplyMessage->State.OutputBuffer;
-                *Buffer = DirectReadData->InputInfo->ReadConInpDbcsLeadByte;
-                if (!(a->Flags & CONSOLE_READ_NOREMOVE))
-                    ZeroMemory(&DirectReadData->InputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                *Buffer = DirectReadData->pInputInfo->ReadConInpDbcsLeadByte;
+                if (IsFlagClear(a->Flags, CONSOLE_READ_NOREMOVE))
+                {
+                    ZeroMemory(&DirectReadData->pInputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                }
 
                 SetReplyStatus(WaitReplyMessage, STATUS_SUCCESS);
                 SetReplyInformation(WaitReplyMessage, sizeof(INPUT_RECORD));
@@ -251,7 +253,7 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
         ASSERT(DirectReadData->InputReadHandleData->GetReadCount() > 0);
         DirectReadData->InputReadHandleData->UnlockReadCount();
 #endif
-        DirectReadData->InputReadHandleData->DecrementReadCount();
+        DirectReadData->pInputReadHandleData->DecrementReadCount();
 
         // See if called by CsrDestroyProcess or CsrDestroyThread
         // via ConsoleNotifyWaitBlock. If so, just decrement the ReadCount and return.
@@ -265,7 +267,7 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
         // closed. If so, we decrement the read count. If it goes to
         // zero, we wake up the close thread. Otherwise, we wake up any
         // other thread waiting for data.
-        if (DirectReadData->InputReadHandleData->InputHandleFlags & HANDLE_CLOSING)
+        if (IsFlagSet(DirectReadData->pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing))
         {
             Status = STATUS_ALERTED;
             __leave;
@@ -288,7 +290,7 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
         if (!a->Unicode)
         {
             // ASCII : a->NumRecords is ASCII byte count
-            if (DirectReadData->InputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+            if (DirectReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
             {
                 // Saved DBCS Traling byte
                 if (g_ciConsoleInformation.ReadConInpNumBytesUnicode != 1)
@@ -313,13 +315,13 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
             nLength = &a->NumRecords;
         }
 
-        Status = ReadInputBuffer(DirectReadData->InputInfo,
+        Status = ReadInputBuffer(DirectReadData->pInputInfo,
                                  Buffer,
                                  nLength,
-                                 !!(a->Flags & CONSOLE_READ_NOREMOVE),
-                                 !(a->Flags & CONSOLE_READ_NOWAIT),
+                                 IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE),
+                                 IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT),
                                  FALSE,
-                                 DirectReadData->InputReadHandleData,
+                                 DirectReadData->pInputReadHandleData,
                                  WaitReplyMessage,
                                  DirectReadWaitRoutine,
                                  &DirectReadData,
@@ -339,7 +341,7 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
         {
             if (Status == STATUS_SUCCESS && !a->Unicode)
             {
-                if (fAddDbcsLead && DirectReadData->InputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                if (fAddDbcsLead && DirectReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
                 {
                     a->NumRecords--;
                 }
@@ -347,12 +349,14 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
                 a->NumRecords = TranslateInputToOem(Buffer,
                                                     a->NumRecords,
                                                     g_ciConsoleInformation.ReadConInpNumBytesUnicode,
-                                                    a->Flags & CONSOLE_READ_NOREMOVE ? nullptr : &DirectReadData->InputInfo->ReadConInpDbcsLeadByte);
-                if (fAddDbcsLead && DirectReadData->InputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                                                    IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE) ? nullptr : &DirectReadData->pInputInfo->ReadConInpDbcsLeadByte);
+                if (fAddDbcsLead && DirectReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
                 {
-                    *(Buffer - 1) = DirectReadData->InputInfo->ReadConInpDbcsLeadByte;
-                    if (!(a->Flags & CONSOLE_READ_NOREMOVE))
-                        ZeroMemory(&DirectReadData->InputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                    *(Buffer - 1) = DirectReadData->pInputInfo->ReadConInpDbcsLeadByte;
+                    if (IsFlagClear(a->Flags, CONSOLE_READ_NOREMOVE))
+                    {
+                        ZeroMemory(&DirectReadData->pInputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                    }
                     a->NumRecords++;
                     Buffer--;
                 }
@@ -389,7 +393,8 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
         Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleInput, a->Unicode);
     }
 
-    if (a->Flags & ~CONSOLE_READ_VALID)
+    // If any flags are set that are not within our enum, it's invalid.
+    if (IsAnyFlagSet(a->Flags, ~CONSOLE_READ_VALID))
     {
         return STATUS_INVALID_PARAMETER;
     }
@@ -425,9 +430,9 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
         DWORD nBytesUnicode = a->NumRecords;
 
         // if we're reading, wait for data.  if we're peeking, don't.
-        DirectReadData.InputInfo = pInputInfo;
-        DirectReadData.ProcessData = GetMessageProcess(m);
-        DirectReadData.InputReadHandleData = HandleData->GetClientInput();
+        DirectReadData.pInputInfo = pInputInfo;
+        DirectReadData.pProcessData = GetMessageProcess(m);
+        DirectReadData.pInputReadHandleData = HandleData->GetClientInput();
 
         if (!a->Unicode)
         {
@@ -442,8 +447,10 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
             {
                 // Saved DBCS Traling byte
                 *Buffer = pInputInfo->ReadConInpDbcsLeadByte;
-                if (!(a->Flags & CONSOLE_READ_NOREMOVE))
+                if (IsFlagClear(a->Flags, CONSOLE_READ_NOREMOVE))
+                {
                     ZeroMemory(&pInputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                }
 
                 nBytesUnicode--;
                 Buffer++;
@@ -454,10 +461,10 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
         Status = ReadInputBuffer(pInputInfo,
                                  Buffer,
                                  nLength,
-                                 !!(a->Flags & CONSOLE_READ_NOREMOVE),
-                                 !(a->Flags & CONSOLE_READ_NOWAIT) && !fAddDbcsLead,
+                                 IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE),
+                                 IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT) && !fAddDbcsLead,
                                  FALSE,
-                                 DirectReadData.InputReadHandleData,
+                                 DirectReadData.pInputReadHandleData,
                                  m,
                                  DirectReadWaitRoutine,
                                  &DirectReadData,
@@ -474,7 +481,7 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
                                                 fAddDbcsLead ?
                                                 a->NumRecords - 1 :
                                                 a->NumRecords,
-                                                nBytesUnicode, a->Flags & CONSOLE_READ_NOREMOVE ? nullptr : &pInputInfo->ReadConInpDbcsLeadByte);
+                                                nBytesUnicode, IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE) ? nullptr : &pInputInfo->ReadConInpDbcsLeadByte);
             if (fAddDbcsLead)
             {
                 a->NumRecords++;
@@ -520,6 +527,7 @@ NTSTATUS SrvWriteConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
     INPUT_INFORMATION* pInputInfo;
     if (FAILED(HandleData->GetInputBuffer(GENERIC_WRITE, &pInputInfo)))
     {
+        // TODO: MSFT 9358589 - Is this really supposed to just set 0 written and return success?
         a->NumRecords = 0;
     }
     else
@@ -583,7 +591,7 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
     {
         for (int j = 0; j < Size.X; j++)
         {
-            if (TmpBuffer->Attributes & COMMON_LVB_LEADING_BYTE)
+            if (IsFlagSet(TmpBuffer->Attributes, COMMON_LVB_LEADING_BYTE))
             {
                 if (j < Size.X - 1)
                 {   // -1 is safe DBCS in buffer
@@ -603,12 +611,13 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
                 else
                 {
                     OutputBuffer->Char.AsciiChar = ' ';
-                    OutputBuffer->Attributes = TmpBuffer->Attributes & ~COMMON_LVB_SBCSDBCS;
+                    OutputBuffer->Attributes = TmpBuffer->Attributes;
+                    ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
                     OutputBuffer++;
                     TmpBuffer++;
                 }
             }
-            else if (!(TmpBuffer->Attributes & COMMON_LVB_SBCSDBCS))
+            else if (AreAllFlagsClear(TmpBuffer->Attributes, COMMON_LVB_SBCSDBCS))
             {
                 ConvertToOem(Codepage, &TmpBuffer->Char.UnicodeChar, 1, &OutputBuffer->Char.AsciiChar, 1);
                 OutputBuffer->Attributes = TmpBuffer->Attributes;
@@ -634,7 +643,7 @@ NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Si
     {
         for (int j = 0; j < Size.X; j++)
         {
-            OutputBuffer->Attributes &= ~COMMON_LVB_SBCSDBCS;
+            ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
             if (IsDBCSLeadByteConsole(OutputBuffer->Char.AsciiChar, &g_ciConsoleInformation.OutputCPInfo))
             {
                 if (j < Size.X - 1)
@@ -648,11 +657,11 @@ NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Si
                     ConvertOutputToUnicode(Codepage, &AsciiDbcs[0], 2, &UnicodeDbcs[0], 2);
 
                     OutputBuffer->Char.UnicodeChar = UnicodeDbcs[0];
-                    OutputBuffer->Attributes |= COMMON_LVB_LEADING_BYTE;
+                    SetFlag(OutputBuffer->Attributes, COMMON_LVB_LEADING_BYTE);
                     OutputBuffer++;
                     OutputBuffer->Char.UnicodeChar = UNICODE_DBCS_PADDING;
-                    OutputBuffer->Attributes &= ~COMMON_LVB_SBCSDBCS;
-                    OutputBuffer->Attributes |= COMMON_LVB_TRAILING_BYTE;
+                    ClearAllFlags(OutputBuffer->Attributes, ~COMMON_LVB_SBCSDBCS);
+                    SetFlag(OutputBuffer->Attributes, COMMON_LVB_TRAILING_BYTE);
                     OutputBuffer++;
                 }
                 else
@@ -686,7 +695,8 @@ NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ C
 
             if (OutputBufferR)
             {
-                OutputBufferR->Attributes = OutputBuffer->Attributes & ~COMMON_LVB_SBCSDBCS;
+                OutputBufferR->Attributes = OutputBuffer->Attributes;
+                ClearAllFlags(OutputBufferR->Attributes, COMMON_LVB_SBCSDBCS);
                 if (IsCharFullWidth(OutputBuffer->Char.UnicodeChar))
                 {
                     if (j == Size.X - 1)
@@ -696,11 +706,12 @@ NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ C
                     else
                     {
                         OutputBufferR->Char.UnicodeChar = OutputBuffer->Char.UnicodeChar;
-                        OutputBufferR->Attributes |= COMMON_LVB_LEADING_BYTE;
+                        SetFlag(OutputBufferR->Attributes, COMMON_LVB_LEADING_BYTE);
                         OutputBufferR++;
                         OutputBufferR->Char.UnicodeChar = UNICODE_DBCS_PADDING;
-                        OutputBufferR->Attributes = OutputBuffer->Attributes & ~COMMON_LVB_SBCSDBCS;
-                        OutputBufferR->Attributes |= COMMON_LVB_TRAILING_BYTE;
+                        OutputBufferR->Attributes = OutputBuffer->Attributes;
+                        ClearAllFlags(OutputBufferR->Attributes, COMMON_LVB_SBCSDBCS);
+                        SetFlag(OutputBufferR->Attributes, COMMON_LVB_TRAILING_BYTE);
                     }
                 }
                 else
@@ -1080,13 +1091,14 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::CreateConsoleScreenBuffer);
 
-    if (a->Flags != CONSOLE_TEXTMODE_BUFFER)
+    // If any buffer type except the one we support is set, it's invalid.
+    if (IsAnyFlagSet(a->Flags, ~CONSOLE_TEXTMODE_BUFFER))
     {
         ASSERT(false); // We no longer support anything other than a textmode buffer
         return STATUS_INVALID_PARAMETER;
     }
 
-    ULONG const HandleType = CONSOLE_OUTPUT_HANDLE;
+    ConsoleHandleData::HandleType const HandleType = ConsoleHandleData::HandleType::Output;
 
     const SCREEN_INFORMATION* const psiExisting = g_ciConsoleInformation.CurrentScreenBuffer;
 
@@ -1109,13 +1121,13 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
         goto Exit;
     }
 
-    if (FAILED(ScreenInfo->Header.AllocateIoHandle(HandleType,
-                                                   Information->DesiredAccess,
-                                                   Information->ShareMode,
-                                                   ppHandle)))
+    Status = NTSTATUS_FROM_HRESULT(ScreenInfo->Header.AllocateIoHandle(HandleType,
+                                                                       Information->DesiredAccess,
+                                                                       Information->ShareMode,
+                                                                       ppHandle));
+
+    if (!NT_SUCCESS(Status))
     {
-        // TODO: correct this function to return HRs and pass errors.
-        Status = STATUS_UNSUCCESSFUL;
         goto Exit;
     }
 

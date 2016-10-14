@@ -133,7 +133,6 @@ StateMachine* SCREEN_INFORMATION::GetStateMachine() const
 // Routine Description:
 // - This routine inserts the screen buffer pointer into the console's list of screen buffers.
 // Arguments:
-// - Console - Pointer to console information structure.
 // - ScreenInfo - Pointer to screen information structure.
 // Return Value:
 // Note:
@@ -149,7 +148,6 @@ void SCREEN_INFORMATION::s_InsertScreenBuffer(_In_ PSCREEN_INFORMATION pScreenIn
 // Routine Description:
 // - This routine removes the screen buffer pointer from the console's list of screen buffers.
 // Arguments:
-// - Console - Pointer to console information structure.
 // - ScreenInfo - Pointer to screen information structure.
 // Return Value:
 // Note:

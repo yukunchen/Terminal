@@ -855,9 +855,9 @@ void Settings::SetColorTableEntry(_In_ size_t const index, _In_ COLORREF const C
     }
 }
 
-BOOL Settings::IsStartupFlagSet(_In_ const int Flag) const
+bool Settings::IsStartupTitleIsLinkNameSet() const
 {
-    return IsFlagSet(this->_dwStartupFlags, Flag);
+    return IsFlagSet(_dwStartupFlags, STARTF_TITLEISLINKNAME);
 }
 
 BOOL Settings::IsFaceNameSet() const

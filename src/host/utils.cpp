@@ -45,33 +45,6 @@ short CalcCursorYOffsetInPixels(_In_ short const sFontSizeY, _In_ ULONG const ul
     return (short)((sFontSizeY)-(ulSize));
 }
 
-bool IsFlagSet(_In_ DWORD const dwAllFlags, _In_ DWORD const dwFlagToTest)
-{
-    return ((dwAllFlags & dwFlagToTest) == dwFlagToTest);
-}
-
-void SetFlag(_Inout_ DWORD* const pdwAllFlags, _In_ DWORD const dwFlagToSet)
-{
-    *pdwAllFlags |= dwFlagToSet;
-}
-
-void UnsetFlag(_Inout_ DWORD* const pdwAllFlags, _In_ DWORD const dwFlagToUnset)
-{
-    *pdwAllFlags &= ~dwFlagToUnset;
-}
-
-void SetFlagBasedOnBool(_In_ bool const fCondition, _Inout_ DWORD* const pdwAllFlags, _In_ DWORD const dwFlag)
-{
-    if (fCondition)
-    {
-        SetFlag(pdwAllFlags, dwFlag);
-    }
-    else
-    {
-        UnsetFlag(pdwAllFlags, dwFlag);
-    }
-}
-
 WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwchEnd)
 {
     WORD val = 0;
@@ -290,19 +263,4 @@ bool Utils::s_AddToPosition(_In_ const SMALL_RECT srectEdges, _In_ const int iAd
 void Utils::s_GetCurrentBufferEdges(_Out_ SMALL_RECT* const psrectEdges)
 {
     g_ciConsoleInformation.CurrentScreenBuffer->GetScreenEdges(psrectEdges);
-}
-
-NTSTATUS Utils::s_NtStatusFromHr(_In_ const HRESULT hr)
-{
-    switch (hr)
-    {
-    case S_OK:
-        return STATUS_SUCCESS;
-    case E_HANDLE:
-        return STATUS_INVALID_HANDLE;
-    case E_ACCESSDENIED:
-        return STATUS_ACCESS_DENIED;
-    default:
-        return STATUS_UNSUCCESSFUL;
-    }
 }

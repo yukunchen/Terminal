@@ -11,6 +11,9 @@ Abstract:
 
 #pragma once
 
+// We want WIL to use the bit operation flags, but I can't tell where WIL is being included so put this at the top to ensure they're forced on.
+#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
+
 #define DEFINE_CONSOLEV2_PROPERTIES
 
 // Ignore checked iterators warning from VC compiler.
@@ -83,8 +86,6 @@ typedef NTSTATUS *PNTSTATUS;
 #include <memory>
 
 // WIL
-// We'll probably want to use this, but there's a conflict in utils.cpp right now.
-//#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil\Common.h>
 #include <wil\Result.h>
 #include <wil\ResultException.h>
@@ -132,5 +133,6 @@ BOOL IsConsoleFullWidth(_In_ HDC hDC, _In_ DWORD CodePage, _In_ WCHAR wch);
 
 #include "..\inc\contsf.h"
 
-
-#define NTSTATUS_FROM_HRESULT(Foo) (Utils::s_NtStatusFromHr((Foo)))
+// TODO: MSFT 9355094 Find a better way of doing this. http://osgvsowi/9355094
+#define NTSTATUS_FROM_HRESULT(H) \
+    NTSTATUS_FROM_WIN32(HRESULT_CODE(H))

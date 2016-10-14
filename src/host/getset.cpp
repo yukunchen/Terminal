@@ -1071,6 +1071,7 @@ NTSTATUS SetScreenColors(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ WORD Attribut
 
     if (UpdateWholeScreen)
     {
+        // TODO: MSFT 9354902: Fix this up to be clearer with less magic bit shifting and less magic numbers. http://osgvsowi/9354902
         WORD const InvertedOldPopupAttributes = (WORD)(((DefaultPopupAttributes << 4) & 0xf0) | ((DefaultPopupAttributes >> 4) & 0x0f));
         WORD const InvertedNewPopupAttributes = (WORD)(((PopupAttributes << 4) & 0xf0) | ((PopupAttributes >> 4) & 0x0f));
 

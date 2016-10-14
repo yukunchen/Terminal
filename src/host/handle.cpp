@@ -55,9 +55,9 @@ NTSTATUS RevalidateConsole(_Out_ CONSOLE_INFORMATION ** const ppConsole)
 NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, _In_ const DWORD cbTitle)
 {
     // Synchronize flags
-    SetFlagBasedOnBool(!!g_ciConsoleInformation.GetAutoPosition(), &g_ciConsoleInformation.Flags, CONSOLE_AUTO_POSITION);
-    SetFlagBasedOnBool(!!g_ciConsoleInformation.GetQuickEdit(), &g_ciConsoleInformation.Flags, CONSOLE_QUICK_EDIT_MODE);
-    SetFlagBasedOnBool(!!g_ciConsoleInformation.GetHistoryNoDup(), &g_ciConsoleInformation.Flags, CONSOLE_HISTORY_NODUP);
+    SetFlagIf(g_ciConsoleInformation.Flags, CONSOLE_AUTO_POSITION, !!g_ciConsoleInformation.GetAutoPosition());
+    SetFlagIf(g_ciConsoleInformation.Flags, CONSOLE_QUICK_EDIT_MODE, !!g_ciConsoleInformation.GetQuickEdit());
+    SetFlagIf(g_ciConsoleInformation.Flags, CONSOLE_HISTORY_NODUP, !!g_ciConsoleInformation.GetHistoryNoDup());
 
     Selection* const pSelection = &Selection::Instance();
     pSelection->SetLineSelection(!!g_ciConsoleInformation.GetLineSelection());
