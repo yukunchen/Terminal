@@ -5,7 +5,6 @@ rem This is another script to help Microsoft developers feel at home working on 
 
 set _LAST_BUILD_CONF=%DEFAULT_CONFIGURATION%
 
-setlocal
 set _MSBUILD_TARGET=Clean,Build
 
 :ARGS_LOOP
@@ -28,3 +27,8 @@ goto :ARGS_LOOP
 echo starting build
 
 msbuild.exe %OPENCON%\OpenConsole.sln /t:%_MSBUILD_TARGET% /m /nr:true /p:Configuration=%_LAST_BUILD_CONF%
+
+rem Cleanup unused variables here. Note we cannot use setlocal because we need to pass modified
+rem _LAST_BUILD_CONF out to OpenCon.cmd later.
+rem
+set _MSBUILD_TARGET=

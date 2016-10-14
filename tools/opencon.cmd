@@ -10,10 +10,8 @@ if not exist %OPENCON%\bin\%ARCH%\%_LAST_BUILD_CONF%\OpenConsole.exe (
 )
 
 setlocal
-rem This should be unique enough... random short, and the date/timestamp
-set copy_name=%random%%DATE:/=%%TIME::=%_Openconsole.exe
-rem Need to remove the space from the datestamp
-set copy_name=%copy_name: =%
+rem Generate a unique name, so that we can debug multiple revisions of the binary at the same time if needed.
+set copy_name=Test_%random%_OpenConsole.exe
 
 copy /Y %OPENCON%\bin\%ARCH%\%_LAST_BUILD_CONF%\OpenConsole.exe %TEMP%\%copy_name% > nul
 

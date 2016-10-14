@@ -42,7 +42,7 @@ rem if there are args, run them. This can be used for additional env. customizat
 rem    especially on a per shortcut basis.
 :ARGS_LOOP
 if (%1) == () goto :POST_ARGS_LOOP
-if (%1) == (dgb) (
+if (%1) == (dbg) (
     set DEFAULT_CONFIGURATION=Debug
     shift
     goto :ARGS_LOOP
