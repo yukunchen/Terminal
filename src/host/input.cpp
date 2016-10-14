@@ -742,7 +742,7 @@ NTSTATUS ReadInputBuffer(_In_ PINPUT_INFORMATION const pInputInfo,
                          _In_ BOOL const fPeek,
                          _In_ BOOL const fWaitForData,
                          _In_ BOOL const fStreamRead,
-                         _In_ PCONSOLE_HANDLE_DATA pHandleData,
+                         _In_ INPUT_READ_HANDLE_DATA* pHandleData,
                          _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
                          _In_opt_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
                          _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
@@ -759,14 +759,14 @@ NTSTATUS ReadInputBuffer(_In_ PINPUT_INFORMATION const pInputInfo,
             return STATUS_SUCCESS;
         }
 
-        pHandleData->GetClientInput()->IncrementReadCount();
+        pHandleData->IncrementReadCount();
         Status = WaitForMoreToRead(pInputInfo, pConsoleMsg, pfnWaitRoutine, pvWaitParameter, cbWaitParameter, fWaitBlockExists);
         if (!NT_SUCCESS(Status))
         {
             if (Status != CONSOLE_STATUS_WAIT)
             {
                 // WaitForMoreToRead failed, restore ReadCount and bail out
-                pHandleData->GetClientInput()->DecrementReadCount();
+                pHandleData->DecrementReadCount();
             }
 
             *pcLength = 0;

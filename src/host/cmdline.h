@@ -106,7 +106,7 @@ public:
     BOOLEAN Line;
     BOOLEAN InsertMode;
     PCONSOLE_PROCESS_HANDLE ProcessData;
-    CONSOLE_HANDLE_DATA* HandleIndex;
+    INPUT_READ_HANDLE_DATA* InputReadHandleData;
     PWCHAR ExeName;
     USHORT ExeNameLength;
     ULONG CtrlWakeupMask;

@@ -44,4 +44,6 @@ public:
     static void s_GetOppositeCorner(_In_ const SMALL_RECT srRectangle, _In_ const COORD coordCorner, _Out_ COORD* const pcoordOpposite);
 
     static void s_GetCurrentBufferEdges(_Out_ SMALL_RECT* const psrectEdges);
+    // TODO: Find a better way of doing this.
+    static NTSTATUS s_NtStatusFromHr(_In_ const HRESULT hr);
 };

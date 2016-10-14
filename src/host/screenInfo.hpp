@@ -91,6 +91,11 @@ public:
     BOOL PostUpdateWindowSize() const;
 
     ConsoleObjectHeader Header;
+
+    // TODO: these methods should probably be a part of construction/destruction.
+    static void s_InsertScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
+    static void s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
+
     DWORD OutputMode;
     COORD ScreenBufferSize; // dimensions of buffer
     SMALL_RECT BufferViewport;  // specifies which coordinates of the screen buffer are visible in the window client (the "viewport" into the buffer)

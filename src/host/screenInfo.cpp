@@ -130,6 +130,72 @@ StateMachine* SCREEN_INFORMATION::GetStateMachine() const
     return _pStateMachine;
 }
 
+// Routine Description:
+// - This routine inserts the screen buffer pointer into the console's list of screen buffers.
+// Arguments:
+// - Console - Pointer to console information structure.
+// - ScreenInfo - Pointer to screen information structure.
+// Return Value:
+// Note:
+// - The console lock must be held when calling this routine.
+void SCREEN_INFORMATION::s_InsertScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo)
+{
+    ASSERT(g_ciConsoleInformation.IsConsoleLocked());
+
+    pScreenInfo->Next = g_ciConsoleInformation.ScreenBuffers;
+    g_ciConsoleInformation.ScreenBuffers = pScreenInfo;
+}
+
+// Routine Description:
+// - This routine removes the screen buffer pointer from the console's list of screen buffers.
+// Arguments:
+// - Console - Pointer to console information structure.
+// - ScreenInfo - Pointer to screen information structure.
+// Return Value:
+// Note:
+// - The console lock must be held when calling this routine.
+void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo)
+{
+    if (pScreenInfo == g_ciConsoleInformation.ScreenBuffers)
+    {
+        g_ciConsoleInformation.ScreenBuffers = pScreenInfo->Next;
+    }
+    else
+    {
+        PSCREEN_INFORMATION Cur = g_ciConsoleInformation.ScreenBuffers;
+        PSCREEN_INFORMATION Prev = Cur;
+        while (Cur != nullptr)
+        {
+            if (pScreenInfo == Cur)
+            {
+                break;
+            }
+
+            Prev = Cur;
+            Cur = Cur->Next;
+        }
+
+        ASSERT(Cur != nullptr);
+        __analysis_assume(Cur != nullptr);
+        Prev->Next = Cur->Next;
+    }
+
+    if (pScreenInfo == g_ciConsoleInformation.CurrentScreenBuffer &&
+        g_ciConsoleInformation.ScreenBuffers != g_ciConsoleInformation.CurrentScreenBuffer)
+    {
+        if (g_ciConsoleInformation.ScreenBuffers != nullptr)
+        {
+            SetActiveScreenBuffer(g_ciConsoleInformation.ScreenBuffers);
+        }
+        else
+        {
+            g_ciConsoleInformation.CurrentScreenBuffer = nullptr;
+        }
+    }
+
+    delete pScreenInfo;
+}
+
 #pragma endregion
 
 #pragma region Output State Machine
@@ -179,7 +245,7 @@ void SCREEN_INFORMATION::_FreeOutputStateMachine()
     {
         if (_psiAlternateBuffer != nullptr)
         {
-            RemoveScreenBuffer(_psiAlternateBuffer);
+            s_RemoveScreenBuffer(_psiAlternateBuffer);
         }
         if (_pStateMachine != nullptr)
         {
@@ -1801,7 +1867,7 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize, pfiExistingFont, WindowSize, Fill, Fill, CURSOR_SMALL_SIZE, ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
     {
-        InsertScreenBuffer(*ppsiNewScreenBuffer);
+        s_InsertScreenBuffer(*ppsiNewScreenBuffer);
         
         // delete the alt buffer's state machine. We don't want it.
         (*ppsiNewScreenBuffer)->_FreeOutputStateMachine(); // this has to be done before we give it a main buffer
@@ -1848,7 +1914,7 @@ NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
 
         if (psiOldAltBuffer != nullptr)
         {
-            ::RemoveScreenBuffer(psiOldAltBuffer); // this will also delete the old alt buffer
+            s_RemoveScreenBuffer(psiOldAltBuffer); // this will also delete the old alt buffer
         }
         // hook it up to our state machine, this needs to be done after deleting the old alt buffer,
         // otherwise deleting the old alt buffer will reattach the GetSet to the main buffer.
@@ -1896,7 +1962,7 @@ NTSTATUS SCREEN_INFORMATION::UseMainScreenBuffer()
             
             SCREEN_INFORMATION* psiAlt = psiMain->_psiAlternateBuffer;
             psiMain->_psiAlternateBuffer = nullptr;
-            ::RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer 
+            s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer 
             // deleting the alt buffer will give the GetSet back to it's main
 
             // Tell the VT MouseInput handler that we're in the main buffer now

@@ -1,5 +1,10 @@
 #pragma once 
 
+// input handle flags
+#define HANDLE_CLOSING 1
+#define HANDLE_INPUT_PENDING 2
+#define HANDLE_MULTI_LINE_INPUT 4
+
 class INPUT_READ_HANDLE_DATA
 {
 public:

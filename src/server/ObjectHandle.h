@@ -19,7 +19,7 @@ Revision History:
 
 #define CONSOLE_INPUT_HANDLE           0x00000001
 #define CONSOLE_OUTPUT_HANDLE          0x00000002
-#define CONSOLE_GRAPHICS_OUTPUT_HANDLE 0x00000004
+//#define CONSOLE_GRAPHICS_OUTPUT_HANDLE 0x00000004
 
 class INPUT_READ_HANDLE_DATA;
 
@@ -36,8 +36,10 @@ typedef struct _CONSOLE_HANDLE_DATA
                          _In_ ULONG const ulShareAccess,
                          _In_ PVOID const pvClientPointer);
 
-    INPUT_INFORMATION* GetInputBuffer() const;
-    SCREEN_INFORMATION* GetScreenBuffer() const;
+    HRESULT GetInputBuffer(_In_ const ACCESS_MASK amRequested,
+                           _Out_ INPUT_INFORMATION** const ppInputInfo) const;
+    HRESULT GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
+                            _Out_ SCREEN_INFORMATION** const ppScreenInfo) const;
 
     INPUT_READ_HANDLE_DATA* GetClientInput() const;
 
@@ -46,18 +48,20 @@ typedef struct _CONSOLE_HANDLE_DATA
     bool IsWriteAllowed() const;
     bool IsWriteShared() const;
 
-    NTSTATUS DereferenceIoHandle(_In_ const ULONG ulHandleType,
-                                 _In_ const ACCESS_MASK amRequested);
-
     // TODO: Temporary public access to types...
     bool IsInputHandle() const
     {
         return _IsInput();
     }
 
+    HRESULT CloseHandle();
+
 private:
     bool _IsInput() const;
     bool _IsOutput() const;
+
+    HRESULT _CloseInputHandle();
+    HRESULT _CloseOutputHandle();
 
     ULONG const _ulHandleType;
     ACCESS_MASK const _amAccess;

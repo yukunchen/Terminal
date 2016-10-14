@@ -134,85 +134,6 @@ ErrorExit3:
     return Status;
 }
 
-void ConsoleCloseHandle(_In_ CONSOLE_HANDLE_DATA* const pClose)
-{
-    if (pClose->IsInputHandle())
-    {
-        // TODO: Fix error handling
-        CloseInputHandle(pClose);
-    }
-    else
-    {
-        // TODO: Fix error handling
-        CloseOutputHandle(pClose);
-    }
-}
-
-// Routine Description:
-// - This routine inserts the screen buffer pointer into the console's list of screen buffers.
-// Arguments:
-// - Console - Pointer to console information structure.
-// - ScreenInfo - Pointer to screen information structure.
-// Return Value:
-// Note:
-// - The console lock must be held when calling this routine.
-void InsertScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo)
-{
-    ASSERT(g_ciConsoleInformation.IsConsoleLocked());
-
-    pScreenInfo->Next = g_ciConsoleInformation.ScreenBuffers;
-    g_ciConsoleInformation.ScreenBuffers = pScreenInfo;
-}
-
-// Routine Description:
-// - This routine removes the screen buffer pointer from the console's list of screen buffers.
-// Arguments:
-// - Console - Pointer to console information structure.
-// - ScreenInfo - Pointer to screen information structure.
-// Return Value:
-// Note:
-// - The console lock must be held when calling this routine.
-void RemoveScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo)
-{
-    if (pScreenInfo == g_ciConsoleInformation.ScreenBuffers)
-    {
-        g_ciConsoleInformation.ScreenBuffers = pScreenInfo->Next;
-    }
-    else
-    {
-        PSCREEN_INFORMATION Cur = g_ciConsoleInformation.ScreenBuffers;
-        PSCREEN_INFORMATION Prev = Cur;
-        while (Cur != nullptr)
-        {
-            if (pScreenInfo == Cur)
-            {
-                break;
-            }
-
-            Prev = Cur;
-            Cur = Cur->Next;
-        }
-
-        ASSERT(Cur != nullptr);
-        __analysis_assume(Cur != nullptr);
-        Prev->Next = Cur->Next;
-    }
-
-    if (pScreenInfo == g_ciConsoleInformation.CurrentScreenBuffer && g_ciConsoleInformation.ScreenBuffers != g_ciConsoleInformation.CurrentScreenBuffer)
-    {
-        if (g_ciConsoleInformation.ScreenBuffers != nullptr)
-        {
-            SetActiveScreenBuffer(g_ciConsoleInformation.ScreenBuffers);
-        }
-        else
-        {
-            g_ciConsoleInformation.CurrentScreenBuffer = nullptr;
-        }
-    }
-
-    delete pScreenInfo;
-}
-
 PCONSOLE_PROCESS_HANDLE AllocProcessData(_In_ CLIENT_ID const * const ClientId,
                                          _In_ ULONG const ulProcessGroupId,
                                          _In_opt_ PCONSOLE_PROCESS_HANDLE pParentProcessData)
@@ -276,12 +197,12 @@ void FreeProcessData(_In_ PCONSOLE_PROCESS_HANDLE pProcessData)
 
     if (pProcessData->InputHandle != nullptr)
     {
-        ConsoleCloseHandle(pProcessData->InputHandle);
+        pProcessData->InputHandle->CloseHandle();
     }
 
     if (pProcessData->OutputHandle != nullptr)
     {
-        ConsoleCloseHandle(pProcessData->OutputHandle);
+        pProcessData->OutputHandle->CloseHandle();
     }
 
     while (!IsListEmpty(&pProcessData->WaitBlockQueue))

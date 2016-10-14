@@ -120,11 +120,6 @@ private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
 };
 
-// input handle flags
-#define HANDLE_CLOSING 1
-#define HANDLE_INPUT_PENDING 2
-#define HANDLE_MULTI_LINE_INPUT 4
-
 #include "..\server\ProcessHandle.h"
 
 #include "..\server\WaitBlock.h"

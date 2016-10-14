@@ -291,3 +291,18 @@ void Utils::s_GetCurrentBufferEdges(_Out_ SMALL_RECT* const psrectEdges)
 {
     g_ciConsoleInformation.CurrentScreenBuffer->GetScreenEdges(psrectEdges);
 }
+
+NTSTATUS Utils::s_NtStatusFromHr(_In_ const HRESULT hr)
+{
+    switch (hr)
+    {
+    case S_OK:
+        return STATUS_SUCCESS;
+    case E_HANDLE:
+        return STATUS_INVALID_HANDLE;
+    case E_ACCESSDENIED:
+        return STATUS_ACCESS_DENIED;
+    default:
+        return STATUS_UNSUCCESSFUL;
+    }
+}

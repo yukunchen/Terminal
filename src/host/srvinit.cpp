@@ -924,7 +924,7 @@ PCONSOLE_API_MSG ConsoleCreateObject(_In_ PCONSOLE_API_MSG Message, _Inout_ CONS
 
     if (FAILED(g_pDeviceComm->CompleteIo(&Message->Complete)))
     {
-        ConsoleCloseHandle(Handle);
+        Handle->CloseHandle();
     }
 
     UnlockConsole();

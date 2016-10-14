@@ -132,5 +132,5 @@ BOOL IsConsoleFullWidth(_In_ HDC hDC, _In_ DWORD CodePage, _In_ WCHAR wch);
 
 #include "..\inc\contsf.h"
 
-// TODO: Find a better way of doing this.
-#define NTSTATUS_FROM_HRESULT(Foo) (Foo)
+
+#define NTSTATUS_FROM_HRESULT(Foo) (Utils::s_NtStatusFromHr((Foo)))
