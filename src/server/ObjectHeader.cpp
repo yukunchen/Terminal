@@ -34,14 +34,14 @@ ConsoleObjectHeader::ConsoleObjectHeader() :
 HRESULT ConsoleObjectHeader::AllocateIoHandle(_In_ const ULONG ulHandleType,
                                               _In_ const ACCESS_MASK amDesired,
                                               _In_ const ULONG ulShareMode,
-                                              _Out_ CONSOLE_HANDLE_DATA** const ppOut)
+                                              _Out_ ConsoleHandleData** const ppOut)
 {
     try
     {
         // Allocate all necessary state.
         // TODO: WARNING. This currently relies on the ConsoleObjectHeader being the FIRST portion of the console object
         //       structure or class. If it is not the first item, the cast back to the object won't work anymore.
-        std::unique_ptr<CONSOLE_HANDLE_DATA> pHandleData = std::make_unique<CONSOLE_HANDLE_DATA>(ulHandleType,
+        std::unique_ptr<ConsoleHandleData> pHandleData = std::make_unique<ConsoleHandleData>(ulHandleType,
                                                                                                  amDesired,
                                                                                                  ulShareMode,
                                                                                                  this); 
@@ -85,7 +85,7 @@ HRESULT ConsoleObjectHeader::AllocateIoHandle(_In_ const ULONG ulHandleType,
     return S_OK;
 }
 
-HRESULT ConsoleObjectHeader::FreeIoHandle(_In_ CONSOLE_HANDLE_DATA* const pFree)
+HRESULT ConsoleObjectHeader::FreeIoHandle(_In_ ConsoleHandleData* const pFree)
 {
     assert(_ulOpenCount > 0);
     _ulOpenCount -= 1;

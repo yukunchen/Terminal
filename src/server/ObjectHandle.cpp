@@ -12,7 +12,7 @@
 #include "..\host\input.h"
 #include "..\host\screenInfo.hpp"
 
-_CONSOLE_HANDLE_DATA::_CONSOLE_HANDLE_DATA(_In_ ULONG const ulHandleType,
+ConsoleHandleData::ConsoleHandleData(_In_ ULONG const ulHandleType,
                                            _In_ ACCESS_MASK const amAccess,
                                            _In_ ULONG const ulShareAccess,
                                            _In_ PVOID const pvClientPointer) :
@@ -29,32 +29,32 @@ _CONSOLE_HANDLE_DATA::_CONSOLE_HANDLE_DATA(_In_ ULONG const ulHandleType,
     }
 }
 
-bool _CONSOLE_HANDLE_DATA::_IsInput() const
+bool ConsoleHandleData::_IsInput() const
 {
     return IsFlagSet(_ulHandleType, CONSOLE_INPUT_HANDLE);
 }
 
-bool _CONSOLE_HANDLE_DATA::_IsOutput() const
+bool ConsoleHandleData::_IsOutput() const
 {
     return IsFlagSet(_ulHandleType, CONSOLE_OUTPUT_HANDLE);
 }
 
-bool _CONSOLE_HANDLE_DATA::IsReadAllowed() const
+bool ConsoleHandleData::IsReadAllowed() const
 {
     return IsFlagSet(_amAccess, GENERIC_READ);
 }
 
-bool _CONSOLE_HANDLE_DATA::IsReadShared() const
+bool ConsoleHandleData::IsReadShared() const
 {
     return IsFlagSet(_ulShareAccess, FILE_SHARE_READ);
 }
 
-bool _CONSOLE_HANDLE_DATA::IsWriteAllowed() const
+bool ConsoleHandleData::IsWriteAllowed() const
 {
     return IsFlagSet(_amAccess, GENERIC_WRITE);
 }
 
-bool _CONSOLE_HANDLE_DATA::IsWriteShared() const
+bool ConsoleHandleData::IsWriteShared() const
 {
     return IsFlagSet(_ulShareAccess, FILE_SHARE_WRITE);
 }
@@ -73,7 +73,7 @@ bool _CONSOLE_HANDLE_DATA::IsWriteShared() const
 // - HandleData - The HANDLE containing the pointer to the input buffer, typically from an API call.
 // Return Value:
 // - The Input Buffer that this handle points to
-HRESULT _CONSOLE_HANDLE_DATA::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
+HRESULT ConsoleHandleData::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
                                              _Out_ INPUT_INFORMATION** const ppInputInfo) const
 {
     *ppInputInfo = nullptr;
@@ -92,7 +92,7 @@ HRESULT _CONSOLE_HANDLE_DATA::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
 // - HandleData - The HANDLE containing the pointer to the screen buffer, typically from an API call.
 // Return Value:
 // - The Screen Buffer that this handle points to.
-HRESULT _CONSOLE_HANDLE_DATA::GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
+HRESULT ConsoleHandleData::GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
                                               _Out_ SCREEN_INFORMATION** const ppScreenInfo) const
 {
     *ppScreenInfo = nullptr;
@@ -105,13 +105,13 @@ HRESULT _CONSOLE_HANDLE_DATA::GetScreenBuffer(_In_ const ACCESS_MASK amRequested
     return S_OK;
 }
 
-INPUT_READ_HANDLE_DATA* _CONSOLE_HANDLE_DATA::GetClientInput() const
+INPUT_READ_HANDLE_DATA* ConsoleHandleData::GetClientInput() const
 {
     return _pClientInput;
 }
 
 // TODO: Consider making this a part of the destructor.
-HRESULT _CONSOLE_HANDLE_DATA::CloseHandle()
+HRESULT ConsoleHandleData::CloseHandle()
 {
     if (_IsInput())
     {
@@ -138,7 +138,7 @@ HRESULT _CONSOLE_HANDLE_DATA::CloseHandle()
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT _CONSOLE_HANDLE_DATA::_CloseInputHandle()
+HRESULT ConsoleHandleData::_CloseInputHandle()
 {
     INPUT_INFORMATION* pInputInfo = static_cast<INPUT_INFORMATION*>(_pvClientPointer);
     INPUT_READ_HANDLE_DATA* pReadHandleData = GetClientInput();
@@ -191,7 +191,7 @@ HRESULT _CONSOLE_HANDLE_DATA::_CloseInputHandle()
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT _CONSOLE_HANDLE_DATA::_CloseOutputHandle()
+HRESULT ConsoleHandleData::_CloseOutputHandle()
 {
     SCREEN_INFORMATION* pScreenInfo = static_cast<SCREEN_INFORMATION*>(_pvClientPointer);
     

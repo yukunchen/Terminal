@@ -29,9 +29,10 @@ typedef _INPUT_INFORMATION *PINPUT_INFORMATION;
 
 class SCREEN_INFORMATION;
 
-typedef struct _CONSOLE_HANDLE_DATA
+class ConsoleHandleData
 {
-    _CONSOLE_HANDLE_DATA(_In_ ULONG const ulHandleType,
+public:
+    ConsoleHandleData(_In_ ULONG const ulHandleType,
                          _In_ ACCESS_MASK const amAccess,
                          _In_ ULONG const ulShareAccess,
                          _In_ PVOID const pvClientPointer);
@@ -68,5 +69,4 @@ private:
     ULONG const _ulShareAccess;
     PVOID const _pvClientPointer; // This will be a pointer to a SCREEN_INFORMATION or INPUT_INFORMATION object.
     INPUT_READ_HANDLE_DATA* _pClientInput;
-
-} CONSOLE_HANDLE_DATA, *PCONSOLE_HANDLE_DATA;
+};

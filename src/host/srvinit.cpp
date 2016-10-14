@@ -877,7 +877,7 @@ PCONSOLE_API_MSG ConsoleCreateObject(_In_ PCONSOLE_API_MSG Message, _Inout_ CONS
         }
     }
 
-    CONSOLE_HANDLE_DATA* Handle = nullptr;
+    ConsoleHandleData* Handle = nullptr;
     // Check the requested type.
     switch (CreateInformation->ObjectType)
     {

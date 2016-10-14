@@ -27,6 +27,6 @@ typedef struct _CONSOLE_PROCESS_HANDLE
     CLIENT_ID ClientId;
     BOOL RootProcess;
     LIST_ENTRY WaitBlockQueue;
-    CONSOLE_HANDLE_DATA* InputHandle;
-    CONSOLE_HANDLE_DATA* OutputHandle;
+    ConsoleHandleData* InputHandle;
+    ConsoleHandleData* OutputHandle;
 } CONSOLE_PROCESS_HANDLE, *PCONSOLE_PROCESS_HANDLE;

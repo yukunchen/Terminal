@@ -1711,7 +1711,7 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
 
     PCONSOLE_PROCESS_HANDLE const ProcessData = GetMessageProcess(m);
     
-    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    ConsoleHandleData* HandleData = GetMessageObject(m);
     INPUT_INFORMATION* pInputInfo;
     Status = NTSTATUS_FROM_HRESULT(HandleData->GetInputBuffer(GENERIC_READ, &pInputInfo));
     if (!NT_SUCCESS(Status))
@@ -1795,7 +1795,7 @@ NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
     }
 
     // Make sure we have a valid screen buffer.
-    PCONSOLE_HANDLE_DATA HandleData = GetMessageObject(m);
+    ConsoleHandleData* HandleData = GetMessageObject(m);
     SCREEN_INFORMATION* pScreenInfo;
     Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
     if (NT_SUCCESS(Status))

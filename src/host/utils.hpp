@@ -22,7 +22,7 @@ Author(s):
 #define RECT_HEIGHT(x) ((x)->bottom - (x)->top)
 
 PCONSOLE_PROCESS_HANDLE GetMessageProcess(_In_ PCCONSOLE_API_MSG pMessage);
-CONSOLE_HANDLE_DATA* GetMessageObject(_In_ PCCONSOLE_API_MSG pMessage);
+ConsoleHandleData* GetMessageObject(_In_ PCCONSOLE_API_MSG pMessage);
 void SetReplyStatus(_Inout_ PCCONSOLE_API_MSG pMessage, _In_ const NTSTATUS Status);
 void SetReplyInformation(_Inout_ PCCONSOLE_API_MSG pMessage, _In_ ULONG_PTR pInformation);
 short CalcWindowSizeX(_In_ const SMALL_RECT * const pRect);
