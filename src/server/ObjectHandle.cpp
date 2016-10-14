@@ -169,14 +169,14 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
 
     delete pReadHandleData;
 
-    pInputInfo->Header.FreeIoHandle(this);
+    LOG_IF_FAILED(pInputInfo->Header.FreeIoHandle(this));
 
     if (!pInputInfo->Header.HasAnyOpenHandles())
     {
         ReinitializeInputBuffer(pInputInfo);
     }
 
-    return STATUS_SUCCESS;
+    return S_OK;
 }
 
 // Routine Description:
@@ -195,12 +195,12 @@ HRESULT ConsoleHandleData::_CloseOutputHandle()
 {
     SCREEN_INFORMATION* pScreenInfo = static_cast<SCREEN_INFORMATION*>(_pvClientPointer);
     
-    pScreenInfo->Header.FreeIoHandle(this);
+    LOG_IF_FAILED(pScreenInfo->Header.FreeIoHandle(this));
     if (!pScreenInfo->Header.HasAnyOpenHandles())
     {
         SCREEN_INFORMATION::s_RemoveScreenBuffer(pScreenInfo);
     }
 
-    return STATUS_SUCCESS;
+    return S_OK;
 
 }
