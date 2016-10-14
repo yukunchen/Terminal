@@ -22,7 +22,7 @@ using namespace WEX::Common;
 // 4) Furthermore, if there is only one more buffer at the end of the row, it is impossible
 //    to put a DBCS char there; instead, an extra blank space has to be temporarily inserted,
 //    and then the DBCS char will be put to the next row. Hopefully Console won't be confused
-//    e.g. when moving cursor around this invivislbe blank space
+//    e.g. when moving cursor around this invisible blank space
 //
 const WCHAR c_wszLoremIpsum[] = L"きABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789き";
 const WCHAR c_wchNewLine = L'\n';
