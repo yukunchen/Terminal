@@ -48,9 +48,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     ZeroMemory((void*)&ProcessHandleList, sizeof(ProcessHandleList));
     InitializeListHead(&g_ciConsoleInformation.ProcessHandleList);
 
-    ZeroMemory((void*)&OutputQueue, sizeof(OutputQueue));
-    InitializeListHead(&g_ciConsoleInformation.OutputQueue);
-
     ZeroMemory((void*)&CommandHistoryList, sizeof(CommandHistoryList));
     InitializeListHead(&g_ciConsoleInformation.CommandHistoryList);
 
@@ -73,7 +70,7 @@ CONSOLE_INFORMATION::~CONSOLE_INFORMATION()
 
 bool CONSOLE_INFORMATION::IsConsoleLocked() const
 {
-    return _csConsoleLock.OwningThread == GetCurrentThread();
+    return _csConsoleLock.OwningThread == (HANDLE)GetCurrentThreadId();
 }
 
 #pragma prefast(suppress:26135, "Adding lock annotation spills into entire project. Future work.")

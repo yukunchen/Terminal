@@ -255,14 +255,12 @@ VOID PrepareReadConsoleCompletion(_Inout_ PCONSOLE_API_MSG Message)
 // - It is called in the context of the writing thread.
 // - It will be called at most once per read.?
 // Arguments:
-// - WaitQueue - pointer to queue containing wait block
 // - WaitReplyMessage - Pointer to reply message to return to dll whenread is completed.
 // - RawReadData - pointer to data saved in ReadChars
 // - SatisfyParameter - Flags.
 // - ThreadDying - Indicates whether the thread (and process) is exiting.
 // Return Value:
-BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
-                        _In_ PCONSOLE_API_MSG pWaitReplyMessage,
+BOOL RawReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                         _In_ PVOID pvWaitParameter,
                         _In_ PVOID pvSatisfyParameter,
                         _In_ BOOL fThreadDying)
@@ -1159,15 +1157,13 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
 // - It is called in the context of the writing thread.
 // - It may be called more than once.
 // Arguments:
-// - WaitQueue - pointer to queue containing wait block
 // - WaitReplyMessage - pointer to reply message
 // - CookedReadData - pointer to data saved in ReadChars
 // - SatisfyParameter - if this routine is called because a ctrl-c or ctrl-break was seen, this argument
 //                      contains CONSOLE_CTRL_SEEN. otherwise it contains nullptr.
 // - ThreadDying - Indicates if the owning thread (and process) is exiting.
 // Return Value:
-BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
-                           _In_ PCONSOLE_API_MSG pWaitReplyMessage,
+BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                            _In_ PCOOKED_READ_DATA pCookedReadData,
                            _In_ void * const pvSatisfyParameter,
                            _In_ const BOOL fThreadDying)
@@ -1774,7 +1770,7 @@ VOID UnblockWriteConsole(_In_ const DWORD dwReason)
     if (AreAllFlagsClear(g_ciConsoleInformation.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         // There is no longer any reason to suspend output, so unblock it.
-        ConsoleNotifyWait(&g_ciConsoleInformation.OutputQueue, TRUE, nullptr);
+        g_ciConsoleInformation.OutputQueue.ConsoleNotifyWait(TRUE, nullptr);
     }
 }
 
@@ -1814,8 +1810,7 @@ NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
     return Status;
 }
 
-BOOL WriteConsoleWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
-                             _In_ PCONSOLE_API_MSG pWaitReplyMessage,
+BOOL WriteConsoleWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                              _In_ PVOID pvWaitParameter,
                              _In_ PVOID /*pvSatisfyParameter*/,
                              _In_ BOOL fThreadDying)

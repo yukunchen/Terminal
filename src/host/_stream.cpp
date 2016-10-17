@@ -863,7 +863,7 @@ NTSTATUS DoWriteConsole(_In_ PCONSOLE_API_MSG m, _In_ PSCREEN_INFORMATION pScree
         memmove(TransBuffer, m->State.TransBuffer, a->NumBytes);
         m->State.TransBuffer = TransBuffer;
         m->State.StackBuffer = FALSE;
-        if (!ConsoleCreateWait(&g_ciConsoleInformation.OutputQueue, WriteConsoleWaitRoutine, m, pScreenInfo))
+        if (!ConsoleWaitQueue::s_ConsoleCreateWait(WriteConsoleWaitRoutine, m, pScreenInfo))
         {
             delete[] TransBuffer;
             m->State.TransBuffer = nullptr;

@@ -82,8 +82,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
 //                      otherwise it contains nullptr.
 // - ThreadDying - Indicates if the owning thread (and process) is exiting.
 // Return Value:
-BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY pWaitQueue,
-                           _In_ PCONSOLE_API_MSG pWaitReplyMessage,
+BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                            _In_ PCOOKED_READ_DATA pCookedReadData,
                            _In_ void * const pvSatisfyParameter,
                            _In_ const BOOL fThreadDying);
@@ -105,8 +104,7 @@ VOID UnblockWriteConsole(_In_ const DWORD dwReason);
 // -  This routine writes characters to the output stream.
 NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 
-BOOL WriteConsoleWaitRoutine(_In_ PLIST_ENTRY pWaitQueue,
-                             _In_ PCONSOLE_API_MSG pWaitReplyMessage,
+BOOL WriteConsoleWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                              _In_ PVOID pvWaitParameter,
                              _In_ PVOID pvSatisfyParameter,
                              _In_ BOOL fThreadDying);

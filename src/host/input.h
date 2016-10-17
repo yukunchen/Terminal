@@ -40,7 +40,7 @@ typedef struct _INPUT_INFORMATION
     ULONG_PTR In;   // ptr to next free event
     ULONG_PTR Out;  // ptr to next available event
     ULONG_PTR Last; // ptr to end + 1 of buffer
-    LIST_ENTRY ReadWaitQueue;
+    ConsoleWaitQueue WaitQueue; // formerly ReadWaitQueue
     struct
     {
         DWORD Disable:1;    // High   : specifies input code page or enable/disable in NLS state

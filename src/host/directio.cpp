@@ -206,8 +206,7 @@ ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG Num
 // - SatisfyParameter - Flags.
 // - ThreadDying - Indicates if the thread (and process) is exiting.
 // Return Value:
-BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/, 
-                           _In_ PCONSOLE_API_MSG WaitReplyMessage, 
+BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage, 
                            _In_ PVOID WaitParameter, 
                            _In_ PVOID SatisfyParameter, 
                            _In_ BOOL ThreadDying)

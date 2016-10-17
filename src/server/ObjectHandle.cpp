@@ -8,6 +8,7 @@
 
 #include "ObjectHandle.h"
 
+#include "..\host\globals.h"
 #include "..\host\inputReadHandleData.h"
 #include "..\host\input.h"
 #include "..\host\screenInfo.hpp"
@@ -136,6 +137,32 @@ HRESULT ConsoleHandleData::GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
 }
 
 // Routine Description:
+// - Retrieves the wait queue associated with the given object held by this handle.
+// Arguments:
+// - ppWaitQueue - On success, filled with a pointer to the desired queue
+// Return Value:
+// - HRESULT S_OK or suitable error.
+HRESULT ConsoleHandleData::GetWaitQueue(_Out_ ConsoleWaitQueue** const ppWaitQueue) const
+{
+    if (_IsInput())
+    {
+        INPUT_INFORMATION* const pObj = static_cast<INPUT_INFORMATION*>(_pvClientPointer);
+        *ppWaitQueue = &pObj->WaitQueue;
+        return S_OK;
+    }
+    else if (_IsOutput())
+    {
+        // TODO: shouldn't the output queue be per output object target, not global?
+        *ppWaitQueue = &g_ciConsoleInformation.OutputQueue;
+        return S_OK;
+    }
+    else
+    {
+        return E_UNEXPECTED;
+    }
+}
+
+// Routine Description:
 // - For input buffers only, retrieves an extra handle data structure used to save some information
 //   across multiple reads from the same handle.
 // Arguments:
@@ -204,7 +231,7 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
         pReadHandleData->UnlockReadCount();
         SetFlag(pReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing);
 
-        ConsoleNotifyWait(&pInputInfo->ReadWaitQueue, TRUE, nullptr);
+        pInputInfo->WaitQueue.ConsoleNotifyWait(TRUE, nullptr);
 
         pReadHandleData->LockReadCount();
     }

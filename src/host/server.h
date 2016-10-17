@@ -24,6 +24,8 @@ Revision History:
 #include "..\terminal\adapter\terminalInput.hpp"
 #include "..\terminal\adapter\MouseInput.hpp"
 
+#include "..\server\WaitQueue.h"
+
 // Flags flags
 #define CONSOLE_IS_ICONIC               0x00000001
 #define CONSOLE_OUTPUT_SUSPENDED        0x00000002
@@ -74,7 +76,7 @@ public:
     HWND hWnd;
     HMENU hMenu;    // handle to system menu
     HMENU hHeirMenu;    // handle to menu we append to system menu
-    LIST_ENTRY OutputQueue;
+    ConsoleWaitQueue OutputQueue;
     LIST_ENTRY CommandHistoryList;
     LIST_ENTRY ExeAliasList;
     UINT NumCommandHistories;
@@ -132,12 +134,7 @@ private:
 
 #include "..\server\ObjectHandle.h"
 
-BOOL ConsoleCreateWait(_In_ PLIST_ENTRY pWaitQueue,
-                       _In_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
-                       _Inout_ PCONSOLE_API_MSG pWaitReplyMessage,
-                       _In_ PVOID pvWaitParameter);
-BOOL ConsoleNotifyWaitBlock(_In_ PCONSOLE_WAIT_BLOCK pWaitBlock, _In_ PLIST_ENTRY pWaitQueue, _In_ PVOID pvSatisfyParameter, _In_ BOOL fThreadDying);
-BOOL ConsoleNotifyWait(_In_ PLIST_ENTRY pWaitQueue, _In_ const BOOL fSatisfyAll, _In_ PVOID pvSatisfyParameter);
+#include "..\server\WaitQueue.h"
 
 NTSTATUS ReadMessageInput(_In_ PCONSOLE_API_MSG pMessage, _In_ const ULONG ulOffset, _Out_writes_bytes_(cbSize) PVOID pvBuffer, _In_ const ULONG cbSize);
 NTSTATUS GetAugmentedOutputBuffer(_Inout_ PCONSOLE_API_MSG pMessage,

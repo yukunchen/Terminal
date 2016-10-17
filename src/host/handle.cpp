@@ -161,8 +161,6 @@ PCONSOLE_PROCESS_HANDLE AllocProcessData(_In_ CLIENT_ID const * const ClientId,
         ProcessData->ClientId = *ClientId;
         ProcessData->ProcessGroupId = ulProcessGroupId;
 
-        InitializeListHead(&ProcessData->WaitBlockQueue);
-
         #pragma warning(push)
         // pointer truncation due to using the HANDLE type to store a DWORD process ID.
         // We're using the HANDLE type in the public ClientId field to store the process ID when we should
@@ -205,14 +203,7 @@ void FreeProcessData(_In_ PCONSOLE_PROCESS_HANDLE pProcessData)
         pProcessData->OutputHandle->CloseHandle();
     }
 
-    while (!IsListEmpty(&pProcessData->WaitBlockQueue))
-    {
-        PCONSOLE_WAIT_BLOCK WaitBlock;
-
-        WaitBlock = CONTAINING_RECORD(pProcessData->WaitBlockQueue.Flink, CONSOLE_WAIT_BLOCK, ProcessLink);
-
-        ConsoleNotifyWaitBlock(WaitBlock, nullptr, nullptr, TRUE);
-    }
+    pProcessData->WaitBlockQueue.FreeBlocks();
 
     if (pProcessData->ProcessHandle != nullptr)
     {

@@ -17,6 +17,7 @@ Revision History:
 #pragma once
 
 #include "ObjectHandle.h"
+#include "WaitQueue.h"
 
 typedef struct _CONSOLE_PROCESS_HANDLE
 {
@@ -26,7 +27,7 @@ typedef struct _CONSOLE_PROCESS_HANDLE
     ULONG ProcessGroupId;
     CLIENT_ID ClientId;
     BOOL RootProcess;
-    LIST_ENTRY WaitBlockQueue;
+    ConsoleWaitQueue WaitBlockQueue;
     ConsoleHandleData* InputHandle;
     ConsoleHandleData* OutputHandle;
 } CONSOLE_PROCESS_HANDLE, *PCONSOLE_PROCESS_HANDLE;

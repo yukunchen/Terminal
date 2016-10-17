@@ -16,17 +16,32 @@ Revision History:
 
 #pragma once
 
-typedef BOOL(*CONSOLE_WAIT_ROUTINE) (_In_ PLIST_ENTRY pWaitQueue,
-                                     _In_ PCONSOLE_API_MSG pWaitReplyMessage,
+#include "..\host\conapi.h"
+
+class ConsoleWaitQueue;
+
+typedef BOOL(*CONSOLE_WAIT_ROUTINE) (_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                                      _In_ PVOID pvWaitParameter,
                                      _In_ PVOID pvSatisfyParameter,
                                      _In_ BOOL fThreadDying);
 
 typedef struct _CONSOLE_WAIT_BLOCK
 {
-    LIST_ENTRY Link;
-    LIST_ENTRY ProcessLink;
+public:
     PVOID WaitParameter;
     CONSOLE_WAIT_ROUTINE WaitRoutine;
     CONSOLE_API_MSG WaitReplyMessage;
+
+    _CONSOLE_WAIT_BLOCK(_In_ ConsoleWaitQueue* const pProcessQueue,
+                        _In_ ConsoleWaitQueue* const pObjectQueue);
+    ~_CONSOLE_WAIT_BLOCK();
+    
+
+private:
+    ConsoleWaitQueue* const _pProcessQueue;
+    std::_List_const_iterator<std::_List_val<std::_List_simple_types<_CONSOLE_WAIT_BLOCK*>>> _itProcessQueue;
+
+    ConsoleWaitQueue* const _pObjectQueue;
+    std::_List_const_iterator<std::_List_val<std::_List_simple_types<_CONSOLE_WAIT_BLOCK*>>> _itObjectQueue;
+
 } CONSOLE_WAIT_BLOCK, *PCONSOLE_WAIT_BLOCK;

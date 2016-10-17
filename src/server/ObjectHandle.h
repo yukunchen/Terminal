@@ -25,6 +25,8 @@ typedef _INPUT_INFORMATION *PINPUT_INFORMATION;
 
 class SCREEN_INFORMATION;
 
+class ConsoleWaitQueue;
+
 class ConsoleHandleData
 {
 public:
@@ -37,6 +39,8 @@ public:
                            _Out_ INPUT_INFORMATION** const ppInputInfo) const;
     HRESULT GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
                             _Out_ SCREEN_INFORMATION** const ppScreenInfo) const;
+
+    HRESULT GetWaitQueue(_Out_ ConsoleWaitQueue** const ppWaitQueue) const;
 
     INPUT_READ_HANDLE_DATA* GetClientInput() const;
 

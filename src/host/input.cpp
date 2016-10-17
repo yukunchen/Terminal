@@ -127,8 +127,6 @@ NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ PINPUT_INFORMATION pInp
         return Status;
     }
 
-    InitializeListHead(&pInputInfo->ReadWaitQueue);
-
     // initialize buffer header
     pInputInfo->InputBufferSize = cEvents;
     pInputInfo->InputMode = ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT;
@@ -210,7 +208,7 @@ NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
             g_ciConsoleInformation.lpCookedReadData = (COOKED_READ_DATA*)WaitParameterBuffer;
         }
 
-        if (!ConsoleCreateWait(&pInputInfo->ReadWaitQueue, pfnWaitRoutine, pConsoleMsg, WaitParameterBuffer))
+        if (!ConsoleWaitQueue::s_ConsoleCreateWait(pfnWaitRoutine, pConsoleMsg, WaitParameterBuffer))
         {
             delete[] WaitParameterBuffer;
             g_ciConsoleInformation.lpCookedReadData = nullptr;
@@ -230,7 +228,7 @@ NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
 // - FALSE/nullptr - The operation failed.
 void WakeUpReadersWaitingForData(_In_ PINPUT_INFORMATION InputInformation)
 {
-    ConsoleNotifyWait(&InputInformation->ReadWaitQueue, FALSE, nullptr);
+    InputInformation->WaitQueue.ConsoleNotifyWait(FALSE, nullptr);
 }
 
 // Routine Description:
@@ -1517,7 +1515,7 @@ ULONG ConvertMouseButtonState(_In_ ULONG Flag, _In_ ULONG State)
 // - Flag - flag indicating whether ctrl-break or ctrl-c was input
 void TerminateRead(_Inout_ PINPUT_INFORMATION InputInfo, _In_ DWORD Flag)
 {
-    ConsoleNotifyWait(&InputInfo->ReadWaitQueue, TRUE, IntToPtr(Flag));
+    InputInfo->WaitQueue.ConsoleNotifyWait(TRUE, IntToPtr(Flag));
 }
 
 // Routine Description:
