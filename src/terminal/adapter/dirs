@@ -1,2 +1,2 @@
 DIRS=lib \
-     ut_adapter{!cs_xbox} \
+     ut_adapter \
