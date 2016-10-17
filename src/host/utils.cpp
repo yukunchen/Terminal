@@ -13,9 +13,9 @@ PCONSOLE_PROCESS_HANDLE GetMessageProcess(_In_ PCCONSOLE_API_MSG pMessage)
     return (PCONSOLE_PROCESS_HANDLE) pMessage->Descriptor.Process;
 }
 
-HANDLE GetMessageObject(_In_ PCCONSOLE_API_MSG pMessage)
+ConsoleHandleData* GetMessageObject(_In_ PCCONSOLE_API_MSG pMessage)
 {
-    return (HANDLE) pMessage->Descriptor.Object;
+    return (ConsoleHandleData*) pMessage->Descriptor.Object;
 }
 
 void SetReplyStatus(_Inout_ PCCONSOLE_API_MSG pMessage, _In_ const NTSTATUS Status)
@@ -43,33 +43,6 @@ short CalcCursorYOffsetInPixels(_In_ short const sFontSizeY, _In_ ULONG const ul
     // TODO: Note, we want to likely enforce that this isn't negative. 
     // Pretty sure there's not a valid case for negative offsets here.
     return (short)((sFontSizeY)-(ulSize));
-}
-
-bool IsFlagSet(_In_ DWORD const dwAllFlags, _In_ DWORD const dwFlagToTest)
-{
-    return ((dwAllFlags & dwFlagToTest) == dwFlagToTest);
-}
-
-void SetFlag(_Inout_ DWORD* const pdwAllFlags, _In_ DWORD const dwFlagToSet)
-{
-    *pdwAllFlags |= dwFlagToSet;
-}
-
-void UnsetFlag(_Inout_ DWORD* const pdwAllFlags, _In_ DWORD const dwFlagToUnset)
-{
-    *pdwAllFlags &= ~dwFlagToUnset;
-}
-
-void SetFlagBasedOnBool(_In_ bool const fCondition, _Inout_ DWORD* const pdwAllFlags, _In_ DWORD const dwFlag)
-{
-    if (fCondition)
-    {
-        SetFlag(pdwAllFlags, dwFlag);
-    }
-    else
-    {
-        UnsetFlag(pdwAllFlags, dwFlag);
-    }
 }
 
 WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwchEnd)

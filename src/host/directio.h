@@ -31,7 +31,7 @@ NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL R
 NTSTATUS SrvFillConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 NTSTATUS DoSrvFillConsoleOutput(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_FILLCONSOLEOUTPUT_MSG* pMsg);
 
-NTSTATUS ConsoleCreateScreenBuffer(_Out_ PHANDLE Handle,
+NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
                                    _In_ PCONSOLE_API_MSG Message,
                                    _In_ PCD_CREATE_OBJECT_INFORMATION Information,
                                    _In_ PCONSOLE_CREATESCREENBUFFER_MSG a);

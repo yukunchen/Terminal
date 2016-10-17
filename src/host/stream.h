@@ -37,7 +37,7 @@ Revision History:
 NTSTATUS GetChar(_In_ PINPUT_INFORMATION pInputInfo,
                  _Out_ PWCHAR pwchChar,
                  _In_ const BOOL fWait,
-                 _In_opt_ PCONSOLE_HANDLE_DATA pHandleData,
+                 _In_opt_ INPUT_READ_HANDLE_DATA* pHandleData,
                  _In_opt_ PCONSOLE_API_MSG pConsoleMessage,
                  _In_opt_ CONSOLE_WAIT_ROUTINE pWaitRoutine,
                  _In_opt_ PVOID pvWaitParameter,
@@ -111,31 +111,5 @@ BOOL WriteConsoleWaitRoutine(_In_ PLIST_ENTRY pWaitQueue,
                              _In_ PVOID pvSatisfyParameter,
                              _In_ BOOL fThreadDying);
 
-// Routine Description:
-// - This routine closes an input handle.  It decrements the input buffer's
-//   reference count.  If it goes to zero, the buffer is reinitialized.
-//   Otherwise, the handle is removed from sharing.
-// Arguments:
-// - ProcessData - Pointer to per process data.
-// - HandleData - Pointer to handle data structure.
-// - Handle - Handle to close.
-// Return Value:
-// Note:
-// - The console lock must be held when calling this routine.
-NTSTATUS CloseInputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData, _In_ const HANDLE hClose);
-
-// Routine Description:
-// - This routine closes an output handle.  It decrements the screen buffer's
-//   reference count.  If it goes to zero, the buffer is freed.  Otherwise,
-//   the handle is removed from sharing.
-// Arguments:
-// - ProcessData - Pointer to per process data.
-// - Console - Pointer to console information structure.
-// - HandleData - Pointer to handle data structure.
-// - Handle - Handle to close.
-// Return Value:
-// Note:
-// - The console lock must be held when calling this routine.
-NTSTATUS CloseOutputHandle(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const HANDLE hClose);
 
 NTSTATUS SrvCloseHandle(_In_ PCONSOLE_API_MSG m);

@@ -81,8 +81,9 @@ public:
     DWORD GetHotKey() const;
     void SetHotKey(_In_ const DWORD dwHotKey);
     
+    bool IsStartupTitleIsLinkNameSet() const;
+
     DWORD GetStartupFlags() const;
-    BOOL IsStartupFlagSet(_In_ const int Flag) const;
     void SetStartupFlags(_In_ const DWORD dwStartupFlags);
     void UnsetStartupFlag(_In_ DWORD const dwFlagToUnset);
     
@@ -206,7 +207,7 @@ private:
     bool _fRenderGridWorldwide;
 
     COLORREF _XtermColorTable[XTERM_COLOR_TABLE_SIZE];
-    void _InitXtermTableValue(_In_ const size_t iIndex, _In_ const byte bRed, _In_ const byte bGreen, _In_ const byte bBlue);
+    void _InitXtermTableValue(_In_ const size_t iIndex, _In_ const BYTE bRed, _In_ const BYTE bGreen, _In_ const BYTE bBlue);
 
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;

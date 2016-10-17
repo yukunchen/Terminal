@@ -889,11 +889,11 @@ NTSTATUS DoWriteConsole(_In_ PCONSOLE_API_MSG m, _In_ PSCREEN_INFORMATION pScree
 NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
                            _Inout_ PBOOL ReplyPending,
                            _Inout_ PVOID BufPtr,
-                           _In_ PCONSOLE_HANDLE_DATA HandleData)
+                           _In_ SCREEN_INFORMATION* const pScreenInfo)
 {
     NTSTATUS Status = STATUS_SUCCESS;
     PCONSOLE_WRITECONSOLE_MSG const a = &m->u.consoleMsgL1.WriteConsole;
-    PSCREEN_INFORMATION const ScreenInfo = GetScreenBufferFromHandle(HandleData);
+    PSCREEN_INFORMATION const ScreenInfo = pScreenInfo->GetActiveBuffer();
     std::unique_ptr<wchar_t[]> wideCharBuffer {nullptr};
     static Utf8ToWideCharParser parser { g_ciConsoleInformation.OutputCP };
     // update current codepage in case it was changed from last time

@@ -16,20 +16,18 @@ Author(s):
 #include "conapi.h"
 #include "server.h"
 
+#include "..\server\ObjectHandle.h"
+
 #define RECT_WIDTH(x) ((x)->right - (x)->left)
 #define RECT_HEIGHT(x) ((x)->bottom - (x)->top)
 
 PCONSOLE_PROCESS_HANDLE GetMessageProcess(_In_ PCCONSOLE_API_MSG pMessage);
-HANDLE GetMessageObject(_In_ PCCONSOLE_API_MSG pMessage);
+ConsoleHandleData* GetMessageObject(_In_ PCCONSOLE_API_MSG pMessage);
 void SetReplyStatus(_Inout_ PCCONSOLE_API_MSG pMessage, _In_ const NTSTATUS Status);
 void SetReplyInformation(_Inout_ PCCONSOLE_API_MSG pMessage, _In_ ULONG_PTR pInformation);
 short CalcWindowSizeX(_In_ const SMALL_RECT * const pRect);
 short CalcWindowSizeY(_In_ const SMALL_RECT * const pRect);
 short CalcCursorYOffsetInPixels(_In_ short const sFontSizeY, _In_ ULONG const ulSize);
-bool IsFlagSet(_In_ DWORD const dwAllFlags, _In_ DWORD const dwFlagToTest);
-void SetFlag(_Inout_ DWORD* const pdwAllFlags, _In_ DWORD const dwFlagToSet);
-void UnsetFlag(_Inout_ DWORD* const pdwAllFlags, _In_ DWORD const dwFlagToUnset);
-void SetFlagBasedOnBool(_In_ bool const fCondition, _Inout_ DWORD* const pdwAllFlags, _In_ DWORD const dwFlag);
 WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwchEnd);
 
 class Utils

@@ -55,9 +55,9 @@ NTSTATUS RevalidateConsole(_Out_ CONSOLE_INFORMATION ** const ppConsole)
 NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, _In_ const DWORD cbTitle)
 {
     // Synchronize flags
-    SetFlagBasedOnBool(!!g_ciConsoleInformation.GetAutoPosition(), &g_ciConsoleInformation.Flags, CONSOLE_AUTO_POSITION);
-    SetFlagBasedOnBool(!!g_ciConsoleInformation.GetQuickEdit(), &g_ciConsoleInformation.Flags, CONSOLE_QUICK_EDIT_MODE);
-    SetFlagBasedOnBool(!!g_ciConsoleInformation.GetHistoryNoDup(), &g_ciConsoleInformation.Flags, CONSOLE_HISTORY_NODUP);
+    SetFlagIf(g_ciConsoleInformation.Flags, CONSOLE_AUTO_POSITION, !!g_ciConsoleInformation.GetAutoPosition());
+    SetFlagIf(g_ciConsoleInformation.Flags, CONSOLE_QUICK_EDIT_MODE, !!g_ciConsoleInformation.GetQuickEdit());
+    SetFlagIf(g_ciConsoleInformation.Flags, CONSOLE_HISTORY_NODUP, !!g_ciConsoleInformation.GetHistoryNoDup());
 
     Selection* const pSelection = &Selection::Instance();
     pSelection->SetLineSelection(!!g_ciConsoleInformation.GetLineSelection());
@@ -77,8 +77,6 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
     {
         goto ErrorExit3;
     }
-
-    InitializeObjectHeader(&g_ciConsoleInformation.pInputBuffer->Header);
 
     // Byte count + 1 so dividing by 2 always rounds up. +1 more for trailing null guard.
     g_ciConsoleInformation.Title = new WCHAR[((cbTitle + 1) / sizeof(WCHAR)) + 1];
@@ -105,12 +103,6 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
     }
 
     g_ciConsoleInformation.CurrentScreenBuffer = g_ciConsoleInformation.ScreenBuffers;
-
-    g_ciConsoleInformation.CurrentScreenBuffer->Header.OpenCount = 1;
-    g_ciConsoleInformation.CurrentScreenBuffer->Header.ReaderCount = 1;
-    g_ciConsoleInformation.CurrentScreenBuffer->Header.ReadShareCount = 1;
-    g_ciConsoleInformation.CurrentScreenBuffer->Header.WriterCount = 1;
-    g_ciConsoleInformation.CurrentScreenBuffer->Header.WriteShareCount = 1;
 
     g_ciConsoleInformation.CurrentScreenBuffer->ScrollScale = g_ciConsoleInformation.GetScrollScale();
 
@@ -140,216 +132,6 @@ ErrorExit2:
 ErrorExit3:
     ASSERT(!NT_SUCCESS(Status));
     return Status;
-}
-
-void ConsoleCloseHandle(_In_ const HANDLE hClose)
-{
-    PCONSOLE_HANDLE_DATA HandleData;
-    NTSTATUS Status = DereferenceIoHandleNoCheck(hClose, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        if (HandleData->HandleType & CONSOLE_INPUT_HANDLE)
-        {
-            Status = CloseInputHandle(HandleData, hClose);
-        }
-        else
-        {
-            Status = CloseOutputHandle((PSCREEN_INFORMATION) HandleData->ClientPointer, hClose);
-        }
-    }
-}
-
-bool FreeConsoleHandle(_In_ HANDLE hFree)
-{
-    PCONSOLE_HANDLE_DATA const HandleData = (PCONSOLE_HANDLE_DATA)hFree;
-
-    BOOLEAN const ReadRequested = (HandleData->Access & GENERIC_READ) != 0;
-    BOOLEAN const ReadShared = (HandleData->ShareAccess & FILE_SHARE_READ) != 0;
-
-    BOOLEAN const WriteRequested = (HandleData->Access & GENERIC_WRITE) != 0;
-    BOOLEAN const WriteShared = (HandleData->ShareAccess & FILE_SHARE_WRITE) != 0;
-
-    PCONSOLE_OBJECT_HEADER const Header = (PCONSOLE_OBJECT_HEADER)HandleData->ClientPointer;
-
-    delete HandleData;
-
-    Header->OpenCount -= 1;
-
-    Header->ReaderCount -= ReadRequested;
-    Header->ReadShareCount -= ReadShared;
-
-    Header->WriterCount -= WriteRequested;
-    Header->WriteShareCount -= WriteShared;
-
-    return Header->OpenCount == 0;
-}
-
-// Routine Description:
-// - This routine allocates an input or output handle from the process's handle table.
-// - This routine initializes all non-type specific fields in the handle data structure.
-// Arguments:
-// - ulHandleType - Flag indicating input or output handle.
-// - phOut - On return, contains allocated handle.  Handle is an index internally.  When returned to the API caller, it is translated into a handle.
-// Return Value:
-// Note:
-// - The console lock must be held when calling this routine.  The handle is allocated from the per-process handle table.  Holding the console
-//   lock serializes both threads within the calling process and any other process that shares the console.
-NTSTATUS AllocateIoHandle(_In_ const ULONG ulHandleType,
-                          _Out_ HANDLE * const phOut,
-                          _Inout_ PCONSOLE_OBJECT_HEADER pObjHeader,
-                          _In_ const ACCESS_MASK amDesired,
-                          _In_ const ULONG ulShareMode)
-{
-    // Check the share mode.
-    BOOLEAN const ReadRequested = (amDesired & GENERIC_READ) != 0;
-    BOOLEAN const ReadShared = (ulShareMode & FILE_SHARE_READ) != 0;
-
-    BOOLEAN const WriteRequested = (amDesired & GENERIC_WRITE) != 0;
-    BOOLEAN const WriteShared = (ulShareMode & FILE_SHARE_WRITE) != 0;
-
-    if (((ReadRequested != FALSE) && (pObjHeader->OpenCount > pObjHeader->ReadShareCount)) ||
-        ((ReadShared == FALSE) && (pObjHeader->ReaderCount > 0)) ||
-        ((WriteRequested != FALSE) && (pObjHeader->OpenCount > pObjHeader->WriteShareCount)) || ((WriteShared == FALSE) && (pObjHeader->WriterCount > 0)))
-    {
-        return STATUS_SHARING_VIOLATION;
-    }
-
-    // Allocate all necessary state.
-    PCONSOLE_HANDLE_DATA const HandleData = new CONSOLE_HANDLE_DATA();
-    if (HandleData == nullptr)
-    {
-        return STATUS_NO_MEMORY;
-    }
-
-    if ((ulHandleType & CONSOLE_INPUT_HANDLE) != 0)
-    {
-        HandleData->pClientInput = new INPUT_READ_HANDLE_DATA();
-        if (HandleData->pClientInput == nullptr)
-        {
-            delete HandleData;
-            return STATUS_NO_MEMORY;
-        }
-    }
-
-    // Update share/open counts and store handle information.
-    pObjHeader->OpenCount += 1;
-
-    pObjHeader->ReaderCount += ReadRequested;
-    pObjHeader->ReadShareCount += ReadShared;
-
-    pObjHeader->WriterCount += WriteRequested;
-    pObjHeader->WriteShareCount += WriteShared;
-
-    HandleData->HandleType = ulHandleType;
-    HandleData->ShareAccess = ulShareMode;
-    HandleData->Access = amDesired;
-    HandleData->ClientPointer = pObjHeader;
-
-    *phOut = (HANDLE)HandleData;
-
-    return STATUS_SUCCESS;
-}
-
-// Routine Description:
-// - This routine verifies a handle's validity, then returns a pointer to the handle data structure.
-// Arguments:
-// - Handle - Handle to dereference.
-// - HandleData - On return, pointer to handle data structure.
-// Return Value:
-NTSTATUS DereferenceIoHandleNoCheck(_In_ HANDLE hIO, _Out_ PCONSOLE_HANDLE_DATA * const ppConsoleData)
-{
-    *ppConsoleData = (PCONSOLE_HANDLE_DATA)hIO;
-    return STATUS_SUCCESS;
-}
-
-// Routine Description:
-// - This routine verifies a handle's validity, then returns a pointer to the handle data structure.
-// Arguments:
-// - ProcessData - Pointer to per process data structure.
-// - Handle - Handle to dereference.
-// - HandleData - On return, pointer to handle data structure.
-// Return Value:
-NTSTATUS DereferenceIoHandle(_In_ HANDLE hIO,
-                             _In_ const ULONG ulHandleType,
-                             _In_ const ACCESS_MASK amRequested,
-                             _Out_ PCONSOLE_HANDLE_DATA * const ppConsoleData)
-{
-    PCONSOLE_HANDLE_DATA const Data = (PCONSOLE_HANDLE_DATA)hIO;
-
-    // Check the type and the granted access.
-    if ((hIO == nullptr) || ((Data->Access & amRequested) == 0) || ((ulHandleType != 0) && ((Data->HandleType & ulHandleType) == 0)))
-    {
-        return STATUS_INVALID_HANDLE;
-    }
-
-    *ppConsoleData = Data;
-
-    return STATUS_SUCCESS;
-}
-
-// Routine Description:
-// - This routine inserts the screen buffer pointer into the console's list of screen buffers.
-// Arguments:
-// - Console - Pointer to console information structure.
-// - ScreenInfo - Pointer to screen information structure.
-// Return Value:
-// Note:
-// - The console lock must be held when calling this routine.
-void InsertScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo)
-{
-    ASSERT(g_ciConsoleInformation.IsConsoleLocked());
-
-    pScreenInfo->Next = g_ciConsoleInformation.ScreenBuffers;
-    g_ciConsoleInformation.ScreenBuffers = pScreenInfo;
-}
-
-// Routine Description:
-// - This routine removes the screen buffer pointer from the console's list of screen buffers.
-// Arguments:
-// - Console - Pointer to console information structure.
-// - ScreenInfo - Pointer to screen information structure.
-// Return Value:
-// Note:
-// - The console lock must be held when calling this routine.
-void RemoveScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo)
-{
-    if (pScreenInfo == g_ciConsoleInformation.ScreenBuffers)
-    {
-        g_ciConsoleInformation.ScreenBuffers = pScreenInfo->Next;
-    }
-    else
-    {
-        PSCREEN_INFORMATION Cur = g_ciConsoleInformation.ScreenBuffers;
-        PSCREEN_INFORMATION Prev = Cur;
-        while (Cur != nullptr)
-        {
-            if (pScreenInfo == Cur)
-            {
-                break;
-            }
-
-            Prev = Cur;
-            Cur = Cur->Next;
-        }
-
-        ASSERT(Cur != nullptr);
-        __analysis_assume(Cur != nullptr);
-        Prev->Next = Cur->Next;
-    }
-
-    if (pScreenInfo == g_ciConsoleInformation.CurrentScreenBuffer && g_ciConsoleInformation.ScreenBuffers != g_ciConsoleInformation.CurrentScreenBuffer)
-    {
-        if (g_ciConsoleInformation.ScreenBuffers != nullptr)
-        {
-            SetActiveScreenBuffer(g_ciConsoleInformation.ScreenBuffers);
-        }
-        else
-        {
-            g_ciConsoleInformation.CurrentScreenBuffer = nullptr;
-        }
-    }
-
-    delete pScreenInfo;
 }
 
 PCONSOLE_PROCESS_HANDLE AllocProcessData(_In_ CLIENT_ID const * const ClientId,
@@ -415,12 +197,12 @@ void FreeProcessData(_In_ PCONSOLE_PROCESS_HANDLE pProcessData)
 
     if (pProcessData->InputHandle != nullptr)
     {
-        ConsoleCloseHandle(pProcessData->InputHandle);
+        pProcessData->InputHandle->CloseHandle();
     }
 
     if (pProcessData->OutputHandle != nullptr)
     {
-        ConsoleCloseHandle(pProcessData->OutputHandle);
+        pProcessData->OutputHandle->CloseHandle();
     }
 
     while (!IsListEmpty(&pProcessData->WaitBlockQueue))
@@ -439,35 +221,4 @@ void FreeProcessData(_In_ PCONSOLE_PROCESS_HANDLE pProcessData)
 
     RemoveEntryList(&pProcessData->ListLink);
     delete pProcessData;
-}
-
-void InitializeObjectHeader(_Out_ PCONSOLE_OBJECT_HEADER pObjHeader)
-{
-    ZeroMemory(pObjHeader, sizeof(*pObjHeader));
-}
-
-// Routine Description:
-// - Retieves the properly typed Input Buffer from the Handle.
-// Arguments:
-// - HandleData - The HANDLE containing the pointer to the input buffer, typically from an API call.
-// Return Value:
-// - The Input Buffer that this handle points to
-PINPUT_INFORMATION GetInputBufferFromHandle(const CONSOLE_HANDLE_DATA* HandleData)
-{
-    return ((PINPUT_INFORMATION)(HandleData->ClientPointer));
-}
-
-// Routine Description:
-// - Retieves the properly typed Screen Buffer from the Handle. If the screen
-//     buffer currently has an alternate buffer, as set through ANSI sequence
-//     ASBSET, then this returns the alternate, so that it seems as though 
-//     the same handle now points to the alternate buffer.
-// Arguments:
-// - HandleData - The HANDLE containing the pointer to the screen buffer, typically from an API call.
-// Return Value:
-// - The Screen Buffer that this handle points to.
-PSCREEN_INFORMATION GetScreenBufferFromHandle(const CONSOLE_HANDLE_DATA* HandleData)
-{
-    SCREEN_INFORMATION* psiScreenInfo = ((PSCREEN_INFORMATION)(HandleData->ClientPointer));
-    return psiScreenInfo->GetActiveBuffer();
 }
