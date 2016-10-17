@@ -25,7 +25,6 @@ SHORT CalcWideCharToColumn(_In_ PCHAR_INFO Buffer, _In_ size_t NumberOfChars);
 void ConsoleImeViewInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ COORD coordConView);
 void ConsoleImeWindowInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ SMALL_RECT rcViewCaWindow);
 NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ COORD NewScreenSize, _In_ ConversionAreaInfo* ConvAreaInfo);
-NTSTATUS ConsoleImeWriteOutput(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ PCHAR_INFO Buffer, _In_ SMALL_RECT CharRegion, _In_ BOOL fUnicode);
 bool InsertConvertedString(_In_ LPCWSTR lpStr);
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
                                   _In_ USHORT StringLength,
@@ -83,10 +82,10 @@ void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
     ConsoleImeInfo* const pIme = &g_ciConsoleInformation.ConsoleIme;
 
-    for (auto it = pIme->ConvAreaCompStr.begin(); it != pIme->ConvAreaCompStr.end(); ++it)
+    for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
     {
-        ConversionAreaInfo* const pConvAreaInfo = *it;
-    
+        ConversionAreaInfo* const pConvAreaInfo = pIme->ConvAreaCompStr[i];
+
         if (!pConvAreaInfo->IsHidden())
         {
             // Do clipping region
@@ -111,8 +110,8 @@ void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 ClippedRegion.Bottom = min(Region.Bottom, psrConvRegion->Bottom);
                 if (IsValidSmallRect(&ClippedRegion))
                 {
-                    // if we have a renderer, we need to update. 
-                    // we've already confirmed (above with an early return) that we're on conversion areas that are a part of the active (visible/rendered) screen 
+                    // if we have a renderer, we need to update.
+                    // we've already confirmed (above with an early return) that we're on conversion areas that are a part of the active (visible/rendered) screen
                     // so send invalidates to those regions such that we're queried for data on the next frame and repainted.
                     if (g_pRender != nullptr)
                     {
@@ -137,7 +136,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
 
     COORD Position = ScreenInfo->TextInfo->GetCursor()->GetPosition();
     COORD WindowOrigin;
-    
+
     if ((ScreenInfo->BufferViewport.Left <= Position.X && Position.X <= ScreenInfo->BufferViewport.Right) &&
         (ScreenInfo->BufferViewport.Top <= Position.Y && Position.Y <= ScreenInfo->BufferViewport.Bottom))
     {
@@ -152,8 +151,17 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
     }
 
     SHORT PosY = Position.Y;
-    ULONG NumStr;
-    NumStr = WideCharToMultiByte(CP_ACP, 0, lpString, NumChars * sizeof(WCHAR), nullptr, 0, nullptr, nullptr);
+
+    // NOTE: There are security implications for not passing WC_NO_BEST_FIT_CHARS, so don't remove it without strong
+    // cause: https://msdn.microsoft.com/en-us/library/windows/desktop/dd374047(v=vs.85).aspx#SC_char_conv_func
+    ULONG NumStr = WideCharToMultiByte(CP_ACP,
+                                       WC_NO_BEST_FIT_CHARS,
+                                       lpString,
+                                       NumChars,
+                                       nullptr,
+                                       0,
+                                       nullptr,
+                                       nullptr);
 
     int const WholeLen = (int)Position.X + (int)NumStr;
     int const WholeRow = WholeLen / ScreenInfo->GetScreenWindowSizeX();
@@ -336,10 +344,10 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
 NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* ConvAreaInfo)
 {
     ConvAreaInfo->SetHidden(true);
-    
+
     COORD Coord = { 0 };
     DWORD CharsToWrite = ConvAreaInfo->ScreenBuffer->ScreenBufferSize.X;
-    
+
     FillOutput(ConvAreaInfo->ScreenBuffer, (WCHAR)' ', Coord, CONSOLE_FALSE_UNICODE,    // faster than real unicode
                &CharsToWrite);
 
@@ -364,9 +372,9 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         }
 
         // Determine string.
-        for (auto it = pIme->ConvAreaCompStr.begin(); it != pIme->ConvAreaCompStr.end(); ++it)
+        for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
         {
-            ConversionAreaInfo* const ConvAreaInfo = *it;
+            ConversionAreaInfo* const ConvAreaInfo = pIme->ConvAreaCompStr[i];
             if (ConvAreaInfo && !ConvAreaInfo->IsHidden())
             {
                 FillUndetermineChars(ConvAreaInfo);
@@ -402,9 +410,9 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         }
 
         // Composition string.
-        for (auto it = pIme->ConvAreaCompStr.begin(); it != pIme->ConvAreaCompStr.end(); ++it)
+        for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
         {
-            ConversionAreaInfo* const ConvAreaInfo = *it;
+            ConversionAreaInfo* const ConvAreaInfo = pIme->ConvAreaCompStr[i];
             if (ConvAreaInfo && !ConvAreaInfo->IsHidden())
             {
                 FillUndetermineChars(ConvAreaInfo);
@@ -429,9 +437,9 @@ NTSTATUS ConsoleImeResizeCompStrView()
     LPCONIME_UICOMPMESSAGE const CompStr = pIme->CompStrData;
     if (CompStr)
     {
-        for (auto it = pIme->ConvAreaCompStr.begin(); it != pIme->ConvAreaCompStr.end(); ++it)
+        for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
         {
-            ConversionAreaInfo* const ConvAreaInfo = *it;
+            ConversionAreaInfo* const ConvAreaInfo = pIme->ConvAreaCompStr[i];
             if (ConvAreaInfo && !ConvAreaInfo->IsHidden())
             {
                 FillUndetermineChars(ConvAreaInfo);
@@ -453,9 +461,9 @@ NTSTATUS ConsoleImeResizeCompStrScreenBuffer(_In_ COORD const coordNewScreenSize
     ConsoleImeInfo* const pIme = &g_ciConsoleInformation.ConsoleIme;
 
     // Composition string
-    for (auto it = pIme->ConvAreaCompStr.begin(); it != pIme->ConvAreaCompStr.end(); ++it)
+    for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
     {
-        ConversionAreaInfo* const ConvAreaInfo = *it;
+        ConversionAreaInfo* const ConvAreaInfo = pIme->ConvAreaCompStr[i];
 
         if (ConvAreaInfo)
         {
@@ -609,62 +617,6 @@ NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ 
         {
             ConvAreaInfo->CaInfo.rcViewCaWindow.Bottom = NewScreenSize.Y - 1;
         }
-    }
-
-    return Status;
-}
-
-NTSTATUS ConsoleImeWriteOutput(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ PCHAR_INFO Buffer, _In_ SMALL_RECT CharRegion, _In_ BOOL fUnicode)
-{
-    NTSTATUS Status;
- 
-    COORD BufferSize;
-    BufferSize.X = (SHORT)(CharRegion.Right - CharRegion.Left + 1);
-    BufferSize.Y = (SHORT)(CharRegion.Bottom - CharRegion.Top + 1);
-
-    SMALL_RECT ConvRegion = CharRegion;
-
-    PSCREEN_INFORMATION const ScreenInfo = ConvAreaInfo->ScreenBuffer;
-
-    if (!fUnicode)
-    {
-        TranslateOutputToUnicode(Buffer, BufferSize);
-        Status = WriteScreenBuffer(ScreenInfo, Buffer, &ConvRegion);
-    }
-    else
-    {
-        ULONG NumBytes;
-
-        if (FAILED(ULongMult(BufferSize.Y, BufferSize.X, &NumBytes)) ||
-            FAILED(ULongMult(NumBytes, 2, &NumBytes)) || 
-            FAILED(ULongMult(NumBytes, sizeof(CHAR_INFO), &NumBytes)))
-        {
-            return STATUS_INVALID_PARAMETER;
-        }
-
-        PCHAR_INFO TransBuffer = (PCHAR_INFO) new BYTE[NumBytes];
-        if (TransBuffer == nullptr)
-        {
-            return STATUS_NO_MEMORY;
-        }
-
-        TranslateOutputToPaddingUnicode(Buffer, BufferSize, &TransBuffer[0]);
-
-        Status = WriteScreenBuffer(ScreenInfo, &TransBuffer[0], &ConvRegion);
-        delete[] TransBuffer;
-    }
-
-    if (NT_SUCCESS(Status))
-    {
-        PSCREEN_INFORMATION ScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
-
-        // cause screen to be updated
-        ConvRegion.Left += (ScreenInfo->BufferViewport.Left + ConvAreaInfo->CaInfo.coordConView.X);
-        ConvRegion.Right += (ScreenInfo->BufferViewport.Left + ConvAreaInfo->CaInfo.coordConView.X);
-        ConvRegion.Top += (ScreenInfo->BufferViewport.Top + ConvAreaInfo->CaInfo.coordConView.Y);
-        ConvRegion.Bottom += (ScreenInfo->BufferViewport.Top + ConvAreaInfo->CaInfo.coordConView.Y);
-
-        WriteConvRegionToScreen(ScreenInfo, &ConvRegion);
     }
 
     return Status;
@@ -825,13 +777,13 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
     // see if attr string is different.  if so, allocate a new attr buffer and merge the two strings.
     if (Row->AttrRow.Length != 1 || !(Row->AttrRow.GetHead()->GetAttributes()->IsEqual(ScreenInfo->GetAttributes())))
-    {        
+    {
         TextAttributeRun InsertedRun;
 
         const WORD wScreenAttributes = ScreenInfo->GetAttributes()->GetLegacyAttributes();
         const bool fRVerticalSet = IsFlagSet(wScreenAttributes, COMMON_LVB_GRID_SINGLEFLAG | COMMON_LVB_GRID_RVERTICAL);
         const bool fLVerticalSet = IsFlagSet(wScreenAttributes, COMMON_LVB_GRID_SINGLEFLAG | COMMON_LVB_GRID_LVERTICAL);
-        
+
         if (fLVerticalSet || fRVerticalSet)
         {
             const byte LeadOrTrailByte = fRVerticalSet? CHAR_ROW::ATTR_LEADING_BYTE : CHAR_ROW::ATTR_TRAILING_BYTE;
@@ -847,17 +799,18 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
                 {
                     InsertedRun.SetAttributesFromLegacy(wScreenAttributes & ~COMMON_LVB_GRID_SINGLEFLAG);
                 }
-            }
 
+                // Each time around the loop, take our new 1-length attribute with the appropriate line attributes (underlines, etc.)
+                // and insert it into the existing Run-Length-Encoded attribute list.
+                Row->AttrRow.InsertAttrRuns(&InsertedRun, 1, TargetPoint.X + i, (SHORT)(TargetPoint.X + i + 1), ScreenInfo->ScreenBufferSize.X);
+            }
         }
         else
         {
             InsertedRun.SetLength(StringLength);
             InsertedRun.SetAttributesFromLegacy(wScreenAttributes);
+            Row->AttrRow.InsertAttrRuns(&InsertedRun, 1, TargetPoint.X, (SHORT)(TargetPoint.X + StringLength - 1), ScreenInfo->ScreenBufferSize.X);
         }
-
-        Row->AttrRow.InsertAttrRuns(&InsertedRun, 1, TargetPoint.X, (SHORT)(TargetPoint.X + StringLength - 1), ScreenInfo->ScreenBufferSize.X);
-        
     }
 
     ScreenInfo->ResetTextFlags(TargetPoint.X, TargetPoint.Y, TargetPoint.X + StringLength - 1, TargetPoint.Y);

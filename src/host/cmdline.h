@@ -169,9 +169,9 @@ public:
 protected:
     CommandLine();
 
-    // hide these or we can accidentally get copies of the singleton
-    CommandLine(CommandLine const&);
-    void operator=(CommandLine const&);
+    // delete these because we don't want to accidentally get copies of the singleton
+    CommandLine(CommandLine const&) = delete;
+    CommandLine& operator=(CommandLine const&) = delete;
 };
 
 NTSTATUS ProcessCommandLine(_In_ PCOOKED_READ_DATA pCookedReadData,
@@ -199,7 +199,7 @@ void CleanUpPopups(_In_ PCOOKED_READ_DATA const CookedReadData);
 
 // This is no longer necessary. The buffer will always be Unicode. We don't need to perform special work to check if we're in a raster font
 // and convert the entire buffer to match (and all insertions).
-//#define WC_FALSIFY_UNICODE       0x08     
+//#define WC_FALSIFY_UNICODE       0x08
 
 #define WC_LIMIT_BACKSPACE       0x10
 #define WC_NONDESTRUCTIVE_TAB    0x20

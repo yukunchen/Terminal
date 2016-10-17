@@ -245,7 +245,7 @@ NTSTATUS RegistrySerialization::s_SetValue(_In_ HKEY const hKey,
 // Arguments:
 // - hKey - Handle to a registry key
 // - pwszValueName - Name of the value to query
-// - cbValueLength - Length of the provided data buffer. 
+// - cbValueLength - Length of the provided data buffer.
 // - pbData - Pointer to byte stream of data to fill with the registry value data.
 // - pcbDataLength - Number of bytes filled in the given data buffer
 // Return Value:
@@ -279,7 +279,7 @@ NTSTATUS RegistrySerialization::s_QueryValue(_In_ HKEY const hKey,
 // Arguments:
 // - hKey - Handle to a registry key
 // - dwIndex - Index of value within this key to return
-// - cbValueLength - Length of the provided value name buffer. 
+// - cbValueLength - Length of the provided value name buffer.
 // - pwszValueName - Value name buffer to be filled with null terminated string name of value.
 // - cbDataLength - Length of the provided value data buffer.
 // - pbData - Value data buffer to be filled based on data type. Will be null terminated for string types. (REG_SZ, REG_MULTI_SZ, REG_EXPAND_SZ)
@@ -296,6 +296,7 @@ NTSTATUS RegistrySerialization::s_EnumValue(_In_ HKEY const hKey,
     DWORD cchValueName = cbValueLength / sizeof(WCHAR);
     DWORD cbData = cbDataLength;
 
+#pragma prefast(suppress: 26015, "prefast doesn't realize that cbData == cbDataLength and cchValueName == cbValueLength/2")
     return NTSTATUS_FROM_WIN32(RegEnumValueW(hKey,
                                              dwIndex,
                                              pwszValueName,
@@ -379,7 +380,7 @@ NTSTATUS RegistrySerialization::s_OpenCurrentUserConsoleTitleKey(_In_ PCWSTR con
             {
                 RegCloseKey(*phConsoleKey);
             }
-            //else all keys were created/opened successfully, and we'll return success 
+            //else all keys were created/opened successfully, and we'll return success
         }
         else
         {

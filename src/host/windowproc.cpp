@@ -209,19 +209,12 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_DPICHANGED:
     {
-        // HEY YOU. Don't get the idea to use the rectangle WM_DPICHANGED provides us for this entire operation.
-        // It doesn't scale correctly for our needs in the majority case. It scales linearly on the window rect.
-        // Sounds good, but then the title bar and window frame scale non-linearly leaving us with
-        // strange client areas that cause us to gain/lose characters in our client.
-        // The ONLY exception is that we must use it after an aero snap operation because we skipped handling in WM_WINDOWPOSCHANGED to handle it here.
-
         g_dpi = HIWORD(wParam);
         _UpdateSystemMetrics();
         s_ReinitializeFontsForDPIChange();
 
         // this is the RECT that the system suggests.
         RECT* const prcNewScale = (RECT*)lParam;
-        UINT uiFlags = 0; 
         SIZE szNewScale;
         szNewScale.cx = RECT_WIDTH(prcNewScale);
         szNewScale.cy = RECT_HEIGHT(prcNewScale);
@@ -231,80 +224,6 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
             // If we're a full screen window, completely ignore what the DPICHANGED says as it will be bigger than the monitor and 
             // instead use the value that we were given back in the WM_WINDOWPOSCHANGED (that we had ignored at the time)
             *prcNewScale = _rcWhenDpiChanges;
-        }
-        else if (g_dpi == _iSuggestedDpi && szNewScale.cx == _sizeSuggested.cx && szNewScale.cy == _sizeSuggested.cy)
-        {
-            // If the DPI and size of the window we were just given matches what we reported to the system from WM_GETDPISCALEDSIZE,
-            // then we need to accept the rectangle given as the system will have corrected its POSITION only to prevent cursor drift
-            // while dragging the window.
-        }
-        else if (EqualRect(prcNewScale, &_rcWhenDpiChanges))
-        {
-            // Check if the rectangle is exactly equal to the one we got in WM_WINDOWPOSCHANGED.
-            // If it was, then this was a snap operation and we oddly DO want to listen to what we were told this time so skip this code.
-        }
-        else
-        {
-            // Calculate the window size that we want to have. WM_DPICHANGED gives bad sizes for the suggested rect.
-            // It scales the window linearly, but then the caption bar scales non-linearly so we get a non-linear client area scaling.
-            SMALL_RECT const srViewport = GetScreenInfo()->BufferViewport;
-            COORD coordViewport;
-            coordViewport.X = srViewport.Right - srViewport.Left + 1;
-            coordViewport.Y = srViewport.Bottom - srViewport.Top + 1;
-
-            RECT rectProposed;
-            _CalculateWindowRect(coordViewport, &rectProposed);
-
-            // Now determine where to place the rect so we won't thrash. We want to make sure we're a majority on the monitor that the system
-            // tried to propose.
-
-            // Find the monitor we were about to be placed onto.
-            HMONITOR hmon = MonitorFromRect(prcNewScale, MONITOR_DEFAULTTONEAREST);
-
-            // Determine which quadrant the top left corner is in.
-
-            // - Get the work area from the monitor
-            MONITORINFOEXW mi;
-            mi.cbSize = sizeof(mi);
-            GetMonitorInfoW(hmon, &mi);
-
-            // - Get the center point of the work area
-            POINT ptCenterWork;
-            ptCenterWork.x = mi.rcWork.left + ((mi.rcWork.right - mi.rcWork.left) / 2);
-            ptCenterWork.y = mi.rcWork.top + ((mi.rcWork.bottom - mi.rcWork.top) / 2);
-
-            // - Get the center point of the system suggested window.
-            POINT ptCenterNewScale;
-            ptCenterNewScale.x = prcNewScale->left + ((prcNewScale->right - prcNewScale->left) / 2);
-            ptCenterNewScale.y = prcNewScale->top + ((prcNewScale->bottom - prcNewScale->top) / 2);
-
-            // - Get the size delta from what we calculated versus what the system suggested.
-            SIZE szDelta;
-            szDelta.cx = RECT_WIDTH(&rectProposed) - RECT_WIDTH(prcNewScale);
-            szDelta.cy = RECT_HEIGHT(&rectProposed) - RECT_HEIGHT(prcNewScale);
-
-            // - Now adjust the proposed rectangle based on where the suggestion was relative to the monitor we're going onto.
-            // - We use the center of the rectangle the system gave us in relation to the center of the work area to determine which direction to grow and stay on the monitor.
-            if (ptCenterNewScale.x <= ptCenterWork.x)
-            {
-                prcNewScale->left -= szDelta.cx;
-            }
-            else
-            {
-                prcNewScale->right += szDelta.cx;
-            }
-
-            if (ptCenterNewScale.y <= ptCenterWork.y)
-            {
-                prcNewScale->top -= szDelta.cy;
-            }
-            else
-            {
-                prcNewScale->bottom += szDelta.cy;
-            }
-
-            // We just based the window size on the viewport size, so set the NOSIZE flag so we won't recalculate the viewport down this route.
-            uiFlags |= SWP_NOSIZE;
         }
         
         SetWindowPos(hWnd, HWND_TOP, prcNewScale->left, prcNewScale->top, RECT_WIDTH(prcNewScale), RECT_HEIGHT(prcNewScale), SWP_NOZORDER | SWP_NOACTIVATE);
