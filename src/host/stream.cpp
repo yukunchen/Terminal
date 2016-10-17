@@ -262,7 +262,7 @@ VOID PrepareReadConsoleCompletion(_Inout_ PCONSOLE_API_MSG Message)
 // Return Value:
 BOOL RawReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                         _In_ PVOID pvWaitParameter,
-                        _In_ PVOID pvSatisfyParameter,
+                        _In_ WaitTerminationReason const TerminationReason,
                         _In_ BOOL fThreadDying)
 {
     PCONSOLE_READCONSOLE_MSG const a = &pWaitReplyMessage->u.consoleMsgL1.ReadConsole;
@@ -270,7 +270,7 @@ BOOL RawReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
 
     NTSTATUS Status = STATUS_SUCCESS;
 
-    if ((ULONG_PTR)pvSatisfyParameter & CONSOLE_CTRL_C_SEEN)
+    if (IsFlagSet(TerminationReason, WaitTerminationReason::CtrlC))
     {
         return FALSE;
     }
@@ -293,7 +293,7 @@ BOOL RawReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
         RawReadData->pInputReadHandleData->DecrementReadCount();
 
         // If a ctrl-c is seen, don't terminate read. If ctrl-break is seen, terminate read.
-        if ((ULONG_PTR)pvSatisfyParameter & CONSOLE_CTRL_BREAK_SEEN)
+        if (IsFlagSet(TerminationReason, WaitTerminationReason::CtrlBreak))
         {
             SetReplyStatus(pWaitReplyMessage, STATUS_ALERTED);
             __leave;
@@ -1165,7 +1165,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
 // Return Value:
 BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                            _In_ PCOOKED_READ_DATA pCookedReadData,
-                           _In_ void * const pvSatisfyParameter,
+                           _In_ WaitTerminationReason const TerminationReason,
                            _In_ const BOOL fThreadDying)
 {
     NTSTATUS Status = STATUS_SUCCESS;
@@ -1181,7 +1181,7 @@ BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
     pCookedReadData->pInputReadHandleData->DecrementReadCount();
 
     // if ctrl-c or ctrl-break was seen, terminate read.
-    if (IsAnyFlagSet((ULONG_PTR)pvSatisfyParameter, (CONSOLE_CTRL_C_SEEN | CONSOLE_CTRL_BREAK_SEEN)))
+    if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
     {
         SetReplyStatus(pWaitReplyMessage, STATUS_ALERTED);
         delete[] pCookedReadData->BackupLimit;
@@ -1770,7 +1770,7 @@ VOID UnblockWriteConsole(_In_ const DWORD dwReason)
     if (AreAllFlagsClear(g_ciConsoleInformation.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         // There is no longer any reason to suspend output, so unblock it.
-        g_ciConsoleInformation.OutputQueue.ConsoleNotifyWait(TRUE, nullptr);
+        g_ciConsoleInformation.OutputQueue.ConsoleNotifyWait(TRUE);
     }
 }
 
@@ -1812,7 +1812,7 @@ NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
 
 BOOL WriteConsoleWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                              _In_ PVOID pvWaitParameter,
-                             _In_ PVOID /*pvSatisfyParameter*/,
+                             _In_ WaitTerminationReason /*pvSatisfyParameter*/,
                              _In_ BOOL fThreadDying)
 {
     PCONSOLE_WRITECONSOLE_MSG const a = &pWaitReplyMessage->u.consoleMsgL1.WriteConsole;

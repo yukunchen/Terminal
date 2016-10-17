@@ -18,30 +18,32 @@ Revision History:
 
 #include "..\host\conapi.h"
 
+#include "WaitTerminationReason.h"
+
 class ConsoleWaitQueue;
 
 typedef BOOL(*CONSOLE_WAIT_ROUTINE) (_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                                      _In_ PVOID pvWaitParameter,
-                                     _In_ PVOID pvSatisfyParameter,
+                                     _In_ WaitTerminationReason TerminationReason,
                                      _In_ BOOL fThreadDying);
 
-typedef struct _CONSOLE_WAIT_BLOCK
+class ConsoleWaitBlock
 {
 public:
     PVOID WaitParameter;
     CONSOLE_WAIT_ROUTINE WaitRoutine;
     CONSOLE_API_MSG WaitReplyMessage;
 
-    _CONSOLE_WAIT_BLOCK(_In_ ConsoleWaitQueue* const pProcessQueue,
+    ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
                         _In_ ConsoleWaitQueue* const pObjectQueue);
-    ~_CONSOLE_WAIT_BLOCK();
+    ~ConsoleWaitBlock();
     
 
 private:
     ConsoleWaitQueue* const _pProcessQueue;
-    std::_List_const_iterator<std::_List_val<std::_List_simple_types<_CONSOLE_WAIT_BLOCK*>>> _itProcessQueue;
+    std::_List_const_iterator<std::_List_val<std::_List_simple_types<ConsoleWaitBlock*>>> _itProcessQueue;
 
     ConsoleWaitQueue* const _pObjectQueue;
-    std::_List_const_iterator<std::_List_val<std::_List_simple_types<_CONSOLE_WAIT_BLOCK*>>> _itObjectQueue;
+    std::_List_const_iterator<std::_List_val<std::_List_simple_types<ConsoleWaitBlock*>>> _itObjectQueue;
 
-} CONSOLE_WAIT_BLOCK, *PCONSOLE_WAIT_BLOCK;
+};

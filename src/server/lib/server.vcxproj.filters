@@ -74,5 +74,8 @@
     <ClInclude Include="..\WaitQueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\WaitTerminationReason.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

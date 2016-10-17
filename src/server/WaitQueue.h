@@ -21,15 +21,18 @@ Revision History:
 #include "..\host\conapi.h"
 
 #include "WaitBlock.h"
+#include "WaitTerminationReason.h"
 
 class ConsoleWaitQueue
 {
 public:
-    BOOL ConsoleNotifyWait(_In_ const BOOL fSatisfyAll,
-                           _In_ PVOID pvSatisfyParameter);
+    BOOL ConsoleNotifyWait(_In_ const BOOL fSatisfyAll);
 
-    BOOL ConsoleNotifyWaitBlock(_In_ PCONSOLE_WAIT_BLOCK pWaitBlock,
-                                _In_ PVOID pvSatisfyParameter,
+    BOOL ConsoleNotifyWait(_In_ const BOOL fSatisfyAll,
+                           _In_ WaitTerminationReason TerminationReason);
+
+    BOOL ConsoleNotifyWaitBlock(_In_ ConsoleWaitBlock* pWaitBlock,
+                                _In_ WaitTerminationReason TerminationReason,
                                 _In_ BOOL fThreadDying);
 
     static BOOL s_ConsoleCreateWait(_In_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
@@ -38,11 +41,16 @@ public:
 
     void FreeBlocks();
 
-public:
-    std::list<_CONSOLE_WAIT_BLOCK*> _blocks;
-
-    void Foo()
+    ConsoleWaitQueue()
     {
 
     }
+
+    ~ConsoleWaitQueue()
+    {
+
+    }
+
+public:
+    std::list<ConsoleWaitBlock*> _blocks;
 };

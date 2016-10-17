@@ -24,6 +24,7 @@
     <ClInclude Include="..\ProcessHandle.h" />
     <ClInclude Include="..\WaitBlock.h" />
     <ClInclude Include="..\WaitQueue.h" />
+    <ClInclude Include="..\WaitTerminationReason.h" />
     <ClInclude Include="..\WinNTControl.h" />
   </ItemGroup>
   <PropertyGroup>

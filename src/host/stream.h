@@ -77,14 +77,14 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
 // - WaitQueue - pointer to queue containing wait block
 // - WaitReplyMessage - pointer to reply message
 // - CookedReadData - pointer to data saved in ReadChars
-// - SatisfyParameter - if this routine is called because a ctrl-c or
+// - TerminationReason - if this routine is called because a ctrl-c or
 //                      ctrl-break was seen, this argument contains CONSOLE_CTRL_SEEN.
-//                      otherwise it contains nullptr.
+//                      otherwise it contains 0.
 // - ThreadDying - Indicates if the owning thread (and process) is exiting.
 // Return Value:
 BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                            _In_ PCOOKED_READ_DATA pCookedReadData,
-                           _In_ void * const pvSatisfyParameter,
+                           _In_ WaitTerminationReason TerminationReason,
                            _In_ const BOOL fThreadDying);
 
 // Routine Description:
@@ -106,7 +106,7 @@ NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
 
 BOOL WriteConsoleWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                              _In_ PVOID pvWaitParameter,
-                             _In_ PVOID pvSatisfyParameter,
+                             _In_ WaitTerminationReason const TerminationReason,
                              _In_ BOOL fThreadDying);
 
 

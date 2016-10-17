@@ -208,7 +208,7 @@ ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG Num
 // Return Value:
 BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage, 
                            _In_ PVOID WaitParameter, 
-                           _In_ PVOID SatisfyParameter, 
+                           _In_ WaitTerminationReason const TerminationReason, 
                            _In_ BOOL ThreadDying)
 {
     PCONSOLE_GETCONSOLEINPUT_MSG const a = &WaitReplyMessage->u.consoleMsgL1.GetConsoleInput;
@@ -218,7 +218,7 @@ BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage,
     NTSTATUS Status = STATUS_SUCCESS;
 
     // If ctrl-c or ctrl-break was seen, ignore it.
-    if (IsAnyFlagSet((ULONG_PTR)SatisfyParameter, (CONSOLE_CTRL_C_SEEN | CONSOLE_CTRL_BREAK_SEEN)))
+    if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason ::CtrlBreak)))
     {
         return FALSE;
     }

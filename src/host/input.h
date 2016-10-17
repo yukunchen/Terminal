@@ -109,9 +109,6 @@ private:
 #define KEY_PRESSED 0x8000
 #define KEY_TOGGLED 0x01
 
-#define CONSOLE_CTRL_C_SEEN  1
-#define CONSOLE_CTRL_BREAK_SEEN 2
-
 #define LoadKeyEvent(PEVENT, KEYDOWN, CHAR, KEYCODE, SCANCODE, KEYSTATE) { \
         (PEVENT)->EventType = KEY_EVENT;                                   \
         (PEVENT)->Event.KeyEvent.bKeyDown = KEYDOWN;                       \

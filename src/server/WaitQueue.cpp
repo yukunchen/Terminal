@@ -12,29 +12,39 @@
 #include "..\host\globals.h"
 #include "..\host\utils.hpp"
 
-BOOL ConsoleWaitQueue::ConsoleNotifyWait(_In_ const BOOL fSatisfyAll, _In_ PVOID pvSatisfyParameter)
+BOOL ConsoleWaitQueue::ConsoleNotifyWait(_In_ const BOOL fSatisfyAll)
+{
+    return ConsoleNotifyWait(fSatisfyAll, WaitTerminationReason::NoReason);
+}
+
+BOOL ConsoleWaitQueue::ConsoleNotifyWait(_In_ const BOOL fSatisfyAll, 
+                                         _In_ WaitTerminationReason TerminationReason)
 {
     BOOL Result = FALSE;
 
-    for (auto it = _blocks.cbegin(); it != _blocks.cend(); std::next(it))
+    for (auto it = _blocks.cbegin(); it != _blocks.cend();)
     {
-        PCONSOLE_WAIT_BLOCK const WaitBlock = (*it);
+        ConsoleWaitBlock* const WaitBlock = (*it);
+        auto nextIt = std::next(it); // we have to capture next before it is potentially erased
         if (WaitBlock->WaitRoutine)
         {
-            Result |= ConsoleNotifyWaitBlock(WaitBlock, pvSatisfyParameter, FALSE);
+            Result |= ConsoleNotifyWaitBlock(WaitBlock, TerminationReason, FALSE);
             if (!fSatisfyAll)
             {
                 break;
             }
         }
+        it = nextIt;
     }
 
     return Result;
 }
 
-BOOL ConsoleWaitQueue::ConsoleNotifyWaitBlock(_In_ PCONSOLE_WAIT_BLOCK pWaitBlock, _In_ PVOID pvSatisfyParameter, _In_ BOOL fThreadDying)
+BOOL ConsoleWaitQueue::ConsoleNotifyWaitBlock(_In_ ConsoleWaitBlock* pWaitBlock, 
+                                              _In_ WaitTerminationReason TerminationReason, 
+                                              _In_ BOOL fThreadDying)
 {
-    if ((*pWaitBlock->WaitRoutine)(&pWaitBlock->WaitReplyMessage, pWaitBlock->WaitParameter, pvSatisfyParameter, fThreadDying))
+    if ((*pWaitBlock->WaitRoutine)(&pWaitBlock->WaitReplyMessage, pWaitBlock->WaitParameter, TerminationReason, fThreadDying))
     {
         ReleaseMessageBuffers(&pWaitBlock->WaitReplyMessage);
 
@@ -56,7 +66,7 @@ _Success_(return == TRUE)
 static BOOL ConsoleInitializeWait(_In_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
                                   _Inout_ PCONSOLE_API_MSG pWaitReplyMessage,
                                   _In_ PVOID pvWaitParameter,
-                                  _Outptr_ PCONSOLE_WAIT_BLOCK * ppWaitBlock)
+                                  _Outptr_ ConsoleWaitBlock** ppWaitBlock)
 {
     PCONSOLE_PROCESS_HANDLE const ProcessData = GetMessageProcess(pWaitReplyMessage);
     assert(ProcessData != nullptr);
@@ -70,10 +80,10 @@ static BOOL ConsoleInitializeWait(_In_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
     pHandleData->GetWaitQueue(&pObjectQueue);
     assert(pObjectQueue != nullptr);
 
-    PCONSOLE_WAIT_BLOCK WaitBlock;
+    ConsoleWaitBlock* WaitBlock;
     try
     {
-        WaitBlock = new CONSOLE_WAIT_BLOCK(pProcessQueue, pObjectQueue);
+        WaitBlock = new ConsoleWaitBlock(pProcessQueue, pObjectQueue);
     }
     catch(...)
     {
@@ -108,7 +118,7 @@ BOOL ConsoleWaitQueue::s_ConsoleCreateWait(_In_ CONSOLE_WAIT_ROUTINE pfnWaitRout
 {
     assert(g_ciConsoleInformation.IsConsoleLocked());
 
-    PCONSOLE_WAIT_BLOCK WaitBlock;
+    ConsoleWaitBlock* WaitBlock;
     if (!ConsoleInitializeWait(pfnWaitRoutine, pWaitReplyMessage, pvWaitParameter, &WaitBlock))
     {
         return FALSE;
@@ -121,6 +131,6 @@ void ConsoleWaitQueue::FreeBlocks()
 {
     for (auto it = _blocks.cbegin(); it != _blocks.cend(); std::next(it))
     {
-        ConsoleNotifyWaitBlock(*it, nullptr, TRUE);
+        ConsoleNotifyWaitBlock(*it, WaitTerminationReason::NoReason, TRUE);
     }
 }

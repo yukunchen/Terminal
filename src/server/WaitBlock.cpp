@@ -9,7 +9,7 @@
 #include "WaitBlock.h"
 #include "WaitQueue.h"
 
-_CONSOLE_WAIT_BLOCK::_CONSOLE_WAIT_BLOCK(_In_ ConsoleWaitQueue* const pProcessQueue,
+ConsoleWaitBlock::ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
                                          _In_ ConsoleWaitQueue* const pObjectQueue) :
     _pProcessQueue(THROW_HR_IF_NULL(E_INVALIDARG, pProcessQueue)),
     _pObjectQueue(THROW_HR_IF_NULL(E_INVALIDARG, pObjectQueue))
@@ -21,7 +21,7 @@ _CONSOLE_WAIT_BLOCK::_CONSOLE_WAIT_BLOCK(_In_ ConsoleWaitQueue* const pProcessQu
     _itObjectQueue = _pObjectQueue->_blocks.cbegin();
 }
 
-_CONSOLE_WAIT_BLOCK::~_CONSOLE_WAIT_BLOCK()
+ConsoleWaitBlock::~ConsoleWaitBlock()
 {
     _pProcessQueue->_blocks.erase(_itProcessQueue);
     _pObjectQueue->_blocks.erase(_itObjectQueue);

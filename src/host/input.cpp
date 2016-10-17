@@ -228,7 +228,7 @@ NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
 // - FALSE/nullptr - The operation failed.
 void WakeUpReadersWaitingForData(_In_ PINPUT_INFORMATION InputInformation)
 {
-    InputInformation->WaitQueue.ConsoleNotifyWait(FALSE, nullptr);
+    InputInformation->WaitQueue.ConsoleNotifyWait(FALSE);
 }
 
 // Routine Description:
@@ -1513,9 +1513,9 @@ ULONG ConvertMouseButtonState(_In_ ULONG Flag, _In_ ULONG State)
 // Arguments:
 // - InputInfo - pointer to input buffer
 // - Flag - flag indicating whether ctrl-break or ctrl-c was input
-void TerminateRead(_Inout_ PINPUT_INFORMATION InputInfo, _In_ DWORD Flag)
+void TerminateRead(_Inout_ PINPUT_INFORMATION InputInfo, _In_ WaitTerminationReason Flag)
 {
-    InputInfo->WaitQueue.ConsoleNotifyWait(TRUE, IntToPtr(Flag));
+    InputInfo->WaitQueue.ConsoleNotifyWait(TRUE, Flag);
 }
 
 // Routine Description:
@@ -1886,7 +1886,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
             HandleCtrlEvent(CTRL_C_EVENT);
             if (g_ciConsoleInformation.PopupCount == 0)
             {
-                TerminateRead(g_ciConsoleInformation.pInputBuffer, CONSOLE_CTRL_C_SEEN);
+                TerminateRead(g_ciConsoleInformation.pInputBuffer, WaitTerminationReason::CtrlC);
             }
 
             if (!(g_ciConsoleInformation.Flags & CONSOLE_SUSPENDED))
@@ -1902,7 +1902,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
             HandleCtrlEvent(CTRL_BREAK_EVENT);
             if (g_ciConsoleInformation.PopupCount == 0)
             {
-                TerminateRead(g_ciConsoleInformation.pInputBuffer, CONSOLE_CTRL_BREAK_SEEN);
+                TerminateRead(g_ciConsoleInformation.pInputBuffer, WaitTerminationReason::CtrlBreak);
             }
 
             if (!(g_ciConsoleInformation.Flags & CONSOLE_SUSPENDED))
