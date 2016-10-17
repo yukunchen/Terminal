@@ -200,16 +200,13 @@ ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG Num
 //   structure.  This routine is called when events have been written to
 //   the input buffer.  It is called in the context of the writing thread.
 // Arguments:
-// - WaitQueue - Pointer to queue containing wait block.
 // - WaitReplyMessage - Pointer to reply message to return to dll when read is completed.
 // - DirectReadData - Context of read.
-// - SatisfyParameter - Flags.
-// - ThreadDying - Indicates if the thread (and process) is exiting.
+// - TerminationReason - Flags.
 // Return Value:
 BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage, 
                            _In_ PVOID WaitParameter, 
-                           _In_ WaitTerminationReason const TerminationReason, 
-                           _In_ BOOL ThreadDying)
+                           _In_ WaitTerminationReason const TerminationReason)
 {
     PCONSOLE_GETCONSOLEINPUT_MSG const a = &WaitReplyMessage->u.consoleMsgL1.GetConsoleInput;
 
@@ -256,7 +253,7 @@ BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage,
 
         // See if called by CsrDestroyProcess or CsrDestroyThread
         // via ConsoleNotifyWaitBlock. If so, just decrement the ReadCount and return.
-        if (ThreadDying)
+        if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
         {
             Status = STATUS_THREAD_IS_TERMINATING;
             __leave;

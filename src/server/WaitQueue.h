@@ -32,8 +32,7 @@ public:
                            _In_ WaitTerminationReason TerminationReason);
 
     BOOL ConsoleNotifyWaitBlock(_In_ ConsoleWaitBlock* pWaitBlock,
-                                _In_ WaitTerminationReason TerminationReason,
-                                _In_ BOOL fThreadDying);
+                                _In_ WaitTerminationReason TerminationReason);
 
     static BOOL s_ConsoleCreateWait(_In_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
                                     _Inout_ PCONSOLE_API_MSG pWaitReplyMessage,

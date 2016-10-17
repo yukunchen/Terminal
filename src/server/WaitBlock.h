@@ -24,8 +24,7 @@ class ConsoleWaitQueue;
 
 typedef BOOL(*CONSOLE_WAIT_ROUTINE) (_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                                      _In_ PVOID pvWaitParameter,
-                                     _In_ WaitTerminationReason TerminationReason,
-                                     _In_ BOOL fThreadDying);
+                                     _In_ WaitTerminationReason TerminationReason);
 
 class ConsoleWaitBlock
 {

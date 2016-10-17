@@ -257,13 +257,11 @@ VOID PrepareReadConsoleCompletion(_Inout_ PCONSOLE_API_MSG Message)
 // Arguments:
 // - WaitReplyMessage - Pointer to reply message to return to dll whenread is completed.
 // - RawReadData - pointer to data saved in ReadChars
-// - SatisfyParameter - Flags.
-// - ThreadDying - Indicates whether the thread (and process) is exiting.
+// - TerminationReason - Flags specifying why a termination was requested for this wait
 // Return Value:
 BOOL RawReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                         _In_ PVOID pvWaitParameter,
-                        _In_ WaitTerminationReason const TerminationReason,
-                        _In_ BOOL fThreadDying)
+                        _In_ WaitTerminationReason const TerminationReason)
 {
     PCONSOLE_READCONSOLE_MSG const a = &pWaitReplyMessage->u.consoleMsgL1.ReadConsole;
     PRAW_READ_DATA const RawReadData = (PRAW_READ_DATA)pvWaitParameter;
@@ -300,7 +298,7 @@ BOOL RawReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
         }
 
         // See if we were called because the thread that owns this wait block is exiting.
-        if (fThreadDying)
+        if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
         {
             Status = STATUS_THREAD_IS_TERMINATING;
             __leave;
@@ -1159,14 +1157,12 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
 // Arguments:
 // - WaitReplyMessage - pointer to reply message
 // - CookedReadData - pointer to data saved in ReadChars
-// - SatisfyParameter - if this routine is called because a ctrl-c or ctrl-break was seen, this argument
-//                      contains CONSOLE_CTRL_SEEN. otherwise it contains nullptr.
-// - ThreadDying - Indicates if the owning thread (and process) is exiting.
+// - TerminationReason - if this routine is called because a ctrl-c or ctrl-break was seen, this argument
+//                      contains CtrlC or CtrlBreak. If the owning thread is exiting, it will have ThreadDying. Otherwise 0.
 // Return Value:
 BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                            _In_ PCOOKED_READ_DATA pCookedReadData,
-                           _In_ WaitTerminationReason const TerminationReason,
-                           _In_ const BOOL fThreadDying)
+                           _In_ WaitTerminationReason const TerminationReason)
 {
     NTSTATUS Status = STATUS_SUCCESS;
     ASSERT(IsFlagClear(pCookedReadData->pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending));
@@ -1193,7 +1189,7 @@ BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
     }
 
     // See if we were called because the thread that owns this wait block is exiting.
-    if (fThreadDying)
+    if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
         SetReplyStatus(pWaitReplyMessage, STATUS_THREAD_IS_TERMINATING);
 
@@ -1812,12 +1808,11 @@ NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
 
 BOOL WriteConsoleWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                              _In_ PVOID pvWaitParameter,
-                             _In_ WaitTerminationReason /*pvSatisfyParameter*/,
-                             _In_ BOOL fThreadDying)
+                             _In_ WaitTerminationReason const TerminationReason)
 {
     PCONSOLE_WRITECONSOLE_MSG const a = &pWaitReplyMessage->u.consoleMsgL1.WriteConsole;
 
-    if (fThreadDying)
+    if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
         SetReplyStatus(pWaitReplyMessage, STATUS_THREAD_IS_TERMINATING);
         return TRUE;

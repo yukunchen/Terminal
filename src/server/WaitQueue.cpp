@@ -28,7 +28,7 @@ BOOL ConsoleWaitQueue::ConsoleNotifyWait(_In_ const BOOL fSatisfyAll,
         auto nextIt = std::next(it); // we have to capture next before it is potentially erased
         if (WaitBlock->WaitRoutine)
         {
-            Result |= ConsoleNotifyWaitBlock(WaitBlock, TerminationReason, FALSE);
+            Result |= ConsoleNotifyWaitBlock(WaitBlock, TerminationReason);
             if (!fSatisfyAll)
             {
                 break;
@@ -41,10 +41,9 @@ BOOL ConsoleWaitQueue::ConsoleNotifyWait(_In_ const BOOL fSatisfyAll,
 }
 
 BOOL ConsoleWaitQueue::ConsoleNotifyWaitBlock(_In_ ConsoleWaitBlock* pWaitBlock, 
-                                              _In_ WaitTerminationReason TerminationReason, 
-                                              _In_ BOOL fThreadDying)
+                                              _In_ WaitTerminationReason TerminationReason)
 {
-    if ((*pWaitBlock->WaitRoutine)(&pWaitBlock->WaitReplyMessage, pWaitBlock->WaitParameter, TerminationReason, fThreadDying))
+    if ((*pWaitBlock->WaitRoutine)(&pWaitBlock->WaitReplyMessage, pWaitBlock->WaitParameter, TerminationReason))
     {
         ReleaseMessageBuffers(&pWaitBlock->WaitReplyMessage);
 
@@ -57,7 +56,7 @@ BOOL ConsoleWaitQueue::ConsoleNotifyWaitBlock(_In_ ConsoleWaitBlock* pWaitBlock,
     else
     {
         // If fThreadDying is TRUE we need to make sure that we removed the pWaitBlock from the list (which we don't do on this branch).
-        assert(!fThreadDying);
+        assert(IsFlagClear(TerminationReason, WaitTerminationReason::ThreadDying));
         return FALSE;
     }
 }
@@ -131,6 +130,6 @@ void ConsoleWaitQueue::FreeBlocks()
 {
     for (auto it = _blocks.cbegin(); it != _blocks.cend(); std::next(it))
     {
-        ConsoleNotifyWaitBlock(*it, WaitTerminationReason::NoReason, TRUE);
+        ConsoleNotifyWaitBlock(*it, WaitTerminationReason::ThreadDying);
     }
 }

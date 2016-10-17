@@ -21,6 +21,7 @@ enum WaitTerminationReason
     NoReason = 0x0,
     CtrlC = 0x1,
     CtrlBreak = 0x2,
+    ThreadDying = 0x4
 };
 
 DEFINE_ENUM_FLAG_OPERATORS(WaitTerminationReason);
