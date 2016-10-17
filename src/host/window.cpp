@@ -348,9 +348,9 @@ NTSTATUS Window::ActivateAndShow(_In_ WORD const wShowWindow)
     HWND const hWnd = GetWindowHandle();
 
     // Only activate if the wShowWindow we were passed at process create doesn't explicitly tell us to remain inactive/hidden
-    if (IsFlagClear(wShowWindow, SW_SHOWNOACTIVATE) &&
-        AreAllFlagsClear(wShowWindow, SW_SHOWMINNOACTIVE) &&
-        AreAllFlagsClear(wShowWindow, SW_HIDE))
+    if (wShowWindow != SW_SHOWNOACTIVATE &&
+        wShowWindow != SW_SHOWMINNOACTIVE &&
+        wShowWindow != SW_HIDE)
     {
         HWND const hWndPrevious = SetActiveWindow(hWnd);
 
@@ -360,7 +360,7 @@ NTSTATUS Window::ActivateAndShow(_In_ WORD const wShowWindow)
             status = NTSTATUS_FROM_WIN32(GetLastError());
         }
     }
-    else if (AreAllFlagsSet(wShowWindow, SW_SHOWMINNOACTIVE))
+    else if (wShowWindow == SW_SHOWMINNOACTIVE)
     {
         // If we're minimized and not the active window, set iconic to stop rendering
         g_ciConsoleInformation.Flags |= CONSOLE_IS_ICONIC;
