@@ -140,8 +140,7 @@ NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ PINPUT_INFORMATION pInp
 void ReinitializeInputBuffer(_Inout_ PINPUT_INFORMATION pInputInfo);
 void FreeInputBuffer(_In_ PINPUT_INFORMATION pInputInfo);
 
-NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
-                           _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
+NTSTATUS WaitForMoreToRead(_In_opt_ PCONSOLE_API_MSG pConsoleMsg,
                            _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
                            _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
                            _In_ const ULONG cbWaitParameter,

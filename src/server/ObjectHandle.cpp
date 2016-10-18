@@ -104,7 +104,7 @@ bool ConsoleHandleData::IsWriteShared() const
 // Return Value:
 // - HRESULT S_OK or suitable error.
 HRESULT ConsoleHandleData::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
-                                          _Out_ INPUT_INFORMATION** const ppInputInfo) const
+                                          _Outptr_ INPUT_INFORMATION** const ppInputInfo) const
 {
     *ppInputInfo = nullptr;
 
@@ -124,7 +124,7 @@ HRESULT ConsoleHandleData::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
 // Return Value:
 // - HRESULT S_OK or suitable error.
 HRESULT ConsoleHandleData::GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
-                                           _Out_ SCREEN_INFORMATION** const ppScreenInfo) const
+                                           _Outptr_ SCREEN_INFORMATION** const ppScreenInfo) const
 {
     *ppScreenInfo = nullptr;
 
@@ -141,8 +141,8 @@ HRESULT ConsoleHandleData::GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
 // Arguments:
 // - ppWaitQueue - On success, filled with a pointer to the desired queue
 // Return Value:
-// - HRESULT S_OK or suitable error.
-HRESULT ConsoleHandleData::GetWaitQueue(_Out_ ConsoleWaitQueue** const ppWaitQueue) const
+// - HRESULT S_OK or E_UNEXPECTED if the handle data structure is in an invalid state.
+HRESULT ConsoleHandleData::GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWaitQueue) const
 {
     if (_IsInput())
     {
@@ -152,7 +152,7 @@ HRESULT ConsoleHandleData::GetWaitQueue(_Out_ ConsoleWaitQueue** const ppWaitQue
     }
     else if (_IsOutput())
     {
-        // TODO: shouldn't the output queue be per output object target, not global?
+        // TODO MSFT 9405322: shouldn't the output queue be per output object target, not global? https://osgvsowi/9405322
         *ppWaitQueue = &g_ciConsoleInformation.OutputQueue;
         return S_OK;
     }

@@ -1031,7 +1031,7 @@ DWORD ConsoleIoThread()
                 // This will not return. Terminate immediately when disconnected.
                 TerminateProcess(GetCurrentProcess(), STATUS_SUCCESS);
             }
-            RIPMSG1(RIP_WARNING, "NtReplyWaitReceivePort failed with Result 0x%x", hr);
+            RIPMSG1(RIP_WARNING, "DeviceIoControl failed with Result 0x%x", hr);
             ReplyMsg = nullptr;
             continue;
         }

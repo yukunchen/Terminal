@@ -16,7 +16,7 @@ Revision History:
 
 #pragma once
 
-enum WaitTerminationReason
+enum class WaitTerminationReason
 {
     NoReason = 0x0,
     CtrlC = 0x1,

@@ -284,9 +284,9 @@ BOOL RawReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
     __try
     {
 #ifdef DBG
-        RawReadData->InputReadHandleData->LockReadCount();
-        ASSERT(RawReadData->InputReadHandleData->GetReadCount() > 0);
-        RawReadData->InputReadHandleData->UnlockReadCount();
+        RawReadData->pInputReadHandleData->LockReadCount();
+        ASSERT(RawReadData->pInputReadHandleData->GetReadCount() > 0);
+        RawReadData->pInputReadHandleData->UnlockReadCount();
 #endif
         RawReadData->pInputReadHandleData->DecrementReadCount();
 
@@ -919,8 +919,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                     if (!fWaitRoutine)
                     {
                         // we have no wait block, so create one.
-                        WaitForMoreToRead(pCookedReadData->pInputInfo,
-                                          pWaitReplyMessage,
+                        WaitForMoreToRead(pWaitReplyMessage,
                                           (ConsoleWaitRoutine)CookedReadWaitRoutine,
                                           pCookedReadData,
                                           sizeof(*pCookedReadData),
@@ -1169,9 +1168,9 @@ BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
 
     // this routine should be called by a thread owning the same lock on the same console as we're reading from.
 #ifdef DBG
-    pCookedReadData->InputReadHandleData->LockReadCount();
-    ASSERT(pCookedReadData->InputReadHandleData->GetReadCount() > 0);
-    pCookedReadData->InputReadHandleData->UnlockReadCount();
+    pCookedReadData->pInputReadHandleData->LockReadCount();
+    ASSERT(pCookedReadData->pInputReadHandleData->GetReadCount() > 0);
+    pCookedReadData->pInputReadHandleData->UnlockReadCount();
 #endif
 
     pCookedReadData->pInputReadHandleData->DecrementReadCount();
@@ -1766,7 +1765,7 @@ VOID UnblockWriteConsole(_In_ const DWORD dwReason)
     if (AreAllFlagsClear(g_ciConsoleInformation.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         // There is no longer any reason to suspend output, so unblock it.
-        g_ciConsoleInformation.OutputQueue.NotifyWaiters(TRUE);
+        g_ciConsoleInformation.OutputQueue.NotifyWaiters(true);
     }
 }
 

@@ -177,10 +177,10 @@ void FreeInputBuffer(_In_ PINPUT_INFORMATION pInputInfo)
 // Routine Description:
 // - This routine waits for a writer to add data to the buffer.
 // Arguments:
-// - pInputInfo - buffer to wait for
 // - Console - Pointer to console buffer information.
 // - pConsoleMsg - if called from dll (not InputThread), points to api
-//             message.  this parameter is used for wait block processing.
+//             message.  this parameter is used for wait block processing. 
+//             We'll get the correct input object from this message.
 // - pfnWaitRoutine - Routine to call when wait is woken up.
 // - pvWaitParameter - Parameter to pass to wait routine.
 // - cbWaitParameter - Length of wait parameter.
@@ -188,8 +188,7 @@ void FreeInputBuffer(_In_ PINPUT_INFORMATION pInputInfo)
 // Return Value:
 // - STATUS_WAIT - call was from client and wait block has been created.
 // - STATUS_SUCCESS - call was from server and wait has been satisfied.
-NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
-                           _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
+NTSTATUS WaitForMoreToRead(_In_opt_ PCONSOLE_API_MSG pConsoleMsg,
                            _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
                            _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
                            _In_ const ULONG cbWaitParameter,
@@ -229,7 +228,7 @@ NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
 // - FALSE/nullptr - The operation failed.
 void WakeUpReadersWaitingForData(_In_ PINPUT_INFORMATION InputInformation)
 {
-    InputInformation->WaitQueue.NotifyWaiters(FALSE);
+    InputInformation->WaitQueue.NotifyWaiters(false);
 }
 
 // Routine Description:
@@ -759,7 +758,7 @@ NTSTATUS ReadInputBuffer(_In_ PINPUT_INFORMATION const pInputInfo,
         }
 
         pHandleData->IncrementReadCount();
-        Status = WaitForMoreToRead(pInputInfo, pConsoleMsg, pfnWaitRoutine, pvWaitParameter, cbWaitParameter, fWaitBlockExists);
+        Status = WaitForMoreToRead(pConsoleMsg, pfnWaitRoutine, pvWaitParameter, cbWaitParameter, fWaitBlockExists);
         if (!NT_SUCCESS(Status))
         {
             if (Status != CONSOLE_STATUS_WAIT)
@@ -1513,10 +1512,10 @@ ULONG ConvertMouseButtonState(_In_ ULONG Flag, _In_ ULONG State)
 // - This routine wakes up any readers waiting for data when a ctrl-c or ctrl-break is input.
 // Arguments:
 // - InputInfo - pointer to input buffer
-// - Flag - flag indicating whether ctrl-break or ctrl-c was input
+// - Flag - flag indicating whether ctrl-break or ctrl-c was input.
 void TerminateRead(_Inout_ PINPUT_INFORMATION InputInfo, _In_ WaitTerminationReason Flag)
 {
-    InputInfo->WaitQueue.NotifyWaiters(TRUE, Flag);
+    InputInfo->WaitQueue.NotifyWaiters(true, Flag);
 }
 
 // Routine Description:

@@ -37,7 +37,7 @@ public:
 
     static HRESULT s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
                                 _In_ ConsoleWaitRoutine const pfnWaitRoutine,
-                                _In_ PVOID const pvWaitParameter);
+                                _In_ PVOID const pvWaitContext);
 
 private:
     bool _NotifyBlock(_In_ ConsoleWaitBlock* pWaitBlock,

@@ -33,12 +33,12 @@ ConsoleWaitQueue::~ConsoleWaitQueue()
 // Arguments:
 // - pWaitReplyMessage - The API message that we're deferring until data is available later.
 // - pfnWaitRoutine - The function to callback later when data becomes available.
-// - pvWaitParameter - The parameter to pass to the callback function.
+// - pvWaitContext - The parameter to pass to the callback function.
 // Return Value:
 // - S_OK if enqueued appropriately and everything is alright. Or suitable HRESULT failure otherwise.
 HRESULT ConsoleWaitQueue::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
                                        _In_ ConsoleWaitRoutine const pfnWaitRoutine,
-                                       _In_ PVOID const pvWaitParameter)
+                                       _In_ PVOID const pvWaitContext)
 {
     // Normally we'd have the Wait Queue handle the insertion of the block into the queue, but
     // the console does queues in a somewhat special way.
@@ -56,7 +56,7 @@ HRESULT ConsoleWaitQueue::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReply
 
     return ConsoleWaitBlock::s_CreateWait(pWaitReplyMessage,
                                           pfnWaitRoutine,
-                                          pvWaitParameter);
+                                          pvWaitContext);
 }
 
 // Routine Description:

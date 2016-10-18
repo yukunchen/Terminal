@@ -23,8 +23,8 @@ Revision History:
 class ConsoleWaitQueue;
 
 typedef BOOL(*ConsoleWaitRoutine) (_In_ PCONSOLE_API_MSG pWaitReplyMessage,
-                                     _In_ PVOID pvWaitParameter,
-                                     _In_ WaitTerminationReason TerminationReason);
+                                   _In_ PVOID pvWaitContext,
+                                   _In_ WaitTerminationReason TerminationReason);
 
 class ConsoleWaitBlock
 {
@@ -36,14 +36,14 @@ public:
 
     static HRESULT s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
                                 _In_ ConsoleWaitRoutine const pfnWaitRoutine,
-                                _In_ PVOID const pvWaitParameter);
+                                _In_ PVOID const pvWaitContext);
 
 
 private:
     ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
                      _In_ ConsoleWaitQueue* const pObjectQueue,
                      _In_ ConsoleWaitRoutine const pfnWaitRoutine,
-                     _In_ PVOID const pvWaitParameter,
+                     _In_ PVOID const pvWaitContext,
                      _In_ const CONSOLE_API_MSG* const pWaitReplyMessage);
 
     ConsoleWaitQueue* const _pProcessQueue;
@@ -52,7 +52,7 @@ private:
     ConsoleWaitQueue* const _pObjectQueue;
     std::_List_const_iterator<std::_List_val<std::_List_simple_types<ConsoleWaitBlock*>>> _itObjectQueue;
 
-    PVOID const _pvWaitParameter;
+    PVOID const _pvWaitContext;
     ConsoleWaitRoutine const _pfnWaitRoutine;
     CONSOLE_API_MSG _WaitReplyMessage;
 };

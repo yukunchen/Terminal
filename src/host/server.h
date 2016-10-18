@@ -134,8 +134,6 @@ private:
 
 #include "..\server\ObjectHandle.h"
 
-#include "..\server\WaitQueue.h"
-
 NTSTATUS ReadMessageInput(_In_ PCONSOLE_API_MSG pMessage, _In_ const ULONG ulOffset, _Out_writes_bytes_(cbSize) PVOID pvBuffer, _In_ const ULONG cbSize);
 NTSTATUS GetAugmentedOutputBuffer(_Inout_ PCONSOLE_API_MSG pMessage,
                                   _In_ const ULONG ulFactor,

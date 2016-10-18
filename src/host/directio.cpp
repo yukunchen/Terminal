@@ -245,9 +245,9 @@ BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage,
     __try
     {
 #ifdef DBG
-        DirectReadData->InputReadHandleData->LockReadCount();
-        ASSERT(DirectReadData->InputReadHandleData->GetReadCount() > 0);
-        DirectReadData->InputReadHandleData->UnlockReadCount();
+        DirectReadData->pInputReadHandleData->LockReadCount();
+        ASSERT(DirectReadData->pInputReadHandleData->GetReadCount() > 0);
+        DirectReadData->pInputReadHandleData->UnlockReadCount();
 #endif
         DirectReadData->pInputReadHandleData->DecrementReadCount();
 

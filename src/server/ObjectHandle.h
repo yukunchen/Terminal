@@ -25,7 +25,7 @@ typedef _INPUT_INFORMATION *PINPUT_INFORMATION;
 
 class SCREEN_INFORMATION;
 
-class ConsoleWaitQueue;
+#include "WaitQueue.h"
 
 class ConsoleHandleData
 {
@@ -36,11 +36,11 @@ public:
                       _In_ PVOID const pvClientPointer);
 
     HRESULT GetInputBuffer(_In_ const ACCESS_MASK amRequested,
-                           _Out_ INPUT_INFORMATION** const ppInputInfo) const;
+                           _Outptr_ INPUT_INFORMATION** const ppInputInfo) const;
     HRESULT GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
-                            _Out_ SCREEN_INFORMATION** const ppScreenInfo) const;
+                            _Outptr_ SCREEN_INFORMATION** const ppScreenInfo) const;
 
-    HRESULT GetWaitQueue(_Out_ ConsoleWaitQueue** const ppWaitQueue) const;
+    HRESULT GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWaitQueue) const;
 
     INPUT_READ_HANDLE_DATA* GetClientInput() const;
 
