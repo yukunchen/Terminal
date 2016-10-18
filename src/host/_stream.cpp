@@ -863,12 +863,14 @@ NTSTATUS DoWriteConsole(_In_ PCONSOLE_API_MSG m, _In_ PSCREEN_INFORMATION pScree
         memmove(TransBuffer, m->State.TransBuffer, a->NumBytes);
         m->State.TransBuffer = TransBuffer;
         m->State.StackBuffer = FALSE;
-        if (!ConsoleWaitQueue::s_ConsoleCreateWait(WriteConsoleWaitRoutine, m, pScreenInfo))
+
+        HRESULT hr = ConsoleWaitQueue::s_CreateWait(m, WriteConsoleWaitRoutine, pScreenInfo);
+        if (FAILED(hr))
         {
             delete[] TransBuffer;
             m->State.TransBuffer = nullptr;
             m->State.StackBuffer = TRUE;
-            return STATUS_NO_MEMORY;
+            return NTSTATUS_FROM_HRESULT(hr);
         }
 
         return CONSOLE_STATUS_WAIT;

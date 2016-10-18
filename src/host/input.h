@@ -129,7 +129,7 @@ NTSTATUS ReadInputBuffer(_In_ PINPUT_INFORMATION const pInputInfo,
                          _In_ BOOL const fStreamRead,
                          _In_ INPUT_READ_HANDLE_DATA* pHandleData,
                          _In_opt_ PCONSOLE_API_MSG pConsoleMessage,
-                         _In_opt_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
+                         _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
                          _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
                          _In_ ULONG const cbWaitParameter,
                          _In_ BOOLEAN const fWaitBlockExists,
@@ -142,7 +142,7 @@ void FreeInputBuffer(_In_ PINPUT_INFORMATION pInputInfo);
 
 NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
                            _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
-                           _In_opt_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
+                           _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
                            _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
                            _In_ const ULONG cbWaitParameter,
                            _In_ const BOOLEAN fWaitBlockExists);

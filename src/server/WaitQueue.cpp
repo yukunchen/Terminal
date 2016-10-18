@@ -12,124 +12,119 @@
 #include "..\host\globals.h"
 #include "..\host\utils.hpp"
 
-BOOL ConsoleWaitQueue::ConsoleNotifyWait(_In_ const BOOL fSatisfyAll)
+// Routine Description:
+// - Instantiates a new ConsoleWaitQueue
+ConsoleWaitQueue::ConsoleWaitQueue()
 {
-    return ConsoleNotifyWait(fSatisfyAll, WaitTerminationReason::NoReason);
+
 }
 
-BOOL ConsoleWaitQueue::ConsoleNotifyWait(_In_ const BOOL fSatisfyAll, 
-                                         _In_ WaitTerminationReason TerminationReason)
+// Routine Description:
+// - Destructs a ConsoleWaitQueue
+// - This will notify any remaining waiting items that the associated process/object is dying.
+ConsoleWaitQueue::~ConsoleWaitQueue()
 {
-    BOOL Result = FALSE;
+    // Notify all blocks that the thread or object is dying when destroyed.
+    NotifyWaiters(TRUE, WaitTerminationReason::ThreadDying);
+}
 
-    for (auto it = _blocks.cbegin(); it != _blocks.cend();)
+// Routine Description:
+// - Establishes a wait (call me back later) for a particular message with a given callback routine and its parameter
+// Arguments:
+// - pWaitReplyMessage - The API message that we're deferring until data is available later.
+// - pfnWaitRoutine - The function to callback later when data becomes available.
+// - pvWaitParameter - The parameter to pass to the callback function.
+// Return Value:
+// - S_OK if enqueued appropriately and everything is alright. Or suitable HRESULT failure otherwise.
+HRESULT ConsoleWaitQueue::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
+                                       _In_ ConsoleWaitRoutine const pfnWaitRoutine,
+                                       _In_ PVOID const pvWaitParameter)
+{
+    // Normally we'd have the Wait Queue handle the insertion of the block into the queue, but
+    // the console does queues in a somewhat special way.
+    //
+    // Each block belongs in two queues: 
+    // 1. The process queue of the client that dispatched the request
+    // 2. The object queue that the request will be serviced by
+    // As such, when a wait occurs, it gets added to both queues.
+    //
+    // It will end up being serviced by one or the other queue, but when it is serviced, it must be 
+    // removed from both so it is not double processed.
+    //
+    // Therefore, I've inverted the queue management responsibility into the WaitBlock itself
+    // and made it a friend to this WaitQueue class.
+
+    return ConsoleWaitBlock::s_CreateWait(pWaitReplyMessage,
+                                          pfnWaitRoutine,
+                                          pvWaitParameter);
+}
+
+// Routine Description:
+// - Instructs this queue to attempt to callback waiting requests
+// Arguments:
+// - fNotifyAll - If true, we will notify all items in the queue. If false, we will only notify the first item.
+// Return Value:
+// - True if any block was successfully notified. False if no blocks were successful.
+bool ConsoleWaitQueue::NotifyWaiters(_In_ bool const fNotifyAll)
+{
+    return NotifyWaiters(fNotifyAll, WaitTerminationReason::NoReason);
+}
+
+// Routine Description:
+// - Instructs this queue to attempt to callback waiting requests and request termination with the given reason
+// Arguments:
+// - fNotifyAll - If true, we will notify all items in the queue. If false, we will only notify the first item.
+// - TerminationReason - A reason/message to pass to each waiter signaling it should terminate appropriately.
+// Return Value:
+// - True if any block was successfully notified. False if no blocks were successful.
+bool ConsoleWaitQueue::NotifyWaiters(_In_ bool const fNotifyAll,
+                                     _In_ WaitTerminationReason const TerminationReason)
+{
+    bool fResult = false;
+
+    // Blocks are pushed into the head to make storing constant time iterators easy. (See WaitBlock constructor.)
+    // To ensure it acted as a queue, we need to therefore pull items off the end (reverse iterator).
+    auto it = _blocks.crbegin();
+    while (it != _blocks.crend())
     {
         ConsoleWaitBlock* const WaitBlock = (*it);
-        auto nextIt = std::next(it); // we have to capture next before it is potentially erased
-        if (WaitBlock->WaitRoutine)
+
+        auto const nextIt = std::next(it); // we have to capture next before it is potentially erased
+
+        if (_NotifyBlock(WaitBlock, TerminationReason))
         {
-            Result |= ConsoleNotifyWaitBlock(WaitBlock, TerminationReason);
-            if (!fSatisfyAll)
-            {
-                break;
-            }
+            fResult = true;
         }
+
+        if (!fNotifyAll)
+        {
+            break;
+        }
+
         it = nextIt;
     }
 
-    return Result;
+    return fResult;
 }
 
-BOOL ConsoleWaitQueue::ConsoleNotifyWaitBlock(_In_ ConsoleWaitBlock* pWaitBlock, 
-                                              _In_ WaitTerminationReason TerminationReason)
+// Routine Description:
+// - A helper to delete successfully notified callbacks
+// Arguments:
+// - pWaitBlock - A block containing callback data
+// - TerminationReason - Optional reason to tell the callback to terminate. If 0, we're not requesting termination.
+// Return Value:
+// - True if callback successfully delivered data. False if callback still needs to wait longer.
+bool ConsoleWaitQueue::_NotifyBlock(_In_ ConsoleWaitBlock* pWaitBlock,
+                                    _In_ WaitTerminationReason TerminationReason)
 {
-    if ((*pWaitBlock->WaitRoutine)(&pWaitBlock->WaitReplyMessage, pWaitBlock->WaitParameter, TerminationReason))
+    // Attempt to notify block with the given reason.
+    bool const fResult = pWaitBlock->Notify(TerminationReason);
+
+    if (fResult)
     {
-        ReleaseMessageBuffers(&pWaitBlock->WaitReplyMessage);
-
-        LOG_IF_FAILED(g_pDeviceComm->CompleteIo(&pWaitBlock->WaitReplyMessage.Complete));
-
+        // If it was successful, delete it. (It will remove itself from appropriate queues.)
         delete pWaitBlock;
-
-        return TRUE;
-    }
-    else
-    {
-        // If fThreadDying is TRUE we need to make sure that we removed the pWaitBlock from the list (which we don't do on this branch).
-        assert(IsFlagClear(TerminationReason, WaitTerminationReason::ThreadDying));
-        return FALSE;
-    }
-}
-
-_Success_(return == TRUE)
-static BOOL ConsoleInitializeWait(_In_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
-                                  _Inout_ PCONSOLE_API_MSG pWaitReplyMessage,
-                                  _In_ PVOID pvWaitParameter,
-                                  _Outptr_ ConsoleWaitBlock** ppWaitBlock)
-{
-    PCONSOLE_PROCESS_HANDLE const ProcessData = GetMessageProcess(pWaitReplyMessage);
-    assert(ProcessData != nullptr);
-
-    ConsoleWaitQueue* pProcessQueue = &ProcessData->WaitBlockQueue;
-
-    ConsoleHandleData* const pHandleData = GetMessageObject(pWaitReplyMessage);
-    assert(pHandleData != nullptr);
-
-    ConsoleWaitQueue* pObjectQueue;
-    pHandleData->GetWaitQueue(&pObjectQueue);
-    assert(pObjectQueue != nullptr);
-
-    ConsoleWaitBlock* WaitBlock;
-    try
-    {
-        WaitBlock = new ConsoleWaitBlock(pProcessQueue, pObjectQueue);
-    }
-    catch(...)
-    {
-        HRESULT hr = wil::ResultFromCaughtException();
-        SetReplyStatus(pWaitReplyMessage, NTSTATUS_FROM_HRESULT(hr));
-        return FALSE;
-    }
-    
-    if (WaitBlock == nullptr)
-    {
-        SetReplyStatus(pWaitReplyMessage, STATUS_NO_MEMORY);
-        return FALSE;
     }
 
-    WaitBlock->WaitParameter = pvWaitParameter;
-    WaitBlock->WaitRoutine = pfnWaitRoutine;
-    memmove(&WaitBlock->WaitReplyMessage, pWaitReplyMessage, sizeof(CONSOLE_API_MSG));
-
-    if (pWaitReplyMessage->Complete.Write.Data != nullptr)
-    {
-        WaitBlock->WaitReplyMessage.Complete.Write.Data = &WaitBlock->WaitReplyMessage.u;
-    }
-
-    *ppWaitBlock = WaitBlock;
-
-    return TRUE;
-}
-
-BOOL ConsoleWaitQueue::s_ConsoleCreateWait(_In_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
-                                           _Inout_ PCONSOLE_API_MSG pWaitReplyMessage,
-                                           _In_ PVOID pvWaitParameter)
-{
-    assert(g_ciConsoleInformation.IsConsoleLocked());
-
-    ConsoleWaitBlock* WaitBlock;
-    if (!ConsoleInitializeWait(pfnWaitRoutine, pWaitReplyMessage, pvWaitParameter, &WaitBlock))
-    {
-        return FALSE;
-    }
-
-    return TRUE;
-}
-
-void ConsoleWaitQueue::FreeBlocks()
-{
-    for (auto it = _blocks.cbegin(); it != _blocks.cend(); std::next(it))
-    {
-        ConsoleNotifyWaitBlock(*it, WaitTerminationReason::ThreadDying);
-    }
+    return fResult;
 }

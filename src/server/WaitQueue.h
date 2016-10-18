@@ -26,30 +26,24 @@ Revision History:
 class ConsoleWaitQueue
 {
 public:
-    BOOL ConsoleNotifyWait(_In_ const BOOL fSatisfyAll);
+    ConsoleWaitQueue();
 
-    BOOL ConsoleNotifyWait(_In_ const BOOL fSatisfyAll,
-                           _In_ WaitTerminationReason TerminationReason);
+    ~ConsoleWaitQueue();
 
-    BOOL ConsoleNotifyWaitBlock(_In_ ConsoleWaitBlock* pWaitBlock,
-                                _In_ WaitTerminationReason TerminationReason);
+    bool NotifyWaiters(_In_ bool const fNotifyAll);
 
-    static BOOL s_ConsoleCreateWait(_In_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
-                                    _Inout_ PCONSOLE_API_MSG pWaitReplyMessage,
-                                    _In_ PVOID pvWaitParameter);
+    bool NotifyWaiters(_In_ bool const fNotifyAll,
+                       _In_ WaitTerminationReason const TerminationReason);
 
-    void FreeBlocks();
+    static HRESULT s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
+                                _In_ ConsoleWaitRoutine const pfnWaitRoutine,
+                                _In_ PVOID const pvWaitParameter);
 
-    ConsoleWaitQueue()
-    {
+private:
+    bool _NotifyBlock(_In_ ConsoleWaitBlock* pWaitBlock,
+                      _In_ WaitTerminationReason const TerminationReason);
 
-    }
-
-    ~ConsoleWaitQueue()
-    {
-
-    }
-
-public:
     std::list<ConsoleWaitBlock*> _blocks;
+
+    friend class ConsoleWaitBlock; // Blocks live in multiple queues so we let them manage the lifetime.
 };

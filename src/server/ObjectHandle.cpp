@@ -231,7 +231,7 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
         pReadHandleData->UnlockReadCount();
         SetFlag(pReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing);
 
-        pInputInfo->WaitQueue.ConsoleNotifyWait(TRUE);
+        pInputInfo->WaitQueue.NotifyWaiters(TRUE);
 
         pReadHandleData->LockReadCount();
     }

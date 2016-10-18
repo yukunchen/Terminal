@@ -22,27 +22,37 @@ Revision History:
 
 class ConsoleWaitQueue;
 
-typedef BOOL(*CONSOLE_WAIT_ROUTINE) (_In_ PCONSOLE_API_MSG pWaitReplyMessage,
+typedef BOOL(*ConsoleWaitRoutine) (_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                                      _In_ PVOID pvWaitParameter,
                                      _In_ WaitTerminationReason TerminationReason);
 
 class ConsoleWaitBlock
 {
 public:
-    PVOID WaitParameter;
-    CONSOLE_WAIT_ROUTINE WaitRoutine;
-    CONSOLE_API_MSG WaitReplyMessage;
 
-    ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
-                        _In_ ConsoleWaitQueue* const pObjectQueue);
     ~ConsoleWaitBlock();
-    
+
+    bool Notify(_In_ WaitTerminationReason const TerminationReason);
+
+    static HRESULT s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
+                                _In_ ConsoleWaitRoutine const pfnWaitRoutine,
+                                _In_ PVOID const pvWaitParameter);
+
 
 private:
+    ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
+                     _In_ ConsoleWaitQueue* const pObjectQueue,
+                     _In_ ConsoleWaitRoutine const pfnWaitRoutine,
+                     _In_ PVOID const pvWaitParameter,
+                     _In_ const CONSOLE_API_MSG* const pWaitReplyMessage);
+
     ConsoleWaitQueue* const _pProcessQueue;
     std::_List_const_iterator<std::_List_val<std::_List_simple_types<ConsoleWaitBlock*>>> _itProcessQueue;
 
     ConsoleWaitQueue* const _pObjectQueue;
     std::_List_const_iterator<std::_List_val<std::_List_simple_types<ConsoleWaitBlock*>>> _itObjectQueue;
 
+    PVOID const _pvWaitParameter;
+    ConsoleWaitRoutine const _pfnWaitRoutine;
+    CONSOLE_API_MSG _WaitReplyMessage;
 };

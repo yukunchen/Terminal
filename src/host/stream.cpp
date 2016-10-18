@@ -71,7 +71,7 @@ NTSTATUS GetChar(_In_ PINPUT_INFORMATION pInputInfo,
                  _In_ const BOOL fWait,
                  _In_opt_ INPUT_READ_HANDLE_DATA* pHandleData,
                  _In_opt_ PCONSOLE_API_MSG pConsoleMessage,
-                 _In_opt_ CONSOLE_WAIT_ROUTINE pWaitRoutine,
+                 _In_opt_ ConsoleWaitRoutine pWaitRoutine,
                  _In_opt_ PVOID pvWaitParameter,
                  _In_opt_ ULONG ulWaitParameterLength,
                  _In_opt_ BOOLEAN fWaitBlockExists,
@@ -878,7 +878,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                          TRUE,
                          pCookedReadData->pInputReadHandleData,
                          pWaitReplyMessage,
-                         (CONSOLE_WAIT_ROUTINE)CookedReadWaitRoutine,
+                         (ConsoleWaitRoutine)CookedReadWaitRoutine,
                          pCookedReadData,
                          sizeof(*pCookedReadData),
                          fWaitRoutine,
@@ -921,7 +921,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                         // we have no wait block, so create one.
                         WaitForMoreToRead(pCookedReadData->pInputInfo,
                                           pWaitReplyMessage,
-                                          (CONSOLE_WAIT_ROUTINE)CookedReadWaitRoutine,
+                                          (ConsoleWaitRoutine)CookedReadWaitRoutine,
                                           pCookedReadData,
                                           sizeof(*pCookedReadData),
                                           FALSE);
@@ -1766,7 +1766,7 @@ VOID UnblockWriteConsole(_In_ const DWORD dwReason)
     if (AreAllFlagsClear(g_ciConsoleInformation.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         // There is no longer any reason to suspend output, so unblock it.
-        g_ciConsoleInformation.OutputQueue.ConsoleNotifyWait(TRUE);
+        g_ciConsoleInformation.OutputQueue.NotifyWaiters(TRUE);
     }
 }
 

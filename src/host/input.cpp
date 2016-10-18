@@ -190,7 +190,7 @@ void FreeInputBuffer(_In_ PINPUT_INFORMATION pInputInfo)
 // - STATUS_SUCCESS - call was from server and wait has been satisfied.
 NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
                            _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
-                           _In_opt_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
+                           _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
                            _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
                            _In_ const ULONG cbWaitParameter,
                            _In_ const BOOLEAN fWaitBlockExists)
@@ -208,11 +208,12 @@ NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
             g_ciConsoleInformation.lpCookedReadData = (COOKED_READ_DATA*)WaitParameterBuffer;
         }
 
-        if (!ConsoleWaitQueue::s_ConsoleCreateWait(pfnWaitRoutine, pConsoleMsg, WaitParameterBuffer))
+        HRESULT hr = ConsoleWaitQueue::s_CreateWait(pConsoleMsg, pfnWaitRoutine, WaitParameterBuffer);
+        if (FAILED(hr))
         {
             delete[] WaitParameterBuffer;
             g_ciConsoleInformation.lpCookedReadData = nullptr;
-            return STATUS_NO_MEMORY;
+            return NTSTATUS_FROM_HRESULT(hr);
         }
     }
 
@@ -228,7 +229,7 @@ NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
 // - FALSE/nullptr - The operation failed.
 void WakeUpReadersWaitingForData(_In_ PINPUT_INFORMATION InputInformation)
 {
-    InputInformation->WaitQueue.ConsoleNotifyWait(FALSE);
+    InputInformation->WaitQueue.NotifyWaiters(FALSE);
 }
 
 // Routine Description:
@@ -742,7 +743,7 @@ NTSTATUS ReadInputBuffer(_In_ PINPUT_INFORMATION const pInputInfo,
                          _In_ BOOL const fStreamRead,
                          _In_ INPUT_READ_HANDLE_DATA* pHandleData,
                          _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
-                         _In_opt_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
+                         _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
                          _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
                          _In_ ULONG const cbWaitParameter,
                          _In_ BOOLEAN const fWaitBlockExists,
@@ -1515,7 +1516,7 @@ ULONG ConvertMouseButtonState(_In_ ULONG Flag, _In_ ULONG State)
 // - Flag - flag indicating whether ctrl-break or ctrl-c was input
 void TerminateRead(_Inout_ PINPUT_INFORMATION InputInfo, _In_ WaitTerminationReason Flag)
 {
-    InputInfo->WaitQueue.ConsoleNotifyWait(TRUE, Flag);
+    InputInfo->WaitQueue.NotifyWaiters(TRUE, Flag);
 }
 
 // Routine Description:

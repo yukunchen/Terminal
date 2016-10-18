@@ -27,7 +27,7 @@ typedef struct _CONSOLE_PROCESS_HANDLE
     ULONG ProcessGroupId;
     CLIENT_ID ClientId;
     BOOL RootProcess;
-    ConsoleWaitQueue WaitBlockQueue;
+    ConsoleWaitQueue* pWaitBlockQueue;
     ConsoleHandleData* InputHandle;
     ConsoleHandleData* OutputHandle;
 } CONSOLE_PROCESS_HANDLE, *PCONSOLE_PROCESS_HANDLE;
