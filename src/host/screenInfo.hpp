@@ -25,6 +25,7 @@ Revision History:
 #include "outputStream.hpp"
 #include "..\terminal\adapter\adaptDispatch.hpp"
 #include "..\terminal\parser\stateMachine.hpp"
+#include "..\server\ObjectHeader.h"
 using namespace Microsoft::Console::VirtualTerminal;
 
 class Window; // forward decl window. circular reference

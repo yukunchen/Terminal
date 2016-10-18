@@ -71,7 +71,7 @@ NTSTATUS GetChar(_In_ PINPUT_INFORMATION pInputInfo,
                  _In_ const BOOL fWait,
                  _In_opt_ INPUT_READ_HANDLE_DATA* pHandleData,
                  _In_opt_ PCONSOLE_API_MSG pConsoleMessage,
-                 _In_opt_ CONSOLE_WAIT_ROUTINE pWaitRoutine,
+                 _In_opt_ ConsoleWaitRoutine pWaitRoutine,
                  _In_opt_ PVOID pvWaitParameter,
                  _In_opt_ ULONG ulWaitParameterLength,
                  _In_opt_ BOOLEAN fWaitBlockExists,
@@ -255,24 +255,20 @@ VOID PrepareReadConsoleCompletion(_Inout_ PCONSOLE_API_MSG Message)
 // - It is called in the context of the writing thread.
 // - It will be called at most once per read.?
 // Arguments:
-// - WaitQueue - pointer to queue containing wait block
 // - WaitReplyMessage - Pointer to reply message to return to dll whenread is completed.
 // - RawReadData - pointer to data saved in ReadChars
-// - SatisfyParameter - Flags.
-// - ThreadDying - Indicates whether the thread (and process) is exiting.
+// - TerminationReason - Flags specifying why a termination was requested for this wait
 // Return Value:
-BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
-                        _In_ PCONSOLE_API_MSG pWaitReplyMessage,
+BOOL RawReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                         _In_ PVOID pvWaitParameter,
-                        _In_ PVOID pvSatisfyParameter,
-                        _In_ BOOL fThreadDying)
+                        _In_ WaitTerminationReason const TerminationReason)
 {
     PCONSOLE_READCONSOLE_MSG const a = &pWaitReplyMessage->u.consoleMsgL1.ReadConsole;
     PRAW_READ_DATA const RawReadData = (PRAW_READ_DATA)pvWaitParameter;
 
     NTSTATUS Status = STATUS_SUCCESS;
 
-    if ((ULONG_PTR)pvSatisfyParameter & CONSOLE_CTRL_C_SEEN)
+    if (IsFlagSet(TerminationReason, WaitTerminationReason::CtrlC))
     {
         return FALSE;
     }
@@ -285,40 +281,34 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
     BOOLEAN RetVal = TRUE;
     BOOL fAddDbcsLead = FALSE;
     bool fSkipFinally = false;
-    __try
-    {
+
 #ifdef DBG
-        RawReadData->InputReadHandleData->LockReadCount();
-        ASSERT(RawReadData->InputReadHandleData->GetReadCount() > 0);
-        RawReadData->InputReadHandleData->UnlockReadCount();
+    RawReadData->pInputReadHandleData->LockReadCount();
+    ASSERT(RawReadData->pInputReadHandleData->GetReadCount() > 0);
+    RawReadData->pInputReadHandleData->UnlockReadCount();
 #endif
-        RawReadData->pInputReadHandleData->DecrementReadCount();
+    RawReadData->pInputReadHandleData->DecrementReadCount();
 
-        // If a ctrl-c is seen, don't terminate read. If ctrl-break is seen, terminate read.
-        if ((ULONG_PTR)pvSatisfyParameter & CONSOLE_CTRL_BREAK_SEEN)
-        {
-            SetReplyStatus(pWaitReplyMessage, STATUS_ALERTED);
-            __leave;
-        }
-
-        // See if we were called because the thread that owns this wait block is exiting.
-        if (fThreadDying)
-        {
-            Status = STATUS_THREAD_IS_TERMINATING;
-            __leave;
-        }
-
-        // We must see if we were woken up because the handle is being
-        // closed. If so, we decrement the read count. If it goes to zero,
-        // we wake up the close thread. Otherwise, we wake up any other
-        // thread waiting for data.
-
-        if (IsFlagSet(RawReadData->pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing))
-        {
-            Status = STATUS_ALERTED;
-            __leave;
-        }
-
+    // If a ctrl-c is seen, don't terminate read. If ctrl-break is seen, terminate read.
+    if (IsFlagSet(TerminationReason, WaitTerminationReason::CtrlBreak))
+    {
+        SetReplyStatus(pWaitReplyMessage, STATUS_ALERTED);
+    }
+    // See if we were called because the thread that owns this wait block is exiting.
+    else if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
+    {
+        Status = STATUS_THREAD_IS_TERMINATING;
+    }
+    // We must see if we were woken up because the handle is being
+    // closed. If so, we decrement the read count. If it goes to zero,
+    // we wake up the close thread. Otherwise, we wake up any other
+    // thread waiting for data.
+    else if (IsFlagSet(RawReadData->pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing))
+    {
+        Status = STATUS_ALERTED;
+    }
+    else
+    {
         // If we get to here, this routine was called either by the input
         // thread or a write routine. Both of these callers grab the current
         // console lock.
@@ -345,7 +335,6 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
                     a->NumBytes = 1;
                     RetVal = FALSE;
                     fSkipFinally = true;
-                    __leave;
                 }
             }
             else
@@ -382,48 +371,49 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
                              nullptr);
         }
 
-        if (!NT_SUCCESS(Status))
+        if (!NT_SUCCESS(Status) || fSkipFinally)
         {
             if (Status == CONSOLE_STATUS_WAIT)
             {
                 RetVal = FALSE;
             }
-            __leave;
         }
-        IsCharFullWidth(*lpBuffer) ? NumBytes += 2 : NumBytes++;
-        lpBuffer++;
-        a->NumBytes += sizeof(WCHAR);
-        while (a->NumBytes < RawReadData->BufferSize)
+        else
         {
-            // This call to GetChar won't block.
-            Status = GetChar(RawReadData->pInputInfo, lpBuffer, FALSE, nullptr, nullptr, nullptr, nullptr, 0, TRUE, nullptr, nullptr, nullptr, nullptr);
-            if (!NT_SUCCESS(Status))
-            {
-                Status = STATUS_SUCCESS;
-                break;
-            }
             IsCharFullWidth(*lpBuffer) ? NumBytes += 2 : NumBytes++;
             lpBuffer++;
             a->NumBytes += sizeof(WCHAR);
+            while (a->NumBytes < RawReadData->BufferSize)
+            {
+                // This call to GetChar won't block.
+                Status = GetChar(RawReadData->pInputInfo, lpBuffer, FALSE, nullptr, nullptr, nullptr, nullptr, 0, TRUE, nullptr, nullptr, nullptr, nullptr);
+                if (!NT_SUCCESS(Status))
+                {
+                    Status = STATUS_SUCCESS;
+                    break;
+                }
+                IsCharFullWidth(*lpBuffer) ? NumBytes += 2 : NumBytes++;
+                lpBuffer++;
+                a->NumBytes += sizeof(WCHAR);
+            }
         }
     }
-    __finally
+
+    // If the read was completed (status != wait), free the raw read data.
+    if (Status != CONSOLE_STATUS_WAIT && !fSkipFinally)
     {
-        // If the read was completed (status != wait), free the raw read data.
-        if (Status != CONSOLE_STATUS_WAIT && !fSkipFinally)
+        if (!a->Unicode)
         {
-            if (!a->Unicode)
+            PCHAR TransBuffer;
+
+            // It's ansi, so translate the string.
+            TransBuffer = (PCHAR) new BYTE[NumBytes];
+            if (TransBuffer == nullptr)
             {
-                PCHAR TransBuffer;
-
-                // It's ansi, so translate the string.
-                TransBuffer = (PCHAR) new BYTE[NumBytes];
-                if (TransBuffer == nullptr)
-                {
-                    RetVal = TRUE;
-                    goto EndFinally;
-                }
-
+                RetVal = TRUE;
+            }
+            else
+            {
                 lpBuffer = RawReadData->BufPtr;
 
                 a->NumBytes = TranslateUnicodeToOem(lpBuffer, a->NumBytes / sizeof(WCHAR), TransBuffer, NumBytes, &RawReadData->pInputInfo->ReadConInpDbcsLeadByte);
@@ -435,12 +425,16 @@ BOOL RawReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/,
                 }
 
                 delete[] TransBuffer;
-            }
 
+                SetReplyStatus(pWaitReplyMessage, Status);
+                PrepareReadConsoleCompletion(pWaitReplyMessage);
+            }
+        }
+        else
+        {
             SetReplyStatus(pWaitReplyMessage, Status);
             PrepareReadConsoleCompletion(pWaitReplyMessage);
         }
-    EndFinally:;
     }
 
     return RetVal;
@@ -882,7 +876,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                          TRUE,
                          pCookedReadData->pInputReadHandleData,
                          pWaitReplyMessage,
-                         (CONSOLE_WAIT_ROUTINE)CookedReadWaitRoutine,
+                         (ConsoleWaitRoutine)CookedReadWaitRoutine,
                          pCookedReadData,
                          sizeof(*pCookedReadData),
                          fWaitRoutine,
@@ -923,9 +917,8 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                     if (!fWaitRoutine)
                     {
                         // we have no wait block, so create one.
-                        WaitForMoreToRead(pCookedReadData->pInputInfo,
-                                          pWaitReplyMessage,
-                                          (CONSOLE_WAIT_ROUTINE)CookedReadWaitRoutine,
+                        WaitForMoreToRead(pWaitReplyMessage,
+                                          (ConsoleWaitRoutine)CookedReadWaitRoutine,
                                           pCookedReadData,
                                           sizeof(*pCookedReadData),
                                           FALSE);
@@ -1159,33 +1152,29 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
 // - It is called in the context of the writing thread.
 // - It may be called more than once.
 // Arguments:
-// - WaitQueue - pointer to queue containing wait block
 // - WaitReplyMessage - pointer to reply message
 // - CookedReadData - pointer to data saved in ReadChars
-// - SatisfyParameter - if this routine is called because a ctrl-c or ctrl-break was seen, this argument
-//                      contains CONSOLE_CTRL_SEEN. otherwise it contains nullptr.
-// - ThreadDying - Indicates if the owning thread (and process) is exiting.
+// - TerminationReason - if this routine is called because a ctrl-c or ctrl-break was seen, this argument
+//                      contains CtrlC or CtrlBreak. If the owning thread is exiting, it will have ThreadDying. Otherwise 0.
 // Return Value:
-BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
-                           _In_ PCONSOLE_API_MSG pWaitReplyMessage,
+BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                            _In_ PCOOKED_READ_DATA pCookedReadData,
-                           _In_ void * const pvSatisfyParameter,
-                           _In_ const BOOL fThreadDying)
+                           _In_ WaitTerminationReason const TerminationReason)
 {
     NTSTATUS Status = STATUS_SUCCESS;
     ASSERT(IsFlagClear(pCookedReadData->pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending));
 
     // this routine should be called by a thread owning the same lock on the same console as we're reading from.
 #ifdef DBG
-    pCookedReadData->InputReadHandleData->LockReadCount();
-    ASSERT(pCookedReadData->InputReadHandleData->GetReadCount() > 0);
-    pCookedReadData->InputReadHandleData->UnlockReadCount();
+    pCookedReadData->pInputReadHandleData->LockReadCount();
+    ASSERT(pCookedReadData->pInputReadHandleData->GetReadCount() > 0);
+    pCookedReadData->pInputReadHandleData->UnlockReadCount();
 #endif
 
     pCookedReadData->pInputReadHandleData->DecrementReadCount();
 
     // if ctrl-c or ctrl-break was seen, terminate read.
-    if (IsAnyFlagSet((ULONG_PTR)pvSatisfyParameter, (CONSOLE_CTRL_C_SEEN | CONSOLE_CTRL_BREAK_SEEN)))
+    if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
     {
         SetReplyStatus(pWaitReplyMessage, STATUS_ALERTED);
         delete[] pCookedReadData->BackupLimit;
@@ -1197,7 +1186,7 @@ BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
     }
 
     // See if we were called because the thread that owns this wait block is exiting.
-    if (fThreadDying)
+    if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
         SetReplyStatus(pWaitReplyMessage, STATUS_THREAD_IS_TERMINATING);
 
@@ -1774,7 +1763,7 @@ VOID UnblockWriteConsole(_In_ const DWORD dwReason)
     if (AreAllFlagsClear(g_ciConsoleInformation.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         // There is no longer any reason to suspend output, so unblock it.
-        ConsoleNotifyWait(&g_ciConsoleInformation.OutputQueue, TRUE, nullptr);
+        g_ciConsoleInformation.OutputQueue.NotifyWaiters(true);
     }
 }
 
@@ -1814,15 +1803,13 @@ NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
     return Status;
 }
 
-BOOL WriteConsoleWaitRoutine(_In_ PLIST_ENTRY /*pWaitQueue*/,
-                             _In_ PCONSOLE_API_MSG pWaitReplyMessage,
+BOOL WriteConsoleWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                              _In_ PVOID pvWaitParameter,
-                             _In_ PVOID /*pvSatisfyParameter*/,
-                             _In_ BOOL fThreadDying)
+                             _In_ WaitTerminationReason const TerminationReason)
 {
     PCONSOLE_WRITECONSOLE_MSG const a = &pWaitReplyMessage->u.consoleMsgL1.WriteConsole;
 
-    if (fThreadDying)
+    if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
         SetReplyStatus(pWaitReplyMessage, STATUS_THREAD_IS_TERMINATING);
         return TRUE;

@@ -501,7 +501,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, _In_ const BOOL fUnexp
         if (0 != GetSystemDirectoryW(pwszSysRoot, MAX_PATH))
         {
             if (SUCCEEDED(StringCbLengthW(pwszConsoleTitle, STRSAFE_MAX_CCH, &cbConsoleTitle)) &&
-                SUCCEEDED(StringCbLengthW(pwszSysRoot, STRSAFE_MAX_CCH, &cbSystemRoot)))
+                SUCCEEDED(StringCbLengthW(pwszSysRoot, MAX_PATH, &cbSystemRoot)))
             {
                 int const cchSystemRoot = (int)(cbSystemRoot / sizeof(WCHAR));
                 int const cchConsoleTitle = (int)(cbConsoleTitle / sizeof(WCHAR));
@@ -1018,20 +1018,17 @@ DWORD ConsoleIoThread()
         }
 
         // TODO: correct mixed NTSTATUS/HRESULT
-        Status = g_pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
-        if (FAILED(Status))
+        HRESULT hr = g_pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
+        if (FAILED(hr))
         {
-            if (Status == STATUS_PIPE_DISCONNECTED ||
-                Status == ERROR_PIPE_NOT_CONNECTED ||
-                Status == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED) ||
-                Status == NTSTATUS_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
+            if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
             {
                 fShouldExit = true;
 
                 // This will not return. Terminate immediately when disconnected.
                 TerminateProcess(GetCurrentProcess(), STATUS_SUCCESS);
             }
-            RIPMSG1(RIP_WARNING, "NtReplyWaitReceivePort failed with Status 0x%x", Status);
+            RIPMSG1(RIP_WARNING, "DeviceIoControl failed with Result 0x%x", hr);
             ReplyMsg = nullptr;
             continue;
         }

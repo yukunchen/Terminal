@@ -8,6 +8,7 @@
 
 #include "ObjectHandle.h"
 
+#include "..\host\globals.h"
 #include "..\host\inputReadHandleData.h"
 #include "..\host\input.h"
 #include "..\host\screenInfo.hpp"
@@ -103,7 +104,7 @@ bool ConsoleHandleData::IsWriteShared() const
 // Return Value:
 // - HRESULT S_OK or suitable error.
 HRESULT ConsoleHandleData::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
-                                          _Out_ INPUT_INFORMATION** const ppInputInfo) const
+                                          _Outptr_ INPUT_INFORMATION** const ppInputInfo) const
 {
     *ppInputInfo = nullptr;
 
@@ -123,7 +124,7 @@ HRESULT ConsoleHandleData::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
 // Return Value:
 // - HRESULT S_OK or suitable error.
 HRESULT ConsoleHandleData::GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
-                                           _Out_ SCREEN_INFORMATION** const ppScreenInfo) const
+                                           _Outptr_ SCREEN_INFORMATION** const ppScreenInfo) const
 {
     *ppScreenInfo = nullptr;
 
@@ -133,6 +134,32 @@ HRESULT ConsoleHandleData::GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
     *ppScreenInfo = static_cast<SCREEN_INFORMATION*>(_pvClientPointer);
 
     return S_OK;
+}
+
+// Routine Description:
+// - Retrieves the wait queue associated with the given object held by this handle.
+// Arguments:
+// - ppWaitQueue - On success, filled with a pointer to the desired queue
+// Return Value:
+// - HRESULT S_OK or E_UNEXPECTED if the handle data structure is in an invalid state.
+HRESULT ConsoleHandleData::GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWaitQueue) const
+{
+    if (_IsInput())
+    {
+        INPUT_INFORMATION* const pObj = static_cast<INPUT_INFORMATION*>(_pvClientPointer);
+        *ppWaitQueue = &pObj->WaitQueue;
+        return S_OK;
+    }
+    else if (_IsOutput())
+    {
+        // TODO MSFT 9405322: shouldn't the output queue be per output object target, not global? https://osgvsowi/9405322
+        *ppWaitQueue = &g_ciConsoleInformation.OutputQueue;
+        return S_OK;
+    }
+    else
+    {
+        return E_UNEXPECTED;
+    }
 }
 
 // Routine Description:
@@ -204,7 +231,7 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
         pReadHandleData->UnlockReadCount();
         SetFlag(pReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing);
 
-        ConsoleNotifyWait(&pInputInfo->ReadWaitQueue, TRUE, nullptr);
+        pInputInfo->WaitQueue.NotifyWaiters(TRUE);
 
         pReadHandleData->LockReadCount();
     }

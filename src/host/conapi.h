@@ -16,9 +16,9 @@ Revision History:
 #pragma once
 
 #include <condrv.h>
+#include <conmsgl1.h>
+#include <conmsgl2.h>
 #include <conmsgl3.h>
-
-#include "..\server\ObjectHeader.h"
 
 typedef struct _CONSOLE_API_STATE
 {

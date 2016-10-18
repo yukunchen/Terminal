@@ -127,8 +127,6 @@ NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ PINPUT_INFORMATION pInp
         return Status;
     }
 
-    InitializeListHead(&pInputInfo->ReadWaitQueue);
-
     // initialize buffer header
     pInputInfo->InputBufferSize = cEvents;
     pInputInfo->InputMode = ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT;
@@ -179,10 +177,10 @@ void FreeInputBuffer(_In_ PINPUT_INFORMATION pInputInfo)
 // Routine Description:
 // - This routine waits for a writer to add data to the buffer.
 // Arguments:
-// - pInputInfo - buffer to wait for
 // - Console - Pointer to console buffer information.
 // - pConsoleMsg - if called from dll (not InputThread), points to api
-//             message.  this parameter is used for wait block processing.
+//             message.  this parameter is used for wait block processing. 
+//             We'll get the correct input object from this message.
 // - pfnWaitRoutine - Routine to call when wait is woken up.
 // - pvWaitParameter - Parameter to pass to wait routine.
 // - cbWaitParameter - Length of wait parameter.
@@ -190,9 +188,8 @@ void FreeInputBuffer(_In_ PINPUT_INFORMATION pInputInfo)
 // Return Value:
 // - STATUS_WAIT - call was from client and wait block has been created.
 // - STATUS_SUCCESS - call was from server and wait has been satisfied.
-NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
-                           _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
-                           _In_opt_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
+NTSTATUS WaitForMoreToRead(_In_opt_ PCONSOLE_API_MSG pConsoleMsg,
+                           _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
                            _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
                            _In_ const ULONG cbWaitParameter,
                            _In_ const BOOLEAN fWaitBlockExists)
@@ -210,11 +207,12 @@ NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
             g_ciConsoleInformation.lpCookedReadData = (COOKED_READ_DATA*)WaitParameterBuffer;
         }
 
-        if (!ConsoleCreateWait(&pInputInfo->ReadWaitQueue, pfnWaitRoutine, pConsoleMsg, WaitParameterBuffer))
+        HRESULT hr = ConsoleWaitQueue::s_CreateWait(pConsoleMsg, pfnWaitRoutine, WaitParameterBuffer);
+        if (FAILED(hr))
         {
             delete[] WaitParameterBuffer;
             g_ciConsoleInformation.lpCookedReadData = nullptr;
-            return STATUS_NO_MEMORY;
+            return NTSTATUS_FROM_HRESULT(hr);
         }
     }
 
@@ -230,7 +228,7 @@ NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
 // - FALSE/nullptr - The operation failed.
 void WakeUpReadersWaitingForData(_In_ PINPUT_INFORMATION InputInformation)
 {
-    ConsoleNotifyWait(&InputInformation->ReadWaitQueue, FALSE, nullptr);
+    InputInformation->WaitQueue.NotifyWaiters(false);
 }
 
 // Routine Description:
@@ -744,7 +742,7 @@ NTSTATUS ReadInputBuffer(_In_ PINPUT_INFORMATION const pInputInfo,
                          _In_ BOOL const fStreamRead,
                          _In_ INPUT_READ_HANDLE_DATA* pHandleData,
                          _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
-                         _In_opt_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
+                         _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
                          _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
                          _In_ ULONG const cbWaitParameter,
                          _In_ BOOLEAN const fWaitBlockExists,
@@ -760,7 +758,7 @@ NTSTATUS ReadInputBuffer(_In_ PINPUT_INFORMATION const pInputInfo,
         }
 
         pHandleData->IncrementReadCount();
-        Status = WaitForMoreToRead(pInputInfo, pConsoleMsg, pfnWaitRoutine, pvWaitParameter, cbWaitParameter, fWaitBlockExists);
+        Status = WaitForMoreToRead(pConsoleMsg, pfnWaitRoutine, pvWaitParameter, cbWaitParameter, fWaitBlockExists);
         if (!NT_SUCCESS(Status))
         {
             if (Status != CONSOLE_STATUS_WAIT)
@@ -1514,10 +1512,10 @@ ULONG ConvertMouseButtonState(_In_ ULONG Flag, _In_ ULONG State)
 // - This routine wakes up any readers waiting for data when a ctrl-c or ctrl-break is input.
 // Arguments:
 // - InputInfo - pointer to input buffer
-// - Flag - flag indicating whether ctrl-break or ctrl-c was input
-void TerminateRead(_Inout_ PINPUT_INFORMATION InputInfo, _In_ DWORD Flag)
+// - Flag - flag indicating whether ctrl-break or ctrl-c was input.
+void TerminateRead(_Inout_ PINPUT_INFORMATION InputInfo, _In_ WaitTerminationReason Flag)
 {
-    ConsoleNotifyWait(&InputInfo->ReadWaitQueue, TRUE, IntToPtr(Flag));
+    InputInfo->WaitQueue.NotifyWaiters(true, Flag);
 }
 
 // Routine Description:
@@ -1888,7 +1886,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
             HandleCtrlEvent(CTRL_C_EVENT);
             if (g_ciConsoleInformation.PopupCount == 0)
             {
-                TerminateRead(g_ciConsoleInformation.pInputBuffer, CONSOLE_CTRL_C_SEEN);
+                TerminateRead(g_ciConsoleInformation.pInputBuffer, WaitTerminationReason::CtrlC);
             }
 
             if (!(g_ciConsoleInformation.Flags & CONSOLE_SUSPENDED))
@@ -1904,7 +1902,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
             HandleCtrlEvent(CTRL_BREAK_EVENT);
             if (g_ciConsoleInformation.PopupCount == 0)
             {
-                TerminateRead(g_ciConsoleInformation.pInputBuffer, CONSOLE_CTRL_BREAK_SEEN);
+                TerminateRead(g_ciConsoleInformation.pInputBuffer, WaitTerminationReason::CtrlBreak);
             }
 
             if (!(g_ciConsoleInformation.Flags & CONSOLE_SUSPENDED))

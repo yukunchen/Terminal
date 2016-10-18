@@ -16,17 +16,43 @@ Revision History:
 
 #pragma once
 
-typedef BOOL(*CONSOLE_WAIT_ROUTINE) (_In_ PLIST_ENTRY pWaitQueue,
-                                     _In_ PCONSOLE_API_MSG pWaitReplyMessage,
-                                     _In_ PVOID pvWaitParameter,
-                                     _In_ PVOID pvSatisfyParameter,
-                                     _In_ BOOL fThreadDying);
+#include "..\host\conapi.h"
 
-typedef struct _CONSOLE_WAIT_BLOCK
+#include "WaitTerminationReason.h"
+
+class ConsoleWaitQueue;
+
+typedef BOOL(*ConsoleWaitRoutine) (_In_ PCONSOLE_API_MSG pWaitReplyMessage,
+                                   _In_ PVOID pvWaitContext,
+                                   _In_ WaitTerminationReason TerminationReason);
+
+class ConsoleWaitBlock
 {
-    LIST_ENTRY Link;
-    LIST_ENTRY ProcessLink;
-    PVOID WaitParameter;
-    CONSOLE_WAIT_ROUTINE WaitRoutine;
-    CONSOLE_API_MSG WaitReplyMessage;
-} CONSOLE_WAIT_BLOCK, *PCONSOLE_WAIT_BLOCK;
+public:
+
+    ~ConsoleWaitBlock();
+
+    bool Notify(_In_ WaitTerminationReason const TerminationReason);
+
+    static HRESULT s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
+                                _In_ ConsoleWaitRoutine const pfnWaitRoutine,
+                                _In_ PVOID const pvWaitContext);
+
+
+private:
+    ConsoleWaitBlock(_In_ ConsoleWaitQueue* const pProcessQueue,
+                     _In_ ConsoleWaitQueue* const pObjectQueue,
+                     _In_ ConsoleWaitRoutine const pfnWaitRoutine,
+                     _In_ PVOID const pvWaitContext,
+                     _In_ const CONSOLE_API_MSG* const pWaitReplyMessage);
+
+    ConsoleWaitQueue* const _pProcessQueue;
+    std::_List_const_iterator<std::_List_val<std::_List_simple_types<ConsoleWaitBlock*>>> _itProcessQueue;
+
+    ConsoleWaitQueue* const _pObjectQueue;
+    std::_List_const_iterator<std::_List_val<std::_List_simple_types<ConsoleWaitBlock*>>> _itObjectQueue;
+
+    PVOID const _pvWaitContext;
+    ConsoleWaitRoutine const _pfnWaitRoutine;
+    CONSOLE_API_MSG _WaitReplyMessage;
+};

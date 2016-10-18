@@ -10,6 +10,8 @@
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\WaitBlock.cpp" />
+    <ClCompile Include="..\WaitQueue.cpp" />
     <ClCompile Include="..\WinNTControl.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -21,6 +23,8 @@
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\ProcessHandle.h" />
     <ClInclude Include="..\WaitBlock.h" />
+    <ClInclude Include="..\WaitQueue.h" />
+    <ClInclude Include="..\WaitTerminationReason.h" />
     <ClInclude Include="..\WinNTControl.h" />
   </ItemGroup>
   <PropertyGroup>

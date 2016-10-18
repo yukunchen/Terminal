@@ -40,7 +40,7 @@ typedef struct _INPUT_INFORMATION
     ULONG_PTR In;   // ptr to next free event
     ULONG_PTR Out;  // ptr to next available event
     ULONG_PTR Last; // ptr to end + 1 of buffer
-    LIST_ENTRY ReadWaitQueue;
+    ConsoleWaitQueue WaitQueue; // formerly ReadWaitQueue
     struct
     {
         DWORD Disable:1;    // High   : specifies input code page or enable/disable in NLS state
@@ -109,9 +109,6 @@ private:
 #define KEY_PRESSED 0x8000
 #define KEY_TOGGLED 0x01
 
-#define CONSOLE_CTRL_C_SEEN  1
-#define CONSOLE_CTRL_BREAK_SEEN 2
-
 #define LoadKeyEvent(PEVENT, KEYDOWN, CHAR, KEYCODE, SCANCODE, KEYSTATE) { \
         (PEVENT)->EventType = KEY_EVENT;                                   \
         (PEVENT)->Event.KeyEvent.bKeyDown = KEYDOWN;                       \
@@ -132,7 +129,7 @@ NTSTATUS ReadInputBuffer(_In_ PINPUT_INFORMATION const pInputInfo,
                          _In_ BOOL const fStreamRead,
                          _In_ INPUT_READ_HANDLE_DATA* pHandleData,
                          _In_opt_ PCONSOLE_API_MSG pConsoleMessage,
-                         _In_opt_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
+                         _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
                          _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
                          _In_ ULONG const cbWaitParameter,
                          _In_ BOOLEAN const fWaitBlockExists,
@@ -143,9 +140,8 @@ NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ PINPUT_INFORMATION pInp
 void ReinitializeInputBuffer(_Inout_ PINPUT_INFORMATION pInputInfo);
 void FreeInputBuffer(_In_ PINPUT_INFORMATION pInputInfo);
 
-NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
-                           _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
-                           _In_opt_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
+NTSTATUS WaitForMoreToRead(_In_opt_ PCONSOLE_API_MSG pConsoleMsg,
+                           _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
                            _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
                            _In_ const ULONG cbWaitParameter,
                            _In_ const BOOLEAN fWaitBlockExists);

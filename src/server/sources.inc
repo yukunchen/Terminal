@@ -28,6 +28,8 @@ SOURCES= \
     ..\Entrypoints.cpp \
     ..\ObjectHandle.cpp \
     ..\ObjectHeader.cpp \
+    ..\WaitBlock.cpp \
+    ..\WaitQueue.cpp \
     ..\WinNTControl.cpp \
 
 TARGETLIBS= \

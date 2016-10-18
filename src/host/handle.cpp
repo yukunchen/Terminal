@@ -158,28 +158,35 @@ PCONSOLE_PROCESS_HANDLE AllocProcessData(_In_ CLIENT_ID const * const ClientId,
     ProcessData = new CONSOLE_PROCESS_HANDLE();
     if (ProcessData != nullptr)
     {
-        ProcessData->ClientId = *ClientId;
-        ProcessData->ProcessGroupId = ulProcessGroupId;
+        ProcessData->pWaitBlockQueue = new ConsoleWaitQueue();
 
-        InitializeListHead(&ProcessData->WaitBlockQueue);
-
-        #pragma warning(push)
-        // pointer truncation due to using the HANDLE type to store a DWORD process ID.
-        // We're using the HANDLE type in the public ClientId field to store the process ID when we should
-        // be using a more appropriate type. This should be collected and replaced with the server refactor.
-        // TODO - MSFT:9115192
-        #pragma warning(disable:4311 4302) 
-        ProcessData->ProcessHandle = OpenProcess(MAXIMUM_ALLOWED,
-                                                 FALSE,
-                                                 (DWORD)ProcessData->ClientId.UniqueProcess);
-        #pragma warning(pop)
-
-        // Link this ProcessData ptr into the global list.
-        InsertHeadList(&g_ciConsoleInformation.ProcessHandleList, &ProcessData->ListLink);
-
-        if (ProcessData->ProcessHandle != nullptr)
+        if (ProcessData->pWaitBlockQueue != nullptr)
         {
-            Telemetry::Instance().LogProcessConnected(ProcessData->ProcessHandle);
+            ProcessData->ClientId = *ClientId;
+            ProcessData->ProcessGroupId = ulProcessGroupId;
+
+#pragma warning(push)
+            // pointer truncation due to using the HANDLE type to store a DWORD process ID.
+            // We're using the HANDLE type in the public ClientId field to store the process ID when we should
+            // be using a more appropriate type. This should be collected and replaced with the server refactor.
+            // TODO - MSFT:9115192
+#pragma warning(disable:4311 4302) 
+            ProcessData->ProcessHandle = OpenProcess(MAXIMUM_ALLOWED,
+                                                     FALSE,
+                                                     (DWORD)ProcessData->ClientId.UniqueProcess);
+#pragma warning(pop)
+
+            // Link this ProcessData ptr into the global list.
+            InsertHeadList(&g_ciConsoleInformation.ProcessHandleList, &ProcessData->ListLink);
+
+            if (ProcessData->ProcessHandle != nullptr)
+            {
+                Telemetry::Instance().LogProcessConnected(ProcessData->ProcessHandle);
+            }
+        }
+        else
+        {
+            delete ProcessData;
         }
     }
 
@@ -195,6 +202,8 @@ void FreeProcessData(_In_ PCONSOLE_PROCESS_HANDLE pProcessData)
 {
     ASSERT(g_ciConsoleInformation.IsConsoleLocked());
 
+    delete pProcessData->pWaitBlockQueue;
+
     if (pProcessData->InputHandle != nullptr)
     {
         pProcessData->InputHandle->CloseHandle();
@@ -203,15 +212,6 @@ void FreeProcessData(_In_ PCONSOLE_PROCESS_HANDLE pProcessData)
     if (pProcessData->OutputHandle != nullptr)
     {
         pProcessData->OutputHandle->CloseHandle();
-    }
-
-    while (!IsListEmpty(&pProcessData->WaitBlockQueue))
-    {
-        PCONSOLE_WAIT_BLOCK WaitBlock;
-
-        WaitBlock = CONTAINING_RECORD(pProcessData->WaitBlockQueue.Flink, CONSOLE_WAIT_BLOCK, ProcessLink);
-
-        ConsoleNotifyWaitBlock(WaitBlock, nullptr, nullptr, TRUE);
     }
 
     if (pProcessData->ProcessHandle != nullptr)

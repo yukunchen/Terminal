@@ -39,7 +39,7 @@ NTSTATUS GetChar(_In_ PINPUT_INFORMATION pInputInfo,
                  _In_ const BOOL fWait,
                  _In_opt_ INPUT_READ_HANDLE_DATA* pHandleData,
                  _In_opt_ PCONSOLE_API_MSG pConsoleMessage,
-                 _In_opt_ CONSOLE_WAIT_ROUTINE pWaitRoutine,
+                 _In_opt_ ConsoleWaitRoutine pWaitRoutine,
                  _In_opt_ PVOID pvWaitParameter,
                  _In_opt_ ULONG ulWaitParameterLength,
                  _In_opt_ BOOLEAN fWaitBlockExists,
@@ -67,26 +67,9 @@ BOOL ProcessCookedReadInput(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ WCHAR w
 
 NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MSG pWaitReplyMessage, _In_ const BOOLEAN fWaitRoutine);
 
-// Routine Description:
-// - This routine is called to complete a cooked read that blocked in
-//   ReadInputBuffer.  The context of the read was saved in the CookedReadData
-//   structure.  This routine is called when events have been written to
-//   the input buffer.  It is called in the context of the writing thread.
-//   It may be called more than once.
-// Arguments:
-// - WaitQueue - pointer to queue containing wait block
-// - WaitReplyMessage - pointer to reply message
-// - CookedReadData - pointer to data saved in ReadChars
-// - SatisfyParameter - if this routine is called because a ctrl-c or
-//                      ctrl-break was seen, this argument contains CONSOLE_CTRL_SEEN.
-//                      otherwise it contains nullptr.
-// - ThreadDying - Indicates if the owning thread (and process) is exiting.
-// Return Value:
-BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY pWaitQueue,
-                           _In_ PCONSOLE_API_MSG pWaitReplyMessage,
+BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                            _In_ PCOOKED_READ_DATA pCookedReadData,
-                           _In_ void * const pvSatisfyParameter,
-                           _In_ const BOOL fThreadDying);
+                           _In_ WaitTerminationReason TerminationReason);
 
 // Routine Description:
 // - This routine reads characters from the input stream.
@@ -105,11 +88,9 @@ VOID UnblockWriteConsole(_In_ const DWORD dwReason);
 // -  This routine writes characters to the output stream.
 NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 
-BOOL WriteConsoleWaitRoutine(_In_ PLIST_ENTRY pWaitQueue,
-                             _In_ PCONSOLE_API_MSG pWaitReplyMessage,
+BOOL WriteConsoleWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                              _In_ PVOID pvWaitParameter,
-                             _In_ PVOID pvSatisfyParameter,
-                             _In_ BOOL fThreadDying);
+                             _In_ WaitTerminationReason const TerminationReason);
 
 
 NTSTATUS SrvCloseHandle(_In_ PCONSOLE_API_MSG m);
