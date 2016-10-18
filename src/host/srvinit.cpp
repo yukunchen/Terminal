@@ -501,7 +501,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, _In_ const BOOL fUnexp
         if (0 != GetSystemDirectoryW(pwszSysRoot, MAX_PATH))
         {
             if (SUCCEEDED(StringCbLengthW(pwszConsoleTitle, STRSAFE_MAX_CCH, &cbConsoleTitle)) &&
-                SUCCEEDED(StringCbLengthW(pwszSysRoot, STRSAFE_MAX_CCH, &cbSystemRoot)))
+                SUCCEEDED(StringCbLengthW(pwszSysRoot, MAX_PATH, &cbSystemRoot)))
             {
                 int const cchSystemRoot = (int)(cbSystemRoot / sizeof(WCHAR));
                 int const cchConsoleTitle = (int)(cbConsoleTitle / sizeof(WCHAR));
