@@ -70,6 +70,8 @@ CONSOLE_INFORMATION::~CONSOLE_INFORMATION()
 
 bool CONSOLE_INFORMATION::IsConsoleLocked() const
 {
+    // The critical section structure's OwningThread field contains the ThreadId despite having the HANDLE type.
+    // This requires us to hard cast the ID to compare.
     return _csConsoleLock.OwningThread == (HANDLE)GetCurrentThreadId();
 }
 

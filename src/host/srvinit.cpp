@@ -1021,10 +1021,7 @@ DWORD ConsoleIoThread()
         HRESULT hr = g_pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
         if (FAILED(hr))
         {
-            if (hr == STATUS_PIPE_DISCONNECTED ||
-                hr == ERROR_PIPE_NOT_CONNECTED ||
-                hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED) ||
-                hr == NTSTATUS_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
+            if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
             {
                 fShouldExit = true;
 

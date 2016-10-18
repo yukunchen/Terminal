@@ -281,7 +281,7 @@ BOOL RawReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
     BOOLEAN RetVal = TRUE;
     BOOL fAddDbcsLead = FALSE;
     bool fSkipFinally = false;
-    
+
 #ifdef DBG
     RawReadData->pInputReadHandleData->LockReadCount();
     ASSERT(RawReadData->pInputReadHandleData->GetReadCount() > 0);
@@ -918,7 +918,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                     {
                         // we have no wait block, so create one.
                         WaitForMoreToRead(pWaitReplyMessage,
-                            (ConsoleWaitRoutine)CookedReadWaitRoutine,
+                                          (ConsoleWaitRoutine)CookedReadWaitRoutine,
                                           pCookedReadData,
                                           sizeof(*pCookedReadData),
                                           FALSE);
