@@ -204,8 +204,8 @@ ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG Num
 // - DirectReadData - Context of read.
 // - TerminationReason - Flags.
 // Return Value:
-BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage, 
-                           _In_ PVOID WaitParameter, 
+BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage,
+                           _In_ PVOID WaitParameter,
                            _In_ WaitTerminationReason const TerminationReason)
 {
     PCONSOLE_GETCONSOLEINPUT_MSG const a = &WaitReplyMessage->u.consoleMsgL1.GetConsoleInput;
@@ -215,7 +215,7 @@ BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage,
     NTSTATUS Status = STATUS_SUCCESS;
 
     // If ctrl-c or ctrl-break was seen, ignore it.
-    if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason ::CtrlBreak)))
+    if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
     {
         return FALSE;
     }
@@ -242,33 +242,29 @@ BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage,
 
     BOOLEAN fAddDbcsLead = FALSE;
     // this routine should be called by a thread owning the same lock on the same console as we're reading from.
-    __try
-    {
 #ifdef DBG
-        DirectReadData->pInputReadHandleData->LockReadCount();
-        ASSERT(DirectReadData->pInputReadHandleData->GetReadCount() > 0);
-        DirectReadData->pInputReadHandleData->UnlockReadCount();
+    DirectReadData->pInputReadHandleData->LockReadCount();
+    ASSERT(DirectReadData->pInputReadHandleData->GetReadCount() > 0);
+    DirectReadData->pInputReadHandleData->UnlockReadCount();
 #endif
-        DirectReadData->pInputReadHandleData->DecrementReadCount();
+    DirectReadData->pInputReadHandleData->DecrementReadCount();
 
-        // See if called by CsrDestroyProcess or CsrDestroyThread
-        // via ConsoleNotifyWaitBlock. If so, just decrement the ReadCount and return.
-        if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
-        {
-            Status = STATUS_THREAD_IS_TERMINATING;
-            __leave;
-        }
-
-        // We must see if we were woken up because the handle is being
-        // closed. If so, we decrement the read count. If it goes to
-        // zero, we wake up the close thread. Otherwise, we wake up any
-        // other thread waiting for data.
-        if (IsFlagSet(DirectReadData->pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing))
-        {
-            Status = STATUS_ALERTED;
-            __leave;
-        }
-
+    // See if called by CsrDestroyProcess or CsrDestroyThread
+    // via ConsoleNotifyWaitBlock. If so, just decrement the ReadCount and return.
+    if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
+    {
+        Status = STATUS_THREAD_IS_TERMINATING;
+    }
+    // We must see if we were woken up because the handle is being
+    // closed. If so, we decrement the read count. If it goes to
+    // zero, we wake up the close thread. Otherwise, we wake up any
+    // other thread waiting for data.
+    else if (IsFlagSet(DirectReadData->pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing))
+    {
+        Status = STATUS_ALERTED;
+    }
+    else
+    {
         // if we get to here, this routine was called either by the input
         // thread or a write routine.  both of these callers grab the
         // current console lock.
@@ -330,39 +326,37 @@ BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage,
             RetVal = FALSE;
         }
     }
-    __finally
-    {
-        // If the read was completed (status != wait), free the direct read data.
-        if (Status != CONSOLE_STATUS_WAIT)
-        {
-            if (Status == STATUS_SUCCESS && !a->Unicode)
-            {
-                if (fAddDbcsLead && DirectReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
-                {
-                    a->NumRecords--;
-                }
 
-                a->NumRecords = TranslateInputToOem(Buffer,
-                                                    a->NumRecords,
-                                                    g_ciConsoleInformation.ReadConInpNumBytesUnicode,
-                                                    IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE) ? nullptr : &DirectReadData->pInputInfo->ReadConInpDbcsLeadByte);
-                if (fAddDbcsLead && DirectReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
-                {
-                    *(Buffer - 1) = DirectReadData->pInputInfo->ReadConInpDbcsLeadByte;
-                    if (IsFlagClear(a->Flags, CONSOLE_READ_NOREMOVE))
-                    {
-                        ZeroMemory(&DirectReadData->pInputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
-                    }
-                    a->NumRecords++;
-                    Buffer--;
-                }
+    // If the read was completed (status != wait), free the direct read data.
+    if (Status != CONSOLE_STATUS_WAIT)
+    {
+        if (Status == STATUS_SUCCESS && !a->Unicode)
+        {
+            if (fAddDbcsLead && DirectReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+            {
+                a->NumRecords--;
             }
 
-            SetReplyStatus(WaitReplyMessage, Status);
-            SetReplyInformation(WaitReplyMessage, a->NumRecords * sizeof(INPUT_RECORD));
-
-            delete[] DirectReadData;
+            a->NumRecords = TranslateInputToOem(Buffer,
+                                                a->NumRecords,
+                                                g_ciConsoleInformation.ReadConInpNumBytesUnicode,
+                                                IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE) ? nullptr : &DirectReadData->pInputInfo->ReadConInpDbcsLeadByte);
+            if (fAddDbcsLead && DirectReadData->pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+            {
+                *(Buffer - 1) = DirectReadData->pInputInfo->ReadConInpDbcsLeadByte;
+                if (IsFlagClear(a->Flags, CONSOLE_READ_NOREMOVE))
+                {
+                    ZeroMemory(&DirectReadData->pInputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                }
+                a->NumRecords++;
+                Buffer--;
+            }
         }
+
+        SetReplyStatus(WaitReplyMessage, Status);
+        SetReplyInformation(WaitReplyMessage, a->NumRecords * sizeof(INPUT_RECORD));
+
+        delete[] DirectReadData;
     }
 
     return RetVal;
