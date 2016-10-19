@@ -96,7 +96,7 @@ VOID SetConsoleWindowOwner(_In_ HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pPr
         {
             ProcessId = pProcessData->ClientId.UniqueProcess;
             ThreadId = pProcessData->ClientId.UniqueThread;
-            pProcessData->RootProcess = TRUE;
+            pProcessData->RootProcess = true;
         }
         else
         {

@@ -18,7 +18,7 @@
 #pragma warning(push)
 #pragma warning(disable:4311 4302) 
 ConsoleProcessHandle::ConsoleProcessHandle(_In_ const CLIENT_ID* const pClientId,
-                                                 _In_ ULONG const ulProcessGroupId) :
+                                           _In_ ULONG const ulProcessGroupId) :
     ClientId(*pClientId),
     ProcessGroupId(ulProcessGroupId),
     pWaitBlockQueue(std::make_unique<ConsoleWaitQueue>()),

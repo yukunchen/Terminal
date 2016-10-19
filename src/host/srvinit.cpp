@@ -349,17 +349,13 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 
 NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
 {
-    NTSTATUS Status;
     CONSOLE_INFORMATION *Console;
-    BOOL fRecomputeOwner;
-
-#pragma prefast(suppress:28931, "Status is not unused. Used by assertions.")
-    Status = RevalidateConsole(&Console);
+    NTSTATUS Status = RevalidateConsole(&Console);
     ASSERT(NT_SUCCESS(Status));
 
     FreeCommandHistory((HANDLE)ProcessData);
 
-    fRecomputeOwner = ProcessData->RootProcess;
+    bool const fRecomputeOwner = ProcessData->RootProcess;
     g_ciConsoleInformation.ProcessHandleList.FreeProcessData(ProcessData);
 
     if (fRecomputeOwner)
@@ -369,7 +365,7 @@ NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
 
     UnlockConsole();
 
-    return STATUS_SUCCESS;
+    return Status;
 }
 
 // Routine Description:
@@ -725,7 +721,7 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
         goto Error;
     }
 
-    ProcessData->RootProcess = ((g_ciConsoleInformation.Flags & CONSOLE_INITIALIZED) == 0);
+    ProcessData->RootProcess = IsFlagClear(g_ciConsoleInformation.Flags, CONSOLE_INITIALIZED);
 
     // ConsoleApp will be false in the AttachConsole case.
     if (Cac.ConsoleApp)

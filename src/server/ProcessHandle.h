@@ -25,16 +25,20 @@ Revision History:
 class ConsoleProcessHandle
 {
 public:
-    ConsoleProcessHandle(_In_ const CLIENT_ID* const pClientId,
-                            _In_ ULONG const ulProcessGroupId);
-    ~ConsoleProcessHandle();
-
     wil::unique_handle const ProcessHandle;
     ULONG TerminateCount;
     ULONG const ProcessGroupId;
     CLIENT_ID const ClientId;
-    BOOL RootProcess;
     std::unique_ptr<ConsoleWaitQueue> const pWaitBlockQueue;
     ConsoleHandleData* InputHandle;
     ConsoleHandleData* OutputHandle;
+
+    bool RootProcess;
+
+private:
+    ConsoleProcessHandle(_In_ const CLIENT_ID* const pClientId,
+                         _In_ ULONG const ulProcessGroupId);
+    ~ConsoleProcessHandle();
+
+    friend class ConsoleProcessList; // ensure List manages lifetimes and not other classes.
 };
