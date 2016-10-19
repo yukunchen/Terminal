@@ -11,12 +11,11 @@
 #include "..\host\globals.h"
 #include "..\host\telemetry.hpp"
 
-// pointer truncation due to using the HANDLE type to store a DWORD process ID.
-// We're using the HANDLE type in the public ClientId field to store the process ID when we should
-// be using a more appropriate type. This should be collected and replaced with the server refactor.
 // TODO - MSFT:9115192
-#pragma warning(push)
-#pragma warning(disable:4311 4302) 
+// Routine Description:
+// - Constructs an instance of the ConsoleProcessHandle Class
+// - NOTE: Can throw if allocation fails.
+// - NOTE: Not being able to open the process by ID isn't a failure. It will be logged and continued.
 ConsoleProcessHandle::ConsoleProcessHandle(_In_ DWORD const dwProcessId,
                                            _In_ DWORD const dwThreadId,
                                            _In_ ULONG const ulProcessGroupId) :
@@ -33,10 +32,13 @@ ConsoleProcessHandle::ConsoleProcessHandle(_In_ DWORD const dwProcessId,
         Telemetry::Instance().LogProcessConnected(_hProcess.get());
     }
 }
-#pragma warning(pop)
 
+// Routine Description:
+// - Destroys an instance of the ConsoleProcessHandle class.
+// - NOTE: Will close ConsoleHandleData handles if attached.
 ConsoleProcessHandle::~ConsoleProcessHandle()
 {
+    // TODO: Convert to deleters and put CloseHandle in respective destructors? Then use smart pointers?
     if (pInputHandle != nullptr)
     {
         pInputHandle->CloseHandle();

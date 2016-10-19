@@ -40,9 +40,6 @@ private:
                          _In_ ULONG const ulProcessGroupId);
     ~ConsoleProcessHandle();
 
-    
-    
-
     ULONG _ulTerminateCount;
     ULONG const _ulProcessGroupId;
     wil::unique_handle const _hProcess;

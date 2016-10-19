@@ -13,6 +13,20 @@
 #include "..\host\telemetry.hpp"
 #include "..\host\userprivapi.hpp"
 
+// Routine Description:
+// - Allocates and stores in a list the process information given.
+// - Will not create a new entry in the list given information matches a known process. Will instead return existing entry.
+// Arguments:
+// - dwProcessId - Process ID of connecting client
+// - dwThreadId - Thread ID of connecting client
+// - ulProcessGroupId - Process Group ID from connecting client (sometimes referred to as parent)
+// - pParentProcessData - Used to specify parent while locating appropriate scope of sending control messages
+// - ppProcessData - Filled on exit with a pointer to the process handle information. Optional. 
+//                 - If not used, return code will specify whether this process is known to the list or not.
+// Return Value:
+// - S_OK if the process was recorded in the list successfully or already existed.
+// - E_FAIL if we're running into an LPC port conflict by nature of the process chain.
+// - E_OUTOFMEMORY if there wasn't space to allocate a handle or push it into the list.
 HRESULT ConsoleProcessList::AllocProcessData(_In_ DWORD const dwProcessId,
                                              _In_ DWORD const dwThreadId,
                                              _In_ ULONG const ulProcessGroupId,
@@ -61,8 +75,9 @@ HRESULT ConsoleProcessList::AllocProcessData(_In_ DWORD const dwProcessId,
 // Routine Description:
 // - This routine frees any per-process data allocated by the console.
 // Arguments:
-// - ProcessData - Pointer to the per-process data structure.
+// - pProcessData - Pointer to the per-process data structure.
 // Return Value:
+// - <none>
 void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProcessData)
 {
     assert(g_ciConsoleInformation.IsConsoleLocked());
@@ -72,7 +87,13 @@ void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProce
     delete pProcessData;
 }
 
-// Calling FindProcessInList(0) means you want the root process.
+// Routine Description:
+// - Locates a process handle in this list.
+// - NOTE: Calling FindProcessInList(0) means you want the root process.
+// Arguments:
+// - dwProcessId - ID of the process to search for or 0 to find the root process.
+// Return Value:
+// - Pointer to the process handle information or nullptr if no match was found.
 ConsoleProcessHandle* ConsoleProcessList::FindProcessInList(_In_ const DWORD dwProcessId) const
 {
     auto it = _processes.cbegin();
@@ -102,14 +123,20 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessInList(_In_ const DWORD dwP
     return nullptr;
 }
 
-ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ProcessGroupId) const
+// Routine Description:
+// - Locates a process handle by the group ID reference.
+// Arguments:
+// - ulProcessGroupId - Group to search for in the list
+// Return Value:
+// - Pointer to first matching process handle with given group ID. nullptr if no match was found.
+ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ulProcessGroupId) const
 {
     auto it = _processes.cbegin();
 
     while (it != _processes.cend())
     {
         ConsoleProcessHandle* const pProcessHandleRecord = *it;
-        if (pProcessHandleRecord->_ulProcessGroupId == ProcessGroupId)
+        if (pProcessHandleRecord->_ulProcessGroupId == ulProcessGroupId)
         {
             return pProcessHandleRecord;
         }
@@ -120,6 +147,16 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG Proces
     return nullptr;
 }
 
+// Routine Description:
+// - Retrieves the entire list of process IDs that is known to this list.
+// - Requires caller to allocate space. If not enough space, pcProcessList will be filled with count of array necessary.
+// Arguments:
+// - pProcessList - Pointer to buffer to store process IDs. Caller allocated.
+// - pcProcessList - On the way in, the length of the buffer given. On the way out, the amount of the buffer used.
+//                 - If buffer was insufficient, filled with necessary buffer size on the way out.
+// Return Value:
+// - S_OK if buffer was filled successfully and resulting count of items is in pcProcessList.
+// - E_NOT_SUFFICIENT_BUFFER if the buffer given was too small. Refer to pcProcessList for size requirement.
 HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
                                            _Inout_ DWORD* const pcProcessList) const
 {
@@ -151,11 +188,24 @@ HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD
     RETURN_HR(hr);
 }
 
-HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(_In_ DWORD const LimitingProcessId,
+// Routine Description
+// - Retrieves TERMINATION_RECORD structures for all processes known in the list (limited if necessary by parameter for group ID)
+// - This is designed to copy the data so the global lock can be released while sending control information to attached processes.
+// Arguments:
+// - dwLimitingProcessId - Optional (0 if unused). Will restrict the return to only processes containing this group ID.
+// - fCtrlClose - True if we're about to send a Ctrl Close command to the process. Will increment termination attempt count.
+// - prgRecords - Pointer to callee allocated array of termination records. CALLER MUST FREE.
+// - pcRecords - Length of records in prgRecords.
+// Return Value:
+// - S_OK if prgRecords was filled successfully or if no records were found that matched.
+// - E_OUTOFMEMORY in a low memory situation.
+HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(_In_ DWORD const dwLimitingProcessId,
                                                            _In_ bool const fCtrlClose,
                                                            _Outptr_result_buffer_all_(*pcRecords) CONSOLE_PROCESS_TERMINATION_RECORD** prgRecords,
                                                            _Out_ size_t* const pcRecords) const
 {
+    *pcRecords = 0;
+
     try
     {
         std::deque<std::unique_ptr<CONSOLE_PROCESS_TERMINATION_RECORD>> TermRecords;
@@ -167,8 +217,8 @@ HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(_In_ DWORD const Limi
             ConsoleProcessHandle* const pProcessHandleRecord = *it;
 
             // If no limit was specified OR if we have a match, generate a new termination record.
-            if (0 == LimitingProcessId ||
-                pProcessHandleRecord->_ulProcessGroupId == LimitingProcessId)
+            if (0 == dwLimitingProcessId ||
+                pProcessHandleRecord->_ulProcessGroupId == dwLimitingProcessId)
             {
                 std::unique_ptr<CONSOLE_PROCESS_TERMINATION_RECORD> pNewRecord = std::make_unique<CONSOLE_PROCESS_TERMINATION_RECORD>();
 
@@ -215,7 +265,15 @@ HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(_In_ DWORD const Limi
     RETURN_HR(S_OK);
 }
 
-ConsoleProcessHandle* ConsoleProcessList::GetRootProcess() const
+// Routine Description:
+// - Gets the first process in the list.
+// - Used for reassigning a new root process. 
+// TODO: encapsulate root process logic.
+// Arguments:
+// - <none>
+// Return Value:
+// - Pointer to the first item in the list or nullptr if there are no items.
+ConsoleProcessHandle* ConsoleProcessList::GetFirstProcess() const
 {
     if (!_processes.empty())
     {
@@ -225,6 +283,13 @@ ConsoleProcessHandle* ConsoleProcessList::GetRootProcess() const
     return nullptr;
 }
 
+// Routine Description:
+// - Requests that the OS change the process priority for the console and all attached client processes
+// Arguments:
+// - fForeground - True if console is in foreground and related processes should be prioritied. False if they can be backgrounded/deprioritized.
+// Return Value:
+// - <none>
+// - NOTE: Will attempt to request a change, but it's non fatal if it doesn't work. Failures will be logged to debug channel.
 void ConsoleProcessList::ModifyConsoleProcessFocus(_In_ const bool fForeground)
 {
     auto it = _processes.cbegin();
@@ -245,6 +310,13 @@ void ConsoleProcessList::ModifyConsoleProcessFocus(_In_ const bool fForeground)
     _SetProcessForegroundRights(GetCurrentProcess(), fForeground);
 }
 
+// Routine Description:
+// - Specifies that there are no remaining processes
+// TODO: This should not be exposed, most likely. Whomever is calling it should join this class.
+// Arguments: 
+// - <none>
+// Return Value:
+// - True if the list is empty. False if we have known processes.
 bool ConsoleProcessList::IsEmpty() const
 {
     return _processes.size() == 0;

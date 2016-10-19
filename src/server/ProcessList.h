@@ -41,9 +41,9 @@ public:
 
 
     ConsoleProcessHandle* FindProcessInList(_In_ const DWORD dwProcessId) const;
-    ConsoleProcessHandle* FindProcessByGroupId(_In_ ULONG ProcessGroupId) const;
+    ConsoleProcessHandle* FindProcessByGroupId(_In_ ULONG ulProcessGroupId) const;
 
-    HRESULT GetTerminationRecordsByGroupId(_In_ DWORD const LimitingProcessId,
+    HRESULT GetTerminationRecordsByGroupId(_In_ DWORD const dwLimitingProcessId,
                                            _In_ bool const fCtrlClose,
                                            _Outptr_result_buffer_all_(*pcRecords) CONSOLE_PROCESS_TERMINATION_RECORD** prgRecords,
                                            _Out_ size_t* const pcRecords) const;
