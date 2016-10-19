@@ -13,14 +13,15 @@
 #include "..\host\telemetry.hpp"
 #include "..\host\userprivapi.hpp"
 
-HRESULT ConsoleProcessList::AllocProcessData(_In_ CLIENT_ID const * const ClientId,
+HRESULT ConsoleProcessList::AllocProcessData(_In_ DWORD const dwProcessId,
+                                             _In_ DWORD const dwThreadId,
                                              _In_ ULONG const ulProcessGroupId,
                                              _In_opt_ ConsoleProcessHandle* const pParentProcessData,
                                              _Outptr_opt_ ConsoleProcessHandle** const ppProcessData)
 {
     assert(g_ciConsoleInformation.IsConsoleLocked());
 
-    ConsoleProcessHandle* pProcessData = FindProcessInList(ClientId->UniqueProcess);
+    ConsoleProcessHandle* pProcessData = FindProcessInList(dwProcessId);
     if (nullptr != pProcessData)
     {
         // In the GenerateConsoleCtrlEvent it's OK for this process to already have a ProcessData object. However, the other case is someone
@@ -41,7 +42,9 @@ HRESULT ConsoleProcessList::AllocProcessData(_In_ CLIENT_ID const * const Client
 
     try
     {
-        pProcessData = new ConsoleProcessHandle(ClientId, ulProcessGroupId);
+        pProcessData = new ConsoleProcessHandle(dwProcessId,
+                                                dwThreadId, 
+                                                ulProcessGroupId);
 
         _processes.push_back(pProcessData);
 
@@ -69,8 +72,8 @@ void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProce
     delete pProcessData;
 }
 
-// Calling FindProcessInList(nullptr) means you want the root process.
-ConsoleProcessHandle* ConsoleProcessList::FindProcessInList(_In_opt_ HANDLE hProcess) const
+// Calling FindProcessInList(0) means you want the root process.
+ConsoleProcessHandle* ConsoleProcessList::FindProcessInList(_In_ const DWORD dwProcessId) const
 {
     auto it = _processes.cbegin();
 
@@ -78,16 +81,16 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessInList(_In_opt_ HANDLE hPro
     {
         ConsoleProcessHandle* const pProcessHandleRecord = *it;
 
-        if (0 != hProcess)
+        if (0 != dwProcessId)
         {
-            if (pProcessHandleRecord->ClientId.UniqueProcess == hProcess)
+            if (pProcessHandleRecord->dwProcessId == dwProcessId)
             {
                 return pProcessHandleRecord;
             }
         }
         else
         {
-            if (pProcessHandleRecord->RootProcess)
+            if (pProcessHandleRecord->fRootProcess)
             {
                 return pProcessHandleRecord;
             }
@@ -106,7 +109,7 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG Proces
     while (it != _processes.cend())
     {
         ConsoleProcessHandle* const pProcessHandleRecord = *it;
-        if (pProcessHandleRecord->ProcessGroupId == ProcessGroupId)
+        if (pProcessHandleRecord->_ulProcessGroupId == ProcessGroupId)
         {
             return pProcessHandleRecord;
         }
@@ -133,7 +136,7 @@ HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD
         auto it = _processes.cbegin();
         while (it != _processes.cend())
         {
-            pProcessList[cFilled++] = HandleToULong((*it)->ClientId.UniqueProcess);
+            pProcessList[cFilled++] = (*it)->dwProcessId;
             it = std::next(it);
         }
     }
@@ -165,28 +168,28 @@ HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(_In_ DWORD const Limi
 
             // If no limit was specified OR if we have a match, generate a new termination record.
             if (0 == LimitingProcessId ||
-                pProcessHandleRecord->ProcessGroupId == LimitingProcessId)
+                pProcessHandleRecord->_ulProcessGroupId == LimitingProcessId)
             {
                 std::unique_ptr<CONSOLE_PROCESS_TERMINATION_RECORD> pNewRecord = std::make_unique<CONSOLE_PROCESS_TERMINATION_RECORD>();
 
                 // If the duplicate failed, the best we can do is to skip including the process in the list and hope it goes away.
                 LOG_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
-                                                        pProcessHandleRecord->ProcessHandle.get(),
+                                                        pProcessHandleRecord->_hProcess.get(),
                                                         GetCurrentProcess(),
-                                                        &pNewRecord->ProcessHandle,
+                                                        &pNewRecord->hProcess,
                                                         0,
                                                         0,
                                                         DUPLICATE_SAME_ACCESS));
 
-                pNewRecord->ProcessID = pProcessHandleRecord->ClientId.UniqueProcess;
+                pNewRecord->dwProcessID = pProcessHandleRecord->dwProcessId;
 
                 // If we're hard closing the window, increment the counter.
                 if (fCtrlClose)
                 {
-                    pProcessHandleRecord->TerminateCount++;
+                    pProcessHandleRecord->_ulTerminateCount++;
                 }
 
-                pNewRecord->TerminateCount = pProcessHandleRecord->TerminateCount;
+                pNewRecord->ulTerminateCount = pProcessHandleRecord->_ulTerminateCount;
 
                 TermRecords.push_back(std::move(pNewRecord));
             }
@@ -229,10 +232,10 @@ void ConsoleProcessList::ModifyConsoleProcessFocus(_In_ const bool fForeground)
     {
         ConsoleProcessHandle* const pProcessHandle = *it;
 
-        if (pProcessHandle->ProcessHandle != nullptr)
+        if (pProcessHandle->_hProcess != nullptr)
         {
-            _SetProcessFocus(pProcessHandle->ProcessHandle.get(), fForeground);
-            _SetProcessForegroundRights(pProcessHandle->ProcessHandle.get(), fForeground);
+            _SetProcessFocus(pProcessHandle->_hProcess.get(), fForeground);
+            _SetProcessForegroundRights(pProcessHandle->_hProcess.get(), fForeground);
         }
 
         it = std::next(it);

@@ -81,12 +81,12 @@ VOID SetConsoleWindowOwner(_In_ HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pPr
 {
     ASSERT(g_ciConsoleInformation.IsConsoleLocked());
 
-    HANDLE ProcessId;
-    HANDLE ThreadId;
+    DWORD dwProcessId;
+    DWORD dwThreadId;
     if (nullptr != pProcessData)
     {
-        ProcessId = pProcessData->ClientId.UniqueProcess;
-        ThreadId = pProcessData->ClientId.UniqueThread;
+        dwProcessId = pProcessData->dwProcessId;
+        dwThreadId = pProcessData->dwThreadId;
     }
     else
     {
@@ -94,21 +94,21 @@ VOID SetConsoleWindowOwner(_In_ HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pPr
         pProcessData = g_ciConsoleInformation.ProcessHandleList.GetRootProcess();
         if (pProcessData != nullptr)
         {
-            ProcessId = pProcessData->ClientId.UniqueProcess;
-            ThreadId = pProcessData->ClientId.UniqueThread;
-            pProcessData->RootProcess = true;
+            dwProcessId = pProcessData->dwProcessId;
+            dwThreadId = pProcessData->dwThreadId;
+            pProcessData->fRootProcess = true;
         }
         else
         {
-            ProcessId = GetCurrentProcess();
-            ThreadId = GetCurrentThread();
+            dwProcessId = GetCurrentProcessId();
+            dwThreadId = GetCurrentThreadId();
         }
     }
 
     CONSOLEWINDOWOWNER ConsoleOwner;
     ConsoleOwner.hwnd = hwnd;
-    ConsoleOwner.ProcessId = HandleToUlong(ProcessId);
-    ConsoleOwner.ThreadId = HandleToUlong(ThreadId);
+    ConsoleOwner.ProcessId = dwProcessId;
+    ConsoleOwner.ThreadId = dwThreadId;
 
     UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetWindowOwner, &ConsoleOwner, sizeof(ConsoleOwner));
 }

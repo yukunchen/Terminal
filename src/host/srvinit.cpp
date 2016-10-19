@@ -355,7 +355,7 @@ NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
 
     FreeCommandHistory((HANDLE)ProcessData);
 
-    bool const fRecomputeOwner = ProcessData->RootProcess;
+    bool const fRecomputeOwner = ProcessData->fRootProcess;
     g_ciConsoleInformation.ProcessHandleList.FreeProcessData(ProcessData);
 
     if (fRecomputeOwner)
@@ -378,7 +378,7 @@ VOID ConsoleClientDisconnectRoutine(ConsoleProcessHandle* ProcessData)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FreeConsole);
 
-    NotifyWinEvent(EVENT_CONSOLE_END_APPLICATION, g_ciConsoleInformation.hWnd, HandleToULong(ProcessData->ClientId.UniqueProcess), 0);
+    NotifyWinEvent(EVENT_CONSOLE_END_APPLICATION, g_ciConsoleInformation.hWnd, ProcessData->dwProcessId, 0);
 
     RemoveConsole(ProcessData);
 }
@@ -700,9 +700,8 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
 
     LockConsole();
 
-    CLIENT_ID ClientId;
-    ClientId.UniqueProcess = (HANDLE)ReceiveMsg->Descriptor.Process;
-    ClientId.UniqueThread = (HANDLE)ReceiveMsg->Descriptor.Object;
+    DWORD const dwProcessId = (DWORD)ReceiveMsg->Descriptor.Process;
+    DWORD const dwThreadId = (DWORD)ReceiveMsg->Descriptor.Object;
 
     CONSOLE_API_CONNECTINFO Cac;
     NTSTATUS Status = ConsoleInitializeConnectInfo(ReceiveMsg, &Cac);
@@ -711,7 +710,8 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
         goto Error;
     }
 
-    Status = NTSTATUS_FROM_HRESULT(g_ciConsoleInformation.ProcessHandleList.AllocProcessData(&ClientId,
+    Status = NTSTATUS_FROM_HRESULT(g_ciConsoleInformation.ProcessHandleList.AllocProcessData(dwProcessId,
+                                                                                             dwThreadId,
                                                                                              Cac.ProcessGroupId,
                                                                                              nullptr,
                                                                                              &ProcessData));
@@ -721,21 +721,21 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
         goto Error;
     }
 
-    ProcessData->RootProcess = IsFlagClear(g_ciConsoleInformation.Flags, CONSOLE_INITIALIZED);
+    ProcessData->fRootProcess = IsFlagClear(g_ciConsoleInformation.Flags, CONSOLE_INITIALIZED);
 
     // ConsoleApp will be false in the AttachConsole case.
     if (Cac.ConsoleApp)
     {
         CONSOLE_PROCESS_INFO cpi;
 
-        cpi.dwProcessID = HandleToUlong(ClientId.UniqueProcess);
+        cpi.dwProcessID = dwProcessId;
         cpi.dwFlags = CPI_NEWPROCESSWINDOW;
         UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleNotifyConsoleApplication, &cpi, sizeof(CONSOLE_PROCESS_INFO));
     }
 
     if (g_ciConsoleInformation.hWnd)
     {
-        NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, g_ciConsoleInformation.hWnd, HandleToULong(ClientId.UniqueProcess), 0);
+        NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, g_ciConsoleInformation.hWnd, dwProcessId, 0);
     }
 
     if ((g_ciConsoleInformation.Flags & CONSOLE_INITIALIZED) == 0)
@@ -758,7 +758,7 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
     Status = NTSTATUS_FROM_HRESULT(g_ciConsoleInformation.pInputBuffer->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Input,
                                                                                                 GENERIC_READ | GENERIC_WRITE,
                                                                                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                                                                &ProcessData->InputHandle));
+                                                                                                &ProcessData->pInputHandle));
 
     if (!NT_SUCCESS(Status))
     {
@@ -769,7 +769,7 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
     Status = NTSTATUS_FROM_HRESULT(g_ciConsoleInformation.CurrentScreenBuffer->GetMainBuffer()->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
                                                                                                                         GENERIC_READ | GENERIC_WRITE,
                                                                                                                         FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                                                                                        &ProcessData->OutputHandle));
+                                                                                                                        &ProcessData->pOutputHandle));
 
     if (!NT_SUCCESS(Status))
     {
@@ -785,8 +785,8 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
     ReceiveMsg->Complete.Write.Size = sizeof(CD_CONNECTION_INFORMATION);
 
     ConnectionInformation.Process = (ULONG_PTR)ProcessData;
-    ConnectionInformation.Input = (ULONG_PTR)ProcessData->InputHandle;
-    ConnectionInformation.Output = (ULONG_PTR)ProcessData->OutputHandle;
+    ConnectionInformation.Input = (ULONG_PTR)ProcessData->pInputHandle;
+    ConnectionInformation.Output = (ULONG_PTR)ProcessData->pOutputHandle;
 
     if (FAILED(g_pDeviceComm->CompleteIo(&ReceiveMsg->Complete)))
     {

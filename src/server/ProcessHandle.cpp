@@ -17,31 +17,33 @@
 // TODO - MSFT:9115192
 #pragma warning(push)
 #pragma warning(disable:4311 4302) 
-ConsoleProcessHandle::ConsoleProcessHandle(_In_ const CLIENT_ID* const pClientId,
+ConsoleProcessHandle::ConsoleProcessHandle(_In_ DWORD const dwProcessId,
+                                           _In_ DWORD const dwThreadId,
                                            _In_ ULONG const ulProcessGroupId) :
-    ClientId(*pClientId),
-    ProcessGroupId(ulProcessGroupId),
+    dwProcessId(dwProcessId),
+    dwThreadId(dwThreadId),
+    _ulProcessGroupId(ulProcessGroupId),
     pWaitBlockQueue(std::make_unique<ConsoleWaitQueue>()),
-    ProcessHandle(LOG_IF_HANDLE_NULL(OpenProcess(MAXIMUM_ALLOWED,
+    _hProcess(LOG_IF_HANDLE_NULL(OpenProcess(MAXIMUM_ALLOWED,
                                                  FALSE,
-                                                 (DWORD)ClientId.UniqueProcess)))
+                                                 dwProcessId)))
 {
-    if (nullptr != ProcessHandle.get())
+    if (nullptr != _hProcess.get())
     {
-        Telemetry::Instance().LogProcessConnected(ProcessHandle.get());
+        Telemetry::Instance().LogProcessConnected(_hProcess.get());
     }
 }
 #pragma warning(pop)
 
 ConsoleProcessHandle::~ConsoleProcessHandle()
 {
-    if (InputHandle != nullptr)
+    if (pInputHandle != nullptr)
     {
-        InputHandle->CloseHandle();
+        pInputHandle->CloseHandle();
     }
 
-    if (OutputHandle != nullptr)
+    if (pOutputHandle != nullptr)
     {
-        OutputHandle->CloseHandle();
+        pOutputHandle->CloseHandle();
     }
 }

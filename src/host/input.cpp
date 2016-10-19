@@ -1228,7 +1228,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 {
     g_hInstance = GetModuleHandle(L"ConhostV2.dll");
 
-    ConsoleProcessHandle* ProcessData = g_ciConsoleInformation.ProcessHandleList.FindProcessInList(nullptr);
+    ConsoleProcessHandle* ProcessData = g_ciConsoleInformation.ProcessHandleList.FindProcessInList(0);
     ASSERT(ProcessData != nullptr && ProcessData->RootProcess);
 
     // Create and activate the main window
@@ -1253,7 +1253,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
         ConsoleKeyInfo[i].hWnd = CONSOLE_FREE_KEY_INFO;
     }
 
-    NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, g_ciConsoleInformation.hWnd, HandleToULong(ProcessData->ClientId.UniqueProcess), 0);
+    NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, g_ciConsoleInformation.hWnd, ProcessData->dwProcessId, 0);
 
     return STATUS_SUCCESS;
 }
@@ -2448,20 +2448,20 @@ void ProcessCtrlEvents()
         {
             CONSOLEENDTASK ConsoleEndTaskParams;
 
-            ConsoleEndTaskParams.ProcessId = rgProcessHandleList[i].ProcessID;
+            ConsoleEndTaskParams.ProcessId = (HANDLE)rgProcessHandleList[i].dwProcessID;
             ConsoleEndTaskParams.ConsoleEventCode = EventType;
             ConsoleEndTaskParams.ConsoleFlags = CtrlFlags;
             ConsoleEndTaskParams.hwnd = g_ciConsoleInformation.hWnd;
 
             Status = UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleEndTask, &ConsoleEndTaskParams, sizeof(ConsoleEndTaskParams));
-            if (rgProcessHandleList[i].ProcessHandle == NULL) {
+            if (rgProcessHandleList[i].hProcess == NULL) {
                 Status = STATUS_SUCCESS;
             }
         }
 
-        if (rgProcessHandleList[i].ProcessHandle != nullptr)
+        if (rgProcessHandleList[i].hProcess != nullptr)
         {
-            CloseHandle(rgProcessHandleList[i].ProcessHandle);
+            CloseHandle(rgProcessHandleList[i].hProcess);
         }
     }
 

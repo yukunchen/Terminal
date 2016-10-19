@@ -528,19 +528,18 @@ NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
             Status = GetProcessParentId(&ProcessId);
             if (NT_SUCCESS(Status))
             {
-                ProcessHandle = g_ciConsoleInformation.ProcessHandleList.FindProcessInList(UlongToHandle(ProcessId));
+                ProcessHandle = g_ciConsoleInformation.ProcessHandleList.FindProcessInList(ProcessId);
                 if (ProcessHandle == nullptr)
                 {
                     Status = STATUS_INVALID_PARAMETER;
                 }
                 else
                 {
-                    CLIENT_ID ClientId;
-
-                    ClientId.UniqueProcess = UlongToHandle(a->ProcessGroupId);
-                    ClientId.UniqueThread = 0;
-
-                    NTSTATUS_FROM_HRESULT(g_ciConsoleInformation.ProcessHandleList.AllocProcessData(&ClientId, a->ProcessGroupId, ProcessHandle, nullptr));
+                    NTSTATUS_FROM_HRESULT(g_ciConsoleInformation.ProcessHandleList.AllocProcessData(a->ProcessGroupId,
+                                                                                                    0,
+                                                                                                    a->ProcessGroupId, 
+                                                                                                    ProcessHandle, 
+                                                                                                    nullptr));
                 }
             }
         }

@@ -22,16 +22,17 @@ Revision History:
 // holding the console lock.
 typedef struct _CONSOLE_PROCESS_TERMINATION_RECORD
 {
-    HANDLE ProcessHandle;
-    HANDLE ProcessID;
-    ULONG TerminateCount;
+    HANDLE hProcess;
+    DWORD dwProcessID;
+    ULONG ulTerminateCount;
 } CONSOLE_PROCESS_TERMINATION_RECORD, *PCONSOLE_PROCESS_TERMINATION_RECORD;
 
 class ConsoleProcessList
 {
 public:
     
-    HRESULT AllocProcessData(_In_ CLIENT_ID const * const ClientId,
+    HRESULT AllocProcessData(_In_ DWORD const dwProcessId,
+                             _In_ DWORD const dwThreadId, 
                              _In_ ULONG const ulProcessGroupId,
                              _In_opt_ ConsoleProcessHandle* const pParentProcessData,
                              _Outptr_opt_ ConsoleProcessHandle** const ppProcessData);
@@ -39,7 +40,7 @@ public:
     void FreeProcessData(_In_ ConsoleProcessHandle* const ProcessData);
 
 
-    ConsoleProcessHandle* FindProcessInList(_In_opt_ const HANDLE hProcess) const;
+    ConsoleProcessHandle* FindProcessInList(_In_ const DWORD dwProcessId) const;
     ConsoleProcessHandle* FindProcessByGroupId(_In_ ULONG ProcessGroupId) const;
 
     HRESULT GetTerminationRecordsByGroupId(_In_ DWORD const LimitingProcessId,
