@@ -40,7 +40,7 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
                       _In_ COORD coordDestinationOrigin,
                       _In_ CHAR_INFO ciFill);
 
-VOID SetConsoleWindowOwner(_In_ const HWND hwnd, _Inout_opt_ PCONSOLE_PROCESS_HANDLE pProcessData);
+VOID SetConsoleWindowOwner(_In_ const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData);
 
 bool StreamScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo);
 

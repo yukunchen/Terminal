@@ -77,7 +77,7 @@ NTSTATUS DoCreateScreenBuffer()
  * has no processes attached to it -- it's only being kept alive by references
  * via IO handles -- then we'll just set the owner to conhost.exe itself.
  */
-VOID SetConsoleWindowOwner(_In_ HWND hwnd, _Inout_opt_ PCONSOLE_PROCESS_HANDLE pProcessData)
+VOID SetConsoleWindowOwner(_In_ HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData)
 {
     ASSERT(g_ciConsoleInformation.IsConsoleLocked());
 

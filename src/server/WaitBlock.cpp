@@ -73,7 +73,7 @@ HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReply
 
     assert(g_ciConsoleInformation.IsConsoleLocked());
 
-    PCONSOLE_PROCESS_HANDLE const ProcessData = GetMessageProcess(pWaitReplyMessage);
+    ConsoleProcessHandle* const ProcessData = GetMessageProcess(pWaitReplyMessage);
     assert(ProcessData != nullptr);
 
     ConsoleWaitQueue* const pProcessQueue = ProcessData->pWaitBlockQueue.get();

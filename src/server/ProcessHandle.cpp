@@ -17,7 +17,7 @@
 // TODO - MSFT:9115192
 #pragma warning(push)
 #pragma warning(disable:4311 4302) 
-_CONSOLE_PROCESS_HANDLE::_CONSOLE_PROCESS_HANDLE(_In_ const CLIENT_ID* const pClientId,
+ConsoleProcessHandle::ConsoleProcessHandle(_In_ const CLIENT_ID* const pClientId,
                                                  _In_ ULONG const ulProcessGroupId) :
     ClientId(*pClientId),
     ProcessGroupId(ulProcessGroupId),
@@ -33,7 +33,7 @@ _CONSOLE_PROCESS_HANDLE::_CONSOLE_PROCESS_HANDLE(_In_ const CLIENT_ID* const pCl
 }
 #pragma warning(pop)
 
-_CONSOLE_PROCESS_HANDLE::~_CONSOLE_PROCESS_HANDLE()
+ConsoleProcessHandle::~ConsoleProcessHandle()
 {
     if (InputHandle != nullptr)
     {

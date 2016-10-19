@@ -33,21 +33,21 @@ public:
     
     HRESULT AllocProcessData(_In_ CLIENT_ID const * const ClientId,
                              _In_ ULONG const ulProcessGroupId,
-                             _In_opt_ CONSOLE_PROCESS_HANDLE* const pParentProcessData,
-                             _Outptr_opt_ CONSOLE_PROCESS_HANDLE** const ppProcessData);
+                             _In_opt_ ConsoleProcessHandle* const pParentProcessData,
+                             _Outptr_opt_ ConsoleProcessHandle** const ppProcessData);
 
-    void FreeProcessData(_In_ CONSOLE_PROCESS_HANDLE* const ProcessData);
+    void FreeProcessData(_In_ ConsoleProcessHandle* const ProcessData);
 
 
-    CONSOLE_PROCESS_HANDLE* FindProcessInList(_In_opt_ const HANDLE hProcess) const;
-    CONSOLE_PROCESS_HANDLE* FindProcessByGroupId(_In_ ULONG ProcessGroupId) const;
+    ConsoleProcessHandle* FindProcessInList(_In_opt_ const HANDLE hProcess) const;
+    ConsoleProcessHandle* FindProcessByGroupId(_In_ ULONG ProcessGroupId) const;
 
     HRESULT GetTerminationRecordsByGroupId(_In_ DWORD const LimitingProcessId,
                                            _In_ bool const fCtrlClose,
                                            _Outptr_result_buffer_all_(*pcRecords) CONSOLE_PROCESS_TERMINATION_RECORD** prgRecords,
                                            _Out_ size_t* const pcRecords) const;
 
-    CONSOLE_PROCESS_HANDLE* GetRootProcess() const;
+    ConsoleProcessHandle* GetRootProcess() const;
 
     HRESULT GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
                            _Inout_ DWORD* const pcProcessList) const;
@@ -57,5 +57,5 @@ public:
     bool IsEmpty() const;
 
 private:
-    std::list<CONSOLE_PROCESS_HANDLE*> _processes;
+    std::list<ConsoleProcessHandle*> _processes;
 };

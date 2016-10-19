@@ -105,7 +105,7 @@ public:
     BOOLEAN Processed;
     BOOLEAN Line;
     BOOLEAN InsertMode;
-    PCONSOLE_PROCESS_HANDLE pProcessData;
+    ConsoleProcessHandle* pProcessData;
     INPUT_READ_HANDLE_DATA* pInputReadHandleData;
     PWCHAR ExeName;
     USHORT ExeNameLength;

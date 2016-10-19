@@ -516,7 +516,7 @@ NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
     // Make sure the process group id is valid.
     if (a->ProcessGroupId)
     {
-        PCONSOLE_PROCESS_HANDLE ProcessHandle;
+        ConsoleProcessHandle* ProcessHandle;
 
         ProcessHandle = g_ciConsoleInformation.ProcessHandleList.FindProcessByGroupId(a->ProcessGroupId);
         if (ProcessHandle == nullptr)

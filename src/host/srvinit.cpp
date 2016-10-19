@@ -347,7 +347,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
     return STATUS_SUCCESS;
 }
 
-NTSTATUS RemoveConsole(_In_ PCONSOLE_PROCESS_HANDLE ProcessData)
+NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
 {
     NTSTATUS Status;
     CONSOLE_INFORMATION *Console;
@@ -378,7 +378,7 @@ NTSTATUS RemoveConsole(_In_ PCONSOLE_PROCESS_HANDLE ProcessData)
 // - hProcess - Process ID.
 // Return Value:
 // - <none>
-VOID ConsoleClientDisconnectRoutine(PCONSOLE_PROCESS_HANDLE ProcessData)
+VOID ConsoleClientDisconnectRoutine(ConsoleProcessHandle* ProcessData)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FreeConsole);
 
@@ -700,7 +700,7 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AttachConsole);
 
-    PCONSOLE_PROCESS_HANDLE ProcessData = nullptr;
+    ConsoleProcessHandle* ProcessData = nullptr;
 
     LockConsole();
 

@@ -23,7 +23,7 @@ typedef struct _DIRECT_READ_DATA
 {
     PINPUT_INFORMATION pInputInfo;
     CONSOLE_INFORMATION* pConsole;
-    PCONSOLE_PROCESS_HANDLE pProcessData;
+    ConsoleProcessHandle* pProcessData;
     INPUT_READ_HANDLE_DATA* pInputReadHandleData;
 } DIRECT_READ_DATA, *PDIRECT_READ_DATA;
 

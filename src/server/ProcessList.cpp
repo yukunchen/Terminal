@@ -15,12 +15,12 @@
 
 HRESULT ConsoleProcessList::AllocProcessData(_In_ CLIENT_ID const * const ClientId,
                                              _In_ ULONG const ulProcessGroupId,
-                                             _In_opt_ CONSOLE_PROCESS_HANDLE* const pParentProcessData,
-                                             _Outptr_opt_ CONSOLE_PROCESS_HANDLE** const ppProcessData)
+                                             _In_opt_ ConsoleProcessHandle* const pParentProcessData,
+                                             _Outptr_opt_ ConsoleProcessHandle** const ppProcessData)
 {
     assert(g_ciConsoleInformation.IsConsoleLocked());
 
-    CONSOLE_PROCESS_HANDLE* pProcessData = FindProcessInList(ClientId->UniqueProcess);
+    ConsoleProcessHandle* pProcessData = FindProcessInList(ClientId->UniqueProcess);
     if (nullptr != pProcessData)
     {
         // In the GenerateConsoleCtrlEvent it's OK for this process to already have a ProcessData object. However, the other case is someone
@@ -41,7 +41,7 @@ HRESULT ConsoleProcessList::AllocProcessData(_In_ CLIENT_ID const * const Client
 
     try
     {
-        pProcessData = new CONSOLE_PROCESS_HANDLE(ClientId, ulProcessGroupId);
+        pProcessData = new ConsoleProcessHandle(ClientId, ulProcessGroupId);
 
         _processes.push_back(pProcessData);
 
@@ -60,7 +60,7 @@ HRESULT ConsoleProcessList::AllocProcessData(_In_ CLIENT_ID const * const Client
 // Arguments:
 // - ProcessData - Pointer to the per-process data structure.
 // Return Value:
-void ConsoleProcessList::FreeProcessData(_In_ CONSOLE_PROCESS_HANDLE* const pProcessData)
+void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProcessData)
 {
     assert(g_ciConsoleInformation.IsConsoleLocked());
 
@@ -70,13 +70,13 @@ void ConsoleProcessList::FreeProcessData(_In_ CONSOLE_PROCESS_HANDLE* const pPro
 }
 
 // Calling FindProcessInList(nullptr) means you want the root process.
-CONSOLE_PROCESS_HANDLE* ConsoleProcessList::FindProcessInList(_In_opt_ HANDLE hProcess) const
+ConsoleProcessHandle* ConsoleProcessList::FindProcessInList(_In_opt_ HANDLE hProcess) const
 {
     auto it = _processes.cbegin();
 
     while (it != _processes.cend())
     {
-        CONSOLE_PROCESS_HANDLE* const pProcessHandleRecord = *it;
+        ConsoleProcessHandle* const pProcessHandleRecord = *it;
 
         if (0 != hProcess)
         {
@@ -99,13 +99,13 @@ CONSOLE_PROCESS_HANDLE* ConsoleProcessList::FindProcessInList(_In_opt_ HANDLE hP
     return nullptr;
 }
 
-CONSOLE_PROCESS_HANDLE* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ProcessGroupId) const
+ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ProcessGroupId) const
 {
     auto it = _processes.cbegin();
 
     while (it != _processes.cend())
     {
-        CONSOLE_PROCESS_HANDLE* const pProcessHandleRecord = *it;
+        ConsoleProcessHandle* const pProcessHandleRecord = *it;
         if (pProcessHandleRecord->ProcessGroupId == ProcessGroupId)
         {
             return pProcessHandleRecord;
@@ -161,7 +161,7 @@ HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(_In_ DWORD const Limi
         auto it = _processes.cbegin();
         while (it != _processes.cend())
         {
-            CONSOLE_PROCESS_HANDLE* const pProcessHandleRecord = *it;
+            ConsoleProcessHandle* const pProcessHandleRecord = *it;
 
             // If no limit was specified OR if we have a match, generate a new termination record.
             if (0 == LimitingProcessId ||
@@ -212,7 +212,7 @@ HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(_In_ DWORD const Limi
     RETURN_HR(S_OK);
 }
 
-CONSOLE_PROCESS_HANDLE* ConsoleProcessList::GetRootProcess() const
+ConsoleProcessHandle* ConsoleProcessList::GetRootProcess() const
 {
     if (!_processes.empty())
     {
@@ -242,7 +242,7 @@ void ConsoleProcessList::ModifyConsoleProcessFocus(_In_ const BOOL fForeground)
     auto it = _processes.cbegin();
     while (it != _processes.cend())
     {
-        CONSOLE_PROCESS_HANDLE* const pProcessHandle = *it;
+        ConsoleProcessHandle* const pProcessHandle = *it;
 
         if (pProcessHandle->ProcessHandle != nullptr)
         {

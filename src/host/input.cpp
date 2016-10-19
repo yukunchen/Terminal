@@ -1228,7 +1228,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 {
     g_hInstance = GetModuleHandle(L"ConhostV2.dll");
 
-    PCONSOLE_PROCESS_HANDLE ProcessData = g_ciConsoleInformation.ProcessHandleList.FindProcessInList(nullptr);
+    ConsoleProcessHandle* ProcessData = g_ciConsoleInformation.ProcessHandleList.FindProcessInList(nullptr);
     ASSERT(ProcessData != nullptr && ProcessData->RootProcess);
 
     // Create and activate the main window

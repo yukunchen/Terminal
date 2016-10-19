@@ -22,11 +22,12 @@ Revision History:
 #include <memory>
 #include <wil\resource.h>
 
-typedef struct _CONSOLE_PROCESS_HANDLE
+class ConsoleProcessHandle
 {
-    _CONSOLE_PROCESS_HANDLE(_In_ const CLIENT_ID* const pClientId,
+public:
+    ConsoleProcessHandle(_In_ const CLIENT_ID* const pClientId,
                             _In_ ULONG const ulProcessGroupId);
-    ~_CONSOLE_PROCESS_HANDLE();
+    ~ConsoleProcessHandle();
 
     wil::unique_handle const ProcessHandle;
     ULONG TerminateCount;
@@ -36,4 +37,4 @@ typedef struct _CONSOLE_PROCESS_HANDLE
     std::unique_ptr<ConsoleWaitQueue> const pWaitBlockQueue;
     ConsoleHandleData* InputHandle;
     ConsoleHandleData* OutputHandle;
-} CONSOLE_PROCESS_HANDLE, *PCONSOLE_PROCESS_HANDLE;
+};
