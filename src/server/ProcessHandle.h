@@ -25,9 +25,6 @@ Revision History:
 class ConsoleProcessHandle
 {
 public:
-    wil::unique_handle const ProcessHandle;
-    ULONG TerminateCount;
-    ULONG const ProcessGroupId;
     CLIENT_ID const ClientId;
     std::unique_ptr<ConsoleWaitQueue> const pWaitBlockQueue;
     ConsoleHandleData* InputHandle;
@@ -39,6 +36,10 @@ private:
     ConsoleProcessHandle(_In_ const CLIENT_ID* const pClientId,
                          _In_ ULONG const ulProcessGroupId);
     ~ConsoleProcessHandle();
+
+    ULONG TerminateCount;
+    ULONG const ProcessGroupId;
+    wil::unique_handle const ProcessHandle;
 
     friend class ConsoleProcessList; // ensure List manages lifetimes and not other classes.
 };
