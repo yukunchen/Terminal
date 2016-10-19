@@ -51,7 +51,7 @@ HRESULT ConsoleProcessList::AllocProcessData(_In_ CLIENT_ID const * const Client
         }
     }
     CATCH_RETURN();
-    
+
     RETURN_HR(S_OK);
 }
 
@@ -222,22 +222,7 @@ ConsoleProcessHandle* ConsoleProcessList::GetRootProcess() const
     return nullptr;
 }
 
-void SetProcessFocus(_In_ HANDLE ProcessHandle, _In_ BOOL Foreground)
-{
-    SetPriorityClass(ProcessHandle,
-                     Foreground ? PROCESS_MODE_BACKGROUND_END : PROCESS_MODE_BACKGROUND_BEGIN);
-}
-
-void SetProcessForegroundRights(_In_ const HANDLE hProcess, _In_ const BOOL fForeground)
-{
-    CONSOLESETFOREGROUND Flags;
-    Flags.hProcess = hProcess;
-    Flags.bForeground = fForeground;
-
-    UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetForeground, &Flags, sizeof(Flags));
-}
-
-void ConsoleProcessList::ModifyConsoleProcessFocus(_In_ const BOOL fForeground)
+void ConsoleProcessList::ModifyConsoleProcessFocus(_In_ const bool fForeground)
 {
     auto it = _processes.cbegin();
     while (it != _processes.cend())
@@ -246,18 +231,35 @@ void ConsoleProcessList::ModifyConsoleProcessFocus(_In_ const BOOL fForeground)
 
         if (pProcessHandle->ProcessHandle != nullptr)
         {
-            SetProcessFocus(pProcessHandle->ProcessHandle.get(), fForeground);
-            SetProcessForegroundRights(pProcessHandle->ProcessHandle.get(), fForeground);
+            _SetProcessFocus(pProcessHandle->ProcessHandle.get(), fForeground);
+            _SetProcessForegroundRights(pProcessHandle->ProcessHandle.get(), fForeground);
         }
 
         it = std::next(it);
     }
 
     // Do this for conhost.exe itself, too.
-    SetProcessForegroundRights(GetCurrentProcess(), fForeground);
+    _SetProcessForegroundRights(GetCurrentProcess(), fForeground);
 }
 
 bool ConsoleProcessList::IsEmpty() const
 {
     return _processes.size() == 0;
+}
+
+void ConsoleProcessList::_SetProcessFocus(_In_ HANDLE const hProcess, _In_ bool const fForeground) const
+{
+    LOG_IF_WIN32_BOOL_FALSE(SetPriorityClass(hProcess,
+                                             fForeground ? PROCESS_MODE_BACKGROUND_END : PROCESS_MODE_BACKGROUND_BEGIN));
+}
+
+void ConsoleProcessList::_SetProcessForegroundRights(_In_ HANDLE const hProcess, _In_ bool const fForeground) const
+{
+    CONSOLESETFOREGROUND Flags;
+    Flags.hProcess = hProcess;
+    Flags.bForeground = fForeground;
+
+    LOG_IF_NTSTATUS_FAILED(UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetForeground, 
+                                                         &Flags, 
+                                                         sizeof(Flags)));
 }

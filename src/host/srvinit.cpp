@@ -751,10 +751,7 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
 
     AllocateCommandHistory(Cac.AppName, Cac.AppNameLength, (HANDLE)ProcessData);
 
-    if (ProcessData->ProcessHandle != nullptr)
-    {
-        SetProcessForegroundRights(ProcessData->ProcessHandle.get(), g_ciConsoleInformation.Flags & CONSOLE_HAS_FOCUS);
-    }
+    g_ciConsoleInformation.ProcessHandleList.ModifyConsoleProcessFocus(IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_HAS_FOCUS));
 
     // Create the handles.
     

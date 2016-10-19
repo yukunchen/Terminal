@@ -21,8 +21,6 @@ Revision History:
 
 void ScreenBufferSizeChange(_In_ COORD const coordNewSize);
 
-void SetProcessForegroundRights(_In_ const HANDLE hProcess, _In_ const BOOL fForeground);
-
 NTSTATUS ReadScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenInfo, _Inout_ PCHAR_INFO pciBuffer, _Inout_ PSMALL_RECT psrReadRegion);
 NTSTATUS WriteScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PCHAR_INFO pciBuffer, _Inout_ PSMALL_RECT psrWriteRegion);
 

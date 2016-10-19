@@ -52,10 +52,14 @@ public:
     HRESULT GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
                            _Inout_ DWORD* const pcProcessList) const;
 
-    void ModifyConsoleProcessFocus(_In_ const BOOL fForeground);
+    void ModifyConsoleProcessFocus(_In_ const bool fForeground);
 
     bool IsEmpty() const;
 
 private:
     std::list<ConsoleProcessHandle*> _processes;
+    
+    void _SetProcessFocus(_In_ HANDLE const hProcess, _In_ bool const fForeground) const;
+    void _SetProcessForegroundRights(_In_ HANDLE const hProcess, _In_ bool const fForeground) const;
+
 };
