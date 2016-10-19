@@ -249,7 +249,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_SETFOCUS:
     {
-        ModifyConsoleProcessFocus(TRUE);
+        g_ciConsoleInformation.ProcessHandleList.ModifyConsoleProcessFocus(TRUE);
 
         g_ciConsoleInformation.Flags |= CONSOLE_HAS_FOCUS;
 
@@ -266,7 +266,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_KILLFOCUS:
     {
-        ModifyConsoleProcessFocus(FALSE);
+        g_ciConsoleInformation.ProcessHandleList.ModifyConsoleProcessFocus(FALSE);
 
         g_ciConsoleInformation.Flags &= ~CONSOLE_HAS_FOCUS;
 

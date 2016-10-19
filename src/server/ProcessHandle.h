@@ -19,15 +19,21 @@ Revision History:
 #include "ObjectHandle.h"
 #include "WaitQueue.h"
 
+#include <memory>
+#include <wil\resource.h>
+
 typedef struct _CONSOLE_PROCESS_HANDLE
 {
-    LIST_ENTRY ListLink;
-    HANDLE ProcessHandle;
+    _CONSOLE_PROCESS_HANDLE(_In_ const CLIENT_ID* const pClientId,
+                            _In_ ULONG const ulProcessGroupId);
+    ~_CONSOLE_PROCESS_HANDLE();
+
+    wil::unique_handle const ProcessHandle;
     ULONG TerminateCount;
-    ULONG ProcessGroupId;
-    CLIENT_ID ClientId;
+    ULONG const ProcessGroupId;
+    CLIENT_ID const ClientId;
     BOOL RootProcess;
-    ConsoleWaitQueue* pWaitBlockQueue;
+    std::unique_ptr<ConsoleWaitQueue> const pWaitBlockQueue;
     ConsoleHandleData* InputHandle;
     ConsoleHandleData* OutputHandle;
 } CONSOLE_PROCESS_HANDLE, *PCONSOLE_PROCESS_HANDLE;

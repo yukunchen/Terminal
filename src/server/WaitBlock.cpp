@@ -76,7 +76,7 @@ HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReply
     PCONSOLE_PROCESS_HANDLE const ProcessData = GetMessageProcess(pWaitReplyMessage);
     assert(ProcessData != nullptr);
 
-    ConsoleWaitQueue* const pProcessQueue = ProcessData->pWaitBlockQueue;
+    ConsoleWaitQueue* const pProcessQueue = ProcessData->pWaitBlockQueue.get();
 
     ConsoleHandleData* const pHandleData = GetMessageObject(pWaitReplyMessage);
     assert(pHandleData != nullptr);

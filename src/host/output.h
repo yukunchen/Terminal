@@ -51,8 +51,6 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
                                   _In_ PSMALL_RECT const psrTargetRect,
                                   _Inout_opt_ TextAttribute* pTextAttributes);
 
-void ModifyConsoleProcessFocus(_In_ const BOOL fForeground);
-
 SHORT ScrollEntireScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo, _In_ const SHORT sScrollValue);
 
 // For handling process handle state, not the window state itself.

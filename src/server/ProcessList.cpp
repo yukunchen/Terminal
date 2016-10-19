@@ -8,83 +8,51 @@
 
 #include "ProcessList.h"
 
+#include "..\host\conwinuserrefs.h"
 #include "..\host\globals.h"
 #include "..\host\telemetry.hpp"
+#include "..\host\userprivapi.hpp"
 
-PCONSOLE_PROCESS_HANDLE ConsoleProcessList::s_FindProcessByGroupId(_In_ ULONG ProcessGroupId)
-{
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ProcessHandleList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
-    {
-        PCONSOLE_PROCESS_HANDLE const ProcessHandleRecord = CONTAINING_RECORD(ListNext, CONSOLE_PROCESS_HANDLE, ListLink);
-        ListNext = ListNext->Flink;
-        if (ProcessHandleRecord->ProcessGroupId == ProcessGroupId)
-        {
-            return ProcessHandleRecord;
-        }
-    }
-
-    return nullptr;
-}
-
-PCONSOLE_PROCESS_HANDLE ConsoleProcessList::s_AllocProcessData(_In_ CLIENT_ID const * const ClientId,
-                                         _In_ ULONG const ulProcessGroupId,
-                                         _In_opt_ PCONSOLE_PROCESS_HANDLE pParentProcessData)
+HRESULT ConsoleProcessList::AllocProcessData(_In_ CLIENT_ID const * const ClientId,
+                                             _In_ ULONG const ulProcessGroupId,
+                                             _In_opt_ CONSOLE_PROCESS_HANDLE* const pParentProcessData,
+                                             _Outptr_opt_ CONSOLE_PROCESS_HANDLE** const ppProcessData)
 {
     assert(g_ciConsoleInformation.IsConsoleLocked());
 
-    PCONSOLE_PROCESS_HANDLE ProcessData = s_FindProcessInList(ClientId->UniqueProcess);
-    if (ProcessData != nullptr)
+    CONSOLE_PROCESS_HANDLE* pProcessData = FindProcessInList(ClientId->UniqueProcess);
+    if (nullptr != pProcessData)
     {
         // In the GenerateConsoleCtrlEvent it's OK for this process to already have a ProcessData object. However, the other case is someone
         // connecting to our LPC port and they should only do that once, so we fail subsequent connection attempts.
-        if (pParentProcessData == nullptr)
+        if (nullptr == pParentProcessData)
         {
-            return nullptr;
+            RETURN_HR(E_FAIL);
         }
         else
         {
-            return ProcessData;
-        }
-    }
-
-    ProcessData = new CONSOLE_PROCESS_HANDLE();
-    if (ProcessData != nullptr)
-    {
-        ProcessData->pWaitBlockQueue = new ConsoleWaitQueue();
-
-        if (ProcessData->pWaitBlockQueue != nullptr)
-        {
-            ProcessData->ClientId = *ClientId;
-            ProcessData->ProcessGroupId = ulProcessGroupId;
-
-#pragma warning(push)
-            // pointer truncation due to using the HANDLE type to store a DWORD process ID.
-            // We're using the HANDLE type in the public ClientId field to store the process ID when we should
-            // be using a more appropriate type. This should be collected and replaced with the server refactor.
-            // TODO - MSFT:9115192
-#pragma warning(disable:4311 4302) 
-            ProcessData->ProcessHandle = OpenProcess(MAXIMUM_ALLOWED,
-                                                     FALSE,
-                                                     (DWORD)ProcessData->ClientId.UniqueProcess);
-#pragma warning(pop)
-
-            // Link this ProcessData ptr into the global list.
-            InsertHeadList(&g_ciConsoleInformation.ProcessHandleList, &ProcessData->ListLink);
-
-            if (ProcessData->ProcessHandle != nullptr)
+            if (nullptr != ppProcessData)
             {
-                Telemetry::Instance().LogProcessConnected(ProcessData->ProcessHandle);
+                *ppProcessData = pProcessData;
             }
-        }
-        else
-        {
-            delete ProcessData;
+            RETURN_HR(S_OK);
         }
     }
 
-    return ProcessData;
+    try
+    {
+        pProcessData = new CONSOLE_PROCESS_HANDLE(ClientId, ulProcessGroupId);
+
+        _processes.push_back(pProcessData);
+
+        if (nullptr != ppProcessData)
+        {
+            *ppProcessData = pProcessData;
+        }
+    }
+    CATCH_RETURN();
+    
+    RETURN_HR(S_OK);
 }
 
 // Routine Description:
@@ -92,57 +60,204 @@ PCONSOLE_PROCESS_HANDLE ConsoleProcessList::s_AllocProcessData(_In_ CLIENT_ID co
 // Arguments:
 // - ProcessData - Pointer to the per-process data structure.
 // Return Value:
-void ConsoleProcessList::s_FreeProcessData(_In_ PCONSOLE_PROCESS_HANDLE pProcessData)
+void ConsoleProcessList::FreeProcessData(_In_ CONSOLE_PROCESS_HANDLE* const pProcessData)
 {
     assert(g_ciConsoleInformation.IsConsoleLocked());
 
-    delete pProcessData->pWaitBlockQueue;
+    _processes.remove(pProcessData);
 
-    if (pProcessData->InputHandle != nullptr)
-    {
-        pProcessData->InputHandle->CloseHandle();
-    }
-
-    if (pProcessData->OutputHandle != nullptr)
-    {
-        pProcessData->OutputHandle->CloseHandle();
-    }
-
-    if (pProcessData->ProcessHandle != nullptr)
-    {
-        CloseHandle(pProcessData->ProcessHandle);
-    }
-
-    RemoveEntryList(&pProcessData->ListLink);
     delete pProcessData;
 }
 
 // Calling FindProcessInList(nullptr) means you want the root process.
-PCONSOLE_PROCESS_HANDLE ConsoleProcessList::s_FindProcessInList(_In_opt_ HANDLE hProcess)
+CONSOLE_PROCESS_HANDLE* ConsoleProcessList::FindProcessInList(_In_opt_ HANDLE hProcess) const
 {
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ProcessHandleList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
+    auto it = _processes.cbegin();
 
-    while (ListNext != ListHead)
+    while (it != _processes.cend())
     {
-        PCONSOLE_PROCESS_HANDLE const ProcessHandleRecord = CONTAINING_RECORD(ListNext, CONSOLE_PROCESS_HANDLE, ListLink);
+        CONSOLE_PROCESS_HANDLE* const pProcessHandleRecord = *it;
+
         if (0 != hProcess)
         {
-            if (ProcessHandleRecord->ClientId.UniqueProcess == hProcess)
+            if (pProcessHandleRecord->ClientId.UniqueProcess == hProcess)
             {
-                return ProcessHandleRecord;
+                return pProcessHandleRecord;
             }
         }
         else
         {
-            if (ProcessHandleRecord->RootProcess)
+            if (pProcessHandleRecord->RootProcess)
             {
-                return ProcessHandleRecord;
+                return pProcessHandleRecord;
             }
         }
 
-        ListNext = ListNext->Flink;
+        it = std::next(it);
     }
 
     return nullptr;
+}
+
+CONSOLE_PROCESS_HANDLE* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ProcessGroupId) const
+{
+    auto it = _processes.cbegin();
+
+    while (it != _processes.cend())
+    {
+        CONSOLE_PROCESS_HANDLE* const pProcessHandleRecord = *it;
+        if (pProcessHandleRecord->ProcessGroupId == ProcessGroupId)
+        {
+            return pProcessHandleRecord;
+        }
+
+        it = std::next(it);
+    }
+
+    return nullptr;
+}
+
+HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
+                                           _Inout_ DWORD* const pcProcessList) const
+{
+    HRESULT hr = S_OK;
+
+    DWORD const cProcesses = (DWORD)_processes.size();
+
+    // If we can fit inside the given list space, copy out the data.
+    if (cProcesses <= *pcProcessList)
+    {
+        DWORD cFilled = 0;
+
+        // Loop over the list of processes and fill in the caller's buffer.
+        auto it = _processes.cbegin();
+        while (it != _processes.cend())
+        {
+            pProcessList[cFilled++] = HandleToULong((*it)->ClientId.UniqueProcess);
+            it = std::next(it);
+        }
+    }
+    else
+    {
+        hr = E_NOT_SUFFICIENT_BUFFER;
+    }
+
+    // Return how many items were copied (or how many values we would need to fit).
+    *pcProcessList = cProcesses;
+
+    RETURN_HR(hr);
+}
+
+HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(_In_ DWORD const LimitingProcessId,
+                                                           _In_ bool const fCtrlClose,
+                                                           _Outptr_result_buffer_all_(*pcRecords) CONSOLE_PROCESS_TERMINATION_RECORD** prgRecords,
+                                                           _Out_ size_t* const pcRecords) const
+{
+    try
+    {
+        std::deque<std::unique_ptr<CONSOLE_PROCESS_TERMINATION_RECORD>> TermRecords;
+
+        // Dig through known processes looking for a match
+        auto it = _processes.cbegin();
+        while (it != _processes.cend())
+        {
+            CONSOLE_PROCESS_HANDLE* const pProcessHandleRecord = *it;
+
+            // If no limit was specified OR if we have a match, generate a new termination record.
+            if (0 == LimitingProcessId ||
+                pProcessHandleRecord->ProcessGroupId == LimitingProcessId)
+            {
+                std::unique_ptr<CONSOLE_PROCESS_TERMINATION_RECORD> pNewRecord = std::make_unique<CONSOLE_PROCESS_TERMINATION_RECORD>();
+
+                // If the duplicate failed, the best we can do is to skip including the process in the list and hope it goes away.
+                LOG_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
+                                                        pProcessHandleRecord->ProcessHandle.get(),
+                                                        GetCurrentProcess(),
+                                                        &pNewRecord->ProcessHandle,
+                                                        0,
+                                                        0,
+                                                        DUPLICATE_SAME_ACCESS));
+
+                pNewRecord->ProcessID = pProcessHandleRecord->ClientId.UniqueProcess;
+
+                // If we're hard closing the window, increment the counter.
+                if (fCtrlClose)
+                {
+                    pProcessHandleRecord->TerminateCount++;
+                }
+
+                pNewRecord->TerminateCount = pProcessHandleRecord->TerminateCount;
+
+                TermRecords.push_back(std::move(pNewRecord));
+            }
+
+            it = std::next(it);
+        }
+
+        // From all found matches, convert to C-style array to return
+        size_t const cchRetVal = TermRecords.size();
+        CONSOLE_PROCESS_TERMINATION_RECORD* pRetVal = new CONSOLE_PROCESS_TERMINATION_RECORD[cchRetVal];
+        RETURN_IF_NULL_ALLOC(pRetVal);
+
+        for (size_t i = 0; i < cchRetVal; i++)
+        {
+            pRetVal[i] = *TermRecords.at(i);
+        }
+
+        *prgRecords = pRetVal;
+        *pcRecords = cchRetVal;
+    }
+    CATCH_RETURN();
+
+    RETURN_HR(S_OK);
+}
+
+CONSOLE_PROCESS_HANDLE* ConsoleProcessList::GetRootProcess() const
+{
+    if (!_processes.empty())
+    {
+        return _processes.front();
+    }
+
+    return nullptr;
+}
+
+void SetProcessFocus(_In_ HANDLE ProcessHandle, _In_ BOOL Foreground)
+{
+    SetPriorityClass(ProcessHandle,
+                     Foreground ? PROCESS_MODE_BACKGROUND_END : PROCESS_MODE_BACKGROUND_BEGIN);
+}
+
+void SetProcessForegroundRights(_In_ const HANDLE hProcess, _In_ const BOOL fForeground)
+{
+    CONSOLESETFOREGROUND Flags;
+    Flags.hProcess = hProcess;
+    Flags.bForeground = fForeground;
+
+    UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetForeground, &Flags, sizeof(Flags));
+}
+
+void ConsoleProcessList::ModifyConsoleProcessFocus(_In_ const BOOL fForeground)
+{
+    auto it = _processes.cbegin();
+    while (it != _processes.cend())
+    {
+        CONSOLE_PROCESS_HANDLE* const pProcessHandle = *it;
+
+        if (pProcessHandle->ProcessHandle != nullptr)
+        {
+            SetProcessFocus(pProcessHandle->ProcessHandle.get(), fForeground);
+            SetProcessForegroundRights(pProcessHandle->ProcessHandle.get(), fForeground);
+        }
+
+        it = std::next(it);
+    }
+
+    // Do this for conhost.exe itself, too.
+    SetProcessForegroundRights(GetCurrentProcess(), fForeground);
+}
+
+bool ConsoleProcessList::IsEmpty() const
+{
+    return _processes.size() == 0;
 }

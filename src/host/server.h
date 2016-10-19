@@ -24,6 +24,7 @@ Revision History:
 #include "..\terminal\adapter\terminalInput.hpp"
 #include "..\terminal\adapter\MouseInput.hpp"
 
+#include "..\server\ProcessList.h"
 #include "..\server\WaitQueue.h"
 
 // Flags flags
@@ -67,7 +68,7 @@ public:
     CONSOLE_INFORMATION();
     ~CONSOLE_INFORMATION();
 
-    LIST_ENTRY ProcessHandleList;
+    ConsoleProcessList ProcessHandleList;
     PINPUT_INFORMATION pInputBuffer;
 
     Window* pWindow;

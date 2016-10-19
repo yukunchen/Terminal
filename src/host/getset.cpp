@@ -365,7 +365,7 @@ NTSTATUS SrvSetConsoleMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPend
     }
 
     ConsoleHandleData* HandleData = GetMessageObject(m);
-    
+
     if (HandleData->IsInputHandle())
     {
         INPUT_INFORMATION* pInputInfo;
@@ -518,7 +518,7 @@ NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
     {
         PCONSOLE_PROCESS_HANDLE ProcessHandle;
 
-        ProcessHandle = ConsoleProcessList::s_FindProcessByGroupId(a->ProcessGroupId);
+        ProcessHandle = g_ciConsoleInformation.ProcessHandleList.FindProcessByGroupId(a->ProcessGroupId);
         if (ProcessHandle == nullptr)
         {
             ULONG ProcessId = a->ProcessGroupId;
@@ -528,7 +528,7 @@ NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
             Status = GetProcessParentId(&ProcessId);
             if (NT_SUCCESS(Status))
             {
-                ProcessHandle = ConsoleProcessList::s_FindProcessInList(UlongToHandle(ProcessId));
+                ProcessHandle = g_ciConsoleInformation.ProcessHandleList.FindProcessInList(UlongToHandle(ProcessId));
                 if (ProcessHandle == nullptr)
                 {
                     Status = STATUS_INVALID_PARAMETER;
@@ -539,14 +539,8 @@ NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
 
                     ClientId.UniqueProcess = UlongToHandle(a->ProcessGroupId);
                     ClientId.UniqueThread = 0;
-                    if (ConsoleProcessList::s_AllocProcessData(&ClientId, a->ProcessGroupId, ProcessHandle) == nullptr)
-                    {
-                        Status = STATUS_UNSUCCESSFUL;
-                    }
-                    else
-                    {
-                        Status = STATUS_SUCCESS;
-                    }
+
+                    NTSTATUS_FROM_HRESULT(g_ciConsoleInformation.ProcessHandleList.AllocProcessData(&ClientId, a->ProcessGroupId, ProcessHandle, nullptr));
                 }
             }
         }
@@ -1257,7 +1251,7 @@ NTSTATUS SrvGetConsoleProcessList(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Re
 
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleProcessList);
 
-    DWORD dwProcessCount = 0;
+
 
     PVOID Buffer;
     ULONG BufferSize;
@@ -1271,57 +1265,22 @@ NTSTATUS SrvGetConsoleProcessList(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Re
 
     CONSOLE_INFORMATION *Console = nullptr;
     Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
+    if (NT_SUCCESS(Status))
     {
-        goto Cleanup;
-    }
+        /*
+        * If there's not enough space in the array to hold all the pids, we'll
+        * inform the user of that by returning a number > than a->dwProcessCount
+        * (but we still return STATUS_SUCCESS).
+        */
 
-    LPDWORD lpdwProcessList = (PDWORD)Buffer;
+        LPDWORD lpdwProcessList = (PDWORD)Buffer;
+        DWORD dwProcessCount = a->dwProcessCount;
+        if (SUCCEEDED(g_ciConsoleInformation.ProcessHandleList.GetProcessList(lpdwProcessList, &dwProcessCount)))
+        {
+            SetReplyInformation(m, dwProcessCount * sizeof(ULONG));
+        }
 
-    /*
-     * Run through the console's process list to determine if the user-supplied
-     * buffer is big enough to contain them all. This is requires that we make
-     * two passes over the data, but it allows this function to have the same
-     * semantics as GetProcessHeaps().
-     */
-
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ProcessHandleList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
-    {
-        ++dwProcessCount;
-        ListNext = ListNext->Flink;
-    }
-
-    // At this point we can't fail, so set the status accordingly.
-    Status = STATUS_SUCCESS;
-
-    /*
-     * There's not enough space in the array to hold all the pids, so we'll
-     * inform the user of that by returning a number > than a->dwProcessCount
-     * (but we still return STATUS_SUCCESS).
-     */
-    if (dwProcessCount > a->dwProcessCount)
-    {
-        goto Cleanup;
-    }
-
-    // Loop over the list of processes again and fill in the caller's buffer.
-    ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
-    {
-        PCONSOLE_PROCESS_HANDLE const ProcessHandleRecord = CONTAINING_RECORD(ListNext, CONSOLE_PROCESS_HANDLE, ListLink);
-        *lpdwProcessList++ = HandleToUlong(ProcessHandleRecord->ClientId.UniqueProcess);
-        ListNext = ListNext->Flink;
-    }
-
-    SetReplyInformation(m, dwProcessCount * sizeof(ULONG));
-
-Cleanup:
-    a->dwProcessCount = dwProcessCount;
-
-    if (Console != nullptr)
-    {
+        a->dwProcessCount = dwProcessCount;
         UnlockConsole();
     }
 

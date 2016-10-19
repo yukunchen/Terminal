@@ -13,14 +13,14 @@
 
 
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
-    // ProcessHandleList initialized below
+    // ProcessHandleList initializes itself
     pInputBuffer(nullptr),
     CurrentScreenBuffer(nullptr),
     ScreenBuffers(nullptr),
     hWnd(nullptr),
     hMenu(nullptr),
     hHeirMenu(nullptr),
-    // OutputQueue initialized below
+    // OutputQueue initialized below TODO: fix?
     // CommandHistoryList initialized below
     // ExeAliasList initialized below
     NumCommandHistories(0),
@@ -45,15 +45,13 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     termInput(HandleTerminalKeyEventCallback),
     terminalMouseInput(HandleTerminalKeyEventCallback)
 {
-    ZeroMemory((void*)&ProcessHandleList, sizeof(ProcessHandleList));
-    InitializeListHead(&g_ciConsoleInformation.ProcessHandleList);
-
     ZeroMemory((void*)&CommandHistoryList, sizeof(CommandHistoryList));
     InitializeListHead(&g_ciConsoleInformation.CommandHistoryList);
 
     ZeroMemory((void*)&ExeAliasList, sizeof(ExeAliasList));
     InitializeListHead(&g_ciConsoleInformation.ExeAliasList);
 
+    // TODO: remove unused queue
     ZeroMemory((void*)&MessageQueue, sizeof(MessageQueue));
     InitializeListHead(&g_ciConsoleInformation.MessageQueue);
 

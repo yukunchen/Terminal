@@ -360,7 +360,7 @@ NTSTATUS RemoveConsole(_In_ PCONSOLE_PROCESS_HANDLE ProcessData)
     FreeCommandHistory((HANDLE)ProcessData);
 
     fRecomputeOwner = ProcessData->RootProcess;
-    ConsoleProcessList::s_FreeProcessData(ProcessData);
+    g_ciConsoleInformation.ProcessHandleList.FreeProcessData(ProcessData);
 
     if (fRecomputeOwner)
     {
@@ -715,10 +715,13 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
         goto Error;
     }
 
-    ProcessData = ConsoleProcessList::s_AllocProcessData(&ClientId, Cac.ProcessGroupId, nullptr);
-    if (ProcessData == nullptr)
+    Status = NTSTATUS_FROM_HRESULT(g_ciConsoleInformation.ProcessHandleList.AllocProcessData(&ClientId,
+                                                                                             Cac.ProcessGroupId,
+                                                                                             nullptr,
+                                                                                             &ProcessData));
+
+    if (!NT_SUCCESS(Status))
     {
-        Status = STATUS_UNSUCCESSFUL;
         goto Error;
     }
 
@@ -754,7 +757,7 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
 
     if (ProcessData->ProcessHandle != nullptr)
     {
-        SetProcessForegroundRights(ProcessData->ProcessHandle, g_ciConsoleInformation.Flags & CONSOLE_HAS_FOCUS);
+        SetProcessForegroundRights(ProcessData->ProcessHandle.get(), g_ciConsoleInformation.Flags & CONSOLE_HAS_FOCUS);
     }
 
     // Create the handles.
@@ -795,7 +798,7 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
     if (FAILED(g_pDeviceComm->CompleteIo(&ReceiveMsg->Complete)))
     {
         FreeCommandHistory((HANDLE)ProcessData);
-        ConsoleProcessList::s_FreeProcessData(ProcessData);
+        g_ciConsoleInformation.ProcessHandleList.FreeProcessData(ProcessData);
     }
 
     UnlockConsole();
@@ -809,7 +812,7 @@ Error:
     if (ProcessData != nullptr)
     {
         FreeCommandHistory((HANDLE)ProcessData);
-        ConsoleProcessList::s_FreeProcessData(ProcessData);
+        g_ciConsoleInformation.ProcessHandleList.FreeProcessData(ProcessData);
     }
 
     UnlockConsole();
