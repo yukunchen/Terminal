@@ -466,24 +466,6 @@ NTSTATUS SrvSetConsoleMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPend
     return Status;
 }
 
-
-PCONSOLE_PROCESS_HANDLE FindProcessByGroupId(_In_ ULONG ProcessGroupId)
-{
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ProcessHandleList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
-    {
-        PCONSOLE_PROCESS_HANDLE const ProcessHandleRecord = CONTAINING_RECORD(ListNext, CONSOLE_PROCESS_HANDLE, ListLink);
-        ListNext = ListNext->Flink;
-        if (ProcessHandleRecord->ProcessGroupId == ProcessGroupId)
-        {
-            return ProcessHandleRecord;
-        }
-    }
-
-    return nullptr;
-}
-
 NTSTATUS GetProcessParentId(_Inout_ PULONG ProcessId)
 {
     // TODO: Get Parent current not really available without winternl + NtQueryInformationProcess. http://osgvsowi/8394495
@@ -536,7 +518,7 @@ NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
     {
         PCONSOLE_PROCESS_HANDLE ProcessHandle;
 
-        ProcessHandle = FindProcessByGroupId(a->ProcessGroupId);
+        ProcessHandle = ConsoleProcessList::s_FindProcessByGroupId(a->ProcessGroupId);
         if (ProcessHandle == nullptr)
         {
             ULONG ProcessId = a->ProcessGroupId;
@@ -546,7 +528,7 @@ NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
             Status = GetProcessParentId(&ProcessId);
             if (NT_SUCCESS(Status))
             {
-                ProcessHandle = FindProcessInList(UlongToHandle(ProcessId));
+                ProcessHandle = ConsoleProcessList::s_FindProcessInList(UlongToHandle(ProcessId));
                 if (ProcessHandle == nullptr)
                 {
                     Status = STATUS_INVALID_PARAMETER;
@@ -557,7 +539,7 @@ NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
 
                     ClientId.UniqueProcess = UlongToHandle(a->ProcessGroupId);
                     ClientId.UniqueThread = 0;
-                    if (AllocProcessData(&ClientId, a->ProcessGroupId, ProcessHandle) == nullptr)
+                    if (ConsoleProcessList::s_AllocProcessData(&ClientId, a->ProcessGroupId, ProcessHandle) == nullptr)
                     {
                         Status = STATUS_UNSUCCESSFUL;
                     }

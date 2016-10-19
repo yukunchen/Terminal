@@ -268,36 +268,6 @@ HRESULT ConsoleServerInitialization(_In_ HANDLE Server)
     return S_OK;
 }
 
-// Calling FindProcessInList(nullptr) means you want the root process.
-PCONSOLE_PROCESS_HANDLE FindProcessInList(_In_opt_ HANDLE hProcess)
-{
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ProcessHandleList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-
-    while (ListNext != ListHead)
-    {
-        PCONSOLE_PROCESS_HANDLE const ProcessHandleRecord = CONTAINING_RECORD(ListNext, CONSOLE_PROCESS_HANDLE, ListLink);
-        if (0 != hProcess)
-        {
-            if (ProcessHandleRecord->ClientId.UniqueProcess == hProcess)
-            {
-                return ProcessHandleRecord;
-            }
-        }
-        else
-        {
-            if (ProcessHandleRecord->RootProcess)
-            {
-                return ProcessHandleRecord;
-            }
-        }
-
-        ListNext = ListNext->Flink;
-    }
-
-    return nullptr;
-}
-
 NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
                       _In_ DWORD TitleLength,
                       _In_reads_bytes_(TitleLength) LPWSTR Title,
@@ -390,7 +360,7 @@ NTSTATUS RemoveConsole(_In_ PCONSOLE_PROCESS_HANDLE ProcessData)
     FreeCommandHistory((HANDLE)ProcessData);
 
     fRecomputeOwner = ProcessData->RootProcess;
-    FreeProcessData(ProcessData);
+    ConsoleProcessList::s_FreeProcessData(ProcessData);
 
     if (fRecomputeOwner)
     {
@@ -745,7 +715,7 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
         goto Error;
     }
 
-    ProcessData = AllocProcessData(&ClientId, Cac.ProcessGroupId, nullptr);
+    ProcessData = ConsoleProcessList::s_AllocProcessData(&ClientId, Cac.ProcessGroupId, nullptr);
     if (ProcessData == nullptr)
     {
         Status = STATUS_UNSUCCESSFUL;
@@ -825,7 +795,7 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
     if (FAILED(g_pDeviceComm->CompleteIo(&ReceiveMsg->Complete)))
     {
         FreeCommandHistory((HANDLE)ProcessData);
-        FreeProcessData(ProcessData);
+        ConsoleProcessList::s_FreeProcessData(ProcessData);
     }
 
     UnlockConsole();
@@ -839,7 +809,7 @@ Error:
     if (ProcessData != nullptr)
     {
         FreeCommandHistory((HANDLE)ProcessData);
-        FreeProcessData(ProcessData);
+        ConsoleProcessList::s_FreeProcessData(ProcessData);
     }
 
     UnlockConsole();

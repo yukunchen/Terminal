@@ -42,6 +42,12 @@
     <ClCompile Include="..\WaitBlock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\ProcessHandle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ProcessList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h">
@@ -75,6 +81,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\WaitTerminationReason.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ProcessList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

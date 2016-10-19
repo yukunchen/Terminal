@@ -19,13 +19,10 @@ Revision History:
 #include "consrv.h"
 #include "server.h"
 
+#include "..\server\ProcessList.h"
+
 void LockConsole();
 void UnlockConsole();
 
 NTSTATUS RevalidateConsole(_Out_ CONSOLE_INFORMATION ** const ppConsole);
 NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, _In_ const DWORD cbTitle);
-
-PCONSOLE_PROCESS_HANDLE AllocProcessData(_In_ CLIENT_ID const * const ClientId,
-                                         _In_ ULONG const ulProcessGroupId,
-                                         _In_opt_ PCONSOLE_PROCESS_HANDLE pParentProcessData);
-void FreeProcessData(_In_ PCONSOLE_PROCESS_HANDLE ProcessData);
