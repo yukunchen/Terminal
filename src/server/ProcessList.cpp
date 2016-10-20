@@ -57,8 +57,10 @@ HRESULT ConsoleProcessList::AllocProcessData(_In_ DWORD const dwProcessId,
     try
     {
         pProcessData = new ConsoleProcessHandle(dwProcessId,
-                                                dwThreadId, 
+                                                dwThreadId,
                                                 ulProcessGroupId);
+
+        RETURN_IF_NULL_ALLOC(pProcessData);
 
         _processes.push_back(pProcessData);
 
@@ -82,6 +84,9 @@ void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProce
 {
     assert(g_ciConsoleInformation.IsConsoleLocked());
 
+    // Assert that the item exists in the list. If it doesn't exist, the end/last will be returned.
+    assert(_processes.cend() != std::find(_processes.cbegin(), _processes.cend(), pProcessData));
+
     _processes.remove(pProcessData);
 
     delete pProcessData;
@@ -91,7 +96,7 @@ void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProce
 // - Locates a process handle in this list.
 // - NOTE: Calling FindProcessInList(0) means you want the root process.
 // Arguments:
-// - dwProcessId - ID of the process to search for or 0 to find the root process.
+// - dwProcessId - ID of the process to search for or ROOT_PROCESS_ID to find the root process.
 // Return Value:
 // - Pointer to the process handle information or nullptr if no match was found.
 ConsoleProcessHandle* ConsoleProcessList::FindProcessInList(_In_ const DWORD dwProcessId) const
@@ -102,7 +107,7 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessInList(_In_ const DWORD dwP
     {
         ConsoleProcessHandle* const pProcessHandleRecord = *it;
 
-        if (0 != dwProcessId)
+        if (ROOT_PROCESS_ID != dwProcessId)
         {
             if (pProcessHandleRecord->dwProcessId == dwProcessId)
             {
@@ -153,27 +158,28 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ulProc
 // Arguments:
 // - pProcessList - Pointer to buffer to store process IDs. Caller allocated.
 // - pcProcessList - On the way in, the length of the buffer given. On the way out, the amount of the buffer used.
-//                 - If buffer was insufficient, filled with necessary buffer size on the way out.
+//                 - If buffer was insufficient, filled with necessary buffer size (in elements) on the way out.
 // Return Value:
 // - S_OK if buffer was filled successfully and resulting count of items is in pcProcessList.
 // - E_NOT_SUFFICIENT_BUFFER if the buffer given was too small. Refer to pcProcessList for size requirement.
 HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
-                                           _Inout_ DWORD* const pcProcessList) const
+                                           _Inout_ size_t* const pcProcessList) const
 {
     HRESULT hr = S_OK;
 
-    DWORD const cProcesses = (DWORD)_processes.size();
+    size_t const cProcesses = _processes.size();
 
     // If we can fit inside the given list space, copy out the data.
     if (cProcesses <= *pcProcessList)
     {
-        DWORD cFilled = 0;
+        size_t cFilled = 0;
 
         // Loop over the list of processes and fill in the caller's buffer.
         auto it = _processes.cbegin();
-        while (it != _processes.cend())
+        while (it != _processes.cend() && cFilled < *pcProcessList)
         {
-            pProcessList[cFilled++] = (*it)->dwProcessId;
+            pProcessList[cFilled] = (*it)->dwProcessId;
+            cFilled++;
             it = std::next(it);
         }
     }
@@ -185,7 +191,7 @@ HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD
     // Return how many items were copied (or how many values we would need to fit).
     *pcProcessList = cProcesses;
 
-    RETURN_HR(hr);
+    return hr;
 }
 
 // Routine Description
@@ -201,14 +207,14 @@ HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD
 // - E_OUTOFMEMORY in a low memory situation.
 HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(_In_ DWORD const dwLimitingProcessId,
                                                            _In_ bool const fCtrlClose,
-                                                           _Outptr_result_buffer_all_(*pcRecords) CONSOLE_PROCESS_TERMINATION_RECORD** prgRecords,
+                                                           _Outptr_result_buffer_all_(*pcRecords) ConsoleProcessTerminationRecord** prgRecords,
                                                            _Out_ size_t* const pcRecords) const
 {
     *pcRecords = 0;
 
     try
     {
-        std::deque<std::unique_ptr<CONSOLE_PROCESS_TERMINATION_RECORD>> TermRecords;
+        std::deque<std::unique_ptr<ConsoleProcessTerminationRecord>> TermRecords;
 
         // Dig through known processes looking for a match
         auto it = _processes.cbegin();
@@ -220,7 +226,7 @@ HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(_In_ DWORD const dwLi
             if (0 == dwLimitingProcessId ||
                 pProcessHandleRecord->_ulProcessGroupId == dwLimitingProcessId)
             {
-                std::unique_ptr<CONSOLE_PROCESS_TERMINATION_RECORD> pNewRecord = std::make_unique<CONSOLE_PROCESS_TERMINATION_RECORD>();
+                std::unique_ptr<ConsoleProcessTerminationRecord> pNewRecord = std::make_unique<ConsoleProcessTerminationRecord>();
 
                 // If the duplicate failed, the best we can do is to skip including the process in the list and hope it goes away.
                 LOG_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
@@ -249,7 +255,7 @@ HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(_In_ DWORD const dwLi
 
         // From all found matches, convert to C-style array to return
         size_t const cchRetVal = TermRecords.size();
-        CONSOLE_PROCESS_TERMINATION_RECORD* pRetVal = new CONSOLE_PROCESS_TERMINATION_RECORD[cchRetVal];
+        ConsoleProcessTerminationRecord* pRetVal = new ConsoleProcessTerminationRecord[cchRetVal];
         RETURN_IF_NULL_ALLOC(pRetVal);
 
         for (size_t i = 0; i < cchRetVal; i++)
@@ -262,13 +268,13 @@ HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(_In_ DWORD const dwLi
     }
     CATCH_RETURN();
 
-    RETURN_HR(S_OK);
+    return S_OK;
 }
 
 // Routine Description:
 // - Gets the first process in the list.
 // - Used for reassigning a new root process. 
-// TODO: encapsulate root process logic.
+// TODO: MSFT 9450737 - encapsulate root process logic. https://osgvsowi/9450737
 // Arguments:
 // - <none>
 // Return Value:
@@ -299,15 +305,15 @@ void ConsoleProcessList::ModifyConsoleProcessFocus(_In_ const bool fForeground)
 
         if (pProcessHandle->_hProcess != nullptr)
         {
-            _SetProcessFocus(pProcessHandle->_hProcess.get(), fForeground);
-            _SetProcessForegroundRights(pProcessHandle->_hProcess.get(), fForeground);
+            _ModifyProcessFocus(pProcessHandle->_hProcess.get(), fForeground);
+            _ModifyProcessForegroundRights(pProcessHandle->_hProcess.get(), fForeground);
         }
 
         it = std::next(it);
     }
 
     // Do this for conhost.exe itself, too.
-    _SetProcessForegroundRights(GetCurrentProcess(), fForeground);
+    _ModifyProcessForegroundRights(GetCurrentProcess(), fForeground);
 }
 
 // Routine Description:
@@ -329,7 +335,7 @@ bool ConsoleProcessList::IsEmpty() const
 // - fForeground - True if it should be prioritized as foreground. False if it can be backgrounded/deprioritized.
 // Return Value:
 // - <none>
-void ConsoleProcessList::_SetProcessFocus(_In_ HANDLE const hProcess, _In_ bool const fForeground) const
+void ConsoleProcessList::_ModifyProcessFocus(_In_ HANDLE const hProcess, _In_ bool const fForeground) const
 {
     LOG_IF_WIN32_BOOL_FALSE(SetPriorityClass(hProcess,
                                              fForeground ? PROCESS_MODE_BACKGROUND_END : PROCESS_MODE_BACKGROUND_BEGIN));
@@ -342,13 +348,13 @@ void ConsoleProcessList::_SetProcessFocus(_In_ HANDLE const hProcess, _In_ bool 
 // - fForeground - True if we're allowed to set it as the foreground window. False otherwise.
 // Return Value:
 // - <none>
-void ConsoleProcessList::_SetProcessForegroundRights(_In_ HANDLE const hProcess, _In_ bool const fForeground) const
+void ConsoleProcessList::_ModifyProcessForegroundRights(_In_ HANDLE const hProcess, _In_ bool const fForeground) const
 {
     CONSOLESETFOREGROUND Flags;
     Flags.hProcess = hProcess;
     Flags.bForeground = fForeground;
 
-    LOG_IF_NTSTATUS_FAILED(UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetForeground, 
-                                                         &Flags, 
+    LOG_IF_NTSTATUS_FAILED(UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetForeground,
+                                                         &Flags,
                                                          sizeof(Flags)));
 }

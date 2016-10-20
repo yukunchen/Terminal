@@ -1228,7 +1228,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 {
     g_hInstance = GetModuleHandle(L"ConhostV2.dll");
 
-    ConsoleProcessHandle* ProcessData = g_ciConsoleInformation.ProcessHandleList.FindProcessInList(0);
+    ConsoleProcessHandle* ProcessData = g_ciConsoleInformation.ProcessHandleList.FindProcessInList(ConsoleProcessList::ROOT_PROCESS_ID);
     ASSERT(ProcessData != nullptr && ProcessData->fRootProcess);
 
     // Create and activate the main window
@@ -2373,7 +2373,7 @@ void ProcessCtrlEvents()
     DWORD const LimitingProcessId = g_ciConsoleInformation.LimitingProcessId;
     g_ciConsoleInformation.LimitingProcessId = 0;
 
-    CONSOLE_PROCESS_TERMINATION_RECORD* rgProcessHandleList;
+    ConsoleProcessTerminationRecord* rgProcessHandleList;
     size_t cProcessHandleList;
 
     HRESULT hr = g_ciConsoleInformation.ProcessHandleList.GetTerminationRecordsByGroupId(LimitingProcessId,
@@ -2381,8 +2381,7 @@ void ProcessCtrlEvents()
                                                                                          &rgProcessHandleList,
                                                                                          &cProcessHandleList);
 
-    if (FAILED(hr) || 
-        cProcessHandleList == 0)
+    if (FAILED(hr) || cProcessHandleList == 0)
     {
         g_ciConsoleInformation.UnlockConsole();
         return;
@@ -2452,7 +2451,7 @@ void ProcessCtrlEvents()
             ConsoleEndTaskParams.hwnd = g_ciConsoleInformation.hWnd;
 
             Status = UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleEndTask, &ConsoleEndTaskParams, sizeof(ConsoleEndTaskParams));
-            if (rgProcessHandleList[i].hProcess == NULL) {
+            if (rgProcessHandleList[i].hProcess == nullptr) {
                 Status = STATUS_SUCCESS;
             }
         }

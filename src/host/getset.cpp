@@ -1250,8 +1250,6 @@ NTSTATUS SrvGetConsoleProcessList(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Re
 
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleProcessList);
 
-
-
     PVOID Buffer;
     ULONG BufferSize;
     NTSTATUS Status = GetOutputBuffer(m, &Buffer, &BufferSize);
@@ -1273,13 +1271,13 @@ NTSTATUS SrvGetConsoleProcessList(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Re
         */
 
         LPDWORD lpdwProcessList = (PDWORD)Buffer;
-        DWORD dwProcessCount = a->dwProcessCount;
-        if (SUCCEEDED(g_ciConsoleInformation.ProcessHandleList.GetProcessList(lpdwProcessList, &dwProcessCount)))
+        size_t cProcessList = a->dwProcessCount;
+        if (SUCCEEDED(g_ciConsoleInformation.ProcessHandleList.GetProcessList(lpdwProcessList, &cProcessList)))
         {
-            SetReplyInformation(m, dwProcessCount * sizeof(ULONG));
+            SetReplyInformation(m, cProcessList * sizeof(ULONG));
         }
 
-        a->dwProcessCount = dwProcessCount;
+        a->dwProcessCount = (ULONG)cProcessList;
         UnlockConsole();
     }
 

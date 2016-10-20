@@ -20,16 +20,18 @@ Revision History:
 
 // this structure is used to store relevant information from the console for ctrl processing so we can do it without
 // holding the console lock.
-typedef struct _CONSOLE_PROCESS_TERMINATION_RECORD
+struct ConsoleProcessTerminationRecord
 {
     HANDLE hProcess;
     DWORD dwProcessID;
     ULONG ulTerminateCount;
-} CONSOLE_PROCESS_TERMINATION_RECORD, *PCONSOLE_PROCESS_TERMINATION_RECORD;
+};
 
 class ConsoleProcessList
 {
 public:
+
+    static const DWORD ROOT_PROCESS_ID = 0;
     
     HRESULT AllocProcessData(_In_ DWORD const dwProcessId,
                              _In_ DWORD const dwThreadId, 
@@ -45,13 +47,13 @@ public:
 
     HRESULT GetTerminationRecordsByGroupId(_In_ DWORD const dwLimitingProcessId,
                                            _In_ bool const fCtrlClose,
-                                           _Outptr_result_buffer_all_(*pcRecords) CONSOLE_PROCESS_TERMINATION_RECORD** prgRecords,
+                                           _Outptr_result_buffer_all_(*pcRecords) ConsoleProcessTerminationRecord** prgRecords,
                                            _Out_ size_t* const pcRecords) const;
 
     ConsoleProcessHandle* GetFirstProcess() const;
 
     HRESULT GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
-                           _Inout_ DWORD* const pcProcessList) const;
+                           _Inout_ size_t* const pcProcessList) const;
 
     void ModifyConsoleProcessFocus(_In_ const bool fForeground);
 
@@ -60,7 +62,7 @@ public:
 private:
     std::list<ConsoleProcessHandle*> _processes;
     
-    void _SetProcessFocus(_In_ HANDLE const hProcess, _In_ bool const fForeground) const;
-    void _SetProcessForegroundRights(_In_ HANDLE const hProcess, _In_ bool const fForeground) const;
+    void _ModifyProcessFocus(_In_ HANDLE const hProcess, _In_ bool const fForeground) const;
+    void _ModifyProcessForegroundRights(_In_ HANDLE const hProcess, _In_ bool const fForeground) const;
 
 };
