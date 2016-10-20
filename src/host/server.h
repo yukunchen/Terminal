@@ -97,8 +97,6 @@ public:
     ULONG CtrlFlags;    // indicates outstanding ctrl requests
     ULONG LimitingProcessId;
 
-    LIST_ENTRY MessageQueue;
-
     CPINFO CPInfo;
     CPINFO OutputCPInfo;
 

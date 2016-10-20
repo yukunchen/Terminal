@@ -20,7 +20,7 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     hWnd(nullptr),
     hMenu(nullptr),
     hHeirMenu(nullptr),
-    // OutputQueue initialized below TODO: fix?
+    OutputQueue(),
     // CommandHistoryList initialized below
     // ExeAliasList initialized below
     NumCommandHistories(0),
@@ -34,7 +34,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     CtrlFlags(0),
     LimitingProcessId(0),
     // ColorTable initialized below
-    // MessageQueue initialized below
     // CPInfo initialized below
     // OutputCPInfo initialized below
     ReadConInpNumBytesUnicode(0),
@@ -50,10 +49,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
 
     ZeroMemory((void*)&ExeAliasList, sizeof(ExeAliasList));
     InitializeListHead(&g_ciConsoleInformation.ExeAliasList);
-
-    // TODO: remove unused queue
-    ZeroMemory((void*)&MessageQueue, sizeof(MessageQueue));
-    InitializeListHead(&g_ciConsoleInformation.MessageQueue);
 
     ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));

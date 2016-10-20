@@ -1229,7 +1229,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
     g_hInstance = GetModuleHandle(L"ConhostV2.dll");
 
     ConsoleProcessHandle* ProcessData = g_ciConsoleInformation.ProcessHandleList.FindProcessInList(0);
-    ASSERT(ProcessData != nullptr && ProcessData->RootProcess);
+    ASSERT(ProcessData != nullptr && ProcessData->fRootProcess);
 
     // Create and activate the main window
     NTSTATUS Status = Window::CreateInstance(&g_ciConsoleInformation, g_ciConsoleInformation.ScreenBuffers, &g_ciConsoleInformation.pWindow);
@@ -2387,8 +2387,6 @@ void ProcessCtrlEvents()
         g_ciConsoleInformation.UnlockConsole();
         return;
     }
-
-    ASSERT(ProcessHandleListLength > 0);
 
     // Copy ctrl flags.
     ULONG CtrlFlags = g_ciConsoleInformation.CtrlFlags;

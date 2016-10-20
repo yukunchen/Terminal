@@ -91,7 +91,7 @@ VOID SetConsoleWindowOwner(_In_ HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pPr
     else
     {
         // Find a process to own the console window. If there are none then let's use conhost's.
-        pProcessData = g_ciConsoleInformation.ProcessHandleList.GetRootProcess();
+        pProcessData = g_ciConsoleInformation.ProcessHandleList.GetFirstProcess();
         if (pProcessData != nullptr)
         {
             dwProcessId = pProcessData->dwProcessId;
