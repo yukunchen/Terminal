@@ -322,12 +322,26 @@ bool ConsoleProcessList::IsEmpty() const
     return _processes.size() == 0;
 }
 
+// Routine Description:
+// - Requests the OS change the priority class of the given process handle
+// Arguments:
+// - hProcess - Handle to the process to modify
+// - fForeground - True if it should be prioritized as foreground. False if it can be backgrounded/deprioritized.
+// Return Value:
+// - <none>
 void ConsoleProcessList::_SetProcessFocus(_In_ HANDLE const hProcess, _In_ bool const fForeground) const
 {
     LOG_IF_WIN32_BOOL_FALSE(SetPriorityClass(hProcess,
                                              fForeground ? PROCESS_MODE_BACKGROUND_END : PROCESS_MODE_BACKGROUND_BEGIN));
 }
 
+// Routine Description:
+// - Requests the OS allow the console to set one of its child processes as the foreground window
+// Arguments:
+// - hProcess - Handle to the process to modify
+// - fForeground - True if we're allowed to set it as the foreground window. False otherwise.
+// Return Value:
+// - <none>
 void ConsoleProcessList::_SetProcessForegroundRights(_In_ HANDLE const hProcess, _In_ bool const fForeground) const
 {
     CONSOLESETFOREGROUND Flags;

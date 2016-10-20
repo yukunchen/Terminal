@@ -48,7 +48,7 @@ public:
                                            _Outptr_result_buffer_all_(*pcRecords) CONSOLE_PROCESS_TERMINATION_RECORD** prgRecords,
                                            _Out_ size_t* const pcRecords) const;
 
-    ConsoleProcessHandle* GetRootProcess() const;
+    ConsoleProcessHandle* GetFirstProcess() const;
 
     HRESULT GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
                            _Inout_ DWORD* const pcProcessList) const;

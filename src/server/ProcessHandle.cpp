@@ -11,7 +11,6 @@
 #include "..\host\globals.h"
 #include "..\host\telemetry.hpp"
 
-// TODO - MSFT:9115192
 // Routine Description:
 // - Constructs an instance of the ConsoleProcessHandle Class
 // - NOTE: Can throw if allocation fails.
