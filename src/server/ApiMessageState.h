@@ -27,5 +27,4 @@ typedef struct _CONSOLE_API_STATE
 
     PWCHAR TransBuffer;
     BOOLEAN StackBuffer;
-    ULONG WriteFlags; // unused when WriteChars legacy is gone.
 } CONSOLE_API_STATE, *PCONSOLE_API_STATE, *const PCCONSOLE_API_STATE;

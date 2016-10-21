@@ -75,13 +75,6 @@ BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
 // - This routine reads characters from the input stream.
 NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 
-// ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED
-#define WRITE_NO_CR_LF 0
-#define WRITE_CR 1
-#define WRITE_CR_LF 2
-#define WRITE_SPECIAL_CHARS 4
-#define WRITE_UNICODE_CRLF 0x000a000d
-
 VOID UnblockWriteConsole(_In_ const DWORD dwReason);
 
 // Routine Description:
