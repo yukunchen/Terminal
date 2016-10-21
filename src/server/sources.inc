@@ -25,6 +25,7 @@ SOURCES= \
     $(SOURCES) \
     ..\ApiMessage.cpp \
     ..\ApiMessageState.cpp \
+    ..\ApiSorter.cpp \
     ..\DeviceComm.cpp \
     ..\DeviceHandle.cpp \
     ..\Entrypoints.cpp \

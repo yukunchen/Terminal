@@ -25,12 +25,12 @@ Revision History:
 #define NT_TESTNULL(var) (((var) == nullptr) ? STATUS_NO_MEMORY : STATUS_SUCCESS)
 #define NT_TESTNULL_GLE(var) (((var) == nullptr) ? NTSTATUS_FROM_WIN32(GetLastError()) : STATUS_SUCCESS);
 
-extern "C"
-{
-    NTSTATUS ConsoleControl(_In_ CONSOLECONTROL ConsoleCommand,
-                            _In_reads_bytes_opt_(ConsoleInformationLength) PVOID ConsoleInformation,
-                            _In_ DWORD ConsoleInformationLength);
-};
+//extern "C"
+//{
+//    NTSTATUS ConsoleControl(_In_ CONSOLECONTROL ConsoleCommand,
+//                            _In_reads_bytes_opt_(ConsoleInformationLength) PVOID ConsoleInformation,
+//                            _In_ DWORD ConsoleInformationLength);
+//};
 
 /*
  * Used to store some console attributes for the console.  This is a means

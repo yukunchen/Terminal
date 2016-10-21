@@ -4,6 +4,7 @@
   <ItemGroup>
     <ClCompile Include="..\ApiMessage.cpp" />
     <ClCompile Include="..\ApiMessageState.cpp" />
+    <ClCompile Include="..\ApiSorter.cpp" />
     <ClCompile Include="..\DeviceComm.cpp" />
     <ClCompile Include="..\DeviceHandle.cpp" />
     <ClCompile Include="..\Entrypoints.cpp" />
@@ -23,6 +24,7 @@
   <ItemGroup>
     <ClInclude Include="..\ApiMessage.h" />
     <ClInclude Include="..\ApiMessageState.h" />
+    <ClInclude Include="..\ApiSorter.h" />
     <ClInclude Include="..\DeviceComm.h" />
     <ClInclude Include="..\DeviceHandle.h" />
     <ClInclude Include="..\Entrypoints.h" />

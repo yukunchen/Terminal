@@ -12,6 +12,7 @@
 #include "output.h"
 #include "cursor.h"
 #include "dbcs.h"
+#include "input.h"
 #include "handle.h"
 #include "misc.h"
 

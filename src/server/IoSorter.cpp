@@ -8,11 +8,12 @@
 
 #include "IoSorter.h"
 
+#include "IoDispatchers.h"
+
 #include "..\host\globals.h"
 
 #include "..\host\getset.h"
 #include "..\host\stream.h"
-#include "..\host\srvinit.h"
 
 void IoSorter::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg,
                                   _Out_ CONSOLE_API_MSG** ReplyMsg)
@@ -28,21 +29,21 @@ void IoSorter::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg,
     switch (pMsg->Descriptor.Function)
     {
     case CONSOLE_IO_USER_DEFINED:
-        *ReplyMsg = ConsoleDispatchRequest(pMsg);
+        *ReplyMsg = IoDispatchers::ConsoleDispatchRequest(pMsg);
         break;
 
     case CONSOLE_IO_CONNECT:
-        *ReplyMsg = ConsoleHandleConnectionRequest(pMsg);
+        *ReplyMsg = IoDispatchers::ConsoleHandleConnectionRequest(pMsg);
         break;
 
     case CONSOLE_IO_DISCONNECT:
-        ConsoleClientDisconnectRoutine(pMsg->GetProcessHandle());
+        IoDispatchers::ConsoleClientDisconnectRoutine(pMsg->GetProcessHandle());
         pMsg->SetReplyStatus(STATUS_SUCCESS);
         *ReplyMsg = pMsg;
         break;
 
     case CONSOLE_IO_CREATE_OBJECT:
-        *ReplyMsg = ConsoleCreateObject(pMsg, &g_ciConsoleInformation);
+        *ReplyMsg = IoDispatchers::ConsoleCreateObject(pMsg);
         break;
 
     case CONSOLE_IO_CLOSE_OBJECT:
@@ -98,4 +99,3 @@ void IoSorter::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg,
         *ReplyMsg = pMsg;
     }
 }
-
