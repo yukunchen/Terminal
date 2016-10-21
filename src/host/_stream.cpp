@@ -913,10 +913,10 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
         HRESULT hresult = parser.Parse(reinterpret_cast<const byte*>(BufPtr), charCount, wideCharBuffer);
         if (wideCharBuffer.get() == nullptr || FAILED(hresult))
         {
-            SetReplyStatus(m, Status);
+            m->SetReplyStatus(Status);
             if (NT_SUCCESS(Status))
             {
-                SetReplyInformation(m, a->NumBytes);
+                m->SetReplyInformation(a->NumBytes);
             }
             return Status;
         }
@@ -941,7 +941,7 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
         TransBuffer = new WCHAR[a->NumBytes + 2];
         if (TransBuffer == nullptr)
         {
-            SetReplyStatus(m, STATUS_NO_MEMORY);
+            m->SetReplyStatus(STATUS_NO_MEMORY);
             return STATUS_NO_MEMORY;
         }
         m->State.StackBuffer = FALSE;
@@ -1023,10 +1023,10 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
         {
             delete[] TransBuffer;
 
-            SetReplyStatus(m, Status);
+            m->SetReplyStatus(Status);
             if (NT_SUCCESS(Status))
             {
-                SetReplyInformation(m, a->NumBytes);
+                m->SetReplyInformation(a->NumBytes);
             }
             return Status;
         }
@@ -1061,8 +1061,8 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
             }
         }
 
-        SetReplyStatus(m, Status);
-        SetReplyInformation(m, a->NumBytes);
+        m->SetReplyStatus(Status);
+        m->SetReplyInformation(a->NumBytes);
     }
 
     return Status;

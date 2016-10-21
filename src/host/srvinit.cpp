@@ -777,8 +777,8 @@ PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG Receive
     }
 
     // Complete the request.
-    SetReplyStatus(ReceiveMsg, STATUS_SUCCESS);
-    SetReplyInformation(ReceiveMsg, sizeof(CD_CONNECTION_INFORMATION));
+    ReceiveMsg->SetReplyStatus(STATUS_SUCCESS);
+    ReceiveMsg->SetReplyInformation(sizeof(CD_CONNECTION_INFORMATION));
 
     CD_CONNECTION_INFORMATION ConnectionInformation;
     ReceiveMsg->Complete.Write.Data = &ConnectionInformation;
@@ -810,7 +810,7 @@ Error:
 
     UnlockConsole();
 
-    SetReplyStatus(ReceiveMsg, Status);
+    ReceiveMsg->SetReplyStatus(Status);
 
     return ReceiveMsg;
 }
@@ -886,8 +886,8 @@ PCONSOLE_API_MSG ConsoleCreateObject(_In_ PCONSOLE_API_MSG Message, _Inout_ CONS
     }
 
     // Complete the request.
-    SetReplyStatus(Message, STATUS_SUCCESS);
-    SetReplyInformation(Message, (ULONG_PTR)Handle);
+    Message->SetReplyStatus(STATUS_SUCCESS);
+    Message->SetReplyInformation((ULONG_PTR)Handle);
 
     if (FAILED(g_pDeviceComm->CompleteIo(&Message->Complete)))
     {
@@ -904,7 +904,7 @@ Error:
 
     UnlockConsole();
 
-    SetReplyStatus(Message, Status);
+    Message->SetReplyStatus(Status);
 
     return Message;
 }
@@ -956,7 +956,7 @@ PCONSOLE_API_MSG ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Message)
 
 Complete:
 
-    SetReplyStatus(Message, Status);
+    Message->SetReplyStatus(Status);
 
     return Message;
 }
@@ -968,13 +968,12 @@ Complete:
 // - <none>
 // Return Value:
 // - This routine never returns. The process exits when no more references or clients exist.
+#include "..\server\IoSorter.h"
 DWORD ConsoleIoThread()
 {
     CONSOLE_API_MSG ReceiveMsg;
     ReceiveMsg._pDeviceComm = g_pDeviceComm;
     PCONSOLE_API_MSG ReplyMsg = nullptr;
-    BOOL ReplyPending = FALSE;
-    NTSTATUS Status;
 
     bool fShouldExit = false;
     while (!fShouldExit)
@@ -1000,83 +999,7 @@ DWORD ConsoleIoThread()
             continue;
         }
 
-        ZeroMemory(&ReceiveMsg.State, sizeof(ReceiveMsg.State));
-        ZeroMemory(&ReceiveMsg.Complete, sizeof(CD_IO_COMPLETE));
-
-        ReceiveMsg.Complete.Identifier = ReceiveMsg.Descriptor.Identifier;
-
-        switch (ReceiveMsg.Descriptor.Function)
-        {
-        case CONSOLE_IO_USER_DEFINED:
-            ReplyMsg = ConsoleDispatchRequest(&ReceiveMsg);
-            break;
-
-        case CONSOLE_IO_CONNECT:
-            ReplyMsg = ConsoleHandleConnectionRequest(&ReceiveMsg);
-            break;
-
-        case CONSOLE_IO_DISCONNECT:
-            ConsoleClientDisconnectRoutine(ReceiveMsg.GetProcessHandle());
-            SetReplyStatus(&ReceiveMsg, STATUS_SUCCESS);
-            ReplyMsg = &ReceiveMsg;
-            break;
-
-        case CONSOLE_IO_CREATE_OBJECT:
-            ReplyMsg = ConsoleCreateObject(&ReceiveMsg, &g_ciConsoleInformation);
-            break;
-
-        case CONSOLE_IO_CLOSE_OBJECT:
-            SrvCloseHandle(&ReceiveMsg);
-            SetReplyStatus(&ReceiveMsg, STATUS_SUCCESS);
-            ReplyMsg = &ReceiveMsg;
-            break;
-
-        case CONSOLE_IO_RAW_WRITE:
-            ZeroMemory(&ReceiveMsg.u.consoleMsgL1.WriteConsole, sizeof(CONSOLE_WRITECONSOLE_MSG));
-
-            ReplyPending = FALSE;
-            Status = SrvWriteConsole(&ReceiveMsg, &ReplyPending);
-            if (ReplyPending)
-            {
-                ReplyMsg = nullptr;
-
-            }
-            else
-            {
-                SetReplyStatus(&ReceiveMsg, Status);
-                ReplyMsg = &ReceiveMsg;
-            }
-            break;
-
-        case CONSOLE_IO_RAW_READ:
-            ZeroMemory(&ReceiveMsg.u.consoleMsgL1.ReadConsole, sizeof(CONSOLE_READCONSOLE_MSG));
-            ReceiveMsg.u.consoleMsgL1.ReadConsole.ProcessControlZ = TRUE;
-            ReplyPending = FALSE;
-            Status = SrvReadConsole(&ReceiveMsg, &ReplyPending);
-            if (ReplyPending)
-            {
-                ReplyMsg = nullptr;
-
-            }
-            else
-            {
-                SetReplyStatus(&ReceiveMsg, Status);
-                ReplyMsg = &ReceiveMsg;
-            }
-            break;
-
-        case CONSOLE_IO_RAW_FLUSH:
-            ReplyPending = FALSE;
-            Status = SrvFlushConsoleInputBuffer(&ReceiveMsg, &ReplyPending);
-            ASSERT(!ReplyPending);
-            SetReplyStatus(&ReceiveMsg, Status);
-            ReplyMsg = &ReceiveMsg;
-            break;
-
-        default:
-            SetReplyStatus(&ReceiveMsg, STATUS_UNSUCCESSFUL);
-            ReplyMsg = &ReceiveMsg;
-        }
+        IoSorter::ServiceIoOperation(&ReceiveMsg, &ReplyMsg);
     }
 
     return 0;

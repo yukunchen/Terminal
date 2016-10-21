@@ -15,6 +15,8 @@ Revision History:
 
 #pragma once
 
+#include "cmdline.h"
+
 #define IS_CONTROL_CHAR(wch)  ((wch) < L' ')
 
 // Routine Description:
@@ -63,7 +65,7 @@ ULONG RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 
 // Return Value:
 // - TRUE if read is completed
-BOOL ProcessCookedReadInput(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ WCHAR wch, _In_ const DWORD dwKeyState, _Out_ PNTSTATUS pStatus);
+BOOL ProcessCookedReadInput(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ WCHAR wch, _In_ const DWORD dwKeyState, _Out_ NTSTATUS* pStatus);
 
 NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MSG pWaitReplyMessage, _In_ const BOOLEAN fWaitRoutine);
 

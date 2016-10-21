@@ -854,7 +854,7 @@ NTSTATUS SrvGetConsoleAlias(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*R
 
     if (NT_SUCCESS(Status))
     {
-        SetReplyInformation(m, a->TargetLength);
+        m->SetReplyInformation(a->TargetLength);
     }
 
     return Status;
@@ -1029,7 +1029,7 @@ NTSTATUS SrvGetConsoleAliases(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /
     }
     UnlockConsole();
 
-    SetReplyInformation(m, a->AliasesBufferLength);
+    m->SetReplyInformation(a->AliasesBufferLength);
 
     return STATUS_SUCCESS;
 }
@@ -1140,7 +1140,7 @@ NTSTATUS SrvGetConsoleAliasExes(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const
         ListNext = ListNext->Flink;
     }
 
-    SetReplyInformation(m, a->AliasExesBufferLength);
+    m->SetReplyInformation(a->AliasExesBufferLength);
 
     UnlockConsole();
     return STATUS_SUCCESS;
@@ -1580,7 +1580,7 @@ NTSTATUS SrvGetConsoleCommandHistory(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL 
 
     if (NT_SUCCESS(Status))
     {
-        SetReplyInformation(m, CommandHistoryLength);
+        m->SetReplyInformation(CommandHistoryLength);
     }
 
     return Status;
@@ -2331,7 +2331,7 @@ NTSTATUS ProcessCommandListInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _
                 }
             }
 
-            SetReplyStatus(WaitReplyMessage, STATUS_SUCCESS);
+            WaitReplyMessage->SetReplyStatus(STATUS_SUCCESS);
             PCONSOLE_READCONSOLE_MSG const a = &WaitReplyMessage->u.consoleMsgL1.ReadConsole;
             if (pCookedReadData->BytesRead > pCookedReadData->UserBufferSize || LineCount > 1)
             {
@@ -4350,14 +4350,14 @@ NTSTATUS SrvGetConsoleTitle(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*R
     if (a->Unicode)
     {
         StringCbCopyW((PWSTR) Buffer, a->TitleLength, Title);
-        SetReplyInformation((PCONSOLE_API_MSG) m, (wcslen((PWSTR) Buffer) + 1) * sizeof(WCHAR));
+        m->SetReplyInformation((wcslen((PWSTR) Buffer) + 1) * sizeof(WCHAR));
         a->TitleLength = TitleLength;
     }
     else
     {
         a->TitleLength = (USHORT) ConvertToOem(g_uiOEMCP, Title, TitleLength, (LPSTR) Buffer, a->TitleLength);
         ((char *)Buffer)[a->TitleLength] = '\0';
-        SetReplyInformation(m, a->TitleLength + 1);
+        m->SetReplyInformation(a->TitleLength + 1);
     }
 
     UnlockConsole();

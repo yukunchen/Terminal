@@ -7,6 +7,8 @@
     <ClCompile Include="..\DeviceComm.cpp" />
     <ClCompile Include="..\DeviceHandle.cpp" />
     <ClCompile Include="..\Entrypoints.cpp" />
+    <ClCompile Include="..\IoDispatchers.cpp" />
+    <ClCompile Include="..\IoSorter.cpp" />
     <ClCompile Include="..\ObjectHandle.cpp" />
     <ClCompile Include="..\ObjectHeader.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -24,6 +26,8 @@
     <ClInclude Include="..\DeviceComm.h" />
     <ClInclude Include="..\DeviceHandle.h" />
     <ClInclude Include="..\Entrypoints.h" />
+    <ClInclude Include="..\IoDispatchers.h" />
+    <ClInclude Include="..\IoSorter.h" />
     <ClInclude Include="..\ObjectHandle.h" />
     <ClInclude Include="..\ObjectHeader.h" />
     <ClInclude Include="..\precomp.h" />

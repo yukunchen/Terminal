@@ -234,8 +234,8 @@ BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage,
                     ZeroMemory(&DirectReadData->pInputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
                 }
 
-                SetReplyStatus(WaitReplyMessage, STATUS_SUCCESS);
-                SetReplyInformation(WaitReplyMessage, sizeof(INPUT_RECORD));
+                WaitReplyMessage->SetReplyStatus(STATUS_SUCCESS);
+                WaitReplyMessage->SetReplyInformation(sizeof(INPUT_RECORD));
             }
         }
     }
@@ -353,8 +353,8 @@ BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage,
             }
         }
 
-        SetReplyStatus(WaitReplyMessage, Status);
-        SetReplyInformation(WaitReplyMessage, a->NumRecords * sizeof(INPUT_RECORD));
+        WaitReplyMessage->SetReplyStatus(Status);
+        WaitReplyMessage->SetReplyInformation(a->NumRecords * sizeof(INPUT_RECORD));
 
         delete[] DirectReadData;
     }
@@ -484,7 +484,7 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
 
     if (NT_SUCCESS(Status))
     {
-        SetReplyInformation(m, a->NumRecords * sizeof(INPUT_RECORD));
+        m->SetReplyInformation(a->NumRecords * sizeof(INPUT_RECORD));
     }
 
     return Status;
@@ -783,7 +783,7 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
 
         if (NT_SUCCESS(Status))
         {
-            SetReplyInformation(m, CalcWindowSizeX(&a->CharRegion) * CalcWindowSizeY(&a->CharRegion) * sizeof(CHAR_INFO));
+            m->SetReplyInformation(CalcWindowSizeX(&a->CharRegion) * CalcWindowSizeY(&a->CharRegion) * sizeof(CHAR_INFO));
         }
     }
 
@@ -944,7 +944,7 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
         Status = ReadOutputString(pScreenInfo->GetActiveBuffer(), Buffer, a->ReadCoord, a->StringType, &a->NumRecords);
         if (NT_SUCCESS(Status))
         {
-            SetReplyInformation(m, a->NumRecords * nSize);
+            m->SetReplyInformation(a->NumRecords * nSize);
         }
     }
 

@@ -28,6 +28,8 @@ SOURCES= \
     ..\DeviceComm.cpp \
     ..\DeviceHandle.cpp \
     ..\Entrypoints.cpp \
+    ..\IoDispatchers.cpp \
+    ..\IoSorter.cpp \
     ..\ObjectHandle.cpp \
     ..\ObjectHeader.cpp \
     ..\ProcessHandle.cpp \

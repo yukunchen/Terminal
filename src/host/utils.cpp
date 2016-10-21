@@ -8,16 +8,6 @@
 
 #include "globals.h"
 
-void SetReplyStatus(_Inout_ PCCONSOLE_API_MSG pMessage, _In_ const NTSTATUS Status)
-{
-    pMessage->Complete.IoStatus.Status = Status;
-}
-
-void SetReplyInformation(_Inout_ PCCONSOLE_API_MSG pMessage, _In_ ULONG_PTR pInformation)
-{
-    pMessage->Complete.IoStatus.Information = pInformation;
-}
-
 short CalcWindowSizeX(_In_ const SMALL_RECT * const pRect)
 {
     return pRect->Right - pRect->Left + 1;

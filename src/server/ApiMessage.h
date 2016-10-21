@@ -65,4 +65,7 @@ public:
 
     HRESULT ReleaseMessageBuffers();
 
+    void SetReplyStatus(_In_ const NTSTATUS Status);
+    void SetReplyInformation(_In_ ULONG_PTR pInformation);
+
 } CONSOLE_API_MSG, *PCONSOLE_API_MSG, *const PCCONSOLE_API_MSG;

@@ -245,7 +245,7 @@ VOID PrepareReadConsoleCompletion(_Inout_ PCONSOLE_API_MSG Message)
         a->NumBytes = 0;
     }
 
-    SetReplyInformation(Message, a->NumBytes);
+    Message->SetReplyInformation(a->NumBytes);
 }
 
 // Routine Description:
@@ -292,7 +292,7 @@ BOOL RawReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
     // If a ctrl-c is seen, don't terminate read. If ctrl-break is seen, terminate read.
     if (IsFlagSet(TerminationReason, WaitTerminationReason::CtrlBreak))
     {
-        SetReplyStatus(pWaitReplyMessage, STATUS_ALERTED);
+        pWaitReplyMessage->SetReplyStatus(STATUS_ALERTED);
     }
     // See if we were called because the thread that owns this wait block is exiting.
     else if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
@@ -426,13 +426,13 @@ BOOL RawReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
 
                 delete[] TransBuffer;
 
-                SetReplyStatus(pWaitReplyMessage, Status);
+                pWaitReplyMessage->SetReplyStatus(Status);
                 PrepareReadConsoleCompletion(pWaitReplyMessage);
             }
         }
         else
         {
-            SetReplyStatus(pWaitReplyMessage, Status);
+            pWaitReplyMessage->SetReplyStatus(Status);
             PrepareReadConsoleCompletion(pWaitReplyMessage);
         }
     }
@@ -991,7 +991,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                 }
             }
         }
-        SetReplyStatus(pWaitReplyMessage, Status);
+        pWaitReplyMessage->SetReplyStatus(Status);
 
         // at this point, a->NumBytes contains the number of bytes in
         // the UNICODE string read.  UserBufferSize contains the converted
@@ -1176,7 +1176,7 @@ BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
     // if ctrl-c or ctrl-break was seen, terminate read.
     if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
     {
-        SetReplyStatus(pWaitReplyMessage, STATUS_ALERTED);
+        pWaitReplyMessage->SetReplyStatus(STATUS_ALERTED);
         delete[] pCookedReadData->BackupLimit;
         delete[] pCookedReadData->ExeName;
         g_ciConsoleInformation.lpCookedReadData = nullptr;
@@ -1188,7 +1188,7 @@ BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
     // See if we were called because the thread that owns this wait block is exiting.
     if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
-        SetReplyStatus(pWaitReplyMessage, STATUS_THREAD_IS_TERMINATING);
+        pWaitReplyMessage->SetReplyStatus(STATUS_THREAD_IS_TERMINATING);
 
         // Clean up popup data structures.
         CleanUpPopups(pCookedReadData);
@@ -1206,7 +1206,7 @@ BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
 
     if (IsFlagSet(pCookedReadData->pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing))
     {
-        SetReplyStatus(pWaitReplyMessage, STATUS_ALERTED);
+        pWaitReplyMessage->SetReplyStatus(STATUS_ALERTED);
 
         // Clean up popup data structures.
         CleanUpPopups(pCookedReadData);
@@ -1811,7 +1811,7 @@ BOOL WriteConsoleWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
 
     if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
-        SetReplyStatus(pWaitReplyMessage, STATUS_THREAD_IS_TERMINATING);
+        pWaitReplyMessage->SetReplyStatus(STATUS_THREAD_IS_TERMINATING);
         return TRUE;
     }
 
@@ -1843,8 +1843,8 @@ BOOL WriteConsoleWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
         delete[] pWaitReplyMessage->State.TransBuffer;
     }
 
-    SetReplyStatus(pWaitReplyMessage, Status);
-    SetReplyInformation(pWaitReplyMessage, a->NumBytes);
+    pWaitReplyMessage->SetReplyStatus(Status);
+    pWaitReplyMessage->SetReplyInformation(a->NumBytes);
     return TRUE;
 }
 

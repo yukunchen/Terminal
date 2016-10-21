@@ -1274,7 +1274,7 @@ NTSTATUS SrvGetConsoleProcessList(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Re
         size_t cProcessList = a->dwProcessCount;
         if (SUCCEEDED(g_ciConsoleInformation.ProcessHandleList.GetProcessList(lpdwProcessList, &cProcessList)))
         {
-            SetReplyInformation(m, cProcessList * sizeof(ULONG));
+            m->SetReplyInformation(cProcessList * sizeof(ULONG));
         }
 
         a->dwProcessCount = (ULONG)cProcessList;

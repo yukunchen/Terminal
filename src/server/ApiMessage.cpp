@@ -167,3 +167,12 @@ HRESULT _CONSOLE_API_MSG::ReleaseMessageBuffers()
     return hr;
 }
 
+void _CONSOLE_API_MSG::SetReplyStatus(_In_ const NTSTATUS Status)
+{
+    Complete.IoStatus.Status = Status;
+}
+
+void _CONSOLE_API_MSG::SetReplyInformation(_In_ ULONG_PTR pInformation)
+{
+    Complete.IoStatus.Information = pInformation;
+}

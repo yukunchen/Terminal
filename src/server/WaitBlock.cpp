@@ -103,7 +103,7 @@ HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReply
 
     if (FAILED(hr))
     {
-        SetReplyStatus(pWaitReplyMessage, NTSTATUS_FROM_HRESULT(hr));
+        pWaitReplyMessage->SetReplyStatus(NTSTATUS_FROM_HRESULT(hr));
     }
 
     return hr;
