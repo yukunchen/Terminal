@@ -54,7 +54,7 @@ HRESULT DeviceComm::ReadIo(_In_opt_ CD_IO_COMPLETE* const pCompletion,
     if (hr == HRESULT_FROM_WIN32(ERROR_IO_PENDING))
     {
         WaitForSingleObjectEx(_Server.get(), 0, FALSE);
-        hr = pMessage->IoStatus.Status;
+        hr = S_OK; // TODO: ??? This isn't really relevant anymore with a switch from NtDeviceIoControlFile to DeviceIoControl...
     }
 
     return hr;

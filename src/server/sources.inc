@@ -23,6 +23,8 @@ INCLUDES= \
 
 SOURCES= \
     $(SOURCES) \
+    ..\ApiMessage.cpp \
+    ..\ApiMessageState.cpp \
     ..\DeviceComm.cpp \
     ..\DeviceHandle.cpp \
     ..\Entrypoints.cpp \

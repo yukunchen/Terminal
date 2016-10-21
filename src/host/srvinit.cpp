@@ -588,7 +588,7 @@ NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONS
     CONSOLE_SERVER_MSG Data = { 0 };
 
     // Try to receive the data sent by the client.
-    NTSTATUS Status = ReadMessageInput(Message, 0, &Data, sizeof Data);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(Message->ReadMessageInput(0, &Data, sizeof Data));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -971,6 +971,7 @@ Complete:
 DWORD ConsoleIoThread()
 {
     CONSOLE_API_MSG ReceiveMsg;
+    ReceiveMsg._pDeviceComm = g_pDeviceComm;
     PCONSOLE_API_MSG ReplyMsg = nullptr;
     BOOL ReplyPending = FALSE;
     NTSTATUS Status;
@@ -980,7 +981,7 @@ DWORD ConsoleIoThread()
     {
         if (ReplyMsg != nullptr)
         {
-            ReleaseMessageBuffers(ReplyMsg);
+            ReplyMsg->ReleaseMessageBuffers();
         }
 
         // TODO: correct mixed NTSTATUS/HRESULT
@@ -1015,7 +1016,7 @@ DWORD ConsoleIoThread()
             break;
 
         case CONSOLE_IO_DISCONNECT:
-            ConsoleClientDisconnectRoutine(GetMessageProcess(&ReceiveMsg));
+            ConsoleClientDisconnectRoutine(ReceiveMsg.GetProcessHandle());
             SetReplyStatus(&ReceiveMsg, STATUS_SUCCESS);
             ReplyMsg = &ReceiveMsg;
             break;

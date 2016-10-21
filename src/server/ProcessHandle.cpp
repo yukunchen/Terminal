@@ -21,7 +21,7 @@ ConsoleProcessHandle::ConsoleProcessHandle(_In_ DWORD const dwProcessId,
     dwProcessId(dwProcessId),
     dwThreadId(dwThreadId),
     _ulProcessGroupId(ulProcessGroupId),
-    pWaitBlockQueue(std::unique_ptr<ConsoleWaitQueue>()),
+    pWaitBlockQueue(std::make_unique<ConsoleWaitQueue>()),
     _hProcess(LOG_IF_HANDLE_NULL(OpenProcess(MAXIMUM_ALLOWED,
                                                  FALSE,
                                                  dwProcessId)))
