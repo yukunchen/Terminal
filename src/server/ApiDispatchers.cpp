@@ -15,7 +15,20 @@
 
 NTSTATUS ApiDispatchers::ServeGetConsoleCP(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    return SrvGetConsoleCP(m, pbReplyPending);
+    CONSOLE_GETCP_MSG* const a = &m->u.consoleMsgL1.GetConsoleCP;
+
+    NTSTATUS Result = 0;
+
+    if (a->Output)
+    {
+        Result = m->_pApiRoutines->GetConsoleOutputCodePageImpl(&a->CodePage);
+    }
+    else
+    {
+        Result = m->_pApiRoutines->GetConsoleInputCodePageImpl(&a->CodePage);
+    }
+
+    return Result;
 }
 
 NTSTATUS ApiDispatchers::ServeGetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)

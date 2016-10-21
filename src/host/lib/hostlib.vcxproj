@@ -50,6 +50,7 @@
     <ClCompile Include="..\_stream.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\ApiRoutines.h" />
     <ClInclude Include="..\clipboard.hpp" />
     <ClInclude Include="..\cmdline.h" />
     <ClInclude Include="..\conapi.h" />

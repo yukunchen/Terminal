@@ -574,9 +574,12 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 // Return Value:
 // - This routine never returns. The process exits when no more references or clients exist.
 #include "..\server\IoSorter.h"
+#include "ApiRoutines.h"
 DWORD ConsoleIoThread()
 {
+    ApiRoutines Routines;
     CONSOLE_API_MSG ReceiveMsg;
+    ReceiveMsg._pApiRoutines = &Routines;
     ReceiveMsg._pDeviceComm = g_pDeviceComm;
     PCONSOLE_API_MSG ReplyMsg = nullptr;
 

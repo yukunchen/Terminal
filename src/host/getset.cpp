@@ -20,6 +20,8 @@
 #include "tracing.hpp"
 #include "window.hpp"
 
+#include "ApiRoutines.h"
+
 #pragma hdrstop
 
 // The following mask is used to test for valid text attributes.
@@ -1199,30 +1201,26 @@ SrvSetConsoleCPFailure:
     return Status;
 }
 
-NTSTATUS SrvGetConsoleCP(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
-    PCONSOLE_GETCP_MSG const a = &m->u.consoleMsgL1.GetConsoleCP;
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleCP);
 
-    Telemetry::Instance().LogApiCall(a->Output ? Telemetry::ApiCall::GetConsoleOutputCP : Telemetry::ApiCall::GetConsoleCP);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    if (a->Output)
-    {
-        a->CodePage = g_ciConsoleInformation.OutputCP;
-    }
-    else
-    {
-        a->CodePage = g_ciConsoleInformation.CP;
-    }
-
+    LockConsole();
+    *pCodePage = g_ciConsoleInformation.CP;
     UnlockConsole();
-    return STATUS_SUCCESS;
+
+    return S_OK;
+}
+
+HRESULT ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
+{
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleOutputCP);
+
+    LockConsole();
+    *pCodePage = g_ciConsoleInformation.OutputCP;
+    UnlockConsole();
+
+    return S_OK;
 }
 
 NTSTATUS SrvGetConsoleWindow(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
