@@ -17,6 +17,7 @@ Revision History:
 #pragma once
 
 #include "ApiMessageState.h"
+#include "IApiRoutines.h"
 
 class ConsoleProcessHandle;
 class ConsoleHandleData;
@@ -29,6 +30,7 @@ typedef struct _CONSOLE_API_MSG
     CONSOLE_API_STATE State;
 
     DeviceComm* _pDeviceComm;
+    IApiRoutines* _pApiRoutines;
 
     // From here down is the actual packet data sent/received.
     CD_IO_DESCRIPTOR Descriptor;

@@ -23,6 +23,7 @@ INCLUDES= \
 
 SOURCES= \
     $(SOURCES) \
+    ..\ApiDispatchers.cpp \
     ..\ApiMessage.cpp \
     ..\ApiMessageState.cpp \
     ..\ApiSorter.cpp \

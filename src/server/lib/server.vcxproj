@@ -2,6 +2,7 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="..\ApiDispatchers.cpp" />
     <ClCompile Include="..\ApiMessage.cpp" />
     <ClCompile Include="..\ApiMessageState.cpp" />
     <ClCompile Include="..\ApiSorter.cpp" />
@@ -22,12 +23,14 @@
     <ClCompile Include="..\WinNTControl.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\ApiDispatchers.h" />
     <ClInclude Include="..\ApiMessage.h" />
     <ClInclude Include="..\ApiMessageState.h" />
     <ClInclude Include="..\ApiSorter.h" />
     <ClInclude Include="..\DeviceComm.h" />
     <ClInclude Include="..\DeviceHandle.h" />
     <ClInclude Include="..\Entrypoints.h" />
+    <ClInclude Include="..\IApiRoutines.h" />
     <ClInclude Include="..\IoDispatchers.h" />
     <ClInclude Include="..\IoSorter.h" />
     <ClInclude Include="..\ObjectHandle.h" />
