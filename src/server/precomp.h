@@ -55,6 +55,7 @@ __inline NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(
 
 #include <winioctl.h>
 #include <assert.h>
+#include <intsafe.h>
 
 // C++ header files
 #include <stdexcept>

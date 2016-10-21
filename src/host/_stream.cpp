@@ -904,7 +904,6 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
 
     if (a->Unicode)
     {
-        m->State.WriteFlags = ULONG_MAX; // ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED.
         m->State.TransBuffer = (PWCHAR)BufPtr;
     }
     else if (g_ciConsoleInformation.OutputCP == CP_UTF8)
@@ -923,7 +922,6 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
         }
         else
         {
-            m->State.WriteFlags = ULONG_MAX; // ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED.
             m->State.TransBuffer = reinterpret_cast<wchar_t*>(wideCharBuffer.get());
             m->State.StackBuffer = FALSE;
             g_ciConsoleInformation.WriteConOutNumBytesTemp = a->NumBytes;
@@ -1035,7 +1033,6 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
 
         g_ciConsoleInformation.WriteConOutNumBytesTemp = a->NumBytes;
         a->NumBytes = g_ciConsoleInformation.WriteConOutNumBytesUnicode = dbcsNumBytes + BufPtrNumBytes;
-        m->State.WriteFlags = WRITE_SPECIAL_CHARS; // ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED.
         m->State.TransBuffer = TransBufferOriginalLocation;
     }
 

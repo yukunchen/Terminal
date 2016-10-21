@@ -33,9 +33,6 @@
     <ClCompile Include="..\convarea.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\csrutil.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\cursor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

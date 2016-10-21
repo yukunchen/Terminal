@@ -1,13 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\common.build.pre.props"/>
+  <Import Project="..\..\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\clipboard.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
     <ClCompile Include="..\conimeinfo.cpp" />
     <ClCompile Include="..\consoleInformation.cpp" />
     <ClCompile Include="..\convarea.cpp" />
-    <ClCompile Include="..\csrutil.cpp" />
     <ClCompile Include="..\cursor.cpp" />
     <ClCompile Include="..\dbcs.cpp" />
     <ClCompile Include="..\directio.cpp" />
@@ -109,6 +108,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="..\..\common.build.lib.props"/>
-  <Import Project="..\..\common.build.post.props"/>
+  <Import Project="..\..\common.build.lib.props" />
+  <Import Project="..\..\common.build.post.props" />
 </Project>

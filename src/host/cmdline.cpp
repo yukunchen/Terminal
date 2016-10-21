@@ -620,7 +620,7 @@ NTSTATUS SrvAddConsoleAlias(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*R
     // Read the input buffer and validate the strings.
     PVOID Buffer;
     ULONG BufferSize;
-    NTSTATUS Status = GetInputBuffer(m, &Buffer, &BufferSize);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&Buffer, &BufferSize));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -747,7 +747,7 @@ NTSTATUS SrvGetConsoleAlias(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*R
 
     PVOID InputBuffer;
     ULONG InputBufferSize;
-    NTSTATUS Status = GetInputBuffer(m, &InputBuffer, &InputBufferSize);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&InputBuffer, &InputBufferSize));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -762,7 +762,7 @@ NTSTATUS SrvGetConsoleAlias(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*R
 
     PVOID OutputBuffer;
     ULONG OutputBufferSize;
-    Status = GetOutputBuffer(m, &OutputBuffer, &OutputBufferSize);
+    Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer(&OutputBuffer, &OutputBufferSize));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -868,7 +868,7 @@ NTSTATUS SrvGetConsoleAliasesLength(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL c
 
     ULONG ExeNameLength;
     PVOID ExeName;
-    NTSTATUS Status = GetInputBuffer(m, &ExeName, &ExeNameLength);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&ExeName, &ExeNameLength));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -933,7 +933,7 @@ NTSTATUS SrvGetConsoleAliases(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /
 
     PVOID ExeName;
     ULONG ExeNameLength;
-    NTSTATUS Status = GetInputBuffer(m, &ExeName, &ExeNameLength);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&ExeName, &ExeNameLength));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -946,7 +946,7 @@ NTSTATUS SrvGetConsoleAliases(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /
 
     PVOID OutputBuffer;
     DWORD AliasesBufferLength;
-    Status = GetOutputBuffer(m, &OutputBuffer, &AliasesBufferLength);
+    Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer(&OutputBuffer, &AliasesBufferLength));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -1072,7 +1072,7 @@ NTSTATUS SrvGetConsoleAliasExes(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const
 
     PVOID Buffer;
     DWORD AliasExesBufferLength;
-    NTSTATUS Status = GetOutputBuffer(m, &Buffer, &AliasExesBufferLength);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer(&Buffer, &AliasExesBufferLength));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -1408,7 +1408,7 @@ NTSTATUS SrvExpungeConsoleCommandHistory(_In_ PCONSOLE_API_MSG const m, _In_opt_
     PCONSOLE_EXPUNGECOMMANDHISTORY_MSG const a = &m->u.consoleMsgL3.ExpungeConsoleCommandHistoryW;
     PVOID ExeName;
     ULONG ExeNameLength;
-    NTSTATUS Status = GetInputBuffer(m, &ExeName, &ExeNameLength);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&ExeName, &ExeNameLength));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -1431,7 +1431,7 @@ NTSTATUS SrvSetConsoleNumberOfCommands(_In_ PCONSOLE_API_MSG const m, _In_opt_ P
     PCONSOLE_SETNUMBEROFCOMMANDS_MSG const a = &m->u.consoleMsgL3.SetConsoleNumberOfCommandsW;
     PVOID ExeName;
     ULONG ExeNameLength;
-    NTSTATUS Status = GetInputBuffer(m, &ExeName, &ExeNameLength);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&ExeName, &ExeNameLength));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -1456,7 +1456,7 @@ NTSTATUS SrvGetConsoleCommandHistoryLength(_Inout_ PCONSOLE_API_MSG m, _In_opt_ 
 
     PVOID ExeName;
     ULONG ExeNameLength;
-    NTSTATUS Status = GetInputBuffer(m, &ExeName, &ExeNameLength);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&ExeName, &ExeNameLength));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -1495,14 +1495,14 @@ NTSTATUS SrvGetConsoleCommandHistory(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL 
 
     PVOID ExeName;
     ULONG ExeNameLength;
-    NTSTATUS Status = GetInputBuffer(m, &ExeName, &ExeNameLength);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&ExeName, &ExeNameLength));
     if (!NT_SUCCESS(Status))
     {
         return Status;
     }
 
     PVOID OutputBuffer;
-    Status = GetOutputBuffer(m, &OutputBuffer, &a->CommandBufferLength);
+    Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer(&OutputBuffer, &a->CommandBufferLength));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -4320,7 +4320,7 @@ NTSTATUS SrvGetConsoleTitle(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*R
     Telemetry::Instance().LogApiCall(a->Original ? Telemetry::ApiCall::GetConsoleOriginalTitle : Telemetry::ApiCall::GetConsoleTitle, a->Unicode);
 
     PVOID Buffer;
-    NTSTATUS Status = GetOutputBuffer(m, &Buffer, &a->TitleLength);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer(&Buffer, &a->TitleLength));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -4373,7 +4373,7 @@ NTSTATUS SrvSetConsoleTitle(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*R
     PVOID Buffer;
     ULONG cbOriginalLength;
 
-    NTSTATUS Status = GetInputBuffer(m, &Buffer, &cbOriginalLength);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&Buffer, &cbOriginalLength));
     if (NT_SUCCESS(Status))
     {
         CONSOLE_INFORMATION *Console;

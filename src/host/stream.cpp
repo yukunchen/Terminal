@@ -1503,7 +1503,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
 
         if (dwInitialNumBytes != 0)
         {
-            ReadMessageInput(pMessage, ExeNameByteLength, CookedReadData.BufPtr, dwInitialNumBytes);
+            pMessage->ReadMessageInput(ExeNameByteLength, CookedReadData.BufPtr, dwInitialNumBytes);
 
             CookedReadData.BytesRead += dwInitialNumBytes;
             CookedReadData.NumberOfVisibleChars = (dwInitialNumBytes / sizeof(WCHAR));
@@ -1522,7 +1522,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
 
         if (CookedReadData.ExeName)
         {
-            ReadMessageInput(pMessage, 0, CookedReadData.ExeName, ExeNameByteLength);
+            pMessage->ReadMessageInput(0, CookedReadData.ExeName, ExeNameByteLength);
             CookedReadData.ExeNameLength = ExeNameByteLength;
         }
 
@@ -1690,7 +1690,7 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
 
     PWCHAR Buffer;
     // If the request is not in Unicode mode, we must allocate an output buffer that is twice as big as the actual caller buffer.
-    NTSTATUS Status = GetAugmentedOutputBuffer(m, (a->Unicode != FALSE) ? 1 : 2, (PVOID *)& Buffer, &a->NumBytes);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetAugmentedOutputBuffer((a->Unicode != FALSE) ? 1 : 2, (PVOID *)& Buffer, &a->NumBytes));
 
     if (!NT_SUCCESS(Status))
     {
@@ -1704,9 +1704,9 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
         return Status;
     }
 
-    ConsoleProcessHandle* const ProcessData = GetMessageProcess(m);
+    ConsoleProcessHandle* const ProcessData = m->GetProcessHandle(); 
 
-    ConsoleHandleData* HandleData = GetMessageObject(m);
+    ConsoleHandleData* HandleData = m->GetObjectHandle();
     INPUT_INFORMATION* pInputInfo;
     Status = NTSTATUS_FROM_HRESULT(HandleData->GetInputBuffer(GENERIC_READ, &pInputInfo));
     if (!NT_SUCCESS(Status))
@@ -1776,7 +1776,7 @@ NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsole, a->Unicode);
 
     PVOID Buffer;
-    NTSTATUS Status = GetInputBuffer(m, &Buffer, &a->NumBytes);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&Buffer, &a->NumBytes));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -1790,7 +1790,7 @@ NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
     }
 
     // Make sure we have a valid screen buffer.
-    ConsoleHandleData* HandleData = GetMessageObject(m);
+    ConsoleHandleData* HandleData = m->GetObjectHandle();
     SCREEN_INFORMATION* pScreenInfo;
     Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
     if (NT_SUCCESS(Status))
@@ -1857,7 +1857,7 @@ NTSTATUS SrvCloseHandle(_In_ PCONSOLE_API_MSG m)
         return Status;
     }
 
-    GetMessageObject(m)->CloseHandle();
+    m->GetObjectHandle()->CloseHandle();
 
     UnlockConsole();
     return Status;

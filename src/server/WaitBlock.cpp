@@ -73,12 +73,12 @@ HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReply
 
     assert(g_ciConsoleInformation.IsConsoleLocked());
 
-    ConsoleProcessHandle* const ProcessData = GetMessageProcess(pWaitReplyMessage);
+    ConsoleProcessHandle* const ProcessData = pWaitReplyMessage->GetProcessHandle();
     assert(ProcessData != nullptr);
 
     ConsoleWaitQueue* const pProcessQueue = ProcessData->pWaitBlockQueue.get();
 
-    ConsoleHandleData* const pHandleData = GetMessageObject(pWaitReplyMessage);
+    ConsoleHandleData* const pHandleData = pWaitReplyMessage->GetObjectHandle();
     assert(pHandleData != nullptr);
 
     ConsoleWaitQueue* pObjectQueue;
@@ -121,7 +121,7 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
 
     if ((_pfnWaitRoutine)(&_WaitReplyMessage, _pvWaitContext, TerminationReason))
     {
-        ReleaseMessageBuffers(&_WaitReplyMessage);
+        _WaitReplyMessage.ReleaseMessageBuffers();
 
         LOG_IF_FAILED(g_pDeviceComm->CompleteIo(&_WaitReplyMessage.Complete));
 
