@@ -18,7 +18,7 @@ Revision History:
 
 #include "ApiMessage.h"
 
-typedef NTSTATUS(*PCONSOLE_API_ROUTINE) (_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
+typedef HRESULT(*PCONSOLE_API_ROUTINE) (_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 
 class ApiSorter
 {

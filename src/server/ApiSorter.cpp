@@ -25,8 +25,6 @@ typedef struct _CONSOLE_API_LAYER_DESCRIPTOR
     ULONG Count;
 } CONSOLE_API_LAYER_DESCRIPTOR, *PCONSOLE_API_LAYER_DESCRIPTOR;
 
-NTSTATUS SrvDeprecatedAPI(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-
 const CONSOLE_API_DESCRIPTOR ConsoleApiLayer1[] = {
     CONSOLE_API_STRUCT(ApiDispatchers::ServeGetConsoleCP, CONSOLE_GETCP_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeGetConsoleMode, CONSOLE_MODE_MSG),
@@ -35,9 +33,9 @@ const CONSOLE_API_DESCRIPTOR ConsoleApiLayer1[] = {
     CONSOLE_API_STRUCT(ApiDispatchers::ServeGetConsoleInput, CONSOLE_GETCONSOLEINPUT_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeReadConsole, CONSOLE_READCONSOLE_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeWriteConsole, CONSOLE_WRITECONSOLE_MSG),
-    CONSOLE_API_NO_PARAMETER(SrvDeprecatedAPI), // ApiDispatchers::ServeConsoleNotifyLastClose
+    CONSOLE_API_NO_PARAMETER(ApiDispatchers::ServeDeprecatedApi), // ApiDispatchers::ServeConsoleNotifyLastClose
     CONSOLE_API_STRUCT(ApiDispatchers::ServeGetConsoleLangId, CONSOLE_LANGID_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_MAPBITMAP_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_MAPBITMAP_MSG),
 };
 
 const CONSOLE_API_DESCRIPTOR ConsoleApiLayer2[] = {
@@ -66,23 +64,23 @@ const CONSOLE_API_DESCRIPTOR ConsoleApiLayer2[] = {
 };
 
 const CONSOLE_API_DESCRIPTOR ConsoleApiLayer3[] = {
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_GETNUMBEROFFONTS_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_GETNUMBEROFFONTS_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeGetConsoleMouseInfo, CONSOLE_GETMOUSEINFO_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_GETFONTINFO_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_GETFONTINFO_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeGetConsoleFontSize, CONSOLE_GETFONTSIZE_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeGetConsoleCurrentFont, CONSOLE_CURRENTFONT_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETFONT_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETICON_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_INVALIDATERECT_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_VDM_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETCURSOR_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SHOWCURSOR_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_MENUCONTROL_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETPALETTE_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_SETFONT_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_SETICON_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_INVALIDATERECT_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_VDM_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_SETCURSOR_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_SHOWCURSOR_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_MENUCONTROL_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_SETPALETTE_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeSetConsoleDisplayMode, CONSOLE_SETDISPLAYMODE_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_REGISTERVDM_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_GETHARDWARESTATE_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETHARDWARESTATE_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_REGISTERVDM_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_GETHARDWARESTATE_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_SETHARDWARESTATE_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeGetConsoleDisplayMode, CONSOLE_GETDISPLAYMODE_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeAddConsoleAlias, CONSOLE_ADDALIAS_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeGetConsoleAlias, CONSOLE_GETALIAS_MSG),
@@ -94,18 +92,18 @@ const CONSOLE_API_DESCRIPTOR ConsoleApiLayer3[] = {
     CONSOLE_API_STRUCT(ApiDispatchers::ServeSetConsoleNumberOfCommands, CONSOLE_SETNUMBEROFCOMMANDS_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeGetConsoleCommandHistoryLength, CONSOLE_GETCOMMANDHISTORYLENGTH_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeGetConsoleCommandHistory, CONSOLE_GETCOMMANDHISTORY_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETKEYSHORTCUTS_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETMENUCLOSE_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_GETKEYBOARDLAYOUTNAME_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_SETKEYSHORTCUTS_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_SETMENUCLOSE_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_GETKEYBOARDLAYOUTNAME_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeGetConsoleWindow, CONSOLE_GETCONSOLEWINDOW_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_CHAR_TYPE_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_LOCAL_EUDC_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_CURSOR_MODE_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_CURSOR_MODE_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_REGISTEROS2_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETOS2OEMFORMAT_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_NLS_MODE_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_NLS_MODE_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_CHAR_TYPE_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_LOCAL_EUDC_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_CURSOR_MODE_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_CURSOR_MODE_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_REGISTEROS2_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_SETOS2OEMFORMAT_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_NLS_MODE_MSG),
+    CONSOLE_API_STRUCT(ApiDispatchers::ServeDeprecatedApi, CONSOLE_NLS_MODE_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeGetConsoleSelectionInfo, CONSOLE_GETSELECTIONINFO_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeGetConsoleProcessList, CONSOLE_GETCONSOLEPROCESSLIST_MSG),
     CONSOLE_API_STRUCT(ApiDispatchers::ServeGetConsoleHistory, CONSOLE_HISTORY_MSG),
@@ -156,7 +154,7 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
     Message->State.WriteOffset = Message->msgHeader.ApiDescriptorSize;
     Message->State.ReadOffset = Message->msgHeader.ApiDescriptorSize + sizeof(CONSOLE_MSG_HEADER);
 
-    Status = (*Descriptor->Routine) (Message, &ReplyPending);
+    Status = NTSTATUS_FROM_HRESULT((*Descriptor->Routine) (Message, &ReplyPending));
 
     if (!ReplyPending)
     {

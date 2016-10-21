@@ -612,21 +612,3 @@ DWORD ConsoleIoThread()
 
     return 0;
 }
-
-NTSTATUS SrvDeprecatedAPI(_Inout_ PCONSOLE_API_MSG /*m*/, _Inout_ PBOOL /*ReplyPending*/)
-{
-    // assert if we hit a deprecated API.
-    ASSERT(TRUE);
-
-    // One common aspect of the functions we deprecate is that they all RevalidateConsole and then UnlockConsole at the
-    // end. Here we do the same thing to more closely emulate the old functions.
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    UnlockConsole();
-    return STATUS_UNSUCCESSFUL;
-}
