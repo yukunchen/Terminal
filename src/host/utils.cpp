@@ -8,9 +8,9 @@
 
 #include "globals.h"
 
-PCONSOLE_PROCESS_HANDLE GetMessageProcess(_In_ PCCONSOLE_API_MSG pMessage)
+ConsoleProcessHandle* GetMessageProcess(_In_ PCCONSOLE_API_MSG pMessage)
 {
-    return (PCONSOLE_PROCESS_HANDLE) pMessage->Descriptor.Process;
+    return (ConsoleProcessHandle*) pMessage->Descriptor.Process;
 }
 
 ConsoleHandleData* GetMessageObject(_In_ PCCONSOLE_API_MSG pMessage)

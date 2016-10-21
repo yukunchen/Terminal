@@ -31,7 +31,7 @@ typedef struct _RAW_READ_DATA
     PINPUT_INFORMATION pInputInfo;
     ULONG BufferSize;
     _Field_size_(BufferSize) PWCHAR BufPtr;
-    PCONSOLE_PROCESS_HANDLE pProcessData;
+    ConsoleProcessHandle* pProcessData;
     INPUT_READ_HANDLE_DATA* pInputReadHandleData;
 } RAW_READ_DATA, *PRAW_READ_DATA;
 
@@ -1276,7 +1276,7 @@ BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
 // - HandleData - Pointer to handle data structure.
 // Return Value:
 NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
-                   _In_ PCONSOLE_PROCESS_HANDLE const pProcessData,
+                   _In_ ConsoleProcessHandle* const pProcessData,
                    _In_ PSCREEN_INFORMATION const pScreenInfo,
                    _Inout_updates_bytes_(*pdwNumBytes) PWCHAR pwchBuffer,
                    _Inout_ PDWORD pdwNumBytes,
@@ -1704,7 +1704,7 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
         return Status;
     }
 
-    PCONSOLE_PROCESS_HANDLE const ProcessData = GetMessageProcess(m);
+    ConsoleProcessHandle* const ProcessData = GetMessageProcess(m);
 
     ConsoleHandleData* HandleData = GetMessageObject(m);
     INPUT_INFORMATION* pInputInfo;

@@ -101,17 +101,6 @@ extern "C"
     } IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
 
 
-    //
-    // ClientId
-    //
-
-    typedef struct _CLIENT_ID {
-        HANDLE UniqueProcess;
-        HANDLE UniqueThread;
-    } CLIENT_ID;
-    typedef CLIENT_ID *PCLIENT_ID;
-
-
 #pragma region LIST_ENTRY manipulation
     FORCEINLINE
         VOID

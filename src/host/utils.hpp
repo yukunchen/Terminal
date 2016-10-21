@@ -21,7 +21,7 @@ Author(s):
 #define RECT_WIDTH(x) ((x)->right - (x)->left)
 #define RECT_HEIGHT(x) ((x)->bottom - (x)->top)
 
-PCONSOLE_PROCESS_HANDLE GetMessageProcess(_In_ PCCONSOLE_API_MSG pMessage);
+ConsoleProcessHandle* GetMessageProcess(_In_ PCCONSOLE_API_MSG pMessage);
 ConsoleHandleData* GetMessageObject(_In_ PCCONSOLE_API_MSG pMessage);
 void SetReplyStatus(_Inout_ PCCONSOLE_API_MSG pMessage, _In_ const NTSTATUS Status);
 void SetReplyInformation(_Inout_ PCCONSOLE_API_MSG pMessage, _In_ ULONG_PTR pInformation);

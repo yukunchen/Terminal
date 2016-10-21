@@ -13,14 +13,14 @@
 
 
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
-    // ProcessHandleList initialized below
+    // ProcessHandleList initializes itself
     pInputBuffer(nullptr),
     CurrentScreenBuffer(nullptr),
     ScreenBuffers(nullptr),
     hWnd(nullptr),
     hMenu(nullptr),
     hHeirMenu(nullptr),
-    // OutputQueue initialized below
+    OutputQueue(),
     // CommandHistoryList initialized below
     // ExeAliasList initialized below
     NumCommandHistories(0),
@@ -34,7 +34,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     CtrlFlags(0),
     LimitingProcessId(0),
     // ColorTable initialized below
-    // MessageQueue initialized below
     // CPInfo initialized below
     // OutputCPInfo initialized below
     ReadConInpNumBytesUnicode(0),
@@ -45,17 +44,11 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     termInput(HandleTerminalKeyEventCallback),
     terminalMouseInput(HandleTerminalKeyEventCallback)
 {
-    ZeroMemory((void*)&ProcessHandleList, sizeof(ProcessHandleList));
-    InitializeListHead(&g_ciConsoleInformation.ProcessHandleList);
-
     ZeroMemory((void*)&CommandHistoryList, sizeof(CommandHistoryList));
     InitializeListHead(&g_ciConsoleInformation.CommandHistoryList);
 
     ZeroMemory((void*)&ExeAliasList, sizeof(ExeAliasList));
     InitializeListHead(&g_ciConsoleInformation.ExeAliasList);
-
-    ZeroMemory((void*)&MessageQueue, sizeof(MessageQueue));
-    InitializeListHead(&g_ciConsoleInformation.MessageQueue);
 
     ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));

@@ -69,15 +69,6 @@ typedef struct _CONSOLE_KEY_INFO
     WORD wVirtualScanCode;
 } CONSOLE_KEY_INFO, *PCONSOLE_KEY_INFO;
 
-// this structure is used to store relevant information from the console for ctrl processing so we can do it without
-// holding the console lock.
-typedef struct _CONSOLE_PROCESS_TERMINATION_RECORD
-{
-    HANDLE ProcessHandle;
-    HANDLE ProcessID;
-    ULONG TerminateCount;
-} CONSOLE_PROCESS_TERMINATION_RECORD, *PCONSOLE_PROCESS_TERMINATION_RECORD;
-
 CONSOLE_KEY_INFO ConsoleKeyInfo[CONSOLE_MAX_KEY_INFO];
 
 NTSTATUS InitWindowsStuff();
@@ -1237,8 +1228,8 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 {
     g_hInstance = GetModuleHandle(L"ConhostV2.dll");
 
-    PCONSOLE_PROCESS_HANDLE ProcessData = FindProcessInList(nullptr);
-    ASSERT(ProcessData != nullptr && ProcessData->RootProcess);
+    ConsoleProcessHandle* ProcessData = g_ciConsoleInformation.ProcessHandleList.FindProcessInList(ConsoleProcessList::ROOT_PROCESS_ID);
+    ASSERT(ProcessData != nullptr && ProcessData->fRootProcess);
 
     // Create and activate the main window
     NTSTATUS Status = Window::CreateInstance(&g_ciConsoleInformation, g_ciConsoleInformation.ScreenBuffers, &g_ciConsoleInformation.pWindow);
@@ -1262,7 +1253,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
         ConsoleKeyInfo[i].hWnd = CONSOLE_FREE_KEY_INFO;
     }
 
-    NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, g_ciConsoleInformation.hWnd, HandleToULong(ProcessData->ClientId.UniqueProcess), 0);
+    NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, g_ciConsoleInformation.hWnd, ProcessData->dwProcessId, 0);
 
     return STATUS_SUCCESS;
 }
@@ -2382,111 +2373,19 @@ void ProcessCtrlEvents()
     DWORD const LimitingProcessId = g_ciConsoleInformation.LimitingProcessId;
     g_ciConsoleInformation.LimitingProcessId = 0;
 
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ProcessHandleList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
+    ConsoleProcessTerminationRecord* rgProcessHandleList;
+    size_t cProcessHandleList;
 
-    ULONG ProcessHandleListLength = 0;
-    while (ListNext != ListHead)
-    {
-        PCONSOLE_PROCESS_HANDLE const ProcessHandleRecord = CONTAINING_RECORD(ListNext, CONSOLE_PROCESS_HANDLE, ListLink);
-        ListNext = ListNext->Flink;
-        if (LimitingProcessId)
-        {
-            if (ProcessHandleRecord->ProcessGroupId == LimitingProcessId)
-            {
-                ProcessHandleListLength += 1;
-            }
-        }
-        else
-        {
-            ProcessHandleListLength += 1;
-        }
-    }
+    HRESULT hr = g_ciConsoleInformation.ProcessHandleList.GetTerminationRecordsByGroupId(LimitingProcessId,
+                                                                                         IsFlagSet(g_ciConsoleInformation.CtrlFlags, CONSOLE_CTRL_CLOSE_FLAG),
+                                                                                         &rgProcessHandleList,
+                                                                                         &cProcessHandleList);
 
-    // It's possible that before we grabbed the lock all our processes decided to exit on their own. If so, no further action is needed here.
-    if (ProcessHandleListLength == 0)
+    if (FAILED(hr) || cProcessHandleList == 0)
     {
         g_ciConsoleInformation.UnlockConsole();
         return;
     }
-
-    CONSOLE_PROCESS_TERMINATION_RECORD ProcessHandles[2];
-    PCONSOLE_PROCESS_TERMINATION_RECORD ProcessHandleList;
-    // Use the stack buffer to hold the process handles if there are only a few, otherwise allocate a buffer from the heap.
-    if (ProcessHandleListLength <= ARRAYSIZE(ProcessHandles))
-    {
-        ProcessHandleList = ProcessHandles;
-    }
-    else
-    {
-        ProcessHandleList = new CONSOLE_PROCESS_TERMINATION_RECORD[ProcessHandleListLength];
-        if (ProcessHandleList == nullptr)
-        {
-            g_ciConsoleInformation.UnlockConsole();
-            return;
-        }
-    }
-
-    ListNext = ListHead->Flink;
-    ULONG i = 0;
-    while (ListNext != ListHead)
-    {
-
-        ASSERT(i <= ProcessHandleListLength);
-        PCONSOLE_PROCESS_HANDLE const ProcessHandleRecord = CONTAINING_RECORD(ListNext, CONSOLE_PROCESS_HANDLE, ListLink);
-        ListNext = ListNext->Flink;
-
-        if (LimitingProcessId && ProcessHandleRecord->ProcessGroupId != LimitingProcessId)
-        {
-            continue;
-        }
-
-
-        if (ProcessHandleRecord->ProcessHandle == nullptr)
-        {
-            ProcessHandleList[i].ProcessHandle = nullptr;
-        }
-        else
-        {
-            NTSTATUS tmpStatus = STATUS_SUCCESS;
-
-            if (FALSE == DuplicateHandle(GetCurrentProcess(),
-                                         ProcessHandleRecord->ProcessHandle,
-                                         GetCurrentProcess(),
-                                         &ProcessHandleList[i].ProcessHandle,
-                                         0,
-                                         0,
-                                         DUPLICATE_SAME_ACCESS))
-            {
-                tmpStatus = NTSTATUS_FROM_WIN32(GetLastError());
-            }
-
-            // If the duplicate failed, the best we can do is to skip including the process in the list and hope it goes away.
-            if (!NT_SUCCESS(tmpStatus))
-            {
-                RIPMSG3(RIP_WARNING, "Dup handle failed for %d of %d (Status = 0x%x)", i, ProcessHandleListLength, tmpStatus);
-                continue;
-            }
-        }
-
-        ProcessHandleList[i].ProcessID = ProcessHandleRecord->ClientId.UniqueProcess;
-
-        if (g_ciConsoleInformation.CtrlFlags & CONSOLE_CTRL_CLOSE_FLAG)
-        {
-            ProcessHandleRecord->TerminateCount++;
-        }
-        else
-        {
-            ProcessHandleRecord->TerminateCount = 0;
-        }
-        ProcessHandleList[i].TerminateCount = ProcessHandleRecord->TerminateCount;
-
-        // If this is the VDM process and we're closing the console window, move it to the front of the list
-        i++;
-    }
-
-    ProcessHandleListLength = i;
-    ASSERT(ProcessHandleListLength > 0);
 
     // Copy ctrl flags.
     ULONG CtrlFlags = g_ciConsoleInformation.CtrlFlags;
@@ -2531,7 +2430,7 @@ void ProcessCtrlEvents()
     }
 
     NTSTATUS Status = STATUS_SUCCESS;
-    for (i = 0; i < ProcessHandleListLength; i++)
+    for (size_t i = 0; i < cProcessHandleList; i++)
     {
         /*
          * Status will be non-successful if a process attached to this console
@@ -2546,25 +2445,22 @@ void ProcessCtrlEvents()
         {
             CONSOLEENDTASK ConsoleEndTaskParams;
 
-            ConsoleEndTaskParams.ProcessId = ProcessHandleList[i].ProcessID;
+            ConsoleEndTaskParams.ProcessId = (HANDLE)rgProcessHandleList[i].dwProcessID;
             ConsoleEndTaskParams.ConsoleEventCode = EventType;
             ConsoleEndTaskParams.ConsoleFlags = CtrlFlags;
             ConsoleEndTaskParams.hwnd = g_ciConsoleInformation.hWnd;
 
             Status = UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleEndTask, &ConsoleEndTaskParams, sizeof(ConsoleEndTaskParams));
-            if (ProcessHandleList[i].ProcessHandle == NULL) {
+            if (rgProcessHandleList[i].hProcess == nullptr) {
                 Status = STATUS_SUCCESS;
             }
         }
 
-        if (ProcessHandleList[i].ProcessHandle != nullptr)
+        if (rgProcessHandleList[i].hProcess != nullptr)
         {
-            CloseHandle(ProcessHandleList[i].ProcessHandle);
+            CloseHandle(rgProcessHandleList[i].hProcess);
         }
     }
 
-    if (ProcessHandleList != ProcessHandles)
-    {
-        delete[] ProcessHandleList;
-    }
+    delete[] rgProcessHandleList;
 }

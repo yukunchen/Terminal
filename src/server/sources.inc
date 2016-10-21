@@ -28,6 +28,8 @@ SOURCES= \
     ..\Entrypoints.cpp \
     ..\ObjectHandle.cpp \
     ..\ObjectHeader.cpp \
+    ..\ProcessHandle.cpp \
+    ..\ProcessList.cpp \
     ..\WaitBlock.cpp \
     ..\WaitQueue.cpp \
     ..\WinNTControl.cpp \

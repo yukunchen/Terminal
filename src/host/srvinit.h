@@ -22,4 +22,3 @@ NTSTATUS SrvGetConsoleLangId(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPend
 NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLangId);
 
 PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, _In_ const BOOL fUnexpand, _In_ const BOOL fSubstitute);
-PCONSOLE_PROCESS_HANDLE FindProcessInList(_In_opt_ const HANDLE hProcess);

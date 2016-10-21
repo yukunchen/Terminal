@@ -15,6 +15,8 @@ Author(s):
 --*/
 #pragma once
 
+#include <TraceLoggingActivity.h>
+
 class Telemetry
 {
 public:

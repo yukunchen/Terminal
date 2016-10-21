@@ -19,15 +19,30 @@ Revision History:
 #include "ObjectHandle.h"
 #include "WaitQueue.h"
 
-typedef struct _CONSOLE_PROCESS_HANDLE
+#include <memory>
+#include <wil\resource.h>
+
+class ConsoleProcessHandle
 {
-    LIST_ENTRY ListLink;
-    HANDLE ProcessHandle;
-    ULONG TerminateCount;
-    ULONG ProcessGroupId;
-    CLIENT_ID ClientId;
-    BOOL RootProcess;
-    ConsoleWaitQueue* pWaitBlockQueue;
-    ConsoleHandleData* InputHandle;
-    ConsoleHandleData* OutputHandle;
-} CONSOLE_PROCESS_HANDLE, *PCONSOLE_PROCESS_HANDLE;
+public:
+    std::unique_ptr<ConsoleWaitQueue> const pWaitBlockQueue;
+    ConsoleHandleData* pInputHandle;
+    ConsoleHandleData* pOutputHandle;
+
+    bool fRootProcess;
+
+    DWORD const dwProcessId;
+    DWORD const dwThreadId;
+
+private:
+    ConsoleProcessHandle(_In_ DWORD const dwProcessId,
+                         _In_ DWORD const dwThreadId,
+                         _In_ ULONG const ulProcessGroupId);
+    ~ConsoleProcessHandle();
+
+    ULONG _ulTerminateCount;
+    ULONG const _ulProcessGroupId;
+    wil::unique_handle const _hProcess;
+
+    friend class ConsoleProcessList; // ensure List manages lifetimes and not other classes.
+};
