@@ -119,9 +119,9 @@ class ApiRoutines : public IApiRoutines
 
     //HRESULT FlushConsoleInputBuffer(_In_ INPUT_INFORMATION* const pContext);
 
-    //HRESULT SetConsoleInputCodePageImpl(_In_ ULONG const CodePage);
+    HRESULT SetConsoleInputCodePageImpl(_In_ ULONG const CodePage);
 
-    //HRESULT SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage);
+    HRESULT SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage);
 
     //HRESULT GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
     //                                         _Out_ ULONG* const pCursorSize,

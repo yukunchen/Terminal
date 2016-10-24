@@ -1064,54 +1064,46 @@ NTSTATUS DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* pScreen
     return STATUS_SUCCESS;
 }
 
-NTSTATUS SrvSetConsoleCP(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage)
 {
-    PCONSOLE_SETCP_MSG const a = &m->u.consoleMsgL2.SetConsoleCP;
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleOutputCP);
+    LockConsole();
+    wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(a->Output ? Telemetry::ApiCall::SetConsoleOutputCP : Telemetry::ApiCall::SetConsoleCP);
+    // Return if it's not known as a valid codepage ID.
+    RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidCodePage(CodePage));
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
+    // Do nothing if no change.
+    if (g_ciConsoleInformation.OutputCP != CodePage)
     {
-        return Status;
+        // Set new code page
+        g_ciConsoleInformation.OutputCP = CodePage;
+
+        SetConsoleCPInfo(TRUE);
     }
 
-    if (!IsValidCodePage(a->CodePage))
+    return S_OK;
+}
+
+HRESULT ApiRoutines::SetConsoleInputCodePageImpl(_In_ ULONG const CodePage)
+{
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleOutputCP);
+    LockConsole();
+    wil::ScopeExit([&] { UnlockConsole(); });
+
+    // Return if it's not known as a valid codepage ID.
+    RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidCodePage(CodePage));
+
+    // Do nothing if no change.
+    if (g_ciConsoleInformation.CP != CodePage)
     {
-        Status = STATUS_INVALID_PARAMETER;
-        goto SrvSetConsoleCPFailure;
+        // Set new code page
+        g_ciConsoleInformation.CP = CodePage;
+
+        SetConsoleCPInfo(FALSE);
     }
 
-    if ((a->Output && g_ciConsoleInformation.OutputCP != a->CodePage) || (!a->Output && g_ciConsoleInformation.CP != a->CodePage))
-    {
-        UINT CodePage;
-
-        if (a->Output)
-        {
-            // Backup old code page
-            CodePage = g_ciConsoleInformation.OutputCP;
-
-            // Set new code page
-            g_ciConsoleInformation.OutputCP = a->CodePage;
-
-            SetConsoleCPInfo(a->Output);
-        }
-        else
-        {
-            // Backup old code page
-            CodePage = g_ciConsoleInformation.CP;
-
-            // Set new code page
-            g_ciConsoleInformation.CP = a->CodePage;
-
-            SetConsoleCPInfo(a->Output);
-        }
-    }
-
-SrvSetConsoleCPFailure:
-    UnlockConsole();
-    return Status;
+    return S_OK;
 }
 
 HRESULT ApiRoutines::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)

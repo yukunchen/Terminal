@@ -127,7 +127,16 @@ HRESULT ApiDispatchers::ServeFlushConsoleInputBuffer(_Inout_ CONSOLE_API_MSG * c
 
 HRESULT ApiDispatchers::ServeSetConsoleCP(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvSetConsoleCP(m, pbReplyPending));
+    CONSOLE_SETCP_MSG* const a = &m->u.consoleMsgL2.SetConsoleCP;
+
+    if (a->Output)
+    {
+        return m->_pApiRoutines->SetConsoleOutputCodePageImpl(a->CodePage);
+    }
+    else
+    {
+        return m->_pApiRoutines->SetConsoleInputCodePageImpl(a->CodePage);
+    }
 }
 
 HRESULT ApiDispatchers::ServeGetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
