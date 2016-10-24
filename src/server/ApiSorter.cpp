@@ -154,7 +154,9 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
     Message->State.WriteOffset = Message->msgHeader.ApiDescriptorSize;
     Message->State.ReadOffset = Message->msgHeader.ApiDescriptorSize + sizeof(CONSOLE_MSG_HEADER);
 
-    Status = NTSTATUS_FROM_HRESULT((*Descriptor->Routine) (Message, &ReplyPending));
+    // TODO: This currently causes an issue with double printing some lines. To be corrected.
+    //Status = NTSTATUS_FROM_HRESULT((*Descriptor->Routine) (Message, &ReplyPending));
+    Status = (*Descriptor->Routine)(Message, &ReplyPending);
 
     if (!ReplyPending)
     {
