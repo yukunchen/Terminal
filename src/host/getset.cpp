@@ -62,30 +62,16 @@ HRESULT ApiRoutines::GetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pCo
     return S_OK;
 }
 
-NTSTATUS SrvGetConsoleNumberOfInputEvents(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(_In_ INPUT_INFORMATION* const pContext, _Out_ ULONG* const pEvents)
 {
-    PCONSOLE_GETNUMBEROFINPUTEVENTS_MSG const a = &m->u.consoleMsgL1.GetNumberOfConsoleInputEvents;
-
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetNumberOfConsoleInputEvents);
+    LockConsole();
+    wil::ScopeExit([&] { UnlockConsole(); });
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    // TODO: Should this have a result code? It's void.
+    GetNumberOfReadyEvents(pContext, pEvents);
 
-    ConsoleHandleData* HandleData = m->GetObjectHandle();
-    INPUT_INFORMATION* pInputInfo;
-
-    Status = NTSTATUS_FROM_HRESULT(HandleData->GetInputBuffer(GENERIC_READ, &pInputInfo));
-    if (NT_SUCCESS(Status))
-    {
-        GetNumberOfReadyEvents(pInputInfo, &a->ReadyEvents);
-    }
-
-    UnlockConsole();
-    return Status;
+    return S_OK;
 }
 
 NTSTATUS SrvGetConsoleScreenBufferInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)

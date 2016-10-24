@@ -44,8 +44,8 @@ class ApiRoutines : public IApiRoutines
     HRESULT SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                              _In_ ULONG const Mode);
 
-   // HRESULT GetNumberOfConsoleInputEventsImpl(_In_ INPUT_INFORMATION* const pContext,
-   //                                                   _Out_ ULONG* const pEvents);
+    HRESULT GetNumberOfConsoleInputEventsImpl(_In_ INPUT_INFORMATION* const pContext,
+                                                      _Out_ ULONG* const pEvents);
 
    // HRESULT PeekConsoleInputAImpl(_In_ INPUT_INFORMATION* const pContext,
    //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
