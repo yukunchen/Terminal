@@ -53,7 +53,6 @@ HRESULT ApiRoutines::GetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pCont
 
 HRESULT ApiRoutines::GetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext, _Out_ ULONG* const pMode)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -64,7 +63,6 @@ HRESULT ApiRoutines::GetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pCo
 
 HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(_In_ INPUT_INFORMATION* const pContext, _Out_ ULONG* const pEvents)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetNumberOfConsoleInputEvents);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -77,7 +75,6 @@ HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(_In_ INPUT_INFORMATION* c
 HRESULT ApiRoutines::GetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                       _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleScreenBufferInfoEx);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -100,7 +97,6 @@ HRESULT ApiRoutines::GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pCo
                                               _Out_ ULONG* const pCursorSize,
                                               _Out_ BOOLEAN* const pIsVisible)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleCursorInfo);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -116,7 +112,6 @@ HRESULT DoSrvGetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Out_ UL
 
 HRESULT ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleSelectionInfo);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -142,7 +137,6 @@ HRESULT ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* c
 
 HRESULT ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetNumberOfConsoleMouseButtons);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -155,7 +149,6 @@ HRESULT ApiRoutines::GetConsoleFontSizeImpl(_In_ SCREEN_INFORMATION* const pCont
                                             _In_ DWORD const FontIndex,
                                             _Out_ COORD* const pFontSize)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleFontSize);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -177,7 +170,6 @@ HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
                                                  _In_ BOOLEAN const IsForMaximumWindowSize,
                                                  _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetCurrentConsoleFontEx);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -209,7 +201,6 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
                                                  _In_ BOOLEAN const IsForMaximumWindowSize,
                                                  _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetCurrentConsoleFontEx);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -232,7 +223,6 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
 
 HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pContext, _In_ ULONG const Mode)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleMode);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -274,7 +264,6 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pCont
 
 HRESULT ApiRoutines::SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext, _In_ ULONG const Mode)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleMode);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -391,7 +380,6 @@ NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
 
 HRESULT ApiRoutines::SetConsoleActiveScreenBufferImpl(_In_ SCREEN_INFORMATION* const pNewContext)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleActiveScreenBuffer);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -400,7 +388,6 @@ HRESULT ApiRoutines::SetConsoleActiveScreenBufferImpl(_In_ SCREEN_INFORMATION* c
 
 HRESULT ApiRoutines::FlushConsoleInputBuffer(_In_ INPUT_INFORMATION* const pContext)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FlushConsoleInputBuffer);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -413,7 +400,6 @@ HRESULT ApiRoutines::FlushConsoleInputBuffer(_In_ INPUT_INFORMATION* const pCont
 HRESULT ApiRoutines::GetLargestConsoleWindowSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                      _Out_ COORD* const pSize)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetLargestConsoleWindowSize);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -427,7 +413,6 @@ HRESULT ApiRoutines::GetLargestConsoleWindowSizeImpl(_In_ SCREEN_INFORMATION* co
 HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                     _In_ const COORD* const pSize)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleScreenBufferSize);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -456,8 +441,6 @@ HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(_In_ SCREEN_INFORMATION* con
 HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                       _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleScreenBufferInfoEx);
-
     RETURN_HR_IF(E_INVALIDARG, (pScreenBufferInfoEx->dwSize.X == 0 ||
                                 pScreenBufferInfoEx->dwSize.Y == 0 ||
                                 pScreenBufferInfoEx->dwSize.X == 0x7FFF ||
@@ -506,7 +489,6 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
 HRESULT ApiRoutines::SetConsoleCursorPositionImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                   _In_ const COORD* const pCursorPosition)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleCursorPosition);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -554,7 +536,6 @@ HRESULT ApiRoutines::SetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pCo
                                               _In_ ULONG const CursorSize,
                                               _In_ BOOLEAN const IsVisible)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleCursorInfo);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -576,7 +557,6 @@ HRESULT ApiRoutines::SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pCo
                                               _In_ BOOLEAN const IsAbsoluteRectangle,
                                               _In_ const SMALL_RECT* const pWindowRectangle)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleWindowInfo);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -626,18 +606,14 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(_In_ SCREEN_INFORMATION* con
                                                     _In_ char const chFill,
                                                     _In_ WORD const attrFill)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ScrollConsoleScreenBuffer, FALSE);
-    LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
-
     wchar_t const wchFill = CharToWchar(&chFill, 1);
 
-    return DoSrvScrollConsoleScreenBufferW(pContext,
-                                           pSourceRectangle,
-                                           pTargetOrigin,
-                                           pTargetClipRectangle,
-                                           wchFill,
-                                           attrFill);
+    return ScrollConsoleScreenBufferWImpl(pContext,
+                                          pSourceRectangle,
+                                          pTargetOrigin,
+                                          pTargetClipRectangle,
+                                          wchFill,
+                                          attrFill);
 }
 
 
@@ -648,7 +624,6 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(_In_ SCREEN_INFORMATION* con
                                                     _In_ wchar_t const wchFill,
                                                     _In_ WORD const attrFill)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ScrollConsoleScreenBuffer, TRUE);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -766,7 +741,6 @@ NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attribut
 HRESULT ApiRoutines::SetConsoleTextAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                  _In_ WORD const Attribute)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleTextAttribute);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -821,7 +795,6 @@ NTSTATUS DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* pScreen
 
 HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleOutputCP);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -842,7 +815,6 @@ HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage)
 
 HRESULT ApiRoutines::SetConsoleInputCodePageImpl(_In_ ULONG const CodePage)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleOutputCP);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -863,7 +835,6 @@ HRESULT ApiRoutines::SetConsoleInputCodePageImpl(_In_ ULONG const CodePage)
 
 HRESULT ApiRoutines::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleCP);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -874,7 +845,6 @@ HRESULT ApiRoutines::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
 
 HRESULT ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleOutputCP);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -885,7 +855,6 @@ HRESULT ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
 
 HRESULT ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleWindow);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -998,10 +967,9 @@ NTSTATUS SrvSetConsoleHistory(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
 }
 
 // NOTE: This was in private.c, but turns out to be a public API: http://msdn.microsoft.com/en-us/library/windows/desktop/ms683164(v=vs.85).aspx
-HRESULT ApiRoutines::GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const /*pContext*/, 
+HRESULT ApiRoutines::GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const /*pContext*/,
                                                _Out_ ULONG* const pFlags)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleDisplayMode);
     LockConsole();
     wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -1031,11 +999,10 @@ HRESULT ApiRoutines::GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const /*
 // NOTE:
 // - This was in private.c, but turns out to be a public API:
 // - See: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686028(v=vs.85).aspx
-HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext, 
+HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                                _In_ ULONG const Flags,
                                                _Out_ COORD* const pNewScreenBufferSize)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleDisplayMode);
     LockConsole();
     {
         wil::ScopeExit([&] { UnlockConsole(); });

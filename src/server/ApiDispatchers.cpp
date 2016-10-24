@@ -12,6 +12,7 @@
 #include "..\host\getset.h"
 #include "..\host\stream.h"
 #include "..\host\srvinit.h"
+#include "..\host\telemetry.hpp"
 
 HRESULT ApiDispatchers::ServeDeprecatedApi(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
@@ -27,16 +28,19 @@ HRESULT ApiDispatchers::ServeGetConsoleCP(_Inout_ CONSOLE_API_MSG * const m, _In
 
     if (a->Output)
     {
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleOutputCP);
         return m->_pApiRoutines->GetConsoleOutputCodePageImpl(&a->CodePage);
     }
     else
     {
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleCP);
         return m->_pApiRoutines->GetConsoleInputCodePageImpl(&a->CodePage);
     }
 }
 
 HRESULT ApiDispatchers::ServeGetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
     CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.GetConsoleMode;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
@@ -56,6 +60,7 @@ HRESULT ApiDispatchers::ServeGetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, _
 
 HRESULT ApiDispatchers::ServeSetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleMode);
     CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.SetConsoleMode;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
@@ -75,6 +80,7 @@ HRESULT ApiDispatchers::ServeSetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, _
 
 HRESULT ApiDispatchers::ServeGetNumberOfInputEvents(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetNumberOfConsoleInputEvents);
     CONSOLE_GETNUMBEROFINPUTEVENTS_MSG* const a = &m->u.consoleMsgL1.GetNumberOfConsoleInputEvents;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
@@ -117,6 +123,7 @@ HRESULT ApiDispatchers::ServeGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG * 
 
 HRESULT ApiDispatchers::ServeSetConsoleActiveScreenBuffer(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleActiveScreenBuffer);
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
 
     SCREEN_INFORMATION* pObj;
@@ -127,6 +134,7 @@ HRESULT ApiDispatchers::ServeSetConsoleActiveScreenBuffer(_Inout_ CONSOLE_API_MS
 
 HRESULT ApiDispatchers::ServeFlushConsoleInputBuffer(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FlushConsoleInputBuffer);
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
 
     INPUT_INFORMATION* pObj;
@@ -141,16 +149,19 @@ HRESULT ApiDispatchers::ServeSetConsoleCP(_Inout_ CONSOLE_API_MSG * const m, _In
 
     if (a->Output)
     {
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleOutputCP);
         return m->_pApiRoutines->SetConsoleOutputCodePageImpl(a->CodePage);
     }
     else
     {
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleCP);
         return m->_pApiRoutines->SetConsoleInputCodePageImpl(a->CodePage);
     }
 }
 
 HRESULT ApiDispatchers::ServeGetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleCursorInfo);
     CONSOLE_GETCURSORINFO_MSG* const a = &m->u.consoleMsgL2.GetConsoleCursorInfo;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
@@ -163,6 +174,7 @@ HRESULT ApiDispatchers::ServeGetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG * cons
 
 HRESULT ApiDispatchers::ServeSetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleCursorInfo);
     CONSOLE_SETCURSORINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleCursorInfo;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
@@ -175,6 +187,7 @@ HRESULT ApiDispatchers::ServeSetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG * cons
 
 HRESULT ApiDispatchers::ServeGetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleScreenBufferInfoEx);
     CONSOLE_SCREENBUFFERINFO_MSG* const a = &m->u.consoleMsgL2.GetConsoleScreenBufferInfo;
 
     CONSOLE_SCREEN_BUFFER_INFOEX ex = { 0 };
@@ -205,6 +218,7 @@ HRESULT ApiDispatchers::ServeGetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG 
 
 HRESULT ApiDispatchers::ServeSetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleScreenBufferInfoEx);
     CONSOLE_SCREENBUFFERINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleScreenBufferInfo;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
@@ -233,6 +247,7 @@ HRESULT ApiDispatchers::ServeSetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG 
 
 HRESULT ApiDispatchers::ServeSetConsoleScreenBufferSize(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleScreenBufferSize);
     CONSOLE_SETSCREENBUFFERSIZE_MSG* const a = &m->u.consoleMsgL2.SetConsoleScreenBufferSize;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
@@ -245,6 +260,7 @@ HRESULT ApiDispatchers::ServeSetConsoleScreenBufferSize(_Inout_ CONSOLE_API_MSG 
 
 HRESULT ApiDispatchers::ServeSetConsoleCursorPosition(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleCursorPosition);
     CONSOLE_SETCURSORPOSITION_MSG* const a = &m->u.consoleMsgL2.SetConsoleCursorPosition;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
@@ -257,6 +273,7 @@ HRESULT ApiDispatchers::ServeSetConsoleCursorPosition(_Inout_ CONSOLE_API_MSG * 
 
 HRESULT ApiDispatchers::ServeGetLargestConsoleWindowSize(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetLargestConsoleWindowSize);
     CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a = &m->u.consoleMsgL2.GetLargestConsoleWindowSize;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
@@ -270,6 +287,7 @@ HRESULT ApiDispatchers::ServeGetLargestConsoleWindowSize(_Inout_ CONSOLE_API_MSG
 HRESULT ApiDispatchers::ServeScrollConsoleScreenBuffer(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
     CONSOLE_SCROLLSCREENBUFFER_MSG* const a = &m->u.consoleMsgL2.ScrollConsoleScreenBuffer;
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ScrollConsoleScreenBuffer, a->Unicode);
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
 
@@ -298,6 +316,7 @@ HRESULT ApiDispatchers::ServeScrollConsoleScreenBuffer(_Inout_ CONSOLE_API_MSG *
 
 HRESULT ApiDispatchers::ServeSetConsoleTextAttribute(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleTextAttribute);
     CONSOLE_SETTEXTATTRIBUTE_MSG* const a = &m->u.consoleMsgL2.SetConsoleTextAttribute;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
@@ -310,6 +329,7 @@ HRESULT ApiDispatchers::ServeSetConsoleTextAttribute(_Inout_ CONSOLE_API_MSG * c
 
 HRESULT ApiDispatchers::ServeSetConsoleWindowInfo(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleWindowInfo);
     CONSOLE_SETWINDOWINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleWindowInfo;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
@@ -357,6 +377,7 @@ HRESULT ApiDispatchers::ServeSetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m, 
 
 HRESULT ApiDispatchers::ServeGetConsoleMouseInfo(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetNumberOfConsoleMouseButtons);
     CONSOLE_GETMOUSEINFO_MSG* const a = &m->u.consoleMsgL3.GetConsoleMouseInfo;
 
     return m->_pApiRoutines->GetNumberOfConsoleMouseButtonsImpl(&a->NumButtons);
@@ -364,6 +385,7 @@ HRESULT ApiDispatchers::ServeGetConsoleMouseInfo(_Inout_ CONSOLE_API_MSG * const
 
 HRESULT ApiDispatchers::ServeGetConsoleFontSize(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleFontSize);
     CONSOLE_GETFONTSIZE_MSG* const a = &m->u.consoleMsgL3.GetConsoleFontSize;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
@@ -376,6 +398,7 @@ HRESULT ApiDispatchers::ServeGetConsoleFontSize(_Inout_ CONSOLE_API_MSG * const 
 
 HRESULT ApiDispatchers::ServeGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetCurrentConsoleFontEx);
     CONSOLE_CURRENTFONT_MSG* const a = &m->u.consoleMsgL3.GetCurrentConsoleFont;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
@@ -399,6 +422,7 @@ HRESULT ApiDispatchers::ServeGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG * con
 
 HRESULT ApiDispatchers::ServeSetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleDisplayMode);
     CONSOLE_SETDISPLAYMODE_MSG* const a = &m->u.consoleMsgL3.SetConsoleDisplayMode;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
@@ -411,6 +435,7 @@ HRESULT ApiDispatchers::ServeSetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG * con
 
 HRESULT ApiDispatchers::ServeGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleDisplayMode);
     CONSOLE_GETDISPLAYMODE_MSG* const a = &m->u.consoleMsgL3.GetConsoleDisplayMode;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
@@ -473,6 +498,7 @@ HRESULT ApiDispatchers::ServeGetConsoleCommandHistory(_Inout_ CONSOLE_API_MSG * 
 
 HRESULT ApiDispatchers::ServeGetConsoleWindow(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleWindow);
     CONSOLE_GETCONSOLEWINDOW_MSG* const a = &m->u.consoleMsgL3.GetConsoleWindow;
 
     return m->_pApiRoutines->GetConsoleWindowImpl(&a->hwnd);
@@ -480,6 +506,7 @@ HRESULT ApiDispatchers::ServeGetConsoleWindow(_Inout_ CONSOLE_API_MSG * const m,
 
 HRESULT ApiDispatchers::ServeGetConsoleSelectionInfo(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleSelectionInfo);
     CONSOLE_GETSELECTIONINFO_MSG* const a = &m->u.consoleMsgL3.GetConsoleSelectionInfo;
 
     return m->_pApiRoutines->GetConsoleSelectionInfoImpl(&a->SelectionInfo);
@@ -502,6 +529,7 @@ HRESULT ApiDispatchers::ServeSetConsoleHistory(_Inout_ CONSOLE_API_MSG * const m
 
 HRESULT ApiDispatchers::ServeSetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetCurrentConsoleFontEx);
     CONSOLE_CURRENTFONT_MSG* const a = &m->u.consoleMsgL3.SetCurrentConsoleFont;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
