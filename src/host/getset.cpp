@@ -32,62 +32,34 @@ COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE | COMMON_LVB_GRID_HORIZONTAL 
 #define OUTPUT_MODES (ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN | ENABLE_LVB_GRID_WORLDWIDE)
 #define PRIVATE_MODES (ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_EXTENDED_FLAGS)
 
-NTSTATUS SrvGetConsoleMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pContext, _Out_ ULONG* const pMode)
 {
-    PCONSOLE_MODE_MSG const a = (PCONSOLE_MODE_MSG)& m->u.consoleMsgL1.GetConsoleMode;
-
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
+    LockConsole();
+    wil::ScopeExit([&] { UnlockConsole(); });
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
+    *pMode = pContext->InputMode;
+
+    if (IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_USE_PRIVATE_FLAGS))
     {
-        return Status;
+        SetFlag(*pMode, ENABLE_EXTENDED_FLAGS);
+        SetFlagIf(*pMode, ENABLE_INSERT_MODE, g_ciConsoleInformation.GetInsertMode());
+        SetFlagIf(*pMode, ENABLE_QUICK_EDIT_MODE, IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_QUICK_EDIT_MODE));
+        SetFlagIf(*pMode, ENABLE_AUTO_POSITION, IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_AUTO_POSITION));
     }
 
-    ConsoleHandleData* HandleData = m->GetObjectHandle();
-    // Check handle type and access.
-    if (HandleData->IsInputHandle())
-    {
-        INPUT_INFORMATION* pInputInfo;
-        Status = NTSTATUS_FROM_HRESULT(HandleData->GetInputBuffer(GENERIC_READ, &pInputInfo));
-        if (NT_SUCCESS(Status))
-        {
-            a->Mode = pInputInfo->InputMode;
+    return S_OK;
+}
 
-            if ((g_ciConsoleInformation.Flags & CONSOLE_USE_PRIVATE_FLAGS) != 0)
-            {
-                a->Mode |= ENABLE_EXTENDED_FLAGS;
+HRESULT ApiRoutines::GetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext, _Out_ ULONG* const pMode)
+{
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
+    LockConsole();
+    wil::ScopeExit([&] { UnlockConsole(); });
 
-                if (g_ciConsoleInformation.GetInsertMode())
-                {
-                    a->Mode |= ENABLE_INSERT_MODE;
-                }
+    *pMode = pContext->GetActiveBuffer()->OutputMode;
 
-                if (g_ciConsoleInformation.Flags & CONSOLE_QUICK_EDIT_MODE)
-                {
-                    a->Mode |= ENABLE_QUICK_EDIT_MODE;
-                }
-
-                if (g_ciConsoleInformation.Flags & CONSOLE_AUTO_POSITION)
-                {
-                    a->Mode |= ENABLE_AUTO_POSITION;
-                }
-            }
-        }
-    }
-    else
-    {
-        SCREEN_INFORMATION* pScreenInfo;
-        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_READ, &pScreenInfo));
-        if (NT_SUCCESS(Status))
-        {
-            a->Mode = pScreenInfo->GetActiveBuffer()->OutputMode;
-        }
-    }
-
-    UnlockConsole();
-    return Status;
+    return S_OK;
 }
 
 NTSTATUS SrvGetConsoleNumberOfInputEvents(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
@@ -353,119 +325,74 @@ NTSTATUS SrvSetConsoleCurrentFont(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Re
     return Status;
 }
 
-NTSTATUS SrvSetConsoleMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pContext, _In_ ULONG const Mode)
 {
-    PCONSOLE_MODE_MSG const a = &m->u.consoleMsgL1.SetConsoleMode;
-
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleMode);
+    LockConsole();
+    wil::ScopeExit([&] { UnlockConsole(); });
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
+    // Flags we don't understand are invalid.
+    RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~(INPUT_MODES | PRIVATE_MODES)));
+
+    // ECHO on with LINE off is invalid.
+    RETURN_HR_IF(E_INVALIDARG, IsFlagSet(Mode, ENABLE_ECHO_INPUT) && IsFlagClear(Mode, ENABLE_LINE_INPUT));
+
+
+    if (IsAnyFlagSet(Mode, PRIVATE_MODES))
     {
-        return Status;
-    }
+        SetFlag(g_ciConsoleInformation.Flags, CONSOLE_USE_PRIVATE_FLAGS);
 
-    ConsoleHandleData* HandleData = m->GetObjectHandle();
+        UpdateFlag(g_ciConsoleInformation.Flags, CONSOLE_QUICK_EDIT_MODE, IsFlagSet(Mode, ENABLE_QUICK_EDIT_MODE));
+        UpdateFlag(g_ciConsoleInformation.Flags, CONSOLE_AUTO_POSITION, IsFlagSet(Mode, ENABLE_AUTO_POSITION));
 
-    if (HandleData->IsInputHandle())
-    {
-        INPUT_INFORMATION* pInputInfo;
-        Status = NTSTATUS_FROM_HRESULT(HandleData->GetInputBuffer(GENERIC_WRITE, &pInputInfo));
-        if (NT_SUCCESS(Status))
+        BOOL const PreviousInsertMode = g_ciConsoleInformation.GetInsertMode();
+        g_ciConsoleInformation.SetInsertMode(IsFlagSet(Mode, ENABLE_INSERT_MODE));
+        if (g_ciConsoleInformation.GetInsertMode() != PreviousInsertMode)
         {
-            BOOL PreviousInsertMode;
-
-            if (a->Mode & ~(INPUT_MODES | PRIVATE_MODES))
+            g_ciConsoleInformation.CurrentScreenBuffer->SetCursorDBMode(FALSE);
+            if (g_ciConsoleInformation.lpCookedReadData != nullptr)
             {
-                Status = STATUS_INVALID_PARAMETER;
+                g_ciConsoleInformation.lpCookedReadData->InsertMode = !!g_ciConsoleInformation.GetInsertMode();
             }
-            else if ((a->Mode & (ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT)) == ENABLE_ECHO_INPUT)
-            {
-                Status = STATUS_INVALID_PARAMETER;
-            }
-            else if (a->Mode & PRIVATE_MODES)
-            {
-                g_ciConsoleInformation.Flags |= CONSOLE_USE_PRIVATE_FLAGS;
-
-                if (a->Mode & ENABLE_QUICK_EDIT_MODE)
-                {
-                    g_ciConsoleInformation.Flags |= CONSOLE_QUICK_EDIT_MODE;
-                }
-                else
-                {
-                    g_ciConsoleInformation.Flags &= ~CONSOLE_QUICK_EDIT_MODE;
-                }
-
-                if (a->Mode & ENABLE_AUTO_POSITION)
-                {
-                    g_ciConsoleInformation.Flags |= CONSOLE_AUTO_POSITION;
-                }
-                else
-                {
-                    g_ciConsoleInformation.Flags &= ~CONSOLE_AUTO_POSITION;
-                }
-
-                PreviousInsertMode = g_ciConsoleInformation.GetInsertMode();
-                if (a->Mode & ENABLE_INSERT_MODE)
-                {
-                    g_ciConsoleInformation.SetInsertMode(TRUE);
-                }
-                else
-                {
-                    g_ciConsoleInformation.SetInsertMode(FALSE);
-                }
-
-                if (g_ciConsoleInformation.GetInsertMode() != PreviousInsertMode)
-                {
-                    g_ciConsoleInformation.CurrentScreenBuffer->SetCursorDBMode(FALSE);
-                    if (g_ciConsoleInformation.lpCookedReadData != nullptr)
-                    {
-                        g_ciConsoleInformation.lpCookedReadData->InsertMode = !!g_ciConsoleInformation.GetInsertMode();
-                    }
-                }
-            }
-            else
-            {
-                g_ciConsoleInformation.Flags &= ~CONSOLE_USE_PRIVATE_FLAGS;
-            }
-
-            pInputInfo->InputMode = a->Mode & ~PRIVATE_MODES;
         }
     }
     else
     {
-        SCREEN_INFORMATION* pScreenInfo;
-        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
-        if (NT_SUCCESS(Status))
-        {
-            if ((a->Mode & ~OUTPUT_MODES) == 0)
-            {
-                pScreenInfo = pScreenInfo->GetActiveBuffer();
-                const DWORD dwOldMode = pScreenInfo->OutputMode;
-                const DWORD dwNewMode = a->Mode;
-
-                pScreenInfo->OutputMode = dwNewMode;
-
-                // if we're moving from VT on->off
-                if (!IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) && IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
-                {
-                    // jiggle the handle
-                    pScreenInfo->GetStateMachine()->ResetState();
-                }
-                g_ciConsoleInformation.SetVirtTermLevel(IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? 1 : 0);
-                g_ciConsoleInformation.SetAutomaticReturnOnNewline(IsFlagSet(pScreenInfo->OutputMode, DISABLE_NEWLINE_AUTO_RETURN) ? false : true);
-                g_ciConsoleInformation.SetGridRenderingAllowedWorldwide(IsFlagSet(pScreenInfo->OutputMode, ENABLE_LVB_GRID_WORLDWIDE));
-            }
-            else
-            {
-                Status = STATUS_INVALID_PARAMETER;
-            }
-        }
+        ClearFlag(g_ciConsoleInformation.Flags, CONSOLE_USE_PRIVATE_FLAGS);
     }
 
-    UnlockConsole();
-    return Status;
+    pContext->InputMode = Mode;
+    ClearAllFlags(pContext->InputMode, PRIVATE_MODES);
+
+    return S_OK;
+}
+
+HRESULT ApiRoutines::SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext, _In_ ULONG const Mode)
+{
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleMode);
+    LockConsole();
+    wil::ScopeExit([&] { UnlockConsole(); });
+
+    // Flags we don't understand are invalid.
+    RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~OUTPUT_MODES));
+
+    SCREEN_INFORMATION* const pScreenInfo = pContext->GetActiveBuffer();
+    const DWORD dwOldMode = pScreenInfo->OutputMode;
+    const DWORD dwNewMode = Mode;
+
+    pScreenInfo->OutputMode = dwNewMode;
+
+    // if we're moving from VT on->off
+    if (!IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) && IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    {
+        // jiggle the handle
+        pScreenInfo->GetStateMachine()->ResetState();
+    }
+    g_ciConsoleInformation.SetVirtTermLevel(IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? 1 : 0);
+    g_ciConsoleInformation.SetAutomaticReturnOnNewline(IsFlagSet(pScreenInfo->OutputMode, DISABLE_NEWLINE_AUTO_RETURN) ? false : true);
+    g_ciConsoleInformation.SetGridRenderingAllowedWorldwide(IsFlagSet(pScreenInfo->OutputMode, ENABLE_LVB_GRID_WORLDWIDE));
+
+    return S_OK;
 }
 
 NTSTATUS GetProcessParentId(_Inout_ PULONG ProcessId)
@@ -1204,10 +1131,10 @@ SrvSetConsoleCPFailure:
 HRESULT ApiRoutines::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleCP);
-
     LockConsole();
+    wil::ScopeExit([&] { UnlockConsole(); });
+
     *pCodePage = g_ciConsoleInformation.CP;
-    UnlockConsole();
 
     return S_OK;
 }
@@ -1215,10 +1142,10 @@ HRESULT ApiRoutines::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
 HRESULT ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleOutputCP);
-
     LockConsole();
+    wil::ScopeExit([&] { UnlockConsole(); });
+
     *pCodePage = g_ciConsoleInformation.OutputCP;
-    UnlockConsole();
 
     return S_OK;
 }

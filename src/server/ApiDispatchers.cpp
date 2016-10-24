@@ -37,12 +37,40 @@ HRESULT ApiDispatchers::ServeGetConsoleCP(_Inout_ CONSOLE_API_MSG * const m, _In
 
 HRESULT ApiDispatchers::ServeGetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvGetConsoleMode(m, pbReplyPending));
+    CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.GetConsoleMode;
+
+    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    if (pObjectHandle->IsInputHandle())
+    {
+        INPUT_INFORMATION* pObj;
+        RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_READ, &pObj));
+        return m->_pApiRoutines->GetConsoleInputModeImpl(pObj, &a->Mode);
+    }
+    else
+    {
+        SCREEN_INFORMATION* pObj;
+        RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
+        return m->_pApiRoutines->GetConsoleOutputModeImpl(pObj, &a->Mode);
+    }
 }
 
 HRESULT ApiDispatchers::ServeSetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvSetConsoleMode(m, pbReplyPending));
+    CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.SetConsoleMode;
+
+    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    if (pObjectHandle->IsInputHandle())
+    {
+        INPUT_INFORMATION* pObj;
+        RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pObj));
+        return m->_pApiRoutines->SetConsoleInputModeImpl(pObj, a->Mode);
+    }
+    else
+    {
+        SCREEN_INFORMATION* pObj;
+        RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
+        return m->_pApiRoutines->SetConsoleOutputModeImpl(pObj, a->Mode);
+    }
 }
 
 HRESULT ApiDispatchers::ServeGetNumberOfInputEvents(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)

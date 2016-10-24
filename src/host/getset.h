@@ -17,7 +17,6 @@ Revision History:
 
 class SCREEN_INFORMATION;
 
-NTSTATUS SrvGetConsoleMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 NTSTATUS SrvGetConsoleNumberOfInputEvents(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 NTSTATUS SrvGetLargestConsoleWindowSize(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 
@@ -35,7 +34,6 @@ NTSTATUS SrvGetConsoleMouseInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyP
 NTSTATUS SrvGetConsoleFontSize(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 NTSTATUS SrvGetConsoleCurrentFont(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 NTSTATUS SrvSetConsoleCurrentFont(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvSetConsoleMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 
 NTSTATUS SrvSetConsoleActiveScreenBuffer(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
