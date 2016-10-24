@@ -352,14 +352,16 @@ NTSTATUS IApiRoutines::ScrollConsoleScreenBufferAImpl(_In_ IConsoleOutputObject*
                                                       _In_ const SMALL_RECT* const pSourceRectangle,
                                                       _In_ const COORD* const pTargetOrigin,
                                                       _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                                      _In_ const CHAR_INFO* const pFill)
+                                                      _In_ char const chFill,
+                                                      _In_ WORD const attrFill)
 {
     assert(false);
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pSourceRectangle);
     UNREFERENCED_PARAMETER(pTargetOrigin);
     UNREFERENCED_PARAMETER(pTargetClipRectangle);
-    UNREFERENCED_PARAMETER(pFill);
+    UNREFERENCED_PARAMETER(chFill);
+    UNREFERENCED_PARAMETER(attrFill);
     return 0;
 }
 
@@ -367,14 +369,16 @@ NTSTATUS IApiRoutines::ScrollConsoleScreenBufferWImpl(_In_ IConsoleOutputObject*
                                                       _In_ const SMALL_RECT* const pSourceRectangle,
                                                       _In_ const COORD* const pTargetOrigin,
                                                       _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-                                                      _In_ const CHAR_INFO* const pFill)
+                                                      _In_ wchar_t const wchFill,
+                                                      _In_ WORD const attrFill)
 {
     assert(false);
     UNREFERENCED_PARAMETER(pOutContext);
     UNREFERENCED_PARAMETER(pSourceRectangle);
     UNREFERENCED_PARAMETER(pTargetOrigin);
     UNREFERENCED_PARAMETER(pTargetClipRectangle);
-    UNREFERENCED_PARAMETER(pFill);
+    UNREFERENCED_PARAMETER(wchFill);
+    UNREFERENCED_PARAMETER(attrFill);
     return 0;
 }
 
@@ -682,23 +686,23 @@ NTSTATUS IApiRoutines::GetCurrentConsoleFontExImpl(_In_ IConsoleOutputObject* co
     return 0;
 }
 
-NTSTATUS IApiRoutines::SetConsoleDisplayModeImpl(_In_ IConsoleOutputObject* const pOutContext,
+NTSTATUS IApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext, 
                                                  _In_ ULONG const Flags,
                                                  _Out_ COORD* const pNewScreenBufferSize)
 {
     assert(false);
-    UNREFERENCED_PARAMETER(pOutContext);
+    UNREFERENCED_PARAMETER(pContext);
     UNREFERENCED_PARAMETER(Flags);
     pNewScreenBufferSize->X = 120;
     pNewScreenBufferSize->Y = 30;
     return 0;
 }
 
-NTSTATUS IApiRoutines::GetConsoleDisplayModeImpl(_In_ IConsoleOutputObject* const pOutContext,
+NTSTATUS IApiRoutines::GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext, 
                                                  _Out_ ULONG* const pFlags)
 {
     assert(false);
-    UNREFERENCED_PARAMETER(pOutContext);
+    UNREFERENCED_PARAMETER(pContext);
     *pFlags = 0;
     return 0;
 }

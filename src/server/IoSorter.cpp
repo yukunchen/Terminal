@@ -9,6 +9,7 @@
 #include "IoSorter.h"
 
 #include "IoDispatchers.h"
+#include "ApiDispatchers.h"
 
 #include "..\host\globals.h"
 
@@ -88,7 +89,8 @@ void IoSorter::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg,
 
     case CONSOLE_IO_RAW_FLUSH:
         ReplyPending = FALSE;
-        Status = SrvFlushConsoleInputBuffer(pMsg, &ReplyPending);
+        
+        Status = NTSTATUS_FROM_HRESULT(ApiDispatchers::ServeFlushConsoleInputBuffer(pMsg, &ReplyPending));
         assert(!ReplyPending);
         pMsg->SetReplyStatus(Status);
         *ReplyMsg = pMsg;

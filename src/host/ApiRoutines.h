@@ -33,61 +33,61 @@ class ApiRoutines : public IApiRoutines
     HRESULT GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage);
 
     HRESULT GetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pContext,
-                                            _Out_ ULONG* const pMode);
+                                    _Out_ ULONG* const pMode);
 
     HRESULT GetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                             _Out_ ULONG* const pMode);
+                                     _Out_ ULONG* const pMode);
 
     HRESULT SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pContext,
-                                            _In_ ULONG const Mode);
+                                    _In_ ULONG const Mode);
 
     HRESULT SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                             _In_ ULONG const Mode);
+                                     _In_ ULONG const Mode);
 
     HRESULT GetNumberOfConsoleInputEventsImpl(_In_ INPUT_INFORMATION* const pContext,
-                                                      _Out_ ULONG* const pEvents);
+                                              _Out_ ULONG* const pEvents);
 
-   // HRESULT PeekConsoleInputAImpl(_In_ INPUT_INFORMATION* const pContext,
-   //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
-   //                                       _In_ ULONG const InputRecordsBufferLength,
-   //                                       _Out_ ULONG* const pRecordsWritten);
+    // HRESULT PeekConsoleInputAImpl(_In_ INPUT_INFORMATION* const pContext,
+    //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
+    //                                       _In_ ULONG const InputRecordsBufferLength,
+    //                                       _Out_ ULONG* const pRecordsWritten);
 
-   // HRESULT PeekConsoleInputWImpl(_In_ INPUT_INFORMATION* const pContext,
-   //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
-   //                                       _In_ ULONG const InputRecordsBufferLength,
-   //                                       _Out_ ULONG* const pRecordsWritten);
+    // HRESULT PeekConsoleInputWImpl(_In_ INPUT_INFORMATION* const pContext,
+    //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
+    //                                       _In_ ULONG const InputRecordsBufferLength,
+    //                                       _Out_ ULONG* const pRecordsWritten);
 
-   // HRESULT ReadConsoleInputAImpl(_In_ INPUT_INFORMATION* const pContext,
-   //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
-   //                                       _In_ ULONG const InputRecordsBufferLength,
-   //                                       _Out_ ULONG* const pRecordsWritten);
+    // HRESULT ReadConsoleInputAImpl(_In_ INPUT_INFORMATION* const pContext,
+    //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
+    //                                       _In_ ULONG const InputRecordsBufferLength,
+    //                                       _Out_ ULONG* const pRecordsWritten);
 
-   // HRESULT ReadConsoleInputWImpl(_In_ INPUT_INFORMATION* const pContext,
-   //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
-   //                                       _In_ ULONG const InputRecordsBufferLength,
-   //                                       _Out_ ULONG* const pRecordsWritten);
+    // HRESULT ReadConsoleInputWImpl(_In_ INPUT_INFORMATION* const pContext,
+    //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
+    //                                       _In_ ULONG const InputRecordsBufferLength,
+    //                                       _Out_ ULONG* const pRecordsWritten);
 
-   // HRESULT ReadConsoleAImpl(_In_ INPUT_INFORMATION* const pContext,
-   //                                  _Out_writes_to_(TextBufferLength, *pTextBufferWritten) char* const pTextBuffer,
-   //                                  _In_ ULONG const TextBufferLength,
-   //                                  _Out_ ULONG* const pTextBufferWritten,
-   //                                  _In_opt_ CONSOLE_READCONSOLE_CONTROL* const pReadControl);
+    // HRESULT ReadConsoleAImpl(_In_ INPUT_INFORMATION* const pContext,
+    //                                  _Out_writes_to_(TextBufferLength, *pTextBufferWritten) char* const pTextBuffer,
+    //                                  _In_ ULONG const TextBufferLength,
+    //                                  _Out_ ULONG* const pTextBufferWritten,
+    //                                  _In_opt_ CONSOLE_READCONSOLE_CONTROL* const pReadControl);
 
-   // HRESULT ReadConsoleWImpl(_In_ INPUT_INFORMATION* const pContext,
-   //                                  _Out_writes_to_(TextBufferLength, *pTextBufferWritten) wchar_t* const pTextBuffer,
-   //                                  _In_ ULONG const TextBufferLength,
-   //                                  _Out_ ULONG* const pTextBufferWritten,
-   //                                  _In_opt_ CONSOLE_READCONSOLE_CONTROL* const pReadControl);
+    // HRESULT ReadConsoleWImpl(_In_ INPUT_INFORMATION* const pContext,
+    //                                  _Out_writes_to_(TextBufferLength, *pTextBufferWritten) wchar_t* const pTextBuffer,
+    //                                  _In_ ULONG const TextBufferLength,
+    //                                  _Out_ ULONG* const pTextBufferWritten,
+    //                                  _In_opt_ CONSOLE_READCONSOLE_CONTROL* const pReadControl);
 
-   // HRESULT WriteConsoleAImpl(_In_ SCREEN_INFORMATION* const pContext,
-   //                                   _In_reads_(TextBufferLength) char* const pTextBuffer,
-   //                                   _In_ ULONG const TextBufferLength,
-   //                                   _Out_ ULONG* const pTextBufferRead);
+    // HRESULT WriteConsoleAImpl(_In_ SCREEN_INFORMATION* const pContext,
+    //                                   _In_reads_(TextBufferLength) char* const pTextBuffer,
+    //                                   _In_ ULONG const TextBufferLength,
+    //                                   _Out_ ULONG* const pTextBufferRead);
 
-   // HRESULT WriteConsoleWImpl(_In_ SCREEN_INFORMATION* const pContext,
-   //                                   _In_reads_(TextBufferLength) wchar_t* const pTextBuffer,
-   //                                   _In_ ULONG const TextBufferLength,
-   //                                   _Out_ ULONG* const pTextBufferRead);
+    // HRESULT WriteConsoleWImpl(_In_ SCREEN_INFORMATION* const pContext,
+    //                                   _In_reads_(TextBufferLength) wchar_t* const pTextBuffer,
+    //                                   _In_ ULONG const TextBufferLength,
+    //                                   _Out_ ULONG* const pTextBufferRead);
 
 #pragma endregion
 
@@ -115,56 +115,58 @@ class ApiRoutines : public IApiRoutines
     //HRESULT GenerateConsoleCtrlEventImpl(_In_ ULONG const ProcessGroupFilter,
     //                                             _In_ ULONG const ControlEvent);
 
-    //HRESULT SetConsoleActiveScreenBufferImpl(_In_ HANDLE const NewOutContext);
+    HRESULT SetConsoleActiveScreenBufferImpl(_In_ SCREEN_INFORMATION* const pNewContext);
 
-    //HRESULT FlushConsoleInputBuffer(_In_ INPUT_INFORMATION* const pContext);
+    HRESULT FlushConsoleInputBuffer(_In_ INPUT_INFORMATION* const pContext);
 
     HRESULT SetConsoleInputCodePageImpl(_In_ ULONG const CodePage);
 
     HRESULT SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage);
 
-    //HRESULT GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                         _Out_ ULONG* const pCursorSize,
-    //                                         _Out_ BOOLEAN* const pIsVisible);
+    HRESULT GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                     _Out_ ULONG* const pCursorSize,
+                                     _Out_ BOOLEAN* const pIsVisible);
 
-    //HRESULT SetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                         _In_ ULONG const CursorSize,
-    //                                         _In_ BOOLEAN const IsVisible);
+    HRESULT SetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                     _In_ ULONG const CursorSize,
+                                     _In_ BOOLEAN const IsVisible);
 
     //// driver will pare down for non-Ex method
-    //HRESULT GetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                                 _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx);
+    HRESULT GetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                             _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx);
 
-    //HRESULT SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                                 _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx);
+    HRESULT SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                             _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx);
 
-    //HRESULT SetConsoleScreenBufferSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                               _In_ const COORD* const pSize);
+    HRESULT SetConsoleScreenBufferSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                           _In_ const COORD* const pSize);
 
-    //HRESULT SetConsoleCursorPositionImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                             _In_ const COORD* const pCursorPosition);
+    HRESULT SetConsoleCursorPositionImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                         _In_ const COORD* const pCursorPosition);
 
-    //HRESULT GetLargestConsoleWindowSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                                _Out_ COORD* const pSize);
+    HRESULT GetLargestConsoleWindowSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                            _Out_ COORD* const pSize);
 
-    //HRESULT ScrollConsoleScreenBufferAImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                               _In_ const SMALL_RECT* const pSourceRectangle,
-    //                                               _In_ const COORD* const pTargetOrigin,
-    //                                               _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-    //                                               _In_ const CHAR_INFO* const pFill);
+    HRESULT ScrollConsoleScreenBufferAImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                           _In_ const SMALL_RECT* const pSourceRectangle,
+                                           _In_ const COORD* const pTargetOrigin,
+                                           _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
+                                           _In_ char const chFill,
+                                           _In_ WORD const attrFill);
 
-    //HRESULT ScrollConsoleScreenBufferWImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                               _In_ const SMALL_RECT* const pSourceRectangle,
-    //                                               _In_ const COORD* const pTargetOrigin,
-    //                                               _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
-    //                                               _In_ const CHAR_INFO* const pFill);
+    HRESULT ScrollConsoleScreenBufferWImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                           _In_ const SMALL_RECT* const pSourceRectangle,
+                                           _In_ const COORD* const pTargetOrigin,
+                                           _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
+                                           _In_ wchar_t const wchFill,
+                                           _In_ WORD const attrFill);
 
-    //HRESULT SetConsoleTextAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                            _In_ WORD const Attribute);
+    HRESULT SetConsoleTextAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                        _In_ WORD const Attribute);
 
-    //HRESULT SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                         _In_ BOOLEAN const IsAbsoluteRectangle,
-    //                                         _In_ const SMALL_RECT* const pWindowRectangle);
+    HRESULT SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                     _In_ BOOLEAN const IsAbsoluteRectangle,
+                                     _In_ const SMALL_RECT* const pWindowRectangle);
 
     //HRESULT ReadConsoleOutputAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
     //                                               _In_ const COORD* const pSourceOrigin,
@@ -261,23 +263,23 @@ class ApiRoutines : public IApiRoutines
 #pragma endregion
 
 #pragma region L3
-    //HRESULT GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons);
+    HRESULT GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons);
 
-    //HRESULT GetConsoleFontSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                       _In_ DWORD const FontIndex,
-    //                                       _Out_ COORD* const pFontSize);
+    HRESULT GetConsoleFontSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                   _In_ DWORD const FontIndex,
+                                   _Out_ COORD* const pFontSize);
 
     //// driver will pare down for non-Ex method
-    //HRESULT GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                            _In_ BOOLEAN const IsForMaximumWindowSize,
-    //                                            _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx);
+    HRESULT GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                        _In_ BOOLEAN const IsForMaximumWindowSize,
+                                        _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx);
 
-    //HRESULT SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                          _In_ ULONG const Flags,
-    //                                          _Out_ COORD* const pNewScreenBufferSize);
+    HRESULT SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                      _In_ ULONG const Flags,
+                                      _Out_ COORD* const pNewScreenBufferSize);
 
-    //HRESULT GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                          _Out_ ULONG* const pFlags);
+    HRESULT GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext, 
+                                      _Out_ ULONG* const pFlags);
 
     //HRESULT AddConsoleAliasAImpl(_In_reads_(SourceBufferLength) const char* const pSourceBuffer,
     //                                     _In_ ULONG const SourceBufferLength,
@@ -335,17 +337,17 @@ class ApiRoutines : public IApiRoutines
     //HRESULT GetConsoleAliasExesWImpl(_Out_writes_(AliasExesBufferLength) wchar_t* const pAliasExesBuffer,
     //                                         _In_ ULONG const AliasExesBufferLength);
 
-    //HRESULT GetConsoleWindowImpl(_Out_ HWND* const pHwnd);
+    HRESULT GetConsoleWindowImpl(_Out_ HWND* const pHwnd);
 
-    //HRESULT GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo);
+    HRESULT GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo);
 
     //HRESULT GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo);
 
     //HRESULT SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo);
 
-    //HRESULT SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                            _In_ BOOLEAN const IsForMaximumWindowSize,
-    //                                            _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx);
+    HRESULT SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                        _In_ BOOLEAN const IsForMaximumWindowSize,
+                                        _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx);
 
 #pragma endregion
 };

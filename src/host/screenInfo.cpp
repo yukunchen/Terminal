@@ -314,9 +314,8 @@ BOOL SCREEN_INFORMATION::IsActiveScreenBuffer() const
 NTSTATUS
 SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
                                                _Out_ PCOORD pcoordCursorPosition,
-                                               _Out_ PCOORD pcoordScrollPosition,
+                                               _Out_ PSMALL_RECT psrWindow,
                                                _Out_ PWORD pwAttributes,
-                                               _Out_ PCOORD pcoordCurrentWindowSize,
                                                _Out_ PCOORD pcoordMaximumWindowSize,
                                                _Out_ PWORD pwPopupAttributes,
                                                _Out_writes_(COLOR_TABLE_SIZE) LPCOLORREF lpColorTable) const
@@ -325,17 +324,13 @@ SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
 
     *pcoordCursorPosition = this->TextInfo->GetCursor()->GetPosition();
 
-    pcoordScrollPosition->X = this->BufferViewport.Left;
-    pcoordScrollPosition->Y = this->BufferViewport.Top;
+    *psrWindow = this->BufferViewport;
 
     *pwAttributes = this->_Attributes.GetLegacyAttributes();
     *pwPopupAttributes = this->_PopupAttributes.GetLegacyAttributes();
 
     // the copy length must be constant for now to keep OACR happy with buffer overruns.
     memmove(lpColorTable, g_ciConsoleInformation.GetColorTable(), COLOR_TABLE_SIZE * sizeof(COLORREF));
-
-    pcoordCurrentWindowSize->X = this->GetScreenWindowSizeX();
-    pcoordCurrentWindowSize->Y = this->GetScreenWindowSizeY();
 
     *pcoordMaximumWindowSize = this->GetMaxWindowSizeInCharacters();
 
