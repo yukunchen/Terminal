@@ -36,7 +36,7 @@ HRESULT ApiRoutines::GetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pCont
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     *pMode = pContext->InputMode;
 
@@ -54,7 +54,7 @@ HRESULT ApiRoutines::GetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pCont
 HRESULT ApiRoutines::GetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext, _Out_ ULONG* const pMode)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     *pMode = pContext->GetActiveBuffer()->OutputMode;
 
@@ -64,7 +64,7 @@ HRESULT ApiRoutines::GetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pCo
 HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(_In_ INPUT_INFORMATION* const pContext, _Out_ ULONG* const pEvents)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     // TODO: Should this have a result code? It's void.
     GetNumberOfReadyEvents(pContext, pEvents);
@@ -76,7 +76,7 @@ HRESULT ApiRoutines::GetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* c
                                                       _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     return DoSrvGetConsoleScreenBufferInfo(pContext->GetActiveBuffer(), pScreenBufferInfoEx);
 }
@@ -98,7 +98,7 @@ HRESULT ApiRoutines::GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pCo
                                               _Out_ BOOLEAN* const pIsVisible)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     return DoSrvGetConsoleCursorInfo(pContext->GetActiveBuffer(), pCursorSize, pIsVisible);
 }
@@ -113,7 +113,7 @@ HRESULT DoSrvGetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Out_ UL
 HRESULT ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     const Selection* const pSelection = &Selection::Instance();
     if (pSelection->IsInSelectingState())
@@ -138,7 +138,7 @@ HRESULT ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* c
 HRESULT ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     *pButtons = GetSystemMetrics(SM_CMOUSEBUTTONS);
 
@@ -150,7 +150,7 @@ HRESULT ApiRoutines::GetConsoleFontSizeImpl(_In_ SCREEN_INFORMATION* const pCont
                                             _Out_ COORD* const pFontSize)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     if (FontIndex == 0)
     {
@@ -171,7 +171,7 @@ HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
                                                  _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     const SCREEN_INFORMATION* const psi = pContext->GetActiveBuffer();
 
@@ -202,7 +202,7 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
                                                  _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     SCREEN_INFORMATION* const psi = pContext->GetActiveBuffer();
 
@@ -224,7 +224,7 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
 HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pContext, _In_ ULONG const Mode)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     // Flags we don't understand are invalid.
     RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~(INPUT_MODES | PRIVATE_MODES)));
@@ -265,7 +265,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pCont
 HRESULT ApiRoutines::SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext, _In_ ULONG const Mode)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     // Flags we don't understand are invalid.
     RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~OUTPUT_MODES));
@@ -381,7 +381,7 @@ NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
 HRESULT ApiRoutines::SetConsoleActiveScreenBufferImpl(_In_ SCREEN_INFORMATION* const pNewContext)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     RETURN_NTSTATUS(SetActiveScreenBuffer(pNewContext->GetActiveBuffer()));
 }
@@ -389,7 +389,7 @@ HRESULT ApiRoutines::SetConsoleActiveScreenBufferImpl(_In_ SCREEN_INFORMATION* c
 HRESULT ApiRoutines::FlushConsoleInputBuffer(_In_ INPUT_INFORMATION* const pContext)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     // TODO: shouldn't this have a status code?
     FlushInputBuffer(pContext);
@@ -401,7 +401,7 @@ HRESULT ApiRoutines::GetLargestConsoleWindowSizeImpl(_In_ SCREEN_INFORMATION* co
                                                      _Out_ COORD* const pSize)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     SCREEN_INFORMATION* const pScreenInfo = pContext->GetActiveBuffer();
 
@@ -414,7 +414,7 @@ HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(_In_ SCREEN_INFORMATION* con
                                                     _In_ const COORD* const pSize)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     SCREEN_INFORMATION* const pScreenInfo = pContext->GetActiveBuffer();
 
@@ -447,7 +447,7 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* c
                                 pScreenBufferInfoEx->dwSize.Y == 0x7FFF));
 
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     return DoSrvSetScreenBufferInfo(pContext->GetActiveBuffer(), pScreenBufferInfoEx);
 }
@@ -490,7 +490,7 @@ HRESULT ApiRoutines::SetConsoleCursorPositionImpl(_In_ SCREEN_INFORMATION* const
                                                   _In_ const COORD* const pCursorPosition)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     return DoSrvSetConsoleCursorPosition(pContext->GetActiveBuffer(), pCursorPosition);
 }
@@ -537,7 +537,7 @@ HRESULT ApiRoutines::SetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pCo
                                               _In_ BOOLEAN const IsVisible)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     return DoSrvSetConsoleCursorInfo(pContext->GetActiveBuffer(), CursorSize, IsVisible);
 }
@@ -558,7 +558,7 @@ HRESULT ApiRoutines::SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pCo
                                               _In_ const SMALL_RECT* const pWindowRectangle)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     return DoSrvSetConsoleWindowInfo(pContext->GetActiveBuffer(), IsAbsoluteRectangle, pWindowRectangle);
 }
@@ -625,7 +625,7 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(_In_ SCREEN_INFORMATION* con
                                                     _In_ WORD const attrFill)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     return DoSrvScrollConsoleScreenBufferW(pContext,
                                            pSourceRectangle,
@@ -742,7 +742,7 @@ HRESULT ApiRoutines::SetConsoleTextAttributeImpl(_In_ SCREEN_INFORMATION* const 
                                                  _In_ WORD const Attribute)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     return DoSrvSetConsoleTextAttribute(pContext, Attribute);
 }
@@ -796,7 +796,7 @@ NTSTATUS DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* pScreen
 HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     // Return if it's not known as a valid codepage ID.
     RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidCodePage(CodePage));
@@ -816,7 +816,7 @@ HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage)
 HRESULT ApiRoutines::SetConsoleInputCodePageImpl(_In_ ULONG const CodePage)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     // Return if it's not known as a valid codepage ID.
     RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidCodePage(CodePage));
@@ -836,7 +836,7 @@ HRESULT ApiRoutines::SetConsoleInputCodePageImpl(_In_ ULONG const CodePage)
 HRESULT ApiRoutines::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     *pCodePage = g_ciConsoleInformation.CP;
 
@@ -846,7 +846,7 @@ HRESULT ApiRoutines::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
 HRESULT ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     *pCodePage = g_ciConsoleInformation.OutputCP;
 
@@ -856,7 +856,7 @@ HRESULT ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
 HRESULT ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     *pHwnd = g_ciConsoleInformation.hWnd;
 
@@ -971,7 +971,7 @@ HRESULT ApiRoutines::GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const /*
                                                _Out_ ULONG* const pFlags)
 {
     LockConsole();
-    wil::ScopeExit([&] { UnlockConsole(); });
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     // Initialize flags portion of structure
     *pFlags = 0;
@@ -1005,7 +1005,7 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pC
 {
     LockConsole();
     {
-        wil::ScopeExit([&] { UnlockConsole(); });
+        auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
         SCREEN_INFORMATION* const pScreenInfo = pContext->GetActiveBuffer();
 

@@ -464,9 +464,52 @@ HRESULT ApiDispatchers::ServeGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG * con
     return m->_pApiRoutines->GetConsoleDisplayModeImpl(pObj, &a->ModeFlags);
 }
 
+// TODO: remove extern and fetch from cmdline.cpp
+BOOLEAN IsValidStringBuffer(_In_ BOOLEAN Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...);
+
 HRESULT ApiDispatchers::ServeAddConsoleAlias(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvAddConsoleAlias(m, pbReplyPending));
+    CONSOLE_ADDALIAS_MSG* const a = &m->u.consoleMsgL3.AddConsoleAliasW;
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AddConsoleAlias, a->Unicode);
+
+    // Read the input buffer and validate the strings.
+    PVOID Buffer;
+    ULONG BufferSize;
+    RETURN_IF_FAILED(m->GetInputBuffer(&Buffer, &BufferSize));
+
+    PVOID InputTarget = nullptr;
+    PVOID InputExeName;
+    PVOID InputSource = nullptr;
+
+    RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidStringBuffer(a->Unicode,
+                                                         Buffer,
+                                                         BufferSize,
+                                                         3,
+                                                         (ULONG)a->ExeLength,
+                                                         &InputExeName,
+                                                         (ULONG)a->SourceLength,
+                                                         &InputSource,
+                                                         (ULONG)a->TargetLength,
+                                                         &InputTarget));
+
+    if (a->Unicode)
+    {
+        return m->_pApiRoutines->AddConsoleAliasWImpl((wchar_t*)InputSource,
+                                                      a->SourceLength,
+                                                      (wchar_t*)InputTarget,
+                                                      a->TargetLength,
+                                                      (wchar_t*)InputExeName,
+                                                      a->ExeLength);
+    }
+    else
+    {
+        return m->_pApiRoutines->AddConsoleAliasAImpl((char*)InputSource,
+                                                      a->SourceLength,
+                                                      (char*)InputTarget,
+                                                      a->TargetLength,
+                                                      (char*)InputExeName,
+                                                      a->ExeLength);
+    }
 }
 
 HRESULT ApiDispatchers::ServeGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)

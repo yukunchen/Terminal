@@ -242,15 +242,13 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
     delete pReadHandleData;
     pReadHandleData = nullptr;
 
+    // TODO: THIS IS BAD.
     LOG_IF_FAILED(pInputInfo->Header.FreeIoHandle(this));
 
     if (!pInputInfo->Header.HasAnyOpenHandles())
     {
         ReinitializeInputBuffer(pInputInfo);
     }
-
-    pInputInfo = nullptr;
-    _pvClientPointer = nullptr;
 
     return S_OK;
 }
@@ -270,14 +268,12 @@ HRESULT ConsoleHandleData::_CloseOutputHandle()
     assert(_IsOutput());
     SCREEN_INFORMATION* pScreenInfo = static_cast<SCREEN_INFORMATION*>(_pvClientPointer);
 
+    // TODO: THIS IS BAD.
     LOG_IF_FAILED(pScreenInfo->Header.FreeIoHandle(this));
     if (!pScreenInfo->Header.HasAnyOpenHandles())
     {
         SCREEN_INFORMATION::s_RemoveScreenBuffer(pScreenInfo);
     }
-
-    pScreenInfo = nullptr;
-    _pvClientPointer = nullptr;
 
     return S_OK;
 }

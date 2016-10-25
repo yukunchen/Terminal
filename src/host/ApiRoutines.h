@@ -278,22 +278,22 @@ class ApiRoutines : public IApiRoutines
                                       _In_ ULONG const Flags,
                                       _Out_ COORD* const pNewScreenBufferSize);
 
-    HRESULT GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext, 
+    HRESULT GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                       _Out_ ULONG* const pFlags);
 
-    //HRESULT AddConsoleAliasAImpl(_In_reads_(SourceBufferLength) const char* const pSourceBuffer,
-    //                                     _In_ ULONG const SourceBufferLength,
-    //                                     _In_reads_(TargetBufferLength) const char* const pTargetBuffer,
-    //                                     _In_ ULONG const TargetBufferLength,
-    //                                     _In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
-    //                                     _In_ ULONG const ExeNameBufferLength);
+    HRESULT AddConsoleAliasAImpl(_In_reads_(SourceBufferLength) const char* const pSourceBuffer,
+                                 _In_ ULONG const SourceBufferLength,
+                                 _In_reads_(TargetBufferLength) const char* const pTargetBuffer,
+                                 _In_ ULONG const TargetBufferLength,
+                                 _In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
+                                 _In_ ULONG const ExeNameBufferLength);
 
-    //HRESULT AddConsoleAliasWImpl(_In_reads_(SourceBufferLength) const wchar_t* const pSourceBuffer,
-    //                                     _In_ ULONG const SourceBufferLength,
-    //                                     _In_reads_(TargetBufferLength) const wchar_t* const pTargetBuffer,
-    //                                     _In_ ULONG const TargetBufferLength,
-    //                                     _In_reads_(ExeNameBufferLength) const wchar_t* const pExeNameBuffer,
-    //                                     _In_ ULONG const ExeNameBufferLength);
+    HRESULT AddConsoleAliasWImpl(_In_reads_(SourceBufferLength) const wchar_t* const pSourceBuffer,
+                                 _In_ ULONG const SourceBufferLength,
+                                 _In_reads_(TargetBufferLength) const wchar_t* const pTargetBuffer,
+                                 _In_ ULONG const TargetBufferLength,
+                                 _In_reads_(ExeNameBufferLength) const wchar_t* const pExeNameBuffer,
+                                 _In_ ULONG const ExeNameBufferLength);
 
     //HRESULT GetConsoleAliasAImpl(_In_reads_(SourceBufferLength) const char* const pSourceBuffer,
     //                                     _In_ ULONG const SourceBufferLength,
