@@ -152,7 +152,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
 
     SHORT PosY = Position.Y;
 
-#pragma warning(suppress:__WARNING_W2A_BEST_FIT) // WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.
+#pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
     ULONG NumStr = WideCharToMultiByte(CP_ACP,
                                        0,
                                        lpString,
