@@ -615,7 +615,7 @@ HRESULT ApiRoutines::AddConsoleAliasAImpl(_In_reads_(SourceBufferLength) const c
                                           _In_ ULONG const ExeNameBufferLength)
 {
 
-
+    // TODO: convert to smart pointers
     WCHAR *Source = new WCHAR[SourceBufferLength];
     RETURN_IF_NULL_ALLOC(Source);
     auto SourceCleanup = wil::ScopeExit([&] { delete[] Source; });
@@ -628,6 +628,7 @@ HRESULT ApiRoutines::AddConsoleAliasAImpl(_In_reads_(SourceBufferLength) const c
     RETURN_IF_NULL_ALLOC(UnicodeExeName);
     auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] UnicodeExeName; });
 
+    // TODO: convert to a less crappy conversion that can account for UTF-8
     ULONG SourceLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)pSourceBuffer, SourceBufferLength, Source, SourceBufferLength);
     SourceLength *= 2;
     ULONG TargetLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)pTargetBuffer, TargetBufferLength, Target, TargetBufferLength);
