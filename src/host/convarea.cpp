@@ -152,10 +152,9 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
 
     SHORT PosY = Position.Y;
 
-    // NOTE: There are security implications for not passing WC_NO_BEST_FIT_CHARS, so don't remove it without strong
-    // cause: https://msdn.microsoft.com/en-us/library/windows/desktop/dd374047(v=vs.85).aspx#SC_char_conv_func
+#pragma warning(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
     ULONG NumStr = WideCharToMultiByte(CP_ACP,
-                                       WC_NO_BEST_FIT_CHARS,
+                                       0,
                                        lpString,
                                        NumChars,
                                        nullptr,
