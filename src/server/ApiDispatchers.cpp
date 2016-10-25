@@ -432,7 +432,7 @@ HRESULT ApiDispatchers::ServeGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG * con
     a->FontIndex = FontInfo.nFont;
     a->FontSize = FontInfo.dwFontSize;
     a->FontWeight = FontInfo.FontWeight;
-    
+
     return S_OK;
 }
 
@@ -514,7 +514,54 @@ HRESULT ApiDispatchers::ServeAddConsoleAlias(_Inout_ CONSOLE_API_MSG * const m, 
 
 HRESULT ApiDispatchers::ServeGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvGetConsoleAlias(m, pbReplyPending));
+    CONSOLE_GETALIAS_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasW;
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAlias, a->Unicode);
+
+    PVOID InputBuffer;
+    ULONG InputBufferSize;
+    RETURN_IF_FAILED(m->GetInputBuffer(&InputBuffer, &InputBufferSize));
+
+    PVOID InputExe;
+    PVOID InputSource = nullptr;
+    RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidStringBuffer(a->Unicode,
+                                                         InputBuffer,
+                                                         InputBufferSize,
+                                                         2,
+                                                         a->ExeLength,
+                                                         &InputExe,
+                                                         a->SourceLength,
+                                                         &InputSource));
+
+    PVOID OutputBuffer;
+    ULONG OutputBufferSize;
+    RETURN_IF_FAILED(m->GetOutputBuffer(&OutputBuffer, &OutputBufferSize));
+
+    ULONG cbTargetLength = OutputBufferSize;
+
+    if (a->Unicode)
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasWImpl((wchar_t*)InputSource,
+                                                                a->SourceLength,
+                                                                (wchar_t*)OutputBuffer,
+                                                                &cbTargetLength,
+                                                                (wchar_t*)InputExe,
+                                                                a->ExeLength));
+    }
+    else
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasAImpl((char*)InputSource,
+                                                                a->SourceLength,
+                                                                (char*)OutputBuffer,
+                                                                &cbTargetLength,
+                                                                (char*)InputExe,
+                                                                a->ExeLength));
+    }
+
+    RETURN_IF_FAILED(ULongToUShort(cbTargetLength, &a->TargetLength));
+
+    m->SetReplyInformation(a->TargetLength);
+
+    return S_OK;
 }
 
 HRESULT ApiDispatchers::ServeGetConsoleAliasesLength(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)

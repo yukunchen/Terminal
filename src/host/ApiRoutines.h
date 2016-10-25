@@ -281,33 +281,33 @@ class ApiRoutines : public IApiRoutines
     HRESULT GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                       _Out_ ULONG* const pFlags);
 
-    HRESULT AddConsoleAliasAImpl(_In_reads_(SourceBufferLength) const char* const pSourceBuffer,
-                                 _In_ ULONG const SourceBufferLength,
-                                 _In_reads_(TargetBufferLength) const char* const pTargetBuffer,
-                                 _In_ ULONG const TargetBufferLength,
-                                 _In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
-                                 _In_ ULONG const ExeNameBufferLength);
+    HRESULT AddConsoleAliasAImpl(_In_reads_bytes_(cbSourceBufferLength) const char* const psSourceBuffer,
+                                 _In_ ULONG const cbSourceBufferLength,
+                                 _In_reads_bytes_(cbTargetBufferLength) const char* const psTargetBuffer,
+                                 _In_ ULONG const cbTargetBufferLength,
+                                 _In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                 _In_ ULONG const cbExeNameBufferLength);
 
-    HRESULT AddConsoleAliasWImpl(_In_reads_(SourceBufferLength) const wchar_t* const pSourceBuffer,
-                                 _In_ ULONG const SourceBufferLength,
-                                 _In_reads_(TargetBufferLength) const wchar_t* const pTargetBuffer,
-                                 _In_ ULONG const TargetBufferLength,
-                                 _In_reads_(ExeNameBufferLength) const wchar_t* const pExeNameBuffer,
-                                 _In_ ULONG const ExeNameBufferLength);
+    HRESULT AddConsoleAliasWImpl(_In_reads_bytes_(cbSourceBufferLength) const wchar_t* const pwsSourceBuffer,
+                                 _In_ ULONG const cbSourceBufferLength,
+                                 _In_reads_bytes_(cbTargetBufferLength) const wchar_t* const pwsTargetBuffer,
+                                 _In_ ULONG const cbTargetBufferLength,
+                                 _In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                 _In_ ULONG const cbExeNameBufferLength);
 
-    //HRESULT GetConsoleAliasAImpl(_In_reads_(SourceBufferLength) const char* const pSourceBuffer,
-    //                                     _In_ ULONG const SourceBufferLength,
-    //                                     _Out_writes_(TargetBufferLength) char* const pTargetBuffer,
-    //                                     _In_ ULONG const TargetBufferLength,
-    //                                     _In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
-    //                                     _In_ ULONG const ExeNameBufferLength);
+    HRESULT GetConsoleAliasAImpl(_In_reads_bytes_(cbSourceBufferLength) const char* const psSourceBuffer,
+                                 _In_ ULONG const cbSourceBufferLength,
+                                 _Out_writes_bytes_(*pcbTargetBufferLength) char* const psTargetBuffer,
+                                 _Inout_ ULONG* const pcbTargetBufferLength,
+                                 _In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                 _In_ ULONG const cbExeNameBufferLength);
 
-    //HRESULT GetConsoleAliasWImpl(_In_reads_(SourceBufferLength) const wchar_t* const pSourceBuffer,
-    //                                     _In_ ULONG const SourceBufferLength,
-    //                                     _Out_writes_(TargetBufferLength) wchar_t* const pTargetBuffer,
-    //                                     _In_ ULONG const TargetBufferLength,
-    //                                     _In_reads_(ExeNameBufferLength) const wchar_t* const pExeNameBuffer,
-    //                                     _In_ ULONG const ExeNameBufferLength);
+    HRESULT GetConsoleAliasWImpl(_In_reads_bytes_(cbSourceBufferLength) const wchar_t* const pwsSourceBuffer,
+                                 _In_ ULONG const cbSourceBufferLength,
+                                 _Out_writes_bytes_(*pcbTargetBufferLength) wchar_t* const pwsTargetBuffer,
+                                 _Inout_ ULONG* const pcbTargetBufferLength,
+                                 _In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                 _In_ ULONG const cbExeNameBufferLength);
 
     //HRESULT GetConsoleAliasesLengthAImpl(_In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
     //                                             _In_ ULONG const ExeNameBufferLength,
