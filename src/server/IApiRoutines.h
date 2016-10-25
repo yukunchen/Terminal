@@ -320,17 +320,17 @@ public:
                                          _In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                          _In_ ULONG const cbExeNameBufferLength) = 0;
 
-    virtual HRESULT GetConsoleAliasesLengthAImpl(_In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
-                                                 _In_ ULONG const ExeNameBufferLength,
-                                                 _Out_ ULONG* const pAliasesBufferRequired);
+    virtual HRESULT GetConsoleAliasesLengthAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                                 _In_ ULONG const cbExeNameBufferLength,
+                                                 _Out_ ULONG* const pcbAliasesBufferRequired);
 
-    virtual HRESULT GetConsoleAliasesLengthWImpl(_In_reads_(ExeNameBufferLength) const wchar_t* const pExeNameBuffer,
-                                                 _In_ ULONG const ExeNameBufferLength,
-                                                 _Out_ ULONG* const pAliasesBufferRequired);
+    virtual HRESULT GetConsoleAliasesLengthWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                 _In_ ULONG const cbExeNameBufferLength,
+                                                 _Out_ ULONG* const pcbAliasesBufferRequired);
 
-    virtual HRESULT GetConsoleAliasExesLengthAImpl(_Out_ ULONG* const pAliasExesBufferRequired);
+    virtual HRESULT GetConsoleAliasExesLengthAImpl(_Out_ ULONG* const pcbAliasExesBufferRequired);
 
-    virtual HRESULT GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pAliasExesBufferRequired);
+    virtual HRESULT GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pcbAliasExesBufferRequired);
 
     virtual HRESULT GetConsoleAliasesAImpl(_In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
                                            _In_ ULONG const ExeNameBufferLength,

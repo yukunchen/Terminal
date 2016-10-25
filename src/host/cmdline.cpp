@@ -789,34 +789,42 @@ HRESULT ApiRoutines::GetConsoleAliasWImpl(_In_reads_bytes_(cbSourceBufferLength)
     return S_OK;
 }
 
-NTSTATUS SrvGetConsoleAliasesLength(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                                  _In_ ULONG const cbExeNameBufferLength,
+                                                  _Out_ ULONG* const pcbAliasesBufferRequired)
 {
-    PCONSOLE_GETALIASESLENGTH_MSG const a = &m->u.consoleMsgL3.GetConsoleAliasesLengthW;
+    // TODO: convert to smart pointers
+    WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
+    RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
+    auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliasesLength, a->Unicode);
+    // TODO: convert to a less crappy conversion that can account for UTF-8
+    ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
+    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
 
-    ULONG ExeNameLength;
-    PVOID ExeName;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&ExeName, &ExeNameLength));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    RETURN_IF_FAILED(GetConsoleAliasesLengthWImpl(pwsUnicodeExeName,
+                                                  cbUnicodeExeNameLength,
+                                                  pcbAliasesBufferRequired));
 
-    if (ExeNameLength > USHORT_MAX)
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
 
-    CONSOLE_INFORMATION *Console;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    // TODO: this is terrible. We should be calculating based on the string, not estimating a divide by 2.
+    *pcbAliasesBufferRequired /= sizeof(WCHAR);
 
-    a->AliasesLength = 0;
-    PEXE_ALIAS_LIST const ExeAliasList = FindExe(ExeName, (USHORT)ExeNameLength, a->Unicode);
+    return S_OK;
+}
+
+HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                  _In_ ULONG const cbExeNameBufferLength,
+                                                  _Out_ ULONG* const pcbAliasesBufferRequired)
+{
+    // TODO: (eliminate this one and the others and have it instead just fail on back conversion in the server level. use all size_t)
+    RETURN_HR_IF(E_INVALIDARG, cbExeNameBufferLength > USHORT_MAX);
+
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    *pcbAliasesBufferRequired = 0;
+    PEXE_ALIAS_LIST const ExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, (USHORT)cbExeNameBufferLength, TRUE);
     if (ExeAliasList)
     {
         PLIST_ENTRY const ListHead = &ExeAliasList->AliasList;
@@ -824,16 +832,12 @@ NTSTATUS SrvGetConsoleAliasesLength(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL c
         while (ListNext != ListHead)
         {
             PALIAS Alias = CONTAINING_RECORD(ListNext, ALIAS, ListLink);
-            a->AliasesLength += Alias->SourceLength + Alias->TargetLength + (2 * sizeof(WCHAR));    // + 2 is for = and term null
+            *pcbAliasesBufferRequired += Alias->SourceLength + Alias->TargetLength + (2 * sizeof(WCHAR));    // + 2 is for = and term null
             ListNext = ListNext->Flink;
         }
     }
-    if (!a->Unicode)
-    {
-        a->AliasesLength /= sizeof(WCHAR);
-    }
-    UnlockConsole();
-    return STATUS_SUCCESS;
+
+    return S_OK;
 }
 
 VOID ClearAliases()
@@ -963,34 +967,33 @@ NTSTATUS SrvGetConsoleAliases(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /
     return STATUS_SUCCESS;
 }
 
-NTSTATUS SrvGetConsoleAliasExesLength(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(_Out_ ULONG* const pcbAliasExesBufferRequired)
 {
-    PCONSOLE_GETALIASEXESLENGTH_MSG const a = &m->u.consoleMsgL3.GetConsoleAliasExesLengthW;
+    RETURN_IF_FAILED(GetConsoleAliasExesLengthWImpl(pcbAliasExesBufferRequired));
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliasExesLength, a->Unicode);
+    // TODO: this is bad and should feel bad. we need a better way of calculating actual non-unicode length
+    *pcbAliasExesBufferRequired /= sizeof(WCHAR);
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    return S_OK;
+}
 
-    a->AliasExesLength = 0;
+HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pcbAliasExesBufferRequired)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    *pcbAliasExesBufferRequired = 0;
+
     PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ExeAliasList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
         PEXE_ALIAS_LIST const AliasList = CONTAINING_RECORD(ListNext, EXE_ALIAS_LIST, ListLink);
-        a->AliasExesLength += AliasList->ExeLength + (1 * sizeof(WCHAR));   // + 1 for term null
+        *pcbAliasExesBufferRequired += AliasList->ExeLength + (1 * sizeof(WCHAR));   // + 1 for term null
         ListNext = ListNext->Flink;
     }
-    if (!a->Unicode)
-    {
-        a->AliasExesLength /= sizeof(WCHAR);
-    }
-    UnlockConsole();
-    return STATUS_SUCCESS;
+
+    return S_OK;
 }
 
 NTSTATUS SrvGetConsoleAliasExes(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*ReplyPending*/)
