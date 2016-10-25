@@ -44,6 +44,7 @@ HRESULT ApiDispatchers::ServeGetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, _
     CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.GetConsoleMode;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
     if (pObjectHandle->IsInputHandle())
     {
         INPUT_INFORMATION* pObj;
@@ -64,6 +65,7 @@ HRESULT ApiDispatchers::ServeSetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, _
     CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.SetConsoleMode;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
     if (pObjectHandle->IsInputHandle())
     {
         INPUT_INFORMATION* pObj;
@@ -84,6 +86,7 @@ HRESULT ApiDispatchers::ServeGetNumberOfInputEvents(_Inout_ CONSOLE_API_MSG * co
     CONSOLE_GETNUMBEROFINPUTEVENTS_MSG* const a = &m->u.consoleMsgL1.GetNumberOfConsoleInputEvents;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     INPUT_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_READ, &pObj));
@@ -125,6 +128,7 @@ HRESULT ApiDispatchers::ServeSetConsoleActiveScreenBuffer(_Inout_ CONSOLE_API_MS
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleActiveScreenBuffer);
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
@@ -136,6 +140,7 @@ HRESULT ApiDispatchers::ServeFlushConsoleInputBuffer(_Inout_ CONSOLE_API_MSG * c
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FlushConsoleInputBuffer);
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     INPUT_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pObj));
@@ -165,6 +170,7 @@ HRESULT ApiDispatchers::ServeGetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG * cons
     CONSOLE_GETCURSORINFO_MSG* const a = &m->u.consoleMsgL2.GetConsoleCursorInfo;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
@@ -178,6 +184,7 @@ HRESULT ApiDispatchers::ServeSetConsoleCursorInfo(_Inout_ CONSOLE_API_MSG * cons
     CONSOLE_SETCURSORINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleCursorInfo;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
@@ -194,6 +201,7 @@ HRESULT ApiDispatchers::ServeGetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG 
     ex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
@@ -222,6 +230,7 @@ HRESULT ApiDispatchers::ServeSetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG 
     CONSOLE_SCREENBUFFERINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleScreenBufferInfo;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
@@ -264,6 +273,7 @@ HRESULT ApiDispatchers::ServeSetConsoleCursorPosition(_Inout_ CONSOLE_API_MSG * 
     CONSOLE_SETCURSORPOSITION_MSG* const a = &m->u.consoleMsgL2.SetConsoleCursorPosition;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
@@ -277,6 +287,7 @@ HRESULT ApiDispatchers::ServeGetLargestConsoleWindowSize(_Inout_ CONSOLE_API_MSG
     CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a = &m->u.consoleMsgL2.GetLargestConsoleWindowSize;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
@@ -290,6 +301,7 @@ HRESULT ApiDispatchers::ServeScrollConsoleScreenBuffer(_Inout_ CONSOLE_API_MSG *
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ScrollConsoleScreenBuffer, a->Unicode);
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
@@ -320,6 +332,7 @@ HRESULT ApiDispatchers::ServeSetConsoleTextAttribute(_Inout_ CONSOLE_API_MSG * c
     CONSOLE_SETTEXTATTRIBUTE_MSG* const a = &m->u.consoleMsgL2.SetConsoleTextAttribute;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
@@ -333,6 +346,7 @@ HRESULT ApiDispatchers::ServeSetConsoleWindowInfo(_Inout_ CONSOLE_API_MSG * cons
     CONSOLE_SETWINDOWINFO_MSG* const a = &m->u.consoleMsgL2.SetConsoleWindowInfo;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
@@ -389,6 +403,7 @@ HRESULT ApiDispatchers::ServeGetConsoleFontSize(_Inout_ CONSOLE_API_MSG * const 
     CONSOLE_GETFONTSIZE_MSG* const a = &m->u.consoleMsgL3.GetConsoleFontSize;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
@@ -402,6 +417,7 @@ HRESULT ApiDispatchers::ServeGetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG * con
     CONSOLE_CURRENTFONT_MSG* const a = &m->u.consoleMsgL3.GetCurrentConsoleFont;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
@@ -426,6 +442,7 @@ HRESULT ApiDispatchers::ServeSetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG * con
     CONSOLE_SETDISPLAYMODE_MSG* const a = &m->u.consoleMsgL3.SetConsoleDisplayMode;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
@@ -439,6 +456,7 @@ HRESULT ApiDispatchers::ServeGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG * con
     CONSOLE_GETDISPLAYMODE_MSG* const a = &m->u.consoleMsgL3.GetConsoleDisplayMode;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
@@ -533,6 +551,7 @@ HRESULT ApiDispatchers::ServeSetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG * con
     CONSOLE_CURRENTFONT_MSG* const a = &m->u.consoleMsgL3.SetCurrentConsoleFont;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
