@@ -737,7 +737,6 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_bytes_(cbSourceBufferLength)
                                                   psTargetBuffer,
                                                   *pcbTargetBufferLength);
 
-
     return S_OK;
 }
 
@@ -756,6 +755,9 @@ HRESULT ApiRoutines::GetConsoleAliasWImpl(_In_reads_bytes_(cbSourceBufferLength)
 {
     RETURN_HR_IF(E_INVALIDARG, *pcbTargetBufferLength > USHORT_MAX);
 
+    ULONG const cbOriginalTargetBufferLength = *pcbTargetBufferLength;
+    *pcbTargetBufferLength = 0;
+
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -765,7 +767,7 @@ HRESULT ApiRoutines::GetConsoleAliasWImpl(_In_reads_bytes_(cbSourceBufferLength)
         PALIAS const Alias = FindAlias(ExeAliasList, pwsSourceBuffer, (USHORT)cbSourceBufferLength);
         if (Alias != nullptr)
         {
-            if (Alias->TargetLength + sizeof(WCHAR) > *pcbTargetBufferLength)
+            if (Alias->TargetLength + sizeof(WCHAR) > cbOriginalTargetBufferLength)
             {
                 return HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW);
             }
@@ -858,53 +860,57 @@ VOID ClearAliases()
     }
 }
 
-NTSTATUS SrvGetConsoleAliases(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                            _In_ ULONG const cbExeNameBufferLength,
+                                            _Out_writes_bytes_(*pcbAliasBufferLength) char* const psAliasBuffer,
+                                            _Inout_ ULONG* const pcbAliasBufferLength)
 {
-    PCONSOLE_GETALIASES_MSG const a = &m->u.consoleMsgL3.GetConsoleAliasesW;
+    // TODO: convert to smart pointers
+    WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
+    RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
+    auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliases, a->Unicode);
+    ULONG cbUnicodeAliasBufferLength = *pcbAliasBufferLength * 2;
+    WCHAR* const pwsUnicodeAliasBuffer = new WCHAR[cbUnicodeAliasBufferLength];
+    RETURN_IF_NULL_ALLOC(pwsUnicodeAliasBuffer);
+    auto UnicodeAliasBufferCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeAliasBuffer; });
 
-    PVOID ExeName;
-    ULONG ExeNameLength;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&ExeName, &ExeNameLength));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    // TODO: convert to a less crappy conversion that can account for UTF-8
+    ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
+    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
+    
 
-    if (ExeNameLength > USHORT_MAX)
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
+    RETURN_IF_FAILED(GetConsoleAliasesWImpl(pwsUnicodeExeName,
+                                            cbUnicodeExeNameLength,
+                                            pwsUnicodeAliasBuffer,
+                                            &cbUnicodeAliasBufferLength));
 
-    PVOID OutputBuffer;
-    DWORD AliasesBufferLength;
-    Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer(&OutputBuffer, &AliasesBufferLength));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
 
-    CONSOLE_INFORMATION *Console;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    // TODO: fix this to a less crappy conversion
+#pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
+    *pcbAliasBufferLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
+                                                 pwsUnicodeAliasBuffer,
+                                                 cbUnicodeAliasBufferLength / sizeof(WCHAR),
+                                                 psAliasBuffer,
+                                                 *pcbAliasBufferLength);
 
-    LPWSTR AliasesBufferPtrW = nullptr;
-    LPSTR AliasesBufferPtrA = nullptr;
+    return S_OK;
+}
 
-    if (a->Unicode)
-    {
-        AliasesBufferPtrW = (PWSTR)OutputBuffer;
-    }
-    else
-    {
-        AliasesBufferPtrA = (LPSTR)OutputBuffer;
-    }
-    a->AliasesBufferLength = 0;
-    PEXE_ALIAS_LIST const ExeAliasList = FindExe(ExeName, (USHORT)ExeNameLength, a->Unicode);
+HRESULT ApiRoutines::GetConsoleAliasesWImpl(_In_reads_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                            _In_ ULONG const cbExeNameBufferLength,
+                                            _Out_writes_bytes_(*pcbAliasBufferLength) wchar_t* const pwsAliasBuffer,
+                                            _Inout_ ULONG* const pcbAliasBufferLength)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    LPWSTR AliasesBufferPtrW = (PWSTR)pwsAliasBuffer;
+
+    ULONG const cbOriginalAliasBufferLength = *pcbAliasBufferLength;
+    *pcbAliasBufferLength = 0;
+
+    PEXE_ALIAS_LIST const ExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, (USHORT)cbExeNameBufferLength, TRUE);
     if (ExeAliasList)
     {
         PLIST_ENTRY const ListHead = &ExeAliasList->AliasList;
@@ -912,59 +918,26 @@ NTSTATUS SrvGetConsoleAliases(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /
         while (ListNext != ListHead)
         {
             PALIAS const Alias = CONTAINING_RECORD(ListNext, ALIAS, ListLink);
-            if (a->Unicode)
+            if ((*pcbAliasBufferLength + Alias->SourceLength + Alias->TargetLength + (2 * sizeof(WCHAR))) <= cbOriginalAliasBufferLength)
             {
-                if ((a->AliasesBufferLength + Alias->SourceLength + Alias->TargetLength + (2 * sizeof(WCHAR))) <= AliasesBufferLength)
-                {
-                    memmove(AliasesBufferPtrW, Alias->Source, Alias->SourceLength);
-                    AliasesBufferPtrW += Alias->SourceLength / sizeof(WCHAR);
-                    *AliasesBufferPtrW++ = (WCHAR)'=';
-                    memmove(AliasesBufferPtrW, Alias->Target, Alias->TargetLength);
-                    AliasesBufferPtrW += Alias->TargetLength / sizeof(WCHAR);
-                    *AliasesBufferPtrW++ = (WCHAR)'\0';
-                    a->AliasesBufferLength += Alias->SourceLength + Alias->TargetLength + (2 * sizeof(WCHAR));  // + 2 is for = and term null
-                }
-                else
-                {
-                    UnlockConsole();
-                    return STATUS_BUFFER_OVERFLOW;
-                }
+                memmove(AliasesBufferPtrW, Alias->Source, Alias->SourceLength);
+                AliasesBufferPtrW += Alias->SourceLength / sizeof(WCHAR);
+                *AliasesBufferPtrW++ = (WCHAR)'=';
+                memmove(AliasesBufferPtrW, Alias->Target, Alias->TargetLength);
+                AliasesBufferPtrW += Alias->TargetLength / sizeof(WCHAR);
+                *AliasesBufferPtrW++ = (WCHAR)'\0';
+                *pcbAliasBufferLength += Alias->SourceLength + Alias->TargetLength + (2 * sizeof(WCHAR));  // + 2 is for = and term null
             }
             else
             {
-                if ((a->AliasesBufferLength + ((Alias->SourceLength + Alias->TargetLength) / sizeof(WCHAR)) + (2 * sizeof(CHAR))) <= AliasesBufferLength)
-                {
-                    USHORT SourceLength, TargetLength;
-                    SourceLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
-                                                        Alias->Source,
-                                                        Alias->SourceLength / sizeof(WCHAR),
-                                                        AliasesBufferPtrA,
-                                                        Alias->SourceLength);
-                    AliasesBufferPtrA += SourceLength;
-                    *AliasesBufferPtrA++ = '=';
-                    TargetLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
-                                                        Alias->Target,
-                                                        Alias->TargetLength / sizeof(WCHAR),
-                                                        AliasesBufferPtrA,
-                                                        Alias->TargetLength);
-                    AliasesBufferPtrA += TargetLength;
-                    *AliasesBufferPtrA++ = '\0';
-                    a->AliasesBufferLength += SourceLength + TargetLength + (2 * sizeof(CHAR)); // + 2 is for = and term null
-                }
-                else
-                {
-                    UnlockConsole();
-                    return STATUS_BUFFER_OVERFLOW;
-                }
+                return HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW);
             }
+
             ListNext = ListNext->Flink;
         }
     }
-    UnlockConsole();
 
-    m->SetReplyInformation(a->AliasesBufferLength);
-
-    return STATUS_SUCCESS;
+    return S_OK;
 }
 
 HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(_Out_ ULONG* const pcbAliasExesBufferRequired)

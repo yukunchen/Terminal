@@ -332,15 +332,15 @@ public:
 
     virtual HRESULT GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pcbAliasExesBufferRequired);
 
-    virtual HRESULT GetConsoleAliasesAImpl(_In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
-                                           _In_ ULONG const ExeNameBufferLength,
-                                           _Out_writes_(AliasBufferLength) char* const pAliasBuffer,
-                                           _In_ ULONG const AliasBufferLength);
+    virtual HRESULT GetConsoleAliasesAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                           _In_ ULONG const cbExeNameBufferLength,
+                                           _Out_writes_bytes_(*pcbAliasBufferLength) char* const psAliasBuffer,
+                                           _Inout_ ULONG* const pcbAliasBufferLength) = 0;
 
-    virtual HRESULT GetConsoleAliasesWImpl(_In_reads_(ExeNameBufferLength) const wchar_t* const pExeNameBuffer,
-                                           _In_ ULONG const ExeNameBufferLength,
-                                           _Out_writes_(AliasBufferLength) wchar_t* const pAliasBuffer,
-                                           _In_ ULONG const AliasBufferLength);
+    virtual HRESULT GetConsoleAliasesWImpl(_In_reads_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                           _In_ ULONG const cbExeNameBufferLength,
+                                           _Out_writes_bytes_(*pcbAliasBufferLength) wchar_t* const pwsAliasBuffer,
+                                           _Inout_ ULONG* const pcbAliasBufferLength) = 0;
 
     virtual HRESULT GetConsoleAliasExesAImpl(_Out_writes_(AliasExesBufferLength) char* const pAliasExesBuffer,
                                              _In_ ULONG const AliasExesBufferLength);

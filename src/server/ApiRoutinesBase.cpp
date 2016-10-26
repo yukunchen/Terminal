@@ -743,32 +743,6 @@ NTSTATUS IApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pAliasE
     return 0;
 }
 
-NTSTATUS IApiRoutines::GetConsoleAliasesAImpl(_In_reads_(ExeNameBufferLength) const char* const pExeNameBuffer,
-                                              _In_ ULONG const ExeNameBufferLength,
-                                              _Out_writes_(AliasBufferLength) char* const pAliasBuffer,
-                                              _In_ ULONG const AliasBufferLength)
-{
-    assert(false);
-    UNREFERENCED_PARAMETER(pExeNameBuffer);
-    UNREFERENCED_PARAMETER(ExeNameBufferLength);
-    UNREFERENCED_PARAMETER(pAliasBuffer);
-    UNREFERENCED_PARAMETER(AliasBufferLength);
-    return 0;
-}
-
-NTSTATUS IApiRoutines::GetConsoleAliasesWImpl(_In_reads_(ExeNameBufferLength) const wchar_t* const pExeNameBuffer,
-                                              _In_ ULONG const ExeNameBufferLength,
-                                              _Out_writes_(AliasBufferLength) wchar_t* const pAliasBuffer,
-                                              _In_ ULONG const AliasBufferLength)
-{
-    assert(false);
-    UNREFERENCED_PARAMETER(pExeNameBuffer);
-    UNREFERENCED_PARAMETER(ExeNameBufferLength);
-    UNREFERENCED_PARAMETER(pAliasBuffer);
-    UNREFERENCED_PARAMETER(AliasBufferLength);
-    return 0;
-}
-
 NTSTATUS IApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_(AliasExesBufferLength) char* const pAliasExesBuffer,
                                                 _In_ ULONG const AliasExesBufferLength)
 {
