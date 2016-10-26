@@ -20,6 +20,8 @@
 #include "tracing.hpp"
 #include "window.hpp"
 
+#include "ntprivapi.hpp"
+
 #pragma hdrstop
 
 // The following mask is used to test for valid text attributes.
@@ -467,40 +469,6 @@ PCONSOLE_PROCESS_HANDLE FindProcessByGroupId(_In_ ULONG ProcessGroupId)
     return nullptr;
 }
 
-NTSTATUS GetProcessParentId(_Inout_ PULONG ProcessId)
-{
-    // TODO: Get Parent current not really available without winternl + NtQueryInformationProcess. http://osgvsowi/8394495
-
-    /*OBJECT_ATTRIBUTES oa;
-    InitializeObjectAttributes(&oa, nullptr, 0, nullptr, nullptr);
-
-    CLIENT_ID ClientId;
-    ClientId.UniqueProcess = UlongToHandle(*ProcessId);
-    ClientId.UniqueThread = 0;
-
-    HANDLE ProcessHandle;
-    NTSTATUS Status = NtOpenProcess(&ProcessHandle, PROCESS_QUERY_LIMITED_INFORMATION, &oa, &ClientId);
-
-    PROCESS_BASIC_INFORMATION BasicInfo = { 0 };
-    if (NT_SUCCESS(Status))
-    {
-        Status = NtQueryInformationProcess(ProcessHandle, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), nullptr);
-        NtClose(ProcessHandle);
-    }
-
-    if (!NT_SUCCESS(Status))
-    {
-        *ProcessId = 0;
-        return Status;
-    }
-
-    *ProcessId = (ULONG) BasicInfo.InheritedFromUniqueProcessId;
-    return STATUS_SUCCESS;*/
-
-    *ProcessId = 0;
-    return STATUS_UNSUCCESSFUL;
-}
-
 NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
 {
     PCONSOLE_CTRLEVENT_MSG const a = &m->u.consoleMsgL2.GenerateConsoleCtrlEvent;
@@ -526,7 +494,7 @@ NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
 
             // We didn't find a process with that group ID.
             // Let's see if the process with that ID exists and has a parent that is a member of this console.
-            Status = GetProcessParentId(&ProcessId);
+            Status = NtPrivApi::s_GetProcessParentId(&ProcessId);
             if (NT_SUCCESS(Status))
             {
                 ProcessHandle = FindProcessInList(UlongToHandle(ProcessId));
