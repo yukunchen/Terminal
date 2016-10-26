@@ -24,6 +24,7 @@ INCLUDES= \
 SOURCES= \
     $(SOURCES) \
     ..\ApiDispatchers.cpp \
+    ..\ApiDispatchersInternal.cpp \
     ..\ApiMessage.cpp \
     ..\ApiMessageState.cpp \
     ..\ApiRoutinesBase.cpp \

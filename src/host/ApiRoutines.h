@@ -89,6 +89,10 @@ class ApiRoutines : public IApiRoutines
     //                                   _In_ ULONG const TextBufferLength,
     //                                   _Out_ ULONG* const pTextBufferRead);
 
+#pragma region ThreadCreationInfo
+    HRESULT GetConsoleLangIdImpl(_Out_ LANGID* const pLangId);
+#pragma endregion
+
 #pragma endregion
 
 #pragma region L2
@@ -377,9 +381,9 @@ class ApiRoutines : public IApiRoutines
 
     HRESULT GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo);
 
-    //HRESULT GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo);
+    HRESULT GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo);
 
-    //HRESULT SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo);
+    HRESULT SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo);
 
     HRESULT SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
                                         _In_ BOOLEAN const IsForMaximumWindowSize,

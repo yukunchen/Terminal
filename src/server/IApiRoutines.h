@@ -100,6 +100,10 @@ public:
                                       _In_ ULONG const TextBufferLength,
                                       _Out_ ULONG* const pTextBufferRead);
 
+#pragma region Thread Creation Info
+    virtual HRESULT GetConsoleLangIdImpl(_Out_ LANGID* const pLangId) = 0;
+#pragma endregion
+
 #pragma endregion
 
 #pragma region L2

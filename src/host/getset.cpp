@@ -289,95 +289,6 @@ HRESULT ApiRoutines::SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pCo
     return S_OK;
 }
 
-NTSTATUS GetProcessParentId(_Inout_ PULONG ProcessId)
-{
-    // TODO: Get Parent current not really available without winternl + NtQueryInformationProcess. http://osgvsowi/8394495
-
-    /*OBJECT_ATTRIBUTES oa;
-    InitializeObjectAttributes(&oa, nullptr, 0, nullptr, nullptr);
-
-    CLIENT_ID ClientId;
-    ClientId.UniqueProcess = UlongToHandle(*ProcessId);
-    ClientId.UniqueThread = 0;
-
-    HANDLE ProcessHandle;
-    NTSTATUS Status = NtOpenProcess(&ProcessHandle, PROCESS_QUERY_LIMITED_INFORMATION, &oa, &ClientId);
-
-    PROCESS_BASIC_INFORMATION BasicInfo = { 0 };
-    if (NT_SUCCESS(Status))
-    {
-        Status = NtQueryInformationProcess(ProcessHandle, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), nullptr);
-        NtClose(ProcessHandle);
-    }
-
-    if (!NT_SUCCESS(Status))
-    {
-        *ProcessId = 0;
-        return Status;
-    }
-
-    *ProcessId = (ULONG) BasicInfo.InheritedFromUniqueProcessId;
-    return STATUS_SUCCESS;*/
-
-    *ProcessId = 0;
-    return STATUS_UNSUCCESSFUL;
-}
-
-NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
-{
-    PCONSOLE_CTRLEVENT_MSG const a = &m->u.consoleMsgL2.GenerateConsoleCtrlEvent;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GenerateConsoleCtrlEvent);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    // Make sure the process group id is valid.
-    if (a->ProcessGroupId)
-    {
-        ConsoleProcessHandle* ProcessHandle;
-
-        ProcessHandle = g_ciConsoleInformation.ProcessHandleList.FindProcessByGroupId(a->ProcessGroupId);
-        if (ProcessHandle == nullptr)
-        {
-            ULONG ProcessId = a->ProcessGroupId;
-
-            // We didn't find a process with that group ID.
-            // Let's see if the process with that ID exists and has a parent that is a member of this console.
-            Status = GetProcessParentId(&ProcessId);
-            if (NT_SUCCESS(Status))
-            {
-                ProcessHandle = g_ciConsoleInformation.ProcessHandleList.FindProcessInList(ProcessId);
-                if (ProcessHandle == nullptr)
-                {
-                    Status = STATUS_INVALID_PARAMETER;
-                }
-                else
-                {
-                    NTSTATUS_FROM_HRESULT(g_ciConsoleInformation.ProcessHandleList.AllocProcessData(a->ProcessGroupId,
-                                                                                                    0,
-                                                                                                    a->ProcessGroupId,
-                                                                                                    ProcessHandle,
-                                                                                                    nullptr));
-                }
-            }
-        }
-    }
-
-    if (NT_SUCCESS(Status))
-    {
-        g_ciConsoleInformation.LimitingProcessId = a->ProcessGroupId;
-        HandleCtrlEvent(a->CtrlEvent);
-    }
-
-    UnlockConsole();
-    return Status;
-}
-
 HRESULT ApiRoutines::SetConsoleActiveScreenBufferImpl(_In_ SCREEN_INFORMATION* const pNewContext)
 {
     LockConsole();
@@ -863,107 +774,33 @@ HRESULT ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
     return S_OK;
 }
 
-NTSTATUS SrvGetConsoleProcessList(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
 {
-    PCONSOLE_GETCONSOLEPROCESSLIST_MSG const a = &m->u.consoleMsgL3.GetConsoleProcessList;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleProcessList);
+    pConsoleHistoryInfo->HistoryBufferSize = g_ciConsoleInformation.GetHistoryBufferSize();
+    pConsoleHistoryInfo->NumberOfHistoryBuffers = g_ciConsoleInformation.GetNumberOfHistoryBuffers();
+    SetFlagIf(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG, IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_HISTORY_NODUP));
 
-    PVOID Buffer;
-    ULONG BufferSize;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer(&Buffer, &BufferSize));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    a->dwProcessCount = BufferSize / sizeof(ULONG);
-
-    CONSOLE_INFORMATION *Console = nullptr;
-    Status = RevalidateConsole(&Console);
-    if (NT_SUCCESS(Status))
-    {
-        /*
-        * If there's not enough space in the array to hold all the pids, we'll
-        * inform the user of that by returning a number > than a->dwProcessCount
-        * (but we still return STATUS_SUCCESS).
-        */
-
-        LPDWORD lpdwProcessList = (PDWORD)Buffer;
-        size_t cProcessList = a->dwProcessCount;
-        if (SUCCEEDED(g_ciConsoleInformation.ProcessHandleList.GetProcessList(lpdwProcessList, &cProcessList)))
-        {
-            m->SetReplyInformation(cProcessList * sizeof(ULONG));
-        }
-
-        a->dwProcessCount = (ULONG)cProcessList;
-        UnlockConsole();
-    }
-
-    return Status;
+    return S_OK;
 }
 
-NTSTATUS SrvGetConsoleHistory(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
 {
-    PCONSOLE_HISTORY_MSG const a = &m->u.consoleMsgL3.GetConsoleHistory;
+    RETURN_HR_IF(E_INVALIDARG, pConsoleHistoryInfo->HistoryBufferSize > SHORT_MAX);
+    RETURN_HR_IF(E_INVALIDARG, pConsoleHistoryInfo->NumberOfHistoryBuffers > SHORT_MAX);
+    RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(pConsoleHistoryInfo->dwFlags, ~CHI_VALID_FLAGS));
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleHistoryInfo);
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    ResizeCommandHistoryBuffers(pConsoleHistoryInfo->HistoryBufferSize);
+    g_ciConsoleInformation.SetNumberOfHistoryBuffers(pConsoleHistoryInfo->NumberOfHistoryBuffers);
 
-    a->HistoryBufferSize = g_ciConsoleInformation.GetHistoryBufferSize();
-    a->NumberOfHistoryBuffers = g_ciConsoleInformation.GetNumberOfHistoryBuffers();
-    if (g_ciConsoleInformation.Flags & CONSOLE_HISTORY_NODUP)
-    {
-        a->dwFlags = HISTORY_NO_DUP_FLAG;
-    }
-    else
-    {
-        a->dwFlags = 0;
-    }
+    UpdateFlag(g_ciConsoleInformation.Flags, CONSOLE_HISTORY_NODUP, IsFlagSet(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG));
 
-    UnlockConsole();
-    return STATUS_SUCCESS;
-}
-
-NTSTATUS SrvSetConsoleHistory(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
-{
-    PCONSOLE_HISTORY_MSG const a = &m->u.consoleMsgL3.SetConsoleHistory;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleHistoryInfo);
-
-    if (a->HistoryBufferSize > SHORT_MAX || a->NumberOfHistoryBuffers > SHORT_MAX || (a->dwFlags & CHI_VALID_FLAGS) != a->dwFlags)
-    {
-        RIPMSG3(RIP_WARNING, "Invalid Parameter: 0x%x, 0x%x, 0x%x", a->HistoryBufferSize, a->NumberOfHistoryBuffers, a->dwFlags);
-        return STATUS_INVALID_PARAMETER;
-    }
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    ResizeCommandHistoryBuffers(a->HistoryBufferSize);
-    g_ciConsoleInformation.SetNumberOfHistoryBuffers(a->NumberOfHistoryBuffers);
-
-    if (a->dwFlags & HISTORY_NO_DUP_FLAG)
-    {
-        g_ciConsoleInformation.Flags |= CONSOLE_HISTORY_NODUP;
-    }
-    else
-    {
-        g_ciConsoleInformation.Flags &= ~CONSOLE_HISTORY_NODUP;
-    }
-
-    UnlockConsole();
-    return STATUS_SUCCESS;
+    return S_OK;
 }
 
 // NOTE: This was in private.c, but turns out to be a public API: http://msdn.microsoft.com/en-us/library/windows/desktop/ms683164(v=vs.85).aspx

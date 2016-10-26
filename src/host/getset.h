@@ -21,8 +21,6 @@ HRESULT DoSrvGetConsoleScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenIn
 HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const ScreenInfo, _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo);
 HRESULT DoSrvGetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Out_ ULONG* const pCursorSize, _Out_ BOOLEAN* const pIsVisible);
 
-NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-
 HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ const COORD* const pCursorPosition);
 HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ ULONG const CursorSize, _In_ BOOLEAN const IsVisible);
 HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ BOOLEAN const IsAbsoluteRectangle, _In_ const SMALL_RECT* const pWindowRectangle);

@@ -428,24 +428,12 @@ NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLang
     return Status;
 }
 
-NTSTATUS SrvGetConsoleLangId(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleLangIdImpl(_Out_ LANGID* const pLangId)
 {
-    PCONSOLE_LANGID_MSG const a = &m->u.consoleMsgL1.GetConsoleLangId;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleLangId);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    Status = GetConsoleLangId(g_ciConsoleInformation.OutputCP, &a->LangId);
-
-    UnlockConsole();
-
-    return Status;
+    RETURN_NTSTATUS(GetConsoleLangId(g_ciConsoleInformation.OutputCP, pLangId));
 }
 
 // Routine Description:

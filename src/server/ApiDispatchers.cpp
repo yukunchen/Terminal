@@ -14,14 +14,6 @@
 #include "..\host\srvinit.h"
 #include "..\host\telemetry.hpp"
 
-HRESULT ApiDispatchers::ServeDeprecatedApi(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
-{
-    // assert if we hit a deprecated API.
-    assert(TRUE);
-
-    return E_NOTIMPL;
-}
-
 HRESULT ApiDispatchers::ServeGetConsoleCP(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
     CONSOLE_GETCP_MSG* const a = &m->u.consoleMsgL1.GetConsoleCP;
@@ -109,19 +101,9 @@ HRESULT ApiDispatchers::ServeWriteConsole(_Inout_ CONSOLE_API_MSG * const m, _In
     RETURN_NTSTATUS(SrvWriteConsole(m, pbReplyPending));
 }
 
-HRESULT ApiDispatchers::ServeGetConsoleLangId(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
-{
-    RETURN_NTSTATUS(SrvGetConsoleLangId(m, pbReplyPending));
-}
-
 HRESULT ApiDispatchers::ServeFillConsoleOutput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
     RETURN_NTSTATUS(SrvFillConsoleOutput(m, pbReplyPending));
-}
-
-HRESULT ApiDispatchers::ServeGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
-{
-    RETURN_NTSTATUS(SrvGenerateConsoleCtrlEvent(m, pbReplyPending));
 }
 
 HRESULT ApiDispatchers::ServeSetConsoleActiveScreenBuffer(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
@@ -833,19 +815,35 @@ HRESULT ApiDispatchers::ServeGetConsoleSelectionInfo(_Inout_ CONSOLE_API_MSG * c
     return m->_pApiRoutines->GetConsoleSelectionInfoImpl(&a->SelectionInfo);
 }
 
-HRESULT ApiDispatchers::ServeGetConsoleProcessList(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
-{
-    RETURN_NTSTATUS(SrvGetConsoleProcessList(m, pbReplyPending));
-}
-
 HRESULT ApiDispatchers::ServeGetConsoleHistory(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvGetConsoleHistory(m, pbReplyPending));
+    CONSOLE_HISTORY_MSG* const a = &m->u.consoleMsgL3.GetConsoleHistory;
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleHistoryInfo);
+
+    CONSOLE_HISTORY_INFO info;
+    info.cbSize = sizeof(info);
+
+    RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleHistoryInfoImpl(&info));
+
+    a->dwFlags = info.dwFlags;
+    a->HistoryBufferSize = info.HistoryBufferSize;
+    a->NumberOfHistoryBuffers = info.NumberOfHistoryBuffers;
+
+    return S_OK;
 }
 
 HRESULT ApiDispatchers::ServeSetConsoleHistory(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvSetConsoleHistory(m, pbReplyPending));
+    CONSOLE_HISTORY_MSG* const a = &m->u.consoleMsgL3.SetConsoleHistory;
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleHistoryInfo);
+
+    CONSOLE_HISTORY_INFO info;
+    info.cbSize = sizeof(info);
+    info.dwFlags = a->dwFlags;
+    info.HistoryBufferSize = a->HistoryBufferSize;
+    info.NumberOfHistoryBuffers = a->NumberOfHistoryBuffers;
+
+    return m->_pApiRoutines->SetConsoleHistoryInfoImpl(&info);
 }
 
 HRESULT ApiDispatchers::ServeSetConsoleCurrentFont(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
