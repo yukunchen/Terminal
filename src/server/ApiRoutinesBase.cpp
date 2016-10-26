@@ -581,54 +581,6 @@ NTSTATUS IApiRoutines::ReadConsoleOutputW(_In_ IConsoleOutputObject* const pOutC
     return 0;
 }
 
-NTSTATUS IApiRoutines::GetConsoleTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
-                                            _In_ ULONG const TextBufferSize)
-{
-    assert(false);
-    if (TextBufferSize > 0)
-    {
-        assert(false);
-        *pTextBuffer = '\0';
-    }
-    return 0;
-}
-
-NTSTATUS IApiRoutines::GetConsoleTitleWImpl(_Out_writes_(TextBufferSize) wchar_t* const pTextBuffer,
-                                            _In_ ULONG const TextBufferSize)
-{
-    assert(false);
-    if (TextBufferSize > 0)
-    {
-        assert(false);
-        *pTextBuffer = '\0';
-    }
-    return 0;
-}
-
-NTSTATUS IApiRoutines::GetConsoleOriginalTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
-                                                    _In_ ULONG const TextBufferSize)
-{
-    assert(false);
-    if (TextBufferSize > 0)
-    {
-        assert(false);
-        *pTextBuffer = '\0';
-    }
-    return 0;
-}
-
-NTSTATUS IApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
-                                                    _In_ ULONG const TextBufferSize)
-{
-    assert(false);
-    if (TextBufferSize > 0)
-    {
-        assert(false);
-        *pTextBuffer = '\0';
-    }
-    return 0;
-}
-
 NTSTATUS IApiRoutines::SetConsoleTitleAImpl(_In_reads_(TextBufferSize) char* const pTextBuffer,
                                             _In_ ULONG const TextBufferSize)
 {
@@ -740,24 +692,6 @@ NTSTATUS IApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pAliasE
 {
     assert(false);
     *pAliasExesBufferRequired = 0;
-    return 0;
-}
-
-NTSTATUS IApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_(AliasExesBufferLength) char* const pAliasExesBuffer,
-                                                _In_ ULONG const AliasExesBufferLength)
-{
-    assert(false);
-    UNREFERENCED_PARAMETER(pAliasExesBuffer);
-    UNREFERENCED_PARAMETER(AliasExesBufferLength);
-    return 0;
-}
-
-NTSTATUS IApiRoutines::GetConsoleAliasExesWImpl(_Out_writes_(AliasExesBufferLength) wchar_t* const pAliasExesBuffer,
-                                                _In_ ULONG const AliasExesBufferLength)
-{
-    assert(false);
-    UNREFERENCED_PARAMETER(pAliasExesBuffer);
-    UNREFERENCED_PARAMETER(AliasExesBufferLength);
     return 0;
 }
 

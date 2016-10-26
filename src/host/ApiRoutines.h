@@ -242,23 +242,23 @@ class ApiRoutines : public IApiRoutines
     //                                   _In_ const SMALL_RECT* const pSourceRectangle,
     //                                   _Out_ SMALL_RECT* const pReadRectangle);
 
-    //HRESULT GetConsoleTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
-    //                                     _In_ ULONG const TextBufferSize);
+    HRESULT GetConsoleTitleAImpl(_Out_writes_(*pcchTitleBufferSize) char* const psTitleBuffer,
+                                 _Inout_ ULONG* const pcchTitleBufferSize);
 
-    //HRESULT GetConsoleTitleWImpl(_Out_writes_(TextBufferSize) wchar_t* const pTextBuffer,
-    //                                     _In_ ULONG const TextBufferSize);
+    HRESULT GetConsoleTitleWImpl(_Out_writes_(*pcchTitleBufferSize) wchar_t* const pwsTitleBuffer,
+                                 _Inout_ ULONG* const pcchTitleBufferSize);
 
-    //HRESULT GetConsoleOriginalTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
-    //                                             _In_ ULONG const TextBufferSize);
+    HRESULT GetConsoleOriginalTitleAImpl(_Out_writes_(*pcchTitleBufferSize) char* const psTitleBuffer,
+                                         _Inout_ ULONG* const pcchTitleBufferSize);
 
-    //HRESULT GetConsoleOriginalTitleWImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
-    //                                             _In_ ULONG const TextBufferSize);
+    HRESULT GetConsoleOriginalTitleWImpl(_Out_writes_(*pcchTitleBufferSize) wchar_t* const pwsTitleBuffer,
+                                         _Inout_ ULONG* const pcchTitleBufferSize);
 
-    //HRESULT SetConsoleTitleAImpl(_In_reads_(TextBufferSize) char* const pTextBuffer,
-    //                                     _In_ ULONG const TextBufferSize);
+    HRESULT SetConsoleTitleAImpl(_In_reads_bytes_(cbTitleBufferSize) char* const psTitleBuffer,
+                                 _In_ ULONG const cbTitleBufferSize);
 
-    //HRESULT SetConsoleTitleWImpl(_In_reads_(TextBufferSize) wchar_t* const pTextBuffer,
-    //                                     _In_ ULONG const TextBufferSize);
+    HRESULT SetConsoleTitleWImpl(_In_reads_bytes_(cbTitleBufferSize) wchar_t* const pwsTitleBuffer,
+                                 _In_ ULONG const cbTitleBufferSize);
 
 #pragma endregion
 
@@ -331,11 +331,47 @@ class ApiRoutines : public IApiRoutines
                                    _Out_writes_bytes_(*pcbAliasBufferLength) wchar_t* const pwsAliasBuffer,
                                    _Inout_ ULONG* const pcbAliasBufferLength);
 
-    //HRESULT GetConsoleAliasExesAImpl(_Out_writes_(AliasExesBufferLength) char* const pAliasExesBuffer,
-    //                                         _In_ ULONG const AliasExesBufferLength);
+    HRESULT GetConsoleAliasExesAImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) char* const psAliasExesBuffer,
+                                     _Inout_ ULONG* const pcbAliasExesBufferLength);
 
-    //HRESULT GetConsoleAliasExesWImpl(_Out_writes_(AliasExesBufferLength) wchar_t* const pAliasExesBuffer,
-    //                                         _In_ ULONG const AliasExesBufferLength);
+    HRESULT GetConsoleAliasExesWImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) wchar_t* const pwsAliasExesBuffer,
+                                     _Inout_ ULONG* const pcbAliasExesBufferLength);
+
+#pragma region CMDext Private API
+
+    HRESULT ExpungeConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                              _In_ ULONG const cbExeNameBufferLength);
+
+    HRESULT ExpungeConsoleCommandHistoryWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                              _In_ ULONG const cbExeNameBufferLength);
+
+    HRESULT SetConsoleNumberOfCommandsAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                            _In_ ULONG const cbExeNameBufferLength,
+                                            _In_ ULONG const NumberOfCommands);
+
+    HRESULT SetConsoleNumberOfCommandsWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                            _In_ ULONG const cbExeNameBufferLength,
+                                            _In_ ULONG const NumberOfCommands);
+
+    HRESULT GetConsoleCommandHistoryLengthAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                                _In_ ULONG const cbExeNameBufferLength,
+                                                _Out_ ULONG* const pCommandHistoryLength);
+
+    HRESULT GetConsoleCommandHistoryLengthWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                _In_ ULONG const cbExeNameBufferLength,
+                                                _Out_ ULONG* const pCommandHistoryLength);
+
+    HRESULT GetConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                          _In_ ULONG const cbExeNameBufferLength,
+                                          _Out_writes_bytes_(*pcbCommandHistoryBufferLength) char* const psCommandHistoryBuffer,
+                                          _Inout_ ULONG* const pcbCommandHistoryBufferLength);
+
+    HRESULT GetConsoleCommandHistoryWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                          _In_ ULONG const cbExeNameBufferLength,
+                                          _Out_writes_bytes_(*pcbCommandHistoryBufferLength) wchar_t* const pwsCommandHistoryBuffer,
+                                          _Inout_ ULONG* const pcbCommandHistoryBufferLength);
+
+#pragma endregion
 
     HRESULT GetConsoleWindowImpl(_Out_ HWND* const pHwnd);
 

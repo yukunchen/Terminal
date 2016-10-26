@@ -381,12 +381,71 @@ HRESULT ApiDispatchers::ServeReadConsoleOutput(_Inout_ CONSOLE_API_MSG * const m
 
 HRESULT ApiDispatchers::ServeGetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvGetConsoleTitle(m, pbReplyPending));
+    PCONSOLE_GETTITLE_MSG const a = &m->u.consoleMsgL2.GetConsoleTitle;
+    Telemetry::Instance().LogApiCall(a->Original ? Telemetry::ApiCall::GetConsoleOriginalTitle : Telemetry::ApiCall::GetConsoleTitle, a->Unicode);
+
+    PVOID Buffer;
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer(&Buffer, &a->TitleLength));
+    if (!NT_SUCCESS(Status))
+    {
+        return Status;
+    }
+
+    // a->TitleLength contains length in bytes.
+    if (a->Unicode)
+    {
+        if (a->Original)
+        {
+            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleOriginalTitleWImpl((wchar_t*)Buffer,
+                                                                            &a->TitleLength));
+        }
+        else
+        {
+            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleTitleWImpl((wchar_t*)Buffer,
+                                                                    &a->TitleLength));
+        }
+
+        m->SetReplyInformation((wcslen((PWSTR)Buffer) + 1) * sizeof(WCHAR));
+    }
+    else
+    {
+        if (a->Original)
+        {
+            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleOriginalTitleAImpl((char*)Buffer,
+                                                                            &a->TitleLength));
+        }
+        else
+        {
+            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleTitleAImpl((char*)Buffer,
+                                                                    &a->TitleLength));
+        }
+
+        m->SetReplyInformation(a->TitleLength + 1);
+    }
+
+    return S_OK;
 }
 
 HRESULT ApiDispatchers::ServeSetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvSetConsoleTitle(m, pbReplyPending));
+    CONSOLE_SETTITLE_MSG* const a = &m->u.consoleMsgL2.SetConsoleTitle;
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleTitle, a->Unicode);
+
+    PVOID Buffer;
+    ULONG cbOriginalLength;
+
+    RETURN_IF_FAILED(m->GetInputBuffer(&Buffer, &cbOriginalLength));
+
+    if (a->Unicode)
+    {
+        return m->_pApiRoutines->SetConsoleTitleWImpl((wchar_t*)Buffer,
+                                                      cbOriginalLength);
+    }
+    else
+    {
+        return m->_pApiRoutines->SetConsoleTitleAImpl((char*)Buffer,
+                                                      cbOriginalLength);
+    }
 }
 
 HRESULT ApiDispatchers::ServeGetConsoleMouseInfo(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
@@ -639,27 +698,123 @@ HRESULT ApiDispatchers::ServeGetConsoleAliases(_Inout_ CONSOLE_API_MSG * const m
 
 HRESULT ApiDispatchers::ServeGetConsoleAliasExes(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvGetConsoleAliasExes(m, pbReplyPending));
+    CONSOLE_GETALIASEXES_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasExesW;
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliasExes, a->Unicode);
+
+    PVOID Buffer;
+    DWORD AliasExesBufferLength;
+    RETURN_IF_FAILED(m->GetOutputBuffer(&Buffer, &AliasExesBufferLength));
+
+    if (a->Unicode)
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesWImpl((wchar_t*)Buffer,
+                                                                    &AliasExesBufferLength));
+    }
+    else
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesAImpl((char*)Buffer,
+                                                                    &AliasExesBufferLength));
+    }
+
+    a->AliasExesBufferLength = AliasExesBufferLength;
+
+    m->SetReplyInformation(a->AliasExesBufferLength);
+
+    return S_OK;
 }
 
 HRESULT ApiDispatchers::ServeExpungeConsoleCommandHistory(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvExpungeConsoleCommandHistory(m, pbReplyPending));
+    CONSOLE_EXPUNGECOMMANDHISTORY_MSG* const a = &m->u.consoleMsgL3.ExpungeConsoleCommandHistoryW;
+
+    PVOID ExeName;
+    ULONG ExeNameLength;
+    RETURN_IF_FAILED(m->GetInputBuffer(&ExeName, &ExeNameLength));
+
+    if (a->Unicode)
+    {
+        return m->_pApiRoutines->ExpungeConsoleCommandHistoryWImpl((wchar_t*)ExeName,
+                                                                   ExeNameLength);
+    }
+    else
+    {
+        return m->_pApiRoutines->ExpungeConsoleCommandHistoryAImpl((char*)ExeName,
+                                                                   ExeNameLength);
+    }
 }
 
 HRESULT ApiDispatchers::ServeSetConsoleNumberOfCommands(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvSetConsoleNumberOfCommands(m, pbReplyPending));
+    CONSOLE_SETNUMBEROFCOMMANDS_MSG* const a = &m->u.consoleMsgL3.SetConsoleNumberOfCommandsW;
+    PVOID ExeName;
+    ULONG ExeNameLength;
+    RETURN_IF_FAILED(m->GetInputBuffer(&ExeName, &ExeNameLength));
+
+    if (a->Unicode)
+    {
+        return m->_pApiRoutines->SetConsoleNumberOfCommandsWImpl((wchar_t*)ExeName,
+                                                                 ExeNameLength,
+                                                                 a->NumCommands);
+    }
+    else
+    {
+        return m->_pApiRoutines->SetConsoleNumberOfCommandsAImpl((char*)ExeName,
+                                                                 ExeNameLength,
+                                                                 a->NumCommands);
+    }
 }
 
 HRESULT ApiDispatchers::ServeGetConsoleCommandHistoryLength(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvGetConsoleCommandHistoryLength(m, pbReplyPending));
+    PCONSOLE_GETCOMMANDHISTORYLENGTH_MSG const a = &m->u.consoleMsgL3.GetConsoleCommandHistoryLengthW;
+
+    PVOID ExeName;
+    ULONG ExeNameLength;
+    RETURN_IF_FAILED(m->GetInputBuffer(&ExeName, &ExeNameLength));
+
+    if (a->Unicode)
+    {
+        return m->_pApiRoutines->GetConsoleCommandHistoryLengthWImpl((wchar_t*)ExeName,
+                                                                     ExeNameLength,
+                                                                     &a->CommandHistoryLength);
+    }
+    else
+    {
+        return m->_pApiRoutines->GetConsoleCommandHistoryLengthAImpl((char*)ExeName,
+                                                                     ExeNameLength,
+                                                                     &a->CommandHistoryLength);
+    }
 }
 
 HRESULT ApiDispatchers::ServeGetConsoleCommandHistory(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvGetConsoleCommandHistory(m, pbReplyPending));
+    PCONSOLE_GETCOMMANDHISTORY_MSG const a = &m->u.consoleMsgL3.GetConsoleCommandHistoryW;
+
+    PVOID ExeName;
+    ULONG ExeNameLength;
+    RETURN_IF_FAILED(m->GetInputBuffer(&ExeName, &ExeNameLength));
+
+    PVOID OutputBuffer;
+    RETURN_IF_FAILED(m->GetOutputBuffer(&OutputBuffer, &a->CommandBufferLength));
+
+    if (a->Unicode)
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryWImpl((wchar_t*)ExeName,
+                                                                         ExeNameLength,
+                                                                         (wchar_t*)OutputBuffer,
+                                                                         &a->CommandBufferLength));
+    }
+    else
+    {
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleCommandHistoryAImpl((char*)ExeName,
+                                                                         ExeNameLength,
+                                                                         (char*)OutputBuffer,
+                                                                         &a->CommandBufferLength));
+    }
+
+    m->SetReplyInformation(a->CommandBufferLength);
+
+    return S_OK;
 }
 
 HRESULT ApiDispatchers::ServeGetConsoleWindow(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)

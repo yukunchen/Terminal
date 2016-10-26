@@ -253,23 +253,23 @@ public:
                                        _In_ const SMALL_RECT* const pSourceRectangle,
                                        _Out_ SMALL_RECT* const pReadRectangle);
 
-    virtual HRESULT GetConsoleTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
-                                         _In_ ULONG const TextBufferSize);
+    virtual HRESULT GetConsoleTitleAImpl(_Out_writes_(*pcchTitleBufferSize) char* const psTitleBuffer,
+                                         _Inout_ ULONG* const pcchTitleBufferSize) = 0;
 
-    virtual HRESULT GetConsoleTitleWImpl(_Out_writes_(TextBufferSize) wchar_t* const pTextBuffer,
-                                         _In_ ULONG const TextBufferSize);
+    virtual HRESULT GetConsoleTitleWImpl(_Out_writes_(*pcchTitleBufferSize) wchar_t* const pwsTitleBuffer,
+                                         _Inout_ ULONG* const pcchTitleBufferSize) = 0;
 
-    virtual HRESULT GetConsoleOriginalTitleAImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
-                                                 _In_ ULONG const TextBufferSize);
+    virtual HRESULT GetConsoleOriginalTitleAImpl(_Out_writes_(*pcchTitleBufferSize) char* const psTitleBuffer,
+                                                 _Inout_ ULONG* const pcchTitleBufferSize) = 0;
 
-    virtual HRESULT GetConsoleOriginalTitleWImpl(_Out_writes_(TextBufferSize) char* const pTextBuffer,
-                                                 _In_ ULONG const TextBufferSize);
+    virtual HRESULT GetConsoleOriginalTitleWImpl(_Out_writes_(*pcchTitleBufferSize) wchar_t* const pwsTitleBuffer,
+                                                 _Inout_ ULONG* const pcchTitleBufferSize) = 0;
 
-    virtual HRESULT SetConsoleTitleAImpl(_In_reads_(TextBufferSize) char* const pTextBuffer,
-                                         _In_ ULONG const TextBufferSize);
+    virtual HRESULT SetConsoleTitleAImpl(_In_reads_bytes_(cbTitleBufferSize) char* const psTitleBuffer,
+                                         _In_ ULONG const cbTitleBufferSize);
 
-    virtual HRESULT SetConsoleTitleWImpl(_In_reads_(TextBufferSize) wchar_t* const pTextBuffer,
-                                         _In_ ULONG const TextBufferSize);
+    virtual HRESULT SetConsoleTitleWImpl(_In_reads_bytes_(cbTitleBufferSize) wchar_t* const pwsTitleBuffer,
+                                         _In_ ULONG const cbTitleBufferSize);
 
 #pragma endregion
 
@@ -285,11 +285,11 @@ public:
                                                 _In_ BOOLEAN const IsForMaximumWindowSize,
                                                 _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx);
 
-    virtual HRESULT SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext, 
+    virtual HRESULT SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                               _In_ ULONG const Flags,
                                               _Out_ COORD* const pNewScreenBufferSize);
 
-    virtual HRESULT GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext, 
+    virtual HRESULT GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                               _Out_ ULONG* const pFlags);
 
     virtual HRESULT AddConsoleAliasAImpl(_In_reads_bytes_(cbSourceBufferLength) const char* const psSourceBuffer,
@@ -342,11 +342,47 @@ public:
                                            _Out_writes_bytes_(*pcbAliasBufferLength) wchar_t* const pwsAliasBuffer,
                                            _Inout_ ULONG* const pcbAliasBufferLength) = 0;
 
-    virtual HRESULT GetConsoleAliasExesAImpl(_Out_writes_(AliasExesBufferLength) char* const pAliasExesBuffer,
-                                             _In_ ULONG const AliasExesBufferLength);
+    virtual HRESULT GetConsoleAliasExesAImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) char* const psAliasExesBuffer,
+                                             _Inout_ ULONG* const pcbAliasExesBufferLength) = 0;
 
-    virtual HRESULT GetConsoleAliasExesWImpl(_Out_writes_(AliasExesBufferLength) wchar_t* const pAliasExesBuffer,
-                                             _In_ ULONG const AliasExesBufferLength);
+    virtual HRESULT GetConsoleAliasExesWImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) wchar_t* const pwsAliasExesBuffer,
+                                             _Inout_ ULONG* const pcbAliasExesBufferLength) = 0;
+
+#pragma region CMDext Private API
+
+    virtual HRESULT ExpungeConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                                      _In_ ULONG const cbExeNameBufferLength) = 0;
+
+    virtual HRESULT ExpungeConsoleCommandHistoryWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                      _In_ ULONG const cbExeNameBufferLength) = 0;
+
+    virtual HRESULT SetConsoleNumberOfCommandsAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                                    _In_ ULONG const cbExeNameBufferLength,
+                                                    _In_ ULONG const NumberOfCommands) = 0;
+
+    virtual HRESULT SetConsoleNumberOfCommandsWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                    _In_ ULONG const cbExeNameBufferLength,
+                                                    _In_ ULONG const NumberOfCommands) = 0;
+
+    virtual HRESULT GetConsoleCommandHistoryLengthAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                                        _In_ ULONG const cbExeNameBufferLength,
+                                                        _Out_ ULONG* const pCommandHistoryLength) = 0;
+
+    virtual HRESULT GetConsoleCommandHistoryLengthWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                        _In_ ULONG const cbExeNameBufferLength,
+                                                        _Out_ ULONG* const pCommandHistoryLength) = 0;
+
+    virtual HRESULT GetConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                                  _In_ ULONG const cbExeNameBufferLength,
+                                                  _Out_writes_bytes_(*pcbCommandHistoryBufferLength) char* const psCommandHistoryBuffer,
+                                                  _Inout_ ULONG* const pcbCommandHistoryBufferLength) = 0;
+
+    virtual HRESULT GetConsoleCommandHistoryWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                  _In_ ULONG const cbExeNameBufferLength,
+                                                  _Out_writes_bytes_(*pcbCommandHistoryBufferLength) wchar_t* const pwsCommandHistoryBuffer,
+                                                  _Inout_ ULONG* const pcbCommandHistoryBufferLength) = 0;
+
+#pragma endregion
 
     virtual HRESULT GetConsoleWindowImpl(_Out_ HWND* const pHwnd);
 

@@ -402,7 +402,7 @@ BOOL ConhostInternalGetSet::SetConsoleTitleW(_In_ const wchar_t* const pwchWindo
     
     if (fResult)
     {
-        fResult = NT_SUCCESS(DoSrvSetConsoleTitle((PVOID)pwchWindowTitle, cbOriginalLength, TRUE));
+        fResult = SUCCEEDED(DoSrvSetConsoleTitleW(pwchWindowTitle, cbOriginalLength));
     }    
 
     return fResult;

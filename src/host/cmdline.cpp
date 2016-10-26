@@ -729,7 +729,7 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_bytes_(cbSourceBufferLength)
 
     RETURN_IF_FAILED(GetConsoleAliasWImpl(pwsSource, cbSourceLength, pwsTarget, &cbTargetLength, pwsUnicodeExeName, cbUnicodeExeNameLength));
 
-    // TODO: fix this to a less crappy conversion
+    // TODO: fix this to a less crappy conversion and do error handling
 #pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
     *pcbTargetBufferLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
                                                   pwsTarget,
@@ -878,7 +878,7 @@ HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_bytes_(cbExeNameBufferLeng
     // TODO: convert to a less crappy conversion that can account for UTF-8
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
     ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
-    
+
 
     RETURN_IF_FAILED(GetConsoleAliasesWImpl(pwsUnicodeExeName,
                                             cbUnicodeExeNameLength,
@@ -886,7 +886,7 @@ HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_bytes_(cbExeNameBufferLeng
                                             &cbUnicodeAliasBufferLength));
 
 
-    // TODO: fix this to a less crappy conversion
+    // TODO: fix this to a less crappy conversion and do error handling
 #pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
     *pcbAliasBufferLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
                                                  pwsUnicodeAliasBuffer,
@@ -969,86 +969,60 @@ HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pcbAliasE
     return S_OK;
 }
 
-NTSTATUS SrvGetConsoleAliasExes(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) char* const psAliasExesBuffer,
+                                              _Inout_ ULONG* const pcbAliasExesBufferLength)
 {
-    PCONSOLE_GETALIASEXES_MSG const a = &m->u.consoleMsgL3.GetConsoleAliasExesW;
+    ULONG cbUnicodeAliasExesBufferLength = *pcbAliasExesBufferLength * 2;
+    WCHAR* const pwsUnicodeAliasExesBuffer = new WCHAR[cbUnicodeAliasExesBufferLength];
+    RETURN_IF_NULL_ALLOC(pwsUnicodeAliasExesBuffer);
+    auto UnicodeAliasExesBufferCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeAliasExesBuffer; });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliasExes, a->Unicode);
+    RETURN_IF_FAILED(GetConsoleAliasExesWImpl(pwsUnicodeAliasExesBuffer,
+                                              &cbUnicodeAliasExesBufferLength));
 
-    PVOID Buffer;
-    DWORD AliasExesBufferLength;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer(&Buffer, &AliasExesBufferLength));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    // TODO: fix this to a less crappy conversion and do error handling
+#pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
+    *pcbAliasExesBufferLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
+                                                     pwsUnicodeAliasExesBuffer,
+                                                     cbUnicodeAliasExesBufferLength / sizeof(WCHAR),
+                                                     psAliasExesBuffer,
+                                                     *pcbAliasExesBufferLength);
 
-    CONSOLE_INFORMATION *Console;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    return S_OK;
+}
 
-    LPWSTR AliasExesBufferPtrW = nullptr;
-    LPSTR AliasExesBufferPtrA = nullptr;
-    if (a->Unicode)
-    {
-        AliasExesBufferPtrW = (PWSTR)Buffer;
-    }
-    else
-    {
-        AliasExesBufferPtrA = (LPSTR)Buffer;
-    }
-    a->AliasExesBufferLength = 0;
+HRESULT ApiRoutines::GetConsoleAliasExesWImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) wchar_t* const pwsAliasExesBuffer,
+                                              _Inout_ ULONG* const pcbAliasExesBufferLength)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    LPWSTR AliasExesBufferPtrW = pwsAliasExesBuffer;
+
+    ULONG const cbOriginalAliasExesBufferLength = *pcbAliasExesBufferLength;
+    *pcbAliasExesBufferLength = 0;
+
     PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ExeAliasList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
         PEXE_ALIAS_LIST const AliasList = CONTAINING_RECORD(ListNext, EXE_ALIAS_LIST, ListLink);
-        if (a->Unicode)
+        if ((*pcbAliasExesBufferLength + AliasList->ExeLength + (1 * sizeof(WCHAR))) <= cbOriginalAliasExesBufferLength)
         {
-            if ((a->AliasExesBufferLength + AliasList->ExeLength + (1 * sizeof(WCHAR))) <= AliasExesBufferLength)
-            {
-                memmove(AliasExesBufferPtrW, AliasList->ExeName, AliasList->ExeLength);
-                AliasExesBufferPtrW += AliasList->ExeLength / sizeof(WCHAR);
-                *AliasExesBufferPtrW++ = (WCHAR)'\0';
-                a->AliasExesBufferLength += AliasList->ExeLength + (1 * sizeof(WCHAR)); // + 1 is term null
-            }
-            else
-            {
-                UnlockConsole();
-                return STATUS_BUFFER_OVERFLOW;
-            }
+            memmove(AliasExesBufferPtrW, AliasList->ExeName, AliasList->ExeLength);
+            AliasExesBufferPtrW += AliasList->ExeLength / sizeof(WCHAR);
+            *AliasExesBufferPtrW++ = (WCHAR)'\0';
+            *pcbAliasExesBufferLength += AliasList->ExeLength + (1 * sizeof(WCHAR)); // + 1 is term null
         }
         else
         {
-            if ((a->AliasExesBufferLength + (AliasList->ExeLength / sizeof(WCHAR)) + (1 * sizeof(CHAR))) <= AliasExesBufferLength)
-            {
-                USHORT Length;
-                Length = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
-                                              AliasList->ExeName,
-                                              AliasList->ExeLength / sizeof(WCHAR),
-                                              AliasExesBufferPtrA,
-                                              AliasList->ExeLength);
-                AliasExesBufferPtrA += Length;
-                *AliasExesBufferPtrA++ = (WCHAR)'\0';
-                a->AliasExesBufferLength += Length + (1 * sizeof(CHAR));    // + 1 is term null
-            }
-            else
-            {
-                UnlockConsole();
-                return STATUS_BUFFER_OVERFLOW;
-            }
+            return HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW);
         }
 
         ListNext = ListNext->Flink;
     }
 
-    m->SetReplyInformation(a->AliasExesBufferLength);
-
-    UnlockConsole();
-    return STATUS_SUCCESS;
+    return S_OK;
 }
 
 #define MAX_ARGS 9
@@ -1308,187 +1282,177 @@ NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
     return Status;
 }
 
-NTSTATUS SrvExpungeConsoleCommandHistory(_In_ PCONSOLE_API_MSG const m, _In_opt_ PBOOL const /*ReplyPending*/)
+HRESULT ApiRoutines::ExpungeConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                                       _In_ ULONG const cbExeNameBufferLength)
 {
-    PCONSOLE_EXPUNGECOMMANDHISTORY_MSG const a = &m->u.consoleMsgL3.ExpungeConsoleCommandHistoryW;
-    PVOID ExeName;
-    ULONG ExeNameLength;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&ExeName, &ExeNameLength));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
+    RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
+    auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
 
-    CONSOLE_INFORMATION *Console;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    // TODO: convert to a less crappy conversion that can account for UTF-8
+    ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
+    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
 
-    EmptyCommandHistory(FindExeCommandHistory(ExeName, ExeNameLength, a->Unicode));
-    UnlockConsole();
-    return STATUS_SUCCESS;
+    return ExpungeConsoleCommandHistoryWImpl(pwsUnicodeExeName,
+                                             cbUnicodeExeNameLength);
 }
 
-NTSTATUS SrvSetConsoleNumberOfCommands(_In_ PCONSOLE_API_MSG const m, _In_opt_ PBOOL const /*ReplyPending*/)
+HRESULT ApiRoutines::ExpungeConsoleCommandHistoryWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                       _In_ ULONG const cbExeNameBufferLength)
 {
-    PCONSOLE_SETNUMBEROFCOMMANDS_MSG const a = &m->u.consoleMsgL3.SetConsoleNumberOfCommandsW;
-    PVOID ExeName;
-    ULONG ExeNameLength;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&ExeName, &ExeNameLength));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    CONSOLE_INFORMATION *Console;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    EmptyCommandHistory(FindExeCommandHistory((PVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE));
 
-    ReallocCommandHistory(FindExeCommandHistory(ExeName, ExeNameLength, a->Unicode), a->NumCommands);
-
-    UnlockConsole();
-    return STATUS_SUCCESS;
+    return S_OK;
 }
 
-NTSTATUS SrvGetConsoleCommandHistoryLength(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*ReplyPending*/)
+HRESULT ApiRoutines::SetConsoleNumberOfCommandsAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                                     _In_ ULONG const cbExeNameBufferLength,
+                                                     _In_ ULONG const NumberOfCommands)
 {
-    PCONSOLE_GETCOMMANDHISTORYLENGTH_MSG const a = &m->u.consoleMsgL3.GetConsoleCommandHistoryLengthW;
+    // TODO: smartpointers
+    WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
+    RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
+    auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
 
-    PVOID ExeName;
-    ULONG ExeNameLength;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&ExeName, &ExeNameLength));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    // TODO: convert to a less crappy conversion that can account for UTF-8
+    ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
+    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
 
-    CONSOLE_INFORMATION *Console;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    return SetConsoleNumberOfCommandsWImpl(pwsUnicodeExeName,
+                                           cbUnicodeExeNameLength,
+                                           NumberOfCommands);
+}
 
-    a->CommandHistoryLength = 0;
+HRESULT ApiRoutines::SetConsoleNumberOfCommandsWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                     _In_ ULONG const cbExeNameBufferLength,
+                                                     _In_ ULONG const NumberOfCommands)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    PCOMMAND_HISTORY const CommandHistory = FindExeCommandHistory(ExeName, ExeNameLength, a->Unicode);
+    ReallocCommandHistory(FindExeCommandHistory((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE), NumberOfCommands);
+
+    return S_OK;
+}
+
+HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                                         _In_ ULONG const cbExeNameBufferLength,
+                                                         _Out_ ULONG* const pCommandHistoryLength)
+{
+    // TODO: smartpointers
+    WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
+    RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
+    auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
+
+    // TODO: convert to a less crappy conversion that can account for UTF-8
+    ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
+    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
+
+    RETURN_IF_FAILED(GetConsoleCommandHistoryLengthWImpl(pwsUnicodeExeName,
+                                                         cbUnicodeExeNameLength,
+                                                         pCommandHistoryLength));
+
+    // TODO: this is bad and should feel bad. we need a better way of calculating actual non-unicode length
+    *pCommandHistoryLength /= sizeof(WCHAR);
+
+    return S_OK;
+}
+
+HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                         _In_ ULONG const cbExeNameBufferLength,
+                                                         _Out_ ULONG* const pCommandHistoryLength)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    *pCommandHistoryLength = 0;
+
+    PCOMMAND_HISTORY const CommandHistory = FindExeCommandHistory((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
     if (CommandHistory)
     {
         for (SHORT i = 0; i < CommandHistory->NumberOfCommands; i++)
         {
-            a->CommandHistoryLength += CommandHistory->Commands[i]->CommandLength + sizeof(WCHAR);
+            *pCommandHistoryLength += CommandHistory->Commands[i]->CommandLength + sizeof(WCHAR);
         }
     }
 
-    if (!a->Unicode)
-    {
-        a->CommandHistoryLength /= sizeof(WCHAR);
-    }
-
-    UnlockConsole();
-    return STATUS_SUCCESS;
+    return S_OK;
 }
 
-NTSTATUS SrvGetConsoleCommandHistory(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
+                                                   _In_ ULONG const cbExeNameBufferLength,
+                                                   _Out_writes_bytes_(*pcbCommandHistoryBufferLength) char* const psCommandHistoryBuffer,
+                                                   _Inout_ ULONG* const pcbCommandHistoryBufferLength)
 {
-    PCONSOLE_GETCOMMANDHISTORY_MSG const a = &m->u.consoleMsgL3.GetConsoleCommandHistoryW;
+    // TODO: smartpointers
+    WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
+    RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
+    auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
 
-    PVOID ExeName;
-    ULONG ExeNameLength;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&ExeName, &ExeNameLength));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    // TODO: convert to a less crappy conversion that can account for UTF-8
+    ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
+    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
 
-    PVOID OutputBuffer;
-    Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer(&OutputBuffer, &a->CommandBufferLength));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    ULONG cbUnicodeCommandHistoryBufferLength = *pcbCommandHistoryBufferLength * 2;
+    WCHAR* const pwsUnicodeCommandHistoryBuffer = new WCHAR[cbUnicodeCommandHistoryBufferLength];
+    RETURN_IF_NULL_ALLOC(pwsUnicodeCommandHistoryBuffer);
+    auto UnicodeCommandHistoryBufferCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeCommandHistoryBuffer; });
 
-    CONSOLE_INFORMATION *Console;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    RETURN_IF_FAILED(GetConsoleCommandHistoryWImpl(pwsUnicodeExeName,
+                                                   cbUnicodeExeNameLength,
+                                                   pwsUnicodeCommandHistoryBuffer,
+                                                   &cbUnicodeCommandHistoryBufferLength));
 
-    PWCHAR CommandBufferW = nullptr;
-    PCHAR CommandBufferA = nullptr;
-    if (a->Unicode)
-    {
-        CommandBufferW = (PWCHAR)OutputBuffer;
-    }
-    else
-    {
-        CommandBufferA = (PCHAR)OutputBuffer;
-    }
-    PCOMMAND_HISTORY const CommandHistory = FindExeCommandHistory(ExeName, ExeNameLength, a->Unicode);
+    // TODO: fix this to a less crappy conversion and do error handling
+#pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
+    *pcbCommandHistoryBufferLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
+                                                          pwsUnicodeCommandHistoryBuffer,
+                                                          cbUnicodeCommandHistoryBufferLength / sizeof(WCHAR),
+                                                          psCommandHistoryBuffer,
+                                                          *pcbCommandHistoryBufferLength);
+
+    return S_OK;
+}
+
+HRESULT ApiRoutines::GetConsoleCommandHistoryWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                   _In_ ULONG const cbExeNameBufferLength,
+                                                   _Out_writes_bytes_(*pcbCommandHistoryBufferLength) wchar_t* const pwsCommandHistoryBuffer,
+                                                   _Inout_ ULONG* const pcbCommandHistoryBufferLength)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    PWCHAR CommandBufferW = pwsCommandHistoryBuffer;
+
+    PCOMMAND_HISTORY const CommandHistory = FindExeCommandHistory((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
     ULONG CommandHistoryLength = 0;
     ULONG NewCommandHistoryLength = 0;
     if (CommandHistory)
     {
         for (SHORT i = 0; i < CommandHistory->NumberOfCommands; i++)
         {
-            if (a->Unicode)
+            if (SUCCEEDED(ULongAdd(CommandHistoryLength, CommandHistory->Commands[i]->CommandLength, &NewCommandHistoryLength)) &&
+                SUCCEEDED(ULongAdd(NewCommandHistoryLength, sizeof(WCHAR), &NewCommandHistoryLength)) &&
+                NewCommandHistoryLength <= *pcbCommandHistoryBufferLength)
             {
-                if (SUCCEEDED(ULongAdd(CommandHistoryLength, CommandHistory->Commands[i]->CommandLength, &NewCommandHistoryLength)) &&
-                    SUCCEEDED(ULongAdd(NewCommandHistoryLength, sizeof(WCHAR), &NewCommandHistoryLength)) &&
-                    NewCommandHistoryLength <= a->CommandBufferLength)
-                {
-                    memmove(CommandBufferW, CommandHistory->Commands[i]->Command, CommandHistory->Commands[i]->CommandLength);
-                    CommandBufferW += CommandHistory->Commands[i]->CommandLength / sizeof(WCHAR);
-                    *CommandBufferW++ = (WCHAR)'\0';
-                    CommandHistoryLength = NewCommandHistoryLength;
-                }
-                else
-                {
-                    Status = STATUS_BUFFER_OVERFLOW;
-                    break;
-                }
+                memmove(CommandBufferW, CommandHistory->Commands[i]->Command, CommandHistory->Commands[i]->CommandLength);
+                CommandBufferW += CommandHistory->Commands[i]->CommandLength / sizeof(WCHAR);
+                *CommandBufferW++ = (WCHAR)'\0';
+                CommandHistoryLength = NewCommandHistoryLength;
             }
             else
             {
-                USHORT Length;
-                Length = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
-                                              CommandHistory->Commands[i]->Command,
-                                              CommandHistory->Commands[i]->CommandLength / sizeof(WCHAR),
-                                              CommandBufferA,
-                                              a->CommandBufferLength - CommandHistoryLength);
-
-                if (SUCCEEDED(ULongAdd(CommandHistoryLength, Length, &NewCommandHistoryLength)) &&
-                    SUCCEEDED(ULongAdd(NewCommandHistoryLength, sizeof(CHAR), &NewCommandHistoryLength)) &&
-                    NewCommandHistoryLength <= a->CommandBufferLength)
-                {
-
-                    CommandBufferA += Length;
-                    *CommandBufferA++ = '\0';
-                    CommandHistoryLength = NewCommandHistoryLength;
-                }
-                else
-                {
-                    Status = STATUS_BUFFER_OVERFLOW;
-                    break;
-                }
+                return HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW);
             }
         }
     }
-    a->CommandBufferLength = CommandHistoryLength;
-    UnlockConsole();
 
-    if (NT_SUCCESS(Status))
-    {
-        m->SetReplyInformation(CommandHistoryLength);
-    }
+    *pcbCommandHistoryBufferLength = CommandHistoryLength;
 
-    return Status;
+    return S_OK;
 }
 
 PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandHistory, _In_ DWORD const NumCommands)
@@ -4218,156 +4182,148 @@ NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
     return RetrieveNthCommand(CommandHistory, CommandHistory->LastDisplayed, Buffer, BufferSize, CommandSize);
 }
 
-NTSTATUS SrvGetConsoleTitle(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*ReplyPending*/)
+HRESULT GetConsoleTitleWImplHelper(_Out_writes_(*pcchTitleBufferSize) wchar_t* const pwsTitleBuffer,
+                                   _Inout_ ULONG* const pcchTitleBufferSize,
+                                   _In_ bool const fIsOriginal)
 {
-    PCONSOLE_GETTITLE_MSG const a = &m->u.consoleMsgL2.GetConsoleTitle;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(a->Original ? Telemetry::ApiCall::GetConsoleOriginalTitle : Telemetry::ApiCall::GetConsoleTitle, a->Unicode);
-
-    PVOID Buffer;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer(&Buffer, &a->TitleLength));
-    if (!NT_SUCCESS(Status))
+    LPWSTR pwszTitle;
+    ULONG cchTitleLength;
+    if (fIsOriginal)
     {
-        return Status;
-    }
-
-    CONSOLE_INFORMATION *Console;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    LPWSTR Title;
-    ULONG TitleLength;
-    if (a->Original)
-    {
-        Title = g_ciConsoleInformation.OriginalTitle;
-        TitleLength = (ULONG)wcslen(g_ciConsoleInformation.OriginalTitle);
+        pwszTitle = g_ciConsoleInformation.OriginalTitle;
+        cchTitleLength = (ULONG)wcslen(g_ciConsoleInformation.OriginalTitle);
     }
     else
     {
-        Title = g_ciConsoleInformation.Title;
-        TitleLength = (ULONG)wcslen(g_ciConsoleInformation.Title);
+        pwszTitle = g_ciConsoleInformation.Title;
+        cchTitleLength = (ULONG)wcslen(g_ciConsoleInformation.Title);
     }
 
-    // a->TitleLength contains length in bytes.
-    if (a->Unicode)
-    {
-        StringCbCopyW((PWSTR)Buffer, a->TitleLength, Title);
-        m->SetReplyInformation((wcslen((PWSTR)Buffer) + 1) * sizeof(WCHAR));
-        a->TitleLength = TitleLength;
-    }
-    else
-    {
-        a->TitleLength = (USHORT)ConvertToOem(g_uiOEMCP, Title, TitleLength, (LPSTR)Buffer, a->TitleLength);
-        ((char *)Buffer)[a->TitleLength] = '\0';
-        m->SetReplyInformation(a->TitleLength + 1);
-    }
+    StringCbCopyW(pwsTitleBuffer, *pcchTitleBufferSize, pwszTitle);
 
-    UnlockConsole();
-    return STATUS_SUCCESS;
+    *pcchTitleBufferSize = cchTitleLength;
+
+    return S_OK;
 }
 
-NTSTATUS SrvSetConsoleTitle(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const /*ReplyPending*/)
+HRESULT GetConsoleTitleAImplHelper(_Out_writes_(*pcchTitleBufferSize) char* const psTitleBuffer,
+                                   _Inout_ ULONG* const pcchTitleBufferSize,
+                                   _In_ bool const fIsOriginal)
 {
-    PCONSOLE_SETTITLE_MSG const a = &m->u.consoleMsgL2.SetConsoleTitle;
+    // TODO: convert to smart pointers
+    ULONG cchUnicodeTitleBufferLength = *pcchTitleBufferSize;
+    WCHAR* const pwsUnicodeTitleBuffer = new WCHAR[cchUnicodeTitleBufferLength];
+    RETURN_IF_NULL_ALLOC(pwsUnicodeTitleBuffer);
+    auto UnicodeTitleBufferCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeTitleBuffer; });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleTitle, a->Unicode);
+    RETURN_IF_FAILED(GetConsoleTitleWImplHelper(pwsUnicodeTitleBuffer,
+                                                &cchUnicodeTitleBufferLength,
+                                                fIsOriginal));
 
-    PVOID Buffer;
-    ULONG cbOriginalLength;
+    // TODO: fix this to a less crappy conversion and do error handling
+#pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
+    *pcchTitleBufferSize = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
+                                                pwsUnicodeTitleBuffer,
+                                                cchUnicodeTitleBufferLength,
+                                                psTitleBuffer,
+                                                *pcchTitleBufferSize);
 
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&Buffer, &cbOriginalLength));
-    if (NT_SUCCESS(Status))
-    {
-        CONSOLE_INFORMATION *Console;
-        Status = RevalidateConsole(&Console);
-        if (NT_SUCCESS(Status))
-        {
-            Status = DoSrvSetConsoleTitle(Buffer, cbOriginalLength, a->Unicode);
-            UnlockConsole();
-        }
-    }
+    psTitleBuffer[*pcchTitleBufferSize] = '\0';
 
-    return Status;
+    return S_OK;
 }
 
-NTSTATUS DoSrvSetConsoleTitle(_In_ PVOID const Buffer, _In_ ULONG const cbOriginalLength, _In_ BOOLEAN const fUnicode)
+HRESULT ApiRoutines::GetConsoleTitleAImpl(_Out_writes_(*pcchTitleBufferSize) char* const psTitleBuffer,
+                                          _Inout_ ULONG* const pcchTitleBufferSize)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
+    return GetConsoleTitleAImplHelper(psTitleBuffer,
+                                      pcchTitleBufferSize,
+                                      false);
+}
+
+HRESULT ApiRoutines::GetConsoleTitleWImpl(_Out_writes_(*pcchTitleBufferSize) wchar_t* const pwsTitleBuffer,
+                                          _Inout_ ULONG* const pcchTitleBufferSize)
+{
+    return GetConsoleTitleWImplHelper(pwsTitleBuffer,
+                                      pcchTitleBufferSize,
+                                      false);
+}
+
+HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(_Out_writes_(*pcchTitleBufferSize) char* const psTitleBuffer,
+                                                  _Inout_ ULONG* const pcchTitleBufferSize)
+{
+    return GetConsoleTitleAImplHelper(psTitleBuffer,
+                                      pcchTitleBufferSize,
+                                      true);
+}
+
+HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_(*pcchTitleBufferSize) wchar_t* const pwsTitleBuffer,
+                                                  _Inout_ ULONG* const pcchTitleBufferSize)
+{
+    return GetConsoleTitleWImplHelper(pwsTitleBuffer,
+                                      pcchTitleBufferSize,
+                                      true);
+}
+
+HRESULT ApiRoutines::SetConsoleTitleAImpl(_In_reads_bytes_(cbTitleBufferSize) char* const psTitleBuffer,
+                                          _In_ ULONG const cbTitleBufferSize)
+{
+    // TODO: convert to smart pointers
+    WCHAR* const pwsUnicodeTitleBuffer = new WCHAR[cbTitleBufferSize];
+    RETURN_IF_NULL_ALLOC(pwsUnicodeTitleBuffer);
+    auto UnicodeTitleBufferCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeTitleBuffer; });
+
+    // TODO: convert to a less crappy conversion that can account for UTF-8
+    ULONG const cchUnicodeTitleBuffer = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP,
+                                                                      psTitleBuffer,
+                                                                      cbTitleBufferSize,
+                                                                      pwsUnicodeTitleBuffer,
+                                                                      cbTitleBufferSize);
+    ULONG const cbUnicodeTitleBuffer = cchUnicodeTitleBuffer * 2; // safemath?
+
+    // ConvertInputToUnicode doesn't guarantee nullptr-termination.
+    pwsUnicodeTitleBuffer[cbTitleBufferSize] = 0;
+
+    return SetConsoleTitleWImpl(pwsUnicodeTitleBuffer, cbUnicodeTitleBuffer);
+}
+
+HRESULT ApiRoutines::SetConsoleTitleWImpl(_In_reads_bytes_(cbTitleBufferSize) wchar_t* const pwsTitleBuffer,
+                                          _In_ ULONG const cbTitleBufferSize)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return DoSrvSetConsoleTitleW(pwsTitleBuffer,
+                                 cbTitleBufferSize);
+}
+
+HRESULT DoSrvSetConsoleTitleW(_In_reads_bytes_(cbBuffer) const wchar_t* const pwsBuffer,
+                               _In_ ULONG const cbBuffer)
+{
     ULONG cbTitleLength;
-    if (fUnicode)
+    RETURN_IF_FAILED(ULongAdd(cbBuffer, sizeof(WCHAR), &cbTitleLength));
+
+    // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
+    LPWSTR const NewTitle = new WCHAR[(cbTitleLength + 1) / sizeof(WCHAR)];
+    RETURN_IF_NULL_ALLOC(NewTitle);
+    if (cbBuffer == 0)
     {
-        if (FAILED(ULongAdd(cbOriginalLength, sizeof(WCHAR), &cbTitleLength)))
-        {
-            Status = STATUS_UNSUCCESSFUL;
-        }
+        NewTitle[0] = L'\0';
     }
     else
     {
-        if (FAILED(ULongMult(cbOriginalLength, sizeof(WCHAR), &cbTitleLength)))
-        {
-            Status = STATUS_UNSUCCESSFUL;
-        }
-
-        if (NT_SUCCESS(Status))
-        {
-            if (FAILED(ULongAdd(cbTitleLength, sizeof(WCHAR), &cbTitleLength)))
-            {
-                Status = STATUS_UNSUCCESSFUL;
-            }
-        }
+        memmove(NewTitle, pwsBuffer, cbBuffer);
+        NewTitle[cbBuffer / sizeof(WCHAR)] = 0;
     }
+    delete[] g_ciConsoleInformation.Title;
+    g_ciConsoleInformation.Title = NewTitle;
 
-    if (NT_SUCCESS(Status))
-    {
-        // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-        LPWSTR const NewTitle = new WCHAR[(cbTitleLength + 1) / sizeof(WCHAR)];
-        if (NewTitle != nullptr)
-        {
-            if (cbOriginalLength == 0)
-            {
-                NewTitle[0] = L'\0';
-            }
-            else
-            {
-                if (!fUnicode)
-                {
-                    // convert title to unicode
-                    cbTitleLength = (USHORT)ConvertInputToUnicode(g_uiOEMCP, (LPSTR)Buffer, cbOriginalLength, NewTitle, cbOriginalLength);
-                    // ConvertInputToUnicode doesn't guarantee nullptr-termination.
-                    NewTitle[cbTitleLength] = 0;
-                }
-                else
-                {
-                    memmove(NewTitle, Buffer, cbOriginalLength);
-                    NewTitle[cbOriginalLength / sizeof(WCHAR)] = 0;
-                }
-            }
-            delete[] g_ciConsoleInformation.Title;
-            g_ciConsoleInformation.Title = NewTitle;
+    RETURN_HR_IF_FALSE(E_FAIL, g_ciConsoleInformation.pWindow->PostUpdateTitleWithCopy(g_ciConsoleInformation.Title));
 
-            if (g_ciConsoleInformation.pWindow->PostUpdateTitleWithCopy(g_ciConsoleInformation.Title))
-            {
-                Status = STATUS_SUCCESS;
-            }
-            else
-            {
-                Status = STATUS_UNSUCCESSFUL;
-            }
-        }
-        else
-        {
-            Status = STATUS_NO_MEMORY;
-        }
-    }
-    else
-    {
-        Status = STATUS_INVALID_PARAMETER;
-    }
-
-    return Status;
+    return S_OK;
 }
 
 UINT LoadStringEx(_In_ HINSTANCE hModule, _In_ UINT wID, _Out_writes_(cchBufferMax) LPWSTR lpBuffer, _In_ UINT cchBufferMax, _In_ WORD wLangId)

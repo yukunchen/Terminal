@@ -219,14 +219,8 @@ bool IsPauseKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
 #define IS_WORD_DELIM(wch)  ((wch) == L' ' || (gaWordDelimChars[0] && IsWordDelim(wch)))
 bool IsWordDelim(_In_ WCHAR const wch);
 
-NTSTATUS SrvGetConsoleAliasExes(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvExpungeConsoleCommandHistory(_In_ PCONSOLE_API_MSG const m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvSetConsoleNumberOfCommands(_In_ PCONSOLE_API_MSG const m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvGetConsoleCommandHistoryLength(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvGetConsoleCommandHistory(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvGetConsoleTitle(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvSetConsoleTitle(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS DoSrvSetConsoleTitle(_In_ PVOID const Buffer, _In_ ULONG const cbOriginalLength, _In_ BOOLEAN const fUnicode);
+HRESULT DoSrvSetConsoleTitleW(_In_reads_bytes_(cbBuffer) const wchar_t* const pwsBuffer, 
+                               _In_ ULONG const cbBuffer);
 
 NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
                            _In_ USHORT cbSource,
