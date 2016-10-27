@@ -16,7 +16,7 @@
 HRESULT ApiDispatchers::ServeDeprecatedApi(_Inout_ CONSOLE_API_MSG * const /*m*/, _Inout_ BOOL* const /*pbReplyPending*/)
 {
     // assert if we hit a deprecated API.
-    assert(TRUE);
+    assert(false);
 
     return E_NOTIMPL;
 }
@@ -38,7 +38,7 @@ HRESULT ApiDispatchers::ServeGetConsoleProcessList(_Inout_ CONSOLE_API_MSG * con
     /*
     * If there's not enough space in the array to hold all the pids, we'll
     * inform the user of that by returning a number > than a->dwProcessCount
-    * (but we still return STATUS_SUCCESS).
+    * (but we still return S_OK).
     */
 
     LPDWORD lpdwProcessList = (PDWORD)Buffer;

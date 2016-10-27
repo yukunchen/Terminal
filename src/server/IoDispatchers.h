@@ -21,9 +21,9 @@ Revision History:
 class IoDispatchers
 {
 public:
-    // TODO: temp for now. going to ApiSorter and IoDispatchers
-    static PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG ReceiveMsg);
-    static PCONSOLE_API_MSG ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Message);
-    static PCONSOLE_API_MSG ConsoleCreateObject(_In_ PCONSOLE_API_MSG Message);
-    static VOID ConsoleClientDisconnectRoutine(ConsoleProcessHandle* ProcessData);
+    // TODO: MSFT: 9115192 temp for now. going to ApiSorter and IoDispatchers
+    static PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG pReceiveMsg);
+    static PCONSOLE_API_MSG ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG pMessage);
+    static PCONSOLE_API_MSG ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessage);
+    static void ConsoleClientDisconnectRoutine(_Inout_ ConsoleProcessHandle* pProcessData);
 };

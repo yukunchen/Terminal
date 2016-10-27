@@ -21,7 +21,7 @@ Revision History:
 class IoSorter
 {
 public:
-    // TODO: probably not void.
+    // TODO: MSFT: 9115192 - probably not void.
     static void ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg,
                                    _Out_ CONSOLE_API_MSG** ReplyMsg);
 };

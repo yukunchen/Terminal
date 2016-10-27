@@ -10,8 +10,14 @@
 
 #include "ApiSorter.h"
 
-#include "..\host\handle.h"
+#include "..\host\consrv.h"
+#include "..\host\conwinuserrefs.h"
 #include "..\host\directio.h"
+#include "..\host\handle.h"
+#include "..\host\srvinit.h"
+#include "..\host\telemetry.hpp"
+#include "..\host\userprivapi.hpp"
+
 //
 // MessageId: STATUS_OBJECT_NAME_NOT_FOUND
 //
@@ -24,15 +30,14 @@
 // Routine Description:
 // - This routine handles IO requests to create new objects. It validates the request, creates the object and a "handle" to it.
 // Arguments:
-// - Message - Supplies the message representing the create IO.
-// - Console - Supplies the console whose object will be created.
+// - pMessage - Supplies the message representing the create IO.
 // Return Value:
 // - A pointer to the reply message, if this message is to be completed inline; nullptr if this message will pend now and complete later.
-PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG Message)
+PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessage)
 {
     NTSTATUS Status;
 
-    PCD_CREATE_OBJECT_INFORMATION const CreateInformation = &Message->CreateObject;
+    PCD_CREATE_OBJECT_INFORMATION const CreateInformation = &pMessage->CreateObject;
 
     LockConsole();
 
@@ -79,7 +84,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG Messag
         break;
     }
     case CD_IO_OBJECT_TYPE_NEW_OUTPUT:
-        Status = ConsoleCreateScreenBuffer(&Handle, Message, CreateInformation, &Message->CreateScreenBuffer);
+        Status = ConsoleCreateScreenBuffer(&Handle, pMessage, CreateInformation, &pMessage->CreateScreenBuffer);
         break;
 
     default:
@@ -92,10 +97,10 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG Messag
     }
 
     // Complete the request.
-    Message->SetReplyStatus(STATUS_SUCCESS);
-    Message->SetReplyInformation((ULONG_PTR)Handle);
+    pMessage->SetReplyStatus(STATUS_SUCCESS);
+    pMessage->SetReplyInformation((ULONG_PTR)Handle);
 
-    if (FAILED(g_pDeviceComm->CompleteIo(&Message->Complete)))
+    if (FAILED(g_pDeviceComm->CompleteIo(&pMessage->Complete)))
     {
         Handle->CloseHandle();
     }
@@ -110,18 +115,19 @@ Error:
 
     UnlockConsole();
 
-    Message->SetReplyStatus(Status);
+    pMessage->SetReplyStatus(Status);
 
-    return Message;
+    return pMessage;
 }
 
-#include "..\host\telemetry.hpp"
-#include "..\host\consrv.h"
-#include "..\host\srvinit.h"
-#include "..\host\conwinuserrefs.h"
-#include "..\host\userprivapi.hpp"
-
-PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG ReceiveMsg)
+// Routine Description:
+// - Used when a client application establishes an initial connection to this console server.
+// - This is supposed to represent accounting for the process, making the appropriate handles, etc.
+// Arguments:
+// - pReceiveMsg - The packet message received from the driver specifying that a client is connecting
+// Return Value:
+// - The response data to this request message.
+PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG pReceiveMsg)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AttachConsole);
 
@@ -129,11 +135,11 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_
 
     LockConsole();
 
-    DWORD const dwProcessId = (DWORD)ReceiveMsg->Descriptor.Process;
-    DWORD const dwThreadId = (DWORD)ReceiveMsg->Descriptor.Object;
+    DWORD const dwProcessId = (DWORD)pReceiveMsg->Descriptor.Process;
+    DWORD const dwThreadId = (DWORD)pReceiveMsg->Descriptor.Object;
 
     CONSOLE_API_CONNECTINFO Cac;
-    NTSTATUS Status = ConsoleInitializeConnectInfo(ReceiveMsg, &Cac);
+    NTSTATUS Status = ConsoleInitializeConnectInfo(pReceiveMsg, &Cac);
     if (!NT_SUCCESS(Status))
     {
         goto Error;
@@ -167,7 +173,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_
         NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, g_ciConsoleInformation.hWnd, dwProcessId, 0);
     }
 
-    if ((g_ciConsoleInformation.Flags & CONSOLE_INITIALIZED) == 0)
+    if (IsFlagClear(g_ciConsoleInformation.Flags, CONSOLE_INITIALIZED))
     {
         Status = ConsoleAllocateConsole(&Cac);
         if (!NT_SUCCESS(Status))
@@ -175,7 +181,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_
             goto Error;
         }
 
-        g_ciConsoleInformation.Flags |= CONSOLE_INITIALIZED;
+        SetFlag(g_ciConsoleInformation.Flags, CONSOLE_INITIALIZED);
     }
 
     AllocateCommandHistory(Cac.AppName, Cac.AppNameLength, (HANDLE)ProcessData);
@@ -206,18 +212,18 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_
     }
 
     // Complete the request.
-    ReceiveMsg->SetReplyStatus(STATUS_SUCCESS);
-    ReceiveMsg->SetReplyInformation(sizeof(CD_CONNECTION_INFORMATION));
+    pReceiveMsg->SetReplyStatus(STATUS_SUCCESS);
+    pReceiveMsg->SetReplyInformation(sizeof(CD_CONNECTION_INFORMATION));
 
     CD_CONNECTION_INFORMATION ConnectionInformation;
-    ReceiveMsg->Complete.Write.Data = &ConnectionInformation;
-    ReceiveMsg->Complete.Write.Size = sizeof(CD_CONNECTION_INFORMATION);
+    pReceiveMsg->Complete.Write.Data = &ConnectionInformation;
+    pReceiveMsg->Complete.Write.Size = sizeof(CD_CONNECTION_INFORMATION);
 
     ConnectionInformation.Process = (ULONG_PTR)ProcessData;
     ConnectionInformation.Input = (ULONG_PTR)ProcessData->pInputHandle;
     ConnectionInformation.Output = (ULONG_PTR)ProcessData->pOutputHandle;
 
-    if (FAILED(g_pDeviceComm->CompleteIo(&ReceiveMsg->Complete)))
+    if (FAILED(g_pDeviceComm->CompleteIo(&pReceiveMsg->Complete)))
     {
         FreeCommandHistory((HANDLE)ProcessData);
         g_ciConsoleInformation.ProcessHandleList.FreeProcessData(ProcessData);
@@ -239,33 +245,33 @@ Error:
 
     UnlockConsole();
 
-    ReceiveMsg->SetReplyStatus(Status);
+    pReceiveMsg->SetReplyStatus(Status);
 
-    return ReceiveMsg;
+    return pReceiveMsg;
 }
 
 // Routine Description:
 // - This routine is called when a process is destroyed. It closes the process's handles and frees the console if it's the last reference.
 // Arguments:
-// - hProcess - Process ID.
+// - pProcessData - Pointer to the client's process information structure.
 // Return Value:
 // - <none>
-VOID IoDispatchers::ConsoleClientDisconnectRoutine(ConsoleProcessHandle* ProcessData)
+void IoDispatchers::ConsoleClientDisconnectRoutine(_Inout_ ConsoleProcessHandle* pProcessData)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FreeConsole);
 
-    NotifyWinEvent(EVENT_CONSOLE_END_APPLICATION, g_ciConsoleInformation.hWnd, ProcessData->dwProcessId, 0);
+    NotifyWinEvent(EVENT_CONSOLE_END_APPLICATION, g_ciConsoleInformation.hWnd, pProcessData->dwProcessId, 0);
 
-    RemoveConsole(ProcessData);
+    RemoveConsole(pProcessData);
 }
 
 // Routine Description:
 // - This routine validates a user IO and dispatches it to the appropriate worker routine.
 // Arguments:
-// - Message - Supplies the message representing the user IO.
+// - pMessage - Supplies the message representing the user IO.
 // Return Value:
 // - A pointer to the reply message, if this message is to be completed inline; nullptr if this message will pend now and complete later.
-PCONSOLE_API_MSG IoDispatchers::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Message)
+PCONSOLE_API_MSG IoDispatchers::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG pMessage)
 {
-    return ApiSorter::ConsoleDispatchRequest(Message);
+    return ApiSorter::ConsoleDispatchRequest(pMessage);
 }

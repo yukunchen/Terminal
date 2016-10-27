@@ -66,7 +66,7 @@ HRESULT _CONSOLE_API_MSG::GetInputBuffer(_Outptr_result_bytebuffer_(*pcbSize) vo
 
         RETURN_IF_FAILED(ReadMessageInput(0, pPayload.get(), cbReadSize));
 
-        State.InputBuffer = pPayload.release(); // TODO: don't release, maintain as smart pointer.
+        State.InputBuffer = pPayload.release(); // TODO: MSFT: 9565140 - don't release, maintain as smart pointer.
         State.InputBufferSize = cbReadSize;
     }
 
@@ -102,7 +102,7 @@ HRESULT _CONSOLE_API_MSG::GetAugmentedOutputBuffer(_In_ const ULONG cbFactor,
         BYTE* pPayload = new BYTE[cbWriteSize];
         RETURN_IF_NULL_ALLOC(pPayload);
 
-        State.OutputBuffer = pPayload; // TODO: maintain as smart pointer.
+        State.OutputBuffer = pPayload; // TODO: MSFT: 9565140 - maintain as smart pointer.
         State.OutputBufferSize = cbWriteSize;
     }
 

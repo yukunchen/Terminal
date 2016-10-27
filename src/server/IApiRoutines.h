@@ -125,11 +125,7 @@ public:
                                                     _In_ COORD const StartingCoordinate,
                                                     _Out_ DWORD* const pCellsModified);
 
-    // Process based. Restrict in protocol side?
-    virtual HRESULT GenerateConsoleCtrlEventImpl(_In_ ULONG const ProcessGroupFilter,
-                                                 _In_ ULONG const ControlEvent) = 0;
-
-    virtual HRESULT SetConsoleActiveScreenBufferImpl(_In_ HANDLE const NewOutContext) = 0;
+    virtual HRESULT SetConsoleActiveScreenBufferImpl(_In_ IConsoleOutputObject* const pNewOutContext) = 0;
 
     virtual HRESULT FlushConsoleInputBuffer(_In_ IConsoleInputObject* const pInContext) = 0;
 

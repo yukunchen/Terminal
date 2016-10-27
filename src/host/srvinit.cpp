@@ -24,6 +24,7 @@
 #include "ApiRoutines.h"
 
 #include "..\server\Entrypoints.h"
+#include "..\server\IoSorter.h"
 
 #pragma hdrstop
 
@@ -563,8 +564,6 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 // - <none>
 // Return Value:
 // - This routine never returns. The process exits when no more references or clients exist.
-#include "..\server\IoSorter.h"
-#include "ApiRoutines.h"
 DWORD ConsoleIoThread()
 {
     ApiRoutines Routines;
@@ -581,7 +580,7 @@ DWORD ConsoleIoThread()
             ReplyMsg->ReleaseMessageBuffers();
         }
 
-        // TODO: correct mixed NTSTATUS/HRESULT
+        // TODO: 9115192 correct mixed NTSTATUS/HRESULT
         HRESULT hr = g_pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
         if (FAILED(hr))
         {

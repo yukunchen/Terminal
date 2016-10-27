@@ -367,11 +367,7 @@ HRESULT ApiDispatchers::ServeGetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m, 
     Telemetry::Instance().LogApiCall(a->Original ? Telemetry::ApiCall::GetConsoleOriginalTitle : Telemetry::ApiCall::GetConsoleTitle, a->Unicode);
 
     PVOID Buffer;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer(&Buffer, &a->TitleLength));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    RETURN_IF_FAILED(m->GetOutputBuffer(&Buffer, &a->TitleLength));
 
     // a->TitleLength contains length in bytes.
     if (a->Unicode)
