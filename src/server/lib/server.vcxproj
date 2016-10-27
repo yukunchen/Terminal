@@ -3,6 +3,7 @@
   <Import Project="..\..\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\ApiDispatchers.cpp" />
+    <ClCompile Include="..\ApiDispatchersInternal.cpp" />
     <ClCompile Include="..\ApiMessage.cpp" />
     <ClCompile Include="..\ApiMessageState.cpp" />
     <ClCompile Include="..\ApiRoutinesBase.cpp" />

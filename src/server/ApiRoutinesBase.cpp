@@ -46,6 +46,7 @@ NTSTATUS IApiRoutines::SetConsoleInputModeImpl(IConsoleInputObject* const pInCon
 {
     assert(false);
     UNREFERENCED_PARAMETER(pInContext);
+    UNREFERENCED_PARAMETER(Mode);
     return 0;
 }
 
@@ -54,6 +55,7 @@ NTSTATUS IApiRoutines::SetConsoleOutputModeImpl(_In_ IConsoleOutputObject* const
 {
     assert(false);
     UNREFERENCED_PARAMETER(pOutContext);
+    UNREFERENCED_PARAMETER(Mode);
     return 0;
 }
 

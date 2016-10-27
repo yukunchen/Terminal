@@ -340,8 +340,8 @@ bool ConsoleProcessList::IsEmpty() const
 void ConsoleProcessList::_ModifyProcessFocus(_In_ HANDLE const hProcess, _In_ bool const fForeground) const
 {
     // TODO: This fails with invalid parameter when called for not-this-process. Did it always do that?
-    /*LOG_IF_WIN32_BOOL_FALSE(SetPriorityClass(hProcess,
-                                             fForeground ? PROCESS_MODE_BACKGROUND_END : PROCESS_MODE_BACKGROUND_BEGIN));*/
+    LOG_IF_WIN32_BOOL_FALSE(SetPriorityClass(hProcess,
+                                             fForeground ? PROCESS_MODE_BACKGROUND_END : PROCESS_MODE_BACKGROUND_BEGIN));
 }
 
 // Routine Description:

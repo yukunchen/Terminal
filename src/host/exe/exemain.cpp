@@ -20,10 +20,10 @@
 // Return value:
 // - [[noreturn]] - This function will not return. It will kill the thread we were called from and the console server threads will take over.
 int CALLBACK wWinMain(
-    _In_ HINSTANCE hInstance,
-    _In_ HINSTANCE hPrevInstance,
+    _In_ HINSTANCE /*hInstance*/,
+    _In_ HINSTANCE /*hPrevInstance*/,
     _In_ PWSTR pwszCmdLine,
-    _In_ int nCmdShow)
+    _In_ int /*nCmdShow*/)
 {
     Entrypoints::StartConsoleForCmdLine(pwszCmdLine);
 }

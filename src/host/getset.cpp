@@ -198,7 +198,7 @@ HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
 }
 
 HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                                 _In_ BOOLEAN const IsForMaximumWindowSize,
+                                                 _In_ BOOLEAN const /*IsForMaximumWindowSize*/,
                                                  _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
 {
     LockConsole();

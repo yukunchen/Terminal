@@ -15,7 +15,7 @@ Revision History:
 
 #pragma once
 
-#include <conapi.h>
+#include "conapi.h"
 
 class SCREEN_INFORMATION;
 struct _INPUT_INFORMATION;

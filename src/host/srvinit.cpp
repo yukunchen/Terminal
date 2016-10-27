@@ -21,6 +21,8 @@
 #include "windowdpiapi.hpp"
 #include "userprivapi.hpp"
 
+#include "ApiRoutines.h"
+
 #include "..\server\Entrypoints.h"
 
 #pragma hdrstop

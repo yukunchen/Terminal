@@ -172,7 +172,7 @@ BOOL ConhostInternalGetSet::GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const
 // - TRUE if successful (see DoSrvSetConsoleCursorInfo). FALSE otherwise.
 BOOL ConhostInternalGetSet::SetConsoleCursorInfo(_In_ const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo)
 {
-    return SUCCEEDED(DoSrvSetConsoleCursorInfo(_pScreenInfo, pConsoleCursorInfo->dwSize, pConsoleCursorInfo->bVisible));
+    return SUCCEEDED(DoSrvSetConsoleCursorInfo(_pScreenInfo, pConsoleCursorInfo->dwSize, !!pConsoleCursorInfo->bVisible));
 }
 
 // Routine Description:
@@ -321,7 +321,7 @@ BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pS
 // - TRUE if successful (see DoSrvSetConsoleWindowInfo). FALSE otherwise.
 BOOL ConhostInternalGetSet::SetConsoleWindowInfo(_In_ BOOL const bAbsolute, _In_ const SMALL_RECT* const lpConsoleWindow)
 {
-    return SUCCEEDED(DoSrvSetConsoleWindowInfo(_pScreenInfo, bAbsolute, lpConsoleWindow));
+    return SUCCEEDED(DoSrvSetConsoleWindowInfo(_pScreenInfo, !!bAbsolute, lpConsoleWindow));
 }
 
 // Routine Description:
