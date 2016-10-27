@@ -16,6 +16,8 @@ Revision History:
 
 #pragma once
 
+// TODO: 9115192 - Temporarily forward declare the real objects until I create an interface representing a console object
+// This will be required so the server doesn't actually need to understand the implementation of a console object, just the few methods it needs to call.
 class SCREEN_INFORMATION;
 typedef SCREEN_INFORMATION IConsoleOutputObject;
 
@@ -26,12 +28,9 @@ typedef INPUT_INFORMATION IConsoleInputObject;
 class IApiRoutines
 {
 public:
-    IApiRoutines()
-    {
-
-    }
 
 #pragma region ObjectManagement
+    // TODO: 9115192 - We will need to make the objects via an interface eventually. This represents that idea.
     /*virtual HRESULT CreateInitialObjects(_Out_ IConsoleInputObject** const ppInputObject,
                                           _Out_ IConsoleOutputObject** const ppOutputObject);
 */
@@ -39,24 +38,24 @@ public:
 #pragma endregion
 
 #pragma region L1
-    virtual HRESULT GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage);
+    virtual HRESULT GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage) = 0;
 
-    virtual HRESULT GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage);
+    virtual HRESULT GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage) = 0;
 
     virtual HRESULT GetConsoleInputModeImpl(_In_ IConsoleInputObject* const pInContext,
-                                            _Out_ ULONG* const pMode);
+                                            _Out_ ULONG* const pMode) = 0;
 
     virtual HRESULT GetConsoleOutputModeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                             _Out_ ULONG* const pMode);
+                                             _Out_ ULONG* const pMode) = 0;
 
     virtual HRESULT SetConsoleInputModeImpl(_In_ IConsoleInputObject* const pInContext,
-                                            _In_ ULONG const Mode);
+                                            _In_ ULONG const Mode) = 0;
 
     virtual HRESULT SetConsoleOutputModeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                             _In_ ULONG const Mode);
+                                             _In_ ULONG const Mode) = 0;
 
     virtual HRESULT GetNumberOfConsoleInputEventsImpl(_In_ IConsoleInputObject* const pInContext,
-                                                      _Out_ ULONG* const pEvents);
+                                                      _Out_ ULONG* const pEvents) = 0;
 
     virtual HRESULT PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
                                           _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
@@ -128,60 +127,60 @@ public:
 
     // Process based. Restrict in protocol side?
     virtual HRESULT GenerateConsoleCtrlEventImpl(_In_ ULONG const ProcessGroupFilter,
-                                                 _In_ ULONG const ControlEvent);
+                                                 _In_ ULONG const ControlEvent) = 0;
 
-    virtual HRESULT SetConsoleActiveScreenBufferImpl(_In_ HANDLE const NewOutContext);
+    virtual HRESULT SetConsoleActiveScreenBufferImpl(_In_ HANDLE const NewOutContext) = 0;
 
-    virtual HRESULT FlushConsoleInputBuffer(_In_ IConsoleInputObject* const pInContext);
+    virtual HRESULT FlushConsoleInputBuffer(_In_ IConsoleInputObject* const pInContext) = 0;
 
-    virtual HRESULT SetConsoleInputCodePageImpl(_In_ ULONG const CodePage);
+    virtual HRESULT SetConsoleInputCodePageImpl(_In_ ULONG const CodePage) = 0;
 
-    virtual HRESULT SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage);
+    virtual HRESULT SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage) = 0;
 
     virtual HRESULT GetConsoleCursorInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
                                              _Out_ ULONG* const pCursorSize,
-                                             _Out_ BOOLEAN* const pIsVisible);
+                                             _Out_ BOOLEAN* const pIsVisible) = 0;
 
     virtual HRESULT SetConsoleCursorInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
                                              _In_ ULONG const CursorSize,
-                                             _In_ BOOLEAN const IsVisible);
+                                             _In_ BOOLEAN const IsVisible) = 0;
 
     // driver will pare down for non-Ex method
     virtual HRESULT GetConsoleScreenBufferInfoExImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                     _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx);
+                                                     _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx) = 0;
 
     virtual HRESULT SetConsoleScreenBufferInfoExImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                     _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx);
+                                                     _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx) = 0;
 
     virtual HRESULT SetConsoleScreenBufferSizeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                   _In_ const COORD* const pSize);
+                                                   _In_ const COORD* const pSize) = 0;
 
     virtual HRESULT SetConsoleCursorPositionImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                 _In_ const COORD* const pCursorPosition);
+                                                 _In_ const COORD* const pCursorPosition) = 0;
 
     virtual HRESULT GetLargestConsoleWindowSizeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                    _Out_ COORD* const pSize);
+                                                    _Out_ COORD* const pSize) = 0;
 
     virtual HRESULT ScrollConsoleScreenBufferAImpl(_In_ IConsoleOutputObject* const pOutContext,
                                                    _In_ const SMALL_RECT* const pSourceRectangle,
                                                    _In_ const COORD* const pTargetOrigin,
                                                    _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
                                                    _In_ char const chFill,
-                                                   _In_ WORD const attrFill);
+                                                   _In_ WORD const attrFill) = 0;
 
     virtual HRESULT ScrollConsoleScreenBufferWImpl(_In_ IConsoleOutputObject* const pOutContext,
                                                    _In_ const SMALL_RECT* const pSourceRectangle,
                                                    _In_ const COORD* const pTargetOrigin,
                                                    _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
                                                    _In_ wchar_t const wchFill,
-                                                   _In_ WORD const attrFill);
+                                                   _In_ WORD const attrFill) = 0;
 
     virtual HRESULT SetConsoleTextAttributeImpl(_In_ IConsoleOutputObject* const pOutContext,
-                                                _In_ WORD const Attribute);
+                                                _In_ WORD const Attribute) = 0;
 
     virtual HRESULT SetConsoleWindowInfoImpl(_In_ IConsoleOutputObject* const pOutContext,
                                              _In_ BOOLEAN const IsAbsoluteRectangle,
-                                             _In_ const SMALL_RECT* const pWindowRectangle);
+                                             _In_ const SMALL_RECT* const pWindowRectangle) = 0;
 
     virtual HRESULT ReadConsoleOutputAttributeImpl(_In_ IConsoleOutputObject* const pOutContext,
                                                    _In_ const COORD* const pSourceOrigin,
@@ -270,31 +269,31 @@ public:
                                                  _Inout_ ULONG* const pcchTitleBufferSize) = 0;
 
     virtual HRESULT SetConsoleTitleAImpl(_In_reads_bytes_(cbTitleBufferSize) char* const psTitleBuffer,
-                                         _In_ ULONG const cbTitleBufferSize);
+                                         _In_ ULONG const cbTitleBufferSize) = 0;
 
     virtual HRESULT SetConsoleTitleWImpl(_In_reads_bytes_(cbTitleBufferSize) wchar_t* const pwsTitleBuffer,
-                                         _In_ ULONG const cbTitleBufferSize);
+                                         _In_ ULONG const cbTitleBufferSize) = 0;
 
 #pragma endregion
 
 #pragma region L3
-    virtual HRESULT GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons);
+    virtual HRESULT GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons) = 0;
 
     virtual HRESULT GetConsoleFontSizeImpl(_In_ IConsoleOutputObject* const pOutContext,
                                            _In_ DWORD const FontIndex,
-                                           _Out_ COORD* const pFontSize);
+                                           _Out_ COORD* const pFontSize) = 0;
 
     // driver will pare down for non-Ex method
     virtual HRESULT GetCurrentConsoleFontExImpl(_In_ IConsoleOutputObject* const pOutContext,
                                                 _In_ BOOLEAN const IsForMaximumWindowSize,
-                                                _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx);
+                                                _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx) = 0;
 
     virtual HRESULT SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                               _In_ ULONG const Flags,
-                                              _Out_ COORD* const pNewScreenBufferSize);
+                                              _Out_ COORD* const pNewScreenBufferSize) = 0;
 
     virtual HRESULT GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                              _Out_ ULONG* const pFlags);
+                                              _Out_ ULONG* const pFlags) = 0;
 
     virtual HRESULT AddConsoleAliasAImpl(_In_reads_bytes_(cbSourceBufferLength) const char* const psSourceBuffer,
                                          _In_ ULONG const cbSourceBufferLength,
@@ -326,15 +325,15 @@ public:
 
     virtual HRESULT GetConsoleAliasesLengthAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
                                                  _In_ ULONG const cbExeNameBufferLength,
-                                                 _Out_ ULONG* const pcbAliasesBufferRequired);
+                                                 _Out_ ULONG* const pcbAliasesBufferRequired) = 0;
 
     virtual HRESULT GetConsoleAliasesLengthWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                                  _In_ ULONG const cbExeNameBufferLength,
-                                                 _Out_ ULONG* const pcbAliasesBufferRequired);
+                                                 _Out_ ULONG* const pcbAliasesBufferRequired) = 0;
 
-    virtual HRESULT GetConsoleAliasExesLengthAImpl(_Out_ ULONG* const pcbAliasExesBufferRequired);
+    virtual HRESULT GetConsoleAliasExesLengthAImpl(_Out_ ULONG* const pcbAliasExesBufferRequired) = 0;
 
-    virtual HRESULT GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pcbAliasExesBufferRequired);
+    virtual HRESULT GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pcbAliasExesBufferRequired) = 0;
 
     virtual HRESULT GetConsoleAliasesAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
                                            _In_ ULONG const cbExeNameBufferLength,
@@ -388,17 +387,17 @@ public:
 
 #pragma endregion
 
-    virtual HRESULT GetConsoleWindowImpl(_Out_ HWND* const pHwnd);
+    virtual HRESULT GetConsoleWindowImpl(_Out_ HWND* const pHwnd) = 0;
 
-    virtual HRESULT GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo);
+    virtual HRESULT GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo) = 0;
 
-    virtual HRESULT GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo);
+    virtual HRESULT GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo) = 0;
 
-    virtual HRESULT SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo);
+    virtual HRESULT SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo) = 0;
 
     virtual HRESULT SetCurrentConsoleFontExImpl(_In_ IConsoleOutputObject* const pOutContext,
                                                 _In_ BOOLEAN const IsForMaximumWindowSize,
-                                                _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx);
+                                                _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx) = 0;
 
 #pragma endregion
 };

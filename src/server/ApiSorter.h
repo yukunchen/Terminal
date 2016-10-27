@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation
 
 Module Name:
-- IoSorter.h
+- ApiSorter.h
 
 Abstract:
 - This file sorts out the various console host serviceable APIs.

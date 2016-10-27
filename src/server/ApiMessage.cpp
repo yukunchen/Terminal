@@ -22,11 +22,11 @@ ConsoleHandleData* _CONSOLE_API_MSG::GetObjectHandle() const
 }
 
 // Routine Description:
-// - This routine reads [part of] the input payload of the given message.
+// - This routine reads some or all of the input payload of the given message (depending on the given offset).
 // Arguments:
-// - Offset - Supplies the offset from which to start reading the payload.
-// - Buffer - Receives the payload.
-// - Size - Supplies the number of bytes to be read into the buffer.
+// - cbOffset - Supplies the offset from which to start reading the payload.
+// - pvBuffer - Receives the payload.
+// - cbSize - Supplies the number of bytes to be read into the buffer.
 // Return Value:
 // - HRESULT indicating if the payload was successfully read.
 HRESULT _CONSOLE_API_MSG::ReadMessageInput(_In_ const ULONG cbOffset,
@@ -122,7 +122,7 @@ HRESULT _CONSOLE_API_MSG::GetAugmentedOutputBuffer(_In_ const ULONG cbFactor,
 // - Size - Receives the size, in bytes, of the output buffer.
 // Return Value:
 // - HRESULT indicating if the output buffer was successfully retrieved.
-HRESULT _CONSOLE_API_MSG::GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) PVOID * const ppvBuffer,
+HRESULT _CONSOLE_API_MSG::GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer,
                                           _Out_ ULONG * const pcbSize)
 {
     return GetAugmentedOutputBuffer(1, ppvBuffer, pcbSize);
@@ -172,7 +172,7 @@ void _CONSOLE_API_MSG::SetReplyStatus(_In_ const NTSTATUS Status)
     Complete.IoStatus.Status = Status;
 }
 
-void _CONSOLE_API_MSG::SetReplyInformation(_In_ ULONG_PTR pInformation)
+void _CONSOLE_API_MSG::SetReplyInformation(_In_ ULONG_PTR const pInformation)
 {
     Complete.IoStatus.Information = pInformation;
 }
