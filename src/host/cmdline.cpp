@@ -614,7 +614,7 @@ HRESULT ApiRoutines::AddConsoleAliasAImpl(_In_reads_bytes_(cbSourceBufferLength)
                                           _In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
                                           _In_ ULONG const cbExeNameBufferLength)
 {
-    // TODO: convert to smart pointers
+    // TODO: MSFT: 9564943 - convert to smart pointers
     WCHAR* const pwsSource = new WCHAR[cbSourceBufferLength];
     RETURN_IF_NULL_ALLOC(pwsSource);
     auto SourceCleanup = wil::ScopeExit([&] { delete[] pwsSource; });
@@ -627,7 +627,7 @@ HRESULT ApiRoutines::AddConsoleAliasAImpl(_In_reads_bytes_(cbSourceBufferLength)
     RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
     auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
 
-    // TODO: convert to a less crappy conversion that can account for UTF-8
+    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
     ULONG const cchSourceLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psSourceBuffer, cbSourceBufferLength, pwsSource, cbSourceBufferLength);
     ULONG const cbSourceLength = cchSourceLength * sizeof(wchar_t);
     ULONG const cchTargetLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psTargetBuffer, cbTargetBufferLength, pwsTarget, cbTargetBufferLength);
@@ -706,7 +706,7 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_bytes_(cbSourceBufferLength)
                                           _In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
                                           _In_ ULONG const cbExeNameBufferLength)
 {
-    // TODO: convert to smart pointers
+    // TODO: MSFT: 9564943 - convert to smart pointers
     WCHAR* const pwsSource = new WCHAR[cbSourceBufferLength];
     RETURN_IF_NULL_ALLOC(pwsSource);
     auto SourceCleanup = wil::ScopeExit([&] { delete[] pwsSource; });
@@ -719,7 +719,7 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_bytes_(cbSourceBufferLength)
     RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
     auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
 
-    // TODO: convert to a less crappy conversion that can account for UTF-8
+    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
     ULONG const cchSourceLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psSourceBuffer, cbSourceBufferLength, pwsSource, cbSourceBufferLength);
     ULONG const cbSourceLength = cchSourceLength * sizeof(wchar_t);
 
@@ -729,7 +729,7 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_bytes_(cbSourceBufferLength)
 
     RETURN_IF_FAILED(GetConsoleAliasWImpl(pwsSource, cbSourceLength, pwsTarget, &cbTargetLength, pwsUnicodeExeName, cbUnicodeExeNameLength));
 
-    // TODO: fix this to a less crappy conversion and do error handling
+    // TODO: MSFT: 9564943 - fix this to a less crappy conversion and do error handling
 #pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
     *pcbTargetBufferLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
                                                   pwsTarget,
@@ -795,12 +795,12 @@ HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_bytes_(cbExeNameBuff
                                                   _In_ ULONG const cbExeNameBufferLength,
                                                   _Out_ ULONG* const pcbAliasesBufferRequired)
 {
-    // TODO: convert to smart pointers
+    // TODO: MSFT: 9564943 - convert to smart pointers
     WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
     RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
     auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
 
-    // TODO: convert to a less crappy conversion that can account for UTF-8
+    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
     ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
 
@@ -809,7 +809,7 @@ HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_bytes_(cbExeNameBuff
                                                   pcbAliasesBufferRequired));
 
 
-    // TODO: this is terrible. We should be calculating based on the string, not estimating a divide by 2.
+    // TODO: MSFT: 9564943 - this is terrible. We should be calculating based on the string, not estimating a divide by 2.
     *pcbAliasesBufferRequired /= sizeof(WCHAR);
 
     return S_OK;
@@ -819,7 +819,7 @@ HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(_In_reads_bytes_(cbExeNameBuff
                                                   _In_ ULONG const cbExeNameBufferLength,
                                                   _Out_ ULONG* const pcbAliasesBufferRequired)
 {
-    // TODO: (eliminate this one and the others and have it instead just fail on back conversion in the server level. use all size_t)
+    // TODO: MSFT: 9564943 - (eliminate this one and the others and have it instead just fail on back conversion in the server level. use all size_t)
     RETURN_HR_IF(E_INVALIDARG, cbExeNameBufferLength > USHORT_MAX);
 
     LockConsole();
@@ -865,7 +865,7 @@ HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_bytes_(cbExeNameBufferLeng
                                             _Out_writes_bytes_(*pcbAliasBufferLength) char* const psAliasBuffer,
                                             _Inout_ ULONG* const pcbAliasBufferLength)
 {
-    // TODO: convert to smart pointers
+    // TODO: MSFT: 9564943 - convert to smart pointers
     WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
     RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
     auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
@@ -875,7 +875,7 @@ HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_bytes_(cbExeNameBufferLeng
     RETURN_IF_NULL_ALLOC(pwsUnicodeAliasBuffer);
     auto UnicodeAliasBufferCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeAliasBuffer; });
 
-    // TODO: convert to a less crappy conversion that can account for UTF-8
+    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
     ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
 
@@ -886,7 +886,7 @@ HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_bytes_(cbExeNameBufferLeng
                                             &cbUnicodeAliasBufferLength));
 
 
-    // TODO: fix this to a less crappy conversion and do error handling
+    // TODO: MSFT: 9564943 - fix this to a less crappy conversion and do error handling
 #pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
     *pcbAliasBufferLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
                                                  pwsUnicodeAliasBuffer,
@@ -944,7 +944,7 @@ HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(_Out_ ULONG* const pcbAliasE
 {
     RETURN_IF_FAILED(GetConsoleAliasExesLengthWImpl(pcbAliasExesBufferRequired));
 
-    // TODO: this is bad and should feel bad. we need a better way of calculating actual non-unicode length
+    // TODO: MSFT: 9564943 - this is bad and should feel bad. we need a better way of calculating actual non-unicode length
     *pcbAliasExesBufferRequired /= sizeof(WCHAR);
 
     return S_OK;
@@ -980,7 +980,7 @@ HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_bytes_(*pcbAliasExesBu
     RETURN_IF_FAILED(GetConsoleAliasExesWImpl(pwsUnicodeAliasExesBuffer,
                                               &cbUnicodeAliasExesBufferLength));
 
-    // TODO: fix this to a less crappy conversion and do error handling
+    // TODO: MSFT: 9564943 - fix this to a less crappy conversion and do error handling
 #pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
     *pcbAliasExesBufferLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
                                                      pwsUnicodeAliasExesBuffer,
@@ -1289,7 +1289,7 @@ HRESULT ApiRoutines::ExpungeConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNam
     RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
     auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
 
-    // TODO: convert to a less crappy conversion that can account for UTF-8
+    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
     ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
 
@@ -1312,12 +1312,12 @@ HRESULT ApiRoutines::SetConsoleNumberOfCommandsAImpl(_In_reads_bytes_(cbExeNameB
                                                      _In_ ULONG const cbExeNameBufferLength,
                                                      _In_ ULONG const NumberOfCommands)
 {
-    // TODO: smartpointers
+    // TODO: MSFT: 9564943 - smartpointers
     WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
     RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
     auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
 
-    // TODO: convert to a less crappy conversion that can account for UTF-8
+    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
     ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
 
@@ -1342,12 +1342,12 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(_In_reads_bytes_(cbExeN
                                                          _In_ ULONG const cbExeNameBufferLength,
                                                          _Out_ ULONG* const pCommandHistoryLength)
 {
-    // TODO: smartpointers
+    // TODO: MSFT: 9564943 - smartpointers
     WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
     RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
     auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
 
-    // TODO: convert to a less crappy conversion that can account for UTF-8
+    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
     ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
 
@@ -1355,7 +1355,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(_In_reads_bytes_(cbExeN
                                                          cbUnicodeExeNameLength,
                                                          pCommandHistoryLength));
 
-    // TODO: this is bad and should feel bad. we need a better way of calculating actual non-unicode length
+    // TODO: MSFT: 9564943 - this is bad and should feel bad. we need a better way of calculating actual non-unicode length
     *pCommandHistoryLength /= sizeof(WCHAR);
 
     return S_OK;
@@ -1387,12 +1387,12 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNameBuf
                                                    _Out_writes_bytes_(*pcbCommandHistoryBufferLength) char* const psCommandHistoryBuffer,
                                                    _Inout_ ULONG* const pcbCommandHistoryBufferLength)
 {
-    // TODO: smartpointers
+    // TODO: MSFT: 9564943 - smartpointers
     WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
     RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
     auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
 
-    // TODO: convert to a less crappy conversion that can account for UTF-8
+    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
     ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
 
@@ -1406,7 +1406,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNameBuf
                                                    pwsUnicodeCommandHistoryBuffer,
                                                    &cbUnicodeCommandHistoryBufferLength));
 
-    // TODO: fix this to a less crappy conversion and do error handling
+    // TODO: MSFT: 9564943 - fix this to a less crappy conversion and do error handling
 #pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
     *pcbCommandHistoryBufferLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
                                                           pwsUnicodeCommandHistoryBuffer,
@@ -4213,7 +4213,7 @@ HRESULT GetConsoleTitleAImplHelper(_Out_writes_(*pcchTitleBufferSize) char* cons
                                    _Inout_ ULONG* const pcchTitleBufferSize,
                                    _In_ bool const fIsOriginal)
 {
-    // TODO: convert to smart pointers
+    // TODO: MSFT: 9564943 - convert to smart pointers
     ULONG cchUnicodeTitleBufferLength = *pcchTitleBufferSize;
     WCHAR* const pwsUnicodeTitleBuffer = new WCHAR[cchUnicodeTitleBufferLength];
     RETURN_IF_NULL_ALLOC(pwsUnicodeTitleBuffer);
@@ -4223,7 +4223,7 @@ HRESULT GetConsoleTitleAImplHelper(_Out_writes_(*pcchTitleBufferSize) char* cons
                                                 &cchUnicodeTitleBufferLength,
                                                 fIsOriginal));
 
-    // TODO: fix this to a less crappy conversion and do error handling
+    // TODO: MSFT: 9564943 - fix this to a less crappy conversion and do error handling
 #pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
     *pcchTitleBufferSize = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
                                                 pwsUnicodeTitleBuffer,
@@ -4271,12 +4271,12 @@ HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_(*pcchTitleBufferS
 HRESULT ApiRoutines::SetConsoleTitleAImpl(_In_reads_bytes_(cbTitleBufferSize) char* const psTitleBuffer,
                                           _In_ ULONG const cbTitleBufferSize)
 {
-    // TODO: convert to smart pointers
+    // TODO: MSFT: 9564943 - convert to smart pointers
     WCHAR* const pwsUnicodeTitleBuffer = new WCHAR[cbTitleBufferSize];
     RETURN_IF_NULL_ALLOC(pwsUnicodeTitleBuffer);
     auto UnicodeTitleBufferCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeTitleBuffer; });
 
-    // TODO: convert to a less crappy conversion that can account for UTF-8
+    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
     ULONG const cchUnicodeTitleBuffer = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP,
                                                                       psTitleBuffer,
                                                                       cbTitleBufferSize,
