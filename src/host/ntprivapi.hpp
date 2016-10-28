@@ -77,8 +77,9 @@ typedef PROCESS_BASIC_INFORMATION *PPROCESS_BASIC_INFORMATION;
 class NtPrivApi sealed
 {
 public:
-
     static NTSTATUS s_GetProcessParentId(_Inout_ PULONG ProcessId);
+
+    ~NtPrivApi();
 
 private:
     static NTSTATUS s_NtOpenProcess(_Out_ PHANDLE ProcessHandle,
@@ -94,11 +95,6 @@ private:
 
     static NTSTATUS s_NtClose(_In_ HANDLE Handle);
 
-    
-
-public:
-    ~NtPrivApi();
-private:
     static NtPrivApi& _Instance();
     HMODULE _hNtDll;
 
