@@ -133,16 +133,6 @@ private:
 
 #include "..\server\ObjectHandle.h"
 
-NTSTATUS ReadMessageInput(_In_ PCONSOLE_API_MSG pMessage, _In_ const ULONG ulOffset, _Out_writes_bytes_(cbSize) PVOID pvBuffer, _In_ const ULONG cbSize);
-NTSTATUS GetAugmentedOutputBuffer(_Inout_ PCONSOLE_API_MSG pMessage,
-                                  _In_ const ULONG ulFactor,
-                                  _Outptr_result_bytebuffer_(*pcbSize) PVOID * ppvBuffer,
-                                  _Out_ PULONG pcbSize);
-NTSTATUS GetOutputBuffer(_Inout_ PCONSOLE_API_MSG pMessage, _Outptr_result_bytebuffer_(*pcbSize) PVOID * const ppvBuffer, _Out_ ULONG * const pcbSize);
-NTSTATUS GetInputBuffer(_In_ PCONSOLE_API_MSG pMessage, _Outptr_result_bytebuffer_(*pcbSize) PVOID * const ppvBuffer, _Out_ ULONG * const pcbSize);
-
-void ReleaseMessageBuffers(_Inout_ PCONSOLE_API_MSG pMessage);
-
 void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput);
 
 NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo);

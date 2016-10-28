@@ -15,6 +15,8 @@ Revision History:
 
 #pragma once
 
+#include "cmdline.h"
+
 #define IS_CONTROL_CHAR(wch)  ((wch) < L' ')
 
 // Routine Description:
@@ -63,7 +65,7 @@ ULONG RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 
 // Return Value:
 // - TRUE if read is completed
-BOOL ProcessCookedReadInput(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ WCHAR wch, _In_ const DWORD dwKeyState, _Out_ PNTSTATUS pStatus);
+BOOL ProcessCookedReadInput(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ WCHAR wch, _In_ const DWORD dwKeyState, _Out_ NTSTATUS* pStatus);
 
 NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MSG pWaitReplyMessage, _In_ const BOOLEAN fWaitRoutine);
 
@@ -74,13 +76,6 @@ BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
 // Routine Description:
 // - This routine reads characters from the input stream.
 NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-
-// ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED
-#define WRITE_NO_CR_LF 0
-#define WRITE_CR 1
-#define WRITE_CR_LF 2
-#define WRITE_SPECIAL_CHARS 4
-#define WRITE_UNICODE_CRLF 0x000a000d
 
 VOID UnblockWriteConsole(_In_ const DWORD dwReason);
 

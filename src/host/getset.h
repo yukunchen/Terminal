@@ -15,54 +15,25 @@ Revision History:
 
 #pragma once
 
-NTSTATUS SrvGetConsoleMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvGetConsoleNumberOfInputEvents(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvGetLargestConsoleWindowSize(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
+class SCREEN_INFORMATION;
 
-NTSTATUS SrvGetConsoleScreenBufferInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS DoSrvGetConsoleScreenBufferInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_SCREENBUFFERINFO_MSG* pMsg);
+HRESULT DoSrvGetConsoleScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo);
+HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const ScreenInfo, _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo);
+HRESULT DoSrvGetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Out_ ULONG* const pCursorSize, _Out_ BOOLEAN* const pIsVisible);
 
-NTSTATUS SrvSetScreenBufferInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS DoSrvSetScreenBufferInfo(_In_ PSCREEN_INFORMATION const ScreenInfo, _In_ PCONSOLE_SCREENBUFFERINFO_MSG const a);
+HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ const COORD* const pCursorPosition);
+HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ ULONG const CursorSize, _In_ BOOLEAN const IsVisible);
+HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ BOOLEAN const IsAbsoluteRectangle, _In_ const SMALL_RECT* const pWindowRectangle);
 
-NTSTATUS SrvGetConsoleCursorInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS DoSrvGetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_GETCURSORINFO_MSG* pMsg);
+HRESULT DoSrvScrollConsoleScreenBufferW(_In_ SCREEN_INFORMATION* pScreenInfo,
+                                        _In_ const SMALL_RECT* const pSourceRectangle,
+                                        _In_ const COORD* const pTargetOrigin,
+                                        _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
+                                        _In_ wchar_t const wchFill,
+                                        _In_ WORD const attrFill);
 
-NTSTATUS SrvGetConsoleSelectionInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvGetConsoleMouseInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvGetConsoleFontSize(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvGetConsoleCurrentFont(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvSetConsoleCurrentFont(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvSetConsoleMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-
-NTSTATUS SrvSetConsoleActiveScreenBuffer(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS DoSrvSetConsoleActiveScreenBuffer(_In_ ConsoleHandleData* hScreenBufferHandle);
-
-NTSTATUS SrvFlushConsoleInputBuffer(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvSetConsoleScreenBufferSize(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-
-NTSTATUS SrvSetConsoleCursorPosition(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_SETCURSORPOSITION_MSG* pMsg);
-
-NTSTATUS SrvSetConsoleCursorInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_SETCURSORINFO_MSG* pMsg);
-
-NTSTATUS SrvSetConsoleWindowInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_SETWINDOWINFO_MSG* pMsg);
-
-NTSTATUS SrvScrollConsoleScreenBuffer(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS DoSrvScrollConsoleScreenBuffer(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_SCROLLSCREENBUFFER_MSG* pMsg);
-
-NTSTATUS SrvSetConsoleTextAttribute(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_SETTEXTATTRIBUTE_MSG* pMsg);
-
-NTSTATUS SetScreenColors(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ WORD Attributes, _In_ WORD PopupAttributes, _In_ BOOL UpdateWholeScreen);
-NTSTATUS SrvSetConsoleCP(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvGetConsoleCP(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvGetConsoleWindow(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvGetConsoleDisplayMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvSetConsoleDisplayMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
+HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute);
+NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attributes, _In_ WORD PopupAttributes, _In_ BOOL UpdateWholeScreen);
 
 NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode);
 NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode);

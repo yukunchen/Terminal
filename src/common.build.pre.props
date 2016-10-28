@@ -39,7 +39,7 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <TreatSpecificWarningsAsErrors>4189</TreatSpecificWarningsAsErrors>
+      <TreatSpecificWarningsAsErrors>4189;4100;4242</TreatSpecificWarningsAsErrors>
       <!--<WarningLevel>EnableAllWarnings</WarningLevel>-->
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4312</DisableSpecificWarnings>

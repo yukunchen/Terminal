@@ -904,7 +904,6 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
 
     if (a->Unicode)
     {
-        m->State.WriteFlags = ULONG_MAX; // ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED.
         m->State.TransBuffer = (PWCHAR)BufPtr;
     }
     else if (g_ciConsoleInformation.OutputCP == CP_UTF8)
@@ -914,16 +913,15 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
         HRESULT hresult = parser.Parse(reinterpret_cast<const byte*>(BufPtr), charCount, wideCharBuffer);
         if (wideCharBuffer.get() == nullptr || FAILED(hresult))
         {
-            SetReplyStatus(m, Status);
+            m->SetReplyStatus(Status);
             if (NT_SUCCESS(Status))
             {
-                SetReplyInformation(m, a->NumBytes);
+                m->SetReplyInformation(a->NumBytes);
             }
             return Status;
         }
         else
         {
-            m->State.WriteFlags = ULONG_MAX; // ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED.
             m->State.TransBuffer = reinterpret_cast<wchar_t*>(wideCharBuffer.get());
             m->State.StackBuffer = FALSE;
             g_ciConsoleInformation.WriteConOutNumBytesTemp = a->NumBytes;
@@ -943,7 +941,7 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
         TransBuffer = new WCHAR[a->NumBytes + 2];
         if (TransBuffer == nullptr)
         {
-            SetReplyStatus(m, STATUS_NO_MEMORY);
+            m->SetReplyStatus(STATUS_NO_MEMORY);
             return STATUS_NO_MEMORY;
         }
         m->State.StackBuffer = FALSE;
@@ -1025,17 +1023,16 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
         {
             delete[] TransBuffer;
 
-            SetReplyStatus(m, Status);
+            m->SetReplyStatus(Status);
             if (NT_SUCCESS(Status))
             {
-                SetReplyInformation(m, a->NumBytes);
+                m->SetReplyInformation(a->NumBytes);
             }
             return Status;
         }
 
         g_ciConsoleInformation.WriteConOutNumBytesTemp = a->NumBytes;
         a->NumBytes = g_ciConsoleInformation.WriteConOutNumBytesUnicode = dbcsNumBytes + BufPtrNumBytes;
-        m->State.WriteFlags = WRITE_SPECIAL_CHARS; // ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED.
         m->State.TransBuffer = TransBufferOriginalLocation;
     }
 
@@ -1064,8 +1061,8 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
             }
         }
 
-        SetReplyStatus(m, Status);
-        SetReplyInformation(m, a->NumBytes);
+        m->SetReplyStatus(Status);
+        m->SetReplyInformation(a->NumBytes);
     }
 
     return Status;

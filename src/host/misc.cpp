@@ -39,7 +39,7 @@ int ConvertToOem(_In_ const UINT uiCodePage,
 {
     ASSERT(pwchSource != (LPWSTR) pchTarget);
     DBGCHARS(("ConvertToOem U->%d %.*ls\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pwchSource));
-    return WideCharToMultiByte(uiCodePage, WC_NO_BEST_FIT_CHARS, pwchSource, cchSource, pchTarget, cchTarget, nullptr, nullptr);
+    return LOG_IF_WIN32_BOOL_FALSE(WideCharToMultiByte(uiCodePage, WC_NO_BEST_FIT_CHARS, pwchSource, cchSource, pchTarget, cchTarget, nullptr, nullptr));
 }
 
 // Data in the output buffer is the true unicode value.

@@ -21,10 +21,6 @@ Author(s):
 #define RECT_WIDTH(x) ((x)->right - (x)->left)
 #define RECT_HEIGHT(x) ((x)->bottom - (x)->top)
 
-ConsoleProcessHandle* GetMessageProcess(_In_ PCCONSOLE_API_MSG pMessage);
-ConsoleHandleData* GetMessageObject(_In_ PCCONSOLE_API_MSG pMessage);
-void SetReplyStatus(_Inout_ PCCONSOLE_API_MSG pMessage, _In_ const NTSTATUS Status);
-void SetReplyInformation(_Inout_ PCCONSOLE_API_MSG pMessage, _In_ ULONG_PTR pInformation);
 short CalcWindowSizeX(_In_ const SMALL_RECT * const pRect);
 short CalcWindowSizeY(_In_ const SMALL_RECT * const pRect);
 short CalcCursorYOffsetInPixels(_In_ short const sFontSizeY, _In_ ULONG const ulSize);

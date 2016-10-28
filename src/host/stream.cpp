@@ -245,7 +245,7 @@ VOID PrepareReadConsoleCompletion(_Inout_ PCONSOLE_API_MSG Message)
         a->NumBytes = 0;
     }
 
-    SetReplyInformation(Message, a->NumBytes);
+    Message->SetReplyInformation(a->NumBytes);
 }
 
 // Routine Description:
@@ -292,7 +292,7 @@ BOOL RawReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
     // If a ctrl-c is seen, don't terminate read. If ctrl-break is seen, terminate read.
     if (IsFlagSet(TerminationReason, WaitTerminationReason::CtrlBreak))
     {
-        SetReplyStatus(pWaitReplyMessage, STATUS_ALERTED);
+        pWaitReplyMessage->SetReplyStatus(STATUS_ALERTED);
     }
     // See if we were called because the thread that owns this wait block is exiting.
     else if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
@@ -426,13 +426,13 @@ BOOL RawReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
 
                 delete[] TransBuffer;
 
-                SetReplyStatus(pWaitReplyMessage, Status);
+                pWaitReplyMessage->SetReplyStatus(Status);
                 PrepareReadConsoleCompletion(pWaitReplyMessage);
             }
         }
         else
         {
-            SetReplyStatus(pWaitReplyMessage, Status);
+            pWaitReplyMessage->SetReplyStatus(Status);
             PrepareReadConsoleCompletion(pWaitReplyMessage);
         }
     }
@@ -991,7 +991,7 @@ NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MS
                 }
             }
         }
-        SetReplyStatus(pWaitReplyMessage, Status);
+        pWaitReplyMessage->SetReplyStatus(Status);
 
         // at this point, a->NumBytes contains the number of bytes in
         // the UNICODE string read.  UserBufferSize contains the converted
@@ -1176,7 +1176,7 @@ BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
     // if ctrl-c or ctrl-break was seen, terminate read.
     if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
     {
-        SetReplyStatus(pWaitReplyMessage, STATUS_ALERTED);
+        pWaitReplyMessage->SetReplyStatus(STATUS_ALERTED);
         delete[] pCookedReadData->BackupLimit;
         delete[] pCookedReadData->ExeName;
         g_ciConsoleInformation.lpCookedReadData = nullptr;
@@ -1188,7 +1188,7 @@ BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
     // See if we were called because the thread that owns this wait block is exiting.
     if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
-        SetReplyStatus(pWaitReplyMessage, STATUS_THREAD_IS_TERMINATING);
+        pWaitReplyMessage->SetReplyStatus(STATUS_THREAD_IS_TERMINATING);
 
         // Clean up popup data structures.
         CleanUpPopups(pCookedReadData);
@@ -1206,7 +1206,7 @@ BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
 
     if (IsFlagSet(pCookedReadData->pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing))
     {
-        SetReplyStatus(pWaitReplyMessage, STATUS_ALERTED);
+        pWaitReplyMessage->SetReplyStatus(STATUS_ALERTED);
 
         // Clean up popup data structures.
         CleanUpPopups(pCookedReadData);
@@ -1503,7 +1503,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
 
         if (dwInitialNumBytes != 0)
         {
-            ReadMessageInput(pMessage, ExeNameByteLength, CookedReadData.BufPtr, dwInitialNumBytes);
+            pMessage->ReadMessageInput(ExeNameByteLength, CookedReadData.BufPtr, dwInitialNumBytes);
 
             CookedReadData.BytesRead += dwInitialNumBytes;
             CookedReadData.NumberOfVisibleChars = (dwInitialNumBytes / sizeof(WCHAR));
@@ -1522,7 +1522,7 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
 
         if (CookedReadData.ExeName)
         {
-            ReadMessageInput(pMessage, 0, CookedReadData.ExeName, ExeNameByteLength);
+            pMessage->ReadMessageInput(0, CookedReadData.ExeName, ExeNameByteLength);
             CookedReadData.ExeNameLength = ExeNameByteLength;
         }
 
@@ -1690,7 +1690,7 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
 
     PWCHAR Buffer;
     // If the request is not in Unicode mode, we must allocate an output buffer that is twice as big as the actual caller buffer.
-    NTSTATUS Status = GetAugmentedOutputBuffer(m, (a->Unicode != FALSE) ? 1 : 2, (PVOID *)& Buffer, &a->NumBytes);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetAugmentedOutputBuffer((a->Unicode != FALSE) ? 1 : 2, (PVOID *)& Buffer, &a->NumBytes));
 
     if (!NT_SUCCESS(Status))
     {
@@ -1704,9 +1704,9 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
         return Status;
     }
 
-    ConsoleProcessHandle* const ProcessData = GetMessageProcess(m);
+    ConsoleProcessHandle* const ProcessData = m->GetProcessHandle(); 
 
-    ConsoleHandleData* HandleData = GetMessageObject(m);
+    ConsoleHandleData* HandleData = m->GetObjectHandle();
     INPUT_INFORMATION* pInputInfo;
     Status = NTSTATUS_FROM_HRESULT(HandleData->GetInputBuffer(GENERIC_READ, &pInputInfo));
     if (!NT_SUCCESS(Status))
@@ -1776,7 +1776,7 @@ NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsole, a->Unicode);
 
     PVOID Buffer;
-    NTSTATUS Status = GetInputBuffer(m, &Buffer, &a->NumBytes);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&Buffer, &a->NumBytes));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -1790,7 +1790,7 @@ NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
     }
 
     // Make sure we have a valid screen buffer.
-    ConsoleHandleData* HandleData = GetMessageObject(m);
+    ConsoleHandleData* HandleData = m->GetObjectHandle();
     SCREEN_INFORMATION* pScreenInfo;
     Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
     if (NT_SUCCESS(Status))
@@ -1811,7 +1811,7 @@ BOOL WriteConsoleWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
 
     if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
     {
-        SetReplyStatus(pWaitReplyMessage, STATUS_THREAD_IS_TERMINATING);
+        pWaitReplyMessage->SetReplyStatus(STATUS_THREAD_IS_TERMINATING);
         return TRUE;
     }
 
@@ -1843,8 +1843,8 @@ BOOL WriteConsoleWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
         delete[] pWaitReplyMessage->State.TransBuffer;
     }
 
-    SetReplyStatus(pWaitReplyMessage, Status);
-    SetReplyInformation(pWaitReplyMessage, a->NumBytes);
+    pWaitReplyMessage->SetReplyStatus(Status);
+    pWaitReplyMessage->SetReplyInformation(a->NumBytes);
     return TRUE;
 }
 
@@ -1857,7 +1857,7 @@ NTSTATUS SrvCloseHandle(_In_ PCONSOLE_API_MSG m)
         return Status;
     }
 
-    GetMessageObject(m)->CloseHandle();
+    m->GetObjectHandle()->CloseHandle();
 
     UnlockConsole();
     return Status;

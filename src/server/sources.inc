@@ -23,9 +23,17 @@ INCLUDES= \
 
 SOURCES= \
     $(SOURCES) \
+    ..\ApiDispatchers.cpp \
+    ..\ApiDispatchersInternal.cpp \
+    ..\ApiMessage.cpp \
+    ..\ApiMessageState.cpp \
+    ..\ApiRoutinesBase.cpp \
+    ..\ApiSorter.cpp \
     ..\DeviceComm.cpp \
     ..\DeviceHandle.cpp \
     ..\Entrypoints.cpp \
+    ..\IoDispatchers.cpp \
+    ..\IoSorter.cpp \
     ..\ObjectHandle.cpp \
     ..\ObjectHeader.cpp \
     ..\ProcessHandle.cpp \

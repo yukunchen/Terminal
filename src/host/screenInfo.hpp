@@ -46,9 +46,8 @@ public:
 
     NTSTATUS GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
                                         _Out_ PCOORD pcoordCursorPosition,
-                                        _Out_ PCOORD pcoordScrollPosition,
+                                        _Out_ PSMALL_RECT psrWindow,
                                         _Out_ PWORD pwAttributes,
-                                        _Out_ PCOORD pcoordCurrentWindowSize,
                                         _Out_ PCOORD pcoordMaximumWindowSize,
                                         _Out_ PWORD pwPopupAttributes,
                                         _Out_writes_(COLOR_TABLE_SIZE) LPCOLORREF lpColorTable) const;

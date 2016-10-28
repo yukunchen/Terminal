@@ -42,7 +42,9 @@ HRESULT ConsoleProcessList::AllocProcessData(_In_ DWORD const dwProcessId,
         // connecting to our LPC port and they should only do that once, so we fail subsequent connection attempts.
         if (nullptr == pParentProcessData)
         {
-            RETURN_HR(E_FAIL);
+            return E_FAIL;
+            // TODO: MSFT: 9574803 - This fires all the time. Did it always do that?
+            //RETURN_HR(E_FAIL);
         }
         else
         {
@@ -337,6 +339,7 @@ bool ConsoleProcessList::IsEmpty() const
 // - <none>
 void ConsoleProcessList::_ModifyProcessFocus(_In_ HANDLE const hProcess, _In_ bool const fForeground) const
 {
+    // TODO: MSFT: 9574803 -This fails with invalid parameter when called for not-this-process. Did it always do that?
     LOG_IF_WIN32_BOOL_FALSE(SetPriorityClass(hProcess,
                                              fForeground ? PROCESS_MODE_BACKGROUND_END : PROCESS_MODE_BACKGROUND_BEGIN));
 }
