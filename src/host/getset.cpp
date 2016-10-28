@@ -66,7 +66,7 @@ HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(_In_ INPUT_INFORMATION* c
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    // TODO: Should this have a result code? It's void.
+    // TODO: MSFT: 9574827 - Should this have a result code? It's void.
     GetNumberOfReadyEvents(pContext, pEvents);
 
     return S_OK;
@@ -121,7 +121,7 @@ HRESULT ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* c
         pSelection->GetPublicSelectionFlags(&pConsoleSelectionInfo->dwFlags);
 
         // we should never have failed to set the CONSOLE_SELECTION_IN_PROGRESS flag....
-        ASSERT(IsFlagSet(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS));
+        assert(LOG_HR_IF_FALSE(E_UNEXPECTED, IsFlagSet(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS)));
         SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS); // ... but if we did, set it anyway in release mode.
 
         pSelection->GetSelectionAnchor(&pConsoleSelectionInfo->dwSelectionAnchor);
@@ -215,7 +215,7 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
                 pConsoleFontInfoEx->dwFontSize,
                 g_ciConsoleInformation.OutputCP);
 
-    // TODO: should this have a failure case?
+    // TODO: MSFT: 9574827 - should this have a failure case?
     psi->UpdateFont(&fi);
 
     return S_OK;
@@ -302,7 +302,7 @@ HRESULT ApiRoutines::FlushConsoleInputBuffer(_In_ INPUT_INFORMATION* const pCont
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    // TODO: shouldn't this have a status code?
+    // TODO: MSFT: 9574827 - shouldn't this have a status code?
     FlushInputBuffer(pContext);
 
     return S_OK;
@@ -502,7 +502,7 @@ HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
     NTSTATUS Status = pScreenInfo->SetViewportRect(&Window);
     if (pScreenInfo->IsActiveScreenBuffer())
     {
-        // TODO: shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
+        // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
         pScreenInfo->PostUpdateWindowSize();
         WriteToScreen(pScreenInfo, &pScreenInfo->BufferViewport);
     }
@@ -553,11 +553,10 @@ HRESULT DoSrvScrollConsoleScreenBufferW(_In_ SCREEN_INFORMATION* const pScreenIn
                                         _In_ wchar_t const wchFill,
                                         _In_ WORD const attrFill)
 {
-    // TODO: can we make scroll region use these as const so we don't have to screw with them?
+    // TODO: MSFT 9574849 - can we make scroll region use these as const so we don't have to screw with them?
     SMALL_RECT ClipRect = *pTargetClipRectangle;
     SMALL_RECT ScrollRectangle = *pSourceRectangle;
 
-    // TODO: Get rid of CHAR_INFO. It's gross and bad.
     CHAR_INFO Fill;
     Fill.Char.UnicodeChar = wchFill;
     Fill.Attributes = attrFill;
@@ -840,6 +839,9 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pC
                                                _In_ ULONG const Flags,
                                                _Out_ COORD* const pNewScreenBufferSize)
 {
+    // SetIsFullscreen() below ultimately calls SetwindowLong, which ultimately calls SendMessage(). If we retain
+    // the console lock, we'll deadlock since ConsoleWindowProc takes the lock before processing messages. Instead,
+    // we'll release early.
     LockConsole();
     {
         auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -850,9 +852,6 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pC
         RETURN_HR_IF_FALSE(E_INVALIDARG, pScreenInfo->IsActiveScreenBuffer());
     }
 
-    // SetIsFullscreen() below ultimately calls SetwindowLong, which ultimately calls SendMessage(). If we retain
-    // the console lock, we'll deadlock since ConsoleWindowProc takes the lock before processing messages. Instead,
-    // we'll release early.
     if (IsFlagSet(Flags, CONSOLE_FULLSCREEN_MODE))
     {
         g_ciConsoleInformation.pWindow->SetIsFullscreen(true);

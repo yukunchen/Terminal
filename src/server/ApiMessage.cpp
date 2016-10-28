@@ -24,7 +24,7 @@ ConsoleHandleData* _CONSOLE_API_MSG::GetObjectHandle() const
 // Routine Description:
 // - This routine reads some or all of the input payload of the given message (depending on the given offset).
 // Arguments:
-// - cbOffset - Supplies the offset from which to start reading the payload.
+// - cbOffset - Supplies the offset in bytes from which to start reading the payload.
 // - pvBuffer - Receives the payload.
 // - cbSize - Supplies the number of bytes to be read into the buffer.
 // Return Value:

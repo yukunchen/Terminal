@@ -13,7 +13,7 @@
 #include "..\host\server.h"
 #include "..\host\telemetry.hpp"
 
-HRESULT ApiDispatchers::ServeDeprecatedApi(_Inout_ CONSOLE_API_MSG * const /*m*/, _Inout_ BOOL* const /*pbReplyPending*/)
+HRESULT ApiDispatchers::ServerDeprecatedApi(_Inout_ CONSOLE_API_MSG * const /*m*/, _Inout_ BOOL* const /*pbReplyPending*/)
 {
     // assert if we hit a deprecated API.
     assert(false);
@@ -21,7 +21,7 @@ HRESULT ApiDispatchers::ServeDeprecatedApi(_Inout_ CONSOLE_API_MSG * const /*m*/
     return E_NOTIMPL;
 }
 
-HRESULT ApiDispatchers::ServeGetConsoleProcessList(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
+HRESULT ApiDispatchers::ServerGetConsoleProcessList(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
     PCONSOLE_GETCONSOLEPROCESSLIST_MSG const a = &m->u.consoleMsgL3.GetConsoleProcessList;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleProcessList);
@@ -53,12 +53,12 @@ HRESULT ApiDispatchers::ServeGetConsoleProcessList(_Inout_ CONSOLE_API_MSG * con
     return S_OK;
 }
 
-HRESULT ApiDispatchers::ServeGetConsoleLangId(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
+HRESULT ApiDispatchers::ServerGetConsoleLangId(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
     CONSOLE_LANGID_MSG* const a = &m->u.consoleMsgL1.GetConsoleLangId;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleLangId);
 
-    // TODO: This should probably just ask through GetOutputCP and convert it ourselves on this side.
+    // TODO: MSFT: 9115192 - This should probably just ask through GetOutputCP and convert it ourselves on this side.
     return m->_pApiRoutines->GetConsoleLangIdImpl(&a->LangId);
 }
 
@@ -97,7 +97,7 @@ NTSTATUS GetProcessParentId(_Inout_ PULONG ProcessId)
     return STATUS_UNSUCCESSFUL;
 }
 
-HRESULT ApiDispatchers::ServeGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
+HRESULT ApiDispatchers::ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
     CONSOLE_CTRLEVENT_MSG* const a = &m->u.consoleMsgL2.GenerateConsoleCtrlEvent;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GenerateConsoleCtrlEvent);

@@ -972,6 +972,8 @@ HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pcbAliasE
 HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) char* const psAliasExesBuffer,
                                               _Inout_ ULONG* const pcbAliasExesBufferLength)
 {
+    // TODO: MSFT 9564943 - This is a guess at the buffer length which should be corrected in the linked work item. Not an actual WCHAR size necessarily.
+    // TODO: MSFT 9564943 - Also correct smart pointer usage.
     ULONG cbUnicodeAliasExesBufferLength = *pcbAliasExesBufferLength * 2;
     WCHAR* const pwsUnicodeAliasExesBuffer = new WCHAR[cbUnicodeAliasExesBufferLength];
     RETURN_IF_NULL_ALLOC(pwsUnicodeAliasExesBuffer);
@@ -1394,7 +1396,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNameBuf
 
     // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
+    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
 
     ULONG cbUnicodeCommandHistoryBufferLength = *pcbCommandHistoryBufferLength * 2;
     WCHAR* const pwsUnicodeCommandHistoryBuffer = new WCHAR[cbUnicodeCommandHistoryBufferLength];
@@ -2429,7 +2431,7 @@ NTSTATUS ProcessCopyToCharInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _I
 
             // If we found it, copy up to it.
             if (i < (int)(LastCommand->CommandLength / sizeof(WCHAR)) &&
-                (USHORT)(LastCommand->CommandLength / sizeof(WCHAR)) >(USHORT) pCookedReadData->CurrentPosition)
+                ((USHORT)(LastCommand->CommandLength / sizeof(WCHAR)) > ((USHORT)pCookedReadData->CurrentPosition)))
             {
                 j = i - pCookedReadData->CurrentPosition;
                 ASSERT(j > 0);
@@ -2446,7 +2448,7 @@ NTSTATUS ProcessCopyToCharInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _I
                                               pCookedReadData->BackupLimit,
                                               pCookedReadData->BufPtr,
                                               pCookedReadData->BufPtr,
-                                              (PDWORD)& j,
+                                              (PDWORD)&j,
                                               &NumSpaces,
                                               pCookedReadData->OriginalCursorPosition.X,
                                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
@@ -3342,7 +3344,7 @@ NTSTATUS ProcessCommandLine(_In_ PCOOKED_READ_DATA pCookedReadData,
                                                   pCookedReadData->BufPtr,
                                                   pCookedReadData->BufPtr,
                                                   &cchCount,
-                                                  (PULONG)& NumSpaces,
+                                                  (PULONG)&NumSpaces,
                                                   pCookedReadData->OriginalCursorPosition.X,
                                                   WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                                   &ScrollY);
@@ -3658,7 +3660,7 @@ SHORT FindMatchingCommand(_In_ PCOMMAND_HISTORY CommandHistory,
     {
         PCOMMAND pcmdT = CommandHistory->Commands[CommandIndex];
 
-        if ((!(Flags & FMCFL_EXACT_MATCH) && (cbIn <= pcmdT->CommandLength)) || ((USHORT)cbIn == pcmdT->CommandLength))
+        if ((IsFlagClear(Flags, FMCFL_EXACT_MATCH) && (cbIn <= pcmdT->CommandLength)) || ((USHORT)cbIn == pcmdT->CommandLength))
         {
             if (!wcsncmp(pcmdT->Command, pwchIn, (USHORT)cbIn / sizeof(WCHAR)))
             {
@@ -4282,7 +4284,7 @@ HRESULT ApiRoutines::SetConsoleTitleAImpl(_In_reads_bytes_(cbTitleBufferSize) ch
                                                                       cbTitleBufferSize,
                                                                       pwsUnicodeTitleBuffer,
                                                                       cbTitleBufferSize);
-    ULONG const cbUnicodeTitleBuffer = cchUnicodeTitleBuffer * 2; // safemath?
+    ULONG const cbUnicodeTitleBuffer = cchUnicodeTitleBuffer * sizeof(wchar_t); 
 
     // ConvertInputToUnicode doesn't guarantee nullptr-termination.
     pwsUnicodeTitleBuffer[cbTitleBufferSize] = 0;
@@ -4301,7 +4303,7 @@ HRESULT ApiRoutines::SetConsoleTitleWImpl(_In_reads_bytes_(cbTitleBufferSize) wc
 }
 
 HRESULT DoSrvSetConsoleTitleW(_In_reads_bytes_(cbBuffer) const wchar_t* const pwsBuffer,
-                               _In_ ULONG const cbBuffer)
+                              _In_ ULONG const cbBuffer)
 {
     ULONG cbTitleLength;
     RETURN_IF_FAILED(ULongAdd(cbBuffer, sizeof(WCHAR), &cbTitleLength));

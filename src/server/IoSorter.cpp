@@ -90,7 +90,7 @@ void IoSorter::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg,
     case CONSOLE_IO_RAW_FLUSH:
         ReplyPending = FALSE;
         
-        Status = NTSTATUS_FROM_HRESULT(ApiDispatchers::ServeFlushConsoleInputBuffer(pMsg, &ReplyPending));
+        Status = NTSTATUS_FROM_HRESULT(ApiDispatchers::ServerFlushConsoleInputBuffer(pMsg, &ReplyPending));
         assert(!ReplyPending);
         pMsg->SetReplyStatus(Status);
         *ReplyMsg = pMsg;

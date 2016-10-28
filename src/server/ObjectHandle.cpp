@@ -242,7 +242,7 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
     delete pReadHandleData;
     pReadHandleData = nullptr;
 
-    // TODO: THIS IS BAD.
+    // TODO: MSFT: 9115192 - THIS IS BAD. It should use a destructor.
     LOG_IF_FAILED(pInputInfo->Header.FreeIoHandle(this));
 
     if (!pInputInfo->Header.HasAnyOpenHandles())
@@ -268,7 +268,7 @@ HRESULT ConsoleHandleData::_CloseOutputHandle()
     assert(_IsOutput());
     SCREEN_INFORMATION* pScreenInfo = static_cast<SCREEN_INFORMATION*>(_pvClientPointer);
 
-    // TODO: THIS IS BAD.
+    // TODO: MSFT: 9115192 - THIS IS BAD. It should use a destructor.
     LOG_IF_FAILED(pScreenInfo->Header.FreeIoHandle(this));
     if (!pScreenInfo->Header.HasAnyOpenHandles())
     {

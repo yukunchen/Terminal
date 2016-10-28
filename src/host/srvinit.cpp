@@ -453,7 +453,7 @@ NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONS
     CONSOLE_SERVER_MSG Data = { 0 };
 
     // Try to receive the data sent by the client.
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(Message->ReadMessageInput(0, &Data, sizeof Data));
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(Message->ReadMessageInput(0, &Data, sizeof(Data)));
     if (!NT_SUCCESS(Status))
     {
         return Status;
