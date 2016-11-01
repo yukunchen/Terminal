@@ -29,6 +29,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\propslib\propslib.vcxproj">
@@ -56,7 +57,10 @@
   <ItemGroup>
     <None Include="ConhostV2.def" />
   </ItemGroup>
-  <PropertyGroup Label="Globals">
+  <ItemGroup>
+    <ResourceCompile Include="Host.DLL.rc" />
+  </ItemGroup>
+  <PropertyGroup>
     <ProjectGuid>{E437B604-3E98-4F40-A927-E173E818EA4B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>host</RootNamespace>

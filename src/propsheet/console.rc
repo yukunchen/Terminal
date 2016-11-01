@@ -1,0 +1,380 @@
+/****************************** Module Header ******************************\
+* Module Name: console.rc
+*
+* Copyright (c) 1985-95, Microsoft Corporation
+*
+* Constants
+*
+* History:
+* 08-21-91      Created.
+\***************************************************************************/
+
+#include <windows.h>
+#include <ntverp.h>
+#include <commctrl.h>
+#include "dialogs.h"
+#include "console.h"
+
+IDI_CONSOLE      ICON   "..\\..\\res\\console.ico"
+
+1 11 MSG00001.BIN
+
+//
+//    Dialogs
+//
+
+
+//
+// This is the template for the settings dialog
+//
+
+DID_SETTINGS DIALOG  0, 0, 240, 226
+CAPTION " Options "
+STYLE WS_VISIBLE | WS_CAPTION | WS_CHILD | DS_MODALFRAME
+FONT 8,"MS Shell Dlg"
+BEGIN
+    GROUPBOX        "Cursor Size", -1, 10, 11, 100, 56
+    AUTORADIOBUTTON "&Small", IDD_CURSOR_SMALL, 14, 23, 84, 10,
+                    WS_TABSTOP | WS_GROUP
+    AUTORADIOBUTTON "&Medium", IDD_CURSOR_MEDIUM, 14, 33, 84, 10,
+    AUTORADIOBUTTON "&Large", IDD_CURSOR_LARGE, 14, 43, 84, 10,
+
+    GROUPBOX        "Command History", -1, 115, 11, 120, 56, WS_GROUP
+    LTEXT           "&Buffer Size:", -1, 119, 25, 78, 9
+    EDITTEXT        IDD_HISTORY_SIZE, 197, 23, 31, 12, WS_GROUP | WS_TABSTOP
+    CONTROL         "", IDD_HISTORY_SIZESCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    LTEXT           "&Number of Buffers:", -1, 119, 40, 78, 9
+    EDITTEXT        IDD_HISTORY_NUM, 197, 38, 31, 12, WS_GROUP | WS_TABSTOP
+    CONTROL         "", IDD_HISTORY_NUMSCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    AUTOCHECKBOX    "&Discard Old Duplicates", IDD_HISTORY_NODUP, 119,55, 108, 9
+
+    GROUPBOX        "Edit Options",-1,10,70,225,54
+    CONTROL         "&QuickEdit Mode", IDD_QUICKEDIT, "Button",
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 14, 82, 75, 10
+    CONTROL         "&Insert Mode", IDD_INSERT, "Button",
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 14, 92, 75, 10
+    CONTROL         "Enable Ctrl &key shortcuts", IDD_CTRL_KEYS_ENABLED, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 102, 200, 10
+    CONTROL         "&Filter clipboard contents on paste", IDD_FILTER_ON_PASTE, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 112, 200, 10
+
+    GROUPBOX        "Text Selection",-1,10,126,225,32
+    CONTROL         "&Enable line wrapping selection", IDD_LINE_SELECTION, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 136, 200, 10
+    CONTROL         "E&xtended text selection keys", IDD_EDIT_KEYS, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 146, 200, 10
+
+    GROUPBOX        "Default code page", IDD_LANGUAGE_GROUPBOX,   10, 160, 225, 29, WS_GROUP
+    COMBOBOX        IDD_LANGUAGELIST, 16, 171, 213, 78,
+                    CBS_SORT |
+                    CBS_DISABLENOSCROLL |
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP | WS_GROUP
+
+    CONTROL         "&Use legacy console (requires relaunch)", IDD_FORCEV2, "Button",
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 194, 200, 10
+
+    CONTROL         "Find out more about <A HREF=""http://go.microsoft.com/fwlink/?LinkId=507549"">new console features</A>",
+                    IDD_HELP_SYSLINK, "SysLink", WS_TABSTOP, 10, 206, 200, 10
+
+
+END
+
+//
+// This is the template for the settings dialog called from console
+//
+
+DID_SETTINGS2 DIALOG  0, 0, 245, 226
+CAPTION " Options "
+STYLE WS_VISIBLE | WS_CAPTION | WS_CHILD | DS_MODALFRAME
+FONT 8,"MS Shell Dlg"
+BEGIN
+    GROUPBOX        "Cursor Size", -1, 10, 11, 100, 56
+    AUTORADIOBUTTON "&Small", IDD_CURSOR_SMALL, 14, 23, 84, 10,
+                    WS_TABSTOP | WS_GROUP
+    AUTORADIOBUTTON "&Medium", IDD_CURSOR_MEDIUM, 14, 33, 84, 10,
+    AUTORADIOBUTTON "&Large", IDD_CURSOR_LARGE, 14, 43, 84, 10,
+
+    GROUPBOX        "Command History", -1, 115, 11, 120, 56, WS_GROUP
+    LTEXT           "&Buffer Size:", -1, 119, 25, 78, 9
+    EDITTEXT        IDD_HISTORY_SIZE, 197, 23, 31, 12, WS_GROUP | WS_TABSTOP
+    CONTROL         "", IDD_HISTORY_SIZESCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    LTEXT           "&Number of Buffers:", -1, 119, 40, 78, 9
+    EDITTEXT        IDD_HISTORY_NUM, 197, 38, 31, 12, WS_GROUP | WS_TABSTOP
+    CONTROL         "", IDD_HISTORY_NUMSCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    AUTOCHECKBOX    "&Discard Old Duplicates", IDD_HISTORY_NODUP, 119,55, 108, 9
+
+    GROUPBOX        "Edit Options",-1,10,70,225,54
+    CONTROL         "&QuickEdit Mode", IDD_QUICKEDIT, "Button",
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 14, 82, 75, 10
+    CONTROL         "&Insert Mode", IDD_INSERT, "Button",
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 14, 92, 75, 10
+    CONTROL         "Enable Ctrl &key shortcuts", IDD_CTRL_KEYS_ENABLED, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 102, 200, 10
+    CONTROL         "&Filter clipboard contents on paste", IDD_FILTER_ON_PASTE, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 112, 200, 10
+
+    GROUPBOX        "Text Selection",-1,10,126,225,32
+    CONTROL         "&Enable line wrapping selection", IDD_LINE_SELECTION, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 136, 200, 10
+    CONTROL         "E&xtended text selection keys", IDD_EDIT_KEYS, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 146, 200, 10
+
+    GROUPBOX        "Current code page", IDD_LANGUAGE_GROUPBOX, 10, 160, 225, 24, WS_GROUP
+    LTEXT           "",IDD_LANGUAGE, 16, 171, 184, 10, WS_GROUP
+
+    CONTROL         "&Use legacy console (requires relaunch)", IDD_FORCEV2, "Button",
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 194, 200, 10
+
+    CONTROL         "Find out more about <A HREF=""http://go.microsoft.com/fwlink/?LinkId=507549"">new console features</A>",
+                    IDD_HELP_SYSLINK, "SysLink", WS_TABSTOP, 10, 206, 200, 10
+END
+
+//
+// This is the template for the font selection dialog
+//
+
+DID_FONTDLG DIALOG 0, 0, 233, 226
+CAPTION " Font "
+STYLE WS_VISIBLE | WS_CAPTION | WS_CHILD | DS_MODALFRAME
+FONT 8,"MS Shell Dlg"
+BEGIN
+// PixelSize listbox & PointSize combobox (top left)
+//
+    GROUPBOX        "&Size", IDD_FONTSIZE, 5, 4, 110, 88
+    LISTBOX         IDD_PIXELSLIST,                   12, 17,  50, 73,
+                    LBS_DISABLENOSCROLL | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDD_POINTSLIST,                   12, 17, 30, 76,
+                    CBS_SORT |
+                    CBS_DISABLENOSCROLL | WS_VSCROLL | WS_TABSTOP
+
+// Window Preview (top right)
+//
+    LTEXT           "Window Preview", IDD_PREVIEWLABEL, 125,  4, 109, 8
+    CONTROL         "", IDD_PREVIEWWINDOW, "WOAWinPreview",
+                    WS_CHILD,  125, 17, 109, 83
+
+// FaceName listbox (top middle)
+    GROUPBOX        "&Font", IDD_STATIC,              5, 96, 228, 68
+    LISTBOX         IDD_FACENAME,                     12, 108, 117, 42,
+                    LBS_SORT | WS_VSCROLL | WS_TABSTOP |
+                    LBS_OWNERDRAWFIXED | LBS_NOINTEGRALHEIGHT | LBS_HASSTRINGS
+
+    LTEXT           "TrueType fonts are recommended for high DPI displays as raster fonts may not display clearly.",
+                    -1, 134, 107, 94, 49
+
+// Bold Checkbox (bottom middle)
+//
+    CONTROL         "&Bold fonts", IDD_BOLDFONT, "Button",
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 12, 151, 60, 10
+
+// Bottom portion (middle)
+//
+    GROUPBOX        "", IDD_GROUP, 5, 170, 228, 50
+    CONTROL         "", IDD_FONTWINDOW, "WOAFontPreview",
+                    WS_CHILD, 12, 180, 117, 34
+    LTEXT           "Each character is:", IDD_STATIC2, 135, 180, 75, 8, NOT
+                    WS_GROUP
+    RTEXT           "", IDD_FONTWIDTH, 134, 190, 12, 8, NOT WS_GROUP
+    LTEXT           "screen pixels wide", IDD_STATIC3, 148, 190, 65, 8, NOT
+                    WS_GROUP
+    LTEXT           "screen pixels high", IDD_STATIC4, 148, 200, 65, 8, NOT
+                    WS_GROUP
+    RTEXT           "", IDD_FONTHEIGHT, 134, 200, 12, 8, NOT WS_GROUP
+
+END
+
+//
+// This is the template for the screenbuffer size dialog
+//
+
+DID_SCRBUFSIZE DIALOG  0, 0, 233, 226
+CAPTION " Layout "
+STYLE WS_VISIBLE | WS_CAPTION | WS_CHILD | DS_MODALFRAME
+FONT 8,"MS Shell Dlg"
+BEGIN
+// Window Preview (top left)
+//
+    LTEXT           "Window Preview", IDD_PREVIEWLABEL, 130,  11, 109, 8
+    CONTROL         "", IDD_PREVIEWWINDOW, "WOAWinPreview",
+                    WS_CHILD,  130, 21, 109, 83
+
+    GROUPBOX        "Screen Buffer Size", -1, 10, 11, 110, 56
+    LTEXT           "&Width:", -1, 14, 25, 54, 9
+    EDITTEXT        IDD_SCRBUF_WIDTH, 78, 23, 36, 12,
+                    ES_AUTOHSCROLL | WS_GROUP | WS_TABSTOP
+    CONTROL         "", IDD_SCRBUF_WIDTHSCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    LTEXT           "&Height:", -1, 14, 39, 54, 9
+    EDITTEXT        IDD_SCRBUF_HEIGHT, 78, 37, 36, 12,
+                    ES_AUTOHSCROLL | WS_GROUP | WS_TABSTOP
+    CONTROL         "", IDD_SCRBUF_HEIGHTSCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    CONTROL         "W&rap text output on resize", IDD_LINE_WRAP, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 52, 100, 12
+
+    GROUPBOX        "Window Size", -1, 10, 69, 110, 42
+    LTEXT           "W&idth:", -1, 14, 83, 54, 9
+    EDITTEXT        IDD_WINDOW_WIDTH, 78, 81, 36, 12,
+                    ES_AUTOHSCROLL | WS_GROUP | WS_TABSTOP
+    CONTROL         "", IDD_WINDOW_WIDTHSCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    LTEXT           "H&eight:", -1, 14, 97, 54, 9
+    EDITTEXT        IDD_WINDOW_HEIGHT, 78, 95, 36, 12,
+                    ES_AUTOHSCROLL | WS_GROUP | WS_TABSTOP
+    CONTROL         "", IDD_WINDOW_HEIGHTSCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+
+    GROUPBOX        "Window Position", -1, 10, 113, 110, 56
+    LTEXT           "&Left:", -1, 14, 127, 54, 9
+    EDITTEXT        IDD_WINDOW_POSX, 78, 125, 36, 12,
+                    ES_AUTOHSCROLL | WS_GROUP | WS_TABSTOP
+    CONTROL         "", IDD_WINDOW_POSXSCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    LTEXT           "&Top:", -1, 14, 141, 54, 9
+    EDITTEXT        IDD_WINDOW_POSY, 78, 139, 36, 12,
+                    ES_AUTOHSCROLL | WS_GROUP | WS_TABSTOP
+    CONTROL         "", IDD_WINDOW_POSYSCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    CONTROL         "Let system &position window", IDD_AUTO_POSITION, "Button",
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 14, 156, 100, 10
+END
+
+//
+// This is the template for the screen colors dialog
+//
+
+DID_COLOR DIALOG  0, 0, 233, 226
+CAPTION " Colors "
+STYLE WS_VISIBLE | WS_CAPTION | WS_CHILD | DS_MODALFRAME
+FONT 8,"MS Shell Dlg"
+BEGIN
+    AUTORADIOBUTTON "Screen &Text", IDD_COLOR_SCREEN_TEXT, 10, 10, 104, 12,
+                    WS_TABSTOP|WS_GROUP
+    AUTORADIOBUTTON "Screen &Background", IDD_COLOR_SCREEN_BKGND, 10, 22, 104, 12,
+    AUTORADIOBUTTON "&Popup Text", IDD_COLOR_POPUP_TEXT, 10, 34, 104, 12,
+    AUTORADIOBUTTON "Pop&up Background", IDD_COLOR_POPUP_BKGND, 10, 46, 104, 12,
+
+    CONTROL         "", IDD_COLOR_1, "cpColor",
+                    WS_BORDER | WS_CHILD | WS_GROUP | WS_TABSTOP,
+                    12, 70, 13, 13
+    CONTROL         "", IDD_COLOR_2, "cpColor", WS_BORDER | WS_CHILD,
+                    25, 70, 13, 13
+    CONTROL         "", IDD_COLOR_3, "cpColor", WS_BORDER | WS_CHILD,
+                    38, 70, 13, 13
+    CONTROL         "", IDD_COLOR_4, "cpColor", WS_BORDER | WS_CHILD,
+                    51, 70, 13, 13
+    CONTROL         "", IDD_COLOR_5, "cpColor", WS_BORDER | WS_CHILD,
+                    64, 70, 13, 13
+    CONTROL         "", IDD_COLOR_6, "cpColor", WS_BORDER | WS_CHILD,
+                    77, 70, 13, 13
+    CONTROL         "", IDD_COLOR_7, "cpColor", WS_BORDER | WS_CHILD,
+                    90, 70, 13, 13
+    CONTROL         "", IDD_COLOR_8, "cpColor", WS_BORDER | WS_CHILD,
+                    103, 70, 13, 13
+    CONTROL         "", IDD_COLOR_9, "cpColor", WS_BORDER | WS_CHILD,
+                    116, 70, 13, 13
+    CONTROL         "", IDD_COLOR_10, "cpColor", WS_BORDER | WS_CHILD,
+                    129, 70, 13, 13
+    CONTROL         "", IDD_COLOR_11, "cpColor", WS_BORDER | WS_CHILD,
+                    142, 70, 13, 13
+    CONTROL         "", IDD_COLOR_12, "cpColor", WS_BORDER | WS_CHILD,
+                    155, 70, 13, 13
+    CONTROL         "", IDD_COLOR_13, "cpColor", WS_BORDER | WS_CHILD,
+                    168, 70, 13, 13
+    CONTROL         "", IDD_COLOR_14, "cpColor", WS_BORDER | WS_CHILD,
+                    181, 70, 13, 13
+    CONTROL         "", IDD_COLOR_15, "cpColor", WS_BORDER | WS_CHILD,
+                    194, 70, 13, 13
+    CONTROL         "", IDD_COLOR_16, "cpColor", WS_BORDER | WS_CHILD,
+                    207, 70, 13, 13
+
+    GROUPBOX        "Selected Screen Colors", -1, 10, 84, 213, 46
+    CONTROL         "", IDD_COLOR_SCREEN_COLORS, "WOAFontPreview",
+                    WS_GROUP | WS_CHILD, 15, 94, 204, 31
+
+    GROUPBOX        "Selected Popup Colors", -1, 10, 134, 213, 46
+    CONTROL         "", IDD_COLOR_POPUP_COLORS, "WOAFontPreview",
+                    WS_GROUP | WS_CHILD, 15, 144, 204, 31
+
+    GROUPBOX        "Selected Color Values", -1, 120, 9, 103, 56
+    LTEXT           "&Red:", -1, 124, 23, 54, 9
+    EDITTEXT        IDD_COLOR_RED, 167, 21, 30, 12, WS_TABSTOP | WS_GROUP |
+                    ES_AUTOHSCROLL
+    CONTROL         "", IDD_COLOR_REDSCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    LTEXT           "&Green:", -1, 124, 37, 54, 9
+    EDITTEXT        IDD_COLOR_GREEN, 167, 35, 30, 12, WS_GROUP | WS_TABSTOP |
+                    ES_AUTOHSCROLL
+    CONTROL         "", IDD_COLOR_GREENSCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    LTEXT           "B&lue:", -1, 124, 51, 54, 9
+    EDITTEXT        IDD_COLOR_BLUE, 167, 49, 30, 12, WS_GROUP | WS_TABSTOP |
+                    ES_AUTOHSCROLL
+    CONTROL         "", IDD_COLOR_BLUESCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+
+    GROUPBOX        "&Opacity", IDD_OPACITY_GROUPBOX, 10, 182, 213, 38
+    LTEXT           "30%", IDD_OPACITY_LOW_LABEL, 15, 194, 16, 12
+    CONTROL         "Opacity", IDD_TRANSPARENCY, "msctls_trackbar32",
+                    TBS_NOTICKS | TBS_HORZ | WS_TABSTOP, 35, 192, 135, 16
+    LTEXT           "100%", IDD_OPACITY_HIGH_LABEL, 174, 194, 18, 12
+    LTEXT           "", IDD_OPACITY_VALUE, 200, 193, 18, 10, SS_CENTER | SS_SUNKEN
+END
+
+//
+//  Strings
+//
+
+STRINGTABLE PRELOAD
+BEGIN
+    IDS_NAME,                    "Console"
+    IDS_INFO,                    "Configures console properties."
+    IDS_TITLE,                   "Console Windows"
+    IDS_RASTERFONT,              "Raster Fonts"
+    IDS_FONTSIZE,                "Point size should be between %d and %d"
+    IDS_SELECTEDFONT,            "Selected Font"
+    IDS_LINKERRCAP,              "Error Updating Shortcut"
+    IDS_LINKERROR,               "Unable to modify the shortcut:\n%s.\nCheck to make sure it has not been deleted or renamed."
+    IDS_TOOLTIP_LINE_SELECTION,  "Instead of being rectangular, text selection wraps lines."
+    IDS_TOOLTIP_FILTER_ON_PASTE, "When pasting, remove tabs and convert smart quotes to regular quotes."
+    IDS_TOOLTIP_LINE_WRAP,       "When resizing the window, wrap text to fit width."
+    IDS_TOOLTIP_CTRL_KEYS,       "Allow new Ctrl-key shortcuts (may interfere with some applications)."
+    IDS_TOOLTIP_EDIT_KEYS,       "Enable enhanced keyboard editing on command line."
+    IDS_TOOLTIP_OPACITY,         "Adjust the transparency of the console window."
+END
+
+
+//
+// Version resource information
+//
+
+#define VER_FILETYPE                VFT_DLL
+#define VER_FILESUBTYPE             VFT2_UNKNOWN
+#define VER_FILEDESCRIPTION_STR     "Control Panel Console Applet"
+#define VER_INTERNALNAME_STR        "Console\0"
+#define VER_ORIGINALFILENAME_STR    "CONSOLE.DLL"
+
+#include "common.ver"
+
+//
+// Bitmaps
+//
+BM_TRUETYPE_ICON    BITMAP           "..\\..\\res\\truetype.bmp"
+

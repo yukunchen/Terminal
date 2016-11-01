@@ -11,14 +11,17 @@
 
 #include <windows.h>
 #include "resource.h"
+
+#ifndef EXTERNAL_BUILD
 #include "conhost.rcv"
 #include <ntverp.h>
 #include <common.ver>
+#endif
 
-IDI_APPICON             ICON    "..\\..\\..\\..\\ntuser\\server\console.ico"
+IDI_APPICON             ICON    "..\\..\\..\\res\\console.ico"
 
 // Fusion default manifest (needed since we are created w/ RtlCreateUserProcess)
-IDR_SYSTEM_MANIFEST     RT_MANIFEST MOVEABLE    PURE    "SystemDefault.man"
+IDR_SYSTEM_MANIFEST     RT_MANIFEST MOVEABLE    PURE    "..\\dll\\SystemDefault.Manifest"
 
 //
 //  Menus
