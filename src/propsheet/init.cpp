@@ -27,7 +27,7 @@ HINSTANCE ghInstance;
  *              DWORD     dwReason    - Reason DLL was called
  *              LPVOID    lpvReserved - NULL
 \*************************************************************/
-BOOL DllMain(
+BOOL WINAPI DllMain(
     HINSTANCE hInstDLL,
     DWORD dwReason,
     LPVOID lpvReserved)

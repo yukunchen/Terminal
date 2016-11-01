@@ -54,7 +54,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <PreBuildEvent>
-      <Command>mc.exe strid.mc </Command>
+        <Command>strid.bat</Command>
     </PreBuildEvent>
     <Link>
       <AdditionalDependencies>

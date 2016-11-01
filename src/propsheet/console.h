@@ -147,7 +147,7 @@ VOID RegisterClasses(
 VOID UnregisterClasses(
     HINSTANCE hModule);
 
-INT_PTR FontDlgProc(
+INT_PTR APIENTRY FontDlgProc(
     HWND hDlg,
     UINT wMsg,
     WPARAM wParam,

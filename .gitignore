@@ -224,3 +224,5 @@ build*.rec
 build*.wrn
 build*.metadata
 
+# message compiler output
+MSG*.bin
