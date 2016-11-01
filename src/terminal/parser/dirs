@@ -1,4 +1,4 @@
 DIRS=lib \
-     ft_fuzzer{!cs_xbox} \
-     ft_fuzzwrapper{!cs_xbox} \
-     ut_parser{!cs_xbox} \
+     ft_fuzzer \
+     ft_fuzzwrapper \
+     ut_parser \

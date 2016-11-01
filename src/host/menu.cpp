@@ -21,6 +21,11 @@
 #include "window.hpp"
 
 CONST WCHAR gwszPropertiesDll[] = L"\\console.dll";
+CONST WCHAR gwszRelativePropertiesDll[] = L".\\console.dll";
+
+// This is needed so that the propsheet uses ComCtrl v6.
+// It is needed both in the host and the console.dll
+#pragma comment(linker,"\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #pragma hdrstop
 
@@ -457,29 +462,36 @@ void PropertiesDlgShow(_In_ HWND const hwnd, _In_ BOOL const Defaults)
 
     UnlockConsole();
 
-    WCHAR wszFilePath[MAX_PATH + 1] = { 0 };
-    UINT const len = GetSystemDirectoryW(wszFilePath, ARRAYSIZE(wszFilePath));
-    if (len < ARRAYSIZE(wszFilePath))
+    // First try to find the console.dll next to the launched exe, else default to /windows/system32/console.dll
+    HANDLE hLibrary = LoadLibraryExW(gwszRelativePropertiesDll, 0, 0);
+    bool fLoadedDll = hLibrary != nullptr;
+    if (!fLoadedDll)
     {
-        if (SUCCEEDED(StringCchCatW(wszFilePath, ARRAYSIZE(wszFilePath) - len, gwszPropertiesDll)))
+        WCHAR wszFilePath[MAX_PATH + 1] = { 0 };
+        UINT const len = GetSystemDirectoryW(wszFilePath, ARRAYSIZE(wszFilePath));
+        if (len < ARRAYSIZE(wszFilePath))
         {
-            wszFilePath[ARRAYSIZE(wszFilePath) - 1] = UNICODE_NULL;
-
-
-            HANDLE const hLibrary = LoadLibraryExW(wszFilePath, 0, LOAD_WITH_ALTERED_SEARCH_PATH);
-            if (hLibrary != nullptr)
+            if (SUCCEEDED(StringCchCatW(wszFilePath, ARRAYSIZE(wszFilePath) - len, gwszPropertiesDll)))
             {
-                APPLET_PROC const pfnCplApplet = (APPLET_PROC)GetProcAddress((HMODULE)hLibrary, "CPlApplet");
-                if (pfnCplApplet != nullptr)
-                {
-                    (*pfnCplApplet) (hwnd, CPL_INIT, 0, 0);
-                    (*pfnCplApplet) (hwnd, CPL_DBLCLK, (LPARAM)& StateInfo, 0);
-                    (*pfnCplApplet) (hwnd, CPL_EXIT, 0, 0);
-                }
+                wszFilePath[ARRAYSIZE(wszFilePath) - 1] = UNICODE_NULL;
 
-                FreeLibrary((HMODULE)hLibrary);
+                hLibrary = LoadLibraryExW(wszFilePath, 0, LOAD_WITH_ALTERED_SEARCH_PATH);
+                fLoadedDll = hLibrary != nullptr;
             }
         }
+    }
+    
+    if (fLoadedDll)
+    {
+        APPLET_PROC const pfnCplApplet = (APPLET_PROC)GetProcAddress((HMODULE)hLibrary, "CPlApplet");
+        if (pfnCplApplet != nullptr)
+        {
+            (*pfnCplApplet) (hwnd, CPL_INIT, 0, 0);
+            (*pfnCplApplet) (hwnd, CPL_DBLCLK, (LPARAM)& StateInfo, 0);
+            (*pfnCplApplet) (hwnd, CPL_EXIT, 0, 0);
+        }
+
+        FreeLibrary((HMODULE)hLibrary);
     }
 
     LockConsole();

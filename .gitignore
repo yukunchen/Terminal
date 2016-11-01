@@ -229,3 +229,5 @@ build*.metadata
 
 # .razzlerc.cmd file - used by dev environment
 tools/.razzlerc.*
+# message compiler output
+MSG*.bin

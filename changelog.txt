@@ -1,0 +1,2 @@
+09/29/2016 - 9097513 - Console Hanging with invalid UTF-8 character in parser
+11/01/2016 - 9353337 - Migrate entire prop sheet over to open build system.
