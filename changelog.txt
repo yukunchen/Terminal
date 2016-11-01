@@ -34,3 +34,4 @@
 	8325111 - Move console test code to XES
 	9100070 - Promote console to PMv2
 	9300281 - Update tools\*.bat files
+11/01/2016 - 9535136 - Ctrl-C events and other events on GenerateConsoleCtrlEvent are not going through
