@@ -3,6 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
+# Put Host.EXE first to set as startup project for people without preferences.
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.EXE", "src\host\exe\Host.EXE.vcxproj", "{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PropertiesLibrary", "src\propslib\propslib.vcxproj", "{345FD5A4-B32B-4F29-BD1C-B033BD2C35CC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dependencies", "Dependencies", "{81C352DB-1818-45B7-A284-18E259F1CC87}"
@@ -58,8 +61,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.Tests.Unit", "src\host
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.Tests.Api", "src\host\ft_api\Host.ApiTests.vcxproj", "{8CDB8850-7484-4EC7-B45B-181F85B2EE54}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.EXE", "src\host\exe\Host.EXE.vcxproj", "{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalParser.UnitTests", "src\terminal\parser\ut_parser\Parser.UnitTests.vcxproj", "{12144E07-FE63-4D33-9231-748B8D8C3792}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalAdapter.UnitTests", "src\terminal\adapter\ut_adapter\Adapter.UnitTests.vcxproj", "{6AF01638-84CF-4B65-9870-484DFFCAC772}"
@@ -76,6 +77,17 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.Tests.CJK.Tool", "src\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Propsheet.DLL", "src\propsheet\propsheet.vcxproj", "{5D23E8E1-3C64-4CC1-A8F7-6861677F7239}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build Common", "Build Common", "{04170EEF-983A-4195-BFEF-2321E5E38A1E}"
+	ProjectSection(SolutionItems) = preProject
+		src\common.build.dll.props = src\common.build.dll.props
+		src\common.build.exe.or.dll.props = src\common.build.exe.or.dll.props
+		src\common.build.exe.props = src\common.build.exe.props
+		src\common.build.lib.props = src\common.build.lib.props
+		src\common.build.post.props = src\common.build.post.props
+		src\common.build.pre.props = src\common.build.pre.props
+		src\common.build.tests.props = src\common.build.tests.props
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -84,6 +96,14 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Debug|x64.ActiveCfg = Debug|x64
+		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Debug|x64.Build.0 = Debug|x64
+		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Debug|x86.ActiveCfg = Debug|Win32
+		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Debug|x86.Build.0 = Debug|Win32
+		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Release|x64.ActiveCfg = Release|x64
+		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Release|x64.Build.0 = Release|x64
+		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Release|x86.ActiveCfg = Release|Win32
+		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Release|x86.Build.0 = Release|Win32
 		{345FD5A4-B32B-4F29-BD1C-B033BD2C35CC}.Debug|x64.ActiveCfg = Debug|x64
 		{345FD5A4-B32B-4F29-BD1C-B033BD2C35CC}.Debug|x64.Build.0 = Debug|x64
 		{345FD5A4-B32B-4F29-BD1C-B033BD2C35CC}.Debug|x86.ActiveCfg = Debug|Win32
@@ -164,14 +184,6 @@ Global
 		{8CDB8850-7484-4EC7-B45B-181F85B2EE54}.Release|x64.Build.0 = Release|x64
 		{8CDB8850-7484-4EC7-B45B-181F85B2EE54}.Release|x86.ActiveCfg = Release|Win32
 		{8CDB8850-7484-4EC7-B45B-181F85B2EE54}.Release|x86.Build.0 = Release|Win32
-		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Debug|x64.ActiveCfg = Debug|x64
-		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Debug|x64.Build.0 = Debug|x64
-		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Debug|x86.ActiveCfg = Debug|Win32
-		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Debug|x86.Build.0 = Debug|Win32
-		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Release|x64.ActiveCfg = Release|x64
-		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Release|x64.Build.0 = Release|x64
-		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Release|x86.ActiveCfg = Release|Win32
-		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}.Release|x86.Build.0 = Release|Win32
 		{12144E07-FE63-4D33-9231-748B8D8C3792}.Debug|x64.ActiveCfg = Debug|x64
 		{12144E07-FE63-4D33-9231-748B8D8C3792}.Debug|x64.Build.0 = Debug|x64
 		{12144E07-FE63-4D33-9231-748B8D8C3792}.Debug|x86.ActiveCfg = Debug|Win32

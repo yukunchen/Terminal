@@ -380,7 +380,7 @@ BOOL DirectReadWaitRoutine(_In_ PLIST_ENTRY /*WaitQueue*/, _In_ PCONSOLE_API_MSG
 NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
 {
     PCONSOLE_GETCONSOLEINPUT_MSG const a = &m->u.consoleMsgL1.GetConsoleInput;
-    
+
     if (IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE))
     {
         Telemetry::Instance().LogApiCall(Telemetry::ApiCall::PeekConsoleInput, a->Unicode);
@@ -428,12 +428,12 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
         DirectReadData.InputInfo = GetInputBufferFromHandle(HandleData);
         DirectReadData.ProcessData = GetMessageProcess(m);
         DirectReadData.HandleIndex = GetMessageObject(m);
-        
+
         if (!a->Unicode)
         {
             // MSFT: 6429490 removed the usage of the ReadConInpNumBytesUnicode variable and the early return when the value was 1.
             // This resolved an issue with returning DBCS codepages to getc() and ReadConsoleInput.
-            // There is another copy of the same pattern above in the Wait routine, but that usage scenario isn't 100% clear and 
+            // There is another copy of the same pattern above in the Wait routine, but that usage scenario isn't 100% clear and
             // doesn't affect the issue, so it's left alone for now.
 
             nLength = &nBytesUnicode;
@@ -559,9 +559,9 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
 {
     ULONG NumBytes;
     ULONG uX, uY;
-    if (FAILED(ShortToULong(Size.X, &uX)) || 
-        FAILED(ShortToULong(Size.Y, &uY)) || 
-        FAILED(ULongMult(uX, uY, &NumBytes)) || 
+    if (FAILED(ShortToULong(Size.X, &uX)) ||
+        FAILED(ShortToULong(Size.Y, &uY)) ||
+        FAILED(ULongMult(uX, uY, &NumBytes)) ||
         FAILED(ULongMult(NumBytes, 2 * sizeof(CHAR_INFO), &NumBytes)))
     {
         return STATUS_NO_MEMORY;
@@ -590,7 +590,7 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
                     j++;
                     CHAR AsciiDbcs[2] = { 0 };
                     NumBytes = sizeof(AsciiDbcs);
-                    NumBytes = ConvertOutputToOem(Codepage, &TmpBuffer->Char.UnicodeChar, 1, &AsciiDbcs[0], NumBytes);
+                    NumBytes = ConvertToOem(Codepage, &TmpBuffer->Char.UnicodeChar, 1, &AsciiDbcs[0], NumBytes);
                     OutputBuffer->Char.AsciiChar = AsciiDbcs[0];
                     OutputBuffer->Attributes = TmpBuffer->Attributes;
                     OutputBuffer++;
@@ -610,7 +610,7 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
             }
             else if (!(TmpBuffer->Attributes & COMMON_LVB_SBCSDBCS))
             {
-                ConvertOutputToOem(Codepage, &TmpBuffer->Char.UnicodeChar, 1, &OutputBuffer->Char.AsciiChar, 1);
+                ConvertToOem(Codepage, &TmpBuffer->Char.UnicodeChar, 1, &OutputBuffer->Char.AsciiChar, 1);
                 OutputBuffer->Attributes = TmpBuffer->Attributes;
                 OutputBuffer++;
                 TmpBuffer++;
@@ -726,7 +726,7 @@ NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ C
 NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
 {
     PCONSOLE_READCONSOLEOUTPUT_MSG const a = &m->u.consoleMsgL2.ReadConsoleOutput;
-    
+
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleOutput, a->Unicode);
 
     PCHAR_INFO Buffer;
@@ -825,15 +825,15 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
 
         BufferSize.X = (SHORT)(a->CharRegion.Right - a->CharRegion.Left + 1);
         BufferSize.Y = (SHORT)(a->CharRegion.Bottom - a->CharRegion.Top + 1);
-        if (FAILED(ULongMult(BufferSize.X, BufferSize.Y, &NumBytes)) || 
-            FAILED(ULongMult(NumBytes, sizeof(*Buffer), &NumBytes)) || 
+        if (FAILED(ULongMult(BufferSize.X, BufferSize.Y, &NumBytes)) ||
+            FAILED(ULongMult(NumBytes, sizeof(*Buffer), &NumBytes)) ||
             (Size < NumBytes))
         {
 
             UnlockConsole();
             return STATUS_INVALID_PARAMETER;
         }
-        
+
         PSCREEN_INFORMATION const ScreenBufferInformation = GetScreenBufferFromHandle(HandleData);
 
         if (!a->Unicode)
@@ -855,7 +855,7 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
                     TransBuffer = (PCHAR_INFO)new BYTE[cBufferResult];
                 }
             }
-            
+
             if (TransBuffer == nullptr)
             {
                 UnlockConsole();
@@ -1057,8 +1057,8 @@ NTSTATUS DoSrvFillConsoleOutput(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CO
     return FillOutput(pScreenInfo, pMsg->Element, pMsg->WriteCoord, pMsg->ElementType, &pMsg->Length);
 }
 
-// There used to be a text mode and a graphics mode flag. 
-// Text mode was used for regular applications like CMD.exe. 
+// There used to be a text mode and a graphics mode flag.
+// Text mode was used for regular applications like CMD.exe.
 // Graphics mode was used for bitmap VDM buffers and is no longer supported.
 // OEM console font mode used to represent rewriting the entire buffer into codepage 437 so the renderer could handle it with raster fonts.
 //  But now the entire buffer is always kept in Unicode and the renderer asks for translation when/if necessary for raster fonts only.

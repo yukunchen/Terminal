@@ -6,7 +6,7 @@
 
 #include <precomp.h>
 #include <wextestclass.h>
-#include "ConsoleTAEFTemplates.hpp"
+#include "..\..\inc\consoletaeftemplates.hpp"
 
 #include "MouseInput.hpp"
 using namespace WEX::Common;

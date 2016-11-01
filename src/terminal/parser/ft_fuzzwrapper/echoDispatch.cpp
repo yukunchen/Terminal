@@ -17,7 +17,7 @@ void EchoDispatch::Print(_In_ wchar_t const wchPrintable)
 
 void EchoDispatch::PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
 {
-    wprintf(L"PrintString: \"%s\" (%d chars)\r\n", rgwch, cch);
+    wprintf(L"PrintString: \"%s\" (%zd chars)\r\n", rgwch, cch);
 }
 
 void EchoDispatch::Execute(_In_ wchar_t const wchControl)

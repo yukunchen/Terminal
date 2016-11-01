@@ -283,11 +283,11 @@ void DimensionsTests::TestSetConsoleScreenBufferSize()
     VERIFY_WIN32_BOOL_FAILED(SetConsoleScreenBufferSize(Common::_hConsole, coordSize), L"Set buffer size to smaller than minimum possible.");
 
     // Ensure buffer size cannot be excessively large.
-    RestrictDimensionsHelper(&coordSize, MAXSHORT, MAXSHORT, fAdjustX, fAdjustY);
+    RestrictDimensionsHelper(&coordSize, SHRT_MAX, SHRT_MAX, fAdjustX, fAdjustY);
     VERIFY_WIN32_BOOL_FAILED(SetConsoleScreenBufferSize(Common::_hConsole, coordSize), L"Set buffer size to very, very large.");
 
     // Ensure buffer size cannot be excessively small (negative).
-    RestrictDimensionsHelper(&coordSize, MINSHORT, MINSHORT, fAdjustX, fAdjustY);
+    RestrictDimensionsHelper(&coordSize, SHRT_MIN, SHRT_MIN, fAdjustX, fAdjustY);
     VERIFY_WIN32_BOOL_FAILED(SetConsoleScreenBufferSize(Common::_hConsole, coordSize), L"Set buffer size to negative values.");
 
     // Ensure success on giving the same size back that we started with
