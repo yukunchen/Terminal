@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\common.build.pre.props"/>
+  <Import Project="..\..\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\clipboard.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
@@ -22,6 +22,7 @@
     <ClCompile Include="..\menu.cpp" />
     <ClCompile Include="..\misc.cpp" />
     <ClCompile Include="..\newdelete.cpp" />
+    <ClCompile Include="..\ntprivapi.cpp" />
     <ClCompile Include="..\output.cpp" />
     <ClCompile Include="..\outputStream.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -71,6 +72,7 @@
     <ClInclude Include="..\menu.h" />
     <ClInclude Include="..\misc.h" />
     <ClInclude Include="..\newdelete.hpp" />
+    <ClInclude Include="..\ntprivapi.hpp" />
     <ClInclude Include="..\output.h" />
     <ClInclude Include="..\outputStream.hpp" />
     <ClInclude Include="..\precomp.h" />
@@ -109,6 +111,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="..\..\common.build.lib.props"/>
-  <Import Project="..\..\common.build.post.props"/>
+  <Import Project="..\..\common.build.lib.props" />
+  <Import Project="..\..\common.build.post.props" />
 </Project>

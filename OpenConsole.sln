@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 # Put Host.EXE first to set as startup project for people without preferences.
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.EXE", "src\host\exe\Host.EXE.vcxproj", "{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}"
@@ -76,6 +76,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.Tests.CJK", "src\host\ft_cjk\test\Host.Tests.CJK.vcxproj", "{26F460D5-E7FD-42CB-9E60-9C558A322E97}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.Tests.CJK.Tool", "src\host\ft_cjk\tool\Host.Tests.CJK.Tool.vcxproj", "{707F1302-160D-414D-9B9B-F414570363E1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Propsheet.DLL", "src\propsheet\propsheet.vcxproj", "{5D23E8E1-3C64-4CC1-A8F7-6861677F7239}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build Common", "Build Common", "{04170EEF-983A-4195-BFEF-2321E5E38A1E}"
 	ProjectSection(SolutionItems) = preProject
@@ -248,6 +250,14 @@ Global
 		{707F1302-160D-414D-9B9B-F414570363E1}.Release|x64.Build.0 = Release|x64
 		{707F1302-160D-414D-9B9B-F414570363E1}.Release|x86.ActiveCfg = Release|Win32
 		{707F1302-160D-414D-9B9B-F414570363E1}.Release|x86.Build.0 = Release|Win32
+		{5D23E8E1-3C64-4CC1-A8F7-6861677F7239}.Debug|x64.ActiveCfg = Debug|x64
+		{5D23E8E1-3C64-4CC1-A8F7-6861677F7239}.Debug|x64.Build.0 = Debug|x64
+		{5D23E8E1-3C64-4CC1-A8F7-6861677F7239}.Debug|x86.ActiveCfg = Debug|Win32
+		{5D23E8E1-3C64-4CC1-A8F7-6861677F7239}.Debug|x86.Build.0 = Debug|Win32
+		{5D23E8E1-3C64-4CC1-A8F7-6861677F7239}.Release|x64.ActiveCfg = Release|x64
+		{5D23E8E1-3C64-4CC1-A8F7-6861677F7239}.Release|x64.Build.0 = Release|x64
+		{5D23E8E1-3C64-4CC1-A8F7-6861677F7239}.Release|x86.ActiveCfg = Release|Win32
+		{5D23E8E1-3C64-4CC1-A8F7-6861677F7239}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

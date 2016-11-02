@@ -25,6 +25,9 @@ bld/
 # Visual Studio 2015 cache/options directory
 .vs/
 
+# Visual Studio Code cache/options directory
+.vscode/
+
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
@@ -224,5 +227,7 @@ build*.rec
 build*.wrn
 build*.metadata
 
-# .razzlerc.bat file - used by dev environment
-tools/.razzlerc.bat
+# .razzlerc.cmd file - used by dev environment
+tools/.razzlerc.*
+# message compiler output
+MSG*.bin

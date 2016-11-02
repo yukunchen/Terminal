@@ -344,10 +344,17 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 
     // As of the graphics refactoring to library based, all fonts are now DPI aware. Scaling is performed at the Blt time for raster fonts.
     // Note that we can only declare our DPI awareness once per process launch.
-    SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+    // Set the process's default dpi awareness context to PMv2 so that new top level windows
+    // inherit their WM_DPICHANGED* broadcast mode (and more, like dialog scaling) from the thread.
+    if (!WindowDpiApi::s_SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
+    {
+        // Fallback to per-monitor aware V1 if the API isn't available.
+        SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
 
-    // Allow child dialogs (i.e. Properties and Find) to scale automatically based on DPI if we're currently DPI aware.
-    WindowDpiApi::s_EnablePerMonitorDialogScaling();
+        // Allow child dialogs (i.e. Properties and Find) to scale automatically based on DPI if we're currently DPI aware.
+        // Note that we don't need to do this if we're PMv2.
+        WindowDpiApi::s_EnablePerMonitorDialogScaling();
+    }
 
     //Save initial font name for comparison on exit. We want telemetry when the font has changed
     if (settings.IsFaceNameSet())
