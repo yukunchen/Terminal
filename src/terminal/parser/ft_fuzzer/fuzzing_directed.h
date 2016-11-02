@@ -261,6 +261,14 @@ namespace fuzz
         {
             return rg[GetRandom<size_t>(cElems)];
         }
+
+        // Given an array of elements, select a random element from the
+        // collection.  Note that _cElems is the number of items in the array.
+        template <typename _Type, size_t _cElems>
+        static _Type SelectOne(const _Type (&rg)[_cElems]) throw()
+        {
+            return rg[GetRandom<size_t>(_cElems)];
+        }
     private:
         CFuzzChance() { }
         virtual ~CFuzzChance() { }
