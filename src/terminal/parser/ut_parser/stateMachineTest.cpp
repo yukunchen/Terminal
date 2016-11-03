@@ -169,6 +169,17 @@ class Microsoft::Console::VirtualTerminal::StateMachineTest : TermDispatch
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
 
+    TEST_METHOD(TestC1CsiEntry)
+    {
+        StateMachine mach(this);
+
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+        mach.ProcessCharacter(L'\x9b');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
+        mach.ProcessCharacter(L'm');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+    }
+
     TEST_METHOD(TestCsiImmediate)
     {
         StateMachine mach(this);
