@@ -10,10 +10,6 @@ namespace Conhost.UIA.Tests.Elements
     using System.Collections.Generic;
     using System.Linq;
 
-    using MS.Internal.Mita.Foundation;
-    using MS.Internal.Mita.Foundation.Controls;
-    using MS.Internal.Mita.Foundation.Waiters;
-
     using Conhost.UIA.Tests.Common;
 
     public class Tabs : IDisposable
@@ -85,10 +81,10 @@ namespace Conhost.UIA.Tests.Elements
             switch (state)
             {
                 case GlobalState.ConsoleV1:
-                    tabWithGlobal.GlobalV1V2Box.Box.Check();
+                    tabWithGlobal.GlobalV1V2Box.Check();
                     break;
                 case GlobalState.ConsoleV2:
-                    tabWithGlobal.GlobalV1V2Box.Box.Uncheck();
+                    tabWithGlobal.GlobalV1V2Box.Uncheck();
                     break;
                 default:
                     throw new NotImplementedException();

@@ -10,11 +10,14 @@ namespace Conhost.UIA.Tests.Elements
     using System.Diagnostics;
     using System.IO;
 
-    using MS.Internal.Mita.Foundation;
-    using MS.Internal.Mita.Foundation.Waiters;
-
     using Conhost.UIA.Tests.Common;
     using Conhost.UIA.Tests.Common.NativeMethods;
+
+    using OpenQA.Selenium;
+    using OpenQA.Selenium.Remote;
+    using OpenQA.Selenium.Appium;
+    using OpenQA.Selenium.Appium.iOS;
+    using OpenQA.Selenium.Interactions;
 
     using WEX.Logging.Interop;
     using WEX.TestExecution;
@@ -29,8 +32,12 @@ namespace Conhost.UIA.Tests.Elements
         private static readonly string linkPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                                                                @"Microsoft\Windows\Start Menu\Programs\System Tools\Command Prompt.lnk");
 
+        protected const string AppDriverUrl = "http://127.0.0.1:4723";
+
         private Process commandProcess;
-        public UIObject UIRoot { get; private set; }
+        public IOSDriver<IOSElement> Session { get; private set; }
+        public Actions Actions { get; private set; }
+        public AppiumWebElement UIRoot { get; private set; }
 
         private IntPtr hStdOut = IntPtr.Zero;
         private bool isDisposed = false;
@@ -56,9 +63,9 @@ namespace Conhost.UIA.Tests.Elements
             GC.SuppressFinalize(this);
         }
 
-        public UIObject GetTitleBar()
+        public AppiumWebElement GetTitleBar()
         {
-            return this.UIRoot.Children.Find(UICondition.Create("@AutomationId = {0}", "TitleBar"));
+            return this.UIRoot.FindElementByAccessibilityId("TitleBar");
         }
 
         public IntPtr GetStdOutHandle()
@@ -83,6 +90,11 @@ namespace Conhost.UIA.Tests.Elements
             WinCon.GetConsoleTitle(builder, size);
 
             return builder.ToString();
+        }
+
+        public IntPtr GetWindowHandle()
+        {
+            return WinCon.GetConsoleWindow();
         }
 
         public WinCon.COORD GetCursorPosition(IntPtr hConsole)
@@ -145,13 +157,13 @@ namespace Conhost.UIA.Tests.Elements
 
         private void CreateCmdProcess(string path)
         {
-            WindowOpenedWaiter waiter = new WindowOpenedWaiter(UICondition.CreateFromClassName("ConsoleWindowClass"));
+            //WindowOpenedWaiter waiter = new WindowOpenedWaiter(UICondition.CreateFromClassName("ConsoleWindowClass"));
 
             Log.Comment("Attempting to launch command-line application at '{0}'", path);
-            
-            this.commandProcess = Process.Start(path);
 
-            waiter.Wait(Globals.AppCreateTimeout);
+            this.commandProcess = Process.Start(path, "/k \"TITLE test window\"");
+
+            Globals.WaitForTimeout();
 
             int pid = this.commandProcess.Id;
 
@@ -161,7 +173,19 @@ namespace Conhost.UIA.Tests.Elements
             NativeMethods.Win32BoolHelper(WinCon.FreeConsole(), "Free existing console bindings.");
             NativeMethods.Win32BoolHelper(WinCon.AttachConsole((uint)pid), "Bind to the new PID for console APIs.");
 
-            this.UIRoot = UIObject.Root.Children.Find(UICondition.Create("@ProcessId = {0}", pid));
+            DesiredCapabilities appCapabilities = new DesiredCapabilities();
+            appCapabilities.SetCapability("app", @"Root");
+            Session = new IOSDriver<IOSElement>(new Uri(AppDriverUrl), appCapabilities);
+            Session.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(15));
+            Verify.IsNotNull(Session);
+            Actions = new Actions(Session);
+            Verify.IsNotNull(Session);
+
+            Globals.WaitForTimeout();
+            Globals.WaitForTimeout();
+            Globals.WaitForTimeout();
+
+            this.UIRoot = Session.FindElementByName("test window");
             this.hStdOut = WinCon.GetStdHandle(WinCon.CONSOLE_STD_HANDLE.STD_OUTPUT_HANDLE);
             Verify.IsNotNull(this.hStdOut, "Ensure output handle is valid.");
         }

@@ -8,11 +8,10 @@ namespace Conhost.UIA.Tests.Elements
 {
     using System;
 
-    using MS.Internal.Mita.Foundation;
-    using MS.Internal.Mita.Foundation.Controls;
-    using MS.Internal.Mita.Foundation.Waiters;
+    using OpenQA.Selenium.Appium;
 
     using Conhost.UIA.Tests.Common;
+
     public class PropertiesDialog : IDisposable
     {
         public enum CloseAction
@@ -21,11 +20,11 @@ namespace Conhost.UIA.Tests.Elements
             Cancel
         }
 
-        public Window PropWindow { get; private set; }
-        public Tab Tabs { get; private set; }
+        public AppiumWebElement PropWindow { get; private set; }
+        public AppiumWebElement Tabs { get; private set; }
 
-        private Button okButton;
-        private Button cancelButton;
+        private AppiumWebElement okButton;
+        private AppiumWebElement cancelButton;
 
         private CmdApp app;
 
@@ -83,43 +82,42 @@ namespace Conhost.UIA.Tests.Elements
 
         private void OpenPropertiesDialog(CmdApp app, OpenTarget target)
         {
-            MenuOpenedWaiter contextMenuWaiter = new MenuOpenedWaiter();
+            var titleBar = app.GetTitleBar();
+            app.Session.Mouse.ContextClick(titleBar.Coordinates);
 
-            UIObject titleBar = app.GetTitleBar();
-            titleBar.Click(PointerButtons.Secondary);
+            Globals.WaitForTimeout();
+            //contextMenuWaiter.Wait(Globals.Timeout);
 
-            contextMenuWaiter.Wait(Globals.Timeout);
-            UIObject contextMenu = contextMenuWaiter.Source;
+            //var contextMenu = app.Session.FindElementByName("Menu");
+            var contextMenu = app.Session.FindElementByClassName("#32768");
 
-            UIObject propButton = null;
+            AppiumWebElement propButton;
             switch (target)
             {
                 case OpenTarget.Specifics:
-                    propButton = contextMenu.Children.Find(UICondition.CreateFromName("Properties"));
+                    propButton = contextMenu.FindElementByName("Properties");
                     break;
                 case OpenTarget.Defaults:
-                    propButton = contextMenu.Children.Find(UICondition.CreateFromName("Defaults"));
+                    propButton = contextMenu.FindElementByName("Defaults");
                     break;
                 default:
                     throw new NotImplementedException(AutoHelpers.FormatInvariant("Open Properties dialog doesn't yet support target type of '{0}'", target.ToString()));
             }
 
-            WindowOpenedWaiter propWindowWaiter = new WindowOpenedWaiter();
-            propButton.Click(PointerButtons.Primary);
+            propButton.Click();
 
-            propWindowWaiter.Wait(Globals.Timeout);
+            Globals.WaitForTimeout();
+            //propWindowWaiter.Wait(Globals.Timeout);
 
-            this.PropWindow = new Window(propWindowWaiter.Source);
-            this.Tabs = new Tab(this.PropWindow.Children.Find(UICondition.CreateFromClassName("SysTabControl32")));
+            this.PropWindow = this.app.UIRoot.FindElementByClassName("#32770");
+            this.Tabs = this.PropWindow.FindElementByClassName("SysTabControl32");
 
-            okButton = new Button(this.PropWindow.Children.Find(UICondition.CreateFromName("OK")));
-            cancelButton = new Button(this.PropWindow.Children.Find(UICondition.CreateFromName("Cancel")));
+            okButton = this.PropWindow.FindElementByName("OK");
+            cancelButton = this.PropWindow.FindElementByName("Cancel");
         }
 
         private void ClosePropertiesDialog(CloseAction action)
         {
-            WindowClosedWaiter waiter = new WindowClosedWaiter(this.PropWindow);
-
             switch (action)
             {
                 case CloseAction.OK:
@@ -130,7 +128,7 @@ namespace Conhost.UIA.Tests.Elements
                     break;
             }
 
-            waiter.Wait(Globals.Timeout);
+            Globals.WaitForTimeout();
         }
     }
 }

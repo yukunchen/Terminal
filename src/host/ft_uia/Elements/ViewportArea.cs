@@ -13,15 +13,14 @@ namespace Conhost.UIA.Tests.Elements
     using System.Runtime.InteropServices;
     using System.Text;
 
-    using MS.Internal.Mita.Foundation;
-    using MS.Internal.Mita.Foundation.Controls;
-    using MS.Internal.Mita.Foundation.Waiters;
+    using OpenQA.Selenium.Appium;
 
     using WEX.Logging.Interop;
     using WEX.TestExecution;
 
     using Conhost.UIA.Tests.Common;
     using Conhost.UIA.Tests.Common.NativeMethods;
+    using OpenQA.Selenium;
 
     public class ViewportArea : IDisposable
     {
@@ -84,11 +83,11 @@ namespace Conhost.UIA.Tests.Elements
         private void InitializeWindow()
         {
             AutoHelpers.LogInvariant("Initializing window data for viewport area...");
-            Window w = new Window(this.app.UIRoot);
+            //Window w = new Window(this.app.UIRoot);
 
-            Rectangle windowBounds = w.BoundingRectangle;
+            //Rectangle windowBounds = new Rectangle(this.app.UIRoot.Location.X, this.app.UIRoot.Location.Y, this.app.UIRoot.Size.Width, this.app.UIRoot.Size.Height);
 
-            IntPtr hWnd = w.NativeWindowHandle;
+            IntPtr hWnd = app.GetWindowHandle();
 
             User32.RECT lpRect;
             User32.GetClientRect(hWnd, out lpRect);
@@ -107,7 +106,7 @@ namespace Conhost.UIA.Tests.Elements
 
         public void ExitModes()
         {
-            Keyboard.Instance.SendKeys("{ESC}");
+            app.UIRoot.SendKeys(Keys.Escape);
             this.state = ViewportStates.Normal;
         }
         
@@ -119,35 +118,38 @@ namespace Conhost.UIA.Tests.Elements
                 return;
             }
 
-            MenuOpenedWaiter contextMenuWaiter = new MenuOpenedWaiter();
+            //MenuOpenedWaiter contextMenuWaiter = new MenuOpenedWaiter();
+            var titleBar = app.UIRoot.FindElementByAccessibilityId("TitleBar");
+            app.Session.Mouse.ContextClick(titleBar.Coordinates);
 
-            UIObject titleBar = app.UIRoot.Children.Find(UICondition.Create("@AutomationId = {0}", "TitleBar"));
-            titleBar.Click(PointerButtons.Secondary);
+            Globals.WaitForTimeout();
+            //contextMenuWaiter.Wait(Globals.Timeout);
+            var contextMenu = app.Session.FindElementByClassName("#32768");
+            //var contextMenu = app.Session.FindElementByName("Menu");
 
-            contextMenuWaiter.Wait(Globals.Timeout);
-            UIObject contextMenu = contextMenuWaiter.Source;
+            var editButton = contextMenu.FindElementByName("Edit");
 
-            UIObject editButton = contextMenu.Children.Find(UICondition.CreateFromName("Edit"));
+            //MenuOpenedWaiter editWaiter = new MenuOpenedWaiter();
+            editButton.Click();
+            Globals.WaitForTimeout();
+            //editWaiter.Wait(Globals.Timeout);
 
-            MenuOpenedWaiter editWaiter = new MenuOpenedWaiter();
-            editButton.Click(PointerButtons.Primary);
-            editWaiter.Wait(Globals.Timeout);
+            Globals.WaitForTimeout();
 
-            contextMenu = editWaiter.Source;
-
-            UIObject subMenuButton = null;
+            AppiumWebElement subMenuButton;
             switch (state)
             {
                 case ViewportStates.Mark:
-                    subMenuButton = contextMenu.Children.Find(UICondition.CreateFromName("Mark"));
+                    subMenuButton = app.Session.FindElementByName("Mark");
                     break;
                 default:
                     throw new NotImplementedException(AutoHelpers.FormatInvariant("Set Mode doesn't yet support type of '{0}'", state.ToString()));
             }
 
-            MenuClosedWaiter actionCompleteWaiter = new MenuClosedWaiter();
-            subMenuButton.Click(PointerButtons.Primary);
-            actionCompleteWaiter.Wait(Globals.Timeout);
+            //MenuClosedWaiter actionCompleteWaiter = new MenuClosedWaiter();
+            subMenuButton.Click();
+            Globals.WaitForTimeout();
+            //actionCompleteWaiter.Wait(Globals.Timeout);
 
             this.state = state;
         }

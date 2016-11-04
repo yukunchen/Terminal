@@ -253,6 +253,9 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
         public static extern uint GetConsoleTitle(StringBuilder lpConsoleTitle, int nSize);
 
         [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr GetConsoleWindow();
+
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetConsoleSelectionInfo(out CONSOLE_SELECTION_INFO lpConsoleSelectionInfo);
 
         [DllImport("kernel32.dll", SetLastError = true)]

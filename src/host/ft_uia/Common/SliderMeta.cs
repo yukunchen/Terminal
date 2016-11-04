@@ -8,10 +8,9 @@ namespace Conhost.UIA.Tests.Common
 {
     using System;
     using System.Globalization;
-
-    using MS.Internal.Mita.Foundation.Controls;
-
+    
     using WEX.Logging.Interop;
+    using OpenQA.Selenium.Appium;
 
     public struct SliderMeta
     {
@@ -24,19 +23,39 @@ namespace Conhost.UIA.Tests.Common
             Minimum
         }
 
-        public RangeValueSlider Slider{ get; private set; }
+        public AppiumWebElement Slider { get; private set; }
         public string ValueName { get; private set; }
         public bool IsV2Property { get; private set; }
         public NativeMethods.Wtypes.PROPERTYKEY? PropKey { get; private set; }
 
 
-        public SliderMeta(RangeValueSlider slider, string valueName, bool isV2Property, NativeMethods.Wtypes.PROPERTYKEY? propKey)
+        public SliderMeta(AppiumWebElement slider, string valueName, bool isV2Property, NativeMethods.Wtypes.PROPERTYKEY? propKey)
             : this()
         {
             this.Slider = slider;
             this.ValueName = valueName;
             this.IsV2Property = isV2Property;
             this.PropKey = propKey;
+        }
+
+        public void SetToMaximum()
+        {
+            return;
+        }
+
+        public void SetToMinimum()
+        {
+            return;
+        }
+
+        public int GetMaximum()
+        {
+            return 100;
+        }
+
+        public int GetMinimum()
+        {
+            return 30;
         }
     }
 }

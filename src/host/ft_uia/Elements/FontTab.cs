@@ -9,11 +9,9 @@ namespace Conhost.UIA.Tests.Elements
     using System;
     using System.Collections.Generic;
 
-    using MS.Internal.Mita.Foundation;
-    using MS.Internal.Mita.Foundation.Controls;
-
     using Conhost.UIA.Tests.Common;
     using NativeMethods = Conhost.UIA.Tests.Common.NativeMethods;
+    using OpenQA.Selenium.Appium;
 
     public class FontTab : TabBase
     {
@@ -22,19 +20,19 @@ namespace Conhost.UIA.Tests.Elements
 
         }
 
-        protected override void PopulateItemsOnNavigate(Window propWindow)
+        protected override void PopulateItemsOnNavigate(AppiumWebElement propWindow)
         {
             return;
         }
 
-        public override IEnumerable<UIObject> GetObjectsDisabledForV1Console()
+        public override IEnumerable<AppiumWebElement> GetObjectsDisabledForV1Console()
         {
-            return new UIObject[0];
+            return new AppiumWebElement[0];
         }
 
-        public override IEnumerable<UIObject> GetObjectsUnaffectedByV1V2Switch()
+        public override IEnumerable<AppiumWebElement> GetObjectsUnaffectedByV1V2Switch()
         {
-            return new UIObject[0];
+            return new AppiumWebElement[0];
         }
 
         public override IEnumerable<CheckBoxMeta> GetCheckboxesForVerification()

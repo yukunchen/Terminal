@@ -8,8 +8,6 @@ namespace Conhost.UIA.Tests.Common
 {
     using System;
 
-    using MS.Internal.Mita.Foundation.Waiters;
-
     public static class Globals
     {
         public const int Timeout = 500; // in milliseconds
@@ -17,8 +15,7 @@ namespace Conhost.UIA.Tests.Common
 
         public static void WaitForTimeout()
         {
-            TimeWaiter waiter = new TimeWaiter();
-            waiter.Wait(TimeSpan.FromMilliseconds(Globals.Timeout));
+            System.Threading.Thread.Sleep(Globals.Timeout);
         }
     }
 
