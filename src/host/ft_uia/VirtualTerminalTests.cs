@@ -25,7 +25,7 @@ namespace Conhost.UIA.Tests
     using Conhost.UIA.Tests.Common;
     using Conhost.UIA.Tests.Common.NativeMethods;
     using Conhost.UIA.Tests.Elements;
-
+    using OpenQA.Selenium;
 
     [TestClass]
     public class VirtualTerminalTests
@@ -183,6 +183,7 @@ namespace Conhost.UIA.Tests
         {
             WinCon.COORD cursorPos;
             Log.Comment("---Status Request Commands---");
+            Globals.WaitForTimeout();
             app.UIRoot.SendKeys("c");
             string expectedTitle = string.Format("Response Received: {0}", "\x1b[?1;0c");
 
@@ -228,6 +229,7 @@ namespace Conhost.UIA.Tests
 
             ciExpected.Attributes &= ~WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_ALL;
             ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_GREEN;
+            ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_INTENSITY;
 
             ciActual = area.GetCharInfoAt(hConsole, pt);
             Verify.AreEqual(ciExpected, ciActual, "Verify that foreground green got set.");
@@ -238,6 +240,7 @@ namespace Conhost.UIA.Tests
 
             ciExpected.Attributes &= ~WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_ALL;
             ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_YELLOW;
+            ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_INTENSITY;
 
             ciActual = area.GetCharInfoAt(hConsole, pt);
             Verify.AreEqual(ciExpected, ciActual, "Verify that foreground yellow got set.");
@@ -248,6 +251,7 @@ namespace Conhost.UIA.Tests
 
             ciExpected.Attributes &= ~WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_ALL;
             ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_BLUE;
+            ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_INTENSITY;
 
             ciActual = area.GetCharInfoAt(hConsole, pt);
             Verify.AreEqual(ciExpected, ciActual, "Verify that foreground blue got set.");
@@ -258,6 +262,7 @@ namespace Conhost.UIA.Tests
 
             ciExpected.Attributes &= ~WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_ALL;
             ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_MAGENTA;
+            ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_INTENSITY;
 
             ciActual = area.GetCharInfoAt(hConsole, pt);
             Verify.AreEqual(ciExpected, ciActual, "Verify that foreground magenta got set.");
@@ -268,6 +273,7 @@ namespace Conhost.UIA.Tests
 
             ciExpected.Attributes &= ~WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_ALL;
             ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_CYAN;
+            ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_INTENSITY;
 
             ciActual = area.GetCharInfoAt(hConsole, pt);
             Verify.AreEqual(ciExpected, ciActual, "Verify that foreground cyan got set.");
@@ -278,6 +284,7 @@ namespace Conhost.UIA.Tests
 
             ciExpected.Attributes &= ~WinCon.CONSOLE_ATTRIBUTES.BACKGROUND_ALL;
             ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.BACKGROUND_COLORS;
+            ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_INTENSITY;
 
             ciActual = area.GetCharInfoAt(hConsole, pt);
             Verify.AreEqual(ciExpected, ciActual, "Verify that background white got set.");
@@ -353,7 +360,7 @@ namespace Conhost.UIA.Tests
 
             Log.Comment("Set background bright blue (SGR.104)");
             app.FillCursorPosition(hConsole, ref pt);
-            app.UIRoot.SendKeys("{SHIFT DOWN}5{SHIFT UP}`");
+            app.UIRoot.SendKeys(Keys.Shift + "5" + Keys.Shift + "`");
 
             ciExpected.Attributes &= ~WinCon.CONSOLE_ATTRIBUTES.BACKGROUND_ALL;
             ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.BACKGROUND_BLUE | WinCon.CONSOLE_ATTRIBUTES.BACKGROUND_INTENSITY;
@@ -363,7 +370,7 @@ namespace Conhost.UIA.Tests
 
             Log.Comment("Set background bright cyan (SGR.106)");
             app.FillCursorPosition(hConsole, ref pt);
-            app.UIRoot.SendKeys("{SHIFT DOWN}6{SHIFT UP}`");
+            app.UIRoot.SendKeys(Keys.Shift + "6" + Keys.Shift + "`");
 
             ciExpected.Attributes &= ~WinCon.CONSOLE_ATTRIBUTES.BACKGROUND_ALL;
             ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.BACKGROUND_CYAN | WinCon.CONSOLE_ATTRIBUTES.BACKGROUND_INTENSITY;
@@ -421,6 +428,7 @@ namespace Conhost.UIA.Tests
             app.UIRoot.SendKeys("9`");
 
             ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_COLORS;
+            ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_INTENSITY;
             ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.BACKGROUND_YELLOW;
             ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.COMMON_LVB_UNDERSCORE;
 
@@ -429,17 +437,18 @@ namespace Conhost.UIA.Tests
 
             Log.Comment("Set foreground back to original only (SGR.39)");
             app.FillCursorPosition(hConsole, ref pt);
-            app.UIRoot.SendKeys("{SHIFT DOWN}9{SHIFT UP}`");
+            app.UIRoot.SendKeys(Keys.Shift + "9" + Keys.Shift + "`");
 
             ciExpected.Attributes &= ~WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_ALL; // turn off all foreground flags
             ciExpected.Attributes |= (ciOriginal.Attributes & WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_ALL); // turn on only the foreground part of the original attributes
+            ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_INTENSITY;
 
             ciActual = area.GetCharInfoAt(hConsole, pt);
             Verify.AreEqual(ciExpected, ciActual, "Verify that we set the foreground only back to the default.");
 
             Log.Comment("Set background back to original only (SGR.49)");
             app.FillCursorPosition(hConsole, ref pt);
-            app.UIRoot.SendKeys("{SHIFT DOWN}0{SHIFT UP}`");
+            app.UIRoot.SendKeys(Keys.Shift + "0" + Keys.Shift + "`");
 
             ciExpected.Attributes &= ~WinCon.CONSOLE_ATTRIBUTES.BACKGROUND_ALL; // turn off all foreground flags
             ciExpected.Attributes |= (ciOriginal.Attributes & WinCon.CONSOLE_ATTRIBUTES.BACKGROUND_ALL); // turn on only the foreground part of the original attributes
@@ -707,7 +716,7 @@ namespace Conhost.UIA.Tests
         private static void ScreenFillHelper(CmdApp app, ViewportArea area, IntPtr hConsole)
         {
             Log.Comment("Fill screen with junk");
-            app.UIRoot.SendKeys("{SHIFT DOWN}`{SHIFT UP}");
+            app.UIRoot.SendKeys(Keys.Shift + "`" + Keys.Shift);
 
             Globals.WaitForTimeout(); // give the buffer time to fill.
 

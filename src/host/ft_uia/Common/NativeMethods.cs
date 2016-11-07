@@ -246,6 +246,9 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool FreeConsole();
 
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern bool SetConsoleTitle(string ConsoleTitle);
+
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetConsoleMode(IntPtr hConsoleOutputHandle, out CONSOLE_OUTPUT_MODES lpMode);
 

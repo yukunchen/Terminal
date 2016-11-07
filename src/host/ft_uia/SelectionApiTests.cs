@@ -33,172 +33,6 @@ namespace Conhost.UIA.Tests
         public const int timeout = Globals.Timeout;
 
         [TestMethod]
-        public void TestCtrlHomeEnd()
-        {
-            using (CmdApp app = new CmdApp(CreateType.ProcessOnly))
-            {
-                using (ViewportArea area = new ViewportArea(app))
-                {
-                    // Get keyboard instance to try commands
-                    // NOTE: We must wait after every keyboard sequence to give the console time to process before asking it for changes.
-                    //IKeyboard kbd = Session.Keyboard;
-
-                    // Get console handle.
-                    IntPtr hConsole = app.GetStdOutHandle();
-                    Verify.IsNotNull(hConsole, "Ensure the STDOUT handle is valid.");
-
-                    // Get us to an expected initial state.
-                    app.UIRoot.SendKeys("C:" + Keys.Enter);
-                    app.UIRoot.SendKeys(@"cd C:\" + Keys.Enter);
-                    app.UIRoot.SendKeys("cls" + Keys.Enter);
-
-                    // Get initial screen buffer position
-                    WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiexOriginal = new WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX();
-                    sbiexOriginal.cbSize = (uint)Marshal.SizeOf(sbiexOriginal);
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexOriginal), "Get initial viewport position.");
-
-                    // Prep comparison structure
-                    WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiexCompare = new WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX();
-                    sbiexCompare.cbSize = (uint)Marshal.SizeOf(sbiexCompare);
-
-                    // Ctrl-End shouldn't move anything yet.
-                    Log.Comment("Attempt Ctrl-End. Nothing should move yet.");
-                    app.UIRoot.SendKeys(Keys.Control + Keys.End + Keys.Control);
-
-                    Globals.WaitForTimeout();
-
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexCompare), "Get comparison position.");
-                    Verify.AreEqual<WinCon.SMALL_RECT>(sbiexOriginal.srWindow, sbiexCompare.srWindow, "Compare viewport positions before and after.");
-
-                    // Ctrl-Home shouldn't move anything yet.
-                    Log.Comment("Attempt Ctrl-Home. Nothing should move yet.");
-                    app.UIRoot.SendKeys(Keys.Control + Keys.Home + Keys.Control);
-
-                    Globals.WaitForTimeout();
-
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexCompare), "Get comparison position.");
-                    Verify.AreEqual<WinCon.SMALL_RECT>(sbiexOriginal.srWindow, sbiexCompare.srWindow, "Compare viewport positions before and after.");
-
-                    // Make some text come out
-                    Log.Comment("Emit some text into the buffer so we'll have something to scroll and test.");
-                    app.UIRoot.SendKeys("HELP" + Keys.Enter + "HELP" + Keys.Enter + "HELP" + Keys.Enter + "HELP" + Keys.Enter);
-
-                    Globals.WaitForTimeout();
-
-                    // Get the new original position
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexOriginal), "Get position of viewport once text is emitted.");
-
-                    // Ctrl-Home should move to top of buffer
-                    Log.Comment("Attempt Ctrl-Home. Should move to top of buffer.");
-                    app.UIRoot.SendKeys(Keys.Control + Keys.Home + Keys.Control);
-
-                    Globals.WaitForTimeout();
-
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexCompare), "Get comparison position.");
-                    Verify.AreNotEqual<WinCon.SMALL_RECT>(sbiexOriginal.srWindow, sbiexCompare.srWindow, "Compare viewport positions before and after. Should no longer be the same.");
-                    Verify.AreEqual(sbiexCompare.srWindow.Top, 0, "Position of viewport top should be at 0, top of screen buffer.");
-
-                    // Ctrl-End should take us back to the original position at the end line
-                    Log.Comment("Attempt Ctrl-End. Should move back to edit line (original position.");
-                    app.UIRoot.SendKeys(Keys.Control + Keys.End + Keys.Control);
-
-                    Globals.WaitForTimeout();
-
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexCompare), "Get comparison position.");
-                    Verify.AreEqual<WinCon.SMALL_RECT>(sbiexOriginal.srWindow, sbiexCompare.srWindow, "Compare viewport positions before and after. Should be back to original position.");
-
-
-                    Log.Comment("Now test the line with some text in it.");
-                    // Retrieve original position (including cursor)
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexOriginal), "Get position of viewport with nothing on edit line.");
-
-                    // Put some text onto the edit line now
-                    Log.Comment("Place some text onto the edit line to ensure behavior will change with edit line full.");
-                    const string testText = "SomeTestText";
-                    app.UIRoot.SendKeys(testText);
-
-                    Globals.WaitForTimeout();
-
-                    // Get the position of the cursor after the text is entered
-                    WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiexWithText = new WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX();
-                    sbiexWithText.cbSize = (uint)Marshal.SizeOf(sbiexWithText);
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexWithText), "Get position of viewport with edit line text.");
-
-                    // The cursor can't have moved down a line. We're going to verify the text by reading its "rectangle" out of the screen buffer.
-                    // If it moved down a line, the calculation of what to select is more complicated than the simple rectangle assignment below.
-                    Verify.AreEqual(sbiexOriginal.dwCursorPosition.Y, sbiexWithText.dwCursorPosition.Y, "There's an assumption here that the cursor stayed on the same line when we added our bit of text.");
-
-                    // Prepare the read rectangle for what we want to get out of the buffer.
-                    Rectangle readRectangle = new Rectangle(sbiexOriginal.dwCursorPosition.X,
-                                                            sbiexOriginal.dwCursorPosition.Y,
-                                                            (sbiexWithText.dwCursorPosition.X - sbiexOriginal.dwCursorPosition.X),
-                                                            1);
-
-                    Log.Comment("Verify that the text we keyed matches what's in the buffer.");
-                    IEnumerable<string> text = area.GetLinesInRectangle(hConsole, readRectangle);
-                    Verify.AreEqual(text.Count(), 1, "We should only have retrieved one line.");
-                    Verify.AreEqual(text.First(), testText, "Verify text matches keyed input.");
-
-                    // Move cursor into the middle of the text.
-                    Log.Comment("Move cursor into the middle of the string.");
-
-                    const int lefts = 4;
-                    for (int i = 0; i < lefts; i++)
-                    {
-                        app.UIRoot.SendKeys(Keys.Left);
-                    }
-
-                    Globals.WaitForTimeout();
-
-                    // Get cursor position now that it's moved.
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexWithText), "Get position of viewport with cursor moved into the middle of the edit line text.");
-                    
-                    Log.Comment("Ctrl-End should trim the end of the input line from the cursor (and not move the cursor.)");
-                    app.UIRoot.SendKeys(Keys.Control + Keys.End + Keys.Control);
-
-                    Globals.WaitForTimeout();
-
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexCompare), "Get comparison position.");
-                    Verify.AreEqual<WinCon.SMALL_RECT>(sbiexWithText.srWindow, sbiexCompare.srWindow, "Compare viewport positions before and after.");
-                    Verify.AreEqual<WinCon.COORD>(sbiexWithText.dwCursorPosition, sbiexCompare.dwCursorPosition, "Compare cursor positions before and after.");
-
-                    Log.Comment("Compare actual text visible on screen.");
-                    text = area.GetLinesInRectangle(hConsole, readRectangle);
-                    Verify.AreEqual(text.Count(), 1, "We should only have retrieved one line.");
-
-                    // the substring length is the original length of the string minus the number of lefts
-                    int substringCtrlEnd = testText.Length - lefts;
-                    Verify.AreEqual(text.First().Trim(), testText.Substring(0, substringCtrlEnd), "Verify text matches keyed input without the last characters removed by Ctrl+End.");
-
-                    Log.Comment("Ctrl-Home should trim the remainder of the edit line from the cursor to the beginning (restoring cursor to position before we entered anything.)");
-                    app.UIRoot.SendKeys(Keys.Control + Keys.Home + Keys.Control);
-
-                    Globals.WaitForTimeout();
-
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexCompare), "Get comparison position.");
-                    Verify.AreEqual<WinCon.SMALL_RECT>(sbiexOriginal.srWindow, sbiexCompare.srWindow, "Compare viewport positions before and after.");
-                    Verify.AreEqual<WinCon.COORD>(sbiexOriginal.dwCursorPosition, sbiexCompare.dwCursorPosition, "Compare cursor positions before and after.");
-
-                    Log.Comment("Compare actual text visible on screen.");
-                    text = area.GetLinesInRectangle(hConsole, readRectangle);
-                    Verify.AreEqual(text.Count(), 1, "We should only have retrieved one line.");
-
-                    Verify.AreEqual(text.First().Trim(), string.Empty, "Verify text is now empty after Ctrl+Home from the end of it.");
-
-                    Log.Comment("Now that all the text is gone, try Ctrl+Home one more time to ensure it moves.");
-                    app.UIRoot.SendKeys(Keys.Control + Keys.Home + Keys.Control);
-
-                    Globals.WaitForTimeout();
-
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexCompare), "Get comparison position.");
-
-                    Verify.AreNotEqual<WinCon.SMALL_RECT>(sbiexOriginal.srWindow, sbiexCompare.srWindow, "Compare viewport positions before and after. Should no longer be the same.");
-                    Verify.AreEqual(sbiexCompare.srWindow.Top, 0, "Position of viewport top should be at 0, top of screen buffer.");
-                }
-            }
-        }
-
-        [TestMethod]
         public void TestKeyboardSelection()
         {
             using (RegistryHelper reg = new RegistryHelper())
@@ -340,10 +174,10 @@ namespace Conhost.UIA.Tests
             //        // Prepare the mouse by moving it into the start position. Prepare the structure
             //        WinCon.CONSOLE_SELECTION_INFO csi;
             //        WinCon.SMALL_RECT expectedRect = new WinCon.SMALL_RECT();
-                    
+
             //        WinCon.CONSOLE_SELECTION_INFO_FLAGS flagsExpected = WinCon.CONSOLE_SELECTION_INFO_FLAGS.CONSOLE_NO_SELECTION;
 
-                   
+
             //        m.MouseMove()
             //        m.MouseMove(startPoint);
 
@@ -368,7 +202,7 @@ namespace Conhost.UIA.Tests
             //        Verify.AreEqual(csi.Flags, flagsExpected, "Check initial mouse selection with button still down.");
             //        Verify.AreEqual(csi.SelectionAnchor, expectedAnchor, "Check that the anchor is equal to the start point.");
             //        Verify.AreEqual(csi.Selection, expectedRect, "Check that entire rectangle is the size of 1x1 and is just at the anchor point.");
-                    
+
             //        // 2. Move to end point and release cursor
             //        m.Move(endPoint);
             //        m.Up(MouseButtons.Primary, ModifierKeys.None);

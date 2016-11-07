@@ -14,7 +14,7 @@ namespace VTApp
         static void Main(string[] args)
         {
 
-            string backupTitle = Console.Title;
+            //string backupTitle = Console.Title;
 
             Console.WindowHeight = 25;
             Console.BufferHeight = 9000;
@@ -27,7 +27,7 @@ namespace VTApp
             {
                 ConsoleKeyInfo keyInfo = Console.ReadKey(true);
 
-                bool fTitleUsed = false;
+                //bool fTitleUsed = false;
                 switch (keyInfo.KeyChar)
                 {
                     case '\x1b': // escape
@@ -49,7 +49,7 @@ namespace VTApp
                         builder.Append(keyInfo.KeyChar);
 
                         Console.Title = string.Format(CultureInfo.InvariantCulture, "Response Received: {0}", builder.ToString());
-                        fTitleUsed = true;
+                        //fTitleUsed = true;
                         break;
                     case '\x8': // backspace
                         Console.Write('\x8');
@@ -410,11 +410,11 @@ namespace VTApp
                         break;
                 }
 
-                if (!fTitleUsed)
-                {
-                    // reset backup title on next key no matter what happened
-                    Console.Title = backupTitle;
-                }
+                //if (!fTitleUsed)
+                //{
+                //    // reset backup title on next key no matter what happened
+                //    Console.Title = backupTitle;
+                //}
             }
         }
     }

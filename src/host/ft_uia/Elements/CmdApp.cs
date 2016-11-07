@@ -157,11 +157,11 @@ namespace Conhost.UIA.Tests.Elements
 
         private void CreateCmdProcess(string path)
         {
-            //WindowOpenedWaiter waiter = new WindowOpenedWaiter(UICondition.CreateFromClassName("ConsoleWindowClass"));
+            string WindowTitleToFind = "Host.Tests.UIA window under test";
 
             Log.Comment("Attempting to launch command-line application at '{0}'", path);
 
-            this.commandProcess = Process.Start(path, "/k \"TITLE test window\"");
+            this.commandProcess = Process.Start(path);
 
             Globals.WaitForTimeout();
 
@@ -172,6 +172,8 @@ namespace Conhost.UIA.Tests.Elements
             // This will allow us to use the APIs to get/set the console state of the test window.
             NativeMethods.Win32BoolHelper(WinCon.FreeConsole(), "Free existing console bindings.");
             NativeMethods.Win32BoolHelper(WinCon.AttachConsole((uint)pid), "Bind to the new PID for console APIs.");
+
+            NativeMethods.Win32BoolHelper(WinCon.SetConsoleTitle(WindowTitleToFind), "Set the window title so AppDriver can find it.");
 
             DesiredCapabilities appCapabilities = new DesiredCapabilities();
             appCapabilities.SetCapability("app", @"Root");
@@ -185,7 +187,7 @@ namespace Conhost.UIA.Tests.Elements
             Globals.WaitForTimeout();
             Globals.WaitForTimeout();
 
-            this.UIRoot = Session.FindElementByName("test window");
+            this.UIRoot = Session.FindElementByName(WindowTitleToFind);
             this.hStdOut = WinCon.GetStdHandle(WinCon.CONSOLE_STD_HANDLE.STD_OUTPUT_HANDLE);
             Verify.IsNotNull(this.hStdOut, "Ensure output handle is valid.");
         }

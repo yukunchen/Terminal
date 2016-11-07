@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Principal;
 using System.Text;
@@ -15,7 +16,11 @@ namespace Host.Tests.UIA
         [AssemblyInitialize]
         public static void SetupAll()
         {
+            // Must run as admin
             Verify.IsFalse(IsAdmin(), "You must run this test as a standard user. WinAppDriver generally cannot find host windows launched as admin.");
+
+            // Check if WinAppDriver is running.
+            Verify.IsTrue(IsWinAppDriverRunning(), "WinAppDriver server must be running on the local machine to run this test.");
         }
 
         public static bool IsAdmin()
@@ -23,6 +28,11 @@ namespace Host.Tests.UIA
             var identity = WindowsIdentity.GetCurrent();
             var principal = new WindowsPrincipal(identity);
             return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
+
+        public static bool IsWinAppDriverRunning()
+        {
+            return Process.GetProcessesByName("WinAppDriver").Count() > 0;
         }
     }
 }

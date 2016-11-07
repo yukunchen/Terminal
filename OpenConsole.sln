@@ -89,6 +89,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build Common", "Build Commo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Host.Tests.UIA", "src\host\ft_uia\Host.Tests.UIA.csproj", "{C17E1BF3-9D34-4779-9458-A8EF98CC5662}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VTApp", "src\tools\vtapp\VTApp.csproj", "{099193A0-1E43-4BBC-BA7F-7B351E1342DF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -257,6 +259,14 @@ Global
 		{C17E1BF3-9D34-4779-9458-A8EF98CC5662}.Release|x64.Build.0 = Release|x64
 		{C17E1BF3-9D34-4779-9458-A8EF98CC5662}.Release|x86.ActiveCfg = Release|Win32
 		{C17E1BF3-9D34-4779-9458-A8EF98CC5662}.Release|x86.Build.0 = Release|Win32
+		{099193A0-1E43-4BBC-BA7F-7B351E1342DF}.Debug|x64.ActiveCfg = Debug|x64
+		{099193A0-1E43-4BBC-BA7F-7B351E1342DF}.Debug|x64.Build.0 = Debug|x64
+		{099193A0-1E43-4BBC-BA7F-7B351E1342DF}.Debug|x86.ActiveCfg = Debug|Win32
+		{099193A0-1E43-4BBC-BA7F-7B351E1342DF}.Debug|x86.Build.0 = Debug|Win32
+		{099193A0-1E43-4BBC-BA7F-7B351E1342DF}.Release|x64.ActiveCfg = Release|x64
+		{099193A0-1E43-4BBC-BA7F-7B351E1342DF}.Release|x64.Build.0 = Release|x64
+		{099193A0-1E43-4BBC-BA7F-7B351E1342DF}.Release|x86.ActiveCfg = Release|Win32
+		{099193A0-1E43-4BBC-BA7F-7B351E1342DF}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
