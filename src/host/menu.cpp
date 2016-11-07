@@ -491,7 +491,7 @@ void PropertiesDlgShow(_In_ HWND const hwnd, _In_ BOOL const Defaults)
             (*pfnCplApplet) (hwnd, CPL_EXIT, 0, 0);
         }
 
-        FreeLibrary((HMODULE)hLibrary);
+        LOG_IF_WIN32_BOOL_FALSE(FreeLibrary((HMODULE)hLibrary));
     }
 
     LockConsole();
