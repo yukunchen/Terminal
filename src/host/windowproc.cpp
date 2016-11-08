@@ -321,7 +321,12 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         _HandlePaint();
         
-        goto CallDefWin;
+        // NOTE: We cannot let the OS handle this message (meaning do NOT pass to DefWindowProc)
+        // or it will cause missing painted regions in scenarios without a DWM (like Core Server SKU).
+        // Ensure it is re-validated in this handler so we don't receive infinite WM_PAINTs after 
+        // we have stored the invalid region data for the next trip around the renderer thread.
+
+        break;
     }
 
     case WM_ERASEBKGND:
@@ -821,6 +826,7 @@ void Window::_HandlePaint() const
     if (g_pRender != nullptr)
     {
         g_pRender->TriggerSystemRedraw(&rcUpdate);
+        ValidateRect(GetWindowHandle(), &rcUpdate);
     }
 }
 

@@ -28,14 +28,14 @@ StateMachine::~StateMachine()
 
 // Routine Description:
 // - Determines if a character indicates an action that should be taken in the ground state - 
-//     These are C0 characters and CAN, SUB, and ESC 
+//     These are C0 characters and the C1 [single-character] CSI.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
 // - True if it is. False if it isn't.
 bool StateMachine::s_IsActionableFromGround(_In_ wchar_t const wch)
 {
-    return wch <= AsciiChars::US;
+    return (wch <= AsciiChars::US) || s_IsC1Csi(wch);
 }
 
 // Routine Description:
@@ -51,6 +51,30 @@ bool StateMachine::s_IsC0Code(_In_ wchar_t const wch)
     return (wch >= AsciiChars::NUL && wch <= AsciiChars::ETB) ||
            wch == AsciiChars::EM ||
            (wch >= AsciiChars::FS && wch <= AsciiChars::US);
+}
+
+// Routine Description:
+// - Determines if a character is a C1 CSI (Control Sequence Introducer)
+//   This is a single-character way to start a control sequence, as opposed to "ESC[".
+//
+//   Not all single-byte codepages support C1 control codes--in some, the range that would
+//   be used for C1 codes are instead used for additional graphic characters.
+//
+//   However, we do not need to worry about confusion whether a single byte \x9b in a
+//   single-byte stream represents a C1 CSI or some other glyph, because by the time we
+//   get here, everything is Unicode. Knowing whether a single-byte \x9b represents a
+//   single-character C1 CSI or some other glyph is handled by MultiByteToWideChar before
+//   we get here (if the stream was not already UTF-16). For instance, in CP_ACP, if a
+//   \x9b shows up, it will get converted to \x203a. So, if we get here, and have a
+//   \x009b, we know that it unambiguously represents a C1 CSI.
+//
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+bool StateMachine::s_IsC1Csi(_In_ wchar_t const wch)
+{
+    return wch == L'\x9b';
 }
 
 // Routine Description:
@@ -1000,7 +1024,8 @@ void StateMachine::_EnterOscString()
 // - Processes a character event into an Action that occurs while in the Ground state.
 //   Events in this state will:
 //   1. Execute C0 control characters
-//   2. Print all other characters
+//   2. Handle a C1 Control Sequence Introducer
+//   3. Print all other characters
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
@@ -1011,6 +1036,10 @@ void StateMachine::_EventGround(_In_ wchar_t const wch)
     if (s_IsC0Code(wch))
     {
         _ActionExecute(wch);
+    }
+    else if (s_IsC1Csi(wch))
+    {
+        _EnterCsiEntry();
     }
     else
     {
