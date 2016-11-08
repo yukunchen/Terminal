@@ -8,9 +8,10 @@ namespace Conhost.UIA.Tests.Common
 {
     using System;
     using System.Globalization;
-    
+
     using WEX.Logging.Interop;
     using OpenQA.Selenium.Appium;
+    using OpenQA.Selenium;
 
     public struct SliderMeta
     {
@@ -40,12 +41,14 @@ namespace Conhost.UIA.Tests.Common
 
         public void SetToMaximum()
         {
-            return;
+            this.Slider.Click();
+            this.Slider.SendKeys(Keys.End);
         }
 
         public void SetToMinimum()
         {
-            return;
+            this.Slider.Click();
+            this.Slider.SendKeys(Keys.Home);
         }
 
         public int GetMaximum()

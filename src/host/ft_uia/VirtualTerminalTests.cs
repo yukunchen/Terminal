@@ -41,8 +41,10 @@ namespace Conhost.UIA.Tests
         [ClassInitialize]
         public static void ClassSetup(TestContext context)
         {
-            // The test job must place vtapp.exe in the same folder as the test binary.
-            vtAppLocation = @"vtapp.exe";
+            // We must pass in the location of VtApp.exe to TAEF with a command line switch as /p:VtApp=<path to VtApp.exe>
+            vtAppLocation = context.Properties["VtApp"] as string;
+            Verify.IsFalse(string.IsNullOrEmpty(vtAppLocation));
+            Verify.IsTrue(File.Exists(vtAppLocation));
         }
 
 

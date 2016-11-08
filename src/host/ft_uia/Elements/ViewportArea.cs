@@ -83,24 +83,20 @@ namespace Conhost.UIA.Tests.Elements
         private void InitializeWindow()
         {
             AutoHelpers.LogInvariant("Initializing window data for viewport area...");
-            //Window w = new Window(this.app.UIRoot);
-
-            //Rectangle windowBounds = new Rectangle(this.app.UIRoot.Location.X, this.app.UIRoot.Location.Y, this.app.UIRoot.Size.Width, this.app.UIRoot.Size.Height);
 
             IntPtr hWnd = app.GetWindowHandle();
 
             User32.RECT lpRect;
             User32.GetClientRect(hWnd, out lpRect);
 
-            User32.POINT lpPoint;
-            lpPoint.x = lpRect.left;
-            lpPoint.y = lpRect.top;
+            int style = User32.GetWindowLong(hWnd, User32.GWL_STYLE);
+            int exStyle = User32.GetWindowLong(hWnd, User32.GWL_EXSTYLE);
 
-            User32.ClientToScreen(hWnd, ref lpPoint);
+            Verify.IsTrue(User32.AdjustWindowRectEx(ref lpRect, style, false, exStyle));
 
             this.clientTopLeft = new Point();
-            this.clientTopLeft.X = lpPoint.x;
-            this.clientTopLeft.Y = lpPoint.y;
+            this.clientTopLeft.X = Math.Abs(lpRect.left);
+            this.clientTopLeft.Y = Math.Abs(lpRect.top);
             AutoHelpers.LogInvariant("Top left corner of client area is at X:{0} Y:{1}", this.clientTopLeft.X, this.clientTopLeft.Y);
         }
 
@@ -118,21 +114,16 @@ namespace Conhost.UIA.Tests.Elements
                 return;
             }
 
-            //MenuOpenedWaiter contextMenuWaiter = new MenuOpenedWaiter();
             var titleBar = app.UIRoot.FindElementByAccessibilityId("TitleBar");
             app.Session.Mouse.ContextClick(titleBar.Coordinates);
 
             Globals.WaitForTimeout();
-            //contextMenuWaiter.Wait(Globals.Timeout);
             var contextMenu = app.Session.FindElementByClassName("#32768");
-            //var contextMenu = app.Session.FindElementByName("Menu");
 
             var editButton = contextMenu.FindElementByName("Edit");
 
-            //MenuOpenedWaiter editWaiter = new MenuOpenedWaiter();
             editButton.Click();
             Globals.WaitForTimeout();
-            //editWaiter.Wait(Globals.Timeout);
 
             Globals.WaitForTimeout();
 
@@ -146,23 +137,50 @@ namespace Conhost.UIA.Tests.Elements
                     throw new NotImplementedException(AutoHelpers.FormatInvariant("Set Mode doesn't yet support type of '{0}'", state.ToString()));
             }
 
-            //MenuClosedWaiter actionCompleteWaiter = new MenuClosedWaiter();
             subMenuButton.Click();
             Globals.WaitForTimeout();
-            //actionCompleteWaiter.Wait(Globals.Timeout);
 
             this.state = state;
         }
-                
-        public void ConvertCharacterOffsetToPixelPosition(ref Point pt)
+
+
+        // Accepts Point in characters. Will convert to pixels and move to the right location relative to this viewport.
+        public void MouseMove(Point pt)
+        {
+            Log.Comment($"Character position {pt.X}, {pt.Y}");
+
+            Point modPoint = pt;
+            ConvertCharacterOffsetToPixelPosition(ref modPoint);
+
+            Log.Comment($"Pixel position {modPoint.X}, {modPoint.Y}");
+
+
+            app.Session.Mouse.MouseMove(app.UIRoot.Coordinates, modPoint.X, modPoint.Y);
+        }
+
+        public void MouseDown()
+        {
+            app.Session.Mouse.MouseDown(null);
+        }
+
+        public void MouseUp()
+        {
+            app.Session.Mouse.MouseUp(null);
+        }
+
+        private void ConvertCharacterOffsetToPixelPosition(ref Point pt)
         {
             // Scale by pixel count per character
             pt.X *= this.sizeFont.Width;
             pt.Y *= this.sizeFont.Height;
 
-            // Adjust offset by top left corner of client area
+            // Move it to center of character
+            pt.X += this.sizeFont.Width / 2;
+            pt.Y += this.sizeFont.Height / 2;
+
+            // Adjust to the top left corner of the client rectangle.
             pt.X += this.clientTopLeft.X;
-            pt.Y += this.clientTopLeft.Y;           
+            pt.Y += this.clientTopLeft.Y;
         }
 
         public WinCon.CHAR_INFO GetCharInfoAt(IntPtr handle, Point pt)
