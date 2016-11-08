@@ -86,7 +86,7 @@ namespace Conhost.UIA.Tests.Elements
             app.Session.Mouse.ContextClick(titleBar.Coordinates);
 
             Globals.WaitForTimeout();
-            var contextMenu = app.Session.FindElementByClassName("#32768");
+            var contextMenu = app.Session.FindElementByClassName(Globals.PopupMenuClassId);
 
             AppiumWebElement propButton;
             switch (target)
@@ -105,7 +105,7 @@ namespace Conhost.UIA.Tests.Elements
 
             Globals.WaitForTimeout();
 
-            this.PropWindow = this.app.UIRoot.FindElementByClassName("#32770");
+            this.PropWindow = this.app.UIRoot.FindElementByClassName(Globals.DialogWindowClassId);
             this.Tabs = this.PropWindow.FindElementByClassName("SysTabControl32");
 
             okButton = this.PropWindow.FindElementByName("OK");

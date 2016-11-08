@@ -118,7 +118,7 @@ namespace Conhost.UIA.Tests.Elements
             app.Session.Mouse.ContextClick(titleBar.Coordinates);
 
             Globals.WaitForTimeout();
-            var contextMenu = app.Session.FindElementByClassName("#32768");
+            var contextMenu = app.Session.FindElementByClassName(Globals.PopupMenuClassId);
 
             var editButton = contextMenu.FindElementByName("Edit");
 
