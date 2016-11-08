@@ -45,21 +45,9 @@ namespace WEX {
                 return &expected == &actual;
             }
 
-            static bool IsLessThan(const SMALL_RECT& expectedLess, const SMALL_RECT& expectedGreater)
-            {
-                UNREFERENCED_PARAMETER(expectedLess);
-                UNREFERENCED_PARAMETER(expectedGreater);
-                VERIFY_FAIL(L"Less than is invalid for SMALL_RECT comparisons.");
-                return false;
-            }
+            static bool IsLessThan(const SMALL_RECT& expectedLess, const SMALL_RECT& expectedGreater) = delete;
 
-            static bool IsGreaterThan(const SMALL_RECT& expectedGreater, const SMALL_RECT& expectedLess)
-            {
-                UNREFERENCED_PARAMETER(expectedLess);
-                UNREFERENCED_PARAMETER(expectedGreater);
-                VERIFY_FAIL(L"Greater than is invalid for SMALL_RECT comparisons.");
-                return false;
-            }
+            static bool IsGreaterThan(const SMALL_RECT& expectedGreater, const SMALL_RECT& expectedLess) = delete;
 
             static bool IsNull(const SMALL_RECT& object)
             {
@@ -139,21 +127,9 @@ namespace WEX {
                 return &expected == &actual;
             }
 
-            static bool IsLessThan(const CONSOLE_CURSOR_INFO& expectedLess, const CONSOLE_CURSOR_INFO& expectedGreater)
-            {
-                UNREFERENCED_PARAMETER(expectedLess);
-                UNREFERENCED_PARAMETER(expectedGreater);
-                VERIFY_FAIL(L"Less than is invalid for CONSOLE_CURSOR_INFO comparisons.");
-                return false;
-            }
+            static bool IsLessThan(const CONSOLE_CURSOR_INFO& expectedLess, const CONSOLE_CURSOR_INFO& expectedGreater) = delete;
 
-            static bool IsGreaterThan(const CONSOLE_CURSOR_INFO& expectedGreater, const CONSOLE_CURSOR_INFO& expectedLess)
-            {
-                UNREFERENCED_PARAMETER(expectedLess);
-                UNREFERENCED_PARAMETER(expectedGreater);
-                VERIFY_FAIL(L"Greater than is invalid for CONSOLE_CURSOR_INFO comparisons.");
-                return false;
-            }
+            static bool IsGreaterThan(const CONSOLE_CURSOR_INFO& expectedGreater, const CONSOLE_CURSOR_INFO& expectedLess) = delete;
 
             static bool IsNull(const CONSOLE_CURSOR_INFO& object)
             {
@@ -231,21 +207,9 @@ namespace WEX {
                 return &expected == &actual;
             }
 
-            static bool IsLessThan(const CONSOLE_SCREEN_BUFFER_INFOEX& expectedLess, const CONSOLE_SCREEN_BUFFER_INFOEX& expectedGreater)
-            {
-                UNREFERENCED_PARAMETER(expectedLess);
-                UNREFERENCED_PARAMETER(expectedGreater);
-                VERIFY_FAIL(L"Less than is invalid for CONSOLE_SCREEN_BUFFER_INFOEX comparisons.");
-                return false;
-            }
+            static bool IsLessThan(const CONSOLE_SCREEN_BUFFER_INFOEX& expectedLess, const CONSOLE_SCREEN_BUFFER_INFOEX& expectedGreater) = delete;
 
-            static bool IsGreaterThan(const CONSOLE_SCREEN_BUFFER_INFOEX& expectedGreater, const CONSOLE_SCREEN_BUFFER_INFOEX& expectedLess)
-            {
-                UNREFERENCED_PARAMETER(expectedLess);
-                UNREFERENCED_PARAMETER(expectedGreater);
-                VERIFY_FAIL(L"Greater than is invalid for CONSOLE_SCREEN_BUFFER_INFOEX comparisons.");
-                return false;
-            }
+            static bool IsGreaterThan(const CONSOLE_SCREEN_BUFFER_INFOEX& expectedGreater, const CONSOLE_SCREEN_BUFFER_INFOEX& expectedLess) = delete;
 
             static bool IsNull(const CONSOLE_SCREEN_BUFFER_INFOEX& object)
             {
@@ -424,21 +388,9 @@ namespace WEX {
                 return &expected == &actual;
             }
 
-            static bool IsLessThan(const INPUT_RECORD& expectedLess, const INPUT_RECORD& expectedGreater)
-            {
-                UNREFERENCED_PARAMETER(expectedLess);
-                UNREFERENCED_PARAMETER(expectedGreater);
-                VERIFY_FAIL(L"Less than is invalid for INPUT_RECORD comparisons.");
-                return false;
-            }
+            static bool IsLessThan(const INPUT_RECORD& expectedLess, const INPUT_RECORD& expectedGreater) = delete;
 
-            static bool IsGreaterThan(const INPUT_RECORD& expectedGreater, const INPUT_RECORD& expectedLess)
-            {
-                UNREFERENCED_PARAMETER(expectedLess);
-                UNREFERENCED_PARAMETER(expectedGreater);
-                VERIFY_FAIL(L"Greater than is invalid for INPUT_RECORD comparisons.");
-                return false;
-            }
+            static bool IsGreaterThan(const INPUT_RECORD& expectedGreater, const INPUT_RECORD& expectedLess) = delete;
 
             static bool IsNull(const INPUT_RECORD& object)
             {

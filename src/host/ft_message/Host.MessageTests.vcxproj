@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\common.build.pre.props"/>
+  <ItemGroup>
+    <ClCompile Include="KeyPressTests.cpp" />
+    <ClCompile Include="precomp.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="precomp.h" />
+  </ItemGroup>
+  <PropertyGroup>
+<ProjectGuid>{58CDD164-E99F-416F-B1BF-99BA2E393DDA}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>HostMessageTests</RootNamespace>
+    <ProjectName>Host.Tests.Message</ProjectName>
+    <TargetName>ConHost.Message.Tests</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="..\..\common.build.dll.props"/>
+  <Import Project="..\..\common.build.post.props"/>
+  <Import Project="..\..\common.build.tests.props"/>
+</Project>
