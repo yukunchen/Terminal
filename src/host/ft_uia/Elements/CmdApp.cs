@@ -184,9 +184,7 @@ namespace Conhost.UIA.Tests.Elements
             Verify.IsNotNull(Session);
 
             Globals.WaitForTimeout();
-            Globals.WaitForTimeout();
-            Globals.WaitForTimeout();
-
+            
             this.UIRoot = Session.FindElementByName(WindowTitleToFind);
             this.hStdOut = WinCon.GetStdHandle(WinCon.CONSOLE_STD_HANDLE.STD_OUTPUT_HANDLE);
             Verify.IsNotNull(this.hStdOut, "Ensure output handle is valid.");

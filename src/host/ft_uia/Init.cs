@@ -16,7 +16,7 @@ namespace Host.Tests.UIA
         [AssemblyInitialize]
         public static void SetupAll()
         {
-            // Must run as admin
+            // Must NOT run as admin
             Verify.IsFalse(IsAdmin(), "You must run this test as a standard user. WinAppDriver generally cannot find host windows launched as admin.");
 
             // Check if WinAppDriver is running.

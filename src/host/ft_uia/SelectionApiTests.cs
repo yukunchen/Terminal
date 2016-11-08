@@ -195,8 +195,6 @@ namespace Conhost.UIA.Tests
 
                         // Now set up the keyboard and enter mark mode.
                         // NOTE: We must wait after every keyboard sequence to give the console time to process before asking it for changes.
-                        //IKeyboard app.UIRoot. = Session.Keyboard;
-
                         area.EnterMode(ViewportArea.ViewportStates.Mark);
 
                         NativeMethods.Win32BoolHelper(WinCon.GetConsoleSelectionInfo(out csi), "Get state on entering mark mode.");
@@ -292,16 +290,9 @@ namespace Conhost.UIA.Tests
 
                     WinCon.CONSOLE_SELECTION_INFO_FLAGS flagsExpected = WinCon.CONSOLE_SELECTION_INFO_FLAGS.CONSOLE_NO_SELECTION;
 
-                    Point ptTest = new Point(0, 0);
-                    area.MouseMove(ptTest);
-                    Thread.Sleep(3000);
-
-                    area.MouseMove(startPoint);
-                    Thread.Sleep(3000);
-
                     // 1. Place mouse button down to start selection and check state
+                    area.MouseMove(startPoint);
                     area.MouseDown();
-                    Thread.Sleep(3000);
 
                     Globals.WaitForTimeout(); // must wait after mouse operation. No good waiters since we have no UI objects
 
