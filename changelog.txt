@@ -1,0 +1,37 @@
+09/29/2016 - 9097513 - Console Hanging with invalid UTF-8 character in parser
+11/01/2016 - 9353337 - Migrate entire prop sheet over to open build system.
+11/01/2016 - <batch merge>
+	9522320 - Merge doc folder into main
+	9522351 - Remove usage of WC_NO_BEST_FIT_CHARS and disable OACR warning
+	8981537 - Add tools to OpenConsole Repository
+	9047310 - Close button does not work for bash.exe using kernel console access
+	9073098 - cmdline should delete copy constructors instead of creating runtime error
+	9337398 - ConHost.Resize.Tests!ResizeTests::TestResize fails
+	8939701 - console crashes on IME input
+	9097513 - Console hang with UTF8 characters
+	9273013 - DPI Awareness v2 hasn't reached our branch yet. Fix up #ifndefs to allow build in Razzle and VSO systems
+	9024156 - Fix MouseInputTest in Razzle
+	8951745 - Fix MouseInputTests in new open build
+	8956611 - OACR error 28719 -- Banned API usage in mouseinput.cpp
+	9208355 - OpenConsole uses CMD.exe as default launch in same directory as itself, not the one from system root
+	9236190 - [Watson Failure]: Crash caused by BREAKPOINT_AVRF_80000003_ConhostV2.dll!Unknown - overreleased critical section in ConhostV2!SrvSetConsoleTitle
+	8690551 - Composition line draws line bisecting final character of text
+	9185881 - Conhost.exe bad param crash in ConhostV2!Telemetry::LogProcessConnected
+	8939531 - Console no longer offers "properties" sysmenu item
+	8426499 - Console windows don't always snap correctly to the inside edge of a display between two monitors with different scaling
+	9208385 - Property sheet not persisting properly when saving same parameters as default set
+	9255857 - Remove unneeded code from conhost
+	8931174 - TVS: Warning 26000 in file: Windows\core\console\v2\host\settings.cpp (846)
+	9250603 - TVS: Warning 26006 in file: Windows\core\console\open\src\terminal\adapter\mouseinput.cpp (253)
+	8931330 - TVS: Warning 26015 in file: Windows\core\console\propslib\registryserialization.cpp (299)
+	8931226 - TVS: Warning 26015 in file: Windows\core\console\v2\tsf\imecomp.cpp (170)
+	8931541 - TVS: Warning 28714 in file: Windows\core\console\v2\host\userprivapi.cpp (84)
+	9251274 - TVS: Warning 28719 in file: Windows\core\console\open\src\terminal\adapter\mouseinput.cpp (407)
+	8931363 - TVS: Warning 38021 in file: Windows\core\console\v2\host\convarea.cpp (324)
+	8463428 - XES Auto-Checkin for Open Console
+	9256511 - Cleanup vcxproj files to use common.build.*.props
+	8325065 - Move console dev code to build from XES instead of Razzle
+	8325111 - Move console test code to XES
+	9100070 - Promote console to PMv2
+	9300281 - Update tools\*.bat files
+11/01/2016 - 9535136 - Ctrl-C events and other events on GenerateConsoleCtrlEvent are not going through

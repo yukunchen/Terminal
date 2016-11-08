@@ -62,15 +62,6 @@ NTSTATUS ReadBuffer(_In_ PINPUT_INFORMATION InputInformation,
                     _Out_ PBOOL ResetWaitEvent,
                     _In_ BOOLEAN Unicode);
 
-typedef struct _CONSOLE_KEY_INFO
-{
-    HWND hWnd;
-    WORD wVirtualKeyCode;
-    WORD wVirtualScanCode;
-} CONSOLE_KEY_INFO, *PCONSOLE_KEY_INFO;
-
-CONSOLE_KEY_INFO ConsoleKeyInfo[CONSOLE_MAX_KEY_INFO];
-
 NTSTATUS InitWindowsStuff();
 
 bool IsInProcessedInputMode()
@@ -1135,95 +1126,6 @@ DWORD WriteInputBuffer(_In_ PINPUT_INFORMATION pInputInfo, _In_ PINPUT_RECORD pI
     return EventsWritten;
 }
 
-void StoreKeyInfo(_In_ PMSG msg)
-{
-    UINT i;
-
-    for (i = 0; i < CONSOLE_MAX_KEY_INFO; i++)
-    {
-        if (ConsoleKeyInfo[i].hWnd == CONSOLE_FREE_KEY_INFO || ConsoleKeyInfo[i].hWnd == msg->hwnd)
-        {
-            break;
-        }
-    }
-
-    if (i != CONSOLE_MAX_KEY_INFO)
-    {
-        ConsoleKeyInfo[i].hWnd = msg->hwnd;
-        ConsoleKeyInfo[i].wVirtualKeyCode = LOWORD(msg->wParam);
-        ConsoleKeyInfo[i].wVirtualScanCode = (BYTE) (HIWORD(msg->lParam));
-    }
-    else
-    {
-        RIPMSG0(RIP_WARNING, "ConsoleKeyInfo buffer is full");
-    }
-}
-
-void RetrieveKeyInfo(_In_ HWND hWnd, _Out_ PWORD pwVirtualKeyCode, _Inout_ PWORD pwVirtualScanCode, _In_ BOOL FreeKeyInfo)
-{
-    UINT i;
-
-    for (i = 0; i < CONSOLE_MAX_KEY_INFO; i++)
-    {
-        if (ConsoleKeyInfo[i].hWnd == hWnd)
-        {
-            break;
-        }
-    }
-
-    if (i != CONSOLE_MAX_KEY_INFO)
-    {
-        *pwVirtualKeyCode = ConsoleKeyInfo[i].wVirtualKeyCode;
-        *pwVirtualScanCode = ConsoleKeyInfo[i].wVirtualScanCode;
-        if (FreeKeyInfo)
-        {
-            ConsoleKeyInfo[i].hWnd = CONSOLE_FREE_KEY_INFO;
-        }
-    }
-    else
-    {
-        *pwVirtualKeyCode = (WORD) MapVirtualKeyW(*pwVirtualScanCode, 3);
-    }
-}
-
-void ClearKeyInfo(_In_ const HWND hWnd)
-{
-    for (UINT i = 0; i < CONSOLE_MAX_KEY_INFO; i++)
-    {
-        if (ConsoleKeyInfo[i].hWnd == hWnd)
-        {
-            ConsoleKeyInfo[i].hWnd = CONSOLE_FREE_KEY_INFO;
-        }
-    }
-}
-
-// Routine Description:
-// - This routine gets called to filter input to console dialogs so that we can do the special processing that StoreKeyInfo does.
-LRESULT DialogHookProc(int nCode, WPARAM wParam, LPARAM lParam)
-{
-    MSG msg = *((PMSG) lParam);
-
-    UNREFERENCED_PARAMETER(wParam);
-
-    if (nCode == MSGF_DIALOGBOX)
-    {
-        if (msg.message >= WM_KEYFIRST && msg.message <= WM_KEYLAST)
-        {
-            if (msg.message != WM_CHAR && msg.message != WM_DEADCHAR && msg.message != WM_SYSCHAR && msg.message != WM_SYSDEADCHAR)
-            {
-
-                // don't store key info if dialog box input
-                if (GetWindowLongPtrW(msg.hwnd, GWLP_HWNDPARENT) == 0)
-                {
-                    StoreKeyInfo(&msg);
-                }
-            }
-        }
-    }
-
-    return 0;
-}
-
 NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 {
     g_hInstance = GetModuleHandle(L"ConhostV2.dll");
@@ -1243,15 +1145,6 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
     SetConsoleWindowOwner(g_ciConsoleInformation.pWindow->GetWindowHandle(), ProcessData);
 
     g_ciConsoleInformation.pWindow->ActivateAndShow(g_ciConsoleInformation.GetShowWindow());
-
-    // We intentionally ignore the return value of SetWindowsHookEx. There are mixed LUID cases where this call will fail but in the past this call
-    // was special cased (for CSRSS) to always succeed. Thus, we ignore failure for app compat (as not having the hook isn't fatal).
-    *phhook = SetWindowsHookExW(WH_MSGFILTER, (HOOKPROC)DialogHookProc, nullptr, GetCurrentThreadId());
-
-    for (UINT i = 0; i < CONSOLE_MAX_KEY_INFO; i++)
-    {
-        ConsoleKeyInfo[i].hWnd = CONSOLE_FREE_KEY_INFO;
-    }
 
     NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, g_ciConsoleInformation.hWnd, ProcessData->dwProcessId, 0);
 
@@ -1410,17 +1303,11 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
         {
             DispatchMessageW(&msg);
         }
-        else
+        // do this so that alt-tab works while journalling
+        else if (msg.message == WM_SYSKEYDOWN && msg.wParam == VK_TAB && (msg.lParam & 0x20000000))
         {
-            // do this so that alt-tab works while journalling
-            if (msg.message == WM_SYSKEYDOWN && msg.wParam == VK_TAB && (msg.lParam & 0x20000000))
-            {   // alt is really down
-                DispatchMessageW(&msg);
-            }
-            else
-            {
-                StoreKeyInfo(&msg);
-            }
+            // alt is really down
+            DispatchMessageW(&msg);
         }
     }
 
@@ -1517,7 +1404,7 @@ BOOL HandleSysKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const
 
     if (Message == WM_SYSCHAR || Message == WM_SYSDEADCHAR)
     {
-        VirtualKeyCode = (WORD) MapVirtualKeyW(LOBYTE(HIWORD(lParam)), 1);
+        VirtualKeyCode = (WORD) MapVirtualKeyW(LOBYTE(HIWORD(lParam)), MAPVK_VSC_TO_VK_EX);
     }
     else
     {
@@ -1631,11 +1518,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
     InputEvent.Event.KeyEvent.wVirtualScanCode = (BYTE) (HIWORD(lParam));
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
     {
-        RetrieveKeyInfo(hWnd,
-                        &InputEvent.Event.KeyEvent.wVirtualKeyCode,
-                        &InputEvent.Event.KeyEvent.wVirtualScanCode,
-                        !g_ciConsoleInformation.pInputBuffer->ImeMode.InComposition);
-
+        InputEvent.Event.KeyEvent.wVirtualKeyCode = (WORD) MapVirtualKeyW(InputEvent.Event.KeyEvent.wVirtualScanCode, MAPVK_VSC_TO_VK_EX);
         VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
     }
 

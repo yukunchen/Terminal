@@ -1,4 +1,4 @@
 DIRS= \
-     exe{!cs_xbox} \
+     exe \
      lib
 

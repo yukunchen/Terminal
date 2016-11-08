@@ -21,6 +21,7 @@
     <ClCompile Include="..\menu.cpp" />
     <ClCompile Include="..\misc.cpp" />
     <ClCompile Include="..\newdelete.cpp" />
+    <ClCompile Include="..\ntprivapi.cpp" />
     <ClCompile Include="..\output.cpp" />
     <ClCompile Include="..\outputStream.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -71,6 +72,7 @@
     <ClInclude Include="..\menu.h" />
     <ClInclude Include="..\misc.h" />
     <ClInclude Include="..\newdelete.hpp" />
+    <ClInclude Include="..\ntprivapi.hpp" />
     <ClInclude Include="..\output.h" />
     <ClInclude Include="..\outputStream.hpp" />
     <ClInclude Include="..\precomp.h" />

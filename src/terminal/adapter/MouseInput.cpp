@@ -284,7 +284,7 @@ bool MouseInput::_GenerateDefaultSequence(_In_ const COORD coordMousePosition,
                                           _In_ const bool fIsHover,
                                           _In_ const short sModifierKeystate,
                                           _In_ const short sWheelDelta,
-                                          _Out_ wchar_t** const ppwchSequence,
+                                          _Outptr_result_buffer_(*pcchLength) wchar_t** const ppwchSequence,
                                           _Out_ size_t* const pcchLength) const
 {
     bool fSuccess = false;
@@ -333,7 +333,7 @@ bool MouseInput::_GenerateUtf8Sequence(_In_ const COORD coordMousePosition,
                                        _In_ const bool fIsHover,
                                        _In_ const short sModifierKeystate,
                                        _In_ const short sWheelDelta,
-                                       _Out_ wchar_t** const ppwchSequence,
+                                       _Outptr_result_buffer_(*pcchLength) wchar_t** const ppwchSequence,
                                        _Out_ size_t* const pcchLength) const
 {
     bool fSuccess = false;
@@ -393,7 +393,7 @@ bool MouseInput::_GenerateSGRSequence(_In_ const COORD coordMousePosition,
                                       _In_ const bool fIsHover,
                                       _In_ const short sModifierKeystate,
                                       _In_ const short sWheelDelta,
-                                      _Out_ wchar_t** const ppwchSequence,
+                                      _Outptr_result_buffer_(*pcchLength) wchar_t** const ppwchSequence,
                                       _Out_ size_t* const pcchLength) const
 {
     // Format for SGR events is:

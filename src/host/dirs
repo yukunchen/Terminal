@@ -1,8 +1,8 @@
 DIRS=dll \
      lib \
-     ut_host{noncrit,!cs_xbox} \
-     ft_api{noncrit,!cs_xbox} \
-     ft_cjk{!cs_xbox} \
-     ft_resize{noncrit,!cs_xbox} \
-     ft_uia{noncrit,!cs_xbox} \
-     tools{!cs_xbox} \
+     ut_host{noncrit} \
+     ft_api{noncrit} \
+     ft_cjk \
+     ft_resize{noncrit} \
+     ft_uia{noncrit} \
+     tools \

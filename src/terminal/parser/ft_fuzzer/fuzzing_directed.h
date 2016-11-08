@@ -240,9 +240,23 @@ namespace fuzz
         static _Type GetRandom(__in _Type tMin, __in _Type tMax)
         {
             std::mt19937 engine(m_rd()); // Mersenne twister MT19937
-            std::uniform_int_distribution<size_t> distribution(tMin, tMax);
+            std::uniform_int_distribution<_Type> distribution(tMin, tMax);
             auto generator = std::bind(distribution, engine);
-            return static_cast<_Type>(generator());
+            return generator();
+        }
+
+        // uniform_int_distribution only works with _Is_IntType types, which do not
+        // currently include char or unsigned char, so here is a specialization
+        // specifically for BYTE (unsigned char).
+        template<>
+        static BYTE GetRandom(__in BYTE tMin, __in BYTE tMax)
+        {
+            std::mt19937 engine(m_rd()); // Mersenne twister MT19937
+            // BYTE is unsiged, so we want to also use an unsigned type to avoid sign
+            // extension of tMin and tMax.
+            std::uniform_int_distribution<unsigned short> distribution(tMin, tMax);
+            auto generator = std::bind(distribution, engine);
+            return static_cast<BYTE>(generator());
         }
 #ifdef __min_collision__
 #undef __min_collision__
@@ -260,6 +274,14 @@ namespace fuzz
         static _Type SelectOne(__in_ecount(cElems) const _Type *rg, __in size_t cElems) throw()
         {
             return rg[GetRandom<size_t>(cElems)];
+        }
+
+        // Given an array of elements, select a random element from the
+        // collection.  Note that _cElems is the number of items in the array.
+        template <typename _Type, size_t _cElems>
+        static _Type SelectOne(const _Type (&rg)[_cElems]) throw()
+        {
+            return rg[GetRandom<size_t>(_cElems)];
         }
     private:
         CFuzzChance() { }

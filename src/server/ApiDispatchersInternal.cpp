@@ -13,6 +13,8 @@
 #include "..\host\server.h"
 #include "..\host\telemetry.hpp"
 
+#include "..\host\ntprivapi.hpp"
+
 HRESULT ApiDispatchers::ServerDeprecatedApi(_Inout_ CONSOLE_API_MSG * const /*m*/, _Inout_ BOOL* const /*pbReplyPending*/)
 {
     // assert if we hit a deprecated API.
@@ -62,41 +64,6 @@ HRESULT ApiDispatchers::ServerGetConsoleLangId(_Inout_ CONSOLE_API_MSG * const m
     return m->_pApiRoutines->GetConsoleLangIdImpl(&a->LangId);
 }
 
-NTSTATUS GetProcessParentId(_Inout_ PULONG ProcessId)
-{
-    // TODO: Get Parent current not really available without winternl + NtQueryInformationProcess. http://osgvsowi/8394495
-    // TODO: This is being fixed in bugfix 9535136.
-
-    //OBJECT_ATTRIBUTES oa;
-    //InitializeObjectAttributes(&oa, nullptr, 0, nullptr, nullptr);
-
-    //CLIENT_ID ClientId;
-    //ClientId.UniqueProcess = UlongToHandle(*ProcessId);
-    //ClientId.UniqueThread = 0;
-
-    //HANDLE ProcessHandle;
-    //NTSTATUS Status = NtOpenProcess(&ProcessHandle, PROCESS_QUERY_LIMITED_INFORMATION, &oa, &ClientId);
-
-    //PROCESS_BASIC_INFORMATION BasicInfo = { 0 };
-    //if (NT_SUCCESS(Status))
-    //{
-    //Status = NtQueryInformationProcess(ProcessHandle, ProcessBasicInformation, &BasicInfo, sizeof(BasicInfo), nullptr);
-    //NtClose(ProcessHandle);
-    //}
-
-    //if (!NT_SUCCESS(Status))
-    //{
-    //*ProcessId = 0;
-    //return Status;
-    //}
-
-    //*ProcessId = (ULONG) BasicInfo.InheritedFromUniqueProcessId;
-    //return STATUS_SUCCESS;
-
-    *ProcessId = 0;
-    return STATUS_UNSUCCESSFUL;
-}
-
 HRESULT ApiDispatchers::ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
     CONSOLE_CTRLEVENT_MSG* const a = &m->u.consoleMsgL2.GenerateConsoleCtrlEvent;
@@ -116,7 +83,7 @@ HRESULT ApiDispatchers::ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG *
 
             // We didn't find a process with that group ID.
             // Let's see if the process with that ID exists and has a parent that is a member of this console.
-            RETURN_IF_NTSTATUS_FAILED((GetProcessParentId(&ProcessId)));
+            RETURN_IF_NTSTATUS_FAILED((NtPrivApi::s_GetProcessParentId(&ProcessId)));
             ProcessHandle = g_ciConsoleInformation.ProcessHandleList.FindProcessInList(ProcessId);
             RETURN_HR_IF_NULL(E_INVALIDARG, ProcessHandle);
             RETURN_IF_FAILED(g_ciConsoleInformation.ProcessHandleList.AllocProcessData(a->ProcessGroupId,

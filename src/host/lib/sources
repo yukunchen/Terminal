@@ -44,6 +44,7 @@ SOURCES                         =   $(SOURCES)\
                                     ..\windowproc.cpp \
                                     ..\windowdpiapi.cpp \
                                     ..\userprivapi.cpp \
+                                    ..\ntprivapi.cpp \
                                     ..\renderData.cpp \
                                     ..\renderFontDefaults.cpp \
                                     ..\utf8ToWideCharParser.cpp \
