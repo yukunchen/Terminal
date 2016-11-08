@@ -35,6 +35,28 @@
     <Optimize>true</Optimize>
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
+    <ItemGroup Condition="'$(Platform)' == 'x64'">
+        <Reference Include="wex.common.managed">
+            <HintPath>..\..\..\dep\DDK\TAEF\lib\x64\wex.common.managed.dll</HintPath>
+        </Reference>
+        <Reference Include="Wex.Logger.Interop">
+            <HintPath>..\..\..\dep\DDK\TAEF\lib\x64\Wex.Logger.Interop.dll</HintPath>
+        </Reference>
+        <Reference Include="te.managed">
+            <HintPath>..\..\..\dep\DDK\TAEF\lib\x64\ref4.5\te.managed.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Platform)' == 'Win32'">
+        <Reference Include="wex.common.managed">
+            <HintPath>..\..\..\dep\DDK\TAEF\lib\x86\wex.common.managed.dll</HintPath>
+        </Reference>
+        <Reference Include="Wex.Logger.Interop">
+            <HintPath>..\..\..\dep\DDK\TAEF\lib\x86\Wex.Logger.Interop.dll</HintPath>
+        </Reference>
+        <Reference Include="te.managed">
+            <HintPath>..\..\..\dep\DDK\TAEF\lib\x86\ref4.5\te.managed.dll</HintPath>
+        </Reference>
+    </ItemGroup>
   <ItemGroup>
     <Reference Include="appium-dotnet-driver, Version=2.0.1.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\Appium.WebDriver.2.0.1.1\lib\net45\appium-dotnet-driver.dll</HintPath>
@@ -50,9 +72,6 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
-    <Reference Include="te.managed">
-      <HintPath>..\..\..\dep\DDK\TAEF\lib\x64\ref4.5\te.managed.dll</HintPath>
-    </Reference>
     <Reference Include="WebDriver, Version=2.53.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\Selenium.WebDriver.2.53.1\lib\net40\WebDriver.dll</HintPath>
       <Private>True</Private>
@@ -60,12 +79,6 @@
     <Reference Include="WebDriver.Support, Version=2.53.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\Selenium.Support.2.53.1\lib\net40\WebDriver.Support.dll</HintPath>
       <Private>True</Private>
-    </Reference>
-    <Reference Include="wex.common.managed">
-      <HintPath>..\..\..\dep\DDK\TAEF\lib\x64\wex.common.managed.dll</HintPath>
-    </Reference>
-    <Reference Include="Wex.Logger.Interop">
-      <HintPath>..\..\..\dep\DDK\TAEF\lib\x64\Wex.Logger.Interop.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Choose>
