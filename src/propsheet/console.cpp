@@ -323,16 +323,13 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
     return TRUE;
 }
 
-// Copied as a subset of open/src/host/srvinit.cpp's TranslateConsoleTitle,
-// with (..., Unexpand=true, fSubstitute=true)
+// Copied as a subset of open/src/host/srvinit.cpp's TranslateConsoleTitle
 // Routine Description:
 // - This routine translates path characters into '_' characters because the NT registry apis do not allow the creation of keys with
 //   names that contain path characters. It also converts absolute paths into %SystemRoot% relative ones. As an example, if both behaviors were
 //   specified it would convert a title like C:\WINNT\System32\cmd.exe to %SystemRoot%_System32_cmd.exe.
 // Arguments:
 // - ConsoleTitle - Pointer to string to translate.
-// - Unexpand - Convert absolute path to %SystemRoot% relative one.
-// - Substitute - Whether string-substitution ('_' for '\') should occur.
 // Return Value:
 // - Pointer to translated title or nullptr.
 // Note:
@@ -350,7 +347,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle)
     LPWSTR pwszSysRoot = new wchar_t[MAX_PATH];
     if (nullptr != pwszSysRoot)
     {
-        if (0 != GetSystemDirectoryW(pwszSysRoot, MAX_PATH))
+        if (0 != GetWindowsDirectoryW(pwszSysRoot, MAX_PATH))
         {
             if (SUCCEEDED(StringCbLengthW(pwszConsoleTitle, STRSAFE_MAX_CCH, &cbConsoleTitle)) &&
                 SUCCEEDED(StringCbLengthW(pwszSysRoot, STRSAFE_MAX_CCH, &cbSystemRoot)))
