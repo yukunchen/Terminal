@@ -350,7 +350,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle)
     LPWSTR pwszSysRoot = new wchar_t[MAX_PATH];
     if (nullptr != pwszSysRoot)
     {
-        if (0 != GetSystemDirectoryW(pwszSysRoot, MAX_PATH))
+        if (0 != GetWindowsDirectoryW(pwszSysRoot, MAX_PATH))
         {
             if (SUCCEEDED(StringCbLengthW(pwszConsoleTitle, STRSAFE_MAX_CCH, &cbConsoleTitle)) &&
                 SUCCEEDED(StringCbLengthW(pwszSysRoot, STRSAFE_MAX_CCH, &cbSystemRoot)))
