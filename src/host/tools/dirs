@@ -1,6 +1,0 @@
-DIRS=colortool{noncrit} \
-     echokey{noncrit} \
-     lnkd{noncrit} \
-     pixels{noncrit} \
-     test{noncrit} \
-     vtapp{noncrit} \

@@ -9,12 +9,9 @@ namespace Conhost.UIA.Tests.Elements
     using System;
     using System.Collections.Generic;
 
-    using MS.Internal.Mita.Foundation;
-    using MS.Internal.Mita.Foundation.Controls;
-    using MS.Internal.Mita.Foundation.Waiters;
-
     using Conhost.UIA.Tests.Common;
     using NativeMethods = Conhost.UIA.Tests.Common.NativeMethods;
+    using OpenQA.Selenium.Appium;
 
     public class ColorsTab : TabBase
     {
@@ -24,21 +21,21 @@ namespace Conhost.UIA.Tests.Elements
         {
         }
 
-        protected override void PopulateItemsOnNavigate(Window propWindow)
+        protected override void PopulateItemsOnNavigate(AppiumWebElement propWindow)
         {
-            RangeValueSlider slider = new RangeValueSlider(propWindow.Children.Find(UICondition.CreateFromClassName("msctls_trackbar32")));
+            var slider = propWindow.FindElementByClassName("msctls_trackbar32");
 
             this.OpacitySlider = new SliderMeta(slider, "WindowAlpha", true, NativeMethods.WinConP.PKEY_Console_WindowTransparency);
         }
 
-        public override IEnumerable<UIObject> GetObjectsDisabledForV1Console()
+        public override IEnumerable<AppiumWebElement> GetObjectsDisabledForV1Console()
         {
-            return new UIObject[] { this.OpacitySlider.Slider };
+            return new AppiumWebElement[] { this.OpacitySlider.Slider };
         }
 
-        public override IEnumerable<UIObject> GetObjectsUnaffectedByV1V2Switch()
+        public override IEnumerable<AppiumWebElement> GetObjectsUnaffectedByV1V2Switch()
         {
-            return new UIObject[0];
+            return new AppiumWebElement[0];
         }
 
         public override IEnumerable<CheckBoxMeta> GetCheckboxesForVerification()
