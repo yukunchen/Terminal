@@ -524,7 +524,7 @@ NTSTATUS AddAlias(_In_ PEXE_ALIAS_LIST ExeAliasList,
     }
 
     // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-    Alias->Source = new WCHAR[(SourceLength + 2) / sizeof(WCHAR)];
+    Alias->Source = new WCHAR[(SourceLength + 1) / sizeof(WCHAR)];
     if (Alias->Source == nullptr)
     {
         delete Alias;
@@ -532,7 +532,7 @@ NTSTATUS AddAlias(_In_ PEXE_ALIAS_LIST ExeAliasList,
     }
 
     // Length is in bytes. Add 1 so dividing by WCHAR (2) is always rounding up.
-    Alias->Target = new WCHAR[(TargetLength + 2) / sizeof(WCHAR)];
+    Alias->Target = new WCHAR[(TargetLength + 1) / sizeof(WCHAR)];
     if (Alias->Target == nullptr)
     {
         delete[] Alias->Source;

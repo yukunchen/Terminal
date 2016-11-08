@@ -354,8 +354,8 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* c
 {
     RETURN_HR_IF(E_INVALIDARG, (pScreenBufferInfoEx->dwSize.X == 0 ||
                                 pScreenBufferInfoEx->dwSize.Y == 0 ||
-                                pScreenBufferInfoEx->dwSize.X == 0x7FFF ||
-                                pScreenBufferInfoEx->dwSize.Y == 0x7FFF));
+                                pScreenBufferInfoEx->dwSize.X == SHRT_MAX ||
+                                pScreenBufferInfoEx->dwSize.Y == SHRT_MAX));
 
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -457,6 +457,7 @@ HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
                                   _In_ ULONG const CursorSize,
                                   _In_ BOOLEAN const IsVisible)
 {
+    // If more than 100% or less than 0% cursor height, reject it.
     RETURN_HR_IF(E_INVALIDARG, (CursorSize > 100 || CursorSize == 0));
 
     RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetCursorInformation(CursorSize, IsVisible));
@@ -554,14 +555,26 @@ HRESULT DoSrvScrollConsoleScreenBufferW(_In_ SCREEN_INFORMATION* const pScreenIn
                                         _In_ WORD const attrFill)
 {
     // TODO: MSFT 9574849 - can we make scroll region use these as const so we don't have to screw with them?
-    SMALL_RECT ClipRect = *pTargetClipRectangle;
+    // Scroll region takes non-const parameters but our API has been updated to use maximal consts.
+    // As such, we will have to copy some items into local variables to prevent the const-ness from leaking beyond this point
+    // until 9574849 is fixed (as above).
+
+    SMALL_RECT* pClipRect = nullptr; // We have to pass nullptr if there wasn't a parameter given to us.
+    SMALL_RECT ClipRect = { 0 };
+    if (pTargetClipRectangle != nullptr)
+    {
+        // If there was a valid clip rectangle given, copy its contents to a non-const local and pass that pointer down.
+        ClipRect = *pTargetClipRectangle;
+        pClipRect = &ClipRect;
+    }
+
     SMALL_RECT ScrollRectangle = *pSourceRectangle;
 
     CHAR_INFO Fill;
     Fill.Char.UnicodeChar = wchFill;
     Fill.Attributes = attrFill;
 
-    return ScrollRegion(pScreenInfo, &ScrollRectangle, &ClipRect, *pTargetOrigin, Fill);
+    return ScrollRegion(pScreenInfo, &ScrollRectangle, pClipRect, *pTargetOrigin, Fill);
 }
 
 // Routine Description:

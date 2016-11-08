@@ -436,7 +436,7 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
             // ASCII : a->NumRecords is ASCII byte count
             if (pInputInfo->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
             {
-                // Saved DBCS Traling byte
+                // Saved DBCS Trailing byte
                 *Buffer = pInputInfo->ReadConInpDbcsLeadByte;
                 if (IsFlagClear(a->Flags, CONSOLE_READ_NOREMOVE))
                 {

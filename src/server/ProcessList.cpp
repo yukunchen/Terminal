@@ -327,7 +327,7 @@ void ConsoleProcessList::ModifyConsoleProcessFocus(_In_ const bool fForeground)
 // - True if the list is empty. False if we have known processes.
 bool ConsoleProcessList::IsEmpty() const
 {
-    return _processes.size() == 0;
+    return _processes.empty();
 }
 
 // Routine Description:
