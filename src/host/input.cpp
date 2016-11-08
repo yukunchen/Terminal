@@ -1126,7 +1126,7 @@ DWORD WriteInputBuffer(_In_ PINPUT_INFORMATION pInputInfo, _In_ PINPUT_RECORD pI
     return EventsWritten;
 }
 
-NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
+NTSTATUS InitWindowsSubsystem()
 {
     g_hInstance = GetModuleHandle(L"ConhostV2.dll");
 
@@ -1279,8 +1279,7 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
     InitEnvironmentVariables();
 
     LockConsole();
-    HHOOK hhook;
-    NTSTATUS Status = InitWindowsSubsystem(&hhook);
+    NTSTATUS Status = InitWindowsSubsystem();
     UnlockConsole();
     if (!NT_SUCCESS(Status))
     {
@@ -1313,11 +1312,6 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
 
     // Free all resources used by this thread
     DeactivateTextServices();
-
-    if (hhook != nullptr)
-    {
-        UnhookWindowsHookEx(hhook);
-    }
 
     return 0;
 }
@@ -1491,7 +1485,7 @@ bool ShouldTakeOverKeyboardShortcuts()
     return !g_ciConsoleInformation.GetCtrlKeyShortcutsDisabled() && IsInProcessedInputMode();
 }
 
-void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole)
+void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole)
 {
     BOOLEAN ContinueProcessing;
     ULONG EventsWritten;
