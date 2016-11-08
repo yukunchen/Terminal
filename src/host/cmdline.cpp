@@ -633,7 +633,7 @@ HRESULT ApiRoutines::AddConsoleAliasAImpl(_In_reads_bytes_(cbSourceBufferLength)
     ULONG const cchTargetLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psTargetBuffer, cbTargetBufferLength, pwsTarget, cbTargetBufferLength);
     ULONG const cbTargetLength = cchTargetLength * sizeof(wchar_t);
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
+    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
 
     return AddConsoleAliasWImpl(pwsSource, cbSourceLength, pwsTarget, cbTargetLength, pwsUnicodeExeName, cbUnicodeExeNameLength);
 }
@@ -658,7 +658,7 @@ HRESULT ApiRoutines::AddConsoleAliasWImpl(_In_reads_bytes_(cbSourceBufferLength)
 
     // find specified exe.  if it's not there, add it if we're not removing an alias.
     PEXE_ALIAS_LIST ExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, (USHORT)cbExeNameBufferLength, TRUE);
-    if (ExeAliasList)
+    if (ExeAliasList != nullptr)
     {
         PALIAS Alias = FindAlias(ExeAliasList, pwsSourceBuffer, (USHORT)cbSourceBufferLength);
         if (cbTargetBufferLength > 0)
@@ -725,7 +725,7 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_bytes_(cbSourceBufferLength)
 
     ULONG cbTargetLength = *pcbTargetBufferLength;
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
+    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
 
     RETURN_IF_FAILED(GetConsoleAliasWImpl(pwsSource, cbSourceLength, pwsTarget, &cbTargetLength, pwsUnicodeExeName, cbUnicodeExeNameLength));
 
@@ -802,7 +802,7 @@ HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_bytes_(cbExeNameBuff
 
     // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
+    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
 
     RETURN_IF_FAILED(GetConsoleAliasesLengthWImpl(pwsUnicodeExeName,
                                                   cbUnicodeExeNameLength,
@@ -810,7 +810,7 @@ HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_bytes_(cbExeNameBuff
 
 
     // TODO: MSFT: 9564943 - this is terrible. We should be calculating based on the string, not estimating a divide by 2.
-    *pcbAliasesBufferRequired /= sizeof(WCHAR);
+    *pcbAliasesBufferRequired /= sizeof(wchar_t);
 
     return S_OK;
 }
@@ -834,7 +834,7 @@ HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(_In_reads_bytes_(cbExeNameBuff
         while (ListNext != ListHead)
         {
             PALIAS Alias = CONTAINING_RECORD(ListNext, ALIAS, ListLink);
-            *pcbAliasesBufferRequired += Alias->SourceLength + Alias->TargetLength + (2 * sizeof(WCHAR));    // + 2 is for = and term null
+            *pcbAliasesBufferRequired += Alias->SourceLength + Alias->TargetLength + (2 * sizeof(wchar_t));    // + 2 is for = and term null
             ListNext = ListNext->Flink;
         }
     }
@@ -870,14 +870,14 @@ HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_bytes_(cbExeNameBufferLeng
     RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
     auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
 
-    ULONG cbUnicodeAliasBufferLength = *pcbAliasBufferLength * 2;
+    ULONG cbUnicodeAliasBufferLength = *pcbAliasBufferLength * sizeof(wchar_t);
     WCHAR* const pwsUnicodeAliasBuffer = new WCHAR[cbUnicodeAliasBufferLength];
     RETURN_IF_NULL_ALLOC(pwsUnicodeAliasBuffer);
     auto UnicodeAliasBufferCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeAliasBuffer; });
 
     // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
+    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
 
 
     RETURN_IF_FAILED(GetConsoleAliasesWImpl(pwsUnicodeExeName,
@@ -974,7 +974,7 @@ HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_bytes_(*pcbAliasExesBu
 {
     // TODO: MSFT 9564943 - This is a guess at the buffer length which should be corrected in the linked work item. Not an actual WCHAR size necessarily.
     // TODO: MSFT 9564943 - Also correct smart pointer usage.
-    ULONG cbUnicodeAliasExesBufferLength = *pcbAliasExesBufferLength * 2;
+    ULONG cbUnicodeAliasExesBufferLength = *pcbAliasExesBufferLength * sizeof(wchar_t);
     WCHAR* const pwsUnicodeAliasExesBuffer = new WCHAR[cbUnicodeAliasExesBufferLength];
     RETURN_IF_NULL_ALLOC(pwsUnicodeAliasExesBuffer);
     auto UnicodeAliasExesBufferCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeAliasExesBuffer; });
@@ -1293,7 +1293,7 @@ HRESULT ApiRoutines::ExpungeConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNam
 
     // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
+    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
 
     return ExpungeConsoleCommandHistoryWImpl(pwsUnicodeExeName,
                                              cbUnicodeExeNameLength);
@@ -1321,7 +1321,7 @@ HRESULT ApiRoutines::SetConsoleNumberOfCommandsAImpl(_In_reads_bytes_(cbExeNameB
 
     // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
+    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
 
     return SetConsoleNumberOfCommandsWImpl(pwsUnicodeExeName,
                                            cbUnicodeExeNameLength,
@@ -1351,7 +1351,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(_In_reads_bytes_(cbExeN
 
     // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * 2;
+    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
 
     RETURN_IF_FAILED(GetConsoleCommandHistoryLengthWImpl(pwsUnicodeExeName,
                                                          cbUnicodeExeNameLength,
@@ -1398,7 +1398,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNameBuf
     ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
     ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
 
-    ULONG cbUnicodeCommandHistoryBufferLength = *pcbCommandHistoryBufferLength * 2;
+    ULONG cbUnicodeCommandHistoryBufferLength = *pcbCommandHistoryBufferLength * sizeof(wchar_t);
     WCHAR* const pwsUnicodeCommandHistoryBuffer = new WCHAR[cbUnicodeCommandHistoryBufferLength];
     RETURN_IF_NULL_ALLOC(pwsUnicodeCommandHistoryBuffer);
     auto UnicodeCommandHistoryBufferCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeCommandHistoryBuffer; });
@@ -2191,7 +2191,7 @@ NTSTATUS ProcessCommandListInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _
                 // check for alias
                 i = pCookedReadData->BufferSize;
                 if (NT_SUCCESS(MatchAndCopyAlias(pCookedReadData->BackupLimit,
-                    (USHORT)lStringLength,
+                                                 (USHORT)lStringLength,
                                                  pCookedReadData->BackupLimit,
                                                  (PUSHORT)& i,
                                                  pCookedReadData->ExeName,

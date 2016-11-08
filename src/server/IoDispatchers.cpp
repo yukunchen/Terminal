@@ -18,6 +18,7 @@
 #include "..\host\telemetry.hpp"
 #include "..\host\userprivapi.hpp"
 
+// From ntstatus.h, which we cannot include without causing a bunch of other conflicts. So we just include the one code we need.
 //
 // MessageId: STATUS_OBJECT_NAME_NOT_FOUND
 //
