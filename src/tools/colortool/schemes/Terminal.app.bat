@@ -1,0 +1,20 @@
+@echo off
+
+set __BLACK__=0,0,0		
+set __DARK_BLUE__=73,46,225	
+set __DARK_GREEN__=37,188,36	
+set __DARK_CYAN__=51,187,200
+set __DARK_RED__=194,54,33	
+set __DARK_MAGENTA__=211,56,211
+set __DARK_YELLOW__=173,173,39
+set __DARK_WHITE__=203,204,205
+set __BRIGHT_BLACK__=129,131,131
+set __BRIGHT_BLUE__=88,51,255	
+set __BRIGHT_GREEN__=49,231,34	
+set __BRIGHT_CYAN__=20,240,240
+set __BRIGHT_RED__=252,57,31	
+set __BRIGHT_MAGENTA__=249,53,248
+set __BRIGHT_YELLOW__=234,236,35
+set __WHITE__=233,235,235
+
+%~dp0\do_colors.bat

@@ -4,5 +4,4 @@ DIRS=dll \
      ft_api{noncrit} \
      ft_cjk \
      ft_resize{noncrit} \
-     ft_uia{noncrit} \
      tools \

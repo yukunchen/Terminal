@@ -16,10 +16,6 @@ namespace Conhost.UIA.Tests
 
     using Microsoft.Win32;
 
-    using MS.Internal.Mita.Foundation;
-    using MS.Internal.Mita.Foundation.Controls;
-    using MS.Internal.Mita.Foundation.Waiters;
-
     using WEX.Common.Managed;
     using WEX.Logging.Interop;
     using WEX.TestExecution;
@@ -28,7 +24,7 @@ namespace Conhost.UIA.Tests
     using Conhost.UIA.Tests.Common;
     using Conhost.UIA.Tests.Common.NativeMethods;
     using Conhost.UIA.Tests.Elements;
-
+    using OpenQA.Selenium.Appium;
 
     [TestClass]
     public class ExperimentalTabTests
@@ -60,12 +56,12 @@ namespace Conhost.UIA.Tests
                             {
                                 tab.NavigateToTab();
 
-                                IEnumerable<UIObject> itemsUnaffected = tab.GetObjectsUnaffectedByV1V2Switch();
-                                IEnumerable<UIObject> itemsThatDisable = tab.GetObjectsDisabledForV1Console();
+                                IEnumerable<AppiumWebElement> itemsUnaffected = tab.GetObjectsUnaffectedByV1V2Switch();
+                                IEnumerable<AppiumWebElement> itemsThatDisable = tab.GetObjectsDisabledForV1Console();
 
-                                foreach (UIObject obj in itemsThatDisable.Concat(itemsUnaffected))
+                                foreach (AppiumWebElement obj in itemsThatDisable.Concat(itemsUnaffected))
                                 {
-                                    Verify.IsTrue(obj.IsEnabled, AutoHelpers.FormatInvariant("Option: {0}", obj.Name));
+                                    Verify.IsTrue(obj.Enabled, AutoHelpers.FormatInvariant("Option: {0}", obj.Text));
                                 }
                             }
 
@@ -77,16 +73,16 @@ namespace Conhost.UIA.Tests
                             {
                                 tab.NavigateToTab();
 
-                                IEnumerable<UIObject> itemsUnaffected = tab.GetObjectsUnaffectedByV1V2Switch();
-                                IEnumerable<UIObject> itemsThatDisable = tab.GetObjectsDisabledForV1Console();
+                                IEnumerable<AppiumWebElement> itemsUnaffected = tab.GetObjectsUnaffectedByV1V2Switch();
+                                IEnumerable<AppiumWebElement> itemsThatDisable = tab.GetObjectsDisabledForV1Console();
 
-                                foreach (UIObject obj in itemsThatDisable)
+                                foreach (AppiumWebElement obj in itemsThatDisable)
                                 {
-                                    Verify.IsFalse(obj.IsEnabled, AutoHelpers.FormatInvariant("Option: {0}", obj.Name));
+                                    Verify.IsFalse(obj.Enabled, AutoHelpers.FormatInvariant("Option: {0}", obj.Text));
                                 }
-                                foreach (UIObject obj in itemsUnaffected)
+                                foreach (AppiumWebElement obj in itemsUnaffected)
                                 {
-                                    Verify.IsTrue(obj.IsEnabled, AutoHelpers.FormatInvariant("Option: {0}", obj.Name));
+                                    Verify.IsTrue(obj.Enabled, AutoHelpers.FormatInvariant("Option: {0}", obj.Text));
                                 }
                             }
                         }
@@ -170,16 +166,15 @@ namespace Conhost.UIA.Tests
                     {
                         tab.NavigateToTab();
 
-                        foreach (CheckBox obj in tab.GetCheckboxesForVerification().Select(meta => meta.Box))
+                        foreach (CheckBoxMeta obj in tab.GetCheckboxesForVerification())
                         {
                             obj.Check();
                         }
 
-                        foreach (RangeValueSlider obj in tab.GetSlidersForVerification().Select(meta => meta.Slider))
+                        foreach (SliderMeta obj in tab.GetSlidersForVerification())
                         {
                             // adjust slider to the maximum
-                            double tabValue = obj.Maximum;
-                            obj.SetValue(tabValue);
+                            obj.SetToMaximum();
                         }
                     }
 
@@ -201,14 +196,13 @@ namespace Conhost.UIA.Tests
                     {
                         tab.NavigateToTab();
 
-                        foreach (RangeValueSlider slider in tab.GetSlidersForVerification().Select(meta => meta.Slider))
+                        foreach (SliderMeta slider in tab.GetSlidersForVerification())
                         {
                             // adjust slider to the minimum
-                            double tabValue = slider.Minimum;
-                            slider.SetValue(tabValue);
+                            slider.SetToMinimum();
                         }
 
-                        foreach (CheckBox obj in tab.GetCheckboxesForVerification().Select(exp => exp.Box))
+                        foreach (CheckBoxMeta obj in tab.GetCheckboxesForVerification())
                         {
                             obj.Uncheck();
                         }
@@ -236,16 +230,15 @@ namespace Conhost.UIA.Tests
                     {
                         tab.NavigateToTab();
 
-                        foreach (CheckBox obj in tab.GetCheckboxesForVerification().Select(meta => meta.Box))
+                        foreach (CheckBoxMeta obj in tab.GetCheckboxesForVerification())
                         {
                             obj.Check();
                         }
 
-                        foreach (RangeValueSlider obj in tab.GetSlidersForVerification().Select(meta => meta.Slider))
+                        foreach (SliderMeta obj in tab.GetSlidersForVerification())
                         {
                             // adjust slider to the maximum
-                            double tabValue = obj.Maximum;
-                            obj.SetValue(tabValue);
+                            obj.SetToMaximum();
                         }
                     }
 
@@ -422,10 +415,10 @@ namespace Conhost.UIA.Tests
                 switch (expected)
                 {
                     case SliderMeta.ExpectedPosition.Maximum:
-                        transparency = (int)meta.Slider.Maximum;
+                        transparency = meta.GetMaximum();
                         break;
                     case SliderMeta.ExpectedPosition.Minimum:
-                        transparency = (int)meta.Slider.Minimum;
+                        transparency = meta.GetMinimum();
                         break;
                     default:
                         throw new NotImplementedException();
@@ -467,10 +460,10 @@ namespace Conhost.UIA.Tests
                 switch (expected)
                 {
                     case SliderMeta.ExpectedPosition.Maximum:
-                        transparency = (int)meta.Slider.Maximum;
+                        transparency = meta.GetMaximum();
                         break;
                     case SliderMeta.ExpectedPosition.Minimum:
-                        transparency = (int)meta.Slider.Minimum;
+                        transparency = meta.GetMinimum();
                         break;
                     default:
                         throw new NotImplementedException();
