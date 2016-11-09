@@ -12,7 +12,12 @@
 #pragma once
 
 #include <functional>
+
+#pragma warning(push)
+#pragma warning(disable:4242) // Standard random library contains C4242 warning about conversion from unsigned int to unsigned short.
 #include <random>
+#pragma warning(pop)
+
 #include <vector>
 #include <limits>
 #include <atlcoll.h>

@@ -17,7 +17,9 @@ UINT g_uiDialogBoxCount;
 
 CONSOLE_INFORMATION g_ciConsoleInformation;
 
-HANDLE g_hInputEvent;
+DeviceComm* g_pDeviceComm;
+
+wil::unique_event_nothrow g_hInputEvent;
 
 SHORT g_sVerticalScrollSize;
 SHORT g_sHorizontalScrollSize;
@@ -25,7 +27,7 @@ SHORT g_sHorizontalScrollSize;
 int g_dpi = USER_DEFAULT_SCREEN_DPI;
 
 NTSTATUS g_ntstatusConsoleInputInitStatus;
-HANDLE g_hConsoleInputInitEvent;
+wil::unique_event_nothrow g_hConsoleInputInitEvent;
 DWORD g_dwInputThreadId;
 
 WCHAR gaWordDelimChars[WORD_DELIM_MAX];

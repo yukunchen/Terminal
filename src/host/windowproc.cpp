@@ -249,7 +249,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_SETFOCUS:
     {
-        ModifyConsoleProcessFocus(TRUE);
+        g_ciConsoleInformation.ProcessHandleList.ModifyConsoleProcessFocus(TRUE);
 
         g_ciConsoleInformation.Flags |= CONSOLE_HAS_FOCUS;
 
@@ -266,7 +266,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_KILLFOCUS:
     {
-        ModifyConsoleProcessFocus(FALSE);
+        g_ciConsoleInformation.ProcessHandleList.ModifyConsoleProcessFocus(FALSE);
 
         g_ciConsoleInformation.Flags &= ~CONSOLE_HAS_FOCUS;
 
@@ -312,11 +312,11 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         //       That means this CONSOLE_IS_ICONIC is unnnecessary when/if we can decouple the drawing with D2D.
         if (IsIconic(hWnd))
         {
-            SetFlag(&g_ciConsoleInformation.Flags, CONSOLE_IS_ICONIC);
+            SetFlag(g_ciConsoleInformation.Flags, CONSOLE_IS_ICONIC);
         }
         else
         {
-            UnsetFlag(&g_ciConsoleInformation.Flags, CONSOLE_IS_ICONIC);
+            ClearFlag(g_ciConsoleInformation.Flags, CONSOLE_IS_ICONIC);
         }
 
         _HandlePaint();

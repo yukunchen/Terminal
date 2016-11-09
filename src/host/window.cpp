@@ -234,7 +234,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMA
             if (!IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_AUTO_POSITION))
             {
                 //if launched from a shortcut, ensure window is visible on screen
-                if (pSettings->IsStartupFlagSet(STARTF_TITLEISLINKNAME))
+                if (pSettings->IsStartupTitleIsLinkNameSet())
                 {
                     //if window would be fully OFFscreen, change position so it is ON screen.
                     //This doesn't change the actual coordinates stored in the link, just the starting position of the window
@@ -348,9 +348,9 @@ NTSTATUS Window::ActivateAndShow(_In_ WORD const wShowWindow)
     HWND const hWnd = GetWindowHandle();
 
     // Only activate if the wShowWindow we were passed at process create doesn't explicitly tell us to remain inactive/hidden
-    if (!IsFlagSet(wShowWindow, SW_SHOWNOACTIVATE) &&
-        !IsFlagSet(wShowWindow, SW_SHOWMINNOACTIVE) &&
-        !IsFlagSet(wShowWindow, SW_HIDE))
+    if (wShowWindow != SW_SHOWNOACTIVATE &&
+        wShowWindow != SW_SHOWMINNOACTIVE &&
+        wShowWindow != SW_HIDE)
     {
         HWND const hWndPrevious = SetActiveWindow(hWnd);
 
@@ -360,7 +360,7 @@ NTSTATUS Window::ActivateAndShow(_In_ WORD const wShowWindow)
             status = NTSTATUS_FROM_WIN32(GetLastError());
         }
     }
-    else if (IsFlagSet(wShowWindow, SW_SHOWMINNOACTIVE))
+    else if (wShowWindow == SW_SHOWMINNOACTIVE)
     {
         // If we're minimized and not the active window, set iconic to stop rendering
         g_ciConsoleInformation.Flags |= CONSOLE_IS_ICONIC;
@@ -392,7 +392,7 @@ NTSTATUS Window::SetViewportOrigin(_In_ const SMALL_RECT* const prcNewOrigin)
 
     COORD const FontSize = ScreenInfo->GetScreenFontSize();
 
-    if (!(g_ciConsoleInformation.Flags & (CONSOLE_IS_ICONIC | CONSOLE_NO_WINDOW)))
+    if (AreAllFlagsClear(g_ciConsoleInformation.Flags, (CONSOLE_IS_ICONIC | CONSOLE_NO_WINDOW)))
     {
         Selection* pSelection = &Selection::Instance();
         pSelection->HideSelection();
@@ -469,7 +469,7 @@ void Window::_UpdateWindowSize(_In_ SIZE const sizeNew) const
 {
     SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
 
-    if (!IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_IS_ICONIC))
+    if (IsFlagClear(g_ciConsoleInformation.Flags, CONSOLE_IS_ICONIC))
     {
         ScreenInfo->InternalUpdateScrollBars();
 

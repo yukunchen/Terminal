@@ -9,7 +9,6 @@
 
 #include "WinNTControl.h"
 
-#include <NT\ntdef.h>
 #define FILE_SYNCHRONOUS_IO_NONALERT            0x00000020
 
 /*++
@@ -98,12 +97,12 @@ DeviceHandle::_CreateHandle(
 
     if (Inheritable) 
     {
-        SetFlag(&Flags, OBJ_INHERIT);
+        SetFlag(Flags, OBJ_INHERIT);
     }
 
     UNICODE_STRING Name;
     Name.Buffer = (wchar_t*)DeviceName;
-    Name.Length = (USHORT)(wcslen(DeviceName) * 2);
+    Name.Length = (USHORT)(wcslen(DeviceName) * sizeof(wchar_t));
     Name.MaximumLength = Name.Length + sizeof(wchar_t);
 
     OBJECT_ATTRIBUTES ObjectAttributes;

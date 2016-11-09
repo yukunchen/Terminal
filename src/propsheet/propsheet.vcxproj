@@ -67,7 +67,6 @@
     </Link>
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\dep;..\..\dep\Console;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

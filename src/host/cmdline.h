@@ -88,9 +88,9 @@ typedef struct _COMMAND_HISTORY
 class COOKED_READ_DATA
 {
 public:
-    PINPUT_INFORMATION InputInfo;
-    PSCREEN_INFORMATION ScreenInfo;
-    HANDLE TempHandle;
+    PINPUT_INFORMATION pInputInfo;
+    PSCREEN_INFORMATION pScreenInfo;
+    ConsoleHandleData* pTempHandle;
     ULONG UserBufferSize;   // doubled size in ansi case
     PWCHAR UserBuffer;
     ULONG BufferSize;
@@ -105,8 +105,8 @@ public:
     BOOLEAN Processed;
     BOOLEAN Line;
     BOOLEAN InsertMode;
-    PCONSOLE_PROCESS_HANDLE ProcessData;
-    HANDLE HandleIndex;
+    ConsoleProcessHandle* pProcessData;
+    INPUT_READ_HANDLE_DATA* pInputReadHandleData;
     PWCHAR ExeName;
     USHORT ExeNameLength;
     ULONG CtrlWakeupMask;
@@ -219,19 +219,8 @@ bool IsPauseKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
 #define IS_WORD_DELIM(wch)  ((wch) == L' ' || (gaWordDelimChars[0] && IsWordDelim(wch)))
 bool IsWordDelim(_In_ WCHAR const wch);
 
-NTSTATUS SrvAddConsoleAlias(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvGetConsoleAlias(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvGetConsoleAliasesLength(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvGetConsoleAliasExesLength(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvGetConsoleAliases(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvGetConsoleAliasExes(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvExpungeConsoleCommandHistory(_In_ PCONSOLE_API_MSG const m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvSetConsoleNumberOfCommands(_In_ PCONSOLE_API_MSG const m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvGetConsoleCommandHistoryLength(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvGetConsoleCommandHistory(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvGetConsoleTitle(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS SrvSetConsoleTitle(_Inout_ PCONSOLE_API_MSG m, _In_opt_ PBOOL const ReplyPending);
-NTSTATUS DoSrvSetConsoleTitle(_In_ PVOID const Buffer, _In_ ULONG const cbOriginalLength, _In_ BOOLEAN const fUnicode);
+HRESULT DoSrvSetConsoleTitleW(_In_reads_bytes_(cbBuffer) const wchar_t* const pwsBuffer, 
+                               _In_ ULONG const cbBuffer);
 
 NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
                            _In_ USHORT cbSource,

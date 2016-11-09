@@ -863,12 +863,14 @@ NTSTATUS DoWriteConsole(_In_ PCONSOLE_API_MSG m, _In_ PSCREEN_INFORMATION pScree
         memmove(TransBuffer, m->State.TransBuffer, a->NumBytes);
         m->State.TransBuffer = TransBuffer;
         m->State.StackBuffer = FALSE;
-        if (!ConsoleCreateWait(&g_ciConsoleInformation.OutputQueue, WriteConsoleWaitRoutine, m, pScreenInfo))
+
+        HRESULT hr = ConsoleWaitQueue::s_CreateWait(m, WriteConsoleWaitRoutine, pScreenInfo);
+        if (FAILED(hr))
         {
             delete[] TransBuffer;
             m->State.TransBuffer = nullptr;
             m->State.StackBuffer = TRUE;
-            return STATUS_NO_MEMORY;
+            return NTSTATUS_FROM_HRESULT(hr);
         }
 
         return CONSOLE_STATUS_WAIT;
@@ -889,11 +891,11 @@ NTSTATUS DoWriteConsole(_In_ PCONSOLE_API_MSG m, _In_ PSCREEN_INFORMATION pScree
 NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
                            _Inout_ PBOOL ReplyPending,
                            _Inout_ PVOID BufPtr,
-                           _In_ PCONSOLE_HANDLE_DATA HandleData)
+                           _In_ SCREEN_INFORMATION* const pScreenInfo)
 {
     NTSTATUS Status = STATUS_SUCCESS;
     PCONSOLE_WRITECONSOLE_MSG const a = &m->u.consoleMsgL1.WriteConsole;
-    PSCREEN_INFORMATION const ScreenInfo = GetScreenBufferFromHandle(HandleData);
+    PSCREEN_INFORMATION const ScreenInfo = pScreenInfo->GetActiveBuffer();
     std::unique_ptr<wchar_t[]> wideCharBuffer {nullptr};
     static Utf8ToWideCharParser parser { g_ciConsoleInformation.OutputCP };
     // update current codepage in case it was changed from last time
@@ -902,7 +904,6 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
 
     if (a->Unicode)
     {
-        m->State.WriteFlags = ULONG_MAX; // ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED.
         m->State.TransBuffer = (PWCHAR)BufPtr;
     }
     else if (g_ciConsoleInformation.OutputCP == CP_UTF8)
@@ -912,16 +913,15 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
         HRESULT hresult = parser.Parse(reinterpret_cast<const byte*>(BufPtr), charCount, wideCharBuffer);
         if (wideCharBuffer.get() == nullptr || FAILED(hresult))
         {
-            SetReplyStatus(m, Status);
+            m->SetReplyStatus(Status);
             if (NT_SUCCESS(Status))
             {
-                SetReplyInformation(m, a->NumBytes);
+                m->SetReplyInformation(a->NumBytes);
             }
             return Status;
         }
         else
         {
-            m->State.WriteFlags = ULONG_MAX; // ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED.
             m->State.TransBuffer = reinterpret_cast<wchar_t*>(wideCharBuffer.get());
             m->State.StackBuffer = FALSE;
             g_ciConsoleInformation.WriteConOutNumBytesTemp = a->NumBytes;
@@ -941,7 +941,7 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
         TransBuffer = new WCHAR[a->NumBytes + 2];
         if (TransBuffer == nullptr)
         {
-            SetReplyStatus(m, STATUS_NO_MEMORY);
+            m->SetReplyStatus(STATUS_NO_MEMORY);
             return STATUS_NO_MEMORY;
         }
         m->State.StackBuffer = FALSE;
@@ -1023,17 +1023,16 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
         {
             delete[] TransBuffer;
 
-            SetReplyStatus(m, Status);
+            m->SetReplyStatus(Status);
             if (NT_SUCCESS(Status))
             {
-                SetReplyInformation(m, a->NumBytes);
+                m->SetReplyInformation(a->NumBytes);
             }
             return Status;
         }
 
         g_ciConsoleInformation.WriteConOutNumBytesTemp = a->NumBytes;
         a->NumBytes = g_ciConsoleInformation.WriteConOutNumBytesUnicode = dbcsNumBytes + BufPtrNumBytes;
-        m->State.WriteFlags = WRITE_SPECIAL_CHARS; // ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED.
         m->State.TransBuffer = TransBufferOriginalLocation;
     }
 
@@ -1062,8 +1061,8 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
             }
         }
 
-        SetReplyStatus(m, Status);
-        SetReplyInformation(m, a->NumBytes);
+        m->SetReplyStatus(Status);
+        m->SetReplyInformation(a->NumBytes);
     }
 
     return Status;

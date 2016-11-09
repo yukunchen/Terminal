@@ -62,15 +62,6 @@ NTSTATUS ReadBuffer(_In_ PINPUT_INFORMATION InputInformation,
                     _Out_ PBOOL ResetWaitEvent,
                     _In_ BOOLEAN Unicode);
 
-// this structure is used to store relevant information from the console for ctrl processing so we can do it without
-// holding the console lock.
-typedef struct _CONSOLE_PROCESS_TERMINATION_RECORD
-{
-    HANDLE ProcessHandle;
-    HANDLE ProcessID;
-    ULONG TerminateCount;
-} CONSOLE_PROCESS_TERMINATION_RECORD, *PCONSOLE_PROCESS_TERMINATION_RECORD;
-
 NTSTATUS InitWindowsStuff();
 
 bool IsInProcessedInputMode()
@@ -110,15 +101,13 @@ NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ PINPUT_INFORMATION pInp
     }
 
     NTSTATUS Status = STATUS_SUCCESS;
-    pInputInfo->InputWaitEvent = g_hInputEvent;
+    pInputInfo->InputWaitEvent = g_hInputEvent.get();
 
     if (!NT_SUCCESS(Status))
     {
         delete[] pInputInfo->InputBuffer;
         return Status;
     }
-
-    InitializeListHead(&pInputInfo->ReadWaitQueue);
 
     // initialize buffer header
     pInputInfo->InputBufferSize = cEvents;
@@ -170,10 +159,10 @@ void FreeInputBuffer(_In_ PINPUT_INFORMATION pInputInfo)
 // Routine Description:
 // - This routine waits for a writer to add data to the buffer.
 // Arguments:
-// - pInputInfo - buffer to wait for
 // - Console - Pointer to console buffer information.
 // - pConsoleMsg - if called from dll (not InputThread), points to api
-//             message.  this parameter is used for wait block processing.
+//             message.  this parameter is used for wait block processing. 
+//             We'll get the correct input object from this message.
 // - pfnWaitRoutine - Routine to call when wait is woken up.
 // - pvWaitParameter - Parameter to pass to wait routine.
 // - cbWaitParameter - Length of wait parameter.
@@ -181,9 +170,8 @@ void FreeInputBuffer(_In_ PINPUT_INFORMATION pInputInfo)
 // Return Value:
 // - STATUS_WAIT - call was from client and wait block has been created.
 // - STATUS_SUCCESS - call was from server and wait has been satisfied.
-NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
-                           _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
-                           _In_opt_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
+NTSTATUS WaitForMoreToRead(_In_opt_ PCONSOLE_API_MSG pConsoleMsg,
+                           _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
                            _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
                            _In_ const ULONG cbWaitParameter,
                            _In_ const BOOLEAN fWaitBlockExists)
@@ -201,11 +189,12 @@ NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
             g_ciConsoleInformation.lpCookedReadData = (COOKED_READ_DATA*)WaitParameterBuffer;
         }
 
-        if (!ConsoleCreateWait(&pInputInfo->ReadWaitQueue, pfnWaitRoutine, pConsoleMsg, WaitParameterBuffer))
+        HRESULT hr = ConsoleWaitQueue::s_CreateWait(pConsoleMsg, pfnWaitRoutine, WaitParameterBuffer);
+        if (FAILED(hr))
         {
             delete[] WaitParameterBuffer;
             g_ciConsoleInformation.lpCookedReadData = nullptr;
-            return STATUS_NO_MEMORY;
+            return NTSTATUS_FROM_HRESULT(hr);
         }
     }
 
@@ -221,7 +210,7 @@ NTSTATUS WaitForMoreToRead(_In_ PINPUT_INFORMATION pInputInfo,
 // - FALSE/nullptr - The operation failed.
 void WakeUpReadersWaitingForData(_In_ PINPUT_INFORMATION InputInformation)
 {
-    ConsoleNotifyWait(&InputInformation->ReadWaitQueue, FALSE, nullptr);
+    InputInformation->WaitQueue.NotifyWaiters(false);
 }
 
 // Routine Description:
@@ -733,9 +722,9 @@ NTSTATUS ReadInputBuffer(_In_ PINPUT_INFORMATION const pInputInfo,
                          _In_ BOOL const fPeek,
                          _In_ BOOL const fWaitForData,
                          _In_ BOOL const fStreamRead,
-                         _In_ PCONSOLE_HANDLE_DATA pHandleData,
+                         _In_ INPUT_READ_HANDLE_DATA* pHandleData,
                          _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
-                         _In_opt_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
+                         _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
                          _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
                          _In_ ULONG const cbWaitParameter,
                          _In_ BOOLEAN const fWaitBlockExists,
@@ -750,14 +739,14 @@ NTSTATUS ReadInputBuffer(_In_ PINPUT_INFORMATION const pInputInfo,
             return STATUS_SUCCESS;
         }
 
-        pHandleData->pClientInput->IncrementReadCount();
-        Status = WaitForMoreToRead(pInputInfo, pConsoleMsg, pfnWaitRoutine, pvWaitParameter, cbWaitParameter, fWaitBlockExists);
+        pHandleData->IncrementReadCount();
+        Status = WaitForMoreToRead(pConsoleMsg, pfnWaitRoutine, pvWaitParameter, cbWaitParameter, fWaitBlockExists);
         if (!NT_SUCCESS(Status))
         {
             if (Status != CONSOLE_STATUS_WAIT)
             {
                 // WaitForMoreToRead failed, restore ReadCount and bail out
-                pHandleData->pClientInput->DecrementReadCount();
+                pHandleData->DecrementReadCount();
             }
 
             *pcLength = 0;
@@ -1137,12 +1126,12 @@ DWORD WriteInputBuffer(_In_ PINPUT_INFORMATION pInputInfo, _In_ PINPUT_RECORD pI
     return EventsWritten;
 }
 
-NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
+NTSTATUS InitWindowsSubsystem()
 {
     g_hInstance = GetModuleHandle(L"ConhostV2.dll");
 
-    PCONSOLE_PROCESS_HANDLE ProcessData = FindProcessInList(nullptr);
-    ASSERT(ProcessData != nullptr && ProcessData->RootProcess);
+    ConsoleProcessHandle* ProcessData = g_ciConsoleInformation.ProcessHandleList.FindProcessInList(ConsoleProcessList::ROOT_PROCESS_ID);
+    ASSERT(ProcessData != nullptr && ProcessData->fRootProcess);
 
     // Create and activate the main window
     NTSTATUS Status = Window::CreateInstance(&g_ciConsoleInformation, g_ciConsoleInformation.ScreenBuffers, &g_ciConsoleInformation.pWindow);
@@ -1157,7 +1146,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 
     g_ciConsoleInformation.pWindow->ActivateAndShow(g_ciConsoleInformation.GetShowWindow());
 
-    NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, g_ciConsoleInformation.hWnd, HandleToULong(ProcessData->ClientId.UniqueProcess), 0);
+    NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, g_ciConsoleInformation.hWnd, ProcessData->dwProcessId, 0);
 
     return STATUS_SUCCESS;
 }
@@ -1290,17 +1279,16 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
     InitEnvironmentVariables();
 
     LockConsole();
-    HHOOK hhook;
-    NTSTATUS Status = InitWindowsSubsystem(&hhook);
+    NTSTATUS Status = InitWindowsSubsystem();
     UnlockConsole();
     if (!NT_SUCCESS(Status))
     {
         g_ntstatusConsoleInputInitStatus = Status;
-        SetEvent(g_hConsoleInputInitEvent);
+        g_hConsoleInputInitEvent.SetEvent();
         return Status;
     }
 
-    SetEvent(g_hConsoleInputInitEvent);
+    g_hConsoleInputInitEvent.SetEvent();
 
     for (;;)
     {
@@ -1324,11 +1312,6 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
 
     // Free all resources used by this thread
     DeactivateTextServices();
-
-    if (hhook != nullptr)
-    {
-        UnhookWindowsHookEx(hhook);
-    }
 
     return 0;
 }
@@ -1401,10 +1384,10 @@ ULONG ConvertMouseButtonState(_In_ ULONG Flag, _In_ ULONG State)
 // - This routine wakes up any readers waiting for data when a ctrl-c or ctrl-break is input.
 // Arguments:
 // - InputInfo - pointer to input buffer
-// - Flag - flag indicating whether ctrl-break or ctrl-c was input
-void TerminateRead(_Inout_ PINPUT_INFORMATION InputInfo, _In_ DWORD Flag)
+// - Flag - flag indicating whether ctrl-break or ctrl-c was input.
+void TerminateRead(_Inout_ PINPUT_INFORMATION InputInfo, _In_ WaitTerminationReason Flag)
 {
-    ConsoleNotifyWait(&InputInfo->ReadWaitQueue, TRUE, IntToPtr(Flag));
+    InputInfo->WaitQueue.NotifyWaiters(true, Flag);
 }
 
 // Routine Description:
@@ -1502,7 +1485,7 @@ bool ShouldTakeOverKeyboardShortcuts()
     return !g_ciConsoleInformation.GetCtrlKeyShortcutsDisabled() && IsInProcessedInputMode();
 }
 
-void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole)
+void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole)
 {
     BOOLEAN ContinueProcessing;
     ULONG EventsWritten;
@@ -1771,7 +1754,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
             HandleCtrlEvent(CTRL_C_EVENT);
             if (g_ciConsoleInformation.PopupCount == 0)
             {
-                TerminateRead(g_ciConsoleInformation.pInputBuffer, CONSOLE_CTRL_C_SEEN);
+                TerminateRead(g_ciConsoleInformation.pInputBuffer, WaitTerminationReason::CtrlC);
             }
 
             if (!(g_ciConsoleInformation.Flags & CONSOLE_SUSPENDED))
@@ -1787,7 +1770,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
             HandleCtrlEvent(CTRL_BREAK_EVENT);
             if (g_ciConsoleInformation.PopupCount == 0)
             {
-                TerminateRead(g_ciConsoleInformation.pInputBuffer, CONSOLE_CTRL_BREAK_SEEN);
+                TerminateRead(g_ciConsoleInformation.pInputBuffer, WaitTerminationReason::CtrlBreak);
             }
 
             if (!(g_ciConsoleInformation.Flags & CONSOLE_SUSPENDED))
@@ -2267,111 +2250,19 @@ void ProcessCtrlEvents()
     DWORD const LimitingProcessId = g_ciConsoleInformation.LimitingProcessId;
     g_ciConsoleInformation.LimitingProcessId = 0;
 
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ProcessHandleList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
+    ConsoleProcessTerminationRecord* rgProcessHandleList;
+    size_t cProcessHandleList;
 
-    ULONG ProcessHandleListLength = 0;
-    while (ListNext != ListHead)
-    {
-        PCONSOLE_PROCESS_HANDLE const ProcessHandleRecord = CONTAINING_RECORD(ListNext, CONSOLE_PROCESS_HANDLE, ListLink);
-        ListNext = ListNext->Flink;
-        if (LimitingProcessId)
-        {
-            if (ProcessHandleRecord->ProcessGroupId == LimitingProcessId)
-            {
-                ProcessHandleListLength += 1;
-            }
-        }
-        else
-        {
-            ProcessHandleListLength += 1;
-        }
-    }
+    HRESULT hr = g_ciConsoleInformation.ProcessHandleList.GetTerminationRecordsByGroupId(LimitingProcessId,
+                                                                                         IsFlagSet(g_ciConsoleInformation.CtrlFlags, CONSOLE_CTRL_CLOSE_FLAG),
+                                                                                         &rgProcessHandleList,
+                                                                                         &cProcessHandleList);
 
-    // It's possible that before we grabbed the lock all our processes decided to exit on their own. If so, no further action is needed here.
-    if (ProcessHandleListLength == 0)
+    if (FAILED(hr) || cProcessHandleList == 0)
     {
         g_ciConsoleInformation.UnlockConsole();
         return;
     }
-
-    CONSOLE_PROCESS_TERMINATION_RECORD ProcessHandles[2];
-    PCONSOLE_PROCESS_TERMINATION_RECORD ProcessHandleList;
-    // Use the stack buffer to hold the process handles if there are only a few, otherwise allocate a buffer from the heap.
-    if (ProcessHandleListLength <= ARRAYSIZE(ProcessHandles))
-    {
-        ProcessHandleList = ProcessHandles;
-    }
-    else
-    {
-        ProcessHandleList = new CONSOLE_PROCESS_TERMINATION_RECORD[ProcessHandleListLength];
-        if (ProcessHandleList == nullptr)
-        {
-            g_ciConsoleInformation.UnlockConsole();
-            return;
-        }
-    }
-
-    ListNext = ListHead->Flink;
-    ULONG i = 0;
-    while (ListNext != ListHead)
-    {
-
-        ASSERT(i <= ProcessHandleListLength);
-        PCONSOLE_PROCESS_HANDLE const ProcessHandleRecord = CONTAINING_RECORD(ListNext, CONSOLE_PROCESS_HANDLE, ListLink);
-        ListNext = ListNext->Flink;
-
-        if (LimitingProcessId && ProcessHandleRecord->ProcessGroupId != LimitingProcessId)
-        {
-            continue;
-        }
-
-
-        if (ProcessHandleRecord->ProcessHandle == nullptr)
-        {
-            ProcessHandleList[i].ProcessHandle = nullptr;
-        }
-        else
-        {
-            NTSTATUS tmpStatus = STATUS_SUCCESS;
-
-            if (FALSE == DuplicateHandle(GetCurrentProcess(),
-                                         ProcessHandleRecord->ProcessHandle,
-                                         GetCurrentProcess(),
-                                         &ProcessHandleList[i].ProcessHandle,
-                                         0,
-                                         0,
-                                         DUPLICATE_SAME_ACCESS))
-            {
-                tmpStatus = NTSTATUS_FROM_WIN32(GetLastError());
-            }
-
-            // If the duplicate failed, the best we can do is to skip including the process in the list and hope it goes away.
-            if (!NT_SUCCESS(tmpStatus))
-            {
-                RIPMSG3(RIP_WARNING, "Dup handle failed for %d of %d (Status = 0x%x)", i, ProcessHandleListLength, tmpStatus);
-                continue;
-            }
-        }
-
-        ProcessHandleList[i].ProcessID = ProcessHandleRecord->ClientId.UniqueProcess;
-
-        if (g_ciConsoleInformation.CtrlFlags & CONSOLE_CTRL_CLOSE_FLAG)
-        {
-            ProcessHandleRecord->TerminateCount++;
-        }
-        else
-        {
-            ProcessHandleRecord->TerminateCount = 0;
-        }
-        ProcessHandleList[i].TerminateCount = ProcessHandleRecord->TerminateCount;
-
-        // If this is the VDM process and we're closing the console window, move it to the front of the list
-        i++;
-    }
-
-    ProcessHandleListLength = i;
-    ASSERT(ProcessHandleListLength > 0);
 
     // Copy ctrl flags.
     ULONG CtrlFlags = g_ciConsoleInformation.CtrlFlags;
@@ -2416,7 +2307,7 @@ void ProcessCtrlEvents()
     }
 
     NTSTATUS Status = STATUS_SUCCESS;
-    for (i = 0; i < ProcessHandleListLength; i++)
+    for (size_t i = 0; i < cProcessHandleList; i++)
     {
         /*
          * Status will be non-successful if a process attached to this console
@@ -2431,25 +2322,22 @@ void ProcessCtrlEvents()
         {
             CONSOLEENDTASK ConsoleEndTaskParams;
 
-            ConsoleEndTaskParams.ProcessId = ProcessHandleList[i].ProcessID;
+            ConsoleEndTaskParams.ProcessId = (HANDLE)rgProcessHandleList[i].dwProcessID;
             ConsoleEndTaskParams.ConsoleEventCode = EventType;
             ConsoleEndTaskParams.ConsoleFlags = CtrlFlags;
             ConsoleEndTaskParams.hwnd = g_ciConsoleInformation.hWnd;
 
             Status = UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleEndTask, &ConsoleEndTaskParams, sizeof(ConsoleEndTaskParams));
-            if (ProcessHandleList[i].ProcessHandle == NULL) {
+            if (rgProcessHandleList[i].hProcess == nullptr) {
                 Status = STATUS_SUCCESS;
             }
         }
 
-        if (ProcessHandleList[i].ProcessHandle != nullptr)
+        if (rgProcessHandleList[i].hProcess != nullptr)
         {
-            CloseHandle(ProcessHandleList[i].ProcessHandle);
+            CloseHandle(rgProcessHandleList[i].hProcess);
         }
     }
 
-    if (ProcessHandleList != ProcessHandles)
-    {
-        delete[] ProcessHandleList;
-    }
+    delete[] rgProcessHandleList;
 }

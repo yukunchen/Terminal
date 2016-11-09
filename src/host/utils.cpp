@@ -8,26 +8,6 @@
 
 #include "globals.h"
 
-PCONSOLE_PROCESS_HANDLE GetMessageProcess(_In_ PCCONSOLE_API_MSG pMessage)
-{
-    return (PCONSOLE_PROCESS_HANDLE) pMessage->Descriptor.Process;
-}
-
-HANDLE GetMessageObject(_In_ PCCONSOLE_API_MSG pMessage)
-{
-    return (HANDLE) pMessage->Descriptor.Object;
-}
-
-void SetReplyStatus(_Inout_ PCCONSOLE_API_MSG pMessage, _In_ const NTSTATUS Status)
-{
-    pMessage->Complete.IoStatus.Status = Status;
-}
-
-void SetReplyInformation(_Inout_ PCCONSOLE_API_MSG pMessage, _In_ ULONG_PTR pInformation)
-{
-    pMessage->Complete.IoStatus.Information = pInformation;
-}
-
 short CalcWindowSizeX(_In_ const SMALL_RECT * const pRect)
 {
     return pRect->Right - pRect->Left + 1;
@@ -43,33 +23,6 @@ short CalcCursorYOffsetInPixels(_In_ short const sFontSizeY, _In_ ULONG const ul
     // TODO: Note, we want to likely enforce that this isn't negative. 
     // Pretty sure there's not a valid case for negative offsets here.
     return (short)((sFontSizeY)-(ulSize));
-}
-
-bool IsFlagSet(_In_ DWORD const dwAllFlags, _In_ DWORD const dwFlagToTest)
-{
-    return ((dwAllFlags & dwFlagToTest) == dwFlagToTest);
-}
-
-void SetFlag(_Inout_ DWORD* const pdwAllFlags, _In_ DWORD const dwFlagToSet)
-{
-    *pdwAllFlags |= dwFlagToSet;
-}
-
-void UnsetFlag(_Inout_ DWORD* const pdwAllFlags, _In_ DWORD const dwFlagToUnset)
-{
-    *pdwAllFlags &= ~dwFlagToUnset;
-}
-
-void SetFlagBasedOnBool(_In_ bool const fCondition, _Inout_ DWORD* const pdwAllFlags, _In_ DWORD const dwFlag)
-{
-    if (fCondition)
-    {
-        SetFlag(pdwAllFlags, dwFlag);
-    }
-    else
-    {
-        UnsetFlag(pdwAllFlags, dwFlag);
-    }
 }
 
 WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwchEnd)

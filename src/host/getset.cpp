@@ -20,7 +20,7 @@
 #include "tracing.hpp"
 #include "window.hpp"
 
-#include "ntprivapi.hpp"
+#include "ApiRoutines.h"
 
 #pragma hdrstop
 
@@ -32,928 +32,549 @@ COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE | COMMON_LVB_GRID_HORIZONTAL 
 #define OUTPUT_MODES (ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN | ENABLE_LVB_GRID_WORLDWIDE)
 #define PRIVATE_MODES (ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_EXTENDED_FLAGS)
 
-NTSTATUS SrvGetConsoleMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pContext, _Out_ ULONG* const pMode)
 {
-    PCONSOLE_MODE_MSG const a = (PCONSOLE_MODE_MSG) & m->u.consoleMsgL1.GetConsoleMode;
-    
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
+    *pMode = pContext->InputMode;
+
+    if (IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_USE_PRIVATE_FLAGS))
     {
-        return Status;
+        SetFlag(*pMode, ENABLE_EXTENDED_FLAGS);
+        SetFlagIf(*pMode, ENABLE_INSERT_MODE, g_ciConsoleInformation.GetInsertMode());
+        SetFlagIf(*pMode, ENABLE_QUICK_EDIT_MODE, IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_QUICK_EDIT_MODE));
+        SetFlagIf(*pMode, ENABLE_AUTO_POSITION, IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_AUTO_POSITION));
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_INPUT_HANDLE | CONSOLE_OUTPUT_HANDLE, GENERIC_READ, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        // Check handle type and access.
-        if (HandleData->HandleType & CONSOLE_INPUT_HANDLE)
-        {
-            a->Mode = GetInputBufferFromHandle(HandleData)->InputMode;
-
-            if ((g_ciConsoleInformation.Flags & CONSOLE_USE_PRIVATE_FLAGS) != 0)
-            {
-                a->Mode |= ENABLE_EXTENDED_FLAGS;
-
-                if (g_ciConsoleInformation.GetInsertMode())
-                {
-                    a->Mode |= ENABLE_INSERT_MODE;
-                }
-
-                if (g_ciConsoleInformation.Flags & CONSOLE_QUICK_EDIT_MODE)
-                {
-                    a->Mode |= ENABLE_QUICK_EDIT_MODE;
-                }
-
-                if (g_ciConsoleInformation.Flags & CONSOLE_AUTO_POSITION)
-                {
-                    a->Mode |= ENABLE_AUTO_POSITION;
-                }
-            }
-        }
-        else
-        {
-            a->Mode = GetScreenBufferFromHandle(HandleData)->OutputMode;
-        }
-    }
-
-    UnlockConsole();
-    return Status;
+    return S_OK;
 }
 
-NTSTATUS SrvGetConsoleNumberOfInputEvents(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext, _Out_ ULONG* const pMode)
 {
-    PCONSOLE_GETNUMBEROFINPUTEVENTS_MSG const a = &m->u.consoleMsgL1.GetNumberOfConsoleInputEvents;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetNumberOfConsoleInputEvents);
+    *pMode = pContext->GetActiveBuffer()->OutputMode;
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_INPUT_HANDLE, GENERIC_READ, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        GetNumberOfReadyEvents(GetInputBufferFromHandle(HandleData), &a->ReadyEvents);
-    }
-
-    UnlockConsole();
-    return Status;
+    return S_OK;
 }
 
-NTSTATUS SrvGetConsoleScreenBufferInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(_In_ INPUT_INFORMATION* const pContext, _Out_ ULONG* const pEvents)
 {
-    PCONSOLE_SCREENBUFFERINFO_MSG const a = &m->u.consoleMsgL2.GetConsoleScreenBufferInfo;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleScreenBufferInfoEx);
+    // TODO: MSFT: 9574827 - Should this have a result code? It's void.
+    GetNumberOfReadyEvents(pContext, pEvents);
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_READ, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        Status = DoSrvGetConsoleScreenBufferInfo(GetScreenBufferFromHandle(HandleData), a);
-    }
-
-    Tracing::s_TraceApi(Status, a, false);
-
-    UnlockConsole();
-    return Status;
+    return S_OK;
 }
 
-NTSTATUS DoSrvGetConsoleScreenBufferInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_SCREENBUFFERINFO_MSG* pMsg)
+HRESULT ApiRoutines::GetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                                      _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
 {
-    NTSTATUS Status = pScreenInfo->GetScreenBufferInformation(&pMsg->Size,
-                                                              &pMsg->CursorPosition,
-                                                              &pMsg->ScrollPosition,
-                                                              &pMsg->Attributes,
-                                                              &pMsg->CurrentWindowSize,
-                                                              &pMsg->MaximumWindowSize,
-                                                              &pMsg->PopupAttributes,
-                                                              pMsg->ColorTable);
-     
-    pMsg->FullscreenSupported = FALSE; // traditional full screen with the driver support is no longer supported.
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    return Status;
+    return DoSrvGetConsoleScreenBufferInfo(pContext->GetActiveBuffer(), pScreenBufferInfoEx);
 }
 
-NTSTATUS SrvGetConsoleCursorInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT DoSrvGetConsoleScreenBufferInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* pInfo)
 {
-    PCONSOLE_GETCURSORINFO_MSG const a = &m->u.consoleMsgL2.GetConsoleCursorInfo;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleCursorInfo);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_READ, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        Status = DoSrvGetConsoleCursorInfo(GetScreenBufferFromHandle(HandleData), a);
-    }
-
-    UnlockConsole();
-    return Status;
+    pInfo->bFullscreenSupported = FALSE; // traditional full screen with the driver support is no longer supported.
+    RETURN_NTSTATUS(pScreenInfo->GetScreenBufferInformation(&pInfo->dwSize,
+                                                            &pInfo->dwCursorPosition,
+                                                            &pInfo->srWindow,
+                                                            &pInfo->wAttributes,
+                                                            &pInfo->dwMaximumWindowSize,
+                                                            &pInfo->wPopupAttributes,
+                                                            pInfo->ColorTable));
 }
 
-NTSTATUS DoSrvGetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_GETCURSORINFO_MSG* pMsg)
+HRESULT ApiRoutines::GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                              _Out_ ULONG* const pCursorSize,
+                                              _Out_ BOOLEAN* const pIsVisible)
 {
-    pMsg->CursorSize = pScreenInfo->TextInfo->GetCursor()->GetSize();
-    pMsg->Visible = (BOOLEAN)pScreenInfo->TextInfo->GetCursor()->IsVisible();
-    return STATUS_SUCCESS;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return DoSrvGetConsoleCursorInfo(pContext->GetActiveBuffer(), pCursorSize, pIsVisible);
 }
 
-NTSTATUS SrvGetConsoleSelectionInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT DoSrvGetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Out_ ULONG* const pCursorSize, _Out_ BOOLEAN* const pIsVisible)
 {
-    PCONSOLE_GETSELECTIONINFO_MSG const a = &m->u.consoleMsgL3.GetConsoleSelectionInfo;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleSelectionInfo);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (NT_SUCCESS(Status))
-    {
-        const Selection* const pSelection = &Selection::Instance();
-        if (pSelection->IsInSelectingState())
-        {
-            pSelection->GetPublicSelectionFlags(&a->SelectionInfo.dwFlags);
-
-            // we should never have failed to set the CONSOLE_SELECTION_IN_PROGRESS flag....
-            ASSERT((a->SelectionInfo.dwFlags & CONSOLE_SELECTION_IN_PROGRESS) != 0);
-            a->SelectionInfo.dwFlags |= CONSOLE_SELECTION_IN_PROGRESS; // ... but if we did, set it anyway in release mode.
-
-            pSelection->GetSelectionAnchor(&a->SelectionInfo.dwSelectionAnchor);
-            pSelection->GetSelectionRectangle(&a->SelectionInfo.srSelection);
-        }
-        else
-        {
-            ZeroMemory(&a->SelectionInfo, sizeof(a->SelectionInfo));
-        }
-
-        UnlockConsole();
-    }
-
-    return Status;
+    *pCursorSize = pScreenInfo->TextInfo->GetCursor()->GetSize();
+    *pIsVisible = (BOOLEAN)pScreenInfo->TextInfo->GetCursor()->IsVisible();
+    return S_OK;
 }
 
-NTSTATUS SrvGetConsoleMouseInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* const pConsoleSelectionInfo)
 {
-    PCONSOLE_GETMOUSEINFO_MSG const a = &m->u.consoleMsgL3.GetConsoleMouseInfo;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetNumberOfConsoleMouseButtons);
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
+    const Selection* const pSelection = &Selection::Instance();
+    if (pSelection->IsInSelectingState())
     {
-        return Status;
-    }
+        pSelection->GetPublicSelectionFlags(&pConsoleSelectionInfo->dwFlags);
 
-    a->NumButtons = GetSystemMetrics(SM_CMOUSEBUTTONS);
-    
-    UnlockConsole();
-    return Status;
-}
+        // we should never have failed to set the CONSOLE_SELECTION_IN_PROGRESS flag....
+        assert(LOG_HR_IF_FALSE(E_UNEXPECTED, IsFlagSet(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS)));
+        SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS); // ... but if we did, set it anyway in release mode.
 
-NTSTATUS SrvGetConsoleFontSize(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
-{
-    PCONSOLE_GETFONTSIZE_MSG const a = &m->u.consoleMsgL3.GetConsoleFontSize;
-    
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleFontSize);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_READ, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        if (a->FontIndex == 0)
-        {
-            // As of the November 2015 renderer system, we only have a single font at index 0.
-            a->FontSize = GetScreenBufferFromHandle(HandleData)->TextInfo->GetCurrentFont()->GetUnscaledSize();
-        }
-        else
-        {
-            // Invalid font is 0,0 with STATUS_INVALID_PARAMETER
-            a->FontSize.X = 0;
-            a->FontSize.Y = 0;
-            Status = STATUS_INVALID_PARAMETER;
-        }
-    }
-
-    UnlockConsole();
-    return Status;
-}
-
-NTSTATUS SrvGetConsoleCurrentFont(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
-{
-    PCONSOLE_CURRENTFONT_MSG a = &m->u.consoleMsgL3.GetCurrentConsoleFont;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetCurrentConsoleFontEx);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_READ, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        const SCREEN_INFORMATION* const psi = GetScreenBufferFromHandle(HandleData);
-
-        COORD WindowSize;
-        if (a->MaximumWindow)
-        {
-            WindowSize = psi->GetMaxWindowSizeInCharacters();
-        }
-        else
-        {
-            WindowSize = psi->TextInfo->GetCurrentFont()->GetUnscaledSize();
-        }
-        a->FontSize = WindowSize;
-
-        a->FontIndex = 0;
-
-        const FontInfo* const pfi = psi->TextInfo->GetCurrentFont();
-        a->FontFamily = pfi->GetFamily();
-        a->FontWeight = pfi->GetWeight();
-
-        StringCchCopyW(a->FaceName, ARRAYSIZE(a->FaceName), pfi->GetFaceName());
-    }
-
-    UnlockConsole();
-    return Status;
-}
-
-NTSTATUS SrvSetConsoleCurrentFont(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
-{
-    PCONSOLE_CURRENTFONT_MSG const a = &m->u.consoleMsgL3.SetCurrentConsoleFont;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetCurrentConsoleFontEx);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        SCREEN_INFORMATION* const psi = GetScreenBufferFromHandle(HandleData);
-
-        a->FaceName[ARRAYSIZE(a->FaceName) - 1] = UNICODE_NULL;
-
-        FontInfo fi(a->FaceName, static_cast<BYTE>(a->FontFamily), a->FontWeight, a->FontSize, g_ciConsoleInformation.OutputCP);
-        
-        psi->UpdateFont(&fi);
-    }
-
-    UnlockConsole();
-    return Status;
-}
-
-NTSTATUS SrvSetConsoleMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
-{
-    PCONSOLE_MODE_MSG const a = &m->u.consoleMsgL1.SetConsoleMode;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleMode);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_INPUT_HANDLE | CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
-    if (!NT_SUCCESS(Status))
-    {
-        UnlockConsole();
-        return Status;
-    }
-
-    if (HandleData->HandleType & CONSOLE_INPUT_HANDLE)
-    {
-        BOOL PreviousInsertMode;
-
-        if (a->Mode & ~(INPUT_MODES | PRIVATE_MODES))
-        {
-            Status = STATUS_INVALID_PARAMETER;
-        }
-        else if ((a->Mode & (ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT)) == ENABLE_ECHO_INPUT)
-        {
-            Status = STATUS_INVALID_PARAMETER;
-        }
-        else if (a->Mode & PRIVATE_MODES)
-        {
-            g_ciConsoleInformation.Flags |= CONSOLE_USE_PRIVATE_FLAGS;
-
-            if (a->Mode & ENABLE_QUICK_EDIT_MODE)
-            {
-                g_ciConsoleInformation.Flags |= CONSOLE_QUICK_EDIT_MODE;
-            }
-            else
-            {
-                g_ciConsoleInformation.Flags &= ~CONSOLE_QUICK_EDIT_MODE;
-            }
-
-            if (a->Mode & ENABLE_AUTO_POSITION)
-            {
-                g_ciConsoleInformation.Flags |= CONSOLE_AUTO_POSITION;
-            }
-            else
-            {
-                g_ciConsoleInformation.Flags &= ~CONSOLE_AUTO_POSITION;
-            }
-
-            PreviousInsertMode = g_ciConsoleInformation.GetInsertMode();
-            if (a->Mode & ENABLE_INSERT_MODE)
-            {
-                g_ciConsoleInformation.SetInsertMode(TRUE);
-            }
-            else
-            {
-                g_ciConsoleInformation.SetInsertMode(FALSE);
-            }
-
-            if (g_ciConsoleInformation.GetInsertMode() != PreviousInsertMode)
-            {
-                g_ciConsoleInformation.CurrentScreenBuffer->SetCursorDBMode(FALSE);
-                if (g_ciConsoleInformation.lpCookedReadData != nullptr)
-                {
-                    g_ciConsoleInformation.lpCookedReadData->InsertMode = !!g_ciConsoleInformation.GetInsertMode();
-                }
-            }
-        }
-        else
-        {
-            g_ciConsoleInformation.Flags &= ~CONSOLE_USE_PRIVATE_FLAGS;
-        }
-
-        GetInputBufferFromHandle(HandleData)->InputMode = a->Mode & ~PRIVATE_MODES;
+        pSelection->GetSelectionAnchor(&pConsoleSelectionInfo->dwSelectionAnchor);
+        pSelection->GetSelectionRectangle(&pConsoleSelectionInfo->srSelection);
     }
     else
     {
-        if ((a->Mode & ~OUTPUT_MODES) == 0)
-        {
-            SCREEN_INFORMATION* pScreenInfo = GetScreenBufferFromHandle(HandleData);
-            const DWORD dwOldMode = pScreenInfo->OutputMode;
-            const DWORD dwNewMode = a->Mode;
-            
-            pScreenInfo->OutputMode = dwNewMode;
+        ZeroMemory(pConsoleSelectionInfo, sizeof(pConsoleSelectionInfo));
+    }
 
-            // if we're moving from VT on->off
-            if (!IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) && IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    return S_OK;
+}
+
+HRESULT ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButtons)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    *pButtons = GetSystemMetrics(SM_CMOUSEBUTTONS);
+
+    return S_OK;
+}
+
+HRESULT ApiRoutines::GetConsoleFontSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                            _In_ DWORD const FontIndex,
+                                            _Out_ COORD* const pFontSize)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    if (FontIndex == 0)
+    {
+        // As of the November 2015 renderer system, we only have a single font at index 0.
+        *pFontSize = pContext->GetActiveBuffer()->TextInfo->GetCurrentFont()->GetUnscaledSize();
+        return S_OK;
+    }
+    else
+    {
+        // Invalid font is 0,0 with STATUS_INVALID_PARAMETER
+        *pFontSize = { 0 };
+        return E_INVALIDARG;
+    }
+}
+
+HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                                 _In_ BOOLEAN const IsForMaximumWindowSize,
+                                                 _Out_ CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    const SCREEN_INFORMATION* const psi = pContext->GetActiveBuffer();
+
+    COORD WindowSize;
+    if (IsForMaximumWindowSize)
+    {
+        WindowSize = psi->GetMaxWindowSizeInCharacters();
+    }
+    else
+    {
+        WindowSize = psi->TextInfo->GetCurrentFont()->GetUnscaledSize();
+    }
+    pConsoleFontInfoEx->dwFontSize = WindowSize;
+
+    pConsoleFontInfoEx->nFont = 0;
+
+    const FontInfo* const pfi = psi->TextInfo->GetCurrentFont();
+    pConsoleFontInfoEx->FontFamily = pfi->GetFamily();
+    pConsoleFontInfoEx->FontWeight = pfi->GetWeight();
+
+    RETURN_IF_FAILED(StringCchCopyW(pConsoleFontInfoEx->FaceName, ARRAYSIZE(pConsoleFontInfoEx->FaceName), pfi->GetFaceName()));
+
+    return S_OK;
+}
+
+HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                                 _In_ BOOLEAN const /*IsForMaximumWindowSize*/,
+                                                 _In_ const CONSOLE_FONT_INFOEX* const pConsoleFontInfoEx)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    SCREEN_INFORMATION* const psi = pContext->GetActiveBuffer();
+
+    WCHAR FaceName[ARRAYSIZE(pConsoleFontInfoEx->FaceName)];
+    RETURN_IF_FAILED(StringCchCopyW(FaceName, ARRAYSIZE(FaceName), pConsoleFontInfoEx->FaceName));
+
+    FontInfo fi(FaceName,
+                static_cast<BYTE>(pConsoleFontInfoEx->FontFamily),
+                pConsoleFontInfoEx->FontWeight,
+                pConsoleFontInfoEx->dwFontSize,
+                g_ciConsoleInformation.OutputCP);
+
+    // TODO: MSFT: 9574827 - should this have a failure case?
+    psi->UpdateFont(&fi);
+
+    return S_OK;
+}
+
+HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pContext, _In_ ULONG const Mode)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    // Flags we don't understand are invalid.
+    RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~(INPUT_MODES | PRIVATE_MODES)));
+
+    // ECHO on with LINE off is invalid.
+    RETURN_HR_IF(E_INVALIDARG, IsFlagSet(Mode, ENABLE_ECHO_INPUT) && IsFlagClear(Mode, ENABLE_LINE_INPUT));
+
+
+    if (IsAnyFlagSet(Mode, PRIVATE_MODES))
+    {
+        SetFlag(g_ciConsoleInformation.Flags, CONSOLE_USE_PRIVATE_FLAGS);
+
+        UpdateFlag(g_ciConsoleInformation.Flags, CONSOLE_QUICK_EDIT_MODE, IsFlagSet(Mode, ENABLE_QUICK_EDIT_MODE));
+        UpdateFlag(g_ciConsoleInformation.Flags, CONSOLE_AUTO_POSITION, IsFlagSet(Mode, ENABLE_AUTO_POSITION));
+
+        BOOL const PreviousInsertMode = g_ciConsoleInformation.GetInsertMode();
+        g_ciConsoleInformation.SetInsertMode(IsFlagSet(Mode, ENABLE_INSERT_MODE));
+        if (g_ciConsoleInformation.GetInsertMode() != PreviousInsertMode)
+        {
+            g_ciConsoleInformation.CurrentScreenBuffer->SetCursorDBMode(FALSE);
+            if (g_ciConsoleInformation.lpCookedReadData != nullptr)
             {
-                // jiggle the handle
-                pScreenInfo->GetStateMachine()->ResetState();
-            }
-            g_ciConsoleInformation.SetVirtTermLevel(IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING)? 1 : 0);
-            g_ciConsoleInformation.SetAutomaticReturnOnNewline(IsFlagSet(pScreenInfo->OutputMode, DISABLE_NEWLINE_AUTO_RETURN) ? false : true);
-            g_ciConsoleInformation.SetGridRenderingAllowedWorldwide(IsFlagSet(pScreenInfo->OutputMode, ENABLE_LVB_GRID_WORLDWIDE));
-        }
-        else
-        {
-            Status = STATUS_INVALID_PARAMETER;
-        }
-    }
-
-    UnlockConsole();
-    return Status;
-}
-
-
-PCONSOLE_PROCESS_HANDLE FindProcessByGroupId(_In_ ULONG ProcessGroupId)
-{
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ProcessHandleList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
-    {
-        PCONSOLE_PROCESS_HANDLE const ProcessHandleRecord = CONTAINING_RECORD(ListNext, CONSOLE_PROCESS_HANDLE, ListLink);
-        ListNext = ListNext->Flink;
-        if (ProcessHandleRecord->ProcessGroupId == ProcessGroupId)
-        {
-            return ProcessHandleRecord;
-        }
-    }
-
-    return nullptr;
-}
-
-NTSTATUS SrvGenerateConsoleCtrlEvent(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
-{
-    PCONSOLE_CTRLEVENT_MSG const a = &m->u.consoleMsgL2.GenerateConsoleCtrlEvent;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GenerateConsoleCtrlEvent);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    // Make sure the process group id is valid.
-    if (a->ProcessGroupId)
-    {
-        PCONSOLE_PROCESS_HANDLE ProcessHandle;
-
-        ProcessHandle = FindProcessByGroupId(a->ProcessGroupId);
-        if (ProcessHandle == nullptr)
-        {
-            ULONG ProcessId = a->ProcessGroupId;
-
-            // We didn't find a process with that group ID.
-            // Let's see if the process with that ID exists and has a parent that is a member of this console.
-            Status = NtPrivApi::s_GetProcessParentId(&ProcessId);
-            if (NT_SUCCESS(Status))
-            {
-                ProcessHandle = FindProcessInList(UlongToHandle(ProcessId));
-                if (ProcessHandle == nullptr)
-                {
-                    Status = STATUS_INVALID_PARAMETER;
-                }
-                else
-                {
-                    CLIENT_ID ClientId;
-
-                    ClientId.UniqueProcess = UlongToHandle(a->ProcessGroupId);
-                    ClientId.UniqueThread = 0;
-                    if (AllocProcessData(&ClientId, a->ProcessGroupId, ProcessHandle) == nullptr)
-                    {
-                        Status = STATUS_UNSUCCESSFUL;
-                    }
-                    else
-                    {
-                        Status = STATUS_SUCCESS;
-                    }
-                }
-            }
-        }
-    }
-
-    if (NT_SUCCESS(Status))
-    {
-        g_ciConsoleInformation.LimitingProcessId = a->ProcessGroupId;
-        HandleCtrlEvent(a->CtrlEvent);
-    }
-
-    UnlockConsole();
-    return Status;
-}
-
-NTSTATUS SrvSetConsoleActiveScreenBuffer(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
-{
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleActiveScreenBuffer);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    Status = DoSrvSetConsoleActiveScreenBuffer(GetMessageObject(m));
-
-    UnlockConsole();
-    return Status;
-}
-
-// Most other Srv calls do some other processing of the msg once they get the screen buffer out of the message - 
-//  SetConsoleActiveScreenBuffer just sets it. So there's not a lot more to do here.
-NTSTATUS DoSrvSetConsoleActiveScreenBuffer(_In_ HANDLE hScreenBufferHandle)
-{
-    PCONSOLE_HANDLE_DATA HandleData;
-    NTSTATUS Status = DereferenceIoHandle(hScreenBufferHandle, CONSOLE_GRAPHICS_OUTPUT_HANDLE | CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        Status = SetActiveScreenBuffer(GetScreenBufferFromHandle(HandleData));
-    }
-    return Status;
-}
-
-NTSTATUS SrvFlushConsoleInputBuffer(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
-{
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FlushConsoleInputBuffer);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-    
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_INPUT_HANDLE, GENERIC_WRITE, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        FlushInputBuffer(GetInputBufferFromHandle(HandleData));
-    }
-
-    UnlockConsole();
-    return Status;
-}
-
-NTSTATUS SrvGetLargestConsoleWindowSize(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
-{
-    PCONSOLE_GETLARGESTWINDOWSIZE_MSG const a = &m->u.consoleMsgL2.GetLargestConsoleWindowSize;
-    
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetLargestConsoleWindowSize);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        const SCREEN_INFORMATION* const pScreenInfo = GetScreenBufferFromHandle(HandleData);
-        a->Size = pScreenInfo->GetLargestWindowSizeInCharacters();
-    }
-
-    Tracing::s_TraceApi(Status, a);
-
-    UnlockConsole();
-    return Status;
-}
-
-NTSTATUS SrvSetConsoleScreenBufferSize(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
-{
-    PCONSOLE_SETSCREENBUFFERSIZE_MSG const a = &m->u.consoleMsgL2.SetConsoleScreenBufferSize;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleScreenBufferSize);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        SCREEN_INFORMATION* const pScreenInfo = GetScreenBufferFromHandle(HandleData);
-
-        COORD const coordMin = pScreenInfo->GetMinWindowSizeInCharacters();
-
-        if (a->Size.X < pScreenInfo->GetScreenWindowSizeX() ||
-            a->Size.Y < pScreenInfo->GetScreenWindowSizeY() ||
-            a->Size.Y < coordMin.Y ||
-            a->Size.X < coordMin.X)
-        {
-            // Make sure requested screen buffer size isn't smaller than the window.
-            Status = STATUS_INVALID_PARAMETER;
-        }
-        else if (a->Size.X == SHORT_MAX || a->Size.Y == SHORT_MAX)
-        {
-            // Ensure the requested size isn't larger than we can handle in our data type.
-            Status = STATUS_INVALID_PARAMETER;
-        }
-        else if (a->Size.X == pScreenInfo->ScreenBufferSize.X && a->Size.Y == pScreenInfo->ScreenBufferSize.Y)
-        {
-            // If we're not actually changing the size, then quickly return success
-            Status = STATUS_SUCCESS;
-        }
-        else
-        {
-            Status = pScreenInfo->ResizeScreenBuffer(a->Size, TRUE);
-        }
-    }
-
-    Tracing::s_TraceApi(Status, a);
-
-    UnlockConsole();
-    return Status;
-}
-
-NTSTATUS SrvSetScreenBufferInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
-{
-    PCONSOLE_SCREENBUFFERINFO_MSG const a = &m->u.consoleMsgL2.SetConsoleScreenBufferInfo;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleScreenBufferInfoEx);
-
-    NTSTATUS Status = STATUS_SUCCESS;
-    if (a->Size.X == 0 || a->Size.Y == 0 || a->Size.X == 0x7FFF || a->Size.Y == 0x7FFF)
-    {
-        Status = STATUS_INVALID_PARAMETER;
-    }
-
-    if (NT_SUCCESS(Status))
-    {
-        CONSOLE_INFORMATION *Console;
-        Status = RevalidateConsole(&Console);
-        if (NT_SUCCESS(Status))
-        {
-            PCONSOLE_HANDLE_DATA HandleData;
-            Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
-            if (NT_SUCCESS(Status))
-            {
-                Status = DoSrvSetScreenBufferInfo(GetScreenBufferFromHandle(HandleData), a);
+                g_ciConsoleInformation.lpCookedReadData->InsertMode = !!g_ciConsoleInformation.GetInsertMode();
             }
         }
     }
+    else
+    {
+        ClearFlag(g_ciConsoleInformation.Flags, CONSOLE_USE_PRIVATE_FLAGS);
+    }
 
-    Tracing::s_TraceApi(Status, a, true);
+    pContext->InputMode = Mode;
+    ClearAllFlags(pContext->InputMode, PRIVATE_MODES);
 
-    UnlockConsole();
-    return Status;
+    return S_OK;
 }
 
-NTSTATUS DoSrvSetScreenBufferInfo(_In_ PSCREEN_INFORMATION const ScreenInfo, _In_ PCONSOLE_SCREENBUFFERINFO_MSG const a)
+HRESULT ApiRoutines::SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext, _In_ ULONG const Mode)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-    if (a->Size.X != ScreenInfo->ScreenBufferSize.X || (a->Size.Y != ScreenInfo->ScreenBufferSize.Y))
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    // Flags we don't understand are invalid.
+    RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~OUTPUT_MODES));
+
+    SCREEN_INFORMATION* const pScreenInfo = pContext->GetActiveBuffer();
+    const DWORD dwOldMode = pScreenInfo->OutputMode;
+    const DWORD dwNewMode = Mode;
+
+    pScreenInfo->OutputMode = dwNewMode;
+
+    // if we're moving from VT on->off
+    if (!IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) && IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    {
+        // jiggle the handle
+        pScreenInfo->GetStateMachine()->ResetState();
+    }
+    g_ciConsoleInformation.SetVirtTermLevel(IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? 1 : 0);
+    g_ciConsoleInformation.SetAutomaticReturnOnNewline(IsFlagSet(pScreenInfo->OutputMode, DISABLE_NEWLINE_AUTO_RETURN) ? false : true);
+    g_ciConsoleInformation.SetGridRenderingAllowedWorldwide(IsFlagSet(pScreenInfo->OutputMode, ENABLE_LVB_GRID_WORLDWIDE));
+
+    return S_OK;
+}
+
+HRESULT ApiRoutines::SetConsoleActiveScreenBufferImpl(_In_ SCREEN_INFORMATION* const pNewContext)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    RETURN_NTSTATUS(SetActiveScreenBuffer(pNewContext->GetActiveBuffer()));
+}
+
+HRESULT ApiRoutines::FlushConsoleInputBuffer(_In_ INPUT_INFORMATION* const pContext)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    // TODO: MSFT: 9574827 - shouldn't this have a status code?
+    FlushInputBuffer(pContext);
+
+    return S_OK;
+}
+
+HRESULT ApiRoutines::GetLargestConsoleWindowSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                                     _Out_ COORD* const pSize)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    SCREEN_INFORMATION* const pScreenInfo = pContext->GetActiveBuffer();
+
+    *pSize = pScreenInfo->GetLargestWindowSizeInCharacters();
+
+    return S_OK;
+}
+
+HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                                    _In_ const COORD* const pSize)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    SCREEN_INFORMATION* const pScreenInfo = pContext->GetActiveBuffer();
+
+    COORD const coordMin = pScreenInfo->GetMinWindowSizeInCharacters();
+
+    // Make sure requested screen buffer size isn't smaller than the window.
+    RETURN_HR_IF(E_INVALIDARG, (pSize->X < pScreenInfo->GetScreenWindowSizeX() ||
+                                pSize->Y < pScreenInfo->GetScreenWindowSizeY() ||
+                                pSize->Y < coordMin.Y ||
+                                pSize->X < coordMin.X));
+
+    // Ensure the requested size isn't larger than we can handle in our data type.
+    RETURN_HR_IF(E_INVALIDARG, (pSize->X == SHORT_MAX || pSize->Y == SHORT_MAX));
+
+    // Only do the resize if we're actually changing one of the dimensions
+    if (pSize->X != pScreenInfo->ScreenBufferSize.X || pSize->Y != pScreenInfo->ScreenBufferSize.Y)
+    {
+        RETURN_NTSTATUS(pScreenInfo->ResizeScreenBuffer(*pSize, TRUE));
+    }
+
+    return S_OK;
+}
+
+HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                                      _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pScreenBufferInfoEx)
+{
+    RETURN_HR_IF(E_INVALIDARG, (pScreenBufferInfoEx->dwSize.X == 0 ||
+                                pScreenBufferInfoEx->dwSize.Y == 0 ||
+                                pScreenBufferInfoEx->dwSize.X == SHRT_MAX ||
+                                pScreenBufferInfoEx->dwSize.Y == SHRT_MAX));
+
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return DoSrvSetScreenBufferInfo(pContext->GetActiveBuffer(), pScreenBufferInfoEx);
+}
+
+HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
+{
+    if (pInfo->dwSize.X != pScreenInfo->ScreenBufferSize.X || (pInfo->dwSize.Y != pScreenInfo->ScreenBufferSize.Y))
     {
         CommandLine* const pCommandLine = &CommandLine::Instance();
 
         pCommandLine->Hide(FALSE);
 
-        ScreenInfo->ResizeScreenBuffer(a->Size, TRUE);
+        pScreenInfo->ResizeScreenBuffer(pInfo->dwSize, TRUE);
 
         pCommandLine->Show();
     }
 
-    g_ciConsoleInformation.SetColorTable(a->ColorTable, ARRAYSIZE(a->ColorTable));
-    SetScreenColors(ScreenInfo, a->Attributes, a->PopupAttributes, TRUE);
+    g_ciConsoleInformation.SetColorTable(pInfo->ColorTable, ARRAYSIZE(pInfo->ColorTable));
+    SetScreenColors(pScreenInfo, pInfo->wAttributes, pInfo->wPopupAttributes, TRUE);
 
     COORD NewSize;
-    NewSize.X = min(a->CurrentWindowSize.X, a->MaximumWindowSize.X);
-    NewSize.Y = min(a->CurrentWindowSize.Y, a->MaximumWindowSize.Y);
+    NewSize.X = min((pInfo->srWindow.Right - pInfo->srWindow.Left), pInfo->dwMaximumWindowSize.X);
+    NewSize.Y = min((pInfo->srWindow.Bottom - pInfo->srWindow.Top), pInfo->dwMaximumWindowSize.Y);
 
     // If wrap text is on, then the window width must be the same size as the buffer width
     if (g_ciConsoleInformation.GetWrapText())
     {
-        NewSize.X = ScreenInfo->ScreenBufferSize.X;
+        NewSize.X = pScreenInfo->ScreenBufferSize.X;
     }
 
-    if (NewSize.X != ScreenInfo->GetScreenWindowSizeX() || NewSize.Y != ScreenInfo->GetScreenWindowSizeY())
+    if (NewSize.X != pScreenInfo->GetScreenWindowSizeX() || NewSize.Y != pScreenInfo->GetScreenWindowSizeY())
     {
         g_ciConsoleInformation.pWindow->UpdateWindowSize(NewSize);
     }
 
-    return Status;
+    return S_OK;
 }
 
-NTSTATUS SrvSetConsoleCursorPosition(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::SetConsoleCursorPositionImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                                  _In_ const COORD* const pCursorPosition)
 {
-    PCONSOLE_SETCURSORPOSITION_MSG const a = &m->u.consoleMsgL2.SetConsoleCursorPosition;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        PSCREEN_INFORMATION ScreenInfo = GetScreenBufferFromHandle(HandleData);
-
-        Status = DoSrvSetConsoleCursorPosition(ScreenInfo, a);
-    }
-
-    UnlockConsole();
-    return Status;
+    return DoSrvSetConsoleCursorPosition(pContext->GetActiveBuffer(), pCursorPosition);
 }
 
-NTSTATUS DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_SETCURSORPOSITION_MSG* pMsg)
+HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ const COORD* const pCursorPosition)
 {
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleCursorPosition);
-    
-    NTSTATUS Status = STATUS_SUCCESS;
+    RETURN_HR_IF(E_INVALIDARG, (pCursorPosition->X >= pScreenInfo->ScreenBufferSize.X ||
+                                pCursorPosition->Y >= pScreenInfo->ScreenBufferSize.Y ||
+                                pCursorPosition->X < 0 ||
+                                pCursorPosition->Y < 0));
 
-    if (pMsg->CursorPosition.X >= pScreenInfo->ScreenBufferSize.X || 
-        pMsg->CursorPosition.Y >= pScreenInfo->ScreenBufferSize.Y || 
-        pMsg->CursorPosition.X < 0 || 
-        pMsg->CursorPosition.Y < 0)
+    RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetCursorPosition(*pCursorPosition, TRUE));
+
+    LOG_IF_NTSTATUS_FAILED(ConsoleImeResizeCompStrView());
+
+    COORD WindowOrigin;
+    WindowOrigin.X = 0;
+    WindowOrigin.Y = 0;
+    if (pScreenInfo->BufferViewport.Left > pCursorPosition->X)
     {
-        Status = STATUS_INVALID_PARAMETER;
+        WindowOrigin.X = pCursorPosition->X - pScreenInfo->BufferViewport.Left;
     }
-    else
+    else if (pScreenInfo->BufferViewport.Right < pCursorPosition->X)
     {
-        Status = pScreenInfo->SetCursorPosition(pMsg->CursorPosition, TRUE);
-    }
-
-    if (NT_SUCCESS(Status))
-    {
-        ConsoleImeResizeCompStrView();
-
-        COORD WindowOrigin;
-        WindowOrigin.X = 0;
-        WindowOrigin.Y = 0;
-        if (pScreenInfo->BufferViewport.Left > pMsg->CursorPosition.X)
-        {
-            WindowOrigin.X = pMsg->CursorPosition.X - pScreenInfo->BufferViewport.Left;
-        }
-        else if (pScreenInfo->BufferViewport.Right < pMsg->CursorPosition.X)
-        {
-            WindowOrigin.X = pMsg->CursorPosition.X - pScreenInfo->BufferViewport.Right;
-        }
-
-        if (pScreenInfo->BufferViewport.Top > pMsg->CursorPosition.Y)
-        {
-            WindowOrigin.Y = pMsg->CursorPosition.Y - pScreenInfo->BufferViewport.Top;
-        }
-        else if (pScreenInfo->BufferViewport.Bottom < pMsg->CursorPosition.Y)
-        {
-            WindowOrigin.Y = pMsg->CursorPosition.Y - pScreenInfo->BufferViewport.Bottom;
-        }
-
-        Status = pScreenInfo->SetViewportOrigin(FALSE, WindowOrigin);
+        WindowOrigin.X = pCursorPosition->X - pScreenInfo->BufferViewport.Right;
     }
 
-    return Status;
+    if (pScreenInfo->BufferViewport.Top > pCursorPosition->Y)
+    {
+        WindowOrigin.Y = pCursorPosition->Y - pScreenInfo->BufferViewport.Top;
+    }
+    else if (pScreenInfo->BufferViewport.Bottom < pCursorPosition->Y)
+    {
+        WindowOrigin.Y = pCursorPosition->Y - pScreenInfo->BufferViewport.Bottom;
+    }
+
+    RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetViewportOrigin(FALSE, WindowOrigin));
+
+    return S_OK;
 }
 
-NTSTATUS SrvSetConsoleCursorInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::SetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                              _In_ ULONG const CursorSize,
+                                              _In_ BOOLEAN const IsVisible)
 {
-    PCONSOLE_SETCURSORINFO_MSG const a = &m->u.consoleMsgL2.SetConsoleCursorInfo;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleCursorInfo);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        Status = DoSrvSetConsoleCursorInfo(GetScreenBufferFromHandle(HandleData), a);
-    }
-
-    UnlockConsole();
-    return Status;
+    return DoSrvSetConsoleCursorInfo(pContext->GetActiveBuffer(), CursorSize, IsVisible);
 }
 
-NTSTATUS DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_SETCURSORINFO_MSG* pMsg)
+HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
+                                  _In_ ULONG const CursorSize,
+                                  _In_ BOOLEAN const IsVisible)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
+    // If more than 100% or less than 0% cursor height, reject it.
+    RETURN_HR_IF(E_INVALIDARG, (CursorSize > 100 || CursorSize == 0));
 
-    if (pMsg->CursorSize > 100 || pMsg->CursorSize == 0)
-    {
-        Status = STATUS_INVALID_PARAMETER;
-    }
-    else
-    {
-        Status = pScreenInfo->SetCursorInformation(pMsg->CursorSize, pMsg->Visible);
-    }
+    RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetCursorInformation(CursorSize, IsVisible));
 
-    return Status;
+    return S_OK;
 }
 
-NTSTATUS SrvSetConsoleWindowInfo(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::SetConsoleWindowInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                              _In_ BOOLEAN const IsAbsoluteRectangle,
+                                              _In_ const SMALL_RECT* const pWindowRectangle)
 {
-    PCONSOLE_SETWINDOWINFO_MSG const a = &m->u.consoleMsgL2.SetConsoleWindowInfo;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleWindowInfo);
-
-    // Backup the incoming message for tracing purposes
-    CONSOLE_SETWINDOWINFO_MSG const aOriginal = *a;
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (NT_SUCCESS(Status))
-    {
-        PCONSOLE_HANDLE_DATA HandleData;
-        Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
-        if (NT_SUCCESS(Status))
-        {
-            Status = DoSrvSetConsoleWindowInfo(GetScreenBufferFromHandle(HandleData), a);
-        }
-
-        UnlockConsole();
-    }
-
-    Tracing::s_TraceApi(Status, &aOriginal);
-
-    return Status;
+    return DoSrvSetConsoleWindowInfo(pContext->GetActiveBuffer(), IsAbsoluteRectangle, pWindowRectangle);
 }
 
-NTSTATUS DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_SETWINDOWINFO_MSG* pMsg)
+HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
+                                  _In_ BOOLEAN const IsAbsoluteRectangle,
+                                  _In_ const SMALL_RECT* const pWindowRectangle)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
+    SMALL_RECT Window = *pWindowRectangle;
 
-    if (!pMsg->Absolute)
+    if (!IsAbsoluteRectangle)
     {
-        pMsg->Window.Left += pScreenInfo->BufferViewport.Left;
-        pMsg->Window.Right += pScreenInfo->BufferViewport.Right;
-        pMsg->Window.Top += pScreenInfo->BufferViewport.Top;
-        pMsg->Window.Bottom += pScreenInfo->BufferViewport.Bottom;
+        Window.Left += pScreenInfo->BufferViewport.Left;
+        Window.Right += pScreenInfo->BufferViewport.Right;
+        Window.Top += pScreenInfo->BufferViewport.Top;
+        Window.Bottom += pScreenInfo->BufferViewport.Bottom;
     }
 
-    if (pMsg->Window.Right < pMsg->Window.Left || pMsg->Window.Bottom < pMsg->Window.Top)
-    {
-        Status = STATUS_INVALID_PARAMETER;
-    }
-    else
-    {
-        COORD NewWindowSize;
-        NewWindowSize.X = (SHORT)(CalcWindowSizeX(&pMsg->Window));
-        NewWindowSize.Y = (SHORT)(CalcWindowSizeY(&pMsg->Window));
+    RETURN_HR_IF(E_INVALIDARG, (Window.Right < Window.Left || Window.Bottom < Window.Top));
 
-        COORD const coordMax = pScreenInfo->GetMaxWindowSizeInCharacters();
+    COORD NewWindowSize;
+    NewWindowSize.X = (SHORT)(CalcWindowSizeX(&Window));
+    NewWindowSize.Y = (SHORT)(CalcWindowSizeY(&Window));
 
-        if (NewWindowSize.X > coordMax.X || NewWindowSize.Y > coordMax.Y)
-        {
-            Status = STATUS_INVALID_PARAMETER;
-        }
-        else
-        {
-            // Even if it's the same size, we need to post an update in case the scroll bars need to go away.
-            Status = pScreenInfo->SetViewportRect(&pMsg->Window);
-            if (pScreenInfo->IsActiveScreenBuffer())
-            {
-                pScreenInfo->PostUpdateWindowSize();
-                WriteToScreen(pScreenInfo, &pScreenInfo->BufferViewport);
-            }
-        }
+    COORD const coordMax = pScreenInfo->GetMaxWindowSizeInCharacters();
+
+    RETURN_HR_IF(E_INVALIDARG, (NewWindowSize.X > coordMax.X || NewWindowSize.Y > coordMax.Y));
+
+    // Even if it's the same size, we need to post an update in case the scroll bars need to go away.
+    NTSTATUS Status = pScreenInfo->SetViewportRect(&Window);
+    if (pScreenInfo->IsActiveScreenBuffer())
+    {
+        // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
+        pScreenInfo->PostUpdateWindowSize();
+        WriteToScreen(pScreenInfo, &pScreenInfo->BufferViewport);
     }
-    return Status;
+
+    RETURN_NTSTATUS(Status);
 }
 
-NTSTATUS SrvScrollConsoleScreenBuffer(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                                    _In_ const SMALL_RECT* const pSourceRectangle,
+                                                    _In_ const COORD* const pTargetOrigin,
+                                                    _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
+                                                    _In_ char const chFill,
+                                                    _In_ WORD const attrFill)
 {
-    PCONSOLE_SCROLLSCREENBUFFER_MSG const a = &m->u.consoleMsgL2.ScrollConsoleScreenBuffer;
+    wchar_t const wchFill = CharToWchar(&chFill, 1);
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ScrollConsoleScreenBuffer, a->Unicode);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        Status = DoSrvScrollConsoleScreenBuffer(GetScreenBufferFromHandle(HandleData), a);
-    }
-
-    UnlockConsole();
-    return Status;
+    return ScrollConsoleScreenBufferWImpl(pContext,
+                                          pSourceRectangle,
+                                          pTargetOrigin,
+                                          pTargetClipRectangle,
+                                          wchFill,
+                                          attrFill);
 }
 
-NTSTATUS DoSrvScrollConsoleScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo, _Inout_ CONSOLE_SCROLLSCREENBUFFER_MSG* const pMsg)
+
+HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                                    _In_ const SMALL_RECT* const pSourceRectangle,
+                                                    _In_ const COORD* const pTargetOrigin,
+                                                    _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
+                                                    _In_ wchar_t const wchFill,
+                                                    _In_ WORD const attrFill)
 {
-    PSMALL_RECT ClipRect;
-    if (pMsg->Clip)
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return DoSrvScrollConsoleScreenBufferW(pContext,
+                                           pSourceRectangle,
+                                           pTargetOrigin,
+                                           pTargetClipRectangle,
+                                           wchFill,
+                                           attrFill);
+}
+
+HRESULT DoSrvScrollConsoleScreenBufferW(_In_ SCREEN_INFORMATION* const pScreenInfo,
+                                        _In_ const SMALL_RECT* const pSourceRectangle,
+                                        _In_ const COORD* const pTargetOrigin,
+                                        _In_opt_ const SMALL_RECT* const pTargetClipRectangle,
+                                        _In_ wchar_t const wchFill,
+                                        _In_ WORD const attrFill)
+{
+    // TODO: MSFT 9574849 - can we make scroll region use these as const so we don't have to screw with them?
+    // Scroll region takes non-const parameters but our API has been updated to use maximal consts.
+    // As such, we will have to copy some items into local variables to prevent the const-ness from leaking beyond this point
+    // until 9574849 is fixed (as above).
+
+    SMALL_RECT* pClipRect = nullptr; // We have to pass nullptr if there wasn't a parameter given to us.
+    SMALL_RECT ClipRect = { 0 };
+    if (pTargetClipRectangle != nullptr)
     {
-        ClipRect = &pMsg->ClipRectangle;
-    }
-    else
-    {
-        ClipRect = nullptr;
+        // If there was a valid clip rectangle given, copy its contents to a non-const local and pass that pointer down.
+        ClipRect = *pTargetClipRectangle;
+        pClipRect = &ClipRect;
     }
 
-    if (!pMsg->Unicode)
-    {
-        pMsg->Fill.Char.UnicodeChar = CharToWchar(&pMsg->Fill.Char.AsciiChar, 1);
-    }
+    SMALL_RECT ScrollRectangle = *pSourceRectangle;
 
-    return ScrollRegion(pScreenInfo, &pMsg->ScrollRectangle, ClipRect, pMsg->DestinationOrigin, pMsg->Fill);
+    CHAR_INFO Fill;
+    Fill.Char.UnicodeChar = wchFill;
+    Fill.Attributes = attrFill;
+
+    return ScrollRegion(pScreenInfo, &ScrollRectangle, pClipRect, *pTargetOrigin, Fill);
 }
 
 // Routine Description:
@@ -961,8 +582,8 @@ NTSTATUS DoSrvScrollConsoleScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenIn
 // - It goes through the popup structures and changes the saved contents to reflect the new screen/popup colors.
 VOID UpdatePopups(IN WORD NewAttributes, IN WORD NewPopupAttributes, IN WORD OldAttributes, IN WORD OldPopupAttributes)
 {
-    WORD const InvertedOldPopupAttributes = (WORD) (((OldPopupAttributes << 4) & 0xf0) | ((OldPopupAttributes >> 4) & 0x0f));
-    WORD const InvertedNewPopupAttributes = (WORD) (((NewPopupAttributes << 4) & 0xf0) | ((NewPopupAttributes >> 4) & 0x0f));
+    WORD const InvertedOldPopupAttributes = (WORD)(((OldPopupAttributes << 4) & 0xf0) | ((OldPopupAttributes >> 4) & 0x0f));
+    WORD const InvertedNewPopupAttributes = (WORD)(((NewPopupAttributes << 4) & 0xf0) | ((NewPopupAttributes >> 4) & 0x0f));
     PLIST_ENTRY const HistoryListHead = &g_ciConsoleInformation.CommandHistoryList;
     PLIST_ENTRY HistoryListNext = HistoryListHead->Blink;
     while (HistoryListNext != HistoryListHead)
@@ -1003,7 +624,7 @@ VOID UpdatePopups(IN WORD NewAttributes, IN WORD NewPopupAttributes, IN WORD Old
     }
 }
 
-NTSTATUS SetScreenColors(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ WORD Attributes, _In_ WORD PopupAttributes, _In_ BOOL UpdateWholeScreen)
+NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attributes, _In_ WORD PopupAttributes, _In_ BOOL UpdateWholeScreen)
 {
     WORD const DefaultAttributes = ScreenInfo->GetAttributes()->GetLegacyAttributes();
     WORD const DefaultPopupAttributes = ScreenInfo->GetPopupAttributes()->GetLegacyAttributes();
@@ -1015,8 +636,9 @@ NTSTATUS SetScreenColors(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ WORD Attribut
 
     if (UpdateWholeScreen)
     {
-        WORD const InvertedOldPopupAttributes = (WORD) (((DefaultPopupAttributes << 4) & 0xf0) | ((DefaultPopupAttributes >> 4) & 0x0f));
-        WORD const InvertedNewPopupAttributes = (WORD) (((PopupAttributes << 4) & 0xf0) | ((PopupAttributes >> 4) & 0x0f));
+        // TODO: MSFT 9354902: Fix this up to be clearer with less magic bit shifting and less magic numbers. http://osgvsowi/9354902
+        WORD const InvertedOldPopupAttributes = (WORD)(((DefaultPopupAttributes << 4) & 0xf0) | ((DefaultPopupAttributes >> 4) & 0x0f));
+        WORD const InvertedNewPopupAttributes = (WORD)(((PopupAttributes << 4) & 0xf0) | ((PopupAttributes >> 4) & 0x0f));
 
         // change all chars with default color
         for (SHORT i = 0; i < ScreenInfo->ScreenBufferSize.Y; i++)
@@ -1039,42 +661,20 @@ NTSTATUS SetScreenColors(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ WORD Attribut
     return STATUS_SUCCESS;
 }
 
-NTSTATUS SrvSetConsoleTextAttribute(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::SetConsoleTextAttributeImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                                 _In_ WORD const Attribute)
 {
-    PCONSOLE_SETTEXTATTRIBUTE_MSG CONST a = &m->u.consoleMsgL2.SetConsoleTextAttribute;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleTextAttribute);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
-    if (NT_SUCCESS(Status))
-    {
-        Status = DoSrvSetConsoleTextAttribute(GetScreenBufferFromHandle(HandleData), a);
-    }
-    UnlockConsole();
-    return Status;
+    return DoSrvSetConsoleTextAttribute(pContext, Attribute);
 }
 
-NTSTATUS DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _Inout_ CONSOLE_SETTEXTATTRIBUTE_MSG* pMsg)
+HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-    if (pMsg->Attributes & ~VALID_TEXT_ATTRIBUTES)
-    {
-        Status = STATUS_INVALID_PARAMETER;
-    }
-    else
-    {
-        Status = SetScreenColors(pScreenInfo, pMsg->Attributes, pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE);
-    }
+    RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Attribute, ~VALID_TEXT_ATTRIBUTES));
 
-    return Status;
+    RETURN_NTSTATUS(SetScreenColors(pScreenInfo, Attribute, pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE));
 }
 
 NTSTATUS DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ int const iXtermTableEntry, _In_ bool fIsForeground)
@@ -1090,7 +690,7 @@ NTSTATUS DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* pScre
         bool fGreen = (iXtermTableEntry & 0x02) > 0;
         bool fBlue = (iXtermTableEntry & 0x04) > 0;
         bool fBright = (iXtermTableEntry & 0x08) > 0;
-        WORD iWinEntry = (fRed? 0x4:0x0) | (fGreen? 0x2:0x0) | (fBlue? 0x1:0x0) | (fBright? 0x8:0x0);
+        WORD iWinEntry = (fRed ? 0x4 : 0x0) | (fGreen ? 0x2 : 0x0) | (fBlue ? 0x1 : 0x0) | (fBright ? 0x8 : 0x0);
 
         rgbColor = g_ciConsoleInformation.GetColorTableEntry(iWinEntry);
     }
@@ -1116,264 +716,121 @@ NTSTATUS DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* pScreen
     return STATUS_SUCCESS;
 }
 
-NTSTATUS SrvSetConsoleCP(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage)
 {
-    PCONSOLE_SETCP_MSG const a = &m->u.consoleMsgL2.SetConsoleCP;
-    
-    Telemetry::Instance().LogApiCall(a->Output ? Telemetry::ApiCall::SetConsoleOutputCP : Telemetry::ApiCall::SetConsoleCP);
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
+    // Return if it's not known as a valid codepage ID.
+    RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidCodePage(CodePage));
+
+    // Do nothing if no change.
+    if (g_ciConsoleInformation.OutputCP != CodePage)
     {
-        return Status;
+        // Set new code page
+        g_ciConsoleInformation.OutputCP = CodePage;
+
+        SetConsoleCPInfo(TRUE);
     }
 
-    if (!IsValidCodePage(a->CodePage))
-    {
-        Status = STATUS_INVALID_PARAMETER;
-        goto SrvSetConsoleCPFailure;
-    }
-
-    if ((a->Output && g_ciConsoleInformation.OutputCP != a->CodePage) || (!a->Output && g_ciConsoleInformation.CP != a->CodePage))
-    {
-        UINT CodePage;
-
-        if (a->Output)
-        {
-            // Backup old code page
-            CodePage = g_ciConsoleInformation.OutputCP;
-
-            // Set new code page
-            g_ciConsoleInformation.OutputCP = a->CodePage;
-
-            SetConsoleCPInfo(a->Output);
-        }
-        else
-        {
-            // Backup old code page
-            CodePage = g_ciConsoleInformation.CP;
-
-            // Set new code page
-            g_ciConsoleInformation.CP = a->CodePage;
-
-            SetConsoleCPInfo(a->Output);
-        }
-    }
-
-SrvSetConsoleCPFailure:
-    UnlockConsole();
-    return Status;
+    return S_OK;
 }
 
-NTSTATUS SrvGetConsoleCP(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::SetConsoleInputCodePageImpl(_In_ ULONG const CodePage)
 {
-    PCONSOLE_GETCP_MSG const a = &m->u.consoleMsgL1.GetConsoleCP;
-    
-    Telemetry::Instance().LogApiCall(a->Output ? Telemetry::ApiCall::GetConsoleOutputCP : Telemetry::ApiCall::GetConsoleCP);
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
+    // Return if it's not known as a valid codepage ID.
+    RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidCodePage(CodePage));
+
+    // Do nothing if no change.
+    if (g_ciConsoleInformation.CP != CodePage)
     {
-        return Status;
+        // Set new code page
+        g_ciConsoleInformation.CP = CodePage;
+
+        SetConsoleCPInfo(FALSE);
     }
 
-    if (a->Output)
-    {
-        a->CodePage = g_ciConsoleInformation.OutputCP;
-    }
-    else
-    {
-        a->CodePage = g_ciConsoleInformation.CP;
-    }
-
-    UnlockConsole();
-    return STATUS_SUCCESS;
+    return S_OK;
 }
 
-NTSTATUS SrvGetConsoleWindow(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
-    PCONSOLE_GETCONSOLEWINDOW_MSG const a = &m->u.consoleMsgL3.GetConsoleWindow;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleWindow);
+    *pCodePage = g_ciConsoleInformation.CP;
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    a->hwnd = g_ciConsoleInformation.hWnd;
-
-    UnlockConsole();
-    return STATUS_SUCCESS;
+    return S_OK;
 }
 
-NTSTATUS SrvGetConsoleProcessList(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
 {
-    PCONSOLE_GETCONSOLEPROCESSLIST_MSG const a = &m->u.consoleMsgL3.GetConsoleProcessList;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleProcessList);
+    *pCodePage = g_ciConsoleInformation.OutputCP;
 
-    DWORD dwProcessCount = 0; 
-
-    PVOID Buffer;
-    ULONG BufferSize;
-    NTSTATUS Status = GetOutputBuffer(m, &Buffer, &BufferSize);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    a->dwProcessCount = BufferSize / sizeof(ULONG);
-
-    CONSOLE_INFORMATION *Console = nullptr;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        goto Cleanup;
-    }
-
-    LPDWORD lpdwProcessList = (PDWORD) Buffer;
-
-    /*
-     * Run through the console's process list to determine if the user-supplied
-     * buffer is big enough to contain them all. This is requires that we make
-     * two passes over the data, but it allows this function to have the same
-     * semantics as GetProcessHeaps().
-     */
-
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ProcessHandleList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
-    {
-        ++dwProcessCount;
-        ListNext = ListNext->Flink;
-    }
-
-    // At this point we can't fail, so set the status accordingly.
-    Status = STATUS_SUCCESS;
-
-    /*
-     * There's not enough space in the array to hold all the pids, so we'll
-     * inform the user of that by returning a number > than a->dwProcessCount
-     * (but we still return STATUS_SUCCESS).
-     */
-    if (dwProcessCount > a->dwProcessCount)
-    {
-        goto Cleanup;
-    }
-
-    // Loop over the list of processes again and fill in the caller's buffer.
-    ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
-    {
-        PCONSOLE_PROCESS_HANDLE const ProcessHandleRecord = CONTAINING_RECORD(ListNext, CONSOLE_PROCESS_HANDLE, ListLink);
-        *lpdwProcessList++ = HandleToUlong(ProcessHandleRecord->ClientId.UniqueProcess);
-        ListNext = ListNext->Flink;
-    }
-
-    SetReplyInformation(m, dwProcessCount * sizeof(ULONG));
-
-Cleanup:
-    a->dwProcessCount = dwProcessCount;
-
-    if (Console != nullptr)
-    {
-        UnlockConsole();
-    }
-
-    return Status;
+    return S_OK;
 }
 
-NTSTATUS SrvGetConsoleHistory(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
 {
-    PCONSOLE_HISTORY_MSG const a = &m->u.consoleMsgL3.GetConsoleHistory;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleHistoryInfo);
+    *pHwnd = g_ciConsoleInformation.hWnd;
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    a->HistoryBufferSize = g_ciConsoleInformation.GetHistoryBufferSize();
-    a->NumberOfHistoryBuffers = g_ciConsoleInformation.GetNumberOfHistoryBuffers();
-    if (g_ciConsoleInformation.Flags & CONSOLE_HISTORY_NODUP)
-    {
-        a->dwFlags = HISTORY_NO_DUP_FLAG;
-    }
-    else
-    {
-        a->dwFlags = 0;
-    }
-
-    UnlockConsole();
-    return STATUS_SUCCESS;
+    return S_OK;
 }
 
-NTSTATUS SrvSetConsoleHistory(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
 {
-    PCONSOLE_HISTORY_MSG const a = &m->u.consoleMsgL3.SetConsoleHistory;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleHistoryInfo);
+    pConsoleHistoryInfo->HistoryBufferSize = g_ciConsoleInformation.GetHistoryBufferSize();
+    pConsoleHistoryInfo->NumberOfHistoryBuffers = g_ciConsoleInformation.GetNumberOfHistoryBuffers();
+    SetFlagIf(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG, IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_HISTORY_NODUP));
 
-    if (a->HistoryBufferSize > SHORT_MAX || a->NumberOfHistoryBuffers > SHORT_MAX || (a->dwFlags & CHI_VALID_FLAGS) != a->dwFlags)
-    {
-        RIPMSG3(RIP_WARNING, "Invalid Parameter: 0x%x, 0x%x, 0x%x", a->HistoryBufferSize, a->NumberOfHistoryBuffers, a->dwFlags);
-        return STATUS_INVALID_PARAMETER;
-    }
+    return S_OK;
+}
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* const pConsoleHistoryInfo)
+{
+    RETURN_HR_IF(E_INVALIDARG, pConsoleHistoryInfo->HistoryBufferSize > SHORT_MAX);
+    RETURN_HR_IF(E_INVALIDARG, pConsoleHistoryInfo->NumberOfHistoryBuffers > SHORT_MAX);
+    RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(pConsoleHistoryInfo->dwFlags, ~CHI_VALID_FLAGS));
 
-    ResizeCommandHistoryBuffers(a->HistoryBufferSize);
-    g_ciConsoleInformation.SetNumberOfHistoryBuffers(a->NumberOfHistoryBuffers);
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    if (a->dwFlags & HISTORY_NO_DUP_FLAG)
-    {
-        g_ciConsoleInformation.Flags |= CONSOLE_HISTORY_NODUP;
-    }
-    else
-    {
-        g_ciConsoleInformation.Flags &= ~CONSOLE_HISTORY_NODUP;
-    }
+    ResizeCommandHistoryBuffers(pConsoleHistoryInfo->HistoryBufferSize);
+    g_ciConsoleInformation.SetNumberOfHistoryBuffers(pConsoleHistoryInfo->NumberOfHistoryBuffers);
 
-    UnlockConsole();
-    return STATUS_SUCCESS;
+    UpdateFlag(g_ciConsoleInformation.Flags, CONSOLE_HISTORY_NODUP, IsFlagSet(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG));
+
+    return S_OK;
 }
 
 // NOTE: This was in private.c, but turns out to be a public API: http://msdn.microsoft.com/en-us/library/windows/desktop/ms683164(v=vs.85).aspx
-NTSTATUS SrvGetConsoleDisplayMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const /*pContext*/,
+                                               _Out_ ULONG* const pFlags)
 {
-    PCONSOLE_GETDISPLAYMODE_MSG const a = &m->u.consoleMsgL3.GetConsoleDisplayMode;
-    
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleDisplayMode);
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (NT_SUCCESS(Status))
+    // Initialize flags portion of structure
+    *pFlags = 0;
+
+    if (g_ciConsoleInformation.pWindow != nullptr && g_ciConsoleInformation.pWindow->IsInFullscreen())
     {
-        // Initialize flags portion of structure
-        a->ModeFlags = 0;
-
-        if (g_ciConsoleInformation.pWindow != nullptr && g_ciConsoleInformation.pWindow->IsInFullscreen())
-        {
-            a->ModeFlags |= CONSOLE_FULLSCREEN_MODE;
-        }
-
-        UnlockConsole();
+        SetFlag(*pFlags, CONSOLE_FULLSCREEN_MODE);
     }
 
-    return Status;
+    return S_OK;
 }
 
 // Routine Description:
@@ -1391,57 +848,37 @@ NTSTATUS SrvGetConsoleDisplayMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Re
 // NOTE:
 // - This was in private.c, but turns out to be a public API:
 // - See: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686028(v=vs.85).aspx
-NTSTATUS SrvSetConsoleDisplayMode(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
+                                               _In_ ULONG const Flags,
+                                               _Out_ COORD* const pNewScreenBufferSize)
 {
-    PCONSOLE_SETDISPLAYMODE_MSG const a = (PCONSOLE_SETDISPLAYMODE_MSG)& m->u.consoleMsgL3.SetConsoleDisplayMode;
-
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleDisplayMode);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
+    // SetIsFullscreen() below ultimately calls SetwindowLong, which ultimately calls SendMessage(). If we retain
+    // the console lock, we'll deadlock since ConsoleWindowProc takes the lock before processing messages. Instead,
+    // we'll release early.
+    LockConsole();
     {
-        return Status;
+        auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+        SCREEN_INFORMATION* const pScreenInfo = pContext->GetActiveBuffer();
+
+        *pNewScreenBufferSize = pScreenInfo->ScreenBufferSize;
+        RETURN_HR_IF_FALSE(E_INVALIDARG, pScreenInfo->IsActiveScreenBuffer());
     }
 
-    PCONSOLE_HANDLE_DATA HandleData;
-    Status = DereferenceIoHandle(GetMessageObject(m), CONSOLE_OUTPUT_HANDLE | CONSOLE_GRAPHICS_OUTPUT_HANDLE, GENERIC_WRITE, &HandleData);
-    if (NT_SUCCESS(Status))
+    if (IsFlagSet(Flags, CONSOLE_FULLSCREEN_MODE))
     {
-        PSCREEN_INFORMATION const ScreenInfo = GetScreenBufferFromHandle(HandleData);
-        a->ScreenBufferDimensions = ScreenInfo->ScreenBufferSize;
-
-        if (!ScreenInfo->IsActiveScreenBuffer())
-        {
-            Status = STATUS_INVALID_PARAMETER;
-            goto SrvSetConsoleDisplayModeFailure;
-        }
-
-        // SetIsFullscreen() below ultimately calls SetwindowLong, which ultimately calls SendMessage(). If we retain
-        // the console lock, we'll deadlock since ConsoleWindowProc takes the lock before processing messages. Instead,
-        // we'll release early.
-        UnlockConsole();
-        if (a->dwFlags == CONSOLE_FULLSCREEN_MODE)
-        {
-            g_ciConsoleInformation.pWindow->SetIsFullscreen(true);
-            Status = STATUS_SUCCESS;
-        }
-        else if (a->dwFlags == CONSOLE_WINDOWED_MODE)
-        {
-            g_ciConsoleInformation.pWindow->SetIsFullscreen(false);
-            Status = STATUS_SUCCESS;
-        }
-        else
-        {
-            Status = STATUS_INVALID_PARAMETER;
-        }
-
-        LockConsole();
+        g_ciConsoleInformation.pWindow->SetIsFullscreen(true);
+    }
+    else if (IsFlagSet(Flags, CONSOLE_WINDOWED_MODE))
+    {
+        g_ciConsoleInformation.pWindow->SetIsFullscreen(false);
+    }
+    else
+    {
+        RETURN_HR(E_INVALIDARG);
     }
 
-SrvSetConsoleDisplayModeFailure:
-    UnlockConsole();
-    return Status;
+    return S_OK;
 }
 
 // Routine Description:
@@ -1454,7 +891,7 @@ SrvSetConsoleDisplayModeFailure:
 NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode)
 {
     g_ciConsoleInformation.termInput.ChangeCursorKeysMode(fApplicationMode);
-    
+
     return STATUS_SUCCESS;
 }
 
@@ -1468,7 +905,7 @@ NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode)
 NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
 {
     g_ciConsoleInformation.termInput.ChangeKeypadMode(fApplicationMode);
-    
+
     return STATUS_SUCCESS;
 }
 
@@ -1482,7 +919,7 @@ NTSTATUS DoSrvPrivateAllowCursorBlinking(_In_ SCREEN_INFORMATION* pScreenInfo, _
 {
     pScreenInfo->TextInfo->GetCursor()->SetBlinkingAllowed(fEnable);
     pScreenInfo->TextInfo->GetCursor()->SetIsOn(!fEnable);
-    
+
     return STATUS_SUCCESS;
 }
 
@@ -1503,7 +940,7 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(_In_ SCREEN_INFORMATION* pScreenInfo, _I
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
-    if (psrScrollMargins->Top > psrScrollMargins->Bottom) 
+    if (psrScrollMargins->Top > psrScrollMargins->Bottom)
     {
         Status = STATUS_INVALID_PARAMETER;
     }
@@ -1514,8 +951,8 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(_In_ SCREEN_INFORMATION* pScreenInfo, _I
         srScrollMargins.Top = psrScrollMargins->Top;
         srScrollMargins.Bottom = psrScrollMargins->Bottom;
         pScreenInfo->SetScrollMargins(&srScrollMargins);
-        
-        COORD newCursorPosition = {0};
+
+        COORD newCursorPosition = { 0 };
         Status = pScreenInfo->SetCursorPosition(newCursorPosition, TRUE);
     }
 
@@ -1592,7 +1029,7 @@ NTSTATUS DoPrivateTabHelper(_In_ SHORT const sNumTabs, _In_ bool fForward)
     for (SHORT sTabsExecuted = 0; sTabsExecuted < sNumTabs && NT_SUCCESS(Status); sTabsExecuted++)
     {
         const COORD cursorPos = pScreenBuffer->TextInfo->GetCursor()->GetPosition();
-        COORD cNewPos = (fForward)? pScreenBuffer->GetForwardTab(cursorPos) : pScreenBuffer->GetReverseTab(cursorPos);
+        COORD cNewPos = (fForward) ? pScreenBuffer->GetForwardTab(cursorPos) : pScreenBuffer->GetReverseTab(cursorPos);
         // GetForwardTab is smart enough to move the cursor to the next line if 
         // it's at the end of the current one already. AdjustCursorPos shouldn't
         // to be doing anything funny, just moving the cursor to the location GetForwardTab returns
@@ -1658,7 +1095,7 @@ NTSTATUS DoSrvPrivateTabClear(_In_ bool const fClearAll)
 NTSTATUS DoSrvPrivateEnableVT200MouseMode(_In_ bool const fEnable)
 {
     g_ciConsoleInformation.terminalMouseInput.EnableDefaultTracking(fEnable);
-    
+
     return STATUS_SUCCESS;
 }
 
@@ -1671,7 +1108,7 @@ NTSTATUS DoSrvPrivateEnableVT200MouseMode(_In_ bool const fEnable)
 NTSTATUS DoSrvPrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnable)
 {
     g_ciConsoleInformation.terminalMouseInput.SetUtf8ExtendedMode(fEnable);
-    
+
     return STATUS_SUCCESS;
 }
 
@@ -1684,7 +1121,7 @@ NTSTATUS DoSrvPrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnable)
 NTSTATUS DoSrvPrivateEnableSGRExtendedMouseMode(_In_ bool const fEnable)
 {
     g_ciConsoleInformation.terminalMouseInput.SetSGRExtendedMode(fEnable);
-    
+
     return STATUS_SUCCESS;
 }
 
@@ -1697,7 +1134,7 @@ NTSTATUS DoSrvPrivateEnableSGRExtendedMouseMode(_In_ bool const fEnable)
 NTSTATUS DoSrvPrivateEnableButtonEventMouseMode(_In_ bool const fEnable)
 {
     g_ciConsoleInformation.terminalMouseInput.EnableButtonEventTracking(fEnable);
-    
+
     return STATUS_SUCCESS;
 }
 
@@ -1710,7 +1147,7 @@ NTSTATUS DoSrvPrivateEnableButtonEventMouseMode(_In_ bool const fEnable)
 NTSTATUS DoSrvPrivateEnableAnyEventMouseMode(_In_ bool const fEnable)
 {
     g_ciConsoleInformation.terminalMouseInput.EnableAnyEventTracking(fEnable);
-    
+
     return STATUS_SUCCESS;
 }
 
@@ -1723,6 +1160,6 @@ NTSTATUS DoSrvPrivateEnableAnyEventMouseMode(_In_ bool const fEnable)
 NTSTATUS DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable)
 {
     g_ciConsoleInformation.terminalMouseInput.EnableAlternateScroll(fEnable);
-    
+
     return STATUS_SUCCESS;
 }

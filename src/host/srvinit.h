@@ -15,11 +15,12 @@ Revision History:
 
 #pragma once
 
-NTSTATUS SrvGetConsoleProcessList(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvGetConsoleHistory(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvSetConsoleHistory(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS SrvGetConsoleLangId(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
+#include "consrv.h"
+
 NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLangId);
 
 PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, _In_ const BOOL fUnexpand, _In_ const BOOL fSubstitute);
-PCONSOLE_PROCESS_HANDLE FindProcessInList(_In_opt_ const HANDLE hProcess);
+
+NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONSOLE_API_CONNECTINFO Cac);
+NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p);
+NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData);

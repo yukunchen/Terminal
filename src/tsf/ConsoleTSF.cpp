@@ -332,7 +332,7 @@ STDMETHODIMP CConsoleTSF::OnStartComposition(ITfCompositionView* pCompView, BOOL
     return S_OK;
 }
 
-STDMETHODIMP CConsoleTSF::OnUpdateComposition(ITfCompositionView* pComp, ITfRange*)
+STDMETHODIMP CConsoleTSF::OnUpdateComposition(ITfCompositionView* /*pComp*/, ITfRange*)
 {
     return S_OK;
 }
@@ -435,7 +435,7 @@ STDMETHODIMP CConsoleTSF::OnActivated(DWORD dwProfileType, LANGID langid, REFCLS
 //
 //----------------------------------------------------------------------------
 
-STDMETHODIMP CConsoleTSF::OnChange(REFGUID rguid)
+STDMETHODIMP CConsoleTSF::OnChange(REFGUID /*rguid*/)
 {
     return S_OK;
 }
@@ -446,7 +446,7 @@ STDMETHODIMP CConsoleTSF::OnChange(REFGUID rguid)
 //
 //----------------------------------------------------------------------------
 
-STDMETHODIMP CConsoleTSF::BeginUIElement(DWORD dwUIElementId, BOOL *pbShow)
+STDMETHODIMP CConsoleTSF::BeginUIElement(DWORD /*dwUIElementId*/, BOOL *pbShow)
 {
     *pbShow = TRUE;
     return S_OK;
@@ -458,7 +458,7 @@ STDMETHODIMP CConsoleTSF::BeginUIElement(DWORD dwUIElementId, BOOL *pbShow)
 //
 //----------------------------------------------------------------------------
 
-STDMETHODIMP CConsoleTSF::UpdateUIElement(DWORD dwUIElementId)
+STDMETHODIMP CConsoleTSF::UpdateUIElement(DWORD /*dwUIElementId*/)
 {
     return S_OK;
 }
@@ -469,7 +469,7 @@ STDMETHODIMP CConsoleTSF::UpdateUIElement(DWORD dwUIElementId)
 //
 //----------------------------------------------------------------------------
 
-STDMETHODIMP CConsoleTSF::EndUIElement(DWORD dwUIElementId)
+STDMETHODIMP CConsoleTSF::EndUIElement(DWORD /*dwUIElementId*/)
 {
     return S_OK;
 }

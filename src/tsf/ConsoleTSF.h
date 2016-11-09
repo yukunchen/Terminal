@@ -141,7 +141,7 @@ public:
     STDMETHODIMP OnEndEdit(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord);
 
     // ITfTextLayoutSink methods
-    STDMETHODIMP OnLayoutChange(ITfContext *pic, TfLayoutCode lcode, ITfContextView *pView)
+    STDMETHODIMP OnLayoutChange(ITfContext* /*pic*/, TfLayoutCode /*lcode*/, ITfContextView* /*pView*/)
     { return E_NOTIMPL; }
 
 public:
