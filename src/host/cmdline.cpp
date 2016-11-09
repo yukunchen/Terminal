@@ -4189,7 +4189,7 @@ HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcch
                                    _Out_ size_t* const pcchTitleBufferWritten,
                                    _In_ bool const fIsOriginal)
 {
-    // Ensure output varaibles are initialized.
+    // Ensure output variables are initialized.
     *pcchTitleBufferWritten = 0;
     if (nullptr != pwsTitleBuffer)
     {
@@ -4211,7 +4211,7 @@ HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcch
         cchTitleLength = wcslen(g_ciConsoleInformation.Title);
     }
 
-    // If we're have a pointer to receive the data, then copy it out.
+    // If we have a pointer to receive the data, then copy it out.
     if (nullptr != pwsTitleBuffer)
     {
         RETURN_IF_FAILED(StringCchCopyNW(pwsTitleBuffer, cchTitleBufferSize, pwszTitle, cchTitleLength));
