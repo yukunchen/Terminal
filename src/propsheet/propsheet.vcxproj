@@ -64,16 +64,19 @@
       <ModuleDefinitionFile>console.def</ModuleDefinitionFile>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\dep;..\..\dep\Console;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\dep;..\..\dep\Console;$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <Target
     Name="MessageCompile"
     Inputs="@(MessageCompile)"
-    Outputs="%(MessageCompile.Filename).h"
+    Outputs="$(IntermediateOutputPath)\%(MessageCompile.Filename).h"
     BeforeTargets="ClCompile"
     >
-    <Exec Command="mc.exe @(MessageCompile)" />
+    <Exec Command="mc.exe /h $(IntermediateOutputPath) /r $(IntermediateOutputPath) @(MessageCompile)" />
   </Target>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\common.build.dll.props" />
