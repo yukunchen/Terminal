@@ -394,18 +394,9 @@ BOOL ConhostInternalGetSet::PrivateReverseLineFeed()
 // - sCchTitleLength - the number of characters in the title
 // Return Value: 
 // - TRUE if successful (see DoSrvSetConsoleTitle). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetConsoleTitleW(_In_ const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength)
+BOOL ConhostInternalGetSet::SetConsoleTitleW(_In_reads_(sCchTitleLength) const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength)
 {
-    ULONG cbOriginalLength;
-
-    BOOL fResult = SUCCEEDED(ULongMult(sCchTitleLength, sizeof(WCHAR), &cbOriginalLength));
-    
-    if (fResult)
-    {
-        fResult = SUCCEEDED(DoSrvSetConsoleTitleW(pwchWindowTitle, cbOriginalLength));
-    }    
-
-    return fResult;
+    return SUCCEEDED(DoSrvSetConsoleTitleW(pwchWindowTitle, sCchTitleLength));
 }
 
 // Routine Description:
