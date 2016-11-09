@@ -4184,11 +4184,19 @@ NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
     return RetrieveNthCommand(CommandHistory, CommandHistory->LastDisplayed, Buffer, BufferSize, CommandSize);
 }
 
-HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWritten) wchar_t* const pwsTitleBuffer,
+HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                    _In_ size_t const cchTitleBufferSize,
                                    _Out_ size_t* const pcchTitleBufferWritten,
                                    _In_ bool const fIsOriginal)
 {
+    // Ensure output varaibles are initialized.
+    *pcchTitleBufferWritten = 0;
+    if (nullptr != pwsTitleBuffer)
+    {
+        *pwsTitleBuffer = L'\0';
+    }
+
+    // Get the appropriate title and length depending on the mode.
     LPWSTR pwszTitle;
     size_t cchTitleLength;
 
@@ -4203,24 +4211,33 @@ HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcch
         cchTitleLength = wcslen(g_ciConsoleInformation.Title);
     }
 
+    // If we're have a pointer to receive the data, then copy it out.
     if (nullptr != pwsTitleBuffer)
     {
         RETURN_IF_FAILED(StringCchCopyNW(pwsTitleBuffer, cchTitleBufferSize, pwszTitle, cchTitleLength));
     }
 
+    // Always report how much space we would need.
     *pcchTitleBufferWritten = cchTitleLength;
 
     return S_OK;
 }
 
-HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) char* const psTitleBuffer,
+HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
                                    _In_ size_t const cchTitleBufferSize,
                                    _Out_ size_t* const pcchTitleBufferWritten,
                                    _In_ bool const fIsOriginal)
 {
+    // Ensure output variables are initialized.
+    *pcchTitleBufferWritten = 0;
+    *psTitleBuffer = L'\0';
+
     // Figure out how big our temporary Unicode buffer must be to get the title.
     size_t cchUnicodeTitleBufferSize;
     RETURN_IF_FAILED(GetConsoleTitleWImplHelper(nullptr, 0, &cchUnicodeTitleBufferSize, fIsOriginal));
+
+    // If there's nothing to get, then simply return.
+    RETURN_HR_IF(S_OK, 0 == cchUnicodeTitleBufferSize);
 
     // Allocate a unicode buffer of the right size.
     wistd::unique_ptr<wchar_t[]> pwsUnicodeTitleBuffer = wil::make_unique_nothrow<wchar_t[]>(cchUnicodeTitleBufferSize);
@@ -4235,7 +4252,7 @@ HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitl
     size_t cchConverted;
     RETURN_IF_FAILED(ConvertToA(g_ciConsoleInformation.CP,
                                 pwsUnicodeTitleBuffer.get(),
-                                cchUnicodeTitleBufferSize,
+                                cchUnicodeTitleBufferWritten,
                                 psConverted,
                                 cchConverted));
 
@@ -4251,7 +4268,7 @@ HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitl
     return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) char* const psTitleBuffer,
+HRESULT ApiRoutines::GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
                                           _In_ size_t const cchTitleBufferSize,
                                           _Out_ size_t* const pcchTitleBufferWritten)
 {
@@ -4264,7 +4281,7 @@ HRESULT ApiRoutines::GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *p
                                       false);
 }
 
-HRESULT ApiRoutines::GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) wchar_t* const pwsTitleBuffer,
+HRESULT ApiRoutines::GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                           _In_ size_t const cchTitleBufferSize,
                                           _Out_ size_t* const pcchTitleBufferWritten)
 {
@@ -4277,7 +4294,7 @@ HRESULT ApiRoutines::GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *p
                                       false);
 }
 
-HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) char* const psTitleBuffer,
+HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
                                                   _In_ size_t const cchTitleBufferSize,
                                                   _Out_ size_t* const pcchTitleBufferWritten)
 {
@@ -4290,7 +4307,7 @@ HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBuffer
                                       true);
 }
 
-HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) wchar_t* const pwsTitleBuffer,
+HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                                   _In_ size_t const cchTitleBufferSize,
                                                   _Out_ size_t* const pcchTitleBufferWritten)
 {
@@ -4303,7 +4320,7 @@ HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBuffer
                                       true);
 }
 
-HRESULT ApiRoutines::SetConsoleTitleAImpl(_In_reads_(cchTitleBufferSize) char* const psTitleBuffer,
+HRESULT ApiRoutines::SetConsoleTitleAImpl(_In_reads_or_z_(cchTitleBufferSize) char* const psTitleBuffer,
                                           _In_ size_t const cchTitleBufferSize)
 {
     wistd::unique_ptr<wchar_t[]> pwsUnicodeTitleBuffer;
@@ -4317,7 +4334,7 @@ HRESULT ApiRoutines::SetConsoleTitleAImpl(_In_reads_(cchTitleBufferSize) char* c
     return SetConsoleTitleWImpl(pwsUnicodeTitleBuffer.get(), cchUnicodeTitleBuffer);
 }
 
-HRESULT ApiRoutines::SetConsoleTitleWImpl(_In_reads_(cchTitleBufferSize) wchar_t* const pwsTitleBuffer,
+HRESULT ApiRoutines::SetConsoleTitleWImpl(_In_reads_or_z_(cchTitleBufferSize) wchar_t* const pwsTitleBuffer,
                                           _In_ size_t const cchTitleBufferSize)
 {
     LockConsole();
@@ -4327,7 +4344,7 @@ HRESULT ApiRoutines::SetConsoleTitleWImpl(_In_reads_(cchTitleBufferSize) wchar_t
                                  cchTitleBufferSize);
 }
 
-HRESULT DoSrvSetConsoleTitleW(_In_reads_(cchBuffer) const wchar_t* const pwsBuffer,
+HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pwsBuffer,
                               _In_ size_t const cchBuffer)
 {
     // Ensure that we add 1 to the length to leave room for a null if it's not already null terminated.
@@ -4336,7 +4353,7 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_(cchBuffer) const wchar_t* const pwsBuff
 
     wistd::unique_ptr<wchar_t[]> pwszNewTitle = wil::make_unique_nothrow<wchar_t[]>(cchDest);
     RETURN_IF_NULL_ALLOC(pwszNewTitle);
-    if (cchDest == 0)
+    if (cchBuffer == 0)
     {
         pwszNewTitle[0] = L'\0';
     }

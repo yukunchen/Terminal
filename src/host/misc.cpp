@@ -21,8 +21,19 @@
 
 #define CHAR_NULL      ((char)0)
 
+// Routine Description:
+// - Takes a multibyte string, allocates the appropriate amount of memory for the conversion, performs the conversion,
+//   and returns the Unicode UCS-2 result in the smart pointer (and the length).
+// Arguments:
+// - uiCodePage - Windows Code Page representing the multibyte source text
+// - rgchSource - Array of multibyte characters of source text
+// - cchSource - Length of rgchSource array
+// - pwsTarget - Smart pointer to receive allocated memory for converted Unicode text
+// - cchTarget - Length of converted unicode text
+// Return Value:
+// - S_OK if succeeded or suitable HRESULT errors from memory allocation, safe math, or MultiByteToWideChar failures.
 HRESULT ConvertToW(_In_ const UINT uiCodePage,
-                   _In_reads_(cchSource) const char* const rgchSource,
+                   _In_reads_or_z_(cchSource) const char* const rgchSource,
                    _In_ size_t const cchSource,
                    _Inout_ wistd::unique_ptr<wchar_t[]>& pwsTarget,
                    _Out_ size_t& cchTarget)
@@ -36,7 +47,7 @@ HRESULT ConvertToW(_In_ const UINT uiCodePage,
     RETURN_IF_FAILED(SizeTToInt(cchSource, &iSource));
 
     // Ask how much space we will need.
-    int iTarget = MultiByteToWideChar(uiCodePage, 0, rgchSource, iSource, nullptr, 0);
+    int const iTarget = MultiByteToWideChar(uiCodePage, 0, rgchSource, iSource, nullptr, 0);
     RETURN_LAST_ERROR_IF(0 == iTarget);
 
     size_t cchNeeded;
@@ -58,8 +69,19 @@ HRESULT ConvertToW(_In_ const UINT uiCodePage,
     return S_OK;
 }
 
+// Routine Description:
+// - Takes a wide (UCS-2 Unicode) string, allocates the appropriate amount of memory for the conversion, performs the conversion,
+//   and returns the Multibyte result in the smart pointer (and the length).
+// Arguments:
+// - uiCodePage - Windows Code Page representing the multibyte destination text
+// - rgchSource - Array of Unicode (UCS-2) characters of source text
+// - cchSource - Length of rgwchSource array
+// - psTarget - Smart pointer to receive allocated memory for converted Multibyte text
+// - cchTarget - Length of converted text
+// Return Value:
+// - S_OK if succeeded or suitable HRESULT errors from memory allocation, safe math, or WideCharToMultiByte failures.
 HRESULT ConvertToA(_In_ const UINT uiCodePage,
-                   _In_reads_(cchSource) const wchar_t* const rgwchSource,
+                   _In_reads_or_z_(cchSource) const wchar_t* const rgwchSource,
                    _In_ size_t cchSource,
                    _Inout_ wistd::unique_ptr<char[]>& psTarget,
                    _Out_ size_t& cchTarget)
@@ -74,7 +96,7 @@ HRESULT ConvertToA(_In_ const UINT uiCodePage,
 
     // Ask how much space we will need.
     #pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
-    int iTarget = WideCharToMultiByte(uiCodePage, 0, rgwchSource, iSource, nullptr, 0, nullptr, nullptr);
+    int const iTarget = WideCharToMultiByte(uiCodePage, 0, rgwchSource, iSource, nullptr, 0, nullptr, nullptr);
     RETURN_LAST_ERROR_IF(0 == iTarget);
 
     size_t cchNeeded;
@@ -96,8 +118,17 @@ HRESULT ConvertToA(_In_ const UINT uiCodePage,
     return S_OK;
 }
 
+// Routine Description:
+// - Takes a wide (UCS-2 Unicode) string, and determines how many bytes it would take to store it with the given Multibyte codepage.
+// Arguments:
+// - uiCodePage - Windows Code Page representing the multibyte destination text
+// - rgchSource - Array of Unicode (UCS-2) characters of source text
+// - cchSource - Length of rgwchSource array
+// - pcchTarget - Length in characters of multibyte buffer that would be required to hold this text after conversion
+// Return Value:
+// - S_OK if succeeded or suitable HRESULT errors from memory allocation, safe math, or WideCharToMultiByte failures.
 HRESULT GetALengthFromW(_In_ const UINT uiCodePage,
-                        _In_reads_(cchSource) const wchar_t* const rgwchSource,
+                        _In_reads_or_z_(cchSource) const wchar_t* const rgwchSource,
                         _In_ size_t const cchSource,
                         _Out_ size_t* const pcchTarget)
 {
@@ -111,7 +142,7 @@ HRESULT GetALengthFromW(_In_ const UINT uiCodePage,
 
     // Ask how many bytes this string consumes in the other codepage
     #pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
-    int iTarget = WideCharToMultiByte(uiCodePage, 0, rgwchSource, iSource, nullptr, 0, nullptr, nullptr);
+    int const iTarget = WideCharToMultiByte(uiCodePage, 0, rgwchSource, iSource, nullptr, 0, nullptr, nullptr);
     RETURN_LAST_ERROR_IF(0 == iTarget);
 
     // Convert types safely.

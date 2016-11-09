@@ -219,7 +219,7 @@ bool IsPauseKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
 #define IS_WORD_DELIM(wch)  ((wch) == L' ' || (gaWordDelimChars[0] && IsWordDelim(wch)))
 bool IsWordDelim(_In_ WCHAR const wch);
 
-HRESULT DoSrvSetConsoleTitleW(_In_reads_(cchBuffer) const wchar_t* const pwsBuffer, 
+HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pwsBuffer,
                               _In_ size_t const cchBuffer);
 
 NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
