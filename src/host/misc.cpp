@@ -21,6 +21,105 @@
 
 #define CHAR_NULL      ((char)0)
 
+HRESULT ConvertToW(_In_ const UINT uiCodePage,
+                   _In_reads_(cchSource) const char* const rgchSource,
+                   _In_ size_t const cchSource,
+                   _Inout_ wistd::unique_ptr<wchar_t[]>& pwsTarget,
+                   _Out_ size_t& cchTarget)
+{
+    cchTarget = 0;
+
+    // If there's nothing to convert, bail early.
+    RETURN_HR_IF(S_OK, cchSource == 0);
+
+    int iSource; // convert to int because Mb2Wc requires it.
+    RETURN_IF_FAILED(SizeTToInt(cchSource, &iSource));
+
+    // Ask how much space we will need.
+    int iTarget = MultiByteToWideChar(uiCodePage, 0, rgchSource, iSource, nullptr, 0);
+    RETURN_LAST_ERROR_IF(0 == iTarget);
+
+    size_t cchNeeded;
+    RETURN_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
+
+    // Allocate ourselves space in a smart pointer.
+    wistd::unique_ptr<wchar_t[]> pwsOut = wil::make_unique_nothrow<wchar_t[]>(cchNeeded);
+    RETURN_IF_NULL_ALLOC(pwsOut);
+
+    // Attempt conversion for real.
+    RETURN_LAST_ERROR_IF(0 == MultiByteToWideChar(uiCodePage, 0, rgchSource, iSource, pwsOut.get(), iTarget));
+
+    // Return the count of characters we produced.
+    cchTarget = cchNeeded;
+
+    // Give back the smart allocated space (and take their copy so we can free it when exiting.)
+    pwsTarget.swap(pwsOut);
+
+    return S_OK;
+}
+
+HRESULT ConvertToA(_In_ const UINT uiCodePage,
+                   _In_reads_(cchSource) const wchar_t* const rgwchSource,
+                   _In_ size_t cchSource,
+                   _Inout_ wistd::unique_ptr<char[]>& psTarget,
+                   _Out_ size_t& cchTarget)
+{
+    cchTarget = 0;
+
+    // If there's nothing to convert, bail early.
+    RETURN_HR_IF(S_OK, cchSource == 0);
+
+    int iSource; // convert to int because Wc2Mb requires it.
+    RETURN_IF_FAILED(SizeTToInt(cchSource, &iSource));
+
+    // Ask how much space we will need.
+    #pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    int iTarget = WideCharToMultiByte(uiCodePage, 0, rgwchSource, iSource, nullptr, 0, nullptr, nullptr);
+    RETURN_LAST_ERROR_IF(0 == iTarget);
+
+    size_t cchNeeded;
+    RETURN_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
+
+    // Allocate ourselves space in a smart pointer
+    wistd::unique_ptr<char[]> psOut = wil::make_unique_nothrow<char[]>(cchNeeded);
+
+    // Attempt conversion for real.
+    #pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    RETURN_LAST_ERROR_IF(0 == WideCharToMultiByte(uiCodePage, 0, rgwchSource, iSource, psOut.get(), iTarget, nullptr, nullptr));
+
+    // Return the count of characters we produced.
+    cchTarget = cchNeeded;
+
+    // Give back the smart allocated space (and take their copy so we can free it when exiting.)
+    psTarget.swap(psOut);
+
+    return S_OK;
+}
+
+HRESULT GetALengthFromW(_In_ const UINT uiCodePage,
+                        _In_reads_(cchSource) const wchar_t* const rgwchSource,
+                        _In_ size_t const cchSource,
+                        _Out_ size_t* const pcchTarget)
+{
+    *pcchTarget = 0;
+
+    // If there's no bytes, bail early.
+    RETURN_HR_IF(S_OK, cchSource == 0);
+
+    int iSource; // convert to int because Wc2Mb requires it
+    RETURN_IF_FAILED(SizeTToInt(cchSource, &iSource));
+
+    // Ask how many bytes this string consumes in the other codepage
+    #pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    int iTarget = WideCharToMultiByte(uiCodePage, 0, rgwchSource, iSource, nullptr, 0, nullptr, nullptr);
+    RETURN_LAST_ERROR_IF(0 == iTarget);
+
+    // Convert types safely.
+    RETURN_IF_FAILED(IntToSizeT(iTarget, pcchTarget));
+
+    return S_OK;
+}
+
 // Routine Description:
 // - Converts unicode characters to ANSI given a destination codepage
 // Arguments:

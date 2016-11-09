@@ -252,23 +252,27 @@ public:
                                        _In_ const SMALL_RECT* const pSourceRectangle,
                                        _Out_ SMALL_RECT* const pReadRectangle);
 
-    virtual HRESULT GetConsoleTitleAImpl(_Out_writes_(*pcchTitleBufferSize) char* const psTitleBuffer,
-                                         _Inout_ ULONG* const pcchTitleBufferSize) = 0;
+    virtual HRESULT GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) char* const psTitleBuffer,
+                                         _In_ size_t const cchTitleBufferSize,
+                                         _Out_ size_t* const pcchTitleBufferWritten) = 0;
 
-    virtual HRESULT GetConsoleTitleWImpl(_Out_writes_(*pcchTitleBufferSize) wchar_t* const pwsTitleBuffer,
-                                         _Inout_ ULONG* const pcchTitleBufferSize) = 0;
+    virtual HRESULT GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) wchar_t* const pwsTitleBuffer,
+                                         _In_ size_t const cchTitleBufferSize,
+                                         _Out_ size_t* const pcchTitleBufferWritten) = 0;
 
-    virtual HRESULT GetConsoleOriginalTitleAImpl(_Out_writes_(*pcchTitleBufferSize) char* const psTitleBuffer,
-                                                 _Inout_ ULONG* const pcchTitleBufferSize) = 0;
+    virtual HRESULT GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) char* const psTitleBuffer,
+                                                 _In_ size_t const cchTitleBufferSize,
+                                                 _Out_ size_t* const pcchTitleBufferWritten) = 0;
 
-    virtual HRESULT GetConsoleOriginalTitleWImpl(_Out_writes_(*pcchTitleBufferSize) wchar_t* const pwsTitleBuffer,
-                                                 _Inout_ ULONG* const pcchTitleBufferSize) = 0;
+    virtual HRESULT GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) wchar_t* const pwsTitleBuffer,
+                                                 _In_ size_t const cchTitleBufferSize,
+                                                 _Out_ size_t* const pcchTitleBufferWritten) = 0;
 
-    virtual HRESULT SetConsoleTitleAImpl(_In_reads_bytes_(cbTitleBufferSize) char* const psTitleBuffer,
-                                         _In_ ULONG const cbTitleBufferSize) = 0;
+    virtual HRESULT SetConsoleTitleAImpl(_In_reads_(cchTitleBufferSize) char* const psTitleBuffer,
+                                         _In_ size_t const cchTitleBufferSize) = 0;
 
-    virtual HRESULT SetConsoleTitleWImpl(_In_reads_bytes_(cbTitleBufferSize) wchar_t* const pwsTitleBuffer,
-                                         _In_ ULONG const cbTitleBufferSize) = 0;
+    virtual HRESULT SetConsoleTitleWImpl(_In_reads_(cchTitleBufferSize) wchar_t* const pwsTitleBuffer,
+                                         _In_ size_t const cchTitleBufferSize) = 0;
 
 #pragma endregion
 

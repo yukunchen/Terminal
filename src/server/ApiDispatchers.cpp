@@ -367,38 +367,57 @@ HRESULT ApiDispatchers::ServerGetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m,
     Telemetry::Instance().LogApiCall(a->Original ? Telemetry::ApiCall::GetConsoleOriginalTitle : Telemetry::ApiCall::GetConsoleTitle, a->Unicode);
 
     PVOID Buffer;
-    RETURN_IF_FAILED(m->GetOutputBuffer(&Buffer, &a->TitleLength));
+    ULONG cbBuffer;
+    RETURN_IF_FAILED(m->GetOutputBuffer(&Buffer, &cbBuffer));
 
     // a->TitleLength contains length in bytes.
     if (a->Unicode)
     {
+        wchar_t* const pwsBuffer = reinterpret_cast<wchar_t*>(Buffer);
+        size_t const cchBuffer = cbBuffer / sizeof(wchar_t);
+        size_t cchWritten;
         if (a->Original)
         {
-            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleOriginalTitleWImpl((wchar_t*)Buffer,
-                                                                            &a->TitleLength));
+            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleOriginalTitleWImpl(pwsBuffer,
+                                                                            cchBuffer,
+                                                                            &cchWritten));
         }
         else
         {
-            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleTitleWImpl((wchar_t*)Buffer,
-                                                                    &a->TitleLength));
+            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleTitleWImpl(pwsBuffer,
+                                                                    cchBuffer,
+                                                                    &cchWritten));
         }
 
-        m->SetReplyInformation((wcslen((PWSTR)Buffer) + 1) * sizeof(WCHAR));
+        // We must return the character length of the string in a->TitleLength
+        RETURN_IF_FAILED(SizeTToULong(cchWritten, &a->TitleLength));
+
+        // Number of bytes written + the trailing null.
+        m->SetReplyInformation((cchWritten + 1) * sizeof(wchar_t));
     }
     else
     {
+        char* const psBuffer = reinterpret_cast<char*>(Buffer);
+        size_t const cchBuffer = cbBuffer;
+        size_t cchWritten;
         if (a->Original)
         {
-            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleOriginalTitleAImpl((char*)Buffer,
-                                                                            &a->TitleLength));
+            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleOriginalTitleAImpl(psBuffer,
+                                                                            cchBuffer,
+                                                                            &cchWritten));
         }
         else
         {
-            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleTitleAImpl((char*)Buffer,
-                                                                    &a->TitleLength));
+            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleTitleAImpl(psBuffer,
+                                                                    cchBuffer,
+                                                                    &cchWritten));
         }
 
-        m->SetReplyInformation(a->TitleLength + 1);
+        // We must return the character length of the string in a->TitleLength
+        RETURN_IF_FAILED(SizeTToULong(cchWritten, &a->TitleLength));
+
+        // Number of bytes written + the trailing null.
+        m->SetReplyInformation((cchWritten + 1) * sizeof(char));
     }
 
     return S_OK;
@@ -416,13 +435,17 @@ HRESULT ApiDispatchers::ServerSetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m,
 
     if (a->Unicode)
     {
-        return m->_pApiRoutines->SetConsoleTitleWImpl((wchar_t*)Buffer,
-                                                      cbOriginalLength);
+        wchar_t* const pwsBuffer = reinterpret_cast<wchar_t*>(Buffer);
+        size_t const cchBuffer = cbOriginalLength / sizeof(wchar_t);
+        return m->_pApiRoutines->SetConsoleTitleWImpl(pwsBuffer,
+                                                      cchBuffer);
     }
     else
     {
-        return m->_pApiRoutines->SetConsoleTitleAImpl((char*)Buffer,
-                                                      cbOriginalLength);
+        char* const psBuffer = reinterpret_cast<char*>(Buffer);
+        size_t const cchBuffer = cbOriginalLength;
+        return m->_pApiRoutines->SetConsoleTitleAImpl(psBuffer,
+                                                      cchBuffer);
     }
 }
 
