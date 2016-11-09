@@ -366,14 +366,14 @@ HRESULT ApiDispatchers::ServerGetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m,
     PCONSOLE_GETTITLE_MSG const a = &m->u.consoleMsgL2.GetConsoleTitle;
     Telemetry::Instance().LogApiCall(a->Original ? Telemetry::ApiCall::GetConsoleOriginalTitle : Telemetry::ApiCall::GetConsoleTitle, a->Unicode);
 
-    PVOID Buffer;
+    PVOID pvBuffer;
     ULONG cbBuffer;
-    RETURN_IF_FAILED(m->GetOutputBuffer(&Buffer, &cbBuffer));
+    RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBuffer));
 
     // a->TitleLength contains length in bytes.
     if (a->Unicode)
     {
-        wchar_t* const pwsBuffer = reinterpret_cast<wchar_t*>(Buffer);
+        wchar_t* const pwsBuffer = reinterpret_cast<wchar_t*>(pvBuffer);
         size_t const cchBuffer = cbBuffer / sizeof(wchar_t);
         size_t cchWritten;
         if (a->Original)
@@ -397,7 +397,7 @@ HRESULT ApiDispatchers::ServerGetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m,
     }
     else
     {
-        char* const psBuffer = reinterpret_cast<char*>(Buffer);
+        char* const psBuffer = reinterpret_cast<char*>(pvBuffer);
         size_t const cchBuffer = cbBuffer;
         size_t cchWritten;
         if (a->Original)
@@ -428,21 +428,21 @@ HRESULT ApiDispatchers::ServerSetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m,
     CONSOLE_SETTITLE_MSG* const a = &m->u.consoleMsgL2.SetConsoleTitle;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleTitle, a->Unicode);
 
-    PVOID Buffer;
+    PVOID pvBuffer;
     ULONG cbOriginalLength;
 
-    RETURN_IF_FAILED(m->GetInputBuffer(&Buffer, &cbOriginalLength));
+    RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbOriginalLength));
 
     if (a->Unicode)
     {
-        wchar_t* const pwsBuffer = reinterpret_cast<wchar_t*>(Buffer);
+        wchar_t* const pwsBuffer = reinterpret_cast<wchar_t*>(pvBuffer);
         size_t const cchBuffer = cbOriginalLength / sizeof(wchar_t);
         return m->_pApiRoutines->SetConsoleTitleWImpl(pwsBuffer,
                                                       cchBuffer);
     }
     else
     {
-        char* const psBuffer = reinterpret_cast<char*>(Buffer);
+        char* const psBuffer = reinterpret_cast<char*>(pvBuffer);
         size_t const cchBuffer = cbOriginalLength;
         return m->_pApiRoutines->SetConsoleTitleAImpl(psBuffer,
                                                       cchBuffer);
@@ -533,42 +533,59 @@ HRESULT ApiDispatchers::ServerAddConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AddConsoleAlias, a->Unicode);
 
     // Read the input buffer and validate the strings.
-    PVOID Buffer;
-    ULONG BufferSize;
-    RETURN_IF_FAILED(m->GetInputBuffer(&Buffer, &BufferSize));
+    PVOID pvBuffer;
+    ULONG cbBufferSize;
+    RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbBufferSize));
 
-    PVOID InputTarget = nullptr;
-    PVOID InputExeName;
-    PVOID InputSource = nullptr;
-
+    PVOID pvInputTarget;
+    ULONG const cbInputTarget = a->TargetLength;
+    PVOID pvInputExeName;
+    ULONG const cbInputExeName = a->ExeLength;
+    PVOID pvInputSource;
+    ULONG const cbInputSource = a->SourceLength;
     RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidStringBuffer(a->Unicode,
-                                                         Buffer,
-                                                         BufferSize,
+                                                         pvBuffer,
+                                                         cbBufferSize,
                                                          3,
-                                                         (ULONG)a->ExeLength,
-                                                         &InputExeName,
-                                                         (ULONG)a->SourceLength,
-                                                         &InputSource,
-                                                         (ULONG)a->TargetLength,
-                                                         &InputTarget));
+                                                         cbInputExeName,
+                                                         &pvInputExeName,
+                                                         cbInputSource,
+                                                         &pvInputSource,
+                                                         cbInputTarget,
+                                                         &pvInputTarget));
 
     if (a->Unicode)
     {
-        return m->_pApiRoutines->AddConsoleAliasWImpl((wchar_t*)InputSource,
-                                                      a->SourceLength,
-                                                      (wchar_t*)InputTarget,
-                                                      a->TargetLength,
-                                                      (wchar_t*)InputExeName,
-                                                      a->ExeLength);
+        wchar_t* const pwsInputSource = reinterpret_cast<wchar_t*>(pvInputSource);
+        size_t const cchInputSource = cbInputSource / sizeof(wchar_t);
+        wchar_t* const pwsInputTarget = reinterpret_cast<wchar_t*>(pvInputTarget);
+        size_t const cchInputTarget = cbInputTarget / sizeof(wchar_t);
+        wchar_t* const pwsInputExeName = reinterpret_cast<wchar_t*>(pvInputExeName);
+        size_t const cchInputExeName = cbInputExeName / sizeof(wchar_t);
+
+        return m->_pApiRoutines->AddConsoleAliasWImpl(pwsInputSource,
+                                                      cchInputSource,
+                                                      pwsInputTarget,
+                                                      cchInputTarget,
+                                                      pwsInputExeName,
+                                                      cchInputExeName);
     }
     else
     {
-        return m->_pApiRoutines->AddConsoleAliasAImpl((char*)InputSource,
-                                                      a->SourceLength,
-                                                      (char*)InputTarget,
-                                                      a->TargetLength,
-                                                      (char*)InputExeName,
-                                                      a->ExeLength);
+        char* const psInputSource = reinterpret_cast<char*>(pvInputSource);
+        size_t const cchInputSource = cbInputSource;
+        char* const psInputTarget = reinterpret_cast<char*>(pvInputTarget);
+        size_t const cchInputTarget = cbInputTarget;
+        char* const psInputExeName = reinterpret_cast<char*>(pvInputExeName);
+        size_t const cchInputExeName = cbInputExeName;
+
+
+        return m->_pApiRoutines->AddConsoleAliasAImpl(psInputSource,
+                                                      cchInputSource,
+                                                      psInputTarget,
+                                                      cchInputTarget,
+                                                      psInputExeName,
+                                                      cchInputExeName);
     }
 }
 
@@ -577,46 +594,70 @@ HRESULT ApiDispatchers::ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
     CONSOLE_GETALIAS_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasW;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAlias, a->Unicode);
 
-    PVOID InputBuffer;
-    ULONG InputBufferSize;
-    RETURN_IF_FAILED(m->GetInputBuffer(&InputBuffer, &InputBufferSize));
+    PVOID pvInputBuffer;
+    ULONG cbInputBufferSize;
+    RETURN_IF_FAILED(m->GetInputBuffer(&pvInputBuffer, &cbInputBufferSize));
 
-    PVOID InputExe;
-    PVOID InputSource = nullptr;
+    PVOID pvInputExe;
+    ULONG const cbInputExe = a->ExeLength;
+    PVOID pvInputSource;
+    ULONG const cbInputSource = a->SourceLength;
     RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidStringBuffer(a->Unicode,
-                                                         InputBuffer,
-                                                         InputBufferSize,
+                                                         pvInputBuffer,
+                                                         cbInputBufferSize,
                                                          2,
-                                                         a->ExeLength,
-                                                         &InputExe,
-                                                         a->SourceLength,
-                                                         &InputSource));
+                                                         cbInputExe,
+                                                         &pvInputExe,
+                                                         cbInputSource,
+                                                         &pvInputSource));
 
-    PVOID OutputBuffer;
-    ULONG OutputBufferSize;
-    RETURN_IF_FAILED(m->GetOutputBuffer(&OutputBuffer, &OutputBufferSize));
+    PVOID pvOutputBuffer;
+    ULONG cbOutputBufferSize;
+    RETURN_IF_FAILED(m->GetOutputBuffer(&pvOutputBuffer, &cbOutputBufferSize));
 
+    size_t cchWritten;
     if (a->Unicode)
     {
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasWImpl((wchar_t*)InputSource,
-                                                                a->SourceLength,
-                                                                (wchar_t*)OutputBuffer,
-                                                                &OutputBufferSize,
-                                                                (wchar_t*)InputExe,
-                                                                a->ExeLength));
+        const wchar_t* const pwsInputExe = reinterpret_cast<wchar_t*>(pvInputExe);
+        size_t const cchInputExe = cbInputExe / sizeof(wchar_t);
+        const wchar_t* const pwsInputSource = reinterpret_cast<wchar_t*>(pvInputSource);
+        size_t const cchInputSource = cbInputSource / sizeof(wchar_t);
+
+        wchar_t* const pwsOutputBuffer = reinterpret_cast<wchar_t*>(pvOutputBuffer);
+        size_t const cchOutputBuffer = cbOutputBufferSize / sizeof(wchar_t);
+
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasWImpl(pwsInputSource,
+                                                                cchInputSource,
+                                                                pwsOutputBuffer,
+                                                                cchOutputBuffer,
+                                                                &cchWritten,
+                                                                pwsInputExe,
+                                                                cchInputExe));
     }
     else
     {
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasAImpl((char*)InputSource,
-                                                                a->SourceLength,
-                                                                (char*)OutputBuffer,
-                                                                &OutputBufferSize,
-                                                                (char*)InputExe,
-                                                                a->ExeLength));
+        const char* const psInputExe = reinterpret_cast<char*>(pvInputExe);
+        size_t const cchInputExe = cbInputExe;
+        const char* const psInputSource = reinterpret_cast<char*>(pvInputSource);
+        size_t const cchInputSource = cbInputSource;
+
+        char* const psOutputBuffer = reinterpret_cast<char*>(pvOutputBuffer);
+        size_t const cchOutputBuffer = cbOutputBufferSize;
+
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasAImpl(psInputSource,
+                                                                cchInputSource,
+                                                                psOutputBuffer,
+                                                                cchOutputBuffer,
+                                                                &cchWritten,
+                                                                psInputExe,
+                                                                cchInputExe));
     }
 
-    // TODO: MSFT: 9115192 - figure this out for size_t, etc.
-    RETURN_IF_FAILED(ULongToUShort(OutputBufferSize, &a->TargetLength));
+    // We must set the reply length in bytes. Convert back from characters and fit into structure size.
+    size_t cbWritten;
+    RETURN_IF_FAILED(SizeTMult(cchWritten, sizeof(wchar_t), &cbWritten));
+    
+    RETURN_IF_FAILED(SizeTToUShort(cbWritten, &a->TargetLength));
 
     m->SetReplyInformation(a->TargetLength);
 
