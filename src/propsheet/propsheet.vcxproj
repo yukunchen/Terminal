@@ -36,6 +36,7 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="console.rc" />
+    <MessageCompile Include="strid.mc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\propslib\propslib.vcxproj">
@@ -53,22 +54,27 @@
     <TargetName>console</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup>
-    <PreBuildEvent>
-      <Command>strid.bat</Command>
-    </PreBuildEvent>
     <Link>
       <AdditionalDependencies>
             comctl32.lib;
             RuntimeObject.lib;
             Shlwapi.lib;
             %(AdditionalDependencies)
-        </AdditionalDependencies>
+      </AdditionalDependencies>
       <ModuleDefinitionFile>console.def</ModuleDefinitionFile>
     </Link>
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\dep;..\..\dep\Console;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
+  <Target
+    Name="MessageCompile"
+    Inputs="@(MessageCompile)"
+    Outputs="%(MessageCompile.Filename).h"
+    BeforeTargets="ClCompile"
+    >
+    <Exec Command="mc.exe @(MessageCompile)" />
+  </Target>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\common.build.dll.props" />
   <Import Project="..\common.build.post.props" />
