@@ -731,30 +731,51 @@ HRESULT ApiDispatchers::ServerGetConsoleAliases(_Inout_ CONSOLE_API_MSG * const 
     CONSOLE_GETALIASES_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasesW;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliases, a->Unicode);
 
-    PVOID ExeName;
-    ULONG ExeNameLength;
-    RETURN_IF_FAILED(m->GetInputBuffer(&ExeName, &ExeNameLength));
+    PVOID pvExeName;
+    ULONG cbExeNameLength;
+    RETURN_IF_FAILED(m->GetInputBuffer(&pvExeName, &cbExeNameLength));
 
-    PVOID OutputBuffer;
-    DWORD AliasesBufferLength;
-    RETURN_IF_FAILED(m->GetOutputBuffer(&OutputBuffer, &AliasesBufferLength));
+    PVOID pvOutputBuffer;
+    DWORD cbAliasesBufferLength;
+    RETURN_IF_FAILED(m->GetOutputBuffer(&pvOutputBuffer, &cbAliasesBufferLength));
 
+    size_t cbWritten;
     if (a->Unicode)
     {
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesWImpl((wchar_t*)ExeName,
-                                                                  ExeNameLength,
-                                                                  (wchar_t*)OutputBuffer,
-                                                                  &AliasesBufferLength));
+        const wchar_t* const pwsExeName = reinterpret_cast<wchar_t*>(pvExeName);
+        size_t const cchExeName = cbExeNameLength / sizeof(wchar_t);
+
+        wchar_t* const pwsAliasesBuffer = reinterpret_cast<wchar_t*>(pvOutputBuffer);
+        size_t const cchAliasesBuffer = cbAliasesBufferLength / sizeof(wchar_t);
+        size_t cchWritten;
+
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesWImpl(pwsExeName,
+                                                                  cchExeName,
+                                                                  pwsAliasesBuffer,
+                                                                  cchAliasesBuffer,
+                                                                  &cchWritten));
+
+        // We must set the reply length in bytes. Convert back from characters.
+        RETURN_IF_FAILED(SizeTMult(cchWritten, sizeof(wchar_t), &cbWritten));
     }
     else
     {
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesAImpl((char*)ExeName,
-                                                                  ExeNameLength,
-                                                                  (char*)OutputBuffer,
-                                                                  &AliasesBufferLength));
+        const char* const psExeName = reinterpret_cast<char*>(pvExeName);
+        size_t const cchExeName = cbExeNameLength;
+
+        char* const psAliasesBuffer = reinterpret_cast<char*>(pvOutputBuffer);
+        size_t const cchAliasesBuffer = cbAliasesBufferLength;
+        size_t cchWritten;
+
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesAImpl(psExeName,
+                                                                  cchExeName,
+                                                                  psAliasesBuffer,
+                                                                  cchAliasesBuffer,
+                                                                  &cchWritten));
+        cbWritten = cchWritten;
     }
 
-    a->AliasesBufferLength = AliasesBufferLength;
+    RETURN_IF_FAILED(SizeTToULong(cbWritten, &a->AliasesBufferLength));
 
     m->SetReplyInformation(a->AliasesBufferLength);
 
