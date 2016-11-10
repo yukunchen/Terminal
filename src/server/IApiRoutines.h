@@ -325,13 +325,13 @@ public:
                                          _In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                          _In_ size_t const cchExeNameBufferLength) = 0;
 
-    virtual HRESULT GetConsoleAliasesLengthAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
-                                                 _In_ ULONG const cbExeNameBufferLength,
-                                                 _Out_ ULONG* const pcbAliasesBufferRequired) = 0;
+    virtual HRESULT GetConsoleAliasesLengthAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
+                                                 _In_ size_t const cchExeNameBufferLength,
+                                                 _Out_ size_t* const pcchAliasesBufferRequired) = 0;
 
-    virtual HRESULT GetConsoleAliasesLengthWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                 _In_ ULONG const cbExeNameBufferLength,
-                                                 _Out_ ULONG* const pcbAliasesBufferRequired) = 0;
+    virtual HRESULT GetConsoleAliasesLengthWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                 _In_ size_t const cchExeNameBufferLength,
+                                                 _Out_ size_t* const pcchAliasesBufferRequired) = 0;
 
     virtual HRESULT GetConsoleAliasExesLengthAImpl(_Out_ ULONG* const pcbAliasExesBufferRequired) = 0;
 

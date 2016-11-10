@@ -715,8 +715,6 @@ HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const 
         *pwsTargetBuffer = L'\0';
     }
 
-    RETURN_HR_IF(E_INVALIDARG, cchTargetBufferLength > USHORT_MAX);
-
     // Convert size_ts into SHORTs for existing alias functions to use.
     USHORT cbExeNameBufferLength;
     RETURN_IF_FAILED(SizeTToUShort(cchExeNameBufferLength / sizeof(wchar_t), &cbExeNameBufferLength));
@@ -823,55 +821,93 @@ HRESULT ApiRoutines::GetConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength)
     return GetConsoleAliasWImplHelper(pwsSourceBuffer, cchSourceBufferLength, pwsTargetBuffer, cchTargetBufferLength, pcchTargetBufferWritten, pwsExeNameBuffer, cchExeNameBufferLength);
 }
 
-HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
-                                                  _In_ ULONG const cbExeNameBufferLength,
-                                                  _Out_ ULONG* const pcbAliasesBufferRequired)
+#define ALIASES_SEPERATOR L"="
+PCWSTR const pwszAliasesSeperator = ALIASES_SEPERATOR;
+size_t const cchAliasesSeperator = ARRAYSIZE(ALIASES_SEPERATOR);
+
+HRESULT GetConsoleAliasesLengthWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                           _In_ size_t const cchExeNameBufferLength,
+                                           _In_ bool const fCountInUnicode,
+                                           _In_ UINT const uiCodePage,
+                                           _Out_ size_t* const pcchAliasesBufferRequired)
 {
-    // TODO: MSFT: 9564943 - convert to smart pointers
-    WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
-    auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
+    // Ensure output variables are initialized
+    *pcchAliasesBufferRequired = 0;
 
-    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
-    ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
+    // Convert size_ts into SHORTs for existing alias functions to use.
+    USHORT cbExeNameBufferLength;
+    RETURN_IF_FAILED(SizeTToUShort(cchExeNameBufferLength / sizeof(wchar_t), &cbExeNameBufferLength));
 
-    RETURN_IF_FAILED(GetConsoleAliasesLengthWImpl(pwsUnicodeExeName,
-                                                  cbUnicodeExeNameLength,
-                                                  pcbAliasesBufferRequired));
-
-
-    // TODO: MSFT: 9564943 - this is terrible. We should be calculating based on the string, not estimating a divide by 2.
-    *pcbAliasesBufferRequired /= sizeof(wchar_t);
-
-    return S_OK;
-}
-
-HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                  _In_ ULONG const cbExeNameBufferLength,
-                                                  _Out_ ULONG* const pcbAliasesBufferRequired)
-{
-    // TODO: MSFT: 9564943 - (eliminate this one and the others and have it instead just fail on back conversion in the server level. use all size_t)
-    RETURN_HR_IF(E_INVALIDARG, cbExeNameBufferLength > USHORT_MAX);
-
-    LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
-
-    *pcbAliasesBufferRequired = 0;
-    PEXE_ALIAS_LIST const ExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, (USHORT)cbExeNameBufferLength, TRUE);
+    PEXE_ALIAS_LIST const ExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
     if (ExeAliasList)
     {
+        size_t cchNeeded = 0;
+
+        // Each of the aliases will be made up of the source, a seperator, the target, then a null character.
+        // They are of the form "Source=Target" when returned.
+
+        size_t cchNull = 1;
+        size_t cchSeperator = cchAliasesSeperator;
+
+        // If we're counting how much multibyte space will be needed, trial convert the seperator before we add.
+        if (!fCountInUnicode)
+        {
+            RETURN_IF_FAILED(GetALengthFromW(uiCodePage, pwszAliasesSeperator, cchSeperator, &cchSeperator));
+        }
+
         PLIST_ENTRY const ListHead = &ExeAliasList->AliasList;
         PLIST_ENTRY ListNext = ListHead->Flink;
         while (ListNext != ListHead)
         {
             PALIAS Alias = CONTAINING_RECORD(ListNext, ALIAS, ListLink);
-            *pcbAliasesBufferRequired += Alias->SourceLength + Alias->TargetLength + (2 * sizeof(wchar_t));    // + 2 is for = and term null
+
+            size_t cchSource = Alias->SourceLength / sizeof(wchar_t);
+            size_t cchTarget = Alias->TargetLength / sizeof(wchar_t);
+
+            // If we're counting how much multibyte space will be needed, trial convert the source and target strings before we add.
+            if (!fCountInUnicode)
+            {
+                RETURN_IF_FAILED(GetALengthFromW(uiCodePage, Alias->Source, cchSource, &cchSource));
+                RETURN_IF_FAILED(GetALengthFromW(uiCodePage, Alias->Target, cchTarget, &cchTarget));
+            }
+
+            cchNeeded += cchSource + cchSeperator + cchTarget + cchNull;
+
             ListNext = ListNext->Flink;
         }
+
+        *pcchAliasesBufferRequired = cchNeeded;
     }
 
     return S_OK;
+}
+
+HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
+                                                  _In_ size_t const cchExeNameBufferLength,
+                                                  _Out_ size_t* const pcchAliasesBufferRequired)
+{
+    UINT const uiCodePage = g_ciConsoleInformation.CP;
+
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    // Convert our input parameters to Unicode
+    wistd::unique_ptr<wchar_t[]> pwsExeName;
+    size_t cchExeName;
+    RETURN_IF_FAILED(ConvertToW(uiCodePage, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
+
+    return GetConsoleAliasesLengthWImplHelper(pwsExeName.get(), cchExeName, false, uiCodePage, pcchAliasesBufferRequired);
+}
+
+HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                  _In_ size_t const cchExeNameBufferLength,
+                                                  _Out_ size_t* const pcchAliasesBufferRequired)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+
+    return GetConsoleAliasesLengthWImplHelper(pwsExeNameBuffer, cchExeNameBufferLength, true, 0, pcchAliasesBufferRequired);
 }
 
 VOID ClearAliases()
