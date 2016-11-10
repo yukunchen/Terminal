@@ -327,9 +327,9 @@ class ApiRoutines : public IApiRoutines
                                          _In_ size_t const cchExeNameBufferLength,
                                          _Out_ size_t* const pcchAliasesBufferRequired);
 
-    HRESULT GetConsoleAliasExesLengthAImpl(_Out_ ULONG* const pcbAliasExesBufferRequired);
+    HRESULT GetConsoleAliasExesLengthAImpl(_Out_ size_t* const pcchAliasExesBufferRequired);
 
-    HRESULT GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pcbAliasExesBufferRequired);
+    HRESULT GetConsoleAliasExesLengthWImpl(_Out_ size_t* const pcchAliasExesBufferRequired);
 
     HRESULT GetConsoleAliasesAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
                                    _In_ ULONG const cbExeNameBufferLength,

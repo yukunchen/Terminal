@@ -846,7 +846,7 @@ HRESULT GetConsoleAliasesLengthWImplHelper(_In_reads_or_z_(cchExeNameBufferLengt
         // Each of the aliases will be made up of the source, a seperator, the target, then a null character.
         // They are of the form "Source=Target" when returned.
 
-        size_t cchNull = 1;
+        size_t const cchNull = 1;
         size_t cchSeperator = cchAliasesSeperator;
 
         // If we're counting how much multibyte space will be needed, trial convert the seperator before we add.
@@ -861,6 +861,7 @@ HRESULT GetConsoleAliasesLengthWImplHelper(_In_reads_or_z_(cchExeNameBufferLengt
         {
             PALIAS Alias = CONTAINING_RECORD(ListNext, ALIAS, ListLink);
 
+            // Alias stores lengths in bytes.
             size_t cchSource = Alias->SourceLength / sizeof(wchar_t);
             size_t cchTarget = Alias->TargetLength / sizeof(wchar_t);
 
@@ -1008,33 +1009,55 @@ HRESULT ApiRoutines::GetConsoleAliasesWImpl(_In_reads_(cbExeNameBufferLength) co
     return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(_Out_ ULONG* const pcbAliasExesBufferRequired)
+HRESULT GetConsoleAliasExesLengthImplHelper(_In_ bool const fCountInUnicode, _In_ UINT const uiCodePage, _Out_ size_t* const pcchAliasExesBufferRequired)
 {
-    RETURN_IF_FAILED(GetConsoleAliasExesLengthWImpl(pcbAliasExesBufferRequired));
+    // Ensure output variables are initialized
+    *pcchAliasExesBufferRequired = 0;
 
-    // TODO: MSFT: 9564943 - this is bad and should feel bad. we need a better way of calculating actual non-unicode length
-    *pcbAliasExesBufferRequired /= sizeof(WCHAR);
+    size_t cchNeeded = 0;
 
-    return S_OK;
-}
-
-HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pcbAliasExesBufferRequired)
-{
-    LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
-
-    *pcbAliasExesBufferRequired = 0;
+    // Each alias exe will be made up of the string payload and a null terminator.
+    size_t const cchNull = 1;
 
     PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ExeAliasList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
         PEXE_ALIAS_LIST const AliasList = CONTAINING_RECORD(ListNext, EXE_ALIAS_LIST, ListLink);
-        *pcbAliasExesBufferRequired += AliasList->ExeLength + (1 * sizeof(WCHAR));   // + 1 for term null
+
+        // AliasList stores lengths in bytes.
+        size_t cchExe = AliasList->ExeLength / sizeof(wchar_t);
+
+        // If we're counting how much multibyte space will be needed, trial convert the exe string before we add.
+        if (!fCountInUnicode)
+        {
+            RETURN_IF_FAILED(GetALengthFromW(uiCodePage, AliasList->ExeName, cchExe, &cchExe));
+        }
+
+        cchNeeded += cchExe + cchNull;
+
         ListNext = ListNext->Flink;
     }
 
+    *pcchAliasExesBufferRequired = cchNeeded;
+
     return S_OK;
+}
+
+HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(_Out_ size_t* const pcchAliasExesBufferRequired)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return GetConsoleAliasExesLengthImplHelper(false, g_ciConsoleInformation.CP, pcchAliasExesBufferRequired);
+}
+
+HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ size_t* const pcchAliasExesBufferRequired)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return GetConsoleAliasExesLengthImplHelper(true, 0, pcchAliasExesBufferRequired);
 }
 
 HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) char* const psAliasExesBuffer,

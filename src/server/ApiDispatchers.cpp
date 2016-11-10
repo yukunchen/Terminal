@@ -703,14 +703,23 @@ HRESULT ApiDispatchers::ServerGetConsoleAliasExesLength(_Inout_ CONSOLE_API_MSG 
     PCONSOLE_GETALIASEXESLENGTH_MSG const a = &m->u.consoleMsgL3.GetConsoleAliasExesLengthW;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliasExesLength, a->Unicode);
 
+    size_t cbAliasExesLength;
     if (a->Unicode)
     {
-        return m->_pApiRoutines->GetConsoleAliasExesLengthWImpl(&a->AliasExesLength);
+        size_t cchAliasExesLength;
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesLengthWImpl(&cchAliasExesLength));
+        cbAliasExesLength = cchAliasExesLength /= sizeof(wchar_t);
     }
     else
     {
-        return m->_pApiRoutines->GetConsoleAliasExesLengthAImpl(&a->AliasExesLength);
+        size_t cchAliasExesLength;
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesLengthAImpl(&cchAliasExesLength));
+        cbAliasExesLength = cchAliasExesLength;
     }
+
+    RETURN_IF_FAILED(SizeTToULong(cbAliasExesLength, &a->AliasExesLength));
+
+    return S_OK;
 }
 
 HRESULT ApiDispatchers::ServerGetConsoleAliases(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)

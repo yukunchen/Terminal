@@ -333,9 +333,9 @@ public:
                                                  _In_ size_t const cchExeNameBufferLength,
                                                  _Out_ size_t* const pcchAliasesBufferRequired) = 0;
 
-    virtual HRESULT GetConsoleAliasExesLengthAImpl(_Out_ ULONG* const pcbAliasExesBufferRequired) = 0;
+    virtual HRESULT GetConsoleAliasExesLengthAImpl(_Out_ size_t* const pcchAliasExesBufferRequired) = 0;
 
-    virtual HRESULT GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pcbAliasExesBufferRequired) = 0;
+    virtual HRESULT GetConsoleAliasExesLengthWImpl(_Out_ size_t* const pcchAliasExesBufferRequired) = 0;
 
     virtual HRESULT GetConsoleAliasesAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
                                            _In_ ULONG const cbExeNameBufferLength,
