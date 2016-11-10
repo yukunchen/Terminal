@@ -14,14 +14,14 @@
 
 #ifndef EXTERNAL_BUILD
 #include <ntverp.h>
-#endif 
+#endif
 #include <commctrl.h>
 #include "dialogs.h"
 #include "console.h"
 
 IDI_CONSOLE      ICON   "..\\..\\res\\console.ico"
 
-1 11 MSG00001.BIN
+#include "strid.rc"
 
 //
 //    Dialogs
