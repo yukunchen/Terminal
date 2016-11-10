@@ -347,11 +347,13 @@ public:
                                            _Out_writes_bytes_(*pcbAliasBufferLength) wchar_t* const pwsAliasBuffer,
                                            _Inout_ ULONG* const pcbAliasBufferLength) = 0;
 
-    virtual HRESULT GetConsoleAliasExesAImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) char* const psAliasExesBuffer,
-                                             _Inout_ ULONG* const pcbAliasExesBufferLength) = 0;
+    virtual HRESULT GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) char* const psAliasExesBuffer,
+                                             _In_ size_t const cchAliasExesBufferLength,
+                                             _Out_ size_t* const pcchAliasExesBufferWritten) = 0;
 
-    virtual HRESULT GetConsoleAliasExesWImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) wchar_t* const pwsAliasExesBuffer,
-                                             _Inout_ ULONG* const pcbAliasExesBufferLength) = 0;
+    virtual HRESULT GetConsoleAliasExesWImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) wchar_t* const pwsAliasExesBuffer,
+                                             _In_ size_t const cchAliasExesBufferLength,
+                                             _Out_ size_t* const pcchAliasExesBufferWritten) = 0;
 
 #pragma region CMDext Private API
 

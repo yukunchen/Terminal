@@ -615,7 +615,7 @@ HRESULT ApiDispatchers::ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
     ULONG cbOutputBufferSize;
     RETURN_IF_FAILED(m->GetOutputBuffer(&pvOutputBuffer, &cbOutputBufferSize));
 
-    size_t cchWritten;
+    size_t cbWritten;
     if (a->Unicode)
     {
         const wchar_t* const pwsInputExe = reinterpret_cast<wchar_t*>(pvInputExe);
@@ -625,6 +625,7 @@ HRESULT ApiDispatchers::ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
 
         wchar_t* const pwsOutputBuffer = reinterpret_cast<wchar_t*>(pvOutputBuffer);
         size_t const cchOutputBuffer = cbOutputBufferSize / sizeof(wchar_t);
+        size_t cchWritten;
 
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasWImpl(pwsInputSource,
                                                                 cchInputSource,
@@ -633,6 +634,9 @@ HRESULT ApiDispatchers::ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
                                                                 &cchWritten,
                                                                 pwsInputExe,
                                                                 cchInputExe));
+
+        // We must set the reply length in bytes. Convert back from characters and fit into structure size.
+        RETURN_IF_FAILED(SizeTMult(cchWritten, sizeof(wchar_t), &cbWritten));
     }
     else
     {
@@ -643,6 +647,7 @@ HRESULT ApiDispatchers::ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
 
         char* const psOutputBuffer = reinterpret_cast<char*>(pvOutputBuffer);
         size_t const cchOutputBuffer = cbOutputBufferSize;
+        size_t cchWritten;
 
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasAImpl(psInputSource,
                                                                 cchInputSource,
@@ -651,12 +656,11 @@ HRESULT ApiDispatchers::ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
                                                                 &cchWritten,
                                                                 psInputExe,
                                                                 cchInputExe));
+
+        cbWritten = cchWritten;
     }
 
-    // We must set the reply length in bytes. Convert back from characters and fit into structure size.
-    size_t cbWritten;
-    RETURN_IF_FAILED(SizeTMult(cchWritten, sizeof(wchar_t), &cbWritten));
-    
+    // We must return the byte length of the written data in the message
     RETURN_IF_FAILED(SizeTToUShort(cbWritten, &a->TargetLength));
 
     m->SetReplyInformation(a->TargetLength);
@@ -762,22 +766,36 @@ HRESULT ApiDispatchers::ServerGetConsoleAliasExes(_Inout_ CONSOLE_API_MSG * cons
     CONSOLE_GETALIASEXES_MSG* const a = &m->u.consoleMsgL3.GetConsoleAliasExesW;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleAliasExes, a->Unicode);
 
-    PVOID Buffer;
-    DWORD AliasExesBufferLength;
-    RETURN_IF_FAILED(m->GetOutputBuffer(&Buffer, &AliasExesBufferLength));
+    PVOID pvBuffer;
+    ULONG cbAliasExesBufferLength;
+    RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbAliasExesBufferLength));
 
+    size_t cbWritten;
     if (a->Unicode)
     {
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesWImpl((wchar_t*)Buffer,
-                                                                    &AliasExesBufferLength));
+        wchar_t* const pwsBuffer = reinterpret_cast<wchar_t*>(pvBuffer);
+        size_t const cchBuffer = cbAliasExesBufferLength / sizeof(wchar_t);
+        size_t cchWritten;
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesWImpl(pwsBuffer,
+                                                                    cchBuffer,
+                                                                    &cchWritten));
+
+        RETURN_IF_FAILED(SizeTMult(cchWritten, sizeof(wchar_t), &cbWritten));
     }
     else
     {
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesAImpl((char*)Buffer,
-                                                                    &AliasExesBufferLength));
+        char* const psBuffer = reinterpret_cast<char*>(pvBuffer);
+        size_t const cchBuffer = cbAliasExesBufferLength / sizeof(wchar_t);
+        size_t cchWritten;
+        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesAImpl(psBuffer,
+                                                                    cchBuffer,
+                                                                    &cchWritten));
+
+        cbWritten = cchWritten;
     }
 
-    a->AliasExesBufferLength = AliasExesBufferLength;
+    // We must return the byte length of the written data in the message
+    RETURN_IF_FAILED(SizeTToULong(cbWritten, &a->AliasExesBufferLength));
 
     m->SetReplyInformation(a->AliasExesBufferLength);
 

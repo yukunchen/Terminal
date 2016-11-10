@@ -341,11 +341,13 @@ class ApiRoutines : public IApiRoutines
                                    _Out_writes_bytes_(*pcbAliasBufferLength) wchar_t* const pwsAliasBuffer,
                                    _Inout_ ULONG* const pcbAliasBufferLength);
 
-    HRESULT GetConsoleAliasExesAImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) char* const psAliasExesBuffer,
-                                     _Inout_ ULONG* const pcbAliasExesBufferLength);
+    HRESULT GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_) char* const psAliasExesBuffer,
+                                     _In_ size_t const cchAliasExesBufferLength,
+                                     _Out_ size_t* const pcchAliasExesBufferWritten);
 
-    HRESULT GetConsoleAliasExesWImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) wchar_t* const pwsAliasExesBuffer,
-                                     _Inout_ ULONG* const pcbAliasExesBufferLength);
+    HRESULT GetConsoleAliasExesWImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_) wchar_t* const pwsAliasExesBuffer,
+                                     _In_ size_t const cchAliasExesBufferLength,
+                                     _Out_ size_t* const pcchAliasExesBufferWritten);
 
 #pragma region CMDext Private API
 

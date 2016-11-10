@@ -1060,62 +1060,100 @@ HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ size_t* const pcchAlia
     return GetConsoleAliasExesLengthImplHelper(true, 0, pcchAliasExesBufferRequired);
 }
 
-HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) char* const psAliasExesBuffer,
-                                              _Inout_ ULONG* const pcbAliasExesBufferLength)
+HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLength, *pcchAliasExesBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsAliasExesBuffer,
+                                       _In_ size_t const cchAliasExesBufferLength,
+                                       _Out_ size_t* const pcchAliasExesBufferWrittenOrNeeded)
 {
-    // TODO: MSFT 9564943 - This is a guess at the buffer length which should be corrected in the linked work item. Not an actual WCHAR size necessarily.
-    // TODO: MSFT 9564943 - Also correct smart pointer usage.
-    ULONG cbUnicodeAliasExesBufferLength = *pcbAliasExesBufferLength * sizeof(wchar_t);
-    WCHAR* const pwsUnicodeAliasExesBuffer = new WCHAR[cbUnicodeAliasExesBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsUnicodeAliasExesBuffer);
-    auto UnicodeAliasExesBufferCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeAliasExesBuffer; });
-
-    RETURN_IF_FAILED(GetConsoleAliasExesWImpl(pwsUnicodeAliasExesBuffer,
-                                              &cbUnicodeAliasExesBufferLength));
-
-    // TODO: MSFT: 9564943 - fix this to a less crappy conversion and do error handling
-#pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
-    *pcbAliasExesBufferLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
-                                                     pwsUnicodeAliasExesBuffer,
-                                                     cbUnicodeAliasExesBufferLength / sizeof(WCHAR),
-                                                     psAliasExesBuffer,
-                                                     *pcbAliasExesBufferLength);
-
-    return S_OK;
-}
-
-HRESULT ApiRoutines::GetConsoleAliasExesWImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) wchar_t* const pwsAliasExesBuffer,
-                                              _Inout_ ULONG* const pcbAliasExesBufferLength)
-{
-    LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+    // Ensure output variables are initialized.
+    *pcchAliasExesBufferWrittenOrNeeded = 0;
+    if (nullptr != pwsAliasExesBuffer)
+    {
+        *pwsAliasExesBuffer = L'\0';
+    }
 
     LPWSTR AliasExesBufferPtrW = pwsAliasExesBuffer;
-
-    ULONG const cbOriginalAliasExesBufferLength = *pcbAliasExesBufferLength;
-    *pcbAliasExesBufferLength = 0;
+    size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
 
     PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ExeAliasList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
         PEXE_ALIAS_LIST const AliasList = CONTAINING_RECORD(ListNext, EXE_ALIAS_LIST, ListLink);
-        if ((*pcbAliasExesBufferLength + AliasList->ExeLength + (1 * sizeof(WCHAR))) <= cbOriginalAliasExesBufferLength)
+
+        // AliasList stores length in bytes. Add 1 for null terminator.
+        size_t cchNeeded = (AliasList->ExeLength / sizeof(wchar_t)) + 1;
+
+        // If we can return the data, attempt to do so until we're done or it overflows.
+        // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
+        if (nullptr != pwsAliasExesBuffer)
         {
-            memmove(AliasExesBufferPtrW, AliasList->ExeName, AliasList->ExeLength);
-            AliasExesBufferPtrW += AliasList->ExeLength / sizeof(WCHAR);
-            *AliasExesBufferPtrW++ = (WCHAR)'\0';
-            *pcbAliasExesBufferLength += AliasList->ExeLength + (1 * sizeof(WCHAR)); // + 1 is term null
+            if ((cchTotalLength + cchNeeded) <= cchAliasExesBufferLength)
+            {
+                RETURN_IF_FAILED(StringCchCopyNW(AliasExesBufferPtrW, (cchAliasExesBufferLength - cchTotalLength), AliasList->ExeName, cchNeeded));
+                AliasExesBufferPtrW += cchNeeded;
+            }
+            else
+            {
+                return HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW);
+            }
         }
-        else
-        {
-            return HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW);
-        }
+
+        cchTotalLength += cchNeeded;
 
         ListNext = ListNext->Flink;
     }
 
+    *pcchAliasExesBufferWrittenOrNeeded = cchTotalLength;
+
     return S_OK;
+}
+
+HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_) char* const psAliasExesBuffer,
+                                              _In_ size_t const cchAliasExesBufferLength,
+                                              _Out_ size_t* const pcchAliasExesBufferWritten)
+{
+    UINT const uiCodePage = g_ciConsoleInformation.CP;
+
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    // Figure our how big our temporary Unicode buffer must be to retrieve output
+    size_t cchAliasExesBufferNeeded;
+    RETURN_IF_FAILED(GetConsoleAliasExesWImplHelper(nullptr, 0, &cchAliasExesBufferNeeded));
+
+    // If there's nothing to get, then simply return.
+    RETURN_HR_IF(S_OK, 0 == cchAliasExesBufferNeeded);
+
+    // Allocate a unicode buffer of the right size.
+    wistd::unique_ptr<wchar_t[]> pwsTarget = wil::make_unique_nothrow<wchar_t[]>(cchAliasExesBufferNeeded);
+    RETURN_IF_NULL_ALLOC(pwsTarget);
+
+    // Call the Unicode version of this method
+    size_t cchAliasExesBufferWritten;
+    RETURN_IF_FAILED(GetConsoleAliasExesWImplHelper(pwsTarget.get(), cchAliasExesBufferNeeded, &cchAliasExesBufferWritten));
+
+    // Convert result to A
+    wistd::unique_ptr<char[]> psConverted;
+    size_t cchConverted;
+    RETURN_IF_FAILED(ConvertToA(uiCodePage, pwsTarget.get(), cchAliasExesBufferWritten, psConverted, cchConverted));
+
+    // Copy safely to the output buffer
+    RETURN_IF_FAILED(StringCchCopyNA(psAliasExesBuffer, cchAliasExesBufferLength, psConverted.get(), cchConverted));
+
+    // And return the size copied.
+    *pcchAliasExesBufferWritten = cchConverted;
+
+    return S_OK;
+}
+
+HRESULT ApiRoutines::GetConsoleAliasExesWImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_)  wchar_t* const pwsAliasExesBuffer,
+                                              _In_ size_t const cchAliasExesBufferLength,
+                                              _Out_ size_t* const pcchAliasExesBufferWritten)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return GetConsoleAliasExesWImplHelper(pwsAliasExesBuffer, cchAliasExesBufferLength, pcchAliasExesBufferWritten);
 }
 
 #define MAX_ARGS 9
