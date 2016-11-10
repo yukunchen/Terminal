@@ -685,7 +685,7 @@ HRESULT ApiDispatchers::ServerGetConsoleAliasesLength(_Inout_ CONSOLE_API_MSG * 
         size_t cchAliasesLength;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasesLengthWImpl(pwsExeName, cchExeName, &cchAliasesLength));
 
-        cbAliasesLength = cchAliasesLength / sizeof(wchar_t);
+        RETURN_IF_FAILED(SizeTMult(cchAliasesLength, sizeof(wchar_t), &cbAliasesLength));
     }
     else
     {
@@ -806,7 +806,7 @@ HRESULT ApiDispatchers::ServerGetConsoleAliasExes(_Inout_ CONSOLE_API_MSG * cons
     else
     {
         char* const psBuffer = reinterpret_cast<char*>(pvBuffer);
-        size_t const cchBuffer = cbAliasExesBufferLength / sizeof(wchar_t);
+        size_t const cchBuffer = cbAliasExesBufferLength;
         size_t cchWritten;
         RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasExesAImpl(psBuffer,
                                                                     cchBuffer,

@@ -827,7 +827,7 @@ HRESULT ApiRoutines::GetConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength)
 
 #define ALIASES_SEPERATOR L"="
 PCWSTR const pwszAliasesSeperator = ALIASES_SEPERATOR;
-size_t const cchAliasesSeperator = ARRAYSIZE(ALIASES_SEPERATOR);
+size_t const cchAliasesSeperator = ARRAYSIZE(ALIASES_SEPERATOR) / sizeof(wchar_t);
 
 HRESULT GetConsoleAliasesLengthWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                            _In_ size_t const cchExeNameBufferLength,
@@ -1059,7 +1059,10 @@ HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_or_z_(cchExeNameBufferLeng
     RETURN_IF_FAILED(ConvertToA(uiCodePage, pwsAlias.get(), cchAliasBufferWritten, psConverted, cchConverted));
 
     // Copy safely to the output buffer
-    RETURN_IF_FAILED(StringCchCopyNA(psAliasBuffer, cchAliasBufferLength, psConverted.get(), cchConverted));
+    // - Aliases are a series of null terminated strings. We cannot use a SafeString function to copy.
+    //   So instead, validate and use raw memory copy.
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchConverted > cchAliasBufferLength);
+    memcpy_s(psAliasBuffer, cchAliasBufferLength, psConverted.get(), cchConverted);
 
     // And return the size copied.
     *pcchAliasBufferWritten = cchConverted;
@@ -1144,6 +1147,8 @@ HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLen
     LPWSTR AliasExesBufferPtrW = pwsAliasExesBuffer;
     size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
 
+    size_t const cchNull = 1;
+
     PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ExeAliasList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
@@ -1151,7 +1156,9 @@ HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLen
         PEXE_ALIAS_LIST const AliasList = CONTAINING_RECORD(ListNext, EXE_ALIAS_LIST, ListLink);
 
         // AliasList stores length in bytes. Add 1 for null terminator.
-        size_t const cchNeeded = (AliasList->ExeLength / sizeof(wchar_t)) + 1;
+        size_t const cchExe = (AliasList->ExeLength) / sizeof(wchar_t);
+
+        size_t const cchNeeded = cchExe + cchNull;
 
         // If we can return the data, attempt to do so until we're done or it overflows.
         // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
@@ -1159,7 +1166,7 @@ HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLen
         {
             if ((cchTotalLength + cchNeeded) <= cchAliasExesBufferLength)
             {
-                RETURN_IF_FAILED(StringCchCopyNW(AliasExesBufferPtrW, (cchAliasExesBufferLength - cchTotalLength), AliasList->ExeName, cchNeeded));
+                RETURN_IF_FAILED(StringCchCopyNW(AliasExesBufferPtrW, (cchAliasExesBufferLength - cchTotalLength), AliasList->ExeName, cchExe));
                 AliasExesBufferPtrW += cchNeeded;
             }
             else
@@ -1212,7 +1219,10 @@ HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBuffer
     RETURN_IF_FAILED(ConvertToA(uiCodePage, pwsTarget.get(), cchAliasExesBufferWritten, psConverted, cchConverted));
 
     // Copy safely to the output buffer
-    RETURN_IF_FAILED(StringCchCopyNA(psAliasExesBuffer, cchAliasExesBufferLength, psConverted.get(), cchConverted));
+    // - AliasExes are a series of null terminated strings. We cannot use a SafeString function to copy.
+    //   So instead, validate and use raw memory copy.
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchConverted > cchAliasExesBufferLength);
+    memcpy_s(psAliasExesBuffer, cchAliasExesBufferLength, psConverted.get(), cchConverted);
 
     // And return the size copied.
     *pcchAliasExesBufferWritten = cchConverted;
@@ -1645,10 +1655,13 @@ HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLeng
         
         size_t cchTotalLength = 0;
 
+        size_t cchNull = 1;
+
         for (SHORT i = 0; i < CommandHistory->NumberOfCommands; i++)
         {
             // Command stores length in bytes. Add 1 for null terminator.
-            size_t const cchNeeded = (CommandHistory->Commands[i]->CommandLength / sizeof(wchar_t)) + 1;
+            size_t const cchCommand = CommandHistory->Commands[i]->CommandLength / sizeof(wchar_t);
+            size_t const cchNeeded = cchCommand + cchNull;
 
             // If we can return the data, attempt to do so until we're done or it overflows.
             // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
@@ -1659,7 +1672,7 @@ HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLeng
                     RETURN_IF_FAILED(StringCchCopyNW(CommandBufferW,
                                                      cchCommandHistoryBufferLength - cchTotalLength,
                                                      CommandHistory->Commands[i]->Command,
-                                                     cchNeeded));
+                                                     cchCommand));
                     CommandBufferW += cchNeeded;
                 }
                 else
@@ -1718,7 +1731,10 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBuf
     RETURN_IF_FAILED(ConvertToA(uiCodePage, pwsCommand.get(), cchCommandBufferWritten, psConverted, cchConverted));
 
     // Copy safely to output buffer
-    RETURN_IF_FAILED(StringCchCopyNA(psCommandHistoryBuffer, cchCommandHistoryBufferLength, psConverted.get(), cchConverted));
+    // - CommandHistory are a series of null terminated strings. We cannot use a SafeString function to copy.
+    //   So instead, validate and use raw memory copy.
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchConverted > cchCommandHistoryBufferLength);
+    memcpy_s(psCommandHistoryBuffer, cchCommandHistoryBufferLength, psConverted.get(), cchConverted);
 
     // And return the size copied.
     *pcchCommandHistoryBufferWritten = cchConverted;
