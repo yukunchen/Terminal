@@ -721,31 +721,21 @@ HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const 
     USHORT cbSourceBufferLength;
     RETURN_IF_FAILED(GetUShortByteCount(cchSourceBufferLength, &cbSourceBufferLength));
     
-    PEXE_ALIAS_LIST const ExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
-    if (ExeAliasList != nullptr)
-    {
-        PALIAS const Alias = FindAlias(ExeAliasList, pwsSourceBuffer, cbSourceBufferLength);
-        if (Alias != nullptr)
-        {
-            // TargetLength is a byte count.
-            size_t cchTargetNeeded = (Alias->TargetLength / sizeof(wchar_t)) + 1; // +1 to leave room for null terminator.
+    PEXE_ALIAS_LIST const pExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_NOT_FOUND), nullptr == pExeAliasList);
 
-            if (nullptr != pwsTargetBuffer)
-            {
-                RETURN_IF_FAILED(StringCchCopyNW(pwsTargetBuffer, cchTargetBufferLength, Alias->Target, Alias->TargetLength));
-            }
+    PALIAS const pAlias = FindAlias(pExeAliasList, pwsSourceBuffer, cbSourceBufferLength);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_NOT_FOUND), nullptr == pAlias);
 
-            *pcchTargetBufferWrittenOrNeeded = cchTargetNeeded;
-        }
-        else
-        {
-            return HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
-        }
-    }
-    else
+    // TargetLength is a byte count.
+    size_t cchTargetNeeded = (pAlias->TargetLength / sizeof(wchar_t)) + 1; // +1 to leave room for null terminator.
+
+    if (nullptr != pwsTargetBuffer)
     {
-        return HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
+        RETURN_IF_FAILED(StringCchCopyNW(pwsTargetBuffer, cchTargetBufferLength, pAlias->Target, pAlias->TargetLength));
     }
+
+    *pcchTargetBufferWrittenOrNeeded = cchTargetNeeded;
 
     return S_OK;
 }
@@ -953,8 +943,8 @@ HRESULT GetConsoleAliasesWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) con
     USHORT cbExeNameBufferLength;
     RETURN_IF_FAILED(GetUShortByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
 
-    PEXE_ALIAS_LIST const ExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
-    if (nullptr != ExeAliasList)
+    PEXE_ALIAS_LIST const pExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
+    if (nullptr != pExeAliasList)
     {
         LPWSTR AliasesBufferPtrW = pwsAliasBuffer;
         size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
@@ -964,7 +954,7 @@ HRESULT GetConsoleAliasesWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) con
 
         size_t const cchNull = 1;
 
-        PLIST_ENTRY const ListHead = &ExeAliasList->AliasList;
+        PLIST_ENTRY const ListHead = &pExeAliasList->AliasList;
         PLIST_ENTRY ListNext = ListHead->Flink;
         while (ListNext != ListHead)
         {
@@ -980,30 +970,25 @@ HRESULT GetConsoleAliasesWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) con
             // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
             if (nullptr != pwsAliasBuffer)
             {
-                if ((cchTotalLength + cchNeeded) <= cchAliasBufferLength)
-                {
-                    size_t cchAliasBufferRemaining = cchAliasBufferLength - cchTotalLength;
+                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), (cchTotalLength + cchNeeded) > cchAliasBufferLength);
 
-                    RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, Alias->Source, cchSource));
-                    cchAliasBufferRemaining -= cchSource;
-                    AliasesBufferPtrW += cchSource;
+                size_t cchAliasBufferRemaining = cchAliasBufferLength - cchTotalLength;
 
-                    RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, pwszAliasesSeperator, cchAliasesSeperator));
-                    cchAliasBufferRemaining -= cchAliasesSeperator;
-                    AliasesBufferPtrW += cchAliasesSeperator;
+                RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, Alias->Source, cchSource));
+                cchAliasBufferRemaining -= cchSource;
+                AliasesBufferPtrW += cchSource;
 
-                    RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, Alias->Target, cchTarget));
-                    cchAliasBufferRemaining -= cchTarget;
-                    AliasesBufferPtrW += cchTarget;
+                RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, pwszAliasesSeperator, cchAliasesSeperator));
+                cchAliasBufferRemaining -= cchAliasesSeperator;
+                AliasesBufferPtrW += cchAliasesSeperator;
 
-                    // StringCchCopyNW ensures that the destination string is null terminated, so simply advance the pointer.
-                    cchAliasBufferRemaining--;
-                    AliasesBufferPtrW += cchNull;
-                }
-                else
-                {
-                    return HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW);
-                }
+                RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, Alias->Target, cchTarget));
+                cchAliasBufferRemaining -= cchTarget;
+                AliasesBufferPtrW += cchTarget;
+
+                // StringCchCopyNW ensures that the destination string is null terminated, so simply advance the pointer.
+                cchAliasBufferRemaining--;
+                AliasesBufferPtrW += cchNull;
             }
 
             cchTotalLength += cchNeeded;
@@ -1164,15 +1149,10 @@ HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLen
         // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
         if (nullptr != pwsAliasExesBuffer)
         {
-            if ((cchTotalLength + cchNeeded) <= cchAliasExesBufferLength)
-            {
-                RETURN_IF_FAILED(StringCchCopyNW(AliasExesBufferPtrW, (cchAliasExesBufferLength - cchTotalLength), AliasList->ExeName, cchExe));
-                AliasExesBufferPtrW += cchNeeded;
-            }
-            else
-            {
-                return HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW);
-            }
+            RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), (cchTotalLength + cchNeeded) > cchAliasExesBufferLength);
+
+            RETURN_IF_FAILED(StringCchCopyNW(AliasExesBufferPtrW, (cchAliasExesBufferLength - cchTotalLength), AliasList->ExeName, cchExe));
+            AliasExesBufferPtrW += cchNeeded;
         }
 
         cchTotalLength += cchNeeded;
@@ -1667,18 +1647,13 @@ HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLeng
             // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
             if (nullptr != pwsCommandHistoryBuffer)
             {
-                if ((cchTotalLength + cchNeeded) <= cchCommandHistoryBufferLength)
-                {
-                    RETURN_IF_FAILED(StringCchCopyNW(CommandBufferW,
-                                                     cchCommandHistoryBufferLength - cchTotalLength,
-                                                     CommandHistory->Commands[i]->Command,
-                                                     cchCommand));
-                    CommandBufferW += cchNeeded;
-                }
-                else
-                {
-                    return HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW);
-                }
+                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), (cchTotalLength + cchNeeded) > cchCommandHistoryBufferLength);
+
+                RETURN_IF_FAILED(StringCchCopyNW(CommandBufferW,
+                                                    cchCommandHistoryBufferLength - cchTotalLength,
+                                                    CommandHistory->Commands[i]->Command,
+                                                    cchCommand));
+                CommandBufferW += cchNeeded;
             }
 
             cchTotalLength += cchNeeded;
