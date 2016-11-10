@@ -353,37 +353,39 @@ class ApiRoutines : public IApiRoutines
 
 #pragma region CMDext Private API
 
-    HRESULT ExpungeConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
-                                              _In_ ULONG const cbExeNameBufferLength);
+    HRESULT ExpungeConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
+                                              _In_ size_t const cchExeNameBufferLength);
 
-    HRESULT ExpungeConsoleCommandHistoryWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                              _In_ ULONG const cbExeNameBufferLength);
+    HRESULT ExpungeConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                              _In_ size_t const cchExeNameBufferLength);
 
-    HRESULT SetConsoleNumberOfCommandsAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
-                                            _In_ ULONG const cbExeNameBufferLength,
-                                            _In_ ULONG const NumberOfCommands);
+    HRESULT SetConsoleNumberOfCommandsAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
+                                            _In_ size_t const cchExeNameBufferLength,
+                                            _In_ size_t const NumberOfCommands);
 
-    HRESULT SetConsoleNumberOfCommandsWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                            _In_ ULONG const cbExeNameBufferLength,
-                                            _In_ ULONG const NumberOfCommands);
+    HRESULT SetConsoleNumberOfCommandsWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                            _In_ size_t const cchExeNameBufferLength,
+                                            _In_ size_t const NumberOfCommands);
 
-    HRESULT GetConsoleCommandHistoryLengthAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
-                                                _In_ ULONG const cbExeNameBufferLength,
-                                                _Out_ ULONG* const pCommandHistoryLength);
+    HRESULT GetConsoleCommandHistoryLengthAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
+                                                _In_ size_t const cchExeNameBufferLength,
+                                                _Out_ size_t* const pcchCommandHistoryLength);
 
-    HRESULT GetConsoleCommandHistoryLengthWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                _In_ ULONG const cbExeNameBufferLength,
-                                                _Out_ ULONG* const pCommandHistoryLength);
+    HRESULT GetConsoleCommandHistoryLengthWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                _In_ size_t const cchExeNameBufferLength,
+                                                _Out_ size_t* const pcchCommandHistoryLength);
 
-    HRESULT GetConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
-                                          _In_ ULONG const cbExeNameBufferLength,
-                                          _Out_writes_bytes_(*pcbCommandHistoryBufferLength) char* const psCommandHistoryBuffer,
-                                          _Inout_ ULONG* const pcbCommandHistoryBufferLength);
+    HRESULT GetConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
+                                          _In_ size_t const cchExeNameBufferLength,
+                                          _Out_writes_to_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWritten) _Always_(_Post_z_) char* const psCommandHistoryBuffer,
+                                          _In_ size_t const cchCommandHistoryBufferLength,
+                                          _Out_ size_t* const pcchCommandHistoryBufferWritten);
 
-    HRESULT GetConsoleCommandHistoryWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                          _In_ ULONG const cbExeNameBufferLength,
-                                          _Out_writes_bytes_(*pcbCommandHistoryBufferLength) wchar_t* const pwsCommandHistoryBuffer,
-                                          _Inout_ ULONG* const pcbCommandHistoryBufferLength);
+    HRESULT GetConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                          _In_ size_t const cchExeNameBufferLength,
+                                          _Out_writes_to_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWritten) _Always_(_Post_z_) wchar_t* const pwsCommandHistoryBuffer,
+                                          _In_ size_t const cchCommandHistoryBufferLength,
+                                          _Out_ size_t* const pcchCommandHistoryBufferWritten);
 
 #pragma endregion
 

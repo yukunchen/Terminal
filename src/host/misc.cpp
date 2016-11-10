@@ -169,6 +169,23 @@ HRESULT GetUShortByteCount(_In_ size_t cchUnicode,
 }
 
 // Routine Description:
+// - Takes a unicode count of characters (in a size_t) and converts it to a byte count that
+//   fits into a DWORD for compatibility with existing Alias functions within cmdline.cpp.
+// Arguments:
+// - cchUnicode - Count of UCS-2 Unicode characters (wide characters)
+// - pcb - Pointer to result DWORD that will hold the equivalent byte count, if it fit.
+// Return Value:
+// - S_OK if succeeded or appropriate safe math failure code from multiplication and type conversion.
+HRESULT GetDwordByteCount(_In_ size_t cchUnicode,
+                          _Out_ DWORD* const pcb)
+{
+    size_t cbUnicode;
+    RETURN_IF_FAILED(SizeTMult(cchUnicode, sizeof(wchar_t), &cbUnicode));
+    RETURN_IF_FAILED(SizeTToDWord(cbUnicode, pcb));
+    return S_OK;
+}
+
+// Routine Description:
 // - Converts unicode characters to ANSI given a destination codepage
 // Arguments:
 // - uiCodePage - codepage for use in conversion
