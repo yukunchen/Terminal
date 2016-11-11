@@ -607,69 +607,87 @@ void FreeAliasBuffers()
     }
 }
 
-HRESULT ApiRoutines::AddConsoleAliasAImpl(_In_reads_bytes_(cbSourceBufferLength) const char* const psSourceBuffer,
-                                          _In_ ULONG const cbSourceBufferLength,
-                                          _In_reads_bytes_(cbTargetBufferLength) const char* const psTargetBuffer,
-                                          _In_ ULONG const cbTargetBufferLength,
-                                          _In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
-                                          _In_ ULONG const cbExeNameBufferLength)
+// Routine Description:
+// - Adds a command line alias to the global set.
+// - Converts and calls the W version of this function.
+// Arguments:
+// - psSourceBuffer - The shorthand/alias or source buffer to set
+// - cchSourceBufferLength - Length in characters of source buffer
+// - psTargetBuffer - The destination/expansion or target buffer to set
+// - cchTargetBufferLength - Length in characters of target buffer
+// - psExeNameBuffer - The client EXE application attached to the host to whom this substitution will apply
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::AddConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength) const char* const psSourceBuffer,
+                                          _In_ size_t const cchSourceBufferLength,
+                                          _In_reads_or_z_(cchTargetBufferLength) const char* const psTargetBuffer,
+                                          _In_ size_t const cchTargetBufferLength,
+                                          _In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
+                                          _In_ size_t const cchExeNameBufferLength)
 {
-    // TODO: MSFT: 9564943 - convert to smart pointers
-    WCHAR* const pwsSource = new WCHAR[cbSourceBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsSource);
-    auto SourceCleanup = wil::ScopeExit([&] { delete[] pwsSource; });
+    UINT const uiCodePage = g_ciConsoleInformation.CP;
 
-    WCHAR* const pwsTarget = new WCHAR[cbTargetBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsTarget);
-    auto TargetCleanup = wil::ScopeExit([&] { delete[] pwsTarget; });
+    wistd::unique_ptr<wchar_t[]> pwsSource;
+    size_t cchSource;
+    RETURN_IF_FAILED(ConvertToW(uiCodePage, psSourceBuffer, cchSourceBufferLength, pwsSource, cchSource));
 
-    WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
-    auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
+    wistd::unique_ptr<wchar_t[]> pwsTarget;
+    size_t cchTarget;
+    RETURN_IF_FAILED(ConvertToW(uiCodePage, psTargetBuffer, cchTargetBufferLength, pwsTarget, cchTarget));
 
-    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
-    ULONG const cchSourceLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psSourceBuffer, cbSourceBufferLength, pwsSource, cbSourceBufferLength);
-    ULONG const cbSourceLength = cchSourceLength * sizeof(wchar_t);
-    ULONG const cchTargetLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psTargetBuffer, cbTargetBufferLength, pwsTarget, cbTargetBufferLength);
-    ULONG const cbTargetLength = cchTargetLength * sizeof(wchar_t);
-    ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
+    wistd::unique_ptr<wchar_t[]> pwsExeName;
+    size_t cchExeName;
+    RETURN_IF_FAILED(ConvertToW(uiCodePage, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
 
-    return AddConsoleAliasWImpl(pwsSource, cbSourceLength, pwsTarget, cbTargetLength, pwsUnicodeExeName, cbUnicodeExeNameLength);
+    return AddConsoleAliasWImpl(pwsSource.get(), cchSource, pwsTarget.get(), cchTarget, pwsExeName.get(), cchExeName);
 }
 
 // Routine Description:
-// - This routine adds a command line alias to the global set.
+// - Adds a command line alias to the global set.
 // Arguments:
-// - m - message containing api parameters
-// - ReplyStatus - Indicates whether to reply to the dll port.
+// - pwsSourceBuffer - The shorthand/alias or source buffer to set
+// - cchSourceBufferLength - Length in characters of source buffer
+// - pwsTargetBuffer - The destination/expansion or target buffer to set
+// - cchTargetBufferLength - Length in characters of target buffer
+// - pwsExeNameBuffer - The client EXE application attached to the host to whom this substitution will apply
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
 // Return Value:
-HRESULT ApiRoutines::AddConsoleAliasWImpl(_In_reads_bytes_(cbSourceBufferLength) const wchar_t* const pwsSourceBuffer,
-                                          _In_ ULONG const cbSourceBufferLength,
-                                          _In_reads_bytes_(cbTargetBufferLength) const wchar_t* const pwsTargetBuffer,
-                                          _In_ ULONG const cbTargetBufferLength,
-                                          _In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                          _In_ ULONG const cbExeNameBufferLength)
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::AddConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
+                                          _In_ size_t const cchSourceBufferLength,
+                                          _In_reads_or_z_(cchTargetBufferLength) const wchar_t* const pwsTargetBuffer,
+                                          _In_ size_t const cchTargetBufferLength,
+                                          _In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                          _In_ size_t const cchExeNameBufferLength)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    RETURN_HR_IF(E_INVALIDARG, cbSourceBufferLength == 0);
+    RETURN_HR_IF(E_INVALIDARG, cchSourceBufferLength == 0);
+
+    // Convert size_ts into SHORTs for existing alias functions to use.
+    USHORT cbExeNameBufferLength;
+    RETURN_IF_FAILED(GetUShortByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
+    USHORT cbSourceBufferLength;
+    RETURN_IF_FAILED(GetUShortByteCount(cchSourceBufferLength, &cbSourceBufferLength));
+    USHORT cbTargetBufferLength;
+    RETURN_IF_FAILED(GetUShortByteCount(cchTargetBufferLength, &cbTargetBufferLength));
 
     // find specified exe.  if it's not there, add it if we're not removing an alias.
-    PEXE_ALIAS_LIST ExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, (USHORT)cbExeNameBufferLength, TRUE);
+    PEXE_ALIAS_LIST ExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
     if (ExeAliasList != nullptr)
     {
-        PALIAS Alias = FindAlias(ExeAliasList, pwsSourceBuffer, (USHORT)cbSourceBufferLength);
+        PALIAS Alias = FindAlias(ExeAliasList, pwsSourceBuffer, cbSourceBufferLength);
         if (cbTargetBufferLength > 0)
         {
             if (Alias != nullptr)
             {
-                RETURN_NTSTATUS(ReplaceAlias(Alias, pwsTargetBuffer, (USHORT)cbTargetBufferLength));
+                RETURN_NTSTATUS(ReplaceAlias(Alias, pwsTargetBuffer, cbTargetBufferLength));
             }
             else
             {
-                RETURN_NTSTATUS(AddAlias(ExeAliasList, pwsSourceBuffer, (USHORT)cbSourceBufferLength, pwsTargetBuffer, (USHORT)cbTargetBufferLength));
+                RETURN_NTSTATUS(AddAlias(ExeAliasList, pwsSourceBuffer, cbSourceBufferLength, pwsTargetBuffer, cbTargetBufferLength));
             }
         }
         else
@@ -684,10 +702,10 @@ HRESULT ApiRoutines::AddConsoleAliasWImpl(_In_reads_bytes_(cbSourceBufferLength)
     {
         if (cbTargetBufferLength > 0)
         {
-            ExeAliasList = AddExeAliasList((LPVOID)pwsExeNameBuffer, (USHORT)cbExeNameBufferLength, TRUE);
+            ExeAliasList = AddExeAliasList((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
             if (ExeAliasList != nullptr)
             {
-                RETURN_NTSTATUS(AddAlias(ExeAliasList, pwsSourceBuffer, (USHORT)cbSourceBufferLength, pwsTargetBuffer, (USHORT)cbTargetBufferLength));
+                RETURN_NTSTATUS(AddAlias(ExeAliasList, pwsSourceBuffer, cbSourceBufferLength, pwsTargetBuffer, cbTargetBufferLength));
             }
             else
             {
@@ -699,147 +717,289 @@ HRESULT ApiRoutines::AddConsoleAliasWImpl(_In_reads_bytes_(cbSourceBufferLength)
     return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_bytes_(cbSourceBufferLength) const char* const psSourceBuffer,
-                                          _In_ ULONG const cbSourceBufferLength,
-                                          _Out_writes_bytes_(*pcbTargetBufferLength) char* const psTargetBuffer,
-                                          _Inout_ ULONG* const pcbTargetBufferLength,
-                                          _In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
-                                          _In_ ULONG const cbExeNameBufferLength)
+// Routine Description:
+// - Retrieves a command line alias from the global set.
+// - It is permitted to call this function without having a target buffer. Use the result to allocate 
+//   the appropriate amount of space and call again.
+// - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
+//   the output/result data.
+// Arguments:
+// - pwsSourceBuffer - The shorthand/alias or source buffer to use in lookup
+// - cchSourceBufferLength - Length in characters of source buffer
+// - pwsTargetBuffer - The destination/expansion or target buffer we are attempting to retrieve. Optionally nullptr to retrieve needed space.
+// - cchTargetBufferLength - Length in characters of target buffer. Set to 0 when pwsTargetBuffer is nullptr.
+// - pcchTargetBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written (if pwsTargetBuffer is valid)
+//                                     or how many characters would have been consumed (if pwsTargetBuffer was valid.)
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
+                                   _In_ size_t const cchSourceBufferLength,
+                                   _Out_writes_to_opt_(cchTargetBufferLength, *pcchTargetBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsTargetBuffer,
+                                   _In_ size_t const cchTargetBufferLength,
+                                   _Out_ size_t* const pcchTargetBufferWrittenOrNeeded,
+                                   _In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                   _In_ size_t const cchExeNameBufferLength)
 {
-    // TODO: MSFT: 9564943 - convert to smart pointers
-    WCHAR* const pwsSource = new WCHAR[cbSourceBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsSource);
-    auto SourceCleanup = wil::ScopeExit([&] { delete[] pwsSource; });
+    // Ensure output variables are initialized
+    *pcchTargetBufferWrittenOrNeeded = 0;
+    if (nullptr != pwsTargetBuffer)
+    {
+        *pwsTargetBuffer = L'\0';
+    }
 
-    WCHAR* const pwsTarget = new WCHAR[*pcbTargetBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsTarget);
-    auto TargetCleanup = wil::ScopeExit([&] { delete[] pwsTarget; });
+    // Convert size_ts into SHORTs for existing alias functions to use.
+    USHORT cbExeNameBufferLength;
+    RETURN_IF_FAILED(GetUShortByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
+    USHORT cbSourceBufferLength;
+    RETURN_IF_FAILED(GetUShortByteCount(cchSourceBufferLength, &cbSourceBufferLength));
 
-    WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
-    auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
+    PEXE_ALIAS_LIST const pExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_NOT_FOUND), nullptr == pExeAliasList);
 
-    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
-    ULONG const cchSourceLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psSourceBuffer, cbSourceBufferLength, pwsSource, cbSourceBufferLength);
-    ULONG const cbSourceLength = cchSourceLength * sizeof(wchar_t);
+    PALIAS const pAlias = FindAlias(pExeAliasList, pwsSourceBuffer, cbSourceBufferLength);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_NOT_FOUND), nullptr == pAlias);
 
-    ULONG cbTargetLength = *pcbTargetBufferLength;
-    ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
+    // TargetLength is a byte count, convert to characters.
+    size_t cchTarget = pAlias->TargetLength / sizeof(wchar_t);
+    size_t const cchNull = 1;
 
-    RETURN_IF_FAILED(GetConsoleAliasWImpl(pwsSource, cbSourceLength, pwsTarget, &cbTargetLength, pwsUnicodeExeName, cbUnicodeExeNameLength));
+    // The total space we need is the length of the string + the null terminator.
+    size_t cchNeeded;
+    RETURN_IF_FAILED(SizeTAdd(cchTarget, cchNull, &cchNeeded));
 
-    // TODO: MSFT: 9564943 - fix this to a less crappy conversion and do error handling
-#pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
-    *pcbTargetBufferLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
-                                                  pwsTarget,
-                                                  cbTargetLength / sizeof(WCHAR),
-                                                  psTargetBuffer,
-                                                  *pcbTargetBufferLength);
+    if (nullptr != pwsTargetBuffer)
+    {
+        RETURN_IF_FAILED(StringCchCopyNW(pwsTargetBuffer, cchTargetBufferLength, pAlias->Target, cchTarget));
+    }
+
+    *pcchTargetBufferWrittenOrNeeded = cchNeeded;
 
     return S_OK;
 }
 
 // Routine Description:
-// - This routine get a command line alias from the global set.
+// - Retrieves a command line alias from the global set.
+// - This function will convert input parameters from A to W, call the W version of the routine,
+//   and attempt to convert the resulting data back to A for return.
 // Arguments:
-// - m - message containing api parameters
-// - ReplyStatus - Indicates whether to reply to the dll port.
+// - pwsSourceBuffer - The shorthand/alias or source buffer to use in lookup
+// - cchSourceBufferLength - Length in characters of source buffer
+// - pwsTargetBuffer - The destination/expansion or target buffer we are attempting to retrieve. 
+// - cchTargetBufferLength - Length in characters of target buffer. 
+// - pcchTargetBufferWritten - Pointer to space that will specify how many characters were written 
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
 // Return Value:
-HRESULT ApiRoutines::GetConsoleAliasWImpl(_In_reads_bytes_(cbSourceBufferLength) const wchar_t* const pwsSourceBuffer,
-                                          _In_ ULONG const cbSourceBufferLength,
-                                          _Out_writes_bytes_(*pcbTargetBufferLength) wchar_t* const pwsTargetBuffer,
-                                          _Inout_ ULONG* const pcbTargetBufferLength,
-                                          _In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                          _In_ ULONG const cbExeNameBufferLength)
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength) const char* const psSourceBuffer,
+                                          _In_ size_t const cchSourceBufferLength,
+                                          _Out_writes_to_(cchTargetBufferLength, *pcchTargetBufferWritten) _Always_(_Post_z_) char* const psTargetBuffer,
+                                          _In_ size_t const cchTargetBufferLength,
+                                          _Out_ size_t* const pcchTargetBufferWritten,
+                                          _In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
+                                          _In_ size_t const cchExeNameBufferLength)
 {
-    RETURN_HR_IF(E_INVALIDARG, *pcbTargetBufferLength > USHORT_MAX);
+    UINT const uiCodePage = g_ciConsoleInformation.CP;
 
-    ULONG const cbOriginalTargetBufferLength = *pcbTargetBufferLength;
-    *pcbTargetBufferLength = 0;
+    // Ensure output variables are initialized
+    *pcchTargetBufferWritten = 0;
+    *psTargetBuffer = '\0';
 
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    PEXE_ALIAS_LIST const ExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, (USHORT)cbExeNameBufferLength, TRUE);
-    if (ExeAliasList != nullptr)
-    {
-        PALIAS const Alias = FindAlias(ExeAliasList, pwsSourceBuffer, (USHORT)cbSourceBufferLength);
-        if (Alias != nullptr)
-        {
-            if (Alias->TargetLength + sizeof(WCHAR) > cbOriginalTargetBufferLength)
-            {
-                return HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW);
-            }
-            else
-            {
-                *pcbTargetBufferLength = Alias->TargetLength + sizeof(WCHAR);
-                memmove(pwsTargetBuffer, Alias->Target, Alias->TargetLength);
-                pwsTargetBuffer[Alias->TargetLength / sizeof(WCHAR)] = L'\0';
-            }
-        }
-        else
-        {
-            return HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
-        }
-    }
-    else
-    {
-        return HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
-    }
+    // Convert our input parameters to Unicode.
+    wistd::unique_ptr<wchar_t[]> pwsSource;
+    size_t cchSource;
+    RETURN_IF_FAILED(ConvertToW(uiCodePage, psSourceBuffer, cchSourceBufferLength, pwsSource, cchSource));
+
+    wistd::unique_ptr<wchar_t[]> pwsExeName;
+    size_t cchExeName;
+    RETURN_IF_FAILED(ConvertToW(uiCodePage, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
+
+    // Figure out how big our temporary Unicode buffer must be to retrieve output
+    size_t cchTargetBufferNeeded;
+    RETURN_IF_FAILED(GetConsoleAliasWImplHelper(pwsSource.get(), cchSource, nullptr, 0, &cchTargetBufferNeeded, pwsExeName.get(), cchExeName));
+
+    // If there's nothing to get, then simply return.
+    RETURN_HR_IF(S_OK, 0 == cchTargetBufferNeeded);
+
+    // Allocate a unicode buffer of the right size.
+    wistd::unique_ptr<wchar_t[]> pwsTarget = wil::make_unique_nothrow<wchar_t[]>(cchTargetBufferNeeded);
+    RETURN_IF_NULL_ALLOC(pwsTarget);
+
+    // Call the Unicode version of this method
+    size_t cchTargetBufferWritten;
+    RETURN_IF_FAILED(GetConsoleAliasWImplHelper(pwsSource.get(), cchSource, pwsTarget.get(), cchTargetBufferNeeded, &cchTargetBufferWritten, pwsExeName.get(), cchExeName));
+
+    // Convert result to A
+    wistd::unique_ptr<char[]> psConverted;
+    size_t cchConverted;
+    RETURN_IF_FAILED(ConvertToA(uiCodePage, pwsTarget.get(), cchTargetBufferWritten, psConverted, cchConverted));
+
+    // Copy safely to output buffer
+    RETURN_IF_FAILED(StringCchCopyNA(psTargetBuffer, cchTargetBufferLength, psConverted.get(), cchConverted));
+
+    // And return the size copied.
+    *pcchTargetBufferWritten = cchConverted;
 
     return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
-                                                  _In_ ULONG const cbExeNameBufferLength,
-                                                  _Out_ ULONG* const pcbAliasesBufferRequired)
+// Routine Description:
+// - Retrieves a command line alias from the global set.
+// Arguments:
+// - pwsSourceBuffer - The shorthand/alias or source buffer to use in lookup
+// - cchSourceBufferLength - Length in characters of source buffer
+// - pwsTargetBuffer - The destination/expansion or target buffer we are attempting to retrieve. 
+// - cchTargetBufferLength - Length in characters of target buffer. 
+// - pcchTargetBufferWritten - Pointer to space that will specify how many characters were written 
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::GetConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
+                                          _In_ size_t const cchSourceBufferLength,
+                                          _Out_writes_to_(cchTargetBufferLength, *pcchTargetBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTargetBuffer,
+                                          _In_ size_t const cchTargetBufferLength,
+                                          _Out_ size_t* const pcchTargetBufferWritten,
+                                          _In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                          _In_ size_t const cchExeNameBufferLength)
 {
-    // TODO: MSFT: 9564943 - convert to smart pointers
-    WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
-    auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
-
-    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
-    ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
-
-    RETURN_IF_FAILED(GetConsoleAliasesLengthWImpl(pwsUnicodeExeName,
-                                                  cbUnicodeExeNameLength,
-                                                  pcbAliasesBufferRequired));
-
-
-    // TODO: MSFT: 9564943 - this is terrible. We should be calculating based on the string, not estimating a divide by 2.
-    *pcbAliasesBufferRequired /= sizeof(wchar_t);
-
-    return S_OK;
-}
-
-HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                  _In_ ULONG const cbExeNameBufferLength,
-                                                  _Out_ ULONG* const pcbAliasesBufferRequired)
-{
-    // TODO: MSFT: 9564943 - (eliminate this one and the others and have it instead just fail on back conversion in the server level. use all size_t)
-    RETURN_HR_IF(E_INVALIDARG, cbExeNameBufferLength > USHORT_MAX);
-
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    *pcbAliasesBufferRequired = 0;
-    PEXE_ALIAS_LIST const ExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, (USHORT)cbExeNameBufferLength, TRUE);
-    if (ExeAliasList)
+    return GetConsoleAliasWImplHelper(pwsSourceBuffer, cchSourceBufferLength, pwsTargetBuffer, cchTargetBufferLength, pcchTargetBufferWritten, pwsExeNameBuffer, cchExeNameBufferLength);
+}
+
+// These variables define the seperator character and the length of the string.
+// They will be used to as the joiner between source and target strings when returning alias data in list form.
+static PCWSTR const pwszAliasesSeperator = L"=";
+static size_t const cchAliasesSeperator = wcslen(pwszAliasesSeperator);
+
+// Routine Description:
+// - Retrieves the amount of space needed to hold all aliases (source=target pairs) for the given EXE name
+// - Works for both Unicode and Multibyte text. 
+// - This method configuration is called for both A/W routines to allow us an efficient way of asking the system
+//   the lengths of how long each conversion would be without actually performing the full allocations/conversions.
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - fCountInUnicode - True for W version (UCS-2 Unicode) calls. False for A version calls (all multibyte formats.)
+// - uiCodePage - Set to valid Windows Codepage for A version calls. Ignored for W (but typically just set to 0.)
+// - pcchAliasesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all aliases for the given exe.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT GetConsoleAliasesLengthWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                           _In_ size_t const cchExeNameBufferLength,
+                                           _In_ bool const fCountInUnicode,
+                                           _In_ UINT const uiCodePage,
+                                           _Out_ size_t* const pcchAliasesBufferRequired)
+{
+    // Ensure output variables are initialized
+    *pcchAliasesBufferRequired = 0;
+
+    // Convert size_ts into SHORTs for existing alias functions to use.
+    USHORT cbExeNameBufferLength;
+    RETURN_IF_FAILED(GetUShortByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
+
+    PEXE_ALIAS_LIST const pExeAliasList = FindExe((PVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
+    if (nullptr != pExeAliasList)
     {
-        PLIST_ENTRY const ListHead = &ExeAliasList->AliasList;
+        size_t cchNeeded = 0;
+
+        // Each of the aliases will be made up of the source, a seperator, the target, then a null character.
+        // They are of the form "Source=Target" when returned.
+
+        size_t const cchNull = 1;
+        size_t cchSeperator = cchAliasesSeperator;
+
+        // If we're counting how much multibyte space will be needed, trial convert the seperator before we add.
+        if (!fCountInUnicode)
+        {
+            RETURN_IF_FAILED(GetALengthFromW(uiCodePage, pwszAliasesSeperator, cchSeperator, &cchSeperator));
+        }
+
+        PLIST_ENTRY const ListHead = &pExeAliasList->AliasList;
         PLIST_ENTRY ListNext = ListHead->Flink;
         while (ListNext != ListHead)
         {
             PALIAS Alias = CONTAINING_RECORD(ListNext, ALIAS, ListLink);
-            *pcbAliasesBufferRequired += Alias->SourceLength + Alias->TargetLength + (2 * sizeof(wchar_t));    // + 2 is for = and term null
+
+            // Alias stores lengths in bytes.
+            size_t cchSource = Alias->SourceLength / sizeof(wchar_t);
+            size_t cchTarget = Alias->TargetLength / sizeof(wchar_t);
+
+            // If we're counting how much multibyte space will be needed, trial convert the source and target strings before we add.
+            if (!fCountInUnicode)
+            {
+                RETURN_IF_FAILED(GetALengthFromW(uiCodePage, Alias->Source, cchSource, &cchSource));
+                RETURN_IF_FAILED(GetALengthFromW(uiCodePage, Alias->Target, cchTarget, &cchTarget));
+            }
+
+            // Accumulate all sizes to the final string count.
+            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchSource, &cchNeeded));
+            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchSeperator, &cchNeeded));
+            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchTarget, &cchNeeded));
+            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchNull, &cchNeeded));
+
             ListNext = ListNext->Flink;
         }
+
+        *pcchAliasesBufferRequired = cchNeeded;
     }
 
     return S_OK;
+}
+
+// Routine Description:
+// - Retrieves the amount of space needed to hold all aliases (source=target pairs) for the given EXE name
+// - Converts input text from A to W then makes the call to the W implementation.
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pcchAliasesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all aliases for the given exe.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
+                                                  _In_ size_t const cchExeNameBufferLength,
+                                                  _Out_ size_t* const pcchAliasesBufferRequired)
+{
+    UINT const uiCodePage = g_ciConsoleInformation.CP;
+
+    // Ensure output variables are initialized
+    *pcchAliasesBufferRequired = 0;
+
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    // Convert our input parameters to Unicode
+    wistd::unique_ptr<wchar_t[]> pwsExeName;
+    size_t cchExeName;
+    RETURN_IF_FAILED(ConvertToW(uiCodePage, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
+
+    return GetConsoleAliasesLengthWImplHelper(pwsExeName.get(), cchExeName, false, uiCodePage, pcchAliasesBufferRequired);
+}
+
+// Routine Description:
+// - Retrieves the amount of space needed to hold all aliases (source=target pairs) for the given EXE name
+// - Converts input text from A to W then makes the call to the W implementation.
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pcchAliasesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all aliases for the given exe.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                  _In_ size_t const cchExeNameBufferLength,
+                                                  _Out_ size_t* const pcchAliasesBufferRequired)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return GetConsoleAliasesLengthWImplHelper(pwsExeNameBuffer, cchExeNameBufferLength, true, 0, pcchAliasesBufferRequired);
 }
 
 VOID ClearAliases()
@@ -860,171 +1020,409 @@ VOID ClearAliases()
     }
 }
 
-HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
-                                            _In_ ULONG const cbExeNameBufferLength,
-                                            _Out_writes_bytes_(*pcbAliasBufferLength) char* const psAliasBuffer,
-                                            _Inout_ ULONG* const pcbAliasBufferLength)
+// Routine Description:
+// - Retrieves all source=target pairs representing alias definitions for a given EXE name
+// - It is permitted to call this function without having a target buffer. Use the result to allocate 
+//   the appropriate amount of space and call again.
+// - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
+//   the output/result data.
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pwsAliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve. 
+//                    Optionally nullptr to retrieve needed space.
+// - cchAliasBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
+// - pcchAliasBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written (if buffer is valid)
+//                                     or how many characters would have been consumed.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT GetConsoleAliasesWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                     _In_ size_t const cchExeNameBufferLength,
+                                     _Out_writes_to_opt_(cchAliasBufferLength, *pcchAliasBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsAliasBuffer,
+                                     _In_ size_t const cchAliasBufferLength,
+                                     _Out_ size_t* const pcchAliasBufferWrittenOrNeeded)
 {
-    // TODO: MSFT: 9564943 - convert to smart pointers
-    WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
-    auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
-
-    ULONG cbUnicodeAliasBufferLength = *pcbAliasBufferLength * sizeof(wchar_t);
-    WCHAR* const pwsUnicodeAliasBuffer = new WCHAR[cbUnicodeAliasBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsUnicodeAliasBuffer);
-    auto UnicodeAliasBufferCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeAliasBuffer; });
-
-    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
-    ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
-
-
-    RETURN_IF_FAILED(GetConsoleAliasesWImpl(pwsUnicodeExeName,
-                                            cbUnicodeExeNameLength,
-                                            pwsUnicodeAliasBuffer,
-                                            &cbUnicodeAliasBufferLength));
-
-
-    // TODO: MSFT: 9564943 - fix this to a less crappy conversion and do error handling
-#pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
-    *pcbAliasBufferLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
-                                                 pwsUnicodeAliasBuffer,
-                                                 cbUnicodeAliasBufferLength / sizeof(WCHAR),
-                                                 psAliasBuffer,
-                                                 *pcbAliasBufferLength);
-
-    return S_OK;
-}
-
-HRESULT ApiRoutines::GetConsoleAliasesWImpl(_In_reads_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                            _In_ ULONG const cbExeNameBufferLength,
-                                            _Out_writes_bytes_(*pcbAliasBufferLength) wchar_t* const pwsAliasBuffer,
-                                            _Inout_ ULONG* const pcbAliasBufferLength)
-{
-    LockConsole();
-    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
-
-    LPWSTR AliasesBufferPtrW = (PWSTR)pwsAliasBuffer;
-
-    ULONG const cbOriginalAliasBufferLength = *pcbAliasBufferLength;
-    *pcbAliasBufferLength = 0;
-
-    PEXE_ALIAS_LIST const ExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, (USHORT)cbExeNameBufferLength, TRUE);
-    if (ExeAliasList)
+    // Ensure output variables are initialized.
+    *pcchAliasBufferWrittenOrNeeded = 0;
+    if (nullptr != pwsAliasBuffer)
     {
-        PLIST_ENTRY const ListHead = &ExeAliasList->AliasList;
+        *pwsAliasBuffer = L'\0';
+    }
+
+    // Convert size_ts into SHORTs for existing alias functions to use.
+    USHORT cbExeNameBufferLength;
+    RETURN_IF_FAILED(GetUShortByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
+
+    PEXE_ALIAS_LIST const pExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
+    if (nullptr != pExeAliasList)
+    {
+        LPWSTR AliasesBufferPtrW = pwsAliasBuffer;
+        size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
+
+        // Each of the alises will be made up of the source, a seperator, the target, then a null character.
+        // They are of the form "Source=Target" when returned.
+
+        size_t const cchNull = 1;
+
+        PLIST_ENTRY const ListHead = &pExeAliasList->AliasList;
         PLIST_ENTRY ListNext = ListHead->Flink;
         while (ListNext != ListHead)
         {
             PALIAS const Alias = CONTAINING_RECORD(ListNext, ALIAS, ListLink);
-            if ((*pcbAliasBufferLength + Alias->SourceLength + Alias->TargetLength + (2 * sizeof(WCHAR))) <= cbOriginalAliasBufferLength)
+
+            // Alias stores lengths in bytes.
+            size_t const cchSource = Alias->SourceLength / sizeof(wchar_t);
+            size_t const cchTarget = Alias->TargetLength / sizeof(wchar_t);
+
+            // Add up how many characters we will need for the full alias data.
+            size_t cchNeeded = 0;
+            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchSource, &cchNeeded));
+            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchAliasesSeperator, &cchNeeded));
+            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchTarget, &cchNeeded));
+            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchNull, &cchNeeded));
+
+            // If we can return the data, attempt to do so until we're done or it overflows.
+            // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
+            if (nullptr != pwsAliasBuffer)
             {
-                memmove(AliasesBufferPtrW, Alias->Source, Alias->SourceLength);
-                AliasesBufferPtrW += Alias->SourceLength / sizeof(WCHAR);
-                *AliasesBufferPtrW++ = (WCHAR)'=';
-                memmove(AliasesBufferPtrW, Alias->Target, Alias->TargetLength);
-                AliasesBufferPtrW += Alias->TargetLength / sizeof(WCHAR);
-                *AliasesBufferPtrW++ = (WCHAR)'\0';
-                *pcbAliasBufferLength += Alias->SourceLength + Alias->TargetLength + (2 * sizeof(WCHAR));  // + 2 is for = and term null
+                // Calculate the new final total after we add what we need to see if it will exceed the limit
+                size_t cchNewTotal;
+                RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
+
+                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > cchAliasBufferLength);
+
+                size_t cchAliasBufferRemaining;
+                RETURN_IF_FAILED(SizeTSub(cchAliasBufferLength, cchTotalLength, &cchAliasBufferRemaining));
+
+                RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, Alias->Source, cchSource));
+                RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchSource, &cchAliasBufferRemaining));
+                AliasesBufferPtrW += cchSource;
+
+                RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, pwszAliasesSeperator, cchAliasesSeperator));
+                RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchAliasesSeperator, &cchAliasBufferRemaining));
+                AliasesBufferPtrW += cchAliasesSeperator;
+
+                RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, Alias->Target, cchTarget));
+                RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchTarget, &cchAliasBufferRemaining));
+                AliasesBufferPtrW += cchTarget;
+
+                // StringCchCopyNW ensures that the destination string is null terminated, so simply advance the pointer.
+                RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, 1, &cchAliasBufferRemaining));
+                AliasesBufferPtrW += cchNull;
             }
-            else
-            {
-                return HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW);
-            }
+
+            RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchTotalLength));
 
             ListNext = ListNext->Flink;
         }
+
+        *pcchAliasBufferWrittenOrNeeded = cchTotalLength;
     }
 
     return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(_Out_ ULONG* const pcbAliasExesBufferRequired)
+// Routine Description:
+// - Retrieves all source=target pairs representing alias definitions for a given EXE name
+// - Will convert all input from A to W, call the W version of the function, then convert resulting W to A text and return.
+// Arguments:
+// - psExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - psAliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve. 
+// - cchAliasBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
+// - pcchAliasBufferWritten - Pointer to space that will specify how many characters were written 
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
+                                            _In_ size_t const cchExeNameBufferLength,
+                                            _Out_writes_to_(cchAliasBufferLength, *pcchAliasBufferWritten) _Always_(_Post_z_) char* const psAliasBuffer,
+                                            _In_ size_t const cchAliasBufferLength,
+                                            _Out_ size_t* const pcchAliasBufferWritten)
 {
-    RETURN_IF_FAILED(GetConsoleAliasExesLengthWImpl(pcbAliasExesBufferRequired));
+    UINT const uiCodePage = g_ciConsoleInformation.CP;
 
-    // TODO: MSFT: 9564943 - this is bad and should feel bad. we need a better way of calculating actual non-unicode length
-    *pcbAliasExesBufferRequired /= sizeof(WCHAR);
+    // Ensure output variables are initialized
+    *pcchAliasBufferWritten = 0;
+    *psAliasBuffer = '\0';
+
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    // Convert our input parameters to Unicode.
+    wistd::unique_ptr<wchar_t[]> pwsExeName;
+    size_t cchExeName;
+    RETURN_IF_FAILED(ConvertToW(uiCodePage, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
+
+    // Figure out how big our temporary Unicode buffer must be to retrieve output
+    size_t cchAliasBufferNeeded;
+    RETURN_IF_FAILED(GetConsoleAliasesWImplHelper(pwsExeName.get(), cchExeName, nullptr, 0, &cchAliasBufferNeeded));
+
+    // If there's nothing to get, then simply return.
+    RETURN_HR_IF(S_OK, 0 == cchAliasBufferNeeded);
+
+    // Allocate a unicode buffer of the right size.
+    wistd::unique_ptr<wchar_t[]> pwsAlias = wil::make_unique_nothrow<wchar_t[]>(cchAliasBufferNeeded);
+    RETURN_IF_NULL_ALLOC(pwsAlias);
+
+    // Call the Unicode version of this method
+    size_t cchAliasBufferWritten;
+    RETURN_IF_FAILED(GetConsoleAliasesWImplHelper(pwsExeName.get(), cchExeName, pwsAlias.get(), cchAliasBufferNeeded, &cchAliasBufferWritten));
+
+    // Convert result to A
+    wistd::unique_ptr<char[]> psConverted;
+    size_t cchConverted;
+    RETURN_IF_FAILED(ConvertToA(uiCodePage, pwsAlias.get(), cchAliasBufferWritten, psConverted, cchConverted));
+
+    // Copy safely to the output buffer
+    // - Aliases are a series of null terminated strings. We cannot use a SafeString function to copy.
+    //   So instead, validate and use raw memory copy.
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchConverted > cchAliasBufferLength);
+    memcpy_s(psAliasBuffer, cchAliasBufferLength, psConverted.get(), cchConverted);
+
+    // And return the size copied.
+    *pcchAliasBufferWritten = cchConverted;
 
     return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ ULONG* const pcbAliasExesBufferRequired)
+// Routine Description:
+// - Retrieves all source=target pairs representing alias definitions for a given EXE name
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pwsAliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve. 
+// - cchAliasBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
+// - pcchAliasBufferWritten - Pointer to space that will specify how many characters were written 
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::GetConsoleAliasesWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                            _In_ size_t const cchExeNameBufferLength,
+                                            _Out_writes_to_(cchAliasBufferLength, *pcchAliasBufferWritten) _Always_(_Post_z_) wchar_t* const pwsAliasBuffer,
+                                            _In_ size_t const cchAliasBufferLength,
+                                            _Out_ size_t* const pcchAliasBufferWritten)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    *pcbAliasExesBufferRequired = 0;
+    return GetConsoleAliasesWImplHelper(pwsExeNameBuffer, cchExeNameBufferLength, pwsAliasBuffer, cchAliasBufferLength, pcchAliasBufferWritten);
+}
+
+// Routine Description:
+// - Retrieves the amount of space needed to hold all EXE names with aliases defined that are known to the console
+// - Works for both Unicode and Multibyte text. 
+// - This method configuration is called for both A/W routines to allow us an efficient way of asking the system
+//   the lengths of how long each conversion would be without actually performing the full allocations/conversions.
+// Arguments:
+// - fCountInUnicode - True for W version (UCS-2 Unicode) calls. False for A version calls (all multibyte formats.)
+// - uiCodePage - Set to valid Windows Codepage for A version calls. Ignored for W (but typically just set to 0.)
+// - pcchAliasExesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all relevant EXE names.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT GetConsoleAliasExesLengthImplHelper(_In_ bool const fCountInUnicode, _In_ UINT const uiCodePage, _Out_ size_t* const pcchAliasExesBufferRequired)
+{
+    // Ensure output variables are initialized
+    *pcchAliasExesBufferRequired = 0;
+
+    size_t cchNeeded = 0;
+
+    // Each alias exe will be made up of the string payload and a null terminator.
+    size_t const cchNull = 1;
 
     PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ExeAliasList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
         PEXE_ALIAS_LIST const AliasList = CONTAINING_RECORD(ListNext, EXE_ALIAS_LIST, ListLink);
-        *pcbAliasExesBufferRequired += AliasList->ExeLength + (1 * sizeof(WCHAR));   // + 1 for term null
+
+        // AliasList stores lengths in bytes.
+        size_t cchExe = AliasList->ExeLength / sizeof(wchar_t);
+
+        // If we're counting how much multibyte space will be needed, trial convert the exe string before we add.
+        if (!fCountInUnicode)
+        {
+            RETURN_IF_FAILED(GetALengthFromW(uiCodePage, AliasList->ExeName, cchExe, &cchExe));
+        }
+
+        // Accumulate to total
+        RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchExe, &cchNeeded));
+        RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchNull, &cchNeeded));
+
         ListNext = ListNext->Flink;
     }
 
-    return S_OK;
-}
-
-HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) char* const psAliasExesBuffer,
-                                              _Inout_ ULONG* const pcbAliasExesBufferLength)
-{
-    // TODO: MSFT 9564943 - This is a guess at the buffer length which should be corrected in the linked work item. Not an actual WCHAR size necessarily.
-    // TODO: MSFT 9564943 - Also correct smart pointer usage.
-    ULONG cbUnicodeAliasExesBufferLength = *pcbAliasExesBufferLength * sizeof(wchar_t);
-    WCHAR* const pwsUnicodeAliasExesBuffer = new WCHAR[cbUnicodeAliasExesBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsUnicodeAliasExesBuffer);
-    auto UnicodeAliasExesBufferCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeAliasExesBuffer; });
-
-    RETURN_IF_FAILED(GetConsoleAliasExesWImpl(pwsUnicodeAliasExesBuffer,
-                                              &cbUnicodeAliasExesBufferLength));
-
-    // TODO: MSFT: 9564943 - fix this to a less crappy conversion and do error handling
-#pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
-    *pcbAliasExesBufferLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
-                                                     pwsUnicodeAliasExesBuffer,
-                                                     cbUnicodeAliasExesBufferLength / sizeof(WCHAR),
-                                                     psAliasExesBuffer,
-                                                     *pcbAliasExesBufferLength);
+    *pcchAliasExesBufferRequired = cchNeeded;
 
     return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleAliasExesWImpl(_Out_writes_bytes_(*pcbAliasExesBufferLength) wchar_t* const pwsAliasExesBuffer,
-                                              _Inout_ ULONG* const pcbAliasExesBufferLength)
+// Routine Description:
+// - Retrieves the amount of space needed to hold all EXE names with aliases defined that are known to the console
+// Arguments:
+// - pcchAliasExesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all relevant EXE names.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(_Out_ size_t* const pcchAliasExesBufferRequired)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return GetConsoleAliasExesLengthImplHelper(false, g_ciConsoleInformation.CP, pcchAliasExesBufferRequired);
+}
+
+// Routine Description:
+// - Retrieves the amount of space needed to hold all EXE names with aliases defined that are known to the console
+// Arguments:
+// - pcchAliasExesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all relevant EXE names.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ size_t* const pcchAliasExesBufferRequired)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return GetConsoleAliasExesLengthImplHelper(true, 0, pcchAliasExesBufferRequired);
+}
+
+// Routine Description:
+// - Retrieves all EXE names with aliases defined that are known to the console.
+// - It is permitted to call this function without having a target buffer. Use the result to allocate 
+//   the appropriate amount of space and call again.
+// - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
+//   the output/result data.
+// Arguments:
+// - pwsAliasExesBuffer - The target buffer to hold all known EXE names we are trying to retrieve.
+//                        Optionally nullptr to retrieve needed space.
+// - cchAliasExesBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
+// - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written (if buffer is valid)
+//                                        or how many characters would have been consumed.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLength, *pcchAliasExesBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsAliasExesBuffer,
+                                       _In_ size_t const cchAliasExesBufferLength,
+                                       _Out_ size_t* const pcchAliasExesBufferWrittenOrNeeded)
+{
+    // Ensure output variables are initialized.
+    *pcchAliasExesBufferWrittenOrNeeded = 0;
+    if (nullptr != pwsAliasExesBuffer)
+    {
+        *pwsAliasExesBuffer = L'\0';
+    }
 
     LPWSTR AliasExesBufferPtrW = pwsAliasExesBuffer;
+    size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
 
-    ULONG const cbOriginalAliasExesBufferLength = *pcbAliasExesBufferLength;
-    *pcbAliasExesBufferLength = 0;
+    size_t const cchNull = 1;
 
     PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ExeAliasList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
         PEXE_ALIAS_LIST const AliasList = CONTAINING_RECORD(ListNext, EXE_ALIAS_LIST, ListLink);
-        if ((*pcbAliasExesBufferLength + AliasList->ExeLength + (1 * sizeof(WCHAR))) <= cbOriginalAliasExesBufferLength)
+
+        // AliasList stores length in bytes. Add 1 for null terminator.
+        size_t const cchExe = (AliasList->ExeLength) / sizeof(wchar_t);
+
+        size_t cchNeeded;
+        RETURN_IF_FAILED(SizeTAdd(cchExe, cchNull, &cchNeeded));
+
+        // If we can return the data, attempt to do so until we're done or it overflows.
+        // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
+        if (nullptr != pwsAliasExesBuffer)
         {
-            memmove(AliasExesBufferPtrW, AliasList->ExeName, AliasList->ExeLength);
-            AliasExesBufferPtrW += AliasList->ExeLength / sizeof(WCHAR);
-            *AliasExesBufferPtrW++ = (WCHAR)'\0';
-            *pcbAliasExesBufferLength += AliasList->ExeLength + (1 * sizeof(WCHAR)); // + 1 is term null
+            // Calculate the new total length after we add to the buffer
+            // Error out early if there is a problem.
+            size_t cchNewTotal;
+            RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
+            RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > cchAliasExesBufferLength);
+
+            size_t cchRemaining;
+            RETURN_IF_FAILED(SizeTSub(cchAliasExesBufferLength, cchTotalLength, &cchRemaining));
+
+            RETURN_IF_FAILED(StringCchCopyNW(AliasExesBufferPtrW, cchRemaining, AliasList->ExeName, cchExe));
+            AliasExesBufferPtrW += cchNeeded;
         }
-        else
-        {
-            return HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW);
-        }
+
+        // Accumulate the total written amount.
+        RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchTotalLength));
 
         ListNext = ListNext->Flink;
     }
 
+    *pcchAliasExesBufferWrittenOrNeeded = cchTotalLength;
+
     return S_OK;
+}
+
+// Routine Description:
+// - Retrieves all EXE names with aliases defined that are known to the console.
+// - Will call the W version of the function and convert all text back to A on returning.
+// Arguments:
+// - psAliasExesBuffer - The target buffer to hold all known EXE names we are trying to retrieve.
+// - cchAliasExesBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
+// - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written 
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_) char* const psAliasExesBuffer,
+                                              _In_ size_t const cchAliasExesBufferLength,
+                                              _Out_ size_t* const pcchAliasExesBufferWritten)
+{
+    UINT const uiCodePage = g_ciConsoleInformation.CP;
+
+    // Ensure output variables are initialized
+    *pcchAliasExesBufferWritten = 0;
+    *psAliasExesBuffer = '\0';
+
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    // Figure our how big our temporary Unicode buffer must be to retrieve output
+    size_t cchAliasExesBufferNeeded;
+    RETURN_IF_FAILED(GetConsoleAliasExesWImplHelper(nullptr, 0, &cchAliasExesBufferNeeded));
+
+    // If there's nothing to get, then simply return.
+    RETURN_HR_IF(S_OK, 0 == cchAliasExesBufferNeeded);
+
+    // Allocate a unicode buffer of the right size.
+    wistd::unique_ptr<wchar_t[]> pwsTarget = wil::make_unique_nothrow<wchar_t[]>(cchAliasExesBufferNeeded);
+    RETURN_IF_NULL_ALLOC(pwsTarget);
+
+    // Call the Unicode version of this method
+    size_t cchAliasExesBufferWritten;
+    RETURN_IF_FAILED(GetConsoleAliasExesWImplHelper(pwsTarget.get(), cchAliasExesBufferNeeded, &cchAliasExesBufferWritten));
+
+    // Convert result to A
+    wistd::unique_ptr<char[]> psConverted;
+    size_t cchConverted;
+    RETURN_IF_FAILED(ConvertToA(uiCodePage, pwsTarget.get(), cchAliasExesBufferWritten, psConverted, cchConverted));
+
+    // Copy safely to the output buffer
+    // - AliasExes are a series of null terminated strings. We cannot use a SafeString function to copy.
+    //   So instead, validate and use raw memory copy.
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchConverted > cchAliasExesBufferLength);
+    memcpy_s(psAliasExesBuffer, cchAliasExesBufferLength, psConverted.get(), cchConverted);
+
+    // And return the size copied.
+    *pcchAliasExesBufferWritten = cchConverted;
+
+    return S_OK;
+}
+
+// Routine Description:
+// - Retrieves all EXE names with aliases defined that are known to the console.
+// Arguments:
+// - pwsAliasExesBuffer - The target buffer to hold all known EXE names we are trying to retrieve.
+// - cchAliasExesBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
+// - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written 
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::GetConsoleAliasExesWImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_)  wchar_t* const pwsAliasExesBuffer,
+                                              _In_ size_t const cchAliasExesBufferLength,
+                                              _Out_ size_t* const pcchAliasExesBufferWritten)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return GetConsoleAliasExesWImplHelper(pwsAliasExesBuffer, cchAliasExesBufferLength, pcchAliasExesBufferWritten);
 }
 
 #define MAX_ARGS 9
@@ -1284,24 +1682,40 @@ NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
     return Status;
 }
 
-HRESULT ApiRoutines::ExpungeConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
-                                                       _In_ ULONG const cbExeNameBufferLength)
+// Routine Description:
+// - Clears all command history for the given EXE name
+// - Will convert input parameters and call the W version of this method
+// Arguments:
+// - psExeNameBuffer - The client EXE application attached to the host whose history we should clear
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::ExpungeConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
+                                                       _In_ size_t const cchExeNameBufferLength)
 {
-    WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
-    auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
+    wistd::unique_ptr<wchar_t[]> pwsExeName;
+    size_t cchExeName;
+    RETURN_IF_FAILED(ConvertToW(g_ciConsoleInformation.CP, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
 
-    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
-    ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
 
-    return ExpungeConsoleCommandHistoryWImpl(pwsUnicodeExeName,
-                                             cbUnicodeExeNameLength);
+    return ExpungeConsoleCommandHistoryWImpl(pwsExeName.get(),
+                                             cchExeName);
 }
 
-HRESULT ApiRoutines::ExpungeConsoleCommandHistoryWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                       _In_ ULONG const cbExeNameBufferLength)
+// Routine Description:
+// - Clears all command history for the given EXE name
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose history we should clear
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::ExpungeConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                       _In_ size_t const cchExeNameBufferLength)
 {
+    // Convert character count to DWORD byte count to interface with existing functions
+    DWORD cbExeNameBufferLength;
+    RETURN_IF_FAILED(GetDwordByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
+
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -1310,151 +1724,330 @@ HRESULT ApiRoutines::ExpungeConsoleCommandHistoryWImpl(_In_reads_bytes_(cbExeNam
     return S_OK;
 }
 
-HRESULT ApiRoutines::SetConsoleNumberOfCommandsAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
-                                                     _In_ ULONG const cbExeNameBufferLength,
-                                                     _In_ ULONG const NumberOfCommands)
+// Routine Description:
+// - Sets the number of commands that will be stored in history for a given EXE name
+// - Will convert input parameters and call the W version of this method
+// Arguments:
+// - psExeNameBuffer - A client EXE application attached to the host 
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - NumberOfCommands - Specifies the maximum length of the associated history buffer
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::SetConsoleNumberOfCommandsAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
+                                                     _In_ size_t const cchExeNameBufferLength,
+                                                     _In_ size_t const NumberOfCommands)
 {
-    // TODO: MSFT: 9564943 - smartpointers
-    WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
-    auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
+    wistd::unique_ptr<wchar_t[]> pwsExeName;
+    size_t cchExeName;
+    RETURN_IF_FAILED(ConvertToW(g_ciConsoleInformation.CP, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
 
-    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
-    ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
-
-    return SetConsoleNumberOfCommandsWImpl(pwsUnicodeExeName,
-                                           cbUnicodeExeNameLength,
+    return SetConsoleNumberOfCommandsWImpl(pwsExeName.get(),
+                                           cchExeName,
                                            NumberOfCommands);
 }
 
-HRESULT ApiRoutines::SetConsoleNumberOfCommandsWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                     _In_ ULONG const cbExeNameBufferLength,
-                                                     _In_ ULONG const NumberOfCommands)
+// Routine Description:
+// - Sets the number of commands that will be stored in history for a given EXE name
+// Arguments:
+// - pwsExeNameBuffer - A client EXE application attached to the host 
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - NumberOfCommands - Specifies the maximum length of the associated history buffer
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::SetConsoleNumberOfCommandsWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                     _In_ size_t const cchExeNameBufferLength,
+                                                     _In_ size_t const NumberOfCommands)
 {
+    // Convert character count to DWORD byte count to interface with existing functions
+    DWORD cbExeNameBufferLength;
+    RETURN_IF_FAILED(GetDwordByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
+
+    // Convert number of commands to DWORD to interface with existing functions
+    DWORD dwNumberOfCommands;
+    RETURN_IF_FAILED(SizeTToDWord(NumberOfCommands, &dwNumberOfCommands));
+
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    ReallocCommandHistory(FindExeCommandHistory((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE), NumberOfCommands);
+    ReallocCommandHistory(FindExeCommandHistory((PVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE), dwNumberOfCommands);
 
     return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
-                                                         _In_ ULONG const cbExeNameBufferLength,
-                                                         _Out_ ULONG* const pCommandHistoryLength)
+// Routine Description:
+// - Retrieves the amount of space needed to retrieve all command history for a given EXE name
+// - Works for both Unicode and Multibyte text. 
+// - This method configuration is called for both A/W routines to allow us an efficient way of asking the system
+//   the lengths of how long each conversion would be without actually performing the full allocations/conversions.
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - fCountInUnicode - True for W version (UCS-2 Unicode) calls. False for A version calls (all multibyte formats.)
+// - uiCodePage - Set to valid Windows Codepage for A version calls. Ignored for W (but typically just set to 0.)
+// - pcchCommandHistoryLength - Pointer to receive the length of buffer that would be required to retrieve all history for the given exe.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT GetConsoleCommandHistoryLengthImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                 _In_ size_t const cchExeNameBufferLength,
+                                                 _In_ bool const fCountInUnicode,
+                                                 _In_ UINT const uiCodePage,
+                                                 _Out_ size_t* const pcchCommandHistoryLength)
 {
-    // TODO: MSFT: 9564943 - smartpointers
-    WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
-    auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
+    // Ensure output variables are initialized
+    *pcchCommandHistoryLength = 0;
 
-    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
-    ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
+    // Convert character count to DWORD byte count to interface with existing functions
+    DWORD cbExeNameBufferLength;
+    RETURN_IF_FAILED(GetDwordByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
 
-    RETURN_IF_FAILED(GetConsoleCommandHistoryLengthWImpl(pwsUnicodeExeName,
-                                                         cbUnicodeExeNameLength,
-                                                         pCommandHistoryLength));
-
-    // TODO: MSFT: 9564943 - this is bad and should feel bad. we need a better way of calculating actual non-unicode length
-    *pCommandHistoryLength /= sizeof(WCHAR);
-
-    return S_OK;
-}
-
-HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                         _In_ ULONG const cbExeNameBufferLength,
-                                                         _Out_ ULONG* const pCommandHistoryLength)
-{
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    *pCommandHistoryLength = 0;
-
-    PCOMMAND_HISTORY const CommandHistory = FindExeCommandHistory((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
-    if (CommandHistory)
+    PCOMMAND_HISTORY const pCommandHistory = FindExeCommandHistory((PVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
+    if (nullptr != pCommandHistory)
     {
-        for (SHORT i = 0; i < CommandHistory->NumberOfCommands; i++)
+        size_t cchNeeded = 0;
+
+        // Every command history item is made of a string length followed by 1 null character.
+        size_t const cchNull = 1;
+
+        for (SHORT i = 0; i < pCommandHistory->NumberOfCommands; i++)
         {
-            *pCommandHistoryLength += CommandHistory->Commands[i]->CommandLength + sizeof(WCHAR);
+            // Commands store lengths in bytes.
+            size_t cchCommand = pCommandHistory->Commands[i]->CommandLength / sizeof(wchar_t);
+
+            // This is the proposed length of the whole string.
+            size_t cchProposed;
+            RETURN_IF_FAILED(SizeTAdd(cchCommand, cchNull, &cchProposed));
+
+            // If we're counting how much multibyte space will be needed, trial convert the command string before we add.
+            if (!fCountInUnicode)
+            {
+                RETURN_IF_FAILED(GetALengthFromW(uiCodePage, pCommandHistory->Commands[i]->Command, cchCommand, &cchCommand));
+            }
+
+            // Accumulate the result
+            RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchProposed, &cchNeeded));
         }
+
+        *pcchCommandHistoryLength = cchNeeded;
     }
 
     return S_OK;
 }
 
-HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_bytes_(cbExeNameBufferLength) const char* const psExeNameBuffer,
-                                                   _In_ ULONG const cbExeNameBufferLength,
-                                                   _Out_writes_bytes_(*pcbCommandHistoryBufferLength) char* const psCommandHistoryBuffer,
-                                                   _Inout_ ULONG* const pcbCommandHistoryBufferLength)
+// Routine Description:
+// - Retrieves the amount of space needed to retrieve all command history for a given EXE name
+// - Converts input text from A to W then makes the call to the W implementation.
+// Arguments:
+// - psExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pcchCommandHistoryLength - Pointer to receive the length of buffer that would be required to retrieve all history for the given exe.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
+                                                         _In_ size_t const cchExeNameBufferLength,
+                                                         _Out_ size_t* const pcchCommandHistoryLength)
 {
-    // TODO: MSFT: 9564943 - smartpointers
-    WCHAR* const pwsUnicodeExeName = new WCHAR[cbExeNameBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsUnicodeExeName);
-    auto UnicodeExeNameCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeExeName; });
+    UINT const uiCodePage = g_ciConsoleInformation.CP;
 
-    // TODO: MSFT: 9564943 - convert to a less crappy conversion that can account for UTF-8
-    ULONG const cchUnicodeExeNameLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (CHAR*)psExeNameBuffer, cbExeNameBufferLength, pwsUnicodeExeName, cbExeNameBufferLength);
-    ULONG const cbUnicodeExeNameLength = cchUnicodeExeNameLength * sizeof(wchar_t);
+    // Ensure output variables are initialized
+    *pcchCommandHistoryLength = 0;
 
-    ULONG cbUnicodeCommandHistoryBufferLength = *pcbCommandHistoryBufferLength * sizeof(wchar_t);
-    WCHAR* const pwsUnicodeCommandHistoryBuffer = new WCHAR[cbUnicodeCommandHistoryBufferLength];
-    RETURN_IF_NULL_ALLOC(pwsUnicodeCommandHistoryBuffer);
-    auto UnicodeCommandHistoryBufferCleanup = wil::ScopeExit([&] { delete[] pwsUnicodeCommandHistoryBuffer; });
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    RETURN_IF_FAILED(GetConsoleCommandHistoryWImpl(pwsUnicodeExeName,
-                                                   cbUnicodeExeNameLength,
-                                                   pwsUnicodeCommandHistoryBuffer,
-                                                   &cbUnicodeCommandHistoryBufferLength));
+    wistd::unique_ptr<wchar_t[]> pwsExeName;
+    size_t cchExeName;
+    RETURN_IF_FAILED(ConvertToW(uiCodePage, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
 
-    // TODO: MSFT: 9564943 - fix this to a less crappy conversion and do error handling
-#pragma prefast(suppress:26019, "ConvertToOem is aware of buffer boundaries")
-    *pcbCommandHistoryBufferLength = (USHORT)ConvertToOem(g_ciConsoleInformation.CP,
-                                                          pwsUnicodeCommandHistoryBuffer,
-                                                          cbUnicodeCommandHistoryBufferLength / sizeof(WCHAR),
-                                                          psCommandHistoryBuffer,
-                                                          *pcbCommandHistoryBufferLength);
-
-    return S_OK;
+    return GetConsoleCommandHistoryLengthImplHelper(pwsExeName.get(), cchExeName, false, uiCodePage, pcchCommandHistoryLength);
 }
 
-HRESULT ApiRoutines::GetConsoleCommandHistoryWImpl(_In_reads_bytes_(cbExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
-                                                   _In_ ULONG const cbExeNameBufferLength,
-                                                   _Out_writes_bytes_(*pcbCommandHistoryBufferLength) wchar_t* const pwsCommandHistoryBuffer,
-                                                   _Inout_ ULONG* const pcbCommandHistoryBufferLength)
+// Routine Description:
+// - Retrieves the amount of space needed to retrieve all command history for a given EXE name
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pcchCommandHistoryLength - Pointer to receive the length of buffer that would be required to retrieve all history for the given exe.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                         _In_ size_t const cchExeNameBufferLength,
+                                                         _Out_ size_t* const pcchCommandHistoryLength)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    PWCHAR CommandBufferW = pwsCommandHistoryBuffer;
+    return GetConsoleCommandHistoryLengthImplHelper(pwsExeNameBuffer, cchExeNameBufferLength, true, 0, pcchCommandHistoryLength);
+}
 
-    PCOMMAND_HISTORY const CommandHistory = FindExeCommandHistory((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
-    ULONG CommandHistoryLength = 0;
-    ULONG NewCommandHistoryLength = 0;
-    if (CommandHistory)
+// Routine Description:
+// - Retrieves a the full command history for a given EXE name known to the console.
+// - It is permitted to call this function without having a target buffer. Use the result to allocate 
+//   the appropriate amount of space and call again.
+// - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
+//   the output/result data.
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pwsCommandHistoryBuffer - The target buffer for data we are attempting to retrieve. Optionally nullptr to retrieve needed space.
+// - cchCommandHistoryBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
+// - pcchCommandHistoryBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written (if buffer is valid)
+//                                             or how many characters would have been consumed.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                            _In_ size_t const cchExeNameBufferLength,
+                                            _Out_writes_to_opt_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsCommandHistoryBuffer,
+                                            _In_ size_t const cchCommandHistoryBufferLength,
+                                            _Out_ size_t* const pcchCommandHistoryBufferWrittenOrNeeded)
+{
+    // Ensure output variables are initialized
+    *pcchCommandHistoryBufferWrittenOrNeeded = 0;
+    if (nullptr != pwsCommandHistoryBuffer)
     {
-        for (SHORT i = 0; i < CommandHistory->NumberOfCommands; i++)
-        {
-            if (SUCCEEDED(ULongAdd(CommandHistoryLength, CommandHistory->Commands[i]->CommandLength, &NewCommandHistoryLength)) &&
-                SUCCEEDED(ULongAdd(NewCommandHistoryLength, sizeof(WCHAR), &NewCommandHistoryLength)) &&
-                NewCommandHistoryLength <= *pcbCommandHistoryBufferLength)
-            {
-                memmove(CommandBufferW, CommandHistory->Commands[i]->Command, CommandHistory->Commands[i]->CommandLength);
-                CommandBufferW += CommandHistory->Commands[i]->CommandLength / sizeof(WCHAR);
-                *CommandBufferW++ = (WCHAR)'\0';
-                CommandHistoryLength = NewCommandHistoryLength;
-            }
-            else
-            {
-                return HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW);
-            }
-        }
+        *pwsCommandHistoryBuffer = L'\0';
     }
 
-    *pcbCommandHistoryBufferLength = CommandHistoryLength;
+    // Convert size_ts into SHORTs for existing command functions to use.
+    USHORT cbExeNameBufferLength;
+    RETURN_IF_FAILED(GetUShortByteCount(cchExeNameBufferLength, &cbExeNameBufferLength));
+
+    PCOMMAND_HISTORY const CommandHistory = FindExeCommandHistory((PVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
+
+    if (nullptr != CommandHistory)
+    {
+        PWCHAR CommandBufferW = pwsCommandHistoryBuffer;
+
+        size_t cchTotalLength = 0;
+
+        size_t const cchNull = 1;
+
+        for (SHORT i = 0; i < CommandHistory->NumberOfCommands; i++)
+        {
+            // Command stores length in bytes. Add 1 for null terminator.
+            size_t const cchCommand = CommandHistory->Commands[i]->CommandLength / sizeof(wchar_t);
+
+            size_t cchNeeded;
+            RETURN_IF_FAILED(SizeTAdd(cchCommand, cchNull, &cchNeeded));
+
+            // If we can return the data, attempt to do so until we're done or it overflows.
+            // If we cannot return data, we're just going to loop anyway and count how much space we'd need.
+            if (nullptr != pwsCommandHistoryBuffer)
+            {
+                // Calculate what the new total would be after we add what we need.
+                size_t cchNewTotal;
+                RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
+
+                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > cchCommandHistoryBufferLength);
+
+                size_t cchRemaining;
+                RETURN_IF_FAILED(SizeTSub(cchCommandHistoryBufferLength,
+                                          cchTotalLength,
+                                          &cchRemaining));
+
+                RETURN_IF_FAILED(StringCchCopyNW(CommandBufferW,
+                                                 cchRemaining,
+                                                 CommandHistory->Commands[i]->Command,
+                                                 cchCommand));
+
+                CommandBufferW += cchNeeded;
+            }
+
+            RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchTotalLength));
+        }
+
+        *pcchCommandHistoryBufferWrittenOrNeeded = cchTotalLength;
+    }
 
     return S_OK;
+}
+
+// Routine Description:
+// - Retrieves a the full command history for a given EXE name known to the console.
+// - Converts inputs from A to W, calls the W version of this method, and then converts the resulting text W to A.
+// Arguments:
+// - psExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - psCommandHistoryBuffer - The target buffer for data we are attempting to retrieve. 
+// - cchCommandHistoryBufferLength - Length in characters of target buffer. 
+// - pcchCommandHistoryBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
+                                                   _In_ size_t const cchExeNameBufferLength,
+                                                   _Out_writes_to_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWritten) _Always_(_Post_z_) char* const psCommandHistoryBuffer,
+                                                   _In_ size_t const cchCommandHistoryBufferLength,
+                                                   _Out_ size_t* const pcchCommandHistoryBufferWritten)
+{
+    UINT const uiCodePage = g_ciConsoleInformation.CP;
+
+    // Ensure output variables are initialized
+    *pcchCommandHistoryBufferWritten = 0;
+    *psCommandHistoryBuffer = '\0';
+
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    // Convert our input parameters to Unicode.
+    wistd::unique_ptr<wchar_t[]> pwsExeName;
+    size_t cchExeName;
+    RETURN_IF_FAILED(ConvertToW(uiCodePage, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
+
+    // Figure out how big our temporary Unicode buffer must be to retrieve output
+    size_t cchCommandBufferNeeded;
+    RETURN_IF_FAILED(GetConsoleCommandHistoryWImplHelper(pwsExeName.get(), cchExeName, nullptr, 0, &cchCommandBufferNeeded));
+
+    // If there's nothing to get, then simply return.
+    RETURN_HR_IF(S_OK, 0 == cchCommandBufferNeeded);
+
+    // Allocate a unicode buffer of the right size.
+    wistd::unique_ptr<wchar_t[]> pwsCommand = wil::make_unique_nothrow<wchar_t[]>(cchCommandBufferNeeded);
+    RETURN_IF_NULL_ALLOC(pwsCommand);
+
+    // Call the Unicode version of this method
+    size_t cchCommandBufferWritten;
+    RETURN_IF_FAILED(GetConsoleCommandHistoryWImplHelper(pwsExeName.get(), cchExeName, pwsCommand.get(), cchCommandBufferNeeded, &cchCommandBufferWritten));
+
+    // Convert result to A
+    wistd::unique_ptr<char[]> psConverted;
+    size_t cchConverted;
+    RETURN_IF_FAILED(ConvertToA(uiCodePage, pwsCommand.get(), cchCommandBufferWritten, psConverted, cchConverted));
+
+    // Copy safely to output buffer
+    // - CommandHistory are a series of null terminated strings. We cannot use a SafeString function to copy.
+    //   So instead, validate and use raw memory copy.
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchConverted > cchCommandHistoryBufferLength);
+    memcpy_s(psCommandHistoryBuffer, cchCommandHistoryBufferLength, psConverted.get(), cchConverted);
+
+    // And return the size copied.
+    *pcchCommandHistoryBufferWritten = cchConverted;
+
+    return S_OK;
+}
+
+// Routine Description:
+// - Retrieves a the full command history for a given EXE name known to the console.
+// - Converts inputs from A to W, calls the W version of this method, and then converts the resulting text W to A.
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pwsCommandHistoryBuffer - The target buffer for data we are attempting to retrieve. 
+// - cchCommandHistoryBufferLength - Length in characters of target buffer. 
+// - pcchCommandHistoryBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
+HRESULT ApiRoutines::GetConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
+                                                   _In_ size_t const cchExeNameBufferLength,
+                                                   _Out_writes_to_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWritten) _Always_(_Post_z_) wchar_t* const pwsCommandHistoryBuffer,
+                                                   _In_ size_t const cchCommandHistoryBufferLength,
+                                                   _Out_ size_t* const pcchCommandHistoryBufferWritten)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return GetConsoleCommandHistoryWImplHelper(pwsExeNameBuffer, cchExeNameBufferLength, pwsCommandHistoryBuffer, cchCommandHistoryBufferLength, pcchCommandHistoryBufferWritten);
 }
 
 PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandHistory, _In_ DWORD const NumCommands)
@@ -4184,13 +4777,13 @@ NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
     return RetrieveNthCommand(CommandHistory, CommandHistory->LastDisplayed, Buffer, BufferSize, CommandSize);
 }
 
-HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
+HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                    _In_ size_t const cchTitleBufferSize,
-                                   _Out_ size_t* const pcchTitleBufferWritten,
+                                   _Out_ size_t* const pcchTitleBufferWrittenOrNeeded,
                                    _In_ bool const fIsOriginal)
 {
     // Ensure output variables are initialized.
-    *pcchTitleBufferWritten = 0;
+    *pcchTitleBufferWrittenOrNeeded = 0;
     if (nullptr != pwsTitleBuffer)
     {
         *pwsTitleBuffer = L'\0';
@@ -4218,7 +4811,7 @@ HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcch
     }
 
     // Always report how much space we would need.
-    *pcchTitleBufferWritten = cchTitleLength;
+    *pcchTitleBufferWrittenOrNeeded = cchTitleLength;
 
     return S_OK;
 }
@@ -4230,7 +4823,7 @@ HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitl
 {
     // Ensure output variables are initialized.
     *pcchTitleBufferWritten = 0;
-    *psTitleBuffer = L'\0';
+    *psTitleBuffer = '\0';
 
     // Figure out how big our temporary Unicode buffer must be to get the title.
     size_t cchUnicodeTitleBufferSize;
@@ -4320,7 +4913,7 @@ HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBuffer
                                       true);
 }
 
-HRESULT ApiRoutines::SetConsoleTitleAImpl(_In_reads_or_z_(cchTitleBufferSize) char* const psTitleBuffer,
+HRESULT ApiRoutines::SetConsoleTitleAImpl(_In_reads_or_z_(cchTitleBufferSize) const char* const psTitleBuffer,
                                           _In_ size_t const cchTitleBufferSize)
 {
     wistd::unique_ptr<wchar_t[]> pwsUnicodeTitleBuffer;
@@ -4334,7 +4927,7 @@ HRESULT ApiRoutines::SetConsoleTitleAImpl(_In_reads_or_z_(cchTitleBufferSize) ch
     return SetConsoleTitleWImpl(pwsUnicodeTitleBuffer.get(), cchUnicodeTitleBuffer);
 }
 
-HRESULT ApiRoutines::SetConsoleTitleWImpl(_In_reads_or_z_(cchTitleBufferSize) wchar_t* const pwsTitleBuffer,
+HRESULT ApiRoutines::SetConsoleTitleWImpl(_In_reads_or_z_(cchTitleBufferSize) const wchar_t* const pwsTitleBuffer,
                                           _In_ size_t const cchTitleBufferSize)
 {
     LockConsole();
