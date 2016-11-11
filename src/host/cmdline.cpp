@@ -607,6 +607,18 @@ void FreeAliasBuffers()
     }
 }
 
+// Routine Description:
+// - Adds a command line alias to the global set.
+// - Converts and calls the W version of this function.
+// Arguments:
+// - psSourceBuffer - The shorthand/alias or source buffer to set
+// - cchSourceBufferLength - Length in characters of source buffer
+// - psTargetBuffer - The destination/expansion or target buffer to set
+// - cchTargetBufferLength - Length in characters of target buffer
+// - psExeNameBuffer - The client EXE application attached to the host to whom this substitution will apply
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::AddConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength) const char* const psSourceBuffer,
                                           _In_ size_t const cchSourceBufferLength,
                                           _In_reads_or_z_(cchTargetBufferLength) const char* const psTargetBuffer,
@@ -632,11 +644,16 @@ HRESULT ApiRoutines::AddConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength)
 }
 
 // Routine Description:
-// - This routine adds a command line alias to the global set.
+// - Adds a command line alias to the global set.
 // Arguments:
-// - m - message containing api parameters
-// - ReplyStatus - Indicates whether to reply to the dll port.
+// - pwsSourceBuffer - The shorthand/alias or source buffer to set
+// - cchSourceBufferLength - Length in characters of source buffer
+// - pwsTargetBuffer - The destination/expansion or target buffer to set
+// - cchTargetBufferLength - Length in characters of target buffer
+// - pwsExeNameBuffer - The client EXE application attached to the host to whom this substitution will apply
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
 // Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::AddConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
                                           _In_ size_t const cchSourceBufferLength,
                                           _In_reads_or_z_(cchTargetBufferLength) const wchar_t* const pwsTargetBuffer,
@@ -700,6 +717,23 @@ HRESULT ApiRoutines::AddConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength)
     return S_OK;
 }
 
+// Routine Description:
+// - Retrieves a command line alias from the global set.
+// - It is permitted to call this function without having a target buffer. Use the result to allocate 
+//   the appropriate amount of space and call again.
+// - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
+//   the output/result data.
+// Arguments:
+// - pwsSourceBuffer - The shorthand/alias or source buffer to use in lookup
+// - cchSourceBufferLength - Length in characters of source buffer
+// - pwsTargetBuffer - The destination/expansion or target buffer we are attempting to retrieve. Optionally nullptr to retrieve needed space.
+// - cchTargetBufferLength - Length in characters of target buffer. Set to 0 when pwsTargetBuffer is nullptr.
+// - pcchTargetBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written (if pwsTargetBuffer is valid)
+//                                     or how many characters would have been consumed (if pwsTargetBuffer was valid.)
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
                                    _In_ size_t const cchSourceBufferLength,
                                    _Out_writes_to_opt_(cchTargetBufferLength, *pcchTargetBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsTargetBuffer,
@@ -740,6 +774,20 @@ HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const 
     return S_OK;
 }
 
+// Routine Description:
+// - Retrieves a command line alias from the global set.
+// - This function will convert input parameters from A to W, call the W version of the routine,
+//   and attempt to convert the resulting data back to A for return.
+// Arguments:
+// - pwsSourceBuffer - The shorthand/alias or source buffer to use in lookup
+// - cchSourceBufferLength - Length in characters of source buffer
+// - pwsTargetBuffer - The destination/expansion or target buffer we are attempting to retrieve. 
+// - cchTargetBufferLength - Length in characters of target buffer. 
+// - pcchTargetBufferWritten - Pointer to space that will specify how many characters were written 
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength) const char* const psSourceBuffer,
                                           _In_ size_t const cchSourceBufferLength,
                                           _Out_writes_to_(cchTargetBufferLength, *pcchTargetBufferWritten) _Always_(_Post_z_) char* const psTargetBuffer,
@@ -796,11 +844,17 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength)
 }
 
 // Routine Description:
-// - This routine get a command line alias from the global set.
+// - Retrieves a command line alias from the global set.
 // Arguments:
-// - m - message containing api parameters
-// - ReplyStatus - Indicates whether to reply to the dll port.
+// - pwsSourceBuffer - The shorthand/alias or source buffer to use in lookup
+// - cchSourceBufferLength - Length in characters of source buffer
+// - pwsTargetBuffer - The destination/expansion or target buffer we are attempting to retrieve. 
+// - cchTargetBufferLength - Length in characters of target buffer. 
+// - pcchTargetBufferWritten - Pointer to space that will specify how many characters were written 
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
 // Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength) const wchar_t* const pwsSourceBuffer,
                                           _In_ size_t const cchSourceBufferLength,
                                           _Out_writes_to_(cchTargetBufferLength, *pcchTargetBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTargetBuffer,
@@ -815,10 +869,24 @@ HRESULT ApiRoutines::GetConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength)
     return GetConsoleAliasWImplHelper(pwsSourceBuffer, cchSourceBufferLength, pwsTargetBuffer, cchTargetBufferLength, pcchTargetBufferWritten, pwsExeNameBuffer, cchExeNameBufferLength);
 }
 
-#define ALIASES_SEPERATOR L"="
-PCWSTR const pwszAliasesSeperator = ALIASES_SEPERATOR;
-size_t const cchAliasesSeperator = ARRAYSIZE(ALIASES_SEPERATOR) / sizeof(wchar_t);
+// These variables define the seperator character and the length of the string.
+// They will be used to as the joiner between source and target strings when returning alias data in list form.
+PCWSTR const pwszAliasesSeperator = L"=";
+size_t const cchAliasesSeperator = wcslen(pwszAliasesSeperator);
 
+// Routine Description:
+// - Retrieves the amount of space needed to hold all aliases (source=target pairs) for the given EXE name
+// - Works for both Unicode and Multibyte text. 
+// - This method configuration is called for both A/W routines to allow us an efficient way of asking the system
+//   the lengths of how long each conversion would be without actually performing the full allocations/conversions.
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - fCountInUnicode - True for W version (UCS-2 Unicode) calls. False for A version calls (all multibyte formats.)
+// - uiCodePage - Set to valid Windows Codepage for A version calls. Ignored for W (but typically just set to 0.)
+// - pcchAliasesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all aliases for the given exe.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleAliasesLengthWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                            _In_ size_t const cchExeNameBufferLength,
                                            _In_ bool const fCountInUnicode,
@@ -877,6 +945,15 @@ HRESULT GetConsoleAliasesLengthWImplHelper(_In_reads_or_z_(cchExeNameBufferLengt
     return S_OK;
 }
 
+// Routine Description:
+// - Retrieves the amount of space needed to hold all aliases (source=target pairs) for the given EXE name
+// - Converts input text from A to W then makes the call to the W implementation.
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pcchAliasesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all aliases for the given exe.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                                   _In_ size_t const cchExeNameBufferLength,
                                                   _Out_ size_t* const pcchAliasesBufferRequired)
@@ -897,13 +974,21 @@ HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_or_z_(cchExeNameBuff
     return GetConsoleAliasesLengthWImplHelper(pwsExeName.get(), cchExeName, false, uiCodePage, pcchAliasesBufferRequired);
 }
 
+// Routine Description:
+// - Retrieves the amount of space needed to hold all aliases (source=target pairs) for the given EXE name
+// - Converts input text from A to W then makes the call to the W implementation.
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pcchAliasesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all aliases for the given exe.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                                   _In_ size_t const cchExeNameBufferLength,
                                                   _Out_ size_t* const pcchAliasesBufferRequired)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
-
 
     return GetConsoleAliasesLengthWImplHelper(pwsExeNameBuffer, cchExeNameBufferLength, true, 0, pcchAliasesBufferRequired);
 }
@@ -926,6 +1011,22 @@ VOID ClearAliases()
     }
 }
 
+// Routine Description:
+// - Retrieves all source=target pairs representing alias definitions for a given EXE name
+// - It is permitted to call this function without having a target buffer. Use the result to allocate 
+//   the appropriate amount of space and call again.
+// - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
+//   the output/result data.
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pwsAliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve. 
+//                    Optionally nullptr to retrieve needed space.
+// - cchAliasBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
+// - pcchAliasBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written (if buffer is valid)
+//                                     or how many characters would have been consumed.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleAliasesWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                      _In_ size_t const cchExeNameBufferLength,
                                      _Out_writes_to_opt_(cchAliasBufferLength, *pcchAliasBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsAliasBuffer,
@@ -1002,6 +1103,17 @@ HRESULT GetConsoleAliasesWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) con
     return S_OK;
 }
 
+// Routine Description:
+// - Retrieves all source=target pairs representing alias definitions for a given EXE name
+// - Will convert all input from A to W, call the W version of the function, then convert resulting W to A text and return.
+// Arguments:
+// - psExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - psAliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve. 
+// - cchAliasBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
+// - pcchAliasBufferWritten - Pointer to space that will specify how many characters were written 
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                             _In_ size_t const cchExeNameBufferLength,
                                             _Out_writes_to_(cchAliasBufferLength, *pcchAliasBufferWritten) _Always_(_Post_z_) char* const psAliasBuffer,
@@ -1055,6 +1167,16 @@ HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_or_z_(cchExeNameBufferLeng
     return S_OK;
 }
 
+// Routine Description:
+// - Retrieves all source=target pairs representing alias definitions for a given EXE name
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pwsAliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve. 
+// - cchAliasBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
+// - pcchAliasBufferWritten - Pointer to space that will specify how many characters were written 
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasesWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                             _In_ size_t const cchExeNameBufferLength,
                                             _Out_writes_to_(cchAliasBufferLength, *pcchAliasBufferWritten) _Always_(_Post_z_) wchar_t* const pwsAliasBuffer,
@@ -1067,6 +1189,17 @@ HRESULT ApiRoutines::GetConsoleAliasesWImpl(_In_reads_or_z_(cchExeNameBufferLeng
     return GetConsoleAliasesWImplHelper(pwsExeNameBuffer, cchExeNameBufferLength, pwsAliasBuffer, cchAliasBufferLength, pcchAliasBufferWritten);
 }
 
+// Routine Description:
+// - Retrieves the amount of space needed to hold all EXE names with aliases defined that are known to the console
+// - Works for both Unicode and Multibyte text. 
+// - This method configuration is called for both A/W routines to allow us an efficient way of asking the system
+//   the lengths of how long each conversion would be without actually performing the full allocations/conversions.
+// Arguments:
+// - fCountInUnicode - True for W version (UCS-2 Unicode) calls. False for A version calls (all multibyte formats.)
+// - uiCodePage - Set to valid Windows Codepage for A version calls. Ignored for W (but typically just set to 0.)
+// - pcchAliasExesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all relevant EXE names.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleAliasExesLengthImplHelper(_In_ bool const fCountInUnicode, _In_ UINT const uiCodePage, _Out_ size_t* const pcchAliasExesBufferRequired)
 {
     // Ensure output variables are initialized
@@ -1102,6 +1235,12 @@ HRESULT GetConsoleAliasExesLengthImplHelper(_In_ bool const fCountInUnicode, _In
     return S_OK;
 }
 
+// Routine Description:
+// - Retrieves the amount of space needed to hold all EXE names with aliases defined that are known to the console
+// Arguments:
+// - pcchAliasExesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all relevant EXE names.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(_Out_ size_t* const pcchAliasExesBufferRequired)
 {
     LockConsole();
@@ -1110,6 +1249,12 @@ HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(_Out_ size_t* const pcchAlia
     return GetConsoleAliasExesLengthImplHelper(false, g_ciConsoleInformation.CP, pcchAliasExesBufferRequired);
 }
 
+// Routine Description:
+// - Retrieves the amount of space needed to hold all EXE names with aliases defined that are known to the console
+// Arguments:
+// - pcchAliasExesBufferRequired - Pointer to receive the length of buffer that would be required to retrieve all relevant EXE names.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ size_t* const pcchAliasExesBufferRequired)
 {
     LockConsole();
@@ -1118,6 +1263,20 @@ HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ size_t* const pcchAlia
     return GetConsoleAliasExesLengthImplHelper(true, 0, pcchAliasExesBufferRequired);
 }
 
+// Routine Description:
+// - Retrieves all EXE names with aliases defined that are known to the console.
+// - It is permitted to call this function without having a target buffer. Use the result to allocate 
+//   the appropriate amount of space and call again.
+// - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
+//   the output/result data.
+// Arguments:
+// - pwsAliasExesBuffer - The target buffer to hold all known EXE names we are trying to retrieve.
+//                        Optionally nullptr to retrieve needed space.
+// - cchAliasExesBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
+// - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written (if buffer is valid)
+//                                        or how many characters would have been consumed.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLength, *pcchAliasExesBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsAliasExesBuffer,
                                        _In_ size_t const cchAliasExesBufferLength,
                                        _Out_ size_t* const pcchAliasExesBufferWrittenOrNeeded)
@@ -1165,6 +1324,15 @@ HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLen
     return S_OK;
 }
 
+// Routine Description:
+// - Retrieves all EXE names with aliases defined that are known to the console.
+// - Will call the W version of the function and convert all text back to A on returning.
+// Arguments:
+// - psAliasExesBuffer - The target buffer to hold all known EXE names we are trying to retrieve.
+// - cchAliasExesBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
+// - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written 
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_) char* const psAliasExesBuffer,
                                               _In_ size_t const cchAliasExesBufferLength,
                                               _Out_ size_t* const pcchAliasExesBufferWritten)
@@ -1210,6 +1378,14 @@ HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBuffer
     return S_OK;
 }
 
+// Routine Description:
+// - Retrieves all EXE names with aliases defined that are known to the console.
+// Arguments:
+// - pwsAliasExesBuffer - The target buffer to hold all known EXE names we are trying to retrieve.
+// - cchAliasExesBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
+// - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written 
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasExesWImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_)  wchar_t* const pwsAliasExesBuffer,
                                               _In_ size_t const cchAliasExesBufferLength,
                                               _Out_ size_t* const pcchAliasExesBufferWritten)
@@ -1477,6 +1653,14 @@ NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
     return Status;
 }
 
+// Routine Description:
+// - Clears all command history for the given EXE name
+// - Will convert input parameters and call the W version of this method
+// Arguments:
+// - psExeNameBuffer - The client EXE application attached to the host whose history we should clear
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::ExpungeConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                                        _In_ size_t const cchExeNameBufferLength)
 {
@@ -1489,6 +1673,13 @@ HRESULT ApiRoutines::ExpungeConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNam
                                              cchExeName);
 }
 
+// Routine Description:
+// - Clears all command history for the given EXE name
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose history we should clear
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::ExpungeConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                                        _In_ size_t const cchExeNameBufferLength)
 {
@@ -1504,6 +1695,15 @@ HRESULT ApiRoutines::ExpungeConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNam
     return S_OK;
 }
 
+// Routine Description:
+// - Sets the number of commands that will be stored in history for a given EXE name
+// - Will convert input parameters and call the W version of this method
+// Arguments:
+// - psExeNameBuffer - A client EXE application attached to the host 
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - NumberOfCommands - Specifies the maximum length of the associated history buffer
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::SetConsoleNumberOfCommandsAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                                      _In_ size_t const cchExeNameBufferLength,
                                                      _In_ size_t const NumberOfCommands)
@@ -1517,6 +1717,14 @@ HRESULT ApiRoutines::SetConsoleNumberOfCommandsAImpl(_In_reads_or_z_(cchExeNameB
                                            NumberOfCommands);
 }
 
+// Routine Description:
+// - Sets the number of commands that will be stored in history for a given EXE name
+// Arguments:
+// - pwsExeNameBuffer - A client EXE application attached to the host 
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - NumberOfCommands - Specifies the maximum length of the associated history buffer
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::SetConsoleNumberOfCommandsWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                                      _In_ size_t const cchExeNameBufferLength,
                                                      _In_ size_t const NumberOfCommands)
@@ -1537,6 +1745,19 @@ HRESULT ApiRoutines::SetConsoleNumberOfCommandsWImpl(_In_reads_or_z_(cchExeNameB
     return S_OK;
 }
 
+// Routine Description:
+// - Retrieves the amount of space needed to retrieve all command history for a given EXE name
+// - Works for both Unicode and Multibyte text. 
+// - This method configuration is called for both A/W routines to allow us an efficient way of asking the system
+//   the lengths of how long each conversion would be without actually performing the full allocations/conversions.
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - fCountInUnicode - True for W version (UCS-2 Unicode) calls. False for A version calls (all multibyte formats.)
+// - uiCodePage - Set to valid Windows Codepage for A version calls. Ignored for W (but typically just set to 0.)
+// - pcchCommandHistoryLength - Pointer to receive the length of buffer that would be required to retrieve all history for the given exe.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleCommandHistoryLengthImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                                  _In_ size_t const cchExeNameBufferLength,
                                                  _In_ bool const fCountInUnicode,
@@ -1581,6 +1802,15 @@ HRESULT GetConsoleCommandHistoryLengthImplHelper(_In_reads_or_z_(cchExeNameBuffe
     return S_OK;
 }
 
+// Routine Description:
+// - Retrieves the amount of space needed to retrieve all command history for a given EXE name
+// - Converts input text from A to W then makes the call to the W implementation.
+// Arguments:
+// - psExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pcchCommandHistoryLength - Pointer to receive the length of buffer that would be required to retrieve all history for the given exe.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                                          _In_ size_t const cchExeNameBufferLength,
                                                          _Out_ size_t* const pcchCommandHistoryLength)
@@ -1600,6 +1830,14 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(_In_reads_or_z_(cchExeN
     return GetConsoleCommandHistoryLengthImplHelper(pwsExeName.get(), cchExeName, false, uiCodePage, pcchCommandHistoryLength);
 }
 
+// Routine Description:
+// - Retrieves the amount of space needed to retrieve all command history for a given EXE name
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pcchCommandHistoryLength - Pointer to receive the length of buffer that would be required to retrieve all history for the given exe.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                                          _In_ size_t const cchExeNameBufferLength,
                                                          _Out_ size_t* const pcchCommandHistoryLength)
@@ -1610,6 +1848,21 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(_In_reads_or_z_(cchExeN
     return GetConsoleCommandHistoryLengthImplHelper(pwsExeNameBuffer, cchExeNameBufferLength, true, 0, pcchCommandHistoryLength);
 }
 
+// Routine Description:
+// - Retrieves a the full command history for a given EXE name known to the console.
+// - It is permitted to call this function without having a target buffer. Use the result to allocate 
+//   the appropriate amount of space and call again.
+// - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
+//   the output/result data.
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pwsCommandHistoryBuffer - The target buffer for data we are attempting to retrieve. Optionally nullptr to retrieve needed space.
+// - cchCommandHistoryBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
+// - pcchCommandHistoryBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written (if buffer is valid)
+//                                             or how many characters would have been consumed.
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                             _In_ size_t const cchExeNameBufferLength,
                                             _Out_writes_to_opt_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsCommandHistoryBuffer,
@@ -1665,6 +1918,17 @@ HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLeng
     return S_OK;
 }
 
+// Routine Description:
+// - Retrieves a the full command history for a given EXE name known to the console.
+// - Converts inputs from A to W, calls the W version of this method, and then converts the resulting text W to A.
+// Arguments:
+// - psExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - psCommandHistoryBuffer - The target buffer for data we are attempting to retrieve. 
+// - cchCommandHistoryBufferLength - Length in characters of target buffer. 
+// - pcchCommandHistoryBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                                    _In_ size_t const cchExeNameBufferLength,
                                                    _Out_writes_to_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWritten) _Always_(_Post_z_) char* const psCommandHistoryBuffer,
@@ -1717,6 +1981,17 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBuf
     return S_OK;
 }
 
+// Routine Description:
+// - Retrieves a the full command history for a given EXE name known to the console.
+// - Converts inputs from A to W, calls the W version of this method, and then converts the resulting text W to A.
+// Arguments:
+// - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
+// - cchExeNameBufferLength - Length in characters of EXE name buffer
+// - pwsCommandHistoryBuffer - The target buffer for data we are attempting to retrieve. 
+// - cchCommandHistoryBufferLength - Length in characters of target buffer. 
+// - pcchCommandHistoryBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written
+// Return Value:
+// - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
                                                    _In_ size_t const cchExeNameBufferLength,
                                                    _Out_writes_to_(cchCommandHistoryBufferLength, *pcchCommandHistoryBufferWritten) _Always_(_Post_z_) wchar_t* const pwsCommandHistoryBuffer,
