@@ -876,8 +876,8 @@ HRESULT ApiRoutines::GetConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength)
 
 // These variables define the seperator character and the length of the string.
 // They will be used to as the joiner between source and target strings when returning alias data in list form.
-PCWSTR const pwszAliasesSeperator = L"=";
-size_t const cchAliasesSeperator = wcslen(pwszAliasesSeperator);
+static PCWSTR const pwszAliasesSeperator = L"=";
+static size_t const cchAliasesSeperator = wcslen(pwszAliasesSeperator);
 
 // Routine Description:
 // - Retrieves the amount of space needed to hold all aliases (source=target pairs) for the given EXE name
