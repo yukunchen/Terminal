@@ -24,6 +24,8 @@ Revision History:
 #include "..\renderer\inc\IRenderer.hpp"
 #include "..\renderer\inc\IFontDefaultList.hpp"
 
+#include "..\server\DeviceComm.h"
+
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
@@ -34,7 +36,9 @@ extern UINT g_uiDialogBoxCount;
 
 extern CONSOLE_INFORMATION g_ciConsoleInformation;
 
-extern HANDLE g_hInputEvent;
+extern DeviceComm* g_pDeviceComm;
+
+extern wil::unique_event_nothrow g_hInputEvent;
 
 extern SHORT g_sVerticalScrollSize;
 extern SHORT g_sHorizontalScrollSize;
@@ -42,7 +46,7 @@ extern SHORT g_sHorizontalScrollSize;
 extern int g_dpi;
 
 extern NTSTATUS g_ntstatusConsoleInputInitStatus;
-extern HANDLE g_hConsoleInputInitEvent;
+extern wil::unique_event_nothrow g_hConsoleInputInitEvent;
 extern DWORD g_dwInputThreadId;
 
 #define WORD_DELIM_MAX  32

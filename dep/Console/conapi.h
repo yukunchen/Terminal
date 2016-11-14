@@ -20,7 +20,5 @@ Revision History:
 
 #include "conmsgl1.h"
 #include "conmsgl2.h"
-#include "conmsg.h"
-
-
+#include "conmsgl3.h"
 

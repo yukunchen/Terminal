@@ -62,6 +62,11 @@ NTSTATUS DoCreateScreenBuffer()
                                                          g_ciConsoleInformation.GetCursorSize(),
                                                          &g_ciConsoleInformation.ScreenBuffers);
 
+    // TODO: MSFT 9355013: This needs to be resolved. We increment it once with no handle to ensure it's never cleaned up
+    // and one always exists for the renderer (and potentially other functions.)
+    // It's currently a load-bearing piece of code. http://osgvsowi/9355013
+    g_ciConsoleInformation.ScreenBuffers[0].Header.IncrementOriginalScreenBuffer();
+
     return Status;
 }
 
@@ -72,43 +77,38 @@ NTSTATUS DoCreateScreenBuffer()
  * has no processes attached to it -- it's only being kept alive by references
  * via IO handles -- then we'll just set the owner to conhost.exe itself.
  */
-VOID SetConsoleWindowOwner(_In_ HWND hwnd, _Inout_opt_ PCONSOLE_PROCESS_HANDLE pProcessData)
+VOID SetConsoleWindowOwner(_In_ HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData)
 {
     ASSERT(g_ciConsoleInformation.IsConsoleLocked());
 
-    HANDLE ProcessId;
-    HANDLE ThreadId;
+    DWORD dwProcessId;
+    DWORD dwThreadId;
     if (nullptr != pProcessData)
     {
-        ProcessId = pProcessData->ClientId.UniqueProcess;
-        ThreadId = pProcessData->ClientId.UniqueThread;
+        dwProcessId = pProcessData->dwProcessId;
+        dwThreadId = pProcessData->dwThreadId;
     }
     else
     {
         // Find a process to own the console window. If there are none then let's use conhost's.
-        PLIST_ENTRY ListHead, ListNext;
-
-        if (IsListEmpty(&g_ciConsoleInformation.ProcessHandleList))
+        pProcessData = g_ciConsoleInformation.ProcessHandleList.GetFirstProcess();
+        if (pProcessData != nullptr)
         {
-            ProcessId = GetCurrentProcess();
-            ThreadId = GetCurrentThread();
+            dwProcessId = pProcessData->dwProcessId;
+            dwThreadId = pProcessData->dwThreadId;
+            pProcessData->fRootProcess = true;
         }
         else
         {
-            ListHead = &g_ciConsoleInformation.ProcessHandleList;
-            ListNext = ListHead->Flink;
-
-            pProcessData = CONTAINING_RECORD(ListNext, CONSOLE_PROCESS_HANDLE, ListLink);
-            ProcessId = pProcessData->ClientId.UniqueProcess;
-            ThreadId = pProcessData->ClientId.UniqueThread;
-            pProcessData->RootProcess = TRUE;
+            dwProcessId = GetCurrentProcessId();
+            dwThreadId = GetCurrentThreadId();
         }
     }
 
     CONSOLEWINDOWOWNER ConsoleOwner;
     ConsoleOwner.hwnd = hwnd;
-    ConsoleOwner.ProcessId = HandleToUlong(ProcessId);
-    ConsoleOwner.ThreadId = HandleToUlong(ThreadId);
+    ConsoleOwner.ProcessId = dwProcessId;
+    ConsoleOwner.ThreadId = dwThreadId;
 
     UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetWindowOwner, &ConsoleOwner, sizeof(ConsoleOwner));
 }
@@ -1081,41 +1081,7 @@ NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
     return STATUS_SUCCESS;
 }
 
-void SetProcessFocus(_In_ HANDLE ProcessHandle, _In_ BOOL Foreground)
-{
-    SetPriorityClass(ProcessHandle,
-                     Foreground ? PROCESS_MODE_BACKGROUND_END : PROCESS_MODE_BACKGROUND_BEGIN);
-}
-
-void SetProcessForegroundRights(_In_ const HANDLE hProcess, _In_ const BOOL fForeground)
-{
-    CONSOLESETFOREGROUND Flags;
-    Flags.hProcess = hProcess;
-    Flags.bForeground = fForeground;
-
-    UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetForeground, &Flags, sizeof(Flags));
-}
-
-void ModifyConsoleProcessFocus(_In_ const BOOL fForeground)
-{
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ProcessHandleList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-    while (ListNext != ListHead)
-    {
-        PCONSOLE_PROCESS_HANDLE const ProcessData = CONTAINING_RECORD(ListNext, CONSOLE_PROCESS_HANDLE, ListLink);
-        ListNext = ListNext->Flink;
-
-        if (ProcessData->ProcessHandle != nullptr)
-        {
-            SetProcessFocus(ProcessData->ProcessHandle, fForeground);
-            SetProcessForegroundRights(ProcessData->ProcessHandle, fForeground);
-        }
-    }
-
-    // Do this for conhost.exe itself, too.
-    SetProcessForegroundRights(GetCurrentProcess(), fForeground);
-}
-
+// TODO: MSFT 9450717 This should join the ProcessList class when CtrlEvents become moved into the server. https://osgvsowi/9450717
 void CloseConsoleProcessState()
 {
     // If there are no connected processes, sending control events is pointless as there's no one do send them to. In
@@ -1123,7 +1089,7 @@ void CloseConsoleProcessState()
 
     // N.B. We can get into this state when a process has a reference to the console but hasn't connected. For example,
     //      when it's created suspended and never resumed.
-    if (IsListEmpty(&g_ciConsoleInformation.ProcessHandleList) != FALSE)
+    if (g_ciConsoleInformation.ProcessHandleList.IsEmpty())
     {
         ExitProcess(STATUS_SUCCESS);
     }

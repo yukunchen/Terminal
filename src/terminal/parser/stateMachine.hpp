@@ -47,6 +47,7 @@ namespace Microsoft
             private:
                 static bool s_IsActionableFromGround(_In_ wchar_t const wch);
                 static bool s_IsC0Code(_In_ wchar_t const wch);
+                static bool s_IsC1Csi(_In_ wchar_t const wch);
                 static bool s_IsIntermediate(_In_ wchar_t const wch);
                 static bool s_IsDelete(_In_ wchar_t const wch);
                 static bool s_IsEscape(_In_ wchar_t const wch);

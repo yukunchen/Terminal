@@ -93,7 +93,7 @@ public:
 
     virtual BOOL PrivateReverseLineFeed();
 
-    virtual BOOL SetConsoleTitleW(_In_ const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength);
+    virtual BOOL SetConsoleTitleW(_In_reads_(sCchTitleLength) const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength);
 
     virtual BOOL PrivateUseAlternateScreenBuffer();
 

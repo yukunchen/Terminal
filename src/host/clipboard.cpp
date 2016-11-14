@@ -432,7 +432,8 @@ void Clipboard::s_DoCopy()
 bool Clipboard::s_FilterCharacterOnPaste(_Inout_ WCHAR * const pwch)
 {
     bool fAllowChar = true;
-    if (g_ciConsoleInformation.GetFilterOnPaste() && (g_ciConsoleInformation.pInputBuffer->InputMode & ENABLE_PROCESSED_INPUT) != 0 )
+    if (g_ciConsoleInformation.GetFilterOnPaste() &&
+        (IsFlagSet(g_ciConsoleInformation.pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT)))
     {
         switch (*pwch)
         {
@@ -440,6 +441,14 @@ bool Clipboard::s_FilterCharacterOnPaste(_Inout_ WCHAR * const pwch)
             case UNICODE_TAB:
             {
                 fAllowChar = false;
+                break;
+            }
+
+            // Replace Unicode space with standard space
+            case UNICODE_NBSP:
+            case UNICODE_NARROW_NBSP:
+            {
+                *pwch = UNICODE_SPACE;
                 break;
             }
 
@@ -451,8 +460,9 @@ bool Clipboard::s_FilterCharacterOnPaste(_Inout_ WCHAR * const pwch)
                 break;
             }
 
-            // Replace our full-extended hypen with a normal-extended one
-            case UNICODE_LONG_HYPHEN:
+            // Replace Unicode dashes with a standard hypen
+            case UNICODE_EM_DASH:
+            case UNICODE_EN_DASH:
             {
                 *pwch = UNICODE_HYPHEN;
                 break;

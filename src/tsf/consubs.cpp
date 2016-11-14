@@ -106,7 +106,7 @@ void CConsoleTSF::OnUpdateIMM32Composition(WPARAM CompChar, LPARAM CompFlag)
 //
 //----------------------------------------------------------------------------
 
-BOOL CConsoleTSF::OnImeNotify(WPARAM wParam, LPARAM lParam)
+BOOL CConsoleTSF::OnImeNotify(WPARAM /*wParam*/, LPARAM /*lParam*/)
 {
     return FALSE;
 }

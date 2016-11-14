@@ -3,5 +3,6 @@ DIRS=\
      propsheet \
      propslib \
      renderer \
+     server \
      terminal \
      tsf \

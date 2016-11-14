@@ -17,10 +17,6 @@ namespace Conhost.UIA.Tests
 
     using Microsoft.Win32;
 
-    using MS.Internal.Mita.Foundation;
-    using MS.Internal.Mita.Foundation.Controls;
-    using MS.Internal.Mita.Foundation.Waiters;
-
     using WEX.Common.Managed;
     using WEX.Logging.Interop;
     using WEX.TestExecution;
@@ -29,7 +25,7 @@ namespace Conhost.UIA.Tests
     using Conhost.UIA.Tests.Common;
     using Conhost.UIA.Tests.Common.NativeMethods;
     using Conhost.UIA.Tests.Elements;
-
+    using OpenQA.Selenium;
 
     [TestClass]
     public class SelectionApiTests
@@ -43,18 +39,14 @@ namespace Conhost.UIA.Tests
             {
                 using (ViewportArea area = new ViewportArea(app))
                 {
-                    // Get keyboard instance to try commands
-                    // NOTE: We must wait after every keyboard sequence to give the console time to process before asking it for changes.
-                    Keyboard kbd = Keyboard.Instance;
-
                     // Get console handle.
                     IntPtr hConsole = app.GetStdOutHandle();
                     Verify.IsNotNull(hConsole, "Ensure the STDOUT handle is valid.");
 
                     // Get us to an expected initial state.
-                    kbd.SendKeys("C:{ENTER}");
-                    kbd.SendKeys("cd C:\\{ENTER}");
-                    kbd.SendKeys("cls{ENTER}");
+                    app.UIRoot.SendKeys("C:" + Keys.Enter);
+                    app.UIRoot.SendKeys(@"cd C:\" + Keys.Enter);
+                    app.UIRoot.SendKeys("cls" + Keys.Enter);
 
                     // Get initial screen buffer position
                     WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiexOriginal = new WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX();
@@ -67,7 +59,7 @@ namespace Conhost.UIA.Tests
 
                     // Ctrl-End shouldn't move anything yet.
                     Log.Comment("Attempt Ctrl-End. Nothing should move yet.");
-                    kbd.SendKeys("{CONTROL DOWN}{END}{CONTROL UP}");
+                    app.UIRoot.SendKeys(Keys.Control + Keys.End + Keys.Control);
 
                     Globals.WaitForTimeout();
 
@@ -76,41 +68,9 @@ namespace Conhost.UIA.Tests
 
                     // Ctrl-Home shouldn't move anything yet.
                     Log.Comment("Attempt Ctrl-Home. Nothing should move yet.");
-                    kbd.SendKeys("{CONTROL DOWN}{HOME}{CONTROL UP}");
+                    app.UIRoot.SendKeys(Keys.Control + Keys.Home + Keys.Control);
 
                     Globals.WaitForTimeout();
-
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexCompare), "Get comparison position.");
-                    Verify.AreEqual<WinCon.SMALL_RECT>(sbiexOriginal.srWindow, sbiexCompare.srWindow, "Compare viewport positions before and after.");
-
-                    // Make some text come out
-                    Log.Comment("Emit some text into the buffer so we'll have something to scroll and test.");
-                    kbd.SendKeys(@"HELP{ENTER}HELP{ENTER}HELP{ENTER}HELP{ENTER}");
-
-                    Globals.WaitForTimeout();
-
-                    // Get the new original position
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexOriginal), "Get position of viewport once text is emitted.");
-
-                    // Ctrl-Home should move to top of buffer
-                    Log.Comment("Attempt Ctrl-Home. Should move to top of buffer.");
-                    kbd.SendKeys("{CONTROL DOWN}{HOME}{CONTROL UP}");
-
-                    Globals.WaitForTimeout();
-
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexCompare), "Get comparison position.");
-                    Verify.AreNotEqual<WinCon.SMALL_RECT>(sbiexOriginal.srWindow, sbiexCompare.srWindow, "Compare viewport positions before and after. Should no longer be the same.");
-                    Verify.AreEqual(sbiexCompare.srWindow.Top, 0, "Position of viewport top should be at 0, top of screen buffer.");
-
-                    // Ctrl-End should take us back to the original position at the end line
-                    Log.Comment("Attempt Ctrl-End. Should move back to edit line (original position.");
-                    kbd.SendKeys("{CONTROL DOWN}{END}{CONTROL UP}");
-
-                    Globals.WaitForTimeout();
-
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexCompare), "Get comparison position.");
-                    Verify.AreEqual<WinCon.SMALL_RECT>(sbiexOriginal.srWindow, sbiexCompare.srWindow, "Compare viewport positions before and after. Should be back to original position.");
-
 
                     Log.Comment("Now test the line with some text in it.");
                     // Retrieve original position (including cursor)
@@ -119,7 +79,7 @@ namespace Conhost.UIA.Tests
                     // Put some text onto the edit line now
                     Log.Comment("Place some text onto the edit line to ensure behavior will change with edit line full.");
                     const string testText = "SomeTestText";
-                    kbd.SendKeys(testText);
+                    app.UIRoot.SendKeys(testText);
 
                     Globals.WaitForTimeout();
 
@@ -149,16 +109,16 @@ namespace Conhost.UIA.Tests
                     const int lefts = 4;
                     for (int i = 0; i < lefts; i++)
                     {
-                        kbd.SendKeys("{LEFT}");
+                        app.UIRoot.SendKeys(Keys.Left);
                     }
 
                     Globals.WaitForTimeout();
 
                     // Get cursor position now that it's moved.
                     NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexWithText), "Get position of viewport with cursor moved into the middle of the edit line text.");
-                    
+
                     Log.Comment("Ctrl-End should trim the end of the input line from the cursor (and not move the cursor.)");
-                    kbd.SendKeys("{CONTROL DOWN}{END}{CONTROL UP}");
+                    app.UIRoot.SendKeys(Keys.Control + Keys.End + Keys.Control);
 
                     Globals.WaitForTimeout();
 
@@ -175,7 +135,7 @@ namespace Conhost.UIA.Tests
                     Verify.AreEqual(text.First().Trim(), testText.Substring(0, substringCtrlEnd), "Verify text matches keyed input without the last characters removed by Ctrl+End.");
 
                     Log.Comment("Ctrl-Home should trim the remainder of the edit line from the cursor to the beginning (restoring cursor to position before we entered anything.)");
-                    kbd.SendKeys("{CONTROL DOWN}{HOME}{CONTROL UP}");
+                    app.UIRoot.SendKeys(Keys.Control + Keys.Home + Keys.Control);
 
                     Globals.WaitForTimeout();
 
@@ -188,16 +148,6 @@ namespace Conhost.UIA.Tests
                     Verify.AreEqual(text.Count(), 1, "We should only have retrieved one line.");
 
                     Verify.AreEqual(text.First().Trim(), string.Empty, "Verify text is now empty after Ctrl+Home from the end of it.");
-
-                    Log.Comment("Now that all the text is gone, try Ctrl+Home one more time to ensure it moves.");
-                    kbd.SendKeys("{CONTROL DOWN}{HOME}{CONTROL UP}");
-
-                    Globals.WaitForTimeout();
-
-                    NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiexCompare), "Get comparison position.");
-
-                    Verify.AreNotEqual<WinCon.SMALL_RECT>(sbiexOriginal.srWindow, sbiexCompare.srWindow, "Compare viewport positions before and after. Should no longer be the same.");
-                    Verify.AreEqual(sbiexCompare.srWindow.Top, 0, "Position of viewport top should be at 0, top of screen buffer.");
                 }
             }
         }
@@ -245,8 +195,6 @@ namespace Conhost.UIA.Tests
 
                         // Now set up the keyboard and enter mark mode.
                         // NOTE: We must wait after every keyboard sequence to give the console time to process before asking it for changes.
-                        Keyboard kbd = Keyboard.Instance;
-
                         area.EnterMode(ViewportArea.ViewportStates.Mark);
 
                         NativeMethods.Win32BoolHelper(WinCon.GetConsoleSelectionInfo(out csi), "Get state on entering mark mode.");
@@ -257,14 +205,13 @@ namespace Conhost.UIA.Tests
                         // Select a small region
                         Log.Comment("1. Select a small region");
 
-                        // keys names can be found at %SDXROOT%\sdktools\CommonTest\Mita2.0\Foundation\Keyboard.cs
-                        kbd.SendKeys("{SHIFT DOWN}{RIGHT}{RIGHT}{RIGHT}{DOWN}{SHIFT UP}");
+                        app.UIRoot.SendKeys(Keys.Shift + Keys.Right + Keys.Right + Keys.Right + Keys.Down + Keys.Shift);
 
                         Globals.WaitForTimeout();
 
                         // Adjust the expected rectangle for the commands we just entered.
-                        expectedRect.Right += 3; // same as the number of {RIGHT}s we put in
-                        expectedRect.Bottom += 1; // same as the number of {DOWN}s we put in
+                        expectedRect.Right += 3; // same as the number of Rights we put in
+                        expectedRect.Bottom += 1; // same as the number of Downs we put in
 
                         NativeMethods.Win32BoolHelper(WinCon.GetConsoleSelectionInfo(out csi), "Get state of selected region.");
                         Log.Comment("Selection Info: {0}", csi);
@@ -276,7 +223,7 @@ namespace Conhost.UIA.Tests
                         // End selection by moving
                         Log.Comment("2. End the selection by moving.");
 
-                        kbd.SendKeys("{DOWN}");
+                        app.UIRoot.SendKeys(Keys.Down);
 
                         Globals.WaitForTimeout();
 
@@ -288,13 +235,13 @@ namespace Conhost.UIA.Tests
                         // Select another region to ensure anchor moved.
                         Log.Comment("3. Select one more region from new position to verify anchor");
 
-                        kbd.SendKeys("{SHIFT DOWN}{RIGHT}{SHIFT UP}");
+                        app.UIRoot.SendKeys(Keys.Shift + Keys.Right + Keys.Shift);
 
                         Globals.WaitForTimeout();
 
                         expectedAnchor.X = expectedRect.Right;
                         expectedAnchor.Y = expectedRect.Bottom;
-                        expectedAnchor.Y++; // +1 for the {DOWN} in step 2. Not incremented in the line above because C# is unhappy with adding +1 to a short while assigning.
+                        expectedAnchor.Y++; // +1 for the Down in step 2. Not incremented in the line above because C# is unhappy with adding +1 to a short while assigning.
 
                         Verify.AreEqual(csi.SelectionAnchor, expectedAnchor, "Verify anchor moved to the new start position.");
 
@@ -337,20 +284,15 @@ namespace Conhost.UIA.Tests
                     expectedBottomRight.X = (short)endPoint.X;
                     expectedBottomRight.Y = (short)endPoint.Y;
 
-                    // Convert the character coordinates into screen pixels.
-                    area.ConvertCharacterOffsetToPixelPosition(ref startPoint);
-                    area.ConvertCharacterOffsetToPixelPosition(ref endPoint);
-
                     // Prepare the mouse by moving it into the start position. Prepare the structure
                     WinCon.CONSOLE_SELECTION_INFO csi;
                     WinCon.SMALL_RECT expectedRect = new WinCon.SMALL_RECT();
-                    
+
                     WinCon.CONSOLE_SELECTION_INFO_FLAGS flagsExpected = WinCon.CONSOLE_SELECTION_INFO_FLAGS.CONSOLE_NO_SELECTION;
-                    Mouse m = Mouse.Instance;
-                    m.Move(startPoint);
 
                     // 1. Place mouse button down to start selection and check state
-                    m.Down(MouseButtons.Primary, ModifierKeys.None);
+                    area.MouseMove(startPoint);
+                    area.MouseDown();
 
                     Globals.WaitForTimeout(); // must wait after mouse operation. No good waiters since we have no UI objects
 
@@ -370,10 +312,10 @@ namespace Conhost.UIA.Tests
                     Verify.AreEqual(csi.Flags, flagsExpected, "Check initial mouse selection with button still down.");
                     Verify.AreEqual(csi.SelectionAnchor, expectedAnchor, "Check that the anchor is equal to the start point.");
                     Verify.AreEqual(csi.Selection, expectedRect, "Check that entire rectangle is the size of 1x1 and is just at the anchor point.");
-                    
+
                     // 2. Move to end point and release cursor
-                    m.Move(endPoint);
-                    m.Up(MouseButtons.Primary, ModifierKeys.None);
+                    area.MouseMove(endPoint);
+                    area.MouseUp();
 
                     Globals.WaitForTimeout(); // must wait after mouse operation. No good waiters since we have no UI objects
 

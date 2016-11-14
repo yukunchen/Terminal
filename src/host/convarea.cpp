@@ -780,8 +780,8 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         TextAttributeRun InsertedRun;
 
         const WORD wScreenAttributes = ScreenInfo->GetAttributes()->GetLegacyAttributes();
-        const bool fRVerticalSet = IsFlagSet(wScreenAttributes, COMMON_LVB_GRID_SINGLEFLAG | COMMON_LVB_GRID_RVERTICAL);
-        const bool fLVerticalSet = IsFlagSet(wScreenAttributes, COMMON_LVB_GRID_SINGLEFLAG | COMMON_LVB_GRID_LVERTICAL);
+        const bool fRVerticalSet = AreAllFlagsSet(wScreenAttributes, COMMON_LVB_GRID_SINGLEFLAG | COMMON_LVB_GRID_RVERTICAL);
+        const bool fLVerticalSet = AreAllFlagsSet(wScreenAttributes, COMMON_LVB_GRID_SINGLEFLAG | COMMON_LVB_GRID_LVERTICAL);
 
         if (fLVerticalSet || fRVerticalSet)
         {

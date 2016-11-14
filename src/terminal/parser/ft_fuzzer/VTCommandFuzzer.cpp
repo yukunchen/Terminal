@@ -12,6 +12,9 @@ const CHAR ESC[2] { 0x1b, 0x0 };
 // VT100 spec defines the CSI sequence as ESC followed by [
 const CHAR CSI[3] { 0x1b, 0x5b, 0x0 };
 
+// There is an alternative, single-character CSI in the C1 control set:
+const CHAR C1CSI[2] { static_cast<CHAR>(static_cast<unsigned char>(0x9b)), 0x0 };
+
 // VT100 spec defines the OSC sequence as ESC followed by ]
 const CHAR OSC[3] { 0x1b, 0x5d, 0x0 };
 
@@ -131,7 +134,9 @@ CStringA GenerateFuzzedToken(
     __in_ecount(ctokens) const LPSTR *tokens,
     __in DWORD ctokens)
 {
-    CStringA s(CSI);
+    CStringA csis[] = { CSI, C1CSI };
+    CStringA s = CFuzzChance::SelectOne(csis);
+
     BYTE manipulations = (BYTE)CFuzzType<BYTE>(FUZZ_MAP(g_repeatMap), 1);
     for (BYTE i = 0; i < manipulations; i++)
     {

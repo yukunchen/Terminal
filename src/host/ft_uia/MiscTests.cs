@@ -17,10 +17,6 @@ namespace Conhost.UIA.Tests
 
     using Microsoft.Win32;
 
-    using MS.Internal.Mita.Foundation;
-    using MS.Internal.Mita.Foundation.Controls;
-    using MS.Internal.Mita.Foundation.Waiters;
-
     using WEX.Common.Managed;
     using WEX.Logging.Interop;
     using WEX.TestExecution;
@@ -29,7 +25,7 @@ namespace Conhost.UIA.Tests
     using Conhost.UIA.Tests.Common;
     using Conhost.UIA.Tests.Common.NativeMethods;
     using Conhost.UIA.Tests.Elements;
-
+    using OpenQA.Selenium.Appium;
 
     [TestClass]
     public class MiscTests
@@ -45,8 +41,8 @@ namespace Conhost.UIA.Tests
                 using (CmdApp app = new CmdApp(CreateType.ProcessOnly))
                 {
                     // maximize the window
-                    UIObject titleBar = app.GetTitleBar();
-                    titleBar.DoubleClick();
+                    AppiumWebElement titleBar = app.GetTitleBar();
+                    app.Actions.DoubleClick(titleBar);
 
                     // wait for double click action to react.
                     Globals.WaitForTimeout();

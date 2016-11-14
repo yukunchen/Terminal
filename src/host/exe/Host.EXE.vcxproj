@@ -1,20 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\common.build.pre.props"/>
+  <Import Project="..\..\common.build.pre.props" />
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
-    <ClInclude Include="DeviceHandle.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="WinNTControl.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
-    <ClCompile Include="DeviceHandle.cpp" />
     <ClCompile Include="exemain.cpp" />
-    <ClCompile Include="WinNTControl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\propslib\propslib.vcxproj">
@@ -25,6 +21,9 @@
     </ProjectReference>
     <ProjectReference Include="..\..\renderer\gdi\lib\gdi.vcxproj">
       <Project>{1c959542-bac2-4e55-9a6d-13251914cbb9}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\server\lib\server.vcxproj">
+      <Project>{18d09a24-8240-42d6-8cb6-236eee820262}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\terminal\adapter\lib\adapter.vcxproj">
       <Project>{dcf55140-ef6a-4736-a403-957e4f7430bb}</Project>
@@ -52,9 +51,9 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..;..\..\..\dep;..\..\..\dep\Console;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>   
+    </ClCompile>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="..\..\common.build.exe.props"/>
-  <Import Project="..\..\common.build.post.props"/>
+  <Import Project="..\..\common.build.exe.props" />
+  <Import Project="..\..\common.build.post.props" />
 </Project>

@@ -20,13 +20,12 @@ Revision History:
 #include "settings.hpp"
 #include "window.hpp"
 
-struct _INPUT_INFORMATION;
-typedef _INPUT_INFORMATION INPUT_INFORMATION;
-typedef _INPUT_INFORMATION *PINPUT_INFORMATION;
-
 #include "conimeinfo.h"
 #include "..\terminal\adapter\terminalInput.hpp"
 #include "..\terminal\adapter\MouseInput.hpp"
+
+#include "..\server\ProcessList.h"
+#include "..\server\WaitQueue.h"
 
 // Flags flags
 #define CONSOLE_IS_ICONIC               0x00000001
@@ -69,18 +68,16 @@ public:
     CONSOLE_INFORMATION();
     ~CONSOLE_INFORMATION();
 
-    LIST_ENTRY ProcessHandleList;
+    ConsoleProcessList ProcessHandleList;
     PINPUT_INFORMATION pInputBuffer;
-    LIST_ENTRY InputReadDataList;
 
     Window* pWindow;
     PSCREEN_INFORMATION CurrentScreenBuffer;
     PSCREEN_INFORMATION ScreenBuffers;  // singly linked list
-    HANDLE Server;
     HWND hWnd;
     HMENU hMenu;    // handle to system menu
     HMENU hHeirMenu;    // handle to menu we append to system menu
-    LIST_ENTRY OutputQueue;
+    ConsoleWaitQueue OutputQueue;
     LIST_ENTRY CommandHistoryList;
     LIST_ENTRY ExeAliasList;
     UINT NumCommandHistories;
@@ -99,8 +96,6 @@ public:
 
     ULONG CtrlFlags;    // indicates outstanding ctrl requests
     ULONG LimitingProcessId;
-
-    LIST_ENTRY MessageQueue;
 
     CPINFO CPInfo;
     CPINFO OutputCPInfo;
@@ -126,38 +121,9 @@ private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
 };
 
-// input handle flags
-#define HANDLE_CLOSING 1
-#define HANDLE_INPUT_PENDING 2
-#define HANDLE_MULTI_LINE_INPUT 4
+#include "..\server\ProcessHandle.h"
 
-typedef struct _CONSOLE_PROCESS_HANDLE
-{
-    LIST_ENTRY ListLink;
-    HANDLE ProcessHandle;
-    ULONG TerminateCount;
-    ULONG ProcessGroupId;
-    CLIENT_ID ClientId;
-    BOOL RootProcess;
-    LIST_ENTRY WaitBlockQueue;
-    HANDLE InputHandle;
-    HANDLE OutputHandle;
-} CONSOLE_PROCESS_HANDLE, *PCONSOLE_PROCESS_HANDLE;
-
-typedef BOOL(*CONSOLE_WAIT_ROUTINE) (_In_ PLIST_ENTRY pWaitQueue,
-                                     _In_ PCONSOLE_API_MSG pWaitReplyMessage,
-                                     _In_ PVOID pvWaitParameter,
-                                     _In_ PVOID pvSatisfyParameter,
-                                     _In_ BOOL fThreadDying);
-
-typedef struct _CONSOLE_WAIT_BLOCK
-{
-    LIST_ENTRY Link;
-    LIST_ENTRY ProcessLink;
-    PVOID WaitParameter;
-    CONSOLE_WAIT_ROUTINE WaitRoutine;
-    CONSOLE_API_MSG WaitReplyMessage;
-} CONSOLE_WAIT_BLOCK, *PCONSOLE_WAIT_BLOCK;
+#include "..\server\WaitBlock.h"
 
 #define ConsoleLocked() (g_ciConsoleInformation.ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)
 
@@ -165,42 +131,12 @@ typedef struct _CONSOLE_WAIT_BLOCK
 #define CONSOLE_STATUS_READ_COMPLETE 0xC0030002
 #define CONSOLE_STATUS_WAIT_NO_BLOCK 0xC0030003
 
-#define CONSOLE_INPUT_HANDLE           0x00000001
-#define CONSOLE_OUTPUT_HANDLE          0x00000002
-#define CONSOLE_GRAPHICS_OUTPUT_HANDLE 0x00000004
-
-class INPUT_READ_HANDLE_DATA;
-
-typedef struct _CONSOLE_HANDLE_DATA
-{
-    ULONG HandleType;
-    ACCESS_MASK Access;
-    ULONG ShareAccess;
-    PVOID ClientPointer; // This will be a pointer to a SCREEN_INFORMATION or INPUT_INFORMATION object.
-    INPUT_READ_HANDLE_DATA * pClientInput;
-} CONSOLE_HANDLE_DATA, *PCONSOLE_HANDLE_DATA;
-
-BOOL ConsoleCreateWait(_In_ PLIST_ENTRY pWaitQueue,
-                       _In_ CONSOLE_WAIT_ROUTINE pfnWaitRoutine,
-                       _Inout_ PCONSOLE_API_MSG pWaitReplyMessage,
-                       _In_ PVOID pvWaitParameter);
-BOOL ConsoleNotifyWaitBlock(_In_ PCONSOLE_WAIT_BLOCK pWaitBlock, _In_ PLIST_ENTRY pWaitQueue, _In_ PVOID pvSatisfyParameter, _In_ BOOL fThreadDying);
-BOOL ConsoleNotifyWait(_In_ PLIST_ENTRY pWaitQueue, _In_ const BOOL fSatisfyAll, _In_ PVOID pvSatisfyParameter);
-
-NTSTATUS ConsoleComplete(_In_ HANDLE hObject, _In_ PCD_IO_COMPLETE pComplete);
-NTSTATUS ReadMessageInput(_In_ PCONSOLE_API_MSG pMessage, _In_ const ULONG ulOffset, _Out_writes_bytes_(cbSize) PVOID pvBuffer, _In_ const ULONG cbSize);
-NTSTATUS GetAugmentedOutputBuffer(_Inout_ PCONSOLE_API_MSG pMessage,
-                                  _In_ const ULONG ulFactor,
-                                  _Outptr_result_bytebuffer_(*pcbSize) PVOID * ppvBuffer,
-                                  _Out_ PULONG pcbSize);
-NTSTATUS GetOutputBuffer(_Inout_ PCONSOLE_API_MSG pMessage, _Outptr_result_bytebuffer_(*pcbSize) PVOID * const ppvBuffer, _Out_ ULONG * const pcbSize);
-NTSTATUS GetInputBuffer(_In_ PCONSOLE_API_MSG pMessage, _Outptr_result_bytebuffer_(*pcbSize) PVOID * const ppvBuffer, _Out_ ULONG * const pcbSize);
-
-void ReleaseMessageBuffers(_Inout_ PCONSOLE_API_MSG pMessage);
+#include "..\server\ObjectHandle.h"
 
 void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput);
 
 NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo);
 
-PINPUT_INFORMATION GetInputBufferFromHandle(const CONSOLE_HANDLE_DATA* HandleData);
-PSCREEN_INFORMATION GetScreenBufferFromHandle(const CONSOLE_HANDLE_DATA* HandleData);
+struct _INPUT_INFORMATION;
+typedef _INPUT_INFORMATION INPUT_INFORMATION;
+typedef _INPUT_INFORMATION *PINPUT_INFORMATION;

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\common.build.pre.props" />
   <ItemGroup>
@@ -36,6 +36,7 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="console.rc" />
+    <MessageCompile Include="strid.mc" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\propslib\propslib.vcxproj">
@@ -53,22 +54,30 @@
     <TargetName>console</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup>
-    <PreBuildEvent>
-        <Command>strid.bat</Command>
-    </PreBuildEvent>
     <Link>
       <AdditionalDependencies>
             comctl32.lib;
             RuntimeObject.lib;
             Shlwapi.lib;
             %(AdditionalDependencies)
-        </AdditionalDependencies>
+      </AdditionalDependencies>
       <ModuleDefinitionFile>console.def</ModuleDefinitionFile>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\dep;..\..\dep\Console;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\dep;..\..\dep\Console;$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
   </ItemDefinitionGroup>
+  <Target
+    Name="MessageCompile"
+    Inputs="@(MessageCompile)"
+    Outputs="$(IntermediateOutputPath)\%(MessageCompile.Filename).h"
+    BeforeTargets="ClCompile"
+    >
+    <Exec Command="mc.exe /h $(IntermediateOutputPath) /r $(IntermediateOutputPath) @(MessageCompile)" />
+  </Target>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\common.build.dll.props" />
   <Import Project="..\common.build.post.props" />

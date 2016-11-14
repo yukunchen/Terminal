@@ -116,33 +116,7 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ SCREEN_INFORMATION* const pScr
 // - TRUE if successful (see DoSrvGetConsoleScreenBufferInfo). FALSE otherwise.
 BOOL ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const 
 {
-    BOOL fSuccess = pConsoleScreenBufferInfoEx->cbSize == sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-
-    if (fSuccess)
-    {
-        CONSOLE_SCREENBUFFERINFO_MSG msg;
-
-        fSuccess = NT_SUCCESS(DoSrvGetConsoleScreenBufferInfo(_pScreenInfo, &msg));
-
-        if (fSuccess)
-        {
-            pConsoleScreenBufferInfoEx->bFullscreenSupported = msg.FullscreenSupported;
-
-            memcpy(pConsoleScreenBufferInfoEx->ColorTable, msg.ColorTable, sizeof(msg.ColorTable));
-
-            pConsoleScreenBufferInfoEx->dwCursorPosition = msg.CursorPosition;
-            pConsoleScreenBufferInfoEx->dwMaximumWindowSize = msg.MaximumWindowSize;
-            pConsoleScreenBufferInfoEx->dwSize = msg.Size;
-            pConsoleScreenBufferInfoEx->srWindow.Left = msg.ScrollPosition.X;
-            pConsoleScreenBufferInfoEx->srWindow.Top = msg.ScrollPosition.Y;
-            pConsoleScreenBufferInfoEx->srWindow.Right = pConsoleScreenBufferInfoEx->srWindow.Left + msg.CurrentWindowSize.X;
-            pConsoleScreenBufferInfoEx->srWindow.Bottom = pConsoleScreenBufferInfoEx->srWindow.Top + msg.CurrentWindowSize.Y;
-            pConsoleScreenBufferInfoEx->wAttributes = msg.Attributes;
-            pConsoleScreenBufferInfoEx->wPopupAttributes = msg.PopupAttributes;
-        }
-    }
-
-    return fSuccess;
+    return SUCCEEDED(DoSrvGetConsoleScreenBufferInfo(_pScreenInfo, pConsoleScreenBufferInfoEx));
 }
 
 // Routine Description:
@@ -153,27 +127,7 @@ BOOL ConhostInternalGetSet::GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BU
 // - TRUE if successful (see DoSrvSetConsoleScreenBufferInfo). FALSE otherwise.
 BOOL ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const 
 {
-    BOOL fSuccess = pConsoleScreenBufferInfoEx->cbSize == sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    if (fSuccess)
-    {        
-        CONSOLE_SCREENBUFFERINFO_MSG msg;
-        msg.FullscreenSupported = !!pConsoleScreenBufferInfoEx->bFullscreenSupported;
-
-        memcpy(msg.ColorTable, pConsoleScreenBufferInfoEx->ColorTable, sizeof(pConsoleScreenBufferInfoEx->ColorTable));
-
-        msg.CursorPosition    = pConsoleScreenBufferInfoEx->dwCursorPosition;
-        msg.MaximumWindowSize = pConsoleScreenBufferInfoEx->dwMaximumWindowSize;
-        msg.Size              = pConsoleScreenBufferInfoEx->dwSize ;
-        msg.ScrollPosition.X  = pConsoleScreenBufferInfoEx->srWindow.Left;
-        msg.ScrollPosition.Y  = pConsoleScreenBufferInfoEx->srWindow.Top;
-        msg.CurrentWindowSize.X = pConsoleScreenBufferInfoEx->srWindow.Right  - pConsoleScreenBufferInfoEx->srWindow.Left;
-        msg.CurrentWindowSize.Y = pConsoleScreenBufferInfoEx->srWindow.Bottom - pConsoleScreenBufferInfoEx->srWindow.Top;
-        msg.Attributes         = pConsoleScreenBufferInfoEx->wAttributes;
-        msg.PopupAttributes    = pConsoleScreenBufferInfoEx->wPopupAttributes;
-        fSuccess = NT_SUCCESS(DoSrvSetScreenBufferInfo(_pScreenInfo, &msg));
-    }
-
-    return fSuccess;
+    return SUCCEEDED(DoSrvSetScreenBufferInfo(_pScreenInfo, pConsoleScreenBufferInfoEx));
 }
 
 // Routine Description:
@@ -184,12 +138,7 @@ BOOL ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCRE
 // - TRUE if successful (see DoSrvSetConsoleCursorPosition). FALSE otherwise.
 BOOL ConhostInternalGetSet::SetConsoleCursorPosition(_In_ COORD const coordCursorPosition)
 {
-    CONSOLE_SETCURSORPOSITION_MSG msg;
-    msg.CursorPosition = coordCursorPosition;
-
-    BOOL fSuccess = NT_SUCCESS(DoSrvSetConsoleCursorPosition(_pScreenInfo, &msg));
-
-    return fSuccess;
+    return SUCCEEDED(DoSrvSetConsoleCursorPosition(_pScreenInfo, &coordCursorPosition));
 }
 
 // Routine Description:
@@ -200,17 +149,19 @@ BOOL ConhostInternalGetSet::SetConsoleCursorPosition(_In_ COORD const coordCurso
 // - TRUE if successful (see DoSrvGetConsoleCursorInfo). FALSE otherwise.
 BOOL ConhostInternalGetSet::GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) const 
 {
-    CONSOLE_GETCURSORINFO_MSG msg;
+    BOOLEAN bVisible;
+    DWORD dwSize;
 
-    BOOL fSuccess = NT_SUCCESS(DoSrvGetConsoleCursorInfo(_pScreenInfo, &msg));
-
-    if (fSuccess)
+    if (SUCCEEDED(DoSrvGetConsoleCursorInfo(_pScreenInfo, &dwSize, &bVisible)))
     {
-        pConsoleCursorInfo->bVisible = msg.Visible;
-        pConsoleCursorInfo->dwSize = msg.CursorSize;
+        pConsoleCursorInfo->bVisible = bVisible;
+        pConsoleCursorInfo->dwSize = dwSize;
+        return TRUE;
     }
-
-    return fSuccess;
+    else
+    {
+        return FALSE;
+    }
 }
 
 // Routine Description:
@@ -221,13 +172,7 @@ BOOL ConhostInternalGetSet::GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const
 // - TRUE if successful (see DoSrvSetConsoleCursorInfo). FALSE otherwise.
 BOOL ConhostInternalGetSet::SetConsoleCursorInfo(_In_ const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo)
 {
-    CONSOLE_SETCURSORINFO_MSG msg;
-    msg.CursorSize = pConsoleCursorInfo->dwSize;
-    msg.Visible = (BOOLEAN)pConsoleCursorInfo->bVisible;
-
-    BOOL fSuccess = NT_SUCCESS(DoSrvSetConsoleCursorInfo(_pScreenInfo, &msg));
-
-    return fSuccess;
+    return SUCCEEDED(DoSrvSetConsoleCursorInfo(_pScreenInfo, pConsoleCursorInfo->dwSize, !!pConsoleCursorInfo->bVisible));
 }
 
 // Routine Description:
@@ -294,12 +239,7 @@ BOOL ConhostInternalGetSet::_FillConsoleOutput(_In_ USHORT const usElement, _In_
 // - TRUE if successful (see DoSrvSetConsoleTextAttribute). FALSE otherwise.
 BOOL ConhostInternalGetSet::SetConsoleTextAttribute(_In_ WORD const wAttr)
 {
-    CONSOLE_SETTEXTATTRIBUTE_MSG msg;
-    msg.Attributes = wAttr;
-
-    BOOL fSuccess = NT_SUCCESS(DoSrvSetConsoleTextAttribute(_pScreenInfo, &msg));
-
-    return fSuccess;
+    return SUCCEEDED(DoSrvSetConsoleTextAttribute(_pScreenInfo, wAttr));
 }
 
 // Routine Description:
@@ -359,27 +299,17 @@ BOOL ConhostInternalGetSet::WriteConsoleInputW(_In_reads_(nLength) INPUT_RECORD*
 // - pFill - The text/attribute pair to fill all remaining space behind after the "cut" operation (bounded by clip, of course.)
 // Return Value: 
 // - TRUE if successful (see DoSrvScrollConsoleScreenBuffer). FALSE otherwise.
-BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pScrollRectangle, _In_opt_ const SMALL_RECT* pClipRectangle, _In_ COORD coordDestinationOrigin, _In_ const CHAR_INFO* pFill)
+BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pScrollRectangle, 
+                                                       _In_opt_ const SMALL_RECT* pClipRectangle, 
+                                                       _In_ COORD coordDestinationOrigin, 
+                                                       _In_ const CHAR_INFO* pFill)
 {
-    CONSOLE_SCROLLSCREENBUFFER_MSG msg;
-    
-    if (pClipRectangle != nullptr)
-    {
-        msg.ClipRectangle = *pClipRectangle;
-        msg.Clip = TRUE;
-    }
-    else
-    {
-        msg.ClipRectangle = { 0 };
-        msg.Clip = FALSE;
-    }
-
-    msg.DestinationOrigin = coordDestinationOrigin;
-    msg.Fill = *pFill;
-    msg.ScrollRectangle = *pScrollRectangle;
-    msg.Unicode = TRUE;
-
-    return NT_SUCCESS(DoSrvScrollConsoleScreenBuffer(_pScreenInfo, &msg));
+    return SUCCEEDED(DoSrvScrollConsoleScreenBufferW(_pScreenInfo,
+                                                     pScrollRectangle,
+                                                     &coordDestinationOrigin,
+                                                     pClipRectangle,
+                                                     pFill->Char.UnicodeChar,
+                                                     pFill->Attributes));
 }
 
 // Routine Description:
@@ -391,11 +321,7 @@ BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pS
 // - TRUE if successful (see DoSrvSetConsoleWindowInfo). FALSE otherwise.
 BOOL ConhostInternalGetSet::SetConsoleWindowInfo(_In_ BOOL const bAbsolute, _In_ const SMALL_RECT* const lpConsoleWindow)
 {
-    CONSOLE_SETWINDOWINFO_MSG msg;
-    msg.Absolute = !!bAbsolute;
-    msg.Window = *lpConsoleWindow;
-
-    return NT_SUCCESS(DoSrvSetConsoleWindowInfo(_pScreenInfo, &msg));
+    return SUCCEEDED(DoSrvSetConsoleWindowInfo(_pScreenInfo, !!bAbsolute, lpConsoleWindow));
 }
 
 // Routine Description:
@@ -468,18 +394,9 @@ BOOL ConhostInternalGetSet::PrivateReverseLineFeed()
 // - sCchTitleLength - the number of characters in the title
 // Return Value: 
 // - TRUE if successful (see DoSrvSetConsoleTitle). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetConsoleTitleW(_In_ const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength)
+BOOL ConhostInternalGetSet::SetConsoleTitleW(_In_reads_(sCchTitleLength) const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength)
 {
-    ULONG cbOriginalLength;
-
-    BOOL fResult = SUCCEEDED(ULongMult(sCchTitleLength, sizeof(WCHAR), &cbOriginalLength));
-    
-    if (fResult)
-    {
-        fResult = NT_SUCCESS(DoSrvSetConsoleTitle((PVOID)pwchWindowTitle, cbOriginalLength, TRUE));
-    }    
-
-    return fResult;
+    return SUCCEEDED(DoSrvSetConsoleTitleW(pwchWindowTitle, sCchTitleLength));
 }
 
 // Routine Description:

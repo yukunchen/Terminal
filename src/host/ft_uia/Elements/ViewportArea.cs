@@ -13,15 +13,14 @@ namespace Conhost.UIA.Tests.Elements
     using System.Runtime.InteropServices;
     using System.Text;
 
-    using MS.Internal.Mita.Foundation;
-    using MS.Internal.Mita.Foundation.Controls;
-    using MS.Internal.Mita.Foundation.Waiters;
+    using OpenQA.Selenium.Appium;
 
     using WEX.Logging.Interop;
     using WEX.TestExecution;
 
     using Conhost.UIA.Tests.Common;
     using Conhost.UIA.Tests.Common.NativeMethods;
+    using OpenQA.Selenium;
 
     public class ViewportArea : IDisposable
     {
@@ -84,30 +83,26 @@ namespace Conhost.UIA.Tests.Elements
         private void InitializeWindow()
         {
             AutoHelpers.LogInvariant("Initializing window data for viewport area...");
-            Window w = new Window(this.app.UIRoot);
 
-            Rectangle windowBounds = w.BoundingRectangle;
-
-            IntPtr hWnd = w.NativeWindowHandle;
+            IntPtr hWnd = app.GetWindowHandle();
 
             User32.RECT lpRect;
             User32.GetClientRect(hWnd, out lpRect);
 
-            User32.POINT lpPoint;
-            lpPoint.x = lpRect.left;
-            lpPoint.y = lpRect.top;
+            int style = User32.GetWindowLong(hWnd, User32.GWL_STYLE);
+            int exStyle = User32.GetWindowLong(hWnd, User32.GWL_EXSTYLE);
 
-            User32.ClientToScreen(hWnd, ref lpPoint);
+            Verify.IsTrue(User32.AdjustWindowRectEx(ref lpRect, style, false, exStyle));
 
             this.clientTopLeft = new Point();
-            this.clientTopLeft.X = lpPoint.x;
-            this.clientTopLeft.Y = lpPoint.y;
+            this.clientTopLeft.X = Math.Abs(lpRect.left);
+            this.clientTopLeft.Y = Math.Abs(lpRect.top);
             AutoHelpers.LogInvariant("Top left corner of client area is at X:{0} Y:{1}", this.clientTopLeft.X, this.clientTopLeft.Y);
         }
 
         public void ExitModes()
         {
-            Keyboard.Instance.SendKeys("{ESC}");
+            app.UIRoot.SendKeys(Keys.Escape);
             this.state = ViewportStates.Normal;
         }
         
@@ -119,48 +114,73 @@ namespace Conhost.UIA.Tests.Elements
                 return;
             }
 
-            MenuOpenedWaiter contextMenuWaiter = new MenuOpenedWaiter();
+            var titleBar = app.UIRoot.FindElementByAccessibilityId("TitleBar");
+            app.Session.Mouse.ContextClick(titleBar.Coordinates);
 
-            UIObject titleBar = app.UIRoot.Children.Find(UICondition.Create("@AutomationId = {0}", "TitleBar"));
-            titleBar.Click(PointerButtons.Secondary);
+            Globals.WaitForTimeout();
+            var contextMenu = app.Session.FindElementByClassName(Globals.PopupMenuClassId);
 
-            contextMenuWaiter.Wait(Globals.Timeout);
-            UIObject contextMenu = contextMenuWaiter.Source;
+            var editButton = contextMenu.FindElementByName("Edit");
 
-            UIObject editButton = contextMenu.Children.Find(UICondition.CreateFromName("Edit"));
+            editButton.Click();
+            Globals.WaitForTimeout();
 
-            MenuOpenedWaiter editWaiter = new MenuOpenedWaiter();
-            editButton.Click(PointerButtons.Primary);
-            editWaiter.Wait(Globals.Timeout);
+            Globals.WaitForTimeout();
 
-            contextMenu = editWaiter.Source;
-
-            UIObject subMenuButton = null;
+            AppiumWebElement subMenuButton;
             switch (state)
             {
                 case ViewportStates.Mark:
-                    subMenuButton = contextMenu.Children.Find(UICondition.CreateFromName("Mark"));
+                    subMenuButton = app.Session.FindElementByName("Mark");
                     break;
                 default:
                     throw new NotImplementedException(AutoHelpers.FormatInvariant("Set Mode doesn't yet support type of '{0}'", state.ToString()));
             }
 
-            MenuClosedWaiter actionCompleteWaiter = new MenuClosedWaiter();
-            subMenuButton.Click(PointerButtons.Primary);
-            actionCompleteWaiter.Wait(Globals.Timeout);
+            subMenuButton.Click();
+            Globals.WaitForTimeout();
 
             this.state = state;
         }
-                
-        public void ConvertCharacterOffsetToPixelPosition(ref Point pt)
+
+
+        // Accepts Point in characters. Will convert to pixels and move to the right location relative to this viewport.
+        public void MouseMove(Point pt)
+        {
+            Log.Comment($"Character position {pt.X}, {pt.Y}");
+
+            Point modPoint = pt;
+            ConvertCharacterOffsetToPixelPosition(ref modPoint);
+
+            Log.Comment($"Pixel position {modPoint.X}, {modPoint.Y}");
+
+
+            app.Session.Mouse.MouseMove(app.UIRoot.Coordinates, modPoint.X, modPoint.Y);
+        }
+
+        public void MouseDown()
+        {
+            app.Session.Mouse.MouseDown(null);
+        }
+
+        public void MouseUp()
+        {
+            app.Session.Mouse.MouseUp(null);
+        }
+
+        private void ConvertCharacterOffsetToPixelPosition(ref Point pt)
         {
             // Scale by pixel count per character
             pt.X *= this.sizeFont.Width;
             pt.Y *= this.sizeFont.Height;
 
-            // Adjust offset by top left corner of client area
+            // Move it to center of character
+            pt.X += this.sizeFont.Width / 2;
+            pt.Y += this.sizeFont.Height / 2;
+
+            // Adjust to the top left corner of the client rectangle.
             pt.X += this.clientTopLeft.X;
-            pt.Y += this.clientTopLeft.Y;           
+            pt.Y += this.clientTopLeft.Y;
         }
 
         public WinCon.CHAR_INFO GetCharInfoAt(IntPtr handle, Point pt)

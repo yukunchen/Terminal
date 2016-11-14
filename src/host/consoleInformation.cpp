@@ -13,16 +13,14 @@
 
 
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
-    // ProcessHandleList initialized below
+    // ProcessHandleList initializes itself
     pInputBuffer(nullptr),
-    // InputReadDataList initialized below
     CurrentScreenBuffer(nullptr),
     ScreenBuffers(nullptr),
-    Server(nullptr),
     hWnd(nullptr),
     hMenu(nullptr),
     hHeirMenu(nullptr),
-    // OutputQueue initialized below
+    OutputQueue(),
     // CommandHistoryList initialized below
     // ExeAliasList initialized below
     NumCommandHistories(0),
@@ -36,7 +34,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     CtrlFlags(0),
     LimitingProcessId(0),
     // ColorTable initialized below
-    // MessageQueue initialized below
     // CPInfo initialized below
     // OutputCPInfo initialized below
     ReadConInpNumBytesUnicode(0),
@@ -47,12 +44,12 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     termInput(HandleTerminalKeyEventCallback),
     terminalMouseInput(HandleTerminalKeyEventCallback)
 {
-    ZeroMemory((void*)&ProcessHandleList, sizeof(ProcessHandleList));
-    ZeroMemory((void*)&InputReadDataList, sizeof(InputReadDataList));
-    ZeroMemory((void*)&OutputQueue, sizeof(OutputQueue));
     ZeroMemory((void*)&CommandHistoryList, sizeof(CommandHistoryList));
+    InitializeListHead(&g_ciConsoleInformation.CommandHistoryList);
+
     ZeroMemory((void*)&ExeAliasList, sizeof(ExeAliasList));
-    ZeroMemory((void*)&MessageQueue, sizeof(MessageQueue));
+    InitializeListHead(&g_ciConsoleInformation.ExeAliasList);
+
     ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
     ZeroMemory((void*)&ConsoleIme, sizeof(ConsoleIme));
@@ -66,7 +63,9 @@ CONSOLE_INFORMATION::~CONSOLE_INFORMATION()
 
 bool CONSOLE_INFORMATION::IsConsoleLocked() const
 {
-    return _csConsoleLock.OwningThread == GetCurrentThread();
+    // The critical section structure's OwningThread field contains the ThreadId despite having the HANDLE type.
+    // This requires us to hard cast the ID to compare.
+    return _csConsoleLock.OwningThread == (HANDLE)GetCurrentThreadId();
 }
 
 #pragma prefast(suppress:26135, "Adding lock annotation spills into entire project. Future work.")

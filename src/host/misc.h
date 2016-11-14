@@ -17,6 +17,29 @@ Revision History:
 
 #include "screenInfo.hpp"
 
+HRESULT ConvertToW(_In_ const UINT uiCodePage,
+                   _In_reads_or_z_(cchSource) const char* const rgchSource,
+                   _In_ size_t const cchSource,
+                   _Inout_ wistd::unique_ptr<wchar_t[]>& pwsTarget,
+                   _Out_ size_t& cchTarget);
+
+HRESULT ConvertToA(_In_ const UINT uiCodePage,
+                   _In_reads_or_z_(cchSource) const wchar_t* const rgwchSource,
+                   _In_ size_t cchSource,
+                   _Inout_ wistd::unique_ptr<char[]>& psTarget,
+                   _Out_ size_t& cchTarget);
+
+HRESULT GetALengthFromW(_In_ const UINT uiCodePage,
+                        _In_reads_or_z_(cchSource) const wchar_t* const rgwchSource,
+                        _In_ size_t const cchSource,
+                        _Out_ size_t* const pcchTarget);
+
+HRESULT GetUShortByteCount(_In_ size_t cchUnicode,
+                           _Out_ USHORT* const pcb);
+
+HRESULT GetDwordByteCount(_In_ size_t cchUnicode,
+                          _Out_ DWORD* const pcb);
+
 int ConvertToOem(_In_ const UINT uiCodePage,
                  _In_reads_(cchSource) const WCHAR * const pwchSource,
                  _In_ const UINT cchSource,

@@ -94,7 +94,7 @@ HRESULT CicDisplayAttributeMgr::GetDisplayAttributeTrackPropertyRange(TfEditCook
 //
 //----------------------------------------------------------------------------
 
-HRESULT CicDisplayAttributeMgr::GetDisplayAttributeData(ITfCategoryMgr *pcat, TfEditCookie ec, ITfReadOnlyProperty *pProp, ITfRange *pRange, TF_DISPLAYATTRIBUTE *pda, TfGuidAtom *pguid, ULONG  ulNumProp)
+HRESULT CicDisplayAttributeMgr::GetDisplayAttributeData(ITfCategoryMgr *pcat, TfEditCookie ec, ITfReadOnlyProperty *pProp, ITfRange *pRange, TF_DISPLAYATTRIBUTE *pda, TfGuidAtom *pguid, ULONG /*ulNumProp*/)
 {
     VARIANT var;
 

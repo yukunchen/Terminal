@@ -25,6 +25,7 @@ Revision History:
 #include "outputStream.hpp"
 #include "..\terminal\adapter\adaptDispatch.hpp"
 #include "..\terminal\parser\stateMachine.hpp"
+#include "..\server\ObjectHeader.h"
 using namespace Microsoft::Console::VirtualTerminal;
 
 class Window; // forward decl window. circular reference
@@ -45,9 +46,8 @@ public:
 
     NTSTATUS GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
                                         _Out_ PCOORD pcoordCursorPosition,
-                                        _Out_ PCOORD pcoordScrollPosition,
+                                        _Out_ PSMALL_RECT psrWindow,
                                         _Out_ PWORD pwAttributes,
-                                        _Out_ PCOORD pcoordCurrentWindowSize,
                                         _Out_ PCOORD pcoordMaximumWindowSize,
                                         _Out_ PWORD pwPopupAttributes,
                                         _Out_writes_(COLOR_TABLE_SIZE) LPCOLORREF lpColorTable) const;
@@ -90,7 +90,12 @@ public:
     BOOL SendNotifyBeep() const;
     BOOL PostUpdateWindowSize() const;
 
-    CONSOLE_OBJECT_HEADER Header;
+    ConsoleObjectHeader Header;
+
+    // TODO: MSFT 9355062 these methods should probably be a part of construction/destruction. http://osgvsowi/9355062
+    static void s_InsertScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
+    static void s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
+
     DWORD OutputMode;
     COORD ScreenBufferSize; // dimensions of buffer
     SMALL_RECT BufferViewport;  // specifies which coordinates of the screen buffer are visible in the window client (the "viewport" into the buffer)

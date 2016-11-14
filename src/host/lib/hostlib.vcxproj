@@ -7,7 +7,6 @@
     <ClCompile Include="..\conimeinfo.cpp" />
     <ClCompile Include="..\consoleInformation.cpp" />
     <ClCompile Include="..\convarea.cpp" />
-    <ClCompile Include="..\csrutil.cpp" />
     <ClCompile Include="..\cursor.cpp" />
     <ClCompile Include="..\dbcs.cpp" />
     <ClCompile Include="..\directio.cpp" />
@@ -52,6 +51,7 @@
     <ClCompile Include="..\_stream.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\ApiRoutines.h" />
     <ClInclude Include="..\clipboard.hpp" />
     <ClInclude Include="..\cmdline.h" />
     <ClInclude Include="..\conapi.h" />

@@ -12,7 +12,6 @@ SOURCES                         =   $(SOURCES)\
                                     ..\scrolling.cpp \
                                     ..\cmdline.cpp   \
                                     ..\consoleInformation.cpp \
-                                    ..\csrutil.cpp   \
                                     ..\cursor.cpp    \
                                     ..\directio.cpp  \
                                     ..\find.cpp      \

@@ -21,118 +21,12 @@
 #include "windowdpiapi.hpp"
 #include "userprivapi.hpp"
 
+#include "ApiRoutines.h"
+
+#include "..\server\Entrypoints.h"
+#include "..\server\IoSorter.h"
+
 #pragma hdrstop
-
-#define CONSOLE_API_STRUCT(Routine, Struct) { Routine, sizeof(Struct) }
-#define CONSOLE_API_NO_PARAMETER(Routine) { Routine, 0 }
-
-typedef NTSTATUS(*PCONSOLE_API_ROUTINE) (_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-
-typedef struct _CONSOLE_API_DESCRIPTOR
-{
-    PCONSOLE_API_ROUTINE Routine;
-    ULONG RequiredSize;
-} CONSOLE_API_DESCRIPTOR, *PCONSOLE_API_DESCRIPTOR;
-
-typedef struct _CONSOLE_API_LAYER_DESCRIPTOR
-{
-    const CONSOLE_API_DESCRIPTOR *Descriptor;
-    ULONG Count;
-} CONSOLE_API_LAYER_DESCRIPTOR, *PCONSOLE_API_LAYER_DESCRIPTOR;
-
-NTSTATUS SrvDeprecatedAPI(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-
-const CONSOLE_API_DESCRIPTOR ConsoleApiLayer1[] = {
-    CONSOLE_API_STRUCT(SrvGetConsoleCP, CONSOLE_GETCP_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleMode, CONSOLE_MODE_MSG),
-    CONSOLE_API_STRUCT(SrvSetConsoleMode, CONSOLE_MODE_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleNumberOfInputEvents, CONSOLE_GETNUMBEROFINPUTEVENTS_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleInput, CONSOLE_GETCONSOLEINPUT_MSG),
-    CONSOLE_API_STRUCT(SrvReadConsole, CONSOLE_READCONSOLE_MSG),
-    CONSOLE_API_STRUCT(SrvWriteConsole, CONSOLE_WRITECONSOLE_MSG),
-    CONSOLE_API_NO_PARAMETER(SrvDeprecatedAPI), // SrvConsoleNotifyLastClose
-    CONSOLE_API_STRUCT(SrvGetConsoleLangId, CONSOLE_LANGID_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_MAPBITMAP_MSG),
-};
-
-const CONSOLE_API_DESCRIPTOR ConsoleApiLayer2[] = {
-    CONSOLE_API_STRUCT(SrvFillConsoleOutput, CONSOLE_FILLCONSOLEOUTPUT_MSG),
-    CONSOLE_API_STRUCT(SrvGenerateConsoleCtrlEvent, CONSOLE_CTRLEVENT_MSG),
-    CONSOLE_API_NO_PARAMETER(SrvSetConsoleActiveScreenBuffer),
-    CONSOLE_API_NO_PARAMETER(SrvFlushConsoleInputBuffer),
-    CONSOLE_API_STRUCT(SrvSetConsoleCP, CONSOLE_SETCP_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleCursorInfo, CONSOLE_GETCURSORINFO_MSG),
-    CONSOLE_API_STRUCT(SrvSetConsoleCursorInfo, CONSOLE_SETCURSORINFO_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleScreenBufferInfo, CONSOLE_SCREENBUFFERINFO_MSG),
-    CONSOLE_API_STRUCT(SrvSetScreenBufferInfo, CONSOLE_SCREENBUFFERINFO_MSG),
-    CONSOLE_API_STRUCT(SrvSetConsoleScreenBufferSize, CONSOLE_SETSCREENBUFFERSIZE_MSG),
-    CONSOLE_API_STRUCT(SrvSetConsoleCursorPosition, CONSOLE_SETCURSORPOSITION_MSG),
-    CONSOLE_API_STRUCT(SrvGetLargestConsoleWindowSize, CONSOLE_GETLARGESTWINDOWSIZE_MSG),
-    CONSOLE_API_STRUCT(SrvScrollConsoleScreenBuffer, CONSOLE_SCROLLSCREENBUFFER_MSG),
-    CONSOLE_API_STRUCT(SrvSetConsoleTextAttribute, CONSOLE_SETTEXTATTRIBUTE_MSG),
-    CONSOLE_API_STRUCT(SrvSetConsoleWindowInfo, CONSOLE_SETWINDOWINFO_MSG),
-    CONSOLE_API_STRUCT(SrvReadConsoleOutputString, CONSOLE_READCONSOLEOUTPUTSTRING_MSG),
-    CONSOLE_API_STRUCT(SrvWriteConsoleInput, CONSOLE_WRITECONSOLEINPUT_MSG),
-    CONSOLE_API_STRUCT(SrvWriteConsoleOutput, CONSOLE_WRITECONSOLEOUTPUT_MSG),
-    CONSOLE_API_STRUCT(SrvWriteConsoleOutputString, CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG),
-    CONSOLE_API_STRUCT(SrvReadConsoleOutput, CONSOLE_READCONSOLEOUTPUT_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleTitle, CONSOLE_GETTITLE_MSG),
-    CONSOLE_API_STRUCT(SrvSetConsoleTitle, CONSOLE_SETTITLE_MSG),
-};
-
-const CONSOLE_API_DESCRIPTOR ConsoleApiLayer3[] = {
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_GETNUMBEROFFONTS_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleMouseInfo, CONSOLE_GETMOUSEINFO_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_GETFONTINFO_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleFontSize, CONSOLE_GETFONTSIZE_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleCurrentFont, CONSOLE_CURRENTFONT_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETFONT_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETICON_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_INVALIDATERECT_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_VDM_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETCURSOR_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SHOWCURSOR_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_MENUCONTROL_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETPALETTE_MSG),
-    CONSOLE_API_STRUCT(SrvSetConsoleDisplayMode, CONSOLE_SETDISPLAYMODE_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_REGISTERVDM_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_GETHARDWARESTATE_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETHARDWARESTATE_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleDisplayMode, CONSOLE_GETDISPLAYMODE_MSG),
-    CONSOLE_API_STRUCT(SrvAddConsoleAlias, CONSOLE_ADDALIAS_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleAlias, CONSOLE_GETALIAS_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleAliasesLength, CONSOLE_GETALIASESLENGTH_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleAliasExesLength, CONSOLE_GETALIASEXESLENGTH_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleAliases, CONSOLE_GETALIASES_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleAliasExes, CONSOLE_GETALIASEXES_MSG),
-    CONSOLE_API_STRUCT(SrvExpungeConsoleCommandHistory, CONSOLE_EXPUNGECOMMANDHISTORY_MSG),
-    CONSOLE_API_STRUCT(SrvSetConsoleNumberOfCommands, CONSOLE_SETNUMBEROFCOMMANDS_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleCommandHistoryLength, CONSOLE_GETCOMMANDHISTORYLENGTH_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleCommandHistory, CONSOLE_GETCOMMANDHISTORY_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETKEYSHORTCUTS_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETMENUCLOSE_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_GETKEYBOARDLAYOUTNAME_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleWindow, CONSOLE_GETCONSOLEWINDOW_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_CHAR_TYPE_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_LOCAL_EUDC_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_CURSOR_MODE_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_CURSOR_MODE_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_REGISTEROS2_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_SETOS2OEMFORMAT_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_NLS_MODE_MSG),
-    CONSOLE_API_STRUCT(SrvDeprecatedAPI, CONSOLE_NLS_MODE_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleSelectionInfo, CONSOLE_GETSELECTIONINFO_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleProcessList, CONSOLE_GETCONSOLEPROCESSLIST_MSG),
-    CONSOLE_API_STRUCT(SrvGetConsoleHistory, CONSOLE_HISTORY_MSG),
-    CONSOLE_API_STRUCT(SrvSetConsoleHistory, CONSOLE_HISTORY_MSG),
-    CONSOLE_API_STRUCT(SrvSetConsoleCurrentFont, CONSOLE_CURRENTFONT_MSG),
-};
-
-const CONSOLE_API_LAYER_DESCRIPTOR ConsoleApiLayerTable[] = {
-    {ConsoleApiLayer1, RTL_NUMBER_OF(ConsoleApiLayer1)},
-    {ConsoleApiLayer2, RTL_NUMBER_OF(ConsoleApiLayer2)},
-    {ConsoleApiLayer3, RTL_NUMBER_OF(ConsoleApiLayer3)},
-};
 
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
@@ -143,7 +37,7 @@ void LoadLinkInfo(_Inout_ Settings* pLinkSettings,
                   _In_ PCWSTR pwszCurrDir,
                   _In_ PCWSTR pwszAppName)
 {
-    WCHAR wszIconLocation[MAX_PATH] = {0};
+    WCHAR wszIconLocation[MAX_PATH] = { 0 };
     int iIconIndex = 0;
 
     pLinkSettings->SetCodePage(g_uiOEMCP);
@@ -166,7 +60,7 @@ void LoadLinkInfo(_Inout_ Settings* pLinkSettings,
 
                 if (NT_SUCCESS(Status))
                 {
-                    CONSOLE_STATE_INFO csi = {0};
+                    CONSOLE_STATE_INFO csi = { 0 };
                     csi.LinkTitle = g_ciConsoleInformation.LinkTitle;
                     WCHAR wszShortcutTitle[MAX_PATH];
                     BOOL fReadConsoleProperties;
@@ -188,7 +82,7 @@ void LoadLinkInfo(_Inout_ Settings* pLinkSettings,
                     if (wszShortcutTitle[0] != L'\0')
                     {
                         // guarantee null termination to make OACR happy.
-                        wszShortcutTitle[ARRAYSIZE(wszShortcutTitle)-1] = L'\0';
+                        wszShortcutTitle[ARRAYSIZE(wszShortcutTitle) - 1] = L'\0';
                         StringCbCopyW(pwszTitle, *pdwTitleLength, wszShortcutTitle);
 
                         // OACR complains about the use of a DWORD here, so roundtrip through a size_t
@@ -247,53 +141,23 @@ void LoadLinkInfo(_Inout_ Settings* pLinkSettings,
     }
 }
 
-NTSTATUS ConsoleServerInitialization(_In_ HANDLE Server)
+HRESULT ConsoleServerInitialization(_In_ HANDLE Server)
 {
-    g_ciConsoleInformation.Server = Server;
+    try
+    {
+        g_pDeviceComm = new DeviceComm(Server);
+    }
+    CATCH_RETURN();
 
     g_uiOEMCP = GetOEMCP();
 
-    InitializeListHead(&g_ciConsoleInformation.ProcessHandleList);
-    InitializeListHead(&g_ciConsoleInformation.CommandHistoryList);
-    InitializeListHead(&g_ciConsoleInformation.OutputQueue);
-    InitializeListHead(&g_ciConsoleInformation.ExeAliasList);
-    InitializeListHead(&g_ciConsoleInformation.MessageQueue);
-
     g_pFontDefaultList = new RenderFontDefaults();
+    RETURN_IF_NULL_ALLOC(g_pFontDefaultList);
+
     FontInfo::s_SetFontDefaultList(g_pFontDefaultList);
 
     // Removed allocation of scroll buffer here.
-    return STATUS_SUCCESS;
-}
-
-// Calling FindProcessInList(nullptr) means you want the root process.
-PCONSOLE_PROCESS_HANDLE FindProcessInList(_In_opt_ HANDLE hProcess)
-{
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ProcessHandleList;
-    PLIST_ENTRY ListNext = ListHead->Flink;
-
-    while (ListNext != ListHead)
-    {
-        PCONSOLE_PROCESS_HANDLE const ProcessHandleRecord = CONTAINING_RECORD(ListNext, CONSOLE_PROCESS_HANDLE, ListLink);
-        if (0 != hProcess)
-        {
-            if (ProcessHandleRecord->ClientId.UniqueProcess == hProcess)
-            {
-                return ProcessHandleRecord;
-            }
-        }
-        else
-        {
-            if (ProcessHandleRecord->RootProcess)
-            {
-                return ProcessHandleRecord;
-            }
-        }
-
-        ListNext = ListNext->Flink;
-    }
-
-    return nullptr;
+    return S_OK;
 }
 
 NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
@@ -331,7 +195,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 
     // If we weren't started from a link, this will already be set.
     // If LoadLinkInfo couldn't find anything, it will remove the flag so we can dig in the registry.
-    if (!(settings.IsStartupFlagSet(STARTF_TITLEISLINKNAME)))
+    if (!(settings.IsStartupTitleIsLinkNameSet()))
     {
         reg.LoadFromRegistry(Title);
     }
@@ -363,9 +227,9 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
     }
 
     // Now we need to actually create the console using the settings given.
-    #pragma prefast(suppress:26018, "PREfast can't detect null termination status of Title.")
+#pragma prefast(suppress:26018, "PREfast can't detect null termination status of Title.")
 
-    // Allocate console will read the global g_ciConsoleInformation for the settings we just set.
+// Allocate console will read the global g_ciConsoleInformation for the settings we just set.
     NTSTATUS Status = AllocateConsole(Title, TitleLength);
     if (!NT_SUCCESS(Status))
     {
@@ -375,20 +239,16 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
     return STATUS_SUCCESS;
 }
 
-NTSTATUS RemoveConsole(_In_ PCONSOLE_PROCESS_HANDLE ProcessData)
+NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
 {
-    NTSTATUS Status;
     CONSOLE_INFORMATION *Console;
-    BOOL fRecomputeOwner;
-
-#pragma prefast(suppress:28931, "Status is not unused. Used by assertions.")
-    Status = RevalidateConsole(&Console);
+    NTSTATUS Status = RevalidateConsole(&Console);
     ASSERT(NT_SUCCESS(Status));
 
-    FreeCommandHistory((HANDLE) ProcessData);
+    FreeCommandHistory((HANDLE)ProcessData);
 
-    fRecomputeOwner = ProcessData->RootProcess;
-    FreeProcessData(ProcessData);
+    bool const fRecomputeOwner = ProcessData->fRootProcess;
+    g_ciConsoleInformation.ProcessHandleList.FreeProcessData(ProcessData);
 
     if (fRecomputeOwner)
     {
@@ -397,25 +257,10 @@ NTSTATUS RemoveConsole(_In_ PCONSOLE_PROCESS_HANDLE ProcessData)
 
     UnlockConsole();
 
-    return STATUS_SUCCESS;
+    return Status;
 }
 
-// Routine Description:
-// - This routine is called when a process is destroyed. It closes the process's handles and frees the console if it's the last reference.
-// Arguments:
-// - hProcess - Process ID.
-// Return Value:
-// - <none>
-VOID ConsoleClientDisconnectRoutine(PCONSOLE_PROCESS_HANDLE ProcessData)
-{
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FreeConsole);
-
-    NotifyWinEvent(EVENT_CONSOLE_END_APPLICATION, g_ciConsoleInformation.hWnd, HandleToULong(ProcessData->ClientId.UniqueProcess), 0);
-
-    RemoveConsole(ProcessData);
-}
-
-DWORD ConsoleIoThread(_In_ HANDLE Server);
+DWORD ConsoleIoThread();
 
 DWORD ConsoleInputThread(LPVOID lpParameter);
 
@@ -445,62 +290,30 @@ void ConsoleCheckDebug()
 #endif
 }
 
-NTSTATUS ConsoleCreateIoThread(_In_ HANDLE Server)
+HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server)
 {
     ConsoleCheckDebug();
 
-    HANDLE hThread;
-    NTSTATUS Status = ConsoleServerInitialization(Server);
-    if (NT_SUCCESS(Status))
-    {
-        g_hConsoleInputInitEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
-        if (g_hConsoleInputInitEvent == nullptr)
-        {
-            Status = NTSTATUS_FROM_WIN32(GetLastError());
-        }
+    RETURN_IF_FAILED(ConsoleServerInitialization(Server));
+    RETURN_IF_FAILED(g_hConsoleInputInitEvent.create(wil::EventOptions::None));
 
-        if (NT_SUCCESS(Status))
-        {
-            // Set up and tell the driver about the input available event.
-            g_hInputEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+    // Set up and tell the driver about the input available event.
+    RETURN_IF_FAILED(g_hInputEvent.create(wil::EventOptions::ManualReset));
 
-            if (g_hInputEvent == nullptr)
-            {
-                Status = NTSTATUS_FROM_WIN32(GetLastError());
-            }
+    CD_IO_SERVER_INFORMATION ServerInformation;
+    ServerInformation.InputAvailableEvent = g_hInputEvent.get();
+    RETURN_IF_FAILED(g_pDeviceComm->SetServerInformation(&ServerInformation));
 
-            if (NT_SUCCESS(Status))
-            {
+    HANDLE const hThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ConsoleIoThread, 0, 0, nullptr);
+    RETURN_IF_HANDLE_NULL(hThread);
+    LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
-                CD_IO_SERVER_INFORMATION ServerInformation;
-                ServerInformation.InputAvailableEvent = g_hInputEvent;
+    return S_OK;
+}
 
-                Status = IoControlFile(g_ciConsoleInformation.Server,
-                                       IOCTL_CONDRV_SET_SERVER_INFORMATION,
-                                       &ServerInformation,
-                                       sizeof(ServerInformation),
-                                       nullptr,
-                                       0);
-
-                if (NT_SUCCESS(Status))
-                {
-
-                    hThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ConsoleIoThread, Server, 0, nullptr);
-                    if (hThread == nullptr)
-                    {
-                        Status = STATUS_NO_MEMORY;
-                    }
-
-                    if (NT_SUCCESS(Status))
-                    {
-                        CloseHandle(hThread);
-                    }
-                }
-            }
-        }
-    }
-
-    return Status;
+HRESULT ConsoleCreateIoThread(_In_ HANDLE Server)
+{
+    return Entrypoints::StartConsoleForServerHandle(Server);
 }
 
 #define SYSTEM_ROOT         (L"%SystemRoot%")
@@ -528,10 +341,10 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, _In_ const BOOL fUnexp
     LPWSTR pwszSysRoot = new wchar_t[MAX_PATH];
     if (nullptr != pwszSysRoot)
     {
-        if (0 != GetSystemDirectoryW(pwszSysRoot, MAX_PATH))
+        if (0 != GetWindowsDirectoryW(pwszSysRoot, MAX_PATH))
         {
             if (SUCCEEDED(StringCbLengthW(pwszConsoleTitle, STRSAFE_MAX_CCH, &cbConsoleTitle)) &&
-                SUCCEEDED(StringCbLengthW(pwszSysRoot, STRSAFE_MAX_CCH, &cbSystemRoot)))
+                SUCCEEDED(StringCbLengthW(pwszSysRoot, MAX_PATH, &cbSystemRoot)))
             {
                 int const cchSystemRoot = (int)(cbSystemRoot / sizeof(WCHAR));
                 int const cchConsoleTitle = (int)(cbConsoleTitle / sizeof(WCHAR));
@@ -596,21 +409,21 @@ NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLang
     {
         switch (uiOutputCP)
         {
-            case CP_JAPANESE:
-                *pLangId = MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT);
-                break;
-            case CP_KOREAN:
-                *pLangId = MAKELANGID(LANG_KOREAN, SUBLANG_KOREAN);
-                break;
-            case CP_CHINESE_SIMPLIFIED:
-                *pLangId = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
-                break;
-            case CP_CHINESE_TRADITIONAL:
-                *pLangId = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL);
-                break;
-            default:
-                *pLangId = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
-                break;
+        case CP_JAPANESE:
+            *pLangId = MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT);
+            break;
+        case CP_KOREAN:
+            *pLangId = MAKELANGID(LANG_KOREAN, SUBLANG_KOREAN);
+            break;
+        case CP_CHINESE_SIMPLIFIED:
+            *pLangId = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
+            break;
+        case CP_CHINESE_TRADITIONAL:
+            *pLangId = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL);
+            break;
+        default:
+            *pLangId = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+            break;
         }
     }
     Status = STATUS_SUCCESS;
@@ -618,24 +431,12 @@ NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLang
     return Status;
 }
 
-NTSTATUS SrvGetConsoleLangId(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+HRESULT ApiRoutines::GetConsoleLangIdImpl(_Out_ LANGID* const pLangId)
 {
-    PCONSOLE_LANGID_MSG const a = &m->u.consoleMsgL1.GetConsoleLangId;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleLangId);
-
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    Status = GetConsoleLangId(g_ciConsoleInformation.OutputCP, &a->LangId);
-
-    UnlockConsole();
-
-    return Status;
+    RETURN_NTSTATUS(GetConsoleLangId(g_ciConsoleInformation.OutputCP, pLangId));
 }
 
 // Routine Description:
@@ -652,7 +453,7 @@ NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONS
     CONSOLE_SERVER_MSG Data = { 0 };
 
     // Try to receive the data sent by the client.
-    NTSTATUS Status = ReadMessageInput(Message, 0, &Data, sizeof Data);
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(Message->ReadMessageInput(0, &Data, sizeof(Data)));
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -719,12 +520,11 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         {
             // The ConsoleInputThread needs to lock the console so we must first unlock it ourselves.
             UnlockConsole();
-            WaitForSingleObject(g_hConsoleInputInitEvent, INFINITE);
+            g_hConsoleInputInitEvent.wait();
             LockConsole();
 
             CloseHandle(Thread);
-            CloseHandle(g_hConsoleInputInitEvent);
-            g_hConsoleInputInitEvent = nullptr;
+            g_hConsoleInputInitEvent.release();
 
             if (!NT_SUCCESS(g_ntstatusConsoleInputInitStatus))
             {
@@ -746,12 +546,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
              *      is only called when a window is created.
              */
 
-            IoControlFile(g_ciConsoleInformation.Server,
-                          IOCTL_CONDRV_ALLOW_VIA_UIACCESS,
-                          nullptr,
-                          0,
-                          nullptr,
-                          0);
+            LOG_IF_FAILED(g_pDeviceComm->AllowUIAccess());
         }
     }
     else
@@ -762,418 +557,47 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     return Status;
 }
 
-PCONSOLE_API_MSG ConsoleHandleConnectionRequest(_In_ HANDLE Server, _Inout_ PCONSOLE_API_MSG ReceiveMsg)
-{
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AttachConsole);
-
-    PCONSOLE_PROCESS_HANDLE ProcessData = nullptr;
-
-    LockConsole();
-
-    CLIENT_ID ClientId;
-    ClientId.UniqueProcess = (HANDLE) ReceiveMsg->Descriptor.Process;
-    ClientId.UniqueThread = (HANDLE) ReceiveMsg->Descriptor.Object;
-
-    CONSOLE_API_CONNECTINFO Cac;
-    NTSTATUS Status = ConsoleInitializeConnectInfo(ReceiveMsg, &Cac);
-    if (!NT_SUCCESS(Status))
-    {
-        goto Error;
-    }
-
-    ProcessData = AllocProcessData(&ClientId, Cac.ProcessGroupId, nullptr);
-    if (ProcessData == nullptr)
-    {
-        Status = STATUS_UNSUCCESSFUL;
-        goto Error;
-    }
-
-    ProcessData->RootProcess = ((g_ciConsoleInformation.Flags & CONSOLE_INITIALIZED) == 0);
-
-    // ConsoleApp will be false in the AttachConsole case.
-    if (Cac.ConsoleApp)
-    {
-        CONSOLE_PROCESS_INFO cpi;
-
-        cpi.dwProcessID = HandleToUlong(ClientId.UniqueProcess);
-        cpi.dwFlags = CPI_NEWPROCESSWINDOW;
-        UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleNotifyConsoleApplication, &cpi, sizeof(CONSOLE_PROCESS_INFO));
-    }
-
-    if (g_ciConsoleInformation.hWnd)
-    {
-        NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION, g_ciConsoleInformation.hWnd, HandleToULong(ClientId.UniqueProcess), 0);
-    }
-
-    if ((g_ciConsoleInformation.Flags & CONSOLE_INITIALIZED) == 0)
-    {
-        Status = ConsoleAllocateConsole(&Cac);
-        if (!NT_SUCCESS(Status))
-        {
-            goto Error;
-        }
-
-        g_ciConsoleInformation.Flags |= CONSOLE_INITIALIZED;
-    }
-
-    AllocateCommandHistory(Cac.AppName, Cac.AppNameLength, (HANDLE)ProcessData);
-
-    if (ProcessData->ProcessHandle != nullptr)
-    {
-        SetProcessForegroundRights(ProcessData->ProcessHandle, g_ciConsoleInformation.Flags & CONSOLE_HAS_FOCUS);
-    }
-
-    // Create the handles.
-    Status = AllocateIoHandle(CONSOLE_INPUT_HANDLE,
-                              &ProcessData->InputHandle,
-                              &g_ciConsoleInformation.pInputBuffer->Header,
-                              GENERIC_READ | GENERIC_WRITE,
-                              FILE_SHARE_READ | FILE_SHARE_WRITE);
-
-    if (!NT_SUCCESS(Status))
-    {
-        goto Error;
-    }
-
-    Status = AllocateIoHandle(CONSOLE_OUTPUT_HANDLE,
-                              &ProcessData->OutputHandle,
-                              &g_ciConsoleInformation.CurrentScreenBuffer->GetMainBuffer()->Header,
-                              GENERIC_READ | GENERIC_WRITE,
-                              FILE_SHARE_READ | FILE_SHARE_WRITE);
-
-    if (!NT_SUCCESS(Status))
-    {
-        goto Error;
-    }
-
-    // Complete the request.
-    SetReplyStatus(ReceiveMsg, STATUS_SUCCESS);
-    SetReplyInformation(ReceiveMsg, sizeof(CD_CONNECTION_INFORMATION));
-
-    CD_CONNECTION_INFORMATION ConnectionInformation;
-    ReceiveMsg->Complete.Write.Data = &ConnectionInformation;
-    ReceiveMsg->Complete.Write.Size = sizeof(CD_CONNECTION_INFORMATION);
-
-    ConnectionInformation.Process = (ULONG_PTR) ProcessData;
-    ConnectionInformation.Input = (ULONG_PTR) ProcessData->InputHandle;
-    ConnectionInformation.Output = (ULONG_PTR) ProcessData->OutputHandle;
-
-    Status = ConsoleComplete(Server, &ReceiveMsg->Complete);
-    if (!NT_SUCCESS(Status))
-    {
-        FreeCommandHistory((HANDLE) ProcessData);
-        FreeProcessData(ProcessData);
-    }
-
-    UnlockConsole();
-
-    return nullptr;
-
-Error:
-
-    ASSERT(!NT_SUCCESS(Status));
-
-    if (ProcessData != nullptr)
-    {
-        FreeCommandHistory((HANDLE) ProcessData);
-        FreeProcessData(ProcessData);
-    }
-
-    UnlockConsole();
-
-    SetReplyStatus(ReceiveMsg, Status);
-
-    return ReceiveMsg;
-}
-
-// Routine Description:
-// - This routine handles IO requests to create new objects. It validates the request, creates the object and a "handle" to it.
-// Arguments:
-// - Message - Supplies the message representing the create IO.
-// - Console - Supplies the console whose object will be created.
-// Return Value:
-// - A pointer to the reply message, if this message is to be completed inline; nullptr if this message will pend now and complete later.
-PCONSOLE_API_MSG ConsoleCreateObject(_In_ PCONSOLE_API_MSG Message, _Inout_ CONSOLE_INFORMATION *Console)
-{
-    NTSTATUS Status;
-
-    PCD_CREATE_OBJECT_INFORMATION const CreateInformation = &Message->CreateObject;
-
-    LockConsole();
-
-    // If a generic object was requested, use the desired access to determine which type of object the caller is expecting.
-    if (CreateInformation->ObjectType == CD_IO_OBJECT_TYPE_GENERIC)
-    {
-        if ((CreateInformation->DesiredAccess & (GENERIC_READ | GENERIC_WRITE)) == GENERIC_READ)
-        {
-            CreateInformation->ObjectType = CD_IO_OBJECT_TYPE_CURRENT_INPUT;
-
-        }
-        else if ((CreateInformation->DesiredAccess & (GENERIC_READ | GENERIC_WRITE)) == GENERIC_WRITE)
-        {
-            CreateInformation->ObjectType = CD_IO_OBJECT_TYPE_CURRENT_OUTPUT;
-        }
-    }
-
-    HANDLE Handle = nullptr;
-    // Check the requested type.
-    switch (CreateInformation->ObjectType)
-    {
-        case CD_IO_OBJECT_TYPE_CURRENT_INPUT:
-            Status = AllocateIoHandle(CONSOLE_INPUT_HANDLE, &Handle, &Console->pInputBuffer->Header, CreateInformation->DesiredAccess, CreateInformation->ShareMode);
-            break;
-
-        case CD_IO_OBJECT_TYPE_CURRENT_OUTPUT:
-        {
-            PSCREEN_INFORMATION const ScreenInformation = g_ciConsoleInformation.CurrentScreenBuffer->GetMainBuffer();
-            if (ScreenInformation == nullptr)
-            {
-                Status = STATUS_OBJECT_NAME_NOT_FOUND;
-
-            }
-            else
-            {
-                Status = AllocateIoHandle(CONSOLE_OUTPUT_HANDLE, &Handle, &ScreenInformation->Header, CreateInformation->DesiredAccess, CreateInformation->ShareMode);
-            }
-            break;
-        }
-        case CD_IO_OBJECT_TYPE_NEW_OUTPUT:
-            Status = ConsoleCreateScreenBuffer(&Handle, Message, CreateInformation, &Message->CreateScreenBuffer);
-            break;
-
-        default:
-            Status = STATUS_INVALID_PARAMETER;
-    }
-
-    if (!NT_SUCCESS(Status))
-    {
-        goto Error;
-    }
-
-    // Complete the request.
-    SetReplyStatus(Message, STATUS_SUCCESS);
-    SetReplyInformation(Message, (ULONG_PTR) Handle);
-
-    Status = ConsoleComplete(Console->Server, &Message->Complete);
-    if (!NT_SUCCESS(Status))
-    {
-        ConsoleCloseHandle(Handle);
-    }
-
-    UnlockConsole();
-
-    return nullptr;
-
-Error:
-
-    ASSERT(!NT_SUCCESS(Status));
-
-    UnlockConsole();
-
-    SetReplyStatus(Message, Status);
-
-    return Message;
-}
-
-// Routine Description:
-// - This routine validates a user IO and dispatches it to the appropriate worker routine.
-// Arguments:
-// - Message - Supplies the message representing the user IO.
-// Return Value:
-// - A pointer to the reply message, if this message is to be completed inline; nullptr if this message will pend now and complete later.
-PCONSOLE_API_MSG ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Message)
-{
-    // Make sure the indices are valid and retrieve the API descriptor.
-    ULONG const LayerNumber = (Message->msgHeader.ApiNumber >> 24) - 1;
-    ULONG const ApiNumber = Message->msgHeader.ApiNumber & 0xffffff;
-
-    NTSTATUS Status;
-    if ((LayerNumber >= RTL_NUMBER_OF(ConsoleApiLayerTable)) || (ApiNumber >= ConsoleApiLayerTable[LayerNumber].Count))
-    {
-        Status = STATUS_ILLEGAL_FUNCTION;
-        goto Complete;
-    }
-
-    CONSOLE_API_DESCRIPTOR const *Descriptor = &ConsoleApiLayerTable[LayerNumber].Descriptor[ApiNumber];
-
-    // Validate the argument size and call the API.
-    if ((Message->Descriptor.InputSize < sizeof(CONSOLE_MSG_HEADER)) ||
-        (Message->msgHeader.ApiDescriptorSize > sizeof(Message->u)) ||
-        (Message->msgHeader.ApiDescriptorSize > Message->Descriptor.InputSize - sizeof(CONSOLE_MSG_HEADER)) || (Message->msgHeader.ApiDescriptorSize < Descriptor->RequiredSize))
-    {
-        Status = STATUS_ILLEGAL_FUNCTION;
-        goto Complete;
-    }
-
-    BOOL ReplyPending = FALSE;
-    Message->Complete.Write.Data = &Message->u;
-    Message->Complete.Write.Size = Message->msgHeader.ApiDescriptorSize;
-    Message->State.WriteOffset = Message->msgHeader.ApiDescriptorSize;
-    Message->State.ReadOffset = Message->msgHeader.ApiDescriptorSize + sizeof(CONSOLE_MSG_HEADER);
-
-    Status = (*Descriptor->Routine) (Message, &ReplyPending);
-
-    if (!ReplyPending)
-    {
-        goto Complete;
-    }
-
-    return nullptr;
-
-Complete:
-
-    SetReplyStatus(Message, Status);
-
-    return Message;
-}
-
 // Routine Description:
 // - This routine is the main one in the console server IO thread.
 // - It reads IO requests submitted by clients through the driver, services and completes them in a loop.
 // Arguments:
-// - Server - Supplies the console server handle.
+// - <none>
 // Return Value:
 // - This routine never returns. The process exits when no more references or clients exist.
-DWORD ConsoleIoThread(_In_ HANDLE Server)
+DWORD ConsoleIoThread()
 {
+    ApiRoutines Routines;
     CONSOLE_API_MSG ReceiveMsg;
+    ReceiveMsg._pApiRoutines = &Routines;
+    ReceiveMsg._pDeviceComm = g_pDeviceComm;
     PCONSOLE_API_MSG ReplyMsg = nullptr;
-    BOOL ReplyPending = FALSE;
-    NTSTATUS Status;
 
     bool fShouldExit = false;
     while (!fShouldExit)
     {
         if (ReplyMsg != nullptr)
         {
-            ReleaseMessageBuffers(ReplyMsg);
+            ReplyMsg->ReleaseMessageBuffers();
         }
 
-        Status = IoControlFile(Server,
-                               IOCTL_CONDRV_READ_IO,
-                               (ReplyMsg == nullptr) ? nullptr : &ReplyMsg->Complete,
-                               (ReplyMsg == nullptr) ? 0 : sizeof ReplyMsg->Complete,
-                               &ReceiveMsg.Descriptor,
-                               sizeof(CONSOLE_API_MSG) - FIELD_OFFSET(CONSOLE_API_MSG, Descriptor));
-
-        if (Status == STATUS_PENDING)
+        // TODO: 9115192 correct mixed NTSTATUS/HRESULT
+        HRESULT hr = g_pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
+        if (FAILED(hr))
         {
-            WaitForSingleObject(Server, INFINITE);
-            Status = ReceiveMsg.IoStatus.Status;
-        }
-
-        if (!NT_SUCCESS(Status))
-        {
-            if (Status == STATUS_PIPE_DISCONNECTED ||
-                Status == ERROR_PIPE_NOT_CONNECTED ||
-                Status == NTSTATUS_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
+            if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
             {
                 fShouldExit = true;
 
                 // This will not return. Terminate immediately when disconnected.
                 TerminateProcess(GetCurrentProcess(), STATUS_SUCCESS);
             }
-            RIPMSG1(RIP_WARNING, "NtReplyWaitReceivePort failed with Status 0x%x", Status);
+            RIPMSG1(RIP_WARNING, "DeviceIoControl failed with Result 0x%x", hr);
             ReplyMsg = nullptr;
             continue;
         }
 
-        ZeroMemory(&ReceiveMsg.State, sizeof(ReceiveMsg.State));
-        ZeroMemory(&ReceiveMsg.Complete, sizeof(CD_IO_COMPLETE));
-
-        ReceiveMsg.Complete.Identifier = ReceiveMsg.Descriptor.Identifier;
-
-        switch (ReceiveMsg.Descriptor.Function)
-        {
-            case CONSOLE_IO_USER_DEFINED:
-                ReplyMsg = ConsoleDispatchRequest(&ReceiveMsg);
-                break;
-
-            case CONSOLE_IO_CONNECT:
-                ReplyMsg = ConsoleHandleConnectionRequest(Server, &ReceiveMsg);
-                break;
-
-            case CONSOLE_IO_DISCONNECT:
-                ConsoleClientDisconnectRoutine(GetMessageProcess(&ReceiveMsg));
-                SetReplyStatus(&ReceiveMsg, STATUS_SUCCESS);
-                ReplyMsg = &ReceiveMsg;
-                break;
-
-            case CONSOLE_IO_CREATE_OBJECT:
-                ReplyMsg = ConsoleCreateObject(&ReceiveMsg, &g_ciConsoleInformation);
-                break;
-
-            case CONSOLE_IO_CLOSE_OBJECT:
-                SrvCloseHandle(&ReceiveMsg);
-                SetReplyStatus(&ReceiveMsg, STATUS_SUCCESS);
-                ReplyMsg = &ReceiveMsg;
-                break;
-
-            case CONSOLE_IO_RAW_WRITE:
-                ZeroMemory(&ReceiveMsg.u.consoleMsgL1.WriteConsole, sizeof(CONSOLE_WRITECONSOLE_MSG));
-
-                ReplyPending = FALSE;
-                Status = SrvWriteConsole(&ReceiveMsg, &ReplyPending);
-                if (ReplyPending)
-                {
-                    ReplyMsg = nullptr;
-
-                }
-                else
-                {
-                    SetReplyStatus(&ReceiveMsg, Status);
-                    ReplyMsg = &ReceiveMsg;
-                }
-                break;
-
-            case CONSOLE_IO_RAW_READ:
-                ZeroMemory(&ReceiveMsg.u.consoleMsgL1.ReadConsole, sizeof(CONSOLE_READCONSOLE_MSG));
-                ReceiveMsg.u.consoleMsgL1.ReadConsole.ProcessControlZ = TRUE;
-                ReplyPending = FALSE;
-                Status = SrvReadConsole(&ReceiveMsg, &ReplyPending);
-                if (ReplyPending)
-                {
-                    ReplyMsg = nullptr;
-
-                }
-                else
-                {
-                    SetReplyStatus(&ReceiveMsg, Status);
-                    ReplyMsg = &ReceiveMsg;
-                }
-                break;
-
-            case CONSOLE_IO_RAW_FLUSH:
-                ReplyPending = FALSE;
-                Status = SrvFlushConsoleInputBuffer(&ReceiveMsg, &ReplyPending);
-                ASSERT(!ReplyPending);
-                SetReplyStatus(&ReceiveMsg, Status);
-                ReplyMsg = &ReceiveMsg;
-                break;
-
-            default:
-                SetReplyStatus(&ReceiveMsg, STATUS_UNSUCCESSFUL);
-                ReplyMsg = &ReceiveMsg;
-        }
+        IoSorter::ServiceIoOperation(&ReceiveMsg, &ReplyMsg);
     }
 
     return 0;
-}
-
-NTSTATUS SrvDeprecatedAPI(_Inout_ PCONSOLE_API_MSG /*m*/, _Inout_ PBOOL /*ReplyPending*/)
-{
-    // assert if we hit a deprecated API.
-    ASSERT(TRUE);
-
-    // One common aspect of the functions we deprecate is that they all RevalidateConsole and then UnlockConsole at the
-    // end. Here we do the same thing to more closely emulate the old functions.
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    UnlockConsole();
-    return STATUS_UNSUCCESSFUL;
 }

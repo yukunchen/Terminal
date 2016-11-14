@@ -15,6 +15,8 @@ Revision History:
 
 #pragma once
 
+#include "cmdline.h"
+
 #define IS_CONTROL_CHAR(wch)  ((wch) < L' ')
 
 // Routine Description:
@@ -37,9 +39,9 @@ Revision History:
 NTSTATUS GetChar(_In_ PINPUT_INFORMATION pInputInfo,
                  _Out_ PWCHAR pwchChar,
                  _In_ const BOOL fWait,
-                 _In_opt_ PCONSOLE_HANDLE_DATA pHandleData,
+                 _In_opt_ INPUT_READ_HANDLE_DATA* pHandleData,
                  _In_opt_ PCONSOLE_API_MSG pConsoleMessage,
-                 _In_opt_ CONSOLE_WAIT_ROUTINE pWaitRoutine,
+                 _In_opt_ ConsoleWaitRoutine pWaitRoutine,
                  _In_opt_ PVOID pvWaitParameter,
                  _In_opt_ ULONG ulWaitParameterLength,
                  _In_opt_ BOOLEAN fWaitBlockExists,
@@ -63,41 +65,17 @@ ULONG RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 
 // Return Value:
 // - TRUE if read is completed
-BOOL ProcessCookedReadInput(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ WCHAR wch, _In_ const DWORD dwKeyState, _Out_ PNTSTATUS pStatus);
+BOOL ProcessCookedReadInput(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ WCHAR wch, _In_ const DWORD dwKeyState, _Out_ NTSTATUS* pStatus);
 
 NTSTATUS CookedRead(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ PCONSOLE_API_MSG pWaitReplyMessage, _In_ const BOOLEAN fWaitRoutine);
 
-// Routine Description:
-// - This routine is called to complete a cooked read that blocked in
-//   ReadInputBuffer.  The context of the read was saved in the CookedReadData
-//   structure.  This routine is called when events have been written to
-//   the input buffer.  It is called in the context of the writing thread.
-//   It may be called more than once.
-// Arguments:
-// - WaitQueue - pointer to queue containing wait block
-// - WaitReplyMessage - pointer to reply message
-// - CookedReadData - pointer to data saved in ReadChars
-// - SatisfyParameter - if this routine is called because a ctrl-c or
-//                      ctrl-break was seen, this argument contains CONSOLE_CTRL_SEEN.
-//                      otherwise it contains nullptr.
-// - ThreadDying - Indicates if the owning thread (and process) is exiting.
-// Return Value:
-BOOL CookedReadWaitRoutine(_In_ PLIST_ENTRY pWaitQueue,
-                           _In_ PCONSOLE_API_MSG pWaitReplyMessage,
+BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                            _In_ PCOOKED_READ_DATA pCookedReadData,
-                           _In_ void * const pvSatisfyParameter,
-                           _In_ const BOOL fThreadDying);
+                           _In_ WaitTerminationReason TerminationReason);
 
 // Routine Description:
 // - This routine reads characters from the input stream.
 NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-
-// ONLY NEEDED UNTIL WRITECHARS LEGACY IS REMOVED
-#define WRITE_NO_CR_LF 0
-#define WRITE_CR 1
-#define WRITE_CR_LF 2
-#define WRITE_SPECIAL_CHARS 4
-#define WRITE_UNICODE_CRLF 0x000a000d
 
 VOID UnblockWriteConsole(_In_ const DWORD dwReason);
 
@@ -105,37 +83,9 @@ VOID UnblockWriteConsole(_In_ const DWORD dwReason);
 // -  This routine writes characters to the output stream.
 NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 
-BOOL WriteConsoleWaitRoutine(_In_ PLIST_ENTRY pWaitQueue,
-                             _In_ PCONSOLE_API_MSG pWaitReplyMessage,
+BOOL WriteConsoleWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
                              _In_ PVOID pvWaitParameter,
-                             _In_ PVOID pvSatisfyParameter,
-                             _In_ BOOL fThreadDying);
+                             _In_ WaitTerminationReason const TerminationReason);
 
-// Routine Description:
-// - This routine closes an input handle.  It decrements the input buffer's
-//   reference count.  If it goes to zero, the buffer is reinitialized.
-//   Otherwise, the handle is removed from sharing.
-// Arguments:
-// - ProcessData - Pointer to per process data.
-// - HandleData - Pointer to handle data structure.
-// - Handle - Handle to close.
-// Return Value:
-// Note:
-// - The console lock must be held when calling this routine.
-NTSTATUS CloseInputHandle(_In_ PCONSOLE_HANDLE_DATA pHandleData, _In_ const HANDLE hClose);
-
-// Routine Description:
-// - This routine closes an output handle.  It decrements the screen buffer's
-//   reference count.  If it goes to zero, the buffer is freed.  Otherwise,
-//   the handle is removed from sharing.
-// Arguments:
-// - ProcessData - Pointer to per process data.
-// - Console - Pointer to console information structure.
-// - HandleData - Pointer to handle data structure.
-// - Handle - Handle to close.
-// Return Value:
-// Note:
-// - The console lock must be held when calling this routine.
-NTSTATUS CloseOutputHandle(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const HANDLE hClose);
 
 NTSTATUS SrvCloseHandle(_In_ PCONSOLE_API_MSG m);
