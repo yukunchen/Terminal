@@ -35,3 +35,21 @@
 	9100070 - Promote console to PMv2
 	9300281 - Update tools\*.bat files
 11/01/2016 - 9535136 - Ctrl-C events and other events on GenerateConsoleCtrlEvent are not going through
+11/14/2016 - <batch merge>
+	9705968 - Need to use GetWindowsDirectory not GetSystemDirectory for TranslateConsoleTitle
+	9768735 - Numpad input doesn't work in console host
+	9661440 - WM_PAINT operations on SKUs without DWM can leave behidn unpainted regions
+	9522320 - Merge doc folder into main
+	9522351 - Remove usage of WC_NO_BEST_FIT_CHARS and disable OACR warning
+	9636355 - VT100: Support single-character CSI (the C1 control code \x9b)
+	9141166 - Copy-paste includes hidden á characters
+	9535136 - Ctrl-C events and other events on GenerateConsoleControlEvent are not going through
+	9554419 - Filter on paste did not recognize 0x202f as smart character, should have converted to space (0x20)
+	9720425 - move UIA tests to WinAppDriver
+	9115192 - Move/refactor all server layer components of console host to reusable lib (part 1)
+	9643222 - Default to multiprocessor builds for openconsole
+	9564943 - Fix aliases to be able to return UTF-8 data
+	9353337 - move console properties sheet to XES
+	9627224 - powershell scripts for openconsole
+	9754183 - Stop propsheet project from being built again and again
+	9645528 - use correct flags to MapVirtualKeyW
