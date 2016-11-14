@@ -1510,7 +1510,7 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
     INPUT_RECORD InputEvent;
     InputEvent.Event.KeyEvent.wVirtualKeyCode = VirtualKeyCode;
     InputEvent.Event.KeyEvent.wVirtualScanCode = (BYTE) (HIWORD(lParam));
-    if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
+    if (IsFlagClear(GetKeyState(VK_NUMLOCK), KEY_TOGGLED) && (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR))
     {
         InputEvent.Event.KeyEvent.wVirtualKeyCode = (WORD) MapVirtualKeyW(InputEvent.Event.KeyEvent.wVirtualScanCode, MAPVK_VSC_TO_VK_EX);
         VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
