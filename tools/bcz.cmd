@@ -26,6 +26,7 @@ goto :ARGS_LOOP
 :POST_ARGS_LOOP
 echo starting build
 
+nuget.exe restore %OPENCON%\OpenConsole.sln
 msbuild.exe %OPENCON%\OpenConsole.sln /t:%_MSBUILD_TARGET% /m /nr:true /p:Configuration=%_LAST_BUILD_CONF%
 
 rem Cleanup unused variables here. Note we cannot use setlocal because we need to pass modified
