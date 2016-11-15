@@ -1519,6 +1519,10 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
     InputEvent.Event.KeyEvent.dwControlKeyState = ControlKeyState;
     InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)0;
 
+    // We need to differentiate between WM_KEYDOWN and the rest
+    // because when the message is WM_KEYDOWN we need to be
+    // translating the scancode and with the others we're given the
+    // wchar directly.
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
     {
         // If this is a fake character, zero the scancode.
