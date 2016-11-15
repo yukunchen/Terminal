@@ -48,10 +48,19 @@
     <ProjectName>Host.EXE</ProjectName>
     <TargetName>OpenConsole</TargetName>
   </PropertyGroup>
+  <PropertyGroup>
+    <EmbedManifest>
+    </EmbedManifest>
+    <GenerateManifest>true</GenerateManifest>
+  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..;..\..\..\dep;..\..\..\dep\Console;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <AllowIsolation>true</AllowIsolation>
+      <AdditionalManifestDependencies>type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'</AdditionalManifestDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\..\common.build.exe.props" />

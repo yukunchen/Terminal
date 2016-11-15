@@ -51,6 +51,11 @@
     <ProjectName>Host.DLL</ProjectName>
     <TargetName>ConhostV2</TargetName>
   </PropertyGroup>
+  <PropertyGroup>
+    <EmbedManifest>
+    </EmbedManifest>
+    <GenerateManifest>true</GenerateManifest>
+  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>HOST_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -59,6 +64,8 @@
     <Link>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <ModuleDefinitionFile>ConhostV2.def</ModuleDefinitionFile>
+      <AllowIsolation>true</AllowIsolation>
+      <AdditionalManifestDependencies>type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'</AdditionalManifestDependencies>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

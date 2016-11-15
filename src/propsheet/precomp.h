@@ -12,9 +12,6 @@
 // including: windows.h, winuser, ntstatus, assert, and the DDK
 #include "..\CommonIncludes.h"
 
-// This line is needed to enable ComCtrlV6 styling/theming for the propsheet 
-#pragma comment(linker,"\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
-
 #include <windowsx.h>
 #include <stdlib.h>
 #include <stdio.h>
