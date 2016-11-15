@@ -2,9 +2,9 @@ Ver=2
 
 #Copy OpenConsole sources into SD
 [Job]
-SDBRANCH=rs_onecore_dep_dart_dev1
+SDBRANCH=rs_onecore_dep_dart_dev5
 SDPORT=windowsdepot.sys-ntgroup.ntdev.microsoft.com:2016
-SDCOMMENT=MSFT:9535136 - OpenConsole Auto-submission - $(BuildNumber) $(Changes)
+SDCOMMENT=MSFT:9705968 9768735 9661440 9522320 9522351 9636355 9141166 9535136 9554419 9720425 9115192 9643222 9564943 9353337 9627224 9754183 9645528 - OpenConsole Auto-submission - $(BuildNumber) $(Changes)
 EMAILTO=miniksa@microsoft.com;dartcon@microsoft.com
 NOREVERT=True
 [MIR][ERROK]src,windows/core/console/open
