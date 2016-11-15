@@ -39,7 +39,6 @@ ConvertStringToDec(
 NTSTATUS TrueTypeFontList::s_Initialize()
 {
     HKEY hkRegistry;
-    NTSTATUS Status;
     WCHAR awchValue[512];
     WCHAR awchData[512];
     DWORD dwIndex;
@@ -48,9 +47,9 @@ NTSTATUS TrueTypeFontList::s_Initialize()
     // Prevent memory leak. Delete if it's already allocated before refilling it.
     s_Destroy();
 
-    Status = RegistrySerialization::s_OpenKey(NULL,
-                                              MACHINE_REGISTRY_CONSOLE_TTFONT,
-                                              &hkRegistry);
+    NTSTATUS Status = RegistrySerialization::s_OpenKey(HKEY_LOCAL_MACHINE,
+                                                       MACHINE_REGISTRY_CONSOLE_TTFONT_WIN32_PATH,
+                                                       &hkRegistry);
     if (NT_SUCCESS(Status)) {
         LPTTFONTLIST pTTFontList;
 
@@ -61,6 +60,12 @@ NTSTATUS TrueTypeFontList::s_Initialize()
                                                         (LPWSTR)awchValue,
                                                         sizeof(awchData),
                                                         (PBYTE)awchData);
+
+            if (Status == ERROR_NO_MORE_ITEMS) {
+                Status = STATUS_SUCCESS;
+                break;
+            }
+
             if (!NT_SUCCESS(Status)) {
                 break;
             }
@@ -82,8 +87,8 @@ NTSTATUS TrueTypeFontList::s_Initialize()
             }
 
             StringCchCopyW(pTTFontList->FaceName1,
-                              ARRAYSIZE(pTTFontList->FaceName1),
-                              pwsz);
+                           ARRAYSIZE(pTTFontList->FaceName1),
+                           pwsz);
 
             // wcslen is only valid on non-null pointers.
             if (pwsz != nullptr)

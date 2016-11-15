@@ -96,11 +96,13 @@ GetConsoleKeyboardLayoutNameW(
 // registry strings on HKEY_LOCAL_MACHINE
 //
 #define MACHINE_REGISTRY_CONSOLE        (L"\\Registry\\Machine\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Console")
+
 #define MACHINE_REGISTRY_CONSOLEIME     (L"ConsoleIME")
 #define MACHINE_REGISTRY_ENABLE_CONIME_ON_SYSTEM_PROCESS     (L"EnableConImeOnSystemProcess")
 
 
 #define MACHINE_REGISTRY_CONSOLE_TTFONT (L"\\Registry\\Machine\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Console\\TrueTypeFont")
+#define MACHINE_REGISTRY_CONSOLE_TTFONT_WIN32_PATH (L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Console\\TrueTypeFont")
 
 
 #define MACHINE_REGISTRY_CONSOLE_NLS    (L"\\Registry\\Machine\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Console\\Nls")

@@ -12,7 +12,7 @@
 
 RenderFontDefaults::RenderFontDefaults()
 {
-    TrueTypeFontList::s_Initialize();
+    LOG_IF_NTSTATUS_FAILED(TrueTypeFontList::s_Initialize());
 }
 
 RenderFontDefaults::~RenderFontDefaults()
