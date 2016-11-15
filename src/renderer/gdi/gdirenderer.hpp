@@ -41,7 +41,6 @@ namespace Microsoft
                 void ScrollFrame();
 
                 void PaintBackground();
-                void PaintGutter();
                 void PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine, 
                                      _In_ size_t const cchLine, 
                                      _In_ COORD const coordTarget, 
@@ -124,6 +123,14 @@ namespace Microsoft
 
                 COORD _GetFontSize() const;
                 bool _IsMinimized() const;
+
+#ifdef DBG
+                // Helper functions to diagnose issues with painting from the in-memory buffer.
+                // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.
+                bool _fDebug = false;
+                void _PaintDebugRect(_In_ const RECT* const prc) const;
+                void _DoDebugBlt(_In_ const RECT* const prc) const;
+#endif
             };
         };
     };

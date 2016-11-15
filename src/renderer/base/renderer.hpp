@@ -64,7 +64,6 @@ namespace Microsoft
                 bool _CheckViewportAndScroll();
                 
                 void _PaintBackground();
-                void _PaintGutter();
                 
                 void _PaintBufferOutput();
                 void _PaintBufferOutputRasterFontHelper(_In_ const ROW* const pRow, _In_reads_(cchLine) PCWCHAR const pwsLine, _In_reads_(cchLine) PBYTE pbKAttrsLine, _In_ size_t cchLine, _In_ size_t iFirstAttr, _In_ COORD const coordTarget);
