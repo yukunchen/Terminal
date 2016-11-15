@@ -161,7 +161,7 @@ void FreeInputBuffer(_In_ PINPUT_INFORMATION pInputInfo)
 // Arguments:
 // - Console - Pointer to console buffer information.
 // - pConsoleMsg - if called from dll (not InputThread), points to api
-//             message.  this parameter is used for wait block processing. 
+//             message.  this parameter is used for wait block processing.
 //             We'll get the correct input object from this message.
 // - pfnWaitRoutine - Routine to call when wait is woken up.
 // - pvWaitParameter - Parameter to pass to wait routine.
@@ -1487,15 +1487,8 @@ bool ShouldTakeOverKeyboardShortcuts()
 
 void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole)
 {
-    BOOLEAN ContinueProcessing;
-    ULONG EventsWritten;
-    BOOL bGenerateBreak = FALSE;
 
-    // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(lParam) is a character
-    WORD VirtualKeyCode = LOWORD(wParam);
-    const ULONG ControlKeyState = GetControlKeyState(lParam);
-    const BOOL bKeyDown = !(lParam & KEY_TRANSITION_UP);
-
+    const BOOL bKeyDown = IsFlagClear(lParam, KEY_TRANSITION_UP);
     if (bKeyDown)
     {
         // Log a telemetry flag saying the user interacted with the Console
@@ -1506,19 +1499,25 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
         Telemetry::Instance().SetUserInteractive();
     }
 
+    BOOLEAN ContinueProcessing;
+    ULONG EventsWritten;
+    BOOL bGenerateBreak = FALSE;
+
+    // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(lParam) is a character
+    WORD VirtualKeyCode = LOWORD(wParam);
+    const ULONG ControlKeyState = GetControlKeyState(lParam);
+    WORD VirtualScanCode = LOBYTE(HIWORD(lParam));
+    WORD repeatCount = LOWORD(lParam);
+
     // Make sure we retrieve the key info first, or we could chew up unneeded space in the key info table if we bail out early.
     INPUT_RECORD InputEvent;
-    InputEvent.Event.KeyEvent.wVirtualKeyCode = VirtualKeyCode;
-    InputEvent.Event.KeyEvent.wVirtualScanCode = (BYTE) (HIWORD(lParam));
-    if (IsFlagClear(GetKeyState(VK_NUMLOCK), KEY_TOGGLED) && (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR))
-    {
-        InputEvent.Event.KeyEvent.wVirtualKeyCode = (WORD) MapVirtualKeyW(InputEvent.Event.KeyEvent.wVirtualScanCode, MAPVK_VSC_TO_VK_EX);
-        VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
-    }
-
     InputEvent.EventType = KEY_EVENT;
     InputEvent.Event.KeyEvent.bKeyDown = bKeyDown;
-    InputEvent.Event.KeyEvent.wRepeatCount = LOWORD(lParam);
+    InputEvent.Event.KeyEvent.wRepeatCount = repeatCount;
+    InputEvent.Event.KeyEvent.wVirtualKeyCode = VirtualKeyCode;
+    InputEvent.Event.KeyEvent.wVirtualScanCode = VirtualScanCode;
+    InputEvent.Event.KeyEvent.dwControlKeyState = ControlKeyState;
+    InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)0;
 
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
     {
@@ -1527,25 +1526,22 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
         {
             InputEvent.Event.KeyEvent.wVirtualScanCode = 0;
         }
-        InputEvent.Event.KeyEvent.dwControlKeyState = GetControlKeyState(lParam);
-        if (Message == WM_CHAR || Message == WM_SYSCHAR)
-        {
-            InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)wParam;
-        }
-        else
-        {
-            InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)0;
-        }
+        InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)wParam;
+        InputEvent.Event.KeyEvent.wVirtualKeyCode = LOBYTE(VkKeyScan((WCHAR)wParam));
+        VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
+        InputEvent.Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKeyW(InputEvent.Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC);
+        VirtualScanCode = InputEvent.Event.KeyEvent.wVirtualScanCode;
     }
-    else
+    else if (Message == WM_KEYDOWN)
     {
         // if alt-gr, ignore
         if (lParam & 0x02000000)
         {
             return;
         }
-        InputEvent.Event.KeyEvent.dwControlKeyState = ControlKeyState;
-        InputEvent.Event.KeyEvent.uChar.UnicodeChar = 0;
+        InputEvent.Event.KeyEvent.wVirtualKeyCode = (WORD) MapVirtualKeyW(VirtualScanCode, MAPVK_VSC_TO_VK_EX);
+        VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
+        VirtualScanCode = VirtualKeyCode;
     }
 
     const INPUT_KEY_INFO inputKeyInfo(VirtualKeyCode, ControlKeyState);

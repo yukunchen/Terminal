@@ -81,7 +81,7 @@ BEGIN
     CONTROL         "&Use legacy console (requires relaunch)", IDD_FORCEV2, "Button",
                     BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 194, 200, 10
 
-    CONTROL         "Find out more about <A HREF=""http://go.microsoft.com/fwlink/?LinkId=507549"">new console features</A>",
+    CONTROL         "Find out more about <A HREF=""https://go.microsoft.com/fwlink/?LinkId=507549"">new console features</A>",
                     IDD_HELP_SYSLINK, "SysLink", WS_TABSTOP, 10, 206, 200, 10
 
 
@@ -137,7 +137,7 @@ BEGIN
     CONTROL         "&Use legacy console (requires relaunch)", IDD_FORCEV2, "Button",
                     BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 194, 200, 10
 
-    CONTROL         "Find out more about <A HREF=""http://go.microsoft.com/fwlink/?LinkId=507549"">new console features</A>",
+    CONTROL         "Find out more about <A HREF=""https://go.microsoft.com/fwlink/?LinkId=507549"">new console features</A>",
                     IDD_HELP_SYSLINK, "SysLink", WS_TABSTOP, 10, 206, 200, 10
 END
 
