@@ -670,7 +670,7 @@ void Renderer::_PaintCursor()
 {
     const Cursor* const pCursor = _pData->GetCursor();
 
-    if (pCursor->IsVisible() && pCursor->IsOn())
+    if (pCursor->IsVisible() && pCursor->IsOn() && !pCursor->IsPopupShown())
     {
         // Get cursor position in buffer
         COORD coordCursor = pCursor->GetPosition();

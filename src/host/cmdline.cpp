@@ -2318,6 +2318,12 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
     ReadScreenBuffer(ScreenInfo, Popup->OldContents, &TargetRect);
 
     g_ciConsoleInformation.PopupCount++;
+    if (1 == g_ciConsoleInformation.PopupCount)
+    {
+        // If this is the first popup to be shown, stop the cursor from appearing/blinking
+        ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(TRUE);
+    }
+
     DrawCommandListBorder(Popup, ScreenInfo);
     return STATUS_SUCCESS;
 }
@@ -2351,6 +2357,12 @@ NTSTATUS EndPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY Com
     delete[] Popup->OldContents;
     delete Popup;
     g_ciConsoleInformation.PopupCount--;
+
+    if (g_ciConsoleInformation.PopupCount == 0)
+    {
+        // Notify we're done showing popups.
+        ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(FALSE);
+    }
 
     return STATUS_SUCCESS;
 }
