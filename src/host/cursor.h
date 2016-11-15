@@ -45,6 +45,7 @@ public:
     const BOOLEAN IsDouble() const;
     const BOOLEAN IsDoubleWidth() const;
     const BOOLEAN IsConversionArea() const;
+    const BOOLEAN IsPopupShown() const;
     const BOOLEAN GetDelay() const;
     const ULONG GetSize() const;
     const COORD GetPosition() const;
@@ -58,6 +59,7 @@ public:
     void SetBlinkingAllowed(_In_ BOOLEAN const fIsOn);
     void SetIsDouble(_In_ BOOLEAN const fIsDouble);
     void SetIsConversionArea(_In_ BOOLEAN const fIsConversionArea);
+    void SetIsPopupShown(_In_ BOOLEAN const fIsPopupShown);
     void SetDelay(_In_ BOOLEAN const fDelay);
     void SetSize(_In_ ULONG const ulSize);
 
@@ -91,6 +93,7 @@ private:
     BOOLEAN _fBlinkingAllowed; //Whether or not the cursor is allowed to blink at all. only set through VT (^[[?12h/l)
     BOOLEAN _fDelay;    // don't blink scursor on next timer message
     BOOLEAN _fIsConversionArea; // is attached to a conversion area so it doesn't actually need to display the cursor.
+    BOOLEAN _fIsPopupShown; // if a popup is being shown, turn off, stop blinking.
 
     BOOLEAN _fDelayedEolWrap;    // don't wrap at EOL till the next char comes in.
     COORD _coordDelayedAt;   // coordinate the EOL wrap was delayed at.

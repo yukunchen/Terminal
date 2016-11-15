@@ -367,7 +367,6 @@ NTSTATUS RegistrySerialization::s_OpenCurrentUserConsoleTitleKey(_In_ PCWSTR con
     NTSTATUS Status = NTSTATUS_FROM_WIN32(RegOpenKeyW(HKEY_CURRENT_USER,
                                                       nullptr,
                                                       phCurrentUserKey));
-
     if (NT_SUCCESS(Status))
     {
         Status = RegistrySerialization::s_CreateKey(*phCurrentUserKey,
@@ -379,6 +378,7 @@ NTSTATUS RegistrySerialization::s_OpenCurrentUserConsoleTitleKey(_In_ PCWSTR con
             if (!NT_SUCCESS(Status))
             {
                 RegCloseKey(*phConsoleKey);
+                RegCloseKey(*phCurrentUserKey);
             }
             //else all keys were created/opened successfully, and we'll return success
         }

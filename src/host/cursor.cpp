@@ -106,6 +106,11 @@ const BOOLEAN Cursor::IsConversionArea() const
     return _fIsConversionArea;
 }
 
+const BOOLEAN Cursor::IsPopupShown() const
+{
+    return _fIsPopupShown;
+}
+
 const BOOLEAN Cursor::GetDelay() const
 {
     return _fDelay;
@@ -148,6 +153,12 @@ void Cursor::SetIsDouble(_In_ BOOLEAN const fIsDouble)
 void Cursor::SetIsConversionArea(_In_ BOOLEAN const fIsConversionArea)
 {
     _fIsConversionArea = fIsConversionArea;
+    _RedrawCursorAlways();
+}
+
+void Cursor::SetIsPopupShown(_In_ BOOLEAN const fIsPopupShown)
+{
+    _fIsPopupShown = fIsPopupShown;
     _RedrawCursorAlways();
 }
 

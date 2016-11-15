@@ -30,3 +30,9 @@ typedef _Return_type_success_(return >= 0) long NTSTATUS;
 
 #define NT_TESTNULL(var) (((var) == nullptr) ? STATUS_NO_MEMORY : STATUS_SUCCESS)
 #define NT_TESTNULL_GLE(var) (((var) == nullptr) ? NTSTATUS_FROM_WIN32(GetLastError()) : STATUS_SUCCESS);
+
+#if defined(DEBUG) || defined(_DEBUG) || defined(DBG)
+#define WHEN_DBG(x) x
+#else
+#define WHEN_DBG(x)
+#endif

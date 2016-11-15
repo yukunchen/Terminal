@@ -47,7 +47,6 @@ namespace Microsoft
                 virtual void InvalidateAll() = 0;
                 
                 virtual void PaintBackground() = 0;
-                virtual void PaintGutter() = 0;
                 virtual void PaintBufferLine(_In_ PCWCHAR const pwsLine, size_t const cchLine, COORD const coord, _In_ size_t const cchCharWidths, _In_ bool const fTrimLeft) = 0;
                 virtual void PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget) = 0;
                 virtual void PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles) = 0;

@@ -171,7 +171,7 @@ void GdiEngine::EndPaint()
 
         POINT const pt = _GetInvalidRectPoint();
         SIZE const sz = _GetInvalidRectSize();
-
+        
         BitBlt(_psInvalidData.hdc, pt.x, pt.y, sz.cx, sz.cy, _hdcMemoryContext, pt.x, pt.y, SRCCOPY);
 
         _rcInvalid = { 0 };
@@ -196,8 +196,10 @@ void GdiEngine::_PaintBackgroundColor(_In_ const RECT* const prc)
     HBRUSH hbr = (HBRUSH)GetStockObject(DC_BRUSH);
     if (hbr != nullptr)
     {
+        WHEN_DBG(_PaintDebugRect(prc));
         FillRect(_hdcMemoryContext, prc, hbr);
         DeleteObject(hbr);
+        WHEN_DBG(_DoDebugBlt(prc));
     }
 }
 
@@ -212,42 +214,6 @@ void GdiEngine::PaintBackground()
     if (_psInvalidData.fErase)
     {
         _PaintBackgroundColor(&_psInvalidData.rcPaint);
-    }
-}
-
-// Routine Description:
-// - Paints in the gutter region of the drawing canvas.
-// - The gutter is defined as the extraneous pixels at the bottom and right hand of the display that
-//   make up less than 1 character width/height. Various other operations might accidentally paint here
-//   and the final gutter paint ensures that this region stays clean and tidy.
-void GdiEngine::PaintGutter()
-{
-    COORD const coordFontSize = _GetFontSize();
-
-    SIZE szGutter = { 0 };
-    szGutter.cx = _szMemorySurface.cx % coordFontSize.X;
-    szGutter.cy = _szMemorySurface.cy % coordFontSize.Y;
-
-    if (szGutter.cx > 0)
-    {
-        RECT rcGutterRight = { 0 };
-        rcGutterRight.top = 0;
-        rcGutterRight.bottom = rcGutterRight.top + _szMemorySurface.cy;
-        rcGutterRight.right = _szMemorySurface.cx;
-        rcGutterRight.left = rcGutterRight.right - szGutter.cx;
-
-        _PaintBackgroundColor(&rcGutterRight);
-    }
-
-    if (szGutter.cy > 0)
-    {
-        RECT rcGutterBottom = { 0 };
-        rcGutterBottom.left = 0;
-        rcGutterBottom.right = rcGutterBottom.left + _szMemorySurface.cx;
-        rcGutterBottom.bottom = _szMemorySurface.cy;
-        rcGutterBottom.top = rcGutterBottom.bottom - szGutter.cy;
-
-        _PaintBackgroundColor(&rcGutterBottom);
     }
 }
 
@@ -547,3 +513,54 @@ NTSTATUS GdiEngine::_PaintSelectionCalculateRegion(_In_reads_(cRectangles) SMALL
 
     return status;
 }
+
+#ifdef DBG
+// Routine Description:
+// - Will fill a given rectangle with a gray shade to help identify which portion of the screen is being debugged.
+// - Will attempt immediate BLT so you can see it.
+// - NOTE: You must set _fDebug flag for this to operate using a debugger.
+// - NOTE: This only works in Debug (DBG) builds.
+// Arguments:
+// - prc - Pointer to rectangle to fill
+// Return Value:
+// - <none>
+void GdiEngine::_PaintDebugRect(_In_ const RECT* const prc) const
+{
+    if (_fDebug)
+    {
+        if (!IsRectEmpty(prc))
+        {
+            HBRUSH hbr = (HBRUSH)GetStockObject(GRAY_BRUSH);
+            if (hbr != nullptr)
+            {
+                FillRect(_hdcMemoryContext, prc, hbr);
+                DeleteObject(hbr);
+
+                _DoDebugBlt(prc);
+            }
+        }
+    }
+}
+
+// Routine Description:
+// - Will immediately Blt the given rectangle to the screen for aid in debugging when it is tough to see
+//   what is occuring with the in-memory DC.
+// - This will pause the thread for 200ms when called to give you an opportunity to see the paint.
+// - NOTE: You must set _fDebug flag for this to operate using a debugger.
+// - NOTE: This only works in Debug (DBG) builds.
+// Arguments:
+// - prc - Pointer to region to immediately Blt to the real screen DC.
+// Return Value:
+// - <none>
+void GdiEngine::_DoDebugBlt(_In_ const RECT* const prc) const
+{
+    if (_fDebug)
+    {
+        if (!IsRectEmpty(prc))
+        {
+            BitBlt(_psInvalidData.hdc, prc->left, prc->top, prc->right - prc->left, prc->bottom - prc->top, _hdcMemoryContext, prc->left, prc->top, SRCCOPY);
+            Sleep(200);
+        }
+    }
+}
+#endif

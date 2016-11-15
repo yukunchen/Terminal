@@ -123,9 +123,6 @@ void Renderer::PaintFrame()
         // 6. Paint Cursor
         _PaintCursor();
 
-        // 7. Paint Gutter (if necessary, scrolling?)
-        _PaintGutter();
-
         _pEngine->EndPaint();
     }
 }
@@ -335,18 +332,6 @@ void Renderer::_PaintBackground()
 }
 
 // Routine Description:
-// - Paint helper to clean off any excess text drawn in the gutter region.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Renderer::_PaintGutter()
-{
-    _pEngine->PaintGutter();
-}
-
-
-// Routine Description:
 // - Paint helper to copy the primary console buffer text onto the screen.
 // - This portion primarily handles figuring the current viewport, comparing it/trimming it versus the invalid portion of the frame, and queuing up, row by row, which pieces of text need to be further processed.
 // - See also: Helper functions that seperate out each complexity of text rendering.
@@ -372,8 +357,13 @@ void Renderer::_PaintBufferOutput()
     srDirty.Right = min(srDirty.Right, coordBufferSize.X - 1);
     srDirty.Bottom = min(srDirty.Bottom, coordBufferSize.Y - 1);
 
-    Viewport viewDirty(&srDirty);
+    // Also ensure that the dirty rect still fits inside the screen viewport.
+    srDirty.Top = max(srDirty.Top, view.Top());
+    srDirty.Left = max(srDirty.Left, view.Left());
+    srDirty.Right = min(srDirty.Right, view.RightInclusive());
+    srDirty.Bottom = min(srDirty.Bottom, view.BottomInclusive());
 
+    Viewport viewDirty(&srDirty);
     for (SHORT iRow = viewDirty.Top(); iRow <= viewDirty.BottomInclusive(); iRow++)
     {
         // Get row of text data
@@ -680,7 +670,7 @@ void Renderer::_PaintCursor()
 {
     const Cursor* const pCursor = _pData->GetCursor();
 
-    if (pCursor->IsVisible() && pCursor->IsOn())
+    if (pCursor->IsVisible() && pCursor->IsOn() && !pCursor->IsPopupShown())
     {
         // Get cursor position in buffer
         COORD coordCursor = pCursor->GetPosition();
