@@ -686,29 +686,39 @@ void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
                   _In_opt_ const SMALL_RECT * const psrMerge,
                   _In_ const COORD coordTarget)
 {
-    if (pScreenInfo->IsActiveScreenBuffer() && g_pRender != nullptr)
+    if (pScreenInfo->IsActiveScreenBuffer())
     {
-        // psrScroll is the source rectangle which gets written with the same dimensions to the coordTarget position.
-        // Therefore the final rectangle starts with the top left corner at coordTarget
-        // and the size is the size of psrScroll.
-        // NOTE: psrScroll is an INCLUSIVE rectangle, so we must add 1 when measuring width as R-L or B-T
-        SMALL_RECT rcWritten = *psrScroll;
-        rcWritten.Left = coordTarget.X;
-        rcWritten.Top = coordTarget.Y;
-        rcWritten.Right = rcWritten.Left + (psrScroll->Right - psrScroll->Left + 1);
-        rcWritten.Bottom = rcWritten.Top + (psrScroll->Bottom - psrScroll->Top + 1);
+        // Notify accessibility that a scroll has occurred.
+        NotifyWinEvent(EVENT_CONSOLE_UPDATE_SCROLL, 
+                       g_ciConsoleInformation.hWnd, 
+                       coordTarget.X - psrScroll->Left, 
+                       coordTarget.Y - psrScroll->Right);
 
-        g_pRender->TriggerRedraw(&rcWritten);
 
-        // psrMerge was just filled exactly where it's stated.
-        if (psrMerge != nullptr)
+        if (g_pRender != nullptr)
         {
-            // psrMerge is an inclusive rectangle. Make it exclusive to deal with the renderer.
-            SMALL_RECT rcMerge = *psrMerge;
-            rcMerge.Bottom++;
-            rcMerge.Right++;
+            // psrScroll is the source rectangle which gets written with the same dimensions to the coordTarget position.
+            // Therefore the final rectangle starts with the top left corner at coordTarget
+            // and the size is the size of psrScroll.
+            // NOTE: psrScroll is an INCLUSIVE rectangle, so we must add 1 when measuring width as R-L or B-T
+            SMALL_RECT rcWritten = *psrScroll;
+            rcWritten.Left = coordTarget.X;
+            rcWritten.Top = coordTarget.Y;
+            rcWritten.Right = rcWritten.Left + (psrScroll->Right - psrScroll->Left + 1);
+            rcWritten.Bottom = rcWritten.Top + (psrScroll->Bottom - psrScroll->Top + 1);
 
-            g_pRender->TriggerRedraw(&rcMerge);
+            g_pRender->TriggerRedraw(&rcWritten);
+
+            // psrMerge was just filled exactly where it's stated.
+            if (psrMerge != nullptr)
+            {
+                // psrMerge is an inclusive rectangle. Make it exclusive to deal with the renderer.
+                SMALL_RECT rcMerge = *psrMerge;
+                rcMerge.Bottom++;
+                rcMerge.Right++;
+
+                g_pRender->TriggerRedraw(&rcMerge);
+            }
         }
     }
 }
@@ -739,12 +749,18 @@ bool StreamScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo)
     if (fSuccess)
     {
         // Trigger a graphical update if we're active.
-        if (pScreenInfo->IsActiveScreenBuffer() && g_pRender != nullptr)
+        if (pScreenInfo->IsActiveScreenBuffer())
         {
             COORD coordDelta = { 0 };
             coordDelta.Y = -1;
 
-            g_pRender->TriggerScroll(&coordDelta);
+            // Notify accessibility that a scroll has occurred.
+            NotifyWinEvent(EVENT_CONSOLE_UPDATE_SCROLL, g_ciConsoleInformation.hWnd, coordDelta.X, coordDelta.Y);
+
+            if (g_pRender != nullptr)
+            {
+                g_pRender->TriggerScroll(&coordDelta);
+            }
         }
     }
     return fSuccess;
