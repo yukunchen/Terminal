@@ -53,3 +53,11 @@
 	9627224 - powershell scripts for openconsole
 	9754183 - Stop propsheet project from being built again and again
 	9645528 - use correct flags to MapVirtualKeyW
+11/15/2016 - <batch merge>
+	9792723 - Cannot type into CMD prompt when numlock is on
+	9236359 - console.rc contains references to insecure HTTP endpoints
+	9603879 - CMD renders old text at the bottom of the window
+	9770984 - Cursor keeps blinking under popup dialog
+	9623380 - EVENT_CONSOLE_UPDATE_SCROLL is not firing for when the buffer contents are scrolled
+	9705982 - HKEY is leaked when property sheet is closed
+	9792553 - TrueTypeFontList::s_Initialize is using incorrect registry format, always fails
