@@ -41,9 +41,17 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 RECT GetImeSuggestionWindowPos()
 {
     TEXT_BUFFER_INFO* const ptbi = g_ciConsoleInformation.CurrentScreenBuffer->TextInfo;
-
-    COORD const coordCursor = ptbi->GetCursor()->GetPosition();
+    
     COORD const coordFont = ptbi->GetCurrentFont()->GetSize();
+    COORD coordCursor = ptbi->GetCursor()->GetPosition();
+    
+    // Adjust the cursor position to be relative to the viewport.
+    // This means that if the cursor is at row 30 in the buffer but the viewport is showing rows 20-40 right now on screen
+    // that the "relative" position is that it is on the 11th line from the top (or 10th by index).
+    // Correct by subtracting the top/left corner from the cursor's position.
+    SMALL_RECT const srViewport = g_ciConsoleInformation.CurrentScreenBuffer->BufferViewport;
+    coordCursor.X -= srViewport.Left;
+    coordCursor.Y -= srViewport.Top;
 
     // Map the point to be just under the current cursor position. Convert from coordinate to pixels using font.
     POINT ptSuggestion;
