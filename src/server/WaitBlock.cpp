@@ -81,7 +81,7 @@ HRESULT ConsoleWaitBlock::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReply
     ConsoleHandleData* const pHandleData = pWaitReplyMessage->GetObjectHandle();
     assert(pHandleData != nullptr);
 
-    ConsoleWaitQueue* pObjectQueue;
+    ConsoleWaitQueue* pObjectQueue = nullptr;
     pHandleData->GetWaitQueue(&pObjectQueue);
     assert(pObjectQueue != nullptr);
 
