@@ -2083,7 +2083,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
                 pSelection->ExtendSelection(MousePosition);
             }
         }
-        if (Message != WM_MOUSEWHEEL)
+        if (Message != WM_MOUSEWHEEL && Message != WM_MOUSEHWHEEL)
         {
             // We haven't processed the mousewheel event, so don't early return in that case
             // Otherwise, all other mouse events are done being processed.
