@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\common.build.pre.props" />
   <ItemGroup>
@@ -46,12 +46,20 @@
   <ItemGroup>
     <None Include="console.def" />
   </ItemGroup>
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
   <PropertyGroup>
     <ProjectGuid>{5D23E8E1-3C64-4CC1-A8F7-6861677F7239}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>propsheet</RootNamespace>
     <ProjectName>Propsheet.DLL</ProjectName>
     <TargetName>console</TargetName>
+  </PropertyGroup>
+  <PropertyGroup>
+    <EmbedManifest>
+    </EmbedManifest>
+    <GenerateManifest>true</GenerateManifest>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Link>
@@ -62,6 +70,8 @@
             %(AdditionalDependencies)
       </AdditionalDependencies>
       <ModuleDefinitionFile>console.def</ModuleDefinitionFile>
+      <AllowIsolation>true</AllowIsolation>
+      <AdditionalManifestDependencies>type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'</AdditionalManifestDependencies>
     </Link>
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\dep;..\..\dep\Console;$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -70,12 +80,7 @@
       <AdditionalIncludeDirectories>$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemDefinitionGroup>
-  <Target
-    Name="MessageCompile"
-    Inputs="@(MessageCompile)"
-    Outputs="$(IntermediateOutputPath)\%(MessageCompile.Filename).h"
-    BeforeTargets="ClCompile"
-    >
+  <Target Name="MessageCompile" Inputs="@(MessageCompile)" Outputs="$(IntermediateOutputPath)\%(MessageCompile.Filename).h" BeforeTargets="ClCompile">
     <Exec Command="mc.exe /h $(IntermediateOutputPath) /r $(IntermediateOutputPath) @(MessageCompile)" />
   </Target>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

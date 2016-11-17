@@ -23,10 +23,6 @@
 CONST WCHAR gwszPropertiesDll[] = L"\\console.dll";
 CONST WCHAR gwszRelativePropertiesDll[] = L".\\console.dll";
 
-// This is needed so that the propsheet uses ComCtrl v6.
-// It is needed both in the host and the console.dll
-#pragma comment(linker,"\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
-
 #pragma hdrstop
 
 // Routine Description:

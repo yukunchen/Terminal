@@ -60,6 +60,9 @@
     <ClCompile Include="ColorsPage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LayoutPage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="globals.h">
@@ -84,6 +87,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ColorsPage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OptionsPage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LayoutPage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
