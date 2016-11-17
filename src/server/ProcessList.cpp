@@ -21,7 +21,7 @@
 // - dwThreadId - Thread ID of connecting client
 // - ulProcessGroupId - Process Group ID from connecting client (sometimes referred to as parent)
 // - pParentProcessData - Used to specify parent while locating appropriate scope of sending control messages
-// - ppProcessData - Filled on exit with a pointer to the process handle information. Optional. 
+// - ppProcessData - Filled on exit with a pointer to the process handle information. Optional.
 //                 - If not used, return code will specify whether this process is known to the list or not.
 // Return Value:
 // - S_OK if the process was recorded in the list successfully or already existed.
@@ -275,7 +275,7 @@ HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(_In_ DWORD const dwLi
 
 // Routine Description:
 // - Gets the first process in the list.
-// - Used for reassigning a new root process. 
+// - Used for reassigning a new root process.
 // TODO: MSFT 9450737 - encapsulate root process logic. https://osgvsowi/9450737
 // Arguments:
 // - <none>
@@ -307,7 +307,6 @@ void ConsoleProcessList::ModifyConsoleProcessFocus(_In_ const bool fForeground)
 
         if (pProcessHandle->_hProcess != nullptr)
         {
-            _ModifyProcessFocus(pProcessHandle->_hProcess.get(), fForeground);
             _ModifyProcessForegroundRights(pProcessHandle->_hProcess.get(), fForeground);
         }
 
@@ -321,27 +320,13 @@ void ConsoleProcessList::ModifyConsoleProcessFocus(_In_ const bool fForeground)
 // Routine Description:
 // - Specifies that there are no remaining processes
 // TODO: This should not be exposed, most likely. Whomever is calling it should join this class.
-// Arguments: 
+// Arguments:
 // - <none>
 // Return Value:
 // - True if the list is empty. False if we have known processes.
 bool ConsoleProcessList::IsEmpty() const
 {
     return _processes.empty();
-}
-
-// Routine Description:
-// - Requests the OS change the priority class of the given process handle
-// Arguments:
-// - hProcess - Handle to the process to modify
-// - fForeground - True if it should be prioritized as foreground. False if it can be backgrounded/deprioritized.
-// Return Value:
-// - <none>
-void ConsoleProcessList::_ModifyProcessFocus(_In_ HANDLE const hProcess, _In_ bool const fForeground) const
-{
-    // TODO: MSFT: 9574803 -This fails with invalid parameter when called for not-this-process. Did it always do that?
-    LOG_IF_WIN32_BOOL_FALSE(SetPriorityClass(hProcess,
-                                             fForeground ? PROCESS_MODE_BACKGROUND_END : PROCESS_MODE_BACKGROUND_BEGIN));
 }
 
 // Routine Description:

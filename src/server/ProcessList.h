@@ -32,9 +32,9 @@ class ConsoleProcessList
 public:
 
     static const DWORD ROOT_PROCESS_ID = 0;
-    
+
     HRESULT AllocProcessData(_In_ DWORD const dwProcessId,
-                             _In_ DWORD const dwThreadId, 
+                             _In_ DWORD const dwThreadId,
                              _In_ ULONG const ulProcessGroupId,
                              _In_opt_ ConsoleProcessHandle* const pParentProcessData,
                              _Outptr_opt_ ConsoleProcessHandle** const ppProcessData);
@@ -61,8 +61,6 @@ public:
 
 private:
     std::list<ConsoleProcessHandle*> _processes;
-    
-    void _ModifyProcessFocus(_In_ HANDLE const hProcess, _In_ bool const fForeground) const;
-    void _ModifyProcessForegroundRights(_In_ HANDLE const hProcess, _In_ bool const fForeground) const;
 
+    void _ModifyProcessForegroundRights(_In_ HANDLE const hProcess, _In_ bool const fForeground) const;
 };
