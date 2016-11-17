@@ -17,6 +17,7 @@ namespace Conhost.UIA.Tests.Elements
     public class LayoutTab : TabBase
     {
         public List<CheckBoxMeta> Checkboxes { get; private set; }
+        public CheckBoxMeta WrapTextCheckBox { get; private set; }
 
         public LayoutTab(PropertiesDialog propDialog) : base(propDialog, " Layout ")
         {
@@ -25,7 +26,8 @@ namespace Conhost.UIA.Tests.Elements
         protected override void PopulateItemsOnNavigate(AppiumWebElement propWindow)
         {
             this.Checkboxes = new List<CheckBoxMeta>();
-            this.Checkboxes.Add(new CheckBoxMeta(propWindow, "Wrap text output on resize", "LineWrap", false, false, true, NativeMethods.WinConP.PKEY_Console_WrapText));
+            this.WrapTextCheckBox = new CheckBoxMeta(propWindow, "Wrap text output on resize", "LineWrap", false, false, true, NativeMethods.WinConP.PKEY_Console_WrapText);
+            this.Checkboxes.Add(this.WrapTextCheckBox);
         }
 
         public override IEnumerable<AppiumWebElement> GetObjectsDisabledForV1Console()

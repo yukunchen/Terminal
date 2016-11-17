@@ -90,5 +90,21 @@ namespace Conhost.UIA.Tests.Elements
                     throw new NotImplementedException();
             }
         }
+
+        public void SetWrapState(bool isWrapOn)
+        {
+            AutoHelpers.LogInvariant("Updating wrap state to '{0}'", isWrapOn.ToString());
+            LayoutTab tabWithWrap = this.tabs.Single(tab => typeof(LayoutTab) == tab.GetType()) as LayoutTab;
+            tabWithWrap.NavigateToTab();
+
+            if (isWrapOn)
+            {
+                tabWithWrap.WrapTextCheckBox.Check();
+            }
+            else
+            {
+                tabWithWrap.WrapTextCheckBox.Uncheck();
+            }
+        }
     }
 }
