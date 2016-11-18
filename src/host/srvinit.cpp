@@ -150,6 +150,7 @@ HRESULT ConsoleServerInitialization(_In_ HANDLE Server)
     CATCH_RETURN();
 
     g_uiOEMCP = GetOEMCP();
+    g_uiWindowsCP = GetACP();
 
     g_pFontDefaultList = new RenderFontDefaults();
     RETURN_IF_NULL_ALLOC(g_pFontDefaultList);
@@ -405,28 +406,55 @@ NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLang
 {
     NTSTATUS Status = STATUS_NOT_SUPPORTED;
 
-    if (pLangId != nullptr)
+    // -- WARNING -- LOAD BEARING CODE --
+    // Only attempt to return the Lang ID if the Windows ACP on console launch was an East Asian Code Page.
+    // - 
+    // As of right now, this is a load bearing check and causes a domino effect of errors during OEM preinstallation if removed
+    // resulting in a crash on launch of CMD.exe 
+    // (and consequently any scripts OEMs use to customize an image during the auditUser preinstall step inside their unattend.xml files.)
+    // I have no reason to believe that removing this check causes any problems on any other SKU or scenario types.
+    // -
+    // Returning STATUS_NOT_SUPPORTED will skip a call to SetThreadLocale inside the Windows loader. This has the effect of not 
+    // setting the appropriate locale on the client end of the pipe, but also avoids the error.
+    // Returning STATUS_SUCCESS will trigger the call to SetThreadLocale inside the loader.
+    // This method is called on process launch by the loader and on every SetConsoleOutputCP call made from the client application to
+    // maintain the synchrony of the client's Thread Locale state.
+    // -
+    // It is important to note that a comment exists inside the loader stating that DBCS code pages (CJK languages)
+    // must have the SetThreadLocale synchronized with the console in order for FormatMessage to output correctly.
+    // I'm not sure of the full validity of that comment at this point in time (Nov 2016), but the least risky thing is to trust it and revert
+    // the behavior to this function until it can be otherwise proven.
+    // -
+    // See MSFT: 9808579 for the complete story on what happened here and why this must stay until the other dominos are resolved.
+    // -
+    // I would also highly advise against expanding the LANGIDs returned here or modifying them in any way until the cascading impacts
+    // discovered in MSFT: 9808579 are vetted against any changes.
+    // -- END WARNING --
+    if (IsAvailableEastAsianCodePage(g_uiWindowsCP))
     {
-        switch (uiOutputCP)
+        if (pLangId != nullptr)
         {
-        case CP_JAPANESE:
-            *pLangId = MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT);
-            break;
-        case CP_KOREAN:
-            *pLangId = MAKELANGID(LANG_KOREAN, SUBLANG_KOREAN);
-            break;
-        case CP_CHINESE_SIMPLIFIED:
-            *pLangId = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
-            break;
-        case CP_CHINESE_TRADITIONAL:
-            *pLangId = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL);
-            break;
-        default:
-            *pLangId = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
-            break;
+            switch (uiOutputCP)
+            {
+            case CP_JAPANESE:
+                *pLangId = MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT);
+                break;
+            case CP_KOREAN:
+                *pLangId = MAKELANGID(LANG_KOREAN, SUBLANG_KOREAN);
+                break;
+            case CP_CHINESE_SIMPLIFIED:
+                *pLangId = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED);
+                break;
+            case CP_CHINESE_TRADITIONAL:
+                *pLangId = MAKELANGID(LANG_CHINESE, SUBLANG_CHINESE_TRADITIONAL);
+                break;
+            default:
+                *pLangId = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+                break;
+            }
         }
+        Status = STATUS_SUCCESS;
     }
-    Status = STATUS_SUCCESS;
 
     return Status;
 }

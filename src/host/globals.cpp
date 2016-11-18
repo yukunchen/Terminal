@@ -12,6 +12,7 @@
 #include "renderFontDefaults.hpp"
 
 UINT g_uiOEMCP;
+UINT g_uiWindowsCP;
 HINSTANCE g_hInstance;
 UINT g_uiDialogBoxCount;
 

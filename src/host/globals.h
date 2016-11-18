@@ -31,6 +31,7 @@ Revision History:
 TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 
 extern UINT g_uiOEMCP;
+extern UINT g_uiWindowsCP;
 extern HINSTANCE g_hInstance;
 extern UINT g_uiDialogBoxCount;
 
