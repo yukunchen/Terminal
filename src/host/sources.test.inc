@@ -13,3 +13,4 @@ INCLUDES                        =   $(INCLUDES); \
 TARGETLIBS                      =   $(TARGETLIBS) \
                                     $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Common.lib \
                                     $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Logger.lib \
+                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Te.Common.lib \

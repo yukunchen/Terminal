@@ -7,6 +7,7 @@
     <ClCompile Include="ClipboardTests.cpp" />
     <ClCompile Include="CommonState.cpp" />
     <ClCompile Include="DbcsTests.cpp" />
+    <ClCompile Include="InitTests.cpp" />
     <ClCompile Include="ScreenBufferTests.cpp" />
     <ClCompile Include="SelectionTests.cpp" />
     <ClCompile Include="TextBufferTests.cpp" />
