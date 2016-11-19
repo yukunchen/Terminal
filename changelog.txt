@@ -61,3 +61,4 @@
 	9623380 - EVENT_CONSOLE_UPDATE_SCROLL is not firing for when the buffer contents are scrolled
 	9705982 - HKEY is leaked when property sheet is closed
 	9792553 - TrueTypeFontList::s_Initialize is using incorrect registry format, always fails
+11/18/2016 - 9808579 - Revert behavior of GetConsoleLangId to RS1. Add unit test and comments ensuring this behavior is maintained.
