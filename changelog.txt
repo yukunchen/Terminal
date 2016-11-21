@@ -72,3 +72,6 @@
 	9574803 - Investigate noisy errors after conversion to WIL
 11/21/2016 - 9892363 - cannot run ft tests with Invoke-OpenConsoleTests
 11/21/2016 - 9851176 - added special handling of ctrl+c to get around TranslateMessage
+11/21/2016 - 9900422 - Propsheet still not working from OpenConsole build environment
+11/21/2016 - 9358589 - Success on failure to get buffer for SrvWriteConsoleInput
+11/21/2016 - 9842794 - Reliability: ConhostV2.dll!ConsoleIoThread -- APPLICATION_FAULT c0000005
