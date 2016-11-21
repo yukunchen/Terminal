@@ -515,15 +515,24 @@ NTSTATUS SrvWriteConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
     }
 
     ConsoleHandleData* const HandleData = m->GetObjectHandle();
-    INPUT_INFORMATION* pInputInfo;
-    if (FAILED(HandleData->GetInputBuffer(GENERIC_WRITE, &pInputInfo)))
+    if (HandleData == nullptr)
     {
-        // TODO: MSFT 9358589 - Is this really supposed to just set 0 written and return success?
         a->NumRecords = 0;
+        Status = STATUS_INVALID_HANDLE;
     }
-    else
+
+    if (NT_SUCCESS(Status))
     {
-        Status = DoSrvWriteConsoleInput(pInputInfo, a, Buffer);
+        INPUT_INFORMATION* pInputInfo;
+        if (FAILED(HandleData->GetInputBuffer(GENERIC_WRITE, &pInputInfo)))
+        {
+            a->NumRecords = 0;
+            Status = STATUS_INVALID_HANDLE;
+        }
+        else
+        {
+            Status = DoSrvWriteConsoleInput(pInputInfo, a, Buffer);
+        }
     }
 
     UnlockConsole();
