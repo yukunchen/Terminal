@@ -19,6 +19,9 @@ set OPENCON_TOOLS=%~dp0
 rem The opencon root is at ...\open\tools\, without the last 7 chars ('\tools\')
 set OPENCON=%OPENCON_TOOLS:~0,-7%
 
+rem Add nuget to PATH
+set PATH=%PATH%%OPENCON%\dep\nuget;
+
 if "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
     set ARCH=x64
 ) else (

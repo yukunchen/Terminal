@@ -21,8 +21,43 @@ function Set-MsbuildDevEnvironment()
 }
 
 #.SYNOPSIS
+# Runs a Taef test suite in a new OpenConsole window.
+#
+#.PARAMETER OpenConsolePath
+# Path to the OpenConsole.exe to run.
+#
+#.PARAMETER $TaefPath
+# Path to the taef.exe to run.
+#
+#.PARAMETER $TestDll
+# Path to the test DLL to run with Taef.
+#
+#.PARAMETER $TaefArgs
+# Any arguments to path to Taef.
+function Invoke-TaefInNewWindow()
+{
+    [CmdletBinding()]
+    Param (
+        [parameter(Mandatory=$true)]
+        [string]$OpenConsolePath,
+
+        [parameter(Mandatory=$true)]
+        [string]$TaefPath,
+
+        [parameter(Mandatory=$true)]
+        [string]$TestDll,
+
+        [parameter(Mandatory=$false)]
+        [string]$TaefArgs
+    )
+
+    Start-Process $OpenConsolePath -Wait -ArgumentList "powershell.exe $TaefPath $TestDll $TaefArgs; Read-Host 'Press enter to continue...'"
+}
+
+#.SYNOPSIS
 # Runs OpenConsole's tests. Will only run unit tests by default. Each ft test is
-# run in its own window.
+# run in its own window. Note that the uia tests will move the mouse around, so
+# it must be left alone for the duration of the test.
 #
 #.PARAMETER AllTests
 # When set, all tests will be run.
@@ -32,7 +67,7 @@ function Set-MsbuildDevEnvironment()
 #
 #.PARAMETER Test
 # Can be used to specify that only a particular test should be run.
-# Current values allowed are: unit, api, cjk, resize, message.
+# Current values allowed are: unit, api, cjk, resize, message, uia.
 #
 #.PARAMETER TaefArgs
 # Used to pass any additional arguments to the test runner.
@@ -67,6 +102,7 @@ function Invoke-OpenConsoleTests()
         [string]$Configuration = "Debug"
 
     )
+
     if (($AllTests -and $FTOnly) -or ($AllTests -and $Test) -or ($FTOnly -and $Test))
     {
         Write-Host "Invalid combination of flags" -ForegroundColor Red
@@ -74,60 +110,67 @@ function Invoke-OpenConsoleTests()
     }
     $OpenConsolePath = "$env:OpenConsoleroot\bin\$Platform\$Configuration\OpenConsole.exe"
     $RunTePath = "$env:OpenConsoleRoot\tools\runte.cmd"
+    $TaefExePath = "$env:OpenConsoleRoot\dep\ddk\TAEF\$Platform\te.exe"
     $BinDir = "$env:OpenConsoleRoot\bin\$Platform\$Configuration"
+    [xml]$TestConfig = Get-Content tests.xml
+
+    # check if WinAppDriver needs to be started
+    $WinAppDriverExe = $null
+    if ($AllTests -or $FtOnly -or $Test -eq "uia")
+    {
+        $WinAppDriverExe = [Diagnostics.Process]::Start("$env:OpenConsoleRoot\dep\WinAppDriver\WinAppDriver.exe")
+    }
+
+    # select tests to run
     if ($AllTests)
     {
-        te.exe "$BinDir\ConHost.Unit.Tests.dll" $TaefArgs
+        $TestsToRun = $TestConfig.tests.test
     }
-    if ($FTOnly -or $AllTests)
+    elseif ($FTOnly)
     {
-        & $OpenConsolePath $RunTePath "$BinDir\Conhost.Api.Tests.dll" $TaefArgs
-        & $OpenConsolePath $RunTePath "$BinDir\Conhost.CJK.Tests.dll" $TaefArgs
-        & $OpenConsolePath $RunTePath "$BinDir\Conhost.Resize.Tests.dll" $TaefArgs
-        & $OpenConsolePath $RunTePath "$BinDir\Conhost.Message.Tests.dll" $TaefArgs
-        return
+        $TestsToRun = $TestConfig.tests.test | Where-Object { $_.type -eq "ft" }
     }
     elseif ($Test)
     {
-        switch ($Test)
-        {
-            "unit"
-            {
-                te.exe "$BinDir\ConHost.Unit.Tests.dll" $TaefArgs
-            }
-
-            "api"
-            {
-                & $OpenConsolePath $RunTePath "$BinDir\Conhost.Api.Tests.dll" $TaefArgs
-            }
-
-            "cjk"
-            {
-                & $OpenConsolePath $RunTePath "$BinDir\Conhost.CJK.Tests.dll" $TaefArgs
-            }
-
-            "resize"
-            {
-                & $OpenConsolePath $RunTePath "$BinDir\Conhost.Resize.Tests.dll" $TaefArgs
-            }
-
-            "message"
-            {
-                & $OpenConsolePath $RunTePath "$BinDir\Conhost.Message.Tests.dll" $TaefArgs
-            }
-        }
+        $TestsToRun = $TestConfig.tests.test | Where-Object { $_.name -eq $Test }
     }
-    # run just the unit tests by default
     else
     {
-        te.exe "$env:OpenConsoleRoot\bin\$Platform\$Configuration\ConHost.Unit.Tests.dll" $TaefArgs
+        # run unit tests by default
+        $TestsToRun = $TestConfig.tests.test | Where-Object { $_.type -eq "unit" }
+    }
+
+    # run selected tests
+    foreach ($t in $TestsToRun)
+    {
+        if ($t.type -eq "unit")
+        {
+            & $TaefExePath "$BinDir\$($t.binary)" $TaefArgs
+        }
+        elseif ($t.type -eq "ft")
+        {
+            Invoke-TaefInNewWindow -OpenConsolePath $OpenConsolePath -TaefPath $TaefExePath -TestDll "$BinDir\$($t.binary)" -TaefArgs $TaefArgs
+        }
+        else
+        {
+            Write-Host "Invalid test type $t.type for test: $t.name" -ForegroundColor Red
+            return
+        }
+    }
+
+    # stop running WinAppDriver if it was launched
+    if ($WinAppDriverExe)
+    {
+        Stop-Process -Id $WinAppDriverExe.Id
     }
 }
+
 
 #.SYNOPSIS
 # Builds OpenConsole.sln using msbuild. Any arguments get passed on to msbuild.
 function Invoke-OpenConsoleBuild()
 {
+    & "$env:OpenConsoleRoot\dep\nuget\nuget.exe" restore "$env:OpenConsoleRoot\OpenConsole.sln"
     msbuild.exe "$env:OpenConsoleRoot\OpenConsole.sln" @args
 }
 

@@ -154,7 +154,6 @@ namespace Conhost.UIA.Tests.Elements
 
             Log.Comment($"Pixel position {modPoint.X}, {modPoint.Y}");
 
-
             app.Session.Mouse.MouseMove(app.UIRoot.Coordinates, modPoint.X, modPoint.Y);
         }
 

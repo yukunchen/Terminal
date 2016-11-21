@@ -273,6 +273,9 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetConsoleScreenBufferInfoEx(IntPtr hConsoleOutput, ref CONSOLE_SCREEN_BUFFER_INFO_EX ConsoleScreenBufferInfo);
 
+         [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetConsoleScreenBufferInfoEx(IntPtr ConsoleOutput, ref CONSOLE_SCREEN_BUFFER_INFO_EX ConsoleScreenBufferInfoEx);
+
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetCurrentConsoleFont(IntPtr hConsoleOutput, bool bMaximumWindow, out CONSOLE_FONT_INFO lpConsoleCurrentFont);
 
@@ -362,6 +365,8 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
             public Int32 y;
         }
 
+        public const int WHEEL_DELTA = 120;
+
         [DllImport("user32.dll")]
         public static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
 
@@ -373,10 +378,27 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
 
         [DllImport("user32.dll")]
         public static extern bool AdjustWindowRectEx(ref RECT lpRect, int dwStyle, bool bMenu, int dwExStyle);
-
-
+        
         [DllImport("user32.dll")]
         public static extern bool ClientToScreen(IntPtr hWnd, ref POINT lpPoint);
+
+        public enum WindowMessages : UInt32
+        {
+            WM_MOUSEWHEEL = 0x020A,
+            WM_MOUSEHWHEEL = 0x020E,
+        }
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        public static extern IntPtr SendMessage(IntPtr hWnd, WindowMessages Msg, Int32 wParam, IntPtr lParam);
+
+        public enum SPI : uint
+        {
+            SPI_GETWHEELSCROLLLINES = 0x0068,
+            SPI_GETWHEELSCROLLCHARACTERS = 0x006C
+        }
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern bool SystemParametersInfo(SPI uiAction, uint uiParam, ref uint pvParam, uint fWinIni);
     }
 
     public static class Shell32

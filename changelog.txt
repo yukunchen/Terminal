@@ -62,3 +62,11 @@
 	9705982 - HKEY is leaked when property sheet is closed
 	9792553 - TrueTypeFontList::s_Initialize is using incorrect registry format, always fails
 11/18/2016 - 9808579 - Revert behavior of GetConsoleLangId to RS1. Add unit test and comments ensuring this behavior is maintained.
+11/21/2016 - <batch merge>
+	9718785 - Powershell does not respond to MouseHWheel
+	9798576 - IME popup isn't aligned with bottom of console window
+	9798601 - Noisy SrvReadConsole when process create and quit to attached console
+	9792606 - Property sheet not launching when generated via VSO build
+	9808579 - CMD breaking when locale-country mix not recognized (during OEM preinstall audit mode)
+	9720425 - Move UIA tests to WinAppDriver
+	9574803 - Investigate noisy errors after conversion to WIL

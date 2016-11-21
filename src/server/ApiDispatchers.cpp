@@ -93,7 +93,15 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
 
 HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvReadConsole(m, pbReplyPending));
+    NTSTATUS Status = SrvReadConsole(m, pbReplyPending);
+    if (Status != CONSOLE_STATUS_WAIT)
+    {
+        RETURN_NTSTATUS(Status);
+    }
+    else
+    {
+        return HRESULT_FROM_NT(Status);
+    }
 }
 
 HRESULT ApiDispatchers::ServerWriteConsole(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)

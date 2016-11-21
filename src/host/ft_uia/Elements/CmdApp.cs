@@ -73,6 +73,20 @@ namespace Conhost.UIA.Tests.Elements
             return hStdOut;
         }
 
+        public void SetWrapState(bool WrapOn)
+        {
+            // Go to property sheet and make sure that wrap is set
+            using (PropertiesDialog props = new PropertiesDialog(this))
+            {
+                props.Open(OpenTarget.Specifics);
+                using (Tabs tabs = new Tabs(props))
+                {
+                    tabs.SetWrapState(WrapOn);
+                }
+                props.Close(PropertiesDialog.CloseAction.OK);
+            }
+        }
+
         public bool IsVirtualTerminalEnabled(IntPtr hConsoleOutput)
         {
             WinCon.CONSOLE_OUTPUT_MODES modes;
@@ -95,6 +109,16 @@ namespace Conhost.UIA.Tests.Elements
         public IntPtr GetWindowHandle()
         {
             return WinCon.GetConsoleWindow();
+        }
+
+        public void ScrollWindow(int scrolls = -1)
+        {
+            User32.SendMessage(WinCon.GetConsoleWindow(), User32.WindowMessages.WM_MOUSEWHEEL, (User32.WHEEL_DELTA * scrolls) << 16, IntPtr.Zero);
+        }
+
+        public void HScrollWindow(int scrolls = -1)
+        {
+            User32.SendMessage(WinCon.GetConsoleWindow(), User32.WindowMessages.WM_MOUSEHWHEEL, (User32.WHEEL_DELTA * scrolls) << 16, IntPtr.Zero);
         }
 
         public WinCon.COORD GetCursorPosition(IntPtr hConsole)
@@ -137,12 +161,22 @@ namespace Conhost.UIA.Tests.Elements
             return cursorInfo;
         }
 
+        public WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX GetScreenBufferInfo()
+        {
+            return GetScreenBufferInfo(GetStdOutHandle());
+        }
+
         public WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX GetScreenBufferInfo(IntPtr hConsole)
         {
             WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiex = new WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX();
             sbiex.cbSize = (uint)Marshal.SizeOf(sbiex);
             NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Get screen buffer info for cursor position.");
             return sbiex;
+        }
+
+        public void SetScreenBufferInfo(IntPtr hConsole, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiex)
+        {
+            NativeMethods.Win32BoolHelper(WinCon.SetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Set screen buffer info with given data.");
         }
 
         protected virtual void Dispose(bool disposing)
