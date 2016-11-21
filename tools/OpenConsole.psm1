@@ -112,7 +112,7 @@ function Invoke-OpenConsoleTests()
     $RunTePath = "$env:OpenConsoleRoot\tools\runte.cmd"
     $TaefExePath = "$env:OpenConsoleRoot\dep\ddk\TAEF\$Platform\te.exe"
     $BinDir = "$env:OpenConsoleRoot\bin\$Platform\$Configuration"
-    [xml]$TestConfig = Get-Content tests.xml
+    [xml]$TestConfig = Get-Content "$env:OpenConsoleRoot\tools\tests.xml"
 
     # check if WinAppDriver needs to be started
     $WinAppDriverExe = $null

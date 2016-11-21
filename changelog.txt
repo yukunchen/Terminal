@@ -70,3 +70,5 @@
 	9808579 - CMD breaking when locale-country mix not recognized (during OEM preinstall audit mode)
 	9720425 - Move UIA tests to WinAppDriver
 	9574803 - Investigate noisy errors after conversion to WIL
+11/21/2016 - 9892363 - cannot run ft tests with Invoke-OpenConsoleTests
+11/21/2016 - 9851176 - added special handling of ctrl+c to get around TranslateMessage

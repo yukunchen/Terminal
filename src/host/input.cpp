@@ -1298,7 +1298,19 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
             break;
         }
 
-        if (!UserPrivApi::s_TranslateMessageEx(&msg, TM_POSTCHARBREAKS))
+        // special handling to forcibly differentiate between ctrl+c and ctrl+break.
+        // this is to get around the fact that we currently use TranslateMessage
+        // when we should be handling it ourselves. MSFT:9891752 tracks this.
+        const bool controlKeyPressed = IsFlagSet(GetKeyState(VK_LCONTROL), KEY_PRESSED) || IsFlagSet(GetKeyState(VK_RCONTROL), KEY_PRESSED);
+        const WORD virtualScanCode = LOBYTE(HIWORD(msg.lParam));
+        if (controlKeyPressed && msg.message == WM_KEYDOWN && MapVirtualKeyW(virtualScanCode, MAPVK_VSC_TO_VK_EX) == 'C')
+        {
+            msg.message = WM_CHAR;
+            msg.wParam = 'c';
+            msg.lParam = 'C';
+            DispatchMessageW(&msg);
+        }
+        else if (!UserPrivApi::s_TranslateMessageEx(&msg, TM_POSTCHARBREAKS))
         {
             DispatchMessageW(&msg);
         }
