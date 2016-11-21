@@ -63,14 +63,8 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>
-            comctl32.lib;
-            RuntimeObject.lib;
-            Shlwapi.lib;
-            %(AdditionalDependencies)
-      </AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;RuntimeObject.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>console.def</ModuleDefinitionFile>
-      <AllowIsolation>true</AllowIsolation>
       <AdditionalManifestDependencies>type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'</AdditionalManifestDependencies>
     </Link>
     <ClCompile>

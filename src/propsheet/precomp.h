@@ -19,6 +19,17 @@
 #include <winbase.h>
 #include <winconp.h>
 #include <wingdi.h>
+
+// -- WARNING -- LOAD BEARING CODE --
+// This define ABSOLUTELY MUST be included (and equal to 1, or more specifically != 0)
+// prior to the import of Common Controls.
+// Failure to do so will result in a state where property sheet pages load without complete theming,
+// suddenly start disappearing and closing themselves (while throwing no error in the debugger)
+// or otherwise failing to load the correct version of ComCtl or the string resources you expect.
+// For more details, see https://msdn.microsoft.com/en-us/library/windows/desktop/bb773175(v=vs.85).aspx
+// DO NOT REMOVE.
+#define ISOLATION_AWARE_ENABLED 1
+// -- END WARNING
 #include <commctrl.h>
 
 #include "globals.h"
