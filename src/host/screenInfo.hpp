@@ -163,12 +163,12 @@ private:
     SCREEN_INFORMATION(_In_ const CHAR_INFO ciFill, _In_ const CHAR_INFO ciPopupFill);
 
     _Must_inspect_result_
-    Window* _GetWindow() const;
+        Window* _GetWindow() const;
 
-    void _AdjustScreenBufferHelper(_In_ const RECT* const prcClientNew,
-                                   _In_ COORD const coordBufferOld,
-                                   _Out_ COORD* const pcoordClientNewCharacters);
-    void _AdjustScreenBuffer(_In_ const RECT* const prcClientNew);
+    HRESULT _AdjustScreenBufferHelper(_In_ const RECT* const prcClientNew,
+                                      _In_ COORD const coordBufferOld,
+                                      _Out_ COORD* const pcoordClientNewCharacters);
+    HRESULT _AdjustScreenBuffer(_In_ const RECT* const prcClientNew);
     void _CalculateViewportSize(_In_ const RECT* const prcClientArea, _Out_ COORD* const pcoordSize);
     void _AdjustViewportSize(_In_ const RECT* const prcClientNew, _In_ const RECT* const prcClientOld, _In_ const COORD* const pcoordSize);
     void _InternalSetViewportSize(_In_ const COORD* const pcoordSize, _In_ bool const fResizeFromTop, _In_ bool const fResizeFromLeft);
@@ -199,16 +199,16 @@ private:
     SCREEN_INFORMATION* _psiAlternateBuffer = nullptr; // The VT "Alternate" screen buffer.
     SCREEN_INFORMATION* _psiMainBuffer = nullptr; // A pointer to the main buffer, if this is the alternate buffer.
 
-    RECT _rcAltSavedClientNew = {0};
-    RECT _rcAltSavedClientOld = {0};
+    RECT _rcAltSavedClientNew = { 0 };
+    RECT _rcAltSavedClientOld = { 0 };
     bool _fAltWindowChanged = false;
-                
+
     TabStop* _ptsTabs = nullptr; // The head of the list of Tab Stops
-    
+
     TextAttribute _Attributes;
     TextAttribute _PopupAttributes;
 #ifdef UNIT_TESTING
-friend class ScreenBufferTests;
+    friend class ScreenBufferTests;
 #endif
 };
 
