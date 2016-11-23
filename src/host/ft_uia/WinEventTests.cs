@@ -24,6 +24,7 @@ namespace Conhost.UIA.Tests
     using OpenQA.Selenium;
     using System.Threading;
     using System.Runtime.InteropServices;
+    using System.Drawing;
 
     // Test hooks adapted from C++ WinEvent accessibility sample at https://msdn.microsoft.com/en-us/library/ms971319.aspx#atg_consoleaccessibility_topic05
     [TestClass]
@@ -85,7 +86,6 @@ namespace Conhost.UIA.Tests
 
         Queue<EventData> received = new Queue<EventData>();
 
-
         public void CaretSelection(int x, int y)
         {
             Log.Comment($"Event Console CARET SELECTION! X: {x} Y: {y}");
@@ -132,11 +132,6 @@ namespace Conhost.UIA.Tests
         {
             Log.Comment($"Event Console UPDATE SIMPLE! X: {x} - Y: {y} - Char: {character} - Attr: {attribute}");
             received.Enqueue(new EventData(EventType.UpdateSimple, x, y, character, attribute));
-        }
-
-        public void RunWinEventTest(Action a)
-        {
-           
         }
 
         void VerifyQueue(Queue<EventData> testQueue)
@@ -190,8 +185,10 @@ namespace Conhost.UIA.Tests
             this.VerifyQueue(expected);
         }
 
-        [TestMethod]
-        public void TestLaunchAndExitChild()
+        delegate void AccessibilityTest(CmdApp app, ViewportArea area, IntPtr hConsole, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiex, Queue<EventData> expected, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiexOriginal);
+
+
+        void RunTest(AccessibilityTest test)
         {
             using (RegistryHelper reg = new RegistryHelper())
             {
@@ -215,52 +212,147 @@ namespace Conhost.UIA.Tests
                             NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Get initial console data.");
                             WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiexOriginal = sbiex; // keep a copy of the original data for later.
 
-                            // A. We're going to type "cmd" into the prompt to start a command prompt.
-                            {
-                                TestTypeStringHelper("cmd", app, sbiex);
-                            }
-
-                            // B. Now we're going to press enter to launch the CMD application
-                            {
-                                NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Update console data.");
-                                expected.Enqueue(new EventData(EventType.StartApplication));
-                                expected.Enqueue(new EventData(EventType.UpdateRegion, 0, 0, sbiex.dwSize.X - 1, sbiex.dwSize.Y - 1));
-                                sbiex.dwCursorPosition.Y++;
-                                expected.Enqueue(new EventData(EventType.UpdateRegion, 0, sbiex.dwCursorPosition.Y, "Microsoft Windows [Version 10.0.14974]".Length - 1, sbiex.dwCursorPosition.Y));
-                                sbiex.dwCursorPosition.Y++;
-                                expected.Enqueue(new EventData(EventType.UpdateRegion, 0, sbiex.dwCursorPosition.Y, "(c) 2016 Microsoft Corporation. All rights reserved.".Length - 1, sbiex.dwCursorPosition.Y));
-                                sbiex.dwCursorPosition.Y++;
-                                sbiex.dwCursorPosition.Y++;
-                                expected.Enqueue(new EventData(EventType.UpdateRegion, 0, sbiex.dwCursorPosition.Y, sbiexOriginal.dwCursorPosition.X - 1, sbiex.dwCursorPosition.Y));
-                                expected.Enqueue(new EventData(EventType.CaretVisible, sbiexOriginal.dwCursorPosition.X, sbiex.dwCursorPosition.Y));
-
-                                app.UIRoot.SendKeys(Keys.Enter);
-                                Globals.WaitForTimeout();
-                                VerifyQueue(expected);
-                            }
-
-                            // C. Now we're going to type exit to leave the nested CMD application
-                            {
-                                NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Update console data.");
-                                TestTypeStringHelper("exit", app, sbiex);
-                            }
-
-                            // D. Now we're going to press enter to exit the CMD application
-                            {
-                                NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Update console data.");
-                                expected.Enqueue(new EventData(EventType.EndApplication));
-                                sbiex.dwCursorPosition.Y++;
-                                sbiex.dwCursorPosition.Y++;
-                                expected.Enqueue(new EventData(EventType.UpdateRegion, 0, sbiex.dwCursorPosition.Y, sbiexOriginal.dwCursorPosition.X - 1, sbiex.dwCursorPosition.Y));
-                                expected.Enqueue(new EventData(EventType.CaretVisible, sbiexOriginal.dwCursorPosition.X, sbiex.dwCursorPosition.Y));
-
-                                app.UIRoot.SendKeys(Keys.Enter);
-                                Globals.WaitForTimeout();
-                                VerifyQueue(expected);
-                            }
+                            // Run the test
+                            test(app, area, hConsole, sbiex, expected, sbiexOriginal);
                         }
                     }
                 }
+            }
+        }
+
+        [TestMethod]
+        public void TestSelection()
+        {
+            RunTest(TestSelectionImpl);  
+        }
+
+        private void TestSelectionImpl(CmdApp app, ViewportArea area, IntPtr hConsole, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiex, Queue<EventData> expected, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiexOriginal)
+        {
+            // A. Test single area click
+            {
+                // Move mouse pointer to where the cursor is
+                NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Update console data.");
+                Point pt = new Point(sbiex.dwCursorPosition.X, sbiex.dwCursorPosition.Y);
+                area.MouseMove(pt);
+
+                // Click on this area.
+                expected.Enqueue(new EventData(EventType.CaretSelection, sbiex.dwCursorPosition.X, sbiex.dwCursorPosition.Y));
+                area.MouseDown();
+                area.MouseUp();
+
+                Globals.WaitForTimeout();
+
+                VerifyQueue(expected);
+
+                // We may receive more than one caret and that's OK. Clear it out.
+                this.received.Clear();
+
+                // End selection with escape
+                app.UIRoot.SendKeys(Keys.Escape);
+                Globals.WaitForTimeout();
+
+                // Expect to see the caret again after leaving selection mode
+                expected.Enqueue(new EventData(EventType.CaretVisible, sbiex.dwCursorPosition.X, sbiex.dwCursorPosition.Y));
+                VerifyQueue(expected);
+            }
+
+            // B. Drag area click
+            {
+                // Move mouse pointer to where the cursor is
+                NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Update console data.");
+                Point pt = new Point(sbiex.dwCursorPosition.X, sbiex.dwCursorPosition.Y);
+                area.MouseMove(pt);
+
+                // Click on this area.
+                expected.Enqueue(new EventData(EventType.CaretSelection, sbiex.dwCursorPosition.X, sbiex.dwCursorPosition.Y));
+                area.MouseDown();
+
+                Globals.WaitForTimeout();
+
+                Point ptDrag = pt;
+                ptDrag.X += 10;
+                ptDrag.Y += 10;
+
+                area.MouseMove(ptDrag);
+
+                Globals.WaitForTimeout();
+
+                area.MouseUp();
+
+                Globals.WaitForTimeout();
+
+                // Verify that the first one in the queue starts with where we put the mouse down.
+                VerifyQueue(expected);
+
+                // Now we have to take the final message in the queue and make sure it is where we released the mouse
+                EventData expectedLast = new EventData(EventType.CaretSelection, ptDrag.X, ptDrag.Y);
+                EventData actualLast = received.Last();
+                Verify.AreEqual(expectedLast, actualLast);
+
+                // Empty the received queue.
+                received.Clear();
+
+                // End selection with escape
+                app.UIRoot.SendKeys(Keys.Escape);
+                Globals.WaitForTimeout();
+
+                // Expect to see the caret again after leaving selection mode
+                expected.Enqueue(new EventData(EventType.CaretVisible, sbiex.dwCursorPosition.X, sbiex.dwCursorPosition.Y));
+                VerifyQueue(expected);
+            }
+        }
+
+        [TestMethod]
+        public void TestLaunchAndExitChild()
+        {
+            RunTest(TestLaunchAndExitChildImpl);   
+        }
+
+        private void TestLaunchAndExitChildImpl(CmdApp app, ViewportArea area, IntPtr hConsole, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiex, Queue<EventData> expected, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiexOriginal)
+        {
+            // A. We're going to type "cmd" into the prompt to start a command prompt.
+            {
+                NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Update console data.");
+                TestTypeStringHelper("cmd", app, sbiex);
+            }
+
+            // B. Now we're going to press enter to launch the CMD application
+            {
+                NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Update console data.");
+                expected.Enqueue(new EventData(EventType.StartApplication));
+                expected.Enqueue(new EventData(EventType.UpdateRegion, 0, 0, sbiex.dwSize.X - 1, sbiex.dwSize.Y - 1));
+                sbiex.dwCursorPosition.Y++;
+                expected.Enqueue(new EventData(EventType.UpdateRegion, 0, sbiex.dwCursorPosition.Y, "Microsoft Windows [Version 10.0.14974]".Length - 1, sbiex.dwCursorPosition.Y));
+                sbiex.dwCursorPosition.Y++;
+                expected.Enqueue(new EventData(EventType.UpdateRegion, 0, sbiex.dwCursorPosition.Y, "(c) 2016 Microsoft Corporation. All rights reserved.".Length - 1, sbiex.dwCursorPosition.Y));
+                sbiex.dwCursorPosition.Y++;
+                sbiex.dwCursorPosition.Y++;
+                expected.Enqueue(new EventData(EventType.UpdateRegion, 0, sbiex.dwCursorPosition.Y, sbiexOriginal.dwCursorPosition.X - 1, sbiex.dwCursorPosition.Y));
+                expected.Enqueue(new EventData(EventType.CaretVisible, sbiexOriginal.dwCursorPosition.X, sbiex.dwCursorPosition.Y));
+
+                app.UIRoot.SendKeys(Keys.Enter);
+                Globals.WaitForTimeout();
+                VerifyQueue(expected);
+            }
+
+            // C. Now we're going to type exit to leave the nested CMD application
+            {
+                NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Update console data.");
+                TestTypeStringHelper("exit", app, sbiex);
+            }
+
+            // D. Now we're going to press enter to exit the CMD application
+            {
+                NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Update console data.");
+                expected.Enqueue(new EventData(EventType.EndApplication));
+                sbiex.dwCursorPosition.Y++;
+                sbiex.dwCursorPosition.Y++;
+                expected.Enqueue(new EventData(EventType.UpdateRegion, 0, sbiex.dwCursorPosition.Y, sbiexOriginal.dwCursorPosition.X - 1, sbiex.dwCursorPosition.Y));
+                expected.Enqueue(new EventData(EventType.CaretVisible, sbiexOriginal.dwCursorPosition.X, sbiex.dwCursorPosition.Y));
+
+                app.UIRoot.SendKeys(Keys.Enter);
+                Globals.WaitForTimeout();
+                VerifyQueue(expected);
             }
         }
     }
