@@ -25,6 +25,8 @@ namespace Conhost.UIA.Tests.Elements
     using System.Runtime.InteropServices;
     using System.Drawing;
     using System.Text;
+    using System.Threading.Tasks;
+    using System.Threading;
 
     public class CmdApp : IDisposable
     {
@@ -111,6 +113,12 @@ namespace Conhost.UIA.Tests.Elements
             return WinCon.GetConsoleWindow();
         }
 
+        public int GetPid()
+        {
+            return this.commandProcess.Id;
+        }
+
+        
         public void ScrollWindow(int scrolls = -1)
         {
             User32.SendMessage(WinCon.GetConsoleWindow(), User32.WindowMessages.WM_MOUSEWHEEL, (User32.WHEEL_DELTA * scrolls) << 16, IntPtr.Zero);
@@ -185,6 +193,7 @@ namespace Conhost.UIA.Tests.Elements
             {
                 // ensure we're exited when this is destroyed or disposed of explicitly
                 this.ExitCmdProcess();
+
                 this.isDisposed = true;
             }
         }
@@ -218,7 +227,7 @@ namespace Conhost.UIA.Tests.Elements
             Verify.IsNotNull(Session);
 
             Globals.WaitForTimeout();
-            
+
             this.UIRoot = Session.FindElementByName(WindowTitleToFind);
             this.hStdOut = WinCon.GetStdHandle(WinCon.CONSOLE_STD_HANDLE.STD_OUTPUT_HANDLE);
             Verify.IsNotNull(this.hStdOut, "Ensure output handle is valid.");
@@ -254,6 +263,11 @@ namespace Conhost.UIA.Tests.Elements
             }
             this.UIRoot = null;
             this.commandProcess = null;
+        }
+
+        public WinEventSystem AttachWinEventSystem(IWinEventCallbacks callbacks)
+        {
+            return new WinEventSystem(callbacks, (uint)this.commandProcess.Id);
         }
     }
 }
