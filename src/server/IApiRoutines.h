@@ -187,7 +187,7 @@ public:
     virtual HRESULT ReadConsoleOutputCharacterAImpl(_In_ IConsoleOutputObject* const pOutContext,
                                                     _In_ const COORD* const pSourceOrigin,
                                                     _Out_writes_to_(TextBufferLength, *pTextBufferWritten) char* const pTextBuffer,
-                                                    _In_ ULONG const pTextBufferLength,
+                                                    _In_ ULONG const TextBufferLength,
                                                     _Out_ ULONG* const pTextBufferWritten);
 
     virtual HRESULT ReadConsoleOutputCharacterWImpl(_In_ IConsoleOutputObject* const pOutContext,

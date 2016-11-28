@@ -75,3 +75,7 @@
 11/21/2016 - 9900422 - Propsheet still not working from OpenConsole build environment
 11/21/2016 - 9358589 - Success on failure to get buffer for SrvWriteConsoleInput
 11/21/2016 - 9842794 - Reliability: ConhostV2.dll!ConsoleIoThread -- APPLICATION_FAULT c0000005
+11/28/2016 - <batch merge>
+	9901410 - Invalid SAL annotation on ReadConsoleOutputCharacterAImpl
+	9821668 - PSReadline now causes window to shrink while typing
+	9409098 - Reliability: appcrash in integer_divide_by_zero_c0000094_conhostv2.dll!screen_information::_adjustscreenbufferhelper.
