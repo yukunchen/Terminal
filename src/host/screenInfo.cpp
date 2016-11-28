@@ -790,13 +790,16 @@ void SCREEN_INFORMATION::ProcessResizeWindow(_In_ const RECT* const prcClientNew
 // - coordBufferOld - Size of backing buffer in characters
 // - pcoordClientNewCharacters - The maximum number of characters X by Y that can be displayed in the window with the given backing buffer.
 // Return Value:
-// - <none>
-void SCREEN_INFORMATION::_AdjustScreenBufferHelper(_In_ const RECT* const prcClientNew,
+// - S_OK if math was successful. Check with SUCCEEDED/FAILED macro.
+HRESULT SCREEN_INFORMATION::_AdjustScreenBufferHelper(_In_ const RECT* const prcClientNew,
                                                    _In_ COORD const coordBufferOld,
                                                    _Out_ COORD* const pcoordClientNewCharacters)
 {
     // Get the font size ready.
     COORD const coordFontSize = GetScreenFontSize();
+
+    // We cannot operate if the font size is 0. This shouldn't happen, but stop early if it does.
+    RETURN_HR_IF(E_NOT_VALID_STATE, 0 == coordFontSize.X || 0 == coordFontSize.Y);
 
     // Find out how much client space we have to work with in the new area.
     SIZE sizeClientNewPixels = { 0 };
@@ -820,6 +823,8 @@ void SCREEN_INFORMATION::_AdjustScreenBufferHelper(_In_ const RECT* const prcCli
     // Now with the scroll bars removed, calculate how many characters could fit into the new window area.
     pcoordClientNewCharacters->X = (SHORT)(sizeClientNewPixels.cx / coordFontSize.X);
     pcoordClientNewCharacters->Y = (SHORT)(sizeClientNewPixels.cy / coordFontSize.Y);
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -830,7 +835,7 @@ void SCREEN_INFORMATION::_AdjustScreenBufferHelper(_In_ const RECT* const prcCli
 // - prcClientNew - Client rectangle in pixels after this update
 // Return Value:
 // - <none>
-void SCREEN_INFORMATION::_AdjustScreenBuffer(_In_ const RECT* const prcClientNew)
+HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(_In_ const RECT* const prcClientNew)
 {
     // Prepare the buffer sizes.
     // We need the main's size here to maintain the right scrollbar visibility.
@@ -840,7 +845,7 @@ void SCREEN_INFORMATION::_AdjustScreenBuffer(_In_ const RECT* const prcClientNew
     // First figure out how many characters we could fit into the new window given the old buffer size
     COORD coordClientNewCharacters;
 
-    _AdjustScreenBufferHelper(prcClientNew, coordBufferSizeOld, &coordClientNewCharacters);
+    RETURN_IF_FAILED(_AdjustScreenBufferHelper(prcClientNew, coordBufferSizeOld, &coordClientNewCharacters));
 
     // If we're in wrap text mode, then we want to be fixed to the window size. So use the character calculation we just got
     // to fix the buffer and window width together.
@@ -851,7 +856,7 @@ void SCREEN_INFORMATION::_AdjustScreenBuffer(_In_ const RECT* const prcClientNew
 
     // Reanalyze scroll bars in case we fixed the edge together for word wrap.
     // Use the new buffer client size.
-    _AdjustScreenBufferHelper(prcClientNew, coordBufferSizeNew, &coordClientNewCharacters);
+    RETURN_IF_FAILED(_AdjustScreenBufferHelper(prcClientNew, coordBufferSizeNew, &coordClientNewCharacters));
 
     // Now reanalyze the buffer size and grow if we can fit more characters into the window no matter the console mode.
     if (_IsAltBuffer())
@@ -891,6 +896,8 @@ void SCREEN_INFORMATION::_AdjustScreenBuffer(_In_ const RECT* const prcClientNew
         pCommandLine->Show();
         TextInfo->GetCursor()->SetIsVisible(true);
     }
+
+    return S_OK;
 }
 
 // Routine Description:
