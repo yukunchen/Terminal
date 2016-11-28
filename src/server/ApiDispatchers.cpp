@@ -206,8 +206,8 @@ HRESULT ApiDispatchers::ServerGetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG
     a->Size = ex.dwSize;
     a->ScrollPosition.X = ex.srWindow.Left;
     a->ScrollPosition.Y = ex.srWindow.Top;
-    a->CurrentWindowSize.X = ex.srWindow.Right - ex.srWindow.Left;
-    a->CurrentWindowSize.Y = ex.srWindow.Bottom - ex.srWindow.Top;
+    a->CurrentWindowSize.X = ex.srWindow.Right - ex.srWindow.Left + 1;
+    a->CurrentWindowSize.Y = ex.srWindow.Bottom - ex.srWindow.Top + 1;
     a->Attributes = ex.wAttributes;
     a->PopupAttributes = ex.wPopupAttributes;
 
