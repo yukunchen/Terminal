@@ -71,16 +71,21 @@ namespace Conhost.UIA.Tests
 
             public bool Equals(EventData other)
             {
-                return this.type == other.type &&
-                    this.data[0] == other.data[0] &&
-                    this.data[1] == other.data[1] &&
-                    this.data[2] == other.data[2] &&
-                    this.data[3] == other.data[3];
+                return type == other.type &&
+                    data[0] == other.data[0] &&
+                    data[1] == other.data[1] &&
+                    data[2] == other.data[2] &&
+                    data[3] == other.data[3];
             }
 
             public override string ToString()
             {
-                return $"\r\nType: {this.type} Data[0]: {this.data[0]} Data[1]: {this.data[1]} Data[2]: {this.data[2]} Data[3]: {this.data[3]}\r\n";
+                return $"\r\nType: {type} Data[0]: {data[0]} Data[1]: {data[1]} Data[2]: {data[2]} Data[3]: {data[3]}\r\n";
+            }
+
+            public override int GetHashCode()
+            {
+                return type.GetHashCode() ^ data[0].GetHashCode() ^ data[1].GetHashCode() ^ data[2].GetHashCode() ^ data[3].GetHashCode();
             }
         }
 
