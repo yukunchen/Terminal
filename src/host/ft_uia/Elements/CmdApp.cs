@@ -118,6 +118,21 @@ namespace Conhost.UIA.Tests.Elements
             return this.commandProcess.Id;
         }
 
+        public int GetRowsPerScroll()
+        {
+            uint rows = 0;
+            NativeMethods.Win32BoolHelper(User32.SystemParametersInfo(User32.SPI.SPI_GETWHEELSCROLLLINES, 0, ref rows, 0), "Retrieve rows per click.");
+
+            return (int)rows;
+        }
+
+        public int GetColsPerScroll()
+        {
+            uint cols = 0;
+            NativeMethods.Win32BoolHelper(User32.SystemParametersInfo(User32.SPI.SPI_GETWHEELSCROLLCHARACTERS, 0, ref cols, 0), "Retrieve cols per click.");
+
+            return (int)cols;
+        }
         
         public void ScrollWindow(int scrolls = -1)
         {

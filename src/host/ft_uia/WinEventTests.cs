@@ -159,7 +159,7 @@ namespace Conhost.UIA.Tests
                     {
                         using (ViewportArea area = new ViewportArea(app))
                         {
-                            Thread.Sleep(25000);
+                            Thread.Sleep(500000);
                         }
                     }
                 }
@@ -359,6 +359,53 @@ namespace Conhost.UIA.Tests
                 Globals.WaitForTimeout();
                 VerifyQueue(expected);
             }
+        }
+
+        [TestMethod]
+        public void TestScrollByWheel()
+        {
+            RunTest(TestScrollByWheelImpl);
+        }
+        
+        private void TestScrollByWheelImpl(CmdApp app, ViewportArea area, IntPtr hConsole, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiex, Queue<EventData> expected, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiexOriginal)
+        {
+            int rowsPerScroll = app.GetRowsPerScroll();
+            int scrollDelta; 
+
+            // A. Scroll down.
+            {
+                scrollDelta = -1;
+                expected.Enqueue(new EventData(EventType.UpdateScroll, 0, scrollDelta * rowsPerScroll));
+                expected.Enqueue(new EventData(EventType.Layout));
+
+                app.ScrollWindow(scrollDelta);
+
+                Globals.WaitForTimeout();
+                VerifyQueue(expected);
+            }
+
+            // B. Scroll up.
+            {
+                scrollDelta = 1;
+                expected.Enqueue(new EventData(EventType.UpdateScroll, 0, scrollDelta * rowsPerScroll));
+                expected.Enqueue(new EventData(EventType.Layout));
+
+                app.ScrollWindow(scrollDelta);
+
+                Globals.WaitForTimeout();
+                VerifyQueue(expected);
+            }
+        }
+
+        [TestMethod]
+        public void TestScrollByOverflow()
+        {
+            RunTest(TestScrollByOverflowImpl);
+        }
+
+        private void TestScrollByOverflowImpl(CmdApp app, ViewportArea area, IntPtr hConsole, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiex, Queue<EventData> expected, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiexOriginal)
+        {
+
         }
     }
 }
