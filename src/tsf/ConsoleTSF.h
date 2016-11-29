@@ -40,16 +40,10 @@ public:
         _pfnPosition(pfnPosition),
         _cRef(1)
     {
-        _pConsoleTable = NULL;
     }
 
     virtual ~CConsoleTSF()
     {
-        if (_pConsoleTable)
-        {
-            delete _pConsoleTable;
-            _pConsoleTable = NULL;
-        }
     }
     HRESULT Initialize();
     void    Uninitialize();
@@ -148,8 +142,6 @@ public:
     CConversionArea* CreateConversionArea();
     CConversionArea* GetConversionArea() { return _pConversionArea; }
     ITfContext* GetInputContext() { return _spITfInputContext; }
-    KEYBOARD_LAYOUT_INFO* GetLayoutInfo() { return &_KeyboardLayoutInfo; }
-    HRESULT GetLanguageProfileDescription(BSTR* pbstrProfileDescription);
     HWND GetConsoleHwnd() { return _hwndConsole; }
     TfClientId GetTfClientId() { return _tid; }
     BOOL IsInComposition() { return (_cCompositions > 0); }
@@ -218,15 +210,9 @@ private:
     // Conversion area object for the languages.
     CConversionArea*        _pConversionArea;
 
-    // Active keyboard layout info.
-    KEYBOARD_LAYOUT_INFO    _KeyboardLayoutInfo;
-
     // Console info.
     HWND    _hwndConsole;
     GetSuggestionWindowPos _pfnPosition;
-
-    // IMM32 composition stuff.
-    CConsoleTable* _pConsoleTable;
 
     // Miscellaneous flags
     BOOL _fHasFocus : 1;

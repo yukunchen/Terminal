@@ -15,7 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ConsoleTSF.h" />
-    <ClInclude Include="contbl.h" />
     <ClInclude Include="debug.h" />
     <ClInclude Include="globals.h" />
     <ClInclude Include="precomp.h" />

@@ -44,9 +44,6 @@
     <ClInclude Include="ConsoleTSF.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="contbl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="debug.h">
       <Filter>Header Files</Filter>
     </ClInclude>

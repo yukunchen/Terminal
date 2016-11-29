@@ -50,5 +50,4 @@ extern "C"
 }
 
 #include "TfCtxtComp.h"
-#include "contbl.h"
 #include "ConsoleTSF.h"

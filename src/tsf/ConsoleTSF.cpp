@@ -39,7 +39,7 @@ HRESULT CConsoleTSF::Initialize()
     Init_CheckResult();
 
     // Create Cicero document manager and input context.
-    
+
     hr = _spITfThreadMgr->CreateDocumentMgr(&_spITfDocumentMgr);
     Init_CheckResult();
 
@@ -52,7 +52,7 @@ HRESULT CConsoleTSF::Initialize()
     CComQIPtr<ITfSource> spSrcIC(_spITfInputContext);
     hr = spSrcIC->AdviseSink(IID_ITfContextOwner, static_cast<ITfContextOwner*>(this), &_dwContextOwnerCookie);
     Init_CheckResult();
-    
+
     hr = _spITfDocumentMgr->Push(_spITfInputContext);
     Init_CheckResult();
 
@@ -66,22 +66,22 @@ HRESULT CConsoleTSF::Initialize()
         hr = spITfProfilesMgr->GetActiveProfile(GUID_TFCAT_TIP_KEYBOARD, &ipp);
         if (SUCCEEDED(hr))
         {
-            OnActivated(ipp.dwProfileType, ipp.langid, ipp.clsid, ipp.catid, 
+            OnActivated(ipp.dwProfileType, ipp.langid, ipp.clsid, ipp.catid,
                         ipp.guidProfile, ipp.hkl, ipp.dwFlags);
         }
     }
     Init_CheckResult();
 
     // Setup some useful Cicero event sinks and callbacks.
-    
+
     CComQIPtr<ITfSource> spSrcTIM(_spITfThreadMgr);
     CComQIPtr<ITfSourceSingle> spSrcICS(_spITfInputContext);
-    
+
     hr = (spSrcTIM && spSrcIC && spSrcICS) ? S_OK : E_FAIL;
     Init_CheckResult();
 
-    hr = spSrcTIM->AdviseSink(IID_ITfInputProcessorProfileActivationSink, 
-                              static_cast<ITfInputProcessorProfileActivationSink*>(this), 
+    hr = spSrcTIM->AdviseSink(IID_ITfInputProcessorProfileActivationSink,
+                              static_cast<ITfInputProcessorProfileActivationSink*>(this),
                               &_dwActivationSinkCookie);
     Init_CheckResult();
 
@@ -106,7 +106,7 @@ HRESULT CConsoleTSF::Initialize()
 void CConsoleTSF::Uninitialize()
 {
     // Destroy the current conversion area object
-    
+
     if (_pConversionArea)
     {
         delete _pConversionArea;
@@ -123,7 +123,7 @@ void CConsoleTSF::Uninitialize()
     // Associate the document\context with the console window.
 
     CComQIPtr<ITfSource> spSrcTIM(_spITfThreadMgr);
-    if (spSrcTIM) 
+    if (spSrcTIM)
     {
         if (_dwUIElementSinkCookie)
         {
@@ -138,7 +138,7 @@ void CConsoleTSF::Uninitialize()
     _dwActivationSinkCookie = 0;
 
     CComQIPtr<ITfSource> spSrcIC(_spITfInputContext);
-    if (spSrcIC) 
+    if (spSrcIC)
     {
         if (_dwContextOwnerCookie)
         {
@@ -162,7 +162,7 @@ void CConsoleTSF::Uninitialize()
     }
 
     // Dismiss the input context and document manager.
-    
+
     if (_spITfDocumentMgr)
     {
         _spITfDocumentMgr->Pop(TF_POPF_ALL);
@@ -209,7 +209,7 @@ STDMETHODIMP CConsoleTSF::QueryInterface(REFIID riid, void** ppvObj)
     {
         *ppvObj = static_cast<ITfContextOwnerCompositionSink*>(this);
     }
-    else if (IsEqualIID(riid, IID_ITfUIElementSink)) 
+    else if (IsEqualIID(riid, IID_ITfUIElementSink))
     {
         *ppvObj = static_cast<ITfUIElementSink*>(this);
     }
@@ -217,19 +217,19 @@ STDMETHODIMP CConsoleTSF::QueryInterface(REFIID riid, void** ppvObj)
     {
         *ppvObj = static_cast<ITfCompositionSink*>(this);
     }
-    else if (IsEqualIID(riid, IID_ITfContextOwner)) 
+    else if (IsEqualIID(riid, IID_ITfContextOwner))
     {
         *ppvObj = static_cast<ITfContextOwner*>(this);
     }
-    else if (IsEqualIID(riid, IID_ITfInputProcessorProfileActivationSink)) 
+    else if (IsEqualIID(riid, IID_ITfInputProcessorProfileActivationSink))
     {
         *ppvObj = static_cast<ITfInputProcessorProfileActivationSink*>(this);
     }
-    else if (IsEqualIID(riid, IID_ITfCompartmentEventSink)) 
+    else if (IsEqualIID(riid, IID_ITfCompartmentEventSink))
     {
         *ppvObj = static_cast<ITfCompartmentEventSink*>(this);
     }
-    else if (IsEqualIID(riid, IID_ITfTextEditSink)) 
+    else if (IsEqualIID(riid, IID_ITfTextEditSink))
     {
         *ppvObj = static_cast<ITfTextEditSink*>(this);
     }
@@ -315,7 +315,7 @@ STDMETHODIMP CConsoleTSF::OnStartComposition(ITfCompositionView* pCompView, BOOL
     else
     {
         *pfOk = TRUE;
-        // Ignore compositions triggered by our own edit sessions 
+        // Ignore compositions triggered by our own edit sessions
         // (i.e. when the application is the composition owner)
         CLSID clsidCompositionOwner = GUID_APPLICATION;
         pCompView->GetOwnerClsid(&clsidCompositionOwner);
@@ -324,7 +324,6 @@ STDMETHODIMP CConsoleTSF::OnStartComposition(ITfCompositionView* pCompView, BOOL
             _cCompositions++;
             if (_cCompositions == 1)
             {
-                _KeyboardLayoutInfo.fInComposition = TRUE;
                 ConsoleImeSendMessage2(CI_ONSTARTCOMPOSITION, 0, NULL);
             }
         }
@@ -343,7 +342,7 @@ STDMETHODIMP CConsoleTSF::OnEndComposition(ITfCompositionView* pCompView)
     {
         return E_FAIL;
     }
-    // Ignore compositions triggered by our own edit sessions 
+    // Ignore compositions triggered by our own edit sessions
     // (i.e. when the application is the composition owner)
     CLSID clsidCompositionOwner = GUID_APPLICATION;
     pCompView->GetOwnerClsid(&clsidCompositionOwner);
@@ -353,7 +352,6 @@ STDMETHODIMP CConsoleTSF::OnEndComposition(ITfCompositionView* pCompView)
         if (!_cCompositions)
         {
             OnCompleteComposition();
-            _KeyboardLayoutInfo.fInComposition = FALSE;
             ConsoleImeSendMessage2(CI_ONENDCOMPOSITION, 0, NULL);
         }
     }
@@ -380,7 +378,7 @@ STDMETHODIMP CConsoleTSF::OnCompositionTerminated(TfEditCookie /*ecWrite*/, ITfC
 
 STDMETHODIMP CConsoleTSF::OnEndEdit(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord)
 {
-    if (_cCompositions && _pConversionArea && HasCompositionChanged(pInputContext, ecReadOnly, pEditRecord)) 
+    if (_cCompositions && _pConversionArea && HasCompositionChanged(pInputContext, ecReadOnly, pEditRecord))
     {
         OnUpdateComposition();
     }
@@ -393,20 +391,11 @@ STDMETHODIMP CConsoleTSF::OnEndEdit(ITfContext *pInputContext, TfEditCookie ecRe
 //
 //----------------------------------------------------------------------------
 
-STDMETHODIMP CConsoleTSF::OnActivated(DWORD dwProfileType, LANGID langid, REFCLSID clsid, 
-                                      REFGUID catid, REFGUID guidProfile, HKL hkl, DWORD dwFlags)
+STDMETHODIMP CConsoleTSF::OnActivated(DWORD /*dwProfileType*/, LANGID /*langid*/, REFCLSID /*clsid*/,
+                                      REFGUID catid, REFGUID /*guidProfile*/, HKL /*hkl*/, DWORD dwFlags)
 {
     if (!(dwFlags & TF_IPSINK_FLAG_ACTIVE))
-    { 
-        if (_KeyboardLayoutInfo.dwProfileType == dwProfileType &&
-            _KeyboardLayoutInfo.hKL == hkl &&
-            _KeyboardLayoutInfo.langid == langid &&
-            IsEqualGUID(_KeyboardLayoutInfo.guidProfile, guidProfile))
-        {
-            Assert(!_cCompositions);
-            _KeyboardLayoutInfo.dwFlags = 0;           
-            SafeReleaseClear(_pConsoleTable);
-        }
+    {
         return S_OK;
     }
     if (!IsEqualGUID(catid, GUID_TFCAT_TIP_KEYBOARD))
@@ -414,15 +403,6 @@ STDMETHODIMP CConsoleTSF::OnActivated(DWORD dwProfileType, LANGID langid, REFCLS
         // Don't care for non-keyboard profiles.
         return S_OK;
     }
-
-    _KeyboardLayoutInfo.hKL = hkl ? hkl : (HKL)MAKELPARAM(langid, 0);
-    _KeyboardLayoutInfo.dwProfileType = dwProfileType;
-    _KeyboardLayoutInfo.clsid = clsid;
-    _KeyboardLayoutInfo.langid = langid;
-    _KeyboardLayoutInfo.guidProfile = guidProfile;
-    _KeyboardLayoutInfo.dwFlags = dwFlags;           
-
-    _pConsoleTable = new CConsoleTable(&_KeyboardLayoutInfo);
 
     CreateConversionArea();
 
@@ -502,7 +482,7 @@ ITfUIElement *CConsoleTSF::GetUIElement(DWORD dwUIElementId)
     BOOL fHadConvArea = (_pConversionArea != NULL);
 
     if (!_pConversionArea)
-    {   
+    {
         _pConversionArea = new CConversionArea();
     }
 
@@ -546,10 +526,10 @@ HRESULT CConsoleTSF::AdviseCompartmentSink(REFGUID rguidComp, DWORD* pdwCookie)
     if (SUCCEEDED(GetCompartment(rguidComp, &spCompartment)))
     {
         CComQIPtr<ITfSource> spSrcComp(spCompartment);
-        if (spSrcComp) 
+        if (spSrcComp)
         {
-            hr = spSrcComp->AdviseSink(IID_ITfCompartmentEventSink, 
-                                       static_cast<ITfCompartmentEventSink*>(this), 
+            hr = spSrcComp->AdviseSink(IID_ITfCompartmentEventSink,
+                                       static_cast<ITfCompartmentEventSink*>(this),
                                        pdwCookie);
         }
     }
@@ -565,14 +545,14 @@ HRESULT CConsoleTSF::AdviseCompartmentSink(REFGUID rguidComp, DWORD* pdwCookie)
 HRESULT CConsoleTSF::UnadviseCompartmentSink(REFGUID rguidComp, DWORD* pdwCookie)
 {
     HRESULT hr = E_FAIL;
-    
+
     if (*pdwCookie)
     {
         CComPtr<ITfCompartment> spCompartment;
         if (SUCCEEDED(GetCompartment(rguidComp, &spCompartment)))
         {
             CComQIPtr<ITfSource> spSrcComp(spCompartment);
-            if (spSrcComp) 
+            if (spSrcComp)
             {
                 hr = spSrcComp->UnadviseSink(*pdwCookie);
             }
@@ -594,7 +574,7 @@ HRESULT CConsoleTSF::SetCompartmentDWORD(REFGUID rguidComp, DWORD dw)
     VARIANT var;
 
     CComPtr<ITfCompartment> pComp;
-    if (SUCCEEDED(hr = GetCompartment(rguidComp, &pComp))) 
+    if (SUCCEEDED(hr = GetCompartment(rguidComp, &pComp)))
     {
         var.vt = VT_I4;
         var.lVal = dw;
@@ -611,40 +591,21 @@ HRESULT CConsoleTSF::SetCompartmentDWORD(REFGUID rguidComp, DWORD dw)
 
 HRESULT CConsoleTSF::GetCompartmentDWORD(REFGUID rguidComp, DWORD *pdw)
 {
-    HRESULT hr;             
+    HRESULT hr;
     VARIANT var;
 
     *pdw = 0;
 
     CComPtr<ITfCompartment> pComp;
-    if (SUCCEEDED(hr = GetCompartment(rguidComp, &pComp))) 
+    if (SUCCEEDED(hr = GetCompartment(rguidComp, &pComp)))
     {
-        if ((hr = pComp->GetValue(&var)) == S_OK) 
+        if ((hr = pComp->GetValue(&var)) == S_OK)
         {
             Assert(var.vt == VT_I4);
             *pdw = var.lVal;
         }
     }
     return hr;
-}
-
-//+---------------------------------------------------------------------------
-//
-// CInputProfile::GetLanguageProfileDescription
-//
-//----------------------------------------------------------------------------
-
-HRESULT CConsoleTSF::GetLanguageProfileDescription(BSTR* pbstrProfile)
-{
-    if (!_spITfProfiles && FAILED(_spITfProfiles.CoCreateInstance(CLSID_TF_InputProcessorProfiles)))
-    {
-        return E_FAIL;
-    }
-    
-    return _spITfProfiles->GetLanguageProfileDescription(_KeyboardLayoutInfo.clsid, 
-                                                         _KeyboardLayoutInfo.langid, 
-                                                         _KeyboardLayoutInfo.guidProfile, 
-                                                         pbstrProfile);
 }
 
 //+---------------------------------------------------------------------------
@@ -690,7 +651,7 @@ HRESULT CConsoleTSF::OnCompleteComposition()
     CEditSessionCompositionComplete* pEditSession = new CEditSessionCompositionComplete();
     if (pEditSession)
     {
-        // The composition could have been finalized because of a caret move, therefore it must be 
+        // The composition could have been finalized because of a caret move, therefore it must be
         // inserted synchronously while at the orignal caret position.(TF_ES_SYNC is ok for a nested RO session).
         _spITfInputContext->RequestEditSession(_tid, pEditSession, TF_ES_READ | TF_ES_SYNC, &hr);
         if (FAILED(hr))
@@ -718,5 +679,3 @@ HRESULT CConsoleTSF::OnCompleteComposition()
     }
     return hr;
 }
-
-

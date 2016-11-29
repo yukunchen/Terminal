@@ -47,7 +47,6 @@ Abstract:
 #include "consrv.h"
 
 #include "conv.h"
-#include <imm.h>
 
 // STL
 #include <string>

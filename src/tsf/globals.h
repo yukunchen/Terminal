@@ -64,8 +64,6 @@ Notes:
 
 #ifdef __cplusplus
 
-class CConsoleTable;
-
 // ConSrv protocol
 LRESULT ConsoleImeSendMessage(COPYDATASTRUCT* pCopyData);
 LRESULT ConsoleImeSendMessage2(ULONG_PTR dwData, DWORD cbData, __field_bcount(cbData) PVOID lpData);
