@@ -103,7 +103,7 @@ public:
     STDMETHODIMP GetWnd(HWND* phwnd)
     {
         *phwnd = _hwndConsole;
-        return E_NOTIMPL;
+        return S_OK;
     }
     STDMETHODIMP GetAttribute(REFGUID,  VARIANT*)
     { return E_NOTIMPL; }
@@ -153,7 +153,6 @@ public:
         _fCompositionCleanupSkipped = !bSucceeded;
     }
     void SetModifyingDocFlag(BOOL fSet) { _fModifyingDoc = fSet; }
-    BOOL HasFocus() { return _fHasFocus ? TRUE : FALSE; }
     void SetFocus(BOOL fSet)
     {
         if (!fSet && _cCompositions)
@@ -165,7 +164,6 @@ public:
                 spCompositionServices->TerminateComposition(NULL);
             }
         }
-        _fHasFocus = fSet;
     }
 
     // A workaround for a MS Korean IME scenario where the IME appends a whitespace
@@ -180,15 +178,9 @@ public:
     void SetCompletedRangeLength(long cch) { _cchCompleted = cch; }
 
 private:
-    ITfUIElement *GetUIElement(DWORD dwUIElementId);
-    HRESULT GetCompartment(REFGUID rguidComp, ITfCompartment **ppComp);
-    HRESULT AdviseCompartmentSink(REFGUID rguidComp, DWORD* pdwCookie);
-    HRESULT UnadviseCompartmentSink(REFGUID rguidComp, DWORD* pdwCookie);
-    HRESULT SetCompartmentDWORD(REFGUID rguidComp, DWORD dw);
-    HRESULT GetCompartmentDWORD(REFGUID rguidComp, DWORD *pdw);
-    HRESULT OnUpdateComposition();
-    HRESULT OnCompleteComposition();
-    BOOL HasCompositionChanged(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord);
+    HRESULT _OnUpdateComposition();
+    HRESULT _OnCompleteComposition();
+    BOOL _HasCompositionChanged(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord);
 
 private:
     // ref count.
@@ -215,7 +207,6 @@ private:
     GetSuggestionWindowPos _pfnPosition;
 
     // Miscellaneous flags
-    BOOL _fHasFocus : 1;
     BOOL _fModifyingDoc : 1;            // Set TRUE, when calls ITfRange::SetText
     BOOL _fCoInitialized : 1;
     BOOL _fEditSessionRequested : 1;

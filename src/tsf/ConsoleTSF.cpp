@@ -351,7 +351,7 @@ STDMETHODIMP CConsoleTSF::OnEndComposition(ITfCompositionView* pCompView)
         _cCompositions--;
         if (!_cCompositions)
         {
-            OnCompleteComposition();
+            _OnCompleteComposition();
             ConsoleImeSendMessage2(CI_ONENDCOMPOSITION, 0, NULL);
         }
     }
@@ -378,9 +378,9 @@ STDMETHODIMP CConsoleTSF::OnCompositionTerminated(TfEditCookie /*ecWrite*/, ITfC
 
 STDMETHODIMP CConsoleTSF::OnEndEdit(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord)
 {
-    if (_cCompositions && _pConversionArea && HasCompositionChanged(pInputContext, ecReadOnly, pEditRecord))
+    if (_cCompositions && _pConversionArea && _HasCompositionChanged(pInputContext, ecReadOnly, pEditRecord))
     {
-        OnUpdateComposition();
+        _OnUpdateComposition();
     }
     return S_OK;
 }
@@ -456,23 +456,6 @@ STDMETHODIMP CConsoleTSF::EndUIElement(DWORD /*dwUIElementId*/)
 
 //+---------------------------------------------------------------------------
 //
-// CConsoleTSF::GetUIElement
-//
-//----------------------------------------------------------------------------
-
-ITfUIElement *CConsoleTSF::GetUIElement(DWORD dwUIElementId)
-{
-    ITfUIElement *pElement = NULL;
-    CComQIPtr<ITfUIElementMgr> spUIElementMgr(_spITfThreadMgr);
-    if (spUIElementMgr)
-    {
-        spUIElementMgr->GetUIElement(dwUIElementId, &pElement);
-    }
-    return pElement;
-}
-
-//+---------------------------------------------------------------------------
-//
 // CConsoleTSF::CreateConversionAreaService
 //
 //----------------------------------------------------------------------------
@@ -498,123 +481,11 @@ ITfUIElement *CConsoleTSF::GetUIElement(DWORD dwUIElementId)
 
 //+---------------------------------------------------------------------------
 //
-//  CConsoleTSF::GetCompartment
-//
-//----------------------------------------------------------------------------
-
-HRESULT CConsoleTSF::GetCompartment(REFGUID rguidComp, ITfCompartment **ppComp)
-{
-    Assert(ppComp);
-    *ppComp = NULL;
-
-    CComQIPtr<ITfCompartmentMgr> spCompMgr(_spITfThreadMgr);
-    return (spCompMgr && SUCCEEDED(spCompMgr->GetCompartment(rguidComp, ppComp)) && *ppComp) ? S_OK : E_FAIL;
-}
-
-//+---------------------------------------------------------------------------
-//
-//  CConsoleTSF::AdviseCompartmentSink
-//
-//----------------------------------------------------------------------------
-
-HRESULT CConsoleTSF::AdviseCompartmentSink(REFGUID rguidComp, DWORD* pdwCookie)
-{
-    HRESULT hr = E_FAIL;
-    *pdwCookie = 0;
-
-    CComPtr<ITfCompartment> spCompartment;
-    if (SUCCEEDED(GetCompartment(rguidComp, &spCompartment)))
-    {
-        CComQIPtr<ITfSource> spSrcComp(spCompartment);
-        if (spSrcComp)
-        {
-            hr = spSrcComp->AdviseSink(IID_ITfCompartmentEventSink,
-                                       static_cast<ITfCompartmentEventSink*>(this),
-                                       pdwCookie);
-        }
-    }
-    return hr;
-}
-
-//+---------------------------------------------------------------------------
-//
-//  CConsoleTSF::UnadviseCompartmentSink
-//
-//----------------------------------------------------------------------------
-
-HRESULT CConsoleTSF::UnadviseCompartmentSink(REFGUID rguidComp, DWORD* pdwCookie)
-{
-    HRESULT hr = E_FAIL;
-
-    if (*pdwCookie)
-    {
-        CComPtr<ITfCompartment> spCompartment;
-        if (SUCCEEDED(GetCompartment(rguidComp, &spCompartment)))
-        {
-            CComQIPtr<ITfSource> spSrcComp(spCompartment);
-            if (spSrcComp)
-            {
-                hr = spSrcComp->UnadviseSink(*pdwCookie);
-            }
-        }
-        *pdwCookie = 0;
-    }
-    return hr;
-}
-
-//+---------------------------------------------------------------------------
-//
-//  CConsoleTSF::SetCompartmentDWORD
-//
-//----------------------------------------------------------------------------
-
-HRESULT CConsoleTSF::SetCompartmentDWORD(REFGUID rguidComp, DWORD dw)
-{
-    HRESULT hr;
-    VARIANT var;
-
-    CComPtr<ITfCompartment> pComp;
-    if (SUCCEEDED(hr = GetCompartment(rguidComp, &pComp)))
-    {
-        var.vt = VT_I4;
-        var.lVal = dw;
-        hr = pComp->SetValue(_tid, &var);
-    }
-    return hr;
-}
-
-//+---------------------------------------------------------------------------
-//
-//  CConsoleTSF::GetCompartmentDWORD
-//
-//----------------------------------------------------------------------------
-
-HRESULT CConsoleTSF::GetCompartmentDWORD(REFGUID rguidComp, DWORD *pdw)
-{
-    HRESULT hr;
-    VARIANT var;
-
-    *pdw = 0;
-
-    CComPtr<ITfCompartment> pComp;
-    if (SUCCEEDED(hr = GetCompartment(rguidComp, &pComp)))
-    {
-        if ((hr = pComp->GetValue(&var)) == S_OK)
-        {
-            Assert(var.vt == VT_I4);
-            *pdw = var.lVal;
-        }
-    }
-    return hr;
-}
-
-//+---------------------------------------------------------------------------
-//
 // CConsoleTSF::OnUpdateComposition()
 //
 //----------------------------------------------------------------------------
 
-HRESULT CConsoleTSF::OnUpdateComposition()
+HRESULT CConsoleTSF::_OnUpdateComposition()
 {
     if (_fEditSessionRequested)
     {
@@ -643,7 +514,7 @@ HRESULT CConsoleTSF::OnUpdateComposition()
 //
 //----------------------------------------------------------------------------
 
-HRESULT CConsoleTSF::OnCompleteComposition()
+HRESULT CConsoleTSF::_OnCompleteComposition()
 {
     // Update the composition area.
 
