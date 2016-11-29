@@ -197,6 +197,11 @@ namespace Conhost.UIA.Tests.Elements
             return sbiex;
         }
 
+        public void SetScreenBufferInfo(WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiex)
+        {
+            SetScreenBufferInfo(GetStdOutHandle(), sbiex);
+        }
+
         public void SetScreenBufferInfo(IntPtr hConsole, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiex)
         {
             NativeMethods.Win32BoolHelper(WinCon.SetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Set screen buffer info with given data.");

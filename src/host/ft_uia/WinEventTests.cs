@@ -40,7 +40,6 @@ namespace Conhost.UIA.Tests
             UpdateRegion,
             UpdateScroll,
             UpdateSimple
-
         }
 
         class EventData
@@ -144,25 +143,6 @@ namespace Conhost.UIA.Tests
             while (testQueue.Count > 0)
             {
                 Verify.AreEqual(testQueue.Dequeue(), received.Dequeue());
-            }
-        }
-
-        [TestMethod]
-        public void qwert()
-        {
-            using (RegistryHelper reg = new RegistryHelper())
-            {
-                reg.BackupRegistry();
-                using (CmdApp app = new CmdApp(CreateType.ProcessOnly))
-                {
-                    using (WinEventSystem sys = app.AttachWinEventSystem(this))
-                    {
-                        using (ViewportArea area = new ViewportArea(app))
-                        {
-                            Thread.Sleep(500000);
-                        }
-                    }
-                }
             }
         }
 
@@ -405,7 +385,37 @@ namespace Conhost.UIA.Tests
 
         private void TestScrollByOverflowImpl(CmdApp app, ViewportArea area, IntPtr hConsole, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiex, Queue<EventData> expected, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiexOriginal)
         {
+            // Get original screen information
+            sbiexOriginal = app.GetScreenBufferInfo();
+            short promptLineEnd = sbiexOriginal.dwCursorPosition.X;
+            promptLineEnd--; // prompt line ended one position left of cursor
 
+            // Resize the window to only have two lines left at the bottom to test overflow when we echo some text
+            sbiex = sbiexOriginal;
+            sbiex.srWindow.Bottom = sbiex.dwCursorPosition.Y;
+            sbiex.srWindow.Bottom += 3;
+            app.SetScreenBufferInfo(sbiex);
+
+            string echoText = "foo";
+            string echoCommand = "echo";
+
+            int echoLine = sbiexOriginal.dwCursorPosition.Y + 1;
+            expected.Enqueue(new EventData(EventType.UpdateRegion, 0, echoLine, echoText.Length - 1, echoLine));
+            expected.Enqueue(new EventData(EventType.UpdateScroll, 0, -1));
+            expected.Enqueue(new EventData(EventType.Layout));
+
+            int newPromptLine = echoLine + 2;
+            expected.Enqueue(new EventData(EventType.UpdateRegion, 0, newPromptLine, promptLineEnd, newPromptLine));
+            expected.Enqueue(new EventData(EventType.CaretVisible, promptLineEnd + 1, newPromptLine));
+
+            // type command to echo foo and press enter
+            app.UIRoot.SendKeys($"{echoCommand} {echoText}");
+            Globals.WaitForTimeout();
+            received.Clear();
+            app.UIRoot.SendKeys(Keys.Enter);
+            Globals.WaitForTimeout();
+
+            VerifyQueue(expected);
         }
     }
 }
