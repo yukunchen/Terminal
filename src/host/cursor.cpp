@@ -348,13 +348,13 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
             DWORD dwFlags = 0;
 
             // Flags is expected to be 2, 1, or 0. 2 in selecting (whether or not visible), 1 if just visible, 0 if invisible/noselect.
-            if (g_ciConsoleInformation.Flags & CONSOLE_SELECTING)
+            if (IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_SELECTING))
             {
-                dwFlags |= CONSOLE_CARET_SELECTION;
+                dwFlags = CONSOLE_CARET_SELECTION;
             }
             else if (this->IsVisible())
             {
-                dwFlags |= CONSOLE_CARET_VISIBLE;
+                dwFlags = CONSOLE_CARET_VISIBLE;
             }
 
             NotifyWinEvent(EVENT_CONSOLE_CARET, g_ciConsoleInformation.hWnd, dwFlags, PACKCOORD(this->GetPosition()));
