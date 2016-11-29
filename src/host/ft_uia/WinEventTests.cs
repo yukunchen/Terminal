@@ -45,6 +45,7 @@ namespace Conhost.UIA.Tests
         class EventData
         {
             EventType type;
+            // Of all the WinEvents that we return in the console, the max number of parameters returned is 4.
             int[] data = new int[4];
 
             public EventData(EventType type, int a = 0, int b = 0, int c = 0, int d = 0)
@@ -255,6 +256,7 @@ namespace Conhost.UIA.Tests
                 Globals.WaitForTimeout();
 
                 Point ptDrag = pt;
+                // Drag down and right for "some" distance. 10 isn't for a specific reason, it's just "some".
                 ptDrag.X += 10;
                 ptDrag.Y += 10;
 
