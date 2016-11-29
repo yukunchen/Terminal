@@ -92,12 +92,6 @@ void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProce
     _processes.remove(pProcessData);
 
     delete pProcessData;
-
-    // If no one is left attached to this host, exit.
-    if (g_ciConsoleInformation.ProcessHandleList.IsEmpty())
-    {
-        ExitProcess(STATUS_SUCCESS);
-    }
 }
 
 // Routine Description:
