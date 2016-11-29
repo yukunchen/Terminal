@@ -41,10 +41,10 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 RECT GetImeSuggestionWindowPos()
 {
     TEXT_BUFFER_INFO* const ptbi = g_ciConsoleInformation.CurrentScreenBuffer->TextInfo;
-    
+
     COORD const coordFont = ptbi->GetCurrentFont()->GetSize();
     COORD coordCursor = ptbi->GetCursor()->GetPosition();
-    
+
     // Adjust the cursor position to be relative to the viewport.
     // This means that if the cursor is at row 30 in the buffer but the viewport is showing rows 20-40 right now on screen
     // that the "relative" position is that it is on the 11th line from the top (or 10th by index).
@@ -671,10 +671,10 @@ NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct)
             }
             break;
         case CI_ONSTARTCOMPOSITION:
-            g_ciConsoleInformation.pInputBuffer->ImeMode.InComposition = TRUE;
+            g_ciConsoleInformation.pInputBuffer->fInComposition = TRUE;
             break;
         case CI_ONENDCOMPOSITION:
-            g_ciConsoleInformation.pInputBuffer->ImeMode.InComposition = FALSE;
+            g_ciConsoleInformation.pInputBuffer->fInComposition = FALSE;
             break;
     }
 

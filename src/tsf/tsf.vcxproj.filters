@@ -18,13 +18,7 @@
     <ClCompile Include="ConsoleTSF.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="consubs.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="contsf.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="imecomp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TfCatUtil.cpp">

@@ -104,7 +104,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         // Then we have to re-propose a window size for our window that is scaled to DPI and SetWindowPos.
 
         // First get the new DPI and update all the scaling factors in the console that are affected.
-        
+
         // NOTE: GetWindowDpi and/or GetDpiForWindow can be *WRONG* at this point in time depending on monitor configuration.
         //       They won't be correct until the window is actually shown. So instead of using those APIs, figure out the DPI
         //       based on the rectangle that is about to be shown using the nearest monitor.
@@ -160,7 +160,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         goto CallDefWin;
         break;
     }
-    
+
     case WM_GETDPISCALEDSIZE:
     {
         // This message will send us the DPI we're about to be changed to.
@@ -185,7 +185,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         COORD coordWindowInChars;
         coordWindowInChars.X = srViewport.Right - srViewport.Left + 1;
         coordWindowInChars.Y = srViewport.Bottom - srViewport.Top + 1;
-            
+
         COORD coordBufferSize = ScreenInfo->TextInfo->GetCoordBufferSize();
 
         // Now call the math calculation for our proposed size.
@@ -221,17 +221,17 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         if (IsInFullscreen())
         {
-            // If we're a full screen window, completely ignore what the DPICHANGED says as it will be bigger than the monitor and 
+            // If we're a full screen window, completely ignore what the DPICHANGED says as it will be bigger than the monitor and
             // instead use the value that we were given back in the WM_WINDOWPOSCHANGED (that we had ignored at the time)
             *prcNewScale = _rcWhenDpiChanges;
         }
-        
+
         SetWindowPos(hWnd, HWND_TOP, prcNewScale->left, prcNewScale->top, RECT_WIDTH(prcNewScale), RECT_HEIGHT(prcNewScale), SWP_NOZORDER | SWP_NOACTIVATE);
 
         // Reset the WM_GETDPISCALEDSIZE proposals if they exist. They only last for one DPI change attempt.
         _iSuggestedDpi = 0;
         _sizeSuggested = { 0 };
-        
+
         break;
     }
 
@@ -256,10 +256,9 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         Cursor::s_FocusStart(hWnd);
 
         HandleFocusEvent(TRUE);
-        
+
         // ActivateTextServices does nothing if already active so this is OK to be called every focus.
         ActivateTextServices(g_ciConsoleInformation.hWnd, GetImeSuggestionWindowPos);
-        ConsoleImeMessagePump(CONIME_SETFOCUS, 0, (LPARAM)0);
 
         break;
     }
@@ -277,30 +276,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         HandleFocusEvent(FALSE);
 
-        // This function simply returns false if there isn't an active IME object, so it's safe to call every time.
-        Status = ConsoleImeMessagePump(CONIME_KILLFOCUS, 0, (LPARAM)0);
-
         break;
-    }
-
-    case WM_IME_STARTCOMPOSITION:
-    case WM_IME_ENDCOMPOSITION:
-    case WM_IME_COMPOSITION:
-    case WM_IME_NOTIFY:
-    {
-        // Try to notify the IME. If it succeeds, we processed the message. 
-        // If it fails, pass it to the def window proc.
-        if (NotifyTextServices(Message, wParam, lParam, &Status))
-        {
-            break;
-        }
-        goto CallDefWin;
-    }
-
-    case WM_IME_SETCONTEXT:
-    {
-        lParam &= ~ISC_SHOWUIALL;
-        goto CallDefWin;
     }
 
     case WM_PAINT:
@@ -320,10 +296,10 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         }
 
         _HandlePaint();
-        
+
         // NOTE: We cannot let the OS handle this message (meaning do NOT pass to DefWindowProc)
         // or it will cause missing painted regions in scenarios without a DWM (like Core Server SKU).
-        // Ensure it is re-validated in this handler so we don't receive infinite WM_PAINTs after 
+        // Ensure it is re-validated in this handler so we don't receive infinite WM_PAINTs after
         // we have stored the invalid region data for the next trip around the renderer thread.
 
         break;
@@ -361,7 +337,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
     {
         // Enforce maximum size here instead of WM_GETMINMAXINFO.
         // If we return it in WM_GETMINMAXINFO, then it will be enforced when snapping across DPI boundaries (bad.)
-      
+
         // Retrieve the suggested dimensions and make a rect and size.
         LPWINDOWPOS lpwpos = (LPWINDOWPOS)lParam;
 
@@ -718,44 +694,6 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         break;
     }
 
-    case WM_ENTERMENULOOP:
-    {
-        if (g_ciConsoleInformation.Flags & CONSOLE_HAS_FOCUS)
-        {
-            g_ciConsoleInformation.pInputBuffer->ImeMode.Unavailable = TRUE;
-            Status = ConsoleImeMessagePump(CONIME_KILLFOCUS, 0, 0);
-        }
-        break;
-    }
-
-    case WM_EXITMENULOOP:
-    {
-        if (g_ciConsoleInformation.Flags & CONSOLE_HAS_FOCUS)
-        {
-            Status = ConsoleImeMessagePump(CONIME_SETFOCUS, 0, 0);
-            g_ciConsoleInformation.pInputBuffer->ImeMode.Unavailable = FALSE;
-        }
-        break;
-    }
-
-    case WM_ENTERSIZEMOVE:
-    {
-        if (g_ciConsoleInformation.Flags & CONSOLE_HAS_FOCUS)
-        {
-            g_ciConsoleInformation.pInputBuffer->ImeMode.Unavailable = TRUE;
-        }
-        break;
-    }
-
-    case WM_EXITSIZEMOVE:
-    {
-        if (g_ciConsoleInformation.Flags & CONSOLE_HAS_FOCUS)
-        {
-            g_ciConsoleInformation.pInputBuffer->ImeMode.Unavailable = FALSE;
-        }
-        break;
-    }
-
     default:
     CallDefWin :
     {
@@ -874,19 +812,19 @@ LRESULT Window::_HandleTimer(_In_ const WPARAM /*wParam*/)
 
     // MSFT:4875135 - Disabling auto-save of window positioning data due to late LNK problem.
     //if(!this->_fHasMoved)
-    //{  
+    //{
     //    Window::s_PersistWindowPosition(
     //        g_ciConsoleInformation.LinkTitle,
     //        g_ciConsoleInformation.OriginalTitle,
-    //        g_ciConsoleInformation.Flags,           
-    //        g_ciConsoleInformation.pWindow           
+    //        g_ciConsoleInformation.Flags,
+    //        g_ciConsoleInformation.pWindow
     //    );
     //    Window::s_PersistWindowOpacity(
     //        g_ciConsoleInformation.LinkTitle,
-    //        g_ciConsoleInformation.OriginalTitle,     
-    //        g_ciConsoleInformation.pWindow 
+    //        g_ciConsoleInformation.OriginalTitle,
+    //        g_ciConsoleInformation.pWindow
     //    );
-    //} 
+    //}
 
     this->_fHasMoved = false;
 

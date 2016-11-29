@@ -25,7 +25,6 @@ SOURCES                         =   \
 
 TARGETLIBS                      =   $(TARGETLIBS) \
                                     $(SDK_LIB_PATH)\kernel32.lib \
-                                    $(SDK_LIB_PATH)\imm32.lib \
                                     $(SDK_LIB_PATH)\user32.lib \
                                     $(SDK_LIB_PATH)\advapi32.lib \
                                     $(WINDOWS_LIB_PATH)\msctf.lib \

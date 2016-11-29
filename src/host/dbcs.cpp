@@ -21,8 +21,6 @@
 
 #pragma hdrstop
 
-NTSTATUS ConsoleImeMessagePumpWorker(UINT Message, WPARAM wParam, LPARAM lParam, LRESULT * lplResult);
-
 // Routine Description:
 // - This routine setup of line character code.
 // Arguments:
@@ -218,7 +216,7 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
     }
     else if (0x3190 <= wch && wch <= 0x3247)
     {
-        // From Unicode 9.0, this range is wide 
+        // From Unicode 9.0, this range is wide
         return TRUE;
     }
     else if (0x3251 <= wch && wch <= 0xA4C6)
@@ -229,7 +227,7 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
             return FALSE;
         }
 
-        // From Unicode 9.0, this range is wide 
+        // From Unicode 9.0, this range is wide
         // CJK Unified Ideograph and Yi and Reserved.
         // Includes Han Ideographic range.
         return TRUE;
@@ -261,7 +259,7 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
     else if (0xF900 <= wch && wch <= 0xFAFF)
     {
         // From Unicode 9.0, this range is wide
-        // CJK Compatibility Ideographs 
+        // CJK Compatibility Ideographs
         // Includes Han Compatibility Ideographs
         return TRUE;
     }
@@ -298,9 +296,9 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
         return FALSE;
     }
     else if ((0xffa0 <= wch && wch <= 0xffbe) ||
-             (0xffc2 <= wch && wch <= 0xffc7) || 
-             (0xffca <= wch && wch <= 0xffcf) || 
-             (0xffd2 <= wch && wch <= 0xffd7) || 
+             (0xffc2 <= wch && wch <= 0xffc7) ||
+             (0xffca <= wch && wch <= 0xffcf) ||
+             (0xffd2 <= wch && wch <= 0xffd7) ||
              (0xffda <= wch && wch <= 0xffdc))
     {
         /* Halfwidth Hangule variants */
@@ -378,7 +376,7 @@ DWORD RemoveDbcsMark(_Inout_updates_(NumChars) PWCHAR Dst,
 // - The length of the destination buffer.
 DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) const CHAR_INFO * pciSrc, _In_ DWORD cch)
 {
-    // Walk through the source CHAR_INFO and copy each to the destination. 
+    // Walk through the source CHAR_INFO and copy each to the destination.
     // EXCEPT for trailing bytes (this will de-duplicate the leading/trailing byte double copies of the CHAR_INFOs as stored in the buffer).
 
     // Set up indices used for arrays.
@@ -495,32 +493,6 @@ BOOL IsAvailableEastAsianCodePage(_In_ UINT const uiCodePage)
     default:
         return false;
     }
-}
-
-/*
- * Console IME message pump.
- *
- * Note for NT5 --- this function is build on bogus assumptions
- * (also has some nasty workaround for sloppy conime).
- * There's a chance that pConsole goes away while sendmessage
- * is processed by conime.
- * Keep in mind, anybody who calls this function should validate
- * the return status as appropriate.
- */
-
-NTSTATUS ConsoleImeMessagePumpWorker(UINT Message, WPARAM wParam, LPARAM lParam, LRESULT * lplResult)
-{
-    *lplResult = 0;
-    NotifyTextServices(Message, wParam, lParam, lplResult);
-
-    return STATUS_SUCCESS;
-}
-
-NTSTATUS ConsoleImeMessagePump(_In_ const UINT msg, _In_ const WPARAM wParam, _In_ const LPARAM lParam)
-{
-    LRESULT lResultDummy;
-
-    return ConsoleImeMessagePumpWorker(msg, wParam, lParam, &lResultDummy);
 }
 
 _Ret_range_(0, cbAnsi)
