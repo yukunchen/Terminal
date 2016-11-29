@@ -22,16 +22,13 @@ Notes:
 
 class CConversionArea;
 
-class CConsoleTSF :
+class CConsoleTSF sealed:
     public ITfContextOwner,
     public ITfContextOwnerCompositionSink,
     public ITfInputProcessorProfileActivationSink,
     public ITfUIElementSink,
-    public ITfCompartmentEventSink,
     public ITfCleanupContextSink,
-    public ITfCompositionSink,
-    public ITfTextEditSink,
-    public ITfTextLayoutSink
+    public ITfTextEditSink
 {
 public:
     CConsoleTSF(HWND hwndConsole,
@@ -113,9 +110,6 @@ public:
     STDMETHODIMP OnUpdateComposition(ITfCompositionView *pComposition, ITfRange *pRangeNew);
     STDMETHODIMP OnEndComposition(ITfCompositionView* pComposition);
 
-    // ITfCompositionSink methods
-    STDMETHODIMP OnCompositionTerminated(TfEditCookie ecWrite, ITfComposition* pComposition);
-
     // ITfInputProcessorProfileActivationSink
     STDMETHODIMP OnActivated(DWORD dwProfileType, LANGID langid, REFCLSID clsid,
                              REFGUID catid, REFGUID guidProfile, HKL hkl, DWORD dwFlags);
@@ -125,18 +119,11 @@ public:
     STDMETHODIMP UpdateUIElement(DWORD dwUIELementId);
     STDMETHODIMP EndUIElement(DWORD dwUIELementId);
 
-    // ITfCompartmentEventSink
-    STDMETHODIMP OnChange(REFGUID rguid);
-
     // ITfCleanupContextSink methods
     STDMETHODIMP OnCleanupContext(TfEditCookie ecWrite, ITfContext *pic);
 
     // ITfTextEditSink methods
     STDMETHODIMP OnEndEdit(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord);
-
-    // ITfTextLayoutSink methods
-    STDMETHODIMP OnLayoutChange(ITfContext* /*pic*/, TfLayoutCode /*lcode*/, ITfContextView* /*pView*/)
-    { return E_NOTIMPL; }
 
 public:
     CConversionArea* CreateConversionArea();
@@ -191,7 +178,6 @@ private:
     CComPtr<ITfThreadMgrEx> _spITfThreadMgr;
     CComPtr<ITfDocumentMgr> _spITfDocumentMgr;
     CComPtr<ITfContext>     _spITfInputContext;
-    CComPtr<ITfInputProcessorProfiles> _spITfProfiles;
 
     // Event sink cookies.
     DWORD   _dwContextOwnerCookie;

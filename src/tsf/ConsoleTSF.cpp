@@ -213,10 +213,6 @@ STDMETHODIMP CConsoleTSF::QueryInterface(REFIID riid, void** ppvObj)
     {
         *ppvObj = static_cast<ITfUIElementSink*>(this);
     }
-    else if (IsEqualGUID(riid, IID_ITfCompositionSink))
-    {
-        *ppvObj = static_cast<ITfCompositionSink*>(this);
-    }
     else if (IsEqualIID(riid, IID_ITfContextOwner))
     {
         *ppvObj = static_cast<ITfContextOwner*>(this);
@@ -224,10 +220,6 @@ STDMETHODIMP CConsoleTSF::QueryInterface(REFIID riid, void** ppvObj)
     else if (IsEqualIID(riid, IID_ITfInputProcessorProfileActivationSink))
     {
         *ppvObj = static_cast<ITfInputProcessorProfileActivationSink*>(this);
-    }
-    else if (IsEqualIID(riid, IID_ITfCompartmentEventSink))
-    {
-        *ppvObj = static_cast<ITfCompartmentEventSink*>(this);
     }
     else if (IsEqualIID(riid, IID_ITfTextEditSink))
     {
@@ -360,18 +352,6 @@ STDMETHODIMP CConsoleTSF::OnEndComposition(ITfCompositionView* pCompView)
 
 //+---------------------------------------------------------------------------
 //
-// CConsoleTSF::ITfCompositionSink::OnCompositionTerminated
-//
-//----------------------------------------------------------------------------
-
-STDMETHODIMP CConsoleTSF::OnCompositionTerminated(TfEditCookie /*ecWrite*/, ITfComposition* pComposition)
-{
-    CComQIPtr<ITfCompositionView> spCompView(pComposition);
-    return spCompView ? OnEndComposition(spCompView) : E_FAIL;
-}
-
-//+---------------------------------------------------------------------------
-//
 // CConsoleTSF::::GetLanguageProfileDescription
 //
 //----------------------------------------------------------------------------
@@ -406,17 +386,6 @@ STDMETHODIMP CConsoleTSF::OnActivated(DWORD /*dwProfileType*/, LANGID /*langid*/
 
     CreateConversionArea();
 
-    return S_OK;
-}
-
-//+---------------------------------------------------------------------------
-//
-// CConsoleTSF::ITfCompartmentEventSink::OnChange
-//
-//----------------------------------------------------------------------------
-
-STDMETHODIMP CConsoleTSF::OnChange(REFGUID /*rguid*/)
-{
     return S_OK;
 }
 
