@@ -17,6 +17,20 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
     using WEX.TestExecution;
     using WEX.Logging.Interop;
 
+    // Small extension method helpers to make C# feel closer to native.
+    public static class NativeExtensions
+    {
+        public static int LoWord(this int val)
+        {
+            return val & 0xffff;
+        }
+
+        public static int HiWord(this int val)
+        {
+            return (val >> 16) & 0xffff;
+        }
+    }
+
     public static class NativeMethods
     {
         public static void Win32BoolHelper(bool result, string actionMessage)
@@ -28,6 +42,17 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
             }
 
             Verify.IsTrue(result, actionMessage);
+        }
+
+        public static void Win32NullHelper(IntPtr result, string actionMessage)
+        {
+            if (result == IntPtr.Zero)
+            {
+                string errorMsg = string.Format("Win32 error occurred: 0x{0:X}", Marshal.GetLastWin32Error());
+                Log.Comment(errorMsg);
+            }
+
+            Verify.IsNotNull(result, actionMessage);
         }
     }
 
@@ -239,7 +264,7 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr GetStdHandle(CONSOLE_STD_HANDLE nStdHandle);
-        
+
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool AttachConsole(UInt32 dwProcessId);
 
@@ -266,15 +291,15 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetConsoleCursorInfo(IntPtr hConsoleOutput, out CONSOLE_CURSOR_INFO lpConsoleCursorInfo);
-        
+
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetConsoleScreenBufferInfo(IntPtr hConsoleOutput, out CONSOLE_SCREEN_BUFFER_INFO lpConsoleScreenBufferInfo);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetConsoleScreenBufferInfoEx(IntPtr hConsoleOutput, ref CONSOLE_SCREEN_BUFFER_INFO_EX ConsoleScreenBufferInfo);
 
-         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool SetConsoleScreenBufferInfoEx(IntPtr ConsoleOutput, ref CONSOLE_SCREEN_BUFFER_INFO_EX ConsoleScreenBufferInfoEx);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetConsoleScreenBufferInfoEx(IntPtr ConsoleOutput, ref CONSOLE_SCREEN_BUFFER_INFO_EX ConsoleScreenBufferInfoEx);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetCurrentConsoleFont(IntPtr hConsoleOutput, bool bMaximumWindow, out CONSOLE_FONT_INFO lpConsoleCurrentFont);
@@ -378,7 +403,7 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
 
         [DllImport("user32.dll")]
         public static extern bool AdjustWindowRectEx(ref RECT lpRect, int dwStyle, bool bMenu, int dwExStyle);
-        
+
         [DllImport("user32.dll")]
         public static extern bool ClientToScreen(IntPtr hWnd, ref POINT lpPoint);
 
@@ -399,6 +424,65 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern bool SystemParametersInfo(SPI uiAction, uint uiParam, ref uint pvParam, uint fWinIni);
+
+
+        public enum WinEventId : uint
+        {
+            EVENT_CONSOLE_CARET = 0x4001,
+            EVENT_CONSOLE_UPDATE_REGION = 0x4002,
+            EVENT_CONSOLE_UPDATE_SIMPLE = 0x4003,
+            EVENT_CONSOLE_UPDATE_SCROLL = 0x4004,
+            EVENT_CONSOLE_LAYOUT = 0x4005,
+            EVENT_CONSOLE_START_APPLICATION = 0x4006,
+            EVENT_CONSOLE_END_APPLICATION = 0x4007
+        }
+
+        [Flags]
+        public enum WinEventFlags : uint
+        {
+            WINEVENT_OUTOFCONTEXT = 0x0000,  // Events are ASYNC
+            WINEVENT_SKIPOWNTHREAD = 0x0001,  // Don't call back for events on installer's thread
+            WINEVENT_SKIPOWNPROCESS = 0x0002,  // Don't call back for events on installer's process
+            WINEVENT_INCONTEXT = 0x0004,  // Events are SYNC, this causes your dll to be injected into every process
+        }
+
+        public delegate void WinEventDelegate(IntPtr hWinEventHook, WinEventId eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr SetWinEventHook(WinEventId eventMin, WinEventId eventMax, IntPtr hmodWinEventProc, WinEventDelegate lpfnWinEventProc, uint idProcess, uint idThread, WinEventFlags dwFlags);
+
+        [DllImport("user32.dll")]
+        public static extern bool UnhookWinEvent(IntPtr hWinEventHook);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        public struct MSG
+        {
+            public IntPtr hwnd;
+            public uint message;
+            public IntPtr wParam;
+            public IntPtr lParam;
+            public uint time;
+            public POINT pt;
+        }
+
+        public enum PM : uint
+        {
+            PM_NOREMOVE = 0x0000,
+            PM_REMOVE = 0x0001,
+            PM_NOYIELD = 0x0002,
+        }
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool PeekMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax, PM wRemoveMsg);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern int GetMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr DispatchMessage(ref MSG lpmsg);
     }
 
     public static class Shell32
