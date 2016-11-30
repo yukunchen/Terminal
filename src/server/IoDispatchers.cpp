@@ -264,6 +264,12 @@ void IoDispatchers::ConsoleClientDisconnectRoutine(_Inout_ ConsoleProcessHandle*
     NotifyWinEvent(EVENT_CONSOLE_END_APPLICATION, g_ciConsoleInformation.hWnd, pProcessData->dwProcessId, 0);
 
     RemoveConsole(pProcessData);
+
+    // If there are no more clients connected, terminate our process.
+    if (g_ciConsoleInformation.ProcessHandleList.IsEmpty())
+    {
+        TerminateProcess(GetCurrentProcess(), STATUS_SUCCESS);
+    }
 }
 
 // Routine Description:
