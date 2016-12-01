@@ -44,8 +44,11 @@ HRESULT CConsoleTSF::Initialize()
     Init_CheckResult();
 
     TfEditCookie ecTmp;
-    hr = _spITfDocumentMgr->CreateContext(
-        _tid, 0, static_cast<ITfContextOwnerCompositionSink*>(this), &_spITfInputContext, &ecTmp);
+    hr = _spITfDocumentMgr->CreateContext(_tid,
+                                          0,
+                                          static_cast<ITfContextOwnerCompositionSink*>(this),
+                                          &_spITfInputContext,
+                                          &ecTmp);
     Init_CheckResult();
 
     // Set the context owner before attaching the context to the doc.
