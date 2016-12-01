@@ -355,7 +355,7 @@ STDMETHODIMP CConsoleTSF::OnEndComposition(ITfCompositionView* pCompView)
 
 //+---------------------------------------------------------------------------
 //
-// CConsoleTSF::::GetLanguageProfileDescription
+// CConsoleTSF::::ITfTextEditSink::OnEndEdit
 //
 //----------------------------------------------------------------------------
 
