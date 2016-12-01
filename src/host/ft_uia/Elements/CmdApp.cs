@@ -25,6 +25,8 @@ namespace Conhost.UIA.Tests.Elements
     using System.Runtime.InteropServices;
     using System.Drawing;
     using System.Text;
+    using System.Threading.Tasks;
+    using System.Threading;
 
     public class CmdApp : IDisposable
     {
@@ -111,6 +113,27 @@ namespace Conhost.UIA.Tests.Elements
             return WinCon.GetConsoleWindow();
         }
 
+        public int GetPid()
+        {
+            return this.commandProcess.Id;
+        }
+
+        public int GetRowsPerScroll()
+        {
+            uint rows = 0;
+            NativeMethods.Win32BoolHelper(User32.SystemParametersInfo(User32.SPI.SPI_GETWHEELSCROLLLINES, 0, ref rows, 0), "Retrieve rows per click.");
+
+            return (int)rows;
+        }
+
+        public int GetColsPerScroll()
+        {
+            uint cols = 0;
+            NativeMethods.Win32BoolHelper(User32.SystemParametersInfo(User32.SPI.SPI_GETWHEELSCROLLCHARACTERS, 0, ref cols, 0), "Retrieve cols per click.");
+
+            return (int)cols;
+        }
+        
         public void ScrollWindow(int scrolls = -1)
         {
             User32.SendMessage(WinCon.GetConsoleWindow(), User32.WindowMessages.WM_MOUSEWHEEL, (User32.WHEEL_DELTA * scrolls) << 16, IntPtr.Zero);
@@ -174,6 +197,11 @@ namespace Conhost.UIA.Tests.Elements
             return sbiex;
         }
 
+        public void SetScreenBufferInfo(WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiex)
+        {
+            SetScreenBufferInfo(GetStdOutHandle(), sbiex);
+        }
+
         public void SetScreenBufferInfo(IntPtr hConsole, WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX sbiex)
         {
             NativeMethods.Win32BoolHelper(WinCon.SetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Set screen buffer info with given data.");
@@ -185,6 +213,7 @@ namespace Conhost.UIA.Tests.Elements
             {
                 // ensure we're exited when this is destroyed or disposed of explicitly
                 this.ExitCmdProcess();
+
                 this.isDisposed = true;
             }
         }
@@ -218,7 +247,7 @@ namespace Conhost.UIA.Tests.Elements
             Verify.IsNotNull(Session);
 
             Globals.WaitForTimeout();
-            
+
             this.UIRoot = Session.FindElementByName(WindowTitleToFind);
             this.hStdOut = WinCon.GetStdHandle(WinCon.CONSOLE_STD_HANDLE.STD_OUTPUT_HANDLE);
             Verify.IsNotNull(this.hStdOut, "Ensure output handle is valid.");
@@ -254,6 +283,11 @@ namespace Conhost.UIA.Tests.Elements
             }
             this.UIRoot = null;
             this.commandProcess = null;
+        }
+
+        public WinEventSystem AttachWinEventSystem(IWinEventCallbacks callbacks)
+        {
+            return new WinEventSystem(callbacks, (uint)this.commandProcess.Id);
         }
     }
 }
