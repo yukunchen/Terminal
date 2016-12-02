@@ -84,13 +84,18 @@ HRESULT ApiRoutines::GetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* c
 HRESULT DoSrvGetConsoleScreenBufferInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* pInfo)
 {
     pInfo->bFullscreenSupported = FALSE; // traditional full screen with the driver support is no longer supported.
-    RETURN_NTSTATUS(pScreenInfo->GetScreenBufferInformation(&pInfo->dwSize,
-                                                            &pInfo->dwCursorPosition,
-                                                            &pInfo->srWindow,
-                                                            &pInfo->wAttributes,
-                                                            &pInfo->dwMaximumWindowSize,
-                                                            &pInfo->wPopupAttributes,
-                                                            pInfo->ColorTable));
+    NTSTATUS Status = pScreenInfo->GetScreenBufferInformation(&pInfo->dwSize,
+                                                              &pInfo->dwCursorPosition,
+                                                              &pInfo->srWindow,
+                                                              &pInfo->wAttributes,
+                                                              &pInfo->dwMaximumWindowSize,
+                                                              &pInfo->wPopupAttributes,
+                                                              pInfo->ColorTable);
+    // Callers of this function expect to recieve an exclusive rect, not an inclusive one.
+    pInfo->srWindow.Right += 1;
+    pInfo->srWindow.Bottom += 1;
+
+    RETURN_NTSTATUS(Status);
 }
 
 HRESULT ApiRoutines::GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
