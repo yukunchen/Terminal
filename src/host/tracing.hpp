@@ -7,8 +7,8 @@ Module Name:
 Abstract:
 - This module is used for recording tracing/debugging information to the telemetry ETW channel
 - The data is not automatically broadcast to telemetry backends as it does not set the TELEMETRY keyword.
-- NOTE: Many functions in this file appear to be copy/pastes. This is because the TraceLog documentation warns 
-        to not be "cute" in trying to reduce its macro usages with variables as it can cause unexpected behavior. 
+- NOTE: Many functions in this file appear to be copy/pastes. This is because the TraceLog documentation warns
+        to not be "cute" in trying to reduce its macro usages with variables as it can cause unexpected behavior.
 
 Author(s):
 - Michael Niksa (miniksa)     25-Nov-2014
@@ -32,11 +32,20 @@ public:
     static void s_TraceApi(_In_ const NTSTATUS status, _In_ const CONSOLE_SETSCREENBUFFERSIZE_MSG* const a);
     static void s_TraceApi(_In_ const NTSTATUS status, _In_ const CONSOLE_SETWINDOWINFO_MSG* const a);
 
+    static void s_TraceApi(_In_ void* buffer, _In_ const CONSOLE_WRITECONSOLE_MSG* const a);
+
+    static void s_TraceApi(_In_ const CONSOLE_SCREENBUFFERINFO_MSG* const a);
+    static void s_TraceApi(_In_ const CONSOLE_MODE_MSG* const a, const std::wstring& handleType);
+    static void s_TraceApi(_In_ const CONSOLE_SETTEXTATTRIBUTE_MSG* const a);
+    static void s_TraceApi(_In_ const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a);
+
     static void s_TraceWindowViewport(_In_ const SMALL_RECT* const psrView);
 
     static void s_TraceChars(_In_z_ const char* pszMessage, ...);
     static void s_TraceOutput(_In_z_ const char* pszMessage, ...);
-   
+
+    static void __stdcall TraceFailure(const wil::FailureInfo& failure);
+
 private:
     static ULONG s_ulDebugFlag;
 };
