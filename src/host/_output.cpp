@@ -107,13 +107,13 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
     SHORT const XSize = (SHORT)(psrSrc->Right - psrSrc->Left + 1);
     SHORT const YSize = (SHORT)(psrSrc->Bottom - psrSrc->Top + 1);
 
-    // Allocate enough space for the case where; every char is a different color 
+    // Allocate enough space for the case where; every char is a different color
     TextAttributeRun* rAttrRunsBuff = new TextAttributeRun[XSize];
     NTSTATUS Status = NT_TESTNULL(rAttrRunsBuff);
     if (NT_SUCCESS(Status))
     {
         PBYTE SourcePtr = prgbSrc;
-        BYTE* pbSourceEnd = prgbSrc + ((coordSrcDimensions.X * coordSrcDimensions.Y) * sizeof(CHAR_INFO));    
+        BYTE* pbSourceEnd = prgbSrc + ((coordSrcDimensions.X * coordSrcDimensions.Y) * sizeof(CHAR_INFO));
 
         BOOLEAN WholeSource = FALSE;
         if (XSize == coordSrcDimensions.X)
@@ -200,7 +200,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                 // MSKK Apr.02.1993 V-HirotS For KAttr
                 *AttrP++ = (CHAR) ((ATTR_OF_PCI(SourcePtr) & COMMON_LVB_SBCSDBCS) >> 8);
 
-                if (pAttrRun->GetAttributes()->IsEqualToLegacy((ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS)))
+                if (pAttrRun->GetAttributes().IsEqualToLegacy((ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS)))
                 {
                     pAttrRun->SetLength(pAttrRun->GetLength()+1);
                 }
@@ -267,7 +267,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                     {
                         for (int x = coordDest.X; x < srcWidth + coordDest.X; x++)
                         {
-                            rTargetAttributes[x].SetFrom(pSrcAttr);
+                            rTargetAttributes[x].SetFrom(*pSrcAttr);
                             pSrcAttr++; // advance to next attr
                         }
                         pRow->AttrRow.PackAttrs(rTargetAttributes, rowWidth);
@@ -283,7 +283,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
     }
 
     return Status;
-    
+
 }
 
 void WriteRegionToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PSMALL_RECT psrRegion)
@@ -651,7 +651,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
             NumAttrRuns = 1;
             for (SHORT j = X; j < pScreenInfo->ScreenBufferSize.X; j++, SourcePtr++)
             {
-                if (pAttrRun->GetAttributes()->IsEqualToLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS))
+                if (pAttrRun->GetAttributes().IsEqualToLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS))
                 {
                     pAttrRun->SetLength(pAttrRun->GetLength() + 1);
                 }
@@ -1111,7 +1111,7 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill, _In_ PSCREEN_INFORMATIO
         TextAttributeRun AttrRun;
         AttrRun.SetLength(XSize);
         AttrRun.SetAttributesFromLegacy(pciFill->Attributes);
-        
+
         Row->AttrRow.InsertAttrRuns(&AttrRun, 1, psrTarget->Left, psrTarget->Right, pScreenInfo->ScreenBufferSize.X);
 
         // invalidate row wrapping for rectangular drawing

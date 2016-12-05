@@ -128,26 +128,26 @@ void FillRow(ROW* pRow)
 
     // set some colors
     TextAttribute Attr = TextAttribute(0);
-    pRow->AttrRow.Initialize(15, &Attr);
+    pRow->AttrRow.Initialize(15, Attr);
     // A = bright red on dark gray
     // This string starts at index 0
     Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_INTENSITY);
-    pRow->AttrRow.SetAttrToEnd(0, &Attr);
+    pRow->AttrRow.SetAttrToEnd(0, Attr);
 
     // BかC = dark gold on bright blue
     // This string starts at index 1
     Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
-    pRow->AttrRow.SetAttrToEnd(1, &Attr);
+    pRow->AttrRow.SetAttrToEnd(1, Attr);
 
     // き = bright white on dark purple
     // This string starts at index 5
     Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_BLUE);
-    pRow->AttrRow.SetAttrToEnd(5, &Attr);
+    pRow->AttrRow.SetAttrToEnd(5, Attr);
 
-    // DE = black on dark green 
+    // DE = black on dark green
     // This string starts at index 7
     Attr = TextAttribute(BACKGROUND_GREEN);
-    pRow->AttrRow.SetAttrToEnd(7, &Attr);
+    pRow->AttrRow.SetAttrToEnd(7, Attr);
 
     // odd rows forced a wrap
     if (pRow->sRowId % 2 != 0)
@@ -168,7 +168,7 @@ void FillBisect(ROW *pRow)
     memcpy_s(pRow->CharRow.Chars, s_csBufferWidth, pwszText, wcslen(pwszText));
     pRow->CharRow.Left = 0;
     pRow->CharRow.Right = 80; // 1 past the last valid character in the array
-    
+
     // set double-byte/double-width attributes
     pRow->CharRow.KAttrs[0] = CHAR_ROW::ATTR_TRAILING_BYTE;
     pRow->CharRow.KAttrs[27] = CHAR_ROW::ATTR_LEADING_BYTE;
@@ -182,7 +182,7 @@ void FillBisect(ROW *pRow)
     // everything gets default attributes
     pRow->AttrRow.Initialize(80, g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes());
 
-    pRow->CharRow.SetWrapStatus(true); 
+    pRow->CharRow.SetWrapStatus(true);
 }
 
 typedef void(*PFNFillMethod)(ROW*);

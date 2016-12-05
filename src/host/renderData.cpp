@@ -38,7 +38,7 @@ const FontInfo* RenderData::GetFontInfo()
     return g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->GetCurrentFont();
 }
 
-const TextAttribute* const RenderData::GetDefaultBrushColors()
+const TextAttribute RenderData::GetDefaultBrushColors()
 {
     return g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes();
 }
@@ -49,12 +49,12 @@ const void RenderData::GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLOR
     *pcColors = g_ciConsoleInformation.GetColorTableSize();
 }
 
-const Cursor* RenderData::GetCursor() 
+const Cursor* RenderData::GetCursor()
 {
     return g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->GetCursor();
 }
 
-const ConsoleImeInfo* RenderData::GetImeData() 
+const ConsoleImeInfo* RenderData::GetImeData()
 {
     return &g_ciConsoleInformation.ConsoleIme;
 }

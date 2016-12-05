@@ -153,10 +153,10 @@ public:
     COORD GetReverseTab(_In_ const COORD cCurrCursorPos);
     bool AreTabsSet();
 
-    const TextAttribute* const GetAttributes() const;
+    TextAttribute GetAttributes() const;
     const TextAttribute* const GetPopupAttributes() const;
 
-    void SetAttributes(_In_ const TextAttribute* const pAttributes);
+    void SetAttributes(_In_ const TextAttribute attributes);
     void SetPopupAttributes(_In_ const TextAttribute* const pPopupAttributes);
 
 private:
@@ -194,7 +194,7 @@ private:
     AdaptDispatch* _pAdapter;
     StateMachine* _pStateMachine;
 
-    SMALL_RECT _srScrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future. 
+    SMALL_RECT _srScrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
 
     SCREEN_INFORMATION* _psiAlternateBuffer = nullptr; // The VT "Alternate" screen buffer.
     SCREEN_INFORMATION* _psiMainBuffer = nullptr; // A pointer to the main buffer, if this is the alternate buffer.

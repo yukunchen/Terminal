@@ -29,7 +29,7 @@ class TextBufferTests
 
         m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
-        
+
         return true;
     }
 
@@ -118,7 +118,7 @@ class TextBufferTests
 
         TEXT_BUFFER_INFO* tbi = GetTbi();
 
-        tbi->_FirstRow = csBufferHeight / 2 + 2; // sets to a bit over half way around. 
+        tbi->_FirstRow = csBufferHeight / 2 + 2; // sets to a bit over half way around.
 
         DoBufferRowIterationTest(tbi);
     }
@@ -134,7 +134,7 @@ class TextBufferTests
 
         ROW* pRow = tbi->GetRowByOffset(sId);
         VERIFY_IS_NOT_NULL(pRow);
-        
+
         if (pRow != nullptr)
         {
             VERIFY_ARE_EQUAL(pRow->sRowId, sId);
@@ -147,7 +147,7 @@ class TextBufferTests
         TEXT_BUFFER_INFO* tbi = GetTbi();
 
         ROW* pRow = tbi->GetFirstRow();
-        
+
         // no wrap by default
         VERIFY_IS_FALSE(pRow->CharRow.WasWrapForced());
 
@@ -192,7 +192,7 @@ class TextBufferTests
         if (cLength < cMax)
         {
             PWCHAR pChars= pCharRow->Chars;
-            
+
             for (short cStart = cLength; cStart <= cMax; cStart++)
             {
                 pChars[cStart] = UNICODE_SPACE;
@@ -242,7 +242,7 @@ class TextBufferTests
     {
         TEXT_BUFFER_INFO* pOtherTbi = GetTbi();
 
-        TEXT_BUFFER_INFO* pNewTbi = new TEXT_BUFFER_INFO(&pOtherTbi->_fiCurrentFont); 
+        TEXT_BUFFER_INFO* pNewTbi = new TEXT_BUFFER_INFO(&pOtherTbi->_fiCurrentFont);
         pNewTbi->_pCursor = new Cursor(40);// value is irrelevant for this test
         // set initial mapping values
         pNewTbi->GetCursor()->SetHasMoved(FALSE);
@@ -250,7 +250,7 @@ class TextBufferTests
 
         pNewTbi->GetCursor()->SetIsVisible(FALSE);
         pOtherTbi->GetCursor()->SetIsVisible(TRUE);
-        
+
         pNewTbi->GetCursor()->SetIsOn(FALSE);
         pOtherTbi->GetCursor()->SetIsOn(TRUE);
 
@@ -297,17 +297,17 @@ class TextBufferTests
         UINT cAttrApplies;
         pRow->AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, &cAttrApplies);
 
-        VERIFY_IS_FALSE(pAttrRun->GetAttributes()->IsEqual(&TestAttributes));
+        VERIFY_IS_FALSE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
 
         // now apply the new data to the buffer
-        pTbi->InsertCharacter(wchTest, bKAttrTest, &TestAttributes);
+        pTbi->InsertCharacter(wchTest, bKAttrTest, TestAttributes);
 
         // ensure that the buffer position where the cursor WAS contains the test items
         VERIFY_ARE_EQUAL(pRow->CharRow.Chars[coordCursorBefore.X], wchTest);
         VERIFY_ARE_EQUAL(pRow->CharRow.KAttrs[coordCursorBefore.X], bKAttrTest);
 
         pRow->AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, &cAttrApplies);
-        VERIFY_IS_TRUE(pAttrRun->GetAttributes()->IsEqual(&TestAttributes));
+        VERIFY_IS_TRUE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
 
         // ensure that the cursor moved to a new position (X or Y or both have changed)
         VERIFY_IS_TRUE((coordCursorBefore.X != pTbi->GetCursor()->GetPosition().X) || (coordCursorBefore.Y != pTbi->GetCursor()->GetPosition().Y));
@@ -322,7 +322,7 @@ class TextBufferTests
         // Y increments are covered in the NewlineCursor test
 
         short const sBufferWidth = pTbi->_coordBufferSize.X;
-        
+
         #if DBG
         short const sBufferHeight = pTbi->_coordBufferSize.Y;
         ASSERT(sBufferWidth > 1 && sBufferHeight > 1);
@@ -355,9 +355,9 @@ class TextBufferTests
     {
         TEXT_BUFFER_INFO* const pTbi = GetTbi();
 
-        
+
         const short sBufferHeight = pTbi->_coordBufferSize.Y;
-        
+
         #if DBG
         const short sBufferWidth = pTbi->_coordBufferSize.X;
         // width and height are sufficiently large for upcoming math
@@ -368,7 +368,7 @@ class TextBufferTests
 
         // set cursor X position to non zero, any position in buffer
         pTbi->GetCursor()->SetXPosition(3);
-        
+
         // set cursor Y position to not-the-final row in the buffer
         pTbi->GetCursor()->SetYPosition(3);
 
@@ -412,9 +412,9 @@ class TextBufferTests
         // The .Right property on a row is 1 past the last printable character in the row.
         // If there is one character in the row, the last character would be 0.
         // If there are no characters in the row, the last character would be -1 and we need to seek backwards to find the previous row with a character.
-        
+
         // start expected position from cursor
-        COORD coordExpected = pTbi->GetCursor()->GetPosition(); 
+        COORD coordExpected = pTbi->GetCursor()->GetPosition();
 
         // Try to get the X position from the current cursor position.
         coordExpected.X = pTbi->GetRowByOffset(coordExpected.Y)->CharRow.Right - 1;
@@ -428,8 +428,8 @@ class TextBufferTests
             coordExpected.X = pTbi->GetRowByOffset(coordExpected.Y)->CharRow.Right - 1;
         }
 
-        VERIFY_ARE_EQUAL(coordLastNonSpace.X, coordExpected.X); 
-        VERIFY_ARE_EQUAL(coordLastNonSpace.Y, coordExpected.Y); 
+        VERIFY_ARE_EQUAL(coordLastNonSpace.X, coordExpected.X);
+        VERIFY_ARE_EQUAL(coordLastNonSpace.Y, coordExpected.Y);
     }
 
     TEST_METHOD(TestGetLastNonSpaceCharacter)
@@ -469,7 +469,7 @@ class TextBufferTests
 
         // make sure wrap status is on
         pRow->CharRow.SetWrapStatus(true);
-        
+
         // trigger wrap
         pTbi->SetWrapOnCurrentRow();
 
@@ -517,7 +517,7 @@ class TextBufferTests
             VERIFY_ARE_EQUAL(pTbi->_FirstRow, iNextRowIndex); // first row has incremented
             VERIFY_ARE_NOT_EQUAL(pTbi->GetFirstRow(), pFirstRow); // the old first row is no longer the first
 
-            // ensure old first row has been emptied 
+            // ensure old first row has been emptied
             VERIFY_IS_FALSE(pFirstRow->CharRow.ContainsText());
         }
     }

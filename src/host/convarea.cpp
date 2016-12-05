@@ -41,10 +41,10 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 RECT GetImeSuggestionWindowPos()
 {
     TEXT_BUFFER_INFO* const ptbi = g_ciConsoleInformation.CurrentScreenBuffer->TextInfo;
-    
+
     COORD const coordFont = ptbi->GetCurrentFont()->GetSize();
     COORD coordCursor = ptbi->GetCursor()->GetPosition();
-    
+
     // Adjust the cursor position to be relative to the viewport.
     // This means that if the cursor is at row 30 in the buffer but the viewport is showing rows 20-40 right now on screen
     // that the "relative" position is that it is on the 11th line from the top (or 10th by index).
@@ -290,7 +290,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                     wLegacyAttr |= (COMMON_LVB_GRID_SINGLEFLAG | COMMON_LVB_GRID_LVERTICAL);
                 }
                 TextAttribute taAttribute = TextAttribute(wLegacyAttr);
-                ConvScreenInfo->SetAttributes(&taAttribute);
+                ConvScreenInfo->SetAttributes(taAttribute);
 
                 StreamWriteToScreenBufferIME(LocalBuffer, (USHORT) i, ConvScreenInfo, (PCHAR) LocalBufferA);
 
@@ -359,7 +359,7 @@ NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* ConvAreaInfo)
                &CharsToWrite);
 
     CharsToWrite = ConvAreaInfo->ScreenBuffer->ScreenBufferSize.X;
-    FillOutput(ConvAreaInfo->ScreenBuffer, g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes()->GetLegacyAttributes(), Coord, CONSOLE_ATTRIBUTE, &CharsToWrite);
+    FillOutput(ConvAreaInfo->ScreenBuffer, g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes(), Coord, CONSOLE_ATTRIBUTE, &CharsToWrite);
     ConsoleImePaint(ConvAreaInfo);
     return STATUS_SUCCESS;
 }
@@ -783,11 +783,11 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     }
 
     // see if attr string is different.  if so, allocate a new attr buffer and merge the two strings.
-    if (Row->AttrRow.Length != 1 || !(Row->AttrRow.GetHead()->GetAttributes()->IsEqual(ScreenInfo->GetAttributes())))
+    if (Row->AttrRow.Length != 1 || !(Row->AttrRow.GetHead()->GetAttributes().IsEqual(ScreenInfo->GetAttributes())))
     {
         TextAttributeRun InsertedRun;
 
-        const WORD wScreenAttributes = ScreenInfo->GetAttributes()->GetLegacyAttributes();
+        const WORD wScreenAttributes = ScreenInfo->GetAttributes().GetLegacyAttributes();
         const bool fRVerticalSet = AreAllFlagsSet(wScreenAttributes, COMMON_LVB_GRID_SINGLEFLAG | COMMON_LVB_GRID_RVERTICAL);
         const bool fLVerticalSet = AreAllFlagsSet(wScreenAttributes, COMMON_LVB_GRID_SINGLEFLAG | COMMON_LVB_GRID_LVERTICAL);
 

@@ -626,11 +626,11 @@ VOID UpdatePopups(IN WORD NewAttributes, IN WORD NewPopupAttributes, IN WORD Old
 
 NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attributes, _In_ WORD PopupAttributes, _In_ BOOL UpdateWholeScreen)
 {
-    WORD const DefaultAttributes = ScreenInfo->GetAttributes()->GetLegacyAttributes();
+    WORD const DefaultAttributes = ScreenInfo->GetAttributes().GetLegacyAttributes();
     WORD const DefaultPopupAttributes = ScreenInfo->GetPopupAttributes()->GetLegacyAttributes();
     TextAttribute NewPrimaryAttributes = TextAttribute(Attributes);
     TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
-    ScreenInfo->SetAttributes(&NewPrimaryAttributes);
+    ScreenInfo->SetAttributes(NewPrimaryAttributes);
     ScreenInfo->SetPopupAttributes(&NewPopupAttributes);
     g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
 
@@ -701,7 +701,7 @@ NTSTATUS DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* pScre
 
     NewAttributes.SetColor(rgbColor, fIsForeground);
 
-    pScreenInfo->SetAttributes(&NewAttributes);
+    pScreenInfo->SetAttributes(NewAttributes);
 
     return STATUS_SUCCESS;
 }
@@ -711,7 +711,7 @@ NTSTATUS DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* pScreen
     TextAttribute NewAttributes;
     NewAttributes.SetFrom(pScreenInfo->GetAttributes());
     NewAttributes.SetColor(rgbColor, fIsForeground);
-    pScreenInfo->SetAttributes(&NewAttributes);
+    pScreenInfo->SetAttributes(NewAttributes);
 
     return STATUS_SUCCESS;
 }
@@ -910,7 +910,7 @@ NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
 }
 
 // Routine Description:
-// - A private API call for enabling or disabling the cursor blinking. 
+// - A private API call for enabling or disabling the cursor blinking.
 // Parameters:
 // - fEnable - set to true to enable blinking, false to disable
 // Return value:
@@ -924,8 +924,8 @@ NTSTATUS DoSrvPrivateAllowCursorBlinking(_In_ SCREEN_INFORMATION* pScreenInfo, _
 }
 
 // Routine Description:
-// - A private API call for setting the top and bottom scrolling margins for 
-//     the current page. This creates a subsection of the screen that scrolls 
+// - A private API call for setting the top and bottom scrolling margins for
+//     the current page. This creates a subsection of the screen that scrolls
 //     when input reaches the end of the region, leaving the rest of the screen
 //     untouched.
 //  Currently only accessible through the use of ANSI sequence DECSTBM
@@ -975,8 +975,8 @@ NTSTATUS DoSrvPrivateReverseLineFeed(_In_ SCREEN_INFORMATION* pScreenInfo)
 
 // Routine Description:
 // - A private API call for swaping to the alternate screen buffer. In virtual terminals, there exists both a "main"
-//     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already 
-//     existing alternate, it is discarded. 
+//     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
+//     existing alternate, it is discarded.
 // Parameters:
 // - psiCurr - a pointer to the screen buffer that should use an alternate buffer
 // Return value:
@@ -987,8 +987,8 @@ NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(_In_ SCREEN_INFORMATION* const psi
 }
 
 // Routine Description:
-// - A private API call for swaping to the main screen buffer. From the 
-//     alternate buffer, returns to the main screen buffer. From the main 
+// - A private API call for swaping to the main screen buffer. From the
+//     alternate buffer, returns to the main screen buffer. From the main
 //     screen buffer, does nothing. The alternate is discarded.
 // Parameters:
 // - psiCurr - a pointer to the screen buffer that should use the main buffer
@@ -1030,7 +1030,7 @@ NTSTATUS DoPrivateTabHelper(_In_ SHORT const sNumTabs, _In_ bool fForward)
     {
         const COORD cursorPos = pScreenBuffer->TextInfo->GetCursor()->GetPosition();
         COORD cNewPos = (fForward) ? pScreenBuffer->GetForwardTab(cursorPos) : pScreenBuffer->GetReverseTab(cursorPos);
-        // GetForwardTab is smart enough to move the cursor to the next line if 
+        // GetForwardTab is smart enough to move the cursor to the next line if
         // it's at the end of the current one already. AdjustCursorPos shouldn't
         // to be doing anything funny, just moving the cursor to the location GetForwardTab returns
         Status = AdjustCursorPosition(pScreenBuffer, cNewPos, TRUE, nullptr);
@@ -1039,7 +1039,7 @@ NTSTATUS DoPrivateTabHelper(_In_ SHORT const sNumTabs, _In_ bool fForward)
 }
 
 // Routine Description:
-// - A private API call for performing a forwards tab. This will take the 
+// - A private API call for performing a forwards tab. This will take the
 //     cursor to the tab stop following its current location. If there are no
 //     more tabs in this row, it will take it to the right side of the window.
 //     If it's already in the last column of the row, it will move it to the next line.
@@ -1053,7 +1053,7 @@ NTSTATUS DoSrvPrivateForwardTab(_In_ SHORT const sNumTabs)
 }
 
 // Routine Description:
-// - A private API call for performing a backwards tab. This will take the 
+// - A private API call for performing a backwards tab. This will take the
 //     cursor to the tab stop previous to its current location. It will not reverse line feed.
 // Parameters:
 // - sNumTabs - The number of tabs to perform.

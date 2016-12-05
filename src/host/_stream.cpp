@@ -97,7 +97,7 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
         dest.Y = scrollRect.Top - diff;
 
         CHAR_INFO ciFill;
-        ciFill.Attributes = pScreenInfo->GetAttributes()->GetLegacyAttributes();
+        ciFill.Attributes = pScreenInfo->GetAttributes().GetLegacyAttributes();
         ciFill.Char.UnicodeChar = L' ';
 
         ScrollRegion(pScreenInfo, &scrollRect, &scrollRect, dest, ciFill);
@@ -205,7 +205,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
     // Must not adjust cursor here. It has to stay on for many write scenarios. Consumers should call for the cursor to be turned off if they want that.
 
-    WORD const Attributes = pScreenInfo->GetAttributes()->GetLegacyAttributes();
+    WORD const Attributes = pScreenInfo->GetAttributes().GetLegacyAttributes();
     DWORD const BufferSize = *pcb;
     *pcb = 0;
     TempNumSpaces = 0;
