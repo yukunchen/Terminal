@@ -97,7 +97,7 @@ void Renderer::PaintFrame()
     if (_pEngine->StartPaint())
     {
         // A. Prep Colors
-        _UpdateDrawingBrushes(_pData->GetDefaultBrushColors(), true);
+        LOG_IF_FAILED(_UpdateDrawingBrushes(_pData->GetDefaultBrushColors(), true));
 
         // B. Clear Overlays
         _ClearOverlays();
@@ -515,7 +515,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ const ROW* const pRow, _In_rea
         pRow->AttrRow.FindAttrIndex((UINT)(iFirstAttr + cchWritten), &pRun, &cAttrApplies);
 
         // Set the brushes in GDI to this color
-        _UpdateDrawingBrushes(pRun->GetAttributes(), false);
+        LOG_IF_FAILED(_UpdateDrawingBrushes(pRun->GetAttributes(), false));
 
         // The segment we'll write is the shorter of the entire segment we want to draw or the amount of applicable color (Attr applies)
         size_t cchSegment = min(cchLine - cchWritten, cAttrApplies);
@@ -829,7 +829,7 @@ void Renderer::_PaintSelection()
 // - fIncludeBackground - Whether or not to include the hung window/erase window brushes in this operation. (Usually only happens when the default is changed, not when each individual color is swapped in a multi-color run.)
 // Return Value:
 // - <none>
-void Renderer::_UpdateDrawingBrushes(_In_ const TextAttribute* const pTextAttributes, _In_ bool const fIncludeBackground)
+HRESULT Renderer::_UpdateDrawingBrushes(_In_ const TextAttribute* const pTextAttributes, _In_ bool const fIncludeBackground)
 {
     COLORREF rgbForeground = pTextAttributes->GetRgbForeground();
     COLORREF rgbBackground = pTextAttributes->GetRgbBackground();
@@ -844,11 +844,13 @@ void Renderer::_UpdateDrawingBrushes(_In_ const TextAttribute* const pTextAttrib
     // Otherwise, only update if something has changed.
     if (fIncludeBackground || rgbForeground != rgbLastForeground || rgbBackground != rgbLastBackground)
     {
-        _pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, fIncludeBackground);
+        RETURN_IF_FAILED(_pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, fIncludeBackground));
 
         rgbLastForeground = rgbForeground;
         rgbLastBackground = rgbBackground;
     }
+
+    return S_OK;
 }
 
 // Routine Description:

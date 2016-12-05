@@ -201,8 +201,17 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMA
     status = NT_TESTNULL(g_pRenderData);
     if (NT_SUCCESS(status))
     {
-        GdiEngine* pGdiEngine = new GdiEngine();
-        status = NT_TESTNULL(pGdiEngine);
+        GdiEngine* pGdiEngine = nullptr;
+
+        try
+        {
+            pGdiEngine = new GdiEngine();
+            status = NT_TESTNULL(pGdiEngine);
+        }
+        catch (...)
+        {
+            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        }
 
         if (NT_SUCCESS(status))
         {
@@ -288,33 +297,36 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMA
             {
                 g_ciConsoleInformation.hWnd = hWnd; // temporarily save into console info
 
-                pGdiEngine->SetHwnd(hWnd);
+                status = NTSTATUS_FROM_HRESULT(pGdiEngine->SetHwnd(hWnd));
 
-                // Set alpha on window if requested
-                ApplyWindowOpacity();
-
-                g_ciConsoleInformation.hMenu = GetSystemMenu(hWnd, FALSE);
-
-                // Modify system menu to our liking.
-                InitSystemMenu();
-
-                g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
-
-                // Do WM_GETICON workaround. Must call WM_SETICON once or apps calling WM_GETICON will get null.
-                Icon::Instance().ApplyWindowMessageWorkaround();
-
-                // Set up the hot key for this window.
-                if (g_ciConsoleInformation.GetHotKey() != 0)
+                if (NT_SUCCESS(status))
                 {
-                    SendMessageW(hWnd, WM_SETHOTKEY, g_ciConsoleInformation.GetHotKey(), 0);
+                    // Set alpha on window if requested
+                    ApplyWindowOpacity();
+
+                    g_ciConsoleInformation.hMenu = GetSystemMenu(hWnd, FALSE);
+
+                    // Modify system menu to our liking.
+                    InitSystemMenu();
+
+                    g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
+
+                    // Do WM_GETICON workaround. Must call WM_SETICON once or apps calling WM_GETICON will get null.
+                    Icon::Instance().ApplyWindowMessageWorkaround();
+
+                    // Set up the hot key for this window.
+                    if (g_ciConsoleInformation.GetHotKey() != 0)
+                    {
+                        SendMessageW(hWnd, WM_SETHOTKEY, g_ciConsoleInformation.GetHotKey(), 0);
+                    }
+
+                    WindowDpiApi::s_EnableChildWindowDpiMessage(g_ciConsoleInformation.hWnd, TRUE /*fEnable*/);
+
+                    // Post a window size update so that the new console window will size itself correctly once it's up and
+                    // running. This works around chicken & egg cases involving window size calculations having to do with font
+                    // sizes, DPI, and non-primary monitors (see MSFT #2367234).
+                    psiAttached->PostUpdateWindowSize();
                 }
-
-                WindowDpiApi::s_EnableChildWindowDpiMessage(g_ciConsoleInformation.hWnd, TRUE /*fEnable*/);
-
-                // Post a window size update so that the new console window will size itself correctly once it's up and
-                // running. This works around chicken & egg cases involving window size calculations having to do with font
-                // sizes, DPI, and non-primary monitors (see MSFT #2367234).
-                psiAttached->PostUpdateWindowSize();
             }
         }
     }

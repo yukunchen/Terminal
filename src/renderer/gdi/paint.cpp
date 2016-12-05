@@ -288,16 +288,21 @@ void GdiEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
 // Arguments:
 // - <none>
 // Return Value:
-// - <none>
-void GdiEngine::_FlushBufferLines()
+// - S_OK or appropriate GDI failure
+HRESULT GdiEngine::_FlushBufferLines()
 {
+    HRESULT hr = S_OK;
+
     if (_cPolyText > 0)
     {
-        PolyTextOutW(_hdcMemoryContext, _pPolyText, (UINT)_cPolyText);
+        if (!PolyTextOutW(_hdcMemoryContext, _pPolyText, (UINT)_cPolyText))
+        {
+            hr = GetLastError();
+        }
 
         for (size_t iPoly = 0; iPoly < _cPolyText; iPoly++)
         {
-            if (_pPolyText[iPoly].lpstr != nullptr)
+            if (nullptr != _pPolyText[iPoly].lpstr)
             {
                 delete[] _pPolyText[iPoly].lpstr;
             }
@@ -305,6 +310,8 @@ void GdiEngine::_FlushBufferLines()
 
         _cPolyText = 0;
     }
+
+    RETURN_HR(hr);
 }
 
 // Routine Description:

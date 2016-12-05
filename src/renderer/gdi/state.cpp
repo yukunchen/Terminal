@@ -16,6 +16,7 @@ using namespace Microsoft::Console::Render;
 
 // Routine Description:
 // - Creates a new GDI-based rendering engine
+// - NOTE: Will throw if initialization failure. Caller must catch.
 // Arguments:
 // - <none>
 // Return Value:
@@ -33,8 +34,12 @@ GdiEngine::GdiEngine() :
     _rcCursorInvert = { 0 };
     _szInvalidScroll = { 0 };
     _szMemorySurface = { 0 };
+
     _hrgnGdiPaintedSelection = CreateRectRgn(0, 0, 0, 0);
+    THROW_LAST_ERROR_IF_NULL(_hrgnGdiPaintedSelection);
+
     _hdcMemoryContext = CreateCompatibleDC(nullptr);
+    THROW_LAST_ERROR_IF_NULL(_hdcMemoryContext);
 }
 
 // Routine Description:
@@ -55,25 +60,25 @@ GdiEngine::~GdiEngine()
 
     if (_hrgnGdiPaintedSelection != nullptr)
     {
-        DeleteObject(_hrgnGdiPaintedSelection);
+        LOG_LAST_ERROR_IF_FALSE(DeleteObject(_hrgnGdiPaintedSelection));
         _hrgnGdiPaintedSelection = nullptr;
     }
 
     if (_hbitmapMemorySurface != nullptr)
     {
-        DeleteObject(_hbitmapMemorySurface);
+        LOG_LAST_ERROR_IF_FALSE(DeleteObject(_hbitmapMemorySurface));
         _hbitmapMemorySurface = nullptr;
     }
 
     if (_hfont != nullptr)
     {
-        DeleteObject(_hfont);
+        LOG_LAST_ERROR_IF_FALSE(DeleteObject(_hfont));
         _hfont = nullptr;
     }
 
     if (_hdcMemoryContext != nullptr)
     {
-        DeleteObject(_hdcMemoryContext);
+        LOG_LAST_ERROR_IF_FALSE(DeleteObject(_hdcMemoryContext));
         _hdcMemoryContext = nullptr;
     }
 }
@@ -84,30 +89,36 @@ GdiEngine::~GdiEngine()
 // Arguments:
 // - hwnd - Handle to the window on which we will be drawing.
 // Return Value:
-// - <none>
-void GdiEngine::SetHwnd(_In_ HWND const hwnd)
+// - S_OK if set successfully or relevant GDI error via HRESULT.
+HRESULT GdiEngine::SetHwnd(_In_ HWND const hwnd)
 {
-    _hwndTargetWindow = hwnd;
+    // First attempt to get the DC and create an appropriate DC
+    HDC const hdcRealWindow = GetDC(_hwndTargetWindow);
+    RETURN_LAST_ERROR_IF_NULL(hdcRealWindow);
 
-    if (_hdcMemoryContext != nullptr)
+    HDC const hdcNewMemoryContext = CreateCompatibleDC(hdcRealWindow);
+    RETURN_LAST_ERROR_IF_NULL(hdcNewMemoryContext);
+
+    // If we had an existing memory context stored, release it before proceeding.
+    if (nullptr != _hdcMemoryContext)
     {
-        DeleteObject(_hdcMemoryContext);
+        LOG_LAST_ERROR_IF_FALSE(DeleteObject(_hdcMemoryContext));
         _hdcMemoryContext = nullptr;
     }
 
-    HDC hdcRealWindow = GetDC(_hwndTargetWindow);
+    // Store new window handle and memory context
+    _hwndTargetWindow = hwnd;
+    _hdcMemoryContext = hdcNewMemoryContext;
 
-    if (hdcRealWindow != nullptr)
+    // If we have a font, apply it to the context. 
+    if (nullptr != _hfont)
     {
-        _hdcMemoryContext = CreateCompatibleDC(hdcRealWindow);
-
-        if (_hfont != nullptr)
-        {
-            SelectObject(_hdcMemoryContext, _hfont);
-        }
-
-        ReleaseDC(_hwndTargetWindow, hdcRealWindow);
+        LOG_LAST_ERROR_IF_NULL(SelectObject(_hdcMemoryContext, _hfont));
     }
+
+    LOG_LAST_ERROR_IF_FALSE(ReleaseDC(_hwndTargetWindow, hdcRealWindow));
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -115,23 +126,38 @@ void GdiEngine::SetHwnd(_In_ HWND const hwnd)
 // Arguments:
 // - wTextAttributes - A console attributes bit field specifying the brush colors we should use.
 // Return Value:
-// - <none>
-void GdiEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ bool const fIncludeBackgrounds)
+// - S_OK if set successfully or relevant GDI error via HRESULT.
+HRESULT GdiEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ bool const fIncludeBackgrounds)
 {
-    _FlushBufferLines();
+    RETURN_IF_FAILED(_FlushBufferLines());
+
+    RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _hdcMemoryContext);
 
     // Set the colors for painting text
-    SetTextColor(_hdcMemoryContext, colorForeground);
-    SetBkColor(_hdcMemoryContext, colorBackground);
+    RETURN_LAST_ERROR_IF(CLR_INVALID == SetTextColor(_hdcMemoryContext, colorForeground));
+    RETURN_LAST_ERROR_IF(CLR_INVALID == SetBkColor(_hdcMemoryContext, colorBackground));
 
     if (fIncludeBackgrounds)
     {
         // Set the color for painting the extra DC background area
-        SetDCBrushColor(_hdcMemoryContext, colorBackground);
+        RETURN_LAST_ERROR_IF(CLR_INVALID == SetDCBrushColor(_hdcMemoryContext, colorBackground));
 
         // Set the hung app background painting color
-        SetWindowLongW(_hwndTargetWindow, GWL_CONSOLE_BKCOLOR, colorBackground); // Store background color
+        {
+            // SetWindowLong has strange error handling. On success, it returns the previous Window Long value and doesn't modify the Last Error state.
+            // To deal with this, we set the last error to 0/S_OK first, call it, and if the previous long was 0, we check if the error was non-zero before reporting.
+            // Otherwise, we'll get an "Error: The operation has completed successfully." and there will be another screenshot on the internet making fun of Windows.
+            // See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms633591(v=vs.85).aspx
+            SetLastError(0);
+            LONG const lResult = SetWindowLongW(_hwndTargetWindow, GWL_CONSOLE_BKCOLOR, colorBackground); // Store background color
+            if (0 == lResult)
+            {
+                RETURN_LAST_ERROR_IF(0 != GetLastError());
+            }
+        }
     }
+
+    return S_OK;
 }
 
 // Routine Description:

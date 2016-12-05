@@ -55,7 +55,7 @@ namespace Microsoft
                 virtual void ClearCursor() = 0;
                 
 
-                virtual void UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ bool const fIncludeBackgrounds) = 0;
+                virtual HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ bool const fIncludeBackgrounds) = 0;
                 virtual void UpdateFont(_Inout_ FontInfo* const pfiFontInfo) = 0;
                 virtual void UpdateDpi(_In_ int const iDpi) = 0;
 

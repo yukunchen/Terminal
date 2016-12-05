@@ -27,7 +27,7 @@ namespace Microsoft
                 GdiEngine();
                 ~GdiEngine();
 
-                void SetHwnd(_In_ HWND const hwnd);
+                HRESULT SetHwnd(_In_ HWND const hwnd);
 
                 void InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);
                 void InvalidateScroll(_In_ const COORD* const pcoordDelta);
@@ -52,7 +52,7 @@ namespace Microsoft
                 void PaintCursor(_In_ COORD const coordCursor, _In_ ULONG const ulCursorHeightPercent, _In_ bool const fIsDoubleWidth);
                 void ClearCursor();
 
-                void UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ bool const fIncludeBackgrounds);
+                HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ bool const fIncludeBackgrounds);
                 void UpdateFont(_Inout_ FontInfo* const pfiFontInfo);
                 void UpdateDpi(_In_ int const iDpi);
 
@@ -73,7 +73,7 @@ namespace Microsoft
                 static const size_t s_cPolyTextCache = 80;
                 POLYTEXTW _pPolyText[s_cPolyTextCache];
                 size_t _cPolyText;
-                void _FlushBufferLines();
+                HRESULT _FlushBufferLines();
 
                 RECT _rcCursorInvert;
                 
