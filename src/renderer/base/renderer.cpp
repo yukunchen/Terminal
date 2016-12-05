@@ -289,10 +289,10 @@ void Renderer::TriggerFontChange(_In_ int const iDpi, _Inout_ FontInfo* const pF
 // - iDpi - The DPI of the target display
 // - pFontInfo - A description of the font we would like to have. Will be fixed up/filled on return with the chosen font data.
 // Return Value:
-// - <none>
-void Renderer::GetProposedFont(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo)
+// - S_OK if set successfully or relevant GDI error via HRESULT.
+HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo)
 {
-    _pEngine->GetProposedFont(pFontInfo, iDpi);
+    return _pEngine->GetProposedFont(pFontInfo, iDpi);
 }
 
 // Routine Description:

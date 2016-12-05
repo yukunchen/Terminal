@@ -48,7 +48,7 @@ namespace Microsoft
 
                 void TriggerFontChange(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo);
 
-                void GetProposedFont(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo);
+                HRESULT GetProposedFont(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo);
 
                 COORD GetFontSize();
                 bool IsCharFullWidthByFont(_In_ WCHAR const wch);
