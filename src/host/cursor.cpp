@@ -337,8 +337,8 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
 
         CONSOLE_CARET_INFO ConsoleCaretInfo;
         ConsoleCaretInfo.hwnd = g_ciConsoleInformation.hWnd;
-        ConsoleCaretInfo.rc.left = (this->GetPosition().X - ScreenInfo->BufferViewport.Left) * ScreenInfo->GetScreenFontSize().X;
-        ConsoleCaretInfo.rc.top = (this->GetPosition().Y - ScreenInfo->BufferViewport.Top) * ScreenInfo->GetScreenFontSize().Y;
+        ConsoleCaretInfo.rc.left = (this->GetPosition().X - ScreenInfo->GetBufferViewport().Left) * ScreenInfo->GetScreenFontSize().X;
+        ConsoleCaretInfo.rc.top = (this->GetPosition().Y - ScreenInfo->GetBufferViewport().Top) * ScreenInfo->GetScreenFontSize().Y;
         ConsoleCaretInfo.rc.right = ConsoleCaretInfo.rc.left + ScreenInfo->GetScreenFontSize().X;
         ConsoleCaretInfo.rc.bottom = ConsoleCaretInfo.rc.top + ScreenInfo->GetScreenFontSize().Y;
         UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetCaretInfo, &ConsoleCaretInfo, sizeof(ConsoleCaretInfo));

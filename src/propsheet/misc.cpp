@@ -773,6 +773,61 @@ RemoveFace(__in_ecount(LF_FACESIZE) LPCTSTR ptszFace)
     NumberOfFonts -= nToRemove;
 }
 
+// Given a desired SHORT size, search pTTPoints to determine if size is in the list.
+static bool IsSizePresentInList(__in const SHORT sSizeDesired, __in_ecount(nTTPoints) PSHORT pTTPoints, __in UINT nTTPoints)
+{
+    bool fSizePresent = false;
+    for (UINT i = 0; i < nTTPoints; i++)
+    {
+        if (pTTPoints[i] == sSizeDesired)
+        {
+            fSizePresent = true;
+            break;
+        }
+    }
+    return fSizePresent;
+}
+
+// Given a face name, determine if the size provided is custom (i.e. not on the hardcoded list of sizes). Note that the
+// list of sizes we use varies depending on the codepage being used
+bool IsFontSizeCustom(__in PCWSTR pszFaceName, __in const SHORT sSize)
+{
+    bool fUsingCustomFontSize;
+    if (g_fEastAsianSystem && !IsAvailableTTFontCP(pszFaceName, 0))
+    {
+        fUsingCustomFontSize = !IsSizePresentInList(sSize, TTPointsDbcs, ARRAYSIZE(TTPointsDbcs));
+    }
+    else
+    {
+        fUsingCustomFontSize = !IsSizePresentInList(sSize, TTPoints, ARRAYSIZE(TTPoints));
+    }
+
+    return fUsingCustomFontSize;
+}
+
+// Determines if the currently-selected font is using a custom size
+static bool IsCurrentFontSizeCustom()
+{
+    return IsFontSizeCustom(gpStateInfo->FaceName, gpStateInfo->FontSize.Y);
+}
+
+// Given a size, iterate through all TT fonts and load them in the provided size (only used for custom (non-hardcoded)
+// font sizes)
+void CreateSizeForAllTTFonts(__in const SHORT sSize)
+{
+    HDC hDC = CreateCompatibleDC(NULL);
+
+    // for each font face
+    for (PFACENODE pFN = gpFaceNames; pFN; pFN = pFN->pNext)
+    {
+        if (pFN->dwFlag & EF_TTFONT)
+        {
+            // if it's a TT font, load the supplied size
+            DoFontEnum(hDC, pFN->atch, (PSHORT)&sSize, 1);
+        }
+    }
+}
+
 NTSTATUS
 EnumerateFonts(
     DWORD Flags)
@@ -884,6 +939,13 @@ EnumerateFonts(
         pFN->dwFlag |= EF_ENUMERATED;
     }
 
+    // Now check to see if the currently selected font is using a custom size not in the hardcoded list (TTPoints or
+    // TTPointsDbcs depending on locale). If so, make sure we populate all of our fonts at that size.
+    if (IsCurrentFontSizeCustom())
+    {
+        CreateSizeForAllTTFonts(gpStateInfo->FontSize.Y);
+    }
+
     DeleteDC(hDC);
 
     if (g_fEastAsianSystem) {
@@ -896,13 +958,13 @@ EnumerateFonts(
             }
         }
     } else {
-    for (FontIndex = 0; FontIndex < NumberOfFonts; FontIndex++) {
-        if (FontInfo[FontIndex].Size.X == DefaultFontSize.X &&
-            FontInfo[FontIndex].Size.Y == DefaultFontSize.Y &&
-            FontInfo[FontIndex].Family == DefaultFontFamily) {
-            break;
+        for (FontIndex = 0; FontIndex < NumberOfFonts; FontIndex++) {
+            if (FontInfo[FontIndex].Size.X == DefaultFontSize.X &&
+                FontInfo[FontIndex].Size.Y == DefaultFontSize.Y &&
+                FontInfo[FontIndex].Family == DefaultFontFamily) {
+                break;
+            }
         }
-    }
     }
 
     if (FontIndex < NumberOfFonts) {

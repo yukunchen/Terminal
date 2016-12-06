@@ -904,7 +904,7 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
         if (NT_SUCCESS(Status))
         {
             // cause screen to be updated
-            WriteToScreen(ScreenBufferInformation, &a->CharRegion);
+            WriteToScreen(ScreenBufferInformation, a->CharRegion);
         }
     }
 
@@ -1144,7 +1144,7 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
     // Create new screen buffer.
     CHAR_INFO Fill;
     Fill.Char.UnicodeChar = UNICODE_SPACE;
-    Fill.Attributes = psiExisting->GetAttributes()->GetLegacyAttributes();
+    Fill.Attributes = psiExisting->GetAttributes().GetLegacyAttributes();
 
     COORD WindowSize;
     WindowSize.X = (SHORT)psiExisting->GetScreenWindowSizeX();

@@ -22,11 +22,11 @@ class RenderData sealed : public IRenderData
 public:
     RenderData();
     ~RenderData();
-    
-    const SMALL_RECT* GetViewport();
+
+    const SMALL_RECT GetViewport();
     const TEXT_BUFFER_INFO* GetTextBuffer();
     const FontInfo* GetFontInfo();
-    const TextAttribute* const GetDefaultBrushColors();
+    const TextAttribute GetDefaultBrushColors();
     const void GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLORREF** const ppColorTable, _Out_ size_t* const pcColors);
     const Cursor* GetCursor();
     const ConsoleImeInfo* GetImeData();

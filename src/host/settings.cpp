@@ -893,20 +893,20 @@ COLORREF Settings::GetColorTableEntry(_In_ size_t const index) const
 //     This needs to be a method on the Settings because the generated index
 //     is dependent upon the particular values of the color table at the time of reading.
 // Parameters:
-// - pAttributes - The TextAttributes to generate a legacy attribute for.
+// - attributes - The TextAttributes to generate a legacy attribute for.
 // Return value:
 // - A WORD representing the entry in the color table that most closely represents the given fullcolor attributes.
-WORD Settings::GenerateLegacyAttributes(_In_ const TextAttribute* const pAttributes) const
+WORD Settings::GenerateLegacyAttributes(_In_ const TextAttribute attributes) const
 {
-    const WORD wLegacyOriginal = pAttributes->GetLegacyAttributes();
-    if (pAttributes->IsLegacy())
+    const WORD wLegacyOriginal = attributes.GetLegacyAttributes();
+    if (attributes.IsLegacy())
     {
         return wLegacyOriginal;
     }
     // Get the Line drawing attributes and stash those, we'll need to preserve them.
     const WORD wNonColorAttributes = wLegacyOriginal & (~0xFF);
-    const COLORREF rgbForeground = pAttributes->GetRgbForeground();
-    const COLORREF rgbBackground = pAttributes->GetRgbBackground();
+    const COLORREF rgbForeground = attributes.GetRgbForeground();
+    const COLORREF rgbBackground = attributes.GetRgbBackground();
     const WORD wForegroundIndex = FindNearestTableIndex(rgbForeground);
     const WORD wBackgroundIndex = FindNearestTableIndex(rgbBackground);
     const WORD wCompleteAttr = (wNonColorAttributes) | (wBackgroundIndex << 4) | (wForegroundIndex);

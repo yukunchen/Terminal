@@ -80,81 +80,81 @@ public:
 
     DWORD GetHotKey() const;
     void SetHotKey(_In_ const DWORD dwHotKey);
-    
+
     bool IsStartupTitleIsLinkNameSet() const;
 
     DWORD GetStartupFlags() const;
     void SetStartupFlags(_In_ const DWORD dwStartupFlags);
     void UnsetStartupFlag(_In_ DWORD const dwFlagToUnset);
-    
+
     WORD GetFillAttribute() const;
     void SetFillAttribute(_In_ const WORD wFillAttribute);
-    
+
     WORD GetPopupFillAttribute() const;
     void SetPopupFillAttribute(_In_ const WORD wPopupFillAttribute);
-    
+
     WORD GetShowWindow() const;
     void SetShowWindow(_In_ const WORD wShowWindow);
-    
+
     WORD GetReserved() const;
     void SetReserved(_In_ const WORD wReserved);
-    
+
     COORD GetScreenBufferSize() const;
     void SetScreenBufferSize(_In_ const COORD dwScreenBufferSize);
-    
+
     COORD GetWindowSize() const;
     void SetWindowSize(_In_ const COORD dwWindowSize);
 
     bool IsWindowSizePixelsValid() const;
     COORD GetWindowSizePixels() const;
     void SetWindowSizePixels(_In_ const COORD dwWindowSizePixels);
-    
+
     COORD GetWindowOrigin() const;
     void SetWindowOrigin(_In_ const COORD dwWindowOrigin);
-    
+
     DWORD GetFont() const;
     void SetFont(_In_ const DWORD dwFont);
-    
+
     DWORD GetInputBufferSize() const;
     void SetInputBufferSize(_In_ const DWORD dwInputBufferSize);
-    
+
     COORD GetFontSize() const;
     void SetFontSize(_In_ const COORD dwFontSize);
-    
+
     UINT GetFontFamily() const;
     void SetFontFamily(_In_ const UINT uFontFamily);
-    
+
     UINT GetFontWeight() const;
     void SetFontWeight(_In_ const UINT uFontWeight);
-    
+
     const WCHAR* const GetFaceName() const;
     BOOL IsFaceNameSet() const;
     void SetFaceName(_In_ PCWSTR const pcszFaceName, _In_ size_t const cchLength);
-    
+
     UINT GetCursorSize() const;
     void SetCursorSize(_In_ const UINT uCursorSize);
-    
+
     BOOL GetFullScreen() const;
     void SetFullScreen(_In_ const BOOL fFullScreen);
-    
+
     BOOL GetQuickEdit() const;
     void SetQuickEdit(_In_ const BOOL fQuickEdit);
-    
+
     BOOL GetInsertMode() const;
     void SetInsertMode(_In_ const BOOL fInsertMode);
-    
+
     BOOL GetAutoPosition() const;
     void SetAutoPosition(_In_ const BOOL fAutoPosition);
-    
+
     UINT GetHistoryBufferSize() const;
     void SetHistoryBufferSize(_In_ const UINT uHistoryBufferSize);
-    
+
     UINT GetNumberOfHistoryBuffers() const;
     void SetNumberOfHistoryBuffers(_In_ const UINT uNumberOfHistoryBuffers);
-    
+
     BOOL GetHistoryNoDup() const;
     void SetHistoryNoDup(_In_ const BOOL fHistoryNoDup);
-    
+
     const COLORREF* const GetColorTable() const;
     const size_t GetColorTableSize() const;
     void SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, _In_ size_t const cSize);
@@ -197,7 +197,7 @@ private:
     bool _bWrapText; // whether to use text wrapping when resizing the window
     BOOL _fCtrlKeyShortcutsDisabled; // disables Ctrl+<something> key intercepts
     BYTE _bWindowAlpha; // describes the opacity of the window
-    
+
     BOOL _fFilterOnPaste; // should we filter text when the user pastes? (e.g. remove <tab>)
     bool _fExtendedEditKey;
     WCHAR _LaunchFaceName[LF_FACESIZE];
@@ -211,7 +211,7 @@ private:
 
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;
-    COORD _dwWindowSizePixels; 
+    COORD _dwWindowSizePixels;
 
     friend class RegistrySerialization;
 
@@ -261,7 +261,7 @@ private:
 
 public:
 
-    WORD GenerateLegacyAttributes(_In_ const TextAttribute* const pAttributes) const;
+    WORD GenerateLegacyAttributes(_In_ const TextAttribute attributes) const;
     static double s_FindDifference(_In_ const _HSL* const phslColorA, _In_ const COLORREF rgbColorB);
     WORD FindNearestTableIndex(_In_ COLORREF const Color) const;
 
