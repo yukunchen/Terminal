@@ -23,7 +23,7 @@ public:
     RenderData();
     ~RenderData();
 
-    const SMALL_RECT* GetViewport();
+    const SMALL_RECT GetViewport();
     const TEXT_BUFFER_INFO* GetTextBuffer();
     const FontInfo* GetFontInfo();
     const TextAttribute GetDefaultBrushColors();

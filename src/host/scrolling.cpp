@@ -66,7 +66,7 @@ void Scrolling::s_ScrollIfNecessary(_In_ const SCREEN_INFORMATION * const pScree
         if (!(PtInRect(&ClientRect, CursorPos)))
         {
             ScreenToClient(g_ciConsoleInformation.hWnd, &CursorPos);
-            
+
             COORD MousePosition;
             MousePosition.X = (SHORT)CursorPos.x;
             MousePosition.Y = (SHORT)CursorPos.y;
@@ -76,8 +76,8 @@ void Scrolling::s_ScrollIfNecessary(_In_ const SCREEN_INFORMATION * const pScree
             MousePosition.X /= coordFontSize.X;
             MousePosition.Y /= coordFontSize.Y;
 
-            MousePosition.X += pScreenInfo->BufferViewport.Left;
-            MousePosition.Y += pScreenInfo->BufferViewport.Top;
+            MousePosition.X += pScreenInfo->GetBufferViewport().Left;
+            MousePosition.Y += pScreenInfo->GetBufferViewport().Top;
 
             pSelection->ExtendSelection(MousePosition);
         }
@@ -87,8 +87,8 @@ void Scrolling::s_ScrollIfNecessary(_In_ const SCREEN_INFORMATION * const pScree
 void Scrolling::s_HandleMouseWheel(_In_ const UINT msg, _In_ const WPARAM wParam, PSCREEN_INFORMATION pScreenInfo)
 {
     COORD NewOrigin;
-    NewOrigin.X = pScreenInfo->BufferViewport.Left;
-    NewOrigin.Y = pScreenInfo->BufferViewport.Top;
+    NewOrigin.X = pScreenInfo->GetBufferViewport().Left;
+    NewOrigin.Y = pScreenInfo->GetBufferViewport().Top;
 
     // s_ucWheelScrollLines == 0 means that it is turned off.
     if ((msg == WM_MOUSEWHEEL) && (s_ucWheelScrollLines > 0))

@@ -223,7 +223,7 @@ void Renderer::TriggerSelection()
 bool Renderer::_CheckViewportAndScroll()
 {
     SMALL_RECT const srOldViewport = _srViewportPrevious;
-    SMALL_RECT const srNewViewport = *_pData->GetViewport();
+    SMALL_RECT const srNewViewport = _pData->GetViewport();
 
     COORD coordDelta;
     coordDelta.X = srOldViewport.Left - srNewViewport.Left;
@@ -363,7 +363,7 @@ void Renderer::_PaintBufferOutput()
     srDirty.Right = min(srDirty.Right, view.RightInclusive());
     srDirty.Bottom = min(srDirty.Bottom, view.BottomInclusive());
 
-    Viewport viewDirty(&srDirty);
+    Viewport viewDirty(srDirty);
     for (SHORT iRow = viewDirty.Top(); iRow <= viewDirty.BottomInclusive(); iRow++)
     {
         // Get row of text data
@@ -680,7 +680,7 @@ void Renderer::_PaintCursor()
         SMALL_RECT srDirty = _pEngine->GetDirtyRectInChars();
         view.ConvertFromOrigin(&srDirty);
 
-        Viewport viewDirty(&srDirty);
+        Viewport viewDirty(srDirty);
 
         // Check if cursor is within dirty area
         if (viewDirty.IsWithinViewport(&coordCursor))
@@ -742,7 +742,7 @@ void Renderer::_PaintIme(_In_ const ConversionAreaInfo* const pAreaInfo, _In_ co
         srCaView.Right += pAreaInfo->CaInfo.coordConView.X;
 
         // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
-        Viewport viewConv(&srCaView);
+        Viewport viewConv(srCaView);
 
         SMALL_RECT srDirty = _pEngine->GetDirtyRectInChars();
 
@@ -752,7 +752,7 @@ void Renderer::_PaintIme(_In_ const ConversionAreaInfo* const pAreaInfo, _In_ co
 
         if (viewConv.TrimToViewport(&srDirty))
         {
-            Viewport viewDirty(&srDirty);
+            Viewport viewDirty(srDirty);
 
             for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
             {

@@ -904,7 +904,7 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
         if (NT_SUCCESS(Status))
         {
             // cause screen to be updated
-            WriteToScreen(ScreenBufferInformation, &a->CharRegion);
+            WriteToScreen(ScreenBufferInformation, a->CharRegion);
         }
     }
 

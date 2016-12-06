@@ -90,10 +90,10 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
     {
         pScreen->ScreenBufferSize = coordScreenBufferSize;
 
-        pScreen->BufferViewport.Left = 0;
-        pScreen->BufferViewport.Top = 0;
-        pScreen->BufferViewport.Right = coordWindowSize.X - 1;
-        pScreen->BufferViewport.Bottom = coordWindowSize.Y - 1;
+        pScreen->_srBufferViewport.Left = 0;
+        pScreen->_srBufferViewport.Top = 0;
+        pScreen->_srBufferViewport.Right = coordWindowSize.X - 1;
+        pScreen->_srBufferViewport.Bottom = coordWindowSize.Y - 1;
 
         pScreen->ScreenBufferSize = coordScreenBufferSize;
 
@@ -324,7 +324,7 @@ SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
 
     *pcoordCursorPosition = this->TextInfo->GetCursor()->GetPosition();
 
-    *psrWindow = this->BufferViewport;
+    *psrWindow = this->_srBufferViewport;
 
     *pwAttributes = this->_Attributes.GetLegacyAttributes();
     *pwPopupAttributes = this->_PopupAttributes.GetLegacyAttributes();
@@ -447,12 +447,12 @@ void SCREEN_INFORMATION::GetRequiredConsoleSizeInPixels(_Out_ PSIZE const pRequi
 
 SHORT SCREEN_INFORMATION::GetScreenWindowSizeX() const
 {
-    return CalcWindowSizeX(&this->BufferViewport);
+    return CalcWindowSizeX(&this->_srBufferViewport);
 }
 
 SHORT SCREEN_INFORMATION::GetScreenWindowSizeY() const
 {
-    return CalcWindowSizeY(&this->BufferViewport);
+    return CalcWindowSizeY(&this->_srBufferViewport);
 }
 
 COORD SCREEN_INFORMATION::GetScreenFontSize() const
@@ -576,19 +576,19 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
     }
 
     si.cbSize = sizeof(si);
-    si.fMask = (this->_IsAltBuffer())? SIF_ALL | SIF_DISABLENOSCROLL : SIF_ALL;
+    si.fMask = (this->_IsAltBuffer()) ? SIF_ALL | SIF_DISABLENOSCROLL : SIF_ALL;
     si.nPage = this->GetScreenWindowSizeY();
     si.nMin = 0;
     si.nMax = this->ScreenBufferSize.Y - 1;
-    si.nPos = this->BufferViewport.Top;
+    si.nPos = this->_srBufferViewport.Top;
     SetScrollInfo(g_ciConsoleInformation.hWnd, SB_VERT, &si, TRUE);
 
     si.cbSize = sizeof(si);
-    si.fMask = (this->_IsAltBuffer())? SIF_ALL | SIF_DISABLENOSCROLL : SIF_ALL;
+    si.fMask = (this->_IsAltBuffer()) ? SIF_ALL | SIF_DISABLENOSCROLL : SIF_ALL;
     si.nPage = this->GetScreenWindowSizeX();
     si.nMin = 0;
     si.nMax = this->ScreenBufferSize.X - 1;
-    si.nPos = this->BufferViewport.Left;
+    si.nPos = this->_srBufferViewport.Left;
     SetScrollInfo(g_ciConsoleInformation.hWnd, SB_HORZ, &si, TRUE);
 
     // Fire off an event to let accessibility apps know the layout has changed.
@@ -624,12 +624,12 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ c
         {
             return STATUS_SUCCESS;
         }
-        NewWindow.Left = BufferViewport.Left + coordWindowOrigin.X;
-        NewWindow.Top = BufferViewport.Top + coordWindowOrigin.Y;
+        NewWindow.Left = _srBufferViewport.Left + coordWindowOrigin.X;
+        NewWindow.Top = _srBufferViewport.Top + coordWindowOrigin.Y;
     }
     else
     {
-        if (coordWindowOrigin.X == BufferViewport.Left && coordWindowOrigin.Y == BufferViewport.Top)
+        if (coordWindowOrigin.X == _srBufferViewport.Left && coordWindowOrigin.Y == _srBufferViewport.Top)
         {
             return STATUS_SUCCESS;
         }
@@ -657,14 +657,14 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ c
         if (pWindow != nullptr)
         {
             // Tell the window that it needs to set itself to the new origin if we're the active buffer.
-            pWindow->SetViewportOrigin(&NewWindow);
+            pWindow->SetViewportOrigin(NewWindow);
         }
     }
     else
     {
         // Otherwise, just store the new position and go on.
-        BufferViewport = NewWindow;
-        Tracing::s_TraceWindowViewport(&BufferViewport);
+        _srBufferViewport = NewWindow;
+        Tracing::s_TraceWindowViewport(_srBufferViewport);
     }
 
     return STATUS_SUCCESS;
@@ -683,7 +683,7 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ c
 NTSTATUS SCREEN_INFORMATION::SetViewportRect(_In_ SMALL_RECT* const prcNewViewport)
 {
     // make sure there's something to do
-    if (0 == memcmp(&BufferViewport, prcNewViewport, sizeof(SMALL_RECT)))
+    if (0 == memcmp(&_srBufferViewport, prcNewViewport, sizeof(SMALL_RECT)))
     {
         return STATUS_SUCCESS;
     }
@@ -708,8 +708,8 @@ NTSTATUS SCREEN_INFORMATION::SetViewportRect(_In_ SMALL_RECT* const prcNewViewpo
         prcNewViewport->Bottom = ScreenBufferSize.Y;
     }
 
-    BufferViewport = *prcNewViewport;
-    Tracing::s_TraceWindowViewport(&BufferViewport);
+    _srBufferViewport = *prcNewViewport;
+    Tracing::s_TraceWindowViewport(_srBufferViewport);
 
     return STATUS_SUCCESS;
 }
@@ -773,9 +773,9 @@ void SCREEN_INFORMATION::ProcessResizeWindow(_In_ const RECT* const prcClientNew
     // 4. Finally, update the scroll bars.
     UpdateScrollBars();
 
-    ASSERT(BufferViewport.Top >= 0);
-    ASSERT(BufferViewport.Top < BufferViewport.Bottom);
-    ASSERT(BufferViewport.Left < BufferViewport.Right);
+    ASSERT(_srBufferViewport.Top >= 0);
+    ASSERT(_srBufferViewport.Top < _srBufferViewport.Bottom);
+    ASSERT(_srBufferViewport.Left < _srBufferViewport.Right);
 }
 
 #pragma endregion
@@ -952,68 +952,68 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(_In_ const COORD* const pcoord
     if (fResizeFromLeft)
     {
         // we're being horizontally sized from the left border
-        const SHORT sLeftProposed = (BufferViewport.Left - DeltaX);
+        const SHORT sLeftProposed = (_srBufferViewport.Left - DeltaX);
         if (sLeftProposed >= 0)
         {
             // there's enough room in the backlog to just expand left
-            this->BufferViewport.Left -= DeltaX;
+            this->_srBufferViewport.Left -= DeltaX;
         }
         else
         {
             // if we're resizing horizontally, we want to show as much content above as we can, but we can't show more
             // than the left of the window
-            this->BufferViewport.Left = 0;
-            this->BufferViewport.Right += (SHORT)abs(sLeftProposed);
+            this->_srBufferViewport.Left = 0;
+            this->_srBufferViewport.Right += (SHORT)abs(sLeftProposed);
         }
     }
     else
     {
         // we're being horizontally sized from the right border
-        const SHORT sRightProposed = (this->BufferViewport.Right + DeltaX);
+        const SHORT sRightProposed = (this->_srBufferViewport.Right + DeltaX);
         if (sRightProposed <= (this->ScreenBufferSize.X - 1))
         {
-            this->BufferViewport.Right += DeltaX;
+            this->_srBufferViewport.Right += DeltaX;
         }
         else
         {
-            this->BufferViewport.Right = (this->ScreenBufferSize.X - 1);
-            this->BufferViewport.Left -= (sRightProposed - (this->ScreenBufferSize.X - 1));
+            this->_srBufferViewport.Right = (this->ScreenBufferSize.X - 1);
+            this->_srBufferViewport.Left -= (sRightProposed - (this->ScreenBufferSize.X - 1));
         }
     }
 
     if (fResizeFromTop)
     {
-        const SHORT sTopProposed = (BufferViewport.Top - DeltaY);
+        const SHORT sTopProposed = (_srBufferViewport.Top - DeltaY);
         // we're being vertically sized from the top border
         if (sTopProposed >= 0)
         {
             // Special case: Only modify the top position if we're not on the 0th row of the buffer.
             // If we're on the 0th row, people expect it to stay stuck to the top of the window, not to start collapsing down and hiding the top rows.
-            if (this->BufferViewport.Top > 0)
+            if (this->_srBufferViewport.Top > 0)
             {
                 // there's enough room in the backlog to just expand the top
-                this->BufferViewport.Top -= DeltaY;
+                this->_srBufferViewport.Top -= DeltaY;
             }
             else
             {
                 // If we didn't adjust the top, we need to trim off the number of rows from the bottom instead.
                 // NOTE: It's += because DeltaY will be negative already for this circumstance.
                 ASSERT(DeltaY <= 0);
-                this->BufferViewport.Bottom += DeltaY;
+                this->_srBufferViewport.Bottom += DeltaY;
             }
         }
         else
         {
             // if we're resizing vertically, we want to show as much content above as we can, but we can't show more
             // than the top of the window
-            this->BufferViewport.Top = 0;
-            this->BufferViewport.Bottom += (SHORT)abs(sTopProposed);
+            this->_srBufferViewport.Top = 0;
+            this->_srBufferViewport.Bottom += (SHORT)abs(sTopProposed);
         }
     }
     else
     {
         // we're being vertically sized from the bottom border
-        const SHORT sBottomProposed = (BufferViewport.Bottom + DeltaY);
+        const SHORT sBottomProposed = (_srBufferViewport.Bottom + DeltaY);
         if (sBottomProposed <= (this->ScreenBufferSize.Y - 1))
         {
             // If the new bottom is supposed to be before the final line of the buffer
@@ -1025,53 +1025,53 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(_In_ const COORD* const pcoord
             Selection::Instance().GetValidAreaBoundaries(nullptr, &coordValidEnd);
 
             // If the bottom of the window when adjusted would be above the final line of valid text...
-            if (this->BufferViewport.Bottom + DeltaY < coordValidEnd.Y)
+            if (this->_srBufferViewport.Bottom + DeltaY < coordValidEnd.Y)
             {
                 // Adjust the top of the window instead of the bottom (so the lines slide upward)
-                this->BufferViewport.Top -= DeltaY;
+                this->_srBufferViewport.Top -= DeltaY;
 
                 // If we happened to move the top of the window past the 0th row (first row in the buffer)
-                if (this->BufferViewport.Top < 0)
+                if (this->_srBufferViewport.Top < 0)
                 {
                     // Find the amount we went past 0, correct the top of the window back to 0,
                     // and instead adjust the bottom even though it will cause us to lose the prompt line.
-                    const short cRemainder = 0 - this->BufferViewport.Top;
-                    BufferViewport.Top += cRemainder;
-                    ASSERT(BufferViewport.Top == 0);
-                    BufferViewport.Bottom += cRemainder;
+                    const short cRemainder = 0 - this->_srBufferViewport.Top;
+                    _srBufferViewport.Top += cRemainder;
+                    ASSERT(_srBufferViewport.Top == 0);
+                    _srBufferViewport.Bottom += cRemainder;
                 }
             }
             else
             {
-                this->BufferViewport.Bottom += DeltaY;
+                this->_srBufferViewport.Bottom += DeltaY;
             }
         }
         else
         {
-            this->BufferViewport.Bottom = (this->ScreenBufferSize.Y - 1);
-            this->BufferViewport.Top -= (sBottomProposed - (this->ScreenBufferSize.Y - 1));
+            this->_srBufferViewport.Bottom = (this->ScreenBufferSize.Y - 1);
+            this->_srBufferViewport.Top -= (sBottomProposed - (this->ScreenBufferSize.Y - 1));
         }
     }
 
     // Ensure the viewport is valid.
     // We can't have a negative left or top.
-    if (BufferViewport.Left < 0)
+    if (_srBufferViewport.Left < 0)
     {
-        BufferViewport.Right -= BufferViewport.Left;
-        BufferViewport.Left = 0;
+        _srBufferViewport.Right -= _srBufferViewport.Left;
+        _srBufferViewport.Left = 0;
     }
 
-    if (BufferViewport.Top < 0)
+    if (_srBufferViewport.Top < 0)
     {
-        BufferViewport.Bottom -= BufferViewport.Top;
-        BufferViewport.Top = 0;
+        _srBufferViewport.Bottom -= _srBufferViewport.Top;
+        _srBufferViewport.Top = 0;
     }
 
     // Bottom and right cannot pass the final characters in the array.
-    BufferViewport.Right = min(BufferViewport.Right, ScreenBufferSize.X - 1);
-    BufferViewport.Bottom = min(BufferViewport.Bottom, ScreenBufferSize.Y - 1);
+    _srBufferViewport.Right = min(_srBufferViewport.Right, ScreenBufferSize.X - 1);
+    _srBufferViewport.Bottom = min(_srBufferViewport.Bottom, ScreenBufferSize.Y - 1);
 
-    Tracing::s_TraceWindowViewport(&this->BufferViewport);
+    Tracing::s_TraceWindowViewport(this->_srBufferViewport);
 }
 
 // Routine Description:
@@ -1174,13 +1174,13 @@ bool SCREEN_INFORMATION::IsMaximizedBoth() const
 bool SCREEN_INFORMATION::IsMaximizedX() const
 {
     // If the viewport is displaying the entire size of the allocated buffer, it's maximized.
-    return BufferViewport.Left == 0 && (BufferViewport.Right + 1 == ScreenBufferSize.X);
+    return _srBufferViewport.Left == 0 && (_srBufferViewport.Right + 1 == ScreenBufferSize.X);
 }
 
 bool SCREEN_INFORMATION::IsMaximizedY() const
 {
     // If the viewport is displaying the entire size of the allocated buffer, it's maximized.
-    return BufferViewport.Top == 0 && (BufferViewport.Bottom + 1 == ScreenBufferSize.Y);
+    return _srBufferViewport.Top == 0 && (_srBufferViewport.Bottom + 1 == ScreenBufferSize.Y);
 }
 
 #pragma endregion
@@ -1212,7 +1212,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
                                                        &pNewBuffer);
 
     // Save cursor's relative height versus the viewport
-    SHORT const sCursorHeightInViewportBefore = TextInfo->GetCursor()->GetPosition().Y - BufferViewport.Top;
+    SHORT const sCursorHeightInViewportBefore = TextInfo->GetCursor()->GetPosition().Y - _srBufferViewport.Top;
 
     if (NT_SUCCESS(status))
     {
@@ -1362,7 +1362,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
         if (NT_SUCCESS(status))
         {
             // Adjust the viewport so the cursor doesn't wildly fly off up or down.
-            SHORT const sCursorHeightInViewportAfter = pNewCursor->GetPosition().Y - BufferViewport.Top;
+            SHORT const sCursorHeightInViewportAfter = pNewCursor->GetPosition().Y - _srBufferViewport.Top;
             COORD coordCursorHeightDiff = { 0 };
             coordCursorHeightDiff.Y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
             SetViewportOrigin(FALSE, coordCursorHeightDiff);
@@ -1768,26 +1768,26 @@ void SCREEN_INFORMATION::MakeCursorVisible(_In_ const COORD CursorPosition)
 {
     COORD WindowOrigin;
 
-    if (CursorPosition.X > this->BufferViewport.Right)
+    if (CursorPosition.X > this->_srBufferViewport.Right)
     {
-        WindowOrigin.X = CursorPosition.X - this->BufferViewport.Right;
+        WindowOrigin.X = CursorPosition.X - this->_srBufferViewport.Right;
     }
-    else if (CursorPosition.X < this->BufferViewport.Left)
+    else if (CursorPosition.X < this->_srBufferViewport.Left)
     {
-        WindowOrigin.X = CursorPosition.X - this->BufferViewport.Left;
+        WindowOrigin.X = CursorPosition.X - this->_srBufferViewport.Left;
     }
     else
     {
         WindowOrigin.X = 0;
     }
 
-    if (CursorPosition.Y > this->BufferViewport.Bottom)
+    if (CursorPosition.Y > this->_srBufferViewport.Bottom)
     {
-        WindowOrigin.Y = CursorPosition.Y - this->BufferViewport.Bottom;
+        WindowOrigin.Y = CursorPosition.Y - this->_srBufferViewport.Bottom;
     }
-    else if (CursorPosition.Y < this->BufferViewport.Top)
+    else if (CursorPosition.Y < this->_srBufferViewport.Top)
     {
-        WindowOrigin.Y = CursorPosition.Y - this->BufferViewport.Top;
+        WindowOrigin.Y = CursorPosition.Y - this->_srBufferViewport.Top;
     }
     else
     {
@@ -1859,8 +1859,8 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
     Fill.Attributes = this->_Attributes.GetLegacyAttributes();
 
     COORD WindowSize;
-    WindowSize.X = (SHORT)CalcWindowSizeX(&BufferViewport);
-    WindowSize.Y = (SHORT)CalcWindowSizeY(&BufferViewport);
+    WindowSize.X = (SHORT)CalcWindowSizeX(&_srBufferViewport);
+    WindowSize.Y = (SHORT)CalcWindowSizeY(&_srBufferViewport);
 
     const FontInfo* const pfiExistingFont = this->TextInfo->GetCurrentFont();
 
@@ -2246,4 +2246,14 @@ void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute attributes)
 void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute* const pPopupAttributes)
 {
     _PopupAttributes = *pPopupAttributes;
+}
+
+SMALL_RECT SCREEN_INFORMATION::GetBufferViewport() const
+{
+    return _srBufferViewport;
+}
+
+void SCREEN_INFORMATION::SetBufferViewport(SMALL_RECT srBufferViewport)
+{
+    _srBufferViewport = srBufferViewport;
 }

@@ -2281,8 +2281,8 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
 
     // determine origin.  center popup on window
     COORD Origin;
-    Origin.X = (SHORT)((ScreenInfo->GetScreenWindowSizeX() - Size.X) / 2 + ScreenInfo->BufferViewport.Left);
-    Origin.Y = (SHORT)((ScreenInfo->GetScreenWindowSizeY() - Size.Y) / 2 + ScreenInfo->BufferViewport.Top);
+    Origin.X = (SHORT)((ScreenInfo->GetScreenWindowSizeX() - Size.X) / 2 + ScreenInfo->GetBufferViewport().Left);
+    Origin.Y = (SHORT)((ScreenInfo->GetScreenWindowSizeY() - Size.Y) / 2 + ScreenInfo->GetBufferViewport().Top);
 
     // allocate a popup structure
     PCLE_POPUP const Popup = new CLE_POPUP();
@@ -2350,7 +2350,7 @@ NTSTATUS EndPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY Com
     SourceRect.Bottom = Popup->Region.Bottom;
 
     WriteScreenBuffer(ScreenInfo, Popup->OldContents, &SourceRect);
-    WriteToScreen(ScreenInfo, &SourceRect);
+    WriteToScreen(ScreenInfo, SourceRect);
 
     // Free popup structure.
     RemoveEntryList(&Popup->ListLink);
