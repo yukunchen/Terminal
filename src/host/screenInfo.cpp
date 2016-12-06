@@ -519,9 +519,9 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX, _In_ short con
             TextAttributeRun* pAttrRun;
             Row->AttrRow.FindAttrIndex(sStartX, &pAttrRun, &CountOfAttr);
 
-            NotifyWinEvent(EVENT_CONSOLE_UPDATE_SIMPLE, 
-                           g_ciConsoleInformation.hWnd, 
-                           MAKELONG(sStartX, sStartY), 
+            NotifyWinEvent(EVENT_CONSOLE_UPDATE_SIMPLE,
+                           g_ciConsoleInformation.hWnd,
+                           MAKELONG(sStartX, sStartY),
                            MAKELONG(Char, g_ciConsoleInformation.GenerateLegacyAttributes(pAttrRun->GetAttributes())));
         }
         else
@@ -568,9 +568,9 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 
     this->ResizingWindow++;
 
-    // If this isn't the main buffer, make sure we enable both of the scroll bars. 
+    // If this isn't the main buffer, make sure we enable both of the scroll bars.
     //   The alt might come through and disable the scroll bars, this is the only way to re-enable it.
-    if(!_IsAltBuffer()) 
+    if(!_IsAltBuffer())
     {
         EnableScrollBar(g_ciConsoleInformation.hWnd, SB_BOTH, ESB_ENABLE_BOTH);
     }
@@ -888,7 +888,7 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(_In_ const RECT* const prcClient
         // 1. Delete input string if necessary (see menu.c)
         pCommandLine->Hide(FALSE);
         TextInfo->GetCursor()->SetIsVisible(false);
-        
+
         // 2. Call the resize screen buffer method (expensive) to redimension the backing buffer (and reflow)
         ResizeScreenBuffer(coordBufferSizeNew, FALSE);
 
@@ -1272,7 +1272,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
                 {
                     cNewCursorPos = pNewCursor->GetPosition();
                     fFoundCursorPos = true;
-                } 
+                }
 
                 // Insert it into the new buffer
                 if (!pNewBuffer->InsertCharacter(wchChar, bKAttr, rAttrRun->GetAttributes()))
@@ -1290,7 +1290,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
                     if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y){
                         cNewCursorPos = pNewCursor->GetPosition();
                         fFoundCursorPos = true;
-                    } 
+                    }
                     // Only do this if it's not the final line in the buffer.
                     // On the final line, we want the cursor to sit where it is done printing for the cursor adjustment to follow.
                     if (iOldRow < cOldRowsTotal - 1)
@@ -1304,13 +1304,13 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
         {
             // Finish copying remaining parameters from the old text buffer to the new one
             pNewBuffer->CopyProperties(TextInfo);
-            
-            // If we found where to put the cursor while placing characters into the buffer, 
+
+            // If we found where to put the cursor while placing characters into the buffer,
             //   just put the cursor there. Otherwise we have to advance manually.
-            if (fFoundCursorPos) 
+            if (fFoundCursorPos)
             {
                 pNewCursor->SetPosition(cNewCursorPos);
-            } 
+            }
             else
             {
                 // Advance the cursor to the same offset as before
@@ -1329,10 +1329,10 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
                 }
                 else
                 {
-                    // if this buffer didn't wrap, but the old one DID, then the d(columns) of the 
+                    // if this buffer didn't wrap, but the old one DID, then the d(columns) of the
                     //   old buffer will be one more than in this buffer, so new need one LESS.
                     pLastRow = TextInfo->GetRowByOffset(cOldLastChar.Y);
-                    if (pLastRow->CharRow.WasWrapForced()) 
+                    if (pLastRow->CharRow.WasWrapForced())
                     {
                         iNewlines = max(iNewlines-1, 0);
                     }
@@ -1369,7 +1369,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
 
             // Save old cursor size before we delete it
             ULONG const ulSize = pOldCursor->GetSize();
-            
+
             // Free old text buffer
             delete TextInfo;
 
@@ -1467,8 +1467,8 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSi
         {
             for (i = this->ScreenBufferSize.Y; i < coordNewScreenSize.Y; i++)
             {
-                bool fSuccess = Temp[i].AttrRow.Initialize(coordNewScreenSize.X, &this->_Attributes);
-                if (!fSuccess) 
+                bool fSuccess = Temp[i].AttrRow.Initialize(coordNewScreenSize.X, this->_Attributes);
+                if (!fSuccess)
                 {
                     delete[] TextRowsA;
                     delete[] TextRows;
@@ -1548,7 +1548,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSi
     pTextInfo->SetCoordBufferSize(coordNewScreenSize);
 
     NTSTATUS Status = STATUS_SUCCESS;
-    
+
     if (coordNewScreenSize.X != this->ScreenBufferSize.X)
     {
         for (i = 0; i < LimitY; i++)
@@ -1868,7 +1868,7 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
     if (NT_SUCCESS(Status))
     {
         s_InsertScreenBuffer(*ppsiNewScreenBuffer);
-        
+
         // delete the alt buffer's state machine. We don't want it.
         (*ppsiNewScreenBuffer)->_FreeOutputStateMachine(); // this has to be done before we give it a main buffer
         // we'll attach the GetSet, etc once we successfully make this buffer the active buffer.
@@ -1897,7 +1897,7 @@ NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
     if (psiMain->_fAltWindowChanged)
     {
         psiMain->ProcessResizeWindow(&(psiMain->_rcAltSavedClientNew), &(psiMain->_rcAltSavedClientOld));
-        psiMain->_fAltWindowChanged = false;            
+        psiMain->_fAltWindowChanged = false;
     }
 
     SCREEN_INFORMATION* psiNewAltBuffer;
@@ -1950,7 +1950,7 @@ NTSTATUS SCREEN_INFORMATION::UseMainScreenBuffer()
         if (psiMain->_fAltWindowChanged)
         {
             psiMain->ProcessResizeWindow(&(psiMain->_rcAltSavedClientNew), &(psiMain->_rcAltSavedClientOld));
-            psiMain->_fAltWindowChanged = false;            
+            psiMain->_fAltWindowChanged = false;
         }
         Status = ::SetActiveScreenBuffer(psiMain);
         if (NT_SUCCESS(Status))
@@ -1959,10 +1959,10 @@ NTSTATUS SCREEN_INFORMATION::UseMainScreenBuffer()
 
             // send a ScreenBufferSizeChangeEvent for the new Sb viewport
             ScreenBufferSizeChange(psiMain->ScreenBufferSize);
-            
+
             SCREEN_INFORMATION* psiAlt = psiMain->_psiAlternateBuffer;
             psiMain->_psiAlternateBuffer = nullptr;
-            s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer 
+            s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer
             // deleting the alt buffer will give the GetSet back to it's main
 
             // Tell the VT MouseInput handler that we're in the main buffer now
@@ -2205,9 +2205,9 @@ bool SCREEN_INFORMATION::AreTabsSet()
 // <none>
 // Return value:
 // - This screen buffer's attributes
-const TextAttribute* const SCREEN_INFORMATION::GetAttributes() const
+TextAttribute SCREEN_INFORMATION::GetAttributes() const
 {
-    return &_Attributes;
+    return _Attributes;
 }
 
 // Routine Description:
@@ -2225,12 +2225,12 @@ const TextAttribute* const  SCREEN_INFORMATION::GetPopupAttributes() const
 // - Sets the value of the attributes on this screen buffer. Also propagates
 //     the change down to the fill of the text buffer attached to this screen buffer.
 // Parameters:
-// - wAttributes - The new value of the attributes to use.
+// - attributes - The new value of the attributes to use.
 // Return value:
 // <none>
-void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute* const pAttributes)
+void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute attributes)
 {
-    _Attributes.SetFrom(pAttributes);
+    _Attributes.SetFrom(attributes);
 
     CHAR_INFO ciFill = TextInfo->GetFill();
     ciFill.Attributes = _Attributes.GetLegacyAttributes();
@@ -2247,5 +2247,3 @@ void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute* const pPop
 {
     _PopupAttributes = *pPopupAttributes;
 }
-
-

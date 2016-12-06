@@ -171,7 +171,7 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
             for (short iCol = 0; iCol < sXSize; pciTargetPtr++)
             {
                 BYTE bAttrR = *pbAttrP++;
-                TextAttribute* pTextAttr = &rgUnpackedRowAttributes[coordSourcePoint.X + iCol];
+                TextAttribute textAttr = rgUnpackedRowAttributes[coordSourcePoint.X + iCol];
 
                 if (iCol == 0 && bAttrR & CHAR_ROW::ATTR_TRAILING_BYTE)
                 {
@@ -192,11 +192,11 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
                 pciTargetPtr->Attributes = (bAttrR & CHAR_ROW::ATTR_DBCSSBCS_BYTE) << 8;
 
                 // Always copy the legacy attributes to the CHAR_INFO.
-                pciTargetPtr->Attributes |= g_ciConsoleInformation.GenerateLegacyAttributes(pTextAttr);
+                pciTargetPtr->Attributes |= g_ciConsoleInformation.GenerateLegacyAttributes(textAttr);
 
                 if (fOutputTextAttributes)
                 {
-                    pTargetAttributes->SetFrom(pTextAttr);
+                    pTargetAttributes->SetFrom(textAttr);
                     pTargetAttributes++;
                 }
 
@@ -595,7 +595,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 k = 0;
                 for (j = X; j < pScreenInfo->ScreenBufferSize.X; TargetPtr++)
                 {
-                    const WORD wLegacyAttributes = pAttrRun->GetAttributes()->GetLegacyAttributes();
+                    const WORD wLegacyAttributes = pAttrRun->GetAttributes().GetLegacyAttributes();
                     if ((j == X) && (*AttrP & CHAR_ROW::ATTR_TRAILING_BYTE))
                     {
                         *TargetPtr = wLegacyAttributes;
@@ -689,9 +689,9 @@ void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
     if (pScreenInfo->IsActiveScreenBuffer())
     {
         // Notify accessibility that a scroll has occurred.
-        NotifyWinEvent(EVENT_CONSOLE_UPDATE_SCROLL, 
-                       g_ciConsoleInformation.hWnd, 
-                       coordTarget.X - psrScroll->Left, 
+        NotifyWinEvent(EVENT_CONSOLE_UPDATE_SCROLL,
+                       g_ciConsoleInformation.hWnd,
+                       coordTarget.X - psrScroll->Left,
                        coordTarget.Y - psrScroll->Right);
 
 
@@ -795,8 +795,8 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
 
     if (ciFill.Char.UnicodeChar == '\0' && ciFill.Attributes == 0)
     {
-        ciFill.Char.UnicodeChar = (WCHAR)' ';
-        ciFill.Attributes = pScreenInfo->GetAttributes()->GetLegacyAttributes();
+        ciFill.Char.UnicodeChar = L' ';
+        ciFill.Attributes = pScreenInfo->GetAttributes().GetLegacyAttributes();
     }
 
     // clip the source rectangle to the screen buffer
@@ -1084,7 +1084,7 @@ NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
 
     // Empty input buffer.
     FlushAllButKeys();
-    SetScreenColors(pScreenInfo, pScreenInfo->GetAttributes()->GetLegacyAttributes(), pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE);
+    SetScreenColors(pScreenInfo, pScreenInfo->GetAttributes().GetLegacyAttributes(), pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE);
 
     // Set window size.
     pScreenInfo->PostUpdateWindowSize();

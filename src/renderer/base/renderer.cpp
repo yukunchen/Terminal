@@ -55,7 +55,7 @@ HRESULT Renderer::s_CreateInstance(_In_ IRenderData* const pData, _In_ IRenderEn
     {
         hr = E_OUTOFMEMORY;
     }
-    
+
     // Attempt to create renderer thread
     if (SUCCEEDED(hr))
     {
@@ -258,7 +258,7 @@ void Renderer::TriggerScroll()
 // Routine Description:
 // - Called when a scroll operation wishes to explicitly adjust the frame by the given coordinate distance.
 // - This is a special case as calling out scrolls explicitly drastically improves performance.
-// - This should only be used when the viewport is not modified. It lets us know we can "scroll anyway" to save perf, 
+// - This should only be used when the viewport is not modified. It lets us know we can "scroll anyway" to save perf,
 //   because the backing circular buffer rotated out from behind the viewport.
 // Arguments:
 // - <none>
@@ -399,22 +399,22 @@ void Renderer::_PaintBufferOutput()
 // Routine Description:
 // - Paint helper for raster font text. It will pass through to ColorHelper when it's done and cascade from there.
 // - This particular helper checks the current font and converts the text, if necessary, back to the original OEM codepage.
-// - This is required for raster fonts in GDI as it won't adapt them back on our behalf. 
+// - This is required for raster fonts in GDI as it won't adapt them back on our behalf.
 // - See also: All related helpers and buffer output functions.
 // Arguments:
 // - pRow - Pointer to the row structure for the current line of text
 // - pwsLine - Pointer to the first character in the string/substring to be drawn.
 // - pbKAttrsLine - Pointer to the first attribute in a sequence that is perfectly in sync with the pwsLine parameter. e.g. The first attribute here goes with the first character in pwsLine.
-// - cchLine - The length of both pwsLine and pbKAttrsLine. 
+// - cchLine - The length of both pwsLine and pbKAttrsLine.
 // - iFirstAttr - Index into the row corresponding to pwsLine[0] to match up the appropriate color.
-// - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to. 
+// - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to.
 // Return Value:
 // - <none>
-void Renderer::_PaintBufferOutputRasterFontHelper(_In_ const ROW* const pRow, 
-                                                  _In_reads_(cchLine) PCWCHAR const pwsLine, 
-                                                  _In_reads_(cchLine) PBYTE pbKAttrsLine, 
-                                                  _In_ size_t cchLine, 
-                                                  _In_ size_t iFirstAttr, 
+void Renderer::_PaintBufferOutputRasterFontHelper(_In_ const ROW* const pRow,
+                                                  _In_reads_(cchLine) PCWCHAR const pwsLine,
+                                                  _In_reads_(cchLine) PBYTE pbKAttrsLine,
+                                                  _In_ size_t cchLine,
+                                                  _In_ size_t iFirstAttr,
                                                   _In_ COORD const coordTarget)
 {
     const FontInfo* const pFontInfo = _pData->GetFontInfo();
@@ -491,15 +491,15 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ const ROW* const pRow,
 // - pRow - Pointer to the row structure for the current line of text
 // - pwsLine - Pointer to the first character in the string/substring to be drawn.
 // - pbKAttrsLine - Pointer to the first attribute in a sequence that is perfectly in sync with the pwsLine parameter. e.g. The first attribute here goes with the first character in pwsLine.
-// - cchLine - The length of both pwsLine and pbKAttrsLine. 
+// - cchLine - The length of both pwsLine and pbKAttrsLine.
 // - iFirstAttr - Index into the row corresponding to pwsLine[0] to match up the appropriate color.
-// - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to. 
+// - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to.
 // Return Value:
 // - <none>
 void Renderer::_PaintBufferOutputColorHelper(_In_ const ROW* const pRow, _In_reads_(cchLine) PCWCHAR const pwsLine, _In_reads_(cchLine) PBYTE pbKAttrsLine, _In_ size_t cchLine, _In_ size_t iFirstAttr, _In_ COORD const coordTarget)
 {
     // We may have to write this string in several pieces based on the colors.
- 
+
     // Count up how many characters we've written so we know when we're done.
     size_t cchWritten = 0;
 
@@ -558,7 +558,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ const ROW* const pRow, _In_rea
 // Arguments:
 // - pwsLine - Pointer to the first character in the string/substring to be drawn.
 // - pbKAttrsLine - Pointer to the first attribute in a sequence that is perfectly in sync with the pwsLine parameter. e.g. The first attribute here goes with the first character in pwsLine.
-// - cchLine - The length of both pwsLine and pbKAttrsLine. 
+// - cchLine - The length of both pwsLine and pbKAttrsLine.
 // - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from. pwsLine[0] will be the character at position coordTarget within the original console buffer before it was prepared for this function.
 // Return Value:
 // - <none>
@@ -594,11 +594,11 @@ void Renderer::_PaintBufferOutputDoubleByteHelper(_In_reads_(cchLine) PCWCHAR co
             else if (iLine == 0)
             {
                 // If we are a trailing byte, but we're the first character in the run, it's a special case.
-                // Someone has asked us to redraw the right half of the character, but we can't do that. 
+                // Someone has asked us to redraw the right half of the character, but we can't do that.
                 // We'll have to draw the entire thing at once which requires:
                 // 1. We have to copy the character into the segment buffer (which we normally don't do for trailing bytes)
                 // 2. We have to back the draw target up by one character width so the right half will be struck over where we expect
-                
+
                 // Copy character
                 pwsSegment[cchSegment] = pwsLine[iLine];
                 cchSegment++;
@@ -628,34 +628,34 @@ void Renderer::_PaintBufferOutputDoubleByteHelper(_In_reads_(cchLine) PCWCHAR co
 // - This particular helper sets up the various box drawing lines that can be inscribed around any character in the buffer (left, right, top, underline).
 // - See also: All related helpers and buffer output functions.
 // Arguments:
-// - wAttr - The line/box drawing attributes to use for this particular run.
-// - cchLine - The length of both pwsLine and pbKAttrsLine. 
+// - textAttribute - The line/box drawing attributes to use for this particular run.
+// - cchLine - The length of both pwsLine and pbKAttrsLine.
 // - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from.
 // Return Value:
 // - <none>
-void Renderer::_PaintBufferOutputGridLineHelper(_In_ const TextAttribute* const pAttr, _In_ size_t const cchLine, _In_ COORD const coordTarget)
+void Renderer::_PaintBufferOutputGridLineHelper(_In_ const TextAttribute textAttribute, _In_ size_t const cchLine, _In_ COORD const coordTarget)
 {
-    COLORREF rgb = pAttr->GetRgbForeground();
+    COLORREF rgb = textAttribute.GetRgbForeground();
 
     // Convert console grid line representations into rendering engine enum representations.
     IRenderEngine::GridLines lines = IRenderEngine::GridLines::None;
 
-    if (pAttr->IsTopHorizontalDisplayed())
+    if (textAttribute.IsTopHorizontalDisplayed())
     {
         lines |= IRenderEngine::GridLines::Top;
     }
 
-    if (pAttr->IsBottomHorizontalDisplayed())
+    if (textAttribute.IsBottomHorizontalDisplayed())
     {
         lines |= IRenderEngine::GridLines::Bottom;
     }
 
-    if (pAttr->IsLeftVerticalDisplayed())
+    if (textAttribute.IsLeftVerticalDisplayed())
     {
         lines |= IRenderEngine::GridLines::Left;
     }
 
-    if (pAttr->IsRightVerticalDisplayed())
+    if (textAttribute.IsRightVerticalDisplayed())
     {
         lines |= IRenderEngine::GridLines::Right;
     }
@@ -689,7 +689,7 @@ void Renderer::_PaintCursor()
         // Check if cursor is within dirty area
         if (viewDirty.IsWithinViewport(&coordCursor))
         {
-            // Determine cursor height                        
+            // Determine cursor height
             ULONG ulHeight = pCursor->GetSize();
 
             // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
@@ -829,19 +829,19 @@ void Renderer::_PaintSelection()
 // Routine Description:
 // - Helper to convert the text attributes to actual RGB colors and update the rendering pen/brush within the rendering engine before the next draw operation.
 // Arguments:
-// - wTextAttributes - The 16 color foreground/background combination to set
+// - textAttributes - The 16 color foreground/background combination to set
 // - fIncludeBackground - Whether or not to include the hung window/erase window brushes in this operation. (Usually only happens when the default is changed, not when each individual color is swapped in a multi-color run.)
 // Return Value:
 // - <none>
-HRESULT Renderer::_UpdateDrawingBrushes(_In_ const TextAttribute* const pTextAttributes, _In_ bool const fIncludeBackground)
+HRESULT Renderer::_UpdateDrawingBrushes(_In_ const TextAttribute textAttributes, _In_ bool const fIncludeBackground)
 {
-    COLORREF rgbForeground = pTextAttributes->GetRgbForeground();
-    COLORREF rgbBackground = pTextAttributes->GetRgbBackground();
+    COLORREF rgbForeground = textAttributes.GetRgbForeground();
+    COLORREF rgbBackground = textAttributes.GetRgbBackground();
 
     // Only update if the foreground or background are different from the last time we attempted to set it.
 
     // NOTE: Valid COLORREFs are of the pattern 0x00bbggrr. Set the initial one in the static to -1 as the highest byte of a valid color is always 0.
-    static COLORREF rgbLastForeground = 0xffffffff; 
+    static COLORREF rgbLastForeground = 0xffffffff;
     static COLORREF rgbLastBackground = 0xffffffff;
 
     // If we have to update the background too (which is due to a complete window-type change), always update.

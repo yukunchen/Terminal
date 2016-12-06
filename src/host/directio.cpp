@@ -1144,7 +1144,7 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
     // Create new screen buffer.
     CHAR_INFO Fill;
     Fill.Char.UnicodeChar = UNICODE_SPACE;
-    Fill.Attributes = psiExisting->GetAttributes()->GetLegacyAttributes();
+    Fill.Attributes = psiExisting->GetAttributes().GetLegacyAttributes();
 
     COORD WindowSize;
     WindowSize.X = (SHORT)psiExisting->GetScreenWindowSizeX();

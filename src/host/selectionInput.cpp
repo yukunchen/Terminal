@@ -669,7 +669,7 @@ bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKey
         else
         {
             // Set foreground color. Maintain the current console bg color.
-            ulAttr |= g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes()->GetLegacyAttributes() & 0xf0;
+            ulAttr |= g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes() & 0xf0;
         }
 
         // If shift was pressed as well, then this is actually a
@@ -744,7 +744,7 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
         const COORD cursorPos = pTextInfo->GetCursor()->GetPosition();
         ROW* const pRow = pTextInfo->GetRowByOffset(cursorPos.Y);
 
-       
+
         bKAttrs = pRow->CharRow.KAttrs[cursorPos.X];
         if (bKAttrs & CHAR_ROW::ATTR_LEADING_BYTE)
         {

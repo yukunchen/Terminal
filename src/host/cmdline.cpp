@@ -719,7 +719,7 @@ HRESULT ApiRoutines::AddConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength)
 
 // Routine Description:
 // - Retrieves a command line alias from the global set.
-// - It is permitted to call this function without having a target buffer. Use the result to allocate 
+// - It is permitted to call this function without having a target buffer. Use the result to allocate
 //   the appropriate amount of space and call again.
 // - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
 //   the output/result data.
@@ -786,9 +786,9 @@ HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const 
 // Arguments:
 // - pwsSourceBuffer - The shorthand/alias or source buffer to use in lookup
 // - cchSourceBufferLength - Length in characters of source buffer
-// - pwsTargetBuffer - The destination/expansion or target buffer we are attempting to retrieve. 
-// - cchTargetBufferLength - Length in characters of target buffer. 
-// - pcchTargetBufferWritten - Pointer to space that will specify how many characters were written 
+// - pwsTargetBuffer - The destination/expansion or target buffer we are attempting to retrieve.
+// - cchTargetBufferLength - Length in characters of target buffer.
+// - pcchTargetBufferWritten - Pointer to space that will specify how many characters were written
 // - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
 // - cchExeNameBufferLength - Length in characters of EXE name buffer
 // Return Value:
@@ -853,9 +853,9 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength)
 // Arguments:
 // - pwsSourceBuffer - The shorthand/alias or source buffer to use in lookup
 // - cchSourceBufferLength - Length in characters of source buffer
-// - pwsTargetBuffer - The destination/expansion or target buffer we are attempting to retrieve. 
-// - cchTargetBufferLength - Length in characters of target buffer. 
-// - pcchTargetBufferWritten - Pointer to space that will specify how many characters were written 
+// - pwsTargetBuffer - The destination/expansion or target buffer we are attempting to retrieve.
+// - cchTargetBufferLength - Length in characters of target buffer.
+// - pcchTargetBufferWritten - Pointer to space that will specify how many characters were written
 // - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
 // - cchExeNameBufferLength - Length in characters of EXE name buffer
 // Return Value:
@@ -881,7 +881,7 @@ static size_t const cchAliasesSeperator = wcslen(pwszAliasesSeperator);
 
 // Routine Description:
 // - Retrieves the amount of space needed to hold all aliases (source=target pairs) for the given EXE name
-// - Works for both Unicode and Multibyte text. 
+// - Works for both Unicode and Multibyte text.
 // - This method configuration is called for both A/W routines to allow us an efficient way of asking the system
 //   the lengths of how long each conversion would be without actually performing the full allocations/conversions.
 // Arguments:
@@ -1022,14 +1022,14 @@ VOID ClearAliases()
 
 // Routine Description:
 // - Retrieves all source=target pairs representing alias definitions for a given EXE name
-// - It is permitted to call this function without having a target buffer. Use the result to allocate 
+// - It is permitted to call this function without having a target buffer. Use the result to allocate
 //   the appropriate amount of space and call again.
 // - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
 //   the output/result data.
 // Arguments:
 // - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
 // - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - pwsAliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve. 
+// - pwsAliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve.
 //                    Optionally nullptr to retrieve needed space.
 // - cchAliasBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
 // - pcchAliasBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written (if buffer is valid)
@@ -1128,9 +1128,9 @@ HRESULT GetConsoleAliasesWImplHelper(_In_reads_or_z_(cchExeNameBufferLength) con
 // Arguments:
 // - psExeNameBuffer - The client EXE application attached to the host whose set we should check
 // - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - psAliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve. 
+// - psAliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve.
 // - cchAliasBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
-// - pcchAliasBufferWritten - Pointer to space that will specify how many characters were written 
+// - pcchAliasBufferWritten - Pointer to space that will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
@@ -1190,9 +1190,9 @@ HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_or_z_(cchExeNameBufferLeng
 // Arguments:
 // - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
 // - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - pwsAliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve. 
+// - pwsAliasBuffer - The target buffer to hold all alias pairs we are trying to retrieve.
 // - cchAliasBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
-// - pcchAliasBufferWritten - Pointer to space that will specify how many characters were written 
+// - pcchAliasBufferWritten - Pointer to space that will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasesWImpl(_In_reads_or_z_(cchExeNameBufferLength) const wchar_t* const pwsExeNameBuffer,
@@ -1209,7 +1209,7 @@ HRESULT ApiRoutines::GetConsoleAliasesWImpl(_In_reads_or_z_(cchExeNameBufferLeng
 
 // Routine Description:
 // - Retrieves the amount of space needed to hold all EXE names with aliases defined that are known to the console
-// - Works for both Unicode and Multibyte text. 
+// - Works for both Unicode and Multibyte text.
 // - This method configuration is called for both A/W routines to allow us an efficient way of asking the system
 //   the lengths of how long each conversion would be without actually performing the full allocations/conversions.
 // Arguments:
@@ -1285,7 +1285,7 @@ HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(_Out_ size_t* const pcchAlia
 
 // Routine Description:
 // - Retrieves all EXE names with aliases defined that are known to the console.
-// - It is permitted to call this function without having a target buffer. Use the result to allocate 
+// - It is permitted to call this function without having a target buffer. Use the result to allocate
 //   the appropriate amount of space and call again.
 // - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
 //   the output/result data.
@@ -1359,7 +1359,7 @@ HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLen
 // Arguments:
 // - psAliasExesBuffer - The target buffer to hold all known EXE names we are trying to retrieve.
 // - cchAliasExesBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
-// - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written 
+// - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_) char* const psAliasExesBuffer,
@@ -1412,7 +1412,7 @@ HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBuffer
 // Arguments:
 // - pwsAliasExesBuffer - The target buffer to hold all known EXE names we are trying to retrieve.
 // - cchAliasExesBufferLength - Length in characters of target buffer. Set to 0 when buffer is nullptr.
-// - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written 
+// - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
 HRESULT ApiRoutines::GetConsoleAliasExesWImpl(_Out_writes_to_(cchAliasExesBufferLength, *pcchAliasExesBufferWritten) _Always_(_Post_z_)  wchar_t* const pwsAliasExesBuffer,
@@ -1728,7 +1728,7 @@ HRESULT ApiRoutines::ExpungeConsoleCommandHistoryWImpl(_In_reads_or_z_(cchExeNam
 // - Sets the number of commands that will be stored in history for a given EXE name
 // - Will convert input parameters and call the W version of this method
 // Arguments:
-// - psExeNameBuffer - A client EXE application attached to the host 
+// - psExeNameBuffer - A client EXE application attached to the host
 // - cchExeNameBufferLength - Length in characters of EXE name buffer
 // - NumberOfCommands - Specifies the maximum length of the associated history buffer
 // Return Value:
@@ -1749,7 +1749,7 @@ HRESULT ApiRoutines::SetConsoleNumberOfCommandsAImpl(_In_reads_or_z_(cchExeNameB
 // Routine Description:
 // - Sets the number of commands that will be stored in history for a given EXE name
 // Arguments:
-// - pwsExeNameBuffer - A client EXE application attached to the host 
+// - pwsExeNameBuffer - A client EXE application attached to the host
 // - cchExeNameBufferLength - Length in characters of EXE name buffer
 // - NumberOfCommands - Specifies the maximum length of the associated history buffer
 // Return Value:
@@ -1776,7 +1776,7 @@ HRESULT ApiRoutines::SetConsoleNumberOfCommandsWImpl(_In_reads_or_z_(cchExeNameB
 
 // Routine Description:
 // - Retrieves the amount of space needed to retrieve all command history for a given EXE name
-// - Works for both Unicode and Multibyte text. 
+// - Works for both Unicode and Multibyte text.
 // - This method configuration is called for both A/W routines to allow us an efficient way of asking the system
 //   the lengths of how long each conversion would be without actually performing the full allocations/conversions.
 // Arguments:
@@ -1884,7 +1884,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(_In_reads_or_z_(cchExeN
 
 // Routine Description:
 // - Retrieves a the full command history for a given EXE name known to the console.
-// - It is permitted to call this function without having a target buffer. Use the result to allocate 
+// - It is permitted to call this function without having a target buffer. Use the result to allocate
 //   the appropriate amount of space and call again.
 // - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
 //   the output/result data.
@@ -1970,8 +1970,8 @@ HRESULT GetConsoleCommandHistoryWImplHelper(_In_reads_or_z_(cchExeNameBufferLeng
 // Arguments:
 // - psExeNameBuffer - The client EXE application attached to the host whose set we should check
 // - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - psCommandHistoryBuffer - The target buffer for data we are attempting to retrieve. 
-// - cchCommandHistoryBufferLength - Length in characters of target buffer. 
+// - psCommandHistoryBuffer - The target buffer for data we are attempting to retrieve.
+// - cchCommandHistoryBufferLength - Length in characters of target buffer.
 // - pcchCommandHistoryBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
@@ -2033,8 +2033,8 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBuf
 // Arguments:
 // - pwsExeNameBuffer - The client EXE application attached to the host whose set we should check
 // - cchExeNameBufferLength - Length in characters of EXE name buffer
-// - pwsCommandHistoryBuffer - The target buffer for data we are attempting to retrieve. 
-// - cchCommandHistoryBufferLength - Length in characters of target buffer. 
+// - pwsCommandHistoryBuffer - The target buffer for data we are attempting to retrieve.
+// - cchCommandHistoryBufferLength - Length in characters of target buffer.
 // - pcchCommandHistoryBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
@@ -3109,13 +3109,13 @@ NTSTATUS ProcessCommandNumberInput(_In_ PCOOKED_READ_DATA const pCookedReadData,
             return Status;
         }
 
-        if (Char >= (WCHAR)0x30 && Char <= (WCHAR)0x39)
+        if (Char >= L'0' && Char <= L'9')
         {
             if (Popup->NumberRead < 5)
             {
                 DWORD CharsToWrite = sizeof(WCHAR);
-                const TextAttribute* pRealAttributes = pCookedReadData->pScreenInfo->GetAttributes();
-                pCookedReadData->pScreenInfo->SetAttributes(&Popup->Attributes);
+                const TextAttribute realAttributes = pCookedReadData->pScreenInfo->GetAttributes();
+                pCookedReadData->pScreenInfo->SetAttributes(Popup->Attributes);
                 DWORD NumSpaces;
                 Status = WriteCharsLegacy(pCookedReadData->pScreenInfo,
                                           Popup->NumberBuffer,
@@ -3127,7 +3127,7 @@ NTSTATUS ProcessCommandNumberInput(_In_ PCOOKED_READ_DATA const pCookedReadData,
                                           WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                           nullptr);
                 ASSERT(NT_SUCCESS(Status));
-                pCookedReadData->pScreenInfo->SetAttributes(pRealAttributes);
+                pCookedReadData->pScreenInfo->SetAttributes(realAttributes);
                 Popup->NumberBuffer[Popup->NumberRead] = Char;
                 Popup->NumberRead += 1;
             }
@@ -3137,8 +3137,8 @@ NTSTATUS ProcessCommandNumberInput(_In_ PCOOKED_READ_DATA const pCookedReadData,
             if (Popup->NumberRead > 0)
             {
                 DWORD CharsToWrite = sizeof(WCHAR);
-                const TextAttribute* pRealAttributes = pCookedReadData->pScreenInfo->GetAttributes();
-                pCookedReadData->pScreenInfo->SetAttributes(&Popup->Attributes);
+                const TextAttribute realAttributes = pCookedReadData->pScreenInfo->GetAttributes();
+                pCookedReadData->pScreenInfo->SetAttributes(Popup->Attributes);
                 DWORD NumSpaces;
                 Status = WriteCharsLegacy(pCookedReadData->pScreenInfo,
                                           Popup->NumberBuffer,
@@ -3151,7 +3151,7 @@ NTSTATUS ProcessCommandNumberInput(_In_ PCOOKED_READ_DATA const pCookedReadData,
                                           nullptr);
 
                 ASSERT(NT_SUCCESS(Status));
-                pCookedReadData->pScreenInfo->SetAttributes(pRealAttributes);
+                pCookedReadData->pScreenInfo->SetAttributes(realAttributes);
                 Popup->NumberBuffer[Popup->NumberRead] = (WCHAR)' ';
                 Popup->NumberRead -= 1;
             }

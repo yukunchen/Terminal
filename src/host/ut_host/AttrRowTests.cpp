@@ -40,7 +40,7 @@ class AttrRowTests
     TEST_METHOD_SETUP(MethodSetup)
     {
         pSingle = new ATTR_ROW();
-        pSingle->Initialize(_sDefaultLength, &_DefaultAttr);
+        pSingle->Initialize(_sDefaultLength, _DefaultAttr);
 
         // Segment length is the expected length divided by the row length
         // E.g. row of 80, 4 segments, 20 segment length each
@@ -79,7 +79,7 @@ class AttrRowTests
             // So use it as the index (because indicies start at 0)
             TextAttributeRun* pRun = &pChain->GetHead()[_sDefaultChainLength];
 
-            pRun->SetAttributes(&_DefaultChainAttr);
+            pRun->SetAttributes(_DefaultChainAttr);
             pRun->SetLength(sChainLeftover);
         }
 
@@ -109,10 +109,10 @@ class AttrRowTests
         {
             ATTR_ROW* pUnderTest = pTestItems[iIndex];
 
-            pUnderTest->Initialize(sRowWidth, &attr);
+            pUnderTest->Initialize(sRowWidth, attr);
 
             VERIFY_ARE_EQUAL(pUnderTest->Length, 1);
-            VERIFY_IS_TRUE(pUnderTest->GetHead()->GetAttributes()->IsEqual(&attr));
+            VERIFY_IS_TRUE(pUnderTest->GetHead()->GetAttributes().IsEqual(attr));
             VERIFY_ARE_EQUAL(pUnderTest->GetHead()[0].GetLength(), (unsigned int)sRowWidth);
         }
     }
@@ -130,7 +130,7 @@ class AttrRowTests
 
         for (UINT iAttrIndex = 0; iAttrIndex < cAttrs; iAttrIndex++)
         {
-            VERIFY_IS_TRUE(rAttrs[iAttrIndex].IsEqual(&_DefaultAttr));
+            VERIFY_IS_TRUE(rAttrs[iAttrIndex].IsEqual(_DefaultAttr));
         }
 
         delete[] rAttrs;
@@ -155,7 +155,7 @@ class AttrRowTests
                 MatchingAttr = _DefaultChainAttr;
             }
 
-            VERIFY_IS_TRUE(rAttrs[iAttrIndex].IsEqual(&MatchingAttr));
+            VERIFY_IS_TRUE(rAttrs[iAttrIndex].IsEqual(MatchingAttr));
 
             // Add to the chain run
             cChainRun++;
@@ -168,7 +168,7 @@ class AttrRowTests
 
                 // move to the next chain segment down the line
                 iChainSegIndex++;
-            } 
+            }
         }
 
         delete[] rAttrs;
@@ -190,7 +190,7 @@ class AttrRowTests
         // after packing, old chain data should be discarded and we should be down to...
 
         VERIFY_ARE_EQUAL(pChain->Length, 1); // 1 item
-        VERIFY_IS_TRUE(pChain->GetHead()->GetAttributes()->IsEqual(&_DefaultAttr)); // has the attribute we specified for every cell in the array
+        VERIFY_IS_TRUE(pChain->GetHead()->GetAttributes().IsEqual(_DefaultAttr)); // has the attribute we specified for every cell in the array
         VERIFY_ARE_EQUAL(pChain->GetHead()->GetLength(), (unsigned int)cAttrs); // and the length of the array to represent every character in the row
 
         delete[] rgAttrs;
@@ -234,16 +234,16 @@ class AttrRowTests
             cNumberOfChainSegments++;
         }
 
-        // length should match 
+        // length should match
         VERIFY_ARE_EQUAL((UINT)pSingle->Length, cNumberOfChainSegments);
-        
+
         // now verify each chain segment is holding the correct data
         for (UINT iChainSeg = 0; iChainSeg < cNumberOfChainSegments; iChainSeg++)
         {
             // We set the attribute to the number of the chain segment when creating it, so just test against the index.
             TextAttribute SegmentAttributes = TextAttribute((WORD)iChainSeg);
             TextAttributeRun* pSegment = &pSingle->GetHead()[iChainSeg];
-            VERIFY_IS_TRUE(pSegment->GetAttributes()->IsEqual(&SegmentAttributes));
+            VERIFY_IS_TRUE(pSegment->GetAttributes().IsEqual(SegmentAttributes));
 
             // if we're looking at a non-remainder chain segment
             if (iChainSeg < (cAttrs / cCurrAttrLimit))
@@ -271,19 +271,19 @@ class AttrRowTests
         ASSERT(iTestIndex >= 0 && iTestIndex < _sDefaultLength);
 
         Log::Comment(L"SetAttrToEnd for single color applied to whole string.");
-        pSingle->SetAttrToEnd(iTestIndex, &TestAttr);
+        pSingle->SetAttrToEnd(iTestIndex, TestAttr);
 
         // Was 1 (single), should now have 2 segments
         VERIFY_ARE_EQUAL(pSingle->Length, 2);
 
-        VERIFY_IS_TRUE(pSingle->GetHead()[0].GetAttributes()->IsEqual(&_DefaultAttr));
+        VERIFY_IS_TRUE(pSingle->GetHead()[0].GetAttributes().IsEqual(_DefaultAttr));
         VERIFY_ARE_EQUAL(pSingle->GetHead()[0].GetLength(), (unsigned int)(_sDefaultLength - (_sDefaultLength - iTestIndex)));
 
-        VERIFY_IS_TRUE(pSingle->GetHead()[1].GetAttributes()->IsEqual(&TestAttr));
+        VERIFY_IS_TRUE(pSingle->GetHead()[1].GetAttributes().IsEqual(TestAttr));
         VERIFY_ARE_EQUAL(pSingle->GetHead()[1].GetLength(), (unsigned int)(_sDefaultLength - iTestIndex));
 
         Log::Comment(L"SetAttrToEnd for existing chain of multiple colors.");
-        pChain->SetAttrToEnd(iTestIndex, &TestAttr);
+        pChain->SetAttrToEnd(iTestIndex, TestAttr);
 
         // From 7 segments down to 5.
         VERIFY_ARE_EQUAL(pChain->Length, 5);
@@ -312,13 +312,13 @@ class AttrRowTests
         {
             ATTR_ROW* pUnderTest = pTestItems[iIndex];
 
-            pUnderTest->SetAttrToEnd(0, &TestAttr);
+            pUnderTest->SetAttrToEnd(0, TestAttr);
 
             // should be down to 1 attribute set from beginning to end of string
             VERIFY_ARE_EQUAL(pUnderTest->Length, 1);
 
             // singular pair should contain the color
-            VERIFY_IS_TRUE(pUnderTest->GetHead()[0].GetAttributes()->IsEqual(&TestAttr));
+            VERIFY_IS_TRUE(pUnderTest->GetHead()[0].GetAttributes().IsEqual(TestAttr));
 
             // and its length should be the length of the whole string
             VERIFY_ARE_EQUAL(pUnderTest->GetHead()[0].GetLength(), (unsigned int)_sDefaultLength);
