@@ -40,11 +40,11 @@ namespace Microsoft
 
                 virtual HRESULT ScrollFrame() = 0;
 
-                virtual void Invalidate(const SMALL_RECT* const psrRegion) = 0;
-                virtual void InvalidateSystem(const RECT* const prcDirtyClient) = 0;
+                virtual HRESULT Invalidate(const SMALL_RECT* const psrRegion) = 0;
+                virtual HRESULT InvalidateSystem(const RECT* const prcDirtyClient) = 0;
                 virtual HRESULT InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles) = 0;
-                virtual void InvalidateScroll(const COORD* const pcoordDelta) = 0;
-                virtual void InvalidateAll() = 0;
+                virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) = 0;
+                virtual HRESULT InvalidateAll() = 0;
                 
                 virtual HRESULT PaintBackground() = 0;
                 virtual HRESULT PaintBufferLine(_In_ PCWCHAR const pwsLine, size_t const cchLine, COORD const coord, _In_ size_t const cchCharWidths, _In_ bool const fTrimLeft) = 0;
@@ -57,7 +57,7 @@ namespace Microsoft
 
                 virtual HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ bool const fIncludeBackgrounds) = 0;
                 virtual HRESULT UpdateFont(_Inout_ FontInfo* const pfiFontInfo) = 0;
-                virtual void UpdateDpi(_In_ int const iDpi) = 0;
+                virtual HRESULT UpdateDpi(_In_ int const iDpi) = 0;
 
                 virtual HRESULT GetProposedFont(_Inout_ FontInfo* const pfiFontInfo, _In_ int const iDpi) = 0;
 

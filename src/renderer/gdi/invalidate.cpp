@@ -17,10 +17,10 @@ using namespace Microsoft::Console::Render;
 // Arguments:
 // - prcDirtyClient - Pointer to pixel area (RECT) of client region the system believes is dirty
 // Return Value:
-// - <none>
-void GdiEngine::InvalidateSystem(_In_ const RECT* const prcDirtyClient)
+// - HRESULT S_OK, GDI-based error code, or safemath error
+HRESULT GdiEngine::InvalidateSystem(_In_ const RECT* const prcDirtyClient)
 {
-    _InvalidCombine(prcDirtyClient);
+    RETURN_HR(_InvalidCombine(prcDirtyClient));
 }
 
 // Routine Description:
@@ -28,19 +28,25 @@ void GdiEngine::InvalidateSystem(_In_ const RECT* const prcDirtyClient)
 // Arguments:
 // - pcoordDelta - Pointer to character dimension (COORD) of the distance the console would like us to move while scrolling.
 // Return Value:
-// - <none>
-void GdiEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
+// - HRESULT S_OK, GDI-based error code, or safemath error
+HRESULT GdiEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 {
     if (pcoordDelta->X != 0 || pcoordDelta->Y != 0)
     {
         POINT ptDelta = { 0 };
-        if (SUCCEEDED(LOG_IF_FAILED(_ScaleByFont(pcoordDelta, &ptDelta))))
-        {
-            _InvalidOffset(&ptDelta);
-            _szInvalidScroll.cx += ptDelta.x;
-            _szInvalidScroll.cy += ptDelta.y;
-        }
+        RETURN_IF_FAILED(_ScaleByFont(pcoordDelta, &ptDelta));
+
+        RETURN_IF_FAILED(_InvalidOffset(&ptDelta));
+
+        SIZE szInvalidScrollNew;
+        RETURN_IF_FAILED(LongAdd(_szInvalidScroll.cx, ptDelta.x, &szInvalidScrollNew.cx));
+        RETURN_IF_FAILED(LongAdd(_szInvalidScroll.cy, ptDelta.y, &szInvalidScrollNew.cy));
+
+        // Store if safemath succeeded
+        _szInvalidScroll = szInvalidScrollNew;
     }
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -68,7 +74,7 @@ HRESULT GdiEngine::InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const
     if (NULLREGION != iCombineResult && ERROR != iCombineResult)
     {
         // Invalidate that.
-        _InvalidateRgn(hrgnInvalid.get());
+        RETURN_IF_FAILED(_InvalidateRgn(hrgnInvalid.get()));
     }
 
     return S_OK;
@@ -80,14 +86,12 @@ HRESULT GdiEngine::InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const
 // Arguments:
 // - psrRegion - Character region (SMALL_RECT) that has been changed
 // Return Value:
-// - <none>
-void GdiEngine::Invalidate(const SMALL_RECT* const psrRegion)
+// - S_OK, GDI related failure, or safemath failure.
+HRESULT GdiEngine::Invalidate(const SMALL_RECT* const psrRegion)
 {
     RECT rcRegion = { 0 };
-    if (SUCCEEDED(LOG_IF_FAILED(_ScaleByFont(psrRegion, &rcRegion))))
-    {
-        _InvalidateRect(&rcRegion);
-    }
+    RETURN_IF_FAILED(_ScaleByFont(psrRegion, &rcRegion));
+    RETURN_HR(_InvalidateRect(&rcRegion));
 }
 
 // Routine Description:
@@ -96,14 +100,12 @@ void GdiEngine::Invalidate(const SMALL_RECT* const psrRegion)
 // Arguments:
 // - <none>
 // Return Value:
-// - <none>
-void GdiEngine::InvalidateAll()
+// - S_OK, GDI related failure, or safemath failure.
+HRESULT GdiEngine::InvalidateAll()
 {
     RECT rc;
-    if (FALSE != LOG_LAST_ERROR_IF_FALSE(GetClientRect(_hwndTargetWindow, &rc)))
-    {
-        InvalidateSystem(&rc);
-    }
+    RETURN_LAST_ERROR_IF_FALSE(GetClientRect(_hwndTargetWindow, &rc));
+    RETURN_HR(InvalidateSystem(&rc));
 }
 
 // Routine Description:
@@ -111,8 +113,8 @@ void GdiEngine::InvalidateAll()
 // Arguments:
 // - prc - Pixel region (RECT) that should be repainted on the next frame
 // Return Value:
-// - <none>
-void GdiEngine::_InvalidCombine(_In_ const RECT* const prc)
+// - S_OK, GDI related failure, or safemath failure.
+HRESULT GdiEngine::_InvalidCombine(_In_ const RECT* const prc)
 {
     if (!_fInvalidRectUsed)
     {
@@ -125,7 +127,9 @@ void GdiEngine::_InvalidCombine(_In_ const RECT* const prc)
     }
 
     // Ensure invalid areas remain within bounds of window.
-    _InvalidRestrict();
+    RETURN_IF_FAILED(_InvalidRestrict());
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -133,19 +137,26 @@ void GdiEngine::_InvalidCombine(_In_ const RECT* const prc)
 // Arguments:
 // - ppt - Distances by which we should move the invalid region in response to a scroll
 // Return Value:
-// - <none>
-void GdiEngine::_InvalidOffset(_In_ const POINT* const ppt)
+// - S_OK, GDI related failure, or safemath failure.
+HRESULT GdiEngine::_InvalidOffset(_In_ const POINT* const ppt)
 {
     if (_fInvalidRectUsed)
     {
-        _rcInvalid.left += ppt->x;
-        _rcInvalid.right += ppt->x;
-        _rcInvalid.top += ppt->y;
-        _rcInvalid.bottom += ppt->y;
+        RECT rcInvalidNew;
+
+        RETURN_IF_FAILED(LongAdd(_rcInvalid.left, ppt->x, &rcInvalidNew.left));
+        RETURN_IF_FAILED(LongAdd(_rcInvalid.right, ppt->x, &rcInvalidNew.right));
+        RETURN_IF_FAILED(LongAdd(_rcInvalid.top, ppt->y, &rcInvalidNew.top));
+        RETURN_IF_FAILED(LongAdd(_rcInvalid.bottom, ppt->y, &rcInvalidNew.bottom));
+
+        // If all math succeeded, store the new invalid rect.
+        _rcInvalid = rcInvalidNew;
 
         // Ensure invalid areas remain within bounds of window.
-        _InvalidRestrict();
+        RETURN_IF_FAILED(_InvalidRestrict());
     }
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -153,20 +164,21 @@ void GdiEngine::_InvalidOffset(_In_ const POINT* const ppt)
 // Arguments:
 // - <none>
 // Return Value:
-// - <none>
-void GdiEngine::_InvalidRestrict()
+// - S_OK, GDI related failure, or safemath failure.
+HRESULT GdiEngine::_InvalidRestrict()
 {
     // Ensure that the invalid area remains within the bounds of the client area
     RECT rcClient;
 
     // Do restriction only if retrieving the client rect was successful.
-    if (FALSE != LOG_LAST_ERROR_IF_FALSE(GetClientRect(_hwndTargetWindow, &rcClient)))
-    {        
-        _rcInvalid.left = max(_rcInvalid.left, rcClient.left);
-        _rcInvalid.right = min(_rcInvalid.right, rcClient.right);
-        _rcInvalid.top = max(_rcInvalid.top, rcClient.top);
-        _rcInvalid.bottom = min(_rcInvalid.bottom, rcClient.bottom);
-    }
+    RETURN_LAST_ERROR_IF_FALSE(GetClientRect(_hwndTargetWindow, &rcClient));
+
+    _rcInvalid.left = max(_rcInvalid.left, rcClient.left);
+    _rcInvalid.right = min(_rcInvalid.right, rcClient.right);
+    _rcInvalid.top = max(_rcInvalid.top, rcClient.top);
+    _rcInvalid.bottom = min(_rcInvalid.bottom, rcClient.bottom);
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -174,10 +186,10 @@ void GdiEngine::_InvalidRestrict()
 // Arguments:
 // - prc - Pointer to pixel rectangle representing invalid area to add to next paint frame
 // Return Value:
-// - <none>
-void GdiEngine::_InvalidateRect(_In_ const RECT* const prc)
+// - S_OK, GDI related failure, or safemath failure.
+HRESULT GdiEngine::_InvalidateRect(_In_ const RECT* const prc)
 {
-    _InvalidCombine(prc);
+    RETURN_HR(_InvalidCombine(prc));
 }
 
 // Routine Description:
@@ -185,10 +197,10 @@ void GdiEngine::_InvalidateRect(_In_ const RECT* const prc)
 // Arguments:
 // - hrgn - Handle to pixel region representing invalid area to add to next paint frame
 // Return Value:
-// - <none>
-void GdiEngine::_InvalidateRgn(_In_ HRGN hrgn)
+// - S_OK, GDI related failure, or safemath failure.
+HRESULT GdiEngine::_InvalidateRgn(_In_ HRGN hrgn)
 {
     RECT rcInvalid;
-    GetRgnBox(hrgn, &rcInvalid);
-    _InvalidateRect(&rcInvalid);
+    RETURN_LAST_ERROR_IF_FALSE(GetRgnBox(hrgn, &rcInvalid));
+    RETURN_HR(_InvalidateRect(&rcInvalid));
 }

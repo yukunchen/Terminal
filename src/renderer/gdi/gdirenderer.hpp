@@ -30,10 +30,10 @@ namespace Microsoft
                 HRESULT SetHwnd(_In_ HWND const hwnd);
 
                 HRESULT InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);
-                void InvalidateScroll(_In_ const COORD* const pcoordDelta);
-                void InvalidateSystem(_In_ const RECT* const prcDirtyClient);
-                void Invalidate(_In_ const SMALL_RECT* const psrRegion);
-                void InvalidateAll();
+                HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta);
+                HRESULT InvalidateSystem(_In_ const RECT* const prcDirtyClient);
+                HRESULT Invalidate(_In_ const SMALL_RECT* const psrRegion);
+                HRESULT InvalidateAll();
 
                 HRESULT StartPaint();
                 HRESULT EndPaint();
@@ -54,7 +54,7 @@ namespace Microsoft
 
                 HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ bool const fIncludeBackgrounds);
                 HRESULT UpdateFont(_Inout_ FontInfo* const pfiFontInfo);
-                void UpdateDpi(_In_ int const iDpi);
+                HRESULT UpdateDpi(_In_ int const iDpi);
 
                 HRESULT GetProposedFont(_Inout_ FontInfo* const pfiFontInfo, _In_ int const iDpi);
 
@@ -91,12 +91,12 @@ namespace Microsoft
                 SIZE _szInvalidScroll;
                 RECT _rcInvalid;
                 bool _fInvalidRectUsed;
-                void _InvalidCombine(_In_ const RECT* const prc);
-                void _InvalidOffset(_In_ const POINT* const ppt);
-                void _InvalidRestrict();
+                HRESULT _InvalidCombine(_In_ const RECT* const prc);
+                HRESULT _InvalidOffset(_In_ const POINT* const ppt);
+                HRESULT _InvalidRestrict();
 
-                void _InvalidateRect(_In_ const RECT* const prc);
-                void _InvalidateRgn(_In_ HRGN hrgn);
+                HRESULT _InvalidateRect(_In_ const RECT* const prc);
+                HRESULT _InvalidateRgn(_In_ HRGN hrgn);
 
                 HRESULT _PaintBackgroundColor(_In_ const RECT* const prc);
 

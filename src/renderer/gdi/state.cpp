@@ -202,10 +202,11 @@ HRESULT GdiEngine::UpdateFont(_Inout_ FontInfo* const pfiFont)
 // Arguments:
 // - iDpi - The Dots Per Inch to use for scaling. We will use this relative to the system default DPI defined in Windows headers as a constant.
 // Return Value:
-// - <none>
-void GdiEngine::UpdateDpi(_In_ int const iDpi)
+// - HRESULT S_OK, GDI-based error code, or safemath error
+HRESULT GdiEngine::UpdateDpi(_In_ int const iDpi)
 {
     _iCurrentDpi = iDpi;
+    return S_OK;
 }
 
 // Routine Description:
