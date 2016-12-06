@@ -1262,7 +1262,8 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin, _I
         {
             fSuccess = false;
         }
-        else if (sActualTop == 0 && sActualBottom == sScreenHeight) {
+        else if (sActualTop == 0 && sActualBottom == sScreenHeight)
+        {
             // Client requests setting margins to the entire screen 
             //    - clear them instead of setting them.
             // This is for apps like `apt` (NOT `apt-get` which set scroll 
