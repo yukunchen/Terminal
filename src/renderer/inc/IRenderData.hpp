@@ -29,7 +29,7 @@ namespace Microsoft
             class IRenderData
             {
             public:
-                virtual const SMALL_RECT* GetViewport() = 0;
+                virtual const SMALL_RECT GetViewport() = 0;
                 virtual const TEXT_BUFFER_INFO* GetTextBuffer() = 0;
                 virtual const FontInfo* GetFontInfo() = 0;
                 virtual const TextAttribute GetDefaultBrushColors() = 0;

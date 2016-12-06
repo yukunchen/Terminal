@@ -39,7 +39,7 @@ public:
     static void s_TraceApi(_In_ const CONSOLE_SETTEXTATTRIBUTE_MSG* const a);
     static void s_TraceApi(_In_ const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a);
 
-    static void s_TraceWindowViewport(_In_ const SMALL_RECT* const psrView);
+    static void s_TraceWindowViewport(_In_ const SMALL_RECT viewport);
 
     static void s_TraceChars(_In_z_ const char* pszMessage, ...);
     static void s_TraceOutput(_In_z_ const char* pszMessage, ...);

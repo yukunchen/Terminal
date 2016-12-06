@@ -107,7 +107,7 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     }
 
     *pStr = L'\0';
-    
+
     USHORT const ColumnWidth = (USHORT) (pStr - SearchString2);
     pwszSearch = SearchString2;
 
@@ -148,7 +148,7 @@ recalc:
                 RecomputeRow = TRUE;
             }
         }
-  
+
         if (RecomputeRow)
         {
             RowIndex = (pScreenInfo->TextInfo->GetFirstRowIndex() + Position.Y) % pScreenInfo->ScreenBufferSize.Y;
@@ -162,7 +162,7 @@ recalc:
             goto recalc;
         }
 #endif
-        if (IgnoreCase ? 
+        if (IgnoreCase ?
             0 == _wcsnicmp(pwszSearch, &Row->CharRow.Chars[Position.X], cchSearch) :
             0 == wcsncmp(pwszSearch, &Row->CharRow.Chars[Position.X], cchSearch))
         {
@@ -191,7 +191,7 @@ recalc:
 
 INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
-    // This bool is used to track which option - up or down - was used to perform the last search. That way, the next time the 
+    // This bool is used to track which option - up or down - was used to perform the last search. That way, the next time the
     //   find dialog is opened, it will default to the last used option.
     static bool fFindSearchUp = true;
     WCHAR szBuf[SEARCH_STRING_LENGTH + 1];
@@ -247,30 +247,30 @@ INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
                         SMALL_RECT srSelection;
                         pSelection->GetSelectionRectangle(&srSelection);
 
-                        if (srSelection.Left < ScreenInfo->BufferViewport.Left)
+                        if (srSelection.Left < ScreenInfo->GetBufferViewport().Left)
                         {
                             Position.X = srSelection.Left;
                         }
-                        else if (srSelection.Right > ScreenInfo->BufferViewport.Right)
+                        else if (srSelection.Right > ScreenInfo->GetBufferViewport().Right)
                         {
                             Position.X = srSelection.Right - ScreenInfo->GetScreenWindowSizeX() + 1;
                         }
                         else
                         {
-                            Position.X = ScreenInfo->BufferViewport.Left;
+                            Position.X = ScreenInfo->GetBufferViewport().Left;
                         }
 
-                        if (srSelection.Top < ScreenInfo->BufferViewport.Top)
+                        if (srSelection.Top < ScreenInfo->GetBufferViewport().Top)
                         {
                             Position.Y = srSelection.Top;
                         }
-                        else if (srSelection.Bottom > ScreenInfo->BufferViewport.Bottom)
+                        else if (srSelection.Bottom > ScreenInfo->GetBufferViewport().Bottom)
                         {
                             Position.Y = srSelection.Bottom - ScreenInfo->GetScreenWindowSizeY() + 1;
                         }
                         else
                         {
-                            Position.Y = ScreenInfo->BufferViewport.Top;
+                            Position.Y = ScreenInfo->GetBufferViewport().Top;
                         }
                         ScreenInfo->SetViewportOrigin(TRUE, Position);
 

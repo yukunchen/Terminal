@@ -20,7 +20,7 @@ Revision History:
 #include "server.h"
 
 void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
-                             _In_ const SMALL_RECT * const psrConvRegion);
+                             _In_ const SMALL_RECT srConvRegion);
 
 RECT GetImeSuggestionWindowPos();
 

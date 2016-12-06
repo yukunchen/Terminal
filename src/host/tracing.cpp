@@ -171,13 +171,13 @@ void Tracing::s_TraceApi(_In_ const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const 
         );
 }
 
-void Tracing::s_TraceWindowViewport(_In_ const SMALL_RECT* const psrView)
+void Tracing::s_TraceWindowViewport(_In_ const SMALL_RECT viewport)
 {
     TraceLoggingWrite(g_hConhostV2EventTraceProvider, "WindowViewport",
-        TraceLoggingInt32(psrView->Bottom - psrView->Top, "ViewHeight"),
-        TraceLoggingInt32(psrView->Right - psrView->Left, "ViewWidth"),
-        TraceLoggingInt32(psrView->Top, "OriginTop"),
-        TraceLoggingInt32(psrView->Left, "OriginLeft"),
+        TraceLoggingInt32(viewport.Bottom - viewport.Top, "ViewHeight"),
+        TraceLoggingInt32(viewport.Right - viewport.Left, "ViewWidth"),
+        TraceLoggingInt32(viewport.Top, "OriginTop"),
+        TraceLoggingInt32(viewport.Left, "OriginLeft"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
         TraceLoggingKeyword(TraceKeywords::General)
         );

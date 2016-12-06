@@ -84,13 +84,18 @@ HRESULT ApiRoutines::GetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* c
 HRESULT DoSrvGetConsoleScreenBufferInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* pInfo)
 {
     pInfo->bFullscreenSupported = FALSE; // traditional full screen with the driver support is no longer supported.
-    RETURN_NTSTATUS(pScreenInfo->GetScreenBufferInformation(&pInfo->dwSize,
-                                                            &pInfo->dwCursorPosition,
-                                                            &pInfo->srWindow,
-                                                            &pInfo->wAttributes,
-                                                            &pInfo->dwMaximumWindowSize,
-                                                            &pInfo->wPopupAttributes,
-                                                            pInfo->ColorTable));
+    NTSTATUS Status = pScreenInfo->GetScreenBufferInformation(&pInfo->dwSize,
+                                                              &pInfo->dwCursorPosition,
+                                                              &pInfo->srWindow,
+                                                              &pInfo->wAttributes,
+                                                              &pInfo->dwMaximumWindowSize,
+                                                              &pInfo->wPopupAttributes,
+                                                              pInfo->ColorTable);
+    // Callers of this function expect to recieve an exclusive rect, not an inclusive one.
+    pInfo->srWindow.Right += 1;
+    pInfo->srWindow.Bottom += 1;
+
+    RETURN_NTSTATUS(Status);
 }
 
 HRESULT ApiRoutines::GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
@@ -420,22 +425,25 @@ HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo, _In_
     COORD WindowOrigin;
     WindowOrigin.X = 0;
     WindowOrigin.Y = 0;
-    if (pScreenInfo->BufferViewport.Left > pCursorPosition->X)
     {
-        WindowOrigin.X = pCursorPosition->X - pScreenInfo->BufferViewport.Left;
-    }
-    else if (pScreenInfo->BufferViewport.Right < pCursorPosition->X)
-    {
-        WindowOrigin.X = pCursorPosition->X - pScreenInfo->BufferViewport.Right;
-    }
+        const SMALL_RECT currentViewport = pScreenInfo->GetBufferViewport();
+        if (currentViewport.Left > pCursorPosition->X)
+        {
+            WindowOrigin.X = pCursorPosition->X - currentViewport.Left;
+        }
+        else if (currentViewport.Right < pCursorPosition->X)
+        {
+            WindowOrigin.X = pCursorPosition->X - currentViewport.Right;
+        }
 
-    if (pScreenInfo->BufferViewport.Top > pCursorPosition->Y)
-    {
-        WindowOrigin.Y = pCursorPosition->Y - pScreenInfo->BufferViewport.Top;
-    }
-    else if (pScreenInfo->BufferViewport.Bottom < pCursorPosition->Y)
-    {
-        WindowOrigin.Y = pCursorPosition->Y - pScreenInfo->BufferViewport.Bottom;
+        if (currentViewport.Top > pCursorPosition->Y)
+        {
+            WindowOrigin.Y = pCursorPosition->Y - currentViewport.Top;
+        }
+        else if (currentViewport.Bottom < pCursorPosition->Y)
+        {
+            WindowOrigin.Y = pCursorPosition->Y - currentViewport.Bottom;
+        }
     }
 
     RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetViewportOrigin(FALSE, WindowOrigin));
@@ -483,10 +491,11 @@ HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
 
     if (!IsAbsoluteRectangle)
     {
-        Window.Left += pScreenInfo->BufferViewport.Left;
-        Window.Right += pScreenInfo->BufferViewport.Right;
-        Window.Top += pScreenInfo->BufferViewport.Top;
-        Window.Bottom += pScreenInfo->BufferViewport.Bottom;
+        SMALL_RECT currentViewport = pScreenInfo->GetBufferViewport();
+        Window.Left += currentViewport.Left;
+        Window.Right += currentViewport.Right;
+        Window.Top += currentViewport.Top;
+        Window.Bottom += currentViewport.Bottom;
     }
 
     RETURN_HR_IF(E_INVALIDARG, (Window.Right < Window.Left || Window.Bottom < Window.Top));
@@ -505,7 +514,7 @@ HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
     {
         // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
         pScreenInfo->PostUpdateWindowSize();
-        WriteToScreen(pScreenInfo, &pScreenInfo->BufferViewport);
+        WriteToScreen(pScreenInfo, pScreenInfo->GetBufferViewport());
     }
 
     RETURN_NTSTATUS(Status);
@@ -655,7 +664,7 @@ NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attribut
         }
 
         // force repaint of entire line
-        WriteToScreen(ScreenInfo, &ScreenInfo->BufferViewport);
+        WriteToScreen(ScreenInfo, ScreenInfo->GetBufferViewport());
     }
 
     return STATUS_SUCCESS;
@@ -946,7 +955,7 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(_In_ SCREEN_INFORMATION* pScreenInfo, _I
     }
     if (NT_SUCCESS(Status))
     {
-        SMALL_RECT srViewport = pScreenInfo->BufferViewport;
+        SMALL_RECT srViewport = pScreenInfo->GetBufferViewport();
         SMALL_RECT srScrollMargins = pScreenInfo->GetScrollMargins();
         srScrollMargins.Top = psrScrollMargins->Top;
         srScrollMargins.Bottom = psrScrollMargins->Bottom;
