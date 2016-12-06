@@ -22,7 +22,8 @@ SMALL_RECT GdiEngine::GetDirtyRectInChars()
 {
     RECT rc = _psInvalidData.rcPaint;
 
-    SMALL_RECT sr = _ScaleByFont(&rc);
+    SMALL_RECT sr = { 0 };
+    LOG_IF_FAILED(_ScaleByFont(&rc, &sr));
 
     return sr;
 }
@@ -64,48 +65,58 @@ bool GdiEngine::IsCharFullWidthByFont(_In_ WCHAR const wch)
 // Routine Description:
 // - Scales a character region (SMALL_RECT) into a pixel region (RECT) by the current font size.
 // Arguments:
-// - Character region (SMALL_RECT) from the console text buffer.
+// - psr = Character region (SMALL_RECT) from the console text buffer.
+// - prc - Pixel region (RECT) for drawing to the client surface.
 // Return Value:
-// - Pixel region (RECT) for drawing to the client surface.
-RECT GdiEngine::_ScaleByFont(const SMALL_RECT* const psr) const
+// - S_OK or safe math failure value.
+HRESULT GdiEngine::_ScaleByFont(_In_ const SMALL_RECT* const psr, _Out_ RECT* const prc) const
 {
     COORD const coordFontSize = _GetFontSize();
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
+
     RECT rc;
+    RETURN_IF_FAILED(LongMult(psr->Left, coordFontSize.X, &rc.left));
+    RETURN_IF_FAILED(LongMult(psr->Right, coordFontSize.X, &rc.right));
+    RETURN_IF_FAILED(LongMult(psr->Top, coordFontSize.Y, &rc.top));
+    RETURN_IF_FAILED(LongMult(psr->Bottom, coordFontSize.Y, &rc.bottom));
 
-    rc.left = psr->Left * coordFontSize.X;
-    rc.right = psr->Right * coordFontSize.X;
-    rc.top = psr->Top * coordFontSize.Y;
-    rc.bottom = psr->Bottom * coordFontSize.Y;
+    *prc = rc;
 
-    return rc;
+    return S_OK;
 }
 
 // Routine Description:
 // - Scales a character coordinate (COORD) into a pixel coordinate (POINT) by the current font size.
 // Arguments:
-// - Character coordinate (COORD) from the console text buffer.
+// - pcoord - Character coordinate (COORD) from the console text buffer.
+// - ppt - Pixel coordinate (POINT) for drawing to the client surface.
 // Return Value:
-// - Pixel coordinate (POINT) for drawing to the client surface.
-POINT GdiEngine::_ScaleByFont(const COORD* const pcoord) const
+// - S_OK or safe math failure value.
+HRESULT GdiEngine::_ScaleByFont(_In_ const COORD* const pcoord, _Out_ POINT* const ppt) const
 {
     COORD const coordFontSize = _GetFontSize();
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
+
     POINT pt;
+    RETURN_IF_FAILED(LongMult(pcoord->X, coordFontSize.X, &pt.x));
+    RETURN_IF_FAILED(LongMult(pcoord->Y, coordFontSize.Y, &pt.y));
 
-    pt.x = pcoord->X * coordFontSize.X;
-    pt.y = pcoord->Y * coordFontSize.Y;
+    *ppt = pt;
 
-    return pt;
+    return S_OK;
 }
 
 // Routine Description:
 // - Scales a pixel region (RECT) into a character region (SMALL_RECT) by the current font size.
 // Arguments:
-// - Pixel region (RECT) from drawing to the client surface.
+// - prc - Pixel region (RECT) from drawing to the client surface.
+// - psr - Character region (SMALL_RECT) from the console text buffer.
 // Return Value:
-// - Character region (SMALL_RECT) from the console text buffer.
-SMALL_RECT GdiEngine::_ScaleByFont(const RECT* const prc) const
+// - S_OK or safe math failure value.
+HRESULT GdiEngine::_ScaleByFont(_In_ const RECT* const prc, _Out_ SMALL_RECT* const psr) const
 {
     COORD const coordFontSize = _GetFontSize();
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
 
     SMALL_RECT sr;
     sr.Left = static_cast<SHORT>(prc->left / coordFontSize.X);
@@ -130,14 +141,35 @@ SMALL_RECT GdiEngine::_ScaleByFont(const RECT* const prc) const
     // C Conclusion = this works because our addition can never completely push us over to adding an additional ch to the rectangle.
     // So the algorithm below is using the C conclusion's math. 
 
-    sr.Right = static_cast<SHORT>((prc->right + coordFontSize.X - 1) / coordFontSize.X);
-    sr.Bottom = static_cast<SHORT>((prc->bottom + coordFontSize.Y - 1) / coordFontSize.Y);
 
-    // Pixels are exclusive and character rects are inclusive.
-    sr.Right--;
-    sr.Bottom--;
+    // Do math as long and fit to short at the end.
+    LONG lRight = prc->right;
+    LONG lBottom = prc->bottom;
 
-    return sr;
+    // Add the width of a font (in pixels) to the rect
+    RETURN_IF_FAILED(LongAdd(lRight, coordFontSize.X, &lRight));
+    RETURN_IF_FAILED(LongAdd(lBottom, coordFontSize.Y, &lBottom));
+
+    // Subtract 1 to ensure that we round down.
+    RETURN_IF_FAILED(LongSub(lRight, 1, &lRight));
+    RETURN_IF_FAILED(LongSub(lBottom, 1, &lBottom));
+
+    // Divide by font size to see how many rows/columns
+    // note: no safe math for div.
+    lRight /= coordFontSize.X;
+    lBottom /= coordFontSize.Y;
+
+    // Attempt to fit into SMALL_RECT's short variable.
+    RETURN_IF_FAILED(LongToShort(lRight, &sr.Right));
+    RETURN_IF_FAILED(LongToShort(lBottom, &sr.Bottom));
+
+    // Pixels are exclusive and character rects are inclusive. Subtract 1 to go from exclusive to inclusive rect.
+    RETURN_IF_FAILED(ShortSub(sr.Right, 1, &sr.Right));
+    RETURN_IF_FAILED(ShortSub(sr.Bottom, 1, &sr.Bottom));
+
+    *psr = sr;
+
+    return S_OK;
 }
 
 // Routine Description:

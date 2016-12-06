@@ -31,14 +31,15 @@ void GdiEngine::InvalidateSystem(_In_ const RECT* const prcDirtyClient)
 // - <none>
 void GdiEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 {
-    if (pcoordDelta->X != 0 ||
-        pcoordDelta->Y != 0)
+    if (pcoordDelta->X != 0 || pcoordDelta->Y != 0)
     {
-        POINT const ptDelta = _ScaleByFont(pcoordDelta);
-
-        _InvalidOffset(&ptDelta);
-        _szInvalidScroll.cx += ptDelta.x;
-        _szInvalidScroll.cy += ptDelta.y;
+        POINT ptDelta = { 0 };
+        if (SUCCEEDED(LOG_IF_FAILED(_ScaleByFont(pcoordDelta, &ptDelta))))
+        {
+            _InvalidOffset(&ptDelta);
+            _szInvalidScroll.cx += ptDelta.x;
+            _szInvalidScroll.cy += ptDelta.y;
+        }
     }
 }
 
@@ -48,35 +49,29 @@ void GdiEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 // - rgsrSelection - Array of character region rectangles (one per line) that represent the selected area
 // - cRectangles - Length of the array above.
 // Return Value:
-// - <none>
-void GdiEngine::InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
+// - HRESULT S_OK or GDI-based error code
+HRESULT GdiEngine::InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
 {
     // Get the currently selected area as a GDI region
-    HRGN hrgnSelection = CreateRectRgn(0, 0, 0, 0);
-    NTSTATUS status = NT_TESTNULL_GLE(hrgnSelection);
-    if (NT_SUCCESS(status))
+    wil::unique_hrgn hrgnSelection(CreateRectRgn(0, 0, 0, 0));
+    RETURN_LAST_ERROR_IF_NULL(hrgnSelection);
+
+    RETURN_IF_FAILED(_PaintSelectionCalculateRegion(rgsrSelection, cRectangles, hrgnSelection.get()));
+
+    // XOR against the region we saved from the last time we rendered to find out what to invalidate
+    // This is the space that needs to be inverted to either select or deselect the existing region into the new one.
+    wil::unique_hrgn hrgnInvalid(CreateRectRgn(0, 0, 0, 0));
+    RETURN_LAST_ERROR_IF_NULL(hrgnInvalid);
+
+    int const iCombineResult = CombineRgn(hrgnInvalid.get(), _hrgnGdiPaintedSelection, hrgnSelection.get(), RGN_XOR);
+
+    if (NULLREGION != iCombineResult && ERROR != iCombineResult)
     {
-        status = _PaintSelectionCalculateRegion(rgsrSelection, cRectangles, hrgnSelection);
-
-        // XOR against the region we saved from the last time we rendered to find out what to invalidate
-        // This is the space that needs to be inverted to either select or deselect the existing region into the new one.
-        HRGN hrgnInvalid = CreateRectRgn(0, 0, 0, 0);
-        status = NT_TESTNULL_GLE(hrgnInvalid);
-        if (NT_SUCCESS(status))
-        {
-            int const iCombineResult = CombineRgn(hrgnInvalid, _hrgnGdiPaintedSelection, hrgnSelection, RGN_XOR);
-
-            if (iCombineResult != NULLREGION && iCombineResult != ERROR)
-            {
-                // Invalidate that.
-                _InvalidateRgn(hrgnInvalid);
-            }
-
-            DeleteObject(hrgnInvalid);
-        }
-
-        DeleteObject(hrgnSelection);
+        // Invalidate that.
+        _InvalidateRgn(hrgnInvalid.get());
     }
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -88,8 +83,11 @@ void GdiEngine::InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rg
 // - <none>
 void GdiEngine::Invalidate(const SMALL_RECT* const psrRegion)
 {
-    RECT const rcRegion = _ScaleByFont(psrRegion);
-    _InvalidateRect(&rcRegion);
+    RECT rcRegion = { 0 };
+    if (SUCCEEDED(LOG_IF_FAILED(_ScaleByFont(psrRegion, &rcRegion))))
+    {
+        _InvalidateRect(&rcRegion);
+    }
 }
 
 // Routine Description:
@@ -102,7 +100,7 @@ void GdiEngine::Invalidate(const SMALL_RECT* const psrRegion)
 void GdiEngine::InvalidateAll()
 {
     RECT rc;
-    if (FALSE != GetClientRect(_hwndTargetWindow, &rc))
+    if (FALSE != LOG_LAST_ERROR_IF_FALSE(GetClientRect(_hwndTargetWindow, &rc)))
     {
         InvalidateSystem(&rc);
     }
@@ -160,12 +158,15 @@ void GdiEngine::_InvalidRestrict()
 {
     // Ensure that the invalid area remains within the bounds of the client area
     RECT rcClient;
-    GetClientRect(_hwndTargetWindow, &rcClient);
 
-    _rcInvalid.left = max(_rcInvalid.left, rcClient.left);
-    _rcInvalid.right = min(_rcInvalid.right, rcClient.right);
-    _rcInvalid.top = max(_rcInvalid.top, rcClient.top);
-    _rcInvalid.bottom = min(_rcInvalid.bottom, rcClient.bottom);
+    // Do restriction only if retrieving the client rect was successful.
+    if (FALSE != LOG_LAST_ERROR_IF_FALSE(GetClientRect(_hwndTargetWindow, &rcClient)))
+    {        
+        _rcInvalid.left = max(_rcInvalid.left, rcClient.left);
+        _rcInvalid.right = min(_rcInvalid.right, rcClient.right);
+        _rcInvalid.top = max(_rcInvalid.top, rcClient.top);
+        _rcInvalid.bottom = min(_rcInvalid.bottom, rcClient.bottom);
+    }
 }
 
 // Routine Description:

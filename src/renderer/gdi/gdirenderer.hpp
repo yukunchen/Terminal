@@ -29,42 +29,44 @@ namespace Microsoft
 
                 HRESULT SetHwnd(_In_ HWND const hwnd);
 
-                void InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);
+                HRESULT InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);
                 void InvalidateScroll(_In_ const COORD* const pcoordDelta);
                 void InvalidateSystem(_In_ const RECT* const prcDirtyClient);
                 void Invalidate(_In_ const SMALL_RECT* const psrRegion);
                 void InvalidateAll();
 
-                bool StartPaint();
-                void EndPaint();
+                HRESULT StartPaint();
+                HRESULT EndPaint();
 
-                void ScrollFrame();
+                HRESULT ScrollFrame();
 
-                void PaintBackground();
-                void PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine, 
-                                     _In_ size_t const cchLine, 
-                                     _In_ COORD const coordTarget, 
-                                     _In_ size_t const cchCharWidths,
-                                     _In_ bool const fTrimLeft);
-                void PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget);
-                void PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);
+                HRESULT PaintBackground();
+                HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
+                                        _In_ size_t const cchLine,
+                                        _In_ COORD const coordTarget,
+                                        _In_ size_t const cchCharWidths,
+                                        _In_ bool const fTrimLeft);
+                HRESULT PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget);
+                HRESULT PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);
 
-                void PaintCursor(_In_ COORD const coordCursor, _In_ ULONG const ulCursorHeightPercent, _In_ bool const fIsDoubleWidth);
-                void ClearCursor();
+                HRESULT PaintCursor(_In_ COORD const coordCursor, _In_ ULONG const ulCursorHeightPercent, _In_ bool const fIsDoubleWidth);
+                HRESULT ClearCursor();
 
                 HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ bool const fIncludeBackgrounds);
                 HRESULT UpdateFont(_Inout_ FontInfo* const pfiFontInfo);
                 void UpdateDpi(_In_ int const iDpi);
 
                 HRESULT GetProposedFont(_Inout_ FontInfo* const pfiFontInfo, _In_ int const iDpi);
-                
+
                 SMALL_RECT GetDirtyRectInChars();
                 COORD GetFontSize();
                 bool IsCharFullWidthByFont(_In_ WCHAR const wch);
 
             private:
                 HWND _hwndTargetWindow;
+
                 bool _fPaintStarted;
+
                 PAINTSTRUCT _psInvalidData;
                 HDC _hdcMemoryContext;
                 HFONT _hfont;
@@ -76,7 +78,7 @@ namespace Microsoft
                 HRESULT _FlushBufferLines();
 
                 RECT _rcCursorInvert;
-                
+
                 COORD _coordFontLast;
                 int _iCurrentDpi;
 
@@ -84,7 +86,7 @@ namespace Microsoft
 
                 SIZE _szMemorySurface;
                 HBITMAP _hbitmapMemorySurface;
-                void _PrepareMemoryBitmap(_In_ HWND const hwnd);
+                HRESULT _PrepareMemoryBitmap(_In_ HWND const hwnd);
 
                 SIZE _szInvalidScroll;
                 RECT _rcInvalid;
@@ -96,23 +98,23 @@ namespace Microsoft
                 void _InvalidateRect(_In_ const RECT* const prc);
                 void _InvalidateRgn(_In_ HRGN hrgn);
 
-                void _PaintBackgroundColor(_In_ const RECT* const prc);
+                HRESULT _PaintBackgroundColor(_In_ const RECT* const prc);
 
                 HRGN _hrgnGdiPaintedSelection;
-                NTSTATUS _PaintSelectionCalculateRegion(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, 
-                                                        _In_ UINT const cRectangles, 
-                                                        _Inout_ HRGN const hrgnSelection) const;
+                HRESULT _PaintSelectionCalculateRegion(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection,
+                                                       _In_ UINT const cRectangles,
+                                                       _Inout_ HRGN const hrgnSelection) const;
 
                 static const ULONG s_ulMinCursorHeightPercent = 25;
                 static const ULONG s_ulMaxCursorHeightPercent = 100;
 
-                POINT _ScaleByFont(_In_ const COORD* const pcoord) const;
-                RECT _ScaleByFont(_In_ const SMALL_RECT* const psr) const;
-                SMALL_RECT _ScaleByFont(_In_ const RECT* const prc) const;
+                HRESULT _ScaleByFont(_In_ const COORD* const pcoord, _Out_ POINT* const ppt) const;
+                HRESULT _ScaleByFont(_In_ const SMALL_RECT* const psr, _Out_ RECT* const prc) const;
+                HRESULT _ScaleByFont(_In_ const RECT* const prc, _Out_ SMALL_RECT* const psr) const;
 
                 static int s_ScaleByDpi(_In_ const int iPx, _In_ const int iDpi);
                 static int s_ShrinkByDpi(_In_ const int iPx, _In_ const int iDpi);
-               
+
                 POINT _GetInvalidRectPoint() const;
                 SIZE _GetInvalidRectSize() const;
                 SIZE _GetRectSize(_In_ const RECT* const pRect) const;

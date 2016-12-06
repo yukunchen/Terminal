@@ -86,45 +86,49 @@ HRESULT Renderer::s_CreateInstance(_In_ IRenderData* const pData, _In_ IRenderEn
 // Arguments:
 // - <none>
 // Return Value:
-// - <none>
-void Renderer::PaintFrame()
+// - HRESULT S_OK, GDI error, Safe Math error, or state/argument errors.
+HRESULT Renderer::PaintFrame()
 {
-    assert(_pEngine != nullptr);
+    RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _pEngine);
 
     // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
     _CheckViewportAndScroll();
 
-    if (_pEngine->StartPaint())
-    {
-        // A. Prep Colors
-        LOG_IF_FAILED(_UpdateDrawingBrushes(_pData->GetDefaultBrushColors(), true));
+    // Try to start painting a frame
+    HRESULT const hr = _pEngine->StartPaint();
+    RETURN_IF_FAILED(hr); // Return errors
+    RETURN_HR_IF(S_OK, S_FALSE == hr); // Return early if there's nothing to paint.
 
-        // B. Clear Overlays
-        _ClearOverlays();
+    // A. Prep Colors
+    LOG_IF_FAILED(_UpdateDrawingBrushes(_pData->GetDefaultBrushColors(), true));
 
-        // C. Perform Scroll Operations
-        _PerformScrolling();
+    // B. Clear Overlays
+    _ClearOverlays();
 
-        // 1. Paint Background
-        _PaintBackground();
+    // C. Perform Scroll Operations
+    _PerformScrolling();
 
-        // 2. Paint Rows of Text
-        _PaintBufferOutput();
+    // 1. Paint Background
+    _PaintBackground();
 
-        // 3. Paint Input
-        //_PaintCookedInput(); // unnecessary, input is also stored in the output buffer.
+    // 2. Paint Rows of Text
+    _PaintBufferOutput();
 
-        // 4. Paint IME composition area
-        _PaintImeCompositionString();
+    // 3. Paint Input
+    //_PaintCookedInput(); // unnecessary, input is also stored in the output buffer.
 
-        // 5. Paint Selection
-        _PaintSelection();
+    // 4. Paint IME composition area
+    _PaintImeCompositionString();
 
-        // 6. Paint Cursor
-        _PaintCursor();
+    // 5. Paint Selection
+    _PaintSelection();
 
-        _pEngine->EndPaint();
-    }
+    // 6. Paint Cursor
+    _PaintCursor();
+
+    LOG_IF_FAILED(_pEngine->EndPaint());
+
+    return S_OK;
 }
 
 void Renderer::_NotifyPaintFrame()

@@ -35,7 +35,7 @@ namespace Microsoft
                 static HRESULT s_CreateInstance(_In_ IRenderData* const pData, _In_ IRenderEngine* const pEngine, _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
                 ~Renderer();
 
-                void PaintFrame();
+                HRESULT PaintFrame();
 
                 void TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient);
                 void TriggerRedraw(_In_ const SMALL_RECT* const psrRegion);

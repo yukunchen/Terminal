@@ -305,7 +305,6 @@ HRESULT GdiEngine::_GetProposedFont(_Inout_ FontInfo* const pfiFont, _In_ int co
         }
     }
 
-
     // Now fill up the FontInfo we were passed with the full details of which font we actually chose
     {
         // Get the actual font face that we chose

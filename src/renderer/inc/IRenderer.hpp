@@ -26,7 +26,7 @@ namespace Microsoft
             public:
                 virtual ~IRenderer() {};
 
-                virtual void PaintFrame() = 0;
+                virtual HRESULT PaintFrame() = 0;
 
                 virtual void TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient) = 0;
 
