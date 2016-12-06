@@ -97,6 +97,7 @@ namespace Microsoft
                 virtual bool TabClear(_In_ SHORT const sClearType); // TBC
                 virtual bool DesignateCharset(_In_ wchar_t const wchCharset); // DesignateCharset
                 virtual bool SoftReset(); // DECSTR
+                virtual bool HardReset(); // RIS
                 virtual bool EnableVT200MouseMode(_In_ bool const fEnabled); // ?1000
                 virtual bool EnableUTF8ExtendedMouseMode(_In_ bool const fEnabled); // ?1005
                 virtual bool EnableSGRExtendedMouseMode(_In_ bool const fEnabled); // ?1006
@@ -127,6 +128,7 @@ namespace Microsoft
                 bool _EraseSingleLineHelper(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pcsbiex, _In_ EraseType const eraseType, _In_ SHORT const sLineId, _In_ WORD const wFillColor) const;
                 void _SetGraphicsOptionHelper(_In_ GraphicsOptions const opt, _Inout_ WORD* const pAttr);
                 bool _EraseSingleLineDistanceHelper(_In_ COORD const coordStartPosition, _In_ DWORD const dwLength, _In_ WORD const wFillColor) const;
+                bool _EraseScrollback() const;
                 void _SetGraphicsOptionHelper(_In_ GraphicsOptions const opt, _Inout_ WORD* const pAttr) const;
                 bool _InsertDeleteHelper(_In_ unsigned int const uiCount, _In_ bool const fIsInsert) const;
                 bool _ScrollMovement(_In_ ScrollDirection const dir, _In_ unsigned int const uiDistance) const;
@@ -148,6 +150,8 @@ namespace Microsoft
                 COORD _coordSavedCursor;
                 WORD _wBrightnessState;
                 SMALL_RECT _srScrollMargins;
+
+                bool _fSetColumnsEnabled;
 
                 bool _SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, 
                                          _In_ size_t const cOptions, 

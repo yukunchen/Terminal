@@ -33,6 +33,9 @@ AdaptDispatch::AdaptDispatch(_In_ ConGetSet* const pConApi, _In_ AdaptDefaults* 
     _coordSavedCursor.X = 1;
     _coordSavedCursor.Y = 1;
     _srScrollMargins = {0}; // initially, there are no scroll margins.
+    _fSetColumnsEnabled = false; // by default, DECSCPP is disabled.
+    // TODO:10086990 - Create a setting to re-enable this.
+
 }
 
 bool AdaptDispatch::CreateInstance(_In_ ConGetSet* pConApi,
@@ -683,6 +686,13 @@ bool AdaptDispatch::EraseCharacters(_In_ unsigned int const uiNumChars)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EraseInDisplay(_In_ EraseType const eraseType)
 {
+
+    // First things first. If this is a "Scrollback" clear, then just do that.
+    if (eraseType == EraseType::Scrollback)
+    {
+        return _EraseScrollback();
+    }
+
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
@@ -978,7 +988,13 @@ bool AdaptDispatch::ScrollDown(_In_ unsigned int const uiDistance)
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetColumns(_In_ unsigned int const uiColumns)
-{ 
+{
+    if (!_fSetColumnsEnabled) 
+    {
+        // Only set columns if that option is available. Return true, as this is technically a successful handling.
+        return true;
+    }
+
     SHORT sColumns;
     bool fSuccess = SUCCEEDED(UIntToShort(uiColumns, &sColumns));
     if (fSuccess)
@@ -1451,6 +1467,110 @@ bool AdaptDispatch::SoftReset()
     // SetTopBottomMargins already moved the cursor to 1,1 
     if (fSuccess) fSuccess = CursorSavePosition(); // Home position.
 
+    return fSuccess;
+}
+
+//Routine Description:
+// Full Reset - Perform a hard reset of the terminal. http://vt100.net/docs/vt220-rm/chapter4.html
+//  RIS performs the following actions: (Items with sub-bullets are supported)
+//   - Performs a communications line disconnect.
+//   - Clears UDKs.
+//   - Clears a down-line-loaded character set.
+//   - Clears the screen.
+//      * This is like Erase in Display (3), also clearing scrollback, as well as ED(2)
+//   - Returns the cursor to the upper-left corner of the screen.
+//      * CUP(1;1)
+//   - Sets the SGR state to normal.
+//      * SGR(Off)
+//   - Sets the selective erase attribute write state to "not erasable".
+//   - Sets all character sets to the default.
+//      * G0(USASCII)
+//Arguments:
+// <none>
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::HardReset()
+{
+    // Clears the screen - Needs to be done in two operations.
+    bool fSuccess = _EraseScrollback();
+    if (fSuccess) fSuccess = EraseInDisplay(EraseType::All);
+
+    // Cursor to 1,1
+    if (fSuccess) fSuccess = CursorPosition(1, 1);
+
+    // Sets the SGR state to normal.
+    GraphicsOptions opt = GraphicsOptions::Off;
+    if (fSuccess) fSuccess = SetGraphicsRendition(&opt, 1); // Normal rendition.
+    
+    if (fSuccess) fSuccess = DesignateCharset(TermDispatch::VTCharacterSets::USASCII); // Default Charset
+
+    return fSuccess;
+}
+
+//Routine Description:
+// Erase Scrollback (^[[3J - ED extension by xterm)
+//  Because conhost doesn't exactly have a scrollback, We have to be tricky here.
+//  We need to move the entire viewport to 0,0, and clear everything outside (0,0,viewportWidth, viewportHeight)
+//      To give the appearance that everything above the viewport was cleared.
+//  We don't want to save the text BELOW the viewport, because in *nix, there isn't anything there 
+//      (There isnt a scroll-forward, only a scrollback)
+//Arguments:
+// <none>
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::_EraseScrollback() const
+{
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    if (fSuccess)
+    {
+        // const COORD coordStartPosition = {0, 0};
+        // const DWORD dwTotalArea = csbiex.dwSize.X*csbiex.dwSize.Y;
+        // fSuccess = _EraseSingleLineDistanceHelper(coordStartPosition, dwTotalArea, csbiex.wAttributes);
+
+        const SMALL_RECT Screen = csbiex.srWindow;
+        const short sWidth = Screen.Right - Screen.Left;
+        const short sHeight = Screen.Bottom - Screen.Top;
+        const COORD Cursor = csbiex.dwCursorPosition;
+
+        // Rectangle to cut out of the existing buffer
+        SMALL_RECT srScroll = Screen;
+        // srScroll.Left = 0;
+        // srScroll.Right = Screen.Right - Screen.Left;
+        // srScroll.Top = Cursor.Y;
+        // srScroll.Bottom = Screen.Bottom;
+        // Paste coordinate for cut text above
+        COORD coordDestination;
+        coordDestination.X = 0;
+        coordDestination.Y = 0;
+
+        // SMALL_RECT srClip = nullptr;//csbiex.srWindow;
+        // srClip.Top = Cursor.Y;
+
+        // Fill character for remaining space left behind by "cut" operation (or for fill if we "cut" the entire line)
+        CHAR_INFO ciFill;
+        ciFill.Attributes = csbiex.wAttributes;
+        ciFill.Char.UnicodeChar = L' ';
+        fSuccess = !!_pConApi->ScrollConsoleScreenBufferW(&srScroll, /*&srClip*/nullptr, coordDestination, &ciFill);
+        if (fSuccess)
+        {
+            // Clear everything after the viewport.
+            const DWORD dwTotalArea = csbiex.dwSize.X * (csbiex.dwSize.Y - sHeight);
+            const COORD coordStartPosition = {0, sHeight};
+            fSuccess = _EraseSingleLineDistanceHelper(coordStartPosition, dwTotalArea, csbiex.wAttributes);
+            if (fSuccess)
+            {
+                // Move the cursor to the same relative location.
+                const COORD newCursor = {Cursor.X-Screen.Left, Cursor.Y-Screen.Top};
+                csbiex.srWindow.Top = 0;
+                csbiex.srWindow.Bottom = sHeight;
+                csbiex.srWindow.Left = 0;
+                csbiex.srWindow.Right = sWidth;
+                fSuccess = !!_pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
+            }
+        }
+    }
     return fSuccess;
 }
 

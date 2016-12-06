@@ -68,7 +68,8 @@ namespace Microsoft
                 {
                     ToEnd,
                     FromBeginning,
-                    All
+                    All,
+                    Scrollback
                 };
 
                 virtual bool EraseInDisplay(_In_ EraseType const /* eraseType*/) { return false; } // ED
@@ -173,6 +174,7 @@ namespace Microsoft
                 };
 
                 virtual bool SoftReset(){ return false; } // DECSTR
+                virtual bool HardReset(){ return false; } // RIS
             };
         };
     };
