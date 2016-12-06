@@ -145,7 +145,7 @@ void Renderer::_NotifyPaintFrame()
 // - <none>
 void Renderer::TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient)
 {
-    _pEngine->InvalidateSystem(prcDirtyClient);
+    LOG_IF_FAILED(_pEngine->InvalidateSystem(prcDirtyClient));
 
     _NotifyPaintFrame();
 }
@@ -164,7 +164,7 @@ void Renderer::TriggerRedraw(_In_ const SMALL_RECT* const psrRegion)
     if (view.TrimToViewport(&srUpdateRegion))
     {
         view.ConvertToOrigin(&srUpdateRegion);
-        _pEngine->Invalidate(&srUpdateRegion);
+        LOG_IF_FAILED(_pEngine->Invalidate(&srUpdateRegion));
 
         _NotifyPaintFrame();
     }
@@ -191,7 +191,7 @@ void Renderer::TriggerRedraw(_In_ const COORD* const pcoord)
 // - <none>
 void Renderer::TriggerRedrawAll()
 {
-    _pEngine->InvalidateAll();
+    LOG_IF_FAILED(_pEngine->InvalidateAll());
 
     _NotifyPaintFrame();
 }
@@ -210,7 +210,7 @@ void Renderer::TriggerSelection()
 
     if (NT_SUCCESS(_GetSelectionRects(&rgsrSelection, &cRectsSelected)))
     {
-        _pEngine->InvalidateSelection(rgsrSelection, cRectsSelected);
+        LOG_IF_FAILED(_pEngine->InvalidateSelection(rgsrSelection, cRectsSelected));
 
         delete[] rgsrSelection;
 
@@ -233,7 +233,7 @@ bool Renderer::_CheckViewportAndScroll()
     coordDelta.X = srOldViewport.Left - srNewViewport.Left;
     coordDelta.Y = srOldViewport.Top - srNewViewport.Top;
 
-    _pEngine->InvalidateScroll(&coordDelta);
+    LOG_IF_FAILED(_pEngine->InvalidateScroll(&coordDelta));
 
     _srViewportPrevious = srNewViewport;
 
@@ -266,7 +266,7 @@ void Renderer::TriggerScroll()
 // - <none>
 void Renderer::TriggerScroll(_In_ const COORD* const pcoordDelta)
 {
-    _pEngine->InvalidateScroll(pcoordDelta);
+    LOG_IF_FAILED(_pEngine->InvalidateScroll(pcoordDelta));
 
     _NotifyPaintFrame();
 }
@@ -280,8 +280,8 @@ void Renderer::TriggerScroll(_In_ const COORD* const pcoordDelta)
 // - <none>
 void Renderer::TriggerFontChange(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo)
 {
-    _pEngine->UpdateDpi(iDpi);
-    _pEngine->UpdateFont(pFontInfo);
+    LOG_IF_FAILED(_pEngine->UpdateDpi(iDpi));
+    LOG_IF_FAILED(_pEngine->UpdateFont(pFontInfo));
 
     _NotifyPaintFrame();
 }
@@ -332,7 +332,7 @@ bool Renderer::IsCharFullWidthByFont(_In_ WCHAR const wch)
 // - <none>
 void Renderer::_PaintBackground()
 {
-    _pEngine->PaintBackground();
+    LOG_IF_FAILED(_pEngine->PaintBackground());
 }
 
 // Routine Description:
@@ -617,7 +617,7 @@ void Renderer::_PaintBufferOutputDoubleByteHelper(_In_reads_(cchLine) PCWCHAR co
         }
 
         // Draw the line
-        _pEngine->PaintBufferLine(pwsSegment, cchSegment, coordTargetAdjustable, cchCharWidths, fTrimLeft);
+        LOG_IF_FAILED(_pEngine->PaintBufferLine(pwsSegment, cchSegment, coordTargetAdjustable, cchCharWidths, fTrimLeft));
 
         delete[] pwsSegment;
     }
@@ -661,7 +661,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ const TextAttribute* const 
     }
 
     // Draw the lines
-    _pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget);
+    LOG_IF_FAILED(_pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
 }
 
 // Routine Description:
@@ -714,7 +714,7 @@ void Renderer::_PaintCursor()
             view.ConvertToOrigin(&coordCursor);
 
             // Draw it within the viewport
-            _pEngine->PaintCursor(coordCursor, ulHeight, fIsDoubleWidth);
+            LOG_IF_FAILED(_pEngine->PaintCursor(coordCursor, ulHeight, fIsDoubleWidth));
         }
     }
 }
@@ -819,7 +819,7 @@ void Renderer::_PaintSelection()
     {
         if (cRectsSelected > 0)
         {
-            _pEngine->PaintSelection(rgsrSelection, cRectsSelected);
+            LOG_IF_FAILED(_pEngine->PaintSelection(rgsrSelection, cRectsSelected));
         }
 
         delete[] rgsrSelection;
@@ -866,7 +866,7 @@ HRESULT Renderer::_UpdateDrawingBrushes(_In_ const TextAttribute* const pTextAtt
 // - <none>
 void Renderer::_ClearOverlays()
 {
-    _pEngine->ClearCursor();
+    LOG_IF_FAILED(_pEngine->ClearCursor());
 }
 
 // Routine Description:
@@ -879,7 +879,7 @@ void Renderer::_ClearOverlays()
 // - <none>
 void Renderer::_PerformScrolling()
 {
-    _pEngine->ScrollFrame();
+    LOG_IF_FAILED(_pEngine->ScrollFrame());
 }
 
 // Routine Description:
