@@ -111,35 +111,35 @@ HRESULT GdiEngine::_PrepareMemoryBitmap(_In_ HWND const hwnd)
     RETURN_HR_IF(S_OK, _szMemorySurface.cx == szClient.cx && _szMemorySurface.cy == szClient.cy);
 
     wil::unique_hdc hdcRealWindow(GetDC(_hwndTargetWindow));
-    RETURN_LAST_ERROR_IF_NULL(hdcRealWindow);
+    RETURN_LAST_ERROR_IF_NULL(hdcRealWindow.get());
 
     // If we already had a bitmap, Blt the old one onto the new one and clean up the old one.
     if (nullptr != _hbitmapMemorySurface)
     {
         // Make a temporary DC for us to Blt with.
         wil::unique_hdc hdcTemp(CreateCompatibleDC(hdcRealWindow.get()));
-        RETURN_LAST_ERROR_IF_NULL(hdcTemp);
+        RETURN_LAST_ERROR_IF_NULL(hdcTemp.get());
 
         // Make the new bitmap we'll use going forward with the new size.
         wil::unique_hbitmap hbitmapNew(CreateCompatibleBitmap(hdcRealWindow.get(), szClient.cx, szClient.cy));
-        RETURN_LAST_ERROR_IF_NULL(hbitmapNew);
+        RETURN_LAST_ERROR_IF_NULL(hbitmapNew.get());
 
         // Select it into the DC, but hold onto the junky one pixel bitmap (made by default) to give back when we need to Delete.
         wil::unique_hbitmap hbitmapOnePixelJunk(SelectBitmap(hdcTemp.get(), hbitmapNew.get()));
-        RETURN_LAST_ERROR_IF_NULL(hbitmapOnePixelJunk);
-        hbitmapNew.release(); // if SelectObject worked, GDI took ownership. Detach from smart object.
+        RETURN_LAST_ERROR_IF_NULL(hbitmapOnePixelJunk.get());
+        hbitmapNew.release(); // if SelectBitmap worked, GDI took ownership. Detach from smart object.
 
         // Blt from the DC/bitmap we're already holding onto into the new one.
         RETURN_LAST_ERROR_IF_FALSE(BitBlt(hdcTemp.get(), 0, 0, _szMemorySurface.cx, _szMemorySurface.cy, _hdcMemoryContext, 0, 0, SRCCOPY));
 
         // Put the junky bitmap back into the temp DC and get our new one out.
         hbitmapNew.reset(SelectBitmap(hdcTemp.get(), hbitmapOnePixelJunk.get()));
-        RETURN_LAST_ERROR_IF_NULL(hbitmapNew);
-        hbitmapOnePixelJunk.release(); // if SelectObject worked, GDI took ownership. Detach from smart object.
+        RETURN_LAST_ERROR_IF_NULL(hbitmapNew.get());
+        hbitmapOnePixelJunk.release(); // if SelectBitmap worked, GDI took ownership. Detach from smart object.
 
         // Move our new bitmap into the long-standing DC we're holding onto.
         wil::unique_hbitmap hbitmapOld(SelectBitmap(_hdcMemoryContext, hbitmapNew.get()));
-        RETURN_LAST_ERROR_IF_NULL(hbitmapOld);
+        RETURN_LAST_ERROR_IF_NULL(hbitmapOld.get());
 
         // Now save a pointer to our new bitmap into the class state.
         _hbitmapMemorySurface = hbitmapNew.release(); // and prevent it from being freed now that GDI is holding onto it as well.
@@ -150,7 +150,7 @@ HRESULT GdiEngine::_PrepareMemoryBitmap(_In_ HWND const hwnd)
         RETURN_LAST_ERROR_IF_NULL(_hbitmapMemorySurface);
 
         wil::unique_hbitmap hOldBitmap(SelectBitmap(_hdcMemoryContext, _hbitmapMemorySurface)); // DC has a default junk bitmap, take it and delete it.
-        RETURN_LAST_ERROR_IF_NULL(hOldBitmap);
+        RETURN_LAST_ERROR_IF_NULL(hOldBitmap.get());
     }
 
     // Save the new client size.
@@ -199,7 +199,7 @@ HRESULT GdiEngine::EndPaint()
 HRESULT GdiEngine::_PaintBackgroundColor(_In_ const RECT* const prc)
 {
     wil::unique_hbrush hbr(GetStockBrush(DC_BRUSH));
-    RETURN_LAST_ERROR_IF_NULL(hbr);
+    RETURN_LAST_ERROR_IF_NULL(hbr.get());
 
     WHEN_DBG(_PaintDebugRect(prc));
 
@@ -299,7 +299,7 @@ HRESULT GdiEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
 // Arguments:
 // - <none>
 // Return Value:
-// - S_OK or appropriate GDI failure
+// - S_OK or E_FAIL if GDI failed.
 HRESULT GdiEngine::_FlushBufferLines()
 {
     HRESULT hr = S_OK;
@@ -308,7 +308,7 @@ HRESULT GdiEngine::_FlushBufferLines()
     {
         if (!PolyTextOutW(_hdcMemoryContext, _pPolyText, (UINT)_cPolyText))
         {
-            hr = GetLastError();
+            hr = E_FAIL;
         }
 
         for (size_t iPoly = 0; iPoly < _cPolyText; iPoly++)
@@ -333,7 +333,7 @@ HRESULT GdiEngine::_FlushBufferLines()
 // - cchLine - How many characters we should draw the grid lines along (left to right in a row)
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
-// - S_OK or suitable GDI HRESULT error.
+// - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
 HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget)
 {
     // Return early if there are no lines to paint.
@@ -346,11 +346,11 @@ HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORRE
     RETURN_IF_FAILED(_ScaleByFont(&coordTarget, &ptTarget));
     // Set the brush color as requested and save the previous brush to restore at the end.
     wil::unique_hbrush hbr(CreateSolidBrush(color));
-    RETURN_LAST_ERROR_IF_NULL(hbr);
+    RETURN_LAST_ERROR_IF_NULL(hbr.get());
 
     wil::unique_hbrush hbrPrev(SelectBrush(_hdcMemoryContext, hbr.get()));
-    RETURN_LAST_ERROR_IF_NULL(hbrPrev);
-    hbr.release(); // If SelectObject was successful, GDI owns the brush. Release for now.
+    RETURN_LAST_ERROR_IF_NULL(hbrPrev.get());
+    hbr.release(); // If SelectBrush was successful, GDI owns the brush. Release for now.
 
     // On exit, be sure we try to put the brush back how it was originally.
     auto restoreBrushOnExit = wil::ScopeExit([&] { hbr.reset(SelectBrush(_hdcMemoryContext, hbrPrev.get())); });
@@ -363,12 +363,12 @@ HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORRE
     {
         if (lines & GridLines::Top)
         {
-            RETURN_LAST_ERROR_IF_FALSE(PatBlt(_hdcMemoryContext, ptTarget.x, ptTarget.y, coordFontSize.X, 1, PATCOPY));
+            RETURN_HR_IF_FALSE(E_FAIL, PatBlt(_hdcMemoryContext, ptTarget.x, ptTarget.y, coordFontSize.X, 1, PATCOPY));
         }
 
         if (lines & GridLines::Left)
         {
-            RETURN_LAST_ERROR_IF_FALSE(PatBlt(_hdcMemoryContext, ptTarget.x, ptTarget.y, 1, coordFontSize.Y, PATCOPY));
+            RETURN_HR_IF_FALSE(E_FAIL, PatBlt(_hdcMemoryContext, ptTarget.x, ptTarget.y, 1, coordFontSize.Y, PATCOPY));
         }
 
         // NOTE: Watch out for inclusive/exclusive rectangles here.
@@ -380,12 +380,12 @@ HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORRE
 
         if (lines & GridLines::Bottom)
         {
-            RETURN_LAST_ERROR_IF_FALSE(PatBlt(_hdcMemoryContext, ptTarget.x, ptTarget.y + coordFontSize.Y - 1, coordFontSize.X, 1, PATCOPY));
+            RETURN_HR_IF_FALSE(E_FAIL, PatBlt(_hdcMemoryContext, ptTarget.x, ptTarget.y + coordFontSize.Y - 1, coordFontSize.X, 1, PATCOPY));
         }
 
         if (lines & GridLines::Right)
         {
-            RETURN_LAST_ERROR_IF_FALSE(PatBlt(_hdcMemoryContext, ptTarget.x + coordFontSize.X - 1, ptTarget.y, 1, coordFontSize.Y, PATCOPY));
+            RETURN_HR_IF_FALSE(E_FAIL, PatBlt(_hdcMemoryContext, ptTarget.x + coordFontSize.X - 1, ptTarget.y, 1, coordFontSize.Y, PATCOPY));
         }
 
         // Move to the next character in this run.
@@ -402,7 +402,7 @@ HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORRE
 // - ulHeightPercent - The cursor will be drawn at this percentage of the current font height.
 // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
 // Return Value:
-// - S_OK, suitable GDI HRESULT error, or safemath error.
+// - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI error where a specific error isn't set.
 HRESULT GdiEngine::PaintCursor(_In_ COORD const coord, _In_ ULONG const ulHeightPercent, _In_ bool const fIsDoubleWidth)
 {
     LOG_IF_FAILED(_FlushBufferLines());
@@ -434,7 +434,7 @@ HRESULT GdiEngine::PaintCursor(_In_ COORD const coord, _In_ ULONG const ulHeight
     // Reduce the height of the top to be relative to the bottom by the height we want.
     RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
 
-    RETURN_LAST_ERROR_IF_FALSE(InvertRect(_hdcMemoryContext, &rcInvert));
+    RETURN_HR_IF_FALSE(E_FAIL, InvertRect(_hdcMemoryContext, &rcInvert));
 
     // Save inverted cursor position so we can clear it.
     _rcCursorInvert = rcInvert;
@@ -447,13 +447,13 @@ HRESULT GdiEngine::PaintCursor(_In_ COORD const coord, _In_ ULONG const ulHeight
 // Arguments:
 // - <none>
 // Return Value:
-// - S_OK or suitable GDI HRESULT error.
+// - S_OK, suitable GDI HRESULT error, or E_FAIL in a GDI error where a specific error isn't set.
 HRESULT GdiEngine::ClearCursor()
 {
     if (!IsRectEmpty(&_rcCursorInvert))
     {
         // We inverted to set the cursor, so invert the same rect to clear it out.
-        RETURN_LAST_ERROR_IF_FALSE(InvertRect(_hdcMemoryContext, &_rcCursorInvert));
+        RETURN_HR_IF_FALSE(E_FAIL, InvertRect(_hdcMemoryContext, &_rcCursorInvert));
 
         _rcCursorInvert = { 0 };
     }
@@ -476,7 +476,7 @@ HRESULT GdiEngine::PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsr
 
     // Get a region ready
     wil::unique_hrgn hrgnSelection(CreateRectRgn(0, 0, 0, 0));
-    RETURN_LAST_ERROR_IF_NULL(hrgnSelection);
+    RETURN_LAST_ERROR_IF_NULL(hrgnSelection.get());
 
     // Adjust the selected region to invert
     RETURN_IF_FAILED(_PaintSelectionCalculateRegion(rgsrSelection, cRectangles, hrgnSelection.get()));
@@ -516,7 +516,7 @@ HRESULT GdiEngine::_PaintSelectionCalculateRegion(_In_reads_(cRectangles) SMALL_
 
         // create region for selection rectangle
         wil::unique_hrgn hrgnLine(CreateRectRgn(rectHighlight.left, rectHighlight.top, rectHighlight.right, rectHighlight.bottom));
-        RETURN_LAST_ERROR_IF_NULL(hrgnLine);
+        RETURN_LAST_ERROR_IF_NULL(hrgnLine.get());
 
         // compose onto given selection region
         LOG_LAST_ERROR_IF_FALSE(CombineRgn(hrgnSelection, hrgnSelection, hrgnLine.get(), RGN_OR));

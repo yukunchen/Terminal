@@ -92,7 +92,7 @@ HRESULT GdiEngine::_ScaleByFont(_In_ const SMALL_RECT* const psr, _Out_ RECT* co
 // - ppt - Pixel coordinate (POINT) for drawing to the client surface.
 // Return Value:
 // - S_OK or safe math failure value.
-HRESULT GdiEngine::_ScaleByFont(_In_ const COORD* const pcoord, _Out_ POINT* const ppt) const
+HRESULT GdiEngine::_ScaleByFont(_In_ const COORD* const pcoord, _Out_ POINT* const pPoint) const
 {
     COORD const coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
@@ -101,7 +101,7 @@ HRESULT GdiEngine::_ScaleByFont(_In_ const COORD* const pcoord, _Out_ POINT* con
     RETURN_IF_FAILED(LongMult(pcoord->X, coordFontSize.X, &pt.x));
     RETURN_IF_FAILED(LongMult(pcoord->Y, coordFontSize.Y, &pt.y));
 
-    *ppt = pt;
+    *pPoint = pt;
 
     return S_OK;
 }

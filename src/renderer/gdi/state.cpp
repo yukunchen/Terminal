@@ -125,6 +125,30 @@ HRESULT GdiEngine::SetHwnd(_In_ HWND const hwnd)
 }
 
 // Routine Description:
+// - This routine will help call SetWindowLongW with the correct semantics to retrieve the appropriate error code.
+// Arguments:
+// - hWnd - Window handle to use for setting
+// - nIndex - Window handle item offset
+// - dwNewLong - Value to update in window structure
+// Return Value:
+// - S_OK or converted HRESULT from last Win32 error from SetWindowLongW
+HRESULT GdiEngine::s_SetWindowLongWHelper(_In_ HWND const hWnd, _In_ int const nIndex, _In_ LONG const dwNewLong)
+{
+    // SetWindowLong has strange error handling. On success, it returns the previous Window Long value and doesn't modify the Last Error state.
+    // To deal with this, we set the last error to 0/S_OK first, call it, and if the previous long was 0, we check if the error was non-zero before reporting.
+    // Otherwise, we'll get an "Error: The operation has completed successfully." and there will be another screenshot on the internet making fun of Windows.
+    // See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms633591(v=vs.85).aspx
+    SetLastError(0);
+    LONG const lResult = SetWindowLongW(hWnd, nIndex, dwNewLong);
+    if (0 == lResult)
+    {
+        RETURN_LAST_ERROR_IF(0 != GetLastError());
+    }
+
+    return S_OK;
+}
+
+// Routine Description:
 // - This method will set the GDI brushes in the drawing context (and update the hung-window background color)
 // Arguments:
 // - wTextAttributes - A console attributes bit field specifying the brush colors we should use.
@@ -146,18 +170,7 @@ HRESULT GdiEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In
         RETURN_LAST_ERROR_IF(CLR_INVALID == SetDCBrushColor(_hdcMemoryContext, colorBackground));
 
         // Set the hung app background painting color
-        {
-            // SetWindowLong has strange error handling. On success, it returns the previous Window Long value and doesn't modify the Last Error state.
-            // To deal with this, we set the last error to 0/S_OK first, call it, and if the previous long was 0, we check if the error was non-zero before reporting.
-            // Otherwise, we'll get an "Error: The operation has completed successfully." and there will be another screenshot on the internet making fun of Windows.
-            // See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms633591(v=vs.85).aspx
-            SetLastError(0);
-            LONG const lResult = SetWindowLongW(_hwndTargetWindow, GWL_CONSOLE_BKCOLOR, colorBackground); // Store background color
-            if (0 == lResult)
-            {
-                RETURN_LAST_ERROR_IF(0 != GetLastError());
-            }
-        }
+        RETURN_IF_FAILED(s_SetWindowLongWHelper(_hwndTargetWindow, GWL_CONSOLE_BKCOLOR, colorBackground));
     }
 
     return S_OK;
@@ -239,7 +252,7 @@ HRESULT GdiEngine::GetProposedFont(_Inout_ FontInfo* const pfiFont, _In_ int con
 HRESULT GdiEngine::_GetProposedFont(_Inout_ FontInfo* const pfiFont, _In_ int const iDpi, _Inout_ wil::unique_hfont& hFont)
 {
     wil::unique_hdc hdcTemp(CreateCompatibleDC(_hdcMemoryContext));
-    RETURN_LAST_ERROR_IF_NULL(hdcTemp);
+    RETURN_LAST_ERROR_IF_NULL(hdcTemp.get());
 
     // Get a special engine size because TT fonts can't specify X or we'll get weird scaling under some circumstances.
     COORD coordFontRequested = pfiFont->GetEngineSize();
@@ -272,11 +285,11 @@ HRESULT GdiEngine::_GetProposedFont(_Inout_ FontInfo* const pfiFont, _In_ int co
 
     // Create font.
     hFont.reset(CreateFontIndirectW(&lf));
-    RETURN_LAST_ERROR_IF_NULL(hFont);
+    RETURN_LAST_ERROR_IF_NULL(hFont.get());
 
     // Select into DC
     wil::unique_hfont hFontOld(SelectFont(hdcTemp.get(), hFont.get()));
-    RETURN_LAST_ERROR_IF_NULL(hFontOld);
+    RETURN_LAST_ERROR_IF_NULL(hFontOld.get());
 
     // Save off the font metrics for various other calculations
     TEXTMETRICW tm;

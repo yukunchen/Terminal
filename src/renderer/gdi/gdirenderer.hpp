@@ -65,6 +65,8 @@ namespace Microsoft
             private:
                 HWND _hwndTargetWindow;
 
+                static HRESULT s_SetWindowLongWHelper(_In_ HWND const hWnd, _In_ int const nIndex, _In_ LONG const dwNewLong);
+
                 bool _fPaintStarted;
 
                 PAINTSTRUCT _psInvalidData;
@@ -108,7 +110,7 @@ namespace Microsoft
                 static const ULONG s_ulMinCursorHeightPercent = 25;
                 static const ULONG s_ulMaxCursorHeightPercent = 100;
 
-                HRESULT _ScaleByFont(_In_ const COORD* const pcoord, _Out_ POINT* const ppt) const;
+                HRESULT _ScaleByFont(_In_ const COORD* const pcoord, _Out_ POINT* const pPoint) const;
                 HRESULT _ScaleByFont(_In_ const SMALL_RECT* const psr, _Out_ RECT* const prc) const;
                 HRESULT _ScaleByFont(_In_ const RECT* const prc, _Out_ SMALL_RECT* const psr) const;
 
@@ -123,7 +125,7 @@ namespace Microsoft
 
                 bool _IsFontTrueType() const;
 
-                HRESULT _GetProposedFont(_Inout_ FontInfo* const pfiFontInfo, _In_ int const iDpi, wil::unique_hfont& hFont);
+                HRESULT _GetProposedFont(_Inout_ FontInfo* const pfiFontInfo, _In_ int const iDpi, _Inout_ wil::unique_hfont& hFont);
 
                 COORD _GetFontSize() const;
                 bool _IsMinimized() const;

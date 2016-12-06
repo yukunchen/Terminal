@@ -60,14 +60,14 @@ HRESULT GdiEngine::InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const
 {
     // Get the currently selected area as a GDI region
     wil::unique_hrgn hrgnSelection(CreateRectRgn(0, 0, 0, 0));
-    RETURN_LAST_ERROR_IF_NULL(hrgnSelection);
+    RETURN_LAST_ERROR_IF_NULL(hrgnSelection.get());
 
     RETURN_IF_FAILED(_PaintSelectionCalculateRegion(rgsrSelection, cRectangles, hrgnSelection.get()));
 
     // XOR against the region we saved from the last time we rendered to find out what to invalidate
     // This is the space that needs to be inverted to either select or deselect the existing region into the new one.
     wil::unique_hrgn hrgnInvalid(CreateRectRgn(0, 0, 0, 0));
-    RETURN_LAST_ERROR_IF_NULL(hrgnInvalid);
+    RETURN_LAST_ERROR_IF_NULL(hrgnInvalid.get());
 
     int const iCombineResult = CombineRgn(hrgnInvalid.get(), _hrgnGdiPaintedSelection, hrgnSelection.get(), RGN_XOR);
 
