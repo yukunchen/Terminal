@@ -1067,7 +1067,7 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
         // Do fill.
         FillRectangle(&ciFill, pScreenInfo, &ScrollRectangle3);
 
-        WriteToScreen(pScreenInfo, &ScrollRectangle3);
+        WriteToScreen(pScreenInfo, ScrollRectangle3);
     }
     return Status;
 }
@@ -1092,7 +1092,7 @@ NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
     g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
 
     // Write data to screen.
-    WriteToScreen(pScreenInfo, &pScreenInfo->BufferViewport);
+    WriteToScreen(pScreenInfo, pScreenInfo->GetBufferViewport());
 
     return STATUS_SUCCESS;
 }

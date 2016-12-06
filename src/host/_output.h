@@ -35,7 +35,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 
 void WriteRegionToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PSMALL_RECT psrRegion);
 
-void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT * const psrRegion);
+void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT srRegion);
 
 NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                            _In_reads_(*pcRecords) const VOID * pvBuffer,

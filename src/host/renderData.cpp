@@ -23,9 +23,9 @@ RenderData::~RenderData()
 
 }
 
-const SMALL_RECT* RenderData::GetViewport()
+const SMALL_RECT RenderData::GetViewport()
 {
-    return &g_ciConsoleInformation.CurrentScreenBuffer->BufferViewport;
+    return g_ciConsoleInformation.CurrentScreenBuffer->GetBufferViewport();
 }
 
 const TEXT_BUFFER_INFO* RenderData::GetTextBuffer()

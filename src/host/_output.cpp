@@ -306,10 +306,10 @@ void WriteRegionToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PSMALL_RECT 
 // - This routine writes a screen buffer region to the screen.
 // Arguments:
 // - pScreenInfo - Pointer to screen buffer information.
-// - psrRegion - Region to write in screen buffer coordinates.  Region is inclusive
+// - srRegion - Region to write in screen buffer coordinates.  Region is inclusive
 // Return Value:
 // - <none>
-void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT * const psrRegion)
+void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT srRegion)
 {
     DBGOUTPUT(("WriteToScreen\n"));
     // update to screen, if we're not iconic.
@@ -320,18 +320,21 @@ void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT *
 
     // clip region
     SMALL_RECT ClippedRegion;
-    ClippedRegion.Left = max(psrRegion->Left, pScreenInfo->BufferViewport.Left);
-    ClippedRegion.Top = max(psrRegion->Top, pScreenInfo->BufferViewport.Top);
-    ClippedRegion.Right = min(psrRegion->Right, pScreenInfo->BufferViewport.Right);
-    ClippedRegion.Bottom = min(psrRegion->Bottom, pScreenInfo->BufferViewport.Bottom);
-    if (ClippedRegion.Right < ClippedRegion.Left || ClippedRegion.Bottom < ClippedRegion.Top)
     {
-        return;
+        const SMALL_RECT currentViewport = pScreenInfo->GetBufferViewport();
+        ClippedRegion.Left = max(srRegion.Left, currentViewport.Left);
+        ClippedRegion.Top = max(srRegion.Top, currentViewport.Top);
+        ClippedRegion.Right = min(srRegion.Right, currentViewport.Right);
+        ClippedRegion.Bottom = min(srRegion.Bottom, currentViewport.Bottom);
+        if (ClippedRegion.Right < ClippedRegion.Left || ClippedRegion.Bottom < ClippedRegion.Top)
+        {
+            return;
+        }
     }
 
     WriteRegionToScreen(pScreenInfo, &ClippedRegion);
 
-    WriteConvRegionToScreen(pScreenInfo, psrRegion);
+    WriteConvRegionToScreen(pScreenInfo, srRegion);
 }
 
 // Routine Description:
@@ -737,7 +740,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
         WriteRegion.Left = coordWrite.X;
         WriteRegion.Right = X;
     }
-    WriteToScreen(pScreenInfo, &WriteRegion);
+    WriteToScreen(pScreenInfo, WriteRegion);
     if (pcColumns)
     {
         *pcColumns = X + (coordWrite.Y - Y) * pScreenInfo->ScreenBufferSize.X - coordWrite.X + 1;
@@ -1004,8 +1007,8 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
     SMALL_RECT WriteRegion;
     if (pScreenInfo->ConvScreenInfo)
     {
-        WriteRegion.Top = coordWrite.Y + pScreenInfo->BufferViewport.Left + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.Y;
-        WriteRegion.Bottom = Y + pScreenInfo->BufferViewport.Left + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.Y;
+        WriteRegion.Top = coordWrite.Y + pScreenInfo->GetBufferViewport().Left + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.Y;
+        WriteRegion.Bottom = Y + pScreenInfo->GetBufferViewport().Left + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.Y;
         if (Y != coordWrite.Y)
         {
             WriteRegion.Left = 0;
@@ -1013,10 +1016,10 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
         }
         else
         {
-            WriteRegion.Left = coordWrite.X + pScreenInfo->BufferViewport.Top + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.X;
-            WriteRegion.Right = X + pScreenInfo->BufferViewport.Top + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.X;
+            WriteRegion.Left = coordWrite.X + pScreenInfo->GetBufferViewport().Top + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.X;
+            WriteRegion.Right = X + pScreenInfo->GetBufferViewport().Top + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.X;
         }
-        WriteConvRegionToScreen(g_ciConsoleInformation.CurrentScreenBuffer, &WriteRegion);
+        WriteConvRegionToScreen(g_ciConsoleInformation.CurrentScreenBuffer, WriteRegion);
         *pcElements = NumWritten;
         return STATUS_SUCCESS;
     }
@@ -1034,7 +1037,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
         WriteRegion.Right = X;
     }
 
-    WriteToScreen(pScreenInfo, &WriteRegion);
+    WriteToScreen(pScreenInfo, WriteRegion);
     *pcElements = NumWritten;
 
     return STATUS_SUCCESS;
