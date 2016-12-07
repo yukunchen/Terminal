@@ -1533,10 +1533,6 @@ bool AdaptDispatch::_EraseScrollback() const
     bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
     if (fSuccess)
     {
-        // const COORD coordStartPosition = {0, 0};
-        // const DWORD dwTotalArea = csbiex.dwSize.X*csbiex.dwSize.Y;
-        // fSuccess = _EraseSingleLineDistanceHelper(coordStartPosition, dwTotalArea, csbiex.wAttributes);
-
         const SMALL_RECT Screen = csbiex.srWindow;
         const short sWidth = Screen.Right - Screen.Left;
         const short sHeight = Screen.Bottom - Screen.Top;
@@ -1544,23 +1540,16 @@ bool AdaptDispatch::_EraseScrollback() const
 
         // Rectangle to cut out of the existing buffer
         SMALL_RECT srScroll = Screen;
-        // srScroll.Left = 0;
-        // srScroll.Right = Screen.Right - Screen.Left;
-        // srScroll.Top = Cursor.Y;
-        // srScroll.Bottom = Screen.Bottom;
         // Paste coordinate for cut text above
         COORD coordDestination;
         coordDestination.X = 0;
         coordDestination.Y = 0;
 
-        // SMALL_RECT srClip = nullptr;//csbiex.srWindow;
-        // srClip.Top = Cursor.Y;
-
         // Fill character for remaining space left behind by "cut" operation (or for fill if we "cut" the entire line)
         CHAR_INFO ciFill;
         ciFill.Attributes = csbiex.wAttributes;
         ciFill.Char.UnicodeChar = L' ';
-        fSuccess = !!_pConApi->ScrollConsoleScreenBufferW(&srScroll, /*&srClip*/nullptr, coordDestination, &ciFill);
+        fSuccess = !!_pConApi->ScrollConsoleScreenBufferW(&srScroll, nullptr, coordDestination, &ciFill);
         if (fSuccess)
         {
             // Clear everything after the viewport.
@@ -1569,13 +1558,21 @@ bool AdaptDispatch::_EraseScrollback() const
             fSuccess = _EraseSingleLineDistanceHelper(coordStartPosition, dwTotalArea, csbiex.wAttributes);
             if (fSuccess)
             {
-                // Move the cursor to the same relative location.
-                const COORD newCursor = {Cursor.X-Screen.Left, Cursor.Y-Screen.Top};
-                csbiex.srWindow.Top = 0;
-                csbiex.srWindow.Bottom = sHeight;
-                csbiex.srWindow.Left = 0;
-                csbiex.srWindow.Right = sWidth;
-                fSuccess = !!_pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
+                // Move the viewport (CAN'T be done in one call with SetConsoleScreenBufferInfoEx, because legacy)
+                SMALL_RECT srNewViewport;
+                srNewViewport.Left = 0;
+                srNewViewport.Top = 0;
+                // SetConsoleWindowInfo uses an inclusive rect, while GetConsoleScreenBufferInfo is exclusive
+                srNewViewport.Right = sWidth - 1;
+                srNewViewport.Bottom = sHeight - 1;
+                fSuccess = !!_pConApi->SetConsoleWindowInfo(true, &srNewViewport);
+
+                if (fSuccess)
+                {
+                    // Move the cursor to the same relative location.
+                    const COORD newCursor = {Cursor.X-Screen.Left, Cursor.Y-Screen.Top};
+                    fSuccess = !!_pConApi->SetConsoleCursorPosition(newCursor);
+                }
             }
         }
     }
