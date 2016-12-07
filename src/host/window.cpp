@@ -64,18 +64,6 @@ Window::~Window()
     }
 }
 
-// Prevent accidental copies from being made by hiding this from public use.
-Window::Window(Window const&)
-{
-    ASSERT(false);
-}
-
-// Prevent accidental copies from being made by hiding this from public use.
-void Window::operator=(Window const&)
-{
-    ASSERT(false);
-}
-
 // Routine Description:
 // - This routine allocates and initializes a window for the console
 // Arguments:
@@ -201,8 +189,17 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMA
     status = NT_TESTNULL(g_pRenderData);
     if (NT_SUCCESS(status))
     {
-        GdiEngine* pGdiEngine = new GdiEngine();
-        status = NT_TESTNULL(pGdiEngine);
+        GdiEngine* pGdiEngine = nullptr;
+
+        try
+        {
+            pGdiEngine = new GdiEngine();
+            status = NT_TESTNULL(pGdiEngine);
+        }
+        catch (...)
+        {
+            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        }
 
         if (NT_SUCCESS(status))
         {
@@ -288,33 +285,36 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMA
             {
                 g_ciConsoleInformation.hWnd = hWnd; // temporarily save into console info
 
-                pGdiEngine->SetHwnd(hWnd);
+                status = NTSTATUS_FROM_HRESULT(pGdiEngine->SetHwnd(hWnd));
 
-                // Set alpha on window if requested
-                ApplyWindowOpacity();
-
-                g_ciConsoleInformation.hMenu = GetSystemMenu(hWnd, FALSE);
-
-                // Modify system menu to our liking.
-                InitSystemMenu();
-
-                g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
-
-                // Do WM_GETICON workaround. Must call WM_SETICON once or apps calling WM_GETICON will get null.
-                Icon::Instance().ApplyWindowMessageWorkaround();
-
-                // Set up the hot key for this window.
-                if (g_ciConsoleInformation.GetHotKey() != 0)
+                if (NT_SUCCESS(status))
                 {
-                    SendMessageW(hWnd, WM_SETHOTKEY, g_ciConsoleInformation.GetHotKey(), 0);
+                    // Set alpha on window if requested
+                    ApplyWindowOpacity();
+
+                    g_ciConsoleInformation.hMenu = GetSystemMenu(hWnd, FALSE);
+
+                    // Modify system menu to our liking.
+                    InitSystemMenu();
+
+                    g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
+
+                    // Do WM_GETICON workaround. Must call WM_SETICON once or apps calling WM_GETICON will get null.
+                    Icon::Instance().ApplyWindowMessageWorkaround();
+
+                    // Set up the hot key for this window.
+                    if (g_ciConsoleInformation.GetHotKey() != 0)
+                    {
+                        SendMessageW(hWnd, WM_SETHOTKEY, g_ciConsoleInformation.GetHotKey(), 0);
+                    }
+
+                    WindowDpiApi::s_EnableChildWindowDpiMessage(g_ciConsoleInformation.hWnd, TRUE /*fEnable*/);
+
+                    // Post a window size update so that the new console window will size itself correctly once it's up and
+                    // running. This works around chicken & egg cases involving window size calculations having to do with font
+                    // sizes, DPI, and non-primary monitors (see MSFT #2367234).
+                    psiAttached->PostUpdateWindowSize();
                 }
-
-                WindowDpiApi::s_EnableChildWindowDpiMessage(g_ciConsoleInformation.hWnd, TRUE /*fEnable*/);
-
-                // Post a window size update so that the new console window will size itself correctly once it's up and
-                // running. This works around chicken & egg cases involving window size calculations having to do with font
-                // sizes, DPI, and non-primary monitors (see MSFT #2367234).
-                psiAttached->PostUpdateWindowSize();
             }
         }
     }
@@ -384,11 +384,9 @@ NTSTATUS Window::ActivateAndShow(_In_ WORD const wShowWindow)
 //              if FALSE, WindowOrigin is specified in coordinates relative to the current window origin.
 // - WindowOrigin - New window origin.
 // Return Value:
-NTSTATUS Window::SetViewportOrigin(_In_ const SMALL_RECT* const prcNewOrigin)
+NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
 {
     SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
-
-    SMALL_RECT NewWindow = *prcNewOrigin;
 
     COORD const FontSize = ScreenInfo->GetScreenFontSize();
 
@@ -397,20 +395,12 @@ NTSTATUS Window::SetViewportOrigin(_In_ const SMALL_RECT* const prcNewOrigin)
         Selection* pSelection = &Selection::Instance();
         pSelection->HideSelection();
 
-        RECT ClipRect = { 0 };
-        RECT ScrollRect;
-
-        ScrollRect.left = 0;
-        ScrollRect.right = ScreenInfo->GetScreenWindowSizeX() * FontSize.X;
-        ScrollRect.top = 0;
-        ScrollRect.bottom = ScreenInfo->GetScreenWindowSizeY() * FontSize.Y;
-
         // Fire off an event to let accessibility apps know we've scrolled.
-        NotifyWinEvent(EVENT_CONSOLE_UPDATE_SCROLL, g_ciConsoleInformation.hWnd, ScreenInfo->BufferViewport.Left - NewWindow.Left, ScreenInfo->BufferViewport.Top - NewWindow.Top);
+        NotifyWinEvent(EVENT_CONSOLE_UPDATE_SCROLL, g_ciConsoleInformation.hWnd, ScreenInfo->GetBufferViewport().Left - NewWindow.Left, ScreenInfo->GetBufferViewport().Top - NewWindow.Top);
 
         // The new window is OK. Store it in screeninfo and refresh screen.
-        ScreenInfo->BufferViewport = NewWindow;
-        Tracing::s_TraceWindowViewport(&ScreenInfo->BufferViewport);
+        ScreenInfo->SetBufferViewport(NewWindow);
+        Tracing::s_TraceWindowViewport(ScreenInfo->GetBufferViewport());
 
         if (g_pRender != nullptr)
         {
@@ -422,8 +412,8 @@ NTSTATUS Window::SetViewportOrigin(_In_ const SMALL_RECT* const prcNewOrigin)
     else
     {
         // we're iconic
-        ScreenInfo->BufferViewport = NewWindow;
-        Tracing::s_TraceWindowViewport(&ScreenInfo->BufferViewport);
+        ScreenInfo->SetBufferViewport(NewWindow);
+        Tracing::s_TraceWindowViewport(ScreenInfo->GetBufferViewport());
     }
 
     ConsoleImeResizeCompStrView();
@@ -596,8 +586,8 @@ void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbs
     // Log a telemetry event saying the user interacted with the Console
     Telemetry::Instance().SetUserInteractive();
 
-    NewOrigin.X = ScreenInfo->BufferViewport.Left;
-    NewOrigin.Y = ScreenInfo->BufferViewport.Top;
+    NewOrigin.X = ScreenInfo->GetBufferViewport().Left;
+    NewOrigin.Y = ScreenInfo->GetBufferViewport().Top;
     switch (wScrollCommand)
     {
     case SB_LINEUP:
@@ -677,8 +667,8 @@ void Window::HorizontalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wA
 
     SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
 
-    NewOrigin.X = ScreenInfo->BufferViewport.Left;
-    NewOrigin.Y = ScreenInfo->BufferViewport.Top;
+    NewOrigin.X = ScreenInfo->GetBufferViewport().Left;
+    NewOrigin.Y = ScreenInfo->GetBufferViewport().Top;
     switch (wScrollCommand)
     {
     case SB_LINEUP:
@@ -758,7 +748,7 @@ RECT Window::s_GetMaxWindowRectInPixels(_In_ const RECT* const prcSuggested)
 {
     // prepare rectangle
     RECT rc = *prcSuggested;
-    
+
     // use zero rect to compare.
     RECT rcZero;
     SetRectEmpty(&rcZero);
@@ -1030,11 +1020,11 @@ void Window::_CalculateWindowRect(_In_ COORD const coordWindowInChars, _Inout_ R
 // - prectWindow - rectangle to fill with pixel positions of the outer edge rectangle for this window
 // Return Value:
 // - <none>
-void Window::s_CalculateWindowRect(_In_ COORD const coordWindowInChars, 
-                                   _In_ int const iDpi, 
-                                   _In_ COORD const coordFontSize, 
+void Window::s_CalculateWindowRect(_In_ COORD const coordWindowInChars,
+                                   _In_ int const iDpi,
+                                   _In_ COORD const coordFontSize,
                                    _In_ COORD const coordBufferSize,
-                                   _In_opt_ HWND const hWnd, 
+                                   _In_opt_ HWND const hWnd,
                                    _Inout_ RECT* const prectWindow)
 {
     SIZE sizeWindow;
@@ -1336,7 +1326,7 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
         {
             RegCloseKey(hTitleKey);
         }
-        
+
         RegCloseKey(hConsoleKey);
         RegCloseKey(hCurrentUserKey);
     }

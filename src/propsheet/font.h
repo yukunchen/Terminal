@@ -107,4 +107,7 @@ NTSTATUS GetTTFontFaceForCodePage(_In_ const UINT uiCodePage,
                                   _Out_writes_(cchFaceName) PWSTR pszFaceName,
                                   _In_ const size_t cchFaceName);
 
+bool IsFontSizeCustom(__in PCWSTR pwszFaceName, __in const SHORT sSize);
+void CreateSizeForAllTTFonts(__in const SHORT sSize);
+
 #endif /* !FONT_H */

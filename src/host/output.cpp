@@ -827,6 +827,14 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
 
     // Account for the scroll margins set by DECSTBM
     SMALL_RECT srScrollMargins = pScreenInfo->GetScrollMargins();
+    SMALL_RECT srBufferViewport = pScreenInfo->GetBufferViewport();
+
+    // The margins are in viewport relative coordinates. Adjust for that.
+    srScrollMargins.Top += srBufferViewport.Top;
+    srScrollMargins.Bottom += srBufferViewport.Top;
+    srScrollMargins.Left += srBufferViewport.Left;
+    srScrollMargins.Right += srBufferViewport.Left;
+
     if (srScrollMargins.Bottom > srScrollMargins.Top)
     {
         if (psrScroll->Top < srScrollMargins.Top)
@@ -1067,7 +1075,7 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
         // Do fill.
         FillRectangle(&ciFill, pScreenInfo, &ScrollRectangle3);
 
-        WriteToScreen(pScreenInfo, &ScrollRectangle3);
+        WriteToScreen(pScreenInfo, ScrollRectangle3);
     }
     return Status;
 }
@@ -1092,7 +1100,7 @@ NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
     g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
 
     // Write data to screen.
-    WriteToScreen(pScreenInfo, &pScreenInfo->BufferViewport);
+    WriteToScreen(pScreenInfo, pScreenInfo->GetBufferViewport());
 
     return STATUS_SUCCESS;
 }

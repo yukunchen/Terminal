@@ -1278,6 +1278,14 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin, _I
         {
             fSuccess = false;
         }
+        else if (sActualTop == 1 && sActualBottom == sScreenHeight)
+        {
+            // Client requests setting margins to the entire screen 
+            //    - clear them instead of setting them.
+            // This is for apps like `apt` (NOT `apt-get` which set scroll 
+            //      margins, but don't use the alt buffer.)
+            sActualBottom = 0;
+        }
         // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
         if (sActualTop > 0) 
         {

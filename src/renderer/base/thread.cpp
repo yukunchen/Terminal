@@ -121,7 +121,7 @@ DWORD WINAPI RenderThread::_ThreadProc()
         WaitForSingleObject(_hEvent, INFINITE);
 
         LockConsole();
-        _pRenderer->PaintFrame();
+        LOG_IF_FAILED(_pRenderer->PaintFrame());
         UnlockConsole();
 
         // extra check before we sleep since it's a "long" activity, relatively speaking.

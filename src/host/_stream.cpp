@@ -66,6 +66,14 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
     SMALL_RECT srMargins = pScreenInfo->GetScrollMargins();
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
     const int iCurrentCursorY = pScreenInfo->TextInfo->GetCursor()->GetPosition().Y;
+
+    SMALL_RECT srBufferViewport = pScreenInfo->GetBufferViewport();
+    // The margins are in viewport relative coordinates. Adjust for that.
+    srMargins.Top += srBufferViewport.Top;
+    srMargins.Bottom += srBufferViewport.Top;
+    srMargins.Left += srBufferViewport.Left;
+    srMargins.Right += srBufferViewport.Left;
+    
     const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
     const bool fScrollDown = fMarginsSet && fCursorInMargins && (coordCursor.Y > srMargins.Bottom);
     bool fScrollUp = fMarginsSet && fCursorInMargins && (coordCursor.Y < srMargins.Top);
@@ -79,7 +87,7 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
     {
         fScrollUp = true;
         srMargins.Top = 0;
-        srMargins.Bottom = pScreenInfo->BufferViewport.Bottom;
+        srMargins.Bottom = pScreenInfo->GetBufferViewport().Bottom;
     }
 
     if (fScrollUp || fScrollDown)
@@ -89,8 +97,8 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
         SMALL_RECT scrollRect = {0};
         scrollRect.Top = srMargins.Top;
         scrollRect.Bottom = srMargins.Bottom;
-        scrollRect.Left = pScreenInfo->BufferViewport.Left;  // NOTE: Left/Right Scroll margins don't do anything currently.
-        scrollRect.Right = pScreenInfo->BufferViewport.Right - pScreenInfo->BufferViewport.Left; // hmm? Not sure. Might just be .Right
+        scrollRect.Left = pScreenInfo->GetBufferViewport().Left;  // NOTE: Left/Right Scroll margins don't do anything currently.
+        scrollRect.Right = pScreenInfo->GetBufferViewport().Right - pScreenInfo->GetBufferViewport().Left; // hmm? Not sure. Might just be .Right
 
         COORD dest;
         dest.X = scrollRect.Left;
@@ -127,11 +135,11 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
     if (NT_SUCCESS(Status))
     {
         // if at right or bottom edge of window, scroll right or down one char.
-        if (coordCursor.Y > pScreenInfo->BufferViewport.Bottom)
+        if (coordCursor.Y > pScreenInfo->GetBufferViewport().Bottom)
         {
             COORD WindowOrigin;
             WindowOrigin.X = 0;
-            WindowOrigin.Y = coordCursor.Y - pScreenInfo->BufferViewport.Bottom;
+            WindowOrigin.Y = coordCursor.Y - pScreenInfo->GetBufferViewport().Bottom;
             Status = pScreenInfo->SetViewportOrigin(FALSE, WindowOrigin);
         }
     }
@@ -424,7 +432,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             Region.Right = (SHORT)(pCursor->GetPosition().X + i - 1);
             Region.Top = pCursor->GetPosition().Y;
             Region.Bottom = pCursor->GetPosition().Y;
-            WriteToScreen(pScreenInfo, &Region);
+            WriteToScreen(pScreenInfo, Region);
             TempNumSpaces += i;
             CursorPosition.X = (SHORT)(pCursor->GetPosition().X + i);
             CursorPosition.Y = pCursor->GetPosition().Y;
@@ -443,7 +451,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
             else
             {
-                Status = AdjustCursorPosition(pScreenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
+                Status = AdjustCursorPosition(pScreenInfo, CursorPosition, IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
             }
 
             if (*pcb == BufferSize)
@@ -735,7 +743,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     Region.Right = (SHORT)(TargetPoint.X);
                     Region.Top = TargetPoint.Y;
                     Region.Bottom = TargetPoint.Y;
-                    WriteToScreen(pScreenInfo, &Region);
+                    WriteToScreen(pScreenInfo, Region);
                 }
 
                 CursorPosition.X = 0;

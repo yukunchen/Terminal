@@ -35,7 +35,7 @@ namespace Microsoft
                 static HRESULT s_CreateInstance(_In_ IRenderData* const pData, _In_ IRenderEngine* const pEngine, _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
                 ~Renderer();
 
-                void PaintFrame();
+                HRESULT PaintFrame();
 
                 void TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient);
                 void TriggerRedraw(_In_ const SMALL_RECT* const psrRegion);
@@ -48,7 +48,7 @@ namespace Microsoft
 
                 void TriggerFontChange(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo);
 
-                void GetProposedFont(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo);
+                HRESULT GetProposedFont(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo);
 
                 COORD GetFontSize();
                 bool IsCharFullWidthByFont(_In_ WCHAR const wch);
@@ -77,7 +77,8 @@ namespace Microsoft
                 void _PaintIme(_In_ const ConversionAreaInfo* const pAreaInfo, _In_ const TEXT_BUFFER_INFO* const pTextInfo);
                 void _PaintImeCompositionString();
 
-                void _UpdateDrawingBrushes(_In_ const TextAttribute pAttr, _In_ bool const fIncludeBackground);
+                HRESULT _UpdateDrawingBrushes(_In_ const TextAttribute attr, _In_ bool const fIncludeBackground);
+
                 void _ClearOverlays();
                 void _PerformScrolling();
 

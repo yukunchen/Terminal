@@ -642,8 +642,8 @@ void Selection::SelectAll()
     SCREEN_INFORMATION* pScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
 
     COORD coordWindowOrigin;
-    coordWindowOrigin.X = pScreenInfo->BufferViewport.Left;
-    coordWindowOrigin.Y = pScreenInfo->BufferViewport.Top;
+    coordWindowOrigin.X = pScreenInfo->GetBufferViewport().Left;
+    coordWindowOrigin.Y = pScreenInfo->GetBufferViewport().Top;
 
     // Get existing selection rectangle parameters
     const bool fOldSelectionExisted = IsAreaSelected();
