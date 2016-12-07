@@ -26,7 +26,7 @@ namespace Microsoft
             public:
                 virtual ~IRenderer() {};
 
-                virtual void PaintFrame() = 0;
+                virtual HRESULT PaintFrame() = 0;
 
                 virtual void TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient) = 0;
 
@@ -41,7 +41,7 @@ namespace Microsoft
 
                 virtual void TriggerFontChange(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo) = 0;
 
-                virtual void GetProposedFont(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo) = 0;
+                virtual HRESULT GetProposedFont(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo) = 0;
 
                 virtual COORD GetFontSize() = 0;
                 virtual bool IsCharFullWidthByFont(_In_ WCHAR const wch) = 0;

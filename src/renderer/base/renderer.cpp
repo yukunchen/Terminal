@@ -86,45 +86,49 @@ HRESULT Renderer::s_CreateInstance(_In_ IRenderData* const pData, _In_ IRenderEn
 // Arguments:
 // - <none>
 // Return Value:
-// - <none>
-void Renderer::PaintFrame()
+// - HRESULT S_OK, GDI error, Safe Math error, or state/argument errors.
+HRESULT Renderer::PaintFrame()
 {
-    assert(_pEngine != nullptr);
+    RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _pEngine);
 
     // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
     _CheckViewportAndScroll();
 
-    if (_pEngine->StartPaint())
-    {
-        // A. Prep Colors
-        _UpdateDrawingBrushes(_pData->GetDefaultBrushColors(), true);
+    // Try to start painting a frame
+    HRESULT const hr = _pEngine->StartPaint();
+    RETURN_IF_FAILED(hr); // Return errors
+    RETURN_HR_IF(S_OK, S_FALSE == hr); // Return early if there's nothing to paint.
 
-        // B. Clear Overlays
-        _ClearOverlays();
+    // A. Prep Colors
+    LOG_IF_FAILED(_UpdateDrawingBrushes(_pData->GetDefaultBrushColors(), true));
 
-        // C. Perform Scroll Operations
-        _PerformScrolling();
+    // B. Clear Overlays
+    _ClearOverlays();
 
-        // 1. Paint Background
-        _PaintBackground();
+    // C. Perform Scroll Operations
+    _PerformScrolling();
 
-        // 2. Paint Rows of Text
-        _PaintBufferOutput();
+    // 1. Paint Background
+    _PaintBackground();
 
-        // 3. Paint Input
-        //_PaintCookedInput(); // unnecessary, input is also stored in the output buffer.
+    // 2. Paint Rows of Text
+    _PaintBufferOutput();
 
-        // 4. Paint IME composition area
-        _PaintImeCompositionString();
+    // 3. Paint Input
+    //_PaintCookedInput(); // unnecessary, input is also stored in the output buffer.
 
-        // 5. Paint Selection
-        _PaintSelection();
+    // 4. Paint IME composition area
+    _PaintImeCompositionString();
 
-        // 6. Paint Cursor
-        _PaintCursor();
+    // 5. Paint Selection
+    _PaintSelection();
 
-        _pEngine->EndPaint();
-    }
+    // 6. Paint Cursor
+    _PaintCursor();
+
+    LOG_IF_FAILED(_pEngine->EndPaint());
+
+    return S_OK;
 }
 
 void Renderer::_NotifyPaintFrame()
@@ -141,7 +145,7 @@ void Renderer::_NotifyPaintFrame()
 // - <none>
 void Renderer::TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient)
 {
-    _pEngine->InvalidateSystem(prcDirtyClient);
+    LOG_IF_FAILED(_pEngine->InvalidateSystem(prcDirtyClient));
 
     _NotifyPaintFrame();
 }
@@ -160,7 +164,7 @@ void Renderer::TriggerRedraw(_In_ const SMALL_RECT* const psrRegion)
     if (view.TrimToViewport(&srUpdateRegion))
     {
         view.ConvertToOrigin(&srUpdateRegion);
-        _pEngine->Invalidate(&srUpdateRegion);
+        LOG_IF_FAILED(_pEngine->Invalidate(&srUpdateRegion));
 
         _NotifyPaintFrame();
     }
@@ -187,7 +191,7 @@ void Renderer::TriggerRedraw(_In_ const COORD* const pcoord)
 // - <none>
 void Renderer::TriggerRedrawAll()
 {
-    _pEngine->InvalidateAll();
+    LOG_IF_FAILED(_pEngine->InvalidateAll());
 
     _NotifyPaintFrame();
 }
@@ -206,7 +210,7 @@ void Renderer::TriggerSelection()
 
     if (NT_SUCCESS(_GetSelectionRects(&rgsrSelection, &cRectsSelected)))
     {
-        _pEngine->InvalidateSelection(rgsrSelection, cRectsSelected);
+        LOG_IF_FAILED(_pEngine->InvalidateSelection(rgsrSelection, cRectsSelected));
 
         delete[] rgsrSelection;
 
@@ -229,7 +233,7 @@ bool Renderer::_CheckViewportAndScroll()
     coordDelta.X = srOldViewport.Left - srNewViewport.Left;
     coordDelta.Y = srOldViewport.Top - srNewViewport.Top;
 
-    _pEngine->InvalidateScroll(&coordDelta);
+    LOG_IF_FAILED(_pEngine->InvalidateScroll(&coordDelta));
 
     _srViewportPrevious = srNewViewport;
 
@@ -262,7 +266,7 @@ void Renderer::TriggerScroll()
 // - <none>
 void Renderer::TriggerScroll(_In_ const COORD* const pcoordDelta)
 {
-    _pEngine->InvalidateScroll(pcoordDelta);
+    LOG_IF_FAILED(_pEngine->InvalidateScroll(pcoordDelta));
 
     _NotifyPaintFrame();
 }
@@ -276,8 +280,8 @@ void Renderer::TriggerScroll(_In_ const COORD* const pcoordDelta)
 // - <none>
 void Renderer::TriggerFontChange(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo)
 {
-    _pEngine->UpdateDpi(iDpi);
-    _pEngine->UpdateFont(pFontInfo);
+    LOG_IF_FAILED(_pEngine->UpdateDpi(iDpi));
+    LOG_IF_FAILED(_pEngine->UpdateFont(pFontInfo));
 
     _NotifyPaintFrame();
 }
@@ -289,10 +293,10 @@ void Renderer::TriggerFontChange(_In_ int const iDpi, _Inout_ FontInfo* const pF
 // - iDpi - The DPI of the target display
 // - pFontInfo - A description of the font we would like to have. Will be fixed up/filled on return with the chosen font data.
 // Return Value:
-// - <none>
-void Renderer::GetProposedFont(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo)
+// - S_OK if set successfully or relevant GDI error via HRESULT.
+HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo)
 {
-    _pEngine->GetProposedFont(pFontInfo, iDpi);
+    return _pEngine->GetProposedFont(pFontInfo, iDpi);
 }
 
 // Routine Description:
@@ -328,7 +332,7 @@ bool Renderer::IsCharFullWidthByFont(_In_ WCHAR const wch)
 // - <none>
 void Renderer::_PaintBackground()
 {
-    _pEngine->PaintBackground();
+    LOG_IF_FAILED(_pEngine->PaintBackground());
 }
 
 // Routine Description:
@@ -515,7 +519,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ const ROW* const pRow, _In_rea
         pRow->AttrRow.FindAttrIndex((UINT)(iFirstAttr + cchWritten), &pRun, &cAttrApplies);
 
         // Set the brushes in GDI to this color
-        _UpdateDrawingBrushes(pRun->GetAttributes(), false);
+        LOG_IF_FAILED(_UpdateDrawingBrushes(pRun->GetAttributes(), false));
 
         // The segment we'll write is the shorter of the entire segment we want to draw or the amount of applicable color (Attr applies)
         size_t cchSegment = min(cchLine - cchWritten, cAttrApplies);
@@ -613,7 +617,7 @@ void Renderer::_PaintBufferOutputDoubleByteHelper(_In_reads_(cchLine) PCWCHAR co
         }
 
         // Draw the line
-        _pEngine->PaintBufferLine(pwsSegment, cchSegment, coordTargetAdjustable, cchCharWidths, fTrimLeft);
+        LOG_IF_FAILED(_pEngine->PaintBufferLine(pwsSegment, cchSegment, coordTargetAdjustable, cchCharWidths, fTrimLeft));
 
         delete[] pwsSegment;
     }
@@ -657,7 +661,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ const TextAttribute textAtt
     }
 
     // Draw the lines
-    _pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget);
+    LOG_IF_FAILED(_pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
 }
 
 // Routine Description:
@@ -710,7 +714,7 @@ void Renderer::_PaintCursor()
             view.ConvertToOrigin(&coordCursor);
 
             // Draw it within the viewport
-            _pEngine->PaintCursor(coordCursor, ulHeight, fIsDoubleWidth);
+            LOG_IF_FAILED(_pEngine->PaintCursor(coordCursor, ulHeight, fIsDoubleWidth));
         }
     }
 }
@@ -815,7 +819,7 @@ void Renderer::_PaintSelection()
     {
         if (cRectsSelected > 0)
         {
-            _pEngine->PaintSelection(rgsrSelection, cRectsSelected);
+            LOG_IF_FAILED(_pEngine->PaintSelection(rgsrSelection, cRectsSelected));
         }
 
         delete[] rgsrSelection;
@@ -829,7 +833,7 @@ void Renderer::_PaintSelection()
 // - fIncludeBackground - Whether or not to include the hung window/erase window brushes in this operation. (Usually only happens when the default is changed, not when each individual color is swapped in a multi-color run.)
 // Return Value:
 // - <none>
-void Renderer::_UpdateDrawingBrushes(_In_ const TextAttribute textAttributes, _In_ bool const fIncludeBackground)
+HRESULT Renderer::_UpdateDrawingBrushes(_In_ const TextAttribute textAttributes, _In_ bool const fIncludeBackground)
 {
     COLORREF rgbForeground = textAttributes.GetRgbForeground();
     COLORREF rgbBackground = textAttributes.GetRgbBackground();
@@ -844,11 +848,13 @@ void Renderer::_UpdateDrawingBrushes(_In_ const TextAttribute textAttributes, _I
     // Otherwise, only update if something has changed.
     if (fIncludeBackground || rgbForeground != rgbLastForeground || rgbBackground != rgbLastBackground)
     {
-        _pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, fIncludeBackground);
+        RETURN_IF_FAILED(_pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, fIncludeBackground));
 
         rgbLastForeground = rgbForeground;
         rgbLastBackground = rgbBackground;
     }
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -860,7 +866,7 @@ void Renderer::_UpdateDrawingBrushes(_In_ const TextAttribute textAttributes, _I
 // - <none>
 void Renderer::_ClearOverlays()
 {
-    _pEngine->ClearCursor();
+    LOG_IF_FAILED(_pEngine->ClearCursor());
 }
 
 // Routine Description:
@@ -873,7 +879,7 @@ void Renderer::_ClearOverlays()
 // - <none>
 void Renderer::_PerformScrolling()
 {
-    _pEngine->ScrollFrame();
+    LOG_IF_FAILED(_pEngine->ScrollFrame());
 }
 
 // Routine Description:
