@@ -66,6 +66,14 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
     SMALL_RECT srMargins = pScreenInfo->GetScrollMargins();
     const bool fMarginsSet = srMargins.Bottom > srMargins.Top;
     const int iCurrentCursorY = pScreenInfo->TextInfo->GetCursor()->GetPosition().Y;
+
+    SMALL_RECT srBufferViewport = pScreenInfo->GetBufferViewport();
+    // The margins are in viewport relative coordinates. Adjust for that.
+    srMargins.Top += srBufferViewport.Top;
+    srMargins.Bottom += srBufferViewport.Top;
+    srMargins.Left += srBufferViewport.Left;
+    srMargins.Right += srBufferViewport.Left;
+    
     const bool fCursorInMargins = iCurrentCursorY <= srMargins.Bottom && iCurrentCursorY >= srMargins.Top;
     const bool fScrollDown = fMarginsSet && fCursorInMargins && (coordCursor.Y > srMargins.Bottom);
     bool fScrollUp = fMarginsSet && fCursorInMargins && (coordCursor.Y < srMargins.Top);

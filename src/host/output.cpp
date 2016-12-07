@@ -827,6 +827,14 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
 
     // Account for the scroll margins set by DECSTBM
     SMALL_RECT srScrollMargins = pScreenInfo->GetScrollMargins();
+    SMALL_RECT srBufferViewport = pScreenInfo->GetBufferViewport();
+
+    // The margins are in viewport relative coordinates. Adjust for that.
+    srScrollMargins.Top += srBufferViewport.Top;
+    srScrollMargins.Bottom += srBufferViewport.Top;
+    srScrollMargins.Left += srBufferViewport.Left;
+    srScrollMargins.Right += srBufferViewport.Left;
+
     if (srScrollMargins.Bottom > srScrollMargins.Top)
     {
         if (psrScroll->Top < srScrollMargins.Top)
