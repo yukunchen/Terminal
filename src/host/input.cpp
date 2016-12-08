@@ -1927,7 +1927,11 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
         short sDelta = 0;
         if (Message == WM_MOUSEWHEEL)
         {
-            sDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
+            short sWheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+            if (sWheelDelta < WHEEL_DELTA && sWheelDelta > -WHEEL_DELTA) {
+                sWheelDelta = WHEEL_DELTA * (sWheelDelta < 0? -1 : 1);
+            }
+            sDelta = sWheelDelta / WHEEL_DELTA;
         }
 
         if (HandleTerminalMouseEvent(MousePosition, Message, GET_KEYSTATE_WPARAM(wParam), sDelta))
