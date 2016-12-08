@@ -98,6 +98,8 @@ void FontInfo::SetFromEngine(_In_ PCWSTR const pwszFaceName,
     _lWeight = lWeight;
     _coordSize = coordSize;
     _coordSizeUnscaled = coordSizeUnscaled;
+
+    _ValidateCoordSize();
 }
 
 void FontInfo::ValidateFont()
@@ -120,6 +122,11 @@ void FontInfo::ValidateFont()
         }
     }
 
+    _ValidateCoordSize();
+}
+
+void FontInfo::_ValidateCoordSize()
+{
     // If we have no font size, we want to use 8x12 by default
     if (_coordSize.Y == 0)
     {
