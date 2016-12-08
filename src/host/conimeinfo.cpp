@@ -50,7 +50,7 @@ NTSTATUS ConversionAreaInfo::s_CreateInstance(_Outptr_ ConversionAreaInfo** cons
         dwWindowSize.Y = g_ciConsoleInformation.CurrentScreenBuffer->GetScreenWindowSizeY();
 
         CHAR_INFO Fill;
-        Fill.Attributes = g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes()->GetLegacyAttributes();
+        Fill.Attributes = g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes();
 
         CHAR_INFO PopupFill;
         PopupFill.Attributes = g_ciConsoleInformation.CurrentScreenBuffer->GetPopupAttributes()->GetLegacyAttributes();
@@ -150,11 +150,11 @@ ConsoleImeInfo::~ConsoleImeInfo()
 // - <none>
 void ConsoleImeInfo::RefreshAreaAttributes()
 {
-    TextAttribute const Attributes = *g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes();
+    TextAttribute const Attributes = g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes();
 
     for (unsigned int i = 0; i < ConvAreaCompStr.size(); ++i)
     {
-        ConvAreaCompStr[i]->ScreenBuffer->SetAttributes(&Attributes);
+        ConvAreaCompStr[i]->ScreenBuffer->SetAttributes(Attributes);
     }
 }
 

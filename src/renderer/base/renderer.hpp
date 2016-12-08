@@ -35,7 +35,7 @@ namespace Microsoft
                 static HRESULT s_CreateInstance(_In_ IRenderData* const pData, _In_ IRenderEngine* const pEngine, _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
                 ~Renderer();
 
-                void PaintFrame();
+                HRESULT PaintFrame();
 
                 void TriggerSystemRedraw(_In_ const RECT* const prcDirtyClient);
                 void TriggerRedraw(_In_ const SMALL_RECT* const psrRegion);
@@ -48,7 +48,7 @@ namespace Microsoft
 
                 void TriggerFontChange(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo);
 
-                void GetProposedFont(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo);
+                HRESULT GetProposedFont(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo);
 
                 COORD GetFontSize();
                 bool IsCharFullWidthByFont(_In_ WCHAR const wch);
@@ -62,14 +62,14 @@ namespace Microsoft
                 void _NotifyPaintFrame();
 
                 bool _CheckViewportAndScroll();
-                
+
                 void _PaintBackground();
-                
+
                 void _PaintBufferOutput();
                 void _PaintBufferOutputRasterFontHelper(_In_ const ROW* const pRow, _In_reads_(cchLine) PCWCHAR const pwsLine, _In_reads_(cchLine) PBYTE pbKAttrsLine, _In_ size_t cchLine, _In_ size_t iFirstAttr, _In_ COORD const coordTarget);
                 void _PaintBufferOutputColorHelper(_In_ const ROW* const pRow, _In_reads_(cchLine) PCWCHAR const pwsLine, _In_reads_(cchLine) PBYTE pbKAttrsLine, _In_ size_t cchLine, _In_ size_t iFirstAttr, _In_ COORD const coordTarget);
                 void _PaintBufferOutputDoubleByteHelper(_In_reads_(cchLine) PCWCHAR const pwsLine, _In_reads_(cchLine) PBYTE const pbKAttrsLine, _In_ size_t const cchLine, _In_ COORD const coordTarget);
-                void _PaintBufferOutputGridLineHelper(_In_ const TextAttribute* const pAttr, _In_ size_t const cchLine, _In_ COORD const coordTarget);
+                void _PaintBufferOutputGridLineHelper(_In_ const TextAttribute textAttribute, _In_ size_t const cchLine, _In_ COORD const coordTarget);
 
                 void _PaintSelection();
                 void _PaintCursor();
@@ -77,7 +77,8 @@ namespace Microsoft
                 void _PaintIme(_In_ const ConversionAreaInfo* const pAreaInfo, _In_ const TEXT_BUFFER_INFO* const pTextInfo);
                 void _PaintImeCompositionString();
 
-                void _UpdateDrawingBrushes(_In_ const TextAttribute* const pAttr, _In_ bool const fIncludeBackground);
+                HRESULT _UpdateDrawingBrushes(_In_ const TextAttribute attr, _In_ bool const fIncludeBackground);
+
                 void _ClearOverlays();
                 void _PerformScrolling();
 

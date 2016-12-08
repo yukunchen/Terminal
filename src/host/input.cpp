@@ -1936,8 +1936,8 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
         }
     }
 
-    MousePosition.X += pScreenInfo->BufferViewport.Left;
-    MousePosition.Y += pScreenInfo->BufferViewport.Top;
+    MousePosition.X += pScreenInfo->GetBufferViewport().Left;
+    MousePosition.Y += pScreenInfo->GetBufferViewport().Top;
 
     // make sure mouse position is clipped to screen buffer
     if (MousePosition.X < 0)

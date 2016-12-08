@@ -92,13 +92,92 @@ void Tracing::s_TraceApi(_In_ const NTSTATUS status, _In_ const CONSOLE_SETWINDO
         );
 }
 
-void Tracing::s_TraceWindowViewport(_In_ const SMALL_RECT* const psrView)
+void Tracing::s_TraceApi(_In_ void* buffer, _In_ const CONSOLE_WRITECONSOLE_MSG* const a)
+{
+    if (a->Unicode)
+    {
+        wchar_t* buf = static_cast<wchar_t*>(buffer);
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_WriteConsole",
+            TraceLoggingBoolean(a->Unicode, "Unicode"),
+            TraceLoggingUInt32(a->NumBytes, "NumBytes"),
+            TraceLoggingCountedWideString(buf, static_cast<UINT16>(a->NumBytes / sizeof(wchar_t)), "input buffer"),
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TraceKeywords::API)
+            );
+    }
+    else
+    {
+        char* buf = static_cast<char*>(buffer);
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_WriteConsole",
+            TraceLoggingBoolean(a->Unicode, "Unicode"),
+            TraceLoggingUInt32(a->NumBytes, "NumBytes"),
+            TraceLoggingCountedString(buf, static_cast<UINT16>(a->NumBytes / sizeof(char)), "input buffer"),
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TraceKeywords::API)
+            );
+    }
+}
+
+void Tracing::s_TraceApi(_In_ const CONSOLE_SCREENBUFFERINFO_MSG* const a)
+{
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_GetConsoleScreenBufferInfo",
+        TraceLoggingInt16(a->Size.X, "Size.X"),
+        TraceLoggingInt16(a->Size.Y, "Size.Y"),
+        TraceLoggingInt16(a->CursorPosition.X, "CursorPosition.X"),
+        TraceLoggingInt16(a->CursorPosition.Y, "CursorPosition.Y"),
+        TraceLoggingInt16(a->ScrollPosition.X, "ScrollPosition.X"),
+        TraceLoggingInt16(a->ScrollPosition.Y, "ScrollPosition.Y"),
+        TraceLoggingHexUInt16(a->Attributes, "Attributes"),
+        TraceLoggingInt16(a->CurrentWindowSize.X, "CurrentWindowSize.X"),
+        TraceLoggingInt16(a->CurrentWindowSize.Y, "CurrentWindowSize.Y"),
+        TraceLoggingInt16(a->MaximumWindowSize.X, "MaximumWindowSize.X"),
+        TraceLoggingInt16(a->MaximumWindowSize.Y, "MaximumWindowSize.Y"),
+        TraceLoggingHexUInt16(a->PopupAttributes, "PopupAttributes"),
+        TraceLoggingBoolean(a->FullscreenSupported, "FullscreenSupported"),
+        TraceLoggingHexUInt32FixedArray(a->ColorTable, _countof(a->ColorTable), "ColorTable"),
+        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TraceKeywords::API)
+        );
+}
+
+void Tracing::s_TraceApi(_In_ const CONSOLE_MODE_MSG* const a, const std::wstring& handleType)
+{
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_GetConsoleMode",
+        TraceLoggingHexUInt32(a->Mode, "Mode"),
+        TraceLoggingWideString(handleType.c_str(), "Handle type"),
+        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TraceKeywords::API)
+        );
+}
+
+void Tracing::s_TraceApi(_In_ const CONSOLE_SETTEXTATTRIBUTE_MSG* const a)
+{
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_SetConsoleTextAttribute",
+        TraceLoggingHexUInt16(a->Attributes, "Attributes"),
+        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TraceKeywords::API)
+        );
+}
+
+void Tracing::s_TraceApi(_In_ const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a)
+{
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider, "API_WriteConsoleOutput",
+        TraceLoggingInt16(a->WriteCoord.X, "WriteCoord.X"),
+        TraceLoggingInt16(a->WriteCoord.Y, "WriteCoord.Y"),
+        TraceLoggingHexUInt32(a->StringType, "StringType"),
+        TraceLoggingUInt32(a->NumRecords, "NumRecords"),
+        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TraceKeywords::API)
+        );
+}
+
+void Tracing::s_TraceWindowViewport(_In_ const SMALL_RECT viewport)
 {
     TraceLoggingWrite(g_hConhostV2EventTraceProvider, "WindowViewport",
-        TraceLoggingInt32(psrView->Bottom - psrView->Top, "ViewHeight"),
-        TraceLoggingInt32(psrView->Right - psrView->Left, "ViewWidth"),
-        TraceLoggingInt32(psrView->Top, "OriginTop"),
-        TraceLoggingInt32(psrView->Left, "OriginLeft"),
+        TraceLoggingInt32(viewport.Bottom - viewport.Top, "ViewHeight"),
+        TraceLoggingInt32(viewport.Right - viewport.Left, "ViewWidth"),
+        TraceLoggingInt32(viewport.Top, "OriginTop"),
+        TraceLoggingInt32(viewport.Left, "OriginLeft"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
         TraceLoggingKeyword(TraceKeywords::General)
         );
@@ -142,4 +221,21 @@ void Tracing::s_TraceOutput(_In_z_ const char* pszMessage, ...)
     {
         OutputDebugStringA(szBuffer);
     }
+}
+
+void __stdcall Tracing::TraceFailure(const wil::FailureInfo& failure)
+{
+    TraceLoggingWrite(
+        g_hConhostV2EventTraceProvider,
+        "Failure",
+        TraceLoggingHexUInt32(failure.hr, "HResult"),
+        TraceLoggingString(failure.pszFile, "File"),
+        TraceLoggingUInt32(failure.uLineNumber, "LineNumber"),
+        TraceLoggingString(failure.pszFunction, "Function"),
+        TraceLoggingWideString(failure.pszMessage, "Message"),
+        TraceLoggingString(failure.pszCallContext, "CallingContext"),
+        TraceLoggingString(failure.pszModule, "Module"),
+        TraceLoggingPointer(failure.returnAddress, "Site"),
+        TraceLoggingString(failure.pszCode, "Code"),
+        TraceLoggingLevel(WINEVENT_LEVEL_ERROR));
 }

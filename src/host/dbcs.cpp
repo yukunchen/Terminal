@@ -218,7 +218,7 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
     }
     else if (0x3190 <= wch && wch <= 0x3247)
     {
-        // From Unicode 9.0, this range is wide 
+        // From Unicode 9.0, this range is wide
         return TRUE;
     }
     else if (0x3251 <= wch && wch <= 0xA4C6)
@@ -229,7 +229,7 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
             return FALSE;
         }
 
-        // From Unicode 9.0, this range is wide 
+        // From Unicode 9.0, this range is wide
         // CJK Unified Ideograph and Yi and Reserved.
         // Includes Han Ideographic range.
         return TRUE;
@@ -261,7 +261,7 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
     else if (0xF900 <= wch && wch <= 0xFAFF)
     {
         // From Unicode 9.0, this range is wide
-        // CJK Compatibility Ideographs 
+        // CJK Compatibility Ideographs
         // Includes Han Compatibility Ideographs
         return TRUE;
     }
@@ -298,9 +298,9 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
         return FALSE;
     }
     else if ((0xffa0 <= wch && wch <= 0xffbe) ||
-             (0xffc2 <= wch && wch <= 0xffc7) || 
-             (0xffca <= wch && wch <= 0xffcf) || 
-             (0xffd2 <= wch && wch <= 0xffd7) || 
+             (0xffc2 <= wch && wch <= 0xffc7) ||
+             (0xffca <= wch && wch <= 0xffcf) ||
+             (0xffd2 <= wch && wch <= 0xffd7) ||
              (0xffda <= wch && wch <= 0xffdc))
     {
         /* Halfwidth Hangule variants */
@@ -378,7 +378,7 @@ DWORD RemoveDbcsMark(_Inout_updates_(NumChars) PWCHAR Dst,
 // - The length of the destination buffer.
 DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) const CHAR_INFO * pciSrc, _In_ DWORD cch)
 {
-    // Walk through the source CHAR_INFO and copy each to the destination. 
+    // Walk through the source CHAR_INFO and copy each to the destination.
     // EXCEPT for trailing bytes (this will de-duplicate the leading/trailing byte double copies of the CHAR_INFOs as stored in the buffer).
 
     // Set up indices used for arrays.
@@ -429,7 +429,7 @@ DWORD RemoveDbcsMarkAll(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         return cchBuf;
     }
 
-    if (*psLeftChar > pScreenInfo->BufferViewport.Left && pRow->CharRow.KAttrs[*psLeftChar] & CHAR_ROW::ATTR_TRAILING_BYTE)
+    if (*psLeftChar > pScreenInfo->GetBufferViewport().Left && pRow->CharRow.KAttrs[*psLeftChar] & CHAR_ROW::ATTR_TRAILING_BYTE)
     {
         prcText->left -= pScreenInfo->GetScreenFontSize().X;
         --*psLeftChar;
@@ -442,7 +442,7 @@ DWORD RemoveDbcsMarkAll(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "We're guaranteed to be able to make this access.")
         return RemoveDbcsMark(pwchBuf, &pRow->CharRow.Chars[*psLeftChar], cchBuf + 1, (PCHAR) & pRow->CharRow.KAttrs[*psLeftChar]);
     }
-    else if (*psLeftChar == pScreenInfo->BufferViewport.Left && pRow->CharRow.KAttrs[*psLeftChar] & CHAR_ROW::ATTR_TRAILING_BYTE)
+    else if (*psLeftChar == pScreenInfo->GetBufferViewport().Left && pRow->CharRow.KAttrs[*psLeftChar] & CHAR_ROW::ATTR_TRAILING_BYTE)
     {
         *pwchBuf = UNICODE_SPACE;
         return RemoveDbcsMark(pwchBuf + 1, &pRow->CharRow.Chars[*psLeftChar + 1], cchBuf - 1, (PCHAR) & pRow->CharRow.KAttrs[*psLeftChar + 1]) + 1;

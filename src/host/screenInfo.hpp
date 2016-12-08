@@ -84,6 +84,8 @@ public:
     bool IsMaximizedX() const;
     bool IsMaximizedY() const;
 
+    SMALL_RECT GetBufferViewport() const;
+    void SetBufferViewport(SMALL_RECT srBufferViewport);
     // Forwarders to Window if we're the active buffer.
     NTSTATUS SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ const COORD coordWindowOrigin);
     NTSTATUS SetViewportRect(_In_ SMALL_RECT* const prcNewViewport);
@@ -98,7 +100,6 @@ public:
 
     DWORD OutputMode;
     COORD ScreenBufferSize; // dimensions of buffer
-    SMALL_RECT BufferViewport;  // specifies which coordinates of the screen buffer are visible in the window client (the "viewport" into the buffer)
     WORD ResizingWindow;    // > 0 if we should ignore WM_SIZE messages
 
     short WheelDelta;
@@ -153,10 +154,10 @@ public:
     COORD GetReverseTab(_In_ const COORD cCurrCursorPos);
     bool AreTabsSet();
 
-    const TextAttribute* const GetAttributes() const;
+    TextAttribute GetAttributes() const;
     const TextAttribute* const GetPopupAttributes() const;
 
-    void SetAttributes(_In_ const TextAttribute* const pAttributes);
+    void SetAttributes(_In_ const TextAttribute attributes);
     void SetPopupAttributes(_In_ const TextAttribute* const pPopupAttributes);
 
 private:
@@ -194,7 +195,8 @@ private:
     AdaptDispatch* _pAdapter;
     StateMachine* _pStateMachine;
 
-    SMALL_RECT _srScrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future. 
+    SMALL_RECT _srScrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
+    SMALL_RECT _srBufferViewport;  // specifies which coordinates of the screen buffer are visible in the window client (the "viewport" into the buffer)
 
     SCREEN_INFORMATION* _psiAlternateBuffer = nullptr; // The VT "Alternate" screen buffer.
     SCREEN_INFORMATION* _psiMainBuffer = nullptr; // A pointer to the main buffer, if this is the alternate buffer.
@@ -207,6 +209,7 @@ private:
 
     TextAttribute _Attributes;
     TextAttribute _PopupAttributes;
+
 #ifdef UNIT_TESTING
     friend class ScreenBufferTests;
 #endif

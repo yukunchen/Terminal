@@ -84,13 +84,18 @@ HRESULT ApiRoutines::GetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* c
 HRESULT DoSrvGetConsoleScreenBufferInfo(_In_ SCREEN_INFORMATION* pScreenInfo, _Out_ CONSOLE_SCREEN_BUFFER_INFOEX* pInfo)
 {
     pInfo->bFullscreenSupported = FALSE; // traditional full screen with the driver support is no longer supported.
-    RETURN_NTSTATUS(pScreenInfo->GetScreenBufferInformation(&pInfo->dwSize,
-                                                            &pInfo->dwCursorPosition,
-                                                            &pInfo->srWindow,
-                                                            &pInfo->wAttributes,
-                                                            &pInfo->dwMaximumWindowSize,
-                                                            &pInfo->wPopupAttributes,
-                                                            pInfo->ColorTable));
+    NTSTATUS Status = pScreenInfo->GetScreenBufferInformation(&pInfo->dwSize,
+                                                              &pInfo->dwCursorPosition,
+                                                              &pInfo->srWindow,
+                                                              &pInfo->wAttributes,
+                                                              &pInfo->dwMaximumWindowSize,
+                                                              &pInfo->wPopupAttributes,
+                                                              pInfo->ColorTable);
+    // Callers of this function expect to recieve an exclusive rect, not an inclusive one.
+    pInfo->srWindow.Right += 1;
+    pInfo->srWindow.Bottom += 1;
+
+    RETURN_NTSTATUS(Status);
 }
 
 HRESULT ApiRoutines::GetConsoleCursorInfoImpl(_In_ SCREEN_INFORMATION* const pContext,
@@ -420,22 +425,25 @@ HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo, _In_
     COORD WindowOrigin;
     WindowOrigin.X = 0;
     WindowOrigin.Y = 0;
-    if (pScreenInfo->BufferViewport.Left > pCursorPosition->X)
     {
-        WindowOrigin.X = pCursorPosition->X - pScreenInfo->BufferViewport.Left;
-    }
-    else if (pScreenInfo->BufferViewport.Right < pCursorPosition->X)
-    {
-        WindowOrigin.X = pCursorPosition->X - pScreenInfo->BufferViewport.Right;
-    }
+        const SMALL_RECT currentViewport = pScreenInfo->GetBufferViewport();
+        if (currentViewport.Left > pCursorPosition->X)
+        {
+            WindowOrigin.X = pCursorPosition->X - currentViewport.Left;
+        }
+        else if (currentViewport.Right < pCursorPosition->X)
+        {
+            WindowOrigin.X = pCursorPosition->X - currentViewport.Right;
+        }
 
-    if (pScreenInfo->BufferViewport.Top > pCursorPosition->Y)
-    {
-        WindowOrigin.Y = pCursorPosition->Y - pScreenInfo->BufferViewport.Top;
-    }
-    else if (pScreenInfo->BufferViewport.Bottom < pCursorPosition->Y)
-    {
-        WindowOrigin.Y = pCursorPosition->Y - pScreenInfo->BufferViewport.Bottom;
+        if (currentViewport.Top > pCursorPosition->Y)
+        {
+            WindowOrigin.Y = pCursorPosition->Y - currentViewport.Top;
+        }
+        else if (currentViewport.Bottom < pCursorPosition->Y)
+        {
+            WindowOrigin.Y = pCursorPosition->Y - currentViewport.Bottom;
+        }
     }
 
     RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetViewportOrigin(FALSE, WindowOrigin));
@@ -483,10 +491,11 @@ HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
 
     if (!IsAbsoluteRectangle)
     {
-        Window.Left += pScreenInfo->BufferViewport.Left;
-        Window.Right += pScreenInfo->BufferViewport.Right;
-        Window.Top += pScreenInfo->BufferViewport.Top;
-        Window.Bottom += pScreenInfo->BufferViewport.Bottom;
+        SMALL_RECT currentViewport = pScreenInfo->GetBufferViewport();
+        Window.Left += currentViewport.Left;
+        Window.Right += currentViewport.Right;
+        Window.Top += currentViewport.Top;
+        Window.Bottom += currentViewport.Bottom;
     }
 
     RETURN_HR_IF(E_INVALIDARG, (Window.Right < Window.Left || Window.Bottom < Window.Top));
@@ -505,7 +514,7 @@ HRESULT DoSrvSetConsoleWindowInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
     {
         // TODO: MSFT: 9574827 - shouldn't we be looking at or at least logging the failure codes here? (Or making them non-void?)
         pScreenInfo->PostUpdateWindowSize();
-        WriteToScreen(pScreenInfo, &pScreenInfo->BufferViewport);
+        WriteToScreen(pScreenInfo, pScreenInfo->GetBufferViewport());
     }
 
     RETURN_NTSTATUS(Status);
@@ -626,11 +635,11 @@ VOID UpdatePopups(IN WORD NewAttributes, IN WORD NewPopupAttributes, IN WORD Old
 
 NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attributes, _In_ WORD PopupAttributes, _In_ BOOL UpdateWholeScreen)
 {
-    WORD const DefaultAttributes = ScreenInfo->GetAttributes()->GetLegacyAttributes();
+    WORD const DefaultAttributes = ScreenInfo->GetAttributes().GetLegacyAttributes();
     WORD const DefaultPopupAttributes = ScreenInfo->GetPopupAttributes()->GetLegacyAttributes();
     TextAttribute NewPrimaryAttributes = TextAttribute(Attributes);
     TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
-    ScreenInfo->SetAttributes(&NewPrimaryAttributes);
+    ScreenInfo->SetAttributes(NewPrimaryAttributes);
     ScreenInfo->SetPopupAttributes(&NewPopupAttributes);
     g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
 
@@ -655,7 +664,7 @@ NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attribut
         }
 
         // force repaint of entire line
-        WriteToScreen(ScreenInfo, &ScreenInfo->BufferViewport);
+        WriteToScreen(ScreenInfo, ScreenInfo->GetBufferViewport());
     }
 
     return STATUS_SUCCESS;
@@ -701,7 +710,7 @@ NTSTATUS DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* pScre
 
     NewAttributes.SetColor(rgbColor, fIsForeground);
 
-    pScreenInfo->SetAttributes(&NewAttributes);
+    pScreenInfo->SetAttributes(NewAttributes);
 
     return STATUS_SUCCESS;
 }
@@ -711,7 +720,7 @@ NTSTATUS DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* pScreen
     TextAttribute NewAttributes;
     NewAttributes.SetFrom(pScreenInfo->GetAttributes());
     NewAttributes.SetColor(rgbColor, fIsForeground);
-    pScreenInfo->SetAttributes(&NewAttributes);
+    pScreenInfo->SetAttributes(NewAttributes);
 
     return STATUS_SUCCESS;
 }
@@ -910,7 +919,7 @@ NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
 }
 
 // Routine Description:
-// - A private API call for enabling or disabling the cursor blinking. 
+// - A private API call for enabling or disabling the cursor blinking.
 // Parameters:
 // - fEnable - set to true to enable blinking, false to disable
 // Return value:
@@ -924,8 +933,8 @@ NTSTATUS DoSrvPrivateAllowCursorBlinking(_In_ SCREEN_INFORMATION* pScreenInfo, _
 }
 
 // Routine Description:
-// - A private API call for setting the top and bottom scrolling margins for 
-//     the current page. This creates a subsection of the screen that scrolls 
+// - A private API call for setting the top and bottom scrolling margins for
+//     the current page. This creates a subsection of the screen that scrolls
 //     when input reaches the end of the region, leaving the rest of the screen
 //     untouched.
 //  Currently only accessible through the use of ANSI sequence DECSTBM
@@ -946,7 +955,7 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(_In_ SCREEN_INFORMATION* pScreenInfo, _I
     }
     if (NT_SUCCESS(Status))
     {
-        SMALL_RECT srViewport = pScreenInfo->BufferViewport;
+        SMALL_RECT srViewport = pScreenInfo->GetBufferViewport();
         SMALL_RECT srScrollMargins = pScreenInfo->GetScrollMargins();
         srScrollMargins.Top = psrScrollMargins->Top;
         srScrollMargins.Bottom = psrScrollMargins->Bottom;
@@ -975,8 +984,8 @@ NTSTATUS DoSrvPrivateReverseLineFeed(_In_ SCREEN_INFORMATION* pScreenInfo)
 
 // Routine Description:
 // - A private API call for swaping to the alternate screen buffer. In virtual terminals, there exists both a "main"
-//     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already 
-//     existing alternate, it is discarded. 
+//     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
+//     existing alternate, it is discarded.
 // Parameters:
 // - psiCurr - a pointer to the screen buffer that should use an alternate buffer
 // Return value:
@@ -987,8 +996,8 @@ NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(_In_ SCREEN_INFORMATION* const psi
 }
 
 // Routine Description:
-// - A private API call for swaping to the main screen buffer. From the 
-//     alternate buffer, returns to the main screen buffer. From the main 
+// - A private API call for swaping to the main screen buffer. From the
+//     alternate buffer, returns to the main screen buffer. From the main
 //     screen buffer, does nothing. The alternate is discarded.
 // Parameters:
 // - psiCurr - a pointer to the screen buffer that should use the main buffer
@@ -1030,7 +1039,7 @@ NTSTATUS DoPrivateTabHelper(_In_ SHORT const sNumTabs, _In_ bool fForward)
     {
         const COORD cursorPos = pScreenBuffer->TextInfo->GetCursor()->GetPosition();
         COORD cNewPos = (fForward) ? pScreenBuffer->GetForwardTab(cursorPos) : pScreenBuffer->GetReverseTab(cursorPos);
-        // GetForwardTab is smart enough to move the cursor to the next line if 
+        // GetForwardTab is smart enough to move the cursor to the next line if
         // it's at the end of the current one already. AdjustCursorPos shouldn't
         // to be doing anything funny, just moving the cursor to the location GetForwardTab returns
         Status = AdjustCursorPosition(pScreenBuffer, cNewPos, TRUE, nullptr);
@@ -1039,7 +1048,7 @@ NTSTATUS DoPrivateTabHelper(_In_ SHORT const sNumTabs, _In_ bool fForward)
 }
 
 // Routine Description:
-// - A private API call for performing a forwards tab. This will take the 
+// - A private API call for performing a forwards tab. This will take the
 //     cursor to the tab stop following its current location. If there are no
 //     more tabs in this row, it will take it to the right side of the window.
 //     If it's already in the last column of the row, it will move it to the next line.
@@ -1053,7 +1062,7 @@ NTSTATUS DoSrvPrivateForwardTab(_In_ SHORT const sNumTabs)
 }
 
 // Routine Description:
-// - A private API call for performing a backwards tab. This will take the 
+// - A private API call for performing a backwards tab. This will take the
 //     cursor to the tab stop previous to its current location. It will not reverse line feed.
 // Parameters:
 // - sNumTabs - The number of tabs to perform.

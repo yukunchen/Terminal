@@ -337,24 +337,28 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
 
         CONSOLE_CARET_INFO ConsoleCaretInfo;
         ConsoleCaretInfo.hwnd = g_ciConsoleInformation.hWnd;
-        ConsoleCaretInfo.rc.left = (this->GetPosition().X - ScreenInfo->BufferViewport.Left) * ScreenInfo->GetScreenFontSize().X;
-        ConsoleCaretInfo.rc.top = (this->GetPosition().Y - ScreenInfo->BufferViewport.Top) * ScreenInfo->GetScreenFontSize().Y;
+        ConsoleCaretInfo.rc.left = (this->GetPosition().X - ScreenInfo->GetBufferViewport().Left) * ScreenInfo->GetScreenFontSize().X;
+        ConsoleCaretInfo.rc.top = (this->GetPosition().Y - ScreenInfo->GetBufferViewport().Top) * ScreenInfo->GetScreenFontSize().Y;
         ConsoleCaretInfo.rc.right = ConsoleCaretInfo.rc.left + ScreenInfo->GetScreenFontSize().X;
         ConsoleCaretInfo.rc.bottom = ConsoleCaretInfo.rc.top + ScreenInfo->GetScreenFontSize().Y;
         UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetCaretInfo, &ConsoleCaretInfo, sizeof(ConsoleCaretInfo));
 
-        DWORD dwFlags = 0;
-        if (this->IsVisible())
+        // Send accessibility information
         {
-            dwFlags |= CONSOLE_CARET_VISIBLE;
-        }
+            DWORD dwFlags = 0;
 
-        if (g_ciConsoleInformation.Flags & CONSOLE_SELECTING)
-        {
-            dwFlags |= CONSOLE_CARET_SELECTION;
-        }
+            // Flags is expected to be 2, 1, or 0. 2 in selecting (whether or not visible), 1 if just visible, 0 if invisible/noselect.
+            if (IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_SELECTING))
+            {
+                dwFlags = CONSOLE_CARET_SELECTION;
+            }
+            else if (this->IsVisible())
+            {
+                dwFlags = CONSOLE_CARET_VISIBLE;
+            }
 
-        NotifyWinEvent(EVENT_CONSOLE_CARET, g_ciConsoleInformation.hWnd, dwFlags, PACKCOORD(this->GetPosition()));
+            NotifyWinEvent(EVENT_CONSOLE_CARET, g_ciConsoleInformation.hWnd, dwFlags, PACKCOORD(this->GetPosition()));
+        }
     }
 
     // If the DelayCursor flag has been set, wait one more tick before toggle.

@@ -141,8 +141,8 @@ public:
     bool IsRightVerticalDisplayed() const;
 
     void SetFromLegacy(_In_ const WORD wLegacy);
-    void SetFrom(_In_ const TextAttribute* const pOtherAttr);
-    bool IsEqual(_In_ const TextAttribute* const pOtherAttr) const;
+    void SetFrom(_In_ const TextAttribute& otherAttr);
+    bool IsEqual(_In_ const TextAttribute& otherAttr) const;
     bool IsEqualToLegacy(_In_ const WORD wLegacy) const;
 
     bool IsLegacy() const;
@@ -169,8 +169,8 @@ public:
     UINT GetLength();
     void SetLength(_In_ UINT const cchLength);
 
-    const TextAttribute* GetAttributes() const;
-    void SetAttributes(_In_ const TextAttribute* const pNew);
+    const TextAttribute GetAttributes() const;
+    void SetAttributes(_In_ const TextAttribute textAttribute);
     void SetAttributesFromLegacy(_In_ const WORD wNew);
 
 private:
@@ -184,15 +184,15 @@ class ATTR_ROW sealed
 {
 public:
 
-    bool Initialize(_In_ UINT const cchRowWidth, _In_ const TextAttribute* const pAttr);
+    bool Initialize(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr);
 
     void FindAttrIndex(_In_ UINT const iIndex, _Outptr_ TextAttributeRun** const ppIndexedAttr, _Out_ UINT* const cAttrApplies) const;
     TextAttributeRun* GetHead() const;
-    
+
     NTSTATUS PackAttrs(_In_reads_(cRowLength) const TextAttribute* const rgAttrs, _In_ UINT const cRowLength);
     NTSTATUS UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ UINT const cRowLength) const;
-    
-    bool SetAttrToEnd(_In_ UINT const iStart, _In_ const TextAttribute* const pAttr);
+
+    bool SetAttrToEnd(_In_ UINT const iStart, _In_ const TextAttribute attr);
     void ReplaceLegacyAttrs(_In_ const WORD wToBeReplacedAttr, _In_ const WORD wReplaceWith);
     bool Resize(_In_ const short sOldWidth, _In_ const short sNewWidth);
 
@@ -223,7 +223,7 @@ public:
     ATTR_ROW AttrRow;
     SHORT sRowId;
 
-    bool Initialize(_In_ short const sRowWidth, _In_ const TextAttribute* const pAttr);
+    bool Initialize(_In_ short const sRowWidth, _In_ const TextAttribute Attr);
 #ifdef UNIT_TESTING
     friend class RowTests;
 #endif
@@ -252,7 +252,7 @@ public:
     ROW* GetNextRowNoWrap(_In_ ROW* const pRow) const;
 
     // Text insertion functions
-    bool InsertCharacter(_In_ WCHAR const wch, _In_ BYTE const bKAttr, _In_ const TextAttribute* const pAttr);
+    bool InsertCharacter(_In_ WCHAR const wch, _In_ BYTE const bKAttr, _In_ const TextAttribute attr);
     bool IncrementCursor();
     bool NewlineCursor();
 

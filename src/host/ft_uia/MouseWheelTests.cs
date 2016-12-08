@@ -19,24 +19,6 @@ namespace Conhost.UIA.Tests
     [TestClass]
     public class MouseWheelTests
     {
-        private static int rowsPerClick;
-        private static int colsPerClick;
-
-        [ClassInitialize]
-        public static void RetrieveSystemParameters()
-        {
-            Log.Comment("Retrieve system parameters that specify how many rows/columns the viewport should move per mouse wheel click.");
-            uint rows = 0;
-            NativeMethods.Win32BoolHelper(User32.SystemParametersInfo(User32.SPI.SPI_GETWHEELSCROLLLINES, 0, ref rows, 0), "Retrieve rows per click.");
-            uint cols = 0;
-            NativeMethods.Win32BoolHelper(User32.SystemParametersInfo(User32.SPI.SPI_GETWHEELSCROLLCHARACTERS, 0, ref cols, 0), "Retrieve cols per click.");
-
-            rowsPerClick = (int)rows;
-            colsPerClick = (int)cols;
-
-            Log.Comment($"Rows = {rowsPerClick} and Columns = {colsPerClick}");
-        }
-
         [TestMethod]
         public void TestMouseWheel()
         {
@@ -115,7 +97,18 @@ namespace Conhost.UIA.Tests
             // Give the window message a moment to take effect.
             Globals.WaitForTimeout();
 
-            deltaExpected = clicks * rowsPerClick;
+            switch (dir)
+            {
+                case ScrollDir.Vertical:
+                    deltaExpected = clicks * app.GetRowsPerScroll();
+                    break;
+                case ScrollDir.Horizontal:
+                    deltaExpected = clicks * app.GetColsPerScroll();
+                    break;
+                default:
+                    throw new NotSupportedException();
+            }
+            
             afterScroll = app.GetScreenBufferInfo();
 
             switch (dir)

@@ -16,7 +16,7 @@ Author(s):
 class Viewport sealed
 {
 public:
-    Viewport(_In_ const SMALL_RECT* const psr) : _sr(*psr) {}
+    Viewport(_In_ const SMALL_RECT sr) : _sr(sr) {}
     ~Viewport() {}
 
     SHORT Left() const { return _sr.Left; }
@@ -74,5 +74,5 @@ public:
 
 private:
     SMALL_RECT _sr;
-    
+
 };

@@ -302,12 +302,9 @@ COLORREF TextAttribute::_GetRgbBackground() const
     return rgbColor;
 }
 
-void TextAttribute::SetFrom(_In_ const TextAttribute* const pOtherAttr)
+void TextAttribute::SetFrom(_In_ const TextAttribute& otherAttr)
 {
-    _wAttrLegacy = pOtherAttr->_wAttrLegacy;
-    _fUseRgbColor = pOtherAttr->_fUseRgbColor;
-    _rgbForeground = pOtherAttr->_rgbForeground;
-    _rgbBackground = pOtherAttr->_rgbBackground;
+    *this = otherAttr;
 }
 
 void TextAttribute::SetFromLegacy(_In_ const WORD wLegacy)
@@ -322,7 +319,7 @@ void TextAttribute::SetForeground(_In_ const COLORREF rgbForeground)
     if (!_fUseRgbColor)
     {
         _rgbBackground = _GetRgbBackground();
-    }    
+    }
     _fUseRgbColor = true;
 }
 
@@ -332,7 +329,7 @@ void TextAttribute::SetBackground(_In_ const COLORREF rgbBackground)
     if (!_fUseRgbColor)
     {
         _rgbForeground = _GetRgbForeground();
-    }    
+    }
     _fUseRgbColor = true;
 }
 
@@ -342,18 +339,18 @@ void TextAttribute::SetColor(_In_ const COLORREF rgbColor, _In_ const bool fIsFo
     {
         SetForeground(rgbColor);
     }
-    else 
+    else
     {
         SetBackground(rgbColor);
     }
 }
 
-bool TextAttribute::IsEqual(_In_ const TextAttribute* const pOtherAttr) const
+bool TextAttribute::IsEqual(_In_ const TextAttribute& otherAttr) const
 {
-    return _wAttrLegacy == pOtherAttr->_wAttrLegacy &&
-           _fUseRgbColor == pOtherAttr->_fUseRgbColor &&
-           _rgbForeground == pOtherAttr->_rgbForeground &&
-           _rgbBackground == pOtherAttr->_rgbBackground;
+    return _wAttrLegacy == otherAttr._wAttrLegacy &&
+           _fUseRgbColor == otherAttr._fUseRgbColor &&
+           _rgbForeground == otherAttr._rgbForeground &&
+           _rgbBackground == otherAttr._rgbBackground;
 }
 
 bool TextAttribute::IsEqualToLegacy(_In_ const WORD wLegacy) const
@@ -410,14 +407,14 @@ void TextAttributeRun::SetLength(_In_ UINT const cchLength)
     _cchLength = cchLength;
 }
 
-const TextAttribute* TextAttributeRun::GetAttributes() const
+const TextAttribute TextAttributeRun::GetAttributes() const
 {
-    return &_attributes;
+    return _attributes;
 }
 
-void TextAttributeRun::SetAttributes(_In_ const TextAttribute* const pNew)
+void TextAttributeRun::SetAttributes(_In_ const TextAttribute textAttribute)
 {
-    _attributes.SetFrom(pNew);
+    _attributes.SetFrom(textAttribute);
 }
 
 #pragma endregion
@@ -431,7 +428,7 @@ void TextAttributeRun::SetAttributes(_In_ const TextAttribute* const pNew)
 // - pAttr - The default text attributes to use on text in this row.
 // Return Value:
 // - <none>
-bool ATTR_ROW::Initialize(_In_ UINT const cchRowWidth, _In_ const TextAttribute* const pAttr)
+bool ATTR_ROW::Initialize(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr)
 {
     TextAttributeRun* pNewRun = new TextAttributeRun[1];
     bool fSuccess = pNewRun != nullptr;
@@ -442,7 +439,7 @@ bool ATTR_ROW::Initialize(_In_ UINT const cchRowWidth, _In_ const TextAttribute*
             delete[] this->GetHead();
         }
         this->_pAttribRunListHead = pNewRun;
-        this->_pAttribRunListHead->SetAttributes(pAttr);
+        this->_pAttribRunListHead->SetAttributes(attr);
         this->_pAttribRunListHead->SetLength(cchRowWidth);
         this->Length = 1;
     }
@@ -562,7 +559,7 @@ UINT ATTR_ROW::_TotalLength() const
 //  Return Value:
 // - Success if unpacked. Buffer too small if row length is incorrect
 NTSTATUS ATTR_ROW::UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ UINT const cRowLength) const
-{ 
+{
     NTSTATUS status = STATUS_SUCCESS;
 
     unsigned short cTotalLength = 0;
@@ -628,7 +625,7 @@ NTSTATUS ATTR_ROW::UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgA
 // - rgAttrs - Array of words representing the attribute associated with each character position in the row.
 // - cRowLength - Length of preceeding array.
 // Return Value:
-// - Success if success. Buffer too small if row length is incorrect. 
+// - Success if success. Buffer too small if row length is incorrect.
 NTSTATUS ATTR_ROW::PackAttrs(_In_reads_(cRowLength) const TextAttribute* const rgAttrs, _In_ UINT const cRowLength)
 {
     NTSTATUS status = STATUS_SUCCESS;
@@ -649,7 +646,7 @@ NTSTATUS ATTR_ROW::PackAttrs(_In_reads_(cRowLength) const TextAttribute* const r
         {
             const TextAttribute* pCurAttr = &rgAttrs[i];
 
-            if (!pCurAttr->IsEqual(pPrevAttr))
+            if (!pCurAttr->IsEqual(*pPrevAttr))
             {
                 cDeltas++;
             }
@@ -673,18 +670,18 @@ NTSTATUS ATTR_ROW::PackAttrs(_In_reads_(cRowLength) const TextAttribute* const r
             {
                 this->Length = cAttrLength;
                 TextAttributeRun* pCurrentRun = this->GetHead();
-                pCurrentRun->SetAttributes(&rgAttrs[0]);
+                pCurrentRun->SetAttributes(rgAttrs[0]);
                 pCurrentRun->SetLength(1);
                 for (unsigned int i = 1; i < cRowLength; i++)
                 {
-                    if (pCurrentRun->GetAttributes()->IsEqual(&rgAttrs[i]))
+                    if (pCurrentRun->GetAttributes().IsEqual(rgAttrs[i]))
                     {
                         pCurrentRun->SetLength(pCurrentRun->GetLength() + 1);
                     }
                     else
                     {
                         pCurrentRun++;
-                        pCurrentRun->SetAttributes(&rgAttrs[i]);
+                        pCurrentRun->SetAttributes(rgAttrs[i]);
                         pCurrentRun->SetLength(1);
                     }
                 }
@@ -704,18 +701,18 @@ NTSTATUS ATTR_ROW::PackAttrs(_In_reads_(cRowLength) const TextAttribute* const r
 // - Sets the attributes (colors) of all character positions from the given position through the end of the row.
 // Arguments:
 // - iStart - Starting index position within the row
-// - pAttr - Attribute (color) to fill remaining characters with
+// - attr - Attribute (color) to fill remaining characters with
 // Return Value:
 // - <none>
-bool ATTR_ROW::SetAttrToEnd(_In_ UINT const iStart, _In_ const TextAttribute* const pAttr)
+bool ATTR_ROW::SetAttrToEnd(_In_ UINT const iStart, _In_ const TextAttribute attr)
 {
     // First get the information about the attribute applying at the current position
     TextAttributeRun* pIndexedAttrRun;
     UINT cAttrRunLengthFromIndex;
     this->FindAttrIndex(iStart, &pIndexedAttrRun, &cAttrRunLengthFromIndex);
-    bool fSuccess = true; 
+    bool fSuccess = true;
     // Only proceed if we're trying to change it
-    if (!pIndexedAttrRun->GetAttributes()->IsEqual(pAttr))
+    if (!pIndexedAttrRun->GetAttributes().IsEqual(attr))
     {
         // Unpack the old attributes
         const UINT cRowLength = this->_TotalLength();
@@ -727,7 +724,7 @@ bool ATTR_ROW::SetAttrToEnd(_In_ UINT const iStart, _In_ const TextAttribute* co
             ASSERT(iStart >= 0 && iStart < cRowLength);
             for (UINT i = iStart; i < cRowLength; i++)
             {
-                rgAttrs[i].SetFrom(pAttr);
+                rgAttrs[i].SetFrom(attr);
             }
 
             // Repack the attributes
@@ -762,9 +759,9 @@ void ATTR_ROW::ReplaceLegacyAttrs(_In_ WORD wToBeReplacedAttr, _In_ WORD wReplac
     for (SHORT i = 0; i < Length; i++)
     {
         TextAttributeRun* pAttrRun = &(this->GetHead()[i]);
-        if (pAttrRun->GetAttributes()->IsEqual(&ToBeReplaced))
+        if (pAttrRun->GetAttributes().IsEqual(ToBeReplaced))
         {
-            pAttrRun->SetAttributes(&ReplaceWith);
+            pAttrRun->SetAttributes(ReplaceWith);
         }
     }
 }
@@ -826,7 +823,7 @@ NTSTATUS ATTR_ROW::InsertAttrRuns(_In_reads_(cMergeAttrRuns) TextAttributeRun* p
             {
                 TextAttributeRun* pAttrRun = &(prgMergeAttrRuns[sMergeIndex]);
                 // ... loop over every spot in the run
-                for (short sSpotInRun = 0; 
+                for (short sSpotInRun = 0;
                      ((UINT)sSpotInRun < pAttrRun->GetLength()) && (sSpotInRun+sCurrentX <= sEndIndex);
                      sSpotInRun++)
                 {
@@ -852,13 +849,13 @@ NTSTATUS ATTR_ROW::InsertAttrRuns(_In_reads_(cMergeAttrRuns) TextAttributeRun* p
 // - Sets all properties of the ROW to default values
 // Arguments:
 // - sRowWidth - The width of the row.
-// - wAttr - The default attribute (color) to fill
+// - Attr - The default attribute (color) to fill
 // Return Value:
 // - <none>
-bool ROW::Initialize(_In_ short const sRowWidth, _In_ const TextAttribute* const pAttr)
+bool ROW::Initialize(_In_ short const sRowWidth, _In_ const TextAttribute Attr)
 {
     this->CharRow.Initialize(sRowWidth);
-    return this->AttrRow.Initialize(sRowWidth, pAttr);
+    return this->AttrRow.Initialize(sRowWidth, Attr);
 
 }
 #pragma endregion
@@ -979,7 +976,7 @@ NTSTATUS TEXT_BUFFER_INFO::CreateInstance(_In_ const FontInfo* const pFontInfo,
                             pRow->sRowId = (SHORT)i;
                             TextAttribute FillAttributes;
                             FillAttributes.SetFromLegacy(ciFill.Attributes);
-                            bool fSuccess = pRow->Initialize(coordScreenBufferSize.X, &FillAttributes);
+                            bool fSuccess = pRow->Initialize(coordScreenBufferSize.X, FillAttributes);
                             if (!fSuccess)
                             {
                                 status = STATUS_NO_MEMORY;
@@ -1296,7 +1293,7 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ BYTE const bKAttr)
 //Return Value:
 // - true if we successfully inserted the character
 // - false otherwise (out of memory)
-bool TEXT_BUFFER_INFO::InsertCharacter(_In_ WCHAR const wch, _In_ BYTE const bKAttr, _In_ const TextAttribute* const pAttr)
+bool TEXT_BUFFER_INFO::InsertCharacter(_In_ WCHAR const wch, _In_ BYTE const bKAttr, _In_ const TextAttribute attr)
 {
     // Ensure consistent buffer state for double byte characters based on the character type we're about to insert
     bool fSuccess = _PrepareForDoubleByteSequence(bKAttr);
@@ -1334,7 +1331,7 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ WCHAR const wch, _In_ BYTE const bKA
         }
 
         // Store color data
-        fSuccess = pRow->AttrRow.SetAttrToEnd(iCol, pAttr);
+        fSuccess = pRow->AttrRow.SetAttrToEnd(iCol, attr);
         if (fSuccess)
         {
             // Advance the cursor
@@ -1497,7 +1494,7 @@ bool TEXT_BUFFER_INFO::IncrementCircularBuffer()
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     TextAttribute FillAttributes;
     FillAttributes.SetFromLegacy(_ciFill.Attributes);
-    bool fSuccess = this->Rows[this->_FirstRow].Initialize(this->_coordBufferSize.X, &FillAttributes);
+    bool fSuccess = this->Rows[this->_FirstRow].Initialize(this->_coordBufferSize.X, FillAttributes);
     if (fSuccess)
     {
         // Now proceed to increment.
@@ -1528,11 +1525,11 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
     ROW* pCurrRow = this->GetRowByOffset(coordEndOfText.Y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
     coordEndOfText.X = pCurrRow->CharRow.Right - 1;
-    
+
     // If the X coordinate turns out to be -1, the row was empty, we need to search backwards for the real end of text.
     bool fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > 0); // this row is empty, and we're not at the top
     while (fDoBackUp)
-    {    
+    {
         coordEndOfText.Y--;
         pCurrRow = this->GetRowByOffset(coordEndOfText.Y);
         // We need to back up to the previous row if this line is empty, AND there are more rows

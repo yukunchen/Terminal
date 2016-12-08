@@ -10,25 +10,29 @@ SOURCES                            =   \
                                        Properties\AssemblyInfo.cs \
                                        Common\AutoHelpers.cs \
                                        Common\CheckBoxMeta.cs \
-                                       Common\SliderMeta.cs \
                                        Common\Globals.cs \
                                        Common\NativeMethods.cs \
                                        Common\RegistryHelper.cs \
                                        Common\ShortcutHelper.cs \
+                                       Common\SliderMeta.cs \
                                        Common\VersionSelector.cs \
                                        Elements\CmdApp.cs \
+                                       Elements\ColorsTab.cs \
+                                       Elements\FontTab.cs \
+                                       Elements\LayoutTab.cs \
+                                       Elements\OptionsTab.cs \
                                        Elements\PropertiesDialog.cs \
                                        Elements\TabBase.cs \
                                        Elements\Tabs.cs \
-                                       Elements\OptionsTab.cs \
-                                       Elements\FontTab.cs \
-                                       Elements\LayoutTab.cs \
-                                       Elements\ColorsTab.cs \
                                        Elements\ViewportArea.cs \
+                                       Elements\WinEventSystem.cs \
                                        ExperimentalTabTests.cs \
+                                       Init.cs \
                                        MiscTests.cs \
+                                       MouseWheelTests.cs \
                                        SelectionApiTests.cs \
                                        VirtualTerminalTests.cs \
+                                       WinEventTests.cs \
 
 
 REFERENCES                         =   $(CLR_REF_PATH)\System.metadata_dll; \

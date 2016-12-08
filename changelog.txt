@@ -79,3 +79,18 @@
 	9901410 - Invalid SAL annotation on ReadConsoleOutputCharacterAImpl
 	9821668 - PSReadline now causes window to shrink while typing
 	9409098 - Reliability: appcrash in integer_divide_by_zero_c0000094_conhostv2.dll!screen_information::_adjustscreenbufferhelper.
+
+12/07/2016 - <batch merge>
+	9685766 - [BYOBU] Console redrawing issues when using tmux / byobu in bash
+	10047286 - conemu triggers assert when attaching console
+	10071715 - Functions wrapped in NTSTATUS_FROM_WIN32 get called twice
+	9751066 - [Maximus5/ConEmu] WriteConsoleW used with ConEmu duplicates Chinese characters output (#945)
+	9979330 - [Watson Failure] caused by INTEGER_DIVIDE_BY_ZERO - this represents having GDI Engine updated to appropriately log/return/handle all sorts of GDI errors 
+	9891756 - AllocConsole then FreeConsole from win32 application is not closing newly created console window
+	9811815 - ConEmu doesn't scroll properly when dir is run
+	9770949 - F9 popup doesn't restore original colors when leaving
+	9910404 - UIA tests for accessibility
+	9615358 - [GH #757] Can't set different font for the terminal
+	9871791 - [GH #1307] Typing text in the bash: existing text is overwritten, new text is not inserted
+	10046477 - Ctrl-l Doesn't erase bottom row or right column in bash
+	9130937 - Remove Secure CRT suppression flag

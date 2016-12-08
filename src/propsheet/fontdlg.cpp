@@ -152,6 +152,63 @@ BOOL IsBoldOnlyTTFont(_In_ PCWSTR pwszTTFace, _In_opt_ PCWSTR pwszAltTTFace)
     return !fFoundNormalWeightFont;
 }
 
+// Given a handle to our dialog:
+// 1. Get currently entered font size
+// 2. Check to see if the size is a valid custom size
+// 3. If the size is custom, add it to the points size list
+static void AddCustomFontSizeToListIfNeeded(__in const HWND hDlg)
+{
+    WCHAR wszBuf[3]; // only need space for point sizes. the max we allow is "72"
+
+    // check to see if we have text
+    if (GetDlgItemText(hDlg, IDD_POINTSLIST, wszBuf, ARRAYSIZE(wszBuf)) > 0)
+    {
+        // we have text, now retrieve it as an actual size
+        BOOL fTranslated;
+        const SHORT nPointSize = (SHORT)GetDlgItemInt(hDlg, IDD_POINTSLIST, &fTranslated, TRUE);
+        if (fTranslated &&
+            nPointSize >= MIN_PIXEL_HEIGHT &&
+            nPointSize <= MAX_PIXEL_HEIGHT &&
+            IsFontSizeCustom(gpStateInfo->FaceName, nPointSize))
+        {
+            // we got a proper custom size. let's see if it's in our point size list
+            LONG iSize = (LONG)SendDlgItemMessage(hDlg, IDD_POINTSLIST, CB_FINDSTRINGEXACT, (WPARAM)-1, (LPARAM)wszBuf);
+            if (iSize == CB_ERR)
+            {
+                // the size isn't in our list, so we haven't created them yet. do so now.
+                CreateSizeForAllTTFonts(nPointSize);
+
+                // add the size to the dialog list and select it
+                iSize = (LONG)SendDlgItemMessage(hDlg, IDD_POINTSLIST, CB_ADDSTRING, 0, (LPARAM)wszBuf);
+                SendDlgItemMessage(hDlg, IDD_POINTSLIST, CB_SETCURSEL, iSize, 0);
+
+                // get the current font selection
+                LONG lCurrentFont = (LONG)SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETCURSEL, 0, 0);
+
+                // now get the current font's face name
+                WCHAR wszFontFace[LF_FACESIZE];
+                SendDlgItemMessage(hDlg,
+                                   IDD_FACENAME,
+                                   LB_GETTEXT,
+                                   (WPARAM)lCurrentFont,
+                                   (LPARAM)wszFontFace);
+
+                // now cause the hFont for this face/size combination to get loaded -- we need to do this so that the
+                // font preview has an hFont with which to render
+                COORD coordFontSize;
+                coordFontSize.X = 0;
+                coordFontSize.Y = nPointSize;
+                const int iFont = FindCreateFont(FF_MODERN | TMPF_VECTOR | TMPF_TRUETYPE,
+                                                 wszFontFace,
+                                                 coordFontSize,
+                                                 0,
+                                                 gpStateInfo->CodePage);
+                SendDlgItemMessage(hDlg, IDD_POINTSLIST, CB_SETITEMDATA, (WPARAM)iSize, (LPARAM)iFont);
+            }
+        }
+    }
+}
+
 INT_PTR
 APIENTRY
 FontDlgProc(
@@ -345,6 +402,7 @@ RedoFontListAndPreview:
                     hWndFocus = GetFocus();
                     if (hWndFocus != NULL && IsChild(hDlg, hWndFocus) &&
                         hWndFocus != GetDlgItem(hDlg, IDCANCEL)) {
+                        AddCustomFontSizeToListIfNeeded(hDlg);
                         PreviewUpdate(hDlg, FALSE);
                     }
                 }

@@ -47,6 +47,9 @@ Telemetry::Telemetry()
     time(&_tStartedAt);
     TraceLoggingRegister(g_hConhostV2EventTraceProvider);
     TraceLoggingWriteStart(_activity, "ActivityStart");
+    // initialize wil tracelogging
+    wil::SetResultLoggingCallback(&Tracing::TraceFailure);
+    wil::g_pfnShouldOutputDebugString = [] { return !!IsDebuggerPresent(); };
 }
 #pragma warning(pop)
 
@@ -309,7 +312,7 @@ void Telemetry::WriteFinalTraceLog()
                 TraceLoggingBool(g_ciConsoleInformation.LinkTitle == nullptr, "LaunchedFromShortcut"),
                 // Normally we would send out a single array containing the name and count,
                 // but that's difficult to do with our telemetry system, so send out two separate arrays.
-                // Casting to UINT should be fine, since our array size is only 2K.  
+                // Casting to UINT should be fine, since our array size is only 2K.
                 TraceLoggingPackedField(_wchProcessFileNames, static_cast<UINT>(sizeof(WCHAR) * _iProcessFileNamesNext), TlgInUNICODESTRING | TlgInVcount, "ProcessesConnected"),
                 TraceLoggingUInt32Array(_rguiProcessFileNamesCount, _uiNumberProcessFileNames, "ProcessesConnectedCount"),
                 TraceLoggingUInt32Array(_rguiProcessFileNamesCodesCount, _uiNumberProcessFileNames, "ProcessesConnectedCodesCount"),
