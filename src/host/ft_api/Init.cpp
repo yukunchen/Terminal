@@ -15,12 +15,12 @@ wil::unique_handle hJob;
 
 // This will automatically try to terminate the job object (and all of the
 // binaries under test that are children) whenever this class gets shut down.
-auto OnAppExitKillJob = wil::ScopeExit([&] {
-    if (nullptr != hJob.get())
-    {
-        THROW_LAST_ERROR_IF_FALSE(TerminateJobObject(hJob.get(), S_OK));
-    }
-});
+//auto OnAppExitKillJob = wil::ScopeExit([&] {
+//    if (nullptr != hJob.get())
+//    {
+//        THROW_LAST_ERROR_IF_FALSE(TerminateJobObject(hJob.get(), S_OK));
+//    }
+//});
 
 MODULE_SETUP(ModuleSetup)
 {
