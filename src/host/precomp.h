@@ -17,11 +17,6 @@ Abstract:
 #define DEFINE_CONSOLEV2_PROPERTIES
 
 // Ignore checked iterators warning from VC compiler.
-
-#ifndef _CRT_SECURE_NO_WARNINGS // Windows build system already defines this, so use ifndef to prevent collision
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #define _SCL_SECURE_NO_WARNINGS
 
 // This includes a lot of common headers needed by both the host and the propsheet

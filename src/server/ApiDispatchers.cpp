@@ -34,20 +34,28 @@ HRESULT ApiDispatchers::ServerGetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, 
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
     CONSOLE_MODE_MSG* const a = &m->u.consoleMsgL1.GetConsoleMode;
+    std::wstring handleType = L"unknown";
+
+    auto tracing = wil::ScopeExit([&]()
+    {
+        Tracing::s_TraceApi(a, handleType);
+    });
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
     if (pObjectHandle->IsInputHandle())
     {
+        handleType = L"input handle";
         INPUT_INFORMATION* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_READ, &pObj));
-        return m->_pApiRoutines->GetConsoleInputModeImpl(pObj, &a->Mode);
+        RETURN_HR(m->_pApiRoutines->GetConsoleInputModeImpl(pObj, &a->Mode));
     }
     else
     {
+        handleType = L"output handle";
         SCREEN_INFORMATION* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
-        return m->_pApiRoutines->GetConsoleOutputModeImpl(pObj, &a->Mode);
+        RETURN_HR(m->_pApiRoutines->GetConsoleOutputModeImpl(pObj, &a->Mode));
     }
 }
 
@@ -187,6 +195,11 @@ HRESULT ApiDispatchers::ServerGetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleScreenBufferInfoEx);
     CONSOLE_SCREENBUFFERINFO_MSG* const a = &m->u.consoleMsgL2.GetConsoleScreenBufferInfo;
 
+    auto tracing = wil::ScopeExit([&]()
+    {
+        Tracing::s_TraceApi(a);
+    });
+
     CONSOLE_SCREEN_BUFFER_INFOEX ex = { 0 };
     ex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
 
@@ -206,8 +219,8 @@ HRESULT ApiDispatchers::ServerGetConsoleScreenBufferInfo(_Inout_ CONSOLE_API_MSG
     a->Size = ex.dwSize;
     a->ScrollPosition.X = ex.srWindow.Left;
     a->ScrollPosition.Y = ex.srWindow.Top;
-    a->CurrentWindowSize.X = ex.srWindow.Right - ex.srWindow.Left + 1;
-    a->CurrentWindowSize.Y = ex.srWindow.Bottom - ex.srWindow.Top + 1;
+    a->CurrentWindowSize.X = ex.srWindow.Right - ex.srWindow.Left;
+    a->CurrentWindowSize.Y = ex.srWindow.Bottom - ex.srWindow.Top;
     a->Attributes = ex.wAttributes;
     a->PopupAttributes = ex.wPopupAttributes;
 
@@ -321,13 +334,17 @@ HRESULT ApiDispatchers::ServerSetConsoleTextAttribute(_Inout_ CONSOLE_API_MSG * 
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::SetConsoleTextAttribute);
     CONSOLE_SETTEXTATTRIBUTE_MSG* const a = &m->u.consoleMsgL2.SetConsoleTextAttribute;
 
+    auto tracing = wil::ScopeExit([&]()
+    {
+        Tracing::s_TraceApi(a);
+    });
+
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
-
-    return m->_pApiRoutines->SetConsoleTextAttributeImpl(pObj, a->Attributes);
+    RETURN_HR(m->_pApiRoutines->SetConsoleTextAttributeImpl(pObj, a->Attributes));
 }
 
 HRESULT ApiDispatchers::ServerSetConsoleWindowInfo(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)

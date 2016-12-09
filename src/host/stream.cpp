@@ -1704,7 +1704,7 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
         return Status;
     }
 
-    ConsoleProcessHandle* const ProcessData = m->GetProcessHandle(); 
+    ConsoleProcessHandle* const ProcessData = m->GetProcessHandle();
 
     ConsoleHandleData* HandleData = m->GetObjectHandle();
     INPUT_INFORMATION* pInputInfo;
@@ -1776,6 +1776,10 @@ NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsole, a->Unicode);
 
     PVOID Buffer;
+    auto tracing = wil::ScopeExit([&]()
+    {
+        Tracing::s_TraceApi(Buffer, a);
+    });
     NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer(&Buffer, &a->NumBytes));
     if (!NT_SUCCESS(Status))
     {

@@ -48,6 +48,8 @@ public:
     static void s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList);
 
 private:   
+    void _ValidateCoordSize();
+
     WCHAR _pwszFaceName[LF_FACESIZE];
     LONG _lWeight;
     BYTE _bFamily;

@@ -427,7 +427,7 @@ DWORD RemoveDbcsMarkAll(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         return cchBuf;
     }
 
-    if (*psLeftChar > pScreenInfo->BufferViewport.Left && pRow->CharRow.KAttrs[*psLeftChar] & CHAR_ROW::ATTR_TRAILING_BYTE)
+    if (*psLeftChar > pScreenInfo->GetBufferViewport().Left && pRow->CharRow.KAttrs[*psLeftChar] & CHAR_ROW::ATTR_TRAILING_BYTE)
     {
         prcText->left -= pScreenInfo->GetScreenFontSize().X;
         --*psLeftChar;
@@ -440,7 +440,7 @@ DWORD RemoveDbcsMarkAll(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "We're guaranteed to be able to make this access.")
         return RemoveDbcsMark(pwchBuf, &pRow->CharRow.Chars[*psLeftChar], cchBuf + 1, (PCHAR) & pRow->CharRow.KAttrs[*psLeftChar]);
     }
-    else if (*psLeftChar == pScreenInfo->BufferViewport.Left && pRow->CharRow.KAttrs[*psLeftChar] & CHAR_ROW::ATTR_TRAILING_BYTE)
+    else if (*psLeftChar == pScreenInfo->GetBufferViewport().Left && pRow->CharRow.KAttrs[*psLeftChar] & CHAR_ROW::ATTR_TRAILING_BYTE)
     {
         *pwchBuf = UNICODE_SPACE;
         return RemoveDbcsMark(pwchBuf + 1, &pRow->CharRow.Chars[*psLeftChar + 1], cchBuf - 1, (PCHAR) & pRow->CharRow.KAttrs[*psLeftChar + 1]) + 1;

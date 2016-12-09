@@ -208,7 +208,7 @@ void UpdateWinText()
             {
                 // construct new title string
                 PWSTR pwszTitle = new WCHAR[MAX_PATH];
-                if (pwszTitle != nullptr) 
+                if (pwszTitle != nullptr)
                 {
                     if (SUCCEEDED(StringCchPrintfW(pwszTitle,
                                                    MAX_PATH,
@@ -259,7 +259,7 @@ void GetConsoleState(_Out_ CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->QuickEdit = !!(g_ciConsoleInformation.Flags & CONSOLE_QUICK_EDIT_MODE);
     pStateInfo->AutoPosition = !!(g_ciConsoleInformation.Flags & CONSOLE_AUTO_POSITION);
     pStateInfo->InsertMode = g_ciConsoleInformation.GetInsertMode();
-    pStateInfo->ScreenAttributes = ScreenInfo->GetAttributes()->GetLegacyAttributes();
+    pStateInfo->ScreenAttributes = ScreenInfo->GetAttributes().GetLegacyAttributes();
     pStateInfo->PopupAttributes = ScreenInfo->GetPopupAttributes()->GetLegacyAttributes();
     pStateInfo->HistoryBufferSize = g_ciConsoleInformation.GetHistoryBufferSize();
     pStateInfo->NumberOfHistoryBuffers = g_ciConsoleInformation.GetNumberOfHistoryBuffers();
@@ -349,7 +349,7 @@ void PropertiesUpdate(_In_ PCONSOLE_STATE_INFO pStateInfo)
             // Then if wrap text is on, the buffer size gets fixed to the window size value.
             coordBuffer.X = coordWindow.X;
 
-            // However, we're not done. The "max window size" is if we had no scroll bar. 
+            // However, we're not done. The "max window size" is if we had no scroll bar.
             // We need to adjust slightly more if there's space reserved for a vertical scroll bar
             // which happens when the buffer Y is taller than the window Y.
             if (coordBuffer.Y > coordWindow.Y)
@@ -476,7 +476,7 @@ void PropertiesDlgShow(_In_ HWND const hwnd, _In_ BOOL const Defaults)
             }
         }
     }
-    
+
     if (fLoadedDll)
     {
         APPLET_PROC const pfnCplApplet = (APPLET_PROC)GetProcAddress((HMODULE)hLibrary, "CPlApplet");

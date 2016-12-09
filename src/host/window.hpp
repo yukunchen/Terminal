@@ -43,7 +43,7 @@ public:
     void SetIsFullscreen(_In_ bool const fFullscreenEnabled);
     void ToggleFullscreen();
 
-    NTSTATUS SetViewportOrigin(_In_ const SMALL_RECT* const prcNewOrigin);
+    NTSTATUS SetViewportOrigin(_In_ SMALL_RECT NewWindow);
 
     void VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbsoluteChange) const;
     void HorizontalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbsoluteChange) const;
@@ -72,8 +72,8 @@ public:
 
 protected:
     // prevent accidental generation of copies
-    Window(Window const&);
-    void operator=(Window const&);
+    Window(Window const&) = delete;
+    void operator=(Window const&) = delete;
 
 private:
     Window();
@@ -119,11 +119,11 @@ private:
 
     // math helpers
     void _CalculateWindowRect(_In_ COORD const coordWindowInChars, _Inout_ RECT* const prectWindow) const;
-    static void s_CalculateWindowRect(_In_ COORD const coordWindowInChars, 
-                                      _In_ int const iDpi, 
-                                      _In_ COORD const coordFontSize, 
+    static void s_CalculateWindowRect(_In_ COORD const coordWindowInChars,
+                                      _In_ int const iDpi,
+                                      _In_ COORD const coordFontSize,
                                       _In_ COORD const coordBufferSize,
-                                      _In_opt_ HWND const hWnd, 
+                                      _In_opt_ HWND const hWnd,
                                       _Inout_ RECT* const prectWindow);
 
     static BOOL s_AdjustWindowRectEx(_Inout_ LPRECT prc, _In_ const DWORD dwStyle, _In_ const BOOL fMenu, _In_ const DWORD dwExStyle);

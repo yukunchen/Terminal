@@ -128,7 +128,7 @@ public:
         // Copy the expected output into the buffer
         size_t cchInputExpected = 0;
         VERIFY_SUCCEEDED(StringCchLengthW(pwchTestOutput, STRSAFE_MAX_CCH, &cchInputExpected));
-        VERIFY_ARE_EQUAL(cchInputExpected, 6);
+        VERIFY_ARE_EQUAL(cchInputExpected, 6ul);
         
         ClearTestBuffer();
         memcpy(s_pwszExpectedBuffer, pwchTestOutput, cchInputExpected * sizeof(wchar_t));
@@ -151,7 +151,6 @@ public:
         ClearTestBuffer();
 
         // Copy the expected output into the buffer
-        // TODO MSFT:9130937 - VS is content with calling `swprintf` here, but razzle doesn't like the `count` param
         swprintf_s(s_pwszExpectedBuffer, BYTE_MAX, pwchTestOutput, GetSgrCharFromButton(uiButton, sModifierKeystate, sScrollDelta));
         
         size_t cchInputExpected = 0;

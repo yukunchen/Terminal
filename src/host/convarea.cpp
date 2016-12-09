@@ -49,7 +49,7 @@ RECT GetImeSuggestionWindowPos()
     // This means that if the cursor is at row 30 in the buffer but the viewport is showing rows 20-40 right now on screen
     // that the "relative" position is that it is on the 11th line from the top (or 10th by index).
     // Correct by subtracting the top/left corner from the cursor's position.
-    SMALL_RECT const srViewport = g_ciConsoleInformation.CurrentScreenBuffer->BufferViewport;
+    SMALL_RECT const srViewport = g_ciConsoleInformation.CurrentScreenBuffer->GetBufferViewport();
     coordCursor.X -= srViewport.Left;
     coordCursor.Y -= srViewport.Top;
 
@@ -81,7 +81,7 @@ bool IsValidSmallRect(_In_ PSMALL_RECT const Rect)
 }
 
 void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
-                             _In_ const SMALL_RECT * const psrConvRegion)
+                             _In_ const SMALL_RECT srConvRegion)
 {
     if (!pScreenInfo->IsActiveScreenBuffer())
     {
@@ -96,26 +96,27 @@ void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
         if (!pConvAreaInfo->IsHidden())
         {
+            const SMALL_RECT currentViewport = pScreenInfo->GetBufferViewport();
             // Do clipping region
             SMALL_RECT Region;
-            Region.Left = pScreenInfo->BufferViewport.Left + pConvAreaInfo->CaInfo.rcViewCaWindow.Left + pConvAreaInfo->CaInfo.coordConView.X;
+            Region.Left = currentViewport.Left + pConvAreaInfo->CaInfo.rcViewCaWindow.Left + pConvAreaInfo->CaInfo.coordConView.X;
             Region.Right = Region.Left + (pConvAreaInfo->CaInfo.rcViewCaWindow.Right - pConvAreaInfo->CaInfo.rcViewCaWindow.Left);
-            Region.Top = pScreenInfo->BufferViewport.Top + pConvAreaInfo->CaInfo.rcViewCaWindow.Top + pConvAreaInfo->CaInfo.coordConView.Y;
+            Region.Top = currentViewport.Top + pConvAreaInfo->CaInfo.rcViewCaWindow.Top + pConvAreaInfo->CaInfo.coordConView.Y;
             Region.Bottom = Region.Top + (pConvAreaInfo->CaInfo.rcViewCaWindow.Bottom - pConvAreaInfo->CaInfo.rcViewCaWindow.Top);
 
             SMALL_RECT ClippedRegion;
-            ClippedRegion.Left = max(Region.Left, pScreenInfo->BufferViewport.Left);
-            ClippedRegion.Top = max(Region.Top, pScreenInfo->BufferViewport.Top);
-            ClippedRegion.Right = min(Region.Right, pScreenInfo->BufferViewport.Right);
-            ClippedRegion.Bottom = min(Region.Bottom, pScreenInfo->BufferViewport.Bottom);
+            ClippedRegion.Left = max(Region.Left, currentViewport.Left);
+            ClippedRegion.Top = max(Region.Top, currentViewport.Top);
+            ClippedRegion.Right = min(Region.Right, currentViewport.Right);
+            ClippedRegion.Bottom = min(Region.Bottom, currentViewport.Bottom);
 
             if (IsValidSmallRect(&ClippedRegion))
             {
                 Region = ClippedRegion;
-                ClippedRegion.Left = max(Region.Left, psrConvRegion->Left);
-                ClippedRegion.Top = max(Region.Top, psrConvRegion->Top);
-                ClippedRegion.Right = min(Region.Right, psrConvRegion->Right);
-                ClippedRegion.Bottom = min(Region.Bottom, psrConvRegion->Bottom);
+                ClippedRegion.Left = max(Region.Left, srConvRegion.Left);
+                ClippedRegion.Top = max(Region.Top, srConvRegion.Top);
+                ClippedRegion.Right = min(Region.Right, srConvRegion.Right);
+                ClippedRegion.Bottom = min(Region.Bottom, srConvRegion.Bottom);
                 if (IsValidSmallRect(&ClippedRegion))
                 {
                     // if we have a renderer, we need to update.
@@ -144,18 +145,21 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
 
     COORD Position = ScreenInfo->TextInfo->GetCursor()->GetPosition();
     COORD WindowOrigin;
+    {
+        const SMALL_RECT currentViewport = ScreenInfo->GetBufferViewport();
 
-    if ((ScreenInfo->BufferViewport.Left <= Position.X && Position.X <= ScreenInfo->BufferViewport.Right) &&
-        (ScreenInfo->BufferViewport.Top <= Position.Y && Position.Y <= ScreenInfo->BufferViewport.Bottom))
-    {
-        Position.X = ScreenInfo->TextInfo->GetCursor()->GetPosition().X - ScreenInfo->BufferViewport.Left;
-        Position.Y = ScreenInfo->TextInfo->GetCursor()->GetPosition().Y - ScreenInfo->BufferViewport.Top;
-    }
-    else
-    {
-        WindowOrigin.X = 0;
-        WindowOrigin.Y = (SHORT)(Position.Y - ScreenInfo->BufferViewport.Bottom);
-        ScreenInfo->SetViewportOrigin(FALSE, WindowOrigin);
+        if ((currentViewport.Left <= Position.X && Position.X <= currentViewport.Right) &&
+            (currentViewport.Top <= Position.Y && Position.Y <= currentViewport.Bottom))
+        {
+            Position.X = ScreenInfo->TextInfo->GetCursor()->GetPosition().X - currentViewport.Left;
+            Position.Y = ScreenInfo->TextInfo->GetCursor()->GetPosition().Y - currentViewport.Top;
+        }
+        else
+        {
+            WindowOrigin.X = 0;
+            WindowOrigin.Y = (SHORT)(Position.Y - currentViewport.Bottom);
+            ScreenInfo->SetViewportOrigin(FALSE, WindowOrigin);
+        }
     }
 
     SHORT PosY = Position.Y;
@@ -178,7 +182,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
         PosY = (SHORT)(ScreenInfo->GetScreenWindowSizeY() - 1 - WholeRow);
         if (PosY < 0)
         {
-            PosY = ScreenInfo->BufferViewport.Top;
+            PosY = ScreenInfo->GetBufferViewport().Top;
         }
     }
 
@@ -290,7 +294,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                     wLegacyAttr |= (COMMON_LVB_GRID_SINGLEFLAG | COMMON_LVB_GRID_LVERTICAL);
                 }
                 TextAttribute taAttribute = TextAttribute(wLegacyAttr);
-                ConvScreenInfo->SetAttributes(&taAttribute);
+                ConvScreenInfo->SetAttributes(taAttribute);
 
                 StreamWriteToScreenBufferIME(LocalBuffer, (USHORT) i, ConvScreenInfo, (PCHAR) LocalBufferA);
 
@@ -359,7 +363,7 @@ NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* ConvAreaInfo)
                &CharsToWrite);
 
     CharsToWrite = ConvAreaInfo->ScreenBuffer->ScreenBufferSize.X;
-    FillOutput(ConvAreaInfo->ScreenBuffer, g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes()->GetLegacyAttributes(), Coord, CONSOLE_ATTRIBUTE, &CharsToWrite);
+    FillOutput(ConvAreaInfo->ScreenBuffer, g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes(), Coord, CONSOLE_ATTRIBUTE, &CharsToWrite);
     ConsoleImePaint(ConvAreaInfo);
     return STATUS_SUCCESS;
 }
@@ -528,18 +532,18 @@ void ConsoleImePaint(_In_ ConversionAreaInfo* pConvAreaInfo)
     }
 
     SMALL_RECT WriteRegion;
-    WriteRegion.Left = ScreenInfo->BufferViewport.Left + pConvAreaInfo->CaInfo.coordConView.X + pConvAreaInfo->CaInfo.rcViewCaWindow.Left;
+    WriteRegion.Left = ScreenInfo->GetBufferViewport().Left + pConvAreaInfo->CaInfo.coordConView.X + pConvAreaInfo->CaInfo.rcViewCaWindow.Left;
     WriteRegion.Right = WriteRegion.Left + (pConvAreaInfo->CaInfo.rcViewCaWindow.Right - pConvAreaInfo->CaInfo.rcViewCaWindow.Left);
-    WriteRegion.Top = ScreenInfo->BufferViewport.Top + pConvAreaInfo->CaInfo.coordConView.Y + pConvAreaInfo->CaInfo.rcViewCaWindow.Top;
+    WriteRegion.Top = ScreenInfo->GetBufferViewport().Top + pConvAreaInfo->CaInfo.coordConView.Y + pConvAreaInfo->CaInfo.rcViewCaWindow.Top;
     WriteRegion.Bottom = WriteRegion.Top + (pConvAreaInfo->CaInfo.rcViewCaWindow.Bottom - pConvAreaInfo->CaInfo.rcViewCaWindow.Top);
 
     if (!pConvAreaInfo->IsHidden())
     {
-        WriteConvRegionToScreen(ScreenInfo, &WriteRegion);
+        WriteConvRegionToScreen(ScreenInfo, WriteRegion);
     }
     else
     {
-        WriteToScreen(ScreenInfo, &WriteRegion);
+        WriteToScreen(ScreenInfo, WriteRegion);
     }
 }
 
@@ -566,14 +570,14 @@ void ConsoleImeViewInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ COORD coordC
         OldRegion.Bottom += ConvAreaInfo->CaInfo.coordConView.Y;
         ConvAreaInfo->CaInfo.coordConView = coordConView;
 
-        WriteToScreen(g_ciConsoleInformation.CurrentScreenBuffer, &OldRegion);
+        WriteToScreen(g_ciConsoleInformation.CurrentScreenBuffer, OldRegion);
 
         NewRegion = ConvAreaInfo->CaInfo.rcViewCaWindow;
         NewRegion.Left += ConvAreaInfo->CaInfo.coordConView.X;
         NewRegion.Right += ConvAreaInfo->CaInfo.coordConView.X;
         NewRegion.Top += ConvAreaInfo->CaInfo.coordConView.Y;
         NewRegion.Bottom += ConvAreaInfo->CaInfo.coordConView.Y;
-        WriteToScreen(g_ciConsoleInformation.CurrentScreenBuffer, &NewRegion);
+        WriteToScreen(g_ciConsoleInformation.CurrentScreenBuffer, NewRegion);
     }
 }
 
@@ -783,11 +787,11 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     }
 
     // see if attr string is different.  if so, allocate a new attr buffer and merge the two strings.
-    if (Row->AttrRow.Length != 1 || !(Row->AttrRow.GetHead()->GetAttributes()->IsEqual(ScreenInfo->GetAttributes())))
+    if (Row->AttrRow.Length != 1 || !(Row->AttrRow.GetHead()->GetAttributes().IsEqual(ScreenInfo->GetAttributes())))
     {
         TextAttributeRun InsertedRun;
 
-        const WORD wScreenAttributes = ScreenInfo->GetAttributes()->GetLegacyAttributes();
+        const WORD wScreenAttributes = ScreenInfo->GetAttributes().GetLegacyAttributes();
         const bool fRVerticalSet = AreAllFlagsSet(wScreenAttributes, COMMON_LVB_GRID_SINGLEFLAG | COMMON_LVB_GRID_RVERTICAL);
         const bool fLVerticalSet = AreAllFlagsSet(wScreenAttributes, COMMON_LVB_GRID_SINGLEFLAG | COMMON_LVB_GRID_LVERTICAL);
 

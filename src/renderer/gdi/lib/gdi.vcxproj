@@ -23,7 +23,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\dep\Win32K</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\dep\Win32K;..\..\..\..\dep</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
