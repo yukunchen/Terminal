@@ -19,11 +19,8 @@ class DimensionsTests
     TEST_METHOD_SETUP(TestSetup);
     TEST_METHOD_CLEANUP(TestCleanup);
 
-    BEGIN_TEST_METHOD(TestGetLargestConsoleWindowSize)
-    END_TEST_METHOD()
-
-    BEGIN_TEST_METHOD(TestGetConsoleScreenBufferInfoAndEx)
-    END_TEST_METHOD()
+    TEST_METHOD(TestGetLargestConsoleWindowSize);
+    TEST_METHOD(TestGetConsoleScreenBufferInfoAndEx);
 
     BEGIN_TEST_METHOD(TestSetConsoleWindowInfo)
         // This needs to run in both absolute and relative modes.
@@ -35,8 +32,8 @@ class DimensionsTests
         TEST_METHOD_PROPERTY(L"Data:scaleChoices", L"{1, 2, 3}")
     END_TEST_METHOD()
 
-    BEGIN_TEST_METHOD(TestSetConsoleScreenBufferInfoEx)
-    END_TEST_METHOD()
+    TEST_METHOD(TestZeroSizedConsoleScreenBuffers);
+    TEST_METHOD(TestSetConsoleScreenBufferInfoEx);
 };
 
 bool DimensionsTests::TestSetup()
@@ -52,7 +49,7 @@ bool DimensionsTests::TestCleanup()
 void DimensionsTests::TestGetLargestConsoleWindowSize()
 {
     // Note that this API is named "window size" but actually refers to the maximum viewport.
-    // Viewport is defined as the character count that can fit within one client area of the window. 
+    // Viewport is defined as the character count that can fit within one client area of the window.
     // It has nothing to do with the outer pixel dimensions of the window.
     // To know the largest window size, we need:
     // - The size of the monitor that the console window is on
@@ -63,13 +60,13 @@ void DimensionsTests::TestGetLargestConsoleWindowSize()
     // that can be displayed if the current console window was stretched as large as it is currently
     // allowed to be on the given monitor.
 
-    // NOTE: The legacy behavior of this function (in v1) was to give the "full screen window" size as the largest 
+    // NOTE: The legacy behavior of this function (in v1) was to give the "full screen window" size as the largest
     // even if it was in windowed mode and wouldn't fit on the monitor.
 
     // Get the window handle
     HWND const hWindow = GetConsoleWindow();
     VerifySucceededGLE(VERIFY_ARE_NOT_EQUAL(hWindow, INVALID_HANDLE_VALUE, L"Get the window handle for the window."));
-    
+
     // Get the dimensions of the monitor that the window is on.
     HMONITOR const hMonitor = MonitorFromWindow(hWindow, MONITOR_DEFAULTTONULL);
     VerifySucceededGLE(VERIFY_IS_NOT_NULL(hMonitor, L"Get the monitor handle corresponding to the console window."));
@@ -101,15 +98,15 @@ void DimensionsTests::TestGetLargestConsoleWindowSize()
     rcPixels.bottom += wi.cyWindowBorders;
     rcPixels.left -= wi.cxWindowBorders;
     rcPixels.right += wi.cxWindowBorders;
-    
+
     UnadjustWindowRectEx(&rcPixels, dwStyle, bHasMenu, dwStyleEx); // convert outer window dimensions into client area size
-    
+
     // Do not reserve space for scroll bars.
 
     // Now take width and height and divide them by the size of a character to get the max character count.
     coordExpected.X = (SHORT)((rcPixels.right - rcPixels.left) / cfi.dwFontSize.X);
     coordExpected.Y = (SHORT)((rcPixels.bottom - rcPixels.top) / cfi.dwFontSize.Y);
-    
+
     // Now finally ask the console what it thinks its largest size should be and compare.
     COORD const coordLargest = GetLargestConsoleWindowSize(Common::_hConsole);
     VerifySucceededGLE(VERIFY_IS_NOT_NULL(coordLargest, L"Now ask what the console thinks the largest size should be."));
@@ -147,7 +144,7 @@ void ConvertAbsoluteToRelative(bool const bAbsolute, SMALL_RECT* const srViewpor
     }
 }
 
-void TestSetConsoleWindowInfoHelper(bool const bAbsolute, 
+void TestSetConsoleWindowInfoHelper(bool const bAbsolute,
                                     const SMALL_RECT* const srViewport,
                                     const SMALL_RECT* const srOriginalViewport,
                                     bool const bExpectedResult,
@@ -182,7 +179,7 @@ void DimensionsTests::TestSetConsoleWindowInfo()
     sbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(Common::_hConsole, &sbiex), L"Get initial buffer and window information.");
 
-    SMALL_RECT srViewport = { 0 }; 
+    SMALL_RECT srViewport = { 0 };
 
     // Test with and without absolute
     // Left > Right, Top > Bottom (INVALID)
@@ -198,7 +195,7 @@ void DimensionsTests::TestSetConsoleWindowInfo()
     srViewport.Left = 0;
     srViewport.Top = 0;
     srViewport.Right = sbiex.dwMaximumWindowSize.X; // this is 1 larger than the valid right bound since it's 0-based array indexes
-    srViewport.Bottom = sbiex.dwMaximumWindowSize.Y; 
+    srViewport.Bottom = sbiex.dwMaximumWindowSize.Y;
 
     TestSetConsoleWindowInfoHelper(bAbsolute, &srViewport, &sbiex.srWindow, false, L"Ensure window larger than max is marked invalid.");
 
@@ -220,7 +217,7 @@ void DimensionsTests::TestSetConsoleWindowInfo()
     srViewport.Bottom -= 1;
 
     // Verify the assumption that the viewport was sufficiently large to shrink it in the above manner.
-    if (srViewport.Left > srViewport.Right || 
+    if (srViewport.Left > srViewport.Right ||
         srViewport.Top > srViewport.Bottom ||
         (srViewport.Right - srViewport.Left) < 1 ||
         (srViewport.Bottom - srViewport.Top) < 1)
@@ -230,7 +227,7 @@ void DimensionsTests::TestSetConsoleWindowInfo()
 
     // Store a copy of the original (for comparison in case the relative translation is applied).
     SMALL_RECT const srViewportBefore = srViewport;
-    
+
     TestSetConsoleWindowInfoHelper(bAbsolute, &srViewport, &sbiex.srWindow, true, L"Attempt shrinking the window in a valid manner.");
 
     // Get it back and ensure it's the same dimensions
@@ -271,7 +268,7 @@ void DimensionsTests::TestSetConsoleScreenBufferSize()
         fAdjustY = true;
         Log::Comment(L"Adjusting Y dimension");
     }
-    
+
 
     CONSOLE_SCREEN_BUFFER_INFO sbi = { 0 };
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfo(Common::_hConsole, &sbi), L"Get initial buffer/window information.");
@@ -311,9 +308,28 @@ void DimensionsTests::TestSetConsoleScreenBufferSize()
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleScreenBufferSize(Common::_hConsole, coordSize), L"Try to make buffer larger than the window size.");
 }
 
+void DimensionsTests::TestZeroSizedConsoleScreenBuffers()
+{
+    // Make sure we never accept zero-sized console buffers through the public API
+    const COORD rgTestCoords[] = {
+        { 0, 0 },
+        { 0, 1 },
+        { 1, 0 }
+    };
+
+    for (size_t i = 0; i < ARRAYSIZE(rgTestCoords); i++)
+    {
+        const BOOL fSucceeded = SetConsoleScreenBufferSize(Common::_hConsole, rgTestCoords[i]);
+        VERIFY_IS_FALSE(fSucceeded,
+                        NoThrowString().Format(L"Setting zero console size should always fail (x: %d y:%d)",
+                                               rgTestCoords[i].X, rgTestCoords[i].Y));
+        VERIFY_ARE_EQUAL((DWORD)ERROR_INVALID_PARAMETER, GetLastError());
+    }
+}
+
 template<typename T>
 void TestSetConsoleScreenBufferInfoExHelper(bool const fShouldHaveChanged,
-                                            T const pOriginal, 
+                                            T const pOriginal,
                                             T const pTest,
                                             T const pReturned,
                                             PCWSTR pwszDescriptor)
@@ -410,8 +426,8 @@ void DimensionsTests::TestSetConsoleScreenBufferInfoEx()
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(Common::_hConsole, &sbiexAfter), L"Retrieve set data with get.");
 
     // Verify that relevant properties were stored into the console.
-    
-    // The buffer size is weird because there are currently two valid answers. 
+
+    // The buffer size is weird because there are currently two valid answers.
     // This is due to the word wrap status of the console which is currently not visible through the API.
     // We must accept either answer as valid.
     bool fBufferSizePassed = false;
@@ -461,16 +477,16 @@ void DimensionsTests::TestSetConsoleScreenBufferInfoEx()
     // Test remaining parameters are the same
     TestSetConsoleScreenBufferInfoExHelper(true, sbiexOriginal.wAttributes, sbiex.wAttributes, sbiexAfter.wAttributes, L"Attributes (Fg/Bg Colors)");
     TestSetConsoleScreenBufferInfoExHelper(true, sbiexOriginal.wPopupAttributes, sbiex.wPopupAttributes, sbiexAfter.wPopupAttributes, L"Popup Attributes (Fg/Bg Colors)");
-    
+
     // verify colors match
     for (UINT i = 0; i < 16; i++)
     {
         TestSetConsoleScreenBufferInfoExHelper(true, sbiexOriginal.ColorTable[i], sbiex.ColorTable[i], sbiexAfter.ColorTable[i], NoThrowString().Format(L"Color %x", i));
     }
 
-    // NOTE: Max window size and the positioning of the window are adjusted at the discretion of the console. 
+    // NOTE: Max window size and the positioning of the window are adjusted at the discretion of the console.
     // They will not necessarily match, so we're not testing them.
-        
+
     // NOTE: Full screen will NOT be changed by this API and should match the originals.
     TestSetConsoleScreenBufferInfoExHelper(false, sbiexOriginal.bFullscreenSupported, sbiex.bFullscreenSupported, sbiexAfter.bFullscreenSupported, L"Fullscreen");
 
