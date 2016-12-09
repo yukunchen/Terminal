@@ -166,64 +166,70 @@ int WriteVTRGBTestChars(int fg, int bg)
 
 BOOL CreateColorGrid(int iColorMode)
 {
-    CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
-    sbiex.cbSize = sizeof(sbiex);
-    BOOL fSuccess = GetConsoleScreenBufferInfoEx(g_hOut, &sbiex);
+    COORD coordCursor = { 0 };
+    BOOL fSuccess = SetConsoleCursorPosition(g_hOut, coordCursor);
+
     if (fSuccess)
     {
-        DWORD totalWritten = 0;
-        COORD writeSize = g_cWriteSize;
-        COORD cursorPosInitial = sbiex.dwCursorPosition;
-        for (int fg = 0; fg < writeSize.Y; fg++)
+        CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
+        sbiex.cbSize = sizeof(sbiex);
+        fSuccess = GetConsoleScreenBufferInfoEx(g_hOut, &sbiex);
+        if (fSuccess)
         {
-            DWORD numWritten = 0;
-            for (int bg = 0; bg < writeSize.X; bg++)
+            DWORD totalWritten = 0;
+            COORD writeSize = g_cWriteSize;
+            COORD cursorPosInitial = sbiex.dwCursorPosition;
+            for (int fg = 0; fg < writeSize.Y; fg++)
             {
-                switch(iColorMode)
+                DWORD numWritten = 0;
+                for (int bg = 0; bg < writeSize.X; bg++)
+                {
+                    switch (iColorMode)
+                    {
+                    case LEGACY_MODE:
+                        numWritten = WriteLegacyColorTestChars(fg, bg);
+                        totalWritten += numWritten;
+                        break;
+                    case VT_SIMPLE_MODE:
+                        numWritten = WriteVTSimpleTestChars(fg, bg);
+                        totalWritten += numWritten;
+                        break;
+                    case VT_256_MODE:
+                        numWritten = WriteVT256TestChars(fg, bg);
+                        totalWritten += numWritten;
+                        break;
+                    case VT_RGB_MODE:
+                        numWritten = WriteVTRGBTestChars(fg, bg);
+                        totalWritten += numWritten;
+                        break;
+                    case VT_256_GRID_MODE:
+                        numWritten = WriteVT256GridTestChars(fg, bg);
+                        totalWritten += numWritten;
+                        break;
+                    default:
+                        VERIFY_ARE_EQUAL(true, false, L"Did not provide a valid color mode");
+
+                    }
+                }
+                switch (iColorMode)
                 {
                 case LEGACY_MODE:
-                    numWritten = WriteLegacyColorTestChars(fg, bg);
-                    totalWritten += numWritten;
+                    SetConsoleTextAttribute(g_hOut, sbiex.wAttributes);
+                    WriteConsole(g_hOut, L"\n", 1, &numWritten, nullptr);
                     break;
                 case VT_SIMPLE_MODE:
-                    numWritten = WriteVTSimpleTestChars(fg, bg);
-                    totalWritten += numWritten;
-                    break;
                 case VT_256_MODE:
-                    numWritten = WriteVT256TestChars(fg, bg);
-                    totalWritten += numWritten;
-                    break;
                 case VT_RGB_MODE:
-                    numWritten = WriteVTRGBTestChars(fg, bg);
-                    totalWritten += numWritten;
-                    break;
                 case VT_256_GRID_MODE:
-                    numWritten = WriteVT256GridTestChars(fg, bg);
-                    totalWritten += numWritten;
+                    wprintf(L"\x1b[0m\n");
                     break;
                 default:
                     VERIFY_ARE_EQUAL(true, false, L"Did not provide a valid color mode");
 
                 }
             }
-            switch(iColorMode)
-            {
-            case LEGACY_MODE:
-                SetConsoleTextAttribute(g_hOut, sbiex.wAttributes);
-                WriteConsole(g_hOut, L"\n", 1, &numWritten, nullptr);
-                break;
-            case VT_SIMPLE_MODE:
-            case VT_256_MODE:
-            case VT_RGB_MODE:
-            case VT_256_GRID_MODE:
-                wprintf(L"\x1b[0m\n");
-                break;
-            default:
-                VERIFY_ARE_EQUAL(true, false, L"Did not provide a valid color mode");
-
-            }
+            fSuccess = totalWritten == (2 * 16 * 16);
         }
-        fSuccess = totalWritten == (2 * 16 * 16);
     }
     
     return fSuccess;
