@@ -19,6 +19,7 @@ PRECOMPILED_INCLUDE             =   precomp.h
 PRECOMPILED_CXX                 =   1
 
 SOURCES                         =   \
+                                    Init.cpp \
                                     BufferTests.cpp \
                                     Common.cpp \
                                     CursorTests.cpp \

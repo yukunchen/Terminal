@@ -15,3 +15,7 @@ using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
 #include "common.hpp"
+
+#include <wil\Common.h>
+#include <wil\Result.h>
+#include <wil\Resource.h>

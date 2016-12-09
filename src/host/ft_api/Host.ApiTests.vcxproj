@@ -1,12 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\common.build.pre.props"/>
+  <Import Project="..\..\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="BufferTests.cpp" />
     <ClCompile Include="Common.cpp" />
     <ClCompile Include="CursorTests.cpp" />
     <ClCompile Include="DimensionsTests.cpp" />
     <ClCompile Include="FontTests.cpp" />
+    <ClCompile Include="Init.cpp" />
     <ClCompile Include="InputTests.cpp" />
     <ClCompile Include="ModeTests.cpp" />
     <ClCompile Include="RgbColorTests.cpp" />
@@ -25,13 +26,8 @@
     <ProjectName>Host.Tests.Api</ProjectName>
     <TargetName>ConHost.Api.Tests</TargetName>
   </PropertyGroup>
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <AdditionalIncludeDirectories>..</AdditionalIncludeDirectories>
-    </ClCompile>
-  </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="..\..\common.build.dll.props"/>
-  <Import Project="..\..\common.build.post.props"/>
-  <Import Project="..\..\common.build.tests.props"/>
+  <Import Project="..\..\common.build.dll.props" />
+  <Import Project="..\..\common.build.post.props" />
+  <Import Project="..\..\common.build.tests.props" />
 </Project>
