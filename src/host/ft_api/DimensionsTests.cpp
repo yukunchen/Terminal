@@ -320,7 +320,7 @@ void DimensionsTests::TestZeroSizedConsoleScreenBuffers()
     for (size_t i = 0; i < ARRAYSIZE(rgTestCoords); i++)
     {
         const BOOL fSucceeded = SetConsoleScreenBufferSize(Common::_hConsole, rgTestCoords[i]);
-        VERIFY_IS_FALSE(fSucceeded,
+        VERIFY_IS_FALSE(!!fSucceeded,
                         NoThrowString().Format(L"Setting zero console size should always fail (x: %d y:%d)",
                                                rgTestCoords[i].X, rgTestCoords[i].Y));
         VERIFY_ARE_EQUAL((DWORD)ERROR_INVALID_PARAMETER, GetLastError());
