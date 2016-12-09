@@ -48,6 +48,9 @@
     <ClInclude Include="CommonState.hpp" />
     <ClInclude Include="UnicodeLiteral.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <PropertyGroup>
     <ProjectGuid>{531C23E7-4B76-4C08-8AAD-04164CB628C9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
