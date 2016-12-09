@@ -117,9 +117,10 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
 
 void SCREEN_INFORMATION::SetScreenBufferSize(_In_ const COORD coordNewBufferSize)
 {
-    COORD coordCandidate = coordNewBufferSize;
-    // TODO: validation
-    _coordScreenBufferSize = coordNewBufferSize;
+    COORD coordCandidate;
+    coordCandidate.X = max(1, coordNewBufferSize.X);
+    coordCandidate.Y = max(1, coordNewBufferSize.Y);
+    _coordScreenBufferSize = coordCandidate;
 }
 
 COORD SCREEN_INFORMATION::GetScreenBufferSize() const
