@@ -1939,22 +1939,24 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
     MousePosition.X += pScreenInfo->GetBufferViewport().Left;
     MousePosition.Y += pScreenInfo->GetBufferViewport().Top;
 
+    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+
     // make sure mouse position is clipped to screen buffer
     if (MousePosition.X < 0)
     {
         MousePosition.X = 0;
     }
-    else if (MousePosition.X >= pScreenInfo->ScreenBufferSize.X)
+    else if (MousePosition.X >= coordScreenBufferSize.X)
     {
-        MousePosition.X = pScreenInfo->ScreenBufferSize.X - 1;
+        MousePosition.X = coordScreenBufferSize.X - 1;
     }
     if (MousePosition.Y < 0)
     {
         MousePosition.Y = 0;
     }
-    else if (MousePosition.Y >= pScreenInfo->ScreenBufferSize.Y)
+    else if (MousePosition.Y >= coordScreenBufferSize.Y)
     {
-        MousePosition.Y = pScreenInfo->ScreenBufferSize.Y - 1;
+        MousePosition.Y = coordScreenBufferSize.Y - 1;
     }
 
     if (pSelection->IsInSelectingState() || pSelection->IsInQuickEditMode())
@@ -2041,7 +2043,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
                     }
                     coordSelectionAnchor.X--;
                 }
-                while (MousePosition.X < pScreenInfo->ScreenBufferSize.X)
+                while (MousePosition.X < coordScreenBufferSize.X)
                 {
                     if (IS_WORD_DELIM(Row->CharRow.Chars[MousePosition.X]))
                     {

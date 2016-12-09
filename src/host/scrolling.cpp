@@ -129,13 +129,14 @@ void Scrolling::s_HandleMouseWheel(_In_ const UINT msg, _In_ const WPARAM wParam
             }
 
             NewOrigin.Y -= delta;
+            const COORD coordBufferSize = pScreenInfo->GetScreenBufferSize();
             if (NewOrigin.Y < 0)
             {
                 NewOrigin.Y = 0;
             }
-            else if (NewOrigin.Y + pScreenInfo->GetScreenWindowSizeY() > pScreenInfo->ScreenBufferSize.Y)
+            else if (NewOrigin.Y + pScreenInfo->GetScreenWindowSizeY() > coordBufferSize.Y)
             {
-                NewOrigin.Y = pScreenInfo->ScreenBufferSize.Y - pScreenInfo->GetScreenWindowSizeY();
+                NewOrigin.Y = coordBufferSize.Y - pScreenInfo->GetScreenWindowSizeY();
             }
             pScreenInfo->SetViewportOrigin(TRUE, NewOrigin);
         }
@@ -166,13 +167,14 @@ void Scrolling::s_HandleMouseWheel(_In_ const UINT msg, _In_ const WPARAM wParam
             pScreenInfo->HWheelDelta %= ulActualDelta;
 
             NewOrigin.X += delta;
+            const COORD coordBufferSize = pScreenInfo->GetScreenBufferSize();
             if (NewOrigin.X < 0)
             {
                 NewOrigin.X = 0;
             }
-            else if (NewOrigin.X + pScreenInfo->GetScreenWindowSizeX() > pScreenInfo->ScreenBufferSize.X)
+            else if (NewOrigin.X + pScreenInfo->GetScreenWindowSizeX() > coordBufferSize.X)
             {
-                NewOrigin.X = pScreenInfo->ScreenBufferSize.X - pScreenInfo->GetScreenWindowSizeX();
+                NewOrigin.X = coordBufferSize.X - pScreenInfo->GetScreenWindowSizeX();
             }
 
             pScreenInfo->SetViewportOrigin(TRUE, NewOrigin);

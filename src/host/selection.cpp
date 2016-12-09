@@ -249,7 +249,7 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
     }
 
     // Check end position of strings
-    if (coordTargetPoint.X + sStringLength < pScreenInfo->ScreenBufferSize.X)
+    if (coordTargetPoint.X + sStringLength < pScreenInfo->GetScreenBufferSize().X)
     {
         if (pRow->CharRow.KAttrs[coordTargetPoint.X + sStringLength] & CHAR_ROW::ATTR_TRAILING_BYTE)
         {
@@ -731,7 +731,7 @@ void Selection::SelectAll()
     if (!IsLineSelection())
     {
         coordNewSelStart.X = 0;
-        coordNewSelEnd.X = pScreenInfo->ScreenBufferSize.X - 1;
+        coordNewSelEnd.X = pScreenInfo->GetScreenBufferSize().X - 1;
     }
 
     SelectNewRegion(coordNewSelStart, coordNewSelEnd);

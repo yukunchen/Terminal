@@ -42,7 +42,7 @@ NTSTATUS ConversionAreaInfo::s_CreateInstance(_Outptr_ ConversionAreaInfo** cons
     if (NT_SUCCESS(Status))
     {
         // Each conversion area represents one row of the current screen buffer.
-        COORD coordCaBuffer = g_ciConsoleInformation.CurrentScreenBuffer->ScreenBufferSize;
+        COORD coordCaBuffer = g_ciConsoleInformation.CurrentScreenBuffer->GetScreenBufferSize();
         coordCaBuffer.Y = 1;
 
         COORD dwWindowSize;
