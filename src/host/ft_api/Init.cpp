@@ -15,12 +15,12 @@ wil::unique_handle hJob;
 
 // This will automatically try to terminate the job object (and all of the
 // binaries under test that are children) whenever this class gets shut down.
-//auto OnAppExitKillJob = wil::ScopeExit([&] {
-//    if (nullptr != hJob.get())
-//    {
-//        THROW_LAST_ERROR_IF_FALSE(TerminateJobObject(hJob.get(), S_OK));
-//    }
-//});
+auto OnAppExitKillJob = wil::ScopeExit([&] {
+    if (nullptr != hJob.get())
+    {
+        THROW_LAST_ERROR_IF_FALSE(TerminateJobObject(hJob.get(), S_OK));
+    }
+});
 
 MODULE_SETUP(ModuleSetup)
 {
@@ -29,9 +29,12 @@ MODULE_SETUP(ModuleSetup)
     String value;
     VERIFY_SUCCEEDED(RuntimeParameters::TryGetValue(L"TestDeploymentDir", value));
 
-    value = value.Append(L"OpenConsole.exe");
+    value = value.Append(L"OpenConsole.exe Nihilist.exe");
 
-    LPCWSTR str = (LPCWSTR)value.GetBuffer();
+    // Must make mutable string of appropriate length to feed into args.
+    size_t const cchNeeded = value.GetLength() + 1;
+    PWSTR str = new WCHAR[cchNeeded];
+    THROW_IF_FAILED(StringCchCopyW(str, cchNeeded, (WCHAR*)value.GetBuffer()));
 
     // Create a job object to hold the OpenConsole.exe process and the child it creates
     // so we can terminate it easily when we exit.
@@ -45,8 +48,8 @@ MODULE_SETUP(ModuleSetup)
 
     // We start suspended so we can put it in the job before it does anything
     // We say new console so it doesn't run in the same window as our test.
-    THROW_LAST_ERROR_IF_FALSE(CreateProcessW(str,
-                                             nullptr,
+    THROW_LAST_ERROR_IF_FALSE(CreateProcessW(nullptr,
+                                             str,
                                              nullptr,
                                              nullptr,
                                              FALSE,
