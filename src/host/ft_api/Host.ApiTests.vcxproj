@@ -26,6 +26,11 @@
     <ProjectName>Host.Tests.Api</ProjectName>
     <TargetName>ConHost.Api.Tests</TargetName>
   </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <ExceptionHandling>Sync</ExceptionHandling>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="..\..\common.build.dll.props" />
   <Import Project="..\..\common.build.post.props" />

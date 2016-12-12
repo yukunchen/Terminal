@@ -21,13 +21,12 @@ class RgbColorTests
 {
     TEST_CLASS(RgbColorTests);
 
-
     TEST_METHOD_SETUP(MethodSetup)
     {
         g_hOut = GetStdHandle(STD_OUTPUT_HANDLE);
         DWORD outMode;
         VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(g_hOut, &outMode));
-        outMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        outMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | ENABLE_PROCESSED_OUTPUT;
         VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(g_hOut, outMode));
         CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
         sbiex.cbSize = sizeof(sbiex);
@@ -56,6 +55,9 @@ class RgbColorTests
             sbiex.ColorTable[13] = RGB(0x00FF, 0x0000, 0x00FF);
             sbiex.ColorTable[14] = RGB(0x00FF, 0x00FF, 0x0000);
             sbiex.ColorTable[15] = RGB(0x00FF, 0x00FF, 0x00FF);
+
+            sbiex.dwCursorPosition.X = 0;
+            sbiex.dwCursorPosition.Y = 0;
 
             SetConsoleScreenBufferInfoEx(g_hOut, &sbiex);
         }

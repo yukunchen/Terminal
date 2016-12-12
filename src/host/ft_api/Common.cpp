@@ -36,7 +36,6 @@ BOOL UnadjustWindowRectEx(
 
 static HANDLE GetStdHandleVerify(_In_ const DWORD dwHandleType)
 {
-    SetVerifyOutput verifySettings(VerifyOutputSettings::LogOnlyFailures);
     const HANDLE hConsole = GetStdHandle(dwHandleType);
     VERIFY_ARE_NOT_EQUAL(hConsole, INVALID_HANDLE_VALUE, L"Ensure we got a valid console handle");
     VERIFY_IS_NOT_NULL(hConsole, L"Ensure we got a non-null console handle");

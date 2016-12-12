@@ -27,19 +27,18 @@ MODULE_SETUP(ModuleSetup)
     // Retrieve location of directory that the test was deployed to.
     // We're going to look for OpenConsole.exe in the same directory.
     String value;
-    VERIFY_SUCCEEDED(RuntimeParameters::TryGetValue(L"TestDeploymentDir", value));
-
+    VERIFY_SUCCEEDED_RETURN(RuntimeParameters::TryGetValue(L"TestDeploymentDir", value));
     value = value.Append(L"OpenConsole.exe Nihilist.exe");
 
     // Must make mutable string of appropriate length to feed into args.
     size_t const cchNeeded = value.GetLength() + 1;
     PWSTR str = new WCHAR[cchNeeded];
-    THROW_IF_FAILED(StringCchCopyW(str, cchNeeded, (WCHAR*)value.GetBuffer()));
+    VERIFY_SUCCEEDED_RETURN(StringCchCopyW(str, cchNeeded, (WCHAR*)value.GetBuffer()));
 
     // Create a job object to hold the OpenConsole.exe process and the child it creates
     // so we can terminate it easily when we exit.
     hJob.reset(CreateJobObjectW(nullptr, nullptr));
-    THROW_LAST_ERROR_IF_NULL(hJob);
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(nullptr != hJob);
 
     // Setup and call create process.
     STARTUPINFOW si = { 0 };
@@ -48,29 +47,30 @@ MODULE_SETUP(ModuleSetup)
 
     // We start suspended so we can put it in the job before it does anything
     // We say new console so it doesn't run in the same window as our test.
-    THROW_LAST_ERROR_IF_FALSE(CreateProcessW(nullptr,
-                                             str,
-                                             nullptr,
-                                             nullptr,
-                                             FALSE,
-                                             CREATE_NEW_CONSOLE | CREATE_SUSPENDED,
-                                             nullptr,
-                                             nullptr,
-                                             &si,
-                                             pi.addressof()));
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(CreateProcessW(nullptr,
+                                                      str,
+                                                      nullptr,
+                                                      nullptr,
+                                                      FALSE,
+                                                      CREATE_NEW_CONSOLE | CREATE_SUSPENDED,
+                                                      nullptr,
+                                                      nullptr,
+                                                      &si,
+                                                      pi.addressof()));
 
     // Put the new OpenConsole process into the job. The default Job system means when OpenConsole 
     // calls CreateProcess, its children will automatically join the job.
-    THROW_LAST_ERROR_IF_FALSE(AssignProcessToJobObject(hJob.get(), pi.hProcess));
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(AssignProcessToJobObject(hJob.get(), pi.hProcess));
 
     // Let the thread run
-    THROW_LAST_ERROR_IF(-1 == ResumeThread(pi.hThread));
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(-1 != ResumeThread(pi.hThread));
 
     // We have to enter a wait loop here to compensate for Code Coverage instrumentation that might be
     // injected into the process. That takes a while.
     DWORD dwTotalWait = 0;
 
     JOBOBJECT_BASIC_PROCESS_ID_LIST pids;
+    pids.NumberOfAssignedProcesses = 2;
     while (dwTotalWait < _dwMaxMillisecondsToWaitOnStartup)
     {
         QueryInformationJobObject(hJob.get(),
@@ -85,24 +85,28 @@ MODULE_SETUP(ModuleSetup)
         {
             break;
         }
+        else if (pids.NumberOfAssignedProcesses < 1)
+        {
+            VERIFY_FAIL();
+        }
 
         Sleep(_dwStartupWaitPollingIntervalInMilliseconds);
         dwTotalWait += _dwStartupWaitPollingIntervalInMilliseconds;
     }
     // If it took too long, throw so the test ends here.
-    THROW_HR_IF(E_FAIL, dwTotalWait >= _dwMaxMillisecondsToWaitOnStartup);
-    
+    VERIFY_IS_LESS_THAN(dwTotalWait, _dwMaxMillisecondsToWaitOnStartup);
+
     // Now retrieve the actual list of process IDs in the job.
     DWORD cbRequired = sizeof(JOBOBJECT_BASIC_PROCESS_ID_LIST) + sizeof(ULONG_PTR) * pids.NumberOfAssignedProcesses;
     PJOBOBJECT_BASIC_PROCESS_ID_LIST pPidList = reinterpret_cast<PJOBOBJECT_BASIC_PROCESS_ID_LIST>(HeapAlloc(GetProcessHeap(),
                                                                                                              0,
                                                                                                              cbRequired));
 
-    THROW_LAST_ERROR_IF_FALSE(QueryInformationJobObject(hJob.get(),
-                                                        JobObjectBasicProcessIdList,
-                                                        pPidList,
-                                                        cbRequired,
-                                                        nullptr));
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(QueryInformationJobObject(hJob.get(),
+                                                                 JobObjectBasicProcessIdList,
+                                                                 pPidList,
+                                                                 cbRequired,
+                                                                 nullptr));
 
     VERIFY_ARE_EQUAL(pids.NumberOfAssignedProcesses, pPidList->NumberOfProcessIdsInList);
 
@@ -124,12 +128,18 @@ MODULE_SETUP(ModuleSetup)
 
     // Now detach from our current console (if we have one) and instead attach
     // to the one that belongs to the CMD.exe in the new OpenConsole.exe window.
-    THROW_LAST_ERROR_IF_FALSE(FreeConsole());
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(FreeConsole());
 
-    // Wait a second to let everything shake out.
+    // Wait a moment for the driver to be ready after freeing to attach.
     Sleep(1000);
 
-    THROW_LAST_ERROR_IF_FALSE(AttachConsole(dwFindPid));
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(AttachConsole(dwFindPid));
+
+    // Replace CRT handles
+    // These need to be reopened as read/write or they can affect some of the tests.
+    FILE *s;
+    freopen_s(&s, "CONOUT$", "w+", stdout);
+    freopen_s(&s, "CONIN$", "r+", stdin);
 
     return true;
 }
