@@ -1,4 +1,4 @@
-TARGETNAME                      =   Conhost.API.Tests
+TARGETNAME                      =   Conhost.Feature.Tests
 TARGETTYPE                      =   DYNLINK
 TARGET_DESTINATION              =   UnitTests
 DLLDEF                          =
