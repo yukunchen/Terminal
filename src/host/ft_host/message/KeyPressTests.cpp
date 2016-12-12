@@ -42,10 +42,10 @@ class KeyPressTests
         VERIFY_IS_TRUE(!!successBool);
         VERIFY_IS_GREATER_THAN(events, 0u, NoThrowString().Format(L"%d", events));
         std::unique_ptr<INPUT_RECORD[]> inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
-        PeekConsoleInput(inputHandle,
-                         inputBuffer.get(),
-                         1,
-                         &events);
+        VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(PeekConsoleInput(inputHandle,
+                                                            inputBuffer.get(),
+                                                            1,
+                                                            &events));
         VERIFY_ARE_EQUAL(events, 1);
 
         INPUT_RECORD expectedEvent;
@@ -58,7 +58,7 @@ class KeyPressTests
         expectedEvent.Event.KeyEvent.uChar.UnicodeChar = L'Q';
         // compare values against those that have historically been
         // returned with the same arguments to SendMessage
-        VERIFY_IS_TRUE(VerifyCompareTraits<INPUT_RECORD>::AreEqual(inputBuffer[0], expectedEvent));
+        VERIFY_ARE_EQUAL(expectedEvent, inputBuffer[0]);
     }
 
     TEST_METHOD(TestCoalesceSameKeyPress)

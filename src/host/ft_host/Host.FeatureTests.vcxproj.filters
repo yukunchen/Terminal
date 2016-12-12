@@ -13,11 +13,14 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\API">
+      <UniqueIdentifier>{ff4de03f-e6e3-44a0-9a53-06d0b3943469}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Message">
+      <UniqueIdentifier>{ac4e9c27-4849-46e8-bd03-0af91bcb6a87}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Common.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="precomp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -25,25 +28,31 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="api\BufferTests.cpp">
+      <Filter>Source Files\API</Filter>
+    </ClCompile>
+    <ClCompile Include="Common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="api\CursorTests.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\API</Filter>
     </ClCompile>
     <ClCompile Include="api\DimensionsTests.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\API</Filter>
     </ClCompile>
     <ClCompile Include="api\FontTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="api\InputTests.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\API</Filter>
     </ClCompile>
     <ClCompile Include="api\ModeTests.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\API</Filter>
+    </ClCompile>
+    <ClCompile Include="api\InputTests.cpp">
+      <Filter>Source Files\API</Filter>
     </ClCompile>
     <ClCompile Include="api\RgbColorTests.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\API</Filter>
+    </ClCompile>
+    <ClCompile Include="message\KeyPressTests.cpp">
+      <Filter>Source Files\Message</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
