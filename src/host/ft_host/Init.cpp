@@ -32,7 +32,12 @@ MODULE_SETUP(ModuleSetup)
 
     // Must make mutable string of appropriate length to feed into args.
     size_t const cchNeeded = value.GetLength() + 1;
-    PWSTR str = new WCHAR[cchNeeded];
+
+    // We use regular new (not a smart pointer) and a scope exit delete because CreateProcess needs mutable space
+    // and it'd be annoying to const_cast the smart pointer's .get() just for the sake of.
+    PWSTR str = new WCHAR[cchNeeded]; 
+    auto cleanStr = wil::ScopeExit([&] { if (nullptr != str) { delete[] str; }});
+
     VERIFY_SUCCEEDED_RETURN(StringCchCopyW(str, cchNeeded, (WCHAR*)value.GetBuffer()));
 
     // Create a job object to hold the OpenConsole.exe process and the child it creates
