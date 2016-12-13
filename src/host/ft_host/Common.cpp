@@ -16,6 +16,102 @@ void VerifySucceededGLE(BOOL bResult)
     }
 }
 
+void DoFailure(PCWSTR pwszFunc, DWORD dwErrorCode)
+{
+    Log::Comment(NoThrowString().Format(L"'%s' call failed with error 0x%x", pwszFunc, dwErrorCode));
+    VERIFY_FAIL();
+}
+
+void GlePattern(PCWSTR pwszFunc)
+{
+    DoFailure(pwszFunc, GetLastError());
+}
+
+bool CheckLastErrorNegativeOneFail(DWORD dwReturn, PCWSTR pwszFunc)
+{
+    if (dwReturn == -1)
+    {
+        GlePattern(pwszFunc);
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+
+bool CheckLastErrorZeroFail(int iValue, PCWSTR pwszFunc)
+{
+    if (iValue == 0)
+    {
+        GlePattern(pwszFunc);
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+
+bool CheckLastErrorWait(DWORD dwReturn, PCWSTR pwszFunc)
+{
+    if (CheckLastErrorNegativeOneFail(dwReturn, pwszFunc))
+    {
+        if (dwReturn == STATUS_WAIT_0)
+        {
+            return true;
+        }
+        else
+        {
+            DoFailure(pwszFunc, dwReturn);
+            return false;
+        }
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool CheckLastError(HRESULT hr, PCWSTR pwszFunc)
+{
+    if (!SUCCEEDED(hr))
+    {
+        DoFailure(pwszFunc, hr);
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+
+bool CheckLastError(BOOL fSuccess, PCWSTR pwszFunc)
+{
+    if (!fSuccess)
+    {
+        GlePattern(pwszFunc);
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+
+bool CheckLastError(HANDLE handle, PCWSTR pwszFunc)
+{
+    if (handle == INVALID_HANDLE_VALUE)
+    {
+        GlePattern(pwszFunc);
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+
 BOOL UnadjustWindowRectEx(
     LPRECT prc,
     DWORD dwStyle,

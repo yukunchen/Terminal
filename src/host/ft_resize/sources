@@ -1,8 +1,0 @@
-!include ..\sources.test.inc
-
-TARGETNAME                      =   Conhost.Resize.Tests
-TARGETTYPE                      =   DYNLINK
-DLLDEF                          =
-
-SOURCES                         =   $(SOURCES) \
-                                    ResizeTests.cpp \

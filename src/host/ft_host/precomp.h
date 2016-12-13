@@ -19,3 +19,5 @@ using namespace WEX::TestExecution;
 #include <wil\Common.h>
 #include <wil\Result.h>
 #include <wil\Resource.h>
+
+#include <conio.h>

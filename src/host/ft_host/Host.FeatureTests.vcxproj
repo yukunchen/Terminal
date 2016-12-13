@@ -9,12 +9,14 @@
     <ClCompile Include="api\InputTests.cpp" />
     <ClCompile Include="api\ModeTests.cpp" />
     <ClCompile Include="api\RgbColorTests.cpp" />
+    <ClCompile Include="cjk\DbcsTests.cpp" />
     <ClCompile Include="Common.cpp" />
     <ClCompile Include="Init.cpp" />
     <ClCompile Include="message\KeyPressTests.cpp" />
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="resize\ResizeTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.hpp" />

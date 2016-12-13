@@ -5,9 +5,13 @@
 ********************************************************/
 #include "precomp.h"
 
+#define JAPANESE_CP 932u
+
 class DbcsTests
 {
     TEST_CLASS(DbcsTests);
+
+    TEST_METHOD_SETUP(DbcsTestSetup);
 
     // This test must come before ones that launch another process as launching another process can tamper with the codepage
     // in ways that this test is not expecting.
@@ -20,7 +24,24 @@ class DbcsTests
     TEST_METHOD(TestDbcsBisect);
 };
 
-bool IsV2Console() 
+HANDLE hScreen = INVALID_HANDLE_VALUE;
+
+bool DbcsTests::DbcsTestSetup()
+{
+    COORD coordZero = { 0 };
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleCursorPosition(GetStdOutputHandle(), coordZero));
+
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleCP(JAPANESE_CP));
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleOutputCP(JAPANESE_CP));
+    putchar('A');
+    putchar('\x82');
+    putchar('\xa0');
+    putchar('Z');
+
+    return true;
+}
+
+bool IsV2Console()
 {
     HKEY key = (HKEY)INVALID_HANDLE_VALUE;
     VERIFY_SUCCEEDED(RegOpenKeyExW(HKEY_CURRENT_USER, L"Console", 0, GENERIC_READ, &key));
@@ -71,8 +92,10 @@ bool IsTrueTypeFont(HANDLE hOut)
 
 // This test covers read/write of double byte characters including verification of correct attribute handling across 
 // the two-wide double byte characters.
-void DbcsReadWriteInner(HANDLE hOut, HANDLE /*hIn*/)
+void DbcsTests::TestDbcsReadWrite()
 {
+    HANDLE const hOut = GetStdOutputHandle();
+
     UINT dwCP = GetConsoleCP();
     VERIFY_ARE_EQUAL(dwCP, JAPANESE_CP);
 
@@ -250,11 +273,6 @@ void DbcsReadWriteInner(HANDLE hOut, HANDLE /*hIn*/)
 
         delete[] rgChars;
     }
-}
-
-void DbcsTests::TestDbcsReadWrite()
-{
-    SetUpExternalCJKTestEnvironment(PATH_TO_TOOL, DbcsReadWriteInner);
 }
 
 // This is sample code for DbcsReadWriteInner2 that isn't executed but is helpful in seeing how this would actually work from a consumer.
@@ -610,7 +628,7 @@ void DbcsReadWriteInner2ValidateTruetypeW(const CONSOLE_SCREEN_BUFFER_INFOEX* co
         readBufferExpectedW[i++].Char.UnicodeChar = pwszExpected[j];
         readBufferExpectedW[i++].Char.UnicodeChar = 0xffff;
     }
-    
+
     // 4a. The next 8 are the string with every character written twice
     // 4b. The final 8 are the same as the previous step.
     for (size_t k = 0; k < 2; k++)
@@ -728,8 +746,10 @@ void DbcsReadWriteInner2ValidateTruetypeA(const CONSOLE_SCREEN_BUFFER_INFOEX* co
 // This test covers an additional scenario related to read/write of double byte characters.
 // We're specifically looking for the presentation (A) or absence (W) of the lead/trailing byte flags.
 // It's also checking what happens when we use the W API to write full width characters into not enough space
-void DbcsReadWriteInner2(HANDLE hOut, HANDLE /*hIn*/)
+void DbcsTests::TestDbcsReadWrite2()
 {
+    HANDLE const hOut = GetStdOutputHandle();
+
     UINT dwCP = GetConsoleCP();
     VERIFY_ARE_EQUAL(dwCP, JAPANESE_CP);
 
@@ -751,10 +771,10 @@ void DbcsReadWriteInner2(HANDLE hOut, HANDLE /*hIn*/)
 
         LPCSTR pszStr = "‚©‚½‚©‚È";
         DWORD cbStr = (DWORD)strlen(pszStr);
-        
+
         // --- WriteConsoleOutput Unicode
         CHAR_INFO writeBuffer[8 * 4];
-            
+
         COORD dwBufferSize = { (SHORT)cchStr, 1 }; // the buffer is 4 wide and 1 tall
         COORD dwBufferCoord = { 0, 0 }; // the API should start reading at row 0 column 0 from the buffer we pass
         SMALL_RECT srWriteRegion = { 0 };
@@ -762,16 +782,16 @@ void DbcsReadWriteInner2(HANDLE hOut, HANDLE /*hIn*/)
         srWriteRegion.Right = 40; // purposefully too big. it shouldn't use all this space if it doesn't need it
         srWriteRegion.Top = 1; // write to row 1 in the console's buffer (the first row is 0th row)
         srWriteRegion.Bottom = srWriteRegion.Top + dwBufferSize.Y; // Bottom - Top = 1 so we only have one row to write
-        
+
         for (size_t i = 0; i < cchStr; i++)
         {
             writeBuffer[i].Char.UnicodeChar = pwszStr[i];
             writeBuffer[i].Attributes = sbiex.wAttributes;
         }
-        
+
         fSuccess = WriteConsoleOutputW(hOut, writeBuffer, dwBufferSize, dwBufferCoord, &srWriteRegion);
         VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(fSuccess, L"Attempted to write with WriteConsoleOutputW");
-        
+
         // --- WriteConsoleOutput ASCII
 
         dwBufferSize.X = (SHORT)cbStr; // use the ascii string now for the buffer size
@@ -810,7 +830,7 @@ void DbcsReadWriteInner2(HANDLE hOut, HANDLE /*hIn*/)
         // --- WriteConsoleOutputCharacter ASCII
         dwWriteCoord.Y = 4; // move down to the fifth line
         dwWritten = 0; // reset written count
-        
+
         fSuccess = WriteConsoleOutputCharacterA(hOut, pszStr, cbStr, dwWriteCoord, &dwWritten);
         VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(fSuccess, L"Attempted to write with WriteConsoleOutputCharacterA");
         VERIFY_ARE_EQUAL(cbStr, dwWritten, L"Verify all character bytes written successfully.");
@@ -819,8 +839,8 @@ void DbcsReadWriteInner2(HANDLE hOut, HANDLE /*hIn*/)
         Log::Comment(L"Try to read back ‚©‚½‚©‚È from the buffer and confirm formatting.");
 
         COORD dwReadBufferSize = { (SHORT)cbStr, 4 }; // 2 rows with 8 columns each. the string length was 4 so leave double space in case the characters are doubled on read.
-        CHAR_INFO readBuffer[8 * 4]; 
-        
+        CHAR_INFO readBuffer[8 * 4];
+
         COORD dwReadBufferCoord = { 0, 0 };
         SMALL_RECT srReadRegionExpected = { 0 }; // read cols 0-7 in rows 1-2 (first 8 characters of 2 rows we just wrote above)
         srReadRegionExpected.Left = 0;
@@ -865,17 +885,14 @@ void DbcsReadWriteInner2(HANDLE hOut, HANDLE /*hIn*/)
     }
 }
 
-void DbcsTests::TestDbcsReadWrite2()
-{
-    SetUpExternalCJKTestEnvironment(PATH_TO_TOOL, DbcsReadWriteInner2);
-}
-
 // This test covers bisect-prevention handling. This is the behavior where a double-wide character will not be spliced
 // across a line boundary and will instead be advanced onto the next line.
 // It additionally exercises the word wrap functionality to ensure that the bisect calculations continue
 // to apply properly when wrap occurs.
-void DbcsBisectInner(HANDLE hOut, HANDLE /*hIn*/)
+void DbcsTests::TestDbcsBisect()
 {
+    HANDLE const hOut = GetStdOutputHandle();
+
     UINT dwCP = GetConsoleCP();
     VERIFY_ARE_EQUAL(dwCP, JAPANESE_CP);
 
@@ -921,7 +938,7 @@ void DbcsBisectInner(HANDLE hOut, HANDLE /*hIn*/)
                     VERIFY_ARE_EQUAL(1u, dwWritten, L"We should have only read one character back at the end of the line.");
 
                     VERIFY_ARE_EQUAL(wchSpace, wchBuffer, L"A space character should have been left at the end of the line.");
-                    
+
                     Log::Comment(L"Confirm that the wide character was written on the next line down instead.");
                     WCHAR wchBuffer2[2];
                     fSuccess = ReadConsoleOutputCharacterW(hOut, wchBuffer2, 2, coordStartOfNextLine, &dwWritten);
@@ -938,7 +955,8 @@ void DbcsBisectInner(HANDLE hOut, HANDLE /*hIn*/)
                             VERIFY_ARE_EQUAL(coordStartOfNextLine.Y, sbiex.dwCursorPosition.Y, L"Cursor has moved down to next line.");
                             VERIFY_ARE_EQUAL(coordStartOfNextLine.X + 2, sbiex.dwCursorPosition.X, L"Cursor has advanced two spaces on next line for double wide character.");
 
-                            Log::Comment(L"We can only run the resize test in the v2 console. We'll skip it if it turns out v2 is off.");
+                            // TODO: This bit needs to move into a UIA test
+                            /*Log::Comment(L"We can only run the resize test in the v2 console. We'll skip it if it turns out v2 is off.");
                             if (IsV2Console())
                             {
                                 Log::Comment(L"Test that the character moves back up when the window is unwrapped. Make the window one larger.");
@@ -974,7 +992,7 @@ void DbcsBisectInner(HANDLE hOut, HANDLE /*hIn*/)
                                         }
                                     }
                                 }
-                            }
+                            }*/
                         }
                     }
                 }
@@ -983,25 +1001,20 @@ void DbcsBisectInner(HANDLE hOut, HANDLE /*hIn*/)
     }
 }
 
-void DbcsTests::TestDbcsBisect()
-{
-    SetUpExternalCJKTestEnvironment(PATH_TO_TOOL, DbcsBisectInner);
-}
-
 struct MultibyteInputData
 {
     PCWSTR pwszInputText;
     PCSTR pszExpectedText;
 };
 
-const MultibyteInputData MultibyteTestDataSet[] = 
+const MultibyteInputData MultibyteTestDataSet[] =
 {
-    { L"‚ ", "\x82\xa0" },
-    { L"‚ 3", "\x82\xa0\x33" },
-    { L"3‚ ", "\x33\x82\xa0" },
-    { L"3‚ ‚¢", "\x33\x82\xa0\x82\xa2" },
-    { L"3‚ ‚¢‚ ", "\x33\x82\xa0\x82\xa2\x82\xa0" },
-    { L"3‚ ‚¢‚ ‚¢", "\x33\x82\xa0\x82\xa2\x82\xa0\x82\xa2" },
+    { L"\x3042", "\x82\xa0" },
+    { L"\x3042" L"3", "\x82\xa0\x33" },
+    { L"3" L"\x3042", "\x33\x82\xa0" },
+    { L"3" L"\x3042" L"\x3044", "\x33\x82\xa0\x82\xa2" },
+    { L"3" L"\x3042" L"\x3044" L"\x3042", "\x33\x82\xa0\x82\xa2\x82\xa0" },
+    { L"3" L"\x3042" L"\x3044" L"\x3042" L"\x3044", "\x33\x82\xa0\x82\xa2\x82\xa0\x82\xa2" },
 };
 
 void WriteStringToInput(HANDLE hIn, PCWSTR pwszString)
@@ -1009,7 +1022,6 @@ void WriteStringToInput(HANDLE hIn, PCWSTR pwszString)
     size_t const cchString = wcslen(pwszString);
     size_t const cRecords = cchString * 2; // We need double the input records for button down then button up.
 
-    
     INPUT_RECORD* const irString = new INPUT_RECORD[cRecords];
 
     for (size_t i = 0; i < cRecords; i++)

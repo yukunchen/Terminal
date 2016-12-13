@@ -3,5 +3,3 @@ DIRS=dll \
      ut_host{noncrit} \
      ft_host{noncrit} \
      ft_cjk \
-     ft_resize{noncrit} \
-     tools \
