@@ -67,7 +67,7 @@ function Invoke-TaefInNewWindow()
 #
 #.PARAMETER Test
 # Can be used to specify that only a particular test should be run.
-# Current values allowed are: unit, api, cjk, resize, message, uia.
+# Current values allowed are: unit, feature, uia.
 #
 #.PARAMETER TaefArgs
 # Used to pass any additional arguments to the test runner.
