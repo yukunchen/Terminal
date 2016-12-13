@@ -1,9 +1,6 @@
 
 <tests>
   <test name="unit" type="unit" binary="Conhost.Unit.Tests.dll" />
-  <test name="api" type="ft" binary="Conhost.Api.Tests.dll" />
-  <test name="cjk" type="ft" binary="Conhost.CJK.Tests.dll" />
-  <test name="resize" type="ft" binary="Conhost.Resize.Tests.dll" />
-  <test name="message" type="ft" binary="Conhost.Message.Tests.dll" />
+  <test name="feature" type="ft" binary="Conhost.Feature.Tests.dll" />
   <test name="uia" type="ft" binary="Host.Tests.UIA.dll" />
 </tests>
