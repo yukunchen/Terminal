@@ -1,6 +1,6 @@
 
 <tests>
   <test name="unit" type="unit" binary="Conhost.Unit.Tests.dll" />
-  <test name="feature" type="ft" binary="Conhost.Feature.Tests.dll" />
+  <test name="ft" type="ft" binary="Conhost.Feature.Tests.dll" />
   <test name="uia" type="ft" binary="Host.Tests.UIA.dll" />
 </tests>
