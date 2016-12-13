@@ -212,7 +212,7 @@ class ResizeTests
         VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleActiveScreenBuffer(m_hScreenBuffer));
 
         m_LogCurrentConsoleScreenBufferInfo(L"BeforeInitialSizing");
-        m_ResizeWindowAndBuffer(80, 20, SizingDown);
+        m_ResizeWindowAndBuffer(60, 15, SizingDown);
         m_LogCurrentConsoleScreenBufferInfo(L"AfterInitialSizing");
 
         // write 10 rows of ~120 char sample text
@@ -286,14 +286,14 @@ class ResizeTests
         m_GetFullBufferText(&pszPreResizeBuffer, &cchPreResizeBuffer);
 
         // now resize it 5 columns smaller, and then get the text
-        m_ResizeWindowAndBuffer(75, 20, SizingDown);
+        m_ResizeWindowAndBuffer(55, 15, SizingDown);
 
         PWSTR pszPostResizeBuffer;
         size_t cchPostResizeBuffer;
         m_GetFullBufferText(&pszPostResizeBuffer, &cchPostResizeBuffer);
 
         // now resize it back to its original size
-        m_ResizeWindowAndBuffer(80, 20, SizingUp);
+        m_ResizeWindowAndBuffer(60, 15, SizingUp);
 
         PWSTR pszUnresizedBuffer;
         size_t cchUnresizedBuffer;
