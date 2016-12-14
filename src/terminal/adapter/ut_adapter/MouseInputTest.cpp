@@ -4,7 +4,7 @@
 *                                                       *
 ********************************************************/
 
-#include <precomp.h>
+#include "precomp.h"
 #include <wextestclass.h>
 #include "..\..\inc\consoletaeftemplates.hpp"
 
@@ -128,7 +128,7 @@ public:
         // Copy the expected output into the buffer
         size_t cchInputExpected = 0;
         VERIFY_SUCCEEDED(StringCchLengthW(pwchTestOutput, STRSAFE_MAX_CCH, &cchInputExpected));
-        VERIFY_ARE_EQUAL(cchInputExpected, 6);
+        VERIFY_ARE_EQUAL(cchInputExpected, 6ul);
         
         ClearTestBuffer();
         memcpy(s_pwszExpectedBuffer, pwchTestOutput, cchInputExpected * sizeof(wchar_t));

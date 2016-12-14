@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\common.build.pre.props" />
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -59,7 +59,6 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>HOST_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\dep;..\..\..\dep\Console;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
@@ -69,6 +68,6 @@
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="..\..\common.build.dll.props" />
-  <Import Project="..\..\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.build.dll.props" />
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>

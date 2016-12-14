@@ -40,6 +40,18 @@ GdiEngine::GdiEngine() :
 
     _hdcMemoryContext = CreateCompatibleDC(nullptr);
     THROW_LAST_ERROR_IF_NULL(_hdcMemoryContext);
+
+    // On session zero, text GDI APIs might not be ready.
+    // Calling GetTextFace causes a wait that will be
+    // satisfied while GDI text APIs come online.
+    //
+    // (Session zero is the non-interactive session
+    // where long running services processes are hosted.
+    // this increase security and reliability as user
+    // applications in interactive session will not be
+    // able to interact with services through the common
+    // desktop (e.g., window messages)).
+    GetTextFaceW(_hdcMemoryContext, 0, nullptr);
 }
 
 // Routine Description:
