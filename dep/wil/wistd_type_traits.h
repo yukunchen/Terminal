@@ -1,12 +1,6 @@
 // Windows Internal Libraries (wil)
 // Note: do not include this file directly, include "wil\Common.h"
 //
-// wil Usage Guidelines:
-// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Internal%20Libraries%20for%20C++%20Usage%20Guide.docx?web=1
-//
-// wil Discussion Alias (wildisc):
-// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
-//
 //! @file
 //! Selective type traits from STL's <type_traits> header under the `wistd` namespace.
 
@@ -54,17 +48,17 @@ namespace wistd     // ("Windows Internal" std)
 {
 #define __WI_COMMA	,	/* for commas in macro parameters */
   
-	// TEMPLATE CLASS unary_function
+    // TEMPLATE CLASS unary_function
 template<class _T1,
-	class _Ret>
-	struct unary_function;
+    class _Ret>
+    struct unary_function;
 
 
-	// TEMPLATE CLASS binary_function
+    // TEMPLATE CLASS binary_function
 template<class _T1,
-	class _T2,
-	class _Ret>
-	struct binary_function;
+    class _T2,
+    class _Ret>
+    struct binary_function;
 
 
     // TEMPLATE CLASS integral_constant
@@ -139,34 +133,34 @@ template<class _Ty>
 
     // TEMPLATE CLASS remove_pointer
 template<class _Ty>
-	struct remove_pointer
-	{	// remove pointer
-	typedef _Ty type;
-	};
+    struct remove_pointer
+    {	// remove pointer
+    typedef _Ty type;
+    };
 
 template<class _Ty>
-	struct remove_pointer<_Ty *>
-	{	// remove pointer
-	typedef _Ty type;
-	};
+    struct remove_pointer<_Ty *>
+    {	// remove pointer
+    typedef _Ty type;
+    };
 
 template<class _Ty>
-	struct remove_pointer<_Ty *const>
-	{	// remove pointer
-	typedef _Ty type;
-	};
+    struct remove_pointer<_Ty *const>
+    {	// remove pointer
+    typedef _Ty type;
+    };
 
 template<class _Ty>
-	struct remove_pointer<_Ty *volatile>
-	{	// remove pointer
-	typedef _Ty type;
-	};
+    struct remove_pointer<_Ty *volatile>
+    {	// remove pointer
+    typedef _Ty type;
+    };
 
 template<class _Ty>
-	struct remove_pointer<_Ty *const volatile>
-	{	// remove pointer
-	typedef _Ty type;
-	};
+    struct remove_pointer<_Ty *const volatile>
+    {	// remove pointer
+    typedef _Ty type;
+    };
 
 
     // TEMPLATE FUNCTION move
@@ -625,24 +619,24 @@ template<class _Ty>
     };
 
 
-	// TEMPLATE CLASS remove_extent
+    // TEMPLATE CLASS remove_extent
 template<class _Ty>
-	struct remove_extent
-	{	// remove array extent
-	typedef _Ty type;
-	};
+    struct remove_extent
+    {	// remove array extent
+    typedef _Ty type;
+    };
 
 template<class _Ty, unsigned int _Ix>
-	struct remove_extent<_Ty[_Ix]>
-	{	// remove array extent
-	typedef _Ty type;
-	};
+    struct remove_extent<_Ty[_Ix]>
+    {	// remove array extent
+    typedef _Ty type;
+    };
 
 template<class _Ty>
-	struct remove_extent<_Ty[]>
-	{	// remove array extent
-	typedef _Ty type;
-	};
+    struct remove_extent<_Ty[]>
+    {	// remove array extent
+    typedef _Ty type;
+    };
 
 
     // TEMPLATE CLASS add_reference -- retained
@@ -664,603 +658,603 @@ __WI_CLASS_DEFINE_CV(__WI_ADD_REFERENCE_VOID)
 
 
 template<class _Ty>
-	struct _Is_funptr
-		: false_type
-	{	// base class for function pointer predicates
-	};
+    struct _Is_funptr
+        : false_type
+    {	// base class for function pointer predicates
+    };
 
 template<class _Ty>
-	struct _Is_memfunptr
-		: false_type
-	{	// base class for member function pointer predicates
-	};
+    struct _Is_memfunptr
+        : false_type
+    {	// base class for member function pointer predicates
+    };
 
 #define __WIL_CLASS_IS_FUNPTR( \
-	TEMPLATE_LIST, PADDING_LIST, LIST, COMMA, X1, X2, X3, X4) \
+    TEMPLATE_LIST, PADDING_LIST, LIST, COMMA, X1, X2, X3, X4) \
 template<class _Ret COMMA LIST(_CLASS_TYPE)> \
-	struct _Is_funptr<_Ret (*)(LIST(_TYPE))> \
-		: true_type \
-	{	/* base class for function pointer predicates */ \
-	}; \
+    struct _Is_funptr<_Ret (*)(LIST(_TYPE))> \
+        : true_type \
+    {	/* base class for function pointer predicates */ \
+    }; \
 template<class _Ret, \
-	class _Arg0 COMMA LIST(_CLASS_TYPE)> \
-	struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE))> \
-		: true_type \
-	{	/* base class for member function pointer predicates */ \
-	}; \
+    class _Arg0 COMMA LIST(_CLASS_TYPE)> \
+    struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE))> \
+        : true_type \
+    {	/* base class for member function pointer predicates */ \
+    }; \
 template<class _Ret, \
-	class _Arg0 COMMA LIST(_CLASS_TYPE)> \
-	struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE)) const> \
-		: true_type \
-	{	/* base class for member function pointer predicates */ \
-	}; \
+    class _Arg0 COMMA LIST(_CLASS_TYPE)> \
+    struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE)) const> \
+        : true_type \
+    {	/* base class for member function pointer predicates */ \
+    }; \
 template<class _Ret, \
-	class _Arg0 COMMA LIST(_CLASS_TYPE)> \
-	struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE)) volatile> \
-		: true_type \
-	{	/* base class for member function pointer predicates */ \
-	}; \
+    class _Arg0 COMMA LIST(_CLASS_TYPE)> \
+    struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE)) volatile> \
+        : true_type \
+    {	/* base class for member function pointer predicates */ \
+    }; \
 template<class _Ret, \
-	class _Arg0 COMMA LIST(_CLASS_TYPE)> \
-	struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE)) const volatile> \
-		: true_type \
-	{	/* base class for member function pointer predicates */ \
-	}; \
+    class _Arg0 COMMA LIST(_CLASS_TYPE)> \
+    struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE)) const volatile> \
+        : true_type \
+    {	/* base class for member function pointer predicates */ \
+    }; \
 template<class _Ret COMMA LIST(_CLASS_TYPE)> \
-	struct _Is_funptr<_Ret (*)(LIST(_TYPE)...)> \
-		: true_type \
-	{	/* base class for function pointer predicates */ \
-	}; \
+    struct _Is_funptr<_Ret (*)(LIST(_TYPE)...)> \
+        : true_type \
+    {	/* base class for function pointer predicates */ \
+    }; \
 template<class _Ret, \
-	class _Arg0 COMMA LIST(_CLASS_TYPE)> \
-	struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE)...)> \
-		: true_type \
-	{	/* base class for member function pointer predicates */ \
-	}; \
+    class _Arg0 COMMA LIST(_CLASS_TYPE)> \
+    struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE)...)> \
+        : true_type \
+    {	/* base class for member function pointer predicates */ \
+    }; \
 template<class _Ret, \
-	class _Arg0 COMMA LIST(_CLASS_TYPE)> \
-	struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE)...) const> \
-		: true_type \
-	{	/* base class for member function pointer predicates */ \
-	}; \
+    class _Arg0 COMMA LIST(_CLASS_TYPE)> \
+    struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE)...) const> \
+        : true_type \
+    {	/* base class for member function pointer predicates */ \
+    }; \
 template<class _Ret, \
-	class _Arg0 COMMA LIST(_CLASS_TYPE)> \
-	struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE)...) volatile> \
-		: true_type \
-	{	/* base class for member function pointer predicates */ \
-	}; \
+    class _Arg0 COMMA LIST(_CLASS_TYPE)> \
+    struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE)...) volatile> \
+        : true_type \
+    {	/* base class for member function pointer predicates */ \
+    }; \
 template<class _Ret, \
-	class _Arg0 COMMA LIST(_CLASS_TYPE)> \
-	struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE)...) const volatile> \
-		: true_type \
-	{	/* base class for member function pointer predicates */ \
-	};
+    class _Arg0 COMMA LIST(_CLASS_TYPE)> \
+    struct _Is_memfunptr<_Ret (_Arg0::*)(LIST(_TYPE)...) const volatile> \
+        : true_type \
+    {	/* base class for member function pointer predicates */ \
+    };
 
 
     // TEMPLATE CLASS is_member_object_pointer
 template<class _Ty>
-	struct _Is_member_object_pointer
-		: false_type
-	{	// determine whether _Ty is a pointer to member object
-	};
+    struct _Is_member_object_pointer
+        : false_type
+    {	// determine whether _Ty is a pointer to member object
+    };
 
 template<class _Ty1, class _Ty2>
-	struct _Is_member_object_pointer<_Ty1 _Ty2::*>
-		: _Cat_base<!_Is_memfunptr<_Ty1 _Ty2::*>::value>
-	{	// determine whether _Ty is a pointer to member object
-	};
+    struct _Is_member_object_pointer<_Ty1 _Ty2::*>
+        : _Cat_base<!_Is_memfunptr<_Ty1 _Ty2::*>::value>
+    {	// determine whether _Ty is a pointer to member object
+    };
 
 template<class _Ty>
-	struct is_member_object_pointer
-		: _Is_member_object_pointer<typename remove_cv<_Ty>::type>
-	{	// determine whether _Ty is a pointer to member object
-	};
+    struct is_member_object_pointer
+        : _Is_member_object_pointer<typename remove_cv<_Ty>::type>
+    {	// determine whether _Ty is a pointer to member object
+    };
 
 
-	// TEMPLATE CLASS is_member_function_pointer
+    // TEMPLATE CLASS is_member_function_pointer
 template<class _Ty>
-	struct is_member_function_pointer
-		: _Cat_base<_Is_memfunptr<typename remove_cv<_Ty>::type>::value>
-	{	// determine whether _Ty is a pointer to member function
-	};
+    struct is_member_function_pointer
+        : _Cat_base<_Is_memfunptr<typename remove_cv<_Ty>::type>::value>
+    {	// determine whether _Ty is a pointer to member function
+    };
 
 
-	// TEMPLATE CLASS is_pointer
+    // TEMPLATE CLASS is_pointer
 template<class _Ty>
-	struct _Is_pointer
-		: false_type
-	{	// determine whether _Ty is a pointer
-	};
-
-template<class _Ty>
-	struct _Is_pointer<_Ty *>
-		: _Cat_base<!is_member_object_pointer<_Ty *>::value
-		&& !is_member_function_pointer<_Ty *>::value>
-	{	// determine whether _Ty is a pointer
-	};
+    struct _Is_pointer
+        : false_type
+    {	// determine whether _Ty is a pointer
+    };
 
 template<class _Ty>
-	struct is_pointer
-		: _Is_pointer<typename remove_cv<_Ty>::type>
-	{	// determine whether _Ty is a pointer
-	};
+    struct _Is_pointer<_Ty *>
+        : _Cat_base<!is_member_object_pointer<_Ty *>::value
+        && !is_member_function_pointer<_Ty *>::value>
+    {	// determine whether _Ty is a pointer
+    };
+
+template<class _Ty>
+    struct is_pointer
+        : _Is_pointer<typename remove_cv<_Ty>::type>
+    {	// determine whether _Ty is a pointer
+    };
 
 
         //	FUNCTIONAL STUFF (from <functional>)
-		// TEMPLATE STRUCT unary_function
+        // TEMPLATE STRUCT unary_function
 template<class _Arg,
-	class _Result>
-	struct unary_function
-	{	// base class for unary functions
-	typedef _Arg argument_type;
-	typedef _Result result_type;
-	};
+    class _Result>
+    struct unary_function
+    {	// base class for unary functions
+    typedef _Arg argument_type;
+    typedef _Result result_type;
+    };
 
-		// TEMPLATE STRUCT binary_function
+        // TEMPLATE STRUCT binary_function
 template<class _Arg1,
-	class _Arg2,
-	class _Result>
-	struct binary_function
-	{	// base class for binary functions
-	typedef _Arg1 first_argument_type;
-	typedef _Arg2 second_argument_type;
-	typedef _Result result_type;
-	};
+    class _Arg2,
+    class _Result>
+    struct binary_function
+    {	// base class for binary functions
+    typedef _Arg1 first_argument_type;
+    typedef _Arg2 second_argument_type;
+    typedef _Result result_type;
+    };
 
 
-	// TEMPLATE CLASS is_function
+    // TEMPLATE CLASS is_function
 template<class _Ty>
-	struct is_function
-		: _Cat_base<_Is_funptr<typename remove_cv<_Ty>::type *>::value>
-	{	// determine whether _Ty is a function
-	};
-
-template<class _Ty>
-	struct is_function<_Ty&>
-		: false_type
-	{	// determine whether _Ty is a function
-	};
+    struct is_function
+        : _Cat_base<_Is_funptr<typename remove_cv<_Ty>::type *>::value>
+    {	// determine whether _Ty is a function
+    };
 
 template<class _Ty>
-	struct is_function<_Ty&&>
-		: false_type
-	{	// determine whether _Ty is a function
-	};
+    struct is_function<_Ty&>
+        : false_type
+    {	// determine whether _Ty is a function
+    };
 
-	// TEMPLATE CLASS _Is_integral
 template<class _Ty>
-	struct _Is_integral
-		: false_type
-	{	// determine whether _Ty is integral
-	};
+    struct is_function<_Ty&&>
+        : false_type
+    {	// determine whether _Ty is a function
+    };
+
+    // TEMPLATE CLASS _Is_integral
+template<class _Ty>
+    struct _Is_integral
+        : false_type
+    {	// determine whether _Ty is integral
+    };
 
 template<>
-	struct _Is_integral<bool>
-		: true_type
-	{	// determine whether _Ty is integral
-	};
+    struct _Is_integral<bool>
+        : true_type
+    {	// determine whether _Ty is integral
+    };
 
 template<>
-	struct _Is_integral<char>
-		: true_type
-	{	// determine whether _Ty is integral
-	};
+    struct _Is_integral<char>
+        : true_type
+    {	// determine whether _Ty is integral
+    };
 
 template<>
-	struct _Is_integral<unsigned char>
-		: true_type
-	{	// determine whether _Ty is integral
-	};
+    struct _Is_integral<unsigned char>
+        : true_type
+    {	// determine whether _Ty is integral
+    };
 
 template<>
-	struct _Is_integral<signed char>
-		: true_type
-	{	// determine whether _Ty is integral
-	};
+    struct _Is_integral<signed char>
+        : true_type
+    {	// determine whether _Ty is integral
+    };
 
  #ifdef _NATIVE_WCHAR_T_DEFINED
 template<>
-	struct _Is_integral<wchar_t>
-		: true_type
-	{	// determine whether _Ty is integral
-	};
+    struct _Is_integral<wchar_t>
+        : true_type
+    {	// determine whether _Ty is integral
+    };
  #endif /* _NATIVE_WCHAR_T_DEFINED */
 
 template<>
-	struct _Is_integral<unsigned short>
-		: true_type
-	{	// determine whether _Ty is integral
-	};
+    struct _Is_integral<unsigned short>
+        : true_type
+    {	// determine whether _Ty is integral
+    };
 
 template<>
-	struct _Is_integral<signed short>
-		: true_type
-	{	// determine whether _Ty is integral
-	};
+    struct _Is_integral<signed short>
+        : true_type
+    {	// determine whether _Ty is integral
+    };
 
 template<>
-	struct _Is_integral<unsigned int>
-		: true_type
-	{	// determine whether _Ty is integral
-	};
+    struct _Is_integral<unsigned int>
+        : true_type
+    {	// determine whether _Ty is integral
+    };
 
 template<>
-	struct _Is_integral<signed int>
-		: true_type
-	{	// determine whether _Ty is integral
-	};
+    struct _Is_integral<signed int>
+        : true_type
+    {	// determine whether _Ty is integral
+    };
 
 template<>
-	struct _Is_integral<unsigned long>
-		: true_type
-	{	// determine whether _Ty is integral
-	};
+    struct _Is_integral<unsigned long>
+        : true_type
+    {	// determine whether _Ty is integral
+    };
 
 template<>
-	struct _Is_integral<signed long>
-		: true_type
-	{	// determine whether _Ty is integral
-	};
+    struct _Is_integral<signed long>
+        : true_type
+    {	// determine whether _Ty is integral
+    };
 
  #if _HAS_CHAR16_T_LANGUAGE_SUPPORT
 template<>
-	struct _Is_integral<char16_t>
-		: true_type
-	{	// determine whether _Ty is integral
-	};
+    struct _Is_integral<char16_t>
+        : true_type
+    {	// determine whether _Ty is integral
+    };
 
 template<>
-	struct _Is_integral<char32_t>
-		: true_type
-	{	// determine whether _Ty is integral
-	};
+    struct _Is_integral<char32_t>
+        : true_type
+    {	// determine whether _Ty is integral
+    };
  #endif /* _HAS_CHAR16_T_LANGUAGE_SUPPORT */
 
  #ifdef _LONGLONG
 template<>
-	struct _Is_integral<_LONGLONG>
-		: true_type
-	{	// determine whether _Ty is integral
-	};
+    struct _Is_integral<_LONGLONG>
+        : true_type
+    {	// determine whether _Ty is integral
+    };
 
 template<>
-	struct _Is_integral<_ULONGLONG>
-		: true_type
-	{	// determine whether _Ty is integral
-	};
+    struct _Is_integral<_ULONGLONG>
+        : true_type
+    {	// determine whether _Ty is integral
+    };
  #endif /* _LONGLONG */
 
-	// TEMPLATE CLASS is_integral
+    // TEMPLATE CLASS is_integral
 template<class _Ty>
-	struct is_integral
-		: _Is_integral<typename remove_cv<_Ty>::type>
-	{	// determine whether _Ty is integral
-	};
-	// TEMPLATE CLASS _Is_floating_point
+    struct is_integral
+        : _Is_integral<typename remove_cv<_Ty>::type>
+    {	// determine whether _Ty is integral
+    };
+    // TEMPLATE CLASS _Is_floating_point
 template<class _Ty>
-	struct _Is_floating_point
-		: false_type
-	{	// determine whether _Ty is floating point
-	};
+    struct _Is_floating_point
+        : false_type
+    {	// determine whether _Ty is floating point
+    };
 
 template<>
-	struct _Is_floating_point<float>
-		: true_type
-	{	// determine whether _Ty is floating point
-	};
+    struct _Is_floating_point<float>
+        : true_type
+    {	// determine whether _Ty is floating point
+    };
 
 template<>
-	struct _Is_floating_point<double>
-		: true_type
-	{	// determine whether _Ty is floating point
-	};
+    struct _Is_floating_point<double>
+        : true_type
+    {	// determine whether _Ty is floating point
+    };
 
 template<>
-	struct _Is_floating_point<long double>
-		: true_type
-	{	// determine whether _Ty is floating point
-	};
+    struct _Is_floating_point<long double>
+        : true_type
+    {	// determine whether _Ty is floating point
+    };
 
-	// TEMPLATE CLASS is_floating_point
+    // TEMPLATE CLASS is_floating_point
 template<class _Ty>
-	struct is_floating_point
-		: _Is_floating_point<typename remove_cv<_Ty>::type>
-	{	// determine whether _Ty is floating point
-	};	// TEMPLATE CLASS add_pointer
+    struct is_floating_point
+        : _Is_floating_point<typename remove_cv<_Ty>::type>
+    {	// determine whether _Ty is floating point
+    };	// TEMPLATE CLASS add_pointer
 
     // TEMPLATE CLASS is_arithmetic
 template<class _Ty>
-	struct is_arithmetic
-		: _Cat_base<is_integral<_Ty>::value
-		|| is_floating_point<_Ty>::value>
-	{	// determine whether _Ty is an arithmetic type
-	};
+    struct is_arithmetic
+        : _Cat_base<is_integral<_Ty>::value
+        || is_floating_point<_Ty>::value>
+    {	// determine whether _Ty is an arithmetic type
+    };
 
 template<class _Ty>
-	struct add_pointer
-	{	// add pointer
-	typedef typename remove_reference<_Ty>::type *type;
-	};
+    struct add_pointer
+    {	// add pointer
+    typedef typename remove_reference<_Ty>::type *type;
+    };
 
 
     // TEMPLATE CLASS decay
 template<class _Ty>
-	struct decay
-	{	// determines decayed version of _Ty
-	typedef typename remove_reference<_Ty>::type _Ty1;
+    struct decay
+    {	// determines decayed version of _Ty
+    typedef typename remove_reference<_Ty>::type _Ty1;
 
-	typedef typename _If<is_array<_Ty1>::value,
-		typename remove_extent<_Ty1>::type *,
-		typename _If<is_function<_Ty1>::value,
-			typename add_pointer<_Ty1>::type,
-			typename remove_cv<_Ty1>::type>::type>::type type;
-	};
+    typedef typename _If<is_array<_Ty1>::value,
+        typename remove_extent<_Ty1>::type *,
+        typename _If<is_function<_Ty1>::value,
+            typename add_pointer<_Ty1>::type,
+            typename remove_cv<_Ty1>::type>::type>::type type;
+    };
 
 #define __WIL_NOEXCEPT_OP(x)
 
     // TEMPLATE CLASS is_void
 template<class _Ty>
-	struct _Is_void
-		: false_type
-	{	// determine whether _Ty is void
-	};
+    struct _Is_void
+        : false_type
+    {	// determine whether _Ty is void
+    };
 
 template<>
-	struct _Is_void<void>
-		: true_type
-	{	// determine whether _Ty is void
-	};
+    struct _Is_void<void>
+        : true_type
+    {	// determine whether _Ty is void
+    };
 
 template<class _Ty>
-	struct is_void
-		: _Is_void<typename remove_cv<_Ty>::type>
-	{	// determine whether _Ty is void
-	};
+    struct is_void
+        : _Is_void<typename remove_cv<_Ty>::type>
+    {	// determine whether _Ty is void
+    };
 
-		// TEMPLATE CLASS pointer_traits
+        // TEMPLATE CLASS pointer_traits
 template<class _Ty>
-	struct pointer_traits;
+    struct pointer_traits;
 
 template<class _Ty>
-	struct _Get_first_parameter
-	{	// get _Ty::element_type
-	typedef typename _Ty::element_type type;
-	};
+    struct _Get_first_parameter
+    {	// get _Ty::element_type
+    typedef typename _Ty::element_type type;
+    };
 
-		// TEMPLATE STRUCT _Replace_first_parameter
+        // TEMPLATE STRUCT _Replace_first_parameter
 template<class _Newfirst,
-	class _Ty>
-	struct _Replace_first_parameter
-	{	// get _Ty::element_type
-	typedef typename _Ty::template rebind<_Newfirst>::other type;
-	};
+    class _Ty>
+    struct _Replace_first_parameter
+    {	// get _Ty::element_type
+    typedef typename _Ty::template rebind<_Newfirst>::other type;
+    };
 
-		// TEMPLATE STRUCT _Get_element_type
+        // TEMPLATE STRUCT _Get_element_type
 template<class _Ty>
-	struct _Get_element_type
-	__WI_GET_TYPE_OR_DEFAULT(element_type,
-		typename _Get_first_parameter<_Ty>::type);
+    struct _Get_element_type
+    __WI_GET_TYPE_OR_DEFAULT(element_type,
+        typename _Get_first_parameter<_Ty>::type);
 
-		// TEMPLATE STRUCT _Get_ptr_difference_type
+        // TEMPLATE STRUCT _Get_ptr_difference_type
 template<class _Ty>
-	struct _Get_ptr_difference_type
-	__WI_GET_TYPE_OR_DEFAULT(difference_type,
-		ptrdiff_t);
+    struct _Get_ptr_difference_type
+    __WI_GET_TYPE_OR_DEFAULT(difference_type,
+        ptrdiff_t);
 
-		// TEMPLATE STRUCT _Get_rebind_type
+        // TEMPLATE STRUCT _Get_rebind_type
 template<class _Ty,
-	class _Other>
-	struct _Get_rebind_type
-	__WI_GET_TYPE_OR_DEFAULT(template rebind<_Other>::other,
-		typename _Replace_first_parameter<_Other __WI_COMMA _Uty>::type);
+    class _Other>
+    struct _Get_rebind_type
+    __WI_GET_TYPE_OR_DEFAULT(template rebind<_Other>::other,
+        typename _Replace_first_parameter<_Other __WI_COMMA _Uty>::type);
 
-		// TEMPLATE CLASS pointer_traits
+        // TEMPLATE CLASS pointer_traits
 template<class _Ty>
-	struct pointer_traits
-	{	// defines traits for arbitrary pointers
-	typedef pointer_traits<_Ty> other;
+    struct pointer_traits
+    {	// defines traits for arbitrary pointers
+    typedef pointer_traits<_Ty> other;
 
-	typedef typename _Get_element_type<_Ty>::type element_type;
-	typedef _Ty pointer;
-	typedef typename _Get_ptr_difference_type<_Ty>::type difference_type;
+    typedef typename _Get_element_type<_Ty>::type element_type;
+    typedef _Ty pointer;
+    typedef typename _Get_ptr_difference_type<_Ty>::type difference_type;
 
-	template<class _Other>
-		struct rebind
-		{	// converts X<element_type> to X<_Other>
-		typedef typename _Get_rebind_type<_Ty, _Other>::type other;
-		};
+    template<class _Other>
+        struct rebind
+        {	// converts X<element_type> to X<_Other>
+        typedef typename _Get_rebind_type<_Ty, _Other>::type other;
+        };
 
-	static pointer pointer_to(element_type& _Val)
-		{	// convert raw reference to pointer
-		return (_Ty::pointer_to(_Val));
-		}
-	};
+    static pointer pointer_to(element_type& _Val)
+        {	// convert raw reference to pointer
+        return (_Ty::pointer_to(_Val));
+        }
+    };
 
-		// TEMPLATE CLASS pointer_traits<_Ty *>
+        // TEMPLATE CLASS pointer_traits<_Ty *>
 template<class _Ty>
-	struct pointer_traits<_Ty *>
-	{	// defines traits for raw pointers
-	typedef pointer_traits<_Ty *> other;
+    struct pointer_traits<_Ty *>
+    {	// defines traits for raw pointers
+    typedef pointer_traits<_Ty *> other;
 
-	typedef _Ty element_type;
-	typedef _Ty *pointer;
-	typedef ptrdiff_t difference_type;
+    typedef _Ty element_type;
+    typedef _Ty *pointer;
+    typedef ptrdiff_t difference_type;
 
-	template<class _Other>
-		struct rebind
-		{	// converts to a pointer to _Other
-		typedef _Other *other;
-		};
+    template<class _Other>
+        struct rebind
+        {	// converts to a pointer to _Other
+        typedef _Other *other;
+        };
 
-	typedef typename _If<is_void<_Ty>::value,
-		char&,
-		typename add_reference<_Ty>::type>::type _Reftype;
+    typedef typename _If<is_void<_Ty>::value,
+        char&,
+        typename add_reference<_Ty>::type>::type _Reftype;
 
-	static pointer pointer_to(_Reftype _Val)
-		{	// convert raw reference to pointer
-		return (wistd::addressof(_Val));
-		}
-	};
+    static pointer pointer_to(_Reftype _Val)
+        {	// convert raw reference to pointer
+        return (wistd::addressof(_Val));
+        }
+    };
 
-		// TEMPLATE FUNCTION iter_swap_wil (from <xutility>)
+        // TEMPLATE FUNCTION iter_swap_wil (from <xutility>)
 template<class _Ty> inline
-	void swap_wil(_Ty&, _Ty&)
-		__WIL_NOEXCEPT_OP(is_nothrow_move_constructible<_Ty>::value
-			&& is_nothrow_move_assignable<_Ty>::value);
+    void swap_wil(_Ty&, _Ty&)
+        __WIL_NOEXCEPT_OP(is_nothrow_move_constructible<_Ty>::value
+            && is_nothrow_move_assignable<_Ty>::value);
 
 template<class _FwdIt1,
-	class _FwdIt2> inline
-	void iter_swap_wil(_FwdIt1 _Left, _FwdIt2 _Right)
-	{	// swap *_Left and *_Right
-	swap_wil(*_Left, *_Right);
-	}
+    class _FwdIt2> inline
+    void iter_swap_wil(_FwdIt1 _Left, _FwdIt2 _Right)
+    {	// swap *_Left and *_Right
+    swap_wil(*_Left, *_Right);
+    }
 
-		// TEMPLATE FUNCTION _Move_wil
+        // TEMPLATE FUNCTION _Move_wil
 template<class _Ty> inline
-	typename remove_reference<_Ty>::type&&
-		_Move_wil(_Ty&& _Arg) WI_NOEXCEPT
-	{	// forward _Arg as movable
-	return ((typename remove_reference<_Ty>::type&&)_Arg);
-	}
+    typename remove_reference<_Ty>::type&&
+        _Move_wil(_Ty&& _Arg) WI_NOEXCEPT
+    {	// forward _Arg as movable
+    return ((typename remove_reference<_Ty>::type&&)_Arg);
+    }
 
-		// TEMPLATE FUNCTION swap_wil
+        // TEMPLATE FUNCTION swap_wil
 template<class _Ty,
-	size_t _Size> inline
-	void swap_wil(_Ty (&_Left)[_Size], _Ty (&_Right)[_Size])
-		__WIL_NOEXCEPT_OP(__WIL_NOEXCEPT_OP(swap_wil(*_Left, *_Right)))
-	{	// exchange arrays stored at _Left and _Right
-	if (&_Left != &_Right)
-		{	// worth swapping, swap_wil ranges
-		_Ty *_First1 = _Left;
-		_Ty *_Last1 = _First1 + _Size;
-		_Ty *_First2 = _Right;
-		for (; _First1 != _Last1; ++_First1, ++_First2)
-			wistd::iter_swap_wil(_First1, _First2);
-		}
-	}
+    size_t _Size> inline
+    void swap_wil(_Ty (&_Left)[_Size], _Ty (&_Right)[_Size])
+        __WIL_NOEXCEPT_OP(__WIL_NOEXCEPT_OP(swap_wil(*_Left, *_Right)))
+    {	// exchange arrays stored at _Left and _Right
+    if (&_Left != &_Right)
+        {	// worth swapping, swap_wil ranges
+        _Ty *_First1 = _Left;
+        _Ty *_Last1 = _First1 + _Size;
+        _Ty *_First2 = _Right;
+        for (; _First1 != _Last1; ++_First1, ++_First2)
+            wistd::iter_swap_wil(_First1, _First2);
+        }
+    }
 
 template<class _Ty> inline
-	void swap_wil(_Ty& _Left, _Ty& _Right)
-		__WIL_NOEXCEPT_OP(is_nothrow_move_constructible<_Ty>::value
-			&& is_nothrow_move_assignable<_Ty>::value)
-	{	// exchange values stored at _Left and _Right
-	_Ty _Tmp = _Move_wil(_Left);
-	_Left = _Move_wil(_Right);
-	_Right = _Move_wil(_Tmp);
-	}
+    void swap_wil(_Ty& _Left, _Ty& _Right)
+        __WIL_NOEXCEPT_OP(is_nothrow_move_constructible<_Ty>::value
+            && is_nothrow_move_assignable<_Ty>::value)
+    {	// exchange values stored at _Left and _Right
+    _Ty _Tmp = _Move_wil(_Left);
+    _Left = _Move_wil(_Right);
+    _Right = _Move_wil(_Tmp);
+    }
 
-		// TEMPLATE FUNCTION _Swap_adl_wil
+        // TEMPLATE FUNCTION _Swap_adl_wil
 template<class _Ty> inline
-	void _Swap_adl_wil(_Ty& _Left, _Ty& _Right)
-	{	// exchange values stored at _Left and _Right, using ADL
-	swap_wil(_Left, _Right);
-	}
+    void _Swap_adl_wil(_Ty& _Left, _Ty& _Right)
+    {	// exchange values stored at _Left and _Right, using ADL
+    swap_wil(_Left, _Right);
+    }
 
 
-	// TEMPLATE CLASS _Ptr_traits
+    // TEMPLATE CLASS _Ptr_traits
 template<class _Ty>
-	struct _Ptr_traits
-	{	// basic definition
-	};
-
-template<class _Ty>
-	struct _Ptr_traits<_Ty *>
-	{	// pointer properties
-	static const bool _Is_const = false;
-	static const bool _Is_volatile = false;
-	};
+    struct _Ptr_traits
+    {	// basic definition
+    };
 
 template<class _Ty>
-	struct _Ptr_traits<const _Ty *>
-	{	// pointer to const properties
-	static const bool _Is_const = true;
-	static const bool _Is_volatile = false;
-	};
+    struct _Ptr_traits<_Ty *>
+    {	// pointer properties
+    static const bool _Is_const = false;
+    static const bool _Is_volatile = false;
+    };
 
 template<class _Ty>
-	struct _Ptr_traits<volatile _Ty *>
-	{	// pointer to volatile properties
-	static const bool _Is_const = false;
-	static const bool _Is_volatile = true;
-	};
+    struct _Ptr_traits<const _Ty *>
+    {	// pointer to const properties
+    static const bool _Is_const = true;
+    static const bool _Is_volatile = false;
+    };
 
 template<class _Ty>
-	struct _Ptr_traits<const volatile _Ty *>
-	{	// pointer to const volatile properties
-	static const bool _Is_const = true;
-	static const bool _Is_volatile = true;
-	};
+    struct _Ptr_traits<volatile _Ty *>
+    {	// pointer to volatile properties
+    static const bool _Is_const = false;
+    static const bool _Is_volatile = true;
+    };
+
+template<class _Ty>
+    struct _Ptr_traits<const volatile _Ty *>
+    {	// pointer to const volatile properties
+    static const bool _Is_const = true;
+    static const bool _Is_volatile = true;
+    };
 
 
 // TEMPLATE CLASS is_const
 template<class _Ty>
-	struct is_const
-		: _Cat_base<_Ptr_traits<_Ty *>::_Is_const
-		&& !is_function<_Ty>::value>
-	{	// determine whether _Ty is const qualified
-	};
+    struct is_const
+        : _Cat_base<_Ptr_traits<_Ty *>::_Is_const
+        && !is_function<_Ty>::value>
+    {	// determine whether _Ty is const qualified
+    };
 
 template<class _Ty, unsigned int _Nx>
-	struct is_const<_Ty[_Nx]>
-		: false_type
-	{	// determine whether _Ty is const qualified
-	};
+    struct is_const<_Ty[_Nx]>
+        : false_type
+    {	// determine whether _Ty is const qualified
+    };
 
 template<class _Ty, unsigned int _Nx>
-	struct is_const<const _Ty[_Nx]>
-		: true_type
-	{	// determine whether _Ty is const qualified
-	};
+    struct is_const<const _Ty[_Nx]>
+        : true_type
+    {	// determine whether _Ty is const qualified
+    };
 
 template<class _Ty>
-	struct is_const<_Ty&>
-		: false_type
-	{	// determine whether _Ty is const qualified
-	};
+    struct is_const<_Ty&>
+        : false_type
+    {	// determine whether _Ty is const qualified
+    };
 
 template<class _Ty>
-	struct is_const<_Ty&&>
-		: false_type
-	{	// determine whether _Ty is const qualified
-	};
+    struct is_const<_Ty&&>
+        : false_type
+    {	// determine whether _Ty is const qualified
+    };
 
 #define _IS_CONSTRUCTIBLE \
-	__is_constructible
+    __is_constructible
     // TEMPLATE CLASS is_constructible
 
-	// TEMPLATE CLASS add_lvalue_reference
+    // TEMPLATE CLASS add_lvalue_reference
 template<class _Ty>
-	struct add_lvalue_reference
-	{	// add lvalue reference
-	typedef _Ty& type;
-	};
+    struct add_lvalue_reference
+    {	// add lvalue reference
+    typedef _Ty& type;
+    };
 
-	// Type modifiers
-	// TEMPLATE CLASS add_const
+    // Type modifiers
+    // TEMPLATE CLASS add_const
 template<class _Ty>
-	struct add_const
-	{	// add top level const qualifier
-	typedef const _Ty type;
-	};
+    struct add_const
+    {	// add top level const qualifier
+    typedef const _Ty type;
+    };
 
 template<class _Ty,
-	class... _Args>
-	struct is_constructible
-		: _Cat_base<_IS_CONSTRUCTIBLE(_Ty, _Args...)>
-	{	// determine whether _Ty(_Args...) is constructible
-	};
+    class... _Args>
+    struct is_constructible
+        : _Cat_base<_IS_CONSTRUCTIBLE(_Ty, _Args...)>
+    {	// determine whether _Ty(_Args...) is constructible
+    };
 
-	// TEMPLATE CLASS is_copy_constructible
+    // TEMPLATE CLASS is_copy_constructible
 template<class _Ty>
-	struct is_copy_constructible
-		: is_constructible<
-			_Ty,
-			typename add_lvalue_reference<
-				typename add_const<_Ty>::type
-			>::type
-		>::type
-	{	// determine whether _Ty has a copy constructor
-	};
+    struct is_copy_constructible
+        : is_constructible<
+            _Ty,
+            typename add_lvalue_reference<
+                typename add_const<_Ty>::type
+            >::type
+        >::type
+    {	// determine whether _Ty has a copy constructor
+    };
 
 } // wistd
 /// @endcond
