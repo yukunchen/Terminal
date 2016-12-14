@@ -1,3 +1,0 @@
-BUILD_PASS2_CONSUMES= \
-    base\splat\test\cbsdata\multi-branch\packages_amd64|PASS2 \
-

@@ -1,7 +1,5 @@
 DIRS=dll \
      lib \
      ut_host{noncrit} \
-     ft_api{noncrit} \
+     ft_host{noncrit} \
      ft_cjk \
-     ft_resize{noncrit} \
-     tools \
