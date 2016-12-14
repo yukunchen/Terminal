@@ -58,7 +58,7 @@ public:
             }
         }
     }
-  
+
     static void s_TerminalInputTestNullCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
     {
         if (VERIFY_ARE_EQUAL((DWORD)1, cInput, L"Verify expected and actual input array lengths matched."))
@@ -175,6 +175,9 @@ public:
             case VK_F12:
                 s_pwszInputExpected = L"\x1b[24~";
                 break;
+            case VK_CANCEL:
+                s_pwszInputExpected = L"0x3";
+                break;
             default:
                 fExpectedKeyHandled = false;
                 break;
@@ -239,7 +242,7 @@ public:
     {
         Log::Comment(L"Starting test...");
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0001, 0x0002, 0x0004, 0x0008, 0x0010}") 
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0001, 0x0002, 0x0004, 0x0008, 0x0010}")
         END_TEST_METHOD_PROPERTIES()
 
 
@@ -367,6 +370,10 @@ public:
                 fModifySequence = true;
                 memcpy(s_pwsInputBuffer, L"\x1b[24;m~", 7 * sizeof(wchar_t));
                 break;
+            case VK_CANCEL:
+                fModifySequence = true;
+                memcpy(s_pwsInputBuffer, L"0x3", 1 * sizeof(wchar_t));
+                break;
             default:
                 fExpectedKeyHandled = false;
                 break;
@@ -389,10 +396,10 @@ public:
             }
             s_pwszInputExpected = s_pwsInputBuffer;
             Log::Comment(NoThrowString().Format(L"Expected, Buffer = \"%s\", \"%s\"", s_pwszInputExpected, s_pwsInputBuffer));
-            
+
             // Send key into object (will trigger callback and verification)
             VERIFY_ARE_EQUAL(fExpectedKeyHandled, pInput->HandleKey(&irTest), L"Verify key was handled if it should have been.");
-    
+
         }
     }
 
@@ -408,17 +415,16 @@ public:
 
         BYTE vkey = '2';
         Log::Comment(NoThrowString().Format(L"Testing Key 0x%x", vkey));
-        
+
         INPUT_RECORD irTest = { 0 };
         irTest.EventType = KEY_EVENT;
         irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
         irTest.Event.KeyEvent.wRepeatCount = 1;
         irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
         irTest.Event.KeyEvent.bKeyDown = TRUE;
-        
+
         // Send key into object (will trigger callback and verification)
         VERIFY_ARE_EQUAL(true, pInput->HandleKey(&irTest), L"Verify key was handled if it should have been.");
-        
+
     }
 };
-
