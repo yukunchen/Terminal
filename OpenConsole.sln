@@ -11,28 +11,18 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dependencies", "Dependencie
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "wil", "wil", "{4C8E6BB0-4713-4ADB-BD04-81628ECEAF20}"
 	ProjectSection(SolutionItems) = preProject
-		dep\wil\clouddata.h = dep\wil\clouddata.h
-		dep\wil\com.h = dep\wil\com.h
 		dep\wil\common.h = dep\wil\common.h
 		dep\wil\filesystem.h = dep\wil\filesystem.h
 		dep\wil\functional.h = dep\wil\functional.h
 		dep\wil\registry.h = dep\wil\registry.h
 		dep\wil\resource.h = dep\wil\resource.h
 		dep\wil\result.h = dep\wil\result.h
-		dep\wil\resultexception.h = dep\wil\resultexception.h
-		dep\wil\resultlogging.h = dep\wil\resultlogging.h
 		dep\wil\resultmacros.h = dep\wil\resultmacros.h
-		dep\wil\staging.h = dep\wil\staging.h
 		dep\wil\stl.h = dep\wil\stl.h
-		dep\wil\tokenhelpers.h = dep\wil\tokenhelpers.h
-		dep\wil\tracelogging.h = dep\wil\tracelogging.h
 		dep\wil\win32helpers.h = dep\wil\win32helpers.h
-		dep\wil\winrt.h = dep\wil\winrt.h
 		dep\wil\wistd_functional.h = dep\wil\wistd_functional.h
 		dep\wil\wistd_memory.h = dep\wil\wistd_memory.h
 		dep\wil\wistd_type_traits.h = dep\wil\wistd_type_traits.h
-		dep\wil\wrl.h = dep\wil\wrl.h
-		dep\wil\wrlevent.h = dep\wil\wrlevent.h
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Console", "Console", "{D57841D1-8294-4F2B-BB8B-D2A35738DECD}"
