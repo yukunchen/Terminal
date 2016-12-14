@@ -1298,7 +1298,7 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
             break;
         }
 
-        // special handling to forcibly differentiate between ctrl+c and ctrl+break.
+        // special handling to forcibly differentiate between ctrl+c / ctrl+break / VK_CANCEL.
         // this is to get around the fact that we currently use TranslateMessage
         // when we should be handling it ourselves. MSFT:9891752 tracks this.
         const bool controlKeyPressed = IsFlagSet(GetKeyState(VK_LCONTROL), KEY_PRESSED) || IsFlagSet(GetKeyState(VK_RCONTROL), KEY_PRESSED);
@@ -1306,8 +1306,22 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
         if (controlKeyPressed && msg.message == WM_KEYDOWN && MapVirtualKeyW(virtualScanCode, MAPVK_VSC_TO_VK_EX) == 'C')
         {
             msg.message = WM_CHAR;
-            msg.wParam = 'c';
-            msg.lParam = 'C';
+            if (IsInVirtualTerminalInputMode())
+            {
+                msg.wParam = VK_CANCEL;
+            }
+            else
+            {
+                msg.wParam = 'c';
+                msg.lParam = 'C';
+            }
+            DispatchMessageW(&msg);
+        }
+        // need to also handle ctrl+h and VK_BACK special.
+        else if (controlKeyPressed && msg.message == WM_KEYDOWN && MapVirtualKeyW(virtualScanCode, MAPVK_VSC_TO_VK_EX) == 'H')
+        {
+            msg.message = WM_CHAR;
+            msg.wParam = VK_BACK;
             DispatchMessageW(&msg);
         }
         else if (!UserPrivApi::s_TranslateMessageEx(&msg, TM_POSTCHARBREAKS))
