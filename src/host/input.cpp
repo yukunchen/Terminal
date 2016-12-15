@@ -1544,8 +1544,9 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
         }
         InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)wParam;
         InputEvent.Event.KeyEvent.wVirtualKeyCode = LOBYTE(VkKeyScan((WCHAR)wParam));
-        VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
         InputEvent.Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKeyW(InputEvent.Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC);
+
+        VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
         VirtualScanCode = InputEvent.Event.KeyEvent.wVirtualScanCode;
     }
     else if (Message == WM_KEYDOWN)
@@ -1556,8 +1557,20 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
             return;
         }
         InputEvent.Event.KeyEvent.wVirtualKeyCode = (WORD) MapVirtualKeyW(VirtualScanCode, MAPVK_VSC_TO_VK_EX);
+        // for compatibility with the old behavior, we need to translate
+        // keyboard position dependent virtual keycodes to position agnostic
+        // ones (ex. VK_LCONTROL -> VK_CONTROL)
+        if (InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_LCONTROL || InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_RCONTROL)
+        {
+            InputEvent.Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
+        }
+        else if (InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_LSHIFT || InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_RSHIFT)
+        {
+            InputEvent.Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
+        }
+
         VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
-        VirtualScanCode = VirtualKeyCode;
+        VirtualScanCode = InputEvent.Event.KeyEvent.wVirtualScanCode;
     }
 
     const INPUT_KEY_INFO inputKeyInfo(VirtualKeyCode, ControlKeyState);

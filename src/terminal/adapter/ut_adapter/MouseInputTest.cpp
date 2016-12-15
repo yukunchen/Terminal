@@ -4,7 +4,7 @@
 *                                                       *
 ********************************************************/
 
-#include <precomp.h>
+#include "precomp.h"
 #include <wextestclass.h>
 #include "..\..\inc\consoletaeftemplates.hpp"
 
