@@ -623,6 +623,7 @@ BOOL ProcessCookedReadInput(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ WCHAR w
     else
     {
         BOOL CallWrite = TRUE;
+        const SHORT sScreenBufferSizeX = pCookedReadData->pScreenInfo->GetScreenBufferSize().X;
 
         // processing in the middle of the line is more complex:
 
@@ -711,7 +712,7 @@ BOOL ProcessCookedReadInput(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ WCHAR w
                     if (CheckBisectProcessW(pCookedReadData->pScreenInfo,
                                             pCookedReadData->BackupLimit,
                                             pCookedReadData->CurrentPosition + 1,
-                                            pCookedReadData->pScreenInfo->ScreenBufferSize.X - pCookedReadData->OriginalCursorPosition.X,
+                                            sScreenBufferSizeX - pCookedReadData->OriginalCursorPosition.X,
                                             pCookedReadData->OriginalCursorPosition.X,
                                             TRUE))
                     {
@@ -784,10 +785,10 @@ BOOL ProcessCookedReadInput(_In_ PCOOKED_READ_DATA pCookedReadData, _In_ WCHAR w
                 if (CheckBisectProcessW(pCookedReadData->pScreenInfo,
                                         pCookedReadData->BackupLimit,
                                         pCookedReadData->CurrentPosition + 1,
-                                        pCookedReadData->pScreenInfo->ScreenBufferSize.X - pCookedReadData->OriginalCursorPosition.X,
+                                        sScreenBufferSizeX - pCookedReadData->OriginalCursorPosition.X,
                                         pCookedReadData->OriginalCursorPosition.X, TRUE))
                 {
-                    if (CursorPosition.X == (pCookedReadData->pScreenInfo->ScreenBufferSize.X - 1))
+                    if (CursorPosition.X == (sScreenBufferSizeX - 1))
                     {
                         CursorPosition.X++;
                     }
@@ -1512,10 +1513,10 @@ NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
             CookedReadData.OriginalCursorPosition = pScreenInfo->TextInfo->GetCursor()->GetPosition();
             CookedReadData.OriginalCursorPosition.X -= (SHORT)CookedReadData.CurrentPosition;
 
-
+            const SHORT sScreenBufferSizeX = pScreenInfo->GetScreenBufferSize().X;
             while (CookedReadData.OriginalCursorPosition.X < 0)
             {
-                CookedReadData.OriginalCursorPosition.X += pScreenInfo->ScreenBufferSize.X;
+                CookedReadData.OriginalCursorPosition.X += sScreenBufferSizeX;
                 CookedReadData.OriginalCursorPosition.Y -= 1;
             }
         }

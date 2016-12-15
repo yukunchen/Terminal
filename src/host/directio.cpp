@@ -63,7 +63,11 @@ ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
             if (IsCharFullWidth(TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar))
             {
                 NumBytes = sizeof(AsciiDbcs);
-                ConvertToOem(g_ciConsoleInformation.CP, &TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar, 1, (LPSTR)& AsciiDbcs[0], NumBytes);
+                ConvertToOem(g_ciConsoleInformation.CP,
+                             &TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar,
+                             1,
+                             (LPSTR)& AsciiDbcs[0],
+                             NumBytes);
                 if (IsDBCSLeadByteConsole(AsciiDbcs[0], &g_ciConsoleInformation.CPInfo))
                 {
                     if (j < NumRecords - 1)
@@ -102,7 +106,11 @@ ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
             else
             {
                 InputRecords[j] = TmpInpRec[i];
-                ConvertToOem(g_ciConsoleInformation.CP, &InputRecords[j].Event.KeyEvent.uChar.UnicodeChar, 1, &InputRecords[j].Event.KeyEvent.uChar.AsciiChar, 1);
+                ConvertToOem(g_ciConsoleInformation.CP,
+                             &InputRecords[j].Event.KeyEvent.uChar.UnicodeChar,
+                             1,
+                             &InputRecords[j].Event.KeyEvent.uChar.AsciiChar,
+                             1);
             }
         }
     }
@@ -1153,7 +1161,13 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
     const FontInfo* const pfiExistingFont = psiExisting->TextInfo->GetCurrentFont();
 
     PSCREEN_INFORMATION ScreenInfo = nullptr;
-    NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize, pfiExistingFont, WindowSize, Fill, Fill, CURSOR_SMALL_SIZE, &ScreenInfo);
+    NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
+                                                         pfiExistingFont,
+                                                         WindowSize,
+                                                         Fill,
+                                                         Fill,
+                                                         CURSOR_SMALL_SIZE,
+                                                         &ScreenInfo);
 
     if (!NT_SUCCESS(Status))
     {

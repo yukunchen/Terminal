@@ -43,16 +43,17 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     // TODO: from BisectWrite to the end of the if statement seems to never execute
     // both callers of this function appear to already have handled the line length for double-width characters
     BisectWrite(cchBuffer, TargetPoint, pScreenInfo);
-    if (TargetPoint.Y == pScreenInfo->ScreenBufferSize.Y - 1 &&
-        TargetPoint.X + cchBuffer >= pScreenInfo->ScreenBufferSize.X &&
-        *(pchBuffer + pScreenInfo->ScreenBufferSize.X - TargetPoint.X - 1) & CHAR_ROW::ATTR_LEADING_BYTE)
+    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    if (TargetPoint.Y == coordScreenBufferSize.Y - 1 &&
+        TargetPoint.X + cchBuffer >= coordScreenBufferSize.X &&
+        *(pchBuffer + coordScreenBufferSize.X - TargetPoint.X - 1) & CHAR_ROW::ATTR_LEADING_BYTE)
     {
-        *(pwchBuffer + pScreenInfo->ScreenBufferSize.X - TargetPoint.X - 1) = UNICODE_SPACE;
-        *(pchBuffer + pScreenInfo->ScreenBufferSize.X - TargetPoint.X - 1) = 0;
-        if (cchBuffer > pScreenInfo->ScreenBufferSize.X - TargetPoint.X)
+        *(pwchBuffer + coordScreenBufferSize.X - TargetPoint.X - 1) = UNICODE_SPACE;
+        *(pchBuffer + coordScreenBufferSize.X - TargetPoint.X - 1) = 0;
+        if (cchBuffer > coordScreenBufferSize.X - TargetPoint.X)
         {
-            *(pwchBuffer + pScreenInfo->ScreenBufferSize.X - TargetPoint.X) = UNICODE_SPACE;
-            *(pchBuffer + pScreenInfo->ScreenBufferSize.X - TargetPoint.X) = 0;
+            *(pwchBuffer + coordScreenBufferSize.X - TargetPoint.X) = UNICODE_SPACE;
+            *(pchBuffer + coordScreenBufferSize.X - TargetPoint.X) = 0;
         }
     }
 
@@ -61,22 +62,27 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
 
     memmove(&Row->CharRow.Chars[TargetPoint.X], pwchBuffer, cchBuffer * sizeof(WCHAR));
 
-    Row->CharRow.SetWrapStatus(fWasLineWrapped); // caller knows the wrap status as this func is called only for drawing one line at a time
+    // caller knows the wrap status as this func is called only for drawing one line at a time
+    Row->CharRow.SetWrapStatus(fWasLineWrapped);
 
     // recalculate first and last non-space char
     if (TargetPoint.X < Row->CharRow.Left)
     {
-        Row->CharRow.MeasureAndSaveLeft(pScreenInfo->ScreenBufferSize.X);
+        Row->CharRow.MeasureAndSaveLeft(coordScreenBufferSize.X);
     }
 
     if ((TargetPoint.X + cchBuffer) >= Row->CharRow.Right)
     {
-        Row->CharRow.MeasureAndSaveRight(pScreenInfo->ScreenBufferSize.X);
+        Row->CharRow.MeasureAndSaveRight(coordScreenBufferSize.X);
     }
     TextAttributeRun CurrentBufferAttrs;
     CurrentBufferAttrs.SetLength(cchBuffer);
     CurrentBufferAttrs.SetAttributes(pScreenInfo->GetAttributes());
-    Row->AttrRow.InsertAttrRuns(&CurrentBufferAttrs, 1, TargetPoint.X, (SHORT)(TargetPoint.X + cchBuffer - 1), pScreenInfo->ScreenBufferSize.X);
+    Row->AttrRow.InsertAttrRuns(&CurrentBufferAttrs,
+                                1,
+                                TargetPoint.X,
+                                (SHORT)(TargetPoint.X + cchBuffer - 1),
+                                coordScreenBufferSize.X);
 
     pScreenInfo->ResetTextFlags(TargetPoint.X, TargetPoint.Y, TargetPoint.X + cchBuffer - 1, TargetPoint.Y);
 }
@@ -126,6 +132,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             WholeSource = TRUE;
         }
 
+        const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
         ROW* Row = pScreenInfo->TextInfo->GetRowByOffset(coordDest.Y);
         for (SHORT i = 0; i < YSize; i++)
         {
@@ -148,10 +155,10 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             TPoint.Y = coordDest.Y + i;
             BisectWrite(XSize, TPoint, pScreenInfo);
 
-            if (TPoint.Y == pScreenInfo->ScreenBufferSize.Y - 1 &&
-                TPoint.X + XSize - 1 >= pScreenInfo->ScreenBufferSize.X)
+            if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
+                TPoint.X + XSize - 1 >= coordScreenBufferSize.X)
             {
-                const BYTE* const pbLeadingByte = SourcePtr + pScreenInfo->ScreenBufferSize.X - TPoint.X - 1;
+                const BYTE* const pbLeadingByte = SourcePtr + coordScreenBufferSize.X - TPoint.X - 1;
                 if (((pbLeadingByte + sizeof(CHAR_INFO)) > pbSourceEnd) || (pbLeadingByte < prgbSrc))
                 {
                     ASSERT(false);
@@ -162,9 +169,9 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                 {
                     WCHAR_OF_PCI(pbLeadingByte) = UNICODE_SPACE;
                     ATTR_OF_PCI(pbLeadingByte) &= ~COMMON_LVB_SBCSDBCS;
-                    if (XSize - 1 > pScreenInfo->ScreenBufferSize.X - TPoint.X - 1)
+                    if (XSize - 1 > coordScreenBufferSize.X - TPoint.X - 1)
                     {
-                        const BYTE* const pbTrailingByte = SourcePtr + pScreenInfo->ScreenBufferSize.X - TPoint.X;
+                        const BYTE* const pbTrailingByte = SourcePtr + coordScreenBufferSize.X - TPoint.X;
                         if (pbTrailingByte + sizeof(CHAR_INFO) > pbSourceEnd || pbTrailingByte < prgbSrc)
                         {
                             ASSERT(false);
@@ -217,7 +224,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             // recalculate first and last non-space char
             if (coordDest.X < Row->CharRow.Left)
             {
-                PWCHAR LastChar = &Row->CharRow.Chars[pScreenInfo->ScreenBufferSize.X];
+                PWCHAR LastChar = &Row->CharRow.Chars[coordScreenBufferSize.X];
 
                 for (Char = &Row->CharRow.Chars[coordDest.X]; Char < LastChar && *Char == (WCHAR)' '; Char++)
                 {
@@ -241,7 +248,11 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                 Row->CharRow.Right = (SHORT)(LastNonSpace + 1);
             }
 
-            Row->AttrRow.InsertAttrRuns(rAttrRunsBuff, NumAttrRuns, coordDest.X, (SHORT)(coordDest.X + XSize - 1), pScreenInfo->ScreenBufferSize.X);
+            Row->AttrRow.InsertAttrRuns(rAttrRunsBuff,
+                                        NumAttrRuns,
+                                        coordDest.X,
+                                        (SHORT)(coordDest.X + XSize - 1),
+                                        coordScreenBufferSize.X);
 
             Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
         }
@@ -253,7 +264,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
         if (fWriteAttributes)
         {
             TextAttribute* pSrcAttr = &(pTextAttributes[(psrSrc->Top * coordSrcDimensions.X) + psrSrc->Left]);
-            int rowWidth = pScreenInfo->ScreenBufferSize.X;
+            int rowWidth = coordScreenBufferSize.X;
             int srcWidth = psrSrc->Right - psrSrc->Left;
             for (int y = coordDest.Y; y < coordSrcDimensions.Y + coordDest.Y; y++)
             {
@@ -369,7 +380,8 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
     ULONG NumRecordsSavedForUnicode = 0;
     SHORT X = coordWrite.X;
     SHORT Y = coordWrite.Y;
-    if (X >= pScreenInfo->ScreenBufferSize.X || X < 0 || Y >= pScreenInfo->ScreenBufferSize.Y || Y < 0)
+    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    if (X >= coordScreenBufferSize.X || X < 0 || Y >= coordScreenBufferSize.Y || Y < 0)
     {
         *pcRecords = 0;
         return STATUS_SUCCESS;
@@ -534,7 +546,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
             // copy the chars into their arrays
             PWCHAR Char = &Row->CharRow.Chars[X];
             PBYTE AttrP = &Row->CharRow.KAttrs[X];
-            if ((ULONG)(pScreenInfo->ScreenBufferSize.X - X) >= (*pcRecords - NumWritten))
+            if ((ULONG)(coordScreenBufferSize.X - X) >= (*pcRecords - NumWritten))
             {
                 // The text will not hit the right hand edge, copy it all
                 COORD TPoint;
@@ -543,18 +555,18 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 TPoint.Y = Y;
                 BisectWrite((SHORT)(*pcRecords - NumWritten), TPoint, pScreenInfo);
 
-                if (TPoint.Y == pScreenInfo->ScreenBufferSize.Y - 1 &&
-                    (SHORT)(TPoint.X + *pcRecords - NumWritten) >= pScreenInfo->ScreenBufferSize.X &&
-                    *((PCHAR)BufferA + pScreenInfo->ScreenBufferSize.X - TPoint.X - 1) & CHAR_ROW::ATTR_LEADING_BYTE)
+                if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
+                    (SHORT)(TPoint.X + *pcRecords - NumWritten) >= coordScreenBufferSize.X &&
+                    *((PCHAR)BufferA + coordScreenBufferSize.X - TPoint.X - 1) & CHAR_ROW::ATTR_LEADING_BYTE)
                 {
-                    *((PWCHAR)pvBuffer + pScreenInfo->ScreenBufferSize.X - TPoint.X - 1) = UNICODE_SPACE;
-                    *((PCHAR)BufferA + pScreenInfo->ScreenBufferSize.X - TPoint.X - 1) = 0;
-                    if ((SHORT)(*pcRecords - NumWritten) > (SHORT)(pScreenInfo->ScreenBufferSize.X - TPoint.X - 1))
+                    *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X - 1) = UNICODE_SPACE;
+                    *((PCHAR)BufferA + coordScreenBufferSize.X - TPoint.X - 1) = 0;
+                    if ((SHORT)(*pcRecords - NumWritten) > (SHORT)(coordScreenBufferSize.X - TPoint.X - 1))
                     {
                         #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "ScreenBufferSize limits this, but it's very obtuse.")
-                        *((PWCHAR)pvBuffer + pScreenInfo->ScreenBufferSize.X - TPoint.X) = UNICODE_SPACE;
+                        *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X) = UNICODE_SPACE;
                         #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "ScreenBufferSize limits this, but it's very obtuse.")
-                        *((PCHAR)BufferA + pScreenInfo->ScreenBufferSize.X - TPoint.X) = 0;
+                        *((PCHAR)BufferA + coordScreenBufferSize.X - TPoint.X) = 0;
                     }
                 }
 
@@ -572,36 +584,36 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 TPoint.X = X;
                 TPoint.Y = Y;
-                BisectWrite((SHORT)(pScreenInfo->ScreenBufferSize.X - X), TPoint, pScreenInfo);
-                if (TPoint.Y == pScreenInfo->ScreenBufferSize.Y - 1 &&
-                    TPoint.X + pScreenInfo->ScreenBufferSize.X - X >= pScreenInfo->ScreenBufferSize.X &&
-                    *((PCHAR)BufferA + pScreenInfo->ScreenBufferSize.X - TPoint.X - 1) & CHAR_ROW::ATTR_LEADING_BYTE)
+                BisectWrite((SHORT)(coordScreenBufferSize.X - X), TPoint, pScreenInfo);
+                if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
+                    TPoint.X + coordScreenBufferSize.X - X >= coordScreenBufferSize.X &&
+                    *((PCHAR)BufferA + coordScreenBufferSize.X - TPoint.X - 1) & CHAR_ROW::ATTR_LEADING_BYTE)
                 {
-                    *((PWCHAR)pvBuffer + pScreenInfo->ScreenBufferSize.X - TPoint.X - 1) = UNICODE_SPACE;
-                    *((PCHAR)BufferA + pScreenInfo->ScreenBufferSize.X - TPoint.X - 1) = 0;
-                    if (pScreenInfo->ScreenBufferSize.X - X > pScreenInfo->ScreenBufferSize.X - TPoint.X - 1)
+                    *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X - 1) = UNICODE_SPACE;
+                    *((PCHAR)BufferA + coordScreenBufferSize.X - TPoint.X - 1) = 0;
+                    if (coordScreenBufferSize.X - X > coordScreenBufferSize.X - TPoint.X - 1)
                     {
-                        *((PWCHAR)pvBuffer + pScreenInfo->ScreenBufferSize.X - TPoint.X) = UNICODE_SPACE;
-                        *((PCHAR)BufferA + pScreenInfo->ScreenBufferSize.X - TPoint.X) = 0;
+                        *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X) = UNICODE_SPACE;
+                        *((PCHAR)BufferA + coordScreenBufferSize.X - TPoint.X) = 0;
                     }
                 }
-                memmove(AttrP, BufferA, (pScreenInfo->ScreenBufferSize.X - X) * sizeof(CHAR));
-                BufferA = (PBYTE)((PBYTE)BufferA + ((pScreenInfo->ScreenBufferSize.X - X) * sizeof(CHAR)));
-                memmove(Char, pvBuffer, (pScreenInfo->ScreenBufferSize.X - X) * sizeof(WCHAR));
-                pvBuffer = (PVOID)((PBYTE)pvBuffer + ((pScreenInfo->ScreenBufferSize.X - X) * sizeof(WCHAR)));
-                NumWritten += pScreenInfo->ScreenBufferSize.X - X;
-                X = (SHORT)(pScreenInfo->ScreenBufferSize.X - 1);
+                memmove(AttrP, BufferA, (coordScreenBufferSize.X - X) * sizeof(CHAR));
+                BufferA = (PBYTE)((PBYTE)BufferA + ((coordScreenBufferSize.X - X) * sizeof(CHAR)));
+                memmove(Char, pvBuffer, (coordScreenBufferSize.X - X) * sizeof(WCHAR));
+                pvBuffer = (PVOID)((PBYTE)pvBuffer + ((coordScreenBufferSize.X - X) * sizeof(WCHAR)));
+                NumWritten += coordScreenBufferSize.X - X;
+                X = (SHORT)(coordScreenBufferSize.X - 1);
             }
 
             // recalculate first and last non-space char
             if (LeftX < Row->CharRow.Left)
             {
-                Row->CharRow.MeasureAndSaveLeft(pScreenInfo->ScreenBufferSize.X);
+                Row->CharRow.MeasureAndSaveLeft(coordScreenBufferSize.X);
             }
 
             if ((X + 1) >= Row->CharRow.Right)
             {
-                Row->CharRow.MeasureAndSaveRight(pScreenInfo->ScreenBufferSize.X);
+                Row->CharRow.MeasureAndSaveRight(coordScreenBufferSize.X);
             }
 
             if (NumWritten < *pcRecords)
@@ -614,7 +626,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 // if we are wrapping around, set that this row is wrapping
                 Row->CharRow.SetWrapStatus(true);
 
-                if (Y >= pScreenInfo->ScreenBufferSize.Y)
+                if (Y >= coordScreenBufferSize.Y)
                 {
                     break;  // abandon output, string is truncated
                 }
@@ -632,7 +644,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
     else if (ulStringType == CONSOLE_ATTRIBUTE)
     {
         PWORD SourcePtr = (PWORD) pvBuffer;
-        UINT uiScreenBufferWidth = pScreenInfo->ScreenBufferSize.X;
+        UINT uiScreenBufferWidth = coordScreenBufferSize.X;
         TextAttributeRun* rAttrRunsBuff = new TextAttributeRun[uiScreenBufferWidth];
         if (rAttrRunsBuff == nullptr) return STATUS_NO_MEMORY;
         TextAttributeRun* pAttrRun = rAttrRunsBuff;
@@ -652,7 +664,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
             pAttrRun->SetLength(0);
             pAttrRun->SetAttributesFromLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS);
             NumAttrRuns = 1;
-            for (SHORT j = X; j < pScreenInfo->ScreenBufferSize.X; j++, SourcePtr++)
+            for (SHORT j = X; j < coordScreenBufferSize.X; j++, SourcePtr++)
             {
                 if (pAttrRun->GetAttributes().IsEqualToLegacy(*SourcePtr & ~COMMON_LVB_SBCSDBCS))
                 {
@@ -676,7 +688,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             // recalculate last non-space char
 
-            Row->AttrRow.InsertAttrRuns(rAttrRunsBuff, NumAttrRuns, (SHORT)((Y == coordWrite.Y) ? coordWrite.X : 0), X, pScreenInfo->ScreenBufferSize.X);
+            Row->AttrRow.InsertAttrRuns(rAttrRunsBuff, NumAttrRuns, (SHORT)((Y == coordWrite.Y) ? coordWrite.X : 0), X, coordScreenBufferSize.X);
 
             Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
 
@@ -684,7 +696,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
             {
                 X = 0;
                 Y++;
-                if (Y >= pScreenInfo->ScreenBufferSize.Y)
+                if (Y >= coordScreenBufferSize.Y)
                 {
                     break;
                 }
@@ -733,7 +745,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
     if (Y != coordWrite.Y)
     {
         WriteRegion.Left = 0;
-        WriteRegion.Right = (SHORT)(pScreenInfo->ScreenBufferSize.X - 1);
+        WriteRegion.Right = (SHORT)(coordScreenBufferSize.X - 1);
     }
     else
     {
@@ -743,7 +755,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
     WriteToScreen(pScreenInfo, WriteRegion);
     if (pcColumns)
     {
-        *pcColumns = X + (coordWrite.Y - Y) * pScreenInfo->ScreenBufferSize.X - coordWrite.X + 1;
+        *pcColumns = X + (coordWrite.Y - Y) * coordScreenBufferSize.X - coordWrite.X + 1;
     }
     *pcRecords = NumWritten;
     return STATUS_SUCCESS;
@@ -777,7 +789,8 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
     ULONG NumWritten = 0;
     SHORT X = coordWrite.X;
     SHORT Y = coordWrite.Y;
-    if (X >= pScreenInfo->ScreenBufferSize.X || X < 0 || Y >= pScreenInfo->ScreenBufferSize.Y || Y < 0)
+    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    if (X >= coordScreenBufferSize.X || X < 0 || Y >= coordScreenBufferSize.Y || Y < 0)
     {
         *pcElements = 0;
         return STATUS_SUCCESS;
@@ -828,7 +841,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             SHORT LeftX = X;
             PWCHAR Char = &Row->CharRow.Chars[X];
             PCHAR AttrP = (PCHAR) & Row->CharRow.KAttrs[X];
-            if ((ULONG) (pScreenInfo->ScreenBufferSize.X - X) >= (*pcElements - NumWritten))
+            if ((ULONG) (coordScreenBufferSize.X - X) >= (*pcElements - NumWritten))
             {
                 {
                     COORD TPoint;
@@ -877,11 +890,11 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                     TPoint.X = X;
                     TPoint.Y = Y;
-                    BisectWrite((SHORT)(pScreenInfo->ScreenBufferSize.X - X), TPoint, pScreenInfo);
+                    BisectWrite((SHORT)(coordScreenBufferSize.X - X), TPoint, pScreenInfo);
                 }
                 if (IsCharFullWidth((WCHAR)wElement))
                 {
-                    for (SHORT j = 0; j < pScreenInfo->ScreenBufferSize.X - X; j++)
+                    for (SHORT j = 0; j < coordScreenBufferSize.X - X; j++)
                     {
                         *Char++ = (WCHAR)wElement;
                         *AttrP &= ~CHAR_ROW::ATTR_DBCSSBCS_BYTE;
@@ -897,25 +910,25 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                 }
                 else
                 {
-                    for (SHORT j = 0; j < pScreenInfo->ScreenBufferSize.X - X; j++)
+                    for (SHORT j = 0; j < coordScreenBufferSize.X - X; j++)
                     {
                         *Char++ = (WCHAR)wElement;
                         *AttrP++ &= ~CHAR_ROW::ATTR_DBCSSBCS_BYTE;
                     }
                 }
-                NumWritten += pScreenInfo->ScreenBufferSize.X - X;
-                X = (SHORT)(pScreenInfo->ScreenBufferSize.X - 1);
+                NumWritten += coordScreenBufferSize.X - X;
+                X = (SHORT)(coordScreenBufferSize.X - 1);
             }
 
             // recalculate first and last non-space char
             if (LeftX < Row->CharRow.Left)
             {
-                Row->CharRow.MeasureAndSaveLeft(pScreenInfo->ScreenBufferSize.X);
+                Row->CharRow.MeasureAndSaveLeft(coordScreenBufferSize.X);
             }
 
             if ((X + 1) >= Row->CharRow.Right)
             {
-                Row->CharRow.MeasureAndSaveRight(pScreenInfo->ScreenBufferSize.X);
+                Row->CharRow.MeasureAndSaveRight(coordScreenBufferSize.X);
             }
 
             // invalidate row wrap status for any bulk fill of text characters
@@ -925,7 +938,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             {
                 X = 0;
                 Y++;
-                if (Y >= pScreenInfo->ScreenBufferSize.Y)
+                if (Y >= coordScreenBufferSize.Y)
                 {
                     break;
                 }
@@ -954,15 +967,15 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
 
             // Copy the attrs into the screen buffer arrays.
-            if ((ULONG) (pScreenInfo->ScreenBufferSize.X - X) >= (*pcElements - NumWritten))
+            if ((ULONG) (coordScreenBufferSize.X - X) >= (*pcElements - NumWritten))
             {
                 X = (SHORT)(X + *pcElements - NumWritten - 1);
                 NumWritten = *pcElements;
             }
             else
             {
-                NumWritten += pScreenInfo->ScreenBufferSize.X - X;
-                X = (SHORT)(pScreenInfo->ScreenBufferSize.X - 1);
+                NumWritten += coordScreenBufferSize.X - X;
+                X = (SHORT)(coordScreenBufferSize.X - 1);
             }
 
             // Recalculate the last non-space char and merge the two
@@ -970,14 +983,14 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             AttrRun.SetLength((SHORT)((Y == coordWrite.Y) ? (X - coordWrite.X + 1) : (X + 1)));
             AttrRun.SetAttributesFromLegacy(wElement & ~COMMON_LVB_SBCSDBCS);
 
-            Row->AttrRow.InsertAttrRuns(&AttrRun, 1, (SHORT)(X - AttrRun.GetLength() + 1), X, pScreenInfo->ScreenBufferSize.X);
+            Row->AttrRow.InsertAttrRuns(&AttrRun, 1, (SHORT)(X - AttrRun.GetLength() + 1), X, coordScreenBufferSize.X);
 
             // leave row wrap status alone for any attribute fills
             if (NumWritten < *pcElements)
             {
                 X = 0;
                 Y++;
-                if (Y >= pScreenInfo->ScreenBufferSize.Y)
+                if (Y >= coordScreenBufferSize.Y)
                 {
                     break;
                 }
@@ -1012,7 +1025,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
         if (Y != coordWrite.Y)
         {
             WriteRegion.Left = 0;
-            WriteRegion.Right = (SHORT)(g_ciConsoleInformation.CurrentScreenBuffer->ScreenBufferSize.X - 1);
+            WriteRegion.Right = (SHORT)(g_ciConsoleInformation.CurrentScreenBuffer->GetScreenBufferSize().X - 1);
         }
         else
         {
@@ -1029,7 +1042,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
     if (Y != coordWrite.Y)
     {
         WriteRegion.Left = 0;
-        WriteRegion.Right = (SHORT)(pScreenInfo->ScreenBufferSize.X - 1);
+        WriteRegion.Right = (SHORT)(coordScreenBufferSize.X - 1);
     }
     else
     {
@@ -1101,21 +1114,22 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill, _In_ PSCREEN_INFORMATIO
 
         // recalculate first and last non-space char
 
+        const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
         if (psrTarget->Left < Row->CharRow.Left)
         {
-            Row->CharRow.MeasureAndSaveLeft(pScreenInfo->ScreenBufferSize.X);
+            Row->CharRow.MeasureAndSaveLeft(coordScreenBufferSize.X);
         }
 
         if (psrTarget->Right >= Row->CharRow.Right)
         {
-            Row->CharRow.MeasureAndSaveRight(pScreenInfo->ScreenBufferSize.X);
+            Row->CharRow.MeasureAndSaveRight(coordScreenBufferSize.X);
         }
 
         TextAttributeRun AttrRun;
         AttrRun.SetLength(XSize);
         AttrRun.SetAttributesFromLegacy(pciFill->Attributes);
 
-        Row->AttrRow.InsertAttrRuns(&AttrRun, 1, psrTarget->Left, psrTarget->Right, pScreenInfo->ScreenBufferSize.X);
+        Row->AttrRow.InsertAttrRuns(&AttrRun, 1, psrTarget->Left, psrTarget->Right, coordScreenBufferSize.X);
 
         // invalidate row wrapping for rectangular drawing
         Row->CharRow.SetWrapStatus(false);

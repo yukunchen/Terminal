@@ -69,6 +69,9 @@ public:
     void ProcessResizeWindow(_In_ const RECT* const prcClientNew, _In_ const RECT* const prcClientOld);
     void SetViewportSize(_In_ const COORD* const pcoordSize);
 
+    COORD GetScreenBufferSize() const;
+    void SetScreenBufferSize(_In_ const COORD coordNewBufferSize);
+
     COORD GetScreenFontSize() const;
     void UpdateFont(_In_ const FontInfo* const pfiNewFont);
     void RefreshFontWithRenderer();
@@ -99,7 +102,6 @@ public:
     static void s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
 
     DWORD OutputMode;
-    COORD ScreenBufferSize; // dimensions of buffer
     WORD ResizingWindow;    // > 0 if we should ignore WM_SIZE messages
 
     short WheelDelta;
@@ -194,6 +196,8 @@ private:
     WriteBuffer* _pBufferWriter;
     AdaptDispatch* _pAdapter;
     StateMachine* _pStateMachine;
+
+    COORD _coordScreenBufferSize; // dimensions of buffer
 
     SMALL_RECT _srScrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
     SMALL_RECT _srBufferViewport;  // specifies which coordinates of the screen buffer are visible in the window client (the "viewport" into the buffer)
