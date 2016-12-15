@@ -237,7 +237,7 @@ void UpdateWinText()
 void GetConsoleState(_Out_ CONSOLE_STATE_INFO * const pStateInfo)
 {
     PSCREEN_INFORMATION const ScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
-    pStateInfo->ScreenBufferSize = ScreenInfo->ScreenBufferSize;
+    pStateInfo->ScreenBufferSize = ScreenInfo->GetScreenBufferSize();
     pStateInfo->WindowSize.X = ScreenInfo->GetScreenWindowSizeX();
     pStateInfo->WindowSize.Y = ScreenInfo->GetScreenWindowSizeY();
 
@@ -364,8 +364,9 @@ void PropertiesUpdate(_In_ PCONSOLE_STATE_INFO pStateInfo)
         }
 
         // Now adjust the buffer size first to whatever we want it to be if it's different than before.
-        if (coordBuffer.X != ScreenInfo->ScreenBufferSize.X ||
-            coordBuffer.Y != ScreenInfo->ScreenBufferSize.Y)
+        const COORD coordScreenBufferSize = ScreenInfo->GetScreenBufferSize();
+        if (coordBuffer.X != coordScreenBufferSize.X ||
+            coordBuffer.Y != coordScreenBufferSize.Y)
         {
             CommandLine* const pCommandLine = &CommandLine::Instance();
 

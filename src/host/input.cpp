@@ -1544,8 +1544,9 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
         }
         InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)wParam;
         InputEvent.Event.KeyEvent.wVirtualKeyCode = LOBYTE(VkKeyScan((WCHAR)wParam));
-        VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
         InputEvent.Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKeyW(InputEvent.Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC);
+
+        VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
         VirtualScanCode = InputEvent.Event.KeyEvent.wVirtualScanCode;
     }
     else if (Message == WM_KEYDOWN)
@@ -1556,8 +1557,20 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
             return;
         }
         InputEvent.Event.KeyEvent.wVirtualKeyCode = (WORD) MapVirtualKeyW(VirtualScanCode, MAPVK_VSC_TO_VK_EX);
+        // for compatibility with the old behavior, we need to translate
+        // keyboard position dependent virtual keycodes to position agnostic
+        // ones (ex. VK_LCONTROL -> VK_CONTROL)
+        if (InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_LCONTROL || InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_RCONTROL)
+        {
+            InputEvent.Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
+        }
+        else if (InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_LSHIFT || InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_RSHIFT)
+        {
+            InputEvent.Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
+        }
+
         VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
-        VirtualScanCode = VirtualKeyCode;
+        VirtualScanCode = InputEvent.Event.KeyEvent.wVirtualScanCode;
     }
 
     const INPUT_KEY_INFO inputKeyInfo(VirtualKeyCode, ControlKeyState);
@@ -1939,22 +1952,24 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
     MousePosition.X += pScreenInfo->GetBufferViewport().Left;
     MousePosition.Y += pScreenInfo->GetBufferViewport().Top;
 
+    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+
     // make sure mouse position is clipped to screen buffer
     if (MousePosition.X < 0)
     {
         MousePosition.X = 0;
     }
-    else if (MousePosition.X >= pScreenInfo->ScreenBufferSize.X)
+    else if (MousePosition.X >= coordScreenBufferSize.X)
     {
-        MousePosition.X = pScreenInfo->ScreenBufferSize.X - 1;
+        MousePosition.X = coordScreenBufferSize.X - 1;
     }
     if (MousePosition.Y < 0)
     {
         MousePosition.Y = 0;
     }
-    else if (MousePosition.Y >= pScreenInfo->ScreenBufferSize.Y)
+    else if (MousePosition.Y >= coordScreenBufferSize.Y)
     {
-        MousePosition.Y = pScreenInfo->ScreenBufferSize.Y - 1;
+        MousePosition.Y = coordScreenBufferSize.Y - 1;
     }
 
     if (pSelection->IsInSelectingState() || pSelection->IsInQuickEditMode())
@@ -2041,7 +2056,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
                     }
                     coordSelectionAnchor.X--;
                 }
-                while (MousePosition.X < pScreenInfo->ScreenBufferSize.X)
+                while (MousePosition.X < coordScreenBufferSize.X)
                 {
                     if (IS_WORD_DELIM(Row->CharRow.Chars[MousePosition.X]))
                     {

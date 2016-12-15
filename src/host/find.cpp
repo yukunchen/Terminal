@@ -33,9 +33,9 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         coordStringPosition->Y = 0;
     }
 
-    COORD MaxPosition;
-    MaxPosition.X = pScreenInfo->ScreenBufferSize.X - cchSearch;
-    MaxPosition.Y = pScreenInfo->ScreenBufferSize.Y - 1;
+    COORD MaxPosition = pScreenInfo->GetScreenBufferSize();
+    MaxPosition.X -= cchSearch;
+    MaxPosition.Y -= 1;
 
     Selection* const pSelection = &Selection::Instance();
 
@@ -151,7 +151,7 @@ recalc:
 
         if (RecomputeRow)
         {
-            RowIndex = (pScreenInfo->TextInfo->GetFirstRowIndex() + Position.Y) % pScreenInfo->ScreenBufferSize.Y;
+            RowIndex = (pScreenInfo->TextInfo->GetFirstRowIndex() + Position.Y) % pScreenInfo->GetScreenBufferSize().Y;
             Row = &pScreenInfo->TextInfo->Rows[RowIndex];
             RecomputeRow = FALSE;
         }

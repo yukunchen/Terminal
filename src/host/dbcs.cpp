@@ -83,7 +83,8 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
     BeginKAttrCheck(pScreenInfo);
 #endif
 
-    SHORT const RowIndex = (pTextInfo->GetFirstRowIndex() + coordTarget.Y) % pScreenInfo->ScreenBufferSize.Y;
+    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    SHORT const RowIndex = (pTextInfo->GetFirstRowIndex() + coordTarget.Y) % coordScreenBufferSize.Y;
     ROW* const Row = &pTextInfo->Rows[RowIndex];
 
     ROW* RowPrev;
@@ -93,11 +94,11 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
     }
     else
     {
-        RowPrev = &pTextInfo->Rows[pScreenInfo->ScreenBufferSize.Y - 1];
+        RowPrev = &pTextInfo->Rows[coordScreenBufferSize.Y - 1];
     }
 
     ROW* RowNext;
-    if (RowIndex + 1 < pScreenInfo->ScreenBufferSize.Y)
+    if (RowIndex + 1 < coordScreenBufferSize.Y)
     {
         RowNext = &pTextInfo->Rows[RowIndex + 1];
     }
@@ -113,8 +114,8 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
         {
             if (coordTarget.X == 0)
             {
-                RowPrev->CharRow.Chars[pScreenInfo->ScreenBufferSize.X - 1] = UNICODE_SPACE;
-                RowPrev->CharRow.KAttrs[pScreenInfo->ScreenBufferSize.X - 1] = 0;
+                RowPrev->CharRow.Chars[coordScreenBufferSize.X - 1] = UNICODE_SPACE;
+                RowPrev->CharRow.KAttrs[coordScreenBufferSize.X - 1] = 0;
             }
             else
             {
@@ -124,7 +125,7 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
         }
 
         // Check end position of strings
-        if (coordTarget.X + sStringLen < pScreenInfo->ScreenBufferSize.X)
+        if (coordTarget.X + sStringLen < coordScreenBufferSize.X)
         {
             if (Row->CharRow.KAttrs[coordTarget.X + sStringLen] & CHAR_ROW::ATTR_TRAILING_BYTE)
             {
@@ -132,7 +133,7 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
                 Row->CharRow.KAttrs[coordTarget.X + sStringLen] = 0;
             }
         }
-        else if (coordTarget.Y + 1 < pScreenInfo->ScreenBufferSize.Y)
+        else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
         {
             if (RowNext->CharRow.KAttrs[0] & CHAR_ROW::ATTR_TRAILING_BYTE)
             {

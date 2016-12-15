@@ -375,6 +375,8 @@ CreateBoldFont:
      */
     if (nFontType == TRUETYPE_FONTTYPE && !IS_BOLD(FontInfo[nFont].Weight)) {
           pelf->elfLogFont.lfWeight = FW_BOLD;
+          pelf->elfLogFont.lfWidth = SizeOriginal.X;
+          pelf->elfLogFont.lfHeight = SizeOriginal.Y;
           fCreatingBoldFont = TRUE;
           goto CreateBoldFont;
     }
