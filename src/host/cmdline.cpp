@@ -2461,7 +2461,7 @@ void DeleteCommandLine(_Inout_ PCOOKED_READ_DATA const pCookedReadData, _In_ con
     }
 
     FillOutput(pCookedReadData->pScreenInfo,
-        (WCHAR)' ',
+               L' ',
                coordOriginalCursor,
                CONSOLE_FALSE_UNICODE,    // faster than real unicode
                &CharsToWrite);

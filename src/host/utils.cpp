@@ -20,7 +20,7 @@ short CalcWindowSizeY(_In_ const SMALL_RECT * const pRect)
 
 short CalcCursorYOffsetInPixels(_In_ short const sFontSizeY, _In_ ULONG const ulSize)
 {
-    // TODO: Note, we want to likely enforce that this isn't negative.
+    // TODO: MSFT 10229700 - Note, we want to likely enforce that this isn't negative.
     // Pretty sure there's not a valid case for negative offsets here.
     return (short)((sFontSizeY)-(ulSize));
 }

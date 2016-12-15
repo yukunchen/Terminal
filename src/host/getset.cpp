@@ -371,7 +371,7 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* c
 
 HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
 {
-    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    COORD const coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
     if (pInfo->dwSize.X != coordScreenBufferSize.X || (pInfo->dwSize.Y != coordScreenBufferSize.Y))
     {
         CommandLine* const pCommandLine = &CommandLine::Instance();
