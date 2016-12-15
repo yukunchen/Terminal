@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\common.build.pre.props"/>
+  <Import Project="$(SolutionDir)src\common.build.pre.props"/>
   <ItemGroup>
     <ClCompile Include="adapterTest.cpp" />
     <ClCompile Include="inputTest.cpp" />
@@ -26,11 +26,11 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\dep\Console;..\..\..\..\dep;..</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="..\..\..\common.build.dll.props"/>
-  <Import Project="..\..\..\common.build.post.props"/>
-  <Import Project="..\..\..\common.build.tests.props"/>
+  <Import Project="$(SolutionDir)src\common.build.dll.props"/>
+  <Import Project="$(SolutionDir)src\common.build.post.props"/>
+  <Import Project="$(SolutionDir)src\common.build.tests.props"/>
 </Project>
