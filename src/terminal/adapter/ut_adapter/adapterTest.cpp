@@ -359,14 +359,14 @@ public:
 
             // allocate buffer space to hold scrolling rectangle
             SHORT width = pScrollRectangle->Right - pScrollRectangle->Left;
-            SHORT height = pScrollRectangle->Bottom - pScrollRectangle->Top;
+            SHORT height = pScrollRectangle->Bottom - pScrollRectangle->Top + 1;
             size_t const cch = width * height;
             CHAR_INFO* const ciBuffer = new CHAR_INFO[cch];
             size_t cciFilled = 0;
 
             Log::Comment(NoThrowString().Format(L"\tCopy buffer size is %d chars", cch));
 
-            for (SHORT iCharY = pScrollRectangle->Top; iCharY < pScrollRectangle->Bottom; iCharY++)
+            for (SHORT iCharY = pScrollRectangle->Top; iCharY <= pScrollRectangle->Bottom; iCharY++)
             {
                 // back up space and fill it with the fill.
                 for (SHORT iCharX = pScrollRectangle->Left; iCharX < pScrollRectangle->Right; iCharX++)
@@ -392,7 +392,7 @@ public:
             }
             Log::Comment(NoThrowString().Format(L"\tCopied a total %d chars", cciFilled));
             Log::Comment(L"\tCopying chars back");
-            for (SHORT iCharY = pScrollRectangle->Top; iCharY < pScrollRectangle->Bottom; iCharY++)
+            for (SHORT iCharY = pScrollRectangle->Top; iCharY <= pScrollRectangle->Bottom; iCharY++)
             {
                 // back up space and fill it with the fill.
                 for (SHORT iCharX = pScrollRectangle->Left; iCharX < pScrollRectangle->Right; iCharX++)
@@ -1970,9 +1970,11 @@ public:
         srRegion.Right = _pTest->_srViewport.Right - _pTest->_srViewport.Left - 1;
         _pTest->_srExpectedConsoleWindow = srRegion;
         
-        _pTest->_coordExpectedCursorPos.X = _pTest->_coordCursorPos.X - _pTest->_srViewport.Left;
-        _pTest->_coordExpectedCursorPos.Y = _pTest->_coordCursorPos.Y - _pTest->_srViewport.Top;
-
+        // The cursor will be moved to the same relative location in the new viewport with origin @ 0, 0        
+        const COORD coordRelativeCursor = { _pTest->_coordCursorPos.X - _pTest->_srViewport.Left,
+                                            _pTest->_coordCursorPos.Y - _pTest->_srViewport.Top };
+        _pTest->_coordExpectedCursorPos = coordRelativeCursor;
+        
         VERIFY_IS_TRUE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
 
 
@@ -1997,13 +1999,21 @@ public:
 
         rgsrRegionsModified[1] = srRegion;
 
-        // srRegion.Top = _pTest->_coordCursorPos.Y;
-
         // Scan entire buffer and ensure only the necessary region has changed.
         bool fRegionSuccess = _pTest->ValidateEraseBufferState(rgsrRegionsModified, cRegionsToCheck, TestGetSet::s_wchErase, TestGetSet::s_wAttrErase);
         VERIFY_IS_TRUE(fRegionSuccess);
 
-        // fixme test cursor position too
+        Log::Comment(L"Test 2: Gracefully fail when getting console information fails.");
+        _pTest->PrepData();
+        _pTest->_fGetConsoleScreenBufferInfoExResult = false;
+
+        VERIFY_IS_FALSE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
+
+        Log::Comment(L"Test 3: Gracefully fail when filling the rectangle fails.");
+        _pTest->PrepData();
+        _pTest->_fFillConsoleOutputCharacterWResult = false;
+        
+        VERIFY_IS_FALSE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
     }
 
     TEST_METHOD(EraseTests)
