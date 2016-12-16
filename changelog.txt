@@ -94,3 +94,9 @@
 	9871791 - [GH #1307] Typing text in the bash: existing text is overwritten, new text is not inserted
 	10046477 - Ctrl-l Doesn't erase bottom row or right column in bash
 	9130937 - Remove Secure CRT suppression flag
+12/15/2016 - <batch merge>
+	10113792 - Bold fonts preview at incorrect size on high DPI
+	9516800 - [Watson Failure] caused by INTEGER_DIVIDE_BY_ZERO_c0000094_ConhostV2.dll!AdjustCursorPosition
+	10186632 - Feature tests failing/not running in VSO
+	10142744 - Pressing Ctrl or Shift immediately dismisses the selection
+	10141431 - Automated test reports/code coverage within VSO build

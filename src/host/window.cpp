@@ -588,6 +588,9 @@ void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbs
 
     NewOrigin.X = ScreenInfo->GetBufferViewport().Left;
     NewOrigin.Y = ScreenInfo->GetBufferViewport().Top;
+
+    const SHORT sScreenBufferSizeY = ScreenInfo->GetScreenBufferSize().Y;
+
     switch (wScrollCommand)
     {
     case SB_LINEUP:
@@ -636,7 +639,7 @@ void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbs
 
     case SB_BOTTOM:
     {
-        NewOrigin.Y = (WORD)(ScreenInfo->ScreenBufferSize.Y - ScreenInfo->GetScreenWindowSizeY());
+        NewOrigin.Y = (WORD)(sScreenBufferSizeY - ScreenInfo->GetScreenWindowSizeY());
         break;
     }
 
@@ -646,7 +649,7 @@ void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbs
     }
     }
 
-    NewOrigin.Y = (WORD)(max(0, min((SHORT)NewOrigin.Y, (SHORT)ScreenInfo->ScreenBufferSize.Y - (SHORT)ScreenInfo->GetScreenWindowSizeY())));
+    NewOrigin.Y = (WORD)(max(0, min((SHORT)NewOrigin.Y, sScreenBufferSizeY - (SHORT)ScreenInfo->GetScreenWindowSizeY())));
 
     ScreenInfo->SetViewportOrigin(TRUE, NewOrigin);
 }
@@ -666,6 +669,8 @@ void Window::HorizontalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wA
     Telemetry::Instance().SetUserInteractive();
 
     SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
+
+    const SHORT sScreenBufferSizeX = ScreenInfo->GetScreenBufferSize().X;
 
     NewOrigin.X = ScreenInfo->GetBufferViewport().Left;
     NewOrigin.Y = ScreenInfo->GetBufferViewport().Top;
@@ -710,7 +715,7 @@ void Window::HorizontalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wA
 
     case SB_BOTTOM:
     {
-        NewOrigin.X = (WORD)(ScreenInfo->ScreenBufferSize.X - ScreenInfo->GetScreenWindowSizeX());
+        NewOrigin.X = (WORD)(sScreenBufferSizeX - ScreenInfo->GetScreenWindowSizeX());
         break;
     }
 
@@ -720,7 +725,7 @@ void Window::HorizontalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wA
     }
     }
 
-    NewOrigin.X = (WORD)(max(0, min((SHORT)NewOrigin.X, (SHORT)ScreenInfo->ScreenBufferSize.X - (SHORT)ScreenInfo->GetScreenWindowSizeX())));
+    NewOrigin.X = (WORD)(max(0, min((SHORT)NewOrigin.X, sScreenBufferSizeX - (SHORT)ScreenInfo->GetScreenWindowSizeX())));
     ScreenInfo->SetViewportOrigin(TRUE, NewOrigin);
 }
 
@@ -1003,7 +1008,7 @@ void Window::_CalculateWindowRect(_In_ COORD const coordWindowInChars, _Inout_ R
     SCREEN_INFORMATION* const psiAttached = GetScreenInfo();
     COORD const coordFontSize = psiAttached->GetScreenFontSize();
     HWND const hWnd = GetWindowHandle();
-    COORD const coordBufferSize = psiAttached->ScreenBufferSize;
+    COORD const coordBufferSize = psiAttached->GetScreenBufferSize();
     int const iDpi = g_dpi;
 
     s_CalculateWindowRect(coordWindowInChars, iDpi, coordFontSize, coordBufferSize, hWnd, prectWindow);
@@ -1292,8 +1297,9 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
                                                       static_cast<DWORD>(sizeof(dwValue)));
         if (NT_SUCCESS(Status))
         {
-            auto screenBufferWidth = g_ciConsoleInformation.CurrentScreenBuffer->ScreenBufferSize.X;
-            auto screenBufferHeight = g_ciConsoleInformation.CurrentScreenBuffer->ScreenBufferSize.Y;
+            const COORD coordScreenBufferSize = g_ciConsoleInformation.CurrentScreenBuffer->GetScreenBufferSize();
+            auto screenBufferWidth = coordScreenBufferSize.X;
+            auto screenBufferHeight = coordScreenBufferSize.Y;
             dwValue =  MAKELONG(screenBufferWidth, screenBufferHeight);
             Status = RegistrySerialization::s_UpdateValue(hConsoleKey,
                                                           hTitleKey,

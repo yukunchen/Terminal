@@ -357,13 +357,17 @@ NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* ConvAreaInfo)
     ConvAreaInfo->SetHidden(true);
 
     COORD Coord = { 0 };
-    DWORD CharsToWrite = ConvAreaInfo->ScreenBuffer->ScreenBufferSize.X;
+    DWORD CharsToWrite = ConvAreaInfo->ScreenBuffer->GetScreenBufferSize().X;
 
     FillOutput(ConvAreaInfo->ScreenBuffer, (WCHAR)' ', Coord, CONSOLE_FALSE_UNICODE,    // faster than real unicode
                &CharsToWrite);
 
-    CharsToWrite = ConvAreaInfo->ScreenBuffer->ScreenBufferSize.X;
-    FillOutput(ConvAreaInfo->ScreenBuffer, g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes(), Coord, CONSOLE_ATTRIBUTE, &CharsToWrite);
+    CharsToWrite = ConvAreaInfo->ScreenBuffer->GetScreenBufferSize().X;
+    FillOutput(ConvAreaInfo->ScreenBuffer,
+               g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes(),
+               Coord,
+               CONSOLE_ATTRIBUTE,
+               &CharsToWrite);
     ConsoleImePaint(ConvAreaInfo);
     return STATUS_SUCCESS;
 }
@@ -740,12 +744,16 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     // copy chars
     BisectWrite(StringLength, TargetPoint, ScreenInfo);
 
+    const COORD coordScreenBufferSize = ScreenInfo->GetScreenBufferSize();
+
     USHORT ScreenEndOfString;
-    if (SUCCEEDED(UShortSub(ScreenInfo->ScreenBufferSize.X, TargetPoint.X, &ScreenEndOfString)) && ScreenEndOfString && StringLength > ScreenEndOfString)
+    if (SUCCEEDED(UShortSub(coordScreenBufferSize.X, TargetPoint.X, &ScreenEndOfString)) &&
+        ScreenEndOfString &&
+        StringLength > ScreenEndOfString)
     {
 
-        if (TargetPoint.Y == ScreenInfo->ScreenBufferSize.Y - 1 &&
-            TargetPoint.X + StringLength >= ScreenInfo->ScreenBufferSize.X && *(StringA + ScreenEndOfString - 1) & CHAR_ROW::ATTR_LEADING_BYTE)
+        if (TargetPoint.Y == coordScreenBufferSize.Y - 1 &&
+            TargetPoint.X + StringLength >= coordScreenBufferSize.X && *(StringA + ScreenEndOfString - 1) & CHAR_ROW::ATTR_LEADING_BYTE)
         {
             *(String + ScreenEndOfString - 1) = UNICODE_SPACE;
             *(StringA + ScreenEndOfString - 1) = 0;
@@ -763,7 +771,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     if (TargetPoint.X < Row->CharRow.Left)
     {
         // CharRow.Left is leftmost bound of chars in Chars array (array will be full width) i.e. type is COORD
-        PWCHAR LastChar = &Row->CharRow.Chars[ScreenInfo->ScreenBufferSize.X - 1];
+        PWCHAR LastChar = &Row->CharRow.Chars[coordScreenBufferSize.X - 1];
         PWCHAR Char;
 
         for (Char = &Row->CharRow.Chars[TargetPoint.X]; Char < LastChar && *Char == (WCHAR)' '; Char++)
@@ -813,14 +821,22 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
                 // Each time around the loop, take our new 1-length attribute with the appropriate line attributes (underlines, etc.)
                 // and insert it into the existing Run-Length-Encoded attribute list.
-                Row->AttrRow.InsertAttrRuns(&InsertedRun, 1, TargetPoint.X + i, (SHORT)(TargetPoint.X + i + 1), ScreenInfo->ScreenBufferSize.X);
+                Row->AttrRow.InsertAttrRuns(&InsertedRun,
+                                            1,
+                                            TargetPoint.X + i,
+                                            (SHORT)(TargetPoint.X + i + 1),
+                                            coordScreenBufferSize.X);
             }
         }
         else
         {
             InsertedRun.SetLength(StringLength);
             InsertedRun.SetAttributesFromLegacy(wScreenAttributes);
-            Row->AttrRow.InsertAttrRuns(&InsertedRun, 1, TargetPoint.X, (SHORT)(TargetPoint.X + StringLength - 1), ScreenInfo->ScreenBufferSize.X);
+            Row->AttrRow.InsertAttrRuns(&InsertedRun,
+                                        1,
+                                        TargetPoint.X,
+                                        (SHORT)(TargetPoint.X + StringLength - 1),
+                                        coordScreenBufferSize.X);
         }
     }
 

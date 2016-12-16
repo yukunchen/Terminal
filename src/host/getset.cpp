@@ -346,7 +346,8 @@ HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(_In_ SCREEN_INFORMATION* con
     RETURN_HR_IF(E_INVALIDARG, (pSize->X == SHORT_MAX || pSize->Y == SHORT_MAX));
 
     // Only do the resize if we're actually changing one of the dimensions
-    if (pSize->X != pScreenInfo->ScreenBufferSize.X || pSize->Y != pScreenInfo->ScreenBufferSize.Y)
+    COORD const coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    if (pSize->X != coordScreenBufferSize.X || pSize->Y != coordScreenBufferSize.Y)
     {
         RETURN_NTSTATUS(pScreenInfo->ResizeScreenBuffer(*pSize, TRUE));
     }
@@ -370,7 +371,8 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* c
 
 HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
 {
-    if (pInfo->dwSize.X != pScreenInfo->ScreenBufferSize.X || (pInfo->dwSize.Y != pScreenInfo->ScreenBufferSize.Y))
+    COORD const coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    if (pInfo->dwSize.X != coordScreenBufferSize.X || (pInfo->dwSize.Y != coordScreenBufferSize.Y))
     {
         CommandLine* const pCommandLine = &CommandLine::Instance();
 
@@ -391,7 +393,7 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
     // If wrap text is on, then the window width must be the same size as the buffer width
     if (g_ciConsoleInformation.GetWrapText())
     {
-        NewSize.X = pScreenInfo->ScreenBufferSize.X;
+        NewSize.X = coordScreenBufferSize.X;
     }
 
     if (NewSize.X != pScreenInfo->GetScreenWindowSizeX() || NewSize.Y != pScreenInfo->GetScreenWindowSizeY())
@@ -418,8 +420,9 @@ HRESULT ApiRoutines::SetConsoleCursorPositionImpl(_In_ SCREEN_INFORMATION* const
 
 HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ const COORD* const pCursorPosition)
 {
-    RETURN_HR_IF(E_INVALIDARG, (pCursorPosition->X >= pScreenInfo->ScreenBufferSize.X ||
-                                pCursorPosition->Y >= pScreenInfo->ScreenBufferSize.Y ||
+    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    RETURN_HR_IF(E_INVALIDARG, (pCursorPosition->X >= coordScreenBufferSize.X ||
+                                pCursorPosition->Y >= coordScreenBufferSize.Y ||
                                 pCursorPosition->X < 0 ||
                                 pCursorPosition->Y < 0));
 
@@ -655,7 +658,8 @@ NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attribut
         WORD const InvertedNewPopupAttributes = (WORD)(((PopupAttributes << 4) & 0xf0) | ((PopupAttributes >> 4) & 0x0f));
 
         // change all chars with default color
-        for (SHORT i = 0; i < ScreenInfo->ScreenBufferSize.Y; i++)
+        const SHORT sScreenBufferSizeY = ScreenInfo->GetScreenBufferSize().Y;
+        for (SHORT i = 0; i < sScreenBufferSizeY; i++)
         {
             ROW* const Row = &ScreenInfo->TextInfo->Rows[i];
             Row->AttrRow.ReplaceLegacyAttrs(DefaultAttributes, Attributes);
@@ -875,7 +879,7 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pC
 
         SCREEN_INFORMATION* const pScreenInfo = pContext->GetActiveBuffer();
 
-        *pNewScreenBufferSize = pScreenInfo->ScreenBufferSize;
+        *pNewScreenBufferSize = pScreenInfo->GetScreenBufferSize();
         RETURN_HR_IF_FALSE(E_INVALIDARG, pScreenInfo->IsActiveScreenBuffer());
     }
 

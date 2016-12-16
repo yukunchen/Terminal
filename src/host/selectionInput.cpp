@@ -791,7 +791,7 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
         {
         case VK_RIGHT:
         {
-            if (cursorPos.X + iNextRightX < pScreenInfo->ScreenBufferSize.X)
+            if (cursorPos.X + iNextRightX < pScreenInfo->GetScreenBufferSize().X)
             {
                 pCursor->IncrementXPosition(iNextRightX);
             }
@@ -818,7 +818,7 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
 
         case VK_DOWN:
         {
-            if (cursorPos.Y + 1 < pScreenInfo->ScreenBufferSize.Y)
+            if (cursorPos.Y + 1 < pScreenInfo->GetScreenBufferSize().Y)
             {
                 pCursor->IncrementYPosition(1);
             }
@@ -828,9 +828,10 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
         case VK_NEXT:
         {
             pCursor->IncrementYPosition(pScreenInfo->GetScreenWindowSizeY() - 1);
-            if (pCursor->GetPosition().Y >= pScreenInfo->ScreenBufferSize.Y)
+            const COORD coordBufferSize = pScreenInfo->GetScreenBufferSize();
+            if (pCursor->GetPosition().Y >= coordBufferSize.Y)
             {
-                pCursor->SetYPosition(pScreenInfo->ScreenBufferSize.Y - 1);
+                pCursor->SetYPosition(coordBufferSize.Y - 1);
             }
             break;
         }
@@ -848,7 +849,7 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
         case VK_END:
         {
             // End by itself should go to end of current line. Ctrl-End should go to end of buffer.
-            pCursor->SetXPosition(pScreenInfo->ScreenBufferSize.X - 1);
+            pCursor->SetXPosition(pScreenInfo->GetScreenBufferSize().X - 1);
 
             if (pInputKeyInfo->IsCtrlPressed())
             {

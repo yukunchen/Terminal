@@ -20,7 +20,7 @@ short CalcWindowSizeY(_In_ const SMALL_RECT * const pRect)
 
 short CalcCursorYOffsetInPixels(_In_ short const sFontSizeY, _In_ ULONG const ulSize)
 {
-    // TODO: Note, we want to likely enforce that this isn't negative. 
+    // TODO: MSFT 10229700 - Note, we want to likely enforce that this isn't negative.
     // Pretty sure there's not a valid case for negative offsets here.
     return (short)((sFontSizeY)-(ulSize));
 }
@@ -130,7 +130,7 @@ bool Utils::s_DoIncrementScreenCoordinate(_In_ const SMALL_RECT srectEdges, _Ino
 // - coordFirst - The first coordinate position
 // - coordSecond - The second coordinate position
 // Return Value:
-// -  Negative if First is to the left of the Second. 
+// -  Negative if First is to the left of the Second.
 // -  0 if First and Second are the same coordinate.
 // -  Positive if First is to the right of the Second.
 // -  This is so you can do s_CompareCoords(first, second) <= 0 for "first is left or the same as second".
@@ -139,10 +139,11 @@ bool Utils::s_DoIncrementScreenCoordinate(_In_ const SMALL_RECT srectEdges, _Ino
 int Utils::s_CompareCoords(_In_ const COORD coordFirst, _In_ const COORD coordSecond)
 {
     // find the width of one row
-    const short cRowWidth = g_ciConsoleInformation.CurrentScreenBuffer->ScreenBufferSize.X;
+    const COORD coordScreenBufferSize = g_ciConsoleInformation.CurrentScreenBuffer->GetScreenBufferSize();
+    const short cRowWidth = coordScreenBufferSize.X;
 
     // Assert that our coordinates are within the expected boundaries
-    const short cRowHeight = g_ciConsoleInformation.CurrentScreenBuffer->ScreenBufferSize.Y;
+    const short cRowHeight = coordScreenBufferSize.Y;
     ASSERT(coordFirst.X >= 0 && coordFirst.X < cRowWidth);
     ASSERT(coordSecond.X >= 0 && coordSecond.X < cRowWidth);
     ASSERT(coordFirst.Y >= 0 && coordFirst.Y < cRowHeight);
