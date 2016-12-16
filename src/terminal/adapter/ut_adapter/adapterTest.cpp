@@ -617,6 +617,7 @@ public:
         _fSetConsoleTextAttributeResult = TRUE;
         _fWriteConsoleInputWResult = TRUE;
         _fScrollConsoleScreenBufferWResult = TRUE;
+        _fSetConsoleWindowInfoResult = TRUE;
 
         _PrepCharsBuffer(wch, wAttr);
         
@@ -2972,6 +2973,54 @@ public:
         _pTest->_fUsingRgbColor = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
+    }
+
+
+    TEST_METHOD(HardReset)
+    {
+        Log::Comment(L"Starting test...");
+
+        _pTest->PrepData();
+
+        ///////////////// Components of a EraseScrollback //////////////////////
+        _pTest->_fExpectedWindowAbsolute = true;
+        SMALL_RECT srRegion = { 0 };
+        srRegion.Bottom = _pTest->_srViewport.Bottom - _pTest->_srViewport.Top - 1;
+        srRegion.Right = _pTest->_srViewport.Right - _pTest->_srViewport.Left - 1;
+        _pTest->_srExpectedConsoleWindow = srRegion;
+        // The cursor will be moved to the same relative location in the new viewport with origin @ 0, 0        
+        const COORD coordRelativeCursor = { _pTest->_coordCursorPos.X - _pTest->_srViewport.Left,
+                                            _pTest->_coordCursorPos.Y - _pTest->_srViewport.Top };
+
+        // Cursor to 1,1
+        _pTest->_coordExpectedCursorPos = {0, 0};
+        _pTest->_fSetConsoleCursorPositionResult = true;
+        const COORD coordExpectedCursorPos = {0, 0};
+
+        // Sets the SGR state to normal.
+        _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+
+        VERIFY_IS_TRUE(_pDispatch->HardReset());
+        VERIFY_ARE_EQUAL(_pTest->_coordCursorPos, coordExpectedCursorPos);
+        VERIFY_ARE_EQUAL(_pTest->_fUsingRgbColor, false);
+
+        Log::Comment(L"Test 2: Gracefully fail when getting console information fails.");
+        _pTest->PrepData();
+        _pTest->_fGetConsoleScreenBufferInfoExResult = false;
+
+        VERIFY_IS_FALSE(_pDispatch->HardReset());
+
+        Log::Comment(L"Test 3: Gracefully fail when filling the rectangle fails.");
+        _pTest->PrepData();
+        _pTest->_fFillConsoleOutputCharacterWResult = false;
+        
+        VERIFY_IS_FALSE(_pDispatch->HardReset());
+
+        Log::Comment(L"Test 4: Gracefully fail when setting the window fails.");
+        _pTest->PrepData();
+        _pTest->_fSetConsoleWindowInfoResult = false;
+        
+        VERIFY_IS_FALSE(_pDispatch->HardReset());
     }
 
 private:
