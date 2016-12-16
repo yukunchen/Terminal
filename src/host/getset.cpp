@@ -402,7 +402,8 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
     // Despite the fact that this API takes in a srWindow for the viewport, it traditionally actually doesn't set
     //  anything using that member - for moving the viewport, you need SetConsoleWindowInfo
     //  (see https://msdn.microsoft.com/en-us/library/windows/desktop/ms686125(v=vs.85).aspx and DoSrvSetConsoleWindowInfo)
-    // Note that it also doesn't set cursor position. Perhaps we should document which members it actually *does* set.
+    // Note that it also doesn't set cursor position. 
+    // TODO:10210059 Update docs on MSDN to specify which members actually set values.
 
     return S_OK;
 }

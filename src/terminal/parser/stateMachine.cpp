@@ -1427,20 +1427,11 @@ bool StateMachine::_GetEraseOperation(_Out_ TermDispatch::EraseType* const pEras
 
         switch (usParam)
         {
-        case 0:
-            *pEraseType = TermDispatch::EraseType::ToEnd;
-            fSuccess = true;
-            break;
-        case 1:
-            *pEraseType = TermDispatch::EraseType::FromBeginning;
-            fSuccess = true;
-            break;
-        case 2:
-            *pEraseType = TermDispatch::EraseType::All;
-            fSuccess = true;
-            break;
-        case 3:
-            *pEraseType = TermDispatch::EraseType::Scrollback;
+        case TermDispatch::EraseType::ToEnd:
+        case TermDispatch::EraseType::FromBeginning:
+        case TermDispatch::EraseType::All:
+        case TermDispatch::EraseType::Scrollback:
+            *pEraseType = (TermDispatch::EraseType) usParam;
             fSuccess = true;
             break;
         }

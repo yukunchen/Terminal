@@ -24,9 +24,6 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     
     TestGetchar(hIn, hOut);
 
-    // TestSetViewport(hIn, hOut);
-
-
     return 0;
 }
 
@@ -70,10 +67,6 @@ int TestGetchar(HANDLE hIn, HANDLE hOut)
 
     while (hIn != nullptr)
     {
-        //DWORD dwRead;
-        //char ach;
-        //ReadConsoleA(hIn, &ach, 1, &dwRead, nullptr);
-
         int ch = getchar();
         printf("0x%x\r\n", ch);
     }

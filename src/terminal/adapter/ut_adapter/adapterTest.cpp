@@ -105,6 +105,7 @@ public:
         if (_fSetConsoleCursorPositionResult)
         {
             VERIFY_ARE_EQUAL(_coordExpectedCursorPos, dwCursorPosition);
+            _coordCursorPos = dwCursorPosition;
         }
 
         return _fSetConsoleCursorPositionResult;
@@ -144,6 +145,7 @@ public:
         {
             VERIFY_ARE_EQUAL(_fExpectedWindowAbsolute, bAbsolute);
             VERIFY_ARE_EQUAL(_srExpectedConsoleWindow, *lpConsoleWindow);
+            _srViewport = *lpConsoleWindow;
         }
 
         return _fSetConsoleWindowInfoResult;
@@ -357,14 +359,14 @@ public:
 
             // allocate buffer space to hold scrolling rectangle
             SHORT width = pScrollRectangle->Right - pScrollRectangle->Left;
-            SHORT height = pScrollRectangle->Bottom - pScrollRectangle->Top + 1;
+            SHORT height = pScrollRectangle->Bottom - pScrollRectangle->Top;
             size_t const cch = width * height;
             CHAR_INFO* const ciBuffer = new CHAR_INFO[cch];
             size_t cciFilled = 0;
 
             Log::Comment(NoThrowString().Format(L"\tCopy buffer size is %d chars", cch));
 
-            for (SHORT iCharY = pScrollRectangle->Top; iCharY <= pScrollRectangle->Bottom; iCharY++)
+            for (SHORT iCharY = pScrollRectangle->Top; iCharY < pScrollRectangle->Bottom; iCharY++)
             {
                 // back up space and fill it with the fill.
                 for (SHORT iCharX = pScrollRectangle->Left; iCharX < pScrollRectangle->Right; iCharX++)
@@ -390,7 +392,7 @@ public:
             }
             Log::Comment(NoThrowString().Format(L"\tCopied a total %d chars", cciFilled));
             Log::Comment(L"\tCopying chars back");
-            for (SHORT iCharY = pScrollRectangle->Top; iCharY <= pScrollRectangle->Bottom; iCharY++)
+            for (SHORT iCharY = pScrollRectangle->Top; iCharY < pScrollRectangle->Bottom; iCharY++)
             {
                 // back up space and fill it with the fill.
                 for (SHORT iCharX = pScrollRectangle->Left; iCharX < pScrollRectangle->Right; iCharX++)
@@ -403,7 +405,7 @@ public:
 
                     if (_IsInsideClip(pClipRectangle, coordTarget.Y, coordTarget.X) && _IsInsideClip(pClipRectangle, iCharY, iCharX))
                     {
-                        size_t index = width * (iCharY - pScrollRectangle->Top) + (iCharX - pScrollRectangle->Left);
+                        size_t index = (width) * (iCharY - pScrollRectangle->Top) + (iCharX - pScrollRectangle->Left);
                         CHAR_INFO charFromBuffer = ciBuffer[index];
                         *pciStored = charFromBuffer;
                     }
@@ -1953,6 +1955,55 @@ public:
 
         // The inserted spaces at the left edge resulted in an entire line of spaces bounded by the viewport
         VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srModifiedSpace, wchDeleteExpected, wAttrDeleteExpected), L"A whole line of spaces was inserted from the right (the cursor position was deleted enough times.) Extra deletes just covered up some of the spaces that were shifted in.");
+    }
+
+    TEST_METHOD(EraseScrollbackTests)
+    {
+        _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        _pTest->_wAttribute = _pTest->s_wAttrErase;
+        Log::Comment(L"Starting Test");
+
+        _pTest->_fSetConsoleWindowInfoResult = true;
+        _pTest->_fExpectedWindowAbsolute = true;
+        SMALL_RECT srRegion = { 0 };
+        srRegion.Bottom = _pTest->_srViewport.Bottom - _pTest->_srViewport.Top - 1;
+        srRegion.Right = _pTest->_srViewport.Right - _pTest->_srViewport.Left - 1;
+        _pTest->_srExpectedConsoleWindow = srRegion;
+        
+        _pTest->_coordExpectedCursorPos.X = _pTest->_coordCursorPos.X - _pTest->_srViewport.Left;
+        _pTest->_coordExpectedCursorPos.Y = _pTest->_coordCursorPos.Y - _pTest->_srViewport.Top;
+
+        VERIFY_IS_TRUE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
+
+
+        size_t cRegionsToCheck = 2;
+        SMALL_RECT rgsrRegionsModified[2]; 
+        
+        // Region 0 - Below the viewport
+        srRegion.Top = _pTest->_srViewport.Bottom + 1;
+        srRegion.Left = 0;
+
+        srRegion.Bottom = _pTest->_coordBufferSize.Y;
+        srRegion.Right = _pTest->_coordBufferSize.X;
+
+        rgsrRegionsModified[0] = srRegion;
+
+        // Region 1 - To the right of the viewport
+        srRegion.Top = 0;
+        srRegion.Left = _pTest->_srViewport.Right + 1;
+
+        srRegion.Bottom = _pTest->_coordBufferSize.Y;
+        srRegion.Right = _pTest->_coordBufferSize.X;
+
+        rgsrRegionsModified[1] = srRegion;
+
+        // srRegion.Top = _pTest->_coordCursorPos.Y;
+
+        // Scan entire buffer and ensure only the necessary region has changed.
+        bool fRegionSuccess = _pTest->ValidateEraseBufferState(rgsrRegionsModified, cRegionsToCheck, TestGetSet::s_wchErase, TestGetSet::s_wAttrErase);
+        VERIFY_IS_TRUE(fRegionSuccess);
+
+        // fixme test cursor position too
     }
 
     TEST_METHOD(EraseTests)

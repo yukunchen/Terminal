@@ -127,8 +127,9 @@ namespace Microsoft
                 bool _CursorMovePosition(_In_opt_ const unsigned int* const puiRow, _In_opt_ const unsigned int* const puiCol) const;
                 bool _EraseSingleLineHelper(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pcsbiex, _In_ EraseType const eraseType, _In_ SHORT const sLineId, _In_ WORD const wFillColor) const;
                 void _SetGraphicsOptionHelper(_In_ GraphicsOptions const opt, _Inout_ WORD* const pAttr);
+                bool _EraseAreaHelper(_In_ COORD const coordStartPosition, _In_ COORD const coordLastPosition, _In_ WORD const wFillColor);
                 bool _EraseSingleLineDistanceHelper(_In_ COORD const coordStartPosition, _In_ DWORD const dwLength, _In_ WORD const wFillColor) const;
-                bool _EraseScrollback() const;
+                bool _EraseScrollback();
                 void _SetGraphicsOptionHelper(_In_ GraphicsOptions const opt, _Inout_ WORD* const pAttr) const;
                 bool _InsertDeleteHelper(_In_ unsigned int const uiCount, _In_ bool const fIsInsert) const;
                 bool _ScrollMovement(_In_ ScrollDirection const dir, _In_ unsigned int const uiDistance) const;
@@ -151,7 +152,7 @@ namespace Microsoft
                 WORD _wBrightnessState;
                 SMALL_RECT _srScrollMargins;
 
-                bool _fSetColumnsEnabled;
+                bool _fIsSetColumnsEnabled;
 
                 bool _SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, 
                                          _In_ size_t const cOptions, 

@@ -66,10 +66,10 @@ namespace Microsoft
 
                 enum class EraseType : unsigned int
                 {
-                    ToEnd,
-                    FromBeginning,
-                    All,
-                    Scrollback
+                    ToEnd = 0,
+                    FromBeginning = 1,
+                    All = 2,
+                    Scrollback = 3
                 };
 
                 virtual bool EraseInDisplay(_In_ EraseType const /* eraseType*/) { return false; } // ED

@@ -22,7 +22,7 @@ static CStringA GenerateSGRToken();
 static CStringA GenerateCUXToken();
 static CStringA GenerateCUXToken2();
 static CStringA GenerateCUXToken3();
-static CStringA GenerateCUXToken4();
+static CStringA GeneratePrivateModeParamToken();
 static CStringA GenerateDeviceAttributesToken();
 static CStringA GenerateDeviceStatusReportToken();
 static CStringA GenerateEraseToken();
@@ -31,6 +31,8 @@ static CStringA GenerateWhiteSpaceToken();
 static CStringA GenerateInvalidToken();
 static CStringA GenerateTextToken();
 static CStringA GenerateOscTitleToken();
+static CStringA GenerateHardResetToken();
+static CStringA GenerateSoftResetToken();
 
 const fuzz::_fuzz_type_entry<BYTE> g_repeatMap[] =
 {
@@ -45,12 +47,14 @@ const std::function<CStringA()> g_tokenGenerators[] =
     GenerateCUXToken,
     GenerateCUXToken2,
     GenerateCUXToken3,
-    GenerateCUXToken4,
+    GeneratePrivateModeParamToken,
     GenerateDeviceAttributesToken,
     GenerateDeviceStatusReportToken,
     GenerateScrollToken,
     GenerateEraseToken,
-    GenerateOscTitleToken
+    GenerateOscTitleToken,
+    GenerateHardResetToken,
+    GenerateHardResetToken
 };
 
 CStringA GenerateTokenLowProbability()
@@ -227,22 +231,8 @@ CStringA GenerateCUXToken2()
     return cux;
 }
 
-// Cursor positioning, this function handles enabling cursor visibility.  Differs from
-// other cursor functions due to ? being used prior to the number value (i.e. CSI?25h).
-CStringA GenerateCUXToken3()
-{
-    const LPSTR tokens[] = { "h", "l" };
-    const _fuzz_type_entry<CStringA> map[] =
-    {
-        { 10, [](CStringA) { CStringA s; s.AppendFormat("?%02d", CFuzzChance::GetRandom<BYTE>()); return s; } },
-        { 90, [](CStringA) { return CStringA("?25"); } }
-    };
-
-    return GenerateFuzzedToken(FUZZ_MAP(map), tokens, ARRAYSIZE(tokens));
-}
-
 // Cursor positioning with two arguments
-CStringA GenerateCUXToken4()
+CStringA GenerateCUXToken3()
 {
     const LPSTR tokens[]{ "H" };
     const _fuzz_type_entry<CStringA> map[] = 
@@ -257,16 +247,67 @@ CStringA GenerateCUXToken4()
     return GenerateFuzzedToken(FUZZ_MAP(map), tokens, ARRAYSIZE(tokens));
 }
 
+// Hard Reset (has no args)
+CStringA GenerateHardResetToken()
+{
+    const LPSTR tokens[] = { "c" };
+    CStringA cux(ESC);
+
+    cux.AppendFormat("%s%s%s",
+        GenerateTokenLowProbability(),
+        CFuzzChance::SelectOne(tokens, ARRAYSIZE(tokens)),
+        GenerateTokenLowProbability());
+    return cux;
+}
+
+// Soft Reset (has no args)
+CStringA GenerateSoftResetToken()
+{
+    const LPSTR tokens[] = { "p" };
+    CStringA cux(CSI);
+
+    cux.AppendFormat("%s%s%s",
+        GenerateTokenLowProbability(),
+        CFuzzChance::SelectOne(tokens, ARRAYSIZE(tokens)),
+        GenerateTokenLowProbability());
+    return cux;
+}
+
+// Private Mode parameters. These cover a wide range of behaviors - hiding the cursor,
+//      enabling mouse mode, changing to the alt buffer, blinking the cursor, etc.
+CStringA GeneratePrivateModeParamToken()
+{
+    const LPSTR tokens[] = { "h", "l" };
+    const _fuzz_type_entry<CStringA> map[] =
+    {
+        { 12, [](CStringA) { CStringA s; s.AppendFormat("?%02d", CFuzzChance::GetRandom<BYTE>()); return s; } },
+        { 8, [](CStringA) { return CStringA("?1"); } },
+        { 8, [](CStringA) { return CStringA("?3"); } },
+        { 8, [](CStringA) { return CStringA("?12"); } },
+        { 8, [](CStringA) { return CStringA("?25"); } },
+        { 8, [](CStringA) { return CStringA("?1000"); } },
+        { 8, [](CStringA) { return CStringA("?1002"); } },
+        { 8, [](CStringA) { return CStringA("?1003"); } },
+        { 8, [](CStringA) { return CStringA("?1005"); } },
+        { 8, [](CStringA) { return CStringA("?1006"); } },
+        { 8, [](CStringA) { return CStringA("?1007"); } },
+        { 8, [](CStringA) { return CStringA("?1049"); } }
+    };
+
+    return GenerateFuzzedToken(FUZZ_MAP(map), tokens, ARRAYSIZE(tokens));
+}
+
 // Erase sequences, valid numerical values are 0-2.  If no numeric value is specified, 0 is assumed.
 CStringA GenerateEraseToken()
 {
     const LPSTR tokens[] = { "J", "K" };
     const _fuzz_type_entry<CStringA> map[] =
     {
-        { 10, [](CStringA) { return CStringA(""); } },
+        { 9, [](CStringA) { return CStringA(""); } },
         { 25, [](CStringA) { return CStringA("0"); } },
-        { 32, [](CStringA) { return CStringA("1"); } },
-        { 32, [](CStringA) { return CStringA("2"); } },
+        { 25, [](CStringA) { return CStringA("1"); } },
+        { 25, [](CStringA) { return CStringA("2"); } },
+        { 25, [](CStringA) { return CStringA("3"); } },
         { 1, [](CStringA) { CStringA s; s.AppendFormat("%02d", CFuzzChance::GetRandom<BYTE>()); return s; } }
     };
 
