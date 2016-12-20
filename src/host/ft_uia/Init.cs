@@ -21,7 +21,10 @@ namespace Host.Tests.UIA
         {
             string winAppDriver = Environment.GetEnvironmentVariable("WinAppDriverExe");
             Verify.IsNotNull(winAppDriver, "You must set the environment var 'WinAppDriverExe' with the path to WinAppDriver.exe to run this test.");
+
             Log.Comment($"Attempting to launch WinAppDriver at: {winAppDriver}");
+            Log.Comment($"Working directory: {Environment.CurrentDirectory}");
+
             appDriver = Process.Start(winAppDriver);
         }
 
