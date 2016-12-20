@@ -37,6 +37,7 @@ namespace Conhost.UIA.Tests
 
         public const int timeout = Globals.Timeout;
 
+        public TestContext TestContext { get; set; }
 
         [ClassInitialize]
         public static void ClassSetup(TestContext context)
@@ -63,7 +64,7 @@ namespace Conhost.UIA.Tests
 
                 if (haveVtAppPath)
                 {
-                    using (CmdApp app = new CmdApp(vtAppLocation))
+                    using (CmdApp app = new CmdApp(vtAppLocation, TestContext))
                     {
                         using (ViewportArea area = new ViewportArea(app))
                         {

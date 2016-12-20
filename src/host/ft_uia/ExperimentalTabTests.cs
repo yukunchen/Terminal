@@ -29,6 +29,8 @@ namespace Conhost.UIA.Tests
     [TestClass]
     public class ExperimentalTabTests
     {
+        public TestContext TestContext { get; set; }
+
         public const int timeout = Globals.Timeout;
 
         [TestMethod]
@@ -38,7 +40,7 @@ namespace Conhost.UIA.Tests
             {
                 reg.BackupRegistry(); // manipulating the global v1/v2 state can affect the registry so back it up.
 
-                using (CmdApp app = new CmdApp(CreateType.ProcessOnly))
+                using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
                 {
                     using (PropertiesDialog properties = new PropertiesDialog(app))
                     {
@@ -98,7 +100,7 @@ namespace Conhost.UIA.Tests
             {
                 reg.BackupRegistry();
 
-                using (CmdApp app = new CmdApp(CreateType.ProcessOnly))
+                using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
                 {
                     this.CheckRegistryWritebacks(reg, app, OpenTarget.Defaults);
                     this.CheckRegistryWritebacks(reg, app, OpenTarget.Specifics);
@@ -118,7 +120,7 @@ namespace Conhost.UIA.Tests
                 {
                     shortcut.CreateTempCmdShortcut();
 
-                    using (CmdApp app = new CmdApp(shortcut.ShortcutPath))
+                    using (CmdApp app = new CmdApp(shortcut.ShortcutPath, TestContext))
                     {
                         this.CheckShortcutWritebacks(shortcut, app, OpenTarget.Specifics);
                     }

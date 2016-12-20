@@ -13,14 +13,23 @@ namespace Host.Tests.UIA
     [TestClass]
     class Init
     {
+        static Process appDriver;
+
         [AssemblyInitialize]
-        public static void SetupAll()
+        public static void SetupAll(TestContext context)
         {
             // Must NOT run as admin
             Verify.IsFalse(IsAdmin(), "You must run this test as a standard user. WinAppDriver generally cannot find host windows launched as admin.");
 
-            // Check if WinAppDriver is running.
-            Verify.IsTrue(IsWinAppDriverRunning(), "WinAppDriver server must be running on the local machine to run this test.");
+            string winAppDriver = Environment.GetEnvironmentVariable("WinAppDriverExe");
+            Verify.IsNotNull(winAppDriver, "You must set the environment var 'WinAppDriverExe' with the path to WinAppDriver.exe to run this test.");
+            appDriver = Process.Start(winAppDriver);
+        }
+
+        [AssemblyCleanup]
+        public static void CleanupAll()
+        {
+            appDriver.Kill();
         }
 
         public static bool IsAdmin()
@@ -28,11 +37,6 @@ namespace Host.Tests.UIA
             var identity = WindowsIdentity.GetCurrent();
             var principal = new WindowsPrincipal(identity);
             return principal.IsInRole(WindowsBuiltInRole.Administrator);
-        }
-
-        public static bool IsWinAppDriverRunning()
-        {
-            return Process.GetProcessesByName("WinAppDriver").Count() > 0;
         }
     }
 }
