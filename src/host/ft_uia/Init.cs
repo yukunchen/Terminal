@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
+using WEX.Logging.Interop;
 using WEX.TestExecution;
 using WEX.TestExecution.Markup;
 
@@ -20,6 +21,7 @@ namespace Host.Tests.UIA
         {
             string winAppDriver = Environment.GetEnvironmentVariable("WinAppDriverExe");
             Verify.IsNotNull(winAppDriver, "You must set the environment var 'WinAppDriverExe' with the path to WinAppDriver.exe to run this test.");
+            Log.Comment($"Attempting to launch WinAppDriver at: {winAppDriver}");
             appDriver = Process.Start(winAppDriver);
         }
 
