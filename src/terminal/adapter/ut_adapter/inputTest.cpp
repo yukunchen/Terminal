@@ -5,6 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
+#include <windows.h>
 #include <wextestclass.h>
 #include "..\..\inc\consoletaeftemplates.hpp"
 
@@ -96,6 +97,13 @@ public:
             irTest.Event.KeyEvent.wRepeatCount = 1;
             irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
             irTest.Event.KeyEvent.bKeyDown = TRUE;
+            // MapVirtualKey's return value must be mapped to a wchar_t because
+            // that's what we're requesting from it, there isn't any data loss
+            // from the cast.
+#pragma warning(push)
+#pragma warning(disable:4242)
+            irTest.Event.KeyEvent.uChar.UnicodeChar = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
+#pragma warning(pop)
 
             // Set up expected result
             switch (vkey)
@@ -176,7 +184,7 @@ public:
                 s_pwszInputExpected = L"\x1b[24~";
                 break;
             case VK_CANCEL:
-                s_pwszInputExpected = L"0x3";
+                s_pwszInputExpected = L"\x3";
                 break;
             default:
                 fExpectedKeyHandled = false;
@@ -184,6 +192,11 @@ public:
             }
             if (!fExpectedKeyHandled && (vkey >= '0' && vkey <= 'Z'))
             {
+                // we need to have some sort of string to compare to in the
+                // callback, we'll build it here.
+                static wchar_t keyArr[2] = { 0 };
+                keyArr[0] = vkey;
+                s_pwszInputExpected = keyArr;
                 fExpectedKeyHandled = true;
             }
 
@@ -269,6 +282,7 @@ public:
             // Set up expected result
             switch (vkey)
             {
+            case '@':
             case '2':
                 if (uiKeystate == LEFT_CTRL_PRESSED || uiKeystate == RIGHT_CTRL_PRESSED)
                 {
@@ -370,18 +384,15 @@ public:
                 fModifySequence = true;
                 memcpy(s_pwsInputBuffer, L"\x1b[24;m~", 7 * sizeof(wchar_t));
                 break;
-            case VK_CANCEL:
-                fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"0x3", 1 * sizeof(wchar_t));
-                break;
             default:
                 fExpectedKeyHandled = false;
                 break;
             }
-            if (!fExpectedKeyHandled && (vkey >= '0' && vkey <= 'Z'))
+            if (!fExpectedKeyHandled && ((vkey >= '0' && vkey <= 'Z') || vkey == VK_CANCEL))
             {
                 fExpectedKeyHandled = true;
             }
+
             if (fModifySequence)
             {
                 size_t cch = 0;
