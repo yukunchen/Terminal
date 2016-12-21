@@ -34,15 +34,6 @@
 
 #define MAX_CHARS_FROM_1_KEYSTROKE 6
 
-// The following data structures are a hack to work around the fact that
-// MapVirtualKey does not return the correct virtual key code in many cases.
-// we store the correct info (from the keydown message) in the CONSOLE_KEY_INFO
-// structure when a keydown message is translated. Then when we receive a
-// wm_[sys][dead]char message, we retrieve it and clear out the record.
-
-#define CONSOLE_FREE_KEY_INFO 0
-#define CONSOLE_MAX_KEY_INFO 32
-
 #define DEFAULT_NUMBER_OF_EVENTS 50
 #define INPUT_BUFFER_SIZE_INCREMENT 10
 
@@ -1274,6 +1265,39 @@ void InitEnvironmentVariables()
     InitSideBySide(wchValue, ARRAYSIZE(wchValue));
 }
 
+// this is used to save information from a WM_KEYDOWN/WM_KEYUP/WM_SYSKEYDOWN/WM_SYSKEYUP
+// etc. message so that we can recover it after it's been changed to a WM_CHAR
+// message by TranslateMessage and do the right thing.
+class SavedKeypressMessage
+{
+public:
+    void saveMessage(const MSG msg)
+    {
+        _virtualKeyCode = LOWORD(msg.wParam);
+        _virtualScanCode = LOBYTE(HIWORD(msg.lParam));
+        _hasMessage = true;
+    }
+
+    void getMessage(INPUT_RECORD& inputRecord)
+    {
+        inputRecord.Event.KeyEvent.wVirtualKeyCode = _virtualKeyCode;
+        inputRecord.Event.KeyEvent.wVirtualScanCode = _virtualScanCode;
+        _hasMessage = false;
+    }
+
+    bool HasMessage()
+    {
+        return _hasMessage;
+    }
+
+private:
+    WORD _virtualKeyCode = 0;
+    WORD _virtualScanCode = 0;
+    bool _hasMessage = false;
+}
+
+static SavedKeyInfo;
+
 DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
 {
     InitEnvironmentVariables();
@@ -1298,33 +1322,16 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
             break;
         }
 
-        // special handling to forcibly differentiate between ctrl+c / ctrl+break / VK_CANCEL.
-        // this is to get around the fact that we currently use TranslateMessage
-        // when we should be handling it ourselves. MSFT:9891752 tracks this.
-        const bool controlKeyPressed = IsFlagSet(GetKeyState(VK_LCONTROL), KEY_PRESSED) || IsFlagSet(GetKeyState(VK_RCONTROL), KEY_PRESSED);
-        const WORD virtualScanCode = LOBYTE(HIWORD(msg.lParam));
-        if (controlKeyPressed && msg.message == WM_KEYDOWN && MapVirtualKeyW(virtualScanCode, MAPVK_VSC_TO_VK_EX) == 'C')
+        if (msg.message >= WM_KEYFIRST &&
+            msg.message <= WM_KEYLAST &&
+            msg.message != WM_CHAR &&
+            msg.message != WM_DEADCHAR &&
+            msg.message != WM_SYSCHAR &&
+            msg.message != WM_SYSDEADCHAR)
         {
-            msg.message = WM_CHAR;
-            if (IsInVirtualTerminalInputMode())
-            {
-                msg.wParam = VK_CANCEL;
-            }
-            else
-            {
-                msg.wParam = 'c';
-                msg.lParam = 'C';
-            }
-            DispatchMessageW(&msg);
+            SavedKeyInfo.saveMessage(msg);
         }
-        // need to also handle ctrl+h and VK_BACK special.
-        else if (controlKeyPressed && msg.message == WM_KEYDOWN && MapVirtualKeyW(virtualScanCode, MAPVK_VSC_TO_VK_EX) == 'H')
-        {
-            msg.message = WM_CHAR;
-            msg.wParam = VK_BACK;
-            DispatchMessageW(&msg);
-        }
-        else if (!UserPrivApi::s_TranslateMessageEx(&msg, TM_POSTCHARBREAKS))
+        if (!UserPrivApi::s_TranslateMessageEx(&msg, TM_POSTCHARBREAKS))
         {
             DispatchMessageW(&msg);
         }
@@ -1558,6 +1565,10 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
         }
         InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)wParam;
         InputEvent.Event.KeyEvent.wVirtualKeyCode = LOBYTE(VkKeyScan((WCHAR)wParam));
+        if (SavedKeyInfo.HasMessage())
+        {
+            SavedKeyInfo.getMessage(InputEvent);
+        }
         InputEvent.Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKeyW(InputEvent.Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC);
 
         VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
