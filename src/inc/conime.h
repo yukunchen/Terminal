@@ -50,8 +50,8 @@ typedef __struct_bcount(dwSize) struct _CONIME_UICOMPMESSAGE {
 //
 //unused CONIME_CREATE                   (WM_USER+0)
 //unused CONIME_DESTROY                  (WM_USER+1)
-#define CONIME_SETFOCUS                 (WM_USER+2)
-#define CONIME_KILLFOCUS                (WM_USER+3)
+//unused CONIME_SETFOCUS                 (WM_USER+2)
+//unused CONIME_KILLFOCUS                (WM_USER+3)
 //unused CONIME_HOTKEY                   (WM_USER+4)
 //unused CONIME_GET_NLSMODE              (WM_USER+5)
 //unused CONIME_SET_NLSMODE              (WM_USER+6)

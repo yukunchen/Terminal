@@ -259,7 +259,6 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         // ActivateTextServices does nothing if already active so this is OK to be called every focus.
         ActivateTextServices(g_ciConsoleInformation.hWnd, GetImeSuggestionWindowPos);
-        ConsoleImeMessagePump(CONIME_SETFOCUS, 0, (LPARAM)0);
 
         break;
     }
@@ -277,30 +276,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         HandleFocusEvent(FALSE);
 
-        // This function simply returns false if there isn't an active IME object, so it's safe to call every time.
-        Status = ConsoleImeMessagePump(CONIME_KILLFOCUS, 0, (LPARAM)0);
-
         break;
-    }
-
-    case WM_IME_STARTCOMPOSITION:
-    case WM_IME_ENDCOMPOSITION:
-    case WM_IME_COMPOSITION:
-    case WM_IME_NOTIFY:
-    {
-        // Try to notify the IME. If it succeeds, we processed the message.
-        // If it fails, pass it to the def window proc.
-        if (NotifyTextServices(Message, wParam, lParam, &Status))
-        {
-            break;
-        }
-        goto CallDefWin;
-    }
-
-    case WM_IME_SETCONTEXT:
-    {
-        lParam &= ~ISC_SHOWUIALL;
-        goto CallDefWin;
     }
 
     case WM_PAINT:
@@ -715,44 +691,6 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
     case WM_COPYDATA:
     {
         Status = ImeControl((PCOPYDATASTRUCT)lParam);
-        break;
-    }
-
-    case WM_ENTERMENULOOP:
-    {
-        if (g_ciConsoleInformation.Flags & CONSOLE_HAS_FOCUS)
-        {
-            g_ciConsoleInformation.pInputBuffer->ImeMode.Unavailable = TRUE;
-            Status = ConsoleImeMessagePump(CONIME_KILLFOCUS, 0, 0);
-        }
-        break;
-    }
-
-    case WM_EXITMENULOOP:
-    {
-        if (g_ciConsoleInformation.Flags & CONSOLE_HAS_FOCUS)
-        {
-            Status = ConsoleImeMessagePump(CONIME_SETFOCUS, 0, 0);
-            g_ciConsoleInformation.pInputBuffer->ImeMode.Unavailable = FALSE;
-        }
-        break;
-    }
-
-    case WM_ENTERSIZEMOVE:
-    {
-        if (g_ciConsoleInformation.Flags & CONSOLE_HAS_FOCUS)
-        {
-            g_ciConsoleInformation.pInputBuffer->ImeMode.Unavailable = TRUE;
-        }
-        break;
-    }
-
-    case WM_EXITSIZEMOVE:
-    {
-        if (g_ciConsoleInformation.Flags & CONSOLE_HAS_FOCUS)
-        {
-            g_ciConsoleInformation.pInputBuffer->ImeMode.Unavailable = FALSE;
-        }
         break;
     }
 

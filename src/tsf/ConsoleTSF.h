@@ -22,16 +22,13 @@ Notes:
 
 class CConversionArea;
 
-class CConsoleTSF : 
+class CConsoleTSF sealed:
     public ITfContextOwner,
     public ITfContextOwnerCompositionSink,
     public ITfInputProcessorProfileActivationSink,
     public ITfUIElementSink,
-    public ITfCompartmentEventSink,
     public ITfCleanupContextSink,
-    public ITfCompositionSink,
-    public ITfTextEditSink,
-    public ITfTextLayoutSink
+    public ITfTextEditSink
 {
 public:
     CConsoleTSF(HWND hwndConsole,
@@ -40,16 +37,10 @@ public:
         _pfnPosition(pfnPosition),
         _cRef(1)
     {
-        _pConsoleTable = NULL;
     }
 
-    virtual ~CConsoleTSF() 
-    { 
-        if (_pConsoleTable)
-        {
-            delete _pConsoleTable;
-            _pConsoleTable = NULL;
-        }
+    virtual ~CConsoleTSF()
+    {
     }
     HRESULT Initialize();
     void    Uninitialize();
@@ -61,8 +52,8 @@ public:
     STDMETHODIMP_(ULONG) Release(void);
 
     // ITfContextOwner
-    STDMETHODIMP GetACPFromPoint(const POINT*, DWORD, LONG *pCP) 
-    { 
+    STDMETHODIMP GetACPFromPoint(const POINT*, DWORD, LONG *pCP)
+    {
         if (pCP)
         {
             *pCP = 0;
@@ -72,8 +63,8 @@ public:
     }
 
 
-    STDMETHODIMP GetScreenExt(RECT *pRect) 
-    { 
+    STDMETHODIMP GetScreenExt(RECT *pRect)
+    {
         if (pRect)
         {
             *pRect = _pfnPosition();
@@ -96,7 +87,7 @@ public:
 
         return S_OK;
     }
-    
+
     STDMETHODIMP GetStatus(TF_STATUS *pTfStatus)
     {
         if (pTfStatus)
@@ -106,12 +97,12 @@ public:
         }
         return pTfStatus ? S_OK : E_INVALIDARG;
     }
-    STDMETHODIMP GetWnd(HWND* phwnd) 
-    { 
+    STDMETHODIMP GetWnd(HWND* phwnd)
+    {
         *phwnd = _hwndConsole;
-        return E_NOTIMPL; 
+        return S_OK;
     }
-    STDMETHODIMP GetAttribute(REFGUID,  VARIANT*) 
+    STDMETHODIMP GetAttribute(REFGUID,  VARIANT*)
     { return E_NOTIMPL; }
 
     // ITfContextOwnerCompositionSink methods
@@ -119,11 +110,8 @@ public:
     STDMETHODIMP OnUpdateComposition(ITfCompositionView *pComposition, ITfRange *pRangeNew);
     STDMETHODIMP OnEndComposition(ITfCompositionView* pComposition);
 
-    // ITfCompositionSink methods
-    STDMETHODIMP OnCompositionTerminated(TfEditCookie ecWrite, ITfComposition* pComposition);
-
     // ITfInputProcessorProfileActivationSink
-    STDMETHODIMP OnActivated(DWORD dwProfileType, LANGID langid, REFCLSID clsid, 
+    STDMETHODIMP OnActivated(DWORD dwProfileType, LANGID langid, REFCLSID clsid,
                              REFGUID catid, REFGUID guidProfile, HKL hkl, DWORD dwFlags);
 
     // ITfUIElementSink methods
@@ -131,39 +119,29 @@ public:
     STDMETHODIMP UpdateUIElement(DWORD dwUIELementId);
     STDMETHODIMP EndUIElement(DWORD dwUIELementId);
 
-    // ITfCompartmentEventSink
-    STDMETHODIMP OnChange(REFGUID rguid);
-
     // ITfCleanupContextSink methods
     STDMETHODIMP OnCleanupContext(TfEditCookie ecWrite, ITfContext *pic);
 
     // ITfTextEditSink methods
     STDMETHODIMP OnEndEdit(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord);
 
-    // ITfTextLayoutSink methods
-    STDMETHODIMP OnLayoutChange(ITfContext* /*pic*/, TfLayoutCode /*lcode*/, ITfContextView* /*pView*/)
-    { return E_NOTIMPL; }
-
 public:
     CConversionArea* CreateConversionArea();
     CConversionArea* GetConversionArea() { return _pConversionArea; }
     ITfContext* GetInputContext() { return _spITfInputContext; }
-    KEYBOARD_LAYOUT_INFO* GetLayoutInfo() { return &_KeyboardLayoutInfo; }
-    HRESULT GetLanguageProfileDescription(BSTR* pbstrProfileDescription);
     HWND GetConsoleHwnd() { return _hwndConsole; }
     TfClientId GetTfClientId() { return _tid; }
     BOOL IsInComposition() { return (_cCompositions > 0); }
     void OnEditSession() { _fEditSessionRequested = FALSE; }
     BOOL IsPendingCompositionCleanup() { return _fCleanupSessionRequested || _fCompositionCleanupSkipped; }
-    void OnCompositionCleanup(BOOL bSucceeded) 
-    { 
+    void OnCompositionCleanup(BOOL bSucceeded)
+    {
         _fCleanupSessionRequested = FALSE;
         _fCompositionCleanupSkipped = !bSucceeded;
     }
     void SetModifyingDocFlag(BOOL fSet) { _fModifyingDoc = fSet; }
-    BOOL HasFocus() { return _fHasFocus ? TRUE : FALSE; }
-    void SetFocus(BOOL fSet) 
-    { 
+    void SetFocus(BOOL fSet)
+    {
         if (!fSet && _cCompositions)
         {
             // Close (terminate) any open compositions when losing the input focus.
@@ -173,20 +151,13 @@ public:
                 spCompositionServices->TerminateComposition(NULL);
             }
         }
-        _fHasFocus = fSet; 
     }
 
-    // IMM32 event handlers
-    void OnStartIMM32Composition();
-    void OnUpdateIMM32Composition(WPARAM CompChar, LPARAM CompFlag);
-    void OnEndIMM32Composition();
-    BOOL OnImeNotify(WPARAM wParam, LPARAM lParam);
-    
-    // A workaround for a MS Korean IME scenario where the IME appends a whitespace 
-    // composition programmatically right after completing a keyboard input composition. 
-    // Since post-composition clean-up is an async operation, the programmatic whitespace 
+    // A workaround for a MS Korean IME scenario where the IME appends a whitespace
+    // composition programmatically right after completing a keyboard input composition.
+    // Since post-composition clean-up is an async operation, the programmatic whitespace
     // composition gets completed before the previous composition cleanup happened,
-    // and this results in a double insertion of the first composition. To avoid that, we'll 
+    // and this results in a double insertion of the first composition. To avoid that, we'll
     // store the length of the last completed composition here until it's cleaned up.
     // (for simplicity, this patch doesn't provide a generic solution for all possible
     // scenarios with subsequent synchronous compositions, only for the known 'append').
@@ -194,16 +165,10 @@ public:
     void SetCompletedRangeLength(long cch) { _cchCompleted = cch; }
 
 private:
-    ITfUIElement *GetUIElement(DWORD dwUIElementId);
-    HRESULT GetCompartment(REFGUID rguidComp, ITfCompartment **ppComp);
-    HRESULT AdviseCompartmentSink(REFGUID rguidComp, DWORD* pdwCookie);
-    HRESULT UnadviseCompartmentSink(REFGUID rguidComp, DWORD* pdwCookie);
-    HRESULT SetCompartmentDWORD(REFGUID rguidComp, DWORD dw);
-    HRESULT GetCompartmentDWORD(REFGUID rguidComp, DWORD *pdw);
-    HRESULT OnUpdateComposition();
-    HRESULT OnCompleteComposition();
-    BOOL HasCompositionChanged(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord);
-    
+    HRESULT _OnUpdateComposition();
+    HRESULT _OnCompleteComposition();
+    BOOL _HasCompositionChanged(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord);
+
 private:
     // ref count.
     DWORD _cRef;
@@ -213,7 +178,6 @@ private:
     CComPtr<ITfThreadMgrEx> _spITfThreadMgr;
     CComPtr<ITfDocumentMgr> _spITfDocumentMgr;
     CComPtr<ITfContext>     _spITfInputContext;
-    CComPtr<ITfInputProcessorProfiles> _spITfProfiles;
 
     // Event sink cookies.
     DWORD   _dwContextOwnerCookie;
@@ -223,21 +187,14 @@ private:
 
     // Conversion area object for the languages.
     CConversionArea*        _pConversionArea;
-    
-    // Active keyboard layout info.
-    KEYBOARD_LAYOUT_INFO    _KeyboardLayoutInfo;
 
     // Console info.
-    HWND    _hwndConsole;      
+    HWND    _hwndConsole;
     GetSuggestionWindowPos _pfnPosition;
 
-    // IMM32 composition stuff.
-    CConsoleTable* _pConsoleTable;
-
     // Miscellaneous flags
-    BOOL _fHasFocus : 1;
     BOOL _fModifyingDoc : 1;            // Set TRUE, when calls ITfRange::SetText
-    BOOL _fCoInitialized : 1; 
+    BOOL _fCoInitialized : 1;
     BOOL _fEditSessionRequested : 1;
     BOOL _fCleanupSessionRequested : 1;
     BOOL _fCompositionCleanupSkipped : 1;
@@ -247,4 +204,3 @@ private:
 };
 
 extern CConsoleTSF* g_pConsoleTSF;
-

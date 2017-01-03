@@ -679,10 +679,10 @@ NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct)
             }
             break;
         case CI_ONSTARTCOMPOSITION:
-            g_ciConsoleInformation.pInputBuffer->ImeMode.InComposition = TRUE;
+            g_ciConsoleInformation.pInputBuffer->fInComposition = TRUE;
             break;
         case CI_ONENDCOMPOSITION:
-            g_ciConsoleInformation.pInputBuffer->ImeMode.InComposition = FALSE;
+            g_ciConsoleInformation.pInputBuffer->fInComposition = FALSE;
             break;
     }
 

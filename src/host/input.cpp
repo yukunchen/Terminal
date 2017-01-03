@@ -116,11 +116,7 @@ NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ PINPUT_INFORMATION pInp
     pInputInfo->In = (ULONG_PTR) pInputInfo->InputBuffer;
     pInputInfo->Out = (ULONG_PTR) pInputInfo->InputBuffer;
     pInputInfo->Last = (ULONG_PTR) pInputInfo->InputBuffer + BufferSize;
-    pInputInfo->ImeMode.Disable = FALSE;
-    pInputInfo->ImeMode.Unavailable = FALSE;
-    pInputInfo->ImeMode.Open = FALSE;
-    pInputInfo->ImeMode.ReadyConversion = FALSE;
-    pInputInfo->ImeMode.InComposition = FALSE;
+    pInputInfo->fInComposition = false;
 
     ZeroMemory(&pInputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
     ZeroMemory(&pInputInfo->WriteConInpDbcsLeadByte, sizeof(INPUT_RECORD));
@@ -1723,14 +1719,6 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
         !IsSystemKey(VirtualKeyCode))
     {
         g_ciConsoleInformation.pWindow->SendNotifyBeep();
-        return;
-    }
-
-    // IME stuff
-    if (!(g_ciConsoleInformation.pInputBuffer->ImeMode.Disable) &&
-        !g_ciConsoleInformation.pInputBuffer->ImeMode.Unavailable &&
-        g_ciConsoleInformation.pInputBuffer->ImeMode.InComposition)
-    {
         return;
     }
 

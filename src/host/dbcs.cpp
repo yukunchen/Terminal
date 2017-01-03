@@ -21,8 +21,6 @@
 
 #pragma hdrstop
 
-NTSTATUS ConsoleImeMessagePumpWorker(UINT Message, WPARAM wParam, LPARAM lParam, LRESULT * lplResult);
-
 // Routine Description:
 // - This routine setup of line character code.
 // Arguments:
@@ -496,32 +494,6 @@ BOOL IsAvailableEastAsianCodePage(_In_ UINT const uiCodePage)
     default:
         return false;
     }
-}
-
-/*
- * Console IME message pump.
- *
- * Note for NT5 --- this function is build on bogus assumptions
- * (also has some nasty workaround for sloppy conime).
- * There's a chance that pConsole goes away while sendmessage
- * is processed by conime.
- * Keep in mind, anybody who calls this function should validate
- * the return status as appropriate.
- */
-
-NTSTATUS ConsoleImeMessagePumpWorker(UINT Message, WPARAM wParam, LPARAM lParam, LRESULT * lplResult)
-{
-    *lplResult = 0;
-    NotifyTextServices(Message, wParam, lParam, lplResult);
-
-    return STATUS_SUCCESS;
-}
-
-NTSTATUS ConsoleImeMessagePump(_In_ const UINT msg, _In_ const WPARAM wParam, _In_ const LPARAM lParam)
-{
-    LRESULT lResultDummy;
-
-    return ConsoleImeMessagePumpWorker(msg, wParam, lParam, &lResultDummy);
 }
 
 _Ret_range_(0, cbAnsi)
