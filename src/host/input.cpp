@@ -1271,21 +1271,21 @@ void InitEnvironmentVariables()
 class SavedKeypressMessage
 {
 public:
-    void saveMessage(const MSG msg)
+    void Save(_In_ const MSG msg)
     {
         _virtualKeyCode = LOWORD(msg.wParam);
         _virtualScanCode = LOBYTE(HIWORD(msg.lParam));
         _hasMessage = true;
     }
 
-    void getMessage(INPUT_RECORD& inputRecord)
+    void Get(_Inout_ INPUT_RECORD& inputRecord)
     {
         inputRecord.Event.KeyEvent.wVirtualKeyCode = _virtualKeyCode;
         inputRecord.Event.KeyEvent.wVirtualScanCode = _virtualScanCode;
         _hasMessage = false;
     }
 
-    bool HasMessage()
+    bool IsSaved()
     {
         return _hasMessage;
     }
@@ -1322,6 +1322,16 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
             break;
         }
 
+        // --- LOAD BEARING CODE ---
+        // Under circumstances where we have a control type character (one that isn't necessarily printable
+        // and may represent some special function of the application rather than a printable sequence)...
+        // We will need to save the entire context of the original message on WM_KEYDOWN/WM_KEYUP to be 
+        // reconstituted later during the handling of the actual WM_CHAR message.
+        // This is because we will need the raw original scan code, raw original virtual key code,
+        // and initial character intepretation of the message to accurately satisfy what the underlying
+        // application desires. TranslateMessage's work to convert WM_KEYDOWN/WM_KEYUP to WM_CHAR can obscure
+        // or otherwise lose some of this context that will make us unable to replicate the originally intended
+        // input behavior to the client application.
         if (msg.message >= WM_KEYFIRST &&
             msg.message <= WM_KEYLAST &&
             msg.message != WM_CHAR &&
@@ -1329,8 +1339,10 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
             msg.message != WM_SYSCHAR &&
             msg.message != WM_SYSDEADCHAR)
         {
-            SavedKeyInfo.saveMessage(msg);
+            SavedKeyInfo.Save(msg);
         }
+        // --- END LOAD BEARING CODE ---
+
         if (!UserPrivApi::s_TranslateMessageEx(&msg, TM_POSTCHARBREAKS))
         {
             DispatchMessageW(&msg);
@@ -1565,10 +1577,25 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
         }
         InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)wParam;
         InputEvent.Event.KeyEvent.wVirtualKeyCode = LOBYTE(VkKeyScan((WCHAR)wParam));
-        if (SavedKeyInfo.HasMessage())
+
+        // --- LOAD BEARING CODE ---
+        // Note: In some circumstances, specifically when an application is attempting to interpret
+        // keystrokes for a particular key-chord like Ctrl+C, Ctrl+Z, etc...
+        // That application will need the full context that was given to us with the initial WM_KEYDOWN message
+        // including the original scan code and the original virtual key and character interpretation at that time.
+        // This is prior to the translation that occurs when the WM_KEYDOWN message is fed into TranslateMessageEx,
+        // converted by the system, and sent to us again later as a WM_CHAR where it may have a different interpretation
+        // or be missing some of this original contextual data. (a.k.a. it is in a format where it can no longer be accurately
+        // recreated using the MapVirtualKey suite of functions.)
+        // 
+        // As such, if we had determined that we needed to save the original message when it came in to hold such contextual data...
+        // restore it now so the remainder of the input handling routine can appropriately adapt itself for the input.
+        if (SavedKeyInfo.IsSaved())
         {
-            SavedKeyInfo.getMessage(InputEvent);
+            SavedKeyInfo.Get(InputEvent);
         }
+        // --- END LOAD BEARING CODE ---
+
         InputEvent.Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKeyW(InputEvent.Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC);
 
         VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
