@@ -168,7 +168,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         // the same client rendering that we have now.
 
         // First retrieve the new DPI and the current DPI.
-        DWORD const dpiProposed = HIWORD(wParam);
+        DWORD const dpiProposed = (WORD)wParam;
         DWORD const dpiCurrent = g_dpi;
 
         // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
@@ -193,18 +193,18 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         s_CalculateWindowRect(coordWindowInChars, dpiProposed, coordFontProposed, coordBufferSize, hWnd, &rectProposed);
 
         // Prepare where we're going to keep our final suggestion.
-        SIZE szSuggestion = { 0 };
+        SIZE* const pSuggestionSize = (SIZE*)lParam;
 
-        szSuggestion.cx = RECT_WIDTH(&rectProposed);
-        szSuggestion.cy = RECT_HEIGHT(&rectProposed);
+        pSuggestionSize->cx = RECT_WIDTH(&rectProposed);
+        pSuggestionSize->cy = RECT_HEIGHT(&rectProposed);
 
         // Store the fact that we suggested this size to see if it's what WM_DPICHANGED gives us back later.
         _iSuggestedDpi = dpiProposed;
-        _sizeSuggested = szSuggestion;
+        _sizeSuggested = *pSuggestionSize;
 
         // Format our final suggestion for consumption.
         UnlockConsole();
-        return MAKELONG(szSuggestion.cx, szSuggestion.cy);
+        return TRUE;
     }
 
     case WM_DPICHANGED:

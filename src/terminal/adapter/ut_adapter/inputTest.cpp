@@ -5,6 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
+#include <windows.h>
 #include <wextestclass.h>
 #include "..\..\inc\consoletaeftemplates.hpp"
 
@@ -58,7 +59,7 @@ public:
             }
         }
     }
-  
+
     static void s_TerminalInputTestNullCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
     {
         if (VERIFY_ARE_EQUAL((DWORD)1, cInput, L"Verify expected and actual input array lengths matched."))
@@ -96,6 +97,13 @@ public:
             irTest.Event.KeyEvent.wRepeatCount = 1;
             irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
             irTest.Event.KeyEvent.bKeyDown = TRUE;
+            // MapVirtualKey's return value must be mapped to a wchar_t because
+            // that's what we're requesting from it, there isn't any data loss
+            // from the cast.
+#pragma warning(push)
+#pragma warning(disable:4242)
+            irTest.Event.KeyEvent.uChar.UnicodeChar = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
+#pragma warning(pop)
 
             // Set up expected result
             switch (vkey)
@@ -175,12 +183,20 @@ public:
             case VK_F12:
                 s_pwszInputExpected = L"\x1b[24~";
                 break;
+            case VK_CANCEL:
+                s_pwszInputExpected = L"\x3";
+                break;
             default:
                 fExpectedKeyHandled = false;
                 break;
             }
             if (!fExpectedKeyHandled && (vkey >= '0' && vkey <= 'Z'))
             {
+                // we need to have some sort of string to compare to in the
+                // callback, we'll build it here.
+                static wchar_t keyArr[2] = { 0 };
+                keyArr[0] = vkey;
+                s_pwszInputExpected = keyArr;
                 fExpectedKeyHandled = true;
             }
 
@@ -239,7 +255,7 @@ public:
     {
         Log::Comment(L"Starting test...");
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0001, 0x0002, 0x0004, 0x0008, 0x0010}") 
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0001, 0x0002, 0x0004, 0x0008, 0x0010}")
         END_TEST_METHOD_PROPERTIES()
 
 
@@ -266,6 +282,7 @@ public:
             // Set up expected result
             switch (vkey)
             {
+            case '@':
             case '2':
                 if (uiKeystate == LEFT_CTRL_PRESSED || uiKeystate == RIGHT_CTRL_PRESSED)
                 {
@@ -371,10 +388,11 @@ public:
                 fExpectedKeyHandled = false;
                 break;
             }
-            if (!fExpectedKeyHandled && (vkey >= '0' && vkey <= 'Z'))
+            if (!fExpectedKeyHandled && ((vkey >= '0' && vkey <= 'Z') || vkey == VK_CANCEL))
             {
                 fExpectedKeyHandled = true;
             }
+
             if (fModifySequence)
             {
                 size_t cch = 0;
@@ -389,10 +407,10 @@ public:
             }
             s_pwszInputExpected = s_pwsInputBuffer;
             Log::Comment(NoThrowString().Format(L"Expected, Buffer = \"%s\", \"%s\"", s_pwszInputExpected, s_pwsInputBuffer));
-            
+
             // Send key into object (will trigger callback and verification)
             VERIFY_ARE_EQUAL(fExpectedKeyHandled, pInput->HandleKey(&irTest), L"Verify key was handled if it should have been.");
-    
+
         }
     }
 
@@ -408,17 +426,16 @@ public:
 
         BYTE vkey = '2';
         Log::Comment(NoThrowString().Format(L"Testing Key 0x%x", vkey));
-        
+
         INPUT_RECORD irTest = { 0 };
         irTest.EventType = KEY_EVENT;
         irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
         irTest.Event.KeyEvent.wRepeatCount = 1;
         irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
         irTest.Event.KeyEvent.bKeyDown = TRUE;
-        
+
         // Send key into object (will trigger callback and verification)
         VERIFY_ARE_EQUAL(true, pInput->HandleKey(&irTest), L"Verify key was handled if it should have been.");
-        
+
     }
 };
-

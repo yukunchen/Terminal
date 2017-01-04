@@ -19,7 +19,7 @@ Author(s):
 #define GWL_CONSOLE_WNDALLOC (3 * sizeof(DWORD))
 
 // Used for pre-resize querying of the new scaled size of a window when the DPI is about to change.
-#define WM_GETDPISCALEDSIZE             0x02E1
+#define WM_GETDPISCALEDSIZE             0x02E4
 
 class UserPrivApi sealed
 {
