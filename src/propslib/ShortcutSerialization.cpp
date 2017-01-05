@@ -294,7 +294,7 @@ NTSTATUS ShortcutSerialization::s_GetLinkValues(_Inout_ PCONSOLE_STATE_INFO pSta
 
         if (SUCCEEDED(hr) && pwHotKey)
         {
-            hr = psl->GetHotkey(reinterpret_cast<WORD*>(pwHotKey));
+            hr = psl->GetHotkey(pwHotKey);
         }
 
         if (SUCCEEDED(hr))

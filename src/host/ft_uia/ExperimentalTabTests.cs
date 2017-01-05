@@ -120,7 +120,7 @@ namespace Conhost.UIA.Tests
                 {
                     shortcut.CreateTempCmdShortcut();
 
-                    using (CmdApp app = new CmdApp(shortcut.ShortcutPath, TestContext))
+                    using (CmdApp app = new CmdApp(CreateType.ShortcutFile, TestContext, shortcut.ShortcutPath))
                     {
                         this.CheckShortcutWritebacks(shortcut, app, OpenTarget.Specifics);
                     }

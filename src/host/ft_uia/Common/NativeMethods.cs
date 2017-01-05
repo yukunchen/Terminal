@@ -688,6 +688,12 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
             public string cAlternateFileName;
         }
 
+        public enum STARTF : Int32
+        {
+            STARTF_TITLEISLINKNAME = 0x00000800
+        }
+
+
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         public struct STARTUPINFO
         {
@@ -702,7 +708,7 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
             public Int32 dwXCountChars;
             public Int32 dwYCountChars;
             public Int32 dwFillAttribute;
-            public Int32 dwFlags;
+            public STARTF dwFlags;
             public Int16 wShowWindow;
             public Int16 cbReserved2;
             public IntPtr lpReserved2;

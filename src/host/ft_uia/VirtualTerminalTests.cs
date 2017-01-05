@@ -64,7 +64,7 @@ namespace Conhost.UIA.Tests
 
                 if (haveVtAppPath)
                 {
-                    using (CmdApp app = new CmdApp(vtAppLocation, TestContext))
+                    using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext, vtAppLocation))
                     {
                         using (ViewportArea area = new ViewportArea(app))
                         {

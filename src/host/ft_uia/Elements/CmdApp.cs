@@ -49,16 +49,15 @@ namespace Conhost.UIA.Tests.Elements
 
         private TestContext context;
 
-        public CmdApp(CreateType type, TestContext context)
+        public CmdApp(CreateType type, TestContext context, string pathOverride = "")
         {
             this.context = context;
-            this.CreateCmdProcess(type);
+            this.CreateCmdProcess(type, pathOverride);
         }
 
-        public CmdApp(string path, TestContext context)
+        public CmdApp(string path, string linkpath, TestContext context)
         {
-            this.context = context;
-            this.CreateCmdProcess(path);
+
         }
 
         ~CmdApp()
@@ -225,7 +224,7 @@ namespace Conhost.UIA.Tests.Elements
             }
         }
 
-        private void CreateCmdProcess(string path)
+        private void CreateCmdProcess(string path, string link = "")
         {
             string WindowTitleToFind = "Host.Tests.UIA window under test";
 
@@ -241,6 +240,13 @@ namespace Conhost.UIA.Tests.Elements
 
             WinBase.STARTUPINFO si = new WinBase.STARTUPINFO();
             si.cb = Marshal.SizeOf(si);
+
+            // If we were given a LNK file to startup with, set the STARTUPINFO structure to pass that information in to the console host.
+            if (!string.IsNullOrEmpty(link))
+            {
+                si.dwFlags |= WinBase.STARTF.STARTF_TITLEISLINKNAME;
+                si.lpTitle = link;
+            }
 
             WinBase.PROCESS_INFORMATION pi = new WinBase.PROCESS_INFORMATION();
 
@@ -324,23 +330,33 @@ namespace Conhost.UIA.Tests.Elements
             Verify.IsNotNull(this.hStdOut, "Ensure output handle is valid.");
         }
 
-        private void CreateCmdProcess(CreateType type)
+        private void CreateCmdProcess(CreateType type, string pathOverride = "")
         {
-            string path = string.Empty;
-
             switch (type)
             {
                 case CreateType.ProcessOnly:
-                    path = binPath;
+                    if (!string.IsNullOrEmpty(pathOverride))
+                    {
+                        this.CreateCmdProcess(pathOverride);
+                    }
+                    else
+                    {
+                        this.CreateCmdProcess(binPath);
+                    }
                     break;
                 case CreateType.ShortcutFile:
-                    path = linkPath;
+                    if (!string.IsNullOrEmpty(pathOverride))
+                    {
+                        this.CreateCmdProcess(binPath, pathOverride);
+                    }
+                    else
+                    {
+                        this.CreateCmdProcess(binPath, linkPath);
+                    }
                     break;
                 default:
                     throw new NotImplementedException(AutoHelpers.FormatInvariant("CreateType '{0}' not implemented.", type.ToString()));
             }
-
-            this.CreateCmdProcess(path);
         }
 
         private void ExitCmdProcess()
