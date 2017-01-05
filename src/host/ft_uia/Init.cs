@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Security.Principal;
 using System.Text;
@@ -19,8 +20,8 @@ namespace Host.Tests.UIA
         [AssemblyInitialize]
         public static void SetupAll(TestContext context)
         {
-            string winAppDriver = Environment.GetEnvironmentVariable("WinAppDriverExe");
-            Verify.IsNotNull(winAppDriver, "You must set the environment var 'WinAppDriverExe' with the path to WinAppDriver.exe to run this test.");
+            Log.Comment("Searching for WinAppDriver in the same directory where this test was launched from...");
+            string winAppDriver = Path.Combine(context.TestDeploymentDir, "WinAppDriver.exe");
 
             Log.Comment($"Attempting to launch WinAppDriver at: {winAppDriver}");
             Log.Comment($"Working directory: {Environment.CurrentDirectory}");
