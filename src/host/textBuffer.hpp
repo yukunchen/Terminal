@@ -267,6 +267,9 @@ public:
     void SetCurrentFont(_In_ const FontInfo* const pfiNewFont);
     FontInfo* GetCurrentFont();
 
+    void SetDesiredFont(_In_ const FontInfoDesired* const pfiNewFont);
+    FontInfoDesired* GetDesiredFont();
+
     Cursor* const GetCursor() const;
 
     const SHORT GetFirstRowIndex() const;
@@ -293,6 +296,7 @@ private:
     COORD _coordBufferSize; // TODO: can we just measure the number of rows and/or their allocated width for this?
 
     FontInfo _fiCurrentFont;
+    FontInfoDesired _fiDesiredFont;
 
     TEXT_BUFFER_INFO(_In_ const FontInfo* const pfiFont);
     UINT _TotalRowCount() const;

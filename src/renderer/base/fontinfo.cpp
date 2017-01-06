@@ -11,27 +11,47 @@
 #define DEFAULT_TT_FONT_FACENAME L"__DefaultTTFont__"
 #define DEFAULT_RASTER_FONT_FACENAME L"Terminal"
 
-FontInfo::FontInfo(_In_ PCWSTR const pwszFaceName,
-                   _In_ BYTE const bFamily,
-                   _In_ LONG const lWeight,
-                   _In_ COORD const coordSize,
-                   _In_ UINT const uiCodePage) :
-                   _bFamily(bFamily),
-                   _lWeight(lWeight),
-                   _uiCodePage(uiCodePage),
-                   _coordSize(coordSize),
-                   _coordSizeUnscaled(coordSize)
+FontInfoBase::FontInfoBase(_In_ PCWSTR const pwszFaceName,
+                           _In_ BYTE const bFamily,
+                           _In_ LONG const lWeight,
+                           _In_ UINT const uiCodePage) :
+                           _bFamily(bFamily),
+                           _lWeight(lWeight),
+                           _uiCodePage(uiCodePage)
 {
     wcscpy_s(_pwszFaceName, ARRAYSIZE(_pwszFaceName), pwszFaceName);
 
     ValidateFont();
 }
 
-FontInfo::~FontInfo()
+FontInfo::FontInfo(_In_ PCWSTR const pwszFaceName,
+                   _In_ BYTE const bFamily,
+                   _In_ LONG const lWeight,
+                   _In_ COORD const coordSize,
+                   _In_ UINT const uiCodePage) :
+                   FontInfoBase(pwszFaceName, bFamily, lWeight, uiCodePage),
+                   _coordSize(coordSize),
+                   _coordSizeUnscaled(coordSize)
+{
+    ValidateFont();
+}
+
+FontInfo::FontInfo(_In_ const FontInfo& fiFont) :
+                   FontInfoBase(fiFont.GetFaceName(),
+                                fiFont.GetFamily(),
+                                fiFont.GetWeight(),
+                                fiFont.GetCodePage()),
+                   _coordSize(fiFont.GetSize()),
+                   _coordSizeUnscaled(fiFont.GetUnscaledSize())
+{
+
+}
+
+FontInfoBase::~FontInfoBase()
 {
 }
 
-BYTE FontInfo::GetFamily() const
+BYTE FontInfoBase::GetFamily() const
 {
     return _bFamily;
 }
@@ -41,9 +61,9 @@ COORD FontInfo::GetUnscaledSize() const
     return _coordSizeUnscaled;
 }
 
-COORD FontInfo::GetEngineSize() const
+COORD FontInfoDesired::GetEngineSize() const
 {
-    COORD coordSize = _coordSizeUnscaled;
+    COORD coordSize = _coordSizeDesired;
     if (IsTrueTypeFont())
     {
         coordSize.X = 0; // Don't tell the engine about the width for a TrueType font. It makes a mess.
@@ -57,22 +77,22 @@ COORD FontInfo::GetSize() const
     return _coordSize;
 }
 
-LONG FontInfo::GetWeight() const
+LONG FontInfoBase::GetWeight() const
 {
     return _lWeight;
 }
 
-PCWCHAR FontInfo::GetFaceName() const
+PCWCHAR FontInfoBase::GetFaceName() const
 {
     return (PCWCHAR)_pwszFaceName;
 }
 
-UINT FontInfo::GetCodePage() const
+UINT FontInfoBase::GetCodePage() const
 {
     return _uiCodePage;
 }
 
-BYTE FontInfo::GetCharSet() const
+BYTE FontInfoBase::GetCharSet() const
 {
     CHARSETINFO csi;
 
@@ -87,22 +107,32 @@ BYTE FontInfo::GetCharSet() const
 }
 
 // NOTE: this method is intended to only be used from the engine itself to respond what font it has chosen.
+void FontInfoBase::SetFromEngine(_In_ PCWSTR const pwszFaceName,
+                                 _In_ BYTE const bFamily,
+                                 _In_ LONG const lWeight)
+{
+    wcscpy_s(_pwszFaceName, ARRAYSIZE(_pwszFaceName), pwszFaceName);
+    _bFamily = bFamily;
+    _lWeight = lWeight;
+}
+
 void FontInfo::SetFromEngine(_In_ PCWSTR const pwszFaceName,
                              _In_ BYTE const bFamily,
                              _In_ LONG const lWeight,
                              _In_ COORD const coordSize,
                              _In_ COORD const coordSizeUnscaled)
 {
-    wcscpy_s(_pwszFaceName, ARRAYSIZE(_pwszFaceName), pwszFaceName);
-    _bFamily = bFamily;
-    _lWeight = lWeight;
+    FontInfoBase::SetFromEngine(pwszFaceName,
+                                bFamily,
+                                lWeight);
+
     _coordSize = coordSize;
     _coordSizeUnscaled = coordSizeUnscaled;
 
     _ValidateCoordSize();
 }
 
-void FontInfo::ValidateFont()
+void FontInfoBase::ValidateFont()
 {
     // If we were given a blank name, it meant raster fonts, which to us is always Terminal.
     if (wcsnlen_s(_pwszFaceName, ARRAYSIZE(_pwszFaceName)) == 0)
@@ -121,12 +151,23 @@ void FontInfo::ValidateFont()
             }
         }
     }
+}
+
+void FontInfo::ValidateFont()
+{
+    FontInfoBase::ValidateFont();
 
     _ValidateCoordSize();
 }
 
 void FontInfo::_ValidateCoordSize()
 {
+    // Initialize X to 1 so we don't divide by 0
+    if (_coordSize.X == 0)
+    {
+        _coordSize.X = 1;
+    }
+
     // If we have no font size, we want to use 8x12 by default
     if (_coordSize.Y == 0)
     {
@@ -137,14 +178,39 @@ void FontInfo::_ValidateCoordSize()
     }
 }
 
-bool FontInfo::IsTrueTypeFont() const
+bool FontInfoBase::IsTrueTypeFont() const
 {
     return (_bFamily & TMPF_TRUETYPE) != 0;
 }
 
 Microsoft::Console::Render::IFontDefaultList* FontInfo::s_pFontDefaultList;
 
-void FontInfo::s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList)
+void FontInfoBase::s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList)
 {
     s_pFontDefaultList = pFontDefaultList;
 }
+
+void FontInfo::s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList)
+{
+    FontInfoBase::s_SetFontDefaultList(pFontDefaultList);
+}
+
+FontInfoDesired::FontInfoDesired(_In_ PCWSTR const pwszFaceName,
+                                 _In_ BYTE const bFamily,
+                                 _In_ LONG const lWeight,
+                                 _In_ COORD const coordSizeDesired,
+                                 _In_ UINT const uiCodePage) :
+                                 FontInfoBase(pwszFaceName, bFamily, lWeight, uiCodePage),
+                                 _coordSizeDesired(coordSizeDesired)
+{
+}
+
+FontInfoDesired::FontInfoDesired(_In_ const FontInfo& fiFont) :
+                                 FontInfoBase(fiFont.GetFaceName(),
+                                              fiFont.GetFamily(),
+                                              fiFont.GetWeight(),
+                                              fiFont.GetCodePage()),
+                                 _coordSizeDesired(fiFont.GetUnscaledSize())
+{
+}
+
