@@ -19,7 +19,10 @@ FontInfoBase::FontInfoBase(_In_ PCWSTR const pwszFaceName,
                            _lWeight(lWeight),
                            _uiCodePage(uiCodePage)
 {
-    wcscpy_s(_pwszFaceName, ARRAYSIZE(_pwszFaceName), pwszFaceName);
+    if (nullptr != pwszFaceName)
+    {
+        wcscpy_s(_pwszFaceName, ARRAYSIZE(_pwszFaceName), pwszFaceName);
+    }
 
     ValidateFont();
 }
