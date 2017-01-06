@@ -321,6 +321,10 @@ void StateMachine::_ActionEscDispatch(_In_ wchar_t const wch)
             fSuccess = _pDispatch->HorizontalTabSet();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::HTS);
             break;
+        case VTActionCodes::RIS_ResetToInitialState:
+            fSuccess = _pDispatch->HardReset();
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::RIS);
+            break;
         }
     }
     else if (_cIntermediate == 1)
@@ -1423,16 +1427,11 @@ bool StateMachine::_GetEraseOperation(_Out_ TermDispatch::EraseType* const pEras
 
         switch (usParam)
         {
-        case 0:
-            *pEraseType = TermDispatch::EraseType::ToEnd;
-            fSuccess = true;
-            break;
-        case 1:
-            *pEraseType = TermDispatch::EraseType::FromBeginning;
-            fSuccess = true;
-            break;
-        case 2:
-            *pEraseType = TermDispatch::EraseType::All;
+        case TermDispatch::EraseType::ToEnd:
+        case TermDispatch::EraseType::FromBeginning:
+        case TermDispatch::EraseType::All:
+        case TermDispatch::EraseType::Scrollback:
+            *pEraseType = (TermDispatch::EraseType) usParam;
             fSuccess = true;
             break;
         }

@@ -399,6 +399,11 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
         g_ciConsoleInformation.pWindow->UpdateWindowSize(NewSize);
     }
 
+    // Despite the fact that this API takes in a srWindow for the viewport, it traditionally actually doesn't set
+    //  anything using that member - for moving the viewport, you need SetConsoleWindowInfo
+    //  (see https://msdn.microsoft.com/en-us/library/windows/desktop/ms686125(v=vs.85).aspx and DoSrvSetConsoleWindowInfo)
+    // Note that it also doesn't set cursor position. 
+
     return S_OK;
 }
 
