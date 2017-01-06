@@ -30,6 +30,8 @@ namespace Conhost.UIA.Tests
     [TestClass]
     public class MiscTests
     {
+        public TestContext TestContext { get; set; }
+
         [TestMethod]
         public void DotNetSetWindowPosition()
         {
@@ -38,7 +40,7 @@ namespace Conhost.UIA.Tests
                 reg.BackupRegistry();
                 VersionSelector.SetConsoleVersion(reg, ConsoleVersion.V2);
 
-                using (CmdApp app = new CmdApp(CreateType.ProcessOnly))
+                using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
                 {
                     // maximize the window
                     AppiumWebElement titleBar = app.GetTitleBar();

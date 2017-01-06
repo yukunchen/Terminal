@@ -125,9 +125,7 @@ HRESULT ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* c
     {
         pSelection->GetPublicSelectionFlags(&pConsoleSelectionInfo->dwFlags);
 
-        // we should never have failed to set the CONSOLE_SELECTION_IN_PROGRESS flag....
-        assert(LOG_HR_IF_FALSE(E_UNEXPECTED, IsFlagSet(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS)));
-        SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS); // ... but if we did, set it anyway in release mode.
+        SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS); 
 
         pSelection->GetSelectionAnchor(&pConsoleSelectionInfo->dwSelectionAnchor);
         pSelection->GetSelectionRectangle(&pConsoleSelectionInfo->srSelection);
