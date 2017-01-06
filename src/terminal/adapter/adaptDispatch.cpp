@@ -1597,6 +1597,7 @@ bool AdaptDispatch::_EraseScrollback()
         const SMALL_RECT Screen = csbiex.srWindow;
         const short sWidth = Screen.Right - Screen.Left;
         const short sHeight = Screen.Bottom - Screen.Top;
+        assert(sWidth > 0 && sHeight > 0);
         const COORD Cursor = csbiex.dwCursorPosition;
 
         // Rectangle to cut out of the existing buffer
@@ -1609,7 +1610,7 @@ bool AdaptDispatch::_EraseScrollback()
         // Fill character for remaining space left behind by "cut" operation (or for fill if we "cut" the entire line)
         CHAR_INFO ciFill;
         ciFill.Attributes = csbiex.wAttributes;
-        ciFill.Char.UnicodeChar = L' ';
+        ciFill.Char.UnicodeChar = static_cast<WCHAR>(0x20); // space character. use 0x20 instead of literal space because we can't assume the compiler will always turn ' ' into 0x20.
         fSuccess = !!_pConApi->ScrollConsoleScreenBufferW(&srScroll, nullptr, coordDestination, &ciFill);
         if (fSuccess)
         {

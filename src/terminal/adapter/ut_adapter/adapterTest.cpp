@@ -1958,6 +1958,10 @@ public:
         VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srModifiedSpace, wchDeleteExpected, wAttrDeleteExpected), L"A whole line of spaces was inserted from the right (the cursor position was deleted enough times.) Extra deletes just covered up some of the spaces that were shifted in.");
     }
 
+    // Ensures that EraseScrollback (^[[3J) deletes any content from the buffer 
+    //  above the viewport, and moves the contents of the buffer in the
+    //  viewport to 0,0. This emulates the xterm behavior of clearing any
+    //  scrollback content.
     TEST_METHOD(EraseScrollbackTests)
     {
         _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
@@ -1978,7 +1982,8 @@ public:
         
         VERIFY_IS_TRUE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
 
-
+        // There are two portions of the screen that are cleared - 
+        //  below the viewport and to the right of the viewport.
         size_t cRegionsToCheck = 2;
         SMALL_RECT rgsrRegionsModified[2]; 
         

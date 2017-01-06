@@ -54,7 +54,7 @@ const std::function<CStringA()> g_tokenGenerators[] =
     GenerateEraseToken,
     GenerateOscTitleToken,
     GenerateHardResetToken,
-    GenerateHardResetToken
+    GenerateSoftResetToken
 };
 
 CStringA GenerateTokenLowProbability()
