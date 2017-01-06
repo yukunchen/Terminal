@@ -183,6 +183,7 @@ bool FontInfoBase::IsTrueTypeFont() const
     return (_bFamily & TMPF_TRUETYPE) != 0;
 }
 
+#pragma warning(suppress:4356)
 Microsoft::Console::Render::IFontDefaultList* FontInfo::s_pFontDefaultList;
 
 void FontInfoBase::s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList)
