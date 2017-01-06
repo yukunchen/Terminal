@@ -101,3 +101,4 @@
 	10142744 - Pressing Ctrl or Shift immediately dismisses the selection
 	10141431 - Automated test reports/code coverage within VSO build
 1/4/2017 - 10125167 - Ctrl+ sequences not translated properly for Virtual Terminal environments.
+1/6/2017 - 1577180 - Fix `CONSOLE_INFORMATION` ctor to do instance

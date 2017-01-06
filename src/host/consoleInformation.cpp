@@ -44,11 +44,8 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     termInput(HandleTerminalKeyEventCallback),
     terminalMouseInput(HandleTerminalKeyEventCallback)
 {
-    ZeroMemory((void*)&CommandHistoryList, sizeof(CommandHistoryList));
-    InitializeListHead(&g_ciConsoleInformation.CommandHistoryList);
-
-    ZeroMemory((void*)&ExeAliasList, sizeof(ExeAliasList));
-    InitializeListHead(&g_ciConsoleInformation.ExeAliasList);
+    InitializeListHead(&CommandHistoryList);
+    InitializeListHead(&ExeAliasList);
 
     ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
