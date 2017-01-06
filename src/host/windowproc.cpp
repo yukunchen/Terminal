@@ -168,7 +168,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         // the same client rendering that we have now.
 
         // First retrieve the new DPI and the current DPI.
-        DWORD const dpiProposed = HIWORD(wParam);
+        DWORD const dpiProposed = (WORD)wParam;
         DWORD const dpiCurrent = g_dpi;
 
         // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
@@ -193,18 +193,18 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         s_CalculateWindowRect(coordWindowInChars, dpiProposed, coordFontProposed, coordBufferSize, hWnd, &rectProposed);
 
         // Prepare where we're going to keep our final suggestion.
-        SIZE szSuggestion = { 0 };
+        SIZE* const pSuggestionSize = (SIZE*)lParam;
 
-        szSuggestion.cx = RECT_WIDTH(&rectProposed);
-        szSuggestion.cy = RECT_HEIGHT(&rectProposed);
+        pSuggestionSize->cx = RECT_WIDTH(&rectProposed);
+        pSuggestionSize->cy = RECT_HEIGHT(&rectProposed);
 
         // Store the fact that we suggested this size to see if it's what WM_DPICHANGED gives us back later.
         _iSuggestedDpi = dpiProposed;
-        _sizeSuggested = szSuggestion;
+        _sizeSuggested = *pSuggestionSize;
 
         // Format our final suggestion for consumption.
         UnlockConsole();
-        return MAKELONG(szSuggestion.cx, szSuggestion.cy);
+        return TRUE;
     }
 
     case WM_DPICHANGED:
@@ -319,7 +319,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
             ClearFlag(g_ciConsoleInformation.Flags, CONSOLE_IS_ICONIC);
         }
 
-        _HandlePaint();
+        LOG_IF_FAILED(_HandlePaint());
 
         // NOTE: We cannot let the OS handle this message (meaning do NOT pass to DefWindowProc)
         // or it will cause missing painted regions in scenarios without a DWM (like Core Server SKU).
@@ -349,7 +349,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
     {
         Cursor::s_SettingsChanged(hWnd);
     }
-        __fallthrough;
+    __fallthrough;
 
     case WM_DISPLAYCHANGE:
     {
@@ -492,8 +492,8 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
             UnlockConsole();
 
             TrackPopupMenuEx(hHeirMenu,
-                TPM_RIGHTBUTTON | (GetSystemMetrics(SM_MENUDROPALIGNMENT) == 0 ? TPM_LEFTALIGN : TPM_RIGHTALIGN),
-                GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), hWnd, nullptr);
+                             TPM_RIGHTBUTTON | (GetSystemMetrics(SM_MENUDROPALIGNMENT) == 0 ? TPM_LEFTALIGN : TPM_RIGHTALIGN),
+                             GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), hWnd, nullptr);
         }
         else
         {
@@ -686,7 +686,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
     {
 
         SetWindowTextW(hWnd, (PCWSTR)(lParam));
-        delete[] (PCWSTR)(lParam);
+        delete[](PCWSTR)(lParam);
         break;
     }
 
@@ -757,7 +757,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
     }
 
     default:
-    CallDefWin :
+    CallDefWin:
     {
         if (Unlock)
         {
@@ -818,16 +818,42 @@ void Window::_HandleWindowPosChanged(_In_ const LPARAM lParam)
     }
 }
 
-void Window::_HandlePaint() const
+// Routine Description:
+// - This helper method for the window procedure will handle the WM_PAINT message
+// - It will retrieve the invalid rectangle and dispatch that information to the attached renderer
+//   (if available). It will then attempt to validate/finalize the paint to appease the system
+//   and prevent more WM_PAINTs from coming back (until of course something else causes an invalidation).
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded. ERROR_INVALID_HANDLE if there is no HWND. E_FAIL if GDI failed for some reason.
+HRESULT Window::_HandlePaint() const
 {
-    RECT rcUpdate;
-    GetUpdateRect(GetWindowHandle(), &rcUpdate, FALSE);
+    HWND const hwnd = GetWindowHandle();
+    RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE), hwnd);
 
+    // We have to call BeginPaint to retrieve the invalid rectangle state
+    // BeginPaint/EndPaint does a bunch of other magic in the system level
+    // that we can't sufficiently replicate with GetInvalidRect/ValidateRect.
+    // ---
+    // We've tried in the past to not call BeginPaint/EndPaint
+    // and under certain circumstances (windows with SW_HIDE, SKUs without DWM, etc.)
+    // the system either sends WM_PAINT messages ad nauseum or fails to redraw everything correctly.
+    PAINTSTRUCT ps;
+    HDC const hdc = BeginPaint(hwnd, &ps);
+    RETURN_HR_IF_NULL(E_FAIL, hdc);
+    
     if (g_pRender != nullptr)
     {
+        // In lieu of actually painting right now, we're just going to aggregate this information in the renderer
+        // and let it paint whenever it feels appropriate.
+        RECT const rcUpdate = ps.rcPaint;
         g_pRender->TriggerSystemRedraw(&rcUpdate);
-        ValidateRect(GetWindowHandle(), &rcUpdate);
     }
+
+    LOG_IF_WIN32_BOOL_FALSE(EndPaint(hwnd, &ps));
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -936,7 +962,7 @@ BOOL Window::PostUpdateTitleWithCopy(_In_ const PCWSTR pwszNewTitle) const
 {
 
     size_t cchTitleCharLength;
-    if (SUCCEEDED(StringCchLengthW(pwszNewTitle, STRSAFE_MAX_CCH, &cchTitleCharLength))){
+    if (SUCCEEDED(StringCchLengthW(pwszNewTitle, STRSAFE_MAX_CCH, &cchTitleCharLength))) {
         cchTitleCharLength += 1; //"The length does not include the string's terminating null character."
         // - https://msdn.microsoft.com/en-us/library/windows/hardware/ff562856(v=vs.85).aspx
         // this is technically safe because size_t is a ULONG_PTR and STRSAFE_MAX_CCH is INT_MAX.

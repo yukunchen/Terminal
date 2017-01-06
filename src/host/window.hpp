@@ -98,7 +98,7 @@ private:
     // Wndproc helpers
     LRESULT _HandleTimer(_In_ const WPARAM wParam);
     void _HandleDrop(_In_ const WPARAM wParam) const;
-    void _HandlePaint() const;
+    HRESULT _HandlePaint() const;
     void _HandleWindowPosChanged(_In_ const LPARAM lParam);
 
     // Dynamic Settings helpers

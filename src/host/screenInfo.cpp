@@ -112,6 +112,7 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
         }
     }
 
+    LOG_IF_NTSTATUS_FAILED(Status);
     return Status;
 }
 
