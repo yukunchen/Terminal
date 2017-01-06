@@ -28,6 +28,7 @@ namespace Conhost.UIA.Tests.Elements
     using System.Text;
     using System.Threading.Tasks;
     using System.Threading;
+    using System.Security.Principal;
 
     public class CmdApp : IDisposable
     {
@@ -226,6 +227,7 @@ namespace Conhost.UIA.Tests.Elements
 
         private void CreateCmdProcess(string path, string link = "")
         {
+            string AdminPrefix = "Administrator: ";
             string WindowTitleToFind = "Host.Tests.UIA window under test";
 
             job = WinBase.CreateJobObject(IntPtr.Zero, IntPtr.Zero);
@@ -318,16 +320,31 @@ namespace Conhost.UIA.Tests.Elements
             DesiredCapabilities appCapabilities = new DesiredCapabilities();
             appCapabilities.SetCapability("app", @"Root");
             Session = new IOSDriver<IOSElement>(new Uri(AppDriverUrl), appCapabilities);
-            Session.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(15));
+
             Verify.IsNotNull(Session);
             Actions = new Actions(Session);
             Verify.IsNotNull(Session);
 
             Globals.WaitForTimeout();
-            
+
+            // If we are running as admin, the child window title will have a prefix appended as it will also run as admin.
+            if (IsRunningAsAdmin())
+            {
+                WindowTitleToFind = $"{AdminPrefix}{WindowTitleToFind}";
+            }
+
+            Log.Comment($"Searching for window title '{WindowTitleToFind}'");
             this.UIRoot = Session.FindElementByName(WindowTitleToFind);
             this.hStdOut = WinCon.GetStdHandle(WinCon.CONSOLE_STD_HANDLE.STD_OUTPUT_HANDLE);
             Verify.IsNotNull(this.hStdOut, "Ensure output handle is valid.");
+
+            // Set the timeout to 15 seconds after we found the initial window.
+            Session.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(15));
+        }
+
+        private bool IsRunningAsAdmin()
+        {
+            return new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
         }
 
         private void CreateCmdProcess(CreateType type, string pathOverride = "")
