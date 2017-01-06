@@ -172,8 +172,11 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         DWORD const dpiCurrent = g_dpi;
 
         // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
-        FontInfo fiProposed = *ScreenInfo->TextInfo->GetCurrentFont(); // make copy of the currently in-use font
-        g_pRender->GetProposedFont(dpiProposed, &fiProposed); // fiProposal will be updated by the renderer for this new font.
+        FontInfo* pfiCurrent = ScreenInfo->TextInfo->GetCurrentFont();
+        FontInfoDesired fiDesired(*pfiCurrent);
+        FontInfo fiProposed(nullptr, 0, 0, { 0, 0 }, 0);
+
+        g_pRender->GetProposedFont(dpiProposed, &fiDesired, &fiProposed); // fiProposal will be updated by the renderer for this new font.
         COORD coordFontProposed = fiProposed.GetSize();
 
         // Then from that font size, we need to calculate the client area.

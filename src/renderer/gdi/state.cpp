@@ -192,13 +192,14 @@ HRESULT GdiEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In
 // - This method will update the active font on the current device context
 // - NOTE: It is left up to the underling rendering system to choose the nearest font. Please ask for the font dimensions if they are required using the interface. Do not use the size you requested with this structure.
 // Arguments:
-// - pfiFont - Pointer to font information we should use while instantiating a font.
+// - pfiFontDesired - Pointer to font information we should use while instantiating a font.
+// - pfiFont - Pointer to font information where the chosen font information will be populated.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
-HRESULT GdiEngine::UpdateFont(_Inout_ FontInfo* const pfiFont)
+HRESULT GdiEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont)
 {
     wil::unique_hfont hFont;
-    RETURN_IF_FAILED(_GetProposedFont(pfiFont, _iCurrentDpi, hFont));
+    RETURN_IF_FAILED(_GetProposedFont(pfiFontDesired, pfiFont, _iCurrentDpi, hFont));
 
     // Select into DC
     RETURN_LAST_ERROR_IF_NULL(SelectFont(_hdcMemoryContext, hFont.get()));
@@ -240,14 +241,15 @@ HRESULT GdiEngine::UpdateDpi(_In_ int const iDpi)
 // - NOTE: It is left up to the underling rendering system to choose the nearest font. Please ask for the font dimensions if they are required using the interface. Do not use the size you requested with this structure.
 // - If the intent is to immediately turn around and use this font, pass the optional handle parameter and use it immediately.
 // Arguments:
-// - pfiFont - Pointer to font information we should use while instantiating a font.
+// - pfiFontDesired - Pointer to font information we should use while instantiating a font.
+// - pfiFont - Pointer to font information where the chosen font information will be populated.
 // - iDpi - The DPI we will have when rendering
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
-HRESULT GdiEngine::GetProposedFont(_Inout_ FontInfo* const pfiFont, _In_ int const iDpi)
+HRESULT GdiEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont, _In_ int const iDpi)
 {
     wil::unique_hfont hFont;
-    return _GetProposedFont(pfiFont, iDpi, hFont);
+    return _GetProposedFont(pfiFontDesired, pfiFont, iDpi, hFont);
 }
 
 // Routine Description:
@@ -261,13 +263,13 @@ HRESULT GdiEngine::GetProposedFont(_Inout_ FontInfo* const pfiFont, _In_ int con
 // - hFont - A smart pointer to receive a handle to a ready-to-use GDI font.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
-HRESULT GdiEngine::_GetProposedFont(_Inout_ FontInfo* const pfiFont, _In_ int const iDpi, _Inout_ wil::unique_hfont& hFont)
+HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont, _In_ int const iDpi, _Inout_ wil::unique_hfont& hFont)
 {
     wil::unique_hdc hdcTemp(CreateCompatibleDC(_hdcMemoryContext));
     RETURN_LAST_ERROR_IF_NULL(hdcTemp.get());
 
     // Get a special engine size because TT fonts can't specify X or we'll get weird scaling under some circumstances.
-    COORD coordFontRequested = pfiFont->GetEngineSize();
+    COORD coordFontRequested = pfiFontDesired->GetEngineSize();
 
     // For future reference, here is the engine weighting and internal details on Windows Font Mapping:
     // https://msdn.microsoft.com/en-us/library/ms969909.aspx
@@ -286,14 +288,14 @@ HRESULT GdiEngine::_GetProposedFont(_Inout_ FontInfo* const pfiFont, _In_ int co
     LOGFONTW lf = { 0 };
     lf.lfHeight = s_ScaleByDpi(coordFontRequested.Y, iDpi);
     lf.lfWidth = s_ScaleByDpi(coordFontRequested.X, iDpi);
-    lf.lfWeight = pfiFont->GetWeight();
-    lf.lfCharSet = pfiFont->GetCharSet();
+    lf.lfWeight = pfiFontDesired->GetWeight();
+    lf.lfCharSet = pfiFontDesired->GetCharSet();
     lf.lfQuality = DRAFT_QUALITY;
 
     // NOTE: not using what GDI gave us because some fonts don't quite roundtrip (e.g. MS Gothic and VL Gothic)
     lf.lfPitchAndFamily = (FIXED_PITCH | FF_MODERN);
 
-    wcscpy_s(lf.lfFaceName, ARRAYSIZE(lf.lfFaceName), pfiFont->GetFaceName());
+    wcscpy_s(lf.lfFaceName, ARRAYSIZE(lf.lfFaceName), pfiFontDesired->GetFaceName());
 
     // Create font.
     hFont.reset(CreateFontIndirectW(&lf));

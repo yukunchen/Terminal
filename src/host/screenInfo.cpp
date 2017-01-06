@@ -498,14 +498,18 @@ void SCREEN_INFORMATION::RefreshFontWithRenderer()
         // Hand the handle to our internal structure to the font change trigger in case it updates it based on what's appropriate.
         if (g_pRender != nullptr)
         {
-            g_pRender->TriggerFontChange(g_dpi, TextInfo->GetCurrentFont());
+            g_pRender->TriggerFontChange(g_dpi,
+                                         TextInfo->GetDesiredFont(),
+                                         TextInfo->GetCurrentFont());
         }
     }
 }
 
 void SCREEN_INFORMATION::UpdateFont(_In_ const FontInfo* const pfiNewFont)
 {
-    TextInfo->SetCurrentFont(pfiNewFont);
+    FontInfoDesired fiDesiredFont(*pfiNewFont);
+
+    TextInfo->SetDesiredFont(&fiDesiredFont);
 
     RefreshFontWithRenderer();
 }

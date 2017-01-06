@@ -867,7 +867,8 @@ bool ROW::Initialize(_In_ short const sRowWidth, _In_ const TextAttribute Attr)
 TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(_In_ const FontInfo* const pfiFont) :
     Rows(),
     TextRows(nullptr),
-    _fiCurrentFont(*pfiFont)
+    _fiCurrentFont(*pfiFont),
+    _fiDesiredFont(*pfiFont)
 {
 
 }
@@ -1026,6 +1027,16 @@ void TEXT_BUFFER_INFO::SetCurrentFont(_In_ const FontInfo* const pfiNewFont)
 FontInfo* TEXT_BUFFER_INFO::GetCurrentFont()
 {
     return &_fiCurrentFont;
+}
+
+void TEXT_BUFFER_INFO::SetDesiredFont(_In_ const FontInfoDesired* const pfiNewFont)
+{
+    _fiDesiredFont = *pfiNewFont;
+}
+
+FontInfoDesired* TEXT_BUFFER_INFO::GetDesiredFont()
+{
+    return &_fiDesiredFont;
 }
 
 //Routine Description:
