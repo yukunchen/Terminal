@@ -19,6 +19,8 @@ namespace Conhost.UIA.Tests
     [TestClass]
     public class MouseWheelTests
     {
+        public TestContext TestContext { get; set; }
+
         [TestMethod]
         public void TestMouseWheel()
         {
@@ -28,7 +30,7 @@ namespace Conhost.UIA.Tests
                 reg.BackupRegistry();
 
                 // Start our application to test
-                using (CmdApp app = new CmdApp(CreateType.ProcessOnly))
+                using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
                 {
                     Log.Comment("First ensure that word wrap is off so we can get scroll bars in both directions.");
                     // Make sure wrap is off

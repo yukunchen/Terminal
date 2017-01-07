@@ -322,7 +322,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
             ClearFlag(g_ciConsoleInformation.Flags, CONSOLE_IS_ICONIC);
         }
 
-        _HandlePaint();
+        LOG_IF_FAILED(_HandlePaint());
 
         // NOTE: We cannot let the OS handle this message (meaning do NOT pass to DefWindowProc)
         // or it will cause missing painted regions in scenarios without a DWM (like Core Server SKU).
@@ -352,7 +352,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
     {
         Cursor::s_SettingsChanged(hWnd);
     }
-        __fallthrough;
+    __fallthrough;
 
     case WM_DISPLAYCHANGE:
     {
@@ -495,8 +495,8 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
             UnlockConsole();
 
             TrackPopupMenuEx(hHeirMenu,
-                TPM_RIGHTBUTTON | (GetSystemMetrics(SM_MENUDROPALIGNMENT) == 0 ? TPM_LEFTALIGN : TPM_RIGHTALIGN),
-                GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), hWnd, nullptr);
+                             TPM_RIGHTBUTTON | (GetSystemMetrics(SM_MENUDROPALIGNMENT) == 0 ? TPM_LEFTALIGN : TPM_RIGHTALIGN),
+                             GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), hWnd, nullptr);
         }
         else
         {
@@ -689,7 +689,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
     {
 
         SetWindowTextW(hWnd, (PCWSTR)(lParam));
-        delete[] (PCWSTR)(lParam);
+        delete[](PCWSTR)(lParam);
         break;
     }
 
@@ -760,7 +760,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
     }
 
     default:
-    CallDefWin :
+    CallDefWin:
     {
         if (Unlock)
         {
@@ -821,16 +821,42 @@ void Window::_HandleWindowPosChanged(_In_ const LPARAM lParam)
     }
 }
 
-void Window::_HandlePaint() const
+// Routine Description:
+// - This helper method for the window procedure will handle the WM_PAINT message
+// - It will retrieve the invalid rectangle and dispatch that information to the attached renderer
+//   (if available). It will then attempt to validate/finalize the paint to appease the system
+//   and prevent more WM_PAINTs from coming back (until of course something else causes an invalidation).
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded. ERROR_INVALID_HANDLE if there is no HWND. E_FAIL if GDI failed for some reason.
+HRESULT Window::_HandlePaint() const
 {
-    RECT rcUpdate;
-    GetUpdateRect(GetWindowHandle(), &rcUpdate, FALSE);
+    HWND const hwnd = GetWindowHandle();
+    RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE), hwnd);
 
+    // We have to call BeginPaint to retrieve the invalid rectangle state
+    // BeginPaint/EndPaint does a bunch of other magic in the system level
+    // that we can't sufficiently replicate with GetInvalidRect/ValidateRect.
+    // ---
+    // We've tried in the past to not call BeginPaint/EndPaint
+    // and under certain circumstances (windows with SW_HIDE, SKUs without DWM, etc.)
+    // the system either sends WM_PAINT messages ad nauseum or fails to redraw everything correctly.
+    PAINTSTRUCT ps;
+    HDC const hdc = BeginPaint(hwnd, &ps);
+    RETURN_HR_IF_NULL(E_FAIL, hdc);
+    
     if (g_pRender != nullptr)
     {
+        // In lieu of actually painting right now, we're just going to aggregate this information in the renderer
+        // and let it paint whenever it feels appropriate.
+        RECT const rcUpdate = ps.rcPaint;
         g_pRender->TriggerSystemRedraw(&rcUpdate);
-        ValidateRect(GetWindowHandle(), &rcUpdate);
     }
+
+    LOG_IF_WIN32_BOOL_FALSE(EndPaint(hwnd, &ps));
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -939,7 +965,7 @@ BOOL Window::PostUpdateTitleWithCopy(_In_ const PCWSTR pwszNewTitle) const
 {
 
     size_t cchTitleCharLength;
-    if (SUCCEEDED(StringCchLengthW(pwszNewTitle, STRSAFE_MAX_CCH, &cchTitleCharLength))){
+    if (SUCCEEDED(StringCchLengthW(pwszNewTitle, STRSAFE_MAX_CCH, &cchTitleCharLength))) {
         cchTitleCharLength += 1; //"The length does not include the string's terminating null character."
         // - https://msdn.microsoft.com/en-us/library/windows/hardware/ff562856(v=vs.85).aspx
         // this is technically safe because size_t is a ULONG_PTR and STRSAFE_MAX_CCH is INT_MAX.

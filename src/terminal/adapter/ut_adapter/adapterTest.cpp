@@ -105,6 +105,7 @@ public:
         if (_fSetConsoleCursorPositionResult)
         {
             VERIFY_ARE_EQUAL(_coordExpectedCursorPos, dwCursorPosition);
+            _coordCursorPos = dwCursorPosition;
         }
 
         return _fSetConsoleCursorPositionResult;
@@ -144,6 +145,7 @@ public:
         {
             VERIFY_ARE_EQUAL(_fExpectedWindowAbsolute, bAbsolute);
             VERIFY_ARE_EQUAL(_srExpectedConsoleWindow, *lpConsoleWindow);
+            _srViewport = *lpConsoleWindow;
         }
 
         return _fSetConsoleWindowInfoResult;
@@ -403,7 +405,7 @@ public:
 
                     if (_IsInsideClip(pClipRectangle, coordTarget.Y, coordTarget.X) && _IsInsideClip(pClipRectangle, iCharY, iCharX))
                     {
-                        size_t index = width * (iCharY - pScrollRectangle->Top) + (iCharX - pScrollRectangle->Left);
+                        size_t index = (width) * (iCharY - pScrollRectangle->Top) + (iCharX - pScrollRectangle->Left);
                         CHAR_INFO charFromBuffer = ciBuffer[index];
                         *pciStored = charFromBuffer;
                     }
@@ -615,6 +617,7 @@ public:
         _fSetConsoleTextAttributeResult = TRUE;
         _fWriteConsoleInputWResult = TRUE;
         _fScrollConsoleScreenBufferWResult = TRUE;
+        _fSetConsoleWindowInfoResult = TRUE;
 
         _PrepCharsBuffer(wch, wAttr);
         
@@ -1955,6 +1958,70 @@ public:
         VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srModifiedSpace, wchDeleteExpected, wAttrDeleteExpected), L"A whole line of spaces was inserted from the right (the cursor position was deleted enough times.) Extra deletes just covered up some of the spaces that were shifted in.");
     }
 
+    // Ensures that EraseScrollback (^[[3J) deletes any content from the buffer 
+    //  above the viewport, and moves the contents of the buffer in the
+    //  viewport to 0,0. This emulates the xterm behavior of clearing any
+    //  scrollback content.
+    TEST_METHOD(EraseScrollbackTests)
+    {
+        _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        _pTest->_wAttribute = _pTest->s_wAttrErase;
+        Log::Comment(L"Starting Test");
+
+        _pTest->_fSetConsoleWindowInfoResult = true;
+        _pTest->_fExpectedWindowAbsolute = true;
+        SMALL_RECT srRegion = { 0 };
+        srRegion.Bottom = _pTest->_srViewport.Bottom - _pTest->_srViewport.Top - 1;
+        srRegion.Right = _pTest->_srViewport.Right - _pTest->_srViewport.Left - 1;
+        _pTest->_srExpectedConsoleWindow = srRegion;
+        
+        // The cursor will be moved to the same relative location in the new viewport with origin @ 0, 0        
+        const COORD coordRelativeCursor = { _pTest->_coordCursorPos.X - _pTest->_srViewport.Left,
+                                            _pTest->_coordCursorPos.Y - _pTest->_srViewport.Top };
+        _pTest->_coordExpectedCursorPos = coordRelativeCursor;
+        
+        VERIFY_IS_TRUE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
+
+        // There are two portions of the screen that are cleared - 
+        //  below the viewport and to the right of the viewport.
+        size_t cRegionsToCheck = 2;
+        SMALL_RECT rgsrRegionsModified[2]; 
+        
+        // Region 0 - Below the viewport
+        srRegion.Top = _pTest->_srViewport.Bottom + 1;
+        srRegion.Left = 0;
+
+        srRegion.Bottom = _pTest->_coordBufferSize.Y;
+        srRegion.Right = _pTest->_coordBufferSize.X;
+
+        rgsrRegionsModified[0] = srRegion;
+
+        // Region 1 - To the right of the viewport
+        srRegion.Top = 0;
+        srRegion.Left = _pTest->_srViewport.Right + 1;
+
+        srRegion.Bottom = _pTest->_coordBufferSize.Y;
+        srRegion.Right = _pTest->_coordBufferSize.X;
+
+        rgsrRegionsModified[1] = srRegion;
+
+        // Scan entire buffer and ensure only the necessary region has changed.
+        bool fRegionSuccess = _pTest->ValidateEraseBufferState(rgsrRegionsModified, cRegionsToCheck, TestGetSet::s_wchErase, TestGetSet::s_wAttrErase);
+        VERIFY_IS_TRUE(fRegionSuccess);
+
+        Log::Comment(L"Test 2: Gracefully fail when getting console information fails.");
+        _pTest->PrepData();
+        _pTest->_fGetConsoleScreenBufferInfoExResult = false;
+
+        VERIFY_IS_FALSE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
+
+        Log::Comment(L"Test 3: Gracefully fail when filling the rectangle fails.");
+        _pTest->PrepData();
+        _pTest->_fFillConsoleOutputCharacterWResult = false;
+        
+        VERIFY_IS_FALSE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
+    }
+
     TEST_METHOD(EraseTests)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
@@ -2911,6 +2978,54 @@ public:
         _pTest->_fUsingRgbColor = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
+    }
+
+
+    TEST_METHOD(HardReset)
+    {
+        Log::Comment(L"Starting test...");
+
+        _pTest->PrepData();
+
+        ///////////////// Components of a EraseScrollback //////////////////////
+        _pTest->_fExpectedWindowAbsolute = true;
+        SMALL_RECT srRegion = { 0 };
+        srRegion.Bottom = _pTest->_srViewport.Bottom - _pTest->_srViewport.Top - 1;
+        srRegion.Right = _pTest->_srViewport.Right - _pTest->_srViewport.Left - 1;
+        _pTest->_srExpectedConsoleWindow = srRegion;
+        // The cursor will be moved to the same relative location in the new viewport with origin @ 0, 0        
+        const COORD coordRelativeCursor = { _pTest->_coordCursorPos.X - _pTest->_srViewport.Left,
+                                            _pTest->_coordCursorPos.Y - _pTest->_srViewport.Top };
+
+        // Cursor to 1,1
+        _pTest->_coordExpectedCursorPos = {0, 0};
+        _pTest->_fSetConsoleCursorPositionResult = true;
+        const COORD coordExpectedCursorPos = {0, 0};
+
+        // Sets the SGR state to normal.
+        _pTest->_wExpectedAttribute = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+
+        VERIFY_IS_TRUE(_pDispatch->HardReset());
+        VERIFY_ARE_EQUAL(_pTest->_coordCursorPos, coordExpectedCursorPos);
+        VERIFY_ARE_EQUAL(_pTest->_fUsingRgbColor, false);
+
+        Log::Comment(L"Test 2: Gracefully fail when getting console information fails.");
+        _pTest->PrepData();
+        _pTest->_fGetConsoleScreenBufferInfoExResult = false;
+
+        VERIFY_IS_FALSE(_pDispatch->HardReset());
+
+        Log::Comment(L"Test 3: Gracefully fail when filling the rectangle fails.");
+        _pTest->PrepData();
+        _pTest->_fFillConsoleOutputCharacterWResult = false;
+        
+        VERIFY_IS_FALSE(_pDispatch->HardReset());
+
+        Log::Comment(L"Test 4: Gracefully fail when setting the window fails.");
+        _pTest->PrepData();
+        _pTest->_fSetConsoleWindowInfoResult = false;
+        
+        VERIFY_IS_FALSE(_pDispatch->HardReset());
     }
 
 private:

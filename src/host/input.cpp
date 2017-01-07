@@ -1992,7 +1992,20 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
         short sDelta = 0;
         if (Message == WM_MOUSEWHEEL)
         {
-            sDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
+            short sWheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+            // For most devices, we'll get mouse events as multiples of 
+            // WHEEL_DELTA, where WHEEL_DELTA represents a single scroll unit
+            // But sometimes, things like trackpads will scroll in finer
+            // measurements. In this case, the VT mouse scrolling wouldn't work.
+            // So if that happens, ensure we scroll at least one time.
+            if (abs(sWheelDelta) < WHEEL_DELTA)
+            {
+                sDelta = sWheelDelta < 0 ? -1 : 1;
+            }
+            else
+            {
+                sDelta = sWheelDelta / WHEEL_DELTA;
+            }
         }
 
         if (HandleTerminalMouseEvent(MousePosition, Message, GET_KEYSTATE_WPARAM(wParam), sDelta))

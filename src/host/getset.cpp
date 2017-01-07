@@ -125,9 +125,7 @@ HRESULT ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* c
     {
         pSelection->GetPublicSelectionFlags(&pConsoleSelectionInfo->dwFlags);
 
-        // we should never have failed to set the CONSOLE_SELECTION_IN_PROGRESS flag....
-        assert(LOG_HR_IF_FALSE(E_UNEXPECTED, IsFlagSet(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS)));
-        SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS); // ... but if we did, set it anyway in release mode.
+        SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS); 
 
         pSelection->GetSelectionAnchor(&pConsoleSelectionInfo->dwSelectionAnchor);
         pSelection->GetSelectionRectangle(&pConsoleSelectionInfo->srSelection);
@@ -400,6 +398,11 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
     {
         g_ciConsoleInformation.pWindow->UpdateWindowSize(NewSize);
     }
+
+    // Despite the fact that this API takes in a srWindow for the viewport, it traditionally actually doesn't set
+    //  anything using that member - for moving the viewport, you need SetConsoleWindowInfo
+    //  (see https://msdn.microsoft.com/en-us/library/windows/desktop/ms686125(v=vs.85).aspx and DoSrvSetConsoleWindowInfo)
+    // Note that it also doesn't set cursor position. 
 
     return S_OK;
 }

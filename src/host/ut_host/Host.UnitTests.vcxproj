@@ -11,6 +11,7 @@
     <ClCompile Include="ScreenBufferTests.cpp" />
     <ClCompile Include="SelectionTests.cpp" />
     <ClCompile Include="TextBufferTests.cpp" />
+    <ClCompile Include="TitleTests.cpp" />
     <ClCompile Include="UtilsTests.cpp" />
     <ClCompile Include="Utf8ToWideCharParserTests.cpp" />
     <ClCompile Include="..\precomp.cpp">

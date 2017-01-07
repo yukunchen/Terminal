@@ -66,6 +66,9 @@ void LoadLinkInfo(_Inout_ Settings* pLinkSettings,
                     BOOL fReadConsoleProperties;
                     WORD wShowWindow = pLinkSettings->GetShowWindow();
                     DWORD dwHotKey = pLinkSettings->GetHotKey();
+
+                    int iShowWindow;
+                    WORD wHotKey;
                     Status = ShortcutSerialization::s_GetLinkValues(&csi,
                                                                     &fReadConsoleProperties,
                                                                     wszShortcutTitle,
@@ -73,10 +76,18 @@ void LoadLinkInfo(_Inout_ Settings* pLinkSettings,
                                                                     wszIconLocation,
                                                                     ARRAYSIZE(wszIconLocation),
                                                                     &iIconIndex,
-                                                                    (int*) &(wShowWindow),
-                                                                    (WORD*)&(dwHotKey));
-                    pLinkSettings->SetShowWindow(wShowWindow);
+                                                                    &iShowWindow,
+                                                                    &wHotKey);
+
+                    // Convert results back to appropriate types and set.
+                    if (SUCCEEDED(IntToWord(iShowWindow, &wShowWindow)))
+                    {
+                        pLinkSettings->SetShowWindow(wShowWindow);
+                    }
+
+                    dwHotKey = wHotKey;
                     pLinkSettings->SetHotKey(dwHotKey);
+
                     // if we got a title, use it. even on overall link value load failure, the title will be correct if
                     // filled out.
                     if (wszShortcutTitle[0] != L'\0')
@@ -365,15 +376,17 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, _In_ const BOOL fUnexp
                     cbSystemRoot = 0;
                 }
 
-                LPWSTR TranslatedConsoleTitle;
-                Tmp = TranslatedConsoleTitle = (PWSTR)new BYTE[cbSystemRoot + cbConsoleTitle];
-                if (TranslatedConsoleTitle == nullptr)
+                LPWSTR pszTranslatedConsoleTitle;
+                const size_t cbTranslatedConsoleTitle = cbSystemRoot + cbConsoleTitle;
+                Tmp = pszTranslatedConsoleTitle = (PWSTR)new BYTE[cbTranslatedConsoleTitle];
+                if (pszTranslatedConsoleTitle == nullptr)
                 {
                     return nullptr;
                 }
 
-                memmove(TranslatedConsoleTitle, SYSTEM_ROOT, cbSystemRoot);
-                TranslatedConsoleTitle += (cbSystemRoot / sizeof(WCHAR));   // skip by characters -- not bytes
+                // No need to check return here -- pszTranslatedConsoleTitle is guaranteed large enough for SYSTEM_ROOT
+                (void)StringCbCopy(pszTranslatedConsoleTitle, cbTranslatedConsoleTitle, SYSTEM_ROOT);
+                pszTranslatedConsoleTitle += (cbSystemRoot / sizeof(WCHAR));   // skip by characters -- not bytes
 
                 for (UINT i = 0; i < cbConsoleTitle; i += sizeof(WCHAR))
                 {
@@ -381,11 +394,11 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, _In_ const BOOL fUnexp
                     if (fSubstitute && *pwszConsoleTitle == '\\')
                     {
 #pragma prefast(suppress:26019, "Console title must contain system root if this path was followed.")
-                        *TranslatedConsoleTitle++ = (WCHAR)'_';
+                        *pszTranslatedConsoleTitle++ = (WCHAR)'_';
                     }
                     else
                     {
-                        *TranslatedConsoleTitle++ = *pwszConsoleTitle;
+                        *pszTranslatedConsoleTitle++ = *pwszConsoleTitle;
                         if (*pwszConsoleTitle == L'\0')
                         {
                             break;
@@ -408,13 +421,13 @@ NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLang
 
     // -- WARNING -- LOAD BEARING CODE --
     // Only attempt to return the Lang ID if the Windows ACP on console launch was an East Asian Code Page.
-    // - 
+    // -
     // As of right now, this is a load bearing check and causes a domino effect of errors during OEM preinstallation if removed
-    // resulting in a crash on launch of CMD.exe 
+    // resulting in a crash on launch of CMD.exe
     // (and consequently any scripts OEMs use to customize an image during the auditUser preinstall step inside their unattend.xml files.)
     // I have no reason to believe that removing this check causes any problems on any other SKU or scenario types.
     // -
-    // Returning STATUS_NOT_SUPPORTED will skip a call to SetThreadLocale inside the Windows loader. This has the effect of not 
+    // Returning STATUS_NOT_SUPPORTED will skip a call to SetThreadLocale inside the Windows loader. This has the effect of not
     // setting the appropriate locale on the client end of the pipe, but also avoids the error.
     // Returning STATUS_SUCCESS will trigger the call to SetThreadLocale inside the loader.
     // This method is called on process launch by the loader and on every SetConsoleOutputCP call made from the client application to

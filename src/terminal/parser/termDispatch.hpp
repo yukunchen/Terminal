@@ -66,9 +66,10 @@ namespace Microsoft
 
                 enum class EraseType : unsigned int
                 {
-                    ToEnd,
-                    FromBeginning,
-                    All
+                    ToEnd = 0,
+                    FromBeginning = 1,
+                    All = 2,
+                    Scrollback = 3
                 };
 
                 virtual bool EraseInDisplay(_In_ EraseType const /* eraseType*/) { return false; } // ED
@@ -173,6 +174,7 @@ namespace Microsoft
                 };
 
                 virtual bool SoftReset(){ return false; } // DECSTR
+                virtual bool HardReset(){ return false; } // RIS
             };
         };
     };

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
+using WEX.Logging.Interop;
 using WEX.TestExecution;
 using WEX.TestExecution.Markup;
 
@@ -13,26 +15,24 @@ namespace Host.Tests.UIA
     [TestClass]
     class Init
     {
+        static Process appDriver;
+
         [AssemblyInitialize]
-        public static void SetupAll()
+        public static void SetupAll(TestContext context)
         {
-            // Must NOT run as admin
-            Verify.IsFalse(IsAdmin(), "You must run this test as a standard user. WinAppDriver generally cannot find host windows launched as admin.");
+            Log.Comment("Searching for WinAppDriver in the same directory where this test was launched from...");
+            string winAppDriver = Path.Combine(context.TestDeploymentDir, "WinAppDriver.exe");
 
-            // Check if WinAppDriver is running.
-            Verify.IsTrue(IsWinAppDriverRunning(), "WinAppDriver server must be running on the local machine to run this test.");
+            Log.Comment($"Attempting to launch WinAppDriver at: {winAppDriver}");
+            Log.Comment($"Working directory: {Environment.CurrentDirectory}");
+
+            appDriver = Process.Start(winAppDriver);
         }
 
-        public static bool IsAdmin()
+        [AssemblyCleanup]
+        public static void CleanupAll()
         {
-            var identity = WindowsIdentity.GetCurrent();
-            var principal = new WindowsPrincipal(identity);
-            return principal.IsInRole(WindowsBuiltInRole.Administrator);
-        }
-
-        public static bool IsWinAppDriverRunning()
-        {
-            return Process.GetProcessesByName("WinAppDriver").Count() > 0;
+            appDriver.Kill();
         }
     }
 }
