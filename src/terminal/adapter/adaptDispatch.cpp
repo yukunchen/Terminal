@@ -12,6 +12,8 @@
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
 
+#include <assert.h>
+
 using namespace Microsoft::Console::VirtualTerminal;
 
 // Routine Description:
