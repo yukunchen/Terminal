@@ -26,7 +26,7 @@ namespace Conhost.UIA.Tests
     using Conhost.UIA.Tests.Common.NativeMethods;
     using Conhost.UIA.Tests.Elements;
     using OpenQA.Selenium.Appium;
-
+    using OpenQA.Selenium;
     [TestClass]
     public class MiscTests
     {
@@ -86,6 +86,65 @@ namespace Conhost.UIA.Tests
             srWindow.Top = (short)top;
 
             NativeMethods.Win32BoolHelper(WinCon.SetConsoleWindowInfo(hConsole, true, ref srWindow), string.Format("Attempt to update viewport position to {0}.", srWindow));
+        }
+
+        private void DoModifierKeyupTest()
+        {
+                using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
+                {
+
+                    Log.Comment("Send a h, then a Ctrl+H");
+                    app.UIRoot.SendKeys("H");
+                    Globals.WaitForTimeout();
+
+                    app.UIRoot.SendKeys(Keys.Control + "H");
+                    Globals.WaitForTimeout();
+
+                    // maximize the window
+                    AppiumWebElement titleBar = app.GetTitleBar();
+                    app.Actions.DoubleClick(titleBar);
+
+                    // wait for double click action to react.
+                    Globals.WaitForTimeout();
+
+                    // do the thing that makes it upset.
+                    // MSFT:2490828 called Console.SetWindowPosition, so let's just copy the .NET source for that here...
+                    // see: http://referencesource.microsoft.com/#mscorlib/system/console.cs,fcb364a853d81c57
+                    SetWindowPosition(0, 0);
+                }
+
+        }
+
+
+        [TestMethod]
+        public void ModifierKeyupEvents()
+        {
+            using (RegistryHelper reg = new RegistryHelper())
+            {
+                reg.BackupRegistry();
+                VersionSelector.SetConsoleVersion(reg, ConsoleVersion.V1);
+
+                DoModifierKeyupTest();
+
+                VersionSelector.SetConsoleVersion(reg, ConsoleVersion.V2);
+
+                DoModifierKeyupTest();
+
+                // using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
+                // {
+                //     // maximize the window
+                //     AppiumWebElement titleBar = app.GetTitleBar();
+                //     app.Actions.DoubleClick(titleBar);
+
+                //     // wait for double click action to react.
+                //     Globals.WaitForTimeout();
+
+                //     // do the thing that makes it upset.
+                //     // MSFT:2490828 called Console.SetWindowPosition, so let's just copy the .NET source for that here...
+                //     // see: http://referencesource.microsoft.com/#mscorlib/system/console.cs,fcb364a853d81c57
+                //     SetWindowPosition(0, 0);
+                // }
+            }
         }
 
     }
