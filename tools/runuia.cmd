@@ -9,6 +9,6 @@ start %OPENCON%\dep\WinAppDriver\WinAppDriver.exe
 rem Then run the tests.
 
 call %TAEF% ^
-    %OPENCON%\bin\%ARCH%\Debug\Conhost.UIA.Tests.dll ^
+    %OPENCON%\bin\%ARCH%\Debug\Host.Tests.UIA.dll ^
     /p:VtApp=%OPENCON%\bin\%ARCH%\Debug\VtApp.exe ^
     %*

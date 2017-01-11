@@ -28,7 +28,6 @@ namespace Conhost.UIA.Tests
             using (RegistryHelper reg = new RegistryHelper())
             {
                 reg.BackupRegistry();
-                VersionSelector.SetConsoleVersion(reg, ConsoleVersion.V2);
 
                 // Start our application to test
                 using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
