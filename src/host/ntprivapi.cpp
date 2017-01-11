@@ -106,7 +106,9 @@ NTSTATUS NtPrivApi::s_NtClose(_In_ HANDLE Handle)
 
 NtPrivApi::NtPrivApi()
 {
-    _hNtDll = LoadLibraryW(L"ntdll.dll");
+    // NOTE: Use LoadLibraryExW with LOAD_LIBRARY_SEARCH_SYSTEM32 flag below to avoid unneeded directory traversal.
+    //       This has triggered CPG boot IO warnings in the past.
+    _hNtDll = LoadLibraryExW(L"ntdll.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
 }
 
 NtPrivApi::~NtPrivApi()
