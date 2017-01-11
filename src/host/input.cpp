@@ -1118,7 +1118,34 @@ DWORD WriteInputBuffer(_In_ PINPUT_INFORMATION pInputInfo, _In_ PINPUT_RECORD pI
     return EventsWritten;
 }
 
-NTSTATUS InitWindowsSubsystem()
+// Routine Description:
+// - This routine gets called to filter input to console dialogs so that we can do the special processing that StoreKeyInfo does.
+LRESULT DialogHookProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    MSG msg = *((PMSG)lParam);
+
+    UNREFERENCED_PARAMETER(wParam);
+
+    if (nCode == MSGF_DIALOGBOX)
+    {
+        if (msg.message >= WM_KEYFIRST && msg.message <= WM_KEYLAST)
+        {
+            if (msg.message != WM_CHAR && msg.message != WM_DEADCHAR && msg.message != WM_SYSCHAR && msg.message != WM_SYSDEADCHAR)
+            {
+
+                // don't store key info if dialog box input
+                if (GetWindowLongPtrW(msg.hwnd, GWLP_HWNDPARENT) == 0)
+                {
+                    StoreKeyInfo(&msg);
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 {
     g_hInstance = GetModuleHandle(L"ConhostV2.dll");
 
@@ -1133,6 +1160,10 @@ NTSTATUS InitWindowsSubsystem()
         RIPMSG2(RIP_WARNING, "CreateWindowsWindow failed with status 0x%x, gle = 0x%x", Status, GetLastError());
         return Status;
     }
+
+    // We intentionally ignore the return value of SetWindowsHookEx. There are mixed LUID cases where this call will fail but in the past this call
+    // was special cased (for CSRSS) to always succeed. Thus, we ignore failure for app compat (as not having the hook isn't fatal).
+    *phhook = SetWindowsHookExW(WH_MSGFILTER, (HOOKPROC)DialogHookProc, nullptr, GetCurrentThreadId());
 
     SetConsoleWindowOwner(g_ciConsoleInformation.pWindow->GetWindowHandle(), ProcessData);
 
@@ -1271,7 +1302,8 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
     InitEnvironmentVariables();
 
     LockConsole();
-    NTSTATUS Status = InitWindowsSubsystem();
+    HHOOK hhook;
+    NTSTATUS Status = InitWindowsSubsystem(&hhook);
     UnlockConsole();
     if (!NT_SUCCESS(Status))
     {
@@ -1330,6 +1362,11 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
 
     // Free all resources used by this thread
     DeactivateTextServices();
+
+    if (nullptr != hhook)
+    {
+        UnhookWindowsHookEx(hhook);
+    }
 
     return 0;
 }
