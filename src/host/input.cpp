@@ -7,6 +7,7 @@
 #include "precomp.h"
 
 #include "input.h"
+#include "consoleKeyInfo.hpp" 
 
 #include "clipboard.hpp"
 #include "cursor.h"
@@ -1265,39 +1266,6 @@ void InitEnvironmentVariables()
     InitSideBySide(wchValue, ARRAYSIZE(wchValue));
 }
 
-// this is used to save information from a WM_KEYDOWN/WM_KEYUP/WM_SYSKEYDOWN/WM_SYSKEYUP
-// etc. message so that we can recover it after it's been changed to a WM_CHAR
-// message by TranslateMessage and do the right thing.
-class SavedKeypressMessage
-{
-public:
-    void Save(_In_ const MSG msg)
-    {
-        _virtualKeyCode = LOWORD(msg.wParam);
-        _virtualScanCode = LOBYTE(HIWORD(msg.lParam));
-        _hasMessage = true;
-    }
-
-    void Get(_Inout_ INPUT_RECORD& inputRecord)
-    {
-        inputRecord.Event.KeyEvent.wVirtualKeyCode = _virtualKeyCode;
-        inputRecord.Event.KeyEvent.wVirtualScanCode = _virtualScanCode;
-        _hasMessage = false;
-    }
-
-    bool IsSaved()
-    {
-        return _hasMessage;
-    }
-
-private:
-    WORD _virtualKeyCode = 0;
-    WORD _virtualScanCode = 0;
-    bool _hasMessage = false;
-}
-
-static SavedKeyInfo;
-
 DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
 {
     InitEnvironmentVariables();
@@ -1322,27 +1290,27 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
             break;
         }
 
-        // --- LOAD BEARING CODE ---
-        // Under circumstances where we have a control type character (one that isn't necessarily printable
-        // and may represent some special function of the application rather than a printable sequence)...
-        // We will need to save the entire context of the original message on WM_KEYDOWN/WM_KEYUP to be 
-        // reconstituted later during the handling of the actual WM_CHAR message.
-        // This is because we will need the raw original scan code, raw original virtual key code,
-        // and initial character intepretation of the message to accurately satisfy what the underlying
-        // application desires. TranslateMessage's work to convert WM_KEYDOWN/WM_KEYUP to WM_CHAR can obscure
-        // or otherwise lose some of this context that will make us unable to replicate the originally intended
-        // input behavior to the client application.
-        if (msg.message >= WM_KEYFIRST &&
-            msg.message <= WM_KEYLAST &&
-            msg.message != WM_CHAR &&
-            msg.message != WM_DEADCHAR &&
-            msg.message != WM_SYSCHAR &&
-            msg.message != WM_SYSDEADCHAR)
-        {
-            SavedKeyInfo.Save(msg);
-        }
-        // --- END LOAD BEARING CODE ---
-
+        // --- START LOAD BEARING CODE ---
+        // TranslateMessageEx appears to be necessary for a few things (that we could in the future take care of ourselves...)
+        // 1. The normal TranslateMessage will return TRUE for all WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP 
+        //    no matter what. 
+        //    - This means that if there *is* a translation for the keydown, it will post a WM_CHAR to our queue and say TRUE.
+        //      ***HOWEVER*** it also means that if there is *NOT* a translation for the keydown, it will post nothing and still say TRUE.
+        //    - TRUE from TranslateMessage typically means "don't dispatch, it's already handled."
+        //    - *But* the console needs to dispatch a WM_KEYDOWN that wasn't translated into a WM_CHAR so the underlying console client can 
+        //      receive it and decide what to do with it.
+        //    - Thus TranslateMessageEx was kludged in December 1990 to return FALSE for the case where it doesn't post a WM_CHAR so the
+        //      console can know this and handle it.
+        //    - Instead of using this kludge from many years ago... we could instead use the ToUnicode/ToUnicodeEx exports to translate
+        //      the WM_KEYDOWN to WM_CHAR ourselves and synchronously dispatch it with all context if necessary (or continue to dispatch the
+        //      WM_KEYDOWN if ToUnicode offers no translation. We would no longer need the private TranslateMessageEx (or even TranslateMessage at all).
+        // 2. TranslateMessage also performs translation of ALT+NUMPAD sequences on our behalf into their corresponding character input
+        //    - If we take out TranslateMessage entirely as stated in part 1, we would have to reimplement our own version of translating ALT+NUMPAD
+        //      sequences at this point inside the console.
+        //    - The Clipboard class (clipboard.cpp) already does the inverse of this to mock up keypad sequences for text strings pasted into the console
+        //      so they can be faithfully represented as a user "typing" into the client application. The vision would be we leverage the knowledge from
+        //      clipboard to build a transcoder capable of doing the reverse at this point so TranslateMessage would be completely unnecessary for us.
+        // Until that future point in time.... this is LOAD BEARING CODE and should not be hastily modified or removed!
         if (!UserPrivApi::s_TranslateMessageEx(&msg, TM_POSTCHARBREAKS))
         {
             DispatchMessageW(&msg);
@@ -1353,6 +1321,11 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
             // alt is really down
             DispatchMessageW(&msg);
         }
+        else
+        {
+            StoreKeyInfo(&msg);
+        }
+        // -- END LOAD BEARING CODE
     }
 
     // Free all resources used by this thread
@@ -1530,10 +1503,17 @@ bool ShouldTakeOverKeyboardShortcuts()
     return !g_ciConsoleInformation.GetCtrlKeyShortcutsDisabled() && IsInProcessedInputMode();
 }
 
-void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole)
+void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole)
 {
+    BOOLEAN ContinueProcessing;
+    ULONG EventsWritten;
+    BOOL bGenerateBreak = FALSE;
 
+    // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(lParam) is a character
+    WORD VirtualKeyCode = LOWORD(wParam);
+    const ULONG ControlKeyState = GetControlKeyState(lParam);
     const BOOL bKeyDown = IsFlagClear(lParam, KEY_TRANSITION_UP);
+
     if (bKeyDown)
     {
         // Log a telemetry flag saying the user interacted with the Console
@@ -1544,30 +1524,36 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
         Telemetry::Instance().SetUserInteractive();
     }
 
-    BOOLEAN ContinueProcessing;
-    ULONG EventsWritten;
-    BOOL bGenerateBreak = FALSE;
-
-    // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(lParam) is a character
-    WORD VirtualKeyCode = LOWORD(wParam);
-    const ULONG ControlKeyState = GetControlKeyState(lParam);
-    WORD VirtualScanCode = LOBYTE(HIWORD(lParam));
-    WORD repeatCount = LOWORD(lParam);
-
     // Make sure we retrieve the key info first, or we could chew up unneeded space in the key info table if we bail out early.
     INPUT_RECORD InputEvent;
+    InputEvent.Event.KeyEvent.wVirtualKeyCode = VirtualKeyCode;
+    InputEvent.Event.KeyEvent.wVirtualScanCode = (BYTE)(HIWORD(lParam));
+    if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
+    {
+        // --- START LOAD BEARING CODE ---
+        // NOTE: We MUST match up the original data from the WM_KEYDOWN stroke (handled at some inexact moment in the
+        //       past by TranslateMessageEx) with the WM_CHAR we are processing now to ensure we have the correct
+        //       wVirtualScanCode to associate with the message and pass down into the console input queue for further
+        //       processing.
+        //       This is required because we cannot accurately re-synthesize (using MapVirtualKey/Ex)
+        //       the original scan code just based on the information we have now and the scan code might be 
+        //       required by the underlying client application, processed input handler (inside the console),
+        //       or other input channels to help portray certain key sequences.
+        //       Most notably this affects Ctrl-C, Ctrl-Break, and Pause/Break among others.
+        //
+        RetrieveKeyInfo(hWnd,
+                        &InputEvent.Event.KeyEvent.wVirtualKeyCode,
+                        &InputEvent.Event.KeyEvent.wVirtualScanCode,
+                        !g_ciConsoleInformation.pInputBuffer->ImeMode.InComposition);
+
+        VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
+        // --- END LOAD BEARING CODE ---
+    }
+
     InputEvent.EventType = KEY_EVENT;
     InputEvent.Event.KeyEvent.bKeyDown = bKeyDown;
-    InputEvent.Event.KeyEvent.wRepeatCount = repeatCount;
-    InputEvent.Event.KeyEvent.wVirtualKeyCode = VirtualKeyCode;
-    InputEvent.Event.KeyEvent.wVirtualScanCode = VirtualScanCode;
-    InputEvent.Event.KeyEvent.dwControlKeyState = ControlKeyState;
-    InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)0;
+    InputEvent.Event.KeyEvent.wRepeatCount = LOWORD(lParam);
 
-    // We need to differentiate between WM_KEYDOWN and the rest
-    // because when the message is WM_KEYDOWN we need to be
-    // translating the scancode and with the others we're given the
-    // wchar directly.
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
     {
         // If this is a fake character, zero the scancode.
@@ -1575,54 +1561,25 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
         {
             InputEvent.Event.KeyEvent.wVirtualScanCode = 0;
         }
-        InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)wParam;
-        InputEvent.Event.KeyEvent.wVirtualKeyCode = LOBYTE(VkKeyScan((WCHAR)wParam));
-
-        // --- LOAD BEARING CODE ---
-        // Note: In some circumstances, specifically when an application is attempting to interpret
-        // keystrokes for a particular key-chord like Ctrl+C, Ctrl+Z, etc...
-        // That application will need the full context that was given to us with the initial WM_KEYDOWN message
-        // including the original scan code and the original virtual key and character interpretation at that time.
-        // This is prior to the translation that occurs when the WM_KEYDOWN message is fed into TranslateMessageEx,
-        // converted by the system, and sent to us again later as a WM_CHAR where it may have a different interpretation
-        // or be missing some of this original contextual data. (a.k.a. it is in a format where it can no longer be accurately
-        // recreated using the MapVirtualKey suite of functions.)
-        // 
-        // As such, if we had determined that we needed to save the original message when it came in to hold such contextual data...
-        // restore it now so the remainder of the input handling routine can appropriately adapt itself for the input.
-        if (SavedKeyInfo.IsSaved())
+        InputEvent.Event.KeyEvent.dwControlKeyState = GetControlKeyState(lParam);
+        if (Message == WM_CHAR || Message == WM_SYSCHAR)
         {
-            SavedKeyInfo.Get(InputEvent);
+            InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)wParam;
         }
-        // --- END LOAD BEARING CODE ---
-
-        InputEvent.Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKeyW(InputEvent.Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC);
-
-        VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
-        VirtualScanCode = InputEvent.Event.KeyEvent.wVirtualScanCode;
+        else
+        {
+            InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)0;
+        }
     }
-    else if (Message == WM_KEYDOWN)
+    else
     {
         // if alt-gr, ignore
         if (lParam & 0x02000000)
         {
             return;
         }
-        InputEvent.Event.KeyEvent.wVirtualKeyCode = (WORD) MapVirtualKeyW(VirtualScanCode, MAPVK_VSC_TO_VK_EX);
-        // for compatibility with the old behavior, we need to translate
-        // keyboard position dependent virtual keycodes to position agnostic
-        // ones (ex. VK_LCONTROL -> VK_CONTROL)
-        if (InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_LCONTROL || InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_RCONTROL)
-        {
-            InputEvent.Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
-        }
-        else if (InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_LSHIFT || InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_RSHIFT)
-        {
-            InputEvent.Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
-        }
-
-        VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
-        VirtualScanCode = InputEvent.Event.KeyEvent.wVirtualScanCode;
+        InputEvent.Event.KeyEvent.dwControlKeyState = ControlKeyState;
+        InputEvent.Event.KeyEvent.uChar.UnicodeChar = 0;
     }
 
     const INPUT_KEY_INFO inputKeyInfo(VirtualKeyCode, ControlKeyState);
