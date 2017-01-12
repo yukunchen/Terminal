@@ -229,13 +229,6 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pCont
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    // Flags we don't understand are invalid.
-    RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~(INPUT_MODES | PRIVATE_MODES)));
-
-    // ECHO on with LINE off is invalid.
-    RETURN_HR_IF(E_INVALIDARG, IsFlagSet(Mode, ENABLE_ECHO_INPUT) && IsFlagClear(Mode, ENABLE_LINE_INPUT));
-
-
     if (IsAnyFlagSet(Mode, PRIVATE_MODES))
     {
         SetFlag(g_ciConsoleInformation.Flags, CONSOLE_USE_PRIVATE_FLAGS);
@@ -261,6 +254,21 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pCont
 
     pContext->InputMode = Mode;
     ClearAllFlags(pContext->InputMode, PRIVATE_MODES);
+
+    // NOTE: For compatibility reasons, we need to set the modes and then return the error codes, not the other way around
+    //       as might be expected.
+    //       This is a bug from a long time ago and some applications depend on this functionality to operate properly.
+    //       ---
+    //       A prime example of this is that PSReadline module in Powershell will set the invalid mode 0x1e4
+    //       which includes 0x4 for ECHO_INPUT but turns off 0x2 for LINE_INPUT. This is invalid, but PSReadline
+    //       relies on it to properly receive the ^C printout and make a new line when the user presses Ctrl+C.
+    { 
+        // Flags we don't understand are invalid.
+        RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~(INPUT_MODES | PRIVATE_MODES)));
+
+        // ECHO on with LINE off is invalid.
+        RETURN_HR_IF(E_INVALIDARG, IsFlagSet(Mode, ENABLE_ECHO_INPUT) && IsFlagClear(Mode, ENABLE_LINE_INPUT));
+    }
 
     return S_OK;
 }

@@ -5,6 +5,7 @@ TARGETTYPE                      =   DYNLINK
 DLLDEF                          =
 
 SOURCES                         =   $(SOURCES) \
+                                    ApiRoutinesTests.cpp \
                                     CommonState.cpp \
                                     UtilsTests.cpp \
                                     AttrRowTests.cpp \
