@@ -110,3 +110,6 @@
 	10444846 - Ensure synchronization of sdcheckin.txt/changelog.txt when merging to inbox branch
 	9893723 - [GH#1390] Some mouse wheel actions and trackpad gestures are erroneously translated into Mouse Button 5 events
 	10243950 - conhost.exe taking a lot of CPU cycles with Hack font as default
+1/11/2017 - 10059280 - [CPG] - Boot_PostSetup | +544.5 KB regression in Metric: NormalPri-DiskRead | rs_onecore_dep.14986.1001.20161203-1700
+1/12/2017 - 10320237 - Restore input handling to RS1 behavior to restore Ctrl-break, pause/break, Ctrl-c issues
+1/12/2017 - 10438946 - Powershell PSReadline relies on setting invalid input flags to receive ^C for Ctrl+C
