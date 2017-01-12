@@ -255,9 +255,9 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pCont
     pContext->InputMode = Mode;
     ClearAllFlags(pContext->InputMode, PRIVATE_MODES);
 
-    // NOTE: I know this looks wrong. We're checking for the invalid flags/modes *AFTER* we have already set the state 
-    //       inside the console. You're right, it's wrong. However, someone goofed a long time ago on this one
-    //       and now there are applications that depend on this behavior. We can't change it for compatibility reasons.
+    // NOTE: For compatibility reasons, we need to set the modes and then return the error codes, not the other way around
+    //       as might be expected.
+    //       This is a bug from a long time ago and some applications depend on this functionality to operate properly.
     //       ---
     //       A prime example of this is that PSReadline module in Powershell will set the invalid mode 0x1e4
     //       which includes 0x4 for ECHO_INPUT but turns off 0x2 for LINE_INPUT. This is invalid, but PSReadline
