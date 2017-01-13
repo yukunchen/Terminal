@@ -101,6 +101,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Nihilist", "src\tools\nihil
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NoOp.Tests.Feature", "src\tools\ft_x86_noop\ft_x86_noop.vcxproj", "{3CAC8870-95FD-4D75-A6DA-9B1F4F679D4B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FontList", "src\tools\fontlist\FontList.vcxproj", "{919544AC-D39B-463F-8414-3C3C67CF727C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -271,6 +273,14 @@ Global
 		{3CAC8870-95FD-4D75-A6DA-9B1F4F679D4B}.Release|x64.ActiveCfg = Release|x64
 		{3CAC8870-95FD-4D75-A6DA-9B1F4F679D4B}.Release|x86.ActiveCfg = Release|Win32
 		{3CAC8870-95FD-4D75-A6DA-9B1F4F679D4B}.Release|x86.Build.0 = Release|Win32
+		{919544AC-D39B-463F-8414-3C3C67CF727C}.Debug|x64.ActiveCfg = Debug|x64
+		{919544AC-D39B-463F-8414-3C3C67CF727C}.Debug|x64.Build.0 = Debug|x64
+		{919544AC-D39B-463F-8414-3C3C67CF727C}.Debug|x86.ActiveCfg = Debug|Win32
+		{919544AC-D39B-463F-8414-3C3C67CF727C}.Debug|x86.Build.0 = Debug|Win32
+		{919544AC-D39B-463F-8414-3C3C67CF727C}.Release|x64.ActiveCfg = Release|x64
+		{919544AC-D39B-463F-8414-3C3C67CF727C}.Release|x64.Build.0 = Release|x64
+		{919544AC-D39B-463F-8414-3C3C67CF727C}.Release|x86.ActiveCfg = Release|Win32
+		{919544AC-D39B-463F-8414-3C3C67CF727C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -282,5 +292,6 @@ Global
 		{099193A0-1E43-4BBC-BA7F-7B351E1342DF} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 		{FC802440-AD6A-4919-8F2C-7701F2B38D79} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 		{3CAC8870-95FD-4D75-A6DA-9B1F4F679D4B} = {A10C4720-DCA4-4640-9749-67F4314F527C}
+		{919544AC-D39B-463F-8414-3C3C67CF727C} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 	EndGlobalSection
 EndGlobal
