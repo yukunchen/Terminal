@@ -167,9 +167,9 @@ void FontTests::TestFontScenario()
     // I'm going to update this test to ensure we get the correct font.
     VERIFY_ARE_EQUAL(cfieSet.nFont, cfiePost.nFont);
     // MSFT: 10449084 - test is failing
-    /*VERIFY_ARE_EQUAL(cfieSet.dwFontSize.X, cfiePost.dwFontSize.X);
+    VERIFY_ARE_EQUAL(cfieSet.dwFontSize.X, cfiePost.dwFontSize.X);
     VERIFY_ARE_EQUAL(cfieSet.dwFontSize.Y, cfiePost.dwFontSize.Y);
     VERIFY_ARE_EQUAL(cfieSet.FontFamily, cfiePost.FontFamily);
     VERIFY_ARE_EQUAL(cfieSet.FontWeight, cfiePost.FontWeight);
-    VERIFY_ARE_EQUAL(String(cfieSet.FaceName), String(cfiePost.FaceName));*/
+    VERIFY_ARE_EQUAL(String(cfieSet.FaceName), String(cfiePost.FaceName));
 }
