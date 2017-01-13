@@ -120,30 +120,76 @@ class KeyPressTests
         VERIFY_ARE_EQUAL(events, 0);
 
         // send a bunch of 'a' keypresses to the console
-        DWORD repeatCount = 1;
-        const unsigned int messageSendCount = 1000;
-        for (unsigned int i = 0; i < messageSendCount; ++i)
+        // DWORD repeatCount = 1;
+        // const unsigned int messageSendCount = 1000;
+        // for (unsigned int i = 0; i < messageSendCount; ++i)
+        // {
+        //     SendMessage(hwnd,
+        //                 WM_CHAR,
+        //                 0x41,
+        //                 repeatCount);
+        // }
+
+
+        // SendMessage(hwnd, 0x0100, 0x11, 1); // keydown ctrl
+        // SendMessage(hwnd, 0x0100, 0x53, 1); // keydown S
+        // SendMessage(hwnd, 0x0101, 0x53, 1); // keyup s
+        // SendMessage(hwnd, 0x0101, 0x11, 1); // keyup ctrl  
+
+
+        for (int vk = 0x41; vk <= 0x5A; vk ++)
         {
-            SendMessage(hwnd,
-                        WM_CHAR,
-                        0x41,
-                        repeatCount);
+
+            PostMessage(hwnd, WM_KEYDOWN, 0x11, 0); // keydown ctrl
+            PostMessage(hwnd, WM_KEYDOWN,   vk, 0); // keydown S
+            PostMessage(hwnd, WM_KEYUP,   vk, 1); // keyup s
+            PostMessage(hwnd, WM_KEYUP, 0x11, 1); // keyup ctrl  
+
+            Sleep(10);
+
+            events = 0;
+            successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
+            VERIFY_IS_TRUE(!!successBool);
+            VERIFY_IS_GREATER_THAN(events, 0u, NoThrowString().Format(L"%d events found", events));
+
+            std::unique_ptr<INPUT_RECORD[]> inputBuffer = std::make_unique<INPUT_RECORD[]>(16);
+            PeekConsoleInput(inputHandle,
+                             inputBuffer.get(),
+                             4,
+                             &events);
+
+            for (size_t i = 0; i < events; i++)
+            {
+                INPUT_RECORD rc = inputBuffer[i];
+                switch (rc.EventType)
+                {
+                    case KEY_EVENT:
+                    {
+                        Log::Comment(NoThrowString().Format(
+                            L"Down: %d Repeat: %d KeyCode: 0x%x ScanCode: 0x%x Char: %c (0x%x) KeyState: 0x%x",
+                            rc.Event.KeyEvent.bKeyDown,
+                            rc.Event.KeyEvent.wRepeatCount,
+                            rc.Event.KeyEvent.wVirtualKeyCode,
+                            rc.Event.KeyEvent.wVirtualScanCode,
+                            rc.Event.KeyEvent.uChar.UnicodeChar != 0 ? rc.Event.KeyEvent.uChar.UnicodeChar : ' ',
+                            rc.Event.KeyEvent.uChar.UnicodeChar,
+                            rc.Event.KeyEvent.dwControlKeyState
+                        ));
+
+                        break;
+                    }
+                    default:
+                        Log::Comment(NoThrowString().Format(L"Another event type was found."));
+                }
+            }
+            // VERIFY_ARE_EQUAL(events, 4);
+            // VERIFY_ARE_EQUAL(inputBuffer[0].EventType, KEY_EVENT);
+            // VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wRepeatCount, 1, NoThrowString().Format(L"%d", inputBuffer[0].Event.KeyEvent.wRepeatCount));
+
+            FlushConsoleInputBuffer(inputHandle);
         }
 
-        // make sure the the keypresses got processed and coalesced
-        events = 0;
-        successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
-        VERIFY_IS_TRUE(!!successBool);
-        VERIFY_IS_GREATER_THAN(events, 0u, NoThrowString().Format(L"%d", events));
 
-        std::unique_ptr<INPUT_RECORD[]> inputBuffer = std::make_unique<INPUT_RECORD[]>(16);
-        PeekConsoleInput(inputHandle,
-                         inputBuffer.get(),
-                         4,
-                         &events);
-        VERIFY_ARE_EQUAL(events, 4);
-        VERIFY_ARE_EQUAL(inputBuffer[0].EventType, KEY_EVENT);
-        VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wRepeatCount, messageSendCount, NoThrowString().Format(L"%d", inputBuffer[0].Event.KeyEvent.wRepeatCount));
     }
 
 };
