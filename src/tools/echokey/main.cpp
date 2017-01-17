@@ -16,6 +16,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
 
     GetConsoleMode(hOut, &dwOutMode);
     GetConsoleMode(hIn, &dwInMode);
+    wprintf(L"Mode:0x%x\n", dwInMode);
 
     // dwOutMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
     // dwInMode |= ENABLE_VIRTUAL_TERMINAL_INPUT;

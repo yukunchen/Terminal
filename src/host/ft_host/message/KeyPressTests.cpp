@@ -119,6 +119,9 @@ class KeyPressTests
         VERIFY_IS_TRUE(!!successBool);
         VERIFY_ARE_EQUAL(events, 0);
 
+        DWORD dwInMode = 0;
+        GetConsoleMode(inputHandle, &dwInMode);
+        Log::Comment(NoThrowString().Format(L"Mode:0x%x", dwInMode));
         // send a bunch of 'a' keypresses to the console
         // DWORD repeatCount = 1;
         // const unsigned int messageSendCount = 1000;
@@ -137,15 +140,48 @@ class KeyPressTests
         // SendMessage(hwnd, 0x0101, 0x11, 1); // keyup ctrl  
 
 
-        for (int vk = 0x41; vk <= 0x5A; vk ++)
+        for (WORD vk = 0x41; vk <= 0x5A; vk ++)
         {
 
-            PostMessage(hwnd, WM_KEYDOWN, 0x11, 0); // keydown ctrl
-            PostMessage(hwnd, WM_KEYDOWN,   vk, 0); // keydown S
-            PostMessage(hwnd, WM_KEYUP,   vk, 1); // keyup s
-            PostMessage(hwnd, WM_KEYUP, 0x11, 1); // keyup ctrl  
+            if (vk == 'A') continue; // Selects Text
+            if (vk == 'C') continue; // Exits window
+            if (vk == 'F') continue; // Opens Find Dialog
+            if (vk == 'M') continue; // Enters Mark Mode
+            if (vk == 'S') continue; // Ignores the next key? C-s -> DC3
+            if (vk == 'V') continue; // Pastes
 
-            Sleep(10);
+            Log::Comment(NoThrowString().Format(L"Testing Ctrl+%c", vk));
+            // PostMessage(hwnd, WM_KEYDOWN, 0x11, 0); // keydown ctrl
+            // PostMessage(hwnd, WM_KEYDOWN,   vk, 0); // keydown S
+            // PostMessage(hwnd, WM_KEYUP,   vk, 1); // keyup s
+            // PostMessage(hwnd, WM_KEYUP, 0x11, 1); // keyup ctrl  
+
+            // SendMessage(hwnd, WM_KEYDOWN, 0x11, 0); // keydown ctrl
+            // SendMessage(hwnd, WM_KEYDOWN,   vk, 0); // keydown S
+            // SendMessage(hwnd, WM_KEYUP,   vk, 1); // keyup s
+            // SendMessage(hwnd, WM_KEYUP, 0x11, 1); // keyup ctrl  
+
+            KEYBDINPUT kbdIn = {0};
+            INPUT in = {0};
+            in.type = INPUT_KEYBOARD;
+            
+            kbdIn.wVk = 0x11;
+            in.ki = kbdIn;
+            SendInput(1, &in, sizeof(in));
+
+            kbdIn.wVk = vk;
+            in.ki = kbdIn;
+            SendInput(1, &in, sizeof(in));
+
+            kbdIn.dwFlags = KEYEVENTF_KEYUP;
+            in.ki = kbdIn;
+            SendInput(1, &in, sizeof(in));
+
+            kbdIn.wVk = 0x11;
+            in.ki = kbdIn;
+            SendInput(1, &in, sizeof(in));
+
+            Sleep(100);
 
             events = 0;
             successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
@@ -182,8 +218,16 @@ class KeyPressTests
                         Log::Comment(NoThrowString().Format(L"Another event type was found."));
                 }
             }
-            // VERIFY_ARE_EQUAL(events, 4);
-            // VERIFY_ARE_EQUAL(inputBuffer[0].EventType, KEY_EVENT);
+            VERIFY_ARE_EQUAL(events, 4);
+            VERIFY_ARE_EQUAL(inputBuffer[0].EventType, KEY_EVENT);
+            VERIFY_ARE_EQUAL(inputBuffer[1].EventType, KEY_EVENT);
+            VERIFY_ARE_EQUAL(inputBuffer[2].EventType, KEY_EVENT);
+            VERIFY_ARE_EQUAL(inputBuffer[3].EventType, KEY_EVENT);
+
+            VERIFY_ARE_EQUAL(inputBuffer[1].Event.KeyEvent.wVirtualKeyCode, inputBuffer[1].Event.KeyEvent.uChar.UnicodeChar + 0x40);
+            
+            VERIFY_ARE_EQUAL(inputBuffer[1].Event.KeyEvent.wVirtualKeyCode, inputBuffer[2].Event.KeyEvent.wVirtualKeyCode);
+            VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wVirtualKeyCode, inputBuffer[3].Event.KeyEvent.wVirtualKeyCode);
             // VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wRepeatCount, 1, NoThrowString().Format(L"%d", inputBuffer[0].Event.KeyEvent.wRepeatCount));
 
             FlushConsoleInputBuffer(inputHandle);
