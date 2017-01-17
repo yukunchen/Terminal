@@ -397,5 +397,103 @@ namespace WEX {
                 return object.EventType == 0;
             }
         };
+
+        template<>
+        class VerifyOutputTraits <CONSOLE_FONT_INFO>
+        {
+        public:
+            static WEX::Common::NoThrowString ToString(const CONSOLE_FONT_INFO& cfi)
+            {
+                return WEX::Common::NoThrowString().Format(L"Index: %n  Size: (X:%d, Y:%d)", cfi.nFont, cfi.dwFontSize.X, cfi.dwFontSize.Y);
+            }
+        };
+
+        template<>
+        class VerifyCompareTraits <CONSOLE_FONT_INFO, CONSOLE_FONT_INFO>
+        {
+        public:
+            static bool AreEqual(const CONSOLE_FONT_INFO& expected, const CONSOLE_FONT_INFO& actual)
+            {
+                return expected.nFont == actual.nFont &&
+                    expected.dwFontSize.X == actual.dwFontSize.X &&
+                    expected.dwFontSize.Y == actual.dwFontSize.Y;
+            }
+
+            static bool AreSame(const CONSOLE_FONT_INFO& expected, const CONSOLE_FONT_INFO& actual)
+            {
+                return &expected == &actual;
+            }
+
+            static bool IsLessThan(const CONSOLE_FONT_INFO& expectedLess, const CONSOLE_FONT_INFO& expectedGreater)
+            {
+                return expectedLess.dwFontSize.X < expectedGreater.dwFontSize.X &&
+                    expectedLess.dwFontSize.Y < expectedGreater.dwFontSize.Y;
+            }
+
+            static bool IsGreaterThan(const CONSOLE_FONT_INFO& expectedGreater, const CONSOLE_FONT_INFO& expectedLess)
+            {
+                return expectedLess.dwFontSize.X < expectedGreater.dwFontSize.X &&
+                    expectedLess.dwFontSize.Y < expectedGreater.dwFontSize.Y;
+            }
+
+            static bool IsNull(const CONSOLE_FONT_INFO& object)
+            {
+                return object.nFont == 0 && object.dwFontSize.X == 0 && object.dwFontSize.Y == 0;
+            }
+        };
+
+        template<>
+        class VerifyOutputTraits <CONSOLE_FONT_INFOEX>
+        {
+        public:
+            static WEX::Common::NoThrowString ToString(const CONSOLE_FONT_INFOEX& cfiex)
+            {
+                return WEX::Common::NoThrowString().Format(L"Index: %d  Size: (X:%d, Y:%d)  Family: 0x%x (%d)  Weight: 0x%x (%d)  Name: %ls",
+                                                           cfiex.nFont,
+                                                           cfiex.dwFontSize.X,
+                                                           cfiex.dwFontSize.Y,
+                                                           cfiex.FontFamily, cfiex.FontFamily,
+                                                           cfiex.FontWeight, cfiex.FontWeight,
+                                                           cfiex.FaceName);
+            }
+        };
+
+        template<>
+        class VerifyCompareTraits <CONSOLE_FONT_INFOEX, CONSOLE_FONT_INFOEX>
+        {
+        public:
+            static bool AreEqual(const CONSOLE_FONT_INFOEX& expected, const CONSOLE_FONT_INFOEX& actual)
+            {
+                return expected.nFont == actual.nFont &&
+                    expected.dwFontSize.X == actual.dwFontSize.X &&
+                    expected.dwFontSize.Y == actual.dwFontSize.Y &&
+                    expected.FontFamily == actual.FontFamily &&
+                    expected.FontWeight == actual.FontWeight;/* &&
+                    0 == wcscmp(expected.FaceName, actual.FaceName);*/
+            }
+
+            static bool AreSame(const CONSOLE_FONT_INFOEX& expected, const CONSOLE_FONT_INFOEX& actual)
+            {
+                return &expected == &actual;
+            }
+
+            static bool IsLessThan(const CONSOLE_FONT_INFOEX& expectedLess, const CONSOLE_FONT_INFOEX& expectedGreater)
+            {
+                return expectedLess.dwFontSize.X < expectedGreater.dwFontSize.X &&
+                    expectedLess.dwFontSize.Y < expectedGreater.dwFontSize.Y;
+            }
+
+            static bool IsGreaterThan(const CONSOLE_FONT_INFOEX& expectedGreater, const CONSOLE_FONT_INFOEX& expectedLess)
+            {
+                return expectedLess.dwFontSize.X < expectedGreater.dwFontSize.X &&
+                    expectedLess.dwFontSize.Y < expectedGreater.dwFontSize.Y;
+            }
+
+            static bool IsNull(const CONSOLE_FONT_INFOEX& object)
+            {
+                return object.nFont == 0 && object.dwFontSize.X == 0 && object.dwFontSize.Y == 0 &&
+                    object.FontFamily == 0 && object.FontWeight == 0 && object.FaceName[0] == L'\0';
+            }
+        };
     }
 }
