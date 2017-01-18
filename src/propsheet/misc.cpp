@@ -175,7 +175,7 @@ void RecreateFontHandles(_In_ const HWND hWnd)
 
 
 // Routine Description:
-// - Add the font desribed by the LOGFONT structure to the font table if
+// - Add the font described by the LOGFONT structure to the font table if
 //      it's not already there.
 int
 AddFont(

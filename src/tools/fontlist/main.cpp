@@ -38,19 +38,18 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
                      ((CharSet) == CHINESEBIG5_CHARSET) ? TRUE :    \
                      ((CharSet) == GB2312_CHARSET)      ? TRUE : FALSE )
 
-#define CP_US       (UINT)437
-#define CP_JPN      (UINT)932
-#define CP_WANSUNG  (UINT)949
-#define CP_TC       (UINT)950
-#define CP_SC       (UINT)936
+#define CP_US       ((UINT)437)
+#define CP_JPN      ((UINT)932)
+#define CP_WANSUNG  ((UINT)949)
+#define CP_TC       ((UINT)950)
+#define CP_SC       ((UINT)936)
 #define IsEastAsianCP(cp) ((cp)==CP_JPN || (cp)==CP_WANSUNG || (cp)==CP_TC || (cp)==CP_SC)
 
 /*
 * TTPoints -- Initial font pixel heights for TT fonts
-*/
-/*
-* TTPointsDbcs -- Initial font pixel heights for TT fonts of DBCS.
-* So, This list except odd point size because font width is (SBCS:DBCS != 1:2).
+* NOTE:
+*   Font pixel heights for TT fonts of DBCS are the same list except 
+*   odd point size because font width is (SBCS:DBCS != 1:2).
 */
 SHORT TTPoints[] = {
     5, 6, 7, 8, 10, 12, 14, 16, 18, 20, 24, 28, 36, 72
@@ -198,7 +197,7 @@ int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, 
 }
 
 // Routine Description:
-// - Add the font desribed by the LOGFONT structure to the font table if
+// - Add the font described by the LOGFONT structure to the font table if
 //      it's not already there.
 int
 AddFont(
