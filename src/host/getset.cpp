@@ -221,6 +221,16 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
     // TODO: MSFT: 9574827 - should this have a failure case?
     psi->UpdateFont(&fi);
 
+    // If this is the active screen buffer, also cause the window to refresh its viewport size.
+    if (psi->IsActiveScreenBuffer())
+    {
+        Window* const pWindow = g_ciConsoleInformation.pWindow;
+        if (nullptr != pWindow)
+        {
+            pWindow->PostUpdateWindowSize();
+        }
+    }
+
     return S_OK;
 }
 

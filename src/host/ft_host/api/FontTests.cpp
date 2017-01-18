@@ -28,6 +28,8 @@ class FontTests
     TEST_METHOD(TestSetConsoleFontNegativeSize);
 
     TEST_METHOD(TestFontScenario);
+
+    TEST_METHOD(TestSetFontAdjustsWindow);
 };
 
 bool FontTests::TestSetup()
@@ -176,4 +178,57 @@ void FontTests::TestFontScenario()
     wcscpy_s(cfieFullExpected.FaceName, L"Lucida Console");
 
     VERIFY_ARE_EQUAL(cfieFullExpected, cfiePost);
+}
+
+void FontTests::TestSetFontAdjustsWindow()
+{
+    const HANDLE hConsoleOutput = GetStdOutputHandle();
+    const HWND hwnd = GetConsoleWindow();
+    RECT rc = { 0 };
+
+    CONSOLE_FONT_INFOEX cfiex = { 0 };
+    cfiex.cbSize = sizeof(cfiex);
+
+    Log::Comment(L"First set the console window to Consolas 16.");
+    wcscpy_s(cfiex.FaceName, L"Consolas");
+    cfiex.dwFontSize.Y = 16;
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiex));
+    Sleep(250);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetClientRect(hwnd, &rc), L"Retrieve client rectangle size for Consolas 16.");
+    SIZE szConsolas;
+    szConsolas.cx = rc.right - rc.left;
+    szConsolas.cy = rc.bottom - rc.top;
+    Log::Comment(NoThrowString().Format(L"Client rect size is (X: %d, Y: %d)", szConsolas.cx, szConsolas.cy));
+    
+    Log::Comment(L"Adjust console window to Lucida Console 12.");
+    wcscpy_s(cfiex.FaceName, L"Lucida Console");
+    cfiex.dwFontSize.Y = 12;
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiex));
+    Sleep(250);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetClientRect(hwnd, &rc), L"Retrieve client rectangle size for Lucida Console 12.");
+    SIZE szLucida;
+    szLucida.cx = rc.right - rc.left;
+    szLucida.cy = rc.bottom - rc.top;
+
+    Log::Comment(NoThrowString().Format(L"Client rect size is (X: %d, Y: %d)", szLucida.cx, szLucida.cy));
+    Log::Comment(L"Window should shrink in size when going to Lucida 12 from Consolas 16.");
+    VERIFY_IS_LESS_THAN(szLucida.cx, szConsolas.cx);
+    VERIFY_IS_LESS_THAN(szLucida.cy, szConsolas.cy);
+
+    Log::Comment(L"Adjust console window back to Consolas 16.");
+    wcscpy_s(cfiex.FaceName, L"Consolas");
+    cfiex.dwFontSize.Y = 16;
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiex));
+    Sleep(250);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetClientRect(hwnd, &rc), L"Retrieve client rectangle size for Consolas 16.");
+    szConsolas.cx = rc.right - rc.left;
+    szConsolas.cy = rc.bottom - rc.top;
+    
+    Log::Comment(NoThrowString().Format(L"Client rect size is (X: %d, Y: %d)", szConsolas.cx, szConsolas.cy));
+    Log::Comment(L"Window should grow in size when going from Lucida 12 to Consolas 16.");
+    VERIFY_IS_LESS_THAN(szLucida.cx, szConsolas.cx);
+    VERIFY_IS_LESS_THAN(szLucida.cy, szConsolas.cy);
 }
