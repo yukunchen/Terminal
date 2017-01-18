@@ -468,8 +468,8 @@ namespace WEX {
                     expected.dwFontSize.X == actual.dwFontSize.X &&
                     expected.dwFontSize.Y == actual.dwFontSize.Y &&
                     expected.FontFamily == actual.FontFamily &&
-                    expected.FontWeight == actual.FontWeight;/* &&
-                    0 == wcscmp(expected.FaceName, actual.FaceName);*/
+                    expected.FontWeight == actual.FontWeight &&
+                    0 == wcscmp(expected.FaceName, actual.FaceName);
             }
 
             static bool AreSame(const CONSOLE_FONT_INFOEX& expected, const CONSOLE_FONT_INFOEX& actual)
