@@ -244,6 +244,24 @@ public:
     {
         return L'1' + (fShift? 1 : 0) + (fAlt? 2 : 0) + (fCtrl? 4 : 0);
     }
+    bool ControlAndAltPressed(unsigned int uiKeystate)
+    {
+        return (IsFlagSet(uiKeystate, LEFT_CTRL_PRESSED) || IsFlagSet(uiKeystate, RIGHT_CTRL_PRESSED)) 
+                && (IsFlagSet(uiKeystate, LEFT_ALT_PRESSED) || IsFlagSet(uiKeystate, RIGHT_ALT_PRESSED));
+    }
+    bool ControlOrAltPressed(unsigned int uiKeystate)
+    {
+        return (IsFlagSet(uiKeystate, LEFT_CTRL_PRESSED) || IsFlagSet(uiKeystate, RIGHT_CTRL_PRESSED)) 
+                || (IsFlagSet(uiKeystate, LEFT_ALT_PRESSED) || IsFlagSet(uiKeystate, RIGHT_ALT_PRESSED));
+    }
+    bool ControlPressed(unsigned int uiKeystate)
+    {
+        return IsFlagSet(uiKeystate, LEFT_CTRL_PRESSED) || IsFlagSet(uiKeystate, RIGHT_CTRL_PRESSED);
+    }
+    bool AltPressed(unsigned int uiKeystate)
+    {
+        return IsFlagSet(uiKeystate, LEFT_ALT_PRESSED) || IsFlagSet(uiKeystate, RIGHT_ALT_PRESSED);
+    }
 
 // #define RIGHT_ALT_PRESSED     0x0001
 // #define LEFT_ALT_PRESSED      0x0002
@@ -255,12 +273,13 @@ public:
     {
         Log::Comment(L"Starting test...");
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0001, 0x0002, 0x0004, 0x0008, 0x0010}")
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008, 0x000A, 0x000C, 0x000E, 0x0010, 0x0011, 0x0012, 0x0013}")
         END_TEST_METHOD_PROPERTIES()
 
+        unsigned int uiActualKeystate;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiActualKeystate));
+        unsigned int uiKeystate = uiActualKeystate;
 
-        unsigned int uiKeystate;
-        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiKeystate));
         const TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
 
         Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
@@ -274,7 +293,7 @@ public:
             bool fModifySequence = false;
             INPUT_RECORD irTest = { 0 };
             irTest.EventType = KEY_EVENT;
-            irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
+            irTest.Event.KeyEvent.dwControlKeyState = uiActualKeystate;
             irTest.Event.KeyEvent.wRepeatCount = 1;
             irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
             irTest.Event.KeyEvent.bKeyDown = TRUE;
@@ -284,13 +303,16 @@ public:
             {
             case '@':
             case '2':
-                if (uiKeystate == LEFT_CTRL_PRESSED || uiKeystate == RIGHT_CTRL_PRESSED)
+                if (ControlPressed(uiKeystate))
                 {
                     continue;
                 }
                 // C-@ gets translated to null, which doesn't play nicely with this test.
                 // So theres the TerminalInputNullKeyTests Test instead.
                 break;
+            case 0x20:
+                // Space generally gets translated to null, which again, doesn't play well.
+                continue;
             case VK_BACK:
                 memcpy(s_pwsInputBuffer, L"\x7f", 1 * sizeof(wchar_t));
                 break;
@@ -328,6 +350,7 @@ public:
                 break;
             case VK_END:
                 fModifySequence = true;
+                // DebugBreak();
                 memcpy(s_pwsInputBuffer, L"\x1b[1;mF", 6 * sizeof(wchar_t));
                 break;
             case VK_PRIOR:
@@ -385,7 +408,24 @@ public:
                 memcpy(s_pwsInputBuffer, L"\x1b[24;m~", 7 * sizeof(wchar_t));
                 break;
             default:
-                fExpectedKeyHandled = false;
+                // Alt+Key generates [0x1b, key] into the stream
+                if (AltPressed(uiKeystate) && (vkey > 0x40 && vkey <= 0x5A)) 
+                {
+                    memcpy(s_pwsInputBuffer, L"\x1bm", 2 * sizeof(wchar_t));
+                    wchar_t wchShifted = vkey;
+                    // Alt + Ctrl + key generates [0x1b, control key] in the stream.
+                    if (ControlPressed(uiKeystate)) 
+                    {
+                        // Generally the control key is key-0x40
+                        wchShifted = vkey - 0x40;
+                    }
+                    s_pwsInputBuffer[1] = wchShifted;
+                    fExpectedKeyHandled = true;
+                }
+                else
+                {
+                    fExpectedKeyHandled = false;
+                }
                 break;
             }
             if (!fExpectedKeyHandled && ((vkey >= '0' && vkey <= 'Z') || vkey == VK_CANCEL))
