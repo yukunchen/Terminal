@@ -355,7 +355,6 @@ bool TerminalInput::HandleKey(_In_ const INPUT_RECORD* const pInput) const
             }
 
             // ALT is a sequence of ESC + KEY.
-            // ALT+CTRL is handled here too. 
             // NOTE: The ALT handler must come first. For ALT+CTRL, the UnicodeChar will be pre-shifted by the system
             //       into the proper Control Character (<0x20) and so we only need to embed it inside the ALT sequence below.
             if (key.uChar.UnicodeChar != 0 && ((key.dwControlKeyState & LEFT_ALT_PRESSED) || (key.dwControlKeyState & RIGHT_ALT_PRESSED)))
@@ -363,6 +362,28 @@ bool TerminalInput::HandleKey(_In_ const INPUT_RECORD* const pInput) const
                 WCHAR rgwchSequence[3];
                 rgwchSequence[0] = L'\x1b';
                 rgwchSequence[1] = key.uChar.UnicodeChar;
+                rgwchSequence[2] = L'\x0';
+                _SendInputSequence(rgwchSequence);
+                fKeyHandled = true;
+            }
+            else if (((key.dwControlKeyState & LEFT_ALT_PRESSED) || (key.dwControlKeyState & RIGHT_ALT_PRESSED))
+                      && s_IsCtrlPressed(&key)
+                      && key.uChar.UnicodeChar == 0
+                      && !(key.wVirtualKeyCode == VK_MENU || key.wVirtualKeyCode == VK_CONTROL))
+            {
+                // ALT+CTRL is handled here.
+                // For Alt+Ctrl+Key messages, the UnicodeChar is NOT the Ctrl+key char, it's null.
+                // So we need to get the char from the vKey.
+                wchar_t wchPressedChar = (wchar_t)MapVirtualKey(key.wVirtualKeyCode, MAPVK_VK_TO_CHAR);
+                // This is a trick - C-Spc is supposed to send NUL. So quick change space -> @ (0x40)
+                wchPressedChar = (wchPressedChar == 0x20)? 0x40 : wchPressedChar;
+                assert(wchPressedChar >= 0x40);
+                //shift the char to the ctrl range
+                wchPressedChar -= 0x40;
+
+                WCHAR rgwchSequence[3];
+                rgwchSequence[0] = L'\x1b';
+                rgwchSequence[1] = wchPressedChar;
                 rgwchSequence[2] = L'\x0';
                 _SendInputSequence(rgwchSequence);
                 fKeyHandled = true;
