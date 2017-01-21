@@ -19,7 +19,7 @@ class DbcsTests
     // in ways that this test is not expecting.
     TEST_METHOD(TestMultibyteInputRetrieval);
 
-    /*TEST_METHOD(TestDbcsReadWrite);*/
+    TEST_METHOD(TestDbcsReadWrite);
 
     /*TEST_METHOD(TestDbcsReadWrite2);*/
 
@@ -93,190 +93,191 @@ bool DbcsTests::DbcsTestSetup()
 //}
 
 // TODO: MSFT 10187355 - This test needs to move into UIA as it is dependent on the font.
-//// This test covers read/write of double byte characters including verification of correct attribute handling across 
-//// the two-wide double byte characters.
-//void DbcsTests::TestDbcsReadWrite()
-//{
-//    HANDLE const hOut = GetStdOutputHandle();
-//
-//    UINT dwCP = GetConsoleCP();
-//    VERIFY_ARE_EQUAL(dwCP, JAPANESE_CP);
-//
-//    UINT dwOutputCP = GetConsoleOutputCP();
-//    VERIFY_ARE_EQUAL(dwOutputCP, JAPANESE_CP);
-//
-//    CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
-//    sbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-//    BOOL fSuccess = GetConsoleScreenBufferInfoEx(hOut, &sbiex);
-//
-//    VERIFY_ARE_EQUAL(sbiex.dwCursorPosition.X, 4);
-//    VERIFY_ARE_EQUAL(sbiex.dwCursorPosition.Y, 0);
-//
-//    {
-//        SHORT const cChars = sbiex.dwCursorPosition.X + 1;
-//        CHAR_INFO* rgChars = new CHAR_INFO[cChars];
-//
-//        COORD coordBufferSize = { 0 };
-//        coordBufferSize.Y = 1;
-//        coordBufferSize.X = cChars;
-//
-//        COORD coordBufferTarget = { 0 };
-//
-//        SMALL_RECT srReadRegion = { 0 }; // inclusive rectangle (bottom and right are INSIDE the read area. usually are exclusive.)
-//        srReadRegion.Right = sbiex.dwCursorPosition.X;
-//
-//        {
-//            Log::Comment(L"Check Read with 'A' API.");
-//            fSuccess = ReadConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
-//            if (CheckLastError(fSuccess, L"ReadConsoleOutputA"))
-//            {
-//                // Expected colors are same as what we started with.
-//                CHAR_INFO ciExpected[4];
-//                ciExpected[0].Attributes = sbiex.wAttributes;
-//                ciExpected[1].Attributes = sbiex.wAttributes;
-//                ciExpected[2].Attributes = sbiex.wAttributes;
-//                ciExpected[3].Attributes = sbiex.wAttributes;
-//
-//                // Middle two characters should be a lead and trailing byte.
-//                ciExpected[1].Attributes |= COMMON_LVB_LEADING_BYTE;
-//                ciExpected[2].Attributes |= COMMON_LVB_TRAILING_BYTE;
-//
-//                // And now set what the characters should be.
-//                ciExpected[0].Char.AsciiChar = 'A';
-//                ciExpected[1].Char.AsciiChar = '\x82';
-//                ciExpected[2].Char.AsciiChar = '\xa0';
-//                ciExpected[3].Char.AsciiChar = 'Z';
-//
-//                for (size_t i = 0; i < ARRAYSIZE(ciExpected); i++)
-//                {
-//                    VERIFY_ARE_EQUAL(ciExpected[i].Attributes, rgChars[i].Attributes);
-//                    VERIFY_ARE_EQUAL(ciExpected[i].Char.AsciiChar, rgChars[i].Char.AsciiChar);
-//                }
-//            }
-//        }
-//
-//        {
-//            Log::Comment(L"Check Read with 'W' API.");
-//            fSuccess = ReadConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
-//            if (CheckLastError(fSuccess, L"ReadConsoleOutputW"))
-//            {
-//                // Expected colors are same as what we started with.
-//                CHAR_INFO ciExpected[3];
-//                ciExpected[0].Attributes = sbiex.wAttributes;
-//                ciExpected[1].Attributes = sbiex.wAttributes;
-//                ciExpected[2].Attributes = sbiex.wAttributes;
-//
-//                // And now set what the characters should be.
-//                ciExpected[0].Char.UnicodeChar = L'A';
-//
-//                int iRes = MultiByteToWideChar(JAPANESE_CP, 0, "\x82\xa0", 2, &ciExpected[1].Char.UnicodeChar, 1);
-//                CheckLastErrorZeroFail(iRes, L"MultiByteToWideChar");
-//
-//                ciExpected[2].Char.UnicodeChar = L'Z';
-//
-//                for (size_t i = 0; i < ARRAYSIZE(ciExpected); i++)
-//                {
-//                    VERIFY_ARE_EQUAL(ciExpected[i].Attributes, rgChars[i].Attributes);
-//                    VERIFY_ARE_EQUAL(ciExpected[i].Char.UnicodeChar, rgChars[i].Char.UnicodeChar);
-//                }
-//            }
-//        }
-//
-//        {
-//            Log::Comment(L"Check Write with 'A' API and read with 'W' API.");
-//
-//            WORD wAttr = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
-//
-//            rgChars[0].Char.AsciiChar = 'Q';
-//            rgChars[0].Attributes = wAttr;
-//            rgChars[1].Char.AsciiChar = '\x82';
-//            rgChars[1].Attributes = wAttr;
-//            rgChars[2].Char.AsciiChar = '\xa2';
-//            rgChars[2].Attributes = wAttr;
-//            rgChars[3].Char.AsciiChar = 'Y';
-//            rgChars[3].Attributes = wAttr;
-//
-//            fSuccess = WriteConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
-//
-//            if (CheckLastError(fSuccess, L"WriteConsoleOutputA"))
-//            {
-//                fSuccess = ReadConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
-//
-//                if (CheckLastError(fSuccess, L"ReadConsoleOutputW"))
-//                {
-//                    // Expected colors are same as what we started with.
-//                    CHAR_INFO ciExpected[3];
-//                    ciExpected[0].Attributes = wAttr;
-//                    ciExpected[1].Attributes = wAttr;
-//                    ciExpected[2].Attributes = wAttr;
-//
-//                    // And now set what the characters should be.
-//                    ciExpected[0].Char.UnicodeChar = L'Q';
-//
-//                    int iRes = MultiByteToWideChar(JAPANESE_CP, 0, "\x82\xa2", 2, &ciExpected[1].Char.UnicodeChar, 1);
-//                    CheckLastErrorZeroFail(iRes, L"MultiByteToWideChar");
-//
-//                    ciExpected[2].Char.UnicodeChar = L'Y';
-//
-//                    for (size_t i = 0; i < ARRAYSIZE(ciExpected); i++)
-//                    {
-//                        VERIFY_ARE_EQUAL(ciExpected[i].Attributes, rgChars[i].Attributes);
-//                        VERIFY_ARE_EQUAL(ciExpected[i].Char.UnicodeChar, rgChars[i].Char.UnicodeChar);
-//                    }
-//                }
-//            }
-//        }
-//
-//        {
-//            Log::Comment(L"Check Write with 'W' API and read with 'A' API.");
-//
-//            WORD wAttr = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
-//
-//            rgChars[0].Char.UnicodeChar = L'Q';
-//            rgChars[0].Attributes = wAttr;
-//            rgChars[1].Char.UnicodeChar = L'\x3044';
-//            rgChars[1].Attributes = wAttr;
-//            rgChars[2].Char.UnicodeChar = 'Y';
-//            rgChars[2].Attributes = wAttr;
-//
-//            fSuccess = WriteConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
-//
-//            if (CheckLastError(fSuccess, L"WriteConsoleOutputW"))
-//            {
-//                fSuccess = ReadConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
-//
-//                if (CheckLastError(fSuccess, L"ReadConsoleOutputA"))
-//                {
-//
-//                    // Expected colors are same as what we started with.
-//                    CHAR_INFO ciExpected[4];
-//                    ciExpected[0].Attributes = wAttr;
-//                    ciExpected[1].Attributes = wAttr;
-//                    ciExpected[2].Attributes = wAttr;
-//                    ciExpected[3].Attributes = wAttr;
-//
-//                    // Middle two characters should be a lead and trailing byte.
-//                    ciExpected[1].Attributes |= COMMON_LVB_LEADING_BYTE;
-//                    ciExpected[2].Attributes |= COMMON_LVB_TRAILING_BYTE;
-//
-//                    // And now set what the characters should be.
-//                    ciExpected[0].Char.AsciiChar = 'Q';
-//                    ciExpected[1].Char.AsciiChar = '\x82';
-//                    ciExpected[2].Char.AsciiChar = '\xa2';
-//                    ciExpected[3].Char.AsciiChar = 'Y';
-//
-//                    for (size_t i = 0; i < ARRAYSIZE(ciExpected); i++)
-//                    {
-//                        VERIFY_ARE_EQUAL(ciExpected[i].Attributes, rgChars[i].Attributes);
-//                        VERIFY_ARE_EQUAL(ciExpected[i].Char.AsciiChar, rgChars[i].Char.AsciiChar);
-//                    }
-//                }
-//            }
-//        }
-//
-//        delete[] rgChars;
-//    }
-//}
+// This test covers read/write of double byte characters including verification of correct attribute handling across 
+// the two-wide double byte characters.
+void DbcsTests::TestDbcsReadWrite()
+{
+    HANDLE const hOut = GetStdOutputHandle();
+
+    UINT dwCP = GetConsoleCP();
+    VERIFY_ARE_EQUAL(dwCP, JAPANESE_CP);
+
+    UINT dwOutputCP = GetConsoleOutputCP();
+    VERIFY_ARE_EQUAL(dwOutputCP, JAPANESE_CP);
+
+    CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
+    sbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    BOOL fSuccess = GetConsoleScreenBufferInfoEx(hOut, &sbiex);
+
+    VERIFY_ARE_EQUAL(sbiex.dwCursorPosition.X, 4);
+    VERIFY_ARE_EQUAL(sbiex.dwCursorPosition.Y, 0);
+
+    {
+        SHORT const cChars = sbiex.dwCursorPosition.X + 1;
+        CHAR_INFO* rgChars = new CHAR_INFO[cChars];
+
+        COORD coordBufferSize = { 0 };
+        coordBufferSize.Y = 1;
+        coordBufferSize.X = cChars;
+
+        COORD coordBufferTarget = { 0 };
+
+        SMALL_RECT srReadRegion = { 0 }; // inclusive rectangle (bottom and right are INSIDE the read area. usually are exclusive.)
+        srReadRegion.Right = sbiex.dwCursorPosition.X;
+
+        {
+            Log::Comment(L"Check Read with 'A' API.");
+            fSuccess = ReadConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
+            if (CheckLastError(fSuccess, L"ReadConsoleOutputA"))
+            {
+                // Expected colors are same as what we started with.
+                CHAR_INFO ciExpected[4];
+                ZeroMemory(ciExpected, sizeof(CHAR_INFO) * ARRAYSIZE(ciExpected));
+
+                ciExpected[0].Attributes = sbiex.wAttributes;
+                ciExpected[1].Attributes = sbiex.wAttributes;
+                ciExpected[2].Attributes = sbiex.wAttributes;
+                ciExpected[3].Attributes = sbiex.wAttributes;
+
+                // Middle two characters should be a lead and trailing byte.
+                ciExpected[1].Attributes |= COMMON_LVB_LEADING_BYTE;
+                ciExpected[2].Attributes |= COMMON_LVB_TRAILING_BYTE;
+
+                // And now set what the characters should be.
+                ciExpected[0].Char.AsciiChar = 'A';
+                ciExpected[1].Char.AsciiChar = '\x82';
+                ciExpected[2].Char.AsciiChar = '\xa0';
+                ciExpected[3].Char.AsciiChar = 'Z';
+
+                for (size_t i = 0; i < ARRAYSIZE(ciExpected); i++)
+                {
+                    VERIFY_ARE_EQUAL(ciExpected[i], rgChars[i]);
+                }
+            }
+        }
+
+        {
+            Log::Comment(L"Check Read with 'W' API.");
+            fSuccess = ReadConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
+            if (CheckLastError(fSuccess, L"ReadConsoleOutputW"))
+            {
+                // Expected colors are same as what we started with.
+                CHAR_INFO ciExpected[3];
+                ciExpected[0].Attributes = sbiex.wAttributes;
+                ciExpected[1].Attributes = sbiex.wAttributes;
+                ciExpected[2].Attributes = sbiex.wAttributes;
+
+                // And now set what the characters should be.
+                ciExpected[0].Char.UnicodeChar = L'A';
+
+                int iRes = MultiByteToWideChar(JAPANESE_CP, 0, "\x82\xa0", 2, &ciExpected[1].Char.UnicodeChar, 1);
+                CheckLastErrorZeroFail(iRes, L"MultiByteToWideChar");
+
+                ciExpected[2].Char.UnicodeChar = L'Z';
+
+                for (size_t i = 0; i < ARRAYSIZE(ciExpected); i++)
+                {
+                    VERIFY_ARE_EQUAL(ciExpected[i].Attributes, rgChars[i].Attributes);
+                    VERIFY_ARE_EQUAL(ciExpected[i].Char.UnicodeChar, rgChars[i].Char.UnicodeChar);
+                }
+            }
+        }
+
+        {
+            Log::Comment(L"Check Write with 'A' API and read with 'W' API.");
+
+            WORD wAttr = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
+
+            rgChars[0].Char.AsciiChar = 'Q';
+            rgChars[0].Attributes = wAttr;
+            rgChars[1].Char.AsciiChar = '\x82';
+            rgChars[1].Attributes = wAttr;
+            rgChars[2].Char.AsciiChar = '\xa2';
+            rgChars[2].Attributes = wAttr;
+            rgChars[3].Char.AsciiChar = 'Y';
+            rgChars[3].Attributes = wAttr;
+
+            fSuccess = WriteConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
+
+            if (CheckLastError(fSuccess, L"WriteConsoleOutputA"))
+            {
+                fSuccess = ReadConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
+
+                if (CheckLastError(fSuccess, L"ReadConsoleOutputW"))
+                {
+                    // Expected colors are same as what we started with.
+                    CHAR_INFO ciExpected[3];
+                    ciExpected[0].Attributes = wAttr;
+                    ciExpected[1].Attributes = wAttr;
+                    ciExpected[2].Attributes = wAttr;
+
+                    // And now set what the characters should be.
+                    ciExpected[0].Char.UnicodeChar = L'Q';
+
+                    int iRes = MultiByteToWideChar(JAPANESE_CP, 0, "\x82\xa2", 2, &ciExpected[1].Char.UnicodeChar, 1);
+                    CheckLastErrorZeroFail(iRes, L"MultiByteToWideChar");
+
+                    ciExpected[2].Char.UnicodeChar = L'Y';
+
+                    for (size_t i = 0; i < ARRAYSIZE(ciExpected); i++)
+                    {
+                        VERIFY_ARE_EQUAL(ciExpected[i].Attributes, rgChars[i].Attributes);
+                        VERIFY_ARE_EQUAL(ciExpected[i].Char.UnicodeChar, rgChars[i].Char.UnicodeChar);
+                    }
+                }
+            }
+        }
+
+        {
+            Log::Comment(L"Check Write with 'W' API and read with 'A' API.");
+
+            WORD wAttr = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
+
+            rgChars[0].Char.UnicodeChar = L'Q';
+            rgChars[0].Attributes = wAttr;
+            rgChars[1].Char.UnicodeChar = L'\x3044';
+            rgChars[1].Attributes = wAttr;
+            rgChars[2].Char.UnicodeChar = 'Y';
+            rgChars[2].Attributes = wAttr;
+
+            fSuccess = WriteConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
+
+            if (CheckLastError(fSuccess, L"WriteConsoleOutputW"))
+            {
+                fSuccess = ReadConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
+
+                if (CheckLastError(fSuccess, L"ReadConsoleOutputA"))
+                {
+
+                    // Expected colors are same as what we started with.
+                    CHAR_INFO ciExpected[4];
+                    ciExpected[0].Attributes = wAttr;
+                    ciExpected[1].Attributes = wAttr;
+                    ciExpected[2].Attributes = wAttr;
+                    ciExpected[3].Attributes = wAttr;
+
+                    // Middle two characters should be a lead and trailing byte.
+                    ciExpected[1].Attributes |= COMMON_LVB_LEADING_BYTE;
+                    ciExpected[2].Attributes |= COMMON_LVB_TRAILING_BYTE;
+
+                    // And now set what the characters should be.
+                    ciExpected[0].Char.AsciiChar = 'Q';
+                    ciExpected[1].Char.AsciiChar = '\x82';
+                    ciExpected[2].Char.AsciiChar = '\xa2';
+                    ciExpected[3].Char.AsciiChar = 'Y';
+
+                    for (size_t i = 0; i < ARRAYSIZE(ciExpected); i++)
+                    {
+                        VERIFY_ARE_EQUAL(ciExpected[i].Attributes, rgChars[i].Attributes);
+                        VERIFY_ARE_EQUAL(ciExpected[i].Char.AsciiChar, rgChars[i].Char.AsciiChar);
+                    }
+                }
+            }
+        }
+
+        delete[] rgChars;
+    }
+}
 
 // TODO: MSFT: 10187355-  ReadWrite2 needs to be moved completely into UIA tests so it can modify fonts and confirm behavior.
 //// This is sample code for DbcsReadWriteInner2 that isn't executed but is helpful in seeing how this would actually work from a consumer.

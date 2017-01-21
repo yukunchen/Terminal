@@ -495,5 +495,45 @@ namespace WEX {
                     object.FontFamily == 0 && object.FontWeight == 0 && object.FaceName[0] == L'\0';
             }
         };
+
+        template<>
+        class VerifyOutputTraits < CHAR_INFO >
+        {
+        public:
+            static WEX::Common::NoThrowString ToString(const CHAR_INFO& ci)
+            {
+                return WEX::Common::NoThrowString().Format(L"Unicode Char: %lc (0x%x)  Attributes: 0x%x  [Ascii Char: %c (0x%hhx)]", 
+                                                           ci.Char.UnicodeChar,
+                                                           ci.Char.UnicodeChar,
+                                                           ci.Attributes,
+                                                           ci.Char.AsciiChar,
+                                                           ci.Char.AsciiChar);
+            }
+        };
+
+        template<>
+        class VerifyCompareTraits < CHAR_INFO, CHAR_INFO >
+        {
+        public:
+            static bool AreEqual(const CHAR_INFO& expected, const CHAR_INFO& actual)
+            {
+                return expected.Attributes == actual.Attributes &&
+                    expected.Char.UnicodeChar == actual.Char.UnicodeChar;
+            }
+
+            static bool AreSame(const CHAR_INFO& expected, const CHAR_INFO& actual)
+            {
+                return &expected == &actual;
+            }
+
+            static bool IsLessThan(const CHAR_INFO&, const CHAR_INFO&) = delete;
+
+            static bool IsGreaterThan(const CHAR_INFO&, const CHAR_INFO&) = delete;
+
+            static bool IsNull(const CHAR_INFO& object)
+            {
+                return object.Attributes == 0 && object.Char.UnicodeChar == 0;
+            }
+        };
     }
 }
