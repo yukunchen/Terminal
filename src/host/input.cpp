@@ -2188,18 +2188,9 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
             g_ciConsoleInformation.pWindow->ChangeWindowOpacity(OPACITY_DELTA_INTERVAL * sDelta);
             g_ciConsoleInformation.pWindow->SetWindowHasMoved(true);
         }
-        else
-        {
-            return TRUE;
-        }
-    }
-    else if (Message == WM_MOUSEHWHEEL)
-    {
-        return TRUE;
     }
 
-
-    if (!(g_ciConsoleInformation.pInputBuffer->InputMode & ENABLE_MOUSE_INPUT))
+    if (IsFlagClear(g_ciConsoleInformation.pInputBuffer->InputMode, ENABLE_MOUSE_INPUT))
     {
         ReleaseCapture();
         return TRUE;
