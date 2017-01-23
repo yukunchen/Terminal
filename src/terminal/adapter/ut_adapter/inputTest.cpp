@@ -62,7 +62,7 @@ public:
 
     static void s_TerminalInputTestNullCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
     {
-        if (VERIFY_ARE_EQUAL((DWORD)1, cInput, L"Verify expected and actual input array lengths matched."))
+        if (cInput == 1)
         {
             Log::Comment(L"We are expecting a null input event.");
 
@@ -76,7 +76,40 @@ public:
             irExpected.Event.KeyEvent.uChar.UnicodeChar = L'\x0';
 
             VERIFY_ARE_EQUAL(irExpected, rgInput[0]);
+
         }
+        else if (cInput == 2)
+        {
+            Log::Comment(L"We are expecting a null input event, preceded by an escape");
+
+
+            INPUT_RECORD irExpectedEscape = { 0 };
+            irExpectedEscape.EventType = KEY_EVENT;
+            irExpectedEscape.Event.KeyEvent.bKeyDown = TRUE;
+            irExpectedEscape.Event.KeyEvent.wRepeatCount = 1;
+            irExpectedEscape.Event.KeyEvent.wVirtualKeyCode = 0;
+            irExpectedEscape.Event.KeyEvent.dwControlKeyState = 0;
+            irExpectedEscape.Event.KeyEvent.wVirtualScanCode = 0;
+            irExpectedEscape.Event.KeyEvent.uChar.UnicodeChar = L'\x1b';
+
+            INPUT_RECORD irExpected = { 0 };
+            irExpected.EventType = KEY_EVENT;
+            irExpected.Event.KeyEvent.bKeyDown = TRUE;
+            irExpected.Event.KeyEvent.wRepeatCount = 1;
+            // irExpected.Event.KeyEvent.wVirtualKeyCode = LOBYTE(VkKeyScanW(0));
+            irExpected.Event.KeyEvent.wVirtualKeyCode = 0;
+            irExpected.Event.KeyEvent.dwControlKeyState = 0;
+            irExpected.Event.KeyEvent.wVirtualScanCode = 0;
+            irExpected.Event.KeyEvent.uChar.UnicodeChar = L'\x0';
+
+            VERIFY_ARE_EQUAL(irExpectedEscape, rgInput[0]);
+            VERIFY_ARE_EQUAL(irExpected, rgInput[1]);
+        }
+        else
+        {
+            VERIFY_FAIL(NoThrowString().Format(L"Expected either one or two inputs, got %d", cInput));
+        }
+
     }
 
     TEST_METHOD(TerminalInputTests)
@@ -244,23 +277,26 @@ public:
     {
         return L'1' + (fShift? 1 : 0) + (fAlt? 2 : 0) + (fCtrl? 4 : 0);
     }
+
     bool ControlAndAltPressed(unsigned int uiKeystate)
     {
-        return (IsFlagSet(uiKeystate, LEFT_CTRL_PRESSED) || IsFlagSet(uiKeystate, RIGHT_CTRL_PRESSED)) 
-                && (IsFlagSet(uiKeystate, LEFT_ALT_PRESSED) || IsFlagSet(uiKeystate, RIGHT_ALT_PRESSED));
+        return IsAnyFlagSet(uiKeystate, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)
+               && IsAnyFlagSet(uiKeystate, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
     }
+
     bool ControlOrAltPressed(unsigned int uiKeystate)
     {
-        return (IsFlagSet(uiKeystate, LEFT_CTRL_PRESSED) || IsFlagSet(uiKeystate, RIGHT_CTRL_PRESSED)) 
-                || (IsFlagSet(uiKeystate, LEFT_ALT_PRESSED) || IsFlagSet(uiKeystate, RIGHT_ALT_PRESSED));
+        return IsAnyFlagSet(uiKeystate, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED | LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
     }
+
     bool ControlPressed(unsigned int uiKeystate)
     {
-        return IsFlagSet(uiKeystate, LEFT_CTRL_PRESSED) || IsFlagSet(uiKeystate, RIGHT_CTRL_PRESSED);
+        return IsAnyFlagSet(uiKeystate, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED);
     }
+
     bool AltPressed(unsigned int uiKeystate)
     {
-        return IsFlagSet(uiKeystate, LEFT_ALT_PRESSED) || IsFlagSet(uiKeystate, RIGHT_ALT_PRESSED);
+        return IsAnyFlagSet(uiKeystate, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
     }
 
 // #define RIGHT_ALT_PRESSED     0x0001
@@ -314,104 +350,103 @@ public:
                 // Space generally gets translated to null, which again, doesn't play well.
                 continue;
             case VK_BACK:
-                memcpy(s_pwsInputBuffer, L"\x7f", 1 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x7f");
                 break;
             case VK_ESCAPE:
-                memcpy(s_pwsInputBuffer, L"\x1b", 1 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b");
                 break;
             case VK_PAUSE:
-                memcpy(s_pwsInputBuffer, L"\x1a", 1 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1a");
                 break;
             case VK_UP:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[1;mA", 6 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mA");
                 break;
             case VK_DOWN:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[1;mB", 6 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mB");
                 break;
             case VK_RIGHT:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[1;mC", 6 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mC");
                 break;
             case VK_LEFT:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[1;mD", 6 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mD");
                 break;
             case VK_HOME:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[1;mH", 6 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mH");
                 break;
             case VK_INSERT:
-                memcpy(s_pwsInputBuffer, L"\x1b[2~", 4 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[2~");
                 break;
             case VK_DELETE:
-                memcpy(s_pwsInputBuffer, L"\x1b[3~", 4 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[3~");
                 break;
             case VK_END:
                 fModifySequence = true;
-                // DebugBreak();
-                memcpy(s_pwsInputBuffer, L"\x1b[1;mF", 6 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mF");
                 break;
             case VK_PRIOR:
-                memcpy(s_pwsInputBuffer, L"\x1b[5~", 4 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[5~");
                 break;
             case VK_NEXT:
-                memcpy(s_pwsInputBuffer, L"\x1b[6~", 4 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[6~");
                 break;
             case VK_F1:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[1;mP", 6 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mP");
                 break;
             case VK_F2:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[1;mQ", 6 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mQ");
                 break;
             case VK_F3:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[1;mR", 6 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mR");
                 break;
             case VK_F4:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[1;mS", 6 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[1;mS");
                 break;
             case VK_F5:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[15;m~", 7 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[15;m~");
                 break;
             case VK_F6:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[17;m~", 7 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[17;m~");
                 break;
             case VK_F7:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[18;m~", 7 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[18;m~");
                 break;
             case VK_F8:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[19;m~", 7 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[19;m~");
                 break;
             case VK_F9:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[20;m~", 7 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[20;m~");
                 break;
             case VK_F10:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[21;m~", 7 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[21;m~");
                 break;
             case VK_F11:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[23;m~", 7 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[23;m~");
                 break;
             case VK_F12:
                 fModifySequence = true;
-                memcpy(s_pwsInputBuffer, L"\x1b[24;m~", 7 * sizeof(wchar_t));
+                wcscpy_s(s_pwsInputBuffer, L"\x1b[24;m~");
                 break;
             default:
                 // Alt+Key generates [0x1b, key] into the stream
                 if (AltPressed(uiKeystate) && (vkey > 0x40 && vkey <= 0x5A)) 
                 {
-                    memcpy(s_pwsInputBuffer, L"\x1bm", 2 * sizeof(wchar_t));
+                    wcscpy_s(s_pwsInputBuffer, L"\x1bm");
                     wchar_t wchShifted = vkey;
                     // Alt + Ctrl + key generates [0x1b, control key] in the stream.
                     if (ControlPressed(uiKeystate)) 
@@ -465,7 +500,7 @@ public:
         Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
 
         BYTE vkey = '2';
-        Log::Comment(NoThrowString().Format(L"Testing Key 0x%x", vkey));
+        Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
 
         INPUT_RECORD irTest = { 0 };
         irTest.EventType = KEY_EVENT;
@@ -476,6 +511,28 @@ public:
 
         // Send key into object (will trigger callback and verification)
         VERIFY_ARE_EQUAL(true, pInput->HandleKey(&irTest), L"Verify key was handled if it should have been.");
+
+        vkey = VK_SPACE;
+        Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
+        irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
+        irTest.Event.KeyEvent.uChar.UnicodeChar = vkey;
+        VERIFY_ARE_EQUAL(true, pInput->HandleKey(&irTest), L"Verify key was handled if it should have been.");
+
+        uiKeystate = LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED;
+        Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
+        irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
+        VERIFY_ARE_EQUAL(true, pInput->HandleKey(&irTest), L"Verify key was handled if it should have been.");
+
+        uiKeystate = RIGHT_CTRL_PRESSED | LEFT_ALT_PRESSED;
+        Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
+        irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
+        VERIFY_ARE_EQUAL(true, pInput->HandleKey(&irTest), L"Verify key was handled if it should have been.");
+
+        uiKeystate = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
+        // This is AltGr, this ISN'T handled.
+        Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
+        irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
+        VERIFY_ARE_EQUAL(false, pInput->HandleKey(&irTest), L"Verify key was handled if it should have been.");
 
     }
 };

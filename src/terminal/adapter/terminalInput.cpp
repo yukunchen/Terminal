@@ -328,21 +328,6 @@ bool TerminalInput::_TranslateDefaultMapping(_In_ const KEY_EVENT_RECORD* const 
     return fSuccess;
 }
 
-// Routine Description:
-// - Sends the given char as a sequence representing Alt+wch
-// Arguments:
-// - wch - character to send to input paired with Esc
-// Return Value:
-// - None
-void TerminalInput::_SendAltKeySequence(_In_ const wchar_t wch) const
-{
-    wchar_t rgwchSequence[3];
-    rgwchSequence[0] = L'\x1b';
-    rgwchSequence[1] = wch;
-    rgwchSequence[2] = L'\x0';
-    _SendInputSequence(rgwchSequence);
-}
-
 bool TerminalInput::HandleKey(_In_ const INPUT_RECORD* const pInput) const
 {
     // By default, we fail to handle the key
@@ -369,32 +354,30 @@ bool TerminalInput::HandleKey(_In_ const INPUT_RECORD* const pInput) const
                 key.dwControlKeyState &= ~(dwAltGrFlags);
             }
 
-            // ALT is a sequence of ESC + KEY.
-            // NOTE: The ALT handler must come first. For ALT+CTRL, the UnicodeChar will be pre-shifted by the system
-            //       into the proper Control Character (<0x20) and so we only need to embed it inside the ALT sequence below.
-            if (key.uChar.UnicodeChar != 0 && s_IsAltPressed(&key))
-            {
-                _SendAltKeySequence(key.uChar.UnicodeChar);
-                fKeyHandled = true;
-            }
-            else if (s_IsAltPressed(&key)
-                     && s_IsCtrlPressed(&key)
-                     && key.uChar.UnicodeChar == 0
-                     && ((key.wVirtualKeyCode > 0x40 && key.wVirtualKeyCode <= 0x5A) || key.wVirtualKeyCode == 0x20) )
+            if (s_IsAltPressed(&key) && s_IsCtrlPressed(&key)
+                && (key.uChar.UnicodeChar == 0 || key.uChar.UnicodeChar == 0x20)
+                && ((key.wVirtualKeyCode > 0x40 && key.wVirtualKeyCode <= 0x5A) || key.wVirtualKeyCode == VK_SPACE) )
             {
                 // For Alt+Ctrl+Key messages, the UnicodeChar is NOT the Ctrl+key char, it's null.
                 //      So we need to get the char from the vKey.
-                wchar_t wchPressedChar = (wchar_t)MapVirtualKey(key.wVirtualKeyCode, MAPVK_VK_TO_CHAR);
+                //      EXCEPT for Alt+Ctrl+Space. Then the UnicodeChar is space, not NUL.
+                wchar_t wchPressedChar = (wchar_t) MapVirtualKey(key.wVirtualKeyCode, MAPVK_VK_TO_CHAR);
                 // This is a trick - C-Spc is supposed to send NUL. So quick change space -> @ (0x40)
                 wchPressedChar = (wchPressedChar == 0x20)? 0x40 : wchPressedChar;
                 if (wchPressedChar >= 0x40 && wchPressedChar < 0x7F) 
                 {
                     //shift the char to the ctrl range
                     wchPressedChar -= 0x40;
-                    _SendAltKeySequence(wchPressedChar);
+                    _SendEscapedInputSequence(wchPressedChar);
                     fKeyHandled = true;
                 }
             }
+            // ALT is a sequence of ESC + KEY.
+            else if (key.uChar.UnicodeChar != 0 && s_IsAltPressed(&key))
+            {
+                _SendEscapedInputSequence(key.uChar.UnicodeChar);
+                fKeyHandled = true;
+            } 
             else if (s_IsCtrlPressed(&key))
             {
                 if ((key.uChar.UnicodeChar == L' ' ) || // Ctrl+Space
@@ -436,6 +419,36 @@ bool TerminalInput::HandleKey(_In_ const INPUT_RECORD* const pInput) const
 
     return fKeyHandled;
 }
+
+// Routine Description:
+// - Sends the given char as a sequence representing Alt+wch, also the same as
+//      Meta+wch.
+// Arguments:
+// - wch - character to send to input paired with Esc
+// Return Value:
+// - None
+void TerminalInput::_SendEscapedInputSequence(_In_ const wchar_t wch) const
+{
+    INPUT_RECORD rgInput[2];
+    rgInput[0].EventType = KEY_EVENT;
+    rgInput[0].Event.KeyEvent.bKeyDown = TRUE;
+    rgInput[0].Event.KeyEvent.dwControlKeyState = 0;
+    rgInput[0].Event.KeyEvent.wRepeatCount = 1;
+    rgInput[0].Event.KeyEvent.wVirtualKeyCode = 0;
+    rgInput[0].Event.KeyEvent.wVirtualScanCode = 0;
+    rgInput[0].Event.KeyEvent.uChar.UnicodeChar = L'\x1b';
+
+    rgInput[1].EventType = KEY_EVENT;
+    rgInput[1].Event.KeyEvent.bKeyDown = TRUE;
+    rgInput[1].Event.KeyEvent.dwControlKeyState = 0;
+    rgInput[1].Event.KeyEvent.wRepeatCount = 1;
+    rgInput[1].Event.KeyEvent.wVirtualKeyCode = 0;
+    rgInput[1].Event.KeyEvent.wVirtualScanCode = 0;
+    rgInput[1].Event.KeyEvent.uChar.UnicodeChar = wch;
+    
+    _pfnWriteEvents(rgInput, 2);
+}
+
 void TerminalInput::_SendNullInputSequence(_In_ DWORD const dwControlKeyState) const
 {
     INPUT_RECORD irInput;
@@ -449,6 +462,7 @@ void TerminalInput::_SendNullInputSequence(_In_ DWORD const dwControlKeyState) c
     
     _pfnWriteEvents(&irInput, 1);
 }
+
 void TerminalInput::_SendInputSequence(_In_ PCWSTR const pwszSequence) const
 {
     size_t cch = 0;
