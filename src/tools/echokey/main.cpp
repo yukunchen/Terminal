@@ -18,8 +18,8 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     GetConsoleMode(hIn, &dwInMode);
     wprintf(L"Mode:0x%x\n", dwInMode);
 
-    // dwOutMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
-    // dwInMode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+    dwOutMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
+    dwInMode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
 
     SetConsoleMode(hOut, dwOutMode);
     SetConsoleMode(hIn, dwInMode);

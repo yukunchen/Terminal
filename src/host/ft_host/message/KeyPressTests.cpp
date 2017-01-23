@@ -107,9 +107,11 @@ class KeyPressTests
     TEST_METHOD(TestCtrlKeyDownUp)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
+            // VKeys for A-Z
+            // See https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
             TEST_METHOD_PROPERTY(L"Data:vKey", L"{"
-                "0x40,0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4A,0x4B,0x4C,0x4D,0x4E,0x4F," 
-                "0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,0x5A,0x5B,0x5C,0x5D,0x5E,0x5F" 
+                "0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4A,0x4B,0x4C,0x4D,0x4E,0x4F," 
+                "0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,0x5A" 
             "}")
         END_TEST_METHOD_PROPERTIES();
         UINT vk;
@@ -122,10 +124,12 @@ class KeyPressTests
         HANDLE inputHandle = GetStdHandle(STD_INPUT_HANDLE);
         DWORD events = 0;
 
+        // Set the console to raw mode, so that it doesn't hijack any keypresses as shortcut keys
+        SetConsoleMode(inputHandle, 0);
+        
         // flush input buffer
         FlushConsoleInputBuffer(inputHandle);
-        successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
-        VERIFY_IS_TRUE(!!successBool);
+        VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(inputHandle, &events));
         VERIFY_ARE_EQUAL(events, 0);
 
         DWORD dwInMode = 0;
@@ -139,14 +143,6 @@ class KeyPressTests
         // KEY_UP https://msdn.microsoft.com/en-us/library/windows/desktop/ms646281(v=vs.85).aspx
         LPARAM CtrlFlags = ( 0 | ((uiCtrlScancode<<16) & 0x00ff0000) | 0x00000001);
         LPARAM CtrlUpFlags = CtrlFlags | 0xc0000000;
-
-        // Skip certain keys that the console uses
-        if (vk == 'A') return; // Selects Text
-        if (vk == 'C') return; // Exits window
-        if (vk == 'F') return; // Opens Find Dialog
-        if (vk == 'M') return; // Enters Mark Mode
-        if (vk == 'S') return; // Ignores the next key? C-s -> DC3
-        if (vk == 'V') return; // Pastes
 
         UINT uiScancode = MapVirtualKey(vk , MAPVK_VK_TO_VSC);
         LPARAM DownFlags = ( 0 | ((uiScancode<<16) & 0x00ff0000) | 0x00000001);
