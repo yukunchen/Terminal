@@ -788,23 +788,6 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         SCREEN_INFORMATION* const psi = pScreenInfo->GetActiveBuffer();
 
         Status = ReadScreenBuffer(psi, Buffer, &a->CharRegion);
-        // remove dbcs trailing byte CHAR_INFOS
-        const size_t count = BufferSize.X * BufferSize.Y;
-        size_t copyTargetPosition = 0;
-        for (size_t i = 0; i < count; ++i)
-        {
-            if (IsFlagClear(Buffer[i].Attributes, COMMON_LVB_TRAILING_BYTE))
-            {
-                Buffer[copyTargetPosition] = Buffer[i];
-                ClearAllFlags(Buffer[copyTargetPosition].Attributes, COMMON_LVB_SBCSDBCS);
-                ++copyTargetPosition;
-            }
-        }
-        // zero out extra positions
-        for (; copyTargetPosition < count; ++copyTargetPosition)
-        {
-            ZeroMemory(Buffer + copyTargetPosition, sizeof(CHAR_INFO));
-        }
         if (!a->Unicode)
         {
             TranslateOutputToOem(Buffer, BufferSize);
