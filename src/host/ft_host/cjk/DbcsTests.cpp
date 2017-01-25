@@ -4,6 +4,8 @@
 *                                                       *
 ********************************************************/
 #include "precomp.h"
+#include <io.h>
+#include <fcntl.h>
 
 #define JAPANESE_CP 932u
 
@@ -11,7 +13,7 @@ class DbcsTests
 {
     BEGIN_TEST_CLASS(DbcsTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Class")
-    END_TEST_CLASS();
+        END_TEST_CLASS();
 
     TEST_METHOD_SETUP(DbcsTestSetup);
 
@@ -19,7 +21,15 @@ class DbcsTests
     // in ways that this test is not expecting.
     TEST_METHOD(TestMultibyteInputRetrieval);
 
-    TEST_METHOD(TestDbcsReadWrite);
+    /*TEST_METHOD(TestDbcsReadWriteTrueType);*/
+    TEST_METHOD(TestDbcsRasterWriteCrtAReadA);
+    TEST_METHOD(TestDbcsRasterWriteCrtAReadW);
+    TEST_METHOD(TestDbcsRasterWriteCrtWReadA);
+    TEST_METHOD(TestDbcsRasterWriteCrtWReadW);
+    TEST_METHOD(TestDbcsRasterWriteAReadA);
+    TEST_METHOD(TestDbcsRasterWriteAReadW);
+    TEST_METHOD(TestDbcsRasterWriteWReadA);
+    TEST_METHOD(TestDbcsRasterWriteWReadW);
 
     /*TEST_METHOD(TestDbcsReadWrite2);*/
 
@@ -30,91 +40,121 @@ HANDLE hScreen = INVALID_HANDLE_VALUE;
 
 bool DbcsTests::DbcsTestSetup()
 {
-    COORD coordZero = { 0 };
-    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleCursorPosition(GetStdOutputHandle(), coordZero));
-
-    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleCP(JAPANESE_CP));
-    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleOutputCP(JAPANESE_CP));
-    putchar('A');
-    putchar('\x82');
-    putchar('\xa0');
-    putchar('Z');
-
     return true;
 }
-
-//bool IsV2Console()
-//{
-//    HKEY key = (HKEY)INVALID_HANDLE_VALUE;
-//    VERIFY_SUCCEEDED(RegOpenKeyExW(HKEY_CURRENT_USER, L"Console", 0, GENERIC_READ, &key));
-//    DWORD dwData;
-//    DWORD cbData = sizeof(dwData);
-//    VERIFY_SUCCEEDED(RegQueryValueExW(key, L"ForceV2", NULL, NULL, (LPBYTE)&dwData, &cbData));
-//
-//    bool const result = dwData == 1;
-//
-//    if (result)
-//    {
-//        Log::Comment(L"V2 console is on.");
-//    }
-//    else
-//    {
-//        Log::Comment(L"V2 console is off.");
-//    }
-//
-//    if (key != INVALID_HANDLE_VALUE)
-//    {
-//        RegCloseKey(key);
-//    }
-//
-//    return result;
-//}
-
-//bool IsTrueTypeFont(HANDLE hOut)
-//{
-//    Log::Comment(L"Checking if TrueType font is selected...");
-//    CONSOLE_FONT_INFOEX cfiex = { 0 };
-//    cfiex.cbSize = sizeof(cfiex);
-//    VERIFY_SUCCEEDED(GetCurrentConsoleFontEx(hOut, FALSE, &cfiex));
-//
-//    // family contains TMPF TRUETYPE flag when TT font.
-//    bool const fIsTrueType = (cfiex.FontFamily & TMPF_TRUETYPE) != 0;
-//
-//    if (fIsTrueType)
-//    {
-//        Log::Comment(L"TrueType font is selected.");
-//    }
-//    else
-//    {
-//        Log::Comment(L"Raster font is selected.");
-//    }
-//
-//    return fIsTrueType;
-//}
 
 // TODO: MSFT 10187355 - This test needs to move into UIA as it is dependent on the font.
 // This test covers read/write of double byte characters including verification of correct attribute handling across 
 // the two-wide double byte characters.
-void DbcsTests::TestDbcsReadWrite()
+
+void SetupDbcsWriteReadTests(_In_ bool fIsTrueType,
+                             _Out_ HANDLE* const phOut,
+                             _Out_ WORD* const pwAttributes)
 {
     HANDLE const hOut = GetStdOutputHandle();
 
-    UINT dwCP = GetConsoleCP();
-    VERIFY_ARE_EQUAL(dwCP, JAPANESE_CP);
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleCP(JAPANESE_CP));
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleOutputCP(JAPANESE_CP));
 
-    UINT dwOutputCP = GetConsoleOutputCP();
-    VERIFY_ARE_EQUAL(dwOutputCP, JAPANESE_CP);
+    CONSOLE_FONT_INFOEX cfiex = { 0 };
+    cfiex.cbSize = sizeof(cfiex);
+    if (!fIsTrueType)
+    {
+        wcscpy_s(cfiex.FaceName, L"Terminal");
+        cfiex.dwFontSize.X = 8;
+        cfiex.dwFontSize.Y = 18;
+    }
+    else
+    {
+        wcscpy_s(cfiex.FaceName, L"MS Gothic");
+        cfiex.dwFontSize.Y = 16;
+    }
+
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetCurrentConsoleFontEx(hOut, FALSE, &cfiex));
+
+    COORD coordZero = { 0 };
 
     CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
-    sbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    BOOL fSuccess = GetConsoleScreenBufferInfoEx(hOut, &sbiex);
+    sbiex.cbSize = sizeof(sbiex);
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(GetConsoleScreenBufferInfoEx(hOut, &sbiex));
 
-    VERIFY_ARE_EQUAL(sbiex.dwCursorPosition.X, 4);
-    VERIFY_ARE_EQUAL(sbiex.dwCursorPosition.Y, 0);
+    *phOut = hOut;
+    *pwAttributes = sbiex.wAttributes;
 
+    if (!SetConsoleCursorPosition(GetStdOutputHandle(), coordZero))
     {
-        SHORT const cChars = sbiex.dwCursorPosition.X + 1;
+        VERIFY_FAIL(L"Failed to set cursor position");
+    }
+}
+
+void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut,
+                                  _In_ bool const fUseCrt, _In_ bool const fIsUnicode,
+                                  _In_ PCSTR pszTestString, _In_ WORD const wAttr)
+{
+    PWSTR pwszTestString = nullptr;
+    if (fIsUnicode)
+    {
+        int const icchNeeded = MultiByteToWideChar(JAPANESE_CP, 0, pszTestString, -1, nullptr, 0);
+
+        pwszTestString = new WCHAR[icchNeeded];
+
+        int const iRes = MultiByteToWideChar(JAPANESE_CP, 0, pszTestString, -1, pwszTestString, icchNeeded);
+    }
+
+    SHORT cChars = 0;
+    if (fIsUnicode)
+    {
+        cChars = (SHORT)wcslen(pwszTestString);
+    }
+    else
+    {
+        cChars = (SHORT)strlen(pszTestString);
+    }
+
+    if (fUseCrt)
+    {
+        if (fIsUnicode)
+        {
+            _setmode(_fileno(stdout), _O_WTEXT);
+        }
+        else
+        {
+            _setmode(_fileno(stdout), _O_TEXT);
+        }
+
+        if (fIsUnicode)
+        {
+            for (SHORT i = 0; i < cChars; i++)
+            {
+                putwchar(pwszTestString[i]);
+            }
+        }
+        else
+        {
+            for (SHORT i = 0; i < cChars; i++)
+            {
+                putchar(pszTestString[i]);
+            }
+        }
+    }
+    else
+    {
         CHAR_INFO* rgChars = new CHAR_INFO[cChars];
+
+        for (SHORT i = 0; i < cChars; i++)
+        {
+            rgChars[i].Attributes = wAttr;
+
+            if (fIsUnicode)
+            {
+                rgChars[i].Char.UnicodeChar = pwszTestString[i];
+            }
+            else
+            {
+                rgChars[i].Char.UnicodeChar = 0;
+                rgChars[i].Char.AsciiChar = pszTestString[i];
+            }
+        }
 
         COORD coordBufferSize = { 0 };
         coordBufferSize.Y = 1;
@@ -123,160 +163,236 @@ void DbcsTests::TestDbcsReadWrite()
         COORD coordBufferTarget = { 0 };
 
         SMALL_RECT srReadRegion = { 0 }; // inclusive rectangle (bottom and right are INSIDE the read area. usually are exclusive.)
-        srReadRegion.Right = sbiex.dwCursorPosition.X;
+        srReadRegion.Right = cChars - 1;
 
+        // NOTE: Don't VERIFY these calls or we will overwrite the text in the buffer with the log message.
+        if (fIsUnicode)
         {
-            Log::Comment(L"Check Read with 'A' API.");
-            fSuccess = ReadConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
-            if (CheckLastError(fSuccess, L"ReadConsoleOutputA"))
-            {
-                // Expected colors are same as what we started with.
-                CHAR_INFO ciExpected[4];
-                ZeroMemory(ciExpected, sizeof(CHAR_INFO) * ARRAYSIZE(ciExpected));
-
-                ciExpected[0].Attributes = sbiex.wAttributes;
-                ciExpected[1].Attributes = sbiex.wAttributes;
-                ciExpected[2].Attributes = sbiex.wAttributes;
-                ciExpected[3].Attributes = sbiex.wAttributes;
-
-                // Middle two characters should be a lead and trailing byte.
-                ciExpected[1].Attributes |= COMMON_LVB_LEADING_BYTE;
-                ciExpected[2].Attributes |= COMMON_LVB_TRAILING_BYTE;
-
-                // And now set what the characters should be.
-                ciExpected[0].Char.AsciiChar = 'A';
-                ciExpected[1].Char.AsciiChar = '\x82';
-                ciExpected[2].Char.AsciiChar = '\xa0';
-                ciExpected[3].Char.AsciiChar = 'Z';
-
-                for (size_t i = 0; i < ARRAYSIZE(ciExpected); i++)
-                {
-                    VERIFY_ARE_EQUAL(ciExpected[i], rgChars[i]);
-                }
-            }
+            WriteConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
         }
-
+        else
         {
-            Log::Comment(L"Check Read with 'W' API.");
-            fSuccess = ReadConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
-            if (CheckLastError(fSuccess, L"ReadConsoleOutputW"))
-            {
-                // Expected colors are same as what we started with.
-                CHAR_INFO ciExpected[3];
-                ciExpected[0].Attributes = sbiex.wAttributes;
-                ciExpected[1].Attributes = sbiex.wAttributes;
-                ciExpected[2].Attributes = sbiex.wAttributes;
-
-                // And now set what the characters should be.
-                ciExpected[0].Char.UnicodeChar = L'A';
-
-                int iRes = MultiByteToWideChar(JAPANESE_CP, 0, "\x82\xa0", 2, &ciExpected[1].Char.UnicodeChar, 1);
-                CheckLastErrorZeroFail(iRes, L"MultiByteToWideChar");
-
-                ciExpected[2].Char.UnicodeChar = L'Z';
-
-                for (size_t i = 0; i < ARRAYSIZE(ciExpected); i++)
-                {
-                    VERIFY_ARE_EQUAL(ciExpected[i].Attributes, rgChars[i].Attributes);
-                    VERIFY_ARE_EQUAL(ciExpected[i].Char.UnicodeChar, rgChars[i].Char.UnicodeChar);
-                }
-            }
-        }
-
-        {
-            Log::Comment(L"Check Write with 'A' API and read with 'W' API.");
-
-            WORD wAttr = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
-
-            rgChars[0].Char.AsciiChar = 'Q';
-            rgChars[0].Attributes = wAttr;
-            rgChars[1].Char.AsciiChar = '\x82';
-            rgChars[1].Attributes = wAttr;
-            rgChars[2].Char.AsciiChar = '\xa2';
-            rgChars[2].Attributes = wAttr;
-            rgChars[3].Char.AsciiChar = 'Y';
-            rgChars[3].Attributes = wAttr;
-
-            fSuccess = WriteConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
-
-            if (CheckLastError(fSuccess, L"WriteConsoleOutputA"))
-            {
-                fSuccess = ReadConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
-
-                if (CheckLastError(fSuccess, L"ReadConsoleOutputW"))
-                {
-                    // Expected colors are same as what we started with.
-                    CHAR_INFO ciExpected[3];
-                    ciExpected[0].Attributes = wAttr;
-                    ciExpected[1].Attributes = wAttr;
-                    ciExpected[2].Attributes = wAttr;
-
-                    // And now set what the characters should be.
-                    ciExpected[0].Char.UnicodeChar = L'Q';
-
-                    int iRes = MultiByteToWideChar(JAPANESE_CP, 0, "\x82\xa2", 2, &ciExpected[1].Char.UnicodeChar, 1);
-                    CheckLastErrorZeroFail(iRes, L"MultiByteToWideChar");
-
-                    ciExpected[2].Char.UnicodeChar = L'Y';
-
-                    for (size_t i = 0; i < ARRAYSIZE(ciExpected); i++)
-                    {
-                        VERIFY_ARE_EQUAL(ciExpected[i].Attributes, rgChars[i].Attributes);
-                        VERIFY_ARE_EQUAL(ciExpected[i].Char.UnicodeChar, rgChars[i].Char.UnicodeChar);
-                    }
-                }
-            }
-        }
-
-        {
-            Log::Comment(L"Check Write with 'W' API and read with 'A' API.");
-
-            WORD wAttr = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
-
-            rgChars[0].Char.UnicodeChar = L'Q';
-            rgChars[0].Attributes = wAttr;
-            rgChars[1].Char.UnicodeChar = L'\x3044';
-            rgChars[1].Attributes = wAttr;
-            rgChars[2].Char.UnicodeChar = 'Y';
-            rgChars[2].Attributes = wAttr;
-
-            fSuccess = WriteConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
-
-            if (CheckLastError(fSuccess, L"WriteConsoleOutputW"))
-            {
-                fSuccess = ReadConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
-
-                if (CheckLastError(fSuccess, L"ReadConsoleOutputA"))
-                {
-
-                    // Expected colors are same as what we started with.
-                    CHAR_INFO ciExpected[4];
-                    ciExpected[0].Attributes = wAttr;
-                    ciExpected[1].Attributes = wAttr;
-                    ciExpected[2].Attributes = wAttr;
-                    ciExpected[3].Attributes = wAttr;
-
-                    // Middle two characters should be a lead and trailing byte.
-                    ciExpected[1].Attributes |= COMMON_LVB_LEADING_BYTE;
-                    ciExpected[2].Attributes |= COMMON_LVB_TRAILING_BYTE;
-
-                    // And now set what the characters should be.
-                    ciExpected[0].Char.AsciiChar = 'Q';
-                    ciExpected[1].Char.AsciiChar = '\x82';
-                    ciExpected[2].Char.AsciiChar = '\xa2';
-                    ciExpected[3].Char.AsciiChar = 'Y';
-
-                    for (size_t i = 0; i < ARRAYSIZE(ciExpected); i++)
-                    {
-                        VERIFY_ARE_EQUAL(ciExpected[i].Attributes, rgChars[i].Attributes);
-                        VERIFY_ARE_EQUAL(ciExpected[i].Char.AsciiChar, rgChars[i].Char.AsciiChar);
-                    }
-                }
-            }
+            WriteConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
         }
 
         delete[] rgChars;
+
+        // Move the cursor down a line in case log info prints out.
+        coordBufferTarget.Y++;
+        SetConsoleCursorPosition(hOut, coordBufferTarget);
     }
+
+    if (nullptr != pwszTestString)
+    {
+        delete[] pwszTestString;
+    }
+}
+
+void DbcsWriteReadTestsPrepExpected(_In_ PCSTR pszTestData,
+                                    _In_ WORD wAttributes,
+                                    _In_ bool const fIsUnicode,
+                                    _Outptr_result_buffer_(*pcExpected) CHAR_INFO** const ppciExpected,
+                                    _Out_ size_t* const pcExpected)
+{
+    // NOTE: DBCS assumes that multi-byte sequences for Japanese CP 932 are full-width (2 columns)
+    // and that single-byte sequences are half-width (1 column)
+    
+    // We will expect to read back one CHAR_INFO for every A character we sent to the console using the assumption above.
+    // We expect that reading W characters will always be smaller than that.
+    size_t const cExpectedNeeded = strlen(pszTestData);
+
+    CHAR_INFO* rgciExpected = new CHAR_INFO[cExpectedNeeded];
+    ZeroMemory(rgciExpected, sizeof(CHAR_INFO) * cExpectedNeeded);
+
+    if (!fIsUnicode)
+    {
+        bool fSetTrailingNext = false;
+        for (size_t i = 0; i < cExpectedNeeded; i++)
+        {
+            rgciExpected[i].Attributes = wAttributes;
+
+            char const ch = pszTestData[i];
+
+            if (IsDBCSLeadByteEx(JAPANESE_CP, ch))
+            {
+                rgciExpected[i].Attributes |= COMMON_LVB_LEADING_BYTE;
+                fSetTrailingNext = true;
+            }
+            else if (fSetTrailingNext)
+            {
+                rgciExpected[i].Attributes |= COMMON_LVB_TRAILING_BYTE;
+                fSetTrailingNext = false;
+            }
+
+            rgciExpected[i].Char.AsciiChar = pszTestData[i];
+        }
+    }
+    else
+    {
+        int const iwchNeeded = MultiByteToWideChar(JAPANESE_CP, 0, pszTestData, (int)cExpectedNeeded, nullptr, 0);
+        PWSTR pwszTestData = new WCHAR[iwchNeeded];
+        int const iRes = MultiByteToWideChar(JAPANESE_CP, 0, pszTestData, (int)cExpectedNeeded, pwszTestData, iwchNeeded);
+        CheckLastErrorZeroFail(iRes, L"MultiByteToWideChar");
+
+        for (size_t i = 0; i < iwchNeeded; i++)
+        {
+            rgciExpected[i].Attributes = wAttributes;
+            rgciExpected[i].Char.UnicodeChar = pwszTestData[i];
+        }
+
+        delete[] pwszTestData;
+    }
+
+    *ppciExpected = rgciExpected;
+    *pcExpected = cExpectedNeeded;
+}
+
+void DbcsWriteReadTestsRetrieveOutput(_In_ HANDLE const hOut, _In_ bool const fReadUnicode, _Out_writes_(cChars) CHAR_INFO* const rgChars, _In_ SHORT const cChars)
+{
+    COORD coordBufferSize = { 0 };
+    coordBufferSize.Y = 1;
+    coordBufferSize.X = cChars;
+
+    COORD coordBufferTarget = { 0 };
+
+    SMALL_RECT srReadRegion = { 0 }; // inclusive rectangle (bottom and right are INSIDE the read area. usually are exclusive.)
+    srReadRegion.Right = cChars - 1;
+
+    if (!fReadUnicode)
+    {
+        VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(ReadConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion));
+    }
+    else
+    {
+        VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(ReadConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion));
+    }
+
+    Log::Comment(NoThrowString().Format(L"ReadRegion T: %d L: %d B: %d R: %d", srReadRegion.Top, srReadRegion.Left, srReadRegion.Bottom, srReadRegion.Right));
+}
+
+void DbcsWriteReadTestsVerify(_In_ bool const fIsUnicode,
+                              _In_reads_(cExpected) CHAR_INFO* const rgExpected, _In_ size_t const cExpected,
+                              _In_reads_(cExpected) CHAR_INFO* const rgActual)
+{
+    for (size_t i = 0; i < cExpected; i++)
+    {
+        if (!fIsUnicode)
+        {
+            // Reads from the A version of the API may leave garbage in the top half (Unicode-only half) of the union.
+            // Mask off so we discard potentially extraneous bits on comparison.
+            rgExpected[i].Char.UnicodeChar &= 0xFF;
+            rgActual[i].Char.UnicodeChar &= 0xFF;
+        }
+
+        VERIFY_ARE_EQUAL(rgExpected[i], rgActual[i]);
+    }
+}
+
+void DbcsWriteReadTestRunner(_In_ PCSTR pszTestData,
+                             _In_opt_ WORD* const pwAttrOverride,
+                             _In_ bool const fWriteWithCrt,
+                             _In_ bool const fWriteInUnicode,
+                             _In_ bool const fReadWithUnicode)
+{
+    HANDLE hOut;
+    WORD wAttributes;
+    SetupDbcsWriteReadTests(false, &hOut, &wAttributes);
+
+    if (nullptr != pwAttrOverride)
+    {
+        wAttributes = *pwAttrOverride;
+    }
+
+    size_t const cTestData = strlen(pszTestData);
+    DbcsWriteReadTestsSendOutput(hOut, fWriteWithCrt, fWriteInUnicode, pszTestData, wAttributes);
+
+    CHAR_INFO* pciExpected;
+    size_t cExpected;
+    DbcsWriteReadTestsPrepExpected(pszTestData, wAttributes, fReadWithUnicode, &pciExpected, &cExpected);
+
+    CHAR_INFO* pciActual = new CHAR_INFO[cTestData];
+    DbcsWriteReadTestsRetrieveOutput(hOut, fReadWithUnicode, pciActual, (SHORT)cTestData);
+
+    DbcsWriteReadTestsVerify(fReadWithUnicode, pciExpected, cExpected, pciActual);
+
+    delete[] pciActual;
+    delete[] pciExpected;
+}
+
+void DbcsTests::TestDbcsRasterWriteCrtAReadA()
+{
+    Log::Comment(L"Write with CRT 'A'. Check Read with 'A' API.");
+
+    PCSTR pszTestData = "A\x82\xa0Z";
+    DbcsWriteReadTestRunner(pszTestData, nullptr, true, false, false);
+}
+
+void DbcsTests::TestDbcsRasterWriteCrtAReadW()
+{
+    Log::Comment(L"Write with CRT 'A'. Check Read with 'W' API.");
+
+    PCSTR pszTestData = "A\x82\xA0Z";
+    DbcsWriteReadTestRunner(pszTestData, nullptr, true, false, true);
+}
+
+void DbcsTests::TestDbcsRasterWriteCrtWReadA()
+{
+    Log::Comment(L"Write with CRT 'W'. Check Read with 'A' API.");
+
+    PCSTR pszTestData = "A\x82\xa0Z";
+    DbcsWriteReadTestRunner(pszTestData, nullptr, true, true, false);
+}
+
+void DbcsTests::TestDbcsRasterWriteCrtWReadW()
+{
+    Log::Comment(L"Write with CRT 'W'. Check Read with 'W' API.");
+
+    PCSTR pszTestData = "A\x82\xA0Z";
+    DbcsWriteReadTestRunner(pszTestData, nullptr, true, true, true);
+}
+
+void DbcsTests::TestDbcsRasterWriteAReadA()
+{
+    Log::Comment(L"Check Write with 'A' API and read with 'A' API.");
+
+    // For this test, try changing attrs at the same time
+    WORD wAttributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
+    PCSTR pszTestData = "Q\x82\xA2Y";
+
+    DbcsWriteReadTestRunner(pszTestData, &wAttributes, false, false, false);
+}
+
+void DbcsTests::TestDbcsRasterWriteAReadW()
+{
+    Log::Comment(L"Check Write with 'A' API and read with 'W' API.");
+
+    // For this test, try changing attrs at the same time
+    WORD wAttributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
+    PCSTR pszTestData = "Q\x82\xA2Y";
+
+    DbcsWriteReadTestRunner(pszTestData, &wAttributes, false, false, true);
+}
+
+void DbcsTests::TestDbcsRasterWriteWReadA()
+{
+    Log::Comment(L"Check Write with 'W' API and read with 'A' API.");
+
+    // For this test, try changing attrs at the same time
+    WORD wAttributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
+    PCSTR pszTestData = "Q\x82\xA2Y";
+
+    DbcsWriteReadTestRunner(pszTestData, &wAttributes, false, true, false);
+}
+
+void DbcsTests::TestDbcsRasterWriteWReadW()
+{
+    Log::Comment(L"Check Write with 'W' API and read with 'W' API.");
+
+    // For this test, try changing attrs at the same time
+    WORD wAttributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
+    PCSTR pszTestData = "Q\x82\xA2Y";
+
+    DbcsWriteReadTestRunner(pszTestData, &wAttributes, false, true, true);
 }
 
 // TODO: MSFT: 10187355-  ReadWrite2 needs to be moved completely into UIA tests so it can modify fonts and confirm behavior.
