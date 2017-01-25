@@ -13,7 +13,7 @@ class DbcsTests
 {
     BEGIN_TEST_CLASS(DbcsTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Class")
-        END_TEST_CLASS();
+    END_TEST_CLASS();
 
     TEST_METHOD_SETUP(DbcsTestSetup);
 
@@ -21,15 +21,12 @@ class DbcsTests
     // in ways that this test is not expecting.
     TEST_METHOD(TestMultibyteInputRetrieval);
 
-    /*TEST_METHOD(TestDbcsReadWriteTrueType);*/
-    TEST_METHOD(TestDbcsRasterWriteCrtAReadA);
-    TEST_METHOD(TestDbcsRasterWriteCrtAReadW);
-    TEST_METHOD(TestDbcsRasterWriteCrtWReadA);
-    TEST_METHOD(TestDbcsRasterWriteCrtWReadW);
-    TEST_METHOD(TestDbcsRasterWriteAReadA);
-    TEST_METHOD(TestDbcsRasterWriteAReadW);
-    TEST_METHOD(TestDbcsRasterWriteWReadA);
-    TEST_METHOD(TestDbcsRasterWriteWReadW);
+    BEGIN_TEST_METHOD(TestDbcsWriteRead)
+        /*TEST_METHOD_PROPERTY(L"Data:fUseTrueTypeFont", L"{true, false}")*/
+        TEST_METHOD_PROPERTY(L"Data:fUseCrtWrite", L"{true, false}")
+        TEST_METHOD_PROPERTY(L"Data:fWriteInUnicode", L"{true, false}")
+        TEST_METHOD_PROPERTY(L"Data:fReadInUnicode", L"{true, false}")
+    END_TEST_METHOD()
 
     /*TEST_METHOD(TestDbcsReadWrite2);*/
 
@@ -43,57 +40,72 @@ bool DbcsTests::DbcsTestSetup()
     return true;
 }
 
-// TODO: MSFT 10187355 - This test needs to move into UIA as it is dependent on the font.
-// This test covers read/write of double byte characters including verification of correct attribute handling across 
-// the two-wide double byte characters.
-
 void SetupDbcsWriteReadTests(_In_ bool fIsTrueType,
                              _Out_ HANDLE* const phOut,
                              _Out_ WORD* const pwAttributes)
 {
     HANDLE const hOut = GetStdOutputHandle();
 
+    // Ensure that the console is set into the appropriate codepage for the test
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleCP(JAPANESE_CP));
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleOutputCP(JAPANESE_CP));
 
+    // Now set up the font. Many of these APIs are oddly dependent on font, so set as appropriate.
     CONSOLE_FONT_INFOEX cfiex = { 0 };
     cfiex.cbSize = sizeof(cfiex);
     if (!fIsTrueType)
     {
+        // We use Terminal as the raster font name always.
         wcscpy_s(cfiex.FaceName, L"Terminal");
         cfiex.dwFontSize.X = 8;
         cfiex.dwFontSize.Y = 18;
     }
     else
     {
+        // We use MS Gothic as the default font name for Japanese codepage.
         wcscpy_s(cfiex.FaceName, L"MS Gothic");
         cfiex.dwFontSize.Y = 16;
     }
 
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetCurrentConsoleFontEx(hOut, FALSE, &cfiex));
-
-    COORD coordZero = { 0 };
-
+    
+    // Retrieve some of the information about the preferences/settings for the console buffer including
+    // the size of the buffer and the default colors (attributes) to use.
     CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
     sbiex.cbSize = sizeof(sbiex);
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(GetConsoleScreenBufferInfoEx(hOut, &sbiex));
 
-    *phOut = hOut;
-    *pwAttributes = sbiex.wAttributes;
+    // ensure first line of console is cleared out with spaces so nothing interferes with the text these tests will be writing.
+    COORD coordZero = { 0 };
+    DWORD dwWritten;
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(FillConsoleOutputCharacterW(hOut, L'\x20', sbiex.dwSize.X, coordZero, &dwWritten));
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(FillConsoleOutputAttribute(hOut, sbiex.wAttributes, sbiex.dwSize.X, coordZero, &dwWritten));
 
+    // Move the cursor to the 0,0 position into our empty line so the tests can write (important for the CRT tests that specify no location)
     if (!SetConsoleCursorPosition(GetStdOutputHandle(), coordZero))
     {
         VERIFY_FAIL(L"Failed to set cursor position");
     }
+
+    // Give back the output handle and the default attributes so tests can verify attributes didn't change on roundtrip
+    *phOut = hOut;
+    *pwAttributes = sbiex.wAttributes;
 }
 
 void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut,
                                   _In_ bool const fUseCrt, _In_ bool const fIsUnicode,
                                   _In_ PCSTR pszTestString, _In_ WORD const wAttr)
 {
+
+    // DBCS is very dependent on knowing the byte length in the original codepage of the input text.
+    // Save off the original length of the string so we know what its A length was.
+    SHORT const cTestString = (SHORT)strlen(pszTestString);
+
+    // If we're in Unicode mode, we will need to translate the test string to Unicode before passing into the console
     PWSTR pwszTestString = nullptr;
     if (fIsUnicode)
     {
+        // Use double-call pattern to find space to allocate, allocate it, then convert.
         int const icchNeeded = MultiByteToWideChar(JAPANESE_CP, 0, pszTestString, -1, nullptr, 0);
 
         pwszTestString = new WCHAR[icchNeeded];
@@ -101,6 +113,7 @@ void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut,
         int const iRes = MultiByteToWideChar(JAPANESE_CP, 0, pszTestString, -1, pwszTestString, icchNeeded);
     }
 
+    // Calculate the number of cells/characters/calls we will need to fill with our input depending on the mode.
     SHORT cChars = 0;
     if (fIsUnicode)
     {
@@ -108,11 +121,20 @@ void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut,
     }
     else
     {
-        cChars = (SHORT)strlen(pszTestString);
+        cChars = cTestString;
     }
+
+    // These parameters will be used to print out the written rectangle if we used the console APIs (not the CRT APIs)
+    // This information will be stored and printed out at the very end after we move the cursor off of the text we just printed.
+    // The cursor auto-moves for CRT, but we have to manually move it for some of the Console APIs.
+    bool fUseWritten = false;
+    SMALL_RECT srWritten = { 0 };
 
     if (fUseCrt)
     {
+        // Align the CRT's mode with the text we're about to write.
+        // If you call a W function on the CRT while the mode is still set to A,
+        // the CRT will helpfully back-convert your text from W to A before sending it to the driver.
         if (fIsUnicode)
         {
             _setmode(_fileno(stdout), _O_WTEXT);
@@ -122,6 +144,7 @@ void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut,
             _setmode(_fileno(stdout), _O_TEXT);
         }
 
+        // Write each character in the string individually out through the CRT
         if (fIsUnicode)
         {
             for (SHORT i = 0; i < cChars; i++)
@@ -139,7 +162,25 @@ void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut,
     }
     else
     {
-        CHAR_INFO* rgChars = new CHAR_INFO[cChars];
+        // During writing this test, we used the sample string of A\x82\xa0Z which is 4 characters A (CP 932)
+        // and is 3 characters W.
+        // There will be several locations below where I will note that we are using the 4 (A) size for a buffer
+        // containing 3 (W) size data. This is due to console bugs and assumptions that we must maintain for compatibility.
+        // As a rule of thumb, we will always pass the 4 (A) size lengths and make those size structures even when we
+        // only intend to use 3 (W) of it. 
+        // I will note below where it is optional with the *** (where 3 could have been used for this example's W Data) and 
+        // where it is mandatory (using 3 will reveal a bug in the console and not output as expected).
+
+        // If we're going to be using WriteConsoleOutput, we need to create up a nice 
+        // CHAR_INFO buffer to pass into the method containing the string and possibly attributes
+        
+        // NOTE: This might seem strange, but we will allocate enough space for the A version always
+        // (assuming the W version would be shorter in character count). This is in line with
+        // long-standing assumptions the console host makes about allocated space.
+
+        
+        // ***Optional. We could have used the 3 (W) size here instead of 4 (A) and the console would have written all characters.
+        CHAR_INFO* rgChars = new CHAR_INFO[cTestString];
 
         for (SHORT i = 0; i < cChars; i++)
         {
@@ -151,45 +192,70 @@ void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut,
             }
             else
             {
+                // Ensure the top half of the union is filled with 0 for comparison purposes later.
                 rgChars[i].Char.UnicodeChar = 0;
                 rgChars[i].Char.AsciiChar = pszTestString[i];
             }
         }
 
+        // This is the stated size of the buffer we're passing.
+        // This console API can treat the buffer as a 2D array. We're only doing 1 dimension so the Y is 1 and the X is the size.
         COORD coordBufferSize = { 0 };
-        coordBufferSize.Y = 1;
-        coordBufferSize.X = cChars;
+        coordBufferSize.Y = 1; 
+        // *** Mandatory. We must use the 4 (A) size here even though our buffer might be only 3 CHAR_INFOs for W.
+        // This is the console bug where it is using this parameter (instead of srWriteRegion below) as the loop counter
+        // for inserting W text that expands into multiple buffer columns.
+        coordBufferSize.X = cTestString;
 
+        // We want to write to the coordinate 0,0 of the buffer. The test setup function has blanked out that line.
         COORD coordBufferTarget = { 0 };
 
-        SMALL_RECT srReadRegion = { 0 }; // inclusive rectangle (bottom and right are INSIDE the read area. usually are exclusive.)
-        srReadRegion.Right = cChars - 1;
+        // inclusive rectangle (bottom and right are INSIDE the read area. usually are exclusive.)
+        SMALL_RECT srWriteRegion = { 0 }; 
+        // ***Optional. We could have used the 3 (W) size here instead of 4 (A) and the console would have written all characters.
+        // This doesn't make sense given this is the 'write region' a.k.a. the region inside the buffer we are targeting, but the
+        // bug is that the console is using the coordBufferSize variable above as its loop counter instead.
+        srWriteRegion.Right = cTestString - 1;
 
         // NOTE: Don't VERIFY these calls or we will overwrite the text in the buffer with the log message.
         if (fIsUnicode)
         {
-            WriteConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
+            WriteConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srWriteRegion);
         }
         else
         {
-            WriteConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion);
+            WriteConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srWriteRegion);
         }
 
-        delete[] rgChars;
+        // Save write region so we can print it out after we move the cursor out of the way
+        srWritten = srWriteRegion;
+        fUseWritten = true;
 
-        // Move the cursor down a line in case log info prints out.
-        coordBufferTarget.Y++;
-        SetConsoleCursorPosition(hOut, coordBufferTarget);
+        delete[] rgChars;
     }
 
+    // Free memory if appropriate (if we had to convert A to W)
     if (nullptr != pwszTestString)
     {
         delete[] pwszTestString;
+    }
+
+    // Move the cursor down a line in case log info prints out.
+    COORD coordSetCursor = { 0 };
+    coordSetCursor.Y = 1;
+    SetConsoleCursorPosition(hOut, coordSetCursor);
+
+    // If we had log info to print, print it now that it's safe (cursor out of the test data we printed)
+    // This only matters for when the test is run in the same window as the runner and could print log information.
+    if (fUseWritten)
+    {
+        Log::Comment(NoThrowString().Format(L"WriteRegion T: %d L: %d B: %d R: %d", srWritten.Top, srWritten.Left, srWritten.Bottom, srWritten.Right));
     }
 }
 
 void DbcsWriteReadTestsPrepExpected(_In_ PCSTR pszTestData,
                                     _In_ WORD wAttributes,
+                                    _In_ bool const fUseTrueType,
                                     _In_ bool const fIsUnicode,
                                     _Outptr_result_buffer_(*pcExpected) CHAR_INFO** const ppciExpected,
                                     _Out_ size_t* const pcExpected)
@@ -198,14 +264,19 @@ void DbcsWriteReadTestsPrepExpected(_In_ PCSTR pszTestData,
     // and that single-byte sequences are half-width (1 column)
     
     // We will expect to read back one CHAR_INFO for every A character we sent to the console using the assumption above.
-    // We expect that reading W characters will always be smaller than that.
+    // We expect that reading W characters will always be less than or equal to that.
     size_t const cExpectedNeeded = strlen(pszTestData);
 
+    // Allocate and zero out the space so comparisons don't fail from garbage bytes.
     CHAR_INFO* rgciExpected = new CHAR_INFO[cExpectedNeeded];
     ZeroMemory(rgciExpected, sizeof(CHAR_INFO) * cExpectedNeeded);
 
     if (!fIsUnicode)
     {
+        // In the A scenario, the expected buffer will always have the same text as the original
+        // string that was inserted and the same character count. The only notable addition
+        // is that any double-byte sequences should now be marked in the attributes field.
+
         bool fSetTrailingNext = false;
         for (size_t i = 0; i < cExpectedNeeded; i++)
         {
@@ -229,26 +300,91 @@ void DbcsWriteReadTestsPrepExpected(_In_ PCSTR pszTestData,
     }
     else
     {
+        // In the W scenario, we will need to compare the returned characters against the converted A to W string
         int const iwchNeeded = MultiByteToWideChar(JAPANESE_CP, 0, pszTestData, (int)cExpectedNeeded, nullptr, 0);
         PWSTR pwszTestData = new WCHAR[iwchNeeded];
         int const iRes = MultiByteToWideChar(JAPANESE_CP, 0, pszTestData, (int)cExpectedNeeded, pwszTestData, iwchNeeded);
         CheckLastErrorZeroFail(iRes, L"MultiByteToWideChar");
 
-        for (size_t i = 0; i < iwchNeeded; i++)
+        if (!fUseTrueType)
         {
-            rgciExpected[i].Attributes = wAttributes;
-            rgciExpected[i].Char.UnicodeChar = pwszTestData[i];
+            // In the Raster Font case (not TrueType), the expected result is simple.
+            // We should see one CHAR_INFO per unicode character returned, or rather one for 
+            // each character in the resulting W string from MultiByteToWideChar conversion above.
+            // The console should strip out leading/trailing byte formatting from its internal structures
+            // and return only the relevant data.
+            for (size_t i = 0; i < iwchNeeded; i++)
+            {
+                rgciExpected[i].Attributes = wAttributes;
+                rgciExpected[i].Char.UnicodeChar = pwszTestData[i];
+            }
+        }
+        else
+        {
+            // In the TrueType font case, the result is complicated.
+            // The console does not strip out the duplicate copies kept for two-column multi-byte sequences.
+            // Instead, it will return multiple copies of wide characters marking them with LEADING and TRAILING byte flags.
+            // This is due to the convoluted way in which the console treats lead/trailing sequences relatively analogous
+            // to a marking indicating a full-width character. Since this is how it's been for a long time, we must
+            // maintain compatibility.
+
+            bool fSetTrailingNext = false;
+            wchar_t wchTrailing = L'\0';
+            size_t iWideTestData = 0;
+
+            // We will walk through for the length of the original A string before conversion (which is generally the
+            // same length or longer than the Unicode string, or at least that's the console host's assumption.)
+            for (size_t i = 0; i < cExpectedNeeded; i++)
+            {
+                // Color Attributes are straightforward as expected.
+                rgciExpected[i].Attributes = wAttributes;
+
+                // For the character, if it is a lead byte in a DBCS sequence, it will be present twice.
+                // First with the LEADING BYTE flag then again with the TRAILING BYTE flag.
+                char const ch = pszTestData[i];
+                if (IsDBCSLeadByteEx(JAPANESE_CP, ch))
+                {
+                    // If it's a lead byte, copy it over and save a copy to print it again when we come around the loop.
+                    wchar_t wch = pwszTestData[iWideTestData];
+                    iWideTestData++;
+
+                    rgciExpected[i].Char.UnicodeChar = wch;
+                    fSetTrailingNext = true;
+                    wchTrailing = wch;
+
+                    // Mark with lead byte for first copy.
+                    rgciExpected[i].Attributes |= COMMON_LVB_LEADING_BYTE;
+                }
+                else if (fSetTrailingNext)
+                {
+                    // For the next time around the loop immediately after a lead, fill with the same character again
+                    // and mark it trailing this time.
+                    rgciExpected[i].Char.UnicodeChar = wchTrailing;
+                    fSetTrailingNext = false;
+
+                    rgciExpected[i].Attributes |= COMMON_LVB_TRAILING_BYTE;
+                }
+                else
+                {
+                    // If this character has nothing to do with DBCS, leading/trailing, or presumably full-width (2 col)
+                    // then just copy it over and keep moving.
+                    rgciExpected[i].Char.UnicodeChar = pwszTestData[iWideTestData];
+                    iWideTestData++;
+                }
+            }
         }
 
         delete[] pwszTestData;
     }
 
+    // Return the expected array and the length that should be used for comparison at the end of the test.
     *ppciExpected = rgciExpected;
     *pcExpected = cExpectedNeeded;
 }
 
 void DbcsWriteReadTestsRetrieveOutput(_In_ HANDLE const hOut, _In_ bool const fReadUnicode, _Out_writes_(cChars) CHAR_INFO* const rgChars, _In_ SHORT const cChars)
 {
+    // Since we wrote (in SendOutput function) to the 0,0 line, we need to read back the same width from that line.
     COORD coordBufferSize = { 0 };
     coordBufferSize.Y = 1;
     coordBufferSize.X = cChars;
@@ -274,12 +410,16 @@ void DbcsWriteReadTestsVerify(_In_ bool const fIsUnicode,
                               _In_reads_(cExpected) CHAR_INFO* const rgExpected, _In_ size_t const cExpected,
                               _In_reads_(cExpected) CHAR_INFO* const rgActual)
 {
+    // We will walk through for the number of CHAR_INFOs expected. Sometimes the Actual is allocated larger than
+    // expected, but we're mainly concerned with the accurate retrieval of the same data we put in.
+
     for (size_t i = 0; i < cExpected; i++)
     {
         if (!fIsUnicode)
         {
-            // Reads from the A version of the API may leave garbage in the top half (Unicode-only half) of the union.
-            // Mask off so we discard potentially extraneous bits on comparison.
+            // Reads from the A version of the API may leave garbage in the top half (Unicode-only half) of the union
+            // due to memory allocation from the heap.
+            // Mask off so we discard potentially extraneous bits on comparison 
             rgExpected[i].Char.UnicodeChar &= 0xFF;
             rgActual[i].Char.UnicodeChar &= 0xFF;
         }
@@ -290,110 +430,172 @@ void DbcsWriteReadTestsVerify(_In_ bool const fIsUnicode,
 
 void DbcsWriteReadTestRunner(_In_ PCSTR pszTestData,
                              _In_opt_ WORD* const pwAttrOverride,
+                             _In_ bool const fUseTrueType,
                              _In_ bool const fWriteWithCrt,
                              _In_ bool const fWriteInUnicode,
                              _In_ bool const fReadWithUnicode)
 {
+    // First we need to set up the tests by clearing out the first line of the buffer,
+    // retrieving the appropriate output handle, and getting the colors (attributes)
+    // used by default in the buffer (set during clearing as well).
     HANDLE hOut;
     WORD wAttributes;
-    SetupDbcsWriteReadTests(false, &hOut, &wAttributes);
+    SetupDbcsWriteReadTests(fUseTrueType, &hOut, &wAttributes);
 
+    // Some tests might want to override the colors applied to ensure both parts of the CHAR_INFO union 
+    // work for methods that support sending that union. (i.e. not the CRT path)
     if (nullptr != pwAttrOverride)
     {
         wAttributes = *pwAttrOverride;
     }
 
+    // The console bases the space it walks for DBCS conversions on the length of the A version of the text.
+    // Store that length now so we have it for our read/write operations.
     size_t const cTestData = strlen(pszTestData);
+
+    // Write the string under test into the appropriate WRITE API for this test.
     DbcsWriteReadTestsSendOutput(hOut, fWriteWithCrt, fWriteInUnicode, pszTestData, wAttributes);
 
+    // Prepare the array of CHAR_INFO structs that we expect to receive back when we will call read in a moment.
+    // This can vary based on font, unicode/non-unicode, and codepage.
     CHAR_INFO* pciExpected;
     size_t cExpected;
-    DbcsWriteReadTestsPrepExpected(pszTestData, wAttributes, fReadWithUnicode, &pciExpected, &cExpected);
+    DbcsWriteReadTestsPrepExpected(pszTestData, wAttributes, fUseTrueType, fReadWithUnicode, &pciExpected, &cExpected);
 
+    // Now call the appropriate READ API for this test.
     CHAR_INFO* pciActual = new CHAR_INFO[cTestData];
     DbcsWriteReadTestsRetrieveOutput(hOut, fReadWithUnicode, pciActual, (SHORT)cTestData);
 
+    // Loop through and verify that our expected array matches what was actually returned by the given API.
     DbcsWriteReadTestsVerify(fReadWithUnicode, pciExpected, cExpected, pciActual);
 
+    // Free allocated structures
     delete[] pciActual;
     delete[] pciExpected;
 }
 
-void DbcsTests::TestDbcsRasterWriteCrtAReadA()
+void DbcsTests::TestDbcsWriteRead()
 {
-    Log::Comment(L"Write with CRT 'A'. Check Read with 'A' API.");
+    bool fUseTrueTypeFont = false;
+    //VERIFY_SUCCEEDED(TestData::TryGetValue(L"fUseTrueTypeFont", fUseTrueTypeFont));
 
-    PCSTR pszTestData = "A\x82\xa0Z";
-    DbcsWriteReadTestRunner(pszTestData, nullptr, true, false, false);
-}
+    bool fUseCrtWrite;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"fUseCrtWrite", fUseCrtWrite));
 
-void DbcsTests::TestDbcsRasterWriteCrtAReadW()
-{
-    Log::Comment(L"Write with CRT 'A'. Check Read with 'W' API.");
+    bool fWriteInUnicode;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"fWriteInUnicode", fWriteInUnicode));
 
-    PCSTR pszTestData = "A\x82\xA0Z";
-    DbcsWriteReadTestRunner(pszTestData, nullptr, true, false, true);
-}
+    bool fReadInUnicode;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"fReadInUnicode", fReadInUnicode));
 
-void DbcsTests::TestDbcsRasterWriteCrtWReadA()
-{
-    Log::Comment(L"Write with CRT 'W'. Check Read with 'A' API.");
-
-    PCSTR pszTestData = "A\x82\xa0Z";
-    DbcsWriteReadTestRunner(pszTestData, nullptr, true, true, false);
-}
-
-void DbcsTests::TestDbcsRasterWriteCrtWReadW()
-{
-    Log::Comment(L"Write with CRT 'W'. Check Read with 'W' API.");
-
-    PCSTR pszTestData = "A\x82\xA0Z";
-    DbcsWriteReadTestRunner(pszTestData, nullptr, true, true, true);
-}
-
-void DbcsTests::TestDbcsRasterWriteAReadA()
-{
-    Log::Comment(L"Check Write with 'A' API and read with 'A' API.");
-
-    // For this test, try changing attrs at the same time
-    WORD wAttributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
+    Log::Comment(NoThrowString().Format(L"Use '%ls' font. Write with %ls '%ls'. Check Read with %ls '%ls' API.",
+                                        fUseTrueTypeFont ? L"TrueType" : L"Raster",
+                                        fUseCrtWrite ? L"CRT" : L"WriteConsoleOutput",
+                                        fWriteInUnicode ? L"W" : L"A",
+                                        L"ReadConsoleOutput",
+                                        fReadInUnicode ? L"W" : L"A"));
+    
     PCSTR pszTestData = "Q\x82\xA2Y";
 
-    DbcsWriteReadTestRunner(pszTestData, &wAttributes, false, false, false);
+    WORD wAttributes = 0;
+
+    if (!fUseCrtWrite)
+    {
+        Log::Comment(L"We will also try to change the color since WriteConsoleOutput supports it.");
+        wAttributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
+    }
+
+    DbcsWriteReadTestRunner(pszTestData,
+                            wAttributes != 0 ? &wAttributes : nullptr,
+                            fUseTrueTypeFont,
+                            fUseCrtWrite,
+                            fWriteInUnicode,
+                            fReadInUnicode);
 }
 
-void DbcsTests::TestDbcsRasterWriteAReadW()
-{
-    Log::Comment(L"Check Write with 'A' API and read with 'W' API.");
-
-    // For this test, try changing attrs at the same time
-    WORD wAttributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
-    PCSTR pszTestData = "Q\x82\xA2Y";
-
-    DbcsWriteReadTestRunner(pszTestData, &wAttributes, false, false, true);
-}
-
-void DbcsTests::TestDbcsRasterWriteWReadA()
-{
-    Log::Comment(L"Check Write with 'W' API and read with 'A' API.");
-
-    // For this test, try changing attrs at the same time
-    WORD wAttributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
-    PCSTR pszTestData = "Q\x82\xA2Y";
-
-    DbcsWriteReadTestRunner(pszTestData, &wAttributes, false, true, false);
-}
-
-void DbcsTests::TestDbcsRasterWriteWReadW()
-{
-    Log::Comment(L"Check Write with 'W' API and read with 'W' API.");
-
-    // For this test, try changing attrs at the same time
-    WORD wAttributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
-    PCSTR pszTestData = "Q\x82\xA2Y";
-
-    DbcsWriteReadTestRunner(pszTestData, &wAttributes, false, true, true);
-}
+//void DbcsTests::TestDbcsTTWriteCrtAReadW()
+//{
+//    Log::Comment(L"Write with CRT 'A'. Check Read with 'W' API.");
+//
+//    PCSTR pszTestData = "A\x82\xA0Z";
+//    DbcsWriteReadTestRunner(pszTestData, nullptr, true, true, false, true);
+//}
+//
+//void DbcsTests::TestDbcsRasterWriteCrtAReadA()
+//{
+//    Log::Comment(L"Write with CRT 'A'. Check Read with 'A' API.");
+//
+//    PCSTR pszTestData = "A\x82\xa0Z";
+//    DbcsWriteReadTestRunner(pszTestData, nullptr, false, true, false, false);
+//}
+//
+//void DbcsTests::TestDbcsRasterWriteCrtAReadW()
+//{
+//    Log::Comment(L"Write with CRT 'A'. Check Read with 'W' API.");
+//
+//    PCSTR pszTestData = "A\x82\xA0Z";
+//    DbcsWriteReadTestRunner(pszTestData, nullptr, false, true, false, true);
+//}
+//
+//void DbcsTests::TestDbcsRasterWriteCrtWReadA()
+//{
+//    Log::Comment(L"Write with CRT 'W'. Check Read with 'A' API.");
+//
+//    PCSTR pszTestData = "A\x82\xa0Z";
+//    DbcsWriteReadTestRunner(pszTestData, nullptr, false, true, true, false);
+//}
+//
+//void DbcsTests::TestDbcsRasterWriteCrtWReadW()
+//{
+//    Log::Comment(L"Write with CRT 'W'. Check Read with 'W' API.");
+//
+//    PCSTR pszTestData = "A\x82\xA0Z";
+//    DbcsWriteReadTestRunner(pszTestData, nullptr, false, true, true, true);
+//}
+//
+//void DbcsTests::TestDbcsRasterWriteAReadA()
+//{
+//    Log::Comment(L"Check Write with 'A' API and read with 'A' API.");
+//
+//    // For this test, try changing attrs at the same time
+//    WORD wAttributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
+//    PCSTR pszTestData = "Q\x82\xA2Y";
+//
+//    DbcsWriteReadTestRunner(pszTestData, &wAttributes, false, false, false, false);
+//}
+//
+//void DbcsTests::TestDbcsRasterWriteAReadW()
+//{
+//    Log::Comment(L"Check Write with 'A' API and read with 'W' API.");
+//
+//    // For this test, try changing attrs at the same time
+//    WORD wAttributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
+//    PCSTR pszTestData = "Q\x82\xA2Y";
+//
+//    DbcsWriteReadTestRunner(pszTestData, &wAttributes, false, false, false, true);
+//}
+//
+//void DbcsTests::TestDbcsRasterWriteWReadA()
+//{
+//    Log::Comment(L"Check Write with 'W' API and read with 'A' API.");
+//
+//    // For this test, try changing attrs at the same time
+//    WORD wAttributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
+//    PCSTR pszTestData = "Q\x82\xA2Y";
+//
+//    DbcsWriteReadTestRunner(pszTestData, &wAttributes, false, false, true, false);
+//}
+//
+//void DbcsTests::TestDbcsRasterWriteWReadW()
+//{
+//    Log::Comment(L"Check Write with 'W' API and read with 'W' API.");
+//
+//    // For this test, try changing attrs at the same time
+//    WORD wAttributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
+//    PCSTR pszTestData = "Q\x82\xA2Y";
+//
+//    DbcsWriteReadTestRunner(pszTestData, &wAttributes, false, false, true, true);
+//}
 
 // TODO: MSFT: 10187355-  ReadWrite2 needs to be moved completely into UIA tests so it can modify fonts and confirm behavior.
 //// This is sample code for DbcsReadWriteInner2 that isn't executed but is helpful in seeing how this would actually work from a consumer.
