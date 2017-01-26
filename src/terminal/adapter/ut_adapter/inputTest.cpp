@@ -96,7 +96,6 @@ public:
             irExpected.EventType = KEY_EVENT;
             irExpected.Event.KeyEvent.bKeyDown = TRUE;
             irExpected.Event.KeyEvent.wRepeatCount = 1;
-            // irExpected.Event.KeyEvent.wVirtualKeyCode = LOBYTE(VkKeyScanW(0));
             irExpected.Event.KeyEvent.wVirtualKeyCode = 0;
             irExpected.Event.KeyEvent.dwControlKeyState = 0;
             irExpected.Event.KeyEvent.wVirtualScanCode = 0;
