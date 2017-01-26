@@ -31,6 +31,9 @@ class InputTests
     TEST_METHOD(TestPeekConsoleInvalid);
     TEST_METHOD(TestReadConsoleInvalid);
     TEST_METHOD(TestWriteConsoleInvalid);
+
+    TEST_METHOD(TestMouseWheelReadConsoleInput);
+    TEST_METHOD(TestMouseHorizWheelReadConsoleInput);
 };
 
 void VerifyNumberOfInputRecords(_In_ const HANDLE hConsoleInput, _In_ DWORD nInputs)
@@ -259,4 +262,57 @@ void InputTests::TestWriteConsoleInvalid()
     INPUT_RECORD irWrite = {0};
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInput(hConsoleInput, &irWrite, 0, &nWrite));
     VERIFY_ARE_EQUAL(nWrite, (DWORD)0);
+}
+
+void TestMouseWheelReadConsoleInputHelper(_In_ UINT const msg, _In_ DWORD const dwEventFlagsExpected)
+{
+    HWND const hwnd = GetConsoleWindow();
+    VERIFY_IS_NOT_NULL(hwnd, L"Get console window handle to inject wheel messages.");
+
+    HANDLE const hConsoleInput = GetStdInputHandle();
+    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hConsoleInput), L"Flush input queue to make sure no one else is in the way.");
+
+    // WM_MOUSEWHEEL params
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/ms645617(v=vs.85).aspx
+
+    // WPARAM is HIWORD the wheel delta and LOWORD the keystate (keys pressed with it)
+    // We want no keys pressed in the loword (0) and we want one tick of the wheel in the high word.
+    WPARAM wParam = 0;
+    short sKeyState = 0;
+    short sWheelDelta = -WHEEL_DELTA; // scroll down is negative, up is positive.
+    wParam = ((sWheelDelta << 16) | sKeyState) & 0xFFFFFFFF; // we only use the lower 32-bits (in case of 64-bit system)
+
+                                                             // LPARAM is positioning information. We don't care so we'll leave it 0x0
+    LPARAM lParam = 0;
+
+    Log::Comment(L"Send scroll down message into console window queue.");
+    SendMessageW(hwnd, msg, wParam, lParam);
+
+    Sleep(250); // give message time to sink in
+
+    DWORD dwAvailable = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(hConsoleInput, &dwAvailable), L"Retrieve number of events in queue.");
+    VERIFY_ARE_EQUAL(1u, dwAvailable, L"We expect only the one event that our scroll should have generated.");
+
+    INPUT_RECORD ir;
+    DWORD dwRead = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputW(hConsoleInput, &ir, 1, &dwRead), L"Read the event out.");
+    VERIFY_ARE_EQUAL(1, dwRead);
+
+    Log::Comment(L"Verify the event is what we expected. We only verify the fields relevant to this test.");
+    VERIFY_ARE_EQUAL(MOUSE_EVENT, ir.EventType);
+    VERIFY_ARE_EQUAL((DWORD)wParam, ir.Event.MouseEvent.dwButtonState); // hard cast OK. only using lower 32-bits (see above)
+                                                                        // Don't care about ctrl key state. Can be messed with by caps lock/numlock state. Not checking this.
+    VERIFY_ARE_EQUAL(dwEventFlagsExpected, ir.Event.MouseEvent.dwEventFlags);
+    // Don't care about mouse position for ensuring scroll message went through.
+}
+
+void InputTests::TestMouseWheelReadConsoleInput()
+{
+    TestMouseWheelReadConsoleInputHelper(WM_MOUSEWHEEL, MOUSE_WHEELED);
+}
+
+void InputTests::TestMouseHorizWheelReadConsoleInput()
+{
+    TestMouseWheelReadConsoleInputHelper(WM_MOUSEHWHEEL, MOUSE_HWHEELED);
 }
