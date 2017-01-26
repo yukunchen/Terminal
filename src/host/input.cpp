@@ -1637,13 +1637,8 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
     if (!IsInVirtualTerminalInputMode())
     {
         // First attempt to process simple key chords (Ctrl+Key)
-        if (inputKeyInfo.IsCtrlOnly() && ShouldTakeOverKeyboardShortcuts())
+        if (inputKeyInfo.IsCtrlOnly() && ShouldTakeOverKeyboardShortcuts() && bKeyDown)
         {
-            if (!bKeyDown)
-            {
-                return;
-            }
-
             switch (VirtualKeyCode)
             {
             case 'A':
