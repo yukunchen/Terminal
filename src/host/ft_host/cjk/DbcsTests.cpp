@@ -18,6 +18,12 @@ enum DbcsWriteMode
     WriteConsoleFunc = 3
 };
 
+enum DbcsReadMode
+{
+    ReadConsoleOutputFunc = 0,
+    ReadConsoleOutputCharacterFunc = 1
+};
+
 class DbcsTests
 {
     BEGIN_TEST_CLASS(DbcsTests)
@@ -35,6 +41,7 @@ class DbcsTests
         TEST_METHOD_PROPERTY(L"Data:fUseTrueTypeFont", L"{true, false}")
         TEST_METHOD_PROPERTY(L"Data:WriteMode", L"{0, 1, 2, 3}")
         TEST_METHOD_PROPERTY(L"Data:fWriteInUnicode", L"{true, false}")
+        TEST_METHOD_PROPERTY(L"Data:ReadMode", L"{0}")
         TEST_METHOD_PROPERTY(L"Data:fReadInUnicode", L"{true, false}")
     END_TEST_METHOD()
 
@@ -747,32 +754,44 @@ void DbcsWriteReadTestsPrepExpected(_In_ unsigned int const uiCodePage,
     *pcExpected = cExpectedNeeded;
 }
 
-void DbcsWriteReadTestsRetrieveOutput(_In_ HANDLE const hOut, _In_ bool const fReadUnicode, _Out_writes_(cChars) CHAR_INFO* const rgChars, _In_ SHORT const cChars)
+void DbcsWriteReadTestsRetrieveOutput(_In_ HANDLE const hOut, 
+                                      _In_ DbcsReadMode const ReadMode, _In_ bool const fReadUnicode, 
+                                      _Out_writes_(cChars) CHAR_INFO* const rgChars, _In_ SHORT const cChars)
 {
-    // Since we wrote (in SendOutput function) to the 0,0 line, we need to read back the same width from that line.
-    COORD coordBufferSize = { 0 };
-    coordBufferSize.Y = 1;
-    coordBufferSize.X = cChars;
-
-    COORD coordBufferTarget = { 0 };
-
-    SMALL_RECT srReadRegion = { 0 }; // inclusive rectangle (bottom and right are INSIDE the read area. usually are exclusive.)
-    srReadRegion.Right = cChars - 1;
-
-    // return value for read region shouldn't change
-    SMALL_RECT const srReadRegionExpected = srReadRegion;
-
-    if (!fReadUnicode)
+    switch (ReadMode)
     {
-        VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(ReadConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion));
-    }
-    else
+    case DbcsReadMode::ReadConsoleOutputFunc:
     {
-        VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(ReadConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion));
-    }
+        // Since we wrote (in SendOutput function) to the 0,0 line, we need to read back the same width from that line.
+        COORD coordBufferSize = { 0 };
+        coordBufferSize.Y = 1;
+        coordBufferSize.X = cChars;
 
-    Log::Comment(NoThrowString().Format(L"ReadRegion T: %d L: %d B: %d R: %d", srReadRegion.Top, srReadRegion.Left, srReadRegion.Bottom, srReadRegion.Right));
-    VERIFY_ARE_EQUAL(srReadRegionExpected, srReadRegion);
+        COORD coordBufferTarget = { 0 };
+
+        SMALL_RECT srReadRegion = { 0 }; // inclusive rectangle (bottom and right are INSIDE the read area. usually are exclusive.)
+        srReadRegion.Right = cChars - 1;
+
+        // return value for read region shouldn't change
+        SMALL_RECT const srReadRegionExpected = srReadRegion;
+
+        if (!fReadUnicode)
+        {
+            VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(ReadConsoleOutputA(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion));
+        }
+        else
+        {
+            VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(ReadConsoleOutputW(hOut, rgChars, coordBufferSize, coordBufferTarget, &srReadRegion));
+        }
+
+        Log::Comment(NoThrowString().Format(L"ReadRegion T: %d L: %d B: %d R: %d", srReadRegion.Top, srReadRegion.Left, srReadRegion.Bottom, srReadRegion.Right));
+        VERIFY_ARE_EQUAL(srReadRegionExpected, srReadRegion);
+        break;
+    }
+    default:
+        VERIFY_FAIL(L"Unknown read mode");
+        break;
+    }
 }
 
 void DbcsWriteReadTestsVerify(_In_reads_(cExpected) CHAR_INFO* const rgExpected, _In_ size_t const cExpected,
@@ -795,6 +814,7 @@ void DbcsWriteReadTestRunner(_In_ unsigned int const uiCodePage,
                              _In_ bool const fUseTrueType,
                              _In_ DbcsWriteMode const WriteMode,
                              _In_ bool const fWriteInUnicode,
+                             _In_ DbcsReadMode const ReadMode,
                              _In_ bool const fReadWithUnicode)
 {
     // First we need to set up the tests by clearing out the first line of the buffer,
@@ -828,7 +848,7 @@ void DbcsWriteReadTestRunner(_In_ unsigned int const uiCodePage,
     // Now call the appropriate READ API for this test.
     CHAR_INFO* pciActual = new CHAR_INFO[cTestData];
     ZeroMemory(pciActual, sizeof(CHAR_INFO) * cTestData);
-    DbcsWriteReadTestsRetrieveOutput(hOut, fReadWithUnicode, pciActual, (SHORT)cTestData);
+    DbcsWriteReadTestsRetrieveOutput(hOut, ReadMode, fReadWithUnicode, pciActual, (SHORT)cTestData);
 
     // Loop through and verify that our expected array matches what was actually returned by the given API.
     DbcsWriteReadTestsVerify(pciExpected, cExpected, pciActual);
@@ -853,6 +873,10 @@ void DbcsTests::TestDbcsWriteRead()
     bool fWriteInUnicode;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fWriteInUnicode", fWriteInUnicode));
 
+    int iReadMode;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"ReadMode", iReadMode));
+    DbcsReadMode ReadMode = (DbcsReadMode)iReadMode;
+
     bool fReadInUnicode;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fReadInUnicode", fReadInUnicode));
 
@@ -875,11 +899,24 @@ void DbcsTests::TestDbcsWriteRead()
         VERIFY_FAIL(L"Write mode not supported");
     }
 
+    PCWSTR pwszReadMode = L"";
+    switch (ReadMode)
+    {
+    case DbcsReadMode::ReadConsoleOutputFunc:
+        pwszReadMode = L"ReadConsoleOutput";
+        break;
+    case DbcsReadMode::ReadConsoleOutputCharacterFunc:
+        pwszReadMode = L"ReadConsoleOutputCharacter";
+        break;
+    default:
+        VERIFY_FAIL(L"Read mode not supported");
+    }
+
     auto testInfo = NoThrowString().Format(L"\r\n\r\n\r\nUse '%ls' font. Write with %ls '%ls'. Check Read with %ls '%ls' API. Use %d codepage.\r\n",
                                            fUseTrueTypeFont ? L"TrueType" : L"Raster",
                                            pwszWriteMode,
                                            fWriteInUnicode ? L"W" : L"A",
-                                           L"ReadConsoleOutput",
+                                           pwszReadMode,
                                            fReadInUnicode ? L"W" : L"A",
                                            uiCodePage);
 
@@ -913,6 +950,7 @@ void DbcsTests::TestDbcsWriteRead()
                             fUseTrueTypeFont,
                             WriteMode,
                             fWriteInUnicode,
+                            ReadMode,
                             fReadInUnicode);
 
     Log::Comment(testInfo);
