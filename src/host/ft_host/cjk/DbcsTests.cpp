@@ -7,13 +7,15 @@
 #include <io.h>
 #include <fcntl.h>
 
+#define ENGLISH_US_CP 437u
 #define JAPANESE_CP 932u
 
 enum DbcsWriteMode
 {
     CrtWrite = 0,
     WriteConsoleOutputFunc = 1,
-    WriteConsoleOutputCharacterFunc = 2
+    WriteConsoleOutputCharacterFunc = 2,
+    WriteConsoleFunc = 3
 };
 
 class DbcsTests
@@ -29,9 +31,9 @@ class DbcsTests
     TEST_METHOD(TestMultibyteInputRetrieval);
 
     BEGIN_TEST_METHOD(TestDbcsWriteRead)
-        TEST_METHOD_PROPERTY(L"Data:uiCodePage", L"{932}")
+        TEST_METHOD_PROPERTY(L"Data:uiCodePage", L"{437, 932}")
         TEST_METHOD_PROPERTY(L"Data:fUseTrueTypeFont", L"{true, false}")
-        TEST_METHOD_PROPERTY(L"Data:WriteMode", L"{0, 1, 2}")
+        TEST_METHOD_PROPERTY(L"Data:WriteMode", L"{0, 1, 2, 3}")
         TEST_METHOD_PROPERTY(L"Data:fWriteInUnicode", L"{true, false}")
         TEST_METHOD_PROPERTY(L"Data:fReadInUnicode", L"{true, false}")
     END_TEST_METHOD()
@@ -69,8 +71,16 @@ void SetupDbcsWriteReadTests(_In_ unsigned int uiCodePage,
     }
     else
     {
-        // We use MS Gothic as the default font name for Japanese codepage.
-        wcscpy_s(cfiex.FaceName, L"MS Gothic");
+        switch (uiCodePage)
+        {
+        case JAPANESE_CP:
+            wcscpy_s(cfiex.FaceName, L"MS Gothic");
+            break;
+        case ENGLISH_US_CP:
+            wcscpy_s(cfiex.FaceName, L"Consolas");
+            break;
+        }
+        
         cfiex.dwFontSize.Y = 16;
     }
 
@@ -244,6 +254,20 @@ void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut, _In_ unsigned int cons
         else
         {
             WriteConsoleOutputCharacterA(hOut, pszTestString, cChars, coordBufferTarget, &dwWritten);
+        }
+
+        fUseDwordWritten = true;
+        break;
+    }
+    case DbcsWriteMode::WriteConsoleFunc:
+    {
+        if (fIsUnicode)
+        {
+            WriteConsoleW(hOut, pwszTestString, cChars, &dwWritten, nullptr);
+        }
+        else
+        {
+            WriteConsoleA(hOut, pszTestString, cChars, &dwWritten, nullptr);
         }
 
         fUseDwordWritten = true;
@@ -688,6 +712,7 @@ void DbcsWriteReadTestsPrepExpected(_In_ unsigned int const uiCodePage,
     }
     case DbcsWriteMode::CrtWrite:
     case DbcsWriteMode::WriteConsoleOutputCharacterFunc:
+    case DbcsWriteMode::WriteConsoleFunc:
     {
         // Writing with the CRT down here.
         if (!fReadWithUnicode)
@@ -843,6 +868,9 @@ void DbcsTests::TestDbcsWriteRead()
     case DbcsWriteMode::WriteConsoleOutputCharacterFunc:
         pwszWriteMode = L"WriteConsoleOutputCharacter";
         break;
+    case DbcsWriteMode::WriteConsoleFunc:
+        pwszWriteMode = L"WriteConsole";
+        break;
     default:
         VERIFY_FAIL(L"Write mode not supported");
     }
@@ -860,6 +888,9 @@ void DbcsTests::TestDbcsWriteRead()
     PCSTR pszTestData = "";
     switch (uiCodePage)
     {
+    case ENGLISH_US_CP:
+        pszTestData = "QWERTYUIOP";
+        break;
     case JAPANESE_CP:
         pszTestData = "Q\x82\xA2\x82\xa9\x82\xc8ZYXWVUT\x82\xc9";
         break;
