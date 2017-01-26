@@ -297,8 +297,8 @@ void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut, _In_ unsigned int cons
     }
     else if (fUseDwordWritten)
     {
-        // TODO: verify dwWritten
         Log::Comment(NoThrowString().Format(L"Chars Written: %d", dwWritten));
+        VERIFY_ARE_EQUAL(cChars, dwWritten);
     }
 }
 
