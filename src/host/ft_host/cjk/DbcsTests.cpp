@@ -29,6 +29,7 @@ class DbcsTests
     TEST_METHOD(TestMultibyteInputRetrieval);
 
     BEGIN_TEST_METHOD(TestDbcsWriteRead)
+        TEST_METHOD_PROPERTY(L"Data:uiCodePage", L"{932}")
         TEST_METHOD_PROPERTY(L"Data:fUseTrueTypeFont", L"{true, false}")
         TEST_METHOD_PROPERTY(L"Data:WriteMode", L"{0, 1, 2}")
         TEST_METHOD_PROPERTY(L"Data:fWriteInUnicode", L"{true, false}")
@@ -45,15 +46,16 @@ bool DbcsTests::DbcsTestSetup()
     return true;
 }
 
-void SetupDbcsWriteReadTests(_In_ bool fIsTrueType,
+void SetupDbcsWriteReadTests(_In_ unsigned int uiCodePage,
+                             _In_ bool fIsTrueType,
                              _Out_ HANDLE* const phOut,
                              _Out_ WORD* const pwAttributes)
 {
     HANDLE const hOut = GetStdOutputHandle();
 
     // Ensure that the console is set into the appropriate codepage for the test
-    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleCP(JAPANESE_CP));
-    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleOutputCP(JAPANESE_CP));
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleCP(uiCodePage));
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetConsoleOutputCP(uiCodePage));
 
     // Now set up the font. Many of these APIs are oddly dependent on font, so set as appropriate.
     CONSOLE_FONT_INFOEX cfiex = { 0 };
@@ -97,7 +99,7 @@ void SetupDbcsWriteReadTests(_In_ bool fIsTrueType,
     *pwAttributes = sbiex.wAttributes;
 }
 
-void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut,
+void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut, _In_ unsigned int const uiCodePage,
                                   _In_ DbcsWriteMode const WriteMode, _In_ bool const fIsUnicode,
                                   _In_ PCSTR pszTestString, _In_ WORD const wAttr)
 {
@@ -111,11 +113,11 @@ void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut,
     if (fIsUnicode)
     {
         // Use double-call pattern to find space to allocate, allocate it, then convert.
-        int const icchNeeded = MultiByteToWideChar(JAPANESE_CP, 0, pszTestString, -1, nullptr, 0);
+        int const icchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestString, -1, nullptr, 0);
 
         pwszTestString = new WCHAR[icchNeeded];
 
-        int const iRes = MultiByteToWideChar(JAPANESE_CP, 0, pszTestString, -1, pwszTestString, icchNeeded);
+        int const iRes = MultiByteToWideChar(uiCodePage, 0, pszTestString, -1, pwszTestString, icchNeeded);
         CheckLastErrorZeroFail(iRes, L"MultiByteToWideChar");
     }
 
@@ -277,17 +279,18 @@ void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut,
 }
 
 // 3
-void DbcsWriteReadTestsPrepNullPaddedDedupeWPattern(_In_ PCSTR pszTestData,
-                                                    _In_ WORD wAttrOriginal,
-                                                    _In_ WORD wAttrWritten,
+void DbcsWriteReadTestsPrepNullPaddedDedupeWPattern(_In_ unsigned int const uiCodePage,
+                                                    _In_ PCSTR pszTestData,
+                                                    _In_ WORD const wAttrOriginal,
+                                                    _In_ WORD const wAttrWritten,
                                                     _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
                                                     _In_ size_t const cExpected)
 {
     UNREFERENCED_PARAMETER(wAttrOriginal);
     Log::Comment(L"Pattern 3");
-    int const iwchNeeded = MultiByteToWideChar(JAPANESE_CP, 0, pszTestData, -1, nullptr, 0);
+    int const iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
     PWSTR pwszTestData = new wchar_t[iwchNeeded];
-    int const iSuccess = MultiByteToWideChar(JAPANESE_CP, 0, pszTestData, -1, pwszTestData, iwchNeeded);
+    int const iSuccess = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, pwszTestData, iwchNeeded);
     CheckLastErrorZeroFail(iSuccess, L"MultiByteToWideChar");
 
     size_t const cWideTestData = wcslen(pwszTestData);
@@ -304,14 +307,15 @@ void DbcsWriteReadTestsPrepNullPaddedDedupeWPattern(_In_ PCSTR pszTestData,
 }
 
 // 1
-void DbcsWriteReadTestsPrepSpacePaddedDedupeWPattern(_In_ PCSTR pszTestData,
-                                                     _In_ WORD wAttrOriginal,
-                                                     _In_ WORD wAttrWritten,
+void DbcsWriteReadTestsPrepSpacePaddedDedupeWPattern(_In_ unsigned int const uiCodePage,
+                                                     _In_ PCSTR pszTestData,
+                                                     _In_ WORD const wAttrOriginal,
+                                                     _In_ WORD const wAttrWritten,
                                                      _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
                                                      _In_ size_t const cExpected)
 {
     Log::Comment(L"Pattern 1");
-    DbcsWriteReadTestsPrepNullPaddedDedupeWPattern(pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
+    DbcsWriteReadTestsPrepNullPaddedDedupeWPattern(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
 
     for (size_t i = 0; i < cExpected; i++)
     {
@@ -326,17 +330,18 @@ void DbcsWriteReadTestsPrepSpacePaddedDedupeWPattern(_In_ PCSTR pszTestData,
 }
 
 // 2
-void DbcsWriteReadTestsPrepSpacePaddedDedupeTruncatedWPattern(_In_ PCSTR pszTestData,
-                                                              _In_ WORD wAttrOriginal,
-                                                              _In_ WORD wAttrWritten,
+void DbcsWriteReadTestsPrepSpacePaddedDedupeTruncatedWPattern(_In_ unsigned int const uiCodePage,
+                                                              _In_ PCSTR pszTestData,
+                                                              _In_ WORD const wAttrOriginal,
+                                                              _In_ WORD const wAttrWritten,
                                                               _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
                                                               _In_ size_t const cExpected)
 {
     Log::Comment(L"Pattern 2");
     
-    int const iwchNeeded = MultiByteToWideChar(JAPANESE_CP, 0, pszTestData, -1, nullptr, 0);
+    int const iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
     PWSTR pwszTestData = new wchar_t[iwchNeeded];
-    int const iSuccess = MultiByteToWideChar(JAPANESE_CP, 0, pszTestData, -1, pwszTestData, iwchNeeded);
+    int const iSuccess = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, pwszTestData, iwchNeeded);
     CheckLastErrorZeroFail(iSuccess, L"MultiByteToWideChar");
 
     size_t const cWideData = wcslen(pwszTestData);
@@ -365,7 +370,7 @@ void DbcsWriteReadTestsPrepSpacePaddedDedupeTruncatedWPattern(_In_ PCSTR pszTest
         pciCurrent->Attributes = wAttrWritten;
         pciCurrent->Char.UnicodeChar = wchCurrent;
 
-        if (IsDBCSLeadByteEx(JAPANESE_CP, chCurrent))
+        if (IsDBCSLeadByteEx(uiCodePage, chCurrent))
         {
             iColumnsConsumed += 2;
             iNarrow += 2;
@@ -393,9 +398,10 @@ void DbcsWriteReadTestsPrepSpacePaddedDedupeTruncatedWPattern(_In_ PCSTR pszTest
 }
 
 // 5
-void DbcsWriteReadTestsPrepDoubledWPattern(_In_ PCSTR pszTestData,
-                                           _In_ WORD wAttrOriginal,
-                                           _In_ WORD wAttrWritten,
+void DbcsWriteReadTestsPrepDoubledWPattern(_In_ unsigned int const uiCodePage,
+                                           _In_ PCSTR pszTestData,
+                                           _In_ WORD const wAttrOriginal,
+                                           _In_ WORD const wAttrWritten,
                                            _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
                                            _In_ size_t const cExpected)
 {
@@ -404,9 +410,9 @@ void DbcsWriteReadTestsPrepDoubledWPattern(_In_ PCSTR pszTestData,
     size_t const cTestData = strlen(pszTestData);
     VERIFY_IS_GREATER_THAN_OR_EQUAL(cExpected, cTestData);
 
-    int const iwchNeeded = MultiByteToWideChar(JAPANESE_CP, 0, pszTestData, -1, nullptr, 0);
+    int const iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
     PWSTR pwszTestData = new wchar_t[iwchNeeded];
-    int const iSuccess = MultiByteToWideChar(JAPANESE_CP, 0, pszTestData, -1, pwszTestData, iwchNeeded);
+    int const iSuccess = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, pwszTestData, iwchNeeded);
     CheckLastErrorZeroFail(iSuccess, L"MultiByteToWideChar");
 
     size_t iWide = 0;
@@ -420,7 +426,7 @@ void DbcsWriteReadTestsPrepDoubledWPattern(_In_ PCSTR pszTestData,
 
         pciCurrent->Attributes = wAttrWritten;
 
-        if (IsDBCSLeadByteEx(JAPANESE_CP, chTest))
+        if (IsDBCSLeadByteEx(uiCodePage, chTest))
         {
             pciCurrent->Char.UnicodeChar = wchCopy;
             iWide++;
@@ -447,14 +453,15 @@ void DbcsWriteReadTestsPrepDoubledWPattern(_In_ PCSTR pszTestData,
 }
 
 // 4
-void DbcsWriteReadTestsPrepDoubledWNegativeOneTrailingPattern(_In_ PCSTR pszTestData,
-                                                              _In_ WORD wAttrOriginal,
-                                                              _In_ WORD wAttrWritten,
+void DbcsWriteReadTestsPrepDoubledWNegativeOneTrailingPattern(_In_ unsigned int const uiCodePage,
+                                                              _In_ PCSTR pszTestData,
+                                                              _In_ WORD const wAttrOriginal,
+                                                              _In_ WORD const wAttrWritten,
                                                               _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
                                                               _In_ size_t const cExpected)
 {
     Log::Comment(L"Pattern 4");
-    DbcsWriteReadTestsPrepDoubledWPattern(pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
+    DbcsWriteReadTestsPrepDoubledWPattern(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
 
     for (size_t i = 0; i < cExpected; i++)
     {
@@ -468,14 +475,15 @@ void DbcsWriteReadTestsPrepDoubledWNegativeOneTrailingPattern(_In_ PCSTR pszTest
 }
 
 // 7
-void DbcsWriteReadTestsPrepAStompsWNegativeOnePatternTruncateSpacePadded(_In_ PCSTR pszTestData,
-                                                      _In_ WORD wAttrOriginal,
-                                                      _In_ WORD wAttrWritten,
-                                                      _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
-                                                      _In_ size_t const cExpected)
+void DbcsWriteReadTestsPrepAStompsWNegativeOnePatternTruncateSpacePadded(_In_ unsigned int const uiCodePage,
+                                                                         _In_ PCSTR pszTestData,
+                                                                         _In_ WORD const wAttrOriginal,
+                                                                         _In_ WORD const wAttrWritten,
+                                                                         _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
+                                                                         _In_ size_t const cExpected)
 {
     Log::Comment(L"Pattern 7");
-    DbcsWriteReadTestsPrepDoubledWNegativeOneTrailingPattern(pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
+    DbcsWriteReadTestsPrepDoubledWNegativeOneTrailingPattern(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
 
     // Stomp all A portions of the structure from the existing pattern with the A characters
     size_t const cTestData = strlen(pszTestData);
@@ -486,9 +494,9 @@ void DbcsWriteReadTestsPrepAStompsWNegativeOnePatternTruncateSpacePadded(_In_ PC
     }
 
     // Now truncate down and space fill the space based on the max column count.
-    int const iwchNeeded = MultiByteToWideChar(JAPANESE_CP, 0, pszTestData, -1, nullptr, 0);
+    int const iwchNeeded = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, nullptr, 0);
     PWSTR pwszTestData = new wchar_t[iwchNeeded];
-    int const iSuccess = MultiByteToWideChar(JAPANESE_CP, 0, pszTestData, -1, pwszTestData, iwchNeeded);
+    int const iSuccess = MultiByteToWideChar(uiCodePage, 0, pszTestData, -1, pwszTestData, iwchNeeded);
     CheckLastErrorZeroFail(iSuccess, L"MultiByteToWideChar");
 
     size_t const cWideData = wcslen(pwszTestData);
@@ -510,9 +518,10 @@ void DbcsWriteReadTestsPrepAStompsWNegativeOnePatternTruncateSpacePadded(_In_ PC
 }
 
 // 6
-void DbcsWriteReadTestsPrepAPattern(_In_ PCSTR pszTestData,
-                                    _In_ WORD wAttrOriginal,
-                                    _In_ WORD wAttrWritten,
+void DbcsWriteReadTestsPrepAPattern(_In_ unsigned int const uiCodePage,
+                                    _In_ PCSTR pszTestData,
+                                    _In_ WORD const wAttrOriginal,
+                                    _In_ WORD const wAttrWritten,
                                     _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
                                     _In_ size_t const cExpected)
 {
@@ -530,7 +539,7 @@ void DbcsWriteReadTestsPrepAPattern(_In_ PCSTR pszTestData,
         pciCurrent->Attributes = wAttrWritten;
         pciCurrent->Char.AsciiChar = ch;
 
-        if (IsDBCSLeadByteEx(JAPANESE_CP, ch))
+        if (IsDBCSLeadByteEx(uiCodePage, ch))
         {
             pciCurrent->Attributes |= COMMON_LVB_LEADING_BYTE;
             fIsNextTrailing = true;
@@ -544,15 +553,16 @@ void DbcsWriteReadTestsPrepAPattern(_In_ PCSTR pszTestData,
 }
 
 //8
-void DbcsWriteReadTestsPrepAOnDoubledWNegativeOneTrailingPattern(_In_ PCSTR pszTestData,
-                                                                 _In_ WORD wAttrOriginal,
-                                                                 _In_ WORD wAttrWritten,
+void DbcsWriteReadTestsPrepAOnDoubledWNegativeOneTrailingPattern(_In_ unsigned int const uiCodePage,
+                                                                 _In_ PCSTR pszTestData,
+                                                                 _In_ WORD const wAttrOriginal,
+                                                                 _In_ WORD const wAttrWritten,
                                                                  _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
                                                                  _In_ size_t const cExpected)
 {
     Log::Comment(L"Pattern 8");
 
-    DbcsWriteReadTestsPrepDoubledWNegativeOneTrailingPattern(pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
+    DbcsWriteReadTestsPrepDoubledWNegativeOneTrailingPattern(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
 
     // Stomp all A portions of the structure from the existing pattern with the A characters
     size_t const cTestData = strlen(pszTestData);
@@ -565,15 +575,16 @@ void DbcsWriteReadTestsPrepAOnDoubledWNegativeOneTrailingPattern(_In_ PCSTR pszT
 }
 
 // 9
-void DbcsWriteReadTestsPrepAOnDoubledWPattern(_In_ PCSTR pszTestData,
-                                              _In_ WORD wAttrOriginal,
-                                              _In_ WORD wAttrWritten,
+void DbcsWriteReadTestsPrepAOnDoubledWPattern(_In_ unsigned int const uiCodePage,
+                                              _In_ PCSTR pszTestData,
+                                              _In_ WORD const wAttrOriginal,
+                                              _In_ WORD const wAttrWritten,
                                               _Inout_updates_all_(cExpected) CHAR_INFO* const pciExpected,
                                               _In_ size_t const cExpected)
 {
     Log::Comment(L"Pattern 9");
 
-    DbcsWriteReadTestsPrepDoubledWPattern(pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
+    DbcsWriteReadTestsPrepDoubledWPattern(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, pciExpected, cExpected);
 
     // Stomp all A portions of the structure from the existing pattern with the A characters
     size_t const cTestData = strlen(pszTestData);
@@ -585,9 +596,10 @@ void DbcsWriteReadTestsPrepAOnDoubledWPattern(_In_ PCSTR pszTestData,
     }
 }
 
-void DbcsWriteReadTestsPrepExpected(_In_ PCSTR pszTestData,
-                                    _In_ WORD wAttrOriginal,
-                                    _In_ WORD wAttrWritten,
+void DbcsWriteReadTestsPrepExpected(_In_ unsigned int const uiCodePage,
+                                    _In_ PCSTR pszTestData,
+                                    _In_ WORD const wAttrOriginal,
+                                    _In_ WORD const wAttrWritten,
                                     _In_ DbcsWriteMode const WriteMode,
                                     _In_ bool const fWriteWithUnicode,
                                     _In_ bool const fIsTrueTypeFont,
@@ -619,13 +631,13 @@ void DbcsWriteReadTestsPrepExpected(_In_ PCSTR pszTestData,
                     // When written with WriteConsoleOutputW and read back with ReadConsoleOutputA under TT font, we will get a deduplicated
                     // set of Unicode characters (YES. Unicode characters despite calling the A API to read back) that is space padded out
                     // There will be no lead/trailing markings.
-                    DbcsWriteReadTestsPrepSpacePaddedDedupeWPattern(pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                    DbcsWriteReadTestsPrepSpacePaddedDedupeWPattern(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
                 }
                 else
                 {
                     // When written with WriteConsoleOutputW and read back with ReadConsoleOutputA under Raster font, we will get the 
                     // double-byte sequences stomped on top of a Unicode filled CHAR_INFO structure that used -1 for trailing bytes.
-                    DbcsWriteReadTestsPrepAStompsWNegativeOnePatternTruncateSpacePadded(pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                    DbcsWriteReadTestsPrepAStompsWNegativeOnePatternTruncateSpacePadded(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
                 }
             }
             else
@@ -633,7 +645,7 @@ void DbcsWriteReadTestsPrepExpected(_In_ PCSTR pszTestData,
                 // When written with WriteConsoleOutputA and read back with ReadConsoleOutputA,
                 // we will get back the double-byte sequences appropriately labeled with leading/trailing bytes.
                 //DbcsWriteReadTestsPrepAPattern(pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
-                DbcsWriteReadTestsPrepAOnDoubledWNegativeOneTrailingPattern(pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                DbcsWriteReadTestsPrepAOnDoubledWNegativeOneTrailingPattern(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
             }
         }
         else
@@ -645,14 +657,14 @@ void DbcsWriteReadTestsPrepExpected(_In_ PCSTR pszTestData,
                 {
                     // When written with WriteConsoleOutputW and read back with ReadConsoleOutputW when the font is TrueType,
                     // we will get a deduplicated set of Unicode characters with no lead/trailing markings and space padded at the end.
-                    DbcsWriteReadTestsPrepSpacePaddedDedupeWPattern(pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                    DbcsWriteReadTestsPrepSpacePaddedDedupeWPattern(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
                 }
                 else
                 {
                     // When written with WriteConsoleOutputW and read back with ReadConsoleOutputA when the font is TrueType,
                     // we will get back Unicode characters doubled up and marked with leading and trailing bytes...
                     // ... except all the trailing bytes character values will be -1.
-                    DbcsWriteReadTestsPrepDoubledWNegativeOneTrailingPattern(pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                    DbcsWriteReadTestsPrepDoubledWNegativeOneTrailingPattern(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
                 }
             }
             else
@@ -662,13 +674,13 @@ void DbcsWriteReadTestsPrepExpected(_In_ PCSTR pszTestData,
                     // When written with WriteConsoleOutputW and read back with ReadConsoleOutputW when the font is Raster,
                     // we will get a deduplicated set of Unicode characters with no lead/trailing markings and space padded at the end...
                     // ... except something weird happens with truncation (TODO figure out what)
-                    DbcsWriteReadTestsPrepSpacePaddedDedupeTruncatedWPattern(pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                    DbcsWriteReadTestsPrepSpacePaddedDedupeTruncatedWPattern(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
                 }
                 else
                 {
                     // When written with WriteConsoleOutputA and read back with ReadConsoleOutputW when the font is Raster,
                     // we will get back de-duplicated Unicode characters with no lead / trail markings.The extra array space will remain null.
-                    DbcsWriteReadTestsPrepNullPaddedDedupeWPattern(pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                    DbcsWriteReadTestsPrepNullPaddedDedupeWPattern(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
                 }
             }
         }
@@ -683,7 +695,7 @@ void DbcsWriteReadTestsPrepExpected(_In_ PCSTR pszTestData,
             // If we wrote with the CRT and are reading with A functions, the font doesn't matter.
             // We will always get back the double-byte sequences appropriately labeled with leading/trailing bytes.
             //DbcsWriteReadTestsPrepPattern(pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
-            DbcsWriteReadTestsPrepAOnDoubledWPattern(pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+            DbcsWriteReadTestsPrepAOnDoubledWPattern(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
         }
         else
         {
@@ -691,12 +703,12 @@ void DbcsWriteReadTestsPrepExpected(_In_ PCSTR pszTestData,
             if (fIsTrueTypeFont)
             {
                 // In a TrueType font, we will get back Unicode characters doubled up and marked with leading and trailing bytes.
-                DbcsWriteReadTestsPrepDoubledWPattern(pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                DbcsWriteReadTestsPrepDoubledWPattern(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
             }
             else
             {
                 // In a Raster font, we will get back de-duplicated Unicode characters with no lead/trail markings. The extra array space will remain null.
-                DbcsWriteReadTestsPrepNullPaddedDedupeWPattern(pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
+                DbcsWriteReadTestsPrepNullPaddedDedupeWPattern(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
             }
         }
         break;
@@ -752,7 +764,8 @@ void DbcsWriteReadTestsVerify(_In_reads_(cExpected) CHAR_INFO* const rgExpected,
     }
 }
 
-void DbcsWriteReadTestRunner(_In_ PCSTR pszTestData,
+void DbcsWriteReadTestRunner(_In_ unsigned int const uiCodePage, 
+                             _In_ PCSTR pszTestData,
                              _In_opt_ WORD* const pwAttrOverride,
                              _In_ bool const fUseTrueType,
                              _In_ DbcsWriteMode const WriteMode,
@@ -764,7 +777,7 @@ void DbcsWriteReadTestRunner(_In_ PCSTR pszTestData,
     // used by default in the buffer (set during clearing as well).
     HANDLE hOut;
     WORD wAttributes;
-    SetupDbcsWriteReadTests(fUseTrueType, &hOut, &wAttributes);
+    SetupDbcsWriteReadTests(uiCodePage, fUseTrueType, &hOut, &wAttributes);
     WORD const wAttrOriginal = wAttributes;
 
     // Some tests might want to override the colors applied to ensure both parts of the CHAR_INFO union 
@@ -779,13 +792,13 @@ void DbcsWriteReadTestRunner(_In_ PCSTR pszTestData,
     size_t const cTestData = strlen(pszTestData);
 
     // Write the string under test into the appropriate WRITE API for this test.
-    DbcsWriteReadTestsSendOutput(hOut, WriteMode, fWriteInUnicode, pszTestData, wAttributes);
+    DbcsWriteReadTestsSendOutput(hOut, uiCodePage, WriteMode, fWriteInUnicode, pszTestData, wAttributes);
 
     // Prepare the array of CHAR_INFO structs that we expect to receive back when we will call read in a moment.
     // This can vary based on font, unicode/non-unicode (when reading AND writing), and codepage.
     CHAR_INFO* pciExpected;
     size_t cExpected;
-    DbcsWriteReadTestsPrepExpected(pszTestData, wAttrOriginal, wAttributes, WriteMode, fWriteInUnicode, fUseTrueType, fReadWithUnicode, &pciExpected, &cExpected);
+    DbcsWriteReadTestsPrepExpected(uiCodePage, pszTestData, wAttrOriginal, wAttributes, WriteMode, fWriteInUnicode, fUseTrueType, fReadWithUnicode, &pciExpected, &cExpected);
 
     // Now call the appropriate READ API for this test.
     CHAR_INFO* pciActual = new CHAR_INFO[cTestData];
@@ -802,6 +815,9 @@ void DbcsWriteReadTestRunner(_In_ PCSTR pszTestData,
 
 void DbcsTests::TestDbcsWriteRead()
 {
+    unsigned int uiCodePage;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"uiCodePage", uiCodePage));
+
     bool fUseTrueTypeFont;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fUseTrueTypeFont", fUseTrueTypeFont));
 
@@ -831,16 +847,26 @@ void DbcsTests::TestDbcsWriteRead()
         VERIFY_FAIL(L"Write mode not supported");
     }
 
-    auto testInfo = NoThrowString().Format(L"\r\n\r\n\r\nUse '%ls' font. Write with %ls '%ls'. Check Read with %ls '%ls' API.\r\n",
+    auto testInfo = NoThrowString().Format(L"\r\n\r\n\r\nUse '%ls' font. Write with %ls '%ls'. Check Read with %ls '%ls' API. Use %d codepage.\r\n",
                                            fUseTrueTypeFont ? L"TrueType" : L"Raster",
                                            pwszWriteMode,
                                            fWriteInUnicode ? L"W" : L"A",
                                            L"ReadConsoleOutput",
-                                           fReadInUnicode ? L"W" : L"A");
+                                           fReadInUnicode ? L"W" : L"A",
+                                           uiCodePage);
 
     Log::Comment(testInfo);
 
-    PCSTR pszTestData = "Q\x82\xA2\x82\xa9\x82\xc8ZYXWVUT\x82\xc9";
+    PCSTR pszTestData = "";
+    switch (uiCodePage)
+    {
+    case JAPANESE_CP:
+        pszTestData = "Q\x82\xA2\x82\xa9\x82\xc8ZYXWVUT\x82\xc9";
+        break;
+    default:
+        VERIFY_FAIL(L"No test data for this codepage");
+        break;
+    }
 
     WORD wAttributes = 0;
 
@@ -850,7 +876,8 @@ void DbcsTests::TestDbcsWriteRead()
         wAttributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_GREEN;
     }
 
-    DbcsWriteReadTestRunner(pszTestData,
+    DbcsWriteReadTestRunner(uiCodePage, 
+                            pszTestData,
                             wAttributes != 0 ? &wAttributes : nullptr,
                             fUseTrueTypeFont,
                             WriteMode,
