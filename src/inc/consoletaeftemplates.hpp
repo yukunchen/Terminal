@@ -502,11 +502,14 @@ namespace WEX {
         public:
             static WEX::Common::NoThrowString ToString(const CHAR_INFO& ci)
             {
+                wchar_t const wch = ci.Char.UnicodeChar != L'\0' ? ci.Char.UnicodeChar : 0x2400;
+                char const ch = ci.Char.AsciiChar != '\0' ? ci.Char.AsciiChar : 0x20;
+
                 return WEX::Common::NoThrowString().Format(L"Unicode Char: %lc (0x%x)  Attributes: 0x%x  [Ascii Char: %c (0x%hhx)]", 
-                                                           ci.Char.UnicodeChar,
+                                                           wch,
                                                            ci.Char.UnicodeChar,
                                                            ci.Attributes,
-                                                           ci.Char.AsciiChar,
+                                                           ch,
                                                            ci.Char.AsciiChar);
             }
         };
