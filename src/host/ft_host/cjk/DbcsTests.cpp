@@ -12,14 +12,15 @@
 enum DbcsWriteMode
 {
     CrtWrite = 0,
-    WriteConsoleOutputFunc = 1
+    WriteConsoleOutputFunc = 1,
+    WriteConsoleOutputCharacterFunc = 2
 };
 
 class DbcsTests
 {
     BEGIN_TEST_CLASS(DbcsTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Class")
-        END_TEST_CLASS();
+    END_TEST_CLASS();
 
     TEST_METHOD_SETUP(DbcsTestSetup);
 
@@ -29,8 +30,7 @@ class DbcsTests
 
     BEGIN_TEST_METHOD(TestDbcsWriteRead)
         TEST_METHOD_PROPERTY(L"Data:fUseTrueTypeFont", L"{true, false}")
-        TEST_METHOD_PROPERTY(L"Data:WriteMode", L"{0, 1}")
-        //TEST_METHOD_PROPERTY(L"Data:fUseCrtWrite", L"{true, false}")
+        TEST_METHOD_PROPERTY(L"Data:WriteMode", L"{0, 1, 2}")
         TEST_METHOD_PROPERTY(L"Data:fWriteInUnicode", L"{true, false}")
         TEST_METHOD_PROPERTY(L"Data:fReadInUnicode", L"{true, false}")
     END_TEST_METHOD()
@@ -133,9 +133,12 @@ void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut,
     // These parameters will be used to print out the written rectangle if we used the console APIs (not the CRT APIs)
     // This information will be stored and printed out at the very end after we move the cursor off of the text we just printed.
     // The cursor auto-moves for CRT, but we have to manually move it for some of the Console APIs.
-    bool fUseWritten = false;
+    bool fUseRectWritten = false;
     SMALL_RECT srWrittenExpected = { 0 };
     SMALL_RECT srWritten = { 0 };
+
+    bool fUseDwordWritten = false;
+    DWORD dwWritten = 0;
 
     switch (WriteMode)
     {
@@ -223,9 +226,25 @@ void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut,
 
         // Save write region so we can print it out after we move the cursor out of the way
         srWritten = srWriteRegion;
-        fUseWritten = true;
+        fUseRectWritten = true;
 
         delete[] rgChars;
+        break;
+    }
+    case DbcsWriteMode::WriteConsoleOutputCharacterFunc:
+    {
+        COORD coordBufferTarget = { 0 };
+
+        if (fIsUnicode)
+        {
+            WriteConsoleOutputCharacterW(hOut, pwszTestString, cChars, coordBufferTarget, &dwWritten);
+        }
+        else
+        {
+            WriteConsoleOutputCharacterA(hOut, pszTestString, cChars, coordBufferTarget, &dwWritten);
+        }
+
+        fUseDwordWritten = true;
         break;
     }
     default:
@@ -245,10 +264,15 @@ void DbcsWriteReadTestsSendOutput(_In_ HANDLE const hOut,
 
     // If we had log info to print, print it now that it's safe (cursor out of the test data we printed)
     // This only matters for when the test is run in the same window as the runner and could print log information.
-    if (fUseWritten)
+    if (fUseRectWritten)
     {
         Log::Comment(NoThrowString().Format(L"WriteRegion T: %d L: %d B: %d R: %d", srWritten.Top, srWritten.Left, srWritten.Bottom, srWritten.Right));
         VERIFY_ARE_EQUAL(srWrittenExpected, srWritten);
+    }
+    else if (fUseDwordWritten)
+    {
+        // TODO: verify dwWritten
+        Log::Comment(NoThrowString().Format(L"Chars Written: %d", dwWritten));
     }
 }
 
@@ -651,9 +675,9 @@ void DbcsWriteReadTestsPrepExpected(_In_ PCSTR pszTestData,
         break;
     }
     case DbcsWriteMode::CrtWrite:
+    case DbcsWriteMode::WriteConsoleOutputCharacterFunc:
     {
         // Writing with the CRT down here.
-
         if (!fReadWithUnicode)
         {
             // If we wrote with the CRT and are reading with A functions, the font doesn't matter.
@@ -781,9 +805,6 @@ void DbcsTests::TestDbcsWriteRead()
     bool fUseTrueTypeFont;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fUseTrueTypeFont", fUseTrueTypeFont));
 
-    /*bool fUseCrtWrite;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"fUseCrtWrite", fUseCrtWrite));*/
-    
     int iWriteMode;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"WriteMode", iWriteMode));
     DbcsWriteMode WriteMode = (DbcsWriteMode)iWriteMode;
@@ -794,9 +815,25 @@ void DbcsTests::TestDbcsWriteRead()
     bool fReadInUnicode;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fReadInUnicode", fReadInUnicode));
 
+    PCWSTR pwszWriteMode = L"";
+    switch (WriteMode)
+    {
+    case DbcsWriteMode::CrtWrite:
+        pwszWriteMode = L"CRT";
+        break;
+    case DbcsWriteMode::WriteConsoleOutputFunc:
+        pwszWriteMode = L"WriteConsoleOutput";
+        break;
+    case DbcsWriteMode::WriteConsoleOutputCharacterFunc:
+        pwszWriteMode = L"WriteConsoleOutputCharacter";
+        break;
+    default:
+        VERIFY_FAIL(L"Write mode not supported");
+    }
+
     auto testInfo = NoThrowString().Format(L"\r\n\r\n\r\nUse '%ls' font. Write with %ls '%ls'. Check Read with %ls '%ls' API.\r\n",
                                            fUseTrueTypeFont ? L"TrueType" : L"Raster",
-                                           WriteMode==0 ? L"CRT" : L"WriteConsoleOutput",
+                                           pwszWriteMode,
                                            fWriteInUnicode ? L"W" : L"A",
                                            L"ReadConsoleOutput",
                                            fReadInUnicode ? L"W" : L"A");
@@ -823,617 +860,6 @@ void DbcsTests::TestDbcsWriteRead()
     Log::Comment(testInfo);
 
 }
-
-// TODO: MSFT: 10187355-  ReadWrite2 needs to be moved completely into UIA tests so it can modify fonts and confirm behavior.
-//// This is sample code for DbcsReadWriteInner2 that isn't executed but is helpful in seeing how this would actually work from a consumer.
-//int DbcsReadWriteInner2Sample()
-//{
-//    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-//
-//    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-//    csbiex.cbSize = sizeof(csbiex);
-//
-//    GetConsoleScreenBufferInfoEx(hOut, &csbiex);
-//
-//    CHAR_INFO buffer[8];
-//    COORD dwBufferSize = { 4, 1 };
-//    COORD dwBufferCoord = { 0, 0 };
-//    SMALL_RECT srWriteRegion = { 0 };
-//    srWriteRegion.Left = 0;
-//    srWriteRegion.Top = 0;
-//    srWriteRegion.Right = 15;
-//    srWriteRegion.Bottom = 1;
-//
-//    //‚©‚½‚©‚È
-//    LPCWSTR pwszStr = L"‚©‚½‚©‚È";
-//    LPCSTR pszStr = "‚©‚½‚©‚È";
-//
-//    buffer[0].Char.UnicodeChar = pwszStr[0];
-//    buffer[0].Attributes = 7;
-//    buffer[1].Char.UnicodeChar = pwszStr[1];
-//    buffer[1].Attributes = 7;
-//    buffer[2].Char.UnicodeChar = pwszStr[2];
-//    buffer[2].Attributes = 7;
-//    buffer[3].Char.UnicodeChar = pwszStr[3];
-//    buffer[3].Attributes = 7;
-//
-//    WriteConsoleOutputW(hOut, buffer, dwBufferSize, dwBufferCoord, &srWriteRegion);
-//
-//    dwBufferSize.X = 8;
-//    srWriteRegion.Top = 1;
-//    srWriteRegion.Bottom = 2;
-//    srWriteRegion.Right = 60;
-//    buffer[0].Char.AsciiChar = pszStr[0];
-//    buffer[0].Attributes = 7 | COMMON_LVB_LEADING_BYTE;
-//    buffer[1].Char.AsciiChar = pszStr[1];
-//    buffer[1].Attributes = 7 | COMMON_LVB_TRAILING_BYTE;
-//    buffer[2].Char.AsciiChar = pszStr[2];
-//    buffer[2].Attributes = 7 | COMMON_LVB_LEADING_BYTE;
-//    buffer[3].Char.AsciiChar = pszStr[3];
-//    buffer[3].Attributes = 7 | COMMON_LVB_TRAILING_BYTE;
-//    buffer[4].Char.AsciiChar = pszStr[4];
-//    buffer[4].Attributes = 7 | COMMON_LVB_LEADING_BYTE;
-//    buffer[5].Char.AsciiChar = pszStr[5];
-//    buffer[5].Attributes = 7 | COMMON_LVB_TRAILING_BYTE;
-//    buffer[6].Char.AsciiChar = pszStr[6];
-//    buffer[6].Attributes = 7 | COMMON_LVB_LEADING_BYTE;
-//    buffer[7].Char.AsciiChar = pszStr[7];
-//    buffer[7].Attributes = 7 | COMMON_LVB_TRAILING_BYTE;
-//
-//    WriteConsoleOutputA(hOut, buffer, dwBufferSize, dwBufferCoord, &srWriteRegion);
-//
-//    HKEY key;
-//    RegOpenKeyExW(HKEY_CURRENT_USER, L"Console", 0, GENERIC_READ, &key);
-//    DWORD dwData;
-//    DWORD cbData = sizeof(dwData);
-//    RegQueryValueExW(key, L"ForceV2", NULL, NULL, (LPBYTE)&dwData, &cbData);
-//
-//
-//
-//    DWORD dwLength = 4;
-//    COORD dwWriteCoord = { 0, 2 };
-//    DWORD dwWritten = 0;
-//    WriteConsoleOutputCharacterW(hOut, pwszStr, dwLength, dwWriteCoord, &dwWritten);
-//
-//
-//    dwLength = 8;
-//    dwWriteCoord.Y = 3;
-//    WriteConsoleOutputCharacterA(hOut, pszStr, dwLength, dwWriteCoord, &dwWritten);
-//
-//
-//    CHAR_INFO readBuffer[8 * 4];
-//    COORD dwReadBufferSize = { 8, 4 };
-//    COORD dwReadBufferCoord = { 0, 0 };
-//    SMALL_RECT srReadRegion = { 0 };
-//    srReadRegion.Left = 0;
-//    srReadRegion.Right = 8;
-//    srReadRegion.Top = 0;
-//    srReadRegion.Bottom = 4;
-//
-//    ReadConsoleOutputW(hOut, readBuffer, dwReadBufferSize, dwReadBufferCoord, &srReadRegion);
-//
-//    srReadRegion.Left = 0;
-//    srReadRegion.Right = 8;
-//    srReadRegion.Top = 0;
-//    srReadRegion.Bottom = 4;
-//
-//    ReadConsoleOutputA(hOut, readBuffer, dwReadBufferSize, dwReadBufferCoord, &srReadRegion);
-//
-//    getchar();
-//
-//    return 0;
-//}
-//
-//void DbcsReadWriteInner2ValidateRasterW(const CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex, CHAR_INFO* readBuffer)
-//{
-//    // Expected results are copied from a sample code program running against v1 console.
-//    CHAR_INFO readBufferExpectedW[8 * 4];
-//    size_t i = 0;
-//
-//    // Expected Results 
-//    // CHAR | ATTRIBUTE
-//    // ‚©   | 7
-//    // ‚½   | 7
-//    //      | 7
-//    //      | 7
-//    //      | 7
-//    //      | 7
-//    // ‚©   | 7
-//    // ‚½   | 7
-//    // ‚©   | 7
-//    // ‚È   | 7
-//    // ‚©   | 7
-//    // ‚½   | 7
-//    // ‚©   | 7
-//    // ‚È   | 7
-//    // ‚©   | 7
-//    // ‚½   | 7
-//    // ‚©   | 7
-//    // ‚È   | 7
-//    // \0   | 0
-//    // \0   | 0
-//    // \0   | 0
-//    // \0   | 0
-//    // \0   | 0
-//    // \0   | 0
-//    // \0   | 0
-//    // \0   | 0
-//    // \0   | 0
-//    // \0   | 0
-//    // \0   | 0
-//    // \0   | 0
-//    // \0   | 0
-//    // \0   | 0
-//
-//    // -- ATTRIBUTES --
-//    // The first 18 characters of the buffer will be filled with data and have the default attributes.
-//    for (; i < 18; i++)
-//    {
-//        readBufferExpectedW[i].Attributes = psbiex->wAttributes;
-//    }
-//
-//    // The remaining characters have null attributes (empty).
-//    for (; i < ARRAYSIZE(readBufferExpectedW); i++)
-//    {
-//        readBufferExpectedW[i].Attributes = 0;
-//    }
-//
-//    // -- CHARACTERS --
-//    // first ensure buffer is null filled
-//    for (i = 0; i < ARRAYSIZE(readBufferExpectedW); i++)
-//    {
-//        readBufferExpectedW[i].Char.UnicodeChar = L'\0';
-//    }
-//
-//    // now insert the actual pattern we see from v1 console.
-//    i = 0;
-//
-//    // The first line returns ka ta with four spaces. (6 total characters, oddly enough.)
-//    PCWSTR pwszExpectedFirst = L"‚©‚½    "; // 4 spaces.
-//
-//    for (size_t j = 0; j < wcslen(pwszExpectedFirst); j++)
-//    {
-//        readBufferExpectedW[i++].Char.UnicodeChar = pwszExpectedFirst[j];
-//    }
-//
-//
-//    // Then we will see the entire string ka ta ka na three times for the other 3 insertions.
-//    for (size_t k = 0; k < 3; k++)
-//    {
-//        PCWSTR pwszExpectedRest = L"‚©‚½‚©‚È";
-//        for (size_t j = 0; j < wcslen(pwszExpectedRest); j++)
-//        {
-//            readBufferExpectedW[i++].Char.UnicodeChar = pwszExpectedRest[j];
-//        }
-//    }
-//
-//    // -- DO CHECK --
-//    // Now compare.
-//    for (size_t i = 0; i < ARRAYSIZE(readBufferExpectedW); i++)
-//    {
-//        VERIFY_ARE_EQUAL(readBufferExpectedW[i].Char.UnicodeChar, readBuffer[i].Char.UnicodeChar, L"Compare unicode chars");
-//        VERIFY_ARE_EQUAL(readBufferExpectedW[i].Attributes, readBuffer[i].Attributes, L"Compare attributes");
-//    }
-//}
-//
-//void DbcsReadWriteInner2ValidateRasterA(const CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex, CHAR_INFO* readBuffer)
-//{
-//    CHAR_INFO readBufferExpectedA[8 * 4];
-//    PCSTR pszExpected = "‚©‚½‚©‚È";
-//    size_t i = 0;
-//
-//    // Expected Results 
-//    // NOTE: each pair of two makes up the string above. You may need to run this test while the system non-Unicode codepage is Japanese (Japan) - CP932
-//    // CHAR | ATTRIBUTE
-//    // ‚©   | 7
-//    // ‚½   | 7
-//    // ‚©   | 7
-//    // ‚È   | 7
-//    //      | 7
-//    //      | 7
-//    //      | 7
-//    //      | 7
-//    // 0x82 | 0x107
-//    // 0xA9 | 0x207
-//    // 0x82 | 0x107
-//    // 0xBD | 0x207
-//    // 0x82 | 0x107
-//    // 0xA9 | 0x207
-//    // 0x82 | 0x107
-//    // 0xC8 | 0x207
-//    // 0x82 | 0x107
-//    // 0xA9 | 0x207
-//    // 0x82 | 0x107
-//    // 0xBD | 0x207
-//    // 0x82 | 0x107
-//    // 0xA9 | 0x207
-//    // 0x82 | 0x107
-//    // 0xC8 | 0x207
-//    // 0x82 | 0x107
-//    // 0xA9 | 0x207
-//    // 0x82 | 0x107
-//    // 0xBD | 0x207
-//    // 0x82 | 0x107
-//    // 0xA9 | 0x207
-//    // 0x82 | 0x107
-//    // 0xC8 | 0x207
-//
-//    // First fill the buffer with the pattern above 4 times.
-//    for (size_t k = 0; k < 4; k++)
-//    {
-//        for (size_t j = 0; j < strlen(pszExpected); j++)
-//        {
-//            readBufferExpectedA[i].Char.AsciiChar = pszExpected[j];
-//            readBufferExpectedA[i].Attributes = psbiex->wAttributes;
-//
-//            if (j % 2 == 0)
-//            {
-//                readBufferExpectedA[i].Attributes |= COMMON_LVB_LEADING_BYTE;
-//            }
-//            else
-//            {
-//                readBufferExpectedA[i].Attributes |= COMMON_LVB_TRAILING_BYTE;
-//            }
-//
-//            i++;
-//        }
-//    }
-//
-//    // Finally, fix up the first line. The first write will have filled characters 4-7 with spaces instead of the pattern.
-//    // Everything else follows the pattern specifically.
-//
-//    for (i = 4; i < 8; i++)
-//    {
-//        readBufferExpectedA[i].Char.AsciiChar = '\x20'; // space
-//        readBufferExpectedA[i].Attributes = psbiex->wAttributes; // standard attributes
-//    }
-//
-//    // --  DO CHECK --
-//    for (size_t i = 0; i < ARRAYSIZE(readBufferExpectedA); i++)
-//    {
-//        VERIFY_ARE_EQUAL(readBufferExpectedA[i].Char.AsciiChar, readBuffer[i].Char.AsciiChar, L"Compare ASCII chars");
-//        VERIFY_ARE_EQUAL(readBufferExpectedA[i].Attributes, readBuffer[i].Attributes, L"Compare attributes");
-//    }
-//}
-//
-//void DbcsReadWriteInner2ValidateTruetypeW(const CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex, CHAR_INFO* readBuffer)
-//{
-//    // Expected results are copied from a sample code program running against v1 console.
-//    CHAR_INFO readBufferExpectedW[8 * 4];
-//    PCWSTR pwszExpected = L"‚©‚½‚©‚È";
-//
-//    // Expected Results 
-//    // CHAR   | ATTRIBUTE
-//    // ‚©     | 7
-//    // ‚½     | 7
-//    // ‚©     | 7
-//    // ‚È     | 7
-//    //        | 7
-//    //        | 7
-//    //        | 7
-//    //        | 7
-//    // ‚©     | 0x107
-//    // 0xffff | 0x207
-//    // ‚½     | 0x107
-//    // 0xffff | 0x207
-//    // ‚©     | 0x107
-//    // 0xffff | 0x207
-//    // ‚È     | 0x107
-//    // 0xffff | 0x207
-//    // ‚©     | 0x107
-//    // ‚©     | 0x207
-//    // ‚½     | 0x107
-//    // ‚½     | 0x207
-//    // ‚©     | 0x107
-//    // ‚©     | 0x207
-//    // ‚È     | 0x107
-//    // ‚È     | 0x207
-//    // ‚©     | 0x107
-//    // ‚©     | 0x207
-//    // ‚½     | 0x107
-//    // ‚½     | 0x207
-//    // ‚©     | 0x107
-//    // ‚©     | 0x207
-//    // ‚È     | 0x107
-//    // ‚È     | 0x207
-//
-//    // -- ATTRIBUTES --
-//    // All fields have a 7 (default attr) for color
-//    for (size_t i = 0; i < ARRAYSIZE(readBufferExpectedW); i++)
-//    {
-//        readBufferExpectedW[i].Attributes = psbiex->wAttributes;
-//    }
-//
-//    // All fields from 8 onward alternate leading and trailing byte
-//    for (size_t i = 8; i < ARRAYSIZE(readBufferExpectedW); i++)
-//    {
-//        if (i % 2 == 0)
-//        {
-//            readBufferExpectedW[i].Attributes |= COMMON_LVB_LEADING_BYTE;
-//        }
-//        else
-//        {
-//            readBufferExpectedW[i].Attributes |= COMMON_LVB_TRAILING_BYTE;
-//        }
-//    }
-//
-//    // -- CHARACTERS --
-//    size_t i = 0;
-//
-//    // 1. the first 4 characters are the string
-//    for (size_t j = 0; j < wcslen(pwszExpected); j++)
-//    {
-//        readBufferExpectedW[i++].Char.UnicodeChar = pwszExpected[j];
-//    }
-//
-//    // 2. the next 4 characters are spaces
-//    for (size_t j = 0; j < 4; j++)
-//    {
-//        readBufferExpectedW[i++].Char.UnicodeChar = 0x0020; // unicode space
-//    }
-//
-//    // 3. the next 8 are the string alternating with -1 (0xffff)
-//    for (size_t j = 0; j < wcslen(pwszExpected); j++)
-//    {
-//        readBufferExpectedW[i++].Char.UnicodeChar = pwszExpected[j];
-//        readBufferExpectedW[i++].Char.UnicodeChar = 0xffff;
-//    }
-//
-//    // 4a. The next 8 are the string with every character written twice
-//    // 4b. The final 8 are the same as the previous step.
-//    for (size_t k = 0; k < 2; k++)
-//    {
-//        for (size_t j = 0; j < wcslen(pwszExpected); j++)
-//        {
-//            readBufferExpectedW[i++].Char.UnicodeChar = pwszExpected[j];
-//            readBufferExpectedW[i++].Char.UnicodeChar = pwszExpected[j];
-//        }
-//    }
-//
-//    // -- DO CHECK --
-//    // Now compare.
-//    for (size_t i = 0; i < ARRAYSIZE(readBufferExpectedW); i++)
-//    {
-//        VERIFY_ARE_EQUAL(readBufferExpectedW[i].Char.UnicodeChar, readBuffer[i].Char.UnicodeChar, L"Compare unicode chars");
-//        VERIFY_ARE_EQUAL(readBufferExpectedW[i].Attributes, readBuffer[i].Attributes, L"Compare attributes");
-//    }
-//}
-//
-//void DbcsReadWriteInner2ValidateTruetypeA(const CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex, CHAR_INFO* readBuffer)
-//{
-//    CHAR_INFO readBufferExpectedA[8 * 4];
-//    PCSTR pszExpected = "‚©‚½‚©‚È";
-//
-//    // Expected Results 
-//    // NOTE: each pair of two makes up the string above. You may need to run this test while the system non-Unicode codepage is Japanese (Japan) - CP932
-//    // NOTE: YES THE RESPONSE IS MIXING UNICODE AND ASCII. This has always been broken this way and is a compat issue now.
-//    // CHAR | ATTRIBUTE
-//    // ‚©   | 7
-//    // ‚½   | 7
-//    // ‚©   | 7
-//    // ‚È   | 7
-//    //      | 7
-//    //      | 7
-//    //      | 7
-//    //      | 7
-//    // 0x82 | 0x107
-//    // 0xA9 | 0x207
-//    // 0x82 | 0x107
-//    // 0xBD | 0x207
-//    // 0x82 | 0x107
-//    // 0xA9 | 0x207
-//    // 0x82 | 0x107
-//    // 0xC8 | 0x207
-//    // 0x82 | 0x107
-//    // 0xA9 | 0x207
-//    // 0x82 | 0x107
-//    // 0xBD | 0x207
-//    // 0x82 | 0x107
-//    // 0xA9 | 0x207
-//    // 0x82 | 0x107
-//    // 0xC8 | 0x207
-//    // 0x82 | 0x107
-//    // 0xA9 | 0x207
-//    // 0x82 | 0x107
-//    // 0xBD | 0x207
-//    // 0x82 | 0x107
-//    // 0xA9 | 0x207
-//    // 0x82 | 0x107
-//    // 0xC8 | 0x207
-//
-//    // -- ATTRIBUTES --
-//    // All fields have a 7 (default attr) for color
-//    for (size_t i = 0; i < ARRAYSIZE(readBufferExpectedA); i++)
-//    {
-//        readBufferExpectedA[i].Attributes = psbiex->wAttributes;
-//    }
-//
-//    // All fields from 8 onward alternate leading and trailing byte
-//    for (size_t i = 8; i < ARRAYSIZE(readBufferExpectedA); i++)
-//    {
-//        if (i % 2 == 0)
-//        {
-//            readBufferExpectedA[i].Attributes |= COMMON_LVB_LEADING_BYTE;
-//        }
-//        else
-//        {
-//            readBufferExpectedA[i].Attributes |= COMMON_LVB_TRAILING_BYTE;
-//        }
-//    }
-//
-//    // -- CHARACTERS
-//    // For perplexing reasons, the first eight characters are unicode
-//    PCWSTR pwszExpectedOddUnicode = L"‚©‚½‚©‚È    ";
-//    size_t i = 0;
-//    for (; i < 8; i++)
-//    {
-//        readBufferExpectedA[i].Char.UnicodeChar = pwszExpectedOddUnicode[i];
-//    }
-//
-//    // Then the pattern of the expected string is repeated 3 times to fill the buffer
-//    for (size_t k = 0; k < 3; k++)
-//    {
-//        for (size_t j = 0; j < strlen(pszExpected); j++)
-//        {
-//            readBufferExpectedA[i++].Char.AsciiChar = pszExpected[j];
-//        }
-//    }
-//
-//    // --  DO CHECK --
-//    for (size_t i = 0; i < 8; i++)
-//    {
-//        VERIFY_ARE_EQUAL(readBufferExpectedA[i].Char.AsciiChar, readBuffer[i].Char.AsciiChar, L"Compare Unicode chars !!! this is notably wrong for compat");
-//        VERIFY_ARE_EQUAL(readBufferExpectedA[i].Attributes, readBuffer[i].Attributes, L"Compare attributes");
-//    }
-//
-//    for (size_t i = 8; i < ARRAYSIZE(readBufferExpectedA); i++)
-//    {
-//        VERIFY_ARE_EQUAL(readBufferExpectedA[i].Char.AsciiChar, readBuffer[i].Char.AsciiChar, L"Compare ASCII chars");
-//        VERIFY_ARE_EQUAL(readBufferExpectedA[i].Attributes, readBuffer[i].Attributes, L"Compare attributes");
-//    }
-//}
-//
-//// This test covers an additional scenario related to read/write of double byte characters.
-//// We're specifically looking for the presentation (A) or absence (W) of the lead/trailing byte flags.
-//// It's also checking what happens when we use the W API to write full width characters into not enough space
-//void DbcsTests::TestDbcsReadWrite2()
-//{
-//    HANDLE const hOut = GetStdOutputHandle();
-//
-//    UINT dwCP = GetConsoleCP();
-//    VERIFY_ARE_EQUAL(dwCP, JAPANESE_CP);
-//
-//    UINT dwOutputCP = GetConsoleOutputCP();
-//    VERIFY_ARE_EQUAL(dwOutputCP, JAPANESE_CP);
-//
-//    CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
-//    sbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-//    BOOL fSuccess = GetConsoleScreenBufferInfoEx(hOut, &sbiex);
-//
-//    VERIFY_ARE_EQUAL(sbiex.dwCursorPosition.X, 4);
-//    VERIFY_ARE_EQUAL(sbiex.dwCursorPosition.Y, 0);
-//
-//    {
-//        Log::Comment(L"Attempt to write ‚©‚½‚©‚È into the buffer with various methods");
-//
-//        LPCWSTR pwszStr = L"‚©‚½‚©‚È";
-//        DWORD cchStr = (DWORD)wcslen(pwszStr);
-//
-//        LPCSTR pszStr = "‚©‚½‚©‚È";
-//        DWORD cbStr = (DWORD)strlen(pszStr);
-//
-//        // --- WriteConsoleOutput Unicode
-//        CHAR_INFO writeBuffer[8 * 4];
-//
-//        COORD dwBufferSize = { (SHORT)cchStr, 1 }; // the buffer is 4 wide and 1 tall
-//        COORD dwBufferCoord = { 0, 0 }; // the API should start reading at row 0 column 0 from the buffer we pass
-//        SMALL_RECT srWriteRegion = { 0 };
-//        srWriteRegion.Left = 0;
-//        srWriteRegion.Right = 40; // purposefully too big. it shouldn't use all this space if it doesn't need it
-//        srWriteRegion.Top = 1; // write to row 1 in the console's buffer (the first row is 0th row)
-//        srWriteRegion.Bottom = srWriteRegion.Top + dwBufferSize.Y; // Bottom - Top = 1 so we only have one row to write
-//
-//        for (size_t i = 0; i < cchStr; i++)
-//        {
-//            writeBuffer[i].Char.UnicodeChar = pwszStr[i];
-//            writeBuffer[i].Attributes = sbiex.wAttributes;
-//        }
-//
-//        fSuccess = WriteConsoleOutputW(hOut, writeBuffer, dwBufferSize, dwBufferCoord, &srWriteRegion);
-//        VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(fSuccess, L"Attempted to write with WriteConsoleOutputW");
-//
-//        // --- WriteConsoleOutput ASCII
-//
-//        dwBufferSize.X = (SHORT)cbStr; // use the ascii string now for the buffer size
-//
-//        srWriteRegion.Right = 40; // purposefully big again, let API decide length
-//        srWriteRegion.Top = 2; // write to row 2 (the third row) in the console's buffer 
-//        srWriteRegion.Bottom = srWriteRegion.Top + dwBufferSize.Y;
-//
-//        for (size_t i = 0; i < cbStr; i++)
-//        {
-//            writeBuffer[i].Char.AsciiChar = pszStr[i];
-//            writeBuffer[i].Attributes = sbiex.wAttributes;
-//
-//            // alternate leading and trailing bytes for the double byte. 0-1 is one DBCS pair. 2-3. Etc.
-//            if (i % 2 == 0)
-//            {
-//                writeBuffer[i].Attributes |= COMMON_LVB_LEADING_BYTE;
-//            }
-//            else
-//            {
-//                writeBuffer[i].Attributes |= COMMON_LVB_TRAILING_BYTE;
-//            }
-//        }
-//
-//        fSuccess = WriteConsoleOutputA(hOut, writeBuffer, dwBufferSize, dwBufferCoord, &srWriteRegion);
-//        VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(fSuccess, L"Attempted to write with WriteConsoleOutputA");
-//
-//        // --- WriteConsoleOutputCharacter Unicode
-//        COORD dwWriteCoord = { 0, 3 }; // Write to fourth row (row 3), first column (col 0) in the screen buffer
-//        DWORD dwWritten = 0;
-//
-//        fSuccess = WriteConsoleOutputCharacterW(hOut, pwszStr, cchStr, dwWriteCoord, &dwWritten);
-//        VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(fSuccess, L"Attempted to write with WriteConsoleOutputCharacterW");
-//        VERIFY_ARE_EQUAL(cchStr, dwWritten, L"Verify all characters written successfully.");
-//
-//        // --- WriteConsoleOutputCharacter ASCII
-//        dwWriteCoord.Y = 4; // move down to the fifth line
-//        dwWritten = 0; // reset written count
-//
-//        fSuccess = WriteConsoleOutputCharacterA(hOut, pszStr, cbStr, dwWriteCoord, &dwWritten);
-//        VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(fSuccess, L"Attempted to write with WriteConsoleOutputCharacterA");
-//        VERIFY_ARE_EQUAL(cbStr, dwWritten, L"Verify all character bytes written successfully.");
-//
-//
-//        Log::Comment(L"Try to read back ‚©‚½‚©‚È from the buffer and confirm formatting.");
-//
-//        COORD dwReadBufferSize = { (SHORT)cbStr, 4 }; // 2 rows with 8 columns each. the string length was 4 so leave double space in case the characters are doubled on read.
-//        CHAR_INFO readBuffer[8 * 4];
-//
-//        COORD dwReadBufferCoord = { 0, 0 };
-//        SMALL_RECT srReadRegionExpected = { 0 }; // read cols 0-7 in rows 1-2 (first 8 characters of 2 rows we just wrote above)
-//        srReadRegionExpected.Left = 0;
-//        srReadRegionExpected.Top = 1;
-//        srReadRegionExpected.Right = srReadRegionExpected.Left + dwReadBufferSize.X;
-//        srReadRegionExpected.Bottom = srReadRegionExpected.Top + dwReadBufferSize.Y;
-//
-//        SMALL_RECT srReadRegion = srReadRegionExpected;
-//
-//        fSuccess = ReadConsoleOutputW(hOut, readBuffer, dwReadBufferSize, dwReadBufferCoord, &srReadRegion);
-//        VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(fSuccess, L"Attempt to read back with ReadConsoleOutputW");
-//
-//        Log::Comment(L"Verify results from W read...");
-//        {
-//            if (IsTrueTypeFont(hOut))
-//            {
-//                DbcsReadWriteInner2ValidateTruetypeW(&sbiex, readBuffer);
-//            }
-//            else
-//            {
-//                DbcsReadWriteInner2ValidateRasterW(&sbiex, readBuffer);
-//            }
-//        }
-//
-//        // set read region back in case it changed
-//        srReadRegion = srReadRegionExpected;
-//
-//        fSuccess = ReadConsoleOutputA(hOut, readBuffer, dwReadBufferSize, dwReadBufferCoord, &srReadRegion);
-//        VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(fSuccess, L"Attempt to read back wtih ReadConsoleOutputA");
-//
-//        Log::Comment(L"Verify results from A read...");
-//        {
-//            if (IsTrueTypeFont(hOut))
-//            {
-//                DbcsReadWriteInner2ValidateTruetypeA(&sbiex, readBuffer);
-//            }
-//            else
-//            {
-//                DbcsReadWriteInner2ValidateRasterA(&sbiex, readBuffer);
-//            }
-//        }
-//    }
-//}
 
 // This test covers bisect-prevention handling. This is the behavior where a double-wide character will not be spliced
 // across a line boundary and will instead be advanced onto the next line.
