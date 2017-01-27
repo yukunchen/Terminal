@@ -119,3 +119,4 @@
 1/26/2017 - 9765193 - Control AND Meta modifiers on keys work at the same time in VT Input mode.
 1/26/2017 - 9311951 - ReadConsoleInput returns the right number of events when holding control
 1/27/2017 - 10187614 - Adds test for alt-gr and VK_APPS.
+1/27/2017 - 10484556 - Adds tests for ctrl+c, ctrl+z, ctrl+h for bash and cmd.
