@@ -505,7 +505,7 @@ namespace WEX {
                 wchar_t const wch = ci.Char.UnicodeChar != L'\0' ? ci.Char.UnicodeChar : 0x2400;
                 char const ch = ci.Char.AsciiChar != '\0' ? ci.Char.AsciiChar : 0x20;
 
-                return WEX::Common::NoThrowString().Format(L"Unicode Char: %lc (0x%x)  Attributes: 0x%x  [Ascii Char: %c (0x%hhx)]", 
+                return WEX::Common::NoThrowString().Format(L"Unicode Char: %lc (0x%x),  Attributes: 0x%x,  [Ascii Char: %c (0x%hhx)]", 
                                                            wch,
                                                            ci.Char.UnicodeChar,
                                                            ci.Attributes,
