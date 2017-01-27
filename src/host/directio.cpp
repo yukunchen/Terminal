@@ -960,23 +960,7 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
         a->NumRecords /= nSize;
 
         Status = ReadOutputString(pScreenInfo->GetActiveBuffer(), Buffer, a->ReadCoord, a->StringType, &a->NumRecords);
-        if (a->StringType == CONSOLE_ATTRIBUTE)
-        {
-            // remove trailing byte attributes
-            unsigned short* buf = reinterpret_cast<unsigned short*>(Buffer);
-            const size_t count = a->NumRecords;
-            size_t copyTargetPosition = 0;
-            for (size_t i = 0; i < count; ++i)
-            {
-                if (IsFlagClear(buf[i], COMMON_LVB_TRAILING_BYTE))
-                {
-                    buf[copyTargetPosition] = buf[i];
-                    ClearFlag(buf[copyTargetPosition], COMMON_LVB_LEADING_BYTE);
-                    ++copyTargetPosition;
-                }
-            }
-            a->NumRecords = static_cast<ULONG>(copyTargetPosition);
-        }
+
         if (NT_SUCCESS(Status))
         {
             m->SetReplyInformation(a->NumRecords * nSize);
