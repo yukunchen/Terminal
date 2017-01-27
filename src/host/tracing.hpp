@@ -44,6 +44,9 @@ public:
     static void s_TraceChars(_In_z_ const char* pszMessage, ...);
     static void s_TraceOutput(_In_z_ const char* pszMessage, ...);
 
+    static void s_TraceWindowMessage(_In_ const MSG& msg);
+    static void s_TraceInputRecord(_In_ const INPUT_RECORD& inputRecord);
+
     static void __stdcall TraceFailure(const wil::FailureInfo& failure);
 
 private:

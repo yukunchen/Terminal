@@ -21,3 +21,6 @@ using namespace WEX::TestExecution;
 #include <wil\Resource.h>
 
 #include <conio.h>
+
+#define CM_SET_KEY_STATE (WM_USER+18)
+#define CM_SET_KEYBOARD_LAYOUT (WM_USER+19)
