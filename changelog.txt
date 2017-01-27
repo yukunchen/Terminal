@@ -117,3 +117,4 @@
 1/18/2017 - 10571624 - Fix SetConsoleCurrentFont API to ensure that window size/dimensions are refreshed when font changes.
 1/23/2017 - 10471073 - Mouse wheel no longer works in FAR Manager. Console not placing wheel/hwheel events in client input queue.
 1/26/2017 - 9765193 - Control AND Meta modifiers on keys work at the same time in VT Input mode.
+1/26/2017 - 9311951 - ReadConsoleInput returns the right number of events when holding control
