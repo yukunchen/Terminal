@@ -10,57 +10,84 @@
 #include <memory>
 #include <utility>
 #include <iostream>
+#include <iomanip>
+#include <sstream>
+
+#define KEY_STATE_PRESSED (0x80)
+#define KEY_STATE_RELEASED (0x0)
+
+#define KEY_MESSAGE_CONTEXT_CODE (0x20000000)
+#define SINGLE_KEY_REPEAT (0x00000001)
+#define EXTENDED_KEY_FLAG (0x01000000)
+
+#define SLEEP_WAIT_TIME (2 * 1000)
+#define GERMAN_KEYBOARD_LAYOUT (MAKELANGID(LANG_GERMAN, SUBLANG_GERMAN))
 
 class KeyPressTests
 {
     TEST_CLASS(KeyPressTests);
 
-    // TODO: MSFT: 10187614 - Fix this test or the console code.
-    //TEST_METHOD(TestAltGr)
-    //{
-    //    Log::Comment(L"Testing that alt-gr behavior hasn't changed");
-    //    BOOL successBool;
-    //    HWND hwnd = GetConsoleWindow();
-    //    VERIFY_IS_NOT_NULL(hwnd);
-    //    HANDLE inputHandle = GetStdHandle(STD_INPUT_HANDLE);
-    //    DWORD events = 0;
+    void TurnOffModifierKeys(HWND hwnd)
+    {
+        // these are taken from GetControlKeyState.
+        static const WPARAM modifiers[8] = {
+            VK_LMENU,
+            VK_RMENU,
+            VK_LCONTROL,
+            VK_RCONTROL,
+            VK_SHIFT,
+            VK_NUMLOCK,
+            VK_SCROLL,
+            VK_CAPITAL
+        };
+        for (unsigned int i = 0; i < 8; ++i)
+        {
+            PostMessage(hwnd, CM_SET_KEY_STATE, modifiers[i], KEY_STATE_RELEASED);
+        }
+    }
 
-    //    // flush input buffer
-    //    FlushConsoleInputBuffer(inputHandle);
-    //    successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
-    //    VERIFY_IS_TRUE(!!successBool);
-    //    VERIFY_ARE_EQUAL(events, 0);
+    TEST_METHOD(TestContextMenuKey)
+    {
+        Log::Comment(L"Checks that the context menu key is correctly added to the input buffer.");
+        HWND hwnd = GetConsoleWindow();
+        VERIFY_IS_NOT_NULL(hwnd);
+        HANDLE inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+        DWORD events = 0;
 
-    //    // send alt-gr + q keypress (@ on german keyboard)
-    //    DWORD repeatCount = 1;
-    //    SendMessage(hwnd,
-    //                WM_CHAR,
-    //                0x51, // q
-    //                repeatCount | HIWORD(KF_EXTENDED | KF_ALTDOWN));
-    //    // make sure the the keypresses got processed
-    //    events = 0;
-    //    successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
-    //    VERIFY_IS_TRUE(!!successBool);
-    //    VERIFY_IS_GREATER_THAN(events, 0u, NoThrowString().Format(L"%d", events));
-    //    std::unique_ptr<INPUT_RECORD[]> inputBuffer = std::make_unique<INPUT_RECORD[]>(1);
-    //    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(PeekConsoleInput(inputHandle,
-    //                                                        inputBuffer.get(),
-    //                                                        1,
-    //                                                        &events));
-    //    VERIFY_ARE_EQUAL(events, 1);
+        // flush input buffer
+        FlushConsoleInputBuffer(inputHandle);
+        VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(inputHandle, &events));
+        VERIFY_ARE_EQUAL(events, 0);
 
-    //    INPUT_RECORD expectedEvent;
-    //    expectedEvent.EventType = KEY_EVENT;
-    //    expectedEvent.Event.KeyEvent.bKeyDown = !!true;
-    //    expectedEvent.Event.KeyEvent.wRepeatCount = 1;
-    //    expectedEvent.Event.KeyEvent.wVirtualKeyCode = 0;
-    //    expectedEvent.Event.KeyEvent.wVirtualScanCode = 0;
-    //    expectedEvent.Event.KeyEvent.dwControlKeyState = 32;
-    //    expectedEvent.Event.KeyEvent.uChar.UnicodeChar = L'Q';
-    //    // compare values against those that have historically been
-    //    // returned with the same arguments to SendMessage
-    //    VERIFY_ARE_EQUAL(expectedEvent, inputBuffer[0]);
-    //}
+        // send context menu key event
+        TurnOffModifierKeys(hwnd);
+        Sleep(SLEEP_WAIT_TIME);
+        UINT scanCode = MapVirtualKey(VK_APPS, MAPVK_VK_TO_VSC);
+        PostMessage(hwnd, WM_KEYDOWN, VK_APPS, EXTENDED_KEY_FLAG | SINGLE_KEY_REPEAT | (scanCode << 16));
+        Sleep(SLEEP_WAIT_TIME);
+
+        INPUT_RECORD expectedRecord;
+        expectedRecord.EventType = KEY_EVENT;
+        expectedRecord.Event.KeyEvent.uChar.UnicodeChar = 0x0;
+        expectedRecord.Event.KeyEvent.bKeyDown = true;
+        expectedRecord.Event.KeyEvent.dwControlKeyState = ENHANCED_KEY;
+        expectedRecord.Event.KeyEvent.wRepeatCount = SINGLE_KEY_REPEAT;
+        expectedRecord.Event.KeyEvent.wVirtualKeyCode = VK_APPS;
+        expectedRecord.Event.KeyEvent.wVirtualScanCode = (WORD)scanCode;
+
+        // get the input record back and test it
+        INPUT_RECORD record;
+        VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInput(inputHandle, &record, 1, &events));
+        VERIFY_IS_GREATER_THAN(events, 0u);
+        VERIFY_ARE_EQUAL(expectedRecord, record);
+    }
+
+
+    BEGIN_TEST_METHOD(TestAltGr)
+        TEST_METHOD_PROPERTY(L"Ignore[@DevTest=true]", L"false")
+        TEST_METHOD_PROPERTY(L"Ignore[default]", L"true")
+    END_TEST_METHOD()
+
 
     TEST_METHOD(TestCoalesceSameKeyPress)
     {
@@ -103,15 +130,14 @@ class KeyPressTests
         VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wRepeatCount, messageSendCount, NoThrowString().Format(L"%d", inputBuffer[0].Event.KeyEvent.wRepeatCount));
     }
 
-
     TEST_METHOD(TestCtrlKeyDownUp)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             // VKeys for A-Z
             // See https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
             TEST_METHOD_PROPERTY(L"Data:vKey", L"{"
-                "0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4A,0x4B,0x4C,0x4D,0x4E,0x4F," 
-                "0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,0x5A" 
+                "0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4A,0x4B,0x4C,0x4D,0x4E,0x4F,"
+                "0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,0x5A"
             "}")
         END_TEST_METHOD_PROPERTIES();
         UINT vk;
@@ -126,7 +152,7 @@ class KeyPressTests
 
         // Set the console to raw mode, so that it doesn't hijack any keypresses as shortcut keys
         SetConsoleMode(inputHandle, 0);
-        
+
         // flush input buffer
         FlushConsoleInputBuffer(inputHandle);
         VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(inputHandle, &events));
@@ -138,7 +164,7 @@ class KeyPressTests
 
         UINT vkCtrl = VK_LCONTROL; // Need this instead of VK_CONTROL
         UINT uiCtrlScancode = MapVirtualKey(vkCtrl , MAPVK_VK_TO_VSC);
-        // According to 
+        // According to
         // KEY_KEYDOWN https://msdn.microsoft.com/en-us/library/windows/desktop/ms646280(v=vs.85).aspx
         // KEY_UP https://msdn.microsoft.com/en-us/library/windows/desktop/ms646281(v=vs.85).aspx
         LPARAM CtrlFlags = ( 0 | ((uiCtrlScancode<<16) & 0x00ff0000) | 0x00000001);
@@ -158,7 +184,7 @@ class KeyPressTests
         SendMessage(hwnd, WM_KEYDOWN,   vkCtrl,     CtrlFlags);
         SendMessage(hwnd, WM_KEYDOWN,   vk,         DownFlags);
         SendMessage(hwnd, WM_KEYUP,     vk,         UpFlags);
-        SendMessage(hwnd, WM_KEYUP,     vkCtrl,     CtrlUpFlags); 
+        SendMessage(hwnd, WM_KEYUP,     vkCtrl,     CtrlUpFlags);
 
         Sleep(50);
 
@@ -208,3 +234,95 @@ class KeyPressTests
     }
 
 };
+
+void KeyPressTests::TestAltGr()
+{
+    Log::Comment(L"Checks that alt-gr behavior is maintained.");
+    HWND hwnd = GetConsoleWindow();
+    VERIFY_IS_NOT_NULL(hwnd);
+    HANDLE inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD events = 0;
+
+    // flush input buffer
+    FlushConsoleInputBuffer(inputHandle);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(inputHandle, &events));
+    VERIFY_ARE_EQUAL(events, 0);
+
+    // create german locale string
+    std::wstringstream wss;
+    wss << std::setfill(L'0') << std::setw(8) << std::hex << GERMAN_KEYBOARD_LAYOUT;
+    std::wstring germanKeyboardLayoutString(wss.str());
+
+    // save current keyboard layout
+    wchar_t originalLocaleId[KL_NAMELENGTH];
+    GetKeyboardLayoutName(originalLocaleId);
+
+    // make console window the topmost window
+    SetForegroundWindow(hwnd);
+
+    // change to german keyboard layout
+    PostMessage(hwnd, CM_SET_KEYBOARD_LAYOUT, std::stoi(germanKeyboardLayoutString), NULL);
+    Sleep(SLEEP_WAIT_TIME);
+    LoadKeyboardLayout(germanKeyboardLayoutString.c_str(), KLF_ACTIVATE);
+
+    // turn off all modifier keys
+    TurnOffModifierKeys(hwnd);
+
+    // set right control key to be pressed
+    PostMessage(hwnd, CM_SET_KEY_STATE, VK_LCONTROL, KEY_STATE_PRESSED);
+    PostMessage(hwnd, CM_SET_KEY_STATE, VK_CONTROL, KEY_STATE_PRESSED);
+    // set right alt to be pressed
+    PostMessage(hwnd, CM_SET_KEY_STATE, VK_RMENU, KEY_STATE_PRESSED);
+    PostMessage(hwnd, CM_SET_KEY_STATE, VK_MENU, KEY_STATE_PRESSED);
+    Sleep(SLEEP_WAIT_TIME);
+
+    // flush input buffer in preparation of the key event
+    FlushConsoleInputBuffer(inputHandle);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(inputHandle, &events));
+    VERIFY_ARE_EQUAL(events, 0);
+
+    // send the key event that will be turned into an '@'
+    UINT scanCode = MapVirtualKey('Q', MAPVK_VK_TO_VSC);
+    PostMessage(hwnd, WM_KEYDOWN, 'Q', KEY_MESSAGE_CONTEXT_CODE | SINGLE_KEY_REPEAT | (scanCode << 16));
+    Sleep(SLEEP_WAIT_TIME);
+
+    // reset the keymap
+    TurnOffModifierKeys(hwnd);
+
+    // create expected input record
+    INPUT_RECORD expectedRecord;
+    expectedRecord.EventType = KEY_EVENT;
+    expectedRecord.Event.KeyEvent.uChar.UnicodeChar = L'@';
+    expectedRecord.Event.KeyEvent.bKeyDown = true;
+    expectedRecord.Event.KeyEvent.dwControlKeyState = RIGHT_ALT_PRESSED | LEFT_CTRL_PRESSED;
+    expectedRecord.Event.KeyEvent.wRepeatCount = SINGLE_KEY_REPEAT;
+    expectedRecord.Event.KeyEvent.wVirtualKeyCode = L'Q';
+    expectedRecord.Event.KeyEvent.wVirtualScanCode = (WORD)scanCode;
+
+    // read input records and compare
+    const int maxRecordLookup = 20; // some arbitrary value to grab some records
+    Log::Comment(L"Looking for input record matching:");
+    Log::Comment(VerifyOutputTraits<INPUT_RECORD>::ToString(expectedRecord));
+    INPUT_RECORD records[20];
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInput(inputHandle, records, maxRecordLookup, &events));
+    VERIFY_IS_GREATER_THAN(events, 0u);
+    bool successBool = false;
+    // look for the expected record somewhere in the returned records
+    for (unsigned int i = 0; i < events; ++i)
+    {
+        Log::Comment(VerifyOutputTraits<INPUT_RECORD>::ToString(records[i]));
+        if (VerifyCompareTraits<INPUT_RECORD, INPUT_RECORD>::AreEqual(records[i], expectedRecord))
+        {
+            successBool = true;
+            break;
+        }
+    }
+    VERIFY_IS_TRUE(successBool);
+
+    // reset the keyboard layout
+    WPARAM originalLocale;
+    std::wstringstream localeStringStream(originalLocaleId);
+    localeStringStream >> std::hex >> originalLocale;
+    PostMessage(hwnd, CM_SET_KEYBOARD_LAYOUT, originalLocale, NULL);
+    LoadKeyboardLayout(originalLocaleId, KLF_ACTIVATE | KLF_SUBSTITUTE_OK);
+}

@@ -85,7 +85,7 @@
 	10047286 - conemu triggers assert when attaching console
 	10071715 - Functions wrapped in NTSTATUS_FROM_WIN32 get called twice
 	9751066 - [Maximus5/ConEmu] WriteConsoleW used with ConEmu duplicates Chinese characters output (#945)
-	9979330 - [Watson Failure] caused by INTEGER_DIVIDE_BY_ZERO - this represents having GDI Engine updated to appropriately log/return/handle all sorts of GDI errors 
+	9979330 - [Watson Failure] caused by INTEGER_DIVIDE_BY_ZERO - this represents having GDI Engine updated to appropriately log/return/handle all sorts of GDI errors
 	9891756 - AllocConsole then FreeConsole from win32 application is not closing newly created console window
 	9811815 - ConEmu doesn't scroll properly when dir is run
 	9770949 - F9 popup doesn't restore original colors when leaving
@@ -118,3 +118,4 @@
 1/23/2017 - 10471073 - Mouse wheel no longer works in FAR Manager. Console not placing wheel/hwheel events in client input queue.
 1/26/2017 - 9765193 - Control AND Meta modifiers on keys work at the same time in VT Input mode.
 1/26/2017 - 9311951 - ReadConsoleInput returns the right number of events when holding control
+1/27/2017 - 10187614 - Adds test for alt-gr and VK_APPS.
