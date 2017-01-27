@@ -1150,7 +1150,6 @@ void DbcsWriteReadTestsVerify(_In_reads_(cExpected) CHAR_INFO* const rgExpected,
         // Uncomment these lines for help debugging the verification.
         /*Log::Comment(VerifyOutputTraits<CHAR_INFO>::ToString(rgExpected[i]));
         Log::Comment(VerifyOutputTraits<CHAR_INFO>::ToString(rgActual[i]));*/
-        
 
         VERIFY_ARE_EQUAL(rgExpected[i], rgActual[i]);
     }
