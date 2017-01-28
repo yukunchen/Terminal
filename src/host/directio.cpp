@@ -668,7 +668,7 @@ NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Si
                     SetFlag(OutputBuffer->Attributes, COMMON_LVB_LEADING_BYTE);
                     OutputBuffer++;
                     OutputBuffer->Char.UnicodeChar = UNICODE_DBCS_PADDING;
-                    ClearAllFlags(OutputBuffer->Attributes, ~COMMON_LVB_SBCSDBCS);
+                    ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
                     SetFlag(OutputBuffer->Attributes, COMMON_LVB_TRAILING_BYTE);
                     OutputBuffer++;
                 }
