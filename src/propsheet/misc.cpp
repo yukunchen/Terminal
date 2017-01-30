@@ -34,6 +34,8 @@ ULONG gDebugFlag = 0;
 #define FE_SKIPFONT    1
 #define FE_FONTOK      2
 
+#define TERMINAL_FACENAME L"Terminal"
+
 /*
  * TTPoints -- Initial font pixel heights for TT fonts
  */
@@ -467,20 +469,20 @@ int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, 
     }
 
     // reject non-TT fonts that aren't terminal
-    if (fIsEastAsianCP && (nFontType != TRUETYPE_FONTTYPE) && (0 != lstrcmp(ptszFace, L"Terminal")))
+    if (fIsEastAsianCP && (nFontType != TRUETYPE_FONTTYPE) && (0 != lstrcmp(ptszFace, TERMINAL_FACENAME)))
     {
         DBGFONTS(("    REJECT  face (not TT nor Terminal)\n"));
         return pfed->bFindFaces ? FE_SKIPFONT : FE_ABANDONFONT;
     }
 
     // reject East Asian TT fonts that aren't East Asian charset.
-    if (fIsEastAsianCP && !IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet)) {
+    if (fIsEastAsianCP && (nFontType == TRUETYPE_FONTTYPE) && !IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet)) {
         DBGFONTS(("    REJECT  face (East Asian charset, but not East Asian TT)\n"));
         return FE_SKIPFONT;    // should be enumerate next charset.
     }
 
     // reject East Asian TT fonts on non-East Asian systems
-    if (!fIsEastAsianCP && IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet))
+    if (!fIsEastAsianCP && (nFontType == TRUETYPE_FONTTYPE) && IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet))
     {
         DBGFONTS(("    REJECT  face (East Asian TT and not East Asian charset)\n"));
         return FE_SKIPFONT;    // should be enumerate next charset.
@@ -622,7 +624,7 @@ FontEnum(
      * reject non-TT fonts that aren't Terminal
      */
     if (g_fEastAsianSystem && (nFontType != TRUETYPE_FONTTYPE) &&
-        (0 != lstrcmp(ptszFace, TEXT("Terminal"))))
+        (0 != lstrcmp(ptszFace, TERMINAL_FACENAME)))
     {
         DBGFONTS(("    REJECT  face (not TT nor Terminal)\n"));
         return pfed->bFindFaces ? FE_SKIPFONT : FE_ABANDONFONT;
@@ -723,6 +725,11 @@ DoFontEnum(
     LogFont.lfCharSet = DEFAULT_CHARSET;
     if (ptszFace != nullptr) {
         StringCchCopy(LogFont.lfFaceName, LF_FACESIZE, ptszFace);
+
+        if (NumberOfFonts == 0 && 0 == lstrcmp(ptszFace, TERMINAL_FACENAME)) {
+            // We're performing our first enumeration and adding the raster font. Use OEM_CHARSET.
+            LogFont.lfCharSet = OEM_CHARSET;
+        }
     }
 
     /*
