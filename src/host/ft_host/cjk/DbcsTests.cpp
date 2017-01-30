@@ -93,6 +93,13 @@ void SetupDbcsWriteReadTests(_In_ unsigned int uiCodePage,
 
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetCurrentConsoleFontEx(hOut, FALSE, &cfiex));
 
+    // Ensure that we set the font we expected to set
+    CONSOLE_FONT_INFOEX cfiexGet = { 0 };
+    cfiexGet.cbSize = sizeof(cfiexGet);
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(GetCurrentConsoleFontEx(hOut, FALSE, &cfiexGet));
+
+    VERIFY_ARE_EQUAL(NoThrowString(cfiex.FaceName), NoThrowString(cfiexGet.FaceName));
+
     // Retrieve some of the information about the preferences/settings for the console buffer including
     // the size of the buffer and the default colors (attributes) to use.
     CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
