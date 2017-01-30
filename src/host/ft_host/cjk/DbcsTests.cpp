@@ -958,17 +958,6 @@ void DbcsWriteReadTestsPrepExpectedReadConsoleOutputCharacter(_In_ unsigned int 
                                                               _Inout_updates_all_(cExpectedNeeded) CHAR_INFO* const rgciExpected,
                                                               _In_ size_t const cExpectedNeeded)
 {
-    uiCodePage;
-    pszTestData;
-    wAttrOriginal;
-    wAttrWritten;
-    WriteMode;
-    fWriteWithUnicode;
-    fIsTrueTypeFont;
-    fReadWithUnicode;
-    rgciExpected;
-    cExpectedNeeded;
-
     if (DbcsWriteMode::WriteConsoleOutputFunc == WriteMode && fWriteWithUnicode)
     {
         if (fIsTrueTypeFont)
