@@ -986,11 +986,6 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
                 Status = STATUS_UNSUCCESSFUL;
             }
 
-            if (g_ciConsoleInformation.OutputCP != g_uiOEMCP)
-            {
-                dbcsNumBytes *= sizeof(WCHAR);
-            }
-
             TransBuffer++;
             BufPtr = ((PBYTE) BufPtr) + (dbcsNumBytes / sizeof(WCHAR));
             BufPtrNumBytes = a->NumBytes - 1;
