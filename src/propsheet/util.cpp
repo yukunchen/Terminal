@@ -11,7 +11,6 @@ BOOL InitializeConsoleState()
 {
     RegisterClasses(ghInstance);
     OEMCP = GetOEMCP();
-    g_fEastAsianSystem = IsEastAsianCP(OEMCP);
 
     return NT_SUCCESS(InitializeDbcsMisc());
 }

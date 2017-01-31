@@ -513,6 +513,9 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
 
     gpStateInfo = pStateInfo;
 
+    // Consider this an East Asian system if we're currently in a CJK charset
+    g_fEastAsianSystem = IS_ANY_DBCS_CHARSET( CodePageToCharSet( gpStateInfo->CodePage ) );
+    
     //
     // Initialize the state information.
     //
