@@ -10,6 +10,12 @@
 
 #include <winuserp.h> // for GWL_CONSOLE_BKCOLOR
 
+#define IS_ANY_DBCS_CODEPAGE( CodePage ) (((CodePage) == 932) ? TRUE :    \
+                                          ((CodePage) == 949) ? TRUE :    \
+                                          ((CodePage) == 1361) ? TRUE :    \
+                                          ((CodePage) == 950) ? TRUE :    \
+                                          ((CodePage) == 936) ? TRUE : FALSE )
+
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
@@ -300,14 +306,19 @@ HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDe
     // Because the API is affected by the raster/TT status of the actively selected font, we can't have
     // GDI choosing a TT font for us when we ask for Raster. We have to settle for forcing the current system
     // Terminal font to load even if it doesn't have the glyphs necessary such that the APIs continue to work fine.
-    if (0 == wcscmp(pfiFontDesired->GetFaceName(), L"Terminal"))
-    {
-        lf.lfCharSet = OEM_CHARSET;
-    }
-    else
-    {
-        lf.lfCharSet = pfiFontDesired->GetCharSet();
-    }
+
+    lf.lfCharSet = DEFAULT_CHARSET;
+    // const UINT uiOEMCP = GetOEMCP();
+    // if (!IS_ANY_DBCS_CODEPAGE(uiOEMCP) &&
+    //     uiOEMCP != pfiFontDesired->GetCodePage() &&
+    //     0 == wcscmp(pfiFontDesired->GetFaceName(), L"Terminal"))
+    // {
+    //     lf.lfCharSet = OEM_CHARSET;
+    // }
+    // else
+    // {
+    //     lf.lfCharSet = pfiFontDesired->GetCharSet();
+    // }
 
     lf.lfQuality = DRAFT_QUALITY;
 
@@ -355,15 +366,15 @@ HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDe
     // Now fill up the FontInfo we were passed with the full details of which font we actually chose
     {
         // Get the actual font face that we chose
-        WCHAR pwszFaceName[LF_FACESIZE];
-        RETURN_LAST_ERROR_IF_FALSE(GetTextFaceW(hdcTemp.get(), ARRAYSIZE(pwszFaceName), pwszFaceName));
+        WCHAR wszFaceName[LF_FACESIZE];
+        RETURN_LAST_ERROR_IF_FALSE(GetTextFaceW(hdcTemp.get(), ARRAYSIZE(wszFaceName), wszFaceName));
 
         if (coordFontRequested.X == 0)
         {
             coordFontRequested.X = (SHORT)s_ShrinkByDpi(coordFont.X, iDpi);
         }
 
-        pfiFont->SetFromEngine(pwszFaceName,
+        pfiFont->SetFromEngine(wszFaceName,
                                tm.tmPitchAndFamily,
                                tm.tmWeight,
                                coordFont,

@@ -723,8 +723,13 @@ DoFontEnum(
     if (ptszFace != nullptr) {
         StringCchCopy(LogFont.lfFaceName, LF_FACESIZE, ptszFace);
 
-        if (NumberOfFonts == 0 && g_fEastAsianSystem && 0 == lstrcmp(ptszFace, TERMINAL_FACENAME)) {
-            // We're performing our first enumeration and adding the raster font. Use OEM_CHARSET.
+        if (NumberOfFonts == 0 && // We've yet to enumerate fonts
+            g_fEastAsianSystem && // And we're currently using a CJK codepage
+            !IS_ANY_DBCS_CHARSET(CodePageToCharSet(OEMCP)) && // But the system codepage *isn't* CJK
+            0 == lstrcmp(ptszFace, TERMINAL_FACENAME)) {      // and we're looking at the raster font
+
+            // In this specific scenario, the raster font will only be enumerated if we ask for OEM_CHARSET rather than
+            // a CJK charset
             LogFont.lfCharSet = OEM_CHARSET;
         }
     }
