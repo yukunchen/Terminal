@@ -46,6 +46,7 @@ namespace Conhost.UIA.Tests.Elements
         public AppiumWebElement UIRoot { get; private set; }
 
         private IntPtr hStdOut = IntPtr.Zero;
+        private IntPtr hStdErr = IntPtr.Zero;
         private bool isDisposed = false;
 
         private TestContext context;
@@ -80,6 +81,10 @@ namespace Conhost.UIA.Tests.Elements
         public IntPtr GetStdOutHandle()
         {
             return hStdOut;
+        }
+        public IntPtr GetStdErrHandle()
+        {
+            return hStdErr;
         }
 
         public void SetWrapState(bool WrapOn)
@@ -214,6 +219,7 @@ namespace Conhost.UIA.Tests.Elements
             NativeMethods.Win32BoolHelper(WinCon.SetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Set screen buffer info with given data.");
         }
 
+
         protected virtual void Dispose(bool disposing)
         {
             if (!this.isDisposed)
@@ -337,6 +343,8 @@ namespace Conhost.UIA.Tests.Elements
             this.UIRoot = Session.FindElementByName(WindowTitleToFind);
             this.hStdOut = WinCon.GetStdHandle(WinCon.CONSOLE_STD_HANDLE.STD_OUTPUT_HANDLE);
             Verify.IsNotNull(this.hStdOut, "Ensure output handle is valid.");
+            this.hStdErr = WinCon.GetStdHandle(WinCon.CONSOLE_STD_HANDLE.STD_ERROR_HANDLE);
+            Verify.IsNotNull(this.hStdErr, "Ensure error handle is valid.");
 
             // Set the timeout to 15 seconds after we found the initial window.
             Session.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(15));

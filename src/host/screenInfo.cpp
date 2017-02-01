@@ -435,16 +435,9 @@ COORD SCREEN_INFORMATION::GetLargestWindowSizeInCharacters(_In_ COORD const coor
     return coordClientAreaSize;
 }
 
-COORD SCREEN_INFORMATION::GetScrollBarSizesInCharacters(_In_ COORD const coordFontSize) const
+COORD SCREEN_INFORMATION::GetScrollBarSizesInCharacters() const
 {
-    COORD coordFont = coordFontSize;
-
-    // If renderer has been set up, instead retrieve it's font size
-    if (g_pRender != nullptr)
-    {
-        coordFont = g_pRender->GetFontSize();
-    }
-
+    COORD coordFont = GetScreenFontSize();
     COORD coordBarSizes;
     coordBarSizes.X = (g_sVerticalScrollSize / coordFont.X) + ((g_sVerticalScrollSize % coordFont.X) != 0 ? 1 : 0);
     coordBarSizes.Y = (g_sHorizontalScrollSize / coordFont.Y) + ((g_sHorizontalScrollSize % coordFont.Y) != 0 ? 1 : 0);
@@ -473,18 +466,20 @@ SHORT SCREEN_INFORMATION::GetScreenWindowSizeY() const
 
 COORD SCREEN_INFORMATION::GetScreenFontSize() const
 {
+    // If we have no renderer, then we don't really need any sort of pixel math. so the "font size" for the scale factor
+    // (which is used almost everywhere around the code as * and / calls) should just be 1,1 so those operations will do
+    // effectively nothing.
+    COORD coordRet = {1,1};
     if (g_pRender != nullptr)
     {
-        return g_pRender->GetFontSize();
+        coordRet = g_pRender->GetFontSize();
     }
-    else
-    {
-        // If we have no renderer, then we don't really need any sort of pixel math.
-        // so the "font size" for the scale factor (which is used almost everywhere around the code
-        // as * and / calls) should just be 1,1 so those operations will do effectively nothing.
-        COORD const coordDefaultSize = { 1, 1 };
-        return coordDefaultSize;
-    }
+
+    // For sanity's sake, make sure not to leak 0 out as a possible value. These values are used in division operations.
+    coordRet.X = max(coordRet.X, 1);
+    coordRet.Y = max(coordRet.Y, 1);
+
+    return coordRet;
 }
 
 #pragma endregion

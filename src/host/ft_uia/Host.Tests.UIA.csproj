@@ -114,6 +114,7 @@
     <Compile Include="Elements\WinEventSystem.cs" />
     <Compile Include="ExperimentalTabTests.cs" />
     <Compile Include="Init.cs" />
+    <Compile Include="KeyPressTests.cs" />
     <Compile Include="MiscTests.cs" />
     <Compile Include="MouseWheelTests.cs" />
     <Compile Include="SelectionApiTests.cs" />

@@ -409,8 +409,13 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
 
         public enum WindowMessages : UInt32
         {
+            WM_KEYDOWN = 0x0100,
+            WM_KEYUP = 0x0101,
+            WM_CHAR = 0x0102,
             WM_MOUSEWHEEL = 0x020A,
             WM_MOUSEHWHEEL = 0x020E,
+            WM_USER = 0x0400,
+            CM_SET_KEY_STATE = WM_USER + 18
         }
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]

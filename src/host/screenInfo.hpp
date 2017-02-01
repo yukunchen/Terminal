@@ -64,7 +64,7 @@ public:
     COORD GetMinWindowSizeInCharacters(_In_ COORD const coordFontSize = { 1, 1 }) const;
     COORD GetMaxWindowSizeInCharacters(_In_ COORD const coordFontSize = { 1, 1 }) const;
     COORD GetLargestWindowSizeInCharacters(_In_ COORD const coordFontSize = { 1, 1 }) const;
-    COORD GetScrollBarSizesInCharacters(_In_ COORD const coordFontSize = { 1, 1 }) const;
+    COORD GetScrollBarSizesInCharacters() const;
 
     void ProcessResizeWindow(_In_ const RECT* const prcClientNew, _In_ const RECT* const prcClientOld);
     void SetViewportSize(_In_ const COORD* const pcoordSize);
