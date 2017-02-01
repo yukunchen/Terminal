@@ -48,6 +48,7 @@
     <ClCompile Include="..\window.cpp" />
     <ClCompile Include="..\windowdpiapi.cpp" />
     <ClCompile Include="..\windowproc.cpp" />
+    <ClCompile Include="..\windowUiaProvider.cpp" />
     <ClCompile Include="..\_output.cpp" />
     <ClCompile Include="..\_stream.cpp" />
   </ItemGroup>
@@ -97,6 +98,7 @@
     <ClInclude Include="..\utf8ToWideCharParser.hpp" />
     <ClInclude Include="..\window.hpp" />
     <ClInclude Include="..\windowdpiapi.hpp" />
+    <ClInclude Include="..\windowUiaProvider.hpp" />
     <ClInclude Include="..\_output.h" />
     <ClInclude Include="..\_stream.h" />
   </ItemGroup>

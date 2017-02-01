@@ -34,6 +34,8 @@ Abstract:
 #include <conmsgl2.h>
 #include <conmsgl3.h>
 
+#include <UIAutomation.h>
+
 #include <winuser.h>
 #include <winconp.h>
 #include <ntcon.h>

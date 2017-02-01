@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 #include "window.hpp"
+#include "windowUiaProvider.hpp"
 #include "windowdpiapi.hpp"
 #include "userprivapi.hpp"
 
@@ -48,6 +49,12 @@ Window::Window() :
 
 Window::~Window()
 {
+    if (nullptr != _pUiaProvider)
+    {
+        // This is a COM object, so call Release. It will clean up itself when the last ref is released.
+        _pUiaProvider->Release();
+    }
+
     if (g_pRender != nullptr)
     {
         delete g_pRender;
@@ -1413,4 +1420,20 @@ void Window::s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle, _In_ PCWSTR pwszO
 void Window::SetWindowHasMoved(_In_ BOOL const fHasMoved)
 {
     this->_fHasMoved = fHasMoved;
+}
+
+// Routine Description:
+// - Creates/retrieves a handle to the UI Automation provider COM interfaces
+// Arguments:
+// - <none>
+// Return Value:
+// - Pointer to UI Automation provider class/interfaces.
+IRawElementProviderSimple* Window::_GetUiaProvider()
+{
+    if (nullptr == _pUiaProvider)
+    {
+        _pUiaProvider = new WindowUiaProvider(this);
+    }
+
+    return _pUiaProvider;
 }

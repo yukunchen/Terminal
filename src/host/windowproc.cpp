@@ -157,6 +157,12 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         break;
     }
 
+    case WM_GETOBJECT:
+    {
+        Status = _HandleGetObject(hWnd, wParam, lParam);
+        break;
+    }
+
     case WM_SIZING:
     {
         // Signal that the user changed the window size, so we can return the value later for telemetry. By only
@@ -939,6 +945,19 @@ void Window::_HandleDrop(_In_ const WPARAM wParam) const
     }
 }
 
+LRESULT Window::_HandleGetObject(_In_ HWND const hwnd, _In_ WPARAM const wParam, _In_ LPARAM const lParam)
+{
+    LRESULT retVal = 0;
+
+    // If we are receiving a request from Microsoft UI Automation framework, then return the basic UIA COM interface.
+    if (static_cast<long>(lParam) == static_cast<long>(UiaRootObjectId))
+    {
+        retVal = UiaReturnRawElementProvider(hwnd, wParam, lParam, _GetUiaProvider());
+    }
+    // Otherwise, return 0. We don't implement MS Active Accessibility (the other framework that calls WM_GETOBJECT).
+
+    return retVal;
+}
 
 LRESULT Window::_HandleTimer(_In_ const WPARAM /*wParam*/)
 {

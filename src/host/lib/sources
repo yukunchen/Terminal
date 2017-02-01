@@ -43,6 +43,7 @@ SOURCES                         =   $(SOURCES)\
                                     ..\icon.cpp      \
                                     ..\window.cpp    \
                                     ..\windowproc.cpp \
+                                    ..\windowuiaprovider.cpp \
                                     ..\windowdpiapi.cpp \
                                     ..\userprivapi.cpp \
                                     ..\ntprivapi.cpp \
