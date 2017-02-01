@@ -85,7 +85,7 @@
 	10047286 - conemu triggers assert when attaching console
 	10071715 - Functions wrapped in NTSTATUS_FROM_WIN32 get called twice
 	9751066 - [Maximus5/ConEmu] WriteConsoleW used with ConEmu duplicates Chinese characters output (#945)
-	9979330 - [Watson Failure] caused by INTEGER_DIVIDE_BY_ZERO - this represents having GDI Engine updated to appropriately log/return/handle all sorts of GDI errors 
+	9979330 - [Watson Failure] caused by INTEGER_DIVIDE_BY_ZERO - this represents having GDI Engine updated to appropriately log/return/handle all sorts of GDI errors
 	9891756 - AllocConsole then FreeConsole from win32 application is not closing newly created console window
 	9811815 - ConEmu doesn't scroll properly when dir is run
 	9770949 - F9 popup doesn't restore original colors when leaving
@@ -113,3 +113,12 @@
 1/11/2017 - 10059280 - [CPG] - Boot_PostSetup | +544.5 KB regression in Metric: NormalPri-DiskRead | rs_onecore_dep.14986.1001.20161203-1700
 1/12/2017 - 10320237 - Restore input handling to RS1 behavior to restore Ctrl-break, pause/break, Ctrl-c issues
 1/12/2017 - 10438946 - Powershell PSReadline relies on setting invalid input flags to receive ^C for Ctrl+C
+1/18/2017 - 10449084 - Fix TestFontScenario test to utilize proper screen buffer when modifying font
+1/18/2017 - 10571624 - Fix SetConsoleCurrentFont API to ensure that window size/dimensions are refreshed when font changes.
+1/23/2017 - 10471073 - Mouse wheel no longer works in FAR Manager. Console not placing wheel/hwheel events in client input queue.
+1/26/2017 - 9765193 - Control AND Meta modifiers on keys work at the same time in VT Input mode.
+1/26/2017 - 9311951 - ReadConsoleInput returns the right number of events when holding control
+1/27/2017 - 10187614 - Adds test for alt-gr and VK_APPS.
+1/27/2017 - 10484556 - Adds tests for ctrl+c, ctrl+z, ctrl+h for bash and cmd.
+1/30/2017 - 9516800 - [Watson Failure] caused by INTEGER_DIVIDE_BY_ZERO_c0000094_ConhostV2.dll!_CalculateViewportSize
+2/1/2017 - 10187355 - DBCS tests + Read/Write APIs fixed to be fully compatible with v1 console
