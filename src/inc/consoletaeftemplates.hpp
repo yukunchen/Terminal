@@ -495,5 +495,51 @@ namespace WEX {
                     object.FontFamily == 0 && object.FontWeight == 0 && object.FaceName[0] == L'\0';
             }
         };
+
+        template<>
+        class VerifyOutputTraits < CHAR_INFO >
+        {
+        public:
+            static WEX::Common::NoThrowString ToString(const CHAR_INFO& ci)
+            {
+                // 0x2400 is the Unicode symbol for a printable 'NUL' inscribed in a 1 column block. It's for communicating NUL without printing 0x0.
+                wchar_t const wch = ci.Char.UnicodeChar != L'\0' ? ci.Char.UnicodeChar : 0x2400;
+
+                // 0x20 is a standard space character.
+                char const ch = ci.Char.AsciiChar != '\0' ? ci.Char.AsciiChar : 0x20;
+
+                return WEX::Common::NoThrowString().Format(L"Unicode Char: %lc (0x%x),  Attributes: 0x%x,  [Ascii Char: %c (0x%hhx)]", 
+                                                           wch,
+                                                           ci.Char.UnicodeChar,
+                                                           ci.Attributes,
+                                                           ch,
+                                                           ci.Char.AsciiChar);
+            }
+        };
+
+        template<>
+        class VerifyCompareTraits < CHAR_INFO, CHAR_INFO >
+        {
+        public:
+            static bool AreEqual(const CHAR_INFO& expected, const CHAR_INFO& actual)
+            {
+                return expected.Attributes == actual.Attributes &&
+                    expected.Char.UnicodeChar == actual.Char.UnicodeChar;
+            }
+
+            static bool AreSame(const CHAR_INFO& expected, const CHAR_INFO& actual)
+            {
+                return &expected == &actual;
+            }
+
+            static bool IsLessThan(const CHAR_INFO&, const CHAR_INFO&) = delete;
+
+            static bool IsGreaterThan(const CHAR_INFO&, const CHAR_INFO&) = delete;
+
+            static bool IsNull(const CHAR_INFO& object)
+            {
+                return object.Attributes == 0 && object.Char.UnicodeChar == 0;
+            }
+        };
     }
 }
