@@ -228,7 +228,7 @@ class DbcsTests
     TEST_METHOD(TestMultibyteInputRetrieval);
 
     BEGIN_TEST_METHOD(TestDbcsWriteRead)
-        TEST_METHOD_PROPERTY(L"Data:uiCodePage", L"{932}")
+        TEST_METHOD_PROPERTY(L"Data:uiCodePage", L"{437, 932}")
         TEST_METHOD_PROPERTY(L"Data:fUseTrueTypeFont", L"{true, false}")
         TEST_METHOD_PROPERTY(L"Data:WriteMode", L"{0, 1, 2, 3}")
         TEST_METHOD_PROPERTY(L"Data:fWriteInUnicode", L"{true, false}")
