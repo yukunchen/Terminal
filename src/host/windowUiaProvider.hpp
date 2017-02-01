@@ -16,7 +16,9 @@ Author(s):
 // Forward declare, prevent circular ref.
 class Window;
 
-class WindowUiaProvider : public IRawElementProviderSimple
+class WindowUiaProvider : public IRawElementProviderSimple,
+                          public IRawElementProviderFragment,
+                          public IRawElementProviderFragmentRoot
 {
 public:
     WindowUiaProvider(_In_ Window* const pWindow);
@@ -32,7 +34,22 @@ public:
     IFACEMETHODIMP GetPropertyValue(PROPERTYID idProp, VARIANT * pRetVal);
     IFACEMETHODIMP get_HostRawElementProvider(IRawElementProviderSimple ** pRetVal);
 
+    // IRawElementProviderFragment methods
+    HRESULT STDMETHODCALLTYPE Navigate(NavigateDirection direction, _Outptr_result_maybenull_ IRawElementProviderFragment ** retVal);
+    HRESULT STDMETHODCALLTYPE GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY ** retVal);
+    HRESULT STDMETHODCALLTYPE get_BoundingRectangle(_Out_ UiaRect * retVal);
+    HRESULT STDMETHODCALLTYPE GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY ** retVal);
+    HRESULT STDMETHODCALLTYPE SetFocus();
+    HRESULT STDMETHODCALLTYPE get_FragmentRoot(_Outptr_result_maybenull_ IRawElementProviderFragmentRoot * * retVal);
+
+    // IRawElementProviderFragmenRoot methods
+    HRESULT STDMETHODCALLTYPE ElementProviderFromPoint(double x, double y, _Outptr_result_maybenull_ IRawElementProviderFragment ** retVal);
+    HRESULT STDMETHODCALLTYPE GetFocus(_Outptr_result_maybenull_ IRawElementProviderFragment ** retVal);
+
 private:
+
+    HWND _GetHwnd() const;
+    HRESULT _EnsureValidHwnd() const;
 
     // Ref counter for COM object
     ULONG _refCount;

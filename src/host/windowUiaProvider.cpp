@@ -42,6 +42,14 @@ IFACEMETHODIMP WindowUiaProvider::QueryInterface(REFIID riid, void** ppInterface
     {
         *ppInterface = static_cast<IRawElementProviderSimple*>(this);
     }
+    else if (riid == __uuidof(IRawElementProviderFragment))
+    {
+        *ppInterface = static_cast<IRawElementProviderFragment*>(this);
+    }
+    else if (riid == __uuidof(IRawElementProviderFragmentRoot))
+    {
+        *ppInterface = static_cast<IRawElementProviderFragmentRoot*>(this);
+    }
     else
     {
         *ppInterface = NULL;
@@ -61,6 +69,8 @@ IFACEMETHODIMP WindowUiaProvider::QueryInterface(REFIID riid, void** ppInterface
 // Gets UI Automation provider options.
 IFACEMETHODIMP WindowUiaProvider::get_ProviderOptions(ProviderOptions* pRetVal)
 {
+    RETURN_IF_FAILED(_EnsureValidHwnd());
+
     *pRetVal = ProviderOptions_ServerSideProvider;
     return S_OK;
 }
@@ -69,13 +79,12 @@ IFACEMETHODIMP WindowUiaProvider::get_ProviderOptions(ProviderOptions* pRetVal)
 // Gets the object that supports ISelectionPattern.
 IFACEMETHODIMP WindowUiaProvider::GetPatternProvider(PATTERNID patternId, IUnknown** pRetVal)
 {
+    UNREFERENCED_PARAMETER(patternId);
+    RETURN_IF_FAILED(_EnsureValidHwnd());
+
+    // The window itself won't implement patterns. We'll return children that implement patterns.
+
     *pRetVal = NULL;
-    patternId;
-    /*if (patternId == UIA_SelectionPatternId)
-    {
-        *pRetVal = static_cast<IRawElementProviderSimple*>(this);
-        AddRef();
-    }*/
     return S_OK;
 }
 
@@ -83,6 +92,8 @@ IFACEMETHODIMP WindowUiaProvider::GetPatternProvider(PATTERNID patternId, IUnkno
 // Gets custom properties.
 IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(PROPERTYID propertyId, VARIANT* pRetVal)
 {
+    RETURN_IF_FAILED(_EnsureValidHwnd());
+
     // Although it is hard-coded for the purposes of this sample, localizable 
     // text should be stored in, and loaded from, the resource file (.rc). 
     if (propertyId == UIA_LocalizedControlTypePropertyId)
@@ -93,7 +104,7 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(PROPERTYID propertyId, VARIAN
     else if (propertyId == UIA_ControlTypePropertyId)
     {
         pRetVal->vt = VT_I4;
-        pRetVal->lVal = UIA_DocumentControlTypeId;
+        pRetVal->lVal = UIA_PaneControlTypeId;
     }
     else if (propertyId == UIA_IsKeyboardFocusablePropertyId)
     {
@@ -116,12 +127,27 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(PROPERTYID propertyId, VARIAN
 // supplies many properties.
 IFACEMETHODIMP WindowUiaProvider::get_HostRawElementProvider(IRawElementProviderSimple** pRetVal)
 {
-    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, _pWindow);
-
-    HWND const hwnd = _pWindow->GetWindowHandle();
-
-    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, hwnd);
+    HWND const hwnd = _GetHwnd();
+    RETURN_HR_IF_NULL(UIA_E_ELEMENTNOTAVAILABLE, hwnd);
 
     return UiaHostProviderFromHwnd(hwnd, pRetVal);
 }
 #pragma endregion
+
+HWND WindowUiaProvider::_GetHwnd() const
+{
+    HWND hwnd = nullptr;
+
+    if (nullptr != _pWindow)
+    {
+        hwnd = _pWindow->GetWindowHandle();
+    }
+
+    return hwnd;
+}
+
+HRESULT WindowUiaProvider::_EnsureValidHwnd() const
+{
+    RETURN_HR_IF_FALSE(UIA_E_ELEMENTNOTAVAILABLE, !IsWindow(_GetHwnd()));
+    return S_OK;
+}
