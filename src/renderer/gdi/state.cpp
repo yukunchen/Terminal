@@ -297,7 +297,7 @@ HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDe
     lf.lfWeight = pfiFontDesired->GetWeight();
     lf.lfQuality = DRAFT_QUALITY;
 
-    // If we're searching for Terminal, our supported Raster Font, then we must use OEM_CHARSET. If the System's
+    // If we're searching for Terminal, our supported Raster Font, then we must use DEFAULT_CHARSET. If the System's
     // Non-Unicode Setting is set to English (United States) which is 437 and we try to enumerate Terminal with the
     // console codepage as 932, that will turn into SHIFTJIS_CHARSET. Despite C:\windows\fonts\vga932.fon always being
     // present, GDI will refuse to load the Terminal font that doesn't correspond to the current System Non-Unicode
