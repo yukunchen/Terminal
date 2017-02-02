@@ -32,6 +32,7 @@ SOURCES                         =   $(SOURCES)\
                                     ..\convarea.cpp  \
                                     ..\textBuffer.cpp \
                                     ..\screenInfo.cpp \
+                                    ..\screenInfoUiaProvider.cpp \
                                     ..\newdelete.cpp \
                                     ..\_output.cpp   \
                                     ..\_stream.cpp   \

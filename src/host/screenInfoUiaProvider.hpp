@@ -2,10 +2,10 @@
 Copyright (c) Microsoft Corporation
 
 Module Name:
-- windowUiaProvider.hpp
+- screenInfoUiaProvider.hpp
 
 Abstract:
-- This module provides UI Automation access to the console window to support both automation tests and accessibility (screen reading) applications.
+- This module provides UI Automation access to the screen buffer to support both automation tests and accessibility (screen reading) applications.
 - Based on examples, sample code, and guidance from https://msdn.microsoft.com/en-us/library/windows/desktop/ee671596(v=vs.85).aspx
 
 Author(s):
@@ -14,16 +14,15 @@ Author(s):
 #pragma once
 
 // Forward declare, prevent circular ref.
+class SCREEN_INFORMATION;
 class Window;
-class ScreenInfoUiaProvider;
 
-class WindowUiaProvider : public IRawElementProviderSimple,
-                          public IRawElementProviderFragment,
-                          public IRawElementProviderFragmentRoot
+class ScreenInfoUiaProvider : public IRawElementProviderSimple,
+                              public IRawElementProviderFragment
 {
 public:
-    WindowUiaProvider(_In_ Window* const pWindow);
-    virtual ~WindowUiaProvider();
+    ScreenInfoUiaProvider(_In_ Window* const pParent, _In_ SCREEN_INFORMATION* const pScreenInfo);
+    virtual ~ScreenInfoUiaProvider();
 
     // IUnknown methods
     IFACEMETHODIMP_(ULONG) AddRef();
@@ -44,19 +43,11 @@ public:
     HRESULT STDMETHODCALLTYPE SetFocus();
     HRESULT STDMETHODCALLTYPE get_FragmentRoot(_Outptr_result_maybenull_ IRawElementProviderFragmentRoot * * retVal);
 
-    // IRawElementProviderFragmentRoot methods
-    HRESULT STDMETHODCALLTYPE ElementProviderFromPoint(double x, double y, _Outptr_result_maybenull_ IRawElementProviderFragment ** retVal);
-    HRESULT STDMETHODCALLTYPE GetFocus(_Outptr_result_maybenull_ IRawElementProviderFragment ** retVal);
-
 private:
 
     // Ref counter for COM object
     ULONG _refCount;
 
+    SCREEN_INFORMATION* const _pScreenInfo;
     Window* const _pWindow;
-
-    HWND _GetWindowHandle() const;
-    HRESULT _EnsureValidHwnd() const;
-
-    ScreenInfoUiaProvider* _GetScreenInfoProvider() const;
 };

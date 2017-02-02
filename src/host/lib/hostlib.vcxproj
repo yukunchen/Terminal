@@ -32,6 +32,7 @@
     <ClCompile Include="..\renderData.cpp" />
     <ClCompile Include="..\renderFontDefaults.cpp" />
     <ClCompile Include="..\screenInfo.cpp" />
+    <ClCompile Include="..\screenInfoUiaProvider.cpp" />
     <ClCompile Include="..\scrolling.cpp" />
     <ClCompile Include="..\selection.cpp" />
     <ClCompile Include="..\selectionInput.cpp" />
@@ -84,6 +85,7 @@
     <ClInclude Include="..\renderFontDefaults.hpp" />
     <ClInclude Include="..\resource.h" />
     <ClInclude Include="..\screenInfo.hpp" />
+    <ClInclude Include="..\screenInfoUiaProvider.hpp" />
     <ClInclude Include="..\scrolling.hpp" />
     <ClInclude Include="..\selection.hpp" />
     <ClInclude Include="..\server.h" />
