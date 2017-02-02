@@ -32,8 +32,12 @@ class InputTests
     TEST_METHOD(TestReadConsoleInvalid);
     TEST_METHOD(TestWriteConsoleInvalid);
 
-    TEST_METHOD(TestMouseWheelReadConsoleInput);
-    TEST_METHOD(TestMouseHorizWheelReadConsoleInput);
+    TEST_METHOD(TestMouseWheelReadConsoleMouseInput);
+    TEST_METHOD(TestMouseHorizWheelReadConsoleMouseInput);
+    TEST_METHOD(TestMouseWheelReadConsoleNoMouseInput);
+    TEST_METHOD(TestMouseHorizWheelReadConsoleNoMouseInput);
+    TEST_METHOD(TestMouseWheelReadConsoleInputQuickEdit);
+    TEST_METHOD(TestMouseHorizWheelReadConsoleInputQuickEdit);
 };
 
 void VerifyNumberOfInputRecords(_In_ const HANDLE hConsoleInput, _In_ DWORD nInputs)
@@ -264,12 +268,22 @@ void InputTests::TestWriteConsoleInvalid()
     VERIFY_ARE_EQUAL(nWrite, (DWORD)0);
 }
 
-void TestMouseWheelReadConsoleInputHelper(_In_ UINT const msg, _In_ DWORD const dwEventFlagsExpected)
+void TestMouseWheelReadConsoleInputHelper(_In_ UINT const msg, _In_ DWORD const dwEventFlagsExpected, _In_ DWORD const dwConsoleMode)
 {
     HWND const hwnd = GetConsoleWindow();
     VERIFY_IS_NOT_NULL(hwnd, L"Get console window handle to inject wheel messages.");
 
     HANDLE const hConsoleInput = GetStdInputHandle();
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hConsoleInput, dwConsoleMode), L"Apply the requested console mode");
+
+    // We don't generate mouse console event in QuickEditMode or if MouseInput is not enabled
+    DWORD dwExpectedEvents = 1;
+    if (dwConsoleMode & ENABLE_QUICK_EDIT_MODE || !(dwConsoleMode & ENABLE_MOUSE_INPUT))
+    {
+        Log::Comment(L"QuickEditMode is set or MouseInput is not set, not expecting events");
+        dwExpectedEvents = 0;
+    }
+
     VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hConsoleInput), L"Flush input queue to make sure no one else is in the way.");
 
     // WM_MOUSEWHEEL params
@@ -292,27 +306,57 @@ void TestMouseWheelReadConsoleInputHelper(_In_ UINT const msg, _In_ DWORD const 
 
     DWORD dwAvailable = 0;
     VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(hConsoleInput, &dwAvailable), L"Retrieve number of events in queue.");
-    VERIFY_ARE_EQUAL(1u, dwAvailable, L"We expect only the one event that our scroll should have generated.");
+    VERIFY_ARE_EQUAL(dwExpectedEvents, dwAvailable,
+        NoThrowString().Format(L"We expected %i event from our scroll message.", dwExpectedEvents));
 
     INPUT_RECORD ir;
     DWORD dwRead = 0;
-    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputW(hConsoleInput, &ir, 1, &dwRead), L"Read the event out.");
-    VERIFY_ARE_EQUAL(1, dwRead);
+    if (dwExpectedEvents == 1)
+    {
+        VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputW(hConsoleInput, &ir, 1, &dwRead), L"Read the event out.");
+        VERIFY_ARE_EQUAL(1, dwRead);
 
-    Log::Comment(L"Verify the event is what we expected. We only verify the fields relevant to this test.");
-    VERIFY_ARE_EQUAL(MOUSE_EVENT, ir.EventType);
-    VERIFY_ARE_EQUAL((DWORD)wParam, ir.Event.MouseEvent.dwButtonState); // hard cast OK. only using lower 32-bits (see above)
-                                                                        // Don't care about ctrl key state. Can be messed with by caps lock/numlock state. Not checking this.
-    VERIFY_ARE_EQUAL(dwEventFlagsExpected, ir.Event.MouseEvent.dwEventFlags);
-    // Don't care about mouse position for ensuring scroll message went through.
+        Log::Comment(L"Verify the event is what we expected. We only verify the fields relevant to this test.");
+        VERIFY_ARE_EQUAL(MOUSE_EVENT, ir.EventType);
+        VERIFY_ARE_EQUAL((DWORD)wParam, ir.Event.MouseEvent.dwButtonState); // hard cast OK. only using lower 32-bits (see above)
+                                                                            // Don't care about ctrl key state. Can be messed with by caps lock/numlock state. Not checking this.
+        VERIFY_ARE_EQUAL(dwEventFlagsExpected, ir.Event.MouseEvent.dwEventFlags);
+        // Don't care about mouse position for ensuring scroll message went through.
+    }
 }
 
-void InputTests::TestMouseWheelReadConsoleInput()
+void InputTests::TestMouseWheelReadConsoleMouseInput()
 {
-    TestMouseWheelReadConsoleInputHelper(WM_MOUSEWHEEL, MOUSE_WHEELED);
+    const DWORD dwInputMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS;
+    TestMouseWheelReadConsoleInputHelper(WM_MOUSEWHEEL, MOUSE_WHEELED, dwInputMode);
 }
 
-void InputTests::TestMouseHorizWheelReadConsoleInput()
+void InputTests::TestMouseHorizWheelReadConsoleMouseInput()
 {
-    TestMouseWheelReadConsoleInputHelper(WM_MOUSEHWHEEL, MOUSE_HWHEELED);
+    const DWORD dwInputMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS;
+    TestMouseWheelReadConsoleInputHelper(WM_MOUSEHWHEEL, MOUSE_HWHEELED, dwInputMode);
+}
+
+void InputTests::TestMouseWheelReadConsoleNoMouseInput()
+{
+    const DWORD dwInputMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_EXTENDED_FLAGS;
+    TestMouseWheelReadConsoleInputHelper(WM_MOUSEWHEEL, MOUSE_WHEELED, dwInputMode);
+}
+
+void InputTests::TestMouseHorizWheelReadConsoleNoMouseInput()
+{
+    const DWORD dwInputMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_EXTENDED_FLAGS;
+    TestMouseWheelReadConsoleInputHelper(WM_MOUSEHWHEEL, MOUSE_HWHEELED, dwInputMode);
+}
+
+void InputTests::TestMouseWheelReadConsoleInputQuickEdit()
+{
+    const DWORD dwInputMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS | ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE;
+    TestMouseWheelReadConsoleInputHelper(WM_MOUSEWHEEL, MOUSE_WHEELED, dwInputMode);
+}
+
+void InputTests::TestMouseHorizWheelReadConsoleInputQuickEdit()
+{
+    const DWORD dwInputMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS | ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE;
+    TestMouseWheelReadConsoleInputHelper(WM_MOUSEHWHEEL, MOUSE_HWHEELED, dwInputMode);
 }

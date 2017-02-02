@@ -122,3 +122,4 @@
 1/27/2017 - 10484556 - Adds tests for ctrl+c, ctrl+z, ctrl+h for bash and cmd.
 1/30/2017 - 9516800 - [Watson Failure] caused by INTEGER_DIVIDE_BY_ZERO_c0000094_ConhostV2.dll!_CalculateViewportSize
 2/1/2017 - 10187355 - DBCS tests + Read/Write APIs fixed to be fully compatible with v1 console
+2/2/2017 - 10471073 - Mouse wheel no longer works in FAR Manager. Restore messages in the input queue depending on the mode
