@@ -949,9 +949,15 @@ LRESULT Window::_HandleGetObject(_In_ HWND const hwnd, _In_ WPARAM const wParam,
 {
     LRESULT retVal = 0;
 
-    // If we are receiving a request from Microsoft UI Automation framework, then return the basic UIA COM interface.
+    hwnd;
+    wParam;
+    lParam;
+
+    //// If we are receiving a request from Microsoft UI Automation framework, then return the basic UIA COM interface.
     if (static_cast<long>(lParam) == static_cast<long>(UiaRootObjectId))
     {
+
+        
         retVal = UiaReturnRawElementProvider(hwnd, wParam, lParam, _GetUiaProvider());
     }
     // Otherwise, return 0. We don't implement MS Active Accessibility (the other framework that calls WM_GETOBJECT).

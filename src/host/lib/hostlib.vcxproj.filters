@@ -159,6 +159,9 @@
     <ClCompile Include="..\screenInfoUiaProvider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\windowUiaTarget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h">
@@ -306,6 +309,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\screenInfoUiaProvider.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\windowUiaTarget.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

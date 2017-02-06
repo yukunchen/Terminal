@@ -78,7 +78,8 @@ IFACEMETHODIMP WindowUiaProvider::get_ProviderOptions(ProviderOptions* pRetVal)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    *pRetVal = ProviderOptions_ServerSideProvider | ProviderOptions_UseComThreading;
+    /**pRetVal = ProviderOptions_ServerSideProvider | ProviderOptions_UseComThreading;*/
+    *pRetVal = ProviderOptions_ServerSideProvider;
     return S_OK;
 }
 
@@ -149,19 +150,19 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(PROPERTYID propertyId, VARIAN
 // supplies many properties.
 IFACEMETHODIMP WindowUiaProvider::get_HostRawElementProvider(IRawElementProviderSimple** pRetVal)
 {
-    RETURN_IF_FAILED(_EnsureValidHwnd());
+    /*RETURN_IF_FAILED(_EnsureValidHwnd());
 
     *pRetVal = this;
     AddRef();
-    return S_OK;
+    return S_OK;*/
 
-    //RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, _pWindow);
+    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, _pWindow);
 
-    //HWND const hwnd = _pWindow->GetWindowHandle();
+    HWND const hwnd = _pWindow->GetWindowHandle();
 
-    //RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, hwnd);
+    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, hwnd);
 
-    //return UiaHostProviderFromHwnd(hwnd, pRetVal);
+    return UiaHostProviderFromHwnd(hwnd, pRetVal);
 }
 #pragma endregion
 

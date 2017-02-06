@@ -7,6 +7,7 @@
 #include "precomp.h"
 #include "window.hpp"
 #include "windowUiaProvider.hpp"
+#include "windowUiaTarget.hpp"
 #include "windowdpiapi.hpp"
 #include "userprivapi.hpp"
 
@@ -293,6 +294,8 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMA
                 g_ciConsoleInformation.hWnd = hWnd; // temporarily save into console info
 
                 status = NTSTATUS_FROM_HRESULT(pGdiEngine->SetHwnd(hWnd));
+
+                /*_pUiaTarget = new WindowUiaTarget(hWnd, this);*/
 
                 if (NT_SUCCESS(status))
                 {
