@@ -10,12 +10,6 @@
 
 #include <winuserp.h> // for GWL_CONSOLE_BKCOLOR
 
-#define IS_ANY_DBCS_CODEPAGE( CodePage ) (((CodePage) == 932) ? TRUE :    \
-                                          ((CodePage) == 949) ? TRUE :    \
-                                          ((CodePage) == 1361) ? TRUE :    \
-                                          ((CodePage) == 950) ? TRUE :    \
-                                          ((CodePage) == 936) ? TRUE : FALSE )
-
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
