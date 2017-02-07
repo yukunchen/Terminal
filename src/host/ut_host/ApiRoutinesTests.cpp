@@ -191,9 +191,7 @@ class ApiRoutinesTests
         Log::Comment(L"Input mode should be set anyway despite FAILED return code.");
         VerifySetConsoleInputModeImpl(E_INVALIDARG, 0x1E4);
     }
-
-
-
+    
     TEST_METHOD(ApiGetConsoleTitleA)
     {
         g_ciConsoleInformation.Title = L"Test window title.";
