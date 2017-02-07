@@ -191,4 +191,100 @@ class ApiRoutinesTests
         Log::Comment(L"Input mode should be set anyway despite FAILED return code.");
         VerifySetConsoleInputModeImpl(E_INVALIDARG, 0x1E4);
     }
+
+
+
+    TEST_METHOD(ApiGetConsoleTitleA)
+    {
+        g_ciConsoleInformation.Title = L"Test window title.";
+
+        int const iBytesNeeded = WideCharToMultiByte(g_ciConsoleInformation.OutputCP,
+                                                     0,
+                                                     g_ciConsoleInformation.Title,
+                                                     (int)wcslen(g_ciConsoleInformation.Title),
+                                                     nullptr,
+                                                     0,
+                                                     nullptr,
+                                                     nullptr);
+
+        wistd::unique_ptr<char[]> pszExpected = wil::make_unique_nothrow<char[]>(iBytesNeeded);
+        VERIFY_IS_NOT_NULL(pszExpected);
+
+        VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(g_ciConsoleInformation.OutputCP,
+                                                        0,
+                                                        g_ciConsoleInformation.Title,
+                                                        (int)wcslen(g_ciConsoleInformation.Title),
+                                                        pszExpected.get(),
+                                                        iBytesNeeded,
+                                                        nullptr,
+                                                        nullptr));
+
+        char pszTitle[MAX_PATH]; // most applications use MAX_PATH
+        size_t cchWritten = 0;
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleAImpl(pszTitle, ARRAYSIZE(pszTitle), &cchWritten));
+
+        VERIFY_ARE_NOT_EQUAL(0, cchWritten);
+        VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.Title) + 1, cchWritten);
+        VERIFY_IS_TRUE(0 == strcmp(pszExpected.get(), pszTitle));
+    }
+
+    TEST_METHOD(ApiGetConsoleTitleW)
+    {
+        g_ciConsoleInformation.Title = L"Test window title.";
+
+        wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
+        size_t cchWritten = 0;
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten));
+
+        VERIFY_ARE_NOT_EQUAL(0, cchWritten);
+        VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.Title) + 1, cchWritten);
+        VERIFY_IS_TRUE(0 == wcscmp(g_ciConsoleInformation.Title, pwszTitle));
+    }
+
+    TEST_METHOD(ApiGetConsoleOriginalTitleA)
+    {
+        g_ciConsoleInformation.OriginalTitle = L"Test original window title.";
+
+        int const iBytesNeeded = WideCharToMultiByte(g_ciConsoleInformation.OutputCP, 
+                                                     0, 
+                                                     g_ciConsoleInformation.OriginalTitle, 
+                                                     (int)wcslen(g_ciConsoleInformation.OriginalTitle), 
+                                                     nullptr, 
+                                                     0, 
+                                                     nullptr, 
+                                                     nullptr);
+
+        wistd::unique_ptr<char[]> pszExpected = wil::make_unique_nothrow<char[]>(iBytesNeeded);
+        VERIFY_IS_NOT_NULL(pszExpected);
+
+        VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(g_ciConsoleInformation.OutputCP,
+                                                        0,
+                                                        g_ciConsoleInformation.OriginalTitle,
+                                                        (int)wcslen(g_ciConsoleInformation.OriginalTitle),
+                                                        pszExpected.get(),
+                                                        iBytesNeeded,
+                                                        nullptr,
+                                                        nullptr));
+
+        char pszTitle[MAX_PATH]; // most applications use MAX_PATH
+        size_t cchWritten = 0;
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleAImpl(pszTitle, ARRAYSIZE(pszTitle), &cchWritten));
+
+        VERIFY_ARE_NOT_EQUAL(0, cchWritten);
+        VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.OriginalTitle) + 1, cchWritten);
+        VERIFY_IS_TRUE(0 == strcmp(pszExpected.get(), pszTitle));
+    }
+
+    TEST_METHOD(ApiGetConsoleOriginalTitleW)
+    {
+        g_ciConsoleInformation.OriginalTitle = L"Test original window title.";
+
+        wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
+        size_t cchWritten = 0;
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten));
+
+        VERIFY_ARE_NOT_EQUAL(0, cchWritten);
+        VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.OriginalTitle) + 1, cchWritten);
+        VERIFY_IS_TRUE(0 == wcscmp(g_ciConsoleInformation.OriginalTitle, pwszTitle));
+    }
 };
