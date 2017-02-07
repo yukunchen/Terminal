@@ -441,8 +441,8 @@ HRESULT ApiDispatchers::ServerGetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m,
         // We must return the character length of the string in a->TitleLength
         RETURN_IF_FAILED(SizeTToULong(cchWritten, &a->TitleLength));
 
-        // Number of bytes written + the trailing null.
-        m->SetReplyInformation((cchWritten + 1) * sizeof(char));
+        // Number of bytes written. The title retrival routine enforces the trailing null in the count of written already.
+        m->SetReplyInformation(cchWritten * sizeof(char));
     }
 
     return S_OK;
