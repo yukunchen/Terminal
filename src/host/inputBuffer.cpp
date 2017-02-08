@@ -93,21 +93,20 @@ void FreeInputBuffer(_In_ INPUT_INFORMATION* pInputInfo)
 // Routine Description:
 // - This routine returns the number of events in the input buffer.
 // Arguments:
-// - pInputInfo - Pointer to input buffer information structure.
 // - pcEvents - On output contains the number of events.
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-void GetNumberOfReadyEvents(_In_ const INPUT_INFORMATION * const pInputInfo, _Out_ ULONG * const pcEvents)
+void INPUT_INFORMATION::GetNumberOfReadyEvents(_Out_ ULONG * const pcEvents)
 {
-    if (pInputInfo->In < pInputInfo->Out)
+    if (this->In < this->Out)
     {
-        *pcEvents = (ULONG)(pInputInfo->Last - pInputInfo->Out);
-        *pcEvents += (ULONG)(pInputInfo->In - pInputInfo->First);
+        *pcEvents = (ULONG)(this->Last - this->Out);
+        *pcEvents += (ULONG)(this->In - this->First);
     }
     else
     {
-        *pcEvents = (ULONG)(pInputInfo->In - pInputInfo->Out);
+        *pcEvents = (ULONG)(this->In - this->Out);
     }
 
     *pcEvents /= sizeof(INPUT_RECORD);
@@ -891,7 +890,7 @@ NTSTATUS INPUT_INFORMATION::PrependInputBuffer(_In_ PINPUT_RECORD pInputRecord, 
     }
 
     ULONG NumExistingEvents;
-    GetNumberOfReadyEvents(this, &NumExistingEvents);
+    this->GetNumberOfReadyEvents(&NumExistingEvents);
 
     PINPUT_RECORD pExistingEvents;
     ULONG EventsRead = 0;

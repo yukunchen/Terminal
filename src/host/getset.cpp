@@ -67,7 +67,7 @@ HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(_In_ INPUT_INFORMATION* c
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     // TODO: MSFT: 9574827 - Should this have a result code? It's void.
-    GetNumberOfReadyEvents(pContext, pEvents);
+    pContext->GetNumberOfReadyEvents(pEvents);
 
     return S_OK;
 }
@@ -125,7 +125,7 @@ HRESULT ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* c
     {
         pSelection->GetPublicSelectionFlags(&pConsoleSelectionInfo->dwFlags);
 
-        SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS); 
+        SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS);
 
         pSelection->GetSelectionAnchor(&pConsoleSelectionInfo->dwSelectionAnchor);
         pSelection->GetSelectionRectangle(&pConsoleSelectionInfo->srSelection);
@@ -272,7 +272,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pCont
     //       A prime example of this is that PSReadline module in Powershell will set the invalid mode 0x1e4
     //       which includes 0x4 for ECHO_INPUT but turns off 0x2 for LINE_INPUT. This is invalid, but PSReadline
     //       relies on it to properly receive the ^C printout and make a new line when the user presses Ctrl+C.
-    { 
+    {
         // Flags we don't understand are invalid.
         RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~(INPUT_MODES | PRIVATE_MODES)));
 
@@ -420,7 +420,7 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
     // Despite the fact that this API takes in a srWindow for the viewport, it traditionally actually doesn't set
     //  anything using that member - for moving the viewport, you need SetConsoleWindowInfo
     //  (see https://msdn.microsoft.com/en-us/library/windows/desktop/ms686125(v=vs.85).aspx and DoSrvSetConsoleWindowInfo)
-    // Note that it also doesn't set cursor position. 
+    // Note that it also doesn't set cursor position.
 
     return S_OK;
 }
