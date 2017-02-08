@@ -720,7 +720,7 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
         TmpInputEvent++;
     }
 
-    WriteInputBuffer(g_ciConsoleInformation.pInputBuffer, InputEvent, (DWORD) (cchLen - 1));
+    g_ciConsoleInformation.pInputBuffer->WriteInputBuffer(InputEvent, (DWORD) (cchLen - 1));
 
     fResult = true;
 

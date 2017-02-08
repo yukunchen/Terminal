@@ -952,13 +952,12 @@ NTSTATUS PrependInputBuffer(_In_ INPUT_INFORMATION* pInputInfo, _In_ PINPUT_RECO
 // Routine Description:
 // - This routine writes to the input buffer.
 // Arguments:
-// - pInputInfo - Pointer to input buffer information structure.
 // - pInputRecord - Buffer to write from.
 // - cInputRecords - On input, number of events to write.
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-DWORD WriteInputBuffer(_In_ INPUT_INFORMATION* pInputInfo, _In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords)
+DWORD INPUT_INFORMATION::WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords)
 {
     cInputRecords = PreprocessInput(pInputRecord, cInputRecords);
     if (cInputRecords == 0)
@@ -969,15 +968,15 @@ DWORD WriteInputBuffer(_In_ INPUT_INFORMATION* pInputInfo, _In_ PINPUT_RECORD pI
     // Write to buffer.
     ULONG EventsWritten;
     BOOL SetWaitEvent;
-    WriteBuffer(pInputInfo, pInputRecord, cInputRecords, &EventsWritten, &SetWaitEvent);
+    WriteBuffer(this, pInputRecord, cInputRecords, &EventsWritten, &SetWaitEvent);
 
     if (SetWaitEvent)
     {
-        SetEvent(pInputInfo->InputWaitEvent);
+        SetEvent(this->InputWaitEvent);
     }
 
     // Alert any writers waiting for space.
-    WakeUpReadersWaitingForData(pInputInfo);
+    WakeUpReadersWaitingForData(this);
 
     return EventsWritten;
 }

@@ -666,7 +666,7 @@ void Clipboard::s_DoStringPaste(_In_reads_(cchData) PCWCHAR pwchData, _In_ const
             CurChar++;
         }
 
-        EventsWritten = WriteInputBuffer(g_ciConsoleInformation.pInputBuffer, StringData, EventsWritten);
+        EventsWritten = g_ciConsoleInformation.pInputBuffer->WriteInputBuffer(StringData, EventsWritten);
     }
 
     delete[] StringData;

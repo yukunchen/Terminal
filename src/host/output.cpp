@@ -684,7 +684,7 @@ void ScreenBufferSizeChange(_In_ COORD const coordNewSize)
     InputEvent.EventType = WINDOW_BUFFER_SIZE_EVENT;
     InputEvent.Event.WindowBufferSizeEvent.dwSize = coordNewSize;
 
-    WriteInputBuffer(g_ciConsoleInformation.pInputBuffer, &InputEvent, 1);
+    g_ciConsoleInformation.pInputBuffer->WriteInputBuffer(&InputEvent, 1);
 }
 
 void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,

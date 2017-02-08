@@ -860,11 +860,11 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
 
     if (ContinueProcessing)
     {
-        EventsWritten = WriteInputBuffer(g_ciConsoleInformation.pInputBuffer, &InputEvent, 1);
+        EventsWritten = g_ciConsoleInformation.pInputBuffer->WriteInputBuffer(&InputEvent, 1);
         if (EventsWritten && bGenerateBreak)
         {
             InputEvent.Event.KeyEvent.bKeyDown = FALSE;
-            WriteInputBuffer(g_ciConsoleInformation.pInputBuffer, &InputEvent, 1);
+            g_ciConsoleInformation.pInputBuffer->WriteInputBuffer(&InputEvent, 1);
         }
     }
 }
@@ -1255,7 +1255,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
     InputEvent.Event.MouseEvent.dwMousePosition = MousePosition;
     InputEvent.Event.MouseEvent.dwEventFlags = EventFlags;
     InputEvent.Event.MouseEvent.dwButtonState = ConvertMouseButtonState(ButtonFlags, (UINT) wParam);
-    ULONG const EventsWritten = WriteInputBuffer(g_ciConsoleInformation.pInputBuffer, &InputEvent, 1);
+    ULONG const EventsWritten = g_ciConsoleInformation.pInputBuffer->WriteInputBuffer(&InputEvent, 1);
     if (EventsWritten != 1)
     {
         RIPMSG1(RIP_WARNING, "PutInputInBuffer: EventsWritten != 1 (0x%x), 1 expected", EventsWritten);
@@ -1271,7 +1271,7 @@ void HandleFocusEvent(_In_ const BOOL fSetFocus)
     InputEvent.Event.FocusEvent.bSetFocus = fSetFocus;
 
 #pragma prefast(suppress:28931, "EventsWritten is not unused. Used by assertions.")
-    ULONG const EventsWritten = WriteInputBuffer(g_ciConsoleInformation.pInputBuffer, &InputEvent, 1);
+    ULONG const EventsWritten = g_ciConsoleInformation.pInputBuffer->WriteInputBuffer(&InputEvent, 1);
     EventsWritten; // shut the fre build up.
     ASSERT(EventsWritten == 1);
 }
@@ -1283,7 +1283,7 @@ void HandleMenuEvent(_In_ const DWORD wParam)
     InputEvent.Event.MenuEvent.dwCommandId = wParam;
 
 #pragma prefast(suppress:28931, "EventsWritten is not unused. Used by assertions.")
-    ULONG const EventsWritten = WriteInputBuffer(g_ciConsoleInformation.pInputBuffer, &InputEvent, 1);
+    ULONG const EventsWritten = g_ciConsoleInformation.pInputBuffer->WriteInputBuffer(&InputEvent, 1);
     EventsWritten; // shut the fre build up.
 #if DBG
     if (EventsWritten != 1)

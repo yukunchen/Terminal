@@ -556,7 +556,7 @@ NTSTATUS DoSrvWriteConsoleInput(_In_ INPUT_INFORMATION* pInputInfo, _Inout_ CONS
 
     if (pMsg->Append)
     {
-        pMsg->NumRecords = WriteInputBuffer(pInputInfo, rgInputRecords, pMsg->NumRecords);
+        pMsg->NumRecords = pInputInfo->WriteInputBuffer(rgInputRecords, pMsg->NumRecords);
     }
     else
     {
