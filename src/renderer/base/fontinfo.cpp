@@ -68,6 +68,9 @@ BYTE FontInfoBase::GetFamily() const
     return _bFamily;
 }
 
+// When the default raster font is forced set from the engine, this is how we differentiate it from a simple apply.
+// Default raster font is internally represented as a blank face name and zeros for weight, family, and size. This is
+// the hint for the engine to use whatever comes back from GetStockObject(OEM_FIXED_FONT) (at least in the GDI world).
 bool FontInfoBase::WasDefaultRasterSetFromEngine() const
 {
     return _fDefaultRasterSetFromEngine;
@@ -153,6 +156,8 @@ void FontInfo::SetFromEngine(_In_ PCWSTR const pwszFaceName,
     _ValidateCoordSize();
 }
 
+// Internally, default raster font is represented by empty facename, and zeros for weight, family, and size. Since
+// FontInfoBase doesn't have sizing information, this helper checks everything else.
 bool FontInfoBase::IsDefaultRasterFontNoSize() const
 {
     return (_lWeight == 0 && _bFamily == 0 && wcsnlen_s(_wszFaceName, ARRAYSIZE(_wszFaceName)) == 0);
@@ -184,6 +189,8 @@ void FontInfo::ValidateFont()
 
 void FontInfo::_ValidateCoordSize()
 {
+    // a (0,0) font is okay for the default raster font, as we will eventually set the dimensions based on the font GDI
+    // passes back to us.
     if (!IsDefaultRasterFontNoSize())
     {
         // Initialize X to 1 so we don't divide by 0
@@ -237,6 +244,9 @@ FontInfoDesired::FontInfoDesired(_In_ const FontInfo& fiFont) :
 {
 }
 
+// This helper determines if this object represents the default raster font. This can either be because internally we're
+// using the empty facename and zeros for size, weight, and family, or it can be because we were given explicit
+// dimensions from the engine that were the result of loading the default raster font. See GdiEngine::_GetProposedFont().
 bool FontInfoDesired::IsDefaultRasterFont() const
 {
     // Default raster font means no face name, no weight, no family, and (0,0) for both sizes
