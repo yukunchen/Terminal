@@ -62,6 +62,8 @@ struct INPUT_INFORMATION
     INPUT_RECORD ReadConInpDbcsLeadByte;
     INPUT_RECORD WriteConInpDbcsLeadByte[2];
 
+    ~INPUT_INFORMATION();
+
 NTSTATUS ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
                     _In_ ULONG Length,
                     _Out_ PULONG EventsRead,
@@ -93,4 +95,3 @@ void WakeUpReadersWaitingForData();
 };
 
 NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ INPUT_INFORMATION* pInputInfo);
-void FreeInputBuffer(_In_ INPUT_INFORMATION* pInputInfo);

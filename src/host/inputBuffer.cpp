@@ -81,13 +81,13 @@ void INPUT_INFORMATION::ReinitializeInputBuffer()
 // Routine Description:
 // - This routine frees the resources associated with an input buffer.
 // Arguments:
-// - InputBufferInformation - Pointer to input buffer information structure.
+// - None
 // Return Value:
-void FreeInputBuffer(_In_ INPUT_INFORMATION* pInputInfo)
+INPUT_INFORMATION::~INPUT_INFORMATION()
 {
-    CloseHandle(pInputInfo->InputWaitEvent);
-    delete[] pInputInfo->InputBuffer;
-    pInputInfo->InputBuffer = nullptr;
+    CloseHandle(this->InputWaitEvent);
+    delete[] this->InputBuffer;
+    this->InputBuffer = nullptr;
 }
 
 // Routine Description:

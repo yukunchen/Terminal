@@ -75,7 +75,6 @@ void CommonState::PrepareGlobalInputBuffer()
 
 void CommonState::CleanupGlobalInputBuffer()
 {
-    FreeInputBuffer(g_ciConsoleInformation.pInputBuffer);
     delete g_ciConsoleInformation.pInputBuffer;
 }
 

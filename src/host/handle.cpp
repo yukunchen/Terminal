@@ -107,7 +107,7 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
     g_ciConsoleInformation.CurrentScreenBuffer->ScrollScale = g_ciConsoleInformation.GetScrollScale();
 
     g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
-    
+
     if (NT_SUCCESS(Status))
     {
         return STATUS_SUCCESS;
@@ -127,8 +127,8 @@ ErrorExit1:
     g_ciConsoleInformation.OriginalTitle = nullptr;
 
 ErrorExit2:
-    FreeInputBuffer(g_ciConsoleInformation.pInputBuffer);
-    
+    delete g_ciConsoleInformation.pInputBuffer;
+
 ErrorExit3:
     ASSERT(!NT_SUCCESS(Status));
     return Status;
