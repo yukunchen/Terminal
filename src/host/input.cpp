@@ -833,7 +833,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
         // check for ctrl-break.
         else if (InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_CANCEL)
         {
-            FlushInputBuffer(g_ciConsoleInformation.pInputBuffer);
+            g_ciConsoleInformation.pInputBuffer->FlushInputBuffer();
             HandleCtrlEvent(CTRL_BREAK_EVENT);
             if (g_ciConsoleInformation.PopupCount == 0)
             {

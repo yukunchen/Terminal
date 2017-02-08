@@ -184,15 +184,14 @@ NTSTATUS FlushAllButKeys()
 // Routine Description:
 // - This routine empties the input buffer
 // Arguments:
-// - InputInformation - Pointer to input buffer information structure.
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-void FlushInputBuffer(_Inout_ INPUT_INFORMATION* pInputInfo)
+void INPUT_INFORMATION::FlushInputBuffer()
 {
-    pInputInfo->In = (ULONG_PTR) pInputInfo->InputBuffer;
-    pInputInfo->Out = (ULONG_PTR) pInputInfo->InputBuffer;
-    ResetEvent(pInputInfo->InputWaitEvent);
+    this->In = (ULONG_PTR) this->InputBuffer;
+    this->Out = (ULONG_PTR) this->InputBuffer;
+    ResetEvent(this->InputWaitEvent);
 }
 
 // Routine Description:
