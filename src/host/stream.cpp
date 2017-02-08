@@ -105,19 +105,18 @@ NTSTATUS GetChar(_In_ INPUT_INFORMATION* pInputInfo,
     {
         INPUT_RECORD Event;
         ULONG NumRead = 1;
-        Status = ReadInputBuffer(pInputInfo,
-                                 &Event,
-                                 &NumRead,
-                                 FALSE, /*Peek*/
-                                 fWait,
-                                 TRUE, /*StreamRead*/
-                                 pHandleData,
-                                 pConsoleMessage,
-                                 pWaitRoutine,
-                                 pvWaitParameter,
-                                 ulWaitParameterLength,
-                                 fWaitBlockExists,
-                                 TRUE); /*Unicode*/
+        Status = pInputInfo->ReadInputBuffer(&Event,
+                                             &NumRead,
+                                             FALSE, /*Peek*/
+                                             fWait,
+                                             TRUE, /*StreamRead*/
+                                             pHandleData,
+                                             pConsoleMessage,
+                                             pWaitRoutine,
+                                             pvWaitParameter,
+                                             ulWaitParameterLength,
+                                             fWaitBlockExists,
+                                             TRUE); /*Unicode*/
         if (!NT_SUCCESS(Status))
         {
             return Status;

@@ -274,12 +274,12 @@ NTSTATUS SetInputBufferSize(_Inout_ INPUT_INFORMATION* InputInformation, _In_ UL
 // - The console lock must be held when calling this routine.
 NTSTATUS
 INPUT_INFORMATION::ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
-           _In_ ULONG Length,
-           _Out_ PULONG EventsRead,
-           _In_ BOOL Peek,
-           _In_ BOOL StreamRead,
-           _Out_ PBOOL ResetWaitEvent,
-           _In_ BOOLEAN Unicode)
+                              _In_ ULONG Length,
+                              _Out_ PULONG EventsRead,
+                              _In_ BOOL Peek,
+                              _In_ BOOL StreamRead,
+                              _Out_ PBOOL ResetWaitEvent,
+                             _In_ BOOLEAN Unicode)
 {
     *ResetWaitEvent = FALSE;
 
@@ -577,7 +577,6 @@ INPUT_INFORMATION::ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD
 // Routine Description:
 // - This routine reads from the input buffer.
 // Arguments:
-// - pInputInfo - Pointer to input buffer information structure.
 // - pInputRecord - Buffer to read into.
 // - pcLength - On input, number of events to read.  On output, number of events read.
 // - fPeek - If TRUE, copy events to pInputRecord but don't remove them from the input buffer.
@@ -592,22 +591,21 @@ INPUT_INFORMATION::ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS ReadInputBuffer(_In_ INPUT_INFORMATION* const pInputInfo,
-                         _Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
-                         _Inout_ PDWORD pcLength,
-                         _In_ BOOL const fPeek,
-                         _In_ BOOL const fWaitForData,
-                         _In_ BOOL const fStreamRead,
-                         _In_ INPUT_READ_HANDLE_DATA* pHandleData,
-                         _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
-                         _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
-                         _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
-                         _In_ ULONG const cbWaitParameter,
-                         _In_ BOOLEAN const fWaitBlockExists,
-                         _In_ BOOLEAN const fUnicode)
+NTSTATUS INPUT_INFORMATION::ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
+                                            _Inout_ PDWORD pcLength,
+                                            _In_ BOOL const fPeek,
+                                            _In_ BOOL const fWaitForData,
+                                            _In_ BOOL const fStreamRead,
+                                            _In_ INPUT_READ_HANDLE_DATA* pHandleData,
+                                            _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
+                                            _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
+                                            _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
+                                            _In_ ULONG const cbWaitParameter,
+                                            _In_ BOOLEAN const fWaitBlockExists,
+                                            _In_ BOOLEAN const fUnicode)
 {
     NTSTATUS Status;
-    if (pInputInfo->In == pInputInfo->Out)
+    if (this->In == this->Out)
     {
         if (!fWaitForData)
         {
@@ -633,10 +631,10 @@ NTSTATUS ReadInputBuffer(_In_ INPUT_INFORMATION* const pInputInfo,
     // read from buffer
     ULONG EventsRead;
     BOOL ResetWaitEvent;
-    Status = pInputInfo->ReadBuffer(pInputRecord, *pcLength, &EventsRead, fPeek, fStreamRead, &ResetWaitEvent, fUnicode);
+    Status = this->ReadBuffer(pInputRecord, *pcLength, &EventsRead, fPeek, fStreamRead, &ResetWaitEvent, fUnicode);
     if (ResetWaitEvent)
     {
-        ResetEvent(pInputInfo->InputWaitEvent);
+        ResetEvent(this->InputWaitEvent);
     }
 
     *pcLength = EventsRead;

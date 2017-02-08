@@ -70,10 +70,7 @@ NTSTATUS ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
                     _Out_ PBOOL ResetWaitEvent,
                     _In_ BOOLEAN Unicode);
 
-};
-
-NTSTATUS ReadInputBuffer(_In_ INPUT_INFORMATION* const pInputInfo,
-                         _Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
+NTSTATUS ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
                          _Inout_ PDWORD pcLength,
                          _In_ BOOL const fPeek,
                          _In_ BOOL const fWaitForData,
@@ -85,6 +82,8 @@ NTSTATUS ReadInputBuffer(_In_ INPUT_INFORMATION* const pInputInfo,
                          _In_ ULONG const cbWaitParameter,
                          _In_ BOOLEAN const fWaitBlockExists,
                          _In_ BOOLEAN const fUnicode);
+};
+
 DWORD WriteInputBuffer(_In_ INPUT_INFORMATION* pInputInfo, _In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords);
 NTSTATUS PrependInputBuffer(_In_ INPUT_INFORMATION* pInputInfo, _In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * const pcLength);
 NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ INPUT_INFORMATION* pInputInfo);
