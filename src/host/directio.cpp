@@ -560,7 +560,7 @@ NTSTATUS DoSrvWriteConsoleInput(_In_ INPUT_INFORMATION* pInputInfo, _Inout_ CONS
     }
     else
     {
-        Status = PrependInputBuffer(pInputInfo, rgInputRecords, &pMsg->NumRecords);
+        Status = pInputInfo->PrependInputBuffer(rgInputRecords, &pMsg->NumRecords);
     }
 
     return Status;

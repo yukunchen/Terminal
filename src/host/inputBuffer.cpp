@@ -877,13 +877,12 @@ DWORD PreprocessInput(_In_ PINPUT_RECORD InputEvent, _In_ DWORD nLength)
 // Routine Description:
 // -  This routine writes to the beginning of the input buffer.
 // Arguments:
-// - pInputInfo - Pointer to input buffer information structure.
 // - pInputRecord - Buffer to write from.
 // - cInputRecords - On input, number of events to write.  On output, number of events written.
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS PrependInputBuffer(_In_ INPUT_INFORMATION* pInputInfo, _In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * const pcLength)
+NTSTATUS INPUT_INFORMATION::PrependInputBuffer(_In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * const pcLength)
 {
     DWORD cInputRecords = *pcLength;
     cInputRecords = PreprocessInput(pInputRecord, cInputRecords);
@@ -893,7 +892,7 @@ NTSTATUS PrependInputBuffer(_In_ INPUT_INFORMATION* pInputInfo, _In_ PINPUT_RECO
     }
 
     ULONG NumExistingEvents;
-    GetNumberOfReadyEvents(pInputInfo, &NumExistingEvents);
+    GetNumberOfReadyEvents(this, &NumExistingEvents);
 
     PINPUT_RECORD pExistingEvents;
     ULONG EventsRead = 0;
@@ -913,7 +912,7 @@ NTSTATUS PrependInputBuffer(_In_ INPUT_INFORMATION* pInputInfo, _In_ PINPUT_RECO
             return STATUS_NO_MEMORY;
         }
 
-        NTSTATUS Status = pInputInfo->ReadBuffer(pExistingEvents, NumExistingEvents, &EventsRead, FALSE, FALSE, &Dummy, TRUE);
+        NTSTATUS Status = this->ReadBuffer(pExistingEvents, NumExistingEvents, &EventsRead, FALSE, FALSE, &Dummy, TRUE);
         if (!NT_SUCCESS(Status))
         {
             delete[] pExistingEvents;
@@ -928,22 +927,22 @@ NTSTATUS PrependInputBuffer(_In_ INPUT_INFORMATION* pInputInfo, _In_ PINPUT_RECO
     ULONG EventsWritten;
     BOOL SetWaitEvent;
     // write new info to buffer
-    WriteBuffer(pInputInfo, pInputRecord, cInputRecords, &EventsWritten, &SetWaitEvent);
+    WriteBuffer(this, pInputRecord, cInputRecords, &EventsWritten, &SetWaitEvent);
 
     // Write existing info to buffer.
     if (pExistingEvents)
     {
-        WriteBuffer(pInputInfo, pExistingEvents, EventsRead, &EventsWritten, &Dummy);
+        WriteBuffer(this, pExistingEvents, EventsRead, &EventsWritten, &Dummy);
         delete[] pExistingEvents;
     }
 
     if (SetWaitEvent)
     {
-        SetEvent(pInputInfo->InputWaitEvent);
+        SetEvent(this->InputWaitEvent);
     }
 
     // alert any writers waiting for space
-    WakeUpReadersWaitingForData(pInputInfo);
+    WakeUpReadersWaitingForData(this);
 
     *pcLength = cInputRecords;
     return STATUS_SUCCESS;
