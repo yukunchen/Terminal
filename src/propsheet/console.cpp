@@ -513,7 +513,7 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
 
     gpStateInfo = pStateInfo;
 
-    // In v2 console, consider this an East Asian system if we're currently in a CJK charset. In v1, look at the OEMCP.
+    // In v2 console, consider this an East Asian system if we're currently in a CJK charset. In v1, look at the system codepage.
     if (gpStateInfo->fIsV2Console)
     {
         g_fEastAsianSystem = IS_ANY_DBCS_CHARSET(CodePageToCharSet(gpStateInfo->CodePage));
