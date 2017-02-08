@@ -66,17 +66,16 @@ NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ INPUT_INFORMATION* pInp
 // Routine Description:
 // - This routine resets the input buffer information fields to their initial values.
 // Arguments:
-// - InputBufferInformation - Pointer to input buffer information structure.
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-void ReinitializeInputBuffer(_Inout_ INPUT_INFORMATION* pInputInfo)
+void INPUT_INFORMATION::ReinitializeInputBuffer()
 {
-    ResetEvent(pInputInfo->InputWaitEvent);
+    ResetEvent(this->InputWaitEvent);
 
-    pInputInfo->InputMode = ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT;
-    pInputInfo->In = (ULONG_PTR) pInputInfo->InputBuffer;
-    pInputInfo->Out = (ULONG_PTR) pInputInfo->InputBuffer;
+    this->InputMode = ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT;
+    this->In = (ULONG_PTR) this->InputBuffer;
+    this->Out = (ULONG_PTR) this->InputBuffer;
 }
 
 // Routine Description:
