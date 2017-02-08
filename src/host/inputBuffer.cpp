@@ -937,7 +937,7 @@ NTSTATUS INPUT_INFORMATION::PrependInputBuffer(_In_ PINPUT_RECORD pInputRecord, 
     }
 
     // alert any writers waiting for space
-    WakeUpReadersWaitingForData(this);
+    this->WakeUpReadersWaitingForData();
 
     *pcLength = cInputRecords;
     return STATUS_SUCCESS;
@@ -970,7 +970,7 @@ DWORD INPUT_INFORMATION::WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ 
     }
 
     // Alert any writers waiting for space.
-    WakeUpReadersWaitingForData(this);
+    this->WakeUpReadersWaitingForData();
 
     return EventsWritten;
 }
@@ -978,11 +978,10 @@ DWORD INPUT_INFORMATION::WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ 
 // Routine Description:
 // - This routine wakes up readers waiting for data to read.
 // Arguments:
-// - InputInformation - buffer to alert readers for
 // Return Value:
 // - TRUE - The operation was successful
 // - FALSE/nullptr - The operation failed.
-void WakeUpReadersWaitingForData(_In_ INPUT_INFORMATION* InputInformation)
+void INPUT_INFORMATION::WakeUpReadersWaitingForData()
 {
-    InputInformation->WaitQueue.NotifyWaiters(false);
+    this->WaitQueue.NotifyWaiters(false);
 }

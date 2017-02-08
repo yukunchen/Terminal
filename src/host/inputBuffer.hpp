@@ -89,8 +89,8 @@ void ReinitializeInputBuffer();
 void GetNumberOfReadyEvents(_Out_ PULONG pcEvents);
 void FlushInputBuffer();
 NTSTATUS FlushAllButKeys();
+void WakeUpReadersWaitingForData();
 };
-void WakeUpReadersWaitingForData(_In_ INPUT_INFORMATION* InputInformation);
 
 NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ INPUT_INFORMATION* pInputInfo);
 void FreeInputBuffer(_In_ INPUT_INFORMATION* pInputInfo);
