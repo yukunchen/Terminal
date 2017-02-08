@@ -61,16 +61,16 @@ struct INPUT_INFORMATION
     struct _CONSOLE_INFORMATION *Console;
     INPUT_RECORD ReadConInpDbcsLeadByte;
     INPUT_RECORD WriteConInpDbcsLeadByte[2];
-};
 
-NTSTATUS ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
-                    _Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
+NTSTATUS ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
                     _In_ ULONG Length,
                     _Out_ PULONG EventsRead,
                     _In_ BOOL Peek,
                     _In_ BOOL StreamRead,
                     _Out_ PBOOL ResetWaitEvent,
                     _In_ BOOLEAN Unicode);
+
+};
 
 NTSTATUS ReadInputBuffer(_In_ INPUT_INFORMATION* const pInputInfo,
                          _Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,

@@ -143,7 +143,7 @@ NTSTATUS FlushAllButKeys()
         // copy input buffer. let ReadBuffer do any compaction work.
         ULONG NumberOfEventsRead;
         BOOL Dummy;
-        NTSTATUS Status = ReadBuffer(InputInformation, TmpInputBuffer, InputInformation->InputBufferSize, &NumberOfEventsRead, TRUE, FALSE, &Dummy, TRUE);
+        NTSTATUS Status = InputInformation->ReadBuffer(TmpInputBuffer, InputInformation->InputBufferSize, &NumberOfEventsRead, TRUE, FALSE, &Dummy, TRUE);
 
         if (!NT_SUCCESS(Status))
         {
@@ -238,7 +238,7 @@ NTSTATUS SetInputBufferSize(_Inout_ INPUT_INFORMATION* InputInformation, _In_ UL
     // Copy old input buffer. Let the ReadBuffer do any compaction work.
     ULONG NumberOfEventsRead;
     BOOL Dummy;
-    NTSTATUS Status = ReadBuffer(InputInformation, InputBuffer, Size, &NumberOfEventsRead, TRUE, FALSE, &Dummy, TRUE);
+    NTSTATUS Status = InputInformation->ReadBuffer(InputBuffer, Size, &NumberOfEventsRead, TRUE, FALSE, &Dummy, TRUE);
 
     if (!NT_SUCCESS(Status))
     {
@@ -263,7 +263,6 @@ NTSTATUS SetInputBufferSize(_Inout_ INPUT_INFORMATION* InputInformation, _In_ UL
 // Routine Description:
 // - This routine reads from a buffer.  It does the actual circular buffer manipulation.
 // Arguments:
-// - InputInformation - buffer to read from
 // - Buffer - buffer to read into
 // - Length - length of buffer in events
 // - EventsRead - where to store number of events read
@@ -274,8 +273,7 @@ NTSTATUS SetInputBufferSize(_Inout_ INPUT_INFORMATION* InputInformation, _In_ UL
 // Note:
 // - The console lock must be held when calling this routine.
 NTSTATUS
-ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
-           _Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
+INPUT_INFORMATION::ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
            _In_ ULONG Length,
            _Out_ PULONG EventsRead,
            _In_ BOOL Peek,
@@ -289,19 +287,19 @@ ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
     // one, just decrement it. The repeat count is > 1 if more than one event
     // of the same type was merged. We need to expand them back to individual
     // events here.
-    if (StreamRead && ((PINPUT_RECORD) (InputInformation->Out))->EventType == KEY_EVENT)
+    if (StreamRead && ((PINPUT_RECORD) (this->Out))->EventType == KEY_EVENT)
     {
 
         ASSERT(Length == 1);
-        ASSERT(InputInformation->In != InputInformation->Out);
-        memmove((PBYTE) Buffer, (PBYTE) InputInformation->Out, sizeof(INPUT_RECORD));
-        InputInformation->Out += sizeof(INPUT_RECORD);
-        if (InputInformation->Last == InputInformation->Out)
+        ASSERT(this->In != this->Out);
+        memmove((PBYTE) Buffer, (PBYTE) this->Out, sizeof(INPUT_RECORD));
+        this->Out += sizeof(INPUT_RECORD);
+        if (this->Last == this->Out)
         {
-            InputInformation->Out = InputInformation->First;
+            this->Out = this->First;
         }
 
-        if (InputInformation->Out == InputInformation->In)
+        if (this->Out == this->In)
         {
             *ResetWaitEvent = TRUE;
         }
@@ -327,22 +325,22 @@ ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
     //   |______|______|______|
     //
     // we transfer the requested number of events or the amount in the buffer
-    if (InputInformation->In > InputInformation->Out)
+    if (this->In > this->Out)
     {
-        if ((InputInformation->In - InputInformation->Out) > BufferLengthInBytes)
+        if ((this->In - this->Out) > BufferLengthInBytes)
         {
             TransferLength = BufferLengthInBytes;
         }
         else
         {
-            TransferLength = (ULONG) (InputInformation->In - InputInformation->Out);
+            TransferLength = (ULONG) (this->In - this->Out);
         }
         if (!Unicode)
         {
             BufferLengthInBytes = 0;
             OldTransferLength = TransferLength / sizeof(INPUT_RECORD);
             BufferRecords = (PINPUT_RECORD) Buffer;
-            QueueRecords = (PINPUT_RECORD) InputInformation->Out;
+            QueueRecords = (PINPUT_RECORD) this->Out;
 
             while (BufferLengthInBytes < Length && OldTransferLength)
             {
@@ -373,7 +371,7 @@ ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
         }
         else
         {
-            memmove((PBYTE) Buffer, (PBYTE) InputInformation->Out, TransferLength);
+            memmove((PBYTE) Buffer, (PBYTE) this->Out, TransferLength);
         }
 
         *EventsRead = TransferLength / sizeof(INPUT_RECORD);
@@ -381,11 +379,11 @@ ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
 
         if (!Peek)
         {
-            InputInformation->Out += TransferLength;
-            ASSERT(InputInformation->Out <= InputInformation->Last);
+            this->Out += TransferLength;
+            ASSERT(this->Out <= this->Last);
         }
 
-        if (InputInformation->Out == InputInformation->In)
+        if (this->Out == this->In)
         {
             *ResetWaitEvent = TRUE;
         }
@@ -406,13 +404,13 @@ ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
     // are read.
     else
     {
-        if ((InputInformation->Last - InputInformation->Out) > BufferLengthInBytes)
+        if ((this->Last - this->Out) > BufferLengthInBytes)
         {
             TransferLength = BufferLengthInBytes;
         }
         else
         {
-            TransferLength = (ULONG) (InputInformation->Last - InputInformation->Out);
+            TransferLength = (ULONG) (this->Last - this->Out);
         }
 
         if (!Unicode)
@@ -420,7 +418,7 @@ ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
             BufferLengthInBytes = 0;
             OldTransferLength = TransferLength / sizeof(INPUT_RECORD);
             BufferRecords = (PINPUT_RECORD) Buffer;
-            QueueRecords = (PINPUT_RECORD) InputInformation->Out;
+            QueueRecords = (PINPUT_RECORD) this->Out;
 
             while (BufferLengthInBytes < Length && OldTransferLength)
             {
@@ -451,7 +449,7 @@ ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
         }
         else
         {
-            memmove((PBYTE) Buffer, (PBYTE) InputInformation->Out, TransferLength);
+            memmove((PBYTE) Buffer, (PBYTE) this->Out, TransferLength);
         }
 
         *EventsRead = TransferLength / sizeof(INPUT_RECORD);
@@ -459,11 +457,11 @@ ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
 
         if (!Peek)
         {
-            InputInformation->Out += TransferLength;
-            ASSERT(InputInformation->Out <= InputInformation->Last);
-            if (InputInformation->Out == InputInformation->Last)
+            this->Out += TransferLength;
+            ASSERT(this->Out <= this->Last);
+            if (this->Out == this->Last)
             {
-                InputInformation->Out = InputInformation->First;
+                this->Out = this->First;
             }
         }
 
@@ -471,7 +469,7 @@ ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
         {
             if (BufferLengthInBytes >= Length)
             {
-                if (InputInformation->Out == InputInformation->In)
+                if (this->Out == this->In)
                 {
                     *ResetWaitEvent = TRUE;
                 }
@@ -480,7 +478,7 @@ ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
         }
         else if (*EventsRead == Length)
         {
-            if (InputInformation->Out == InputInformation->In)
+            if (this->Out == this->In)
             {
                 *ResetWaitEvent = TRUE;
             }
@@ -497,7 +495,7 @@ ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
             Length -= BufferLengthInBytes;
             if (Length == 0)
             {
-                if (InputInformation->Out == InputInformation->In)
+                if (this->Out == this->In)
                 {
                     *ResetWaitEvent = TRUE;
                 }
@@ -505,28 +503,28 @@ ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
             }
             BufferLengthInBytes = Length * sizeof(INPUT_RECORD);
 
-            if ((InputInformation->In - InputInformation->First) > BufferLengthInBytes)
+            if ((this->In - this->First) > BufferLengthInBytes)
             {
                 TransferLength = BufferLengthInBytes;
             }
             else
             {
-                TransferLength = (ULONG) (InputInformation->In - InputInformation->First);
+                TransferLength = (ULONG) (this->In - this->First);
             }
         }
-        else if ((InputInformation->In - InputInformation->First) > (BufferLengthInBytes - OldTransferLength))
+        else if ((this->In - this->First) > (BufferLengthInBytes - OldTransferLength))
         {
             TransferLength = BufferLengthInBytes - OldTransferLength;
         }
         else
         {
-            TransferLength = (ULONG) (InputInformation->In - InputInformation->First);
+            TransferLength = (ULONG) (this->In - this->First);
         }
         if (!Unicode)
         {
             BufferLengthInBytes = 0;
             OldTransferLength = TransferLength / sizeof(INPUT_RECORD);
-            QueueRecords = (PINPUT_RECORD) InputInformation->First;
+            QueueRecords = (PINPUT_RECORD) this->First;
 
             while (BufferLengthInBytes < Length && OldTransferLength)
             {
@@ -556,7 +554,7 @@ ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
         }
         else
         {
-            memmove((PBYTE) Buffer + OldTransferLength, (PBYTE) InputInformation->First, TransferLength);
+            memmove((PBYTE) Buffer + OldTransferLength, (PBYTE) this->First, TransferLength);
         }
 
         *EventsRead += TransferLength / sizeof(INPUT_RECORD);
@@ -564,10 +562,10 @@ ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
 
         if (!Peek)
         {
-            InputInformation->Out = InputInformation->First + TransferLength;
+            this->Out = this->First + TransferLength;
         }
 
-        if (InputInformation->Out == InputInformation->In)
+        if (this->Out == this->In)
         {
             *ResetWaitEvent = TRUE;
         }
@@ -635,7 +633,7 @@ NTSTATUS ReadInputBuffer(_In_ INPUT_INFORMATION* const pInputInfo,
     // read from buffer
     ULONG EventsRead;
     BOOL ResetWaitEvent;
-    Status = ReadBuffer(pInputInfo, pInputRecord, *pcLength, &EventsRead, fPeek, fStreamRead, &ResetWaitEvent, fUnicode);
+    Status = pInputInfo->ReadBuffer(pInputRecord, *pcLength, &EventsRead, fPeek, fStreamRead, &ResetWaitEvent, fUnicode);
     if (ResetWaitEvent)
     {
         ResetEvent(pInputInfo->InputWaitEvent);
@@ -917,7 +915,7 @@ NTSTATUS PrependInputBuffer(_In_ INPUT_INFORMATION* pInputInfo, _In_ PINPUT_RECO
             return STATUS_NO_MEMORY;
         }
 
-        NTSTATUS Status = ReadBuffer(pInputInfo, pExistingEvents, NumExistingEvents, &EventsRead, FALSE, FALSE, &Dummy, TRUE);
+        NTSTATUS Status = pInputInfo->ReadBuffer(pExistingEvents, NumExistingEvents, &EventsRead, FALSE, FALSE, &Dummy, TRUE);
         if (!NT_SUCCESS(Status))
         {
             delete[] pExistingEvents;
