@@ -88,9 +88,8 @@ NTSTATUS PrependInputBuffer(_In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * con
 void ReinitializeInputBuffer();
 void GetNumberOfReadyEvents(_Out_ PULONG pcEvents);
 void FlushInputBuffer();
-};
-
 NTSTATUS FlushAllButKeys();
+};
 void WakeUpReadersWaitingForData(_In_ INPUT_INFORMATION* InputInformation);
 
 NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ INPUT_INFORMATION* pInputInfo);

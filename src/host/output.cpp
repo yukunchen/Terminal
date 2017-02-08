@@ -1099,7 +1099,7 @@ NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
     pScreenInfo->RefreshFontWithRenderer();
 
     // Empty input buffer.
-    FlushAllButKeys();
+    g_ciConsoleInformation.pInputBuffer->FlushAllButKeys();
     SetScreenColors(pScreenInfo, pScreenInfo->GetAttributes().GetLegacyAttributes(), pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE);
 
     // Set window size.

@@ -118,15 +118,13 @@ void INPUT_INFORMATION::GetNumberOfReadyEvents(_Out_ ULONG * const pcEvents)
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS FlushAllButKeys()
+NTSTATUS INPUT_INFORMATION::FlushAllButKeys()
 {
-    INPUT_INFORMATION* const InputInformation = g_ciConsoleInformation.pInputBuffer;
-
-    if (InputInformation->In != InputInformation->Out)
+    if (this->In != this->Out)
     {
         ULONG BufferSize;
         // Allocate memory for temp buffer.
-        if (FAILED(DWordMult(sizeof(INPUT_RECORD), InputInformation->InputBufferSize + 1, &BufferSize)))
+        if (FAILED(DWordMult(sizeof(INPUT_RECORD), this->InputBufferSize + 1, &BufferSize)))
         {
             return STATUS_INTEGER_OVERFLOW;
         }
@@ -141,7 +139,7 @@ NTSTATUS FlushAllButKeys()
         // copy input buffer. let ReadBuffer do any compaction work.
         ULONG NumberOfEventsRead;
         BOOL Dummy;
-        NTSTATUS Status = InputInformation->ReadBuffer(TmpInputBuffer, InputInformation->InputBufferSize, &NumberOfEventsRead, TRUE, FALSE, &Dummy, TRUE);
+        NTSTATUS Status = this->ReadBuffer(TmpInputBuffer, this->InputBufferSize, &NumberOfEventsRead, TRUE, FALSE, &Dummy, TRUE);
 
         if (!NT_SUCCESS(Status))
         {
@@ -149,13 +147,13 @@ NTSTATUS FlushAllButKeys()
             return Status;
         }
 
-        InputInformation->Out = (ULONG_PTR) InputInformation->InputBuffer;
-        PINPUT_RECORD InPtr = InputInformation->InputBuffer;
+        this->Out = (ULONG_PTR) this->InputBuffer;
+        PINPUT_RECORD InPtr = this->InputBuffer;
         for (ULONG i = 0; i < NumberOfEventsRead; i++)
         {
             // Prevent running off the end of the buffer even though ReadBuffer will surely make this shorter than when we started.
             // We have to leave one free segment at the end for the In to point to when we're done.
-            if (InPtr >= (InputInformation->InputBuffer + InputInformation->InputBufferSize - 1))
+            if (InPtr >= (this->InputBuffer + this->InputBufferSize - 1))
             {
                 break;
             }
@@ -169,10 +167,10 @@ NTSTATUS FlushAllButKeys()
             TmpInputBuffer++;
         }
 
-        InputInformation->In = (ULONG_PTR) InPtr;
-        if (InputInformation->In == InputInformation->Out)
+        this->In = (ULONG_PTR) InPtr;
+        if (this->In == this->Out)
         {
-            ResetEvent(InputInformation->InputWaitEvent);
+            ResetEvent(this->InputWaitEvent);
         }
 
         delete[] TmpInputBufferPtr;
