@@ -23,6 +23,13 @@ Revision History:
 
 #pragma once
 
+#include "inputReadHandleData.h"
+
+#include "../server/WaitBlock.h"
+#include "../server/ObjectHandle.h"
+#include "../server/ObjectHeader.h"
+
+
 #define DEFAULT_NUMBER_OF_EVENTS 50
 #define INPUT_BUFFER_SIZE_INCREMENT 10
 
