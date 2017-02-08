@@ -220,6 +220,8 @@ HRESULT GdiEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired,
     // Save the font.
     _hfont = hFont.release();
 
+    InvalidateAll();
+    
     return S_OK;
 }
 
