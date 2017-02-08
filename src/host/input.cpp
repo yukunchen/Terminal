@@ -441,7 +441,7 @@ ULONG ConvertMouseButtonState(_In_ ULONG Flag, _In_ ULONG State)
 // Arguments:
 // - InputInfo - pointer to input buffer
 // - Flag - flag indicating whether ctrl-break or ctrl-c was input.
-void TerminateRead(_Inout_ PINPUT_INFORMATION InputInfo, _In_ WaitTerminationReason Flag)
+void TerminateRead(_Inout_ INPUT_INFORMATION* InputInfo, _In_ WaitTerminationReason Flag)
 {
     InputInfo->WaitQueue.NotifyWaiters(true, Flag);
 }

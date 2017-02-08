@@ -14,7 +14,7 @@
 // Arguments:
 // - pInputInfo - Pointer to input buffer information structure.
 // Return Value:
-NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ PINPUT_INFORMATION pInputInfo)
+NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ INPUT_INFORMATION* pInputInfo)
 {
     if (0 == cEvents)
     {
@@ -70,7 +70,7 @@ NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ PINPUT_INFORMATION pInp
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-void ReinitializeInputBuffer(_Inout_ PINPUT_INFORMATION pInputInfo)
+void ReinitializeInputBuffer(_Inout_ INPUT_INFORMATION* pInputInfo)
 {
     ResetEvent(pInputInfo->InputWaitEvent);
 
@@ -84,7 +84,7 @@ void ReinitializeInputBuffer(_Inout_ PINPUT_INFORMATION pInputInfo)
 // Arguments:
 // - InputBufferInformation - Pointer to input buffer information structure.
 // Return Value:
-void FreeInputBuffer(_In_ PINPUT_INFORMATION pInputInfo)
+void FreeInputBuffer(_In_ INPUT_INFORMATION* pInputInfo)
 {
     CloseHandle(pInputInfo->InputWaitEvent);
     delete[] pInputInfo->InputBuffer;
@@ -122,7 +122,7 @@ void GetNumberOfReadyEvents(_In_ const INPUT_INFORMATION * const pInputInfo, _Ou
 // - The console lock must be held when calling this routine.
 NTSTATUS FlushAllButKeys()
 {
-    PINPUT_INFORMATION const InputInformation = g_ciConsoleInformation.pInputBuffer;
+    INPUT_INFORMATION* const InputInformation = g_ciConsoleInformation.pInputBuffer;
 
     if (InputInformation->In != InputInformation->Out)
     {
@@ -190,7 +190,7 @@ NTSTATUS FlushAllButKeys()
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-void FlushInputBuffer(_Inout_ PINPUT_INFORMATION pInputInfo)
+void FlushInputBuffer(_Inout_ INPUT_INFORMATION* pInputInfo)
 {
     pInputInfo->In = (ULONG_PTR) pInputInfo->InputBuffer;
     pInputInfo->Out = (ULONG_PTR) pInputInfo->InputBuffer;
@@ -205,7 +205,7 @@ void FlushInputBuffer(_Inout_ PINPUT_INFORMATION pInputInfo)
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS SetInputBufferSize(_Inout_ PINPUT_INFORMATION InputInformation, _In_ ULONG Size)
+NTSTATUS SetInputBufferSize(_Inout_ INPUT_INFORMATION* InputInformation, _In_ ULONG Size)
 {
 #if DBG
     ULONG_PTR NumberOfEvents;
@@ -274,7 +274,7 @@ NTSTATUS SetInputBufferSize(_Inout_ PINPUT_INFORMATION InputInformation, _In_ UL
 // Note:
 // - The console lock must be held when calling this routine.
 NTSTATUS
-ReadBuffer(_In_ PINPUT_INFORMATION InputInformation,
+ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
            _Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
            _In_ ULONG Length,
            _Out_ PULONG EventsRead,
@@ -594,7 +594,7 @@ ReadBuffer(_In_ PINPUT_INFORMATION InputInformation,
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS ReadInputBuffer(_In_ PINPUT_INFORMATION const pInputInfo,
+NTSTATUS ReadInputBuffer(_In_ INPUT_INFORMATION* const pInputInfo,
                          _Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
                          _Inout_ PDWORD pcLength,
                          _In_ BOOL const fPeek,
@@ -657,7 +657,7 @@ NTSTATUS ReadInputBuffer(_In_ PINPUT_INFORMATION const pInputInfo,
 // - ERROR_BROKEN_PIPE - no more readers.
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS WriteBuffer(_Inout_ PINPUT_INFORMATION InputInformation, _In_ PVOID Buffer, _In_ ULONG Length, _Out_ PULONG EventsWritten, _Out_ PBOOL SetWaitEvent)
+NTSTATUS WriteBuffer(_Inout_ INPUT_INFORMATION* InputInformation, _In_ PVOID Buffer, _In_ ULONG Length, _Out_ PULONG EventsWritten, _Out_ PBOOL SetWaitEvent)
 {
     NTSTATUS Status;
     ULONG TransferLength;
@@ -887,7 +887,7 @@ DWORD PreprocessInput(_In_ PINPUT_RECORD InputEvent, _In_ DWORD nLength)
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS PrependInputBuffer(_In_ PINPUT_INFORMATION pInputInfo, _In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * const pcLength)
+NTSTATUS PrependInputBuffer(_In_ INPUT_INFORMATION* pInputInfo, _In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * const pcLength)
 {
     DWORD cInputRecords = *pcLength;
     cInputRecords = PreprocessInput(pInputRecord, cInputRecords);
@@ -962,7 +962,7 @@ NTSTATUS PrependInputBuffer(_In_ PINPUT_INFORMATION pInputInfo, _In_ PINPUT_RECO
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-DWORD WriteInputBuffer(_In_ PINPUT_INFORMATION pInputInfo, _In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords)
+DWORD WriteInputBuffer(_In_ INPUT_INFORMATION* pInputInfo, _In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords)
 {
     cInputRecords = PreprocessInput(pInputRecord, cInputRecords);
     if (cInputRecords == 0)
@@ -993,7 +993,7 @@ DWORD WriteInputBuffer(_In_ PINPUT_INFORMATION pInputInfo, _In_ PINPUT_RECORD pI
 // Return Value:
 // - TRUE - The operation was successful
 // - FALSE/nullptr - The operation failed.
-void WakeUpReadersWaitingForData(_In_ PINPUT_INFORMATION InputInformation)
+void WakeUpReadersWaitingForData(_In_ INPUT_INFORMATION* InputInformation)
 {
     InputInformation->WaitQueue.NotifyWaiters(false);
 }

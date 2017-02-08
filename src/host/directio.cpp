@@ -22,7 +22,7 @@ class CONSOLE_INFORMATION;
 
 typedef struct _DIRECT_READ_DATA
 {
-    PINPUT_INFORMATION pInputInfo;
+    INPUT_INFORMATION* pInputInfo;
     CONSOLE_INFORMATION* pConsole;
     ConsoleProcessHandle* pProcessData;
     INPUT_READ_HANDLE_DATA* pInputReadHandleData;

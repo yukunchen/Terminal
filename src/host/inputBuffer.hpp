@@ -33,7 +33,7 @@ Revision History:
 #define DEFAULT_NUMBER_OF_EVENTS 50
 #define INPUT_BUFFER_SIZE_INCREMENT 10
 
-typedef struct _INPUT_INFORMATION
+struct INPUT_INFORMATION
 {
     ConsoleObjectHeader Header;
     _Field_size_(InputBufferSize) PINPUT_RECORD InputBuffer;
@@ -61,9 +61,9 @@ typedef struct _INPUT_INFORMATION
     struct _CONSOLE_INFORMATION *Console;
     INPUT_RECORD ReadConInpDbcsLeadByte;
     INPUT_RECORD WriteConInpDbcsLeadByte[2];
-} INPUT_INFORMATION, *PINPUT_INFORMATION;
+};
 
-NTSTATUS ReadBuffer(_In_ PINPUT_INFORMATION InputInformation,
+NTSTATUS ReadBuffer(_In_ INPUT_INFORMATION* InputInformation,
                     _Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
                     _In_ ULONG Length,
                     _Out_ PULONG EventsRead,
@@ -72,7 +72,7 @@ NTSTATUS ReadBuffer(_In_ PINPUT_INFORMATION InputInformation,
                     _Out_ PBOOL ResetWaitEvent,
                     _In_ BOOLEAN Unicode);
 
-NTSTATUS ReadInputBuffer(_In_ PINPUT_INFORMATION const pInputInfo,
+NTSTATUS ReadInputBuffer(_In_ INPUT_INFORMATION* const pInputInfo,
                          _Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
                          _Inout_ PDWORD pcLength,
                          _In_ BOOL const fPeek,
@@ -85,14 +85,14 @@ NTSTATUS ReadInputBuffer(_In_ PINPUT_INFORMATION const pInputInfo,
                          _In_ ULONG const cbWaitParameter,
                          _In_ BOOLEAN const fWaitBlockExists,
                          _In_ BOOLEAN const fUnicode);
-DWORD WriteInputBuffer(_In_ PINPUT_INFORMATION pInputInfo, _In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords);
-NTSTATUS PrependInputBuffer(_In_ PINPUT_INFORMATION pInputInfo, _In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * const pcLength);
-NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ PINPUT_INFORMATION pInputInfo);
-void ReinitializeInputBuffer(_Inout_ PINPUT_INFORMATION pInputInfo);
-void FreeInputBuffer(_In_ PINPUT_INFORMATION pInputInfo);
+DWORD WriteInputBuffer(_In_ INPUT_INFORMATION* pInputInfo, _In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords);
+NTSTATUS PrependInputBuffer(_In_ INPUT_INFORMATION* pInputInfo, _In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * const pcLength);
+NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ INPUT_INFORMATION* pInputInfo);
+void ReinitializeInputBuffer(_Inout_ INPUT_INFORMATION* pInputInfo);
+void FreeInputBuffer(_In_ INPUT_INFORMATION* pInputInfo);
 
 void GetNumberOfReadyEvents(_In_ const INPUT_INFORMATION * const pInputInfo, _Out_ PULONG pcEvents);
-void FlushInputBuffer(_Inout_ PINPUT_INFORMATION pInputInfo);
+void FlushInputBuffer(_Inout_ INPUT_INFORMATION* pInputInfo);
 
 NTSTATUS FlushAllButKeys();
-void WakeUpReadersWaitingForData(_In_ PINPUT_INFORMATION InputInformation);
+void WakeUpReadersWaitingForData(_In_ INPUT_INFORMATION* InputInformation);
