@@ -397,5 +397,149 @@ namespace WEX {
                 return object.EventType == 0;
             }
         };
+
+        template<>
+        class VerifyOutputTraits <CONSOLE_FONT_INFO>
+        {
+        public:
+            static WEX::Common::NoThrowString ToString(const CONSOLE_FONT_INFO& cfi)
+            {
+                return WEX::Common::NoThrowString().Format(L"Index: %n  Size: (X:%d, Y:%d)", cfi.nFont, cfi.dwFontSize.X, cfi.dwFontSize.Y);
+            }
+        };
+
+        template<>
+        class VerifyCompareTraits <CONSOLE_FONT_INFO, CONSOLE_FONT_INFO>
+        {
+        public:
+            static bool AreEqual(const CONSOLE_FONT_INFO& expected, const CONSOLE_FONT_INFO& actual)
+            {
+                return expected.nFont == actual.nFont &&
+                    expected.dwFontSize.X == actual.dwFontSize.X &&
+                    expected.dwFontSize.Y == actual.dwFontSize.Y;
+            }
+
+            static bool AreSame(const CONSOLE_FONT_INFO& expected, const CONSOLE_FONT_INFO& actual)
+            {
+                return &expected == &actual;
+            }
+
+            static bool IsLessThan(const CONSOLE_FONT_INFO& expectedLess, const CONSOLE_FONT_INFO& expectedGreater)
+            {
+                return expectedLess.dwFontSize.X < expectedGreater.dwFontSize.X &&
+                    expectedLess.dwFontSize.Y < expectedGreater.dwFontSize.Y;
+            }
+
+            static bool IsGreaterThan(const CONSOLE_FONT_INFO& expectedGreater, const CONSOLE_FONT_INFO& expectedLess)
+            {
+                return expectedLess.dwFontSize.X < expectedGreater.dwFontSize.X &&
+                    expectedLess.dwFontSize.Y < expectedGreater.dwFontSize.Y;
+            }
+
+            static bool IsNull(const CONSOLE_FONT_INFO& object)
+            {
+                return object.nFont == 0 && object.dwFontSize.X == 0 && object.dwFontSize.Y == 0;
+            }
+        };
+
+        template<>
+        class VerifyOutputTraits <CONSOLE_FONT_INFOEX>
+        {
+        public:
+            static WEX::Common::NoThrowString ToString(const CONSOLE_FONT_INFOEX& cfiex)
+            {
+                return WEX::Common::NoThrowString().Format(L"Index: %d  Size: (X:%d, Y:%d)  Family: 0x%x (%d)  Weight: 0x%x (%d)  Name: %ls",
+                                                           cfiex.nFont,
+                                                           cfiex.dwFontSize.X,
+                                                           cfiex.dwFontSize.Y,
+                                                           cfiex.FontFamily, cfiex.FontFamily,
+                                                           cfiex.FontWeight, cfiex.FontWeight,
+                                                           cfiex.FaceName);
+            }
+        };
+
+        template<>
+        class VerifyCompareTraits <CONSOLE_FONT_INFOEX, CONSOLE_FONT_INFOEX>
+        {
+        public:
+            static bool AreEqual(const CONSOLE_FONT_INFOEX& expected, const CONSOLE_FONT_INFOEX& actual)
+            {
+                return expected.nFont == actual.nFont &&
+                    expected.dwFontSize.X == actual.dwFontSize.X &&
+                    expected.dwFontSize.Y == actual.dwFontSize.Y &&
+                    expected.FontFamily == actual.FontFamily &&
+                    expected.FontWeight == actual.FontWeight &&
+                    0 == wcscmp(expected.FaceName, actual.FaceName);
+            }
+
+            static bool AreSame(const CONSOLE_FONT_INFOEX& expected, const CONSOLE_FONT_INFOEX& actual)
+            {
+                return &expected == &actual;
+            }
+
+            static bool IsLessThan(const CONSOLE_FONT_INFOEX& expectedLess, const CONSOLE_FONT_INFOEX& expectedGreater)
+            {
+                return expectedLess.dwFontSize.X < expectedGreater.dwFontSize.X &&
+                    expectedLess.dwFontSize.Y < expectedGreater.dwFontSize.Y;
+            }
+
+            static bool IsGreaterThan(const CONSOLE_FONT_INFOEX& expectedGreater, const CONSOLE_FONT_INFOEX& expectedLess)
+            {
+                return expectedLess.dwFontSize.X < expectedGreater.dwFontSize.X &&
+                    expectedLess.dwFontSize.Y < expectedGreater.dwFontSize.Y;
+            }
+
+            static bool IsNull(const CONSOLE_FONT_INFOEX& object)
+            {
+                return object.nFont == 0 && object.dwFontSize.X == 0 && object.dwFontSize.Y == 0 &&
+                    object.FontFamily == 0 && object.FontWeight == 0 && object.FaceName[0] == L'\0';
+            }
+        };
+
+        template<>
+        class VerifyOutputTraits < CHAR_INFO >
+        {
+        public:
+            static WEX::Common::NoThrowString ToString(const CHAR_INFO& ci)
+            {
+                // 0x2400 is the Unicode symbol for a printable 'NUL' inscribed in a 1 column block. It's for communicating NUL without printing 0x0.
+                wchar_t const wch = ci.Char.UnicodeChar != L'\0' ? ci.Char.UnicodeChar : 0x2400;
+
+                // 0x20 is a standard space character.
+                char const ch = ci.Char.AsciiChar != '\0' ? ci.Char.AsciiChar : 0x20;
+
+                return WEX::Common::NoThrowString().Format(L"Unicode Char: %lc (0x%x),  Attributes: 0x%x,  [Ascii Char: %c (0x%hhx)]", 
+                                                           wch,
+                                                           ci.Char.UnicodeChar,
+                                                           ci.Attributes,
+                                                           ch,
+                                                           ci.Char.AsciiChar);
+            }
+        };
+
+        template<>
+        class VerifyCompareTraits < CHAR_INFO, CHAR_INFO >
+        {
+        public:
+            static bool AreEqual(const CHAR_INFO& expected, const CHAR_INFO& actual)
+            {
+                return expected.Attributes == actual.Attributes &&
+                    expected.Char.UnicodeChar == actual.Char.UnicodeChar;
+            }
+
+            static bool AreSame(const CHAR_INFO& expected, const CHAR_INFO& actual)
+            {
+                return &expected == &actual;
+            }
+
+            static bool IsLessThan(const CHAR_INFO&, const CHAR_INFO&) = delete;
+
+            static bool IsGreaterThan(const CHAR_INFO&, const CHAR_INFO&) = delete;
+
+            static bool IsNull(const CHAR_INFO& object)
+            {
+                return object.Attributes == 0 && object.Char.UnicodeChar == 0;
+            }
+        };
     }
 }

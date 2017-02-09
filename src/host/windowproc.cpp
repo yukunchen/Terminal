@@ -24,6 +24,9 @@
 
 #include "srvinit.h"
 
+#include <iomanip>
+#include <sstream>
+
 // Custom window messages
 #define CM_SET_WINDOW_SIZE       (WM_USER + 2)
 #define CM_BEEP                  (WM_USER + 3)
@@ -42,6 +45,11 @@
 #define CM_CONIME_KL_ACTIVATE    (WM_USER+15)
 #define CM_CONSOLE_MSG           (WM_USER+16)
 #define CM_UPDATE_EDITKEYS       (WM_USER+17)
+
+#ifdef DBG
+#define CM_SET_KEY_STATE         (WM_USER+18)
+#define CM_SET_KEYBOARD_LAYOUT   (WM_USER+19)
+#endif
 
 // The static and specific window procedures for this class are contained here
 #pragma region Window Procedure
@@ -702,6 +710,41 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         reg.GetEditKeys(NULL);
         break;
     }
+
+#ifdef DBG
+    case CM_SET_KEY_STATE:
+    {
+        const int keyboardInputTableStateSize = 256;
+        if (wParam < keyboardInputTableStateSize)
+        {
+            BYTE keyState[keyboardInputTableStateSize];
+            GetKeyboardState(keyState);
+            keyState[wParam] = static_cast<BYTE>(lParam);
+            SetKeyboardState(keyState);
+        }
+        else
+        {
+            LOG_HR_MSG(E_INVALIDARG, "CM_SET_KEY_STATE invalid wParam");
+        }
+        break;
+    }
+
+    case CM_SET_KEYBOARD_LAYOUT:
+    {
+        try
+        {
+            std::wstringstream wss;
+            wss << std::setfill(L'0') << std::setw(8) << wParam;
+            std::wstring wstr(wss.str());
+            LoadKeyboardLayout(wstr.c_str(), KLF_ACTIVATE);
+        }
+        catch (...)
+        {
+            LOG_HR_MSG(wil::ResultFromCaughtException(), "CM_SET_KEYBOARD_LAYOUT exception");
+        }
+        break;
+    }
+#endif DBG
 
     case EVENT_CONSOLE_CARET:
     case EVENT_CONSOLE_UPDATE_REGION:

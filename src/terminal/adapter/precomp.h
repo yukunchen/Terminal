@@ -22,3 +22,10 @@ Abstract:
 
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
+
+
+// WIL
+#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
+#include <wil\Common.h>
+#include <wil\Result.h>
+

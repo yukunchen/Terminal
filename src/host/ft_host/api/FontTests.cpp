@@ -28,18 +28,20 @@ class FontTests
     TEST_METHOD(TestSetConsoleFontNegativeSize);
 
     TEST_METHOD(TestFontScenario);
+
+    TEST_METHOD(TestSetFontAdjustsWindow);
 };
 
 bool FontTests::TestSetup()
 {
     SetVerifyOutput verifySettings(VerifyOutputSettings::LogOnlyFailures);
-    return Common::TestBufferSetup();
+    return true;
 }
 
 bool FontTests::TestCleanup()
 {
     SetVerifyOutput verifySettings(VerifyOutputSettings::LogOnlyFailures);
-    return Common::TestBufferCleanup();
+    return true;
 }
 
 void FontTests::TestCurrentFontAPIsInvalid()
@@ -132,6 +134,7 @@ void FontTests::TestFontScenario()
 {
     const HANDLE hConsoleOutput = GetStdOutputHandle();
 
+    Log::Comment(L"1. Ensure that the various GET APIs for font information align with each other.");
     CONSOLE_FONT_INFOEX cfie = {0};
     cfie.cbSize = sizeof(cfie);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfie));
@@ -146,30 +149,86 @@ void FontTests::TestFontScenario()
     const COORD coordCurrentFontSize = GetConsoleFontSize(hConsoleOutput, cfi.nFont);
     VERIFY_ARE_EQUAL(coordCurrentFontSize, cfi.dwFontSize, L"Ensure GetConsoleFontSize output matches GetCurrentConsoleFont");
 
+    // ---------------------
+
+    Log::Comment(L"2. Ensure that our font settings round-trip appropriately through the Ex APIs");
     CONSOLE_FONT_INFOEX cfieSet = {0};
     cfieSet.cbSize = sizeof(cfieSet);
     cfieSet.dwFontSize.Y = 12;
     VERIFY_SUCCEEDED(StringCchCopy(cfieSet.FaceName, ARRAYSIZE(cfieSet.FaceName), L"Lucida Console"));
 
     VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfieSet));
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(hConsoleOutput, TRUE, &cfieSet));
 
     CONSOLE_FONT_INFOEX cfiePost = {0};
     cfiePost.cbSize = sizeof(cfiePost);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiePost));
 
-    // So it appears that SetCurrentConsoleFontEx is broken in both legacy and modern consoles. Since this behavior
-    // shipped an indeterminate amount of time ago, we need to make sure that the existing broken behavior doesn't
-    // change unless we make said change intentionally. The broken behavior is that we give back the original font
-    // state.
-    // ...
-    // MiNiksa - Nov 2015 - I fixed this with the graphics refactor intentionally.
-    // I'm going to update this test to ensure we get the correct font.
-    VERIFY_ARE_EQUAL(cfieSet.nFont, cfiePost.nFont);
-    // MSFT: 10449084 - test is failing
-    /*VERIFY_ARE_EQUAL(cfieSet.dwFontSize.X, cfiePost.dwFontSize.X);
+    // Ensure that the two values we attempted to set did accurately round-trip through the API.
+    // The other unspecified values may have been adjusted/updated by GDI.
+    VERIFY_ARE_EQUAL(NoThrowString(cfieSet.FaceName), NoThrowString(cfiePost.FaceName));
     VERIFY_ARE_EQUAL(cfieSet.dwFontSize.Y, cfiePost.dwFontSize.Y);
-    VERIFY_ARE_EQUAL(cfieSet.FontFamily, cfiePost.FontFamily);
-    VERIFY_ARE_EQUAL(cfieSet.FontWeight, cfiePost.FontWeight);
-    VERIFY_ARE_EQUAL(String(cfieSet.FaceName), String(cfiePost.FaceName));*/
+
+    // Ensure that the entire structure we received matches what we expect to usually get for this Lucida Console Size 12 ask.
+    CONSOLE_FONT_INFOEX cfieFullExpected = { 0 };
+    cfieFullExpected.cbSize = sizeof(cfieFullExpected);
+    cfieFullExpected.dwFontSize.X = 7;
+    cfieFullExpected.dwFontSize.Y = 12;
+    cfieFullExpected.FontFamily = 54;
+    cfieFullExpected.FontWeight = 400;
+    wcscpy_s(cfieFullExpected.FaceName, L"Lucida Console");
+
+    VERIFY_ARE_EQUAL(cfieFullExpected, cfiePost);
+}
+
+void FontTests::TestSetFontAdjustsWindow()
+{
+    const HANDLE hConsoleOutput = GetStdOutputHandle();
+    const HWND hwnd = GetConsoleWindow();
+    RECT rc = { 0 };
+
+    CONSOLE_FONT_INFOEX cfiex = { 0 };
+    cfiex.cbSize = sizeof(cfiex);
+
+    Log::Comment(L"First set the console window to Consolas 16.");
+    wcscpy_s(cfiex.FaceName, L"Consolas");
+    cfiex.dwFontSize.Y = 16;
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiex));
+    Sleep(250);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetClientRect(hwnd, &rc), L"Retrieve client rectangle size for Consolas 16.");
+    SIZE szConsolas;
+    szConsolas.cx = rc.right - rc.left;
+    szConsolas.cy = rc.bottom - rc.top;
+    Log::Comment(NoThrowString().Format(L"Client rect size is (X: %d, Y: %d)", szConsolas.cx, szConsolas.cy));
+    
+    Log::Comment(L"Adjust console window to Lucida Console 12.");
+    wcscpy_s(cfiex.FaceName, L"Lucida Console");
+    cfiex.dwFontSize.Y = 12;
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiex));
+    Sleep(250);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetClientRect(hwnd, &rc), L"Retrieve client rectangle size for Lucida Console 12.");
+    SIZE szLucida;
+    szLucida.cx = rc.right - rc.left;
+    szLucida.cy = rc.bottom - rc.top;
+
+    Log::Comment(NoThrowString().Format(L"Client rect size is (X: %d, Y: %d)", szLucida.cx, szLucida.cy));
+    Log::Comment(L"Window should shrink in size when going to Lucida 12 from Consolas 16.");
+    VERIFY_IS_LESS_THAN(szLucida.cx, szConsolas.cx);
+    VERIFY_IS_LESS_THAN(szLucida.cy, szConsolas.cy);
+
+    Log::Comment(L"Adjust console window back to Consolas 16.");
+    wcscpy_s(cfiex.FaceName, L"Consolas");
+    cfiex.dwFontSize.Y = 16;
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiex));
+    Sleep(250);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetClientRect(hwnd, &rc), L"Retrieve client rectangle size for Consolas 16.");
+    szConsolas.cx = rc.right - rc.left;
+    szConsolas.cy = rc.bottom - rc.top;
+    
+    Log::Comment(NoThrowString().Format(L"Client rect size is (X: %d, Y: %d)", szConsolas.cx, szConsolas.cy));
+    Log::Comment(L"Window should grow in size when going from Lucida 12 to Consolas 16.");
+    VERIFY_IS_LESS_THAN(szLucida.cx, szConsolas.cx);
+    VERIFY_IS_LESS_THAN(szLucida.cy, szConsolas.cy);
 }
