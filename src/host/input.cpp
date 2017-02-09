@@ -2026,6 +2026,21 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
         MousePosition.Y = coordScreenBufferSize.Y - 1;
     }
 
+    // Process the transparency mousewheel message before the others so that we can
+    // process all the mouse events within the Selection and QuickEdit check
+    if (Message == WM_MOUSEWHEEL)
+    {
+        const short sKeyState = GET_KEYSTATE_WPARAM(wParam);
+
+        // ctrl+shift+scroll will adjust the transparency of the window
+        if ((sKeyState & MK_SHIFT) && (sKeyState & MK_CONTROL))
+        {
+            const short sDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
+            g_ciConsoleInformation.pWindow->ChangeWindowOpacity(OPACITY_DELTA_INTERVAL * sDelta);
+            g_ciConsoleInformation.pWindow->SetWindowHasMoved(true);
+        }
+    }
+
     if (pSelection->IsInSelectingState() || pSelection->IsInQuickEditMode())
     {
         if (Message == WM_LBUTTONDOWN)
@@ -2164,24 +2179,9 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
                 pSelection->ExtendSelection(MousePosition);
             }
         }
-        if (Message != WM_MOUSEWHEEL && Message != WM_MOUSEHWHEEL)
+        else if (Message == WM_MOUSEWHEEL || Message == WM_MOUSEHWHEEL)
         {
-            // We haven't processed the mousewheel event, so don't early return in that case
-            // Otherwise, all other mouse events are done being processed.
-            return FALSE;
-        }
-    }
-
-    if (Message == WM_MOUSEWHEEL)
-    {
-        const short sKeyState = GET_KEYSTATE_WPARAM(wParam);
-
-        // ctrl+shift+scroll will adjust the transparency of the window
-        if ((sKeyState & MK_SHIFT) && (sKeyState & MK_CONTROL))
-        {
-            const short sDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-            g_ciConsoleInformation.pWindow->ChangeWindowOpacity(OPACITY_DELTA_INTERVAL * sDelta);
-            g_ciConsoleInformation.pWindow->SetWindowHasMoved(true);
+            return TRUE;
         }
     }
 

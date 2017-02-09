@@ -58,7 +58,6 @@ Abstract:
 // WIL
 #include <wil\Common.h>
 #include <wil\Result.h>
-#include <wil\ResultException.h>
 
 #pragma prefast(push)
 #pragma prefast(disable:26071, "Range violation in Intsafe. Not ours.")

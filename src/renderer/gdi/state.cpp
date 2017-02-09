@@ -220,6 +220,8 @@ HRESULT GdiEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired,
     // Save the font.
     _hfont = hFont.release();
 
+    InvalidateAll();
+    
     return S_OK;
 }
 
@@ -263,62 +265,75 @@ HRESULT GdiEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDes
 // - hFont - A smart pointer to receive a handle to a ready-to-use GDI font.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
-HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont, _In_ int const iDpi, _Inout_ wil::unique_hfont& hFont)
+HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired,
+                                    _Out_ FontInfo* const pfiFont,
+                                    _In_ int const iDpi,
+                                    _Inout_ wil::unique_hfont& hFont)
 {
     wil::unique_hdc hdcTemp(CreateCompatibleDC(_hdcMemoryContext));
     RETURN_LAST_ERROR_IF_NULL(hdcTemp.get());
 
     // Get a special engine size because TT fonts can't specify X or we'll get weird scaling under some circumstances.
     COORD coordFontRequested = pfiFontDesired->GetEngineSize();
-
-    // For future reference, here is the engine weighting and internal details on Windows Font Mapping:
-    // https://msdn.microsoft.com/en-us/library/ms969909.aspx
-    // More relevant links:
-    // https://support.microsoft.com/en-us/kb/94646
-
-    // IMPORTANT: Be very careful when modifying the values being passed in below. Even the slightest change can cause
-    // GDI to return a font other than the one being requested. If you must change the below for any reason, make sure
-    // these fonts continue to work correctly, as they've been known to break:
-    //       * Monofur
-    //       * Iosevka Extralight
-    //
-    // While you're at it, make sure that the behavior matches what happens in the Fonts property sheet. Pay very close
-    // attention to the font previews to ensure that the font being selected by GDI is exactly the font requested --
-    // some monospace fonts look very similar.
-    LOGFONTW lf = { 0 };
-    lf.lfHeight = s_ScaleByDpi(coordFontRequested.Y, iDpi);
-    lf.lfWidth = s_ScaleByDpi(coordFontRequested.X, iDpi);
-    lf.lfWeight = pfiFontDesired->GetWeight();
-
-    // If we're searching for Terminal, our supported Raster Font, then we must use OEM_CHARSET.
-    // If the System's Non-Unicode Setting is set to English (United States) which is 437 
-    // and we try to enumerate Terminal with the console codepage as 932, that will turn into SHIFTJIS_CHARSET.
-    // Despite C:\windows\fonts\vga932.fon always being present, GDI will refuse to load the Terminal font 
-    // that doesn't correspond to the current System Non-Unicode Setting. It will then fall back to a TrueType
-    // font that does support the SHIFTJIS_CHARSET (because Terminal with CP 437 a.k.a. C:\windows\fonts\vgaoem.fon does NOT support it.)
-    // This is OK for display purposes (things will render properly) but not OK for API purposes.
-    // Because the API is affected by the raster/TT status of the actively selected font, we can't have
-    // GDI choosing a TT font for us when we ask for Raster. We have to settle for forcing the current system
-    // Terminal font to load even if it doesn't have the glyphs necessary such that the APIs continue to work fine.
-    if (0 == wcscmp(pfiFontDesired->GetFaceName(), L"Terminal"))
+    
+    // First, check to see if we're asking for the default raster font.
+    if (pfiFontDesired->IsDefaultRasterFont())
     {
-        lf.lfCharSet = OEM_CHARSET;
+        // We're being asked for the default raster font, which gets special handling. In particular, it's the font
+        // returned by GetStockObject(OEM_FIXED_FONT).
+        hFont.reset((HFONT)GetStockObject(OEM_FIXED_FONT));
     }
     else
     {
-        lf.lfCharSet = pfiFontDesired->GetCharSet();
+        // For future reference, here is the engine weighting and internal details on Windows Font Mapping:
+        // https://msdn.microsoft.com/en-us/library/ms969909.aspx
+        // More relevant links:
+        // https://support.microsoft.com/en-us/kb/94646
+
+        // IMPORTANT: Be very careful when modifying the values being passed in below. Even the slightest change can cause
+        // GDI to return a font other than the one being requested. If you must change the below for any reason, make sure
+        // these fonts continue to work correctly, as they've been known to break:
+        //       * Monofur
+        //       * Iosevka Extralight
+        //
+        // While you're at it, make sure that the behavior matches what happens in the Fonts property sheet. Pay very close
+        // attention to the font previews to ensure that the font being selected by GDI is exactly the font requested --
+        // some monospace fonts look very similar.
+        LOGFONTW lf = { 0 };
+        lf.lfHeight = s_ScaleByDpi(coordFontRequested.Y, iDpi);
+        lf.lfWidth = s_ScaleByDpi(coordFontRequested.X, iDpi);
+        lf.lfWeight = pfiFontDesired->GetWeight();
+
+        // If we're searching for Terminal, our supported Raster Font, then we must use OEM_CHARSET.
+        // If the System's Non-Unicode Setting is set to English (United States) which is 437 
+        // and we try to enumerate Terminal with the console codepage as 932, that will turn into SHIFTJIS_CHARSET.
+        // Despite C:\windows\fonts\vga932.fon always being present, GDI will refuse to load the Terminal font 
+        // that doesn't correspond to the current System Non-Unicode Setting. It will then fall back to a TrueType
+        // font that does support the SHIFTJIS_CHARSET (because Terminal with CP 437 a.k.a. C:\windows\fonts\vgaoem.fon does NOT support it.)
+        // This is OK for display purposes (things will render properly) but not OK for API purposes.
+        // Because the API is affected by the raster/TT status of the actively selected font, we can't have
+        // GDI choosing a TT font for us when we ask for Raster. We have to settle for forcing the current system
+        // Terminal font to load even if it doesn't have the glyphs necessary such that the APIs continue to work fine.
+        if (0 == wcscmp(pfiFontDesired->GetFaceName(), L"Terminal"))
+        {
+            lf.lfCharSet = OEM_CHARSET;
+        }
+        else
+        {
+            lf.lfCharSet = pfiFontDesired->GetCharSet();
+        }
+
+        lf.lfQuality = DRAFT_QUALITY;
+
+        // NOTE: not using what GDI gave us because some fonts don't quite roundtrip (e.g. MS Gothic and VL Gothic)
+        lf.lfPitchAndFamily = (FIXED_PITCH | FF_MODERN);
+
+        wcscpy_s(lf.lfFaceName, ARRAYSIZE(lf.lfFaceName), pfiFontDesired->GetFaceName());
+
+        // Create font.
+        hFont.reset(CreateFontIndirectW(&lf));
+        RETURN_LAST_ERROR_IF_NULL(hFont.get());
     }
-
-    lf.lfQuality = DRAFT_QUALITY;
-
-    // NOTE: not using what GDI gave us because some fonts don't quite roundtrip (e.g. MS Gothic and VL Gothic)
-    lf.lfPitchAndFamily = (FIXED_PITCH | FF_MODERN);
-
-    wcscpy_s(lf.lfFaceName, ARRAYSIZE(lf.lfFaceName), pfiFontDesired->GetFaceName());
-
-    // Create font.
-    hFont.reset(CreateFontIndirectW(&lf));
-    RETURN_LAST_ERROR_IF_NULL(hFont.get());
 
     // Select into DC
     wil::unique_hfont hFontOld(SelectFont(hdcTemp.get(), hFont.get()));
@@ -355,17 +370,22 @@ HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDe
     // Now fill up the FontInfo we were passed with the full details of which font we actually chose
     {
         // Get the actual font face that we chose
-        WCHAR pwszFaceName[LF_FACESIZE];
-        RETURN_LAST_ERROR_IF_FALSE(GetTextFaceW(hdcTemp.get(), ARRAYSIZE(pwszFaceName), pwszFaceName));
+        WCHAR wszFaceName[LF_FACESIZE];
+        RETURN_LAST_ERROR_IF_FALSE(GetTextFaceW(hdcTemp.get(), ARRAYSIZE(wszFaceName), wszFaceName));
 
-        if (coordFontRequested.X == 0)
+        if (pfiFontDesired->IsDefaultRasterFont())
+        {
+            coordFontRequested = coordFont;
+        }
+        else if (coordFontRequested.X == 0)
         {
             coordFontRequested.X = (SHORT)s_ShrinkByDpi(coordFont.X, iDpi);
         }
 
-        pfiFont->SetFromEngine(pwszFaceName,
+        pfiFont->SetFromEngine(wszFaceName,
                                tm.tmPitchAndFamily,
                                tm.tmWeight,
+                               pfiFontDesired->IsDefaultRasterFont(),
                                coordFont,
                                coordFontRequested);
     }

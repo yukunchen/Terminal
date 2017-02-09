@@ -4825,7 +4825,8 @@ HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcch
     }
 
     // Always report how much space we would need.
-    *pcchTitleBufferWrittenOrNeeded = cchTitleLength;
+    // We need +1 for the null that will always terminate the string.
+    *pcchTitleBufferWrittenOrNeeded = cchTitleLength + 1;
 
     return S_OK;
 }

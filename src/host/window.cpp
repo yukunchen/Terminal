@@ -362,13 +362,8 @@ NTSTATUS Window::ActivateAndShow(_In_ WORD const wShowWindow)
         wShowWindow != SW_SHOWMINNOACTIVE &&
         wShowWindow != SW_HIDE)
     {
-        HWND const hWndPrevious = SetActiveWindow(hWnd);
-
-        // If previous window was null, there's an error
-        if (hWndPrevious == nullptr)
-        {
-            status = NTSTATUS_FROM_WIN32(GetLastError());
-        }
+        // Do not check result. On some SKUs, such as WinPE, it's perfectly OK for NULL to be returned.
+        SetActiveWindow(hWnd);
     }
     else if (wShowWindow == SW_SHOWMINNOACTIVE)
     {
