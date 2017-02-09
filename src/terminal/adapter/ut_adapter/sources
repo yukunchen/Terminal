@@ -7,6 +7,7 @@ DLLDEF =
 
 TEST_CODE                       =   1
 NT_SIGNCODE                     =   1
+USE_NATIVE_EH                   =   1
 
 C_DEFINES                       =   $(C_DEFINES) -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTING
 

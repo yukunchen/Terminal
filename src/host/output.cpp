@@ -65,7 +65,10 @@ NTSTATUS DoCreateScreenBuffer()
     // TODO: MSFT 9355013: This needs to be resolved. We increment it once with no handle to ensure it's never cleaned up
     // and one always exists for the renderer (and potentially other functions.)
     // It's currently a load-bearing piece of code. http://osgvsowi/9355013
-    g_ciConsoleInformation.ScreenBuffers[0].Header.IncrementOriginalScreenBuffer();
+    if (NT_SUCCESS(Status))
+    {
+        g_ciConsoleInformation.ScreenBuffers[0].Header.IncrementOriginalScreenBuffer();
+    }
 
     return Status;
 }
@@ -136,7 +139,7 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
     short const sXSize = (short)(psrTargetRect->Right - psrTargetRect->Left + 1);
     short const sYSize = (short)(psrTargetRect->Bottom - psrTargetRect->Top + 1);
     ASSERT(sYSize > 0);
-    const int ScreenBufferWidth = pScreenInfo->ScreenBufferSize.X;
+    const int ScreenBufferWidth = pScreenInfo->GetScreenBufferSize().X;
 
     ROW* pRow = pScreenInfo->TextInfo->GetRowByOffset(coordSourcePoint.Y);
     NTSTATUS Status = STATUS_SUCCESS;
@@ -287,13 +290,14 @@ NTSTATUS ReadScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In
     }
 
     // do clipping.
-    if (psrReadRegion->Right > (SHORT)(pScreenInfo->ScreenBufferSize.X - 1))
+    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    if (psrReadRegion->Right > (SHORT)(coordScreenBufferSize.X - 1))
     {
-        psrReadRegion->Right = (SHORT)(pScreenInfo->ScreenBufferSize.X - 1);
+        psrReadRegion->Right = (SHORT)(coordScreenBufferSize.X - 1);
     }
-    if (psrReadRegion->Bottom > (SHORT)(pScreenInfo->ScreenBufferSize.Y - 1))
+    if (psrReadRegion->Bottom > (SHORT)(coordScreenBufferSize.Y - 1))
     {
-        psrReadRegion->Bottom = (SHORT)(pScreenInfo->ScreenBufferSize.Y - 1);
+        psrReadRegion->Bottom = (SHORT)(coordScreenBufferSize.Y - 1);
     }
 
     COORD TargetPoint;
@@ -353,22 +357,23 @@ NTSTATUS WriteScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PCHAR_INFO
     }
 
     // Ensure that the write region is within the constraints of the screen buffer.
-    if (psrWriteRegion->Left >= pScreenInfo->ScreenBufferSize.X || psrWriteRegion->Top >= pScreenInfo->ScreenBufferSize.Y)
+    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    if (psrWriteRegion->Left >= coordScreenBufferSize.X || psrWriteRegion->Top >= coordScreenBufferSize.Y)
     {
         return STATUS_SUCCESS;
     }
 
     SMALL_RECT SourceRect;
     // Do clipping.
-    if (psrWriteRegion->Right > (SHORT)(pScreenInfo->ScreenBufferSize.X - 1))
+    if (psrWriteRegion->Right > (SHORT)(coordScreenBufferSize.X - 1))
     {
-        psrWriteRegion->Right = (SHORT)(pScreenInfo->ScreenBufferSize.X - 1);
+        psrWriteRegion->Right = (SHORT)(coordScreenBufferSize.X - 1);
     }
     SourceRect.Right = psrWriteRegion->Right - psrWriteRegion->Left;
 
-    if (psrWriteRegion->Bottom > (SHORT)(pScreenInfo->ScreenBufferSize.Y - 1))
+    if (psrWriteRegion->Bottom > (SHORT)(coordScreenBufferSize.Y - 1))
     {
-        psrWriteRegion->Bottom = (SHORT)(pScreenInfo->ScreenBufferSize.Y - 1);
+        psrWriteRegion->Bottom = (SHORT)(coordScreenBufferSize.Y - 1);
     }
     SourceRect.Bottom = psrWriteRegion->Bottom - psrWriteRegion->Top;
 
@@ -433,7 +438,8 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     ULONG NumRead = 0;
     SHORT X = coordRead.X;
     SHORT Y = coordRead.Y;
-    if (X >= pScreenInfo->ScreenBufferSize.X || X < 0 || Y >= pScreenInfo->ScreenBufferSize.Y || Y < 0)
+    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    if (X >= coordScreenBufferSize.X || X < 0 || Y >= coordScreenBufferSize.Y || Y < 0)
     {
         *pcRecords = 0;
         return STATUS_SUCCESS;
@@ -494,7 +500,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 Char = &Row->CharRow.Chars[X];
                 AttrP = &Row->CharRow.KAttrs[X];
 
-                if ((ULONG)(pScreenInfo->ScreenBufferSize.X - X) >(*pcRecords - NumRead))
+                if ((ULONG)(coordScreenBufferSize.X - X) >(*pcRecords - NumRead))
                 {
                     memmove(BufPtr, Char, (*pcRecords - NumRead) * sizeof(WCHAR));
                     memmove(BufPtrA, AttrP, (*pcRecords - NumRead) * sizeof(CHAR));
@@ -503,19 +509,19 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                     break;
                 }
 
-                memmove(BufPtr, Char, (pScreenInfo->ScreenBufferSize.X - X) * sizeof(WCHAR));
-                BufPtr = (PWCHAR)((PBYTE)BufPtr + ((pScreenInfo->ScreenBufferSize.X - X) * sizeof(WCHAR)));
+                memmove(BufPtr, Char, (coordScreenBufferSize.X - X) * sizeof(WCHAR));
+                BufPtr = (PWCHAR)((PBYTE)BufPtr + ((coordScreenBufferSize.X - X) * sizeof(WCHAR)));
 
-                memmove(BufPtrA, AttrP, (pScreenInfo->ScreenBufferSize.X - X) * sizeof(CHAR));
-                BufPtrA = (PBYTE)((PBYTE)BufPtrA + ((pScreenInfo->ScreenBufferSize.X - X) * sizeof(CHAR)));
+                memmove(BufPtrA, AttrP, (coordScreenBufferSize.X - X) * sizeof(CHAR));
+                BufPtrA = (PBYTE)((PBYTE)BufPtrA + ((coordScreenBufferSize.X - X) * sizeof(CHAR)));
 
-                NumRead += pScreenInfo->ScreenBufferSize.X - X;
+                NumRead += coordScreenBufferSize.X - X;
 
                 Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
 
                 X = 0;
                 Y++;
-                if (Y >= pScreenInfo->ScreenBufferSize.Y)
+                if (Y >= coordScreenBufferSize.Y)
                 {
                     break;
                 }
@@ -593,7 +599,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 }
 
                 k = 0;
-                for (j = X; j < pScreenInfo->ScreenBufferSize.X; TargetPtr++)
+                for (j = X; j < coordScreenBufferSize.X; TargetPtr++)
                 {
                     const WORD wLegacyAttributes = pAttrRun->GetAttributes().GetLegacyAttributes();
                     if ((j == X) && (*AttrP & CHAR_ROW::ATTR_TRAILING_BYTE))
@@ -602,7 +608,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                     }
                     else if (*AttrP & CHAR_ROW::ATTR_LEADING_BYTE)
                     {
-                        if ((NumRead == *pcRecords - 1) || (j == pScreenInfo->ScreenBufferSize.X - 1))
+                        if ((NumRead == *pcRecords - 1) || (j == coordScreenBufferSize.X - 1))
                         {
                             *TargetPtr = wLegacyAttributes;
                         }
@@ -618,7 +624,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
                     NumRead++;
                     j += 1;
-                    if (++k == CountOfAttr && j < pScreenInfo->ScreenBufferSize.X)
+                    if (++k == CountOfAttr && j < coordScreenBufferSize.X)
                     {
                         pAttrRun++;
                         k = 0;
@@ -642,7 +648,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
                 X = 0;
                 Y++;
-                if (Y >= pScreenInfo->ScreenBufferSize.Y)
+                if (Y >= coordScreenBufferSize.Y)
                 {
                     break;
                 }
@@ -731,7 +737,7 @@ SHORT ScrollEntireScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo, _In_ const SHO
     SHORT const RowIndex = pScreenInfo->TextInfo->GetFirstRowIndex();
 
     // update screen buffer
-    pScreenInfo->TextInfo->SetFirstRowIndex((SHORT)((RowIndex + sScrollValue) % pScreenInfo->ScreenBufferSize.Y));
+    pScreenInfo->TextInfo->SetFirstRowIndex((SHORT)((RowIndex + sScrollValue) % pScreenInfo->GetScreenBufferSize().Y));
 
     return RowIndex;
 }
@@ -810,13 +816,15 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
         coordDestinationOrigin.Y += -psrScroll->Top;
         psrScroll->Top = 0;
     }
-    if (psrScroll->Right >= pScreenInfo->ScreenBufferSize.X)
+
+    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    if (psrScroll->Right >= coordScreenBufferSize.X)
     {
-        psrScroll->Right = (SHORT)(pScreenInfo->ScreenBufferSize.X - 1);
+        psrScroll->Right = (SHORT)(coordScreenBufferSize.X - 1);
     }
-    if (psrScroll->Bottom >= pScreenInfo->ScreenBufferSize.Y)
+    if (psrScroll->Bottom >= coordScreenBufferSize.Y)
     {
-        psrScroll->Bottom = (SHORT)(pScreenInfo->ScreenBufferSize.Y - 1);
+        psrScroll->Bottom = (SHORT)(coordScreenBufferSize.Y - 1);
     }
 
     // if source rectangle doesn't intersect screen buffer, return.
@@ -861,21 +869,21 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
         {
             psrClip->Top = 0;
         }
-        if (psrClip->Right >= pScreenInfo->ScreenBufferSize.X)
+        if (psrClip->Right >= coordScreenBufferSize.X)
         {
-            psrClip->Right = (SHORT)(pScreenInfo->ScreenBufferSize.X - 1);
+            psrClip->Right = (SHORT)(coordScreenBufferSize.X - 1);
         }
-        if (psrClip->Bottom >= pScreenInfo->ScreenBufferSize.Y)
+        if (psrClip->Bottom >= coordScreenBufferSize.Y)
         {
-            psrClip->Bottom = (SHORT)(pScreenInfo->ScreenBufferSize.Y - 1);
+            psrClip->Bottom = (SHORT)(coordScreenBufferSize.Y - 1);
         }
     }
     else
     {
         OurClipRectangle.Left = 0;
         OurClipRectangle.Top = 0;
-        OurClipRectangle.Right = (SHORT)(pScreenInfo->ScreenBufferSize.X - 1);
-        OurClipRectangle.Bottom = (SHORT)(pScreenInfo->ScreenBufferSize.Y - 1);
+        OurClipRectangle.Right = (SHORT)(coordScreenBufferSize.X - 1);
+        OurClipRectangle.Bottom = (SHORT)(coordScreenBufferSize.Y - 1);
         psrClip = &OurClipRectangle;
     }
     // Account for the scroll margins set by DECSTBM
@@ -964,8 +972,8 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
             TargetPoint.X = TargetRectangle.Left;
             TargetPoint.Y = TargetRectangle.Top;
 
-            if (ScrollRectangle2.Right == (SHORT)(pScreenInfo->ScreenBufferSize.X - 1) &&
-                ScrollRectangle2.Left == 0 && ScrollRectangle2.Bottom == (SHORT)(pScreenInfo->ScreenBufferSize.Y - 1) && ScrollRectangle2.Top == 1)
+            if (ScrollRectangle2.Right == (SHORT)(coordScreenBufferSize.X - 1) &&
+                ScrollRectangle2.Left == 0 && ScrollRectangle2.Bottom == (SHORT)(coordScreenBufferSize.Y - 1) && ScrollRectangle2.Top == 1)
             {
                 ScrollEntireScreen(pScreenInfo, (SHORT)(ScrollRectangle2.Top - TargetRectangle.Top));
             }

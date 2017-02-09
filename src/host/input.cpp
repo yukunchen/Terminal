@@ -7,6 +7,7 @@
 #include "precomp.h"
 
 #include "input.h"
+#include "consoleKeyInfo.hpp" 
 
 #include "clipboard.hpp"
 #include "cursor.h"
@@ -33,15 +34,6 @@
         !((n) & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)))
 
 #define MAX_CHARS_FROM_1_KEYSTROKE 6
-
-// The following data structures are a hack to work around the fact that
-// MapVirtualKey does not return the correct virtual key code in many cases.
-// we store the correct info (from the keydown message) in the CONSOLE_KEY_INFO
-// structure when a keydown message is translated. Then when we receive a
-// wm_[sys][dead]char message, we retrieve it and clear out the record.
-
-#define CONSOLE_FREE_KEY_INFO 0
-#define CONSOLE_MAX_KEY_INFO 32
 
 #define DEFAULT_NUMBER_OF_EVENTS 50
 #define INPUT_BUFFER_SIZE_INCREMENT 10
@@ -1126,7 +1118,34 @@ DWORD WriteInputBuffer(_In_ PINPUT_INFORMATION pInputInfo, _In_ PINPUT_RECORD pI
     return EventsWritten;
 }
 
-NTSTATUS InitWindowsSubsystem()
+// Routine Description:
+// - This routine gets called to filter input to console dialogs so that we can do the special processing that StoreKeyInfo does.
+LRESULT DialogHookProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    MSG msg = *((PMSG)lParam);
+
+    UNREFERENCED_PARAMETER(wParam);
+
+    if (nCode == MSGF_DIALOGBOX)
+    {
+        if (msg.message >= WM_KEYFIRST && msg.message <= WM_KEYLAST)
+        {
+            if (msg.message != WM_CHAR && msg.message != WM_DEADCHAR && msg.message != WM_SYSCHAR && msg.message != WM_SYSDEADCHAR)
+            {
+
+                // don't store key info if dialog box input
+                if (GetWindowLongPtrW(msg.hwnd, GWLP_HWNDPARENT) == 0)
+                {
+                    StoreKeyInfo(&msg);
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 {
     g_hInstance = GetModuleHandle(L"ConhostV2.dll");
 
@@ -1141,6 +1160,10 @@ NTSTATUS InitWindowsSubsystem()
         RIPMSG2(RIP_WARNING, "CreateWindowsWindow failed with status 0x%x, gle = 0x%x", Status, GetLastError());
         return Status;
     }
+
+    // We intentionally ignore the return value of SetWindowsHookEx. There are mixed LUID cases where this call will fail but in the past this call
+    // was special cased (for CSRSS) to always succeed. Thus, we ignore failure for app compat (as not having the hook isn't fatal).
+    *phhook = SetWindowsHookExW(WH_MSGFILTER, (HOOKPROC)DialogHookProc, nullptr, GetCurrentThreadId());
 
     SetConsoleWindowOwner(g_ciConsoleInformation.pWindow->GetWindowHandle(), ProcessData);
 
@@ -1279,7 +1302,8 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
     InitEnvironmentVariables();
 
     LockConsole();
-    NTSTATUS Status = InitWindowsSubsystem();
+    HHOOK hhook;
+    NTSTATUS Status = InitWindowsSubsystem(&hhook);
     UnlockConsole();
     if (!NT_SUCCESS(Status))
     {
@@ -1298,19 +1322,28 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
             break;
         }
 
-        // special handling to forcibly differentiate between ctrl+c and ctrl+break.
-        // this is to get around the fact that we currently use TranslateMessage
-        // when we should be handling it ourselves. MSFT:9891752 tracks this.
-        const bool controlKeyPressed = IsFlagSet(GetKeyState(VK_LCONTROL), KEY_PRESSED) || IsFlagSet(GetKeyState(VK_RCONTROL), KEY_PRESSED);
-        const WORD virtualScanCode = LOBYTE(HIWORD(msg.lParam));
-        if (controlKeyPressed && msg.message == WM_KEYDOWN && MapVirtualKeyW(virtualScanCode, MAPVK_VSC_TO_VK_EX) == 'C')
-        {
-            msg.message = WM_CHAR;
-            msg.wParam = 'c';
-            msg.lParam = 'C';
-            DispatchMessageW(&msg);
-        }
-        else if (!UserPrivApi::s_TranslateMessageEx(&msg, TM_POSTCHARBREAKS))
+        // --- START LOAD BEARING CODE ---
+        // TranslateMessageEx appears to be necessary for a few things (that we could in the future take care of ourselves...)
+        // 1. The normal TranslateMessage will return TRUE for all WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP 
+        //    no matter what. 
+        //    - This means that if there *is* a translation for the keydown, it will post a WM_CHAR to our queue and say TRUE.
+        //      ***HOWEVER*** it also means that if there is *NOT* a translation for the keydown, it will post nothing and still say TRUE.
+        //    - TRUE from TranslateMessage typically means "don't dispatch, it's already handled."
+        //    - *But* the console needs to dispatch a WM_KEYDOWN that wasn't translated into a WM_CHAR so the underlying console client can 
+        //      receive it and decide what to do with it.
+        //    - Thus TranslateMessageEx was kludged in December 1990 to return FALSE for the case where it doesn't post a WM_CHAR so the
+        //      console can know this and handle it.
+        //    - Instead of using this kludge from many years ago... we could instead use the ToUnicode/ToUnicodeEx exports to translate
+        //      the WM_KEYDOWN to WM_CHAR ourselves and synchronously dispatch it with all context if necessary (or continue to dispatch the
+        //      WM_KEYDOWN if ToUnicode offers no translation. We would no longer need the private TranslateMessageEx (or even TranslateMessage at all).
+        // 2. TranslateMessage also performs translation of ALT+NUMPAD sequences on our behalf into their corresponding character input
+        //    - If we take out TranslateMessage entirely as stated in part 1, we would have to reimplement our own version of translating ALT+NUMPAD
+        //      sequences at this point inside the console.
+        //    - The Clipboard class (clipboard.cpp) already does the inverse of this to mock up keypad sequences for text strings pasted into the console
+        //      so they can be faithfully represented as a user "typing" into the client application. The vision would be we leverage the knowledge from
+        //      clipboard to build a transcoder capable of doing the reverse at this point so TranslateMessage would be completely unnecessary for us.
+        // Until that future point in time.... this is LOAD BEARING CODE and should not be hastily modified or removed!
+        if (!UserPrivApi::s_TranslateMessageEx(&msg, TM_POSTCHARBREAKS))
         {
             DispatchMessageW(&msg);
         }
@@ -1320,10 +1353,20 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
             // alt is really down
             DispatchMessageW(&msg);
         }
+        else
+        {
+            StoreKeyInfo(&msg);
+        }
+        // -- END LOAD BEARING CODE
     }
 
     // Free all resources used by this thread
     DeactivateTextServices();
+
+    if (nullptr != hhook)
+    {
+        UnhookWindowsHookEx(hhook);
+    }
 
     return 0;
 }
@@ -1497,10 +1540,17 @@ bool ShouldTakeOverKeyboardShortcuts()
     return !g_ciConsoleInformation.GetCtrlKeyShortcutsDisabled() && IsInProcessedInputMode();
 }
 
-void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole)
+void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole)
 {
+    BOOLEAN ContinueProcessing;
+    ULONG EventsWritten;
+    BOOL bGenerateBreak = FALSE;
 
+    // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(lParam) is a character
+    WORD VirtualKeyCode = LOWORD(wParam);
+    const ULONG ControlKeyState = GetControlKeyState(lParam);
     const BOOL bKeyDown = IsFlagClear(lParam, KEY_TRANSITION_UP);
+
     if (bKeyDown)
     {
         // Log a telemetry flag saying the user interacted with the Console
@@ -1511,30 +1561,36 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
         Telemetry::Instance().SetUserInteractive();
     }
 
-    BOOLEAN ContinueProcessing;
-    ULONG EventsWritten;
-    BOOL bGenerateBreak = FALSE;
-
-    // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(lParam) is a character
-    WORD VirtualKeyCode = LOWORD(wParam);
-    const ULONG ControlKeyState = GetControlKeyState(lParam);
-    WORD VirtualScanCode = LOBYTE(HIWORD(lParam));
-    WORD repeatCount = LOWORD(lParam);
-
     // Make sure we retrieve the key info first, or we could chew up unneeded space in the key info table if we bail out early.
     INPUT_RECORD InputEvent;
+    InputEvent.Event.KeyEvent.wVirtualKeyCode = VirtualKeyCode;
+    InputEvent.Event.KeyEvent.wVirtualScanCode = (BYTE)(HIWORD(lParam));
+    if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
+    {
+        // --- START LOAD BEARING CODE ---
+        // NOTE: We MUST match up the original data from the WM_KEYDOWN stroke (handled at some inexact moment in the
+        //       past by TranslateMessageEx) with the WM_CHAR we are processing now to ensure we have the correct
+        //       wVirtualScanCode to associate with the message and pass down into the console input queue for further
+        //       processing.
+        //       This is required because we cannot accurately re-synthesize (using MapVirtualKey/Ex)
+        //       the original scan code just based on the information we have now and the scan code might be 
+        //       required by the underlying client application, processed input handler (inside the console),
+        //       or other input channels to help portray certain key sequences.
+        //       Most notably this affects Ctrl-C, Ctrl-Break, and Pause/Break among others.
+        //
+        RetrieveKeyInfo(hWnd,
+                        &InputEvent.Event.KeyEvent.wVirtualKeyCode,
+                        &InputEvent.Event.KeyEvent.wVirtualScanCode,
+                        !g_ciConsoleInformation.pInputBuffer->ImeMode.InComposition);
+
+        VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
+        // --- END LOAD BEARING CODE ---
+    }
+
     InputEvent.EventType = KEY_EVENT;
     InputEvent.Event.KeyEvent.bKeyDown = bKeyDown;
-    InputEvent.Event.KeyEvent.wRepeatCount = repeatCount;
-    InputEvent.Event.KeyEvent.wVirtualKeyCode = VirtualKeyCode;
-    InputEvent.Event.KeyEvent.wVirtualScanCode = VirtualScanCode;
-    InputEvent.Event.KeyEvent.dwControlKeyState = ControlKeyState;
-    InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)0;
+    InputEvent.Event.KeyEvent.wRepeatCount = LOWORD(lParam);
 
-    // We need to differentiate between WM_KEYDOWN and the rest
-    // because when the message is WM_KEYDOWN we need to be
-    // translating the scancode and with the others we're given the
-    // wchar directly.
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
     {
         // If this is a fake character, zero the scancode.
@@ -1542,35 +1598,25 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
         {
             InputEvent.Event.KeyEvent.wVirtualScanCode = 0;
         }
-        InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)wParam;
-        InputEvent.Event.KeyEvent.wVirtualKeyCode = LOBYTE(VkKeyScan((WCHAR)wParam));
-        InputEvent.Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKeyW(InputEvent.Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC);
-
-        VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
-        VirtualScanCode = InputEvent.Event.KeyEvent.wVirtualScanCode;
+        InputEvent.Event.KeyEvent.dwControlKeyState = GetControlKeyState(lParam);
+        if (Message == WM_CHAR || Message == WM_SYSCHAR)
+        {
+            InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)wParam;
+        }
+        else
+        {
+            InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)0;
+        }
     }
-    else if (Message == WM_KEYDOWN)
+    else
     {
         // if alt-gr, ignore
         if (lParam & 0x02000000)
         {
             return;
         }
-        InputEvent.Event.KeyEvent.wVirtualKeyCode = (WORD) MapVirtualKeyW(VirtualScanCode, MAPVK_VSC_TO_VK_EX);
-        // for compatibility with the old behavior, we need to translate
-        // keyboard position dependent virtual keycodes to position agnostic
-        // ones (ex. VK_LCONTROL -> VK_CONTROL)
-        if (InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_LCONTROL || InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_RCONTROL)
-        {
-            InputEvent.Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
-        }
-        else if (InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_LSHIFT || InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_RSHIFT)
-        {
-            InputEvent.Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
-        }
-
-        VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
-        VirtualScanCode = InputEvent.Event.KeyEvent.wVirtualScanCode;
+        InputEvent.Event.KeyEvent.dwControlKeyState = ControlKeyState;
+        InputEvent.Event.KeyEvent.uChar.UnicodeChar = 0;
     }
 
     const INPUT_KEY_INFO inputKeyInfo(VirtualKeyCode, ControlKeyState);
@@ -1591,13 +1637,8 @@ void HandleKeyEvent(_In_ const HWND /*hWnd*/, _In_ const UINT Message, _In_ cons
     if (!IsInVirtualTerminalInputMode())
     {
         // First attempt to process simple key chords (Ctrl+Key)
-        if (inputKeyInfo.IsCtrlOnly() && ShouldTakeOverKeyboardShortcuts())
+        if (inputKeyInfo.IsCtrlOnly() && ShouldTakeOverKeyboardShortcuts() && bKeyDown)
         {
-            if (!bKeyDown)
-            {
-                return;
-            }
-
             switch (VirtualKeyCode)
             {
             case 'A':
@@ -1940,7 +1981,20 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
         short sDelta = 0;
         if (Message == WM_MOUSEWHEEL)
         {
-            sDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
+            short sWheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+            // For most devices, we'll get mouse events as multiples of 
+            // WHEEL_DELTA, where WHEEL_DELTA represents a single scroll unit
+            // But sometimes, things like trackpads will scroll in finer
+            // measurements. In this case, the VT mouse scrolling wouldn't work.
+            // So if that happens, ensure we scroll at least one time.
+            if (abs(sWheelDelta) < WHEEL_DELTA)
+            {
+                sDelta = sWheelDelta < 0 ? -1 : 1;
+            }
+            else
+            {
+                sDelta = sWheelDelta / WHEEL_DELTA;
+            }
         }
 
         if (HandleTerminalMouseEvent(MousePosition, Message, GET_KEYSTATE_WPARAM(wParam), sDelta))
@@ -1952,22 +2006,39 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
     MousePosition.X += pScreenInfo->GetBufferViewport().Left;
     MousePosition.Y += pScreenInfo->GetBufferViewport().Top;
 
+    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+
     // make sure mouse position is clipped to screen buffer
     if (MousePosition.X < 0)
     {
         MousePosition.X = 0;
     }
-    else if (MousePosition.X >= pScreenInfo->ScreenBufferSize.X)
+    else if (MousePosition.X >= coordScreenBufferSize.X)
     {
-        MousePosition.X = pScreenInfo->ScreenBufferSize.X - 1;
+        MousePosition.X = coordScreenBufferSize.X - 1;
     }
     if (MousePosition.Y < 0)
     {
         MousePosition.Y = 0;
     }
-    else if (MousePosition.Y >= pScreenInfo->ScreenBufferSize.Y)
+    else if (MousePosition.Y >= coordScreenBufferSize.Y)
     {
-        MousePosition.Y = pScreenInfo->ScreenBufferSize.Y - 1;
+        MousePosition.Y = coordScreenBufferSize.Y - 1;
+    }
+
+    // Process the transparency mousewheel message before the others so that we can
+    // process all the mouse events within the Selection and QuickEdit check
+    if (Message == WM_MOUSEWHEEL)
+    {
+        const short sKeyState = GET_KEYSTATE_WPARAM(wParam);
+
+        // ctrl+shift+scroll will adjust the transparency of the window
+        if ((sKeyState & MK_SHIFT) && (sKeyState & MK_CONTROL))
+        {
+            const short sDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
+            g_ciConsoleInformation.pWindow->ChangeWindowOpacity(OPACITY_DELTA_INTERVAL * sDelta);
+            g_ciConsoleInformation.pWindow->SetWindowHasMoved(true);
+        }
     }
 
     if (pSelection->IsInSelectingState() || pSelection->IsInQuickEditMode())
@@ -2054,7 +2125,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
                     }
                     coordSelectionAnchor.X--;
                 }
-                while (MousePosition.X < pScreenInfo->ScreenBufferSize.X)
+                while (MousePosition.X < coordScreenBufferSize.X)
                 {
                     if (IS_WORD_DELIM(Row->CharRow.Chars[MousePosition.X]))
                     {
@@ -2108,37 +2179,13 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
                 pSelection->ExtendSelection(MousePosition);
             }
         }
-        if (Message != WM_MOUSEWHEEL && Message != WM_MOUSEHWHEEL)
-        {
-            // We haven't processed the mousewheel event, so don't early return in that case
-            // Otherwise, all other mouse events are done being processed.
-            return FALSE;
-        }
-    }
-
-    if (Message == WM_MOUSEWHEEL)
-    {
-        const short sKeyState = GET_KEYSTATE_WPARAM(wParam);
-
-        // ctrl+shift+scroll will adjust the transparency of the window
-        if ((sKeyState & MK_SHIFT) && (sKeyState & MK_CONTROL))
-        {
-            const short sDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-            g_ciConsoleInformation.pWindow->ChangeWindowOpacity(OPACITY_DELTA_INTERVAL * sDelta);
-            g_ciConsoleInformation.pWindow->SetWindowHasMoved(true);
-        }
-        else
+        else if (Message == WM_MOUSEWHEEL || Message == WM_MOUSEHWHEEL)
         {
             return TRUE;
         }
     }
-    else if (Message == WM_MOUSEHWHEEL)
-    {
-        return TRUE;
-    }
 
-
-    if (!(g_ciConsoleInformation.pInputBuffer->InputMode & ENABLE_MOUSE_INPUT))
+    if (IsFlagClear(g_ciConsoleInformation.pInputBuffer->InputMode, ENABLE_MOUSE_INPUT))
     {
         ReleaseCapture();
         return TRUE;

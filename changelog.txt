@@ -85,7 +85,7 @@
 	10047286 - conemu triggers assert when attaching console
 	10071715 - Functions wrapped in NTSTATUS_FROM_WIN32 get called twice
 	9751066 - [Maximus5/ConEmu] WriteConsoleW used with ConEmu duplicates Chinese characters output (#945)
-	9979330 - [Watson Failure] caused by INTEGER_DIVIDE_BY_ZERO - this represents having GDI Engine updated to appropriately log/return/handle all sorts of GDI errors 
+	9979330 - [Watson Failure] caused by INTEGER_DIVIDE_BY_ZERO - this represents having GDI Engine updated to appropriately log/return/handle all sorts of GDI errors
 	9891756 - AllocConsole then FreeConsole from win32 application is not closing newly created console window
 	9811815 - ConEmu doesn't scroll properly when dir is run
 	9770949 - F9 popup doesn't restore original colors when leaving
@@ -94,3 +94,34 @@
 	9871791 - [GH #1307] Typing text in the bash: existing text is overwritten, new text is not inserted
 	10046477 - Ctrl-l Doesn't erase bottom row or right column in bash
 	9130937 - Remove Secure CRT suppression flag
+12/15/2016 - <batch merge>
+	10113792 - Bold fonts preview at incorrect size on high DPI
+	9516800 - [Watson Failure] caused by INTEGER_DIVIDE_BY_ZERO_c0000094_ConhostV2.dll!AdjustCursorPosition
+	10186632 - Feature tests failing/not running in VSO
+	10142744 - Pressing Ctrl or Shift immediately dismisses the selection
+	10141431 - Automated test reports/code coverage within VSO build
+1/4/2017 - 10125167 - Ctrl+ sequences not translated properly for Virtual Terminal environments.
+1/6/2017 - 1577180 - Fix `CONSOLE_INFORMATION` ctor to do instance
+1/6/2017 - <batch merge>
+	10436404 - UIA tests failing/not running in VSO
+	9020846 - TVS: Warning 26000 in file: Windows\core\console\v2\host\srvinit.cpp (529)
+	10108607 - [Watson Failure] caused by NULL_POINTER_WRITE_c0000005_ConhostV2.dll!g_ciConsoleInformation
+	10065277 - [GH#1456] 'tput reset' (cls-like command) won't work
+	10444846 - Ensure synchronization of sdcheckin.txt/changelog.txt when merging to inbox branch
+	9893723 - [GH#1390] Some mouse wheel actions and trackpad gestures are erroneously translated into Mouse Button 5 events
+	10243950 - conhost.exe taking a lot of CPU cycles with Hack font as default
+1/11/2017 - 10059280 - [CPG] - Boot_PostSetup | +544.5 KB regression in Metric: NormalPri-DiskRead | rs_onecore_dep.14986.1001.20161203-1700
+1/12/2017 - 10320237 - Restore input handling to RS1 behavior to restore Ctrl-break, pause/break, Ctrl-c issues
+1/12/2017 - 10438946 - Powershell PSReadline relies on setting invalid input flags to receive ^C for Ctrl+C
+1/18/2017 - 10449084 - Fix TestFontScenario test to utilize proper screen buffer when modifying font
+1/18/2017 - 10571624 - Fix SetConsoleCurrentFont API to ensure that window size/dimensions are refreshed when font changes.
+1/23/2017 - 10471073 - Mouse wheel no longer works in FAR Manager. Console not placing wheel/hwheel events in client input queue.
+1/26/2017 - 9765193 - Control AND Meta modifiers on keys work at the same time in VT Input mode.
+1/26/2017 - 9311951 - ReadConsoleInput returns the right number of events when holding control
+1/27/2017 - 10187614 - Adds test for alt-gr and VK_APPS.
+1/27/2017 - 10484556 - Adds tests for ctrl+c, ctrl+z, ctrl+h for bash and cmd.
+1/30/2017 - 9516800 - [Watson Failure] caused by INTEGER_DIVIDE_BY_ZERO_c0000094_ConhostV2.dll!_CalculateViewportSize
+2/1/2017 - 10187355 - DBCS tests + Read/Write APIs fixed to be fully compatible with v1 console
+2/2/2017 - 10471073 - Mouse wheel no longer works in FAR Manager. Restore messages in the input queue depending on the mode
+2/6/2017 - 10802608 - WinPE main cmd window is invisible. Don't return error during SetActiveWindow.
+2/7/2017 - 10586343 - GetConsoleTitleA fails to return due to off-by-one in buffer size calculation. This affected emacs-client.exe.

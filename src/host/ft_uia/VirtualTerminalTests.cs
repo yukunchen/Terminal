@@ -37,16 +37,16 @@ namespace Conhost.UIA.Tests
 
         public const int timeout = Globals.Timeout;
 
+        public TestContext TestContext { get; set; }
 
         [ClassInitialize]
         public static void ClassSetup(TestContext context)
         {
-            // We must pass in the location of VtApp.exe to TAEF with a command line switch as /p:VtApp=<path to VtApp.exe>
-            vtAppLocation = context.Properties["VtApp"] as string;
+            Log.Comment("Searching for VtApp.exe in the same directory where this test was launched from...");
+            vtAppLocation = Path.Combine(context.TestDeploymentDir, "VtApp.exe");
             Verify.IsFalse(string.IsNullOrEmpty(vtAppLocation));
             Verify.IsTrue(File.Exists(vtAppLocation));
         }
-
 
         [TestMethod]
         public void RunVtAppTester()
@@ -63,7 +63,7 @@ namespace Conhost.UIA.Tests
 
                 if (haveVtAppPath)
                 {
-                    using (CmdApp app = new CmdApp(vtAppLocation))
+                    using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext, vtAppLocation))
                     {
                         using (ViewportArea area = new ViewportArea(app))
                         {

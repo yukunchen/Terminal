@@ -63,7 +63,11 @@ ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
             if (IsCharFullWidth(TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar))
             {
                 NumBytes = sizeof(AsciiDbcs);
-                ConvertToOem(g_ciConsoleInformation.CP, &TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar, 1, (LPSTR)& AsciiDbcs[0], NumBytes);
+                ConvertToOem(g_ciConsoleInformation.CP,
+                             &TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar,
+                             1,
+                             (LPSTR)& AsciiDbcs[0],
+                             NumBytes);
                 if (IsDBCSLeadByteConsole(AsciiDbcs[0], &g_ciConsoleInformation.CPInfo))
                 {
                     if (j < NumRecords - 1)
@@ -102,7 +106,11 @@ ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
             else
             {
                 InputRecords[j] = TmpInpRec[i];
-                ConvertToOem(g_ciConsoleInformation.CP, &InputRecords[j].Event.KeyEvent.uChar.UnicodeChar, 1, &InputRecords[j].Event.KeyEvent.uChar.AsciiChar, 1);
+                ConvertToOem(g_ciConsoleInformation.CP,
+                             &InputRecords[j].Event.KeyEvent.uChar.UnicodeChar,
+                             1,
+                             &InputRecords[j].Event.KeyEvent.uChar.AsciiChar,
+                             1);
             }
         }
     }
@@ -660,7 +668,7 @@ NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Si
                     SetFlag(OutputBuffer->Attributes, COMMON_LVB_LEADING_BYTE);
                     OutputBuffer++;
                     OutputBuffer->Char.UnicodeChar = UNICODE_DBCS_PADDING;
-                    ClearAllFlags(OutputBuffer->Attributes, ~COMMON_LVB_SBCSDBCS);
+                    ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
                     SetFlag(OutputBuffer->Attributes, COMMON_LVB_TRAILING_BYTE);
                     OutputBuffer++;
                 }
@@ -780,23 +788,6 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         SCREEN_INFORMATION* const psi = pScreenInfo->GetActiveBuffer();
 
         Status = ReadScreenBuffer(psi, Buffer, &a->CharRegion);
-        // remove dbcs trailing byte CHAR_INFOS
-        const size_t count = BufferSize.X * BufferSize.Y;
-        size_t copyTargetPosition = 0;
-        for (size_t i = 0; i < count; ++i)
-        {
-            if (IsFlagClear(Buffer[i].Attributes, COMMON_LVB_TRAILING_BYTE))
-            {
-                Buffer[copyTargetPosition] = Buffer[i];
-                ClearAllFlags(Buffer[copyTargetPosition].Attributes, COMMON_LVB_SBCSDBCS);
-                ++copyTargetPosition;
-            }
-        }
-        // zero out extra positions
-        for (; copyTargetPosition < count; ++copyTargetPosition)
-        {
-            ZeroMemory(Buffer + copyTargetPosition, sizeof(CHAR_INFO));
-        }
         if (!a->Unicode)
         {
             TranslateOutputToOem(Buffer, BufferSize);
@@ -969,23 +960,7 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
         a->NumRecords /= nSize;
 
         Status = ReadOutputString(pScreenInfo->GetActiveBuffer(), Buffer, a->ReadCoord, a->StringType, &a->NumRecords);
-        if (a->StringType == CONSOLE_ATTRIBUTE)
-        {
-            // remove trailing byte attributes
-            unsigned short* buf = reinterpret_cast<unsigned short*>(Buffer);
-            const size_t count = a->NumRecords;
-            size_t copyTargetPosition = 0;
-            for (size_t i = 0; i < count; ++i)
-            {
-                if (IsFlagClear(buf[i], COMMON_LVB_TRAILING_BYTE))
-                {
-                    buf[copyTargetPosition] = buf[i];
-                    ClearFlag(buf[copyTargetPosition], COMMON_LVB_LEADING_BYTE);
-                    ++copyTargetPosition;
-                }
-            }
-            a->NumRecords = static_cast<ULONG>(copyTargetPosition);
-        }
+
         if (NT_SUCCESS(Status))
         {
             m->SetReplyInformation(a->NumRecords * nSize);
@@ -1153,7 +1128,13 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
     const FontInfo* const pfiExistingFont = psiExisting->TextInfo->GetCurrentFont();
 
     PSCREEN_INFORMATION ScreenInfo = nullptr;
-    NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize, pfiExistingFont, WindowSize, Fill, Fill, CURSOR_SMALL_SIZE, &ScreenInfo);
+    NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
+                                                         pfiExistingFont,
+                                                         WindowSize,
+                                                         Fill,
+                                                         Fill,
+                                                         CURSOR_SMALL_SIZE,
+                                                         &ScreenInfo);
 
     if (!NT_SUCCESS(Status))
     {

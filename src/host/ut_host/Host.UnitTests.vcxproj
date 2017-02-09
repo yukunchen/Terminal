@@ -2,6 +2,7 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="ApiRoutinesTests.cpp" />
     <ClCompile Include="AttrRowTests.cpp" />
     <ClCompile Include="CharRowTests.cpp" />
     <ClCompile Include="ClipboardTests.cpp" />
@@ -11,6 +12,7 @@
     <ClCompile Include="ScreenBufferTests.cpp" />
     <ClCompile Include="SelectionTests.cpp" />
     <ClCompile Include="TextBufferTests.cpp" />
+    <ClCompile Include="TitleTests.cpp" />
     <ClCompile Include="UtilsTests.cpp" />
     <ClCompile Include="Utf8ToWideCharParserTests.cpp" />
     <ClCompile Include="..\precomp.cpp">

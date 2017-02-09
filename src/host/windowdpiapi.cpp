@@ -57,7 +57,7 @@ BOOL WindowDpiApi::s_EnableChildWindowDpiMessage(_In_ HWND const hwnd, _In_ BOOL
 
         static bool fTried = false;
         static PfnEnableChildWindowDpiMessage pfn = nullptr;
-        
+
         if (!fTried)
         {
             pfn = (PfnEnableChildWindowDpiMessage)GetProcAddress(hUser32, "EnableChildWindowDpiMessage");
@@ -121,10 +121,10 @@ int WindowDpiApi::s_GetWindowDPI(_In_ HWND const hwnd)
 #endif
 }
 
-BOOL WindowDpiApi::s_AdjustWindowRectExForDpi(_Inout_ LPRECT const lpRect, 
-                                              _In_ DWORD const dwStyle, 
-                                              _In_ BOOL const bMenu, 
-                                              _In_ DWORD const dwExStyle, 
+BOOL WindowDpiApi::s_AdjustWindowRectExForDpi(_Inout_ LPRECT const lpRect,
+                                              _In_ DWORD const dwStyle,
+                                              _In_ BOOL const bMenu,
+                                              _In_ DWORD const dwExStyle,
                                               _In_ UINT const dpi)
 {
 #ifdef CON_DPIAPI_INDIRECT
@@ -171,7 +171,7 @@ int WindowDpiApi::s_GetSystemMetricsForDpi(_In_ int const nIndex, _In_ UINT cons
     if (hUser32 != nullptr)
     {
         typedef int(*PfnGetDpiMetrics)(int nIndex, int dpi);
-        
+
         static bool fTried = false;
         static PfnGetDpiMetrics pfn = nullptr;
 
@@ -237,7 +237,9 @@ BOOL WindowDpiApi::s_SetProcessDpiAwarenessContext(_In_ DPI_AWARENESS_CONTEXT dp
 #ifdef CON_DPIAPI_INDIRECT
 WindowDpiApi::WindowDpiApi()
 {
-    _hUser32 = LoadLibraryW(L"user32.dll");
+    // NOTE: Use LoadLibraryExW with LOAD_LIBRARY_SEARCH_SYSTEM32 flag below to avoid unneeded directory traversal.
+    //       This has triggered CPG boot IO warnings in the past.
+    _hUser32 = LoadLibraryExW(L"user32.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
 }
 
 WindowDpiApi::~WindowDpiApi()

@@ -11,29 +11,69 @@
 #define DEFAULT_TT_FONT_FACENAME L"__DefaultTTFont__"
 #define DEFAULT_RASTER_FONT_FACENAME L"Terminal"
 
-FontInfo::FontInfo(_In_ PCWSTR const pwszFaceName,
-                   _In_ BYTE const bFamily,
-                   _In_ LONG const lWeight,
-                   _In_ COORD const coordSize,
-                   _In_ UINT const uiCodePage) :
-                   _bFamily(bFamily),
-                   _lWeight(lWeight),
-                   _uiCodePage(uiCodePage),
-                   _coordSize(coordSize),
-                   _coordSizeUnscaled(coordSize)
+FontInfoBase::FontInfoBase(_In_ PCWSTR const pwszFaceName,
+                           _In_ BYTE const bFamily,
+                           _In_ LONG const lWeight,
+                           _In_ bool const fSetDefaultRasterFont,
+                           _In_ UINT const uiCodePage) :
+                           _bFamily(bFamily),
+                           _lWeight(lWeight),
+                           _fDefaultRasterSetFromEngine(fSetDefaultRasterFont),
+                           _uiCodePage(uiCodePage)
 {
-    wcscpy_s(_pwszFaceName, ARRAYSIZE(_pwszFaceName), pwszFaceName);
+    if (nullptr != pwszFaceName)
+    {
+        wcscpy_s(_wszFaceName, ARRAYSIZE(_wszFaceName), pwszFaceName);
+    }
 
     ValidateFont();
 }
 
-FontInfo::~FontInfo()
+FontInfoBase::FontInfoBase(_In_ const FontInfoBase &fibFont) :
+    FontInfoBase(fibFont.GetFaceName(),
+                 fibFont.GetFamily(),
+                 fibFont.GetWeight(),
+                 fibFont.WasDefaultRasterSetFromEngine(),
+                 fibFont.GetCodePage())
 {
 }
 
-BYTE FontInfo::GetFamily() const
+FontInfo::FontInfo(_In_ PCWSTR const pwszFaceName,
+                   _In_ BYTE const bFamily,
+                   _In_ LONG const lWeight,
+                   _In_ COORD const coordSize,
+                   _In_ UINT const uiCodePage,
+                   _In_ bool const fSetDefaultRasterFont /*= false*/) :
+                   FontInfoBase(pwszFaceName, bFamily, lWeight, fSetDefaultRasterFont, uiCodePage),
+                   _coordSize(coordSize),
+                   _coordSizeUnscaled(coordSize)
+{
+    ValidateFont();
+}
+
+FontInfo::FontInfo(_In_ const FontInfo& fiFont) :
+                   FontInfoBase(fiFont),
+                   _coordSize(fiFont.GetSize()),
+                   _coordSizeUnscaled(fiFont.GetUnscaledSize())
+{
+
+}
+
+FontInfoBase::~FontInfoBase()
+{
+}
+
+BYTE FontInfoBase::GetFamily() const
 {
     return _bFamily;
+}
+
+// When the default raster font is forced set from the engine, this is how we differentiate it from a simple apply.
+// Default raster font is internally represented as a blank face name and zeros for weight, family, and size. This is
+// the hint for the engine to use whatever comes back from GetStockObject(OEM_FIXED_FONT) (at least in the GDI world).
+bool FontInfoBase::WasDefaultRasterSetFromEngine() const
+{
+    return _fDefaultRasterSetFromEngine;
 }
 
 COORD FontInfo::GetUnscaledSize() const
@@ -41,9 +81,9 @@ COORD FontInfo::GetUnscaledSize() const
     return _coordSizeUnscaled;
 }
 
-COORD FontInfo::GetEngineSize() const
+COORD FontInfoDesired::GetEngineSize() const
 {
-    COORD coordSize = _coordSizeUnscaled;
+    COORD coordSize = _coordSizeDesired;
     if (IsTrueTypeFont())
     {
         coordSize.X = 0; // Don't tell the engine about the width for a TrueType font. It makes a mess.
@@ -57,22 +97,22 @@ COORD FontInfo::GetSize() const
     return _coordSize;
 }
 
-LONG FontInfo::GetWeight() const
+LONG FontInfoBase::GetWeight() const
 {
     return _lWeight;
 }
 
-PCWCHAR FontInfo::GetFaceName() const
+PCWCHAR FontInfoBase::GetFaceName() const
 {
-    return (PCWCHAR)_pwszFaceName;
+    return (PCWCHAR)_wszFaceName;
 }
 
-UINT FontInfo::GetCodePage() const
+UINT FontInfoBase::GetCodePage() const
 {
     return _uiCodePage;
 }
 
-BYTE FontInfo::GetCharSet() const
+BYTE FontInfoBase::GetCharSet() const
 {
     CHARSETINFO csi;
 
@@ -87,64 +127,131 @@ BYTE FontInfo::GetCharSet() const
 }
 
 // NOTE: this method is intended to only be used from the engine itself to respond what font it has chosen.
+void FontInfoBase::SetFromEngine(_In_ PCWSTR const pwszFaceName,
+                                 _In_ BYTE const bFamily,
+                                 _In_ LONG const lWeight,
+                                 _In_ bool const fSetDefaultRasterFont)
+{
+    wcscpy_s(_wszFaceName, ARRAYSIZE(_wszFaceName), pwszFaceName);
+    _bFamily = bFamily;
+    _lWeight = lWeight;
+    _fDefaultRasterSetFromEngine = fSetDefaultRasterFont;
+}
+
 void FontInfo::SetFromEngine(_In_ PCWSTR const pwszFaceName,
                              _In_ BYTE const bFamily,
                              _In_ LONG const lWeight,
+                             _In_ bool const fSetDefaultRasterFont,
                              _In_ COORD const coordSize,
                              _In_ COORD const coordSizeUnscaled)
 {
-    wcscpy_s(_pwszFaceName, ARRAYSIZE(_pwszFaceName), pwszFaceName);
-    _bFamily = bFamily;
-    _lWeight = lWeight;
+    FontInfoBase::SetFromEngine(pwszFaceName,
+                                bFamily,
+                                lWeight,
+                                fSetDefaultRasterFont);
+
     _coordSize = coordSize;
     _coordSizeUnscaled = coordSizeUnscaled;
 
     _ValidateCoordSize();
 }
 
-void FontInfo::ValidateFont()
+// Internally, default raster font is represented by empty facename, and zeros for weight, family, and size. Since
+// FontInfoBase doesn't have sizing information, this helper checks everything else.
+bool FontInfoBase::IsDefaultRasterFontNoSize() const
+{
+    return (_lWeight == 0 && _bFamily == 0 && wcsnlen_s(_wszFaceName, ARRAYSIZE(_wszFaceName)) == 0);
+}
+
+void FontInfoBase::ValidateFont()
 {
     // If we were given a blank name, it meant raster fonts, which to us is always Terminal.
-    if (wcsnlen_s(_pwszFaceName, ARRAYSIZE(_pwszFaceName)) == 0)
-    {
-        wcscpy_s(_pwszFaceName, ARRAYSIZE(_pwszFaceName), DEFAULT_RASTER_FONT_FACENAME);
-    }
-    else if (s_pFontDefaultList != nullptr)
+    if (!IsDefaultRasterFontNoSize() && s_pFontDefaultList != nullptr)
     {
         // If we have a list of default fonts and our current font is the placeholder for the defaults, substitute here.
-        if (0 == wcsncmp(_pwszFaceName, DEFAULT_TT_FONT_FACENAME, ARRAYSIZE(DEFAULT_TT_FONT_FACENAME)))
+        if (0 == wcsncmp(_wszFaceName, DEFAULT_TT_FONT_FACENAME, ARRAYSIZE(DEFAULT_TT_FONT_FACENAME)))
         {
             WCHAR pwszDefaultFontFace[LF_FACESIZE];
-            if (SUCCEEDED(s_pFontDefaultList->RetrieveDefaultFontNameForCodepage(GetCodePage(), pwszDefaultFontFace, ARRAYSIZE(pwszDefaultFontFace))))
+            if (SUCCEEDED(s_pFontDefaultList->RetrieveDefaultFontNameForCodepage(GetCodePage(),
+                                                                                 pwszDefaultFontFace,
+                                                                                 ARRAYSIZE(pwszDefaultFontFace))))
             {
-                wcscpy_s(_pwszFaceName, ARRAYSIZE(_pwszFaceName), pwszDefaultFontFace);
+                wcscpy_s(_wszFaceName, ARRAYSIZE(_wszFaceName), pwszDefaultFontFace);
             }
         }
     }
+}
 
+void FontInfo::ValidateFont()
+{
     _ValidateCoordSize();
 }
 
 void FontInfo::_ValidateCoordSize()
 {
-    // If we have no font size, we want to use 8x12 by default
-    if (_coordSize.Y == 0)
+    // a (0,0) font is okay for the default raster font, as we will eventually set the dimensions based on the font GDI
+    // passes back to us.
+    if (!IsDefaultRasterFontNoSize())
     {
-        _coordSize.X = 8;
-        _coordSize.Y = 12;
+        // Initialize X to 1 so we don't divide by 0
+        if (_coordSize.X == 0)
+        {
+            _coordSize.X = 1;
+        }
 
-        _coordSizeUnscaled = _coordSize;
+        // If we have no font size, we want to use 8x12 by default
+        if (_coordSize.Y == 0)
+        {
+            _coordSize.X = 8;
+            _coordSize.Y = 12;
+
+            _coordSizeUnscaled = _coordSize;
+        }
     }
 }
 
-bool FontInfo::IsTrueTypeFont() const
+bool FontInfoBase::IsTrueTypeFont() const
 {
     return (_bFamily & TMPF_TRUETYPE) != 0;
 }
 
+#pragma warning(suppress:4356)
 Microsoft::Console::Render::IFontDefaultList* FontInfo::s_pFontDefaultList;
 
-void FontInfo::s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList)
+void FontInfoBase::s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList)
 {
     s_pFontDefaultList = pFontDefaultList;
 }
+
+void FontInfo::s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList)
+{
+    FontInfoBase::s_SetFontDefaultList(pFontDefaultList);
+}
+
+FontInfoDesired::FontInfoDesired(_In_ PCWSTR const pwszFaceName,
+                                 _In_ BYTE const bFamily,
+                                 _In_ LONG const lWeight,
+                                 _In_ COORD const coordSizeDesired,
+                                 _In_ UINT const uiCodePage) :
+                                 FontInfoBase(pwszFaceName, bFamily, lWeight, false, uiCodePage),
+                                 _coordSizeDesired(coordSizeDesired)
+{
+}
+
+FontInfoDesired::FontInfoDesired(_In_ const FontInfo& fiFont) :
+                                 FontInfoBase(fiFont),
+                                 _coordSizeDesired(fiFont.GetUnscaledSize())
+{
+}
+
+// This helper determines if this object represents the default raster font. This can either be because internally we're
+// using the empty facename and zeros for size, weight, and family, or it can be because we were given explicit
+// dimensions from the engine that were the result of loading the default raster font. See GdiEngine::_GetProposedFont().
+bool FontInfoDesired::IsDefaultRasterFont() const
+{
+    // Default raster font means no face name, no weight, no family, and (0,0) for both sizes
+    return WasDefaultRasterSetFromEngine() || (IsDefaultRasterFontNoSize() &&
+                                               _coordSizeDesired.X == 0 &&
+                                               _coordSizeDesired.Y == 0);
+}
+

@@ -63,7 +63,6 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
                                                    TRUE,
                                                    DUPLICATE_SAME_ACCESS));
 
-
         // Create the child process. We will temporarily overwrite the values in the
         // PEB to force them to be inherited.
 
@@ -74,6 +73,20 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
         StartupInformation.StartupInfo.hStdOutput = ClientHandle[1].get();
         StartupInformation.StartupInfo.hStdError = ClientHandle[2].get();
 
+        // Get the parent startup info for this process. It might contain LNK data we need to pass to the child.
+        {
+            STARTUPINFO HostStartupInfo = { 0 };
+            HostStartupInfo.cb = sizeof(STARTUPINFO);
+            GetStartupInfoW(&HostStartupInfo);
+
+            // If we were started with Title is Link Name, then pass the flag and the link name down to the child.
+            if (IsFlagSet(HostStartupInfo.dwFlags, STARTF_TITLEISLINKNAME))
+            {
+                StartupInformation.StartupInfo.lpTitle = HostStartupInfo.lpTitle;
+                StartupInformation.StartupInfo.dwFlags |= STARTF_TITLEISLINKNAME;
+            }
+        }
+        
         // Create the extended attributes list that will pass the console server information into the child process.
 
         // Call first time to find size

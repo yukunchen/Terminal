@@ -11,7 +11,9 @@
 // - Creates an instance of the NTDLL method-invoking class.
 // - This class helps maintain a loose coupling on NTDLL without reliance on the driver kit headers/libs.
 WinNTControl::WinNTControl() :
-    _NtDllDll(THROW_LAST_ERROR_IF_NULL(LoadLibraryW(L"ntdll.dll"))),
+    // NOTE: Use LoadLibraryExW with LOAD_LIBRARY_SEARCH_SYSTEM32 flag below to avoid unneeded directory traversal.
+    //       This has triggered CPG boot IO warnings in the past.
+    _NtDllDll(THROW_LAST_ERROR_IF_NULL(LoadLibraryExW(L"ntdll.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32))),
     _NtOpenFile(reinterpret_cast<PfnNtOpenFile>(THROW_LAST_ERROR_IF_NULL(GetProcAddress(_NtDllDll.get(), "NtOpenFile"))))
 {
 }

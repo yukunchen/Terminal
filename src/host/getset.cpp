@@ -125,9 +125,7 @@ HRESULT ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* c
     {
         pSelection->GetPublicSelectionFlags(&pConsoleSelectionInfo->dwFlags);
 
-        // we should never have failed to set the CONSOLE_SELECTION_IN_PROGRESS flag....
-        assert(LOG_HR_IF_FALSE(E_UNEXPECTED, IsFlagSet(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS)));
-        SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS); // ... but if we did, set it anyway in release mode.
+        SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS); 
 
         pSelection->GetSelectionAnchor(&pConsoleSelectionInfo->dwSelectionAnchor);
         pSelection->GetSelectionRectangle(&pConsoleSelectionInfo->srSelection);
@@ -223,6 +221,16 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
     // TODO: MSFT: 9574827 - should this have a failure case?
     psi->UpdateFont(&fi);
 
+    // If this is the active screen buffer, also cause the window to refresh its viewport size.
+    if (psi->IsActiveScreenBuffer())
+    {
+        Window* const pWindow = g_ciConsoleInformation.pWindow;
+        if (nullptr != pWindow)
+        {
+            pWindow->PostUpdateWindowSize();
+        }
+    }
+
     return S_OK;
 }
 
@@ -230,13 +238,6 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pCont
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
-
-    // Flags we don't understand are invalid.
-    RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~(INPUT_MODES | PRIVATE_MODES)));
-
-    // ECHO on with LINE off is invalid.
-    RETURN_HR_IF(E_INVALIDARG, IsFlagSet(Mode, ENABLE_ECHO_INPUT) && IsFlagClear(Mode, ENABLE_LINE_INPUT));
-
 
     if (IsAnyFlagSet(Mode, PRIVATE_MODES))
     {
@@ -263,6 +264,21 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pCont
 
     pContext->InputMode = Mode;
     ClearAllFlags(pContext->InputMode, PRIVATE_MODES);
+
+    // NOTE: For compatibility reasons, we need to set the modes and then return the error codes, not the other way around
+    //       as might be expected.
+    //       This is a bug from a long time ago and some applications depend on this functionality to operate properly.
+    //       ---
+    //       A prime example of this is that PSReadline module in Powershell will set the invalid mode 0x1e4
+    //       which includes 0x4 for ECHO_INPUT but turns off 0x2 for LINE_INPUT. This is invalid, but PSReadline
+    //       relies on it to properly receive the ^C printout and make a new line when the user presses Ctrl+C.
+    { 
+        // Flags we don't understand are invalid.
+        RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~(INPUT_MODES | PRIVATE_MODES)));
+
+        // ECHO on with LINE off is invalid.
+        RETURN_HR_IF(E_INVALIDARG, IsFlagSet(Mode, ENABLE_ECHO_INPUT) && IsFlagClear(Mode, ENABLE_LINE_INPUT));
+    }
 
     return S_OK;
 }
@@ -346,7 +362,8 @@ HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(_In_ SCREEN_INFORMATION* con
     RETURN_HR_IF(E_INVALIDARG, (pSize->X == SHORT_MAX || pSize->Y == SHORT_MAX));
 
     // Only do the resize if we're actually changing one of the dimensions
-    if (pSize->X != pScreenInfo->ScreenBufferSize.X || pSize->Y != pScreenInfo->ScreenBufferSize.Y)
+    COORD const coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    if (pSize->X != coordScreenBufferSize.X || pSize->Y != coordScreenBufferSize.Y)
     {
         RETURN_NTSTATUS(pScreenInfo->ResizeScreenBuffer(*pSize, TRUE));
     }
@@ -370,7 +387,8 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* c
 
 HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
 {
-    if (pInfo->dwSize.X != pScreenInfo->ScreenBufferSize.X || (pInfo->dwSize.Y != pScreenInfo->ScreenBufferSize.Y))
+    COORD const coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    if (pInfo->dwSize.X != coordScreenBufferSize.X || (pInfo->dwSize.Y != coordScreenBufferSize.Y))
     {
         CommandLine* const pCommandLine = &CommandLine::Instance();
 
@@ -391,13 +409,18 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
     // If wrap text is on, then the window width must be the same size as the buffer width
     if (g_ciConsoleInformation.GetWrapText())
     {
-        NewSize.X = pScreenInfo->ScreenBufferSize.X;
+        NewSize.X = coordScreenBufferSize.X;
     }
 
     if (NewSize.X != pScreenInfo->GetScreenWindowSizeX() || NewSize.Y != pScreenInfo->GetScreenWindowSizeY())
     {
         g_ciConsoleInformation.pWindow->UpdateWindowSize(NewSize);
     }
+
+    // Despite the fact that this API takes in a srWindow for the viewport, it traditionally actually doesn't set
+    //  anything using that member - for moving the viewport, you need SetConsoleWindowInfo
+    //  (see https://msdn.microsoft.com/en-us/library/windows/desktop/ms686125(v=vs.85).aspx and DoSrvSetConsoleWindowInfo)
+    // Note that it also doesn't set cursor position. 
 
     return S_OK;
 }
@@ -413,8 +436,9 @@ HRESULT ApiRoutines::SetConsoleCursorPositionImpl(_In_ SCREEN_INFORMATION* const
 
 HRESULT DoSrvSetConsoleCursorPosition(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ const COORD* const pCursorPosition)
 {
-    RETURN_HR_IF(E_INVALIDARG, (pCursorPosition->X >= pScreenInfo->ScreenBufferSize.X ||
-                                pCursorPosition->Y >= pScreenInfo->ScreenBufferSize.Y ||
+    const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
+    RETURN_HR_IF(E_INVALIDARG, (pCursorPosition->X >= coordScreenBufferSize.X ||
+                                pCursorPosition->Y >= coordScreenBufferSize.Y ||
                                 pCursorPosition->X < 0 ||
                                 pCursorPosition->Y < 0));
 
@@ -650,7 +674,8 @@ NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attribut
         WORD const InvertedNewPopupAttributes = (WORD)(((PopupAttributes << 4) & 0xf0) | ((PopupAttributes >> 4) & 0x0f));
 
         // change all chars with default color
-        for (SHORT i = 0; i < ScreenInfo->ScreenBufferSize.Y; i++)
+        const SHORT sScreenBufferSizeY = ScreenInfo->GetScreenBufferSize().Y;
+        for (SHORT i = 0; i < sScreenBufferSizeY; i++)
         {
             ROW* const Row = &ScreenInfo->TextInfo->Rows[i];
             Row->AttrRow.ReplaceLegacyAttrs(DefaultAttributes, Attributes);
@@ -870,7 +895,7 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pC
 
         SCREEN_INFORMATION* const pScreenInfo = pContext->GetActiveBuffer();
 
-        *pNewScreenBufferSize = pScreenInfo->ScreenBufferSize;
+        *pNewScreenBufferSize = pScreenInfo->GetScreenBufferSize();
         RETURN_HR_IF_FALSE(E_INVALIDARG, pScreenInfo->IsActiveScreenBuffer());
     }
 

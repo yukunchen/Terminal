@@ -53,10 +53,10 @@ namespace Microsoft
                 HRESULT ClearCursor();
 
                 HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ bool const fIncludeBackgrounds);
-                HRESULT UpdateFont(_Inout_ FontInfo* const pfiFontInfo);
+                HRESULT UpdateFont(_In_ FontInfoDesired const * const pfiFontInfoDesired, _Out_ FontInfo* const pfiFontInfo);
                 HRESULT UpdateDpi(_In_ int const iDpi);
 
-                HRESULT GetProposedFont(_Inout_ FontInfo* const pfiFontInfo, _In_ int const iDpi);
+                HRESULT GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont, _In_ int const iDpi);
 
                 SMALL_RECT GetDirtyRectInChars();
                 COORD GetFontSize();
@@ -125,7 +125,7 @@ namespace Microsoft
 
                 bool _IsFontTrueType() const;
 
-                HRESULT _GetProposedFont(_Inout_ FontInfo* const pfiFontInfo, _In_ int const iDpi, _Inout_ wil::unique_hfont& hFont);
+                HRESULT _GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont, _In_ int const iDpi, _Inout_ wil::unique_hfont& hFont);
 
                 COORD _GetFontSize() const;
                 bool _IsMinimized() const;

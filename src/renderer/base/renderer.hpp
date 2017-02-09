@@ -46,9 +46,9 @@ namespace Microsoft
                 void TriggerScroll();
                 void TriggerScroll(_In_ const COORD* const pcoordDelta);
 
-                void TriggerFontChange(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo);
+                void TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo);
 
-                HRESULT GetProposedFont(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo);
+                HRESULT GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo);
 
                 COORD GetFontSize();
                 bool IsCharFullWidthByFont(_In_ WCHAR const wch);

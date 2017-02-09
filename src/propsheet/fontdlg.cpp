@@ -116,16 +116,16 @@ BOOL IsBoldOnlyTTFont(_In_ PCWSTR pwszTTFace, _In_opt_ PCWSTR pwszAltTTFace)
         }
 
         // only care about fonts in the correct charset
-        if (IS_ANY_DBCS_CHARSET(CodePageToCharSet(gpStateInfo->CodePage)))
+        if (g_fEastAsianSystem)
         {
-            if (!IS_ANY_DBCS_CHARSET(FontInfo[i].tmCharSet))
+            if (!IS_DBCS_OR_OEM_CHARSET(FontInfo[i].tmCharSet))
             {
                 continue;
             }
         }
         else
         {
-            if (IS_ANY_DBCS_CHARSET(FontInfo[i].tmCharSet))
+            if (IS_DBCS_OR_OEM_CHARSET(FontInfo[i].tmCharSet))
             {
                 continue;
             }
@@ -539,7 +539,7 @@ void AddFontSizesToList(PCWSTR pwszTTFace,
             continue;
         }
         if (fDbcsCharSet) {
-            if (!IS_ANY_DBCS_CHARSET(FontInfo[i].tmCharSet)) {
+            if (!IS_DBCS_OR_OEM_CHARSET(FontInfo[i].tmCharSet)) {
                 DBGFONTS(("  Font %x not right type for DBCS character set\n", i));
                 continue;
             }
@@ -660,7 +660,6 @@ FontListCreate(
     HWND hWndFaceCombo;
     BOOL bLB;
     UINT  CodePage = gpStateInfo->CodePage;
-    BOOL  fDbcsCharSet = IS_ANY_DBCS_CHARSET( CodePageToCharSet( CodePage ) );
     BOOL  fFindTTFont = FALSE;
     LPWSTR pwszAltTTFace;
     LONG_PTR dwExStyle;
@@ -710,15 +709,15 @@ FontListCreate(
             if ((panFace->dwFlag & (EF_TTFONT|EF_NEW)) != (EF_TTFONT|EF_NEW)) {
                 continue;
             }
-            if (!fDbcsCharSet && (panFace->dwFlag & EF_DBCSFONT)) {
+            if (!g_fEastAsianSystem && (panFace->dwFlag & EF_DBCSFONT)) {
                 continue;
             }
 
             // NOTE: in v2 we don't depend on the registry list to determine if a TT font should be listed in the font
             // face dialog list -- this is handled in DoFontEnum by using the FontEnumForV2Console enumerator
             if (ShouldAllowAllMonoTTFonts() ||
-                (fDbcsCharSet && IsAvailableTTFontCP(panFace->atch, CodePage)) ||
-                (!fDbcsCharSet && IsAvailableTTFontCP(panFace->atch, 0))) {
+                (g_fEastAsianSystem && IsAvailableTTFontCP(panFace->atch, CodePage)) ||
+                (!g_fEastAsianSystem && IsAvailableTTFontCP(panFace->atch, 0))) {
 
                 if (!bLB &&
                     (lstrcmp(pwszTTFace, panFace->atch) == 0 ||
@@ -741,12 +740,12 @@ FontListCreate(
                     continue;
                 }
 
-                if (!fDbcsCharSet && (panFace->dwFlag & EF_DBCSFONT)) {
+                if (!g_fEastAsianSystem && (panFace->dwFlag & EF_DBCSFONT)) {
                     continue;
                 }
 
-                if (( fDbcsCharSet && IsAvailableTTFontCP(panFace->atch, CodePage)) ||
-                    (!fDbcsCharSet && IsAvailableTTFontCP(panFace->atch, 0)))
+                if (( g_fEastAsianSystem && IsAvailableTTFontCP(panFace->atch, CodePage)) ||
+                    (!g_fEastAsianSystem && IsAvailableTTFontCP(panFace->atch, 0)))
                 {
 
                     if (lstrcmp(pwszTTFace, panFace->atch) != 0) {
@@ -770,7 +769,7 @@ FontListCreate(
      * For JAPAN, We uses "MS Gothic" TT font.
      * So, Bold of this font is not 1:2 width between SBCS:DBCS.
      */
-    if (fDbcsCharSet && IsDisableBoldTTFont(pwszTTFace)) {
+    if (g_fEastAsianSystem && IsDisableBoldTTFont(pwszTTFace)) {
         EnableWindow(hWndShow, FALSE);
         gbBold = FALSE;
         CheckDlgButton(hDlg, IDD_BOLDFONT, FALSE);
@@ -810,7 +809,7 @@ FontListCreate(
     AddFontSizesToList(pwszTTFace,
                        pwszAltTTFace,
                        dwExStyle,
-                       fDbcsCharSet,
+                       g_fEastAsianSystem,
                        bLB,
                        hWndShow,
                        fIsBoldOnlyTTFont);
@@ -1081,7 +1080,7 @@ FindCreateFont(
             Family, pwszFace, Size.X, Size.Y, Weight, CodePage, CharSet));
 
     if (g_fEastAsianSystem) {
-        if (IS_ANY_DBCS_CHARSET(CharSet)) {
+        if (IS_DBCS_OR_OEM_CHARSET(CharSet)) {
             if (pwszFace == NULL || *pwszFace == TEXT('\0')) {
                 pwszFace = DefaultFaceName;
             }
@@ -1155,7 +1154,8 @@ TryFindExactFont:
         }
 
         if (!TM_IS_TT_FONT(FontInfo[i].Family) &&
-                FontInfo[i].tmCharSet != CharSet) {
+            (FontInfo[i].tmCharSet != CharSet &&
+             !(FontInfo[i].tmCharSet == OEM_CHARSET && g_fEastAsianSystem))) {
             continue;
         }
 

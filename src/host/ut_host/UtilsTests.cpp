@@ -148,7 +148,7 @@ class UtilsTests
         srectEdges.Top = srectEdges.Left = 0;
         srectEdges.Bottom = srectEdges.Right = sRowWidth - 1;
 
-        // repeat test 
+        // repeat test
         for (UINT i = 0; i < cTestLoopInstances; i++)
         {
             COORD coordPos;
@@ -215,7 +215,7 @@ class UtilsTests
         COORD coordMaxBuffer;
         coordMaxBuffer.X = SHORT_MAX;
         coordMaxBuffer.Y = SHORT_MAX;
-        g_ciConsoleInformation.CurrentScreenBuffer->ScreenBufferSize = coordMaxBuffer;
+        g_ciConsoleInformation.CurrentScreenBuffer->SetScreenBufferSize(coordMaxBuffer);
 
         Log::Comment(L"#1: 0 case. Coords equal");
         FillBothCoordsSameRandom(&coordA, &coordB);

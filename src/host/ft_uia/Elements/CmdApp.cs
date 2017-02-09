@@ -21,12 +21,14 @@ namespace Conhost.UIA.Tests.Elements
 
     using WEX.Logging.Interop;
     using WEX.TestExecution;
+    using WEX.TestExecution.Markup;
 
     using System.Runtime.InteropServices;
     using System.Drawing;
     using System.Text;
     using System.Threading.Tasks;
     using System.Threading;
+    using System.Security.Principal;
 
     public class CmdApp : IDisposable
     {
@@ -36,22 +38,28 @@ namespace Conhost.UIA.Tests.Elements
 
         protected const string AppDriverUrl = "http://127.0.0.1:4723";
 
-        private Process commandProcess;
+        private IntPtr job;
+        private int pid;
+        
         public IOSDriver<IOSElement> Session { get; private set; }
         public Actions Actions { get; private set; }
         public AppiumWebElement UIRoot { get; private set; }
 
         private IntPtr hStdOut = IntPtr.Zero;
+        private IntPtr hStdErr = IntPtr.Zero;
         private bool isDisposed = false;
 
-        public CmdApp(CreateType type)
+        private TestContext context;
+
+        public CmdApp(CreateType type, TestContext context, string pathOverride = "")
         {
-            this.CreateCmdProcess(type);
+            this.context = context;
+            this.CreateCmdProcess(type, pathOverride);
         }
 
-        public CmdApp(string path)
+        public CmdApp(string path, string linkpath, TestContext context)
         {
-            this.CreateCmdProcess(path);
+
         }
 
         ~CmdApp()
@@ -73,6 +81,10 @@ namespace Conhost.UIA.Tests.Elements
         public IntPtr GetStdOutHandle()
         {
             return hStdOut;
+        }
+        public IntPtr GetStdErrHandle()
+        {
+            return hStdErr;
         }
 
         public void SetWrapState(bool WrapOn)
@@ -115,7 +127,7 @@ namespace Conhost.UIA.Tests.Elements
 
         public int GetPid()
         {
-            return this.commandProcess.Id;
+            return pid;
         }
 
         public int GetRowsPerScroll()
@@ -207,6 +219,7 @@ namespace Conhost.UIA.Tests.Elements
             NativeMethods.Win32BoolHelper(WinCon.SetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Set screen buffer info with given data.");
         }
 
+
         protected virtual void Dispose(bool disposing)
         {
             if (!this.isDisposed)
@@ -218,17 +231,89 @@ namespace Conhost.UIA.Tests.Elements
             }
         }
 
-        private void CreateCmdProcess(string path)
+        private void CreateCmdProcess(string path, string link = "")
         {
+            string AdminPrefix = "Administrator: ";
             string WindowTitleToFind = "Host.Tests.UIA window under test";
+
+            job = WinBase.CreateJobObject(IntPtr.Zero, IntPtr.Zero);
+            NativeMethods.Win32NullHelper(job, "Creating job object to hold binaries under test.");
 
             Log.Comment("Attempting to launch command-line application at '{0}'", path);
 
-            this.commandProcess = Process.Start(path);
+            string openConsolePath = Path.Combine(this.context.TestDeploymentDir, "OpenConsole.exe");
+            string binaryToRunPath = path;
+
+            string launchArgs = $"{openConsolePath}  {binaryToRunPath}";
+
+            WinBase.STARTUPINFO si = new WinBase.STARTUPINFO();
+            si.cb = Marshal.SizeOf(si);
+
+            // If we were given a LNK file to startup with, set the STARTUPINFO structure to pass that information in to the console host.
+            if (!string.IsNullOrEmpty(link))
+            {
+                si.dwFlags |= WinBase.STARTF.STARTF_TITLEISLINKNAME;
+                si.lpTitle = link;
+            }
+
+            WinBase.PROCESS_INFORMATION pi = new WinBase.PROCESS_INFORMATION();
+
+            NativeMethods.Win32BoolHelper(WinBase.CreateProcess(null,
+                launchArgs,
+                IntPtr.Zero,
+                IntPtr.Zero,
+                false,
+                WinBase.CP_CreationFlags.CREATE_NEW_CONSOLE | WinBase.CP_CreationFlags.CREATE_SUSPENDED,
+                IntPtr.Zero,
+                null,
+                ref si,
+                out pi),
+                "Attempting to create child host window process.");
+
+            Log.Comment($"Host window PID: {pi.dwProcessId}");
+
+            NativeMethods.Win32BoolHelper(WinBase.AssignProcessToJobObject(job, pi.hProcess), "Assigning new host window (suspended) to job object.");
+            NativeMethods.Win32BoolHelper(-1 != WinBase.ResumeThread(pi.hThread), "Resume host window process now that it is attached and its launch of the child application will be caught in the job object.");
 
             Globals.WaitForTimeout();
 
-            int pid = this.commandProcess.Id;
+            WinBase.JOBOBJECT_BASIC_PROCESS_ID_LIST list = new WinBase.JOBOBJECT_BASIC_PROCESS_ID_LIST();
+            list.NumberOfAssignedProcesses = 2;
+
+            int listptrsize = Marshal.SizeOf(list);
+            IntPtr listptr = Marshal.AllocHGlobal(listptrsize);
+            Marshal.StructureToPtr(list, listptr, false);
+
+            TimeSpan totalWait = TimeSpan.Zero;
+            TimeSpan waitLimit = TimeSpan.FromSeconds(30);
+            TimeSpan pollInterval = TimeSpan.FromMilliseconds(500);
+            while (totalWait < waitLimit)
+            {
+                WinBase.QueryInformationJobObject(job, WinBase.JOBOBJECTINFOCLASS.JobObjectBasicProcessIdList, listptr, listptrsize, IntPtr.Zero);
+                list = (WinBase.JOBOBJECT_BASIC_PROCESS_ID_LIST)Marshal.PtrToStructure(listptr, typeof(WinBase.JOBOBJECT_BASIC_PROCESS_ID_LIST));
+
+                if (list.NumberOfAssignedProcesses > 1)
+                {
+                    break;
+                }
+                else if (list.NumberOfAssignedProcesses < 1)
+                {
+                    Verify.Fail("Somehow we lost the one console host process in the job already.");
+                }
+
+                Thread.Sleep(pollInterval);
+                totalWait += pollInterval;
+            }
+            Verify.IsLessThan(totalWait, waitLimit);
+
+            WinBase.QueryInformationJobObject(job, WinBase.JOBOBJECTINFOCLASS.JobObjectBasicProcessIdList, listptr, listptrsize, IntPtr.Zero);
+            list = (WinBase.JOBOBJECT_BASIC_PROCESS_ID_LIST)Marshal.PtrToStructure(listptr, typeof(WinBase.JOBOBJECT_BASIC_PROCESS_ID_LIST));
+
+            Verify.AreEqual(list.NumberOfAssignedProcesses, list.NumberOfProcessIdsInList);
+
+            // Take whichever PID isn't the host window's PID as the child.
+            pid = pi.dwProcessId == (int)list.ProcessId ? (int)list.ProcessId2 : (int)list.ProcessId;
+            Log.Comment($"Child command app PID: {pid}");
 
             // Free any attached consoles and attach to the console we just created.
             // The driver will bind our calls to the Console APIs into the child process.
@@ -241,35 +326,62 @@ namespace Conhost.UIA.Tests.Elements
             DesiredCapabilities appCapabilities = new DesiredCapabilities();
             appCapabilities.SetCapability("app", @"Root");
             Session = new IOSDriver<IOSElement>(new Uri(AppDriverUrl), appCapabilities);
-            Session.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(15));
+
             Verify.IsNotNull(Session);
             Actions = new Actions(Session);
             Verify.IsNotNull(Session);
 
             Globals.WaitForTimeout();
 
+            // If we are running as admin, the child window title will have a prefix appended as it will also run as admin.
+            if (IsRunningAsAdmin())
+            {
+                WindowTitleToFind = $"{AdminPrefix}{WindowTitleToFind}";
+            }
+
+            Log.Comment($"Searching for window title '{WindowTitleToFind}'");
             this.UIRoot = Session.FindElementByName(WindowTitleToFind);
             this.hStdOut = WinCon.GetStdHandle(WinCon.CONSOLE_STD_HANDLE.STD_OUTPUT_HANDLE);
             Verify.IsNotNull(this.hStdOut, "Ensure output handle is valid.");
+            this.hStdErr = WinCon.GetStdHandle(WinCon.CONSOLE_STD_HANDLE.STD_ERROR_HANDLE);
+            Verify.IsNotNull(this.hStdErr, "Ensure error handle is valid.");
+
+            // Set the timeout to 15 seconds after we found the initial window.
+            Session.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(15));
         }
 
-        private void CreateCmdProcess(CreateType type)
+        private bool IsRunningAsAdmin()
         {
-            string path = string.Empty;
+            return new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+        }
 
+        private void CreateCmdProcess(CreateType type, string pathOverride = "")
+        {
             switch (type)
             {
                 case CreateType.ProcessOnly:
-                    path = binPath;
+                    if (!string.IsNullOrEmpty(pathOverride))
+                    {
+                        this.CreateCmdProcess(pathOverride);
+                    }
+                    else
+                    {
+                        this.CreateCmdProcess(binPath);
+                    }
                     break;
                 case CreateType.ShortcutFile:
-                    path = linkPath;
+                    if (!string.IsNullOrEmpty(pathOverride))
+                    {
+                        this.CreateCmdProcess(binPath, pathOverride);
+                    }
+                    else
+                    {
+                        this.CreateCmdProcess(binPath, linkPath);
+                    }
                     break;
                 default:
                     throw new NotImplementedException(AutoHelpers.FormatInvariant("CreateType '{0}' not implemented.", type.ToString()));
             }
-
-            this.CreateCmdProcess(path);
         }
 
         private void ExitCmdProcess()
@@ -277,17 +389,18 @@ namespace Conhost.UIA.Tests.Elements
             // Release attachment to the child process console. 
             WinCon.FreeConsole();
 
-            if (this.commandProcess != null && !this.commandProcess.HasExited)
-            {
-                this.commandProcess.Kill();
-            }
             this.UIRoot = null;
-            this.commandProcess = null;
+
+            if (this.job != IntPtr.Zero)
+            {
+                WinBase.TerminateJobObject(this.job, 0);
+            }
+            this.job = IntPtr.Zero;
         }
 
         public WinEventSystem AttachWinEventSystem(IWinEventCallbacks callbacks)
         {
-            return new WinEventSystem(callbacks, (uint)this.commandProcess.Id);
+            return new WinEventSystem(callbacks, (uint)this.pid);
         }
     }
 }

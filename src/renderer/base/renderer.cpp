@@ -275,13 +275,14 @@ void Renderer::TriggerScroll(_In_ const COORD* const pcoordDelta)
 // - Called when a change in font or DPI has been detected.
 // Arguments:
 // - iDpi - New DPI value
-// - pFontInfo - Pointer to font information structure that may be updated by the renderer
+// - pFontInfoDesired - A description of the font we would like to have.
+// - pFontInfo - Data that will be fixed up/filled on return with the chosen font data.
 // Return Value:
 // - <none>
-void Renderer::TriggerFontChange(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo)
+void Renderer::TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
 {
     LOG_IF_FAILED(_pEngine->UpdateDpi(iDpi));
-    LOG_IF_FAILED(_pEngine->UpdateFont(pFontInfo));
+    LOG_IF_FAILED(_pEngine->UpdateFont(pFontInfoDesired, pFontInfo));
 
     _NotifyPaintFrame();
 }
@@ -291,12 +292,13 @@ void Renderer::TriggerFontChange(_In_ int const iDpi, _Inout_ FontInfo* const pF
 // - This is for use with speculative calculations.
 // Arguments:
 // - iDpi - The DPI of the target display
-// - pFontInfo - A description of the font we would like to have. Will be fixed up/filled on return with the chosen font data.
+// - pFontInfoDesired - A description of the font we would like to have.
+// - pFontInfo - Data that will be fixed up/filled on return with the chosen font data.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
-HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _Inout_ FontInfo* const pFontInfo)
+HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
 {
-    return _pEngine->GetProposedFont(pFontInfo, iDpi);
+    return _pEngine->GetProposedFont(pFontInfoDesired, pFontInfo, iDpi);
 }
 
 // Routine Description:

@@ -31,7 +31,7 @@ class ScreenBufferTests
         m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
         m_state->PrepareGlobalInputBuffer();
-        
+
         return true;
     }
 
@@ -117,7 +117,7 @@ class ScreenBufferTests
                 VERIFY_ARE_EQUAL(psiOriginal, psiSecondAlternate->_psiMainBuffer);
                 VERIFY_IS_NULL(psiOriginal->_psiMainBuffer);
                 VERIFY_IS_NULL(psiSecondAlternate->_psiAlternateBuffer);
-                
+
                 Status = psiSecondAlternate->UseMainScreenBuffer();
                 if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
                 {
@@ -159,7 +159,7 @@ class ScreenBufferTests
                 VERIFY_ARE_EQUAL(psiOriginal, psiSecondAlternate->_psiMainBuffer);
                 VERIFY_IS_NULL(psiOriginal->_psiMainBuffer);
                 VERIFY_IS_NULL(psiSecondAlternate->_psiAlternateBuffer);
-                
+
                 Status = psiSecondAlternate->UseMainScreenBuffer();
                 if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
                 {
@@ -181,7 +181,7 @@ class ScreenBufferTests
     SCREEN_INFORMATION::TabStop** CreateSampleList()
     {
         SCREEN_INFORMATION::TabStop** rgpTabs = new SCREEN_INFORMATION::TabStop*[cSampleListTabs];
-        
+
         // create tab stop items and fill with values
         for (size_t i = 0; i < cSampleListTabs; i++)
         {
@@ -334,7 +334,7 @@ class ScreenBufferTests
         Log::Comment(L"Allocate many (5) list items and clear head.");
         {
             SCREEN_INFORMATION::TabStop** rgpTabListTest = CreateSampleList();
-            
+
             psi->_ptsTabs = rgpTabListTest[0];
 
             psi->ClearTabStop(rgSampleListValues[0]);
@@ -464,13 +464,14 @@ class ScreenBufferTests
         {
             psi->_ptsTabs = rgpTabs[0];
 
+            const COORD coordScreenBufferSize = psi->GetScreenBufferSize();
             COORD coordCursor;
-            coordCursor.Y = psi->ScreenBufferSize.Y / 2; // in the middle of the buffer, it doesn't make a difference.
+            coordCursor.Y = coordScreenBufferSize.Y / 2; // in the middle of the buffer, it doesn't make a difference.
 
             Log::Comment(L"Find next tab from before front.");
             {
                 coordCursor.X = 0;
-             
+
                 COORD coordCursorExpected;
                 coordCursorExpected = coordCursor;
                 coordCursorExpected.X = rgSampleListValues[0];
@@ -497,7 +498,7 @@ class ScreenBufferTests
 
                 COORD coordCursorExpected;
                 coordCursorExpected = coordCursor;
-                coordCursorExpected.X = psi->ScreenBufferSize.X - 1;
+                coordCursorExpected.X = coordScreenBufferSize.X - 1;
 
                 COORD const coordCursorResult = psi->GetForwardTab(coordCursor);
                 VERIFY_ARE_EQUAL(coordCursorExpected, coordCursorResult, L"Cursor advanced to end of screen buffer.");
@@ -518,7 +519,7 @@ class ScreenBufferTests
             psi->_ptsTabs = rgpTabs[0];
 
             COORD coordCursor;
-            coordCursor.Y = psi->ScreenBufferSize.Y / 2; // in the middle of the buffer, it doesn't make a difference.
+            coordCursor.Y = psi->GetScreenBufferSize().Y / 2; // in the middle of the buffer, it doesn't make a difference.
 
             Log::Comment(L"Find previous tab from before front.");
             {

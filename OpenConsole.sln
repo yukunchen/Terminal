@@ -73,6 +73,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Server", "src\server\lib\server.vcxproj", "{18D09A24-8240-42D6-8CB6-236EEE820262}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Host.Tests.UIA", "src\host\ft_uia\Host.Tests.UIA.csproj", "{C17E1BF3-9D34-4779-9458-A8EF98CC5662}"
+	ProjectSection(ProjectDependencies) = postProject
+		{099193A0-1E43-4BBC-BA7F-7B351E1342DF} = {099193A0-1E43-4BBC-BA7F-7B351E1342DF}
+		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B} = {9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VTApp", "src\tools\vtapp\VTApp.csproj", "{099193A0-1E43-4BBC-BA7F-7B351E1342DF}"
 EndProject
@@ -90,6 +94,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "useful", "useful", "{815772
 		dep\wil\useful\stl.h = dep\wil\useful\stl.h
 		dep\wil\useful\win32helpers.h = dep\wil\useful\win32helpers.h
 	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Scratch", "src\tools\scratch\Scratch.vcxproj", "{ED82003F-FC5D-4E94-8B36-F480018ED064}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -261,6 +266,14 @@ Global
 		{3CAC8870-95FD-4D75-A6DA-9B1F4F679D4B}.Release|x64.ActiveCfg = Release|x64
 		{3CAC8870-95FD-4D75-A6DA-9B1F4F679D4B}.Release|x86.ActiveCfg = Release|Win32
 		{3CAC8870-95FD-4D75-A6DA-9B1F4F679D4B}.Release|x86.Build.0 = Release|Win32
+		{ED82003F-FC5D-4E94-8B36-F480018ED064}.Debug|x64.ActiveCfg = Debug|x64
+		{ED82003F-FC5D-4E94-8B36-F480018ED064}.Debug|x64.Build.0 = Debug|x64
+		{ED82003F-FC5D-4E94-8B36-F480018ED064}.Debug|x86.ActiveCfg = Debug|Win32
+		{ED82003F-FC5D-4E94-8B36-F480018ED064}.Debug|x86.Build.0 = Debug|Win32
+		{ED82003F-FC5D-4E94-8B36-F480018ED064}.Release|x64.ActiveCfg = Release|x64
+		{ED82003F-FC5D-4E94-8B36-F480018ED064}.Release|x64.Build.0 = Release|x64
+		{ED82003F-FC5D-4E94-8B36-F480018ED064}.Release|x86.ActiveCfg = Release|Win32
+		{ED82003F-FC5D-4E94-8B36-F480018ED064}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -273,5 +286,6 @@ Global
 		{FC802440-AD6A-4919-8F2C-7701F2B38D79} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 		{3CAC8870-95FD-4D75-A6DA-9B1F4F679D4B} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 		{8157729B-BA88-4EB4-B99F-DC6A73E5BB7D} = {4C8E6BB0-4713-4ADB-BD04-81628ECEAF20}
+		{ED82003F-FC5D-4E94-8B36-F480018ED064} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 	EndGlobalSection
 EndGlobal
