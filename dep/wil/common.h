@@ -1,11 +1,5 @@
 // Windows Internal Libraries (wil)
 //
-// wil Usage Guidelines:
-// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Internal%20Libraries%20for%20C++%20Usage%20Guide.docx?web=1
-//
-// wil Discussion Alias (wildisc):
-// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
-//
 //! @file
 //! Dependency-free straight c++ helpers, macros and type traits.
 //! This file is always included implicitly by all wil headers.  It contains helpers that are broadly applicable without
@@ -527,7 +521,6 @@ Three exception modes are avialable:
 //! WI_HEADER_INITITALIZATION_FUNCTION(InitializeDesktopFamilyApis, []
 //! {
 //!     g_pfnGetModuleName              = GetCurrentModuleName;
-//!     g_pfnFailFastInLoaderCallout    = FailFastInLoaderCallout;
 //!     g_pfnRtlNtStatusToDosErrorNoTeb = RtlNtStatusToDosErrorNoTeb;
 //!     return 1;
 //! });

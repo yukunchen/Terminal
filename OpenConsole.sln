@@ -11,28 +11,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dependencies", "Dependencie
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "wil", "wil", "{4C8E6BB0-4713-4ADB-BD04-81628ECEAF20}"
 	ProjectSection(SolutionItems) = preProject
-		dep\wil\clouddata.h = dep\wil\clouddata.h
-		dep\wil\com.h = dep\wil\com.h
 		dep\wil\common.h = dep\wil\common.h
-		dep\wil\filesystem.h = dep\wil\filesystem.h
-		dep\wil\functional.h = dep\wil\functional.h
-		dep\wil\registry.h = dep\wil\registry.h
 		dep\wil\resource.h = dep\wil\resource.h
 		dep\wil\result.h = dep\wil\result.h
-		dep\wil\resultexception.h = dep\wil\resultexception.h
-		dep\wil\resultlogging.h = dep\wil\resultlogging.h
 		dep\wil\resultmacros.h = dep\wil\resultmacros.h
-		dep\wil\staging.h = dep\wil\staging.h
-		dep\wil\stl.h = dep\wil\stl.h
-		dep\wil\tokenhelpers.h = dep\wil\tokenhelpers.h
-		dep\wil\tracelogging.h = dep\wil\tracelogging.h
-		dep\wil\win32helpers.h = dep\wil\win32helpers.h
-		dep\wil\winrt.h = dep\wil\winrt.h
 		dep\wil\wistd_functional.h = dep\wil\wistd_functional.h
 		dep\wil\wistd_memory.h = dep\wil\wistd_memory.h
 		dep\wil\wistd_type_traits.h = dep\wil\wistd_type_traits.h
-		dep\wil\wrl.h = dep\wil\wrl.h
-		dep\wil\wrlevent.h = dep\wil\wrlevent.h
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Console", "Console", "{D57841D1-8294-4F2B-BB8B-D2A35738DECD}"
@@ -100,6 +85,15 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Nihilist", "src\tools\nihilist\Nihilist.vcxproj", "{FC802440-AD6A-4919-8F2C-7701F2B38D79}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NoOp.Tests.Feature", "src\tools\ft_x86_noop\ft_x86_noop.vcxproj", "{3CAC8870-95FD-4D75-A6DA-9B1F4F679D4B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "useful", "useful", "{8157729B-BA88-4EB4-B99F-DC6A73E5BB7D}"
+	ProjectSection(SolutionItems) = preProject
+		dep\wil\useful\filesystem.h = dep\wil\useful\filesystem.h
+		dep\wil\useful\functional.h = dep\wil\useful\functional.h
+		dep\wil\useful\registry.h = dep\wil\useful\registry.h
+		dep\wil\useful\stl.h = dep\wil\useful\stl.h
+		dep\wil\useful\win32helpers.h = dep\wil\useful\win32helpers.h
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Scratch", "src\tools\scratch\Scratch.vcxproj", "{ED82003F-FC5D-4E94-8B36-F480018ED064}"
 EndProject
@@ -292,6 +286,7 @@ Global
 		{099193A0-1E43-4BBC-BA7F-7B351E1342DF} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 		{FC802440-AD6A-4919-8F2C-7701F2B38D79} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 		{3CAC8870-95FD-4D75-A6DA-9B1F4F679D4B} = {A10C4720-DCA4-4640-9749-67F4314F527C}
+		{8157729B-BA88-4EB4-B99F-DC6A73E5BB7D} = {4C8E6BB0-4713-4ADB-BD04-81628ECEAF20}
 		{ED82003F-FC5D-4E94-8B36-F480018ED064} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 	EndGlobalSection
 EndGlobal

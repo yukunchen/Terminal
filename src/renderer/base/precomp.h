@@ -28,4 +28,3 @@ typedef _Return_type_success_(return >= 0) long NTSTATUS;
 // WIL
 #include <wil\Common.h>
 #include <wil\Result.h>
-#include <wil\ResultException.h>

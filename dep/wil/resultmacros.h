@@ -1,14 +1,5 @@
 // Windows Internal Libraries (wil)
 //
-// Usage Guidelines:
-// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Error%20Handling%20Helpers.docx?web=1
-//
-// wil Usage Guidelines:
-// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Internal%20Libraries%20for%20C++%20Usage%20Guide.docx?web=1
-//
-// wil Discussion Alias (wildisc):
-// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
-//
 //! @file
 //! Windows Error Handling Helpers: standard error handling mechanisms across return codes, fail fast, exceptions and logging
 
@@ -723,10 +714,6 @@ typedef _Return_type_success_(return >= 0) LONG NTSTATUS;
 #define FAIL_FAST_IMMEDIATE_IF_NULL(ptr)                        __RFF_FN(FailFastImmediate_IfNull)(ptr)
 #define FAIL_FAST_IMMEDIATE_IF_NTSTATUS_FAILED(status)          __RFF_FN(FailFastImmediate_IfNtStatusFailed)(status)
 
-// Specializations
-#define FAIL_FAST_IMMEDIATE_IF_IN_LOADER_CALLOUT()              do { if (wil::details::g_pfnFailFastInLoaderCallout != nullptr) { wil::details::g_pfnFailFastInLoaderCallout(); } } while (0, 0)
-
-
 //*****************************************************************************
 // Macros to throw exceptions on failure
 //*****************************************************************************
@@ -1168,12 +1155,6 @@ namespace wil
     /// @cond
     namespace details
     {
-        #ifdef WIL_SUPPRESS_PRIVATE_API_USE
-        #pragma detect_mismatch("ODR_violation_WIL_SUPPRESS_PRIVATE_API_USE_mismatch", "1")
-        #else
-        #pragma detect_mismatch("ODR_violation_WIL_SUPPRESS_PRIVATE_API_USE_mismatch", "0")
-        #endif
-
         //! Interface used to wrap up code (generally a lambda or other functor) to run in an exception-managed context where
         //! exceptions or errors can be observed and logged.
         struct IFunctor
@@ -1203,14 +1184,10 @@ namespace wil
         // Desktop/System Only:  Retrieve address offset and modulename
         __declspec(selectany) bool(__stdcall *g_pfnGetModuleInformation)(void* address, _Out_opt_ unsigned int* addressOffset, _Out_writes_bytes_opt_(size) char* name, size_t size) WI_NOEXCEPT = nullptr;
 
-        // Desktop/System Only:  Private module load fail fast function (automatically setup)
-        __declspec(selectany) void(__stdcall *g_pfnFailFastInLoaderCallout)() WI_NOEXCEPT = nullptr;
-
-        // Desktop/System Only:  Private module load convert NtStatus to HResult (automatically setup)
+        // Desktop/System Only:  DDK module load convert NtStatus to HResult (automatically setup)
         __declspec(selectany) ULONG(__stdcall *g_pfnRtlNtStatusToDosErrorNoTeb)(NTSTATUS) WI_NOEXCEPT = nullptr;
 
-        // Private API to determine whether or not termination is happening
-        __declspec(selectany) BOOLEAN(__stdcall *g_pfnRtlDllShutdownInProgress)() WI_NOEXCEPT = nullptr;
+        // Store whether or not termination is happening
         __declspec(selectany) bool g_processShutdownInProgress = false;
 
         // Exception-based compiled additions
@@ -1691,7 +1668,6 @@ namespace wil
             return s_szModule;
         }
 
-#ifndef WIL_SUPPRESS_PRIVATE_API_USE
         inline HMODULE GetNTDLLModuleHandle() WI_NOEXCEPT
         {
             static HMODULE s_hmod = 0;
@@ -1700,17 +1676,6 @@ namespace wil
                 s_hmod = LoadLibraryExW(L"ntdll.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32);
             }
             return s_hmod;
-        }
-
-        inline void __stdcall FailFastInLoaderCallout() WI_NOEXCEPT
-        {
-            // GetProcAddress is used here since we may be linking against an ntdll that doesn't contain this function
-            // e.g. if this header is used on an OS older than Threshold (which may be the case for IE)
-            auto pfn = reinterpret_cast<decltype(&::LdrFastFailInLoaderCallout)>(GetProcAddress(GetNTDLLModuleHandle(), "LdrFastFailInLoaderCallout"));
-            if (pfn != nullptr)
-            {
-                pfn();  // don't do anything non-trivial from DllMain, fail fast.
-            }
         }
 
         inline ULONG __stdcall RtlNtStatusToDosErrorNoTeb(_In_ NTSTATUS status) WI_NOEXCEPT
@@ -1723,36 +1688,14 @@ namespace wil
             return s_pfnRtlNtStatusToDosErrorNoTeb ? s_pfnRtlNtStatusToDosErrorNoTeb(status) : 0;
         }
 
-        inline BOOLEAN __stdcall RtlDllShutdownInProgress() WI_NOEXCEPT
-        {
-            static decltype(RtlDllShutdownInProgress) *s_pfnRtlDllShutdownInProgress = nullptr;
-            if (s_pfnRtlDllShutdownInProgress == nullptr)
-            {
-                s_pfnRtlDllShutdownInProgress = reinterpret_cast<decltype(RtlDllShutdownInProgress)*>(GetProcAddress(GetNTDLLModuleHandle(), "RtlDllShutdownInProgress"));
-            }
-            return s_pfnRtlDllShutdownInProgress ? s_pfnRtlDllShutdownInProgress() : FALSE;
-        }
-#endif
-
 #ifndef RESULT_SUPPRESS_STATIC_INITIALIZERS
-#ifndef WIL_SUPPRESS_PRIVATE_API_USE
         WI_HEADER_INITITALIZATION_FUNCTION(InitializeDesktopFamily, []
         {
             g_pfnGetModuleName              = GetCurrentModuleName;
             g_pfnGetModuleInformation       = GetModuleInformation;
-            g_pfnFailFastInLoaderCallout    = FailFastInLoaderCallout;
             g_pfnRtlNtStatusToDosErrorNoTeb = RtlNtStatusToDosErrorNoTeb;
-            g_pfnRtlDllShutdownInProgress   = RtlDllShutdownInProgress;
             return 1;
         });
-#else
-        WI_HEADER_INITITALIZATION_FUNCTION(InitializeDesktopFamily, []
-        {
-            g_pfnGetModuleName              = GetCurrentModuleName;
-            g_pfnGetModuleInformation       = GetModuleInformation;
-            return 1;
-        });
-#endif
 #endif
 #endif  // WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM)
 
@@ -2157,7 +2100,7 @@ namespace wil
     //! Call this method to determine if process shutdown is in progress (allows avoiding work during dll unload).
     inline bool ProcessShutdownInProgress()
     {
-        return (details::g_processShutdownInProgress || (details::g_pfnRtlDllShutdownInProgress ? details::g_pfnRtlDllShutdownInProgress() : false));
+        return details::g_processShutdownInProgress;
     }
 
     /** Use this object to wrap an object that wants to prevent its destructor from being run when the process is shutting down.
@@ -2196,8 +2139,7 @@ namespace wil
     };
 
     /** Forward your DLLMain to this function so that WIL can have visibility into whether a DLL unload is because
-    of termination or normal unload.  Note that when private API usage is enabled, WIL attempts to make this
-    determination on its own without this callback.  Suppressing private APIs requires use of this. */
+    of termination or normal unload. */
     inline void DLLMain(HINSTANCE, DWORD reason, _In_opt_ LPVOID reserved)
     {
         if (!details::g_processShutdownInProgress)
@@ -2746,210 +2688,6 @@ namespace wil
             return hr;
         }
 
-#ifdef __cplusplus_winrt
-        inline Platform::String^ GetPlatformExceptionMessage(Platform::Exception^ exception)
-        {
-            struct RawExceptionData_Partial
-            {
-                PCWSTR description;
-                PCWSTR restrictedErrorString;
-            };
-
-            auto exceptionPtr = reinterpret_cast<void*>(static_cast<::Platform::Object^>(exception));
-            auto exceptionInfoPtr = reinterpret_cast<ULONG_PTR*>(exceptionPtr) - 1;
-            auto partial = reinterpret_cast<RawExceptionData_Partial*>(*exceptionInfoPtr);
-
-            Platform::String^ message = exception->Message;
-
-            PCWSTR errorString = partial->restrictedErrorString;
-            PCWSTR messageString = reinterpret_cast<PCWSTR>(message ? message->Data() : nullptr);
-
-            // An old Platform::Exception^ bug that did not actually expose the error string out of the exception
-            // message.  We do it by hand here if the message associated with the strong does not contain the
-            // message that was originally attached to the string (in the fixed version it will).
-
-            if ((errorString && *errorString && messageString) &&
-                (wcsstr(messageString, errorString) == nullptr))
-            {
-                return ref new Platform::String(reinterpret_cast<_Null_terminated_ const __wchar_t *>(errorString));
-            }
-            return message;
-        }
-
-        inline void MaybeGetExceptionString(_In_ Platform::Exception^ exception, _Out_writes_opt_(debugStringChars) PWSTR debugString, _When_(debugString != nullptr, _Pre_satisfies_(debugStringChars > 0)) size_t debugStringChars)
-        {
-            if (debugString)
-            {
-                auto message = GetPlatformExceptionMessage(exception);
-                auto messageString = !message ? L"(null Message)" : reinterpret_cast<PCWSTR>(message->Data());
-                StringCchPrintfW(debugString, debugStringChars, L"Platform::Exception^: %ws", messageString);
-            }
-        }
-
-        inline HRESULT ResultFromKnownException(Platform::Exception^ exception, const DiagnosticsInfo& diagnostics, void* returnAddress)
-        {
-            wchar_t message[2048];
-            message[0] = L'\0';
-            MaybeGetExceptionString(exception, message, ARRAYSIZE(message));
-            auto hr = exception->HResult;
-            wil::details::ReportFailure(__R_DIAGNOSTICS_RA(diagnostics, returnAddress), FailureType::Log, hr, message);
-            return hr;
-        }
-
-        inline HRESULT __stdcall ResultFromCaughtException_WinRt(_Inout_updates_opt_(debugStringChars) PWSTR debugString, _When_(debugString != nullptr, _Pre_satisfies_(debugStringChars > 0)) size_t debugStringChars, _Inout_ bool* isNormalized) WI_NOEXCEPT
-        {
-            if (g_pfnResultFromCaughtException)
-            {
-                try
-                {
-                    throw;
-                }
-                catch (const ResultException& exception)
-                {
-                    MaybeGetExceptionString(exception, debugString, debugStringChars);
-                    return exception.GetErrorCode();
-                }
-                catch (Platform::Exception^ exception)
-                {
-                    *isNormalized = true;
-                    MaybeGetExceptionString(exception, debugString, debugStringChars);
-                    return exception->HResult;
-                }
-                catch (const std::bad_alloc& exception)
-                {
-                    MaybeGetExceptionString(exception, debugString, debugStringChars);
-                    return E_OUTOFMEMORY;
-                }
-                catch (...)
-                {
-                    auto hr = RecognizeCaughtExceptionFromCallback(debugString, debugStringChars);
-                    if (FAILED(hr))
-                    {
-                        return hr;
-                    }
-                }
-            }
-            else
-            {
-                try
-                {
-                    throw;
-                }
-                catch (const ResultException& exception)
-                {
-                    MaybeGetExceptionString(exception, debugString, debugStringChars);
-                    return exception.GetErrorCode();
-                }
-                catch (Platform::Exception^ exception)
-                {
-                    *isNormalized = true;
-                    MaybeGetExceptionString(exception, debugString, debugStringChars);
-                    return exception->HResult;
-                }
-                catch (const std::bad_alloc& exception)
-                {
-                    MaybeGetExceptionString(exception, debugString, debugStringChars);
-                    return E_OUTOFMEMORY;
-                }
-                catch (std::exception& exception)
-                {
-                    MaybeGetExceptionString(exception, debugString, debugStringChars);
-                    return HRESULT_FROM_WIN32(ERROR_UNHANDLED_EXCEPTION);
-                }
-                catch (...)
-                {
-                }
-            }
-
-            // Tell the caller that we were unable to map the exception by succeeding...
-            return S_OK;
-        }
-
-        // WinRT supporting version to execute a functor and catch known exceptions.
-        inline HRESULT __stdcall ResultFromKnownExceptions_WinRt(const DiagnosticsInfo& diagnostics, void* returnAddress, SupportedExceptions supported, IFunctor& functor)
-        {
-            WI_ASSERT(supported != SupportedExceptions::Default);
-
-            switch (supported)
-            {
-            case SupportedExceptions::Known:
-                try
-                {
-                    return functor.Run();
-                }
-                catch (const ResultException& exception)
-                {
-                    return ResultFromKnownException(exception, diagnostics, returnAddress);
-                }
-                catch (Platform::Exception^ exception)
-                {
-                    return ResultFromKnownException(exception, diagnostics, returnAddress);
-                }
-                catch (const std::bad_alloc& exception)
-                {
-                    return ResultFromKnownException(exception, diagnostics, returnAddress);
-                }
-                catch (std::exception& exception)
-                {
-                    return ResultFromKnownException(exception, diagnostics, returnAddress);
-                }
-                break;
-
-            case SupportedExceptions::ThrownOrAlloc:
-                try
-                {
-                    return functor.Run();
-                }
-                catch (const ResultException& exception)
-                {
-                    return ResultFromKnownException(exception, diagnostics, returnAddress);
-                }
-                catch (Platform::Exception^ exception)
-                {
-                    return ResultFromKnownException(exception, diagnostics, returnAddress);
-                }
-                catch (const std::bad_alloc& exception)
-                {
-                    return ResultFromKnownException(exception, diagnostics, returnAddress);
-                }
-                break;
-
-            case SupportedExceptions::Thrown:
-                try
-                {
-                    return functor.Run();
-                }
-                catch (const ResultException& exception)
-                {
-                    return ResultFromKnownException(exception, diagnostics, returnAddress);
-                }
-                catch (Platform::Exception^ exception)
-                {
-                    return ResultFromKnownException(exception, diagnostics, returnAddress);
-                }
-                break;
-            }
-
-            WI_ASSERT(false);
-            return S_OK;
-        }
-
-        inline void __stdcall ThrowPlatformException(FailureInfo const &failure, LPCWSTR debugString)
-        {
-            throw Platform::Exception::CreateException(failure.hr, ref new Platform::String(reinterpret_cast<_Null_terminated_ const __wchar_t *>(debugString)));
-        }
-
-#if !defined(RESULT_SUPPRESS_STATIC_INITIALIZERS)
-        WI_HEADER_INITITALIZATION_FUNCTION(InitializeWinRt, []
-        {
-            g_pfnResultFromCaughtException_WinRt = ResultFromCaughtException_WinRt;
-            g_pfnResultFromKnownExceptions_WinRt = ResultFromKnownExceptions_WinRt;
-            g_pfnThrowPlatformException = ThrowPlatformException;
-            return 1;
-        });
-#endif
-#endif
-
         inline void __stdcall Rethrow()
         {
             throw;
@@ -3496,19 +3234,6 @@ namespace wil
         {
             return exception.SetFailureInfo(failure);
         }
-
-#ifdef __cplusplus_winrt
-        inline HRESULT GetErrorCode(_In_ Platform::Exception^ exception) WI_NOEXCEPT
-        {
-            return exception->HResult;
-        }
-
-        inline void SetFailureInfo(_In_ FailureInfo const &, _Inout_ Platform::Exception^ exception) WI_NOEXCEPT
-        {
-            // no-op -- once a PlatformException^ is created, we can't modify the message, but this function must
-            // exist to distinguish this from ResultException
-        }
-#endif
 
         template <typename T>
         __declspec(noreturn) inline void ReportFailure_CustomExceptionHelper(_Inout_ T &exception, __R_FN_PARAMS_FULL, _In_opt_ PCWSTR message = nullptr)

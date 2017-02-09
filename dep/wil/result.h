@@ -1,14 +1,5 @@
 // Windows Internal Libraries (wil)
 //
-// Usage Guidelines:
-// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Error%20Handling%20Helpers.docx?web=1
-//
-// wil Usage Guidelines:
-// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Internal%20Libraries%20for%20C++%20Usage%20Guide.docx?web=1
-//
-// wil Discussion Alias (wildisc):
-// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
-//
 //! @file
 //! Windows Error Handling Helpers: standard error handling mechanisms across return codes, fail fast, exceptions and logging
 

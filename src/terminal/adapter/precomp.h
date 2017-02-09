@@ -28,4 +28,4 @@ Abstract:
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil\Common.h>
 #include <wil\Result.h>
-#include <wil\ResultException.h>
+
