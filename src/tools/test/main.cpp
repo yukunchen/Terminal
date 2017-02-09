@@ -5,14 +5,54 @@
 #include <windows.h>
 #include <wincon.h>
 
+
+int TestSetViewport(HANDLE hIn, HANDLE hOut);
+int TestGetchar(HANDLE hIn, HANDLE hOut);
+
 int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 {
     HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
     if (hIn == INVALID_HANDLE_VALUE)
     {
         return HRESULT_FROM_WIN32(GetLastError());
+    }    
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == INVALID_HANDLE_VALUE)
+    {
+        return HRESULT_FROM_WIN32(GetLastError());
     }
     
+    TestGetchar(hIn, hOut);
+
+    return 0;
+}
+
+
+int TestSetViewport(HANDLE hIn, HANDLE hOut)
+{
+    UNREFERENCED_PARAMETER(hIn);
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    bool fSuccess = GetConsoleScreenBufferInfoEx(hOut, &csbiex);
+    if (fSuccess) {
+        const SMALL_RECT Screen = csbiex.srWindow;
+        const short sWidth = Screen.Right - Screen.Left;
+        const short sHeight = Screen.Bottom - Screen.Top;
+
+        csbiex.srWindow.Top = 50;
+        csbiex.srWindow.Bottom = sHeight + 50;
+        csbiex.srWindow.Left = 0;
+        csbiex.srWindow.Right = sWidth;
+
+        SetConsoleScreenBufferInfoEx(hOut, &csbiex);
+
+    }
+    return 0;
+}
+
+int TestGetchar(HANDLE hIn, HANDLE hOut)
+{
+    UNREFERENCED_PARAMETER(hOut);
     DWORD dwInputModes;
     if (!GetConsoleMode(hIn, &dwInputModes))
     {
@@ -27,14 +67,9 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 
     while (hIn != nullptr)
     {
-        //DWORD dwRead;
-        //char ach;
-        //ReadConsoleA(hIn, &ach, 1, &dwRead, nullptr);
-
         int ch = getchar();
         printf("0x%x\r\n", ch);
     }
 
     return 0;
 }
-

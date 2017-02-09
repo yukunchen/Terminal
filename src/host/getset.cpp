@@ -125,9 +125,7 @@ HRESULT ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* c
     {
         pSelection->GetPublicSelectionFlags(&pConsoleSelectionInfo->dwFlags);
 
-        // we should never have failed to set the CONSOLE_SELECTION_IN_PROGRESS flag....
-        assert(LOG_HR_IF_FALSE(E_UNEXPECTED, IsFlagSet(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS)));
-        SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS); // ... but if we did, set it anyway in release mode.
+        SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS); 
 
         pSelection->GetSelectionAnchor(&pConsoleSelectionInfo->dwSelectionAnchor);
         pSelection->GetSelectionRectangle(&pConsoleSelectionInfo->srSelection);
@@ -223,6 +221,16 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
     // TODO: MSFT: 9574827 - should this have a failure case?
     psi->UpdateFont(&fi);
 
+    // If this is the active screen buffer, also cause the window to refresh its viewport size.
+    if (psi->IsActiveScreenBuffer())
+    {
+        Window* const pWindow = g_ciConsoleInformation.pWindow;
+        if (nullptr != pWindow)
+        {
+            pWindow->PostUpdateWindowSize();
+        }
+    }
+
     return S_OK;
 }
 
@@ -230,13 +238,6 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pCont
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
-
-    // Flags we don't understand are invalid.
-    RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~(INPUT_MODES | PRIVATE_MODES)));
-
-    // ECHO on with LINE off is invalid.
-    RETURN_HR_IF(E_INVALIDARG, IsFlagSet(Mode, ENABLE_ECHO_INPUT) && IsFlagClear(Mode, ENABLE_LINE_INPUT));
-
 
     if (IsAnyFlagSet(Mode, PRIVATE_MODES))
     {
@@ -263,6 +264,21 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pCont
 
     pContext->InputMode = Mode;
     ClearAllFlags(pContext->InputMode, PRIVATE_MODES);
+
+    // NOTE: For compatibility reasons, we need to set the modes and then return the error codes, not the other way around
+    //       as might be expected.
+    //       This is a bug from a long time ago and some applications depend on this functionality to operate properly.
+    //       ---
+    //       A prime example of this is that PSReadline module in Powershell will set the invalid mode 0x1e4
+    //       which includes 0x4 for ECHO_INPUT but turns off 0x2 for LINE_INPUT. This is invalid, but PSReadline
+    //       relies on it to properly receive the ^C printout and make a new line when the user presses Ctrl+C.
+    { 
+        // Flags we don't understand are invalid.
+        RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~(INPUT_MODES | PRIVATE_MODES)));
+
+        // ECHO on with LINE off is invalid.
+        RETURN_HR_IF(E_INVALIDARG, IsFlagSet(Mode, ENABLE_ECHO_INPUT) && IsFlagClear(Mode, ENABLE_LINE_INPUT));
+    }
 
     return S_OK;
 }
@@ -400,6 +416,11 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
     {
         g_ciConsoleInformation.pWindow->UpdateWindowSize(NewSize);
     }
+
+    // Despite the fact that this API takes in a srWindow for the viewport, it traditionally actually doesn't set
+    //  anything using that member - for moving the viewport, you need SetConsoleWindowInfo
+    //  (see https://msdn.microsoft.com/en-us/library/windows/desktop/ms686125(v=vs.85).aspx and DoSrvSetConsoleWindowInfo)
+    // Note that it also doesn't set cursor position. 
 
     return S_OK;
 }

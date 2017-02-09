@@ -269,7 +269,7 @@ void SetConsoleCPInfo(_In_ const BOOL fOutput)
             if (pti != nullptr)
             {
                 const FontInfo* const pfiOld = pti->GetCurrentFont();
-                FontInfo fiNew = FontInfo(pfiOld->GetFaceName(), pfiOld->GetFamily(), pfiOld->GetWeight(), pfiOld->GetUnscaledSize(), g_ciConsoleInformation.OutputCP);
+                FontInfo fiNew(pfiOld->GetFaceName(), pfiOld->GetFamily(), pfiOld->GetWeight(), pfiOld->GetUnscaledSize(), g_ciConsoleInformation.OutputCP);
                 psi->UpdateFont(&fiNew);
             }
         }

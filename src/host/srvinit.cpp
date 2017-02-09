@@ -66,6 +66,9 @@ void LoadLinkInfo(_Inout_ Settings* pLinkSettings,
                     BOOL fReadConsoleProperties;
                     WORD wShowWindow = pLinkSettings->GetShowWindow();
                     DWORD dwHotKey = pLinkSettings->GetHotKey();
+
+                    int iShowWindow;
+                    WORD wHotKey;
                     Status = ShortcutSerialization::s_GetLinkValues(&csi,
                                                                     &fReadConsoleProperties,
                                                                     wszShortcutTitle,
@@ -73,10 +76,18 @@ void LoadLinkInfo(_Inout_ Settings* pLinkSettings,
                                                                     wszIconLocation,
                                                                     ARRAYSIZE(wszIconLocation),
                                                                     &iIconIndex,
-                                                                    (int*) &(wShowWindow),
-                                                                    (WORD*)&(dwHotKey));
-                    pLinkSettings->SetShowWindow(wShowWindow);
+                                                                    &iShowWindow,
+                                                                    &wHotKey);
+
+                    // Convert results back to appropriate types and set.
+                    if (SUCCEEDED(IntToWord(iShowWindow, &wShowWindow)))
+                    {
+                        pLinkSettings->SetShowWindow(wShowWindow);
+                    }
+
+                    dwHotKey = wHotKey;
                     pLinkSettings->SetHotKey(dwHotKey);
+
                     // if we got a title, use it. even on overall link value load failure, the title will be correct if
                     // filled out.
                     if (wszShortcutTitle[0] != L'\0')

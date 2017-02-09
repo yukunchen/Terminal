@@ -409,8 +409,13 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
 
         public enum WindowMessages : UInt32
         {
+            WM_KEYDOWN = 0x0100,
+            WM_KEYUP = 0x0101,
+            WM_CHAR = 0x0102,
             WM_MOUSEWHEEL = 0x020A,
             WM_MOUSEHWHEEL = 0x020E,
+            WM_USER = 0x0400,
+            CM_SET_KEY_STATE = WM_USER + 18
         }
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
@@ -687,6 +692,104 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 14)]
             public string cAlternateFileName;
         }
+
+        public enum STARTF : Int32
+        {
+            STARTF_TITLEISLINKNAME = 0x00000800
+        }
+
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct STARTUPINFO
+        {
+            public Int32 cb;
+            public string lpReserved;
+            public string lpDesktop;
+            public string lpTitle;
+            public Int32 dwX;
+            public Int32 dwY;
+            public Int32 dwXSize;
+            public Int32 dwYSize;
+            public Int32 dwXCountChars;
+            public Int32 dwYCountChars;
+            public Int32 dwFillAttribute;
+            public STARTF dwFlags;
+            public Int16 wShowWindow;
+            public Int16 cbReserved2;
+            public IntPtr lpReserved2;
+            public IntPtr hStdInput;
+            public IntPtr hStdOutput;
+            public IntPtr hStdError;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct PROCESS_INFORMATION
+        {
+            public IntPtr hProcess;
+            public IntPtr hThread;
+            public int dwProcessId;
+            public int dwThreadId;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct STARTUPINFOEX
+        {
+            public STARTUPINFO StartupInfo;
+            public IntPtr lpAttributeList;
+        }
+
+        [Flags]
+        public enum CP_CreationFlags : uint
+        {
+            CREATE_SUSPENDED = 0x4,
+            CREATE_NEW_CONSOLE = 0x10,
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern bool CreateProcess(string lpApplicationName,
+                                                string lpCommandLine,
+                                                IntPtr lpProcessAttributes,
+                                                IntPtr lpThreadAttributes,
+                                                bool bInheritHandles,
+                                                CP_CreationFlags dwCreationFlags,
+                                                IntPtr lpEnvironment,
+                                                string lpCurrentDirectory,
+                                                [In] ref STARTUPINFO lpStartupInfo,
+                                                out PROCESS_INFORMATION lpProcessInformation);
+
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+        public static extern IntPtr CreateJobObject(IntPtr lpJobAttributes, IntPtr lpName);
+
+        [DllImport("kernel32.dll")]
+        public static extern bool TerminateJobObject(IntPtr hJob, uint uExitCode);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool AssignProcessToJobObject(IntPtr hJob, IntPtr hProcess);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern int ResumeThread(IntPtr hThread);
+
+        public enum JOBOBJECTINFOCLASS : uint
+        {
+            JobObjectBasicProcessIdList = 3
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct JOBOBJECT_BASIC_PROCESS_ID_LIST
+        {
+            public uint NumberOfAssignedProcesses;
+            public uint NumberOfProcessIdsInList;
+            public IntPtr ProcessId;
+            public IntPtr ProcessId2;
+        }
+
+        [DllImport("kernel32.dll")]
+        public static extern bool QueryInformationJobObject(IntPtr hJob,
+                                                            JOBOBJECTINFOCLASS JobObjectInformationClass,
+                                                            IntPtr lpJobObjectInfo,
+                                                            int cbJobObjectInfoLength,
+                                                            IntPtr lpReturnLength);
     }
 
     public static class Wtypes

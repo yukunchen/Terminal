@@ -12,6 +12,8 @@
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
 
+#include <assert.h>
+
 using namespace Microsoft::Console::VirtualTerminal;
 
 // Routine Description:
@@ -33,6 +35,9 @@ AdaptDispatch::AdaptDispatch(_In_ ConGetSet* const pConApi, _In_ AdaptDefaults* 
     _coordSavedCursor.X = 1;
     _coordSavedCursor.Y = 1;
     _srScrollMargins = {0}; // initially, there are no scroll margins.
+    _fIsSetColumnsEnabled = false; // by default, DECSCPP is disabled.
+    // TODO:10086990 - Create a setting to re-enable this.
+
 }
 
 bool AdaptDispatch::CreateInstance(_In_ ConGetSet* pConApi,
@@ -598,6 +603,31 @@ bool AdaptDispatch::_EraseSingleLineDistanceHelper(_In_ COORD const coordStartPo
     return fSuccess;
 }
 
+bool AdaptDispatch::_EraseAreaHelper(_In_ COORD const coordStartPosition, _In_ COORD const coordLastPosition, _In_ WORD const wFillColor)
+{
+    WCHAR const wchSpace = static_cast<WCHAR>(0x20); // space character. use 0x20 instead of literal space because we can't assume the compiler will always turn ' ' into 0x20.
+
+    DWORD dwCharsWritten = 0;
+    assert(coordStartPosition.X < coordLastPosition.X);
+    assert(coordStartPosition.Y < coordLastPosition.Y);
+    bool fSuccess = false;
+    for (short y = coordStartPosition.Y; y < coordLastPosition.Y; y++)
+    {
+        const COORD coordLine = {coordStartPosition.X, y};
+        fSuccess = !!_pConApi->FillConsoleOutputCharacterW(wchSpace, coordLastPosition.X - coordStartPosition.X, coordLine, &dwCharsWritten);
+        if (fSuccess)
+        {
+            fSuccess = !!_pConApi->FillConsoleOutputAttribute(wFillColor, coordLastPosition.X - coordStartPosition.X, coordLine, &dwCharsWritten);
+        }
+
+        if (!fSuccess)
+        {
+            break;
+        }
+    }
+    return fSuccess;
+}
+
 // Routine Description:
 // - Internal helper to erase one particular line of the buffer. Either from beginning to the cursor, from the cursor to the end, or the entire line.
 // - Used by both erase line (used just once) and by erase screen (used in a loop) to erase a portion of the buffer.
@@ -678,11 +708,23 @@ bool AdaptDispatch::EraseCharacters(_In_ unsigned int const uiNumChars)
 // Routine Description:
 // - ED - Erases a portion of the current viewable area (viewport) of the console.
 // Arguments:
-// - eraseType - Determines whether to erase: From beginning (top-left corner) to the cursor, from cursor to end (bottom-right corner), or the entire viewport area.
+// - eraseType - Determines whether to erase: 
+//      From beginning (top-left corner) to the cursor
+//      From cursor to end (bottom-right corner)
+//      The entire viewport area
+//      The scrollback (outside the viewport area)
 // Return Value: 
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EraseInDisplay(_In_ EraseType const eraseType)
 {
+    // First things first. If this is a "Scrollback" clear, then just do that.
+    // Scrollback clears erase everything in the "scrollback" of a *nix terminal
+    //      Everything that's scrolled off the screen so far.
+    if (eraseType == EraseType::Scrollback)
+    {
+        return _EraseScrollback();
+    }
+
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
@@ -978,7 +1020,13 @@ bool AdaptDispatch::ScrollDown(_In_ unsigned int const uiDistance)
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetColumns(_In_ unsigned int const uiColumns)
-{ 
+{
+    if (!_fIsSetColumnsEnabled) 
+    {
+        // Only set columns if that option is available. Return true, as this is technically a successful handling.
+        return true;
+    }
+
     SHORT sColumns;
     bool fSuccess = SUCCEEDED(UIntToShort(uiColumns, &sColumns));
     if (fSuccess)
@@ -1450,15 +1498,162 @@ bool AdaptDispatch::DesignateCharset(_In_ wchar_t const wchCharset)
 bool AdaptDispatch::SoftReset()
 {
     bool fSuccess = CursorVisibility(true); // Cursor enabled.
-    if (fSuccess) fSuccess = SetCursorKeysMode(false); // Normal characters.
-    if (fSuccess) fSuccess = SetKeypadMode(false); // Numeric characters.
-    if (fSuccess) fSuccess = SetTopBottomScrollingMargins(0, 0); // Top margin = 1; bottom margin = page length.
-    if (fSuccess) fSuccess = DesignateCharset(TermDispatch::VTCharacterSets::USASCII); // Default Charset
-    GraphicsOptions opt = GraphicsOptions::Off;
-    if (fSuccess) fSuccess = SetGraphicsRendition(&opt, 1); // Normal rendition.
+    if (fSuccess) 
+    {
+        fSuccess = SetCursorKeysMode(false); // Normal characters.
+    }
+    if (fSuccess) 
+    {
+        fSuccess = SetKeypadMode(false); // Numeric characters.
+    }
+    if (fSuccess) 
+    {
+        fSuccess = SetTopBottomScrollingMargins(0, 0); // Top margin = 1; bottom margin = page length.
+    }
+    if (fSuccess) 
+    {
+        fSuccess = DesignateCharset(TermDispatch::VTCharacterSets::USASCII); // Default Charset
+    }
+    if (fSuccess)
+    {
+        GraphicsOptions opt = GraphicsOptions::Off;
+        fSuccess = SetGraphicsRendition(&opt, 1); // Normal rendition.
+    } 
     // SetTopBottomMargins already moved the cursor to 1,1 
-    if (fSuccess) fSuccess = CursorSavePosition(); // Home position.
+    if (fSuccess) 
+    {
+        fSuccess = CursorSavePosition(); // Home position.
+    }
 
+    return fSuccess;
+}
+
+//Routine Description:
+// Full Reset - Perform a hard reset of the terminal. http://vt100.net/docs/vt220-rm/chapter4.html
+//  RIS performs the following actions: (Items with sub-bullets are supported)
+//   - Performs a communications line disconnect.
+//   - Clears UDKs.
+//   - Clears a down-line-loaded character set.
+//   - Clears the screen.
+//      * This is like Erase in Display (3), also clearing scrollback, as well as ED(2)
+//   - Returns the cursor to the upper-left corner of the screen.
+//      * CUP(1;1)
+//   - Sets the SGR state to normal.
+//      * SGR(Off)
+//   - Sets the selective erase attribute write state to "not erasable".
+//   - Sets all character sets to the default.
+//      * G0(USASCII)
+//Arguments:
+// <none>
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::HardReset()
+{
+    // Clears the screen - Needs to be done in two operations.
+    bool fSuccess = _EraseScrollback();
+    if (fSuccess) 
+    {
+        fSuccess = EraseInDisplay(EraseType::All);
+    }
+
+    // Cursor to 1,1
+    if (fSuccess) 
+    {
+        fSuccess = CursorPosition(1, 1);
+    }
+
+    // Sets the SGR state to normal.
+    if (fSuccess) 
+    {
+        GraphicsOptions opt = GraphicsOptions::Off;
+        fSuccess = SetGraphicsRendition(&opt, 1); // Normal rendition.
+    }
+    
+    if (fSuccess) 
+    {
+        fSuccess = DesignateCharset(TermDispatch::VTCharacterSets::USASCII); // Default Charset
+    }
+
+    return fSuccess;
+}
+
+//Routine Description:
+// Erase Scrollback (^[[3J - ED extension by xterm)
+//  Because conhost doesn't exactly have a scrollback, We have to be tricky here.
+//  We need to move the entire viewport to 0,0, and clear everything outside 
+//      (0, 0, viewportWidth, viewportHeight) To give the appearance that 
+//      everything above the viewport was cleared.
+//  We don't want to save the text BELOW the viewport, because in *nix, there isn't anything there 
+//      (There isn't a scroll-forward, only a scrollback)
+//Arguments:
+// <none>
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::_EraseScrollback()
+{
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    if (fSuccess)
+    {
+        const SMALL_RECT Screen = csbiex.srWindow;
+        const short sWidth = Screen.Right - Screen.Left;
+        const short sHeight = Screen.Bottom - Screen.Top;
+        assert(sWidth > 0 && sHeight > 0);
+        const COORD Cursor = csbiex.dwCursorPosition;
+
+        // Rectangle to cut out of the existing buffer
+        SMALL_RECT srScroll = Screen;
+        // Paste coordinate for cut text above
+        COORD coordDestination;
+        coordDestination.X = 0;
+        coordDestination.Y = 0;
+
+        // Fill character for remaining space left behind by "cut" operation (or for fill if we "cut" the entire line)
+        CHAR_INFO ciFill;
+        ciFill.Attributes = csbiex.wAttributes;
+        ciFill.Char.UnicodeChar = static_cast<WCHAR>(0x20); // space character. use 0x20 instead of literal space because we can't assume the compiler will always turn ' ' into 0x20.
+        fSuccess = !!_pConApi->ScrollConsoleScreenBufferW(&srScroll, nullptr, coordDestination, &ciFill);
+        if (fSuccess)
+        {
+            // Clear everything after the viewport.
+
+            // This is two regions, below the viewport and to the right of the viewport.
+            const DWORD dwTotalAreaBelow = csbiex.dwSize.X * (csbiex.dwSize.Y - sHeight);
+            const COORD coordBelowStartPosition = {0, sHeight};
+            // We don't use the _EraseAreaHelper here because _EraseSingleLineDistanceHelper does it all in one operation
+            fSuccess = _EraseSingleLineDistanceHelper(coordBelowStartPosition, dwTotalAreaBelow, csbiex.wAttributes);
+
+            if (fSuccess)
+            {
+                const COORD coordBottomRight = {csbiex.dwSize.X, coordBelowStartPosition.Y};
+
+                const COORD coordRightStartPosition = {sWidth, 0};
+                // We use the Area helper here because the Line helper would 
+                //      erase the parts of the screen we want to keep too
+                fSuccess = _EraseAreaHelper(coordRightStartPosition, coordBottomRight, csbiex.wAttributes);
+
+                if (fSuccess)
+                {
+                    // Move the viewport (CAN'T be done in one call with SetConsoleScreenBufferInfoEx, because legacy)
+                    SMALL_RECT srNewViewport;
+                    srNewViewport.Left = 0;
+                    srNewViewport.Top = 0;
+                    // SetConsoleWindowInfo uses an inclusive rect, while GetConsoleScreenBufferInfo is exclusive
+                    srNewViewport.Right = sWidth - 1;
+                    srNewViewport.Bottom = sHeight - 1;
+                    fSuccess = !!_pConApi->SetConsoleWindowInfo(true, &srNewViewport);
+
+                    if (fSuccess)
+                    {
+                        // Move the cursor to the same relative location.
+                        const COORD newCursor = {Cursor.X-Screen.Left, Cursor.Y-Screen.Top};
+                        fSuccess = !!_pConApi->SetConsoleCursorPosition(newCursor);
+                    } 
+                }
+            }
+        }
+    }
     return fSuccess;
 }
 

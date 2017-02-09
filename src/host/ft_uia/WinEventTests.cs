@@ -30,6 +30,8 @@ namespace Conhost.UIA.Tests
     [TestClass]
     public class WinEventTests : IWinEventCallbacks
     {
+        public TestContext TestContext { get; set; }
+
         enum EventType
         {
             CaretSelection,
@@ -179,7 +181,7 @@ namespace Conhost.UIA.Tests
             using (RegistryHelper reg = new RegistryHelper())
             {
                 reg.BackupRegistry();
-                using (CmdApp app = new CmdApp(CreateType.ProcessOnly))
+                using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
                 {
                     using (WinEventSystem sys = app.AttachWinEventSystem(this))
                     {

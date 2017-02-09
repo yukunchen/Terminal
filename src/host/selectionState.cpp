@@ -53,19 +53,6 @@ bool Selection::IsInQuickEditMode() const
 }
 
 // Routine Description:
-// - Determines whether the selection area is currently being changed
-// Arguments:
-// - <none>
-// Return Value:
-// - True if the selection is currently being changed. False otherwise.
-bool Selection::IsSelectionInProgress() const
-{
-    // TODO: consider having all dwSelectionFlags states return false if we're not in selecting state
-
-    return (_dwSelectionFlags & CONSOLE_SELECTION_IN_PROGRESS) != 0;
-}
-
-// Routine Description:
 // - Determines whether we are performing a line selection right now
 // Arguments:
 // - <none>

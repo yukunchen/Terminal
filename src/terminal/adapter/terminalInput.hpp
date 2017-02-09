@@ -39,6 +39,7 @@ namespace Microsoft
 
                 void _SendNullInputSequence(_In_ DWORD const dwControlKeyState) const;
                 void _SendInputSequence(_In_ PCWSTR const pwszSequence) const;
+                void _SendEscapedInputSequence(_In_ const wchar_t wch) const;
 
                 struct _TermKeyMap
                 {

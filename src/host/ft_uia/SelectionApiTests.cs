@@ -32,10 +32,13 @@ namespace Conhost.UIA.Tests
     {
         public const int timeout = Globals.Timeout;
 
+        public TestContext TestContext { get; set; }
+
+
         [TestMethod]
         public void TestCtrlHomeEnd()
         {
-            using (CmdApp app = new CmdApp(CreateType.ProcessOnly))
+            using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
             {
                 using (ViewportArea area = new ViewportArea(app))
                 {
@@ -161,7 +164,7 @@ namespace Conhost.UIA.Tests
 
                 VersionSelector.SetConsoleVersion(reg, ConsoleVersion.V2);
 
-                using (CmdApp app = new CmdApp(CreateType.ProcessOnly))
+                using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
                 {
                     using (ViewportArea area = new ViewportArea(app))
                     {
@@ -260,7 +263,7 @@ namespace Conhost.UIA.Tests
         [TestMethod]
         public void TestMouseSelection()
         {
-            using (CmdApp app = new CmdApp(CreateType.ProcessOnly))
+            using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
             {
                 using (ViewportArea area = new ViewportArea(app))
                 {

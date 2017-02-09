@@ -14,6 +14,7 @@ enum TraceKeywords
     Chars = 0x004, // _DBGCHARS
     Output = 0x008, // _DBGOUTPUT
     General = 0x100,
+    Input = 0x200,
     API = 0x400,
     All = 0xFFF
 };
@@ -220,6 +221,86 @@ void Tracing::s_TraceOutput(_In_z_ const char* pszMessage, ...)
     if (s_ulDebugFlag & TraceKeywords::Output)
     {
         OutputDebugStringA(szBuffer);
+    }
+}
+
+void Tracing::s_TraceWindowMessage(_In_ const MSG& msg)
+{
+    TraceLoggingWrite(
+        g_hConhostV2EventTraceProvider,
+        "Window Message",
+        TraceLoggingHexUInt32(msg.message, "message"),
+        TraceLoggingHexUInt64(msg.wParam, "wParam"),
+        TraceLoggingHexUInt64(msg.lParam, "lParam"),
+        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TraceKeywords::Input));
+}
+
+void Tracing::s_TraceInputRecord(_In_ const INPUT_RECORD& inputRecord)
+{
+    switch (inputRecord.EventType)
+    {
+    case KEY_EVENT:
+        TraceLoggingWrite(
+            g_hConhostV2EventTraceProvider,
+            "Key Event Input Record",
+            TraceLoggingBool(inputRecord.Event.KeyEvent.bKeyDown, "bKeyDown"),
+            TraceLoggingUInt16(inputRecord.Event.KeyEvent.wRepeatCount, "wRepeatCount"),
+            TraceLoggingHexUInt16(inputRecord.Event.KeyEvent.wVirtualKeyCode, "wVirtualKeyCode"),
+            TraceLoggingHexUInt16(inputRecord.Event.KeyEvent.wVirtualScanCode, "wVirtualScanCode"),
+            TraceLoggingWChar(inputRecord.Event.KeyEvent.uChar.UnicodeChar, "UnicodeChar"),
+            TraceLoggingWChar(inputRecord.Event.KeyEvent.uChar.AsciiChar, "AsciiChar"),
+            TraceLoggingHexUInt16(inputRecord.Event.KeyEvent.uChar.UnicodeChar, "Hex UnicodeChar"),
+            TraceLoggingHexUInt8(inputRecord.Event.KeyEvent.uChar.AsciiChar, "Hex AsciiChar"),
+            TraceLoggingHexUInt32(inputRecord.Event.KeyEvent.dwControlKeyState, "dwControlKeyState"),
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TraceKeywords::Input));
+        break;
+    case MOUSE_EVENT:
+        TraceLoggingWrite(
+            g_hConhostV2EventTraceProvider,
+            "Mouse Event Input Record",
+            TraceLoggingInt16(inputRecord.Event.MouseEvent.dwMousePosition.X, "dwMousePosition.X"),
+            TraceLoggingInt16(inputRecord.Event.MouseEvent.dwMousePosition.Y, "dwMousePosition.Y"),
+            TraceLoggingHexUInt32(inputRecord.Event.MouseEvent.dwButtonState, "dwButtonState"),
+            TraceLoggingHexUInt32(inputRecord.Event.MouseEvent.dwControlKeyState, "dwControlKeyState"),
+            TraceLoggingHexUInt32(inputRecord.Event.MouseEvent.dwEventFlags, "dwEventFlags"),
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TraceKeywords::Input));
+        break;
+    case WINDOW_BUFFER_SIZE_EVENT:
+        TraceLoggingWrite(
+            g_hConhostV2EventTraceProvider,
+            "Window Buffer Size Event Input Record",
+            TraceLoggingInt16(inputRecord.Event.WindowBufferSizeEvent.dwSize.X, "dwSize.X"),
+            TraceLoggingInt16(inputRecord.Event.WindowBufferSizeEvent.dwSize.Y, "dwSize.Y"),
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TraceKeywords::Input));
+        break;
+    case MENU_EVENT:
+        TraceLoggingWrite(
+            g_hConhostV2EventTraceProvider,
+            "Menu Event Input Record",
+            TraceLoggingHexUInt64(inputRecord.Event.MenuEvent.dwCommandId, "dwCommandId"),
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TraceKeywords::Input));
+        break;
+    case FOCUS_EVENT:
+        TraceLoggingWrite(
+            g_hConhostV2EventTraceProvider,
+            "Focus Event Input Record",
+            TraceLoggingBool(inputRecord.Event.FocusEvent.bSetFocus, "bSetFocus"),
+            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+            TraceLoggingKeyword(TraceKeywords::Input));
+        break;
+    default:
+        TraceLoggingWrite(
+            g_hConhostV2EventTraceProvider,
+            "Unknown Input Record",
+            TraceLoggingHexUInt16(inputRecord.EventType, "EventType"),
+            TraceLoggingLevel(WINEVENT_LEVEL_ERROR),
+            TraceLoggingKeyword(TraceKeywords::Input));
+        break;
     }
 }
 

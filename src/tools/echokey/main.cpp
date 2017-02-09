@@ -16,6 +16,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
 
     GetConsoleMode(hOut, &dwOutMode);
     GetConsoleMode(hIn, &dwInMode);
+    wprintf(L"Mode:0x%x\n", dwInMode);
 
     dwOutMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
     dwInMode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
@@ -42,6 +43,8 @@ int __cdecl wmain(int argc, WCHAR* argv[])
                     rc.Event.KeyEvent.uChar.AsciiChar,
                     rc.Event.KeyEvent.uChar.AsciiChar,
                     rc.Event.KeyEvent.dwControlKeyState);
+
+            if (rc.Event.KeyEvent.uChar.AsciiChar == 0x3) return 0;
 
             break;
         }

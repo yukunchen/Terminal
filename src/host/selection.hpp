@@ -106,7 +106,6 @@ public:
 
     bool IsAreaSelected() const;
     bool IsMouseButtonDown() const;
-    bool IsSelectionInProgress() const;
 
     void GetPublicSelectionFlags(_Out_ DWORD* const pdwFlags) const;
     void GetSelectionAnchor(_Out_ COORD* const pcoordSelectionAnchor) const;
