@@ -14,7 +14,6 @@ Author(s):
 #pragma once
 
 class WindowUiaProvider;
-class WindowUiaTarget;
 
 class Window sealed
 {
@@ -107,7 +106,6 @@ private:
     LRESULT _HandleGetObject(_In_ HWND const hwnd, _In_ WPARAM const wParam, _In_ LPARAM const lParam);
     IRawElementProviderSimple* _GetUiaProvider();
     WindowUiaProvider* _pUiaProvider = nullptr;
-    WindowUiaTarget* _pUiaTarget = nullptr;
 
     // Dynamic Settings helpers
     static LRESULT s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle, _In_ const BOOL fAutoPos, _In_ const Window* const pWindow);

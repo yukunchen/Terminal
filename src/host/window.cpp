@@ -295,8 +295,6 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMA
 
                 status = NTSTATUS_FROM_HRESULT(pGdiEngine->SetHwnd(hWnd));
 
-                /*_pUiaTarget = new WindowUiaTarget(hWnd, this);*/
-
                 if (NT_SUCCESS(status))
                 {
                     // Set alpha on window if requested

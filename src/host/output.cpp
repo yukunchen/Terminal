@@ -113,7 +113,7 @@ VOID SetConsoleWindowOwner(_In_ HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pPr
     ConsoleOwner.ProcessId = dwProcessId;
     ConsoleOwner.ThreadId = dwThreadId;
 
-    UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetWindowOwner, &ConsoleOwner, sizeof(ConsoleOwner));
+    //UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetWindowOwner, &ConsoleOwner, sizeof(ConsoleOwner));
 }
 
 // Routine Description:

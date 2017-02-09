@@ -78,7 +78,6 @@ IFACEMETHODIMP WindowUiaProvider::get_ProviderOptions(ProviderOptions* pRetVal)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    /**pRetVal = ProviderOptions_ServerSideProvider | ProviderOptions_UseComThreading;*/
     *pRetVal = ProviderOptions_ServerSideProvider;
     return S_OK;
 }
@@ -102,13 +101,12 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(PROPERTYID propertyId, VARIAN
 
     pRetVal->vt = VT_EMPTY;
 
-
     // Returning the default will leave the property as the default
     // so we only really need to touch it for the properties we want to implement
     if (propertyId == UIA_ControlTypePropertyId)
     {
         pRetVal->vt = VT_I4;
-        pRetVal->lVal = UIA_PaneControlTypeId;
+        pRetVal->lVal = UIA_WindowControlTypeId;
     }
     else if (propertyId == UIA_AutomationIdPropertyId)
     {
@@ -150,16 +148,9 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(PROPERTYID propertyId, VARIAN
 // supplies many properties.
 IFACEMETHODIMP WindowUiaProvider::get_HostRawElementProvider(IRawElementProviderSimple** pRetVal)
 {
-    /*RETURN_IF_FAILED(_EnsureValidHwnd());
-
-    *pRetVal = this;
-    AddRef();
-    return S_OK;*/
-
     RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, _pWindow);
 
     HWND const hwnd = _pWindow->GetWindowHandle();
-
     RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, hwnd);
 
     return UiaHostProviderFromHwnd(hwnd, pRetVal);
@@ -242,8 +233,8 @@ HRESULT STDMETHODCALLTYPE WindowUiaProvider::ElementProviderFromPoint(double x, 
 
     *ppRetVal = NULL;
 
-    x;
-    y;
+    UNREFERENCED_PARAMETER(x);
+    UNREFERENCED_PARAMETER(y);
 
     *ppRetVal = _GetScreenInfoProvider();
     RETURN_IF_NULL_ALLOC(*ppRetVal);

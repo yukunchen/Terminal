@@ -93,7 +93,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::QueryInterface(REFIID riid, void** ppInter
 // Gets UI Automation provider options.
 IFACEMETHODIMP ScreenInfoUiaProvider::get_ProviderOptions(ProviderOptions* pRetVal)
 {
-    *pRetVal = ProviderOptions_ServerSideProvider | ProviderOptions_UseComThreading;
+    *pRetVal = ProviderOptions_ServerSideProvider;
     return S_OK;
 }
 
