@@ -94,6 +94,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "useful", "useful", "{815772
 		dep\wil\useful\stl.h = dep\wil\useful\stl.h
 		dep\wil\useful\win32helpers.h = dep\wil\useful\win32helpers.h
 	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Scratch", "src\tools\scratch\Scratch.vcxproj", "{ED82003F-FC5D-4E94-8B36-F480018ED064}"
 EndProject
 Global
