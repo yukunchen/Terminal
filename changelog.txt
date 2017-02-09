@@ -125,3 +125,4 @@
 2/2/2017 - 10471073 - Mouse wheel no longer works in FAR Manager. Restore messages in the input queue depending on the mode
 2/6/2017 - 10802608 - WinPE main cmd window is invisible. Don't return error during SetActiveWindow.
 2/7/2017 - 10586343 - GetConsoleTitleA fails to return due to off-by-one in buffer size calculation. This affected emacs-client.exe.
+2/9/2017 - 9598109 - [Watson Failure] caused by INVALID_POINTER_READ_c0000005_console.dll!FindCreateFont

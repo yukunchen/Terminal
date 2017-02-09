@@ -37,7 +37,10 @@ public:
     FontInfoBase(_In_ PCWSTR const pwszFaceName,
                  _In_ BYTE const bFamily,
                  _In_ LONG const lWeight,
+                 _In_ bool const fSetDefaultRasterFont,
                  _In_ UINT const uiCodePage);
+
+    FontInfoBase(_In_ const FontInfoBase &fibFont);
 
     ~FontInfoBase();
 
@@ -50,18 +53,24 @@ public:
 
     void SetFromEngine(_In_ PCWSTR const pwszFaceName,
                        _In_ BYTE const bFamily,
-                       _In_ LONG const lWeight);
+                       _In_ LONG const lWeight,
+                       _In_ bool const fSetDefaultRasterFont);
 
+    bool WasDefaultRasterSetFromEngine() const;
     void ValidateFont();
 
     static Microsoft::Console::Render::IFontDefaultList* s_pFontDefaultList;
     static void s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList);
 
+protected:
+    bool IsDefaultRasterFontNoSize() const;
+
 private:
-    WCHAR _pwszFaceName[LF_FACESIZE];
+    WCHAR _wszFaceName[LF_FACESIZE];
     LONG _lWeight;
     BYTE _bFamily;
     UINT _uiCodePage;
+    bool _fDefaultRasterSetFromEngine;
 };
 
 class FontInfo : public FontInfoBase
@@ -71,7 +80,8 @@ public:
              _In_ BYTE const bFamily,
              _In_ LONG const lWeight,
              _In_ COORD const coordSize,
-             _In_ UINT const uiCodePage);
+             _In_ UINT const uiCodePage,
+             _In_ bool const fSetDefaultRasterFont = false);
 
     FontInfo(_In_ const FontInfo &fiFont);
 
@@ -81,11 +91,12 @@ public:
     void SetFromEngine(_In_ PCWSTR const pwszFaceName,
                        _In_ BYTE const bFamily,
                        _In_ LONG const lWeight,
+                       _In_ bool const fSetDefaultRasterFont,
                        _In_ COORD const coordSize,
                        _In_ COORD const coordSizeUnscaled);
 
     void ValidateFont();
-
+    
     static void s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList);
 
 private:
@@ -107,6 +118,7 @@ public:
     FontInfoDesired(_In_ const FontInfo &fiFont);
 
     COORD FontInfoDesired::GetEngineSize() const;
+    bool IsDefaultRasterFont() const;
 
 private:
     COORD _coordSizeDesired;
