@@ -62,36 +62,35 @@ struct INPUT_INFORMATION
     INPUT_RECORD ReadConInpDbcsLeadByte;
     INPUT_RECORD WriteConInpDbcsLeadByte[2];
 
+    INPUT_INFORMATION(_In_ ULONG cEvents);
     ~INPUT_INFORMATION();
 
-NTSTATUS ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
-                    _In_ ULONG Length,
-                    _Out_ PULONG EventsRead,
-                    _In_ BOOL Peek,
-                    _In_ BOOL StreamRead,
-                    _Out_ PBOOL ResetWaitEvent,
-                    _In_ BOOLEAN Unicode);
+    NTSTATUS ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
+                        _In_ ULONG Length,
+                        _Out_ PULONG EventsRead,
+                        _In_ BOOL Peek,
+                        _In_ BOOL StreamRead,
+                        _Out_ PBOOL ResetWaitEvent,
+                        _In_ BOOLEAN Unicode);
 
-NTSTATUS ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
-                         _Inout_ PDWORD pcLength,
-                         _In_ BOOL const fPeek,
-                         _In_ BOOL const fWaitForData,
-                         _In_ BOOL const fStreamRead,
-                         _In_ INPUT_READ_HANDLE_DATA* pHandleData,
-                         _In_opt_ PCONSOLE_API_MSG pConsoleMessage,
-                         _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
-                         _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
-                         _In_ ULONG const cbWaitParameter,
-                         _In_ BOOLEAN const fWaitBlockExists,
-                         _In_ BOOLEAN const fUnicode);
+    NTSTATUS ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
+                            _Inout_ PDWORD pcLength,
+                            _In_ BOOL const fPeek,
+                            _In_ BOOL const fWaitForData,
+                            _In_ BOOL const fStreamRead,
+                            _In_ INPUT_READ_HANDLE_DATA* pHandleData,
+                            _In_opt_ PCONSOLE_API_MSG pConsoleMessage,
+                            _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
+                            _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
+                            _In_ ULONG const cbWaitParameter,
+                            _In_ BOOLEAN const fWaitBlockExists,
+                            _In_ BOOLEAN const fUnicode);
 
-DWORD WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords);
-NTSTATUS PrependInputBuffer(_In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * const pcLength);
-void ReinitializeInputBuffer();
-void GetNumberOfReadyEvents(_Out_ PULONG pcEvents);
-void FlushInputBuffer();
-NTSTATUS FlushAllButKeys();
-void WakeUpReadersWaitingForData();
+    DWORD WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords);
+    NTSTATUS PrependInputBuffer(_In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * const pcLength);
+    void ReinitializeInputBuffer();
+    void GetNumberOfReadyEvents(_Out_ PULONG pcEvents);
+    void FlushInputBuffer();
+    NTSTATUS FlushAllButKeys();
+    void WakeUpReadersWaitingForData();
 };
-
-NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ INPUT_INFORMATION* pInputInfo);

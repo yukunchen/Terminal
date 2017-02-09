@@ -66,18 +66,20 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
     SetConsoleCPInfo(FALSE);
 
     // Initialize input buffer.
-    g_ciConsoleInformation.pInputBuffer = new INPUT_INFORMATION();
-    if (g_ciConsoleInformation.pInputBuffer == nullptr)
+    try
+    {
+        g_ciConsoleInformation.pInputBuffer = new INPUT_INFORMATION(g_ciConsoleInformation.GetInputBufferSize());
+        if (g_ciConsoleInformation.pInputBuffer == nullptr)
+        {
+            return STATUS_NO_MEMORY;
+        }
+    }
+    catch(...)
     {
         return STATUS_NO_MEMORY;
     }
 
-    NTSTATUS Status = CreateInputBuffer(g_ciConsoleInformation.GetInputBufferSize(), g_ciConsoleInformation.pInputBuffer);
-    if (!NT_SUCCESS(Status))
-    {
-        goto ErrorExit3;
-    }
-
+    NTSTATUS Status;
     // Byte count + 1 so dividing by 2 always rounds up. +1 more for trailing null guard.
     g_ciConsoleInformation.Title = new WCHAR[((cbTitle + 1) / sizeof(WCHAR)) + 1];
     if (g_ciConsoleInformation.Title == nullptr)
@@ -129,7 +131,6 @@ ErrorExit1:
 ErrorExit2:
     delete g_ciConsoleInformation.pInputBuffer;
 
-ErrorExit3:
     ASSERT(!NT_SUCCESS(Status));
     return Status;
 }

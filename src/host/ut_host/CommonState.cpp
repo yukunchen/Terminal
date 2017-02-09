@@ -69,8 +69,7 @@ void CommonState::CleanupGlobalScreenBuffer()
 
 void CommonState::PrepareGlobalInputBuffer()
 {
-    g_ciConsoleInformation.pInputBuffer = new INPUT_INFORMATION();
-    CreateInputBuffer(10, g_ciConsoleInformation.pInputBuffer);
+    g_ciConsoleInformation.pInputBuffer = new INPUT_INFORMATION(10);
 }
 
 void CommonState::CleanupGlobalInputBuffer()

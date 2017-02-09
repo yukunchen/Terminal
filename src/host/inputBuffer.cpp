@@ -12,9 +12,9 @@
 // Routine Description:
 // - This routine creates an input buffer.  It allocates the circular buffer and initializes the information fields.
 // Arguments:
-// - pInputInfo - Pointer to input buffer information structure.
+// - cEvents - The default size of the circular buffer (in INPUT_RECORDs)
 // Return Value:
-NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ INPUT_INFORMATION* pInputInfo)
+INPUT_INFORMATION::INPUT_INFORMATION(_In_ ULONG cEvents)
 {
     if (0 == cEvents)
     {
@@ -29,38 +29,36 @@ NTSTATUS CreateInputBuffer(_In_opt_ ULONG cEvents, _Out_ INPUT_INFORMATION* pInp
     }
 
     ULONG const BufferSize = sizeof(INPUT_RECORD) * (cEvents + 1);
-    pInputInfo->InputBuffer = (PINPUT_RECORD) new BYTE[BufferSize];
-    if (pInputInfo->InputBuffer == nullptr)
+    this->InputBuffer = (PINPUT_RECORD) new BYTE[BufferSize];
+    if (this->InputBuffer == nullptr)
     {
-        return STATUS_NO_MEMORY;
+        THROW_NTSTATUS(STATUS_NO_MEMORY);
     }
 
     NTSTATUS Status = STATUS_SUCCESS;
-    pInputInfo->InputWaitEvent = g_hInputEvent.get();
+    this->InputWaitEvent = g_hInputEvent.get();
 
     if (!NT_SUCCESS(Status))
     {
-        delete[] pInputInfo->InputBuffer;
-        return Status;
+        delete[] this->InputBuffer;
+        THROW_NTSTATUS(Status);
     }
 
     // initialize buffer header
-    pInputInfo->InputBufferSize = cEvents;
-    pInputInfo->InputMode = ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT;
-    pInputInfo->First = (ULONG_PTR) pInputInfo->InputBuffer;
-    pInputInfo->In = (ULONG_PTR) pInputInfo->InputBuffer;
-    pInputInfo->Out = (ULONG_PTR) pInputInfo->InputBuffer;
-    pInputInfo->Last = (ULONG_PTR) pInputInfo->InputBuffer + BufferSize;
-    pInputInfo->ImeMode.Disable = FALSE;
-    pInputInfo->ImeMode.Unavailable = FALSE;
-    pInputInfo->ImeMode.Open = FALSE;
-    pInputInfo->ImeMode.ReadyConversion = FALSE;
-    pInputInfo->ImeMode.InComposition = FALSE;
+    this->InputBufferSize = cEvents;
+    this->InputMode = ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT;
+    this->First = (ULONG_PTR) this->InputBuffer;
+    this->In = (ULONG_PTR) this->InputBuffer;
+    this->Out = (ULONG_PTR) this->InputBuffer;
+    this->Last = (ULONG_PTR) this->InputBuffer + BufferSize;
+    this->ImeMode.Disable = FALSE;
+    this->ImeMode.Unavailable = FALSE;
+    this->ImeMode.Open = FALSE;
+    this->ImeMode.ReadyConversion = FALSE;
+    this->ImeMode.InComposition = FALSE;
 
-    ZeroMemory(&pInputInfo->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
-    ZeroMemory(&pInputInfo->WriteConInpDbcsLeadByte, sizeof(INPUT_RECORD));
-
-    return STATUS_SUCCESS;
+    ZeroMemory(&this->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+    ZeroMemory(&this->WriteConInpDbcsLeadByte, sizeof(INPUT_RECORD));
 }
 
 // Routine Description:
