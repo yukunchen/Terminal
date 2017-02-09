@@ -76,7 +76,7 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
     }
     catch(...)
     {
-        return STATUS_NO_MEMORY;
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
     NTSTATUS Status;

@@ -30,14 +30,12 @@ INPUT_INFORMATION::INPUT_INFORMATION(_In_ ULONG cEvents)
 
     ULONG const BufferSize = sizeof(INPUT_RECORD) * (cEvents + 1);
     this->InputBuffer = (PINPUT_RECORD) new BYTE[BufferSize];
-    if (this->InputBuffer == nullptr)
-    {
-        THROW_NTSTATUS(STATUS_NO_MEMORY);
-    }
+    THROW_IF_NULL_ALLOC(this->InputBuffer);
 
     NTSTATUS Status = STATUS_SUCCESS;
     this->InputWaitEvent = g_hInputEvent.get();
 
+    // TODO: MSFT:8805366 Is this if block still necessary?
     if (!NT_SUCCESS(Status))
     {
         delete[] this->InputBuffer;
@@ -83,6 +81,8 @@ void INPUT_INFORMATION::ReinitializeInputBuffer()
 // Return Value:
 INPUT_INFORMATION::~INPUT_INFORMATION()
 {
+    // TODO: MSFT:8805366 check for null before trying to close this
+    // and check that it needs to be closing it in the first place.
     CloseHandle(this->InputWaitEvent);
     delete[] this->InputBuffer;
     this->InputBuffer = nullptr;
@@ -122,6 +122,9 @@ NTSTATUS INPUT_INFORMATION::FlushAllButKeys()
     {
         ULONG BufferSize;
         // Allocate memory for temp buffer.
+
+        // TODO: MSFT:8805366 use hresults, fix DWordMult hiding
+        // non-overflow errors
         if (FAILED(DWordMult(sizeof(INPUT_RECORD), this->InputBufferSize + 1, &BufferSize)))
         {
             return STATUS_INTEGER_OVERFLOW;
