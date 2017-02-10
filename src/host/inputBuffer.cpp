@@ -201,22 +201,22 @@ void INPUT_INFORMATION::FlushInputBuffer()
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS SetInputBufferSize(_Inout_ INPUT_INFORMATION* InputInformation, _In_ ULONG Size)
+NTSTATUS INPUT_INFORMATION::SetInputBufferSize(_In_ ULONG Size)
 {
 #if DBG
     ULONG_PTR NumberOfEvents;
-    if (InputInformation->In < InputInformation->Out)
+    if (this->In < this->Out)
     {
-        NumberOfEvents = InputInformation->Last - InputInformation->Out;
-        NumberOfEvents += InputInformation->In - InputInformation->First;
+        NumberOfEvents = this->Last - this->Out;
+        NumberOfEvents += this->In - this->First;
     }
     else
     {
-        NumberOfEvents = InputInformation->In - InputInformation->Out;
+        NumberOfEvents = this->In - this->Out;
     }
     NumberOfEvents /= sizeof(INPUT_RECORD);
 #endif
-    ASSERT(Size > InputInformation->InputBufferSize);
+    ASSERT(Size > this->InputBufferSize);
 
     size_t BufferSize;
     // Allocate memory for new input buffer.
@@ -234,24 +234,24 @@ NTSTATUS SetInputBufferSize(_Inout_ INPUT_INFORMATION* InputInformation, _In_ UL
     // Copy old input buffer. Let the ReadBuffer do any compaction work.
     ULONG NumberOfEventsRead;
     BOOL Dummy;
-    NTSTATUS Status = InputInformation->ReadBuffer(InputBuffer, Size, &NumberOfEventsRead, TRUE, FALSE, &Dummy, TRUE);
+    NTSTATUS Status = this->ReadBuffer(InputBuffer, Size, &NumberOfEventsRead, TRUE, FALSE, &Dummy, TRUE);
 
     if (!NT_SUCCESS(Status))
     {
         delete[] InputBuffer;
         return Status;
     }
-    InputInformation->Out = (ULONG_PTR) InputBuffer;
-    InputInformation->In = (ULONG_PTR) InputBuffer + sizeof(INPUT_RECORD) * NumberOfEventsRead;
+    this->Out = (ULONG_PTR) InputBuffer;
+    this->In = (ULONG_PTR) InputBuffer + sizeof(INPUT_RECORD) * NumberOfEventsRead;
 
     // adjust pointers
-    InputInformation->First = (ULONG_PTR) InputBuffer;
-    InputInformation->Last = (ULONG_PTR) InputBuffer + BufferSize;
+    this->First = (ULONG_PTR) InputBuffer;
+    this->Last = (ULONG_PTR) InputBuffer + BufferSize;
 
     // free old input buffer
-    delete[] InputInformation->InputBuffer;
-    InputInformation->InputBufferSize = Size;
-    InputInformation->InputBuffer = InputBuffer;
+    delete[] this->InputBuffer;
+    this->InputBufferSize = Size;
+    this->InputBuffer = InputBuffer;
 
     return Status;
 }
@@ -640,7 +640,6 @@ NTSTATUS INPUT_INFORMATION::ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECOR
 // Routine Description:
 // - This routine writes to a buffer.  It does the actual circular buffer manipulation.
 // Arguments:
-// - InputInformation - buffer to write to
 // - Buffer - buffer to write from
 // - Length - length of buffer in events
 // - EventsWritten - where to store number of events written.
@@ -649,7 +648,7 @@ NTSTATUS INPUT_INFORMATION::ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECOR
 // - ERROR_BROKEN_PIPE - no more readers.
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS WriteBuffer(_Inout_ INPUT_INFORMATION* InputInformation, _In_ PVOID Buffer, _In_ ULONG Length, _Out_ PULONG EventsWritten, _Out_ PBOOL SetWaitEvent)
+NTSTATUS INPUT_INFORMATION::WriteBuffer(_In_ PVOID Buffer, _In_ ULONG Length, _Out_ PULONG EventsWritten, _Out_ PBOOL SetWaitEvent)
 {
     NTSTATUS Status;
     ULONG TransferLength;
@@ -659,7 +658,7 @@ NTSTATUS WriteBuffer(_Inout_ INPUT_INFORMATION* InputInformation, _In_ PVOID Buf
 
     // windows sends a mouse_move message each time a window is updated.
     // coalesce these.
-    if (Length == 1 && InputInformation->Out != InputInformation->In)
+    if (Length == 1 && this->Out != this->In)
     {
         PINPUT_RECORD InputEvent = (PINPUT_RECORD) Buffer;
 
@@ -667,13 +666,13 @@ NTSTATUS WriteBuffer(_Inout_ INPUT_INFORMATION* InputInformation, _In_ PVOID Buf
         {
             PINPUT_RECORD LastInputEvent;
 
-            if (InputInformation->In == InputInformation->First)
+            if (this->In == this->First)
             {
-                LastInputEvent = (PINPUT_RECORD) (InputInformation->Last - sizeof(INPUT_RECORD));
+                LastInputEvent = (PINPUT_RECORD) (this->Last - sizeof(INPUT_RECORD));
             }
             else
             {
-                LastInputEvent = (PINPUT_RECORD) (InputInformation->In - sizeof(INPUT_RECORD));
+                LastInputEvent = (PINPUT_RECORD) (this->In - sizeof(INPUT_RECORD));
             }
             if (LastInputEvent->EventType == MOUSE_EVENT && LastInputEvent->Event.MouseEvent.dwEventFlags == MOUSE_MOVED)
             {
@@ -686,13 +685,13 @@ NTSTATUS WriteBuffer(_Inout_ INPUT_INFORMATION* InputInformation, _In_ PVOID Buf
         else if (InputEvent->EventType == KEY_EVENT && InputEvent->Event.KeyEvent.bKeyDown)
         {
             PINPUT_RECORD LastInputEvent;
-            if (InputInformation->In == InputInformation->First)
+            if (this->In == this->First)
             {
-                LastInputEvent = (PINPUT_RECORD) (InputInformation->Last - sizeof(INPUT_RECORD));
+                LastInputEvent = (PINPUT_RECORD) (this->Last - sizeof(INPUT_RECORD));
             }
             else
             {
-                LastInputEvent = (PINPUT_RECORD) (InputInformation->In - sizeof(INPUT_RECORD));
+                LastInputEvent = (PINPUT_RECORD) (this->In - sizeof(INPUT_RECORD));
             }
 
             if (IsCharFullWidth(InputEvent->Event.KeyEvent.uChar.UnicodeChar))
@@ -740,16 +739,16 @@ NTSTATUS WriteBuffer(_Inout_ INPUT_INFORMATION* InputInformation, _In_ PVOID Buf
         //       |______|______|______|
         //
         // we can write from in to out-1
-        if (InputInformation->Out > InputInformation->In)
+        if (this->Out > this->In)
         {
             TransferLength = BufferLengthInBytes;
-            if ((InputInformation->Out - InputInformation->In - sizeof(INPUT_RECORD)) < BufferLengthInBytes)
+            if ((this->Out - this->In - sizeof(INPUT_RECORD)) < BufferLengthInBytes)
             {
-                Status = SetInputBufferSize(InputInformation, InputInformation->InputBufferSize + Length + INPUT_BUFFER_SIZE_INCREMENT);
+                Status = this->SetInputBufferSize(this->InputBufferSize + Length + INPUT_BUFFER_SIZE_INCREMENT);
                 if (!NT_SUCCESS(Status))
                 {
                     RIPMSG1(RIP_WARNING, "Couldn't grow input buffer, Status == 0x%x", Status);
-                    TransferLength = (ULONG) (InputInformation->Out - InputInformation->In - sizeof(INPUT_RECORD));
+                    TransferLength = (ULONG) (this->Out - this->In - sizeof(INPUT_RECORD));
                     if (TransferLength == 0)
                     {
                         return Status;
@@ -760,11 +759,11 @@ NTSTATUS WriteBuffer(_Inout_ INPUT_INFORMATION* InputInformation, _In_ PVOID Buf
                     goto OutPath;   // after resizing, in > out
                 }
             }
-            memmove((PBYTE) InputInformation->In, (PBYTE) Buffer, TransferLength);
+            memmove((PBYTE) this->In, (PBYTE) Buffer, TransferLength);
             Buffer = (PVOID) (((PBYTE) Buffer) + TransferLength);
             *EventsWritten += TransferLength / sizeof(INPUT_RECORD);
             BufferLengthInBytes -= TransferLength;
-            InputInformation->In += TransferLength;
+            this->In += TransferLength;
         }
 
         // if in >= out, buffer looks like this:
@@ -780,21 +779,21 @@ NTSTATUS WriteBuffer(_Inout_ INPUT_INFORMATION* InputInformation, _In_ PVOID Buf
         // are written.
         else
         {
-            if (InputInformation->Out == InputInformation->In)
+            if (this->Out == this->In)
             {
                 *SetWaitEvent = TRUE;
             }
 OutPath:
-            if ((InputInformation->Last - InputInformation->In) > BufferLengthInBytes)
+            if ((this->Last - this->In) > BufferLengthInBytes)
             {
                 TransferLength = BufferLengthInBytes;
             }
             else
             {
-                if (InputInformation->First == InputInformation->Out && InputInformation->In == (InputInformation->Last - sizeof(INPUT_RECORD)))
+                if (this->First == this->Out && this->In == (this->Last - sizeof(INPUT_RECORD)))
                 {
                     TransferLength = BufferLengthInBytes;
-                    Status = SetInputBufferSize(InputInformation, InputInformation->InputBufferSize + Length + INPUT_BUFFER_SIZE_INCREMENT);
+                    Status = this->SetInputBufferSize(this->InputBufferSize + Length + INPUT_BUFFER_SIZE_INCREMENT);
                     if (!NT_SUCCESS(Status))
                     {
                         RIPMSG1(RIP_WARNING, "Couldn't grow input buffer, Status == 0x%x", Status);
@@ -803,21 +802,21 @@ OutPath:
                 }
                 else
                 {
-                    TransferLength = (ULONG) (InputInformation->Last - InputInformation->In);
-                    if (InputInformation->First == InputInformation->Out)
+                    TransferLength = (ULONG) (this->Last - this->In);
+                    if (this->First == this->Out)
                     {
                         TransferLength -= sizeof(INPUT_RECORD);
                     }
                 }
             }
-            memmove((PBYTE) InputInformation->In, (PBYTE) Buffer, TransferLength);
+            memmove((PBYTE) this->In, (PBYTE) Buffer, TransferLength);
             Buffer = (PVOID) (((PBYTE) Buffer) + TransferLength);
             *EventsWritten += TransferLength / sizeof(INPUT_RECORD);
             BufferLengthInBytes -= TransferLength;
-            InputInformation->In += TransferLength;
-            if (InputInformation->In == InputInformation->Last)
+            this->In += TransferLength;
+            if (this->In == this->Last)
             {
-                InputInformation->In = InputInformation->First;
+                this->In = this->First;
             }
         }
         if (TransferLength == 0)
@@ -838,7 +837,7 @@ OutPath:
 // - Number of events to write after special characters have been stripped.
 // Note:
 // - The console lock must be held when calling this routine.
-DWORD PreprocessInput(_In_ PINPUT_RECORD InputEvent, _In_ DWORD nLength)
+DWORD INPUT_INFORMATION::PreprocessInput(_In_ PINPUT_RECORD InputEvent, _In_ DWORD nLength)
 {
     for (ULONG NumEvents = nLength; NumEvents != 0; NumEvents--)
     {
@@ -923,12 +922,12 @@ NTSTATUS INPUT_INFORMATION::PrependInputBuffer(_In_ PINPUT_RECORD pInputRecord, 
     ULONG EventsWritten;
     BOOL SetWaitEvent;
     // write new info to buffer
-    WriteBuffer(this, pInputRecord, cInputRecords, &EventsWritten, &SetWaitEvent);
+    this->WriteBuffer(pInputRecord, cInputRecords, &EventsWritten, &SetWaitEvent);
 
     // Write existing info to buffer.
     if (pExistingEvents)
     {
-        WriteBuffer(this, pExistingEvents, EventsRead, &EventsWritten, &Dummy);
+        this->WriteBuffer(pExistingEvents, EventsRead, &EventsWritten, &Dummy);
         delete[] pExistingEvents;
     }
 
@@ -963,7 +962,7 @@ DWORD INPUT_INFORMATION::WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ 
     // Write to buffer.
     ULONG EventsWritten;
     BOOL SetWaitEvent;
-    WriteBuffer(this, pInputRecord, cInputRecords, &EventsWritten, &SetWaitEvent);
+    this->WriteBuffer(pInputRecord, cInputRecords, &EventsWritten, &SetWaitEvent);
 
     if (SetWaitEvent)
     {

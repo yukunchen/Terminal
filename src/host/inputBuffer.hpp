@@ -87,10 +87,14 @@ struct INPUT_INFORMATION
                             _In_ BOOLEAN const fUnicode);
 
     DWORD WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords);
+
+    NTSTATUS WriteBuffer(_In_ PVOID Buffer, _In_ ULONG Length, _Out_ PULONG EventsWritten, _Out_ PBOOL SetWaitEvent);
     NTSTATUS PrependInputBuffer(_In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * const pcLength);
     void ReinitializeInputBuffer();
     void GetNumberOfReadyEvents(_Out_ PULONG pcEvents);
     void FlushInputBuffer();
     NTSTATUS FlushAllButKeys();
     void WakeUpReadersWaitingForData();
+    NTSTATUS SetInputBufferSize(_In_ ULONG Size);
+    DWORD PreprocessInput(_In_ PINPUT_RECORD InputEvent, _In_ DWORD nLength);
 };
