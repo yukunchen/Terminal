@@ -44,7 +44,6 @@ SOURCES                         =   $(SOURCES)\
                                     ..\icon.cpp      \
                                     ..\window.cpp    \
                                     ..\windowproc.cpp \
-                                    ..\windowuiatarget.cpp \
                                     ..\windowuiaprovider.cpp \
                                     ..\windowdpiapi.cpp \
                                     ..\userprivapi.cpp \
