@@ -91,6 +91,8 @@ class InputBufferTests
         // add a bunch of mouse event records
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
+            mouseRecord.Event.MouseEvent.dwMousePosition.X = static_cast<SHORT>(i + 1);
+            mouseRecord.Event.MouseEvent.dwMousePosition.Y = static_cast<SHORT>(i + 1) * 2;
             VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&mouseRecord, 1), 0u);
         }
 
@@ -98,6 +100,10 @@ class InputBufferTests
         ULONG outNum;
         inputBuffer.GetNumberOfReadyEvents(&outNum);
         VERIFY_ARE_EQUAL(outNum, 1);
+        // check that the mouse position is being updated correctly
+        INPUT_RECORD outRecord = *reinterpret_cast<INPUT_RECORD*>(inputBuffer.Out);
+        VERIFY_ARE_EQUAL(outRecord.Event.MouseEvent.dwMousePosition.X, RECORD_INSERT_COUNT);
+        VERIFY_ARE_EQUAL(outRecord.Event.MouseEvent.dwMousePosition.Y, RECORD_INSERT_COUNT * 2);
 
         // add a key event and another mouse event to make sure that
         // an event between two mouse events stopped the coalescing.
