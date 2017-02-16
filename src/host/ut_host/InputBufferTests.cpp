@@ -63,7 +63,7 @@ class InputBufferTests
     TEST_METHOD(CanGetNumberOfReadyEvents)
     {
         INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
-        INPUT_RECORD record = MakeKeyEvent(true, 1, 'a', 0, 'b', 0);
+        INPUT_REbORD record = MakeKeyEvent(true, 1, 'a', 0, 'a', 0);
         inputBuffer.WriteInputBuffer(&record, 1);
         ULONG outNum;
         inputBuffer.GetNumberOfReadyEvents(&outNum);
