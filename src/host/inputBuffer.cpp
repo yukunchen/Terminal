@@ -862,7 +862,7 @@ DWORD INPUT_INFORMATION::PreprocessInput(_In_ PINPUT_RECORD InputEvent, _In_ DWO
             }
 
             // intercept control-s
-            if ((g_ciConsoleInformation.pInputBuffer->InputMode & ENABLE_LINE_INPUT) &&
+            if ((this->InputMode & ENABLE_LINE_INPUT) &&
                 (InputEvent->Event.KeyEvent.wVirtualKeyCode == VK_PAUSE || IsPauseKey(&InputEvent->Event.KeyEvent)))
             {
 

@@ -32,37 +32,9 @@ class InputBufferTests
         return retval;
     }
 
-    // this needs to be done because some of the input buffer functions
-    // refer to the global input buffer rather than their own
-    // instance. This should be removed once these functions are fixed.
-    TEST_CLASS_SETUP(ClassSetup)
-    {
-        if (g_ciConsoleInformation.pInputBuffer == nullptr)
-        {
-            g_ciConsoleInformation.pInputBuffer = new INPUT_INFORMATION(0);
-        }
-        return true;
-    }
-
-    TEST_CLASS_CLEANUP(ClassCleanup)
-    {
-        if (g_ciConsoleInformation.pInputBuffer != nullptr)
-        {
-            delete g_ciConsoleInformation.pInputBuffer;
-            g_ciConsoleInformation.pInputBuffer = nullptr;
-        }
-        return true;
-    }
-
-    TEST_METHOD_CLEANUP(MethodCleanup)
-    {
-        g_ciConsoleInformation.pInputBuffer->FlushInputBuffer();
-        return true;
-    }
-
     TEST_METHOD(CanGetNumberOfReadyEvents)
     {
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         INPUT_RECORD record = MakeKeyEvent(true, 1, 'a', 0, 'a', 0);
         inputBuffer.WriteInputBuffer(&record, 1);
         ULONG outNum;
@@ -78,7 +50,7 @@ class InputBufferTests
 
     TEST_METHOD(CanInsertIntoInputBufferIndividually)
     {
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         const size_t inputRecordsInserted = 12;
         for (size_t i = 0; i < inputRecordsInserted; ++i)
         {
@@ -93,7 +65,7 @@ class InputBufferTests
 
     TEST_METHOD(CanBulkInsertIntoInputBuffer)
     {
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         const size_t inputRecordsInserted = 12;
         INPUT_RECORD records[inputRecordsInserted] = { 0 };
         for (size_t i = 0; i < inputRecordsInserted; ++i)
@@ -108,7 +80,7 @@ class InputBufferTests
 
     TEST_METHOD(InputBufferCoalescesMouseEvents)
     {
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         const size_t inputRecordsInserted = 12;
 
         INPUT_RECORD mouseRecord;
@@ -142,7 +114,7 @@ class InputBufferTests
     {
         Log::Comment(L"The input buffer should not coalesce mouse events if more than one event is sent at a time");
 
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         const size_t inputRecordsInserted = 12;
         INPUT_RECORD mouseRecords[inputRecordsInserted];
 
@@ -165,7 +137,8 @@ class InputBufferTests
     TEST_METHOD(InputBufferCoalescesKeyEvents)
     {
         Log::Comment(L"The input buffer should coalesce identical key events if they are send one at a time");
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+
+        INPUT_INFORMATION inputBuffer{ 0 };
         const size_t inputRecordsInserted = 12;
         INPUT_RECORD record = MakeKeyEvent(true, 1, 'a', 0, L'a', 0);
 
@@ -204,7 +177,7 @@ class InputBufferTests
     {
         Log::Comment(L"The input buffer should not coalesce key events if more than one event is sent at a time");
 
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         const size_t inputRecordsInserted = 12;
         INPUT_RECORD keyRecords[inputRecordsInserted];
 
@@ -225,7 +198,7 @@ class InputBufferTests
 
     TEST_METHOD(InputBufferDoesNotCoalesceFullWidthChars)
     {
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         const size_t inputRecordsInserted = 12;
         WCHAR hiraganaA = 0x3042; // U+3042 hiragana A
         INPUT_RECORD record = MakeKeyEvent(true, 1, hiraganaA, 0, hiraganaA, 0);
@@ -245,7 +218,7 @@ class InputBufferTests
 
     TEST_METHOD(CanFlushAllOutput)
     {
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         const size_t inputRecordsInserted = 12;
         INPUT_RECORD records[inputRecordsInserted];
 
@@ -267,7 +240,7 @@ class InputBufferTests
 
     TEST_METHOD(CanFlushAllButKeys)
     {
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         const size_t inputRecordsInserted = 12;
         INPUT_RECORD records[inputRecordsInserted];
 
@@ -289,7 +262,7 @@ class InputBufferTests
 
     TEST_METHOD(CanReadInput)
     {
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         const unsigned int inputRecordsInserted = 12;
         INPUT_RECORD records[inputRecordsInserted];
 
@@ -326,7 +299,7 @@ class InputBufferTests
 
     TEST_METHOD(CanPeekAtEvents)
     {
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
 
         // add some events so that we have something to peek at
         const unsigned int inputRecordsInserted = 12;
@@ -365,8 +338,8 @@ class InputBufferTests
     TEST_METHOD(EmptyingBufferDuringReadSetsResetWaitEvent)
     {
         Log::Comment(L"ResetWaitEvent should be true if a read to the buffer completely empties it");
-        // write some input records to the buffer
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+
+        INPUT_INFORMATION inputBuffer{ 0 };
 
         // add some events so that we have something to stick in front of
         const unsigned int inputRecordsInserted = 12;
@@ -407,8 +380,9 @@ class InputBufferTests
     TEST_METHOD(ReadingDbcsCharsPadsOutputArray)
     {
         Log::Comment(L"During a non-unicode read, the output array should have a blank entry at the end of the array for each dbcs key event");
+
         // write a mouse event, key event, dbcs key event, mouse event
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         const unsigned int inputRecordsInserted = 4;
         INPUT_RECORD inRecords[inputRecordsInserted];
         inRecords[0].EventType = MOUSE_EVENT;
@@ -444,7 +418,7 @@ class InputBufferTests
 
     TEST_METHOD(CanPrependEvents)
     {
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
 
         // add some events so that we have something to stick in front of
         const unsigned int inputRecordsInserted = 12;
@@ -513,7 +487,7 @@ class InputBufferTests
 
     TEST_METHOD(CanReinitializeInputBuffer)
     {
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         DWORD originalInputMode = inputBuffer.InputMode;
 
         // change the buffer's state a bit
@@ -534,7 +508,7 @@ class InputBufferTests
 
     TEST_METHOD(CanChangeInputBufferSize)
     {
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         // get original size
         ULONG_PTR originalSize = (inputBuffer.Last - inputBuffer.First) / sizeof(INPUT_RECORD);
         // change it
@@ -546,7 +520,7 @@ class InputBufferTests
 
     TEST_METHOD(PreprocessInputRemovesPauseKeys)
     {
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         INPUT_RECORD pauseRecord = MakeKeyEvent(true, 1, VK_PAUSE, 0, 0, 0);
         ULONG outNum;
 
@@ -573,7 +547,7 @@ class InputBufferTests
 
     TEST_METHOD(SystemKeysDontUnpauseConsole)
     {
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         INPUT_RECORD pauseRecord = MakeKeyEvent(true, 1, VK_PAUSE, 0, 0, 0);
         ULONG outNum;
 
@@ -617,7 +591,7 @@ class InputBufferTests
 
     TEST_METHOD(WritingToEmptyBufferSignalsWaitEvent)
     {
-        INPUT_INFORMATION& inputBuffer = *g_ciConsoleInformation.pInputBuffer;
+        INPUT_INFORMATION inputBuffer{ 0 };
         INPUT_RECORD record = MakeKeyEvent(true, 1, VK_PAUSE, 0, 0, 0);
         ULONG eventsWritten;
         BOOL waitEvent = FALSE;
