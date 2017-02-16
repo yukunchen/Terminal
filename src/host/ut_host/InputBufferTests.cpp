@@ -16,6 +16,8 @@ class InputBufferTests
 {
     TEST_CLASS(InputBufferTests);
 
+    static const size_t RECORD_INSERT_COUNT = 12;
+
     INPUT_RECORD MakeKeyEvent(BOOL bKeyDown,
                               WORD wRepeatCount,
                               WORD wVirtualKeyCode,
@@ -53,8 +55,7 @@ class InputBufferTests
     TEST_METHOD(CanInsertIntoInputBufferIndividually)
     {
         INPUT_INFORMATION inputBuffer{ 0 };
-        const size_t inputRecordsInserted = 12;
-        for (size_t i = 0; i < inputRecordsInserted; ++i)
+        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             INPUT_RECORD record;
             record.EventType = MENU_EVENT;
@@ -62,35 +63,33 @@ class InputBufferTests
         }
         ULONG outNum;
         inputBuffer.GetNumberOfReadyEvents(&outNum);
-        VERIFY_ARE_EQUAL(outNum, inputRecordsInserted);
+        VERIFY_ARE_EQUAL(outNum, RECORD_INSERT_COUNT);
     }
 
     TEST_METHOD(CanBulkInsertIntoInputBuffer)
     {
         INPUT_INFORMATION inputBuffer{ 0 };
-        const size_t inputRecordsInserted = 12;
-        INPUT_RECORD records[inputRecordsInserted] = { 0 };
-        for (size_t i = 0; i < inputRecordsInserted; ++i)
+        INPUT_RECORD records[RECORD_INSERT_COUNT] = { 0 };
+        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             records[i].EventType = MENU_EVENT;
         }
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, inputRecordsInserted), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
         ULONG outNum;
         inputBuffer.GetNumberOfReadyEvents(&outNum);
-        VERIFY_ARE_EQUAL(outNum, inputRecordsInserted);
+        VERIFY_ARE_EQUAL(outNum, RECORD_INSERT_COUNT);
     }
 
     TEST_METHOD(InputBufferCoalescesMouseEvents)
     {
         INPUT_INFORMATION inputBuffer{ 0 };
-        const size_t inputRecordsInserted = 12;
 
         INPUT_RECORD mouseRecord;
         mouseRecord.EventType = MOUSE_EVENT;
         mouseRecord.Event.MouseEvent.dwEventFlags = MOUSE_MOVED;
 
         // add a bunch of mouse event records
-        for (size_t i = 0; i < inputRecordsInserted; ++i)
+        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&mouseRecord, 1), 0u);
         }
@@ -117,10 +116,9 @@ class InputBufferTests
         Log::Comment(L"The input buffer should not coalesce mouse events if more than one event is sent at a time");
 
         INPUT_INFORMATION inputBuffer{ 0 };
-        const size_t inputRecordsInserted = 12;
-        INPUT_RECORD mouseRecords[inputRecordsInserted];
+        INPUT_RECORD mouseRecords[RECORD_INSERT_COUNT];
 
-        for (size_t i = 0; i < inputRecordsInserted; ++i)
+        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             mouseRecords[i].EventType = MOUSE_EVENT;
             mouseRecords[i].Event.MouseEvent.dwEventFlags = MOUSE_MOVED;
@@ -129,11 +127,11 @@ class InputBufferTests
         // send one mouse event to possibly coalesce into later
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(mouseRecords, 1), 0u);
         // write the others in bulk
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(mouseRecords, inputRecordsInserted), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(mouseRecords, RECORD_INSERT_COUNT), 0u);
         // no events should have been coalesced
         ULONG outNum;
         inputBuffer.GetNumberOfReadyEvents(&outNum);
-        VERIFY_ARE_EQUAL(inputRecordsInserted + 1, outNum);
+        VERIFY_ARE_EQUAL(RECORD_INSERT_COUNT + 1, outNum);
     }
 
     TEST_METHOD(InputBufferCoalescesKeyEvents)
@@ -141,12 +139,11 @@ class InputBufferTests
         Log::Comment(L"The input buffer should coalesce identical key events if they are send one at a time");
 
         INPUT_INFORMATION inputBuffer{ 0 };
-        const size_t inputRecordsInserted = 12;
         INPUT_RECORD record = MakeKeyEvent(true, 1, 'a', 0, L'a', 0);
 
         // send a bunch of identical events
         inputBuffer.FlushInputBuffer();
-        for (size_t i = 0; i < inputRecordsInserted; ++i)
+        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
         }
@@ -172,7 +169,7 @@ class InputBufferTests
                                                             0,
                                                             false,
                                                             false));
-        VERIFY_ARE_EQUAL(outRecord.Event.KeyEvent.wRepeatCount, inputRecordsInserted);
+        VERIFY_ARE_EQUAL(outRecord.Event.KeyEvent.wRepeatCount, RECORD_INSERT_COUNT);
     }
 
     TEST_METHOD(InputBufferDoesNotCoalesceBulkKeyEvents)
@@ -180,10 +177,9 @@ class InputBufferTests
         Log::Comment(L"The input buffer should not coalesce key events if more than one event is sent at a time");
 
         INPUT_INFORMATION inputBuffer{ 0 };
-        const size_t inputRecordsInserted = 12;
-        INPUT_RECORD keyRecords[inputRecordsInserted];
+        INPUT_RECORD keyRecords[RECORD_INSERT_COUNT];
 
-        for (size_t i = 0; i < inputRecordsInserted; ++i)
+        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             keyRecords[i] = MakeKeyEvent(true, 1, 'a', 0, L'a', 0);
         }
@@ -191,23 +187,22 @@ class InputBufferTests
         // send one key event to possibly coalesce into later
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(keyRecords, 1), 0u);
         // write the others in bulk
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(keyRecords, inputRecordsInserted), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(keyRecords, RECORD_INSERT_COUNT), 0u);
         // no events should have been coalesced
         ULONG outNum;
         inputBuffer.GetNumberOfReadyEvents(&outNum);
-        VERIFY_ARE_EQUAL(inputRecordsInserted + 1, outNum);
+        VERIFY_ARE_EQUAL(RECORD_INSERT_COUNT + 1, outNum);
     }
 
     TEST_METHOD(InputBufferDoesNotCoalesceFullWidthChars)
     {
         INPUT_INFORMATION inputBuffer{ 0 };
-        const size_t inputRecordsInserted = 12;
         WCHAR hiraganaA = 0x3042; // U+3042 hiragana A
         INPUT_RECORD record = MakeKeyEvent(true, 1, hiraganaA, 0, hiraganaA, 0);
 
         // send a bunch of identical events
         inputBuffer.FlushInputBuffer();
-        for (size_t i = 0; i < inputRecordsInserted; ++i)
+        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
         }
@@ -215,24 +210,23 @@ class InputBufferTests
         // The events shouldn't be coalesced
         ULONG outNum;
         inputBuffer.GetNumberOfReadyEvents(&outNum);
-        VERIFY_ARE_EQUAL(inputRecordsInserted, outNum);
+        VERIFY_ARE_EQUAL(RECORD_INSERT_COUNT, outNum);
     }
 
     TEST_METHOD(CanFlushAllOutput)
     {
         INPUT_INFORMATION inputBuffer{ 0 };
-        const size_t inputRecordsInserted = 12;
-        INPUT_RECORD records[inputRecordsInserted];
+        INPUT_RECORD records[RECORD_INSERT_COUNT];
 
         // put some events in the buffer so we can remove them
-        for (size_t i = 0; i < inputRecordsInserted; ++i)
+        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             records[i].EventType = MENU_EVENT;
         }
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, inputRecordsInserted), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
         ULONG outNum;
         inputBuffer.GetNumberOfReadyEvents(&outNum);
-        VERIFY_ARE_EQUAL(outNum, inputRecordsInserted);
+        VERIFY_ARE_EQUAL(outNum, RECORD_INSERT_COUNT);
 
         // remove them
         inputBuffer.FlushInputBuffer();
@@ -243,40 +237,38 @@ class InputBufferTests
     TEST_METHOD(CanFlushAllButKeys)
     {
         INPUT_INFORMATION inputBuffer{ 0 };
-        const size_t inputRecordsInserted = 12;
-        INPUT_RECORD records[inputRecordsInserted];
+        INPUT_RECORD records[RECORD_INSERT_COUNT];
 
         // create alternating mouse and key events
-        for (size_t i = 0; i < inputRecordsInserted; ++i)
+        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             records[i].EventType = (i % 2 == 0) ? MENU_EVENT : KEY_EVENT;
         }
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, inputRecordsInserted), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
         ULONG outNum;
         inputBuffer.GetNumberOfReadyEvents(&outNum);
-        VERIFY_ARE_EQUAL(outNum, inputRecordsInserted);
+        VERIFY_ARE_EQUAL(outNum, RECORD_INSERT_COUNT);
 
         // remove them
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.FlushAllButKeys());
         inputBuffer.GetNumberOfReadyEvents(&outNum);
-        VERIFY_ARE_EQUAL(outNum, inputRecordsInserted / 2);
+        VERIFY_ARE_EQUAL(outNum, RECORD_INSERT_COUNT / 2);
     }
 
     TEST_METHOD(CanReadInput)
     {
         INPUT_INFORMATION inputBuffer{ 0 };
-        const unsigned int inputRecordsInserted = 12;
-        INPUT_RECORD records[inputRecordsInserted];
+        INPUT_RECORD records[RECORD_INSERT_COUNT];
 
         // write some input records
-        for (unsigned int i = 0; i < inputRecordsInserted; ++i)
+        for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             records[i] = MakeKeyEvent(TRUE, 1, 'A' + i, 0, 'A' + i, 0);
         }
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, inputRecordsInserted), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
 
         // read them back out
-        INPUT_RECORD outRecords[inputRecordsInserted];
+        INPUT_RECORD outRecords[RECORD_INSERT_COUNT];
         DWORD length;
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
                                                             &length,
@@ -293,7 +285,7 @@ class InputBufferTests
         ULONG outNum;
         inputBuffer.GetNumberOfReadyEvents(&outNum);
         VERIFY_ARE_EQUAL(outNum, 0);
-        for (size_t i = 0; i < inputRecordsInserted; ++i)
+        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             VERIFY_ARE_EQUAL(records[i], outRecords[i]);
         }
@@ -304,17 +296,16 @@ class InputBufferTests
         INPUT_INFORMATION inputBuffer{ 0 };
 
         // add some events so that we have something to peek at
-        const unsigned int inputRecordsInserted = 12;
-        INPUT_RECORD records[inputRecordsInserted];
-        for (unsigned int i = 0; i < inputRecordsInserted; ++i)
+        INPUT_RECORD records[RECORD_INSERT_COUNT];
+        for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             records[i] = MakeKeyEvent(TRUE, 1, 'A' + i, 0, 'A' + i, 0);
         }
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, inputRecordsInserted), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
 
         // peek at events
-        INPUT_RECORD outRecords[inputRecordsInserted];
-        DWORD length = inputRecordsInserted;
+        INPUT_RECORD outRecords[RECORD_INSERT_COUNT];
+        DWORD length = RECORD_INSERT_COUNT;
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
                                                             &length,
                                                             true,
@@ -327,11 +318,11 @@ class InputBufferTests
                                                             0,
                                                             false,
                                                             false));
-        VERIFY_ARE_EQUAL(length, inputRecordsInserted);
+        VERIFY_ARE_EQUAL(length, RECORD_INSERT_COUNT);
         ULONG outNum;
         inputBuffer.GetNumberOfReadyEvents(&outNum);
-        VERIFY_ARE_EQUAL(outNum, inputRecordsInserted);
-        for (unsigned int i = 0; i < inputRecordsInserted; ++i)
+        VERIFY_ARE_EQUAL(outNum, RECORD_INSERT_COUNT);
+        for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             VERIFY_ARE_EQUAL(records[i], outRecords[i]);
         }
@@ -344,13 +335,12 @@ class InputBufferTests
         INPUT_INFORMATION inputBuffer{ 0 };
 
         // add some events so that we have something to stick in front of
-        const unsigned int inputRecordsInserted = 12;
-        INPUT_RECORD records[inputRecordsInserted];
-        for (unsigned int i = 0; i < inputRecordsInserted; ++i)
+        INPUT_RECORD records[RECORD_INSERT_COUNT];
+        for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             records[i] = MakeKeyEvent(TRUE, 1, 'A' + i, 0, 'A' + i, 0);
         }
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, inputRecordsInserted), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
 
         // read one record, make sure ResetWaitEvent isn't set
         INPUT_RECORD outRecord;
@@ -367,15 +357,15 @@ class InputBufferTests
         VERIFY_IS_FALSE(!!resetWaitEvent);
 
         // read the rest, resetWaitEvent should be set to true
-        INPUT_RECORD outBuffer[inputRecordsInserted - 1];
+        INPUT_RECORD outBuffer[RECORD_INSERT_COUNT - 1];
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadBuffer(outBuffer,
-                                                       inputRecordsInserted - 1,
+                                                       RECORD_INSERT_COUNT - 1,
                                                        &eventsRead,
                                                        false,
                                                        false,
                                                        &resetWaitEvent,
                                                        true));
-        VERIFY_ARE_EQUAL(eventsRead, inputRecordsInserted - 1);
+        VERIFY_ARE_EQUAL(eventsRead, RECORD_INSERT_COUNT - 1);
         VERIFY_IS_TRUE(!!resetWaitEvent);
     }
 
@@ -385,23 +375,23 @@ class InputBufferTests
 
         // write a mouse event, key event, dbcs key event, mouse event
         INPUT_INFORMATION inputBuffer{ 0 };
-        const unsigned int inputRecordsInserted = 4;
-        INPUT_RECORD inRecords[inputRecordsInserted];
+        const unsigned int RECORD_INSERT_COUNT = 4;
+        INPUT_RECORD inRecords[RECORD_INSERT_COUNT];
         inRecords[0].EventType = MOUSE_EVENT;
         inRecords[1] = MakeKeyEvent(TRUE, 1, 'A', 0, 'A', 0);
         inRecords[2] = MakeKeyEvent(TRUE, 1, 0x3042, 0, 0x3042, 0); // U+3042 hiragana A
         inRecords[3].EventType = MOUSE_EVENT;
 
         inputBuffer.FlushInputBuffer();
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(inRecords, inputRecordsInserted), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(inRecords, RECORD_INSERT_COUNT), 0u);
 
         // read them out non-unicode style and compare
-        INPUT_RECORD outRecords[inputRecordsInserted] = { 0 };
+        INPUT_RECORD outRecords[RECORD_INSERT_COUNT] = { 0 };
         INPUT_RECORD emptyRecord = outRecords[0];
         ULONG eventsRead = 0;
         BOOL resetWaitEvent = false;
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadBuffer(outRecords,
-                                                       inputRecordsInserted,
+                                                       RECORD_INSERT_COUNT,
                                                        &eventsRead,
                                                        false,
                                                        false,
@@ -410,7 +400,7 @@ class InputBufferTests
         // the dbcs record should have counted for two elements int
         // the array, making it so that we get less events read than
         // the size of the array
-        VERIFY_ARE_EQUAL(eventsRead, inputRecordsInserted - 1);
+        VERIFY_ARE_EQUAL(eventsRead, RECORD_INSERT_COUNT - 1);
         for (size_t i = 0; i < eventsRead; ++i)
         {
             VERIFY_ARE_EQUAL(outRecords[i], inRecords[i]);
@@ -423,27 +413,26 @@ class InputBufferTests
         INPUT_INFORMATION inputBuffer{ 0 };
 
         // add some events so that we have something to stick in front of
-        const unsigned int inputRecordsInserted = 12;
-        INPUT_RECORD records[inputRecordsInserted];
-        for (unsigned int i = 0; i < inputRecordsInserted; ++i)
+        INPUT_RECORD records[RECORD_INSERT_COUNT];
+        for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             records[i] = MakeKeyEvent(TRUE, 1, 'A' + i, 0, 'A' + i, 0);
         }
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, inputRecordsInserted), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
 
         // prepend some other events
-        INPUT_RECORD prependRecords[inputRecordsInserted];
-        for (unsigned int i = 0; i < inputRecordsInserted; ++i)
+        INPUT_RECORD prependRecords[RECORD_INSERT_COUNT];
+        for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             prependRecords[i] = MakeKeyEvent(TRUE, 1, 'a' + i, 0, 'a' + i, 0);
         }
-        DWORD prependCount = inputRecordsInserted;
+        DWORD prependCount = RECORD_INSERT_COUNT;
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.PrependInputBuffer(prependRecords, &prependCount));
-        VERIFY_ARE_EQUAL(prependCount, inputRecordsInserted);
+        VERIFY_ARE_EQUAL(prependCount, RECORD_INSERT_COUNT);
 
         // grab the first set of events and ensure they match prependRecords
-        INPUT_RECORD outRecords[inputRecordsInserted];
-        DWORD length = inputRecordsInserted;
+        INPUT_RECORD outRecords[RECORD_INSERT_COUNT];
+        DWORD length = RECORD_INSERT_COUNT;
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
                                                             &length,
                                                             false,
@@ -456,11 +445,11 @@ class InputBufferTests
                                                             0,
                                                             false,
                                                             false));
-        VERIFY_ARE_EQUAL(length, inputRecordsInserted);
+        VERIFY_ARE_EQUAL(length, RECORD_INSERT_COUNT);
         ULONG outNum;
         inputBuffer.GetNumberOfReadyEvents(&outNum);
-        VERIFY_ARE_EQUAL(outNum, inputRecordsInserted);
-        for (unsigned int i = 0; i < inputRecordsInserted; ++i)
+        VERIFY_ARE_EQUAL(outNum, RECORD_INSERT_COUNT);
+        for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             VERIFY_ARE_EQUAL(prependRecords[i], outRecords[i]);
         }
@@ -480,8 +469,8 @@ class InputBufferTests
                                                             false));
         inputBuffer.GetNumberOfReadyEvents(&outNum);
         VERIFY_ARE_EQUAL(outNum, 0);
-        VERIFY_ARE_EQUAL(length, inputRecordsInserted);
-        for (unsigned int i = 0; i < inputRecordsInserted; ++i)
+        VERIFY_ARE_EQUAL(length, RECORD_INSERT_COUNT);
+        for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             VERIFY_ARE_EQUAL(records[i], outRecords[i]);
         }
