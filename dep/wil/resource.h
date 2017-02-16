@@ -1,12 +1,6 @@
 // Windows Internal Libraries (wil)
 // Resource.h: RAII wrappers (smart pointers) and other thin usability pattern wrappers over common Windows patterns.
 //
-// wil Usage Guidelines:
-// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Internal%20Libraries%20for%20C++%20Usage%20Guide.docx?web=1
-//
-// wil Discussion Alias (wildisc):
-// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
-//
 // This file primarily contains the following concepts:
 // * std::unique_ptr<> and std::shared_ptr<> inspired RAII wrappers over most Windows handle types
 // * Thin utility methods to adapt common APIs to these RAII wrappers
@@ -2078,24 +2072,6 @@ namespace wil
         return cs_leave_scope_exit(::TryEnterCriticalSection(pcs) ? pcs : nullptr);
     }
 
-#if defined(_NTURTL_) && !defined(__WIL_NTURTL_CRITSEC_)
-#define __WIL_NTURTL_CRITSEC_
-
-    typedef unique_any<RTL_CRITICAL_SECTION*, decltype(&::RtlLeaveCriticalSection), RtlLeaveCriticalSection, details::pointer_access_none> rtlcs_leave_scope_exit;
-
-    inline cs_leave_scope_exit RtlEnterCriticalSection(_Inout_ RTL_CRITICAL_SECTION *pcs) WI_NOEXCEPT
-    {
-        ::RtlEnterCriticalSection(pcs);
-        return cs_leave_scope_exit(pcs);
-    }
-
-    inline cs_leave_scope_exit RtlTryEnterCriticalSection(_Inout_ RTL_CRITICAL_SECTION *pcs) WI_NOEXCEPT
-    {
-        return cs_leave_scope_exit(::RtlTryEnterCriticalSection(pcs) ? pcs : nullptr);
-    }
-
-#endif
-
     // Critical sections are worse than srwlocks in performance and memory usage (their only unique attribute
     // being recursive acquisition).  Prefer srwlocks over critical sections in new code.
     class critical_section   
@@ -3018,18 +2994,6 @@ namespace wil
     typedef weak_any<shared_hkey> weak_hkey;
 #endif // __WIL_WINREG_STL
 
-
-#if defined(__MSGQUEUE_H__) && !defined(__WIL__MSGQUEUE_H__)
-#define __WIL__MSGQUEUE_H__
-    typedef unique_any<details::handle_invalid_resource_policy<decltype(&::CloseMsgQueue), ::CloseMsgQueue> unique_msg_queue;
-#endif // __WIL__MSGQUEUE_H__
-#if defined(__WIL__MSGQUEUE_H__) && !defined(__WIL__MSGQUEUE_H__STL) && defined(WIL_RESOURCE_STL)
-#define __WIL__MSGQUEUE_H__STL
-    typedef shared_any<unique_msg_queue> shared_msg_queue;
-    typedef weak_any<shared_msg_queue> weak_msg_queue;
-#endif // __WIL__MSGQUEUE_H__STL
-
-
 #if defined(_OLEAUTO_H_) && !defined(__WIL_OLEAUTO_H_)
 #define __WIL_OLEAUTO_H_
     typedef unique_any<BSTR, decltype(&::SysFreeString), ::SysFreeString> unique_bstr;
@@ -3758,37 +3722,6 @@ namespace wil
     };
 #endif // __WIL_OLE2_H_
 
-#if (defined(__SECURITY_RUNTIME_H__) || defined(__ACCESSHLPR_H__)) && !defined(__WIL__SECURITY_RUNTIME_H__)
-#define __WIL__SECURITY_RUNTIME_H__
-    typedef unique_any<PSECURITY_DESCRIPTOR, decltype(&::FreeTransientObjectSecurityDescriptor), ::FreeTransientObjectSecurityDescriptor> unique_transient_security_descriptor;
-#endif // __WIL__SECURITY_RUNTIME_H__
-#if defined(__WIL__SECURITY_RUNTIME_H__) && !defined(__WIL__SECURITY_RUNTIME_H__STL) && defined(WIL_RESOURCE_STL)
-#define __WIL__SECURITY_RUNTIME_H__STL
-    typedef shared_any<unique_transient_security_descriptor> shared_transient_security_descriptor;
-    typedef weak_any<shared_transient_security_descriptor> weak_transient_security_descriptor;
-#endif // __WIL__SECURITY_RUNTIME_H__STL
-
-#if defined(_VAULTCLIEXT_H_) && !defined(__WIL_VAULTCLEXT_H__) && WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-#define __WIL_VAULTCLEXT_H__
-    /// @cond
-    namespace details
-    {
-        inline void VaultCloseVault(_Pre_opt_valid_ _Frees_ptr_opt_ VAULT_HANDLE hVault) WI_NOEXCEPT
-        {
-#pragma prefast(suppress:6031, "annotation issue: VaultCloseVault is annotated __checkreturn, but a failure is not actionable to us");
-            ::VaultCloseVault(&hVault);
-        }
-    }
-    /// @endcond
-
-    typedef unique_any<VAULT_HANDLE, decltype(&details::VaultCloseVault), details::VaultCloseVault> unique_vaulthandle;
-#endif // __WIL_VAULTCLEXT_H__
-#if defined(__WIL_VAULTCLEXT_H__) && !defined(__WIL_VAULTCLEXT_H__STL) && defined(WIL_RESOURCE_STL)
-#define __WIL_VAULTCLEXT_H__
-    typedef shared_any<unique_vaulthandle> shared_vaulthandle;
-    typedef weak_any<unique_vaulthandle> weak_vaulthandle;
-#endif // __WIL_VAULTCLEXT_H__
-
 #if defined(_INC_COMMCTRL) && !defined(__WIL_INC_COMMCTRL)
 #define __WIL_INC_COMMCTRL
     typedef unique_any<HIMAGELIST, decltype(&::ImageList_Destroy), ::ImageList_Destroy> unique_himagelist;
@@ -3809,16 +3742,6 @@ namespace wil
     typedef shared_any<unique_schandle> shared_schandle;
     typedef weak_any<shared_schandle> weak_schandle;
 #endif // __WIL_HANDLE_H_WINSVC_STL
-
-#if defined(_INC_DEVOBJ) && !defined(__WIL_INC_DEVOBJ_) && defined(__WIL_WINBASE_)
-#define __WIL_INC_DEVOBJ_
-    typedef unique_any_handle_invalid<decltype(&::DevObjDestroyDeviceInfoList), ::DevObjDestroyDeviceInfoList> unique_hdolist;
-#endif // __WIL_INC_DEVOBJ_
-#if defined(__WIL_INC_DEVOBJ_) && !defined(__WIL_INC_DEVOBJ_STL) && defined(WIL_RESOURCE_STL)
-#define __WIL_INC_DEVOBJ_STL
-    typedef shared_any<unique_hdolist> shared_hdolist;
-    typedef weak_any<shared_hdolist> weak_hdolist;
-#endif // __WIL_INC_DEVOBJ_STL
 
 #if defined(_INC_STDIO) && !defined(__WIL_INC_STDIO) && WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 #define __WIL_INC_STDIO
@@ -3854,317 +3777,6 @@ namespace wil
     template <typename T>
     using unique_lsa_ptr = wistd::unique_ptr<T, lsa_deleter>;
 #endif // __WIL_HANDLE_H_NTLSA_IFS_
-
-#if defined(_NTURTL_) && defined(__NOTHROW_T_DEFINED) && !defined(__WIL_NTURTL_WNF_)
-#define __WIL_NTURTL_WNF_
-    /** Windows Notification Facility (WNF) helpers that make it easy to produce and consume wnf state blocks.
-    Learn more about WNF here: http://windowsarchive/sites/windows8docs/Win8%20Feature%20Docs/Windows%20Core%20(CORE)/Kernel%20Platform%20Group%20(KPG)/Kernel%20Core%20Software%20Services/Communications/Windows%20Notification%20Facility%20(WNF)/WNF%20-%20Functional%20Specification%20BETA.docm
-    
-    Clients must include <new> or <new.h> to enable use of these helpers as they use new(std::nothrow).
-    This is to avoid the dependency on those headers that some clients can't tolerate.
-    
-    NOTE: The subscription wrappers will wait for outstanding callbacks on destruction
-    
-    Example use of throwing version:
-    ~~~
-    auto stateChangeSubscription = wil::make_wnf_subscription<TYPE>([](const TYPE& type)
-        {
-            // Do stuff with type
-        });
-    ~~~
-    Example use of non-throwing version:
-    ~~~
-    auto stateChangeSubscription = wil::make_wnf_subscription_nothrow<TYPE>([](const TYPE& type)
-        {
-            // Do stuff with type
-        });
-    RETURN_HR_IF_FALSE(E_OUTOFMEMORY, stateChangeSubscription);
-    ~~~
-    */
-
-    //! WNF_CHANGE_STAMP is an alias for ULONG that causes callers that don't specify changeStamp to select the zero size query with change stamp.
-    //! To avoid this use WNF_CHANGE_STAMP_STRUCT instead of WNF_CHANGE_STAMP for this parameter.
-    struct WNF_CHANGE_STAMP_STRUCT
-    {
-        WNF_CHANGE_STAMP value = 0;
-        operator WNF_CHANGE_STAMP /* ULONG */ () const { return value; }
-        static void AssignToOptParam(_In_opt_ WNF_CHANGE_STAMP_STRUCT* changeStampStruct, WNF_CHANGE_STAMP value)
-        {
-            if (changeStampStruct)
-            {
-                changeStampStruct->value = value;
-            }
-        }
-    };
-
-    //! Checks the published state and optionally the change stamp for state blocks of any size.
-    inline HRESULT wnf_is_published_nothrow(WNF_STATE_NAME const& stateName, _Out_ bool* isPublished, _Out_opt_ WNF_CHANGE_STAMP_STRUCT* changeStamp = nullptr) WI_NOEXCEPT
-    {
-        *isPublished = false;
-        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, static_cast<WNF_CHANGE_STAMP>(0));
-        ULONG stateDataSize = 0;
-        WNF_CHANGE_STAMP tempChangeStamp;
-        HRESULT queryResult = HRESULT_FROM_NT(NtQueryWnfStateData(&stateName, nullptr, nullptr, &tempChangeStamp, nullptr, &stateDataSize));
-        RETURN_HR_IF_TRUE(queryResult, FAILED(queryResult) && (queryResult != HRESULT_FROM_NT(STATUS_BUFFER_TOO_SMALL)));
-        *isPublished = (tempChangeStamp != 0);
-        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, tempChangeStamp);
-        return S_OK;
-    }
-
-    //! Query the published state and optioanlly change stamp for zero sized state blocks. This will fail fast for not-zero sized state blocks.
-    inline HRESULT wnf_query_nothrow(WNF_STATE_NAME const& stateName, _Out_ bool* isPublished, _Out_opt_ WNF_CHANGE_STAMP_STRUCT* changeStamp = nullptr) WI_NOEXCEPT
-    {
-        *isPublished = false;
-        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, static_cast<WNF_CHANGE_STAMP>(0));
-        ULONG stateDataSize = 0;
-        WNF_CHANGE_STAMP tempChangeStamp;
-        HRESULT queryResult = HRESULT_FROM_NT(NtQueryWnfStateData(&stateName, nullptr, nullptr, &tempChangeStamp, nullptr, &stateDataSize));
-        RETURN_HR_IF_TRUE(queryResult, FAILED(queryResult) && (queryResult != HRESULT_FROM_NT(STATUS_BUFFER_TOO_SMALL)));
-        __FAIL_FAST_ASSERT__((tempChangeStamp == 0) || (stateDataSize == 0));
-        LOG_HR_IF_FALSE_MSG(E_UNEXPECTED, (tempChangeStamp == 0) || (stateDataSize == 0), "Inconsistent state data size in wnf_query");
-        *isPublished = (tempChangeStamp != 0) && (stateDataSize == 0);  // if the size is non zero, consider it unpublished
-        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, tempChangeStamp);
-        return S_OK;
-    }
-
-    //! Query the published state, state data and optionally the change stamp for fixed size state blocks.
-    template <typename state_data_t>
-    HRESULT wnf_query_nothrow(WNF_STATE_NAME const& stateName, _Out_ bool* isPublished,
-        _Pre_ _Notnull_ _Pre_ _Writable_elements_(1) _Post_ _When_((*isPublished == true), _Valid_) state_data_t* stateData, _Out_opt_ WNF_CHANGE_STAMP_STRUCT* changeStamp = nullptr) WI_NOEXCEPT
-    {
-        *isPublished = false;
-        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, static_cast<WNF_CHANGE_STAMP>(0));
-        ULONG stateDataSize = sizeof(*stateData);
-        WNF_CHANGE_STAMP tempChangeStamp;
-        HRESULT queryResult = HRESULT_FROM_NT(NtQueryWnfStateData(&stateName, nullptr, nullptr, &tempChangeStamp, stateData, &stateDataSize));
-        RETURN_HR_IF_TRUE(queryResult, FAILED(queryResult) && (queryResult != HRESULT_FROM_NT(STATUS_BUFFER_TOO_SMALL)));
-        __FAIL_FAST_ASSERT__((tempChangeStamp == 0) || (stateDataSize == sizeof(*stateData)));
-        LOG_HR_IF_FALSE_MSG(E_UNEXPECTED, (tempChangeStamp == 0) || (stateDataSize == sizeof(*stateData)), "Inconsistent state data size in wnf_query");
-        *isPublished = (tempChangeStamp != 0) && (stateDataSize == sizeof(*stateData));  // if the size is mismatched, consider it unpublished
-        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, tempChangeStamp);
-        return S_OK;
-    }
-
-    //! Query the published state, state data and optionally the change stamp for variable size state blocks.
-    inline HRESULT wnf_query_nothrow(WNF_STATE_NAME const& stateName, _Out_ bool* isPublished,
-        _Out_writes_bytes_(stateDataByteCount) void* stateData, size_t stateDataByteCount,
-        _Out_ size_t* stateDataWrittenByteCount, _Out_opt_ WNF_CHANGE_STAMP_STRUCT* changeStamp = nullptr) WI_NOEXCEPT
-    {
-        *isPublished = false;
-        *stateDataWrittenByteCount = 0;
-        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, static_cast<WNF_CHANGE_STAMP>(0));
-        
-        WNF_CHANGE_STAMP tempChangeStamp;
-        ULONG size = static_cast<ULONG>(stateDataByteCount);
-        RETURN_IF_FAILED(HRESULT_FROM_NT(NtQueryWnfStateData(&stateName, nullptr, nullptr, &tempChangeStamp, stateData, &size)));
-        *isPublished = (tempChangeStamp != 0);
-        *stateDataWrittenByteCount = static_cast<size_t>(size);
-        WNF_CHANGE_STAMP_STRUCT::AssignToOptParam(changeStamp, tempChangeStamp);
-        return S_OK;
-    }
-
-    //! Returns true if the value is published, false if not (or malformed or on error).
-    inline _Success_(return) bool try_wnf_query(WNF_STATE_NAME const& stateName, _Out_opt_ WNF_CHANGE_STAMP_STRUCT* changeStamp = nullptr) WI_NOEXCEPT
-    {
-        bool isPublished;
-        return SUCCEEDED(wnf_query_nothrow(stateName, &isPublished, changeStamp)) && isPublished;
-    }
-
-    //! Returns true if the value is published, false if not (or malformed or on error)
-    //! and returns the fixed size state data.
-    template <typename state_data_t>
-    _Success_(return) bool try_wnf_query(WNF_STATE_NAME const& stateName, _Out_ state_data_t* stateData, _Out_opt_ WNF_CHANGE_STAMP_STRUCT* changeStamp = nullptr) WI_NOEXCEPT
-    {
-        bool isPublished;
-        return SUCCEEDED(wnf_query_nothrow(stateName, &isPublished, stateData, changeStamp)) && isPublished;
-    }
-
-    //! Publish a zero sized state block.
-    inline HRESULT wnf_publish_nothrow(WNF_STATE_NAME const& stateName) WI_NOEXCEPT
-    {
-        return HRESULT_FROM_NT(RtlPublishWnfStateData(stateName, nullptr, nullptr, 0, nullptr));
-    }
-
-    //! Publish a variable sized state block.
-    inline HRESULT wnf_publish_nothrow(WNF_STATE_NAME const& stateName, _In_reads_bytes_(size) const void* stateData, const size_t size) WI_NOEXCEPT
-    {
-        return HRESULT_FROM_NT(RtlPublishWnfStateData(stateName, nullptr, stateData, static_cast<const ULONG>(size), nullptr));
-    }
-
-    //! Publish a fixed sized state block.
-    template <typename state_data_t>
-    HRESULT wnf_publish_nothrow(WNF_STATE_NAME const& stateName, state_data_t const& stateData) WI_NOEXCEPT
-    {
-        return HRESULT_FROM_NT(RtlPublishWnfStateData(stateName, nullptr, &stateData, sizeof(stateData), nullptr));
-    }
-
-#ifdef WIL_ENABLE_EXCEPTIONS
-    //! Checks the published state and optionally the change stamp for state blocks of any size.
-    inline _Success_(return) bool wnf_is_published(WNF_STATE_NAME const& stateName, _Out_opt_ WNF_CHANGE_STAMP_STRUCT* changeStamp = nullptr)
-    {
-        bool isPublished;
-        THROW_IF_FAILED(wnf_is_published_nothrow(stateName, &isPublished, changeStamp));
-        return isPublished;
-    }
-
-    //! Query the published state, state data and optionally the change stamp for fixed size state blocks.
-    template <typename state_data_t>
-    _Success_(return) bool wnf_query(WNF_STATE_NAME const& stateName, _Out_ state_data_t* stateData, _Out_opt_ WNF_CHANGE_STAMP_STRUCT* changeStamp = nullptr)
-    {
-        bool isPublished;
-        THROW_IF_FAILED(wnf_query_nothrow(stateName, &isPublished, stateData, changeStamp));
-        return isPublished;
-    }
-
-    //! Query the published state and optioanlly change stamp for zero sized state blocks. This will fail fast for not-zero sized state blocks.
-    inline _Success_(return) bool wnf_query(WNF_STATE_NAME const& stateName, _Out_opt_ WNF_CHANGE_STAMP_STRUCT* changeStamp = nullptr)
-    {
-        bool isPublished;
-        THROW_IF_FAILED(wnf_query_nothrow(stateName, &isPublished, changeStamp));
-        return isPublished;
-    }
-
-    //! Publish a zero-size state block.
-    inline void wnf_publish(WNF_STATE_NAME const& stateName)
-    {
-        THROW_IF_FAILED(wnf_publish_nothrow(stateName));
-    }
-
-    //! Publish a fixed size state block.
-    template <typename state_data_t>
-    void wnf_publish(WNF_STATE_NAME const& stateName, state_data_t const& stateData)
-    {
-        THROW_IF_FAILED(wnf_publish_nothrow(stateName, stateData));
-    }
-
-#endif // WIL_ENABLE_EXCEPTIONS
-
-    //! Manage the lifetime of a user subscription.
-    typedef unique_any<PWNF_USER_SUBSCRIPTION, decltype(&::RtlUnsubscribeWnfNotificationWaitForCompletion), ::RtlUnsubscribeWnfNotificationWaitForCompletion, details::pointer_access_all> unique_pwnf_user_subscription;
-    WNF_CHANGE_STAMP const WnfChangeStampLatest = MAXULONG;
-
-    /// @cond
-    namespace details
-    {
-        struct empty_wnf_state
-        {
-        };
-
-        template <typename state_data_t>
-        struct wnf_callback_type
-        {
-            typedef typename wistd::function<void(state_data_t const&)> type;
-        };
-
-        template <>
-        struct wnf_callback_type<empty_wnf_state>
-        {
-            typedef wistd::function<void()> type;
-        };
-
-        struct wnf_subscription_state_base
-        {
-            virtual ~wnf_subscription_state_base() {};
-            unique_pwnf_user_subscription m_subscription;
-        };
-
-        template <typename state_data_t = empty_wnf_state>
-        struct wnf_subscription_state : public wnf_subscription_state_base
-        {
-            typedef typename details::wnf_callback_type<state_data_t>::type callback_type;
-
-            wnf_subscription_state(callback_type&& callback) : m_callback(wistd::move(callback)) {}
-
-            ~wnf_subscription_state() override
-            {
-                m_subscription.reset();     // subscription must be released prior to the callback (ordering)
-            }
-
-            template <typename state_data_t>
-            void InternalCallback(state_data_t const* stateData, ULONG stateDataSize)
-            {
-                // Must check the size here vs. in the subscription lambda in make_wnf_subscription_state since the default
-                // case uses empty_wnf_state which has a size > 0
-                __FAIL_FAST_ASSERT__(stateDataSize == sizeof(*stateData));
-                if (stateDataSize != sizeof(*stateData))
-                {
-                    LOG_HR_MSG(E_UNEXPECTED, "Inconsistent state data size in WNF callback");
-                    return;
-                }
-                m_callback(*stateData);
-            }
-
-            template <>
-            void InternalCallback<empty_wnf_state>(empty_wnf_state const* /*stateData*/, ULONG /*stateDataSize*/)
-            {
-                m_callback();
-            }
-
-            callback_type m_callback;
-        };
-
-        template <typename state_data_t = empty_wnf_state>
-        HRESULT make_wnf_subscription_state(WNF_STATE_NAME const& stateName, typename details::wnf_callback_type<state_data_t>::type&& callback, _In_ WNF_CHANGE_STAMP subscribeFrom, _Outptr_ wnf_subscription_state<state_data_t>** subscriptionState) WI_NOEXCEPT
-        {
-            *subscriptionState = nullptr;
-            wistd::unique_ptr<wnf_subscription_state<state_data_t>> subscriptionStateT(new(std::nothrow) wnf_subscription_state<state_data_t>(wistd::move(callback)));
-            RETURN_IF_NULL_ALLOC(subscriptionStateT.get());
-
-            if (subscribeFrom == WnfChangeStampLatest)
-            {
-                // Retrieve the latest changestamp and use that as the basis for change notifications
-                ULONG bufferSize = 0;
-                HRESULT queryResult = HRESULT_FROM_NT(NtQueryWnfStateData(&stateName, 0, nullptr, &subscribeFrom, nullptr, &bufferSize));
-                RETURN_HR_IF_TRUE(queryResult, FAILED(queryResult) && (queryResult != HRESULT_FROM_NT(STATUS_BUFFER_TOO_SMALL)));
-            }
-
-            RETURN_IF_FAILED(HRESULT_FROM_NT(RtlSubscribeWnfStateChangeNotification(wil::out_param(subscriptionStateT->m_subscription), stateName, subscribeFrom,
-                                             [](WNF_STATE_NAME /*stateName*/, WNF_CHANGE_STAMP /*changeStamp*/,
-                                                WNF_TYPE_ID* /*typeID*/, void* callbackContext, const void* buffer, ULONG length) -> NTSTATUS
-                {
-                    static_cast<details::wnf_subscription_state<state_data_t>*>(callbackContext)->InternalCallback(static_cast<state_data_t const*>(buffer), length);
-                    return STATUS_SUCCESS;
-                }, subscriptionStateT.get(), nullptr, 0, 0)));
-
-            *subscriptionState = subscriptionStateT.release();
-            return S_OK;
-        }
-
-        inline void delete_wnf_subscription_state(_In_opt_ wnf_subscription_state_base* subscriptionState) { delete subscriptionState;  }
-    }
-    /// @endcond
-
-    //! Manage the lifetime of a subscription.
-    typedef unique_any<details::wnf_subscription_state_base*, decltype(&details::delete_wnf_subscription_state), details::delete_wnf_subscription_state, details::pointer_access_none> unique_wnf_subscription;
-
-    //! Subscribe to changes for a zero or fixed size wnf state block.
-    //! the callback will only be called if the payload size matches the size of the state block.
-    template<typename state_data_t = details::empty_wnf_state>
-    unique_wnf_subscription make_wnf_subscription_nothrow(WNF_STATE_NAME const& stateName, typename details::wnf_callback_type<state_data_t>::type&& callback, _In_ WNF_CHANGE_STAMP subscribeFrom = 0) WI_NOEXCEPT
-    {
-        details::wnf_subscription_state<state_data_t>* subscriptionState;
-        if (SUCCEEDED(details::make_wnf_subscription_state<state_data_t>(stateName, wistd::move(callback), subscribeFrom, &subscriptionState)))
-        {
-            return unique_wnf_subscription(subscriptionState);
-        }
-        return nullptr;
-    }
-
-#ifdef WIL_ENABLE_EXCEPTIONS
-
-    //! Subscribe to changes for a zero or fixed size wnf state block.
-    //! the callback will only be called if the payload size matches the size of the state block.
-    template<typename state_data_t = details::empty_wnf_state>
-    unique_wnf_subscription make_wnf_subscription(WNF_STATE_NAME const& stateName, typename details::wnf_callback_type<state_data_t>::type&& callback, _In_ WNF_CHANGE_STAMP subscribeFrom = 0)
-    {
-        details::wnf_subscription_state<state_data_t>* subscriptionState;
-        THROW_IF_FAILED(details::make_wnf_subscription_state<state_data_t>(stateName, wistd::move(callback), subscribeFrom, &subscriptionState));
-        return unique_wnf_subscription(subscriptionState);
-    }
-
-#endif // WIL_ENABLE_EXCEPTIONS
-
-#endif // __WIL_NTURTL_WNF_
 
 #if defined(__WERAPI_H__) && !defined(__WIL_WERAPI_H__) && WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 #define __WIL_WERAPI_H__
@@ -4209,16 +3821,6 @@ namespace wil
     typedef weak_any<shared_rpc_binding_vector> weak_rpc_binding_vector;
 #endif
 
-#if defined(__SRUMAPI_H__) && !defined(__WIL_SRUMAPI_H__)
-#define __WIL_SRUMAPI_H__
-    typedef unique_any<PSRU_STATS_RECORD_SET, decltype(&::SruFreeRecordSet), ::SruFreeRecordSet> unique_srum_recordset;
-#endif
-#if defined(__WIL_SRUMAPI_H__) && !defined(__WIL_SRUMAPI_H_STL) && defined(WIL_RESOURCE_STL)
-#define __WIL_SRUMAPI_H_STL
-    typedef shared_any<unique_srum_recordset> shared_srum_recordset;
-    typedef weak_any<shared_srum_recordset> weak_srum_recordset;
-#endif
-
 #if defined(_WCMAPI_H) && !defined(__WIL_WCMAPI_H_) && WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 #define __WIL_WCMAPI_H_
     struct wcm_deleter
@@ -4242,38 +3844,6 @@ namespace wil
 #define __WIL_NETIOAPI_H_STL
     typedef shared_any<unique_mib_iftable> shared_mib_iftable;
     typedef weak_any<shared_mib_iftable> weak_mib_iftable;
-#endif
-
-#if defined(__WWAN_API_DECL__) && !defined(__WIL_WWAN_API_DECL__) && WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-#define __WIL_WWAN_API_DECL__
-    struct wwan_deleter
-    {
-        template<typename T>
-        void operator()(_Frees_ptr_ T* p) const
-        {
-            ::WwanFreeMemory(p);
-        }
-    };
-
-    template<typename T>
-    using unique_wwan_ptr = wistd::unique_ptr<T, wwan_deleter>;
-
-    /// @cond
-    namespace details
-    {
-        inline void CloseWwanHandle(_Frees_ptr_ HANDLE hClientHandle)
-        {
-            ::WwanCloseHandle(hClientHandle, nullptr);
-        }
-    }
-    /// @endcond
-
-    typedef unique_any<HANDLE, decltype(&details::CloseWwanHandle), details::CloseWwanHandle, details::pointer_access_all, HANDLE, INVALID_HANDLE_VALUE> unique_wwan_handle;
-#endif
-#if defined(__WIL_WWAN_API_DECL__) && !defined(__WIL_WWAN_API_DECL_STL) && defined(WIL_RESOURCE_STL)
-#define __WIL_WWAN_API_DECL_STL
-    typedef shared_any<unique_wwan_handle> shared_wwan_handle;
-    typedef weak_any<shared_wwan_handle> weak_wwan_handle;
 #endif
 
 #if defined(_WLAN_WLANAPI_H) && !defined(__WIL_WLAN_WLANAPI_H) && WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
@@ -4306,26 +3876,6 @@ namespace wil
 #define __WIL_WLAN_WLANAPI_H_STL
     typedef shared_any<unique_wlan_handle> shared_wlan_handle;
     typedef weak_any<shared_wlan_handle> weak_wlan_handle;
-#endif
-
-#if defined(_NTEXAPI_) && !defined(__WIL_NTEXAPI_)
-#define __WIL_NTEXAPI_
-    typedef wil::unique_struct<WNF_STATE_NAME, decltype(&::NtDeleteWnfStateName), ::NtDeleteWnfStateName> unique_wnf_state_name;
-#endif
-
-#if defined(STATELOCK_FLAG_TRANSIENT) && !defined(__WIL_STATELOCK_FLAG_TRANSIENT)
-#define __WIL_STATELOCK_FLAG_TRANSIENT
-    typedef unique_any<HSTATE, decltype(&::CloseState), ::CloseState, details::pointer_access_all, HSTATE, INVALID_STATE_HANDLE> unique_hstate;
-#endif
-
-#if defined(_EFSWRTEXT_H_) && !defined(__WIL_EFSWRTEXT_H_)
-#define __WIL_EFSWRTEXT_H_
-    typedef unique_any<PENCRYPTION_PROTECTOR_LIST, decltype(&::FreeIdentityProtectorList), ::FreeIdentityProtectorList> unique_pencryption_protector_list;
-#endif
-
-#if defined(_EDPUTIL_H_) && !defined(__WIL_EDPUTIL_H_)
-#define __WIL_EDPUTIL_H_
-    typedef unique_any<EDP_CONTEXT*, decltype(&::EdpFreeContext), ::EdpFreeContext> unique_edp_context;
 #endif
 
 #if defined(_HPOWERNOTIFY_DEF_) && !defined(__WIL_HPOWERNOTIFY_DEF_H_)
@@ -4373,11 +3923,6 @@ namespace wil
     ~~~
     */
     using unique_process_information = unique_struct<PROCESS_INFORMATION, decltype(&details::CloseProcessInformation), details::CloseProcessInformation>;
-#endif
-
-#if defined(POLICYMANAGER_H) && !defined(__WIL_POLICYSTRING_DEF_H_)
-#define __WIL_POLICYSTRING_DEF_H_
-        typedef unique_any<PWSTR, decltype(&::PolicyManager_FreeStringValue), ::PolicyManager_FreeStringValue> unique_policy_string;
 #endif
 
 } // namespace wil
