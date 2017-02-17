@@ -7,7 +7,7 @@
 #include "precomp.h"
 
 #include "input.h"
-#include "consoleKeyInfo.hpp" 
+#include "consoleKeyInfo.hpp"
 
 #include "clipboard.hpp"
 #include "cursor.h"
@@ -1320,12 +1320,12 @@ DWORD ConsoleInputThread(LPVOID /*lpParameter*/)
 
         // --- START LOAD BEARING CODE ---
         // TranslateMessageEx appears to be necessary for a few things (that we could in the future take care of ourselves...)
-        // 1. The normal TranslateMessage will return TRUE for all WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP 
-        //    no matter what. 
+        // 1. The normal TranslateMessage will return TRUE for all WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP
+        //    no matter what.
         //    - This means that if there *is* a translation for the keydown, it will post a WM_CHAR to our queue and say TRUE.
         //      ***HOWEVER*** it also means that if there is *NOT* a translation for the keydown, it will post nothing and still say TRUE.
         //    - TRUE from TranslateMessage typically means "don't dispatch, it's already handled."
-        //    - *But* the console needs to dispatch a WM_KEYDOWN that wasn't translated into a WM_CHAR so the underlying console client can 
+        //    - *But* the console needs to dispatch a WM_KEYDOWN that wasn't translated into a WM_CHAR so the underlying console client can
         //      receive it and decide what to do with it.
         //    - Thus TranslateMessageEx was kludged in December 1990 to return FALSE for the case where it doesn't post a WM_CHAR so the
         //      console can know this and handle it.
@@ -1569,7 +1569,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
         //       wVirtualScanCode to associate with the message and pass down into the console input queue for further
         //       processing.
         //       This is required because we cannot accurately re-synthesize (using MapVirtualKey/Ex)
-        //       the original scan code just based on the information we have now and the scan code might be 
+        //       the original scan code just based on the information we have now and the scan code might be
         //       required by the underlying client application, processed input handler (inside the console),
         //       or other input channels to help portray certain key sequences.
         //       Most notably this affects Ctrl-C, Ctrl-Break, and Pause/Break among others.
@@ -1577,7 +1577,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
         RetrieveKeyInfo(hWnd,
                         &InputEvent.Event.KeyEvent.wVirtualKeyCode,
                         &InputEvent.Event.KeyEvent.wVirtualScanCode,
-                        !g_ciConsoleInformation.pInputBuffer->ImeMode.InComposition);
+                        !g_ciConsoleInformation.pInputBuffer->fInComposition);
 
         VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
         // --- END LOAD BEARING CODE ---
@@ -1970,7 +1970,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
         if (Message == WM_MOUSEWHEEL)
         {
             short sWheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-            // For most devices, we'll get mouse events as multiples of 
+            // For most devices, we'll get mouse events as multiples of
             // WHEEL_DELTA, where WHEEL_DELTA represents a single scroll unit
             // But sometimes, things like trackpads will scroll in finer
             // measurements. In this case, the VT mouse scrolling wouldn't work.
