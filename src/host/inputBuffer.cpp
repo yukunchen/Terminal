@@ -662,6 +662,8 @@ NTSTATUS INPUT_INFORMATION::WriteBuffer(_In_ PVOID Buffer, _In_ ULONG Length, _O
     {
         PINPUT_RECORD InputEvent = (PINPUT_RECORD) Buffer;
 
+        // this bit coalesces mouse moved events (updating the (x, y)
+        // positions of the event already in the buffer)
         if (InputEvent->EventType == MOUSE_EVENT && InputEvent->Event.MouseEvent.dwEventFlags == MOUSE_MOVED)
         {
             PINPUT_RECORD LastInputEvent;
@@ -682,6 +684,8 @@ NTSTATUS INPUT_INFORMATION::WriteBuffer(_In_ PVOID Buffer, _In_ ULONG Length, _O
                 return STATUS_SUCCESS;
             }
         }
+        // this bit coalesces key events (upping the repeat count of
+        // the event already in the buffer)
         else if (InputEvent->EventType == KEY_EVENT && InputEvent->Event.KeyEvent.bKeyDown)
         {
             PINPUT_RECORD LastInputEvent;
@@ -694,6 +698,7 @@ NTSTATUS INPUT_INFORMATION::WriteBuffer(_In_ PVOID Buffer, _In_ ULONG Length, _O
                 LastInputEvent = (PINPUT_RECORD) (this->In - sizeof(INPUT_RECORD));
             }
 
+            // don't coalesce the key event if it's a full width char
             if (IsCharFullWidth(InputEvent->Event.KeyEvent.uChar.UnicodeChar))
             {
                 /* do nothing */ ;
@@ -702,21 +707,21 @@ NTSTATUS INPUT_INFORMATION::WriteBuffer(_In_ PVOID Buffer, _In_ ULONG Length, _O
             {
                 if (LastInputEvent->EventType == KEY_EVENT &&
                     LastInputEvent->Event.KeyEvent.bKeyDown &&
-                    (LastInputEvent->Event.KeyEvent.uChar.UnicodeChar ==
-                     InputEvent->Event.KeyEvent.uChar.UnicodeChar) && (LastInputEvent->Event.KeyEvent.dwControlKeyState == InputEvent->Event.KeyEvent.dwControlKeyState))
+                    (LastInputEvent->Event.KeyEvent.uChar.UnicodeChar == InputEvent->Event.KeyEvent.uChar.UnicodeChar) &&
+                    (LastInputEvent->Event.KeyEvent.dwControlKeyState == InputEvent->Event.KeyEvent.dwControlKeyState))
                 {
                     LastInputEvent->Event.KeyEvent.wRepeatCount += InputEvent->Event.KeyEvent.wRepeatCount;
                     *EventsWritten = 1;
                     return STATUS_SUCCESS;
                 }
             }
-            else if (LastInputEvent->EventType == KEY_EVENT && LastInputEvent->Event.KeyEvent.bKeyDown && (LastInputEvent->Event.KeyEvent.wVirtualScanCode ==   // scancode same
-                                                                                                           InputEvent->Event.KeyEvent.wVirtualScanCode) && (LastInputEvent->Event.KeyEvent.uChar.UnicodeChar == // character same
-                                                                                                                                                            InputEvent->Event.KeyEvent.uChar.UnicodeChar) && (LastInputEvent->Event.KeyEvent.dwControlKeyState ==   // ctrl/alt/shift state same
-                                                                                                                                                                                                              InputEvent->
-                                                                                                                                                                                                              Event.
-                                                                                                                                                                                                              KeyEvent.
-                                                                                                                                                                                                              dwControlKeyState))
+            // this one checks that the scan code is the same and the
+            // one above doesn't.
+            else if (LastInputEvent->EventType == KEY_EVENT &&
+                     LastInputEvent->Event.KeyEvent.bKeyDown &&
+                     (LastInputEvent->Event.KeyEvent.wVirtualScanCode ==  InputEvent->Event.KeyEvent.wVirtualScanCode) && // scancode same
+                     (LastInputEvent->Event.KeyEvent.uChar.UnicodeChar == InputEvent->Event.KeyEvent.uChar.UnicodeChar) && // character same
+                     (LastInputEvent->Event.KeyEvent.dwControlKeyState == InputEvent->Event.KeyEvent.dwControlKeyState)) // ctrl/alt/shift state same
             {
                 LastInputEvent->Event.KeyEvent.wRepeatCount += InputEvent->Event.KeyEvent.wRepeatCount;
                 *EventsWritten = 1;
@@ -742,6 +747,7 @@ NTSTATUS INPUT_INFORMATION::WriteBuffer(_In_ PVOID Buffer, _In_ ULONG Length, _O
         if (this->Out > this->In)
         {
             TransferLength = BufferLengthInBytes;
+            // check if we need to grow the input buffer size
             if ((this->Out - this->In - sizeof(INPUT_RECORD)) < BufferLengthInBytes)
             {
                 Status = this->SetInputBufferSize(this->InputBufferSize + Length + INPUT_BUFFER_SIZE_INCREMENT);
@@ -779,6 +785,7 @@ NTSTATUS INPUT_INFORMATION::WriteBuffer(_In_ PVOID Buffer, _In_ ULONG Length, _O
         // are written.
         else
         {
+            // check if we started out with an empty buffer
             if (this->Out == this->In)
             {
                 *SetWaitEvent = TRUE;
@@ -790,6 +797,7 @@ OutPath:
             }
             else
             {
+                // buffer is totally full
                 if (this->First == this->Out && this->In == (this->Last - sizeof(INPUT_RECORD)))
                 {
                     TransferLength = BufferLengthInBytes;
@@ -854,7 +862,7 @@ DWORD INPUT_INFORMATION::PreprocessInput(_In_ PINPUT_RECORD InputEvent, _In_ DWO
             }
 
             // intercept control-s
-            if ((g_ciConsoleInformation.pInputBuffer->InputMode & ENABLE_LINE_INPUT) &&
+            if ((this->InputMode & ENABLE_LINE_INPUT) &&
                 (InputEvent->Event.KeyEvent.wVirtualKeyCode == VK_PAUSE || IsPauseKey(&InputEvent->Event.KeyEvent)))
             {
 
