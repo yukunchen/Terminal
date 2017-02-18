@@ -275,7 +275,7 @@ class InputBufferTests
 
         // read them back out
         INPUT_RECORD outRecords[RECORD_INSERT_COUNT];
-        DWORD length;
+        DWORD length = RECORD_INSERT_COUNT;
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
                                                             &length,
                                                             false,
