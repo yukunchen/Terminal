@@ -16,10 +16,9 @@ Revision History:
 #pragma once
 
 #include "conapi.h"
+#include "inputBuffer.hpp"
 
 class SCREEN_INFORMATION;
-struct _INPUT_INFORMATION;
-typedef _INPUT_INFORMATION INPUT_INFORMATION;
 
 NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size);
 NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size, _Inout_ PCHAR_INFO OutputBufferR);
