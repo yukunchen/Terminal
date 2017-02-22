@@ -84,6 +84,7 @@ public:
     void FlushInputBuffer();
     HRESULT FlushAllButKeys();
     void WakeUpReadersWaitingForData();
+    void TerminateRead(_In_ WaitTerminationReason Flag);
 
 private:
     std::deque<INPUT_RECORD> _storage;
@@ -113,5 +114,3 @@ private:
     friend class InputBufferTests;
 #endif
 };
-
-void TerminateRead(_Inout_ InputBuffer* pInputBuffer, _In_ WaitTerminationReason Flag);

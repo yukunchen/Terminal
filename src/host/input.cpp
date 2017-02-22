@@ -811,7 +811,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
             HandleCtrlEvent(CTRL_C_EVENT);
             if (g_ciConsoleInformation.PopupCount == 0)
             {
-                TerminateRead(g_ciConsoleInformation.pInputBuffer, WaitTerminationReason::CtrlC);
+                g_ciConsoleInformation.pInputBuffer->TerminateRead(WaitTerminationReason::CtrlC);
             }
 
             if (!(g_ciConsoleInformation.Flags & CONSOLE_SUSPENDED))
@@ -827,7 +827,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
             HandleCtrlEvent(CTRL_BREAK_EVENT);
             if (g_ciConsoleInformation.PopupCount == 0)
             {
-                TerminateRead(g_ciConsoleInformation.pInputBuffer, WaitTerminationReason::CtrlBreak);
+                g_ciConsoleInformation.pInputBuffer->TerminateRead(WaitTerminationReason::CtrlBreak);
             }
 
             if (!(g_ciConsoleInformation.Flags & CONSOLE_SUSPENDED))

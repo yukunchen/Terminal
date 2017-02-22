@@ -589,13 +589,13 @@ void InputBuffer::WakeUpReadersWaitingForData()
     this->WaitQueue.NotifyWaiters(false);
 }
 
+// TODO docs
 // Routine Description:
 // - This routine wakes up any readers waiting for data when a ctrl-c or ctrl-break is input.
 // Arguments:
 // - pInputBuffer - pointer to input buffer
 // - Flag - flag indicating whether ctrl-break or ctrl-c was input.
-// TODO move to inputBuffer.hpp
-void TerminateRead(_Inout_ InputBuffer* pInputBuffer, _In_ WaitTerminationReason Flag)
+void InputBuffer::TerminateRead(_In_ WaitTerminationReason Flag)
 {
-    pInputBuffer->WaitQueue.NotifyWaiters(true, Flag);
+    WaitQueue.NotifyWaiters(true, Flag);
 }
