@@ -53,7 +53,6 @@ public:
     } ImeMode;
 
     HANDLE InputWaitEvent;
-    struct _CONSOLE_INFORMATION *Console;
     INPUT_RECORD ReadConInpDbcsLeadByte;
     INPUT_RECORD WriteConInpDbcsLeadByte[2];
 

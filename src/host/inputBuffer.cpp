@@ -9,25 +9,25 @@
 #include "dbcs.h"
 #include "stream.h"
 
-#include <algorithm>
-
 #define INPUT_BUFFER_DEFAULT_INPUT_MODE (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT)
 
 // Routine Description:
-// - This routine creates an input buffer.  It allocates the circular buffer and initializes the information fields.
+// - This method creates an input buffer.
 // Arguments:
-// - cEvents - The default size of the circular buffer (in INPUT_RECORDs)
+// - None
 // Return Value:
-InputBuffer::InputBuffer()
+// - A new instance of InputBuffer
+InputBuffer::InputBuffer() :
+    InputMode{ INPUT_BUFFER_DEFAULT_INPUT_MODE },
+    WaitQueue{}
 {
-    this->InputWaitEvent = g_hInputEvent.get();
+    InputWaitEvent = g_hInputEvent.get();
     // initialize buffer header
-    this->InputMode = INPUT_BUFFER_DEFAULT_INPUT_MODE;
-    this->ImeMode.Disable = FALSE;
-    this->ImeMode.Unavailable = FALSE;
-    this->ImeMode.Open = FALSE;
-    this->ImeMode.ReadyConversion = FALSE;
-    this->ImeMode.InComposition = FALSE;
+    ImeMode.Disable = FALSE;
+    ImeMode.Unavailable = FALSE;
+    ImeMode.Open = FALSE;
+    ImeMode.ReadyConversion = FALSE;
+    ImeMode.InComposition = FALSE;
 
     ZeroMemory(&this->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
     ZeroMemory(&this->WriteConInpDbcsLeadByte, sizeof(INPUT_RECORD));
@@ -41,9 +41,8 @@ InputBuffer::InputBuffer()
 // - The console lock must be held when calling this routine.
 void InputBuffer::ReinitializeInputBuffer()
 {
-    ResetEvent(this->InputWaitEvent);
-
-    this->InputMode = INPUT_BUFFER_DEFAULT_INPUT_MODE;
+    ResetEvent(InputWaitEvent);
+    InputMode = INPUT_BUFFER_DEFAULT_INPUT_MODE;
     _storage.clear();
 }
 
@@ -60,11 +59,11 @@ InputBuffer::~InputBuffer()
 }
 
 // Routine Description:
-// - This routine returns the number of events in the input buffer.
+// - Returns the number of events in the input buffer.
 // Arguments:
 // - None
 // Return Value:
-// The number of events currently in the input buffer.
+// - The number of events currently in the input buffer.
 // Note:
 // - The console lock must be held when calling this routine.
 size_t InputBuffer::GetNumberOfReadyEvents()
