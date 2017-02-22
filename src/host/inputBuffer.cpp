@@ -152,7 +152,7 @@ HRESULT InputBuffer::FlushAllButKeys()
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS InputBuffer::ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
+NTSTATUS InputBuffer::ReadInputBuffer(_Out_writes_(*pcLength) INPUT_RECORD* pInputRecord,
                                             _Inout_ PDWORD pcLength,
                                             _In_ BOOL const fPeek,
                                             _In_ BOOL const fWaitForData,
@@ -218,13 +218,13 @@ NTSTATUS InputBuffer::ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInp
 // - The console lock must be held when calling this routine.
 // - This method is mainly a wrapper to allow an array to be used to
 // read into.
-NTSTATUS InputBuffer::_ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
-                                        _In_ ULONG Length,
-                                        _Out_ PULONG EventsRead,
-                                        _In_ BOOL Peek,
-                                        _In_ BOOL StreamRead,
-                                        _Out_ PBOOL ResetWaitEvent,
-                                        _In_ BOOLEAN Unicode)
+NTSTATUS InputBuffer::_ReadBuffer(_Out_writes_to_(Length, *EventsRead) INPUT_RECORD* Buffer,
+                                  _In_ ULONG Length,
+                                  _Out_ PULONG EventsRead,
+                                  _In_ BOOL Peek,
+                                  _In_ BOOL StreamRead,
+                                  _Out_ PBOOL ResetWaitEvent,
+                                  _In_ BOOLEAN Unicode)
 {
     std::deque<INPUT_RECORD> outRecords;
     size_t eventsRead;
@@ -271,13 +271,13 @@ NTSTATUS InputBuffer::_ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RE
 // - S_OK on success.
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT InputBuffer::_ReadBuffer(std::deque<INPUT_RECORD>& outRecords,
-                                       const size_t readCount,
-                                       size_t& eventsRead,
-                                       const bool peek,
-                                       const bool streamRead,
-                                       bool& resetWaitEvent,
-                                       const bool unicode)
+HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
+                                 _In_ const size_t readCount,
+                                 _Out_ size_t& eventsRead,
+                                 _In_ const bool peek,
+                                 _In_ const bool streamRead,
+                                 _Out_ bool& resetWaitEvent,
+                                 _In_ const bool unicode)
 {
     try
     {
@@ -422,7 +422,7 @@ size_t InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
 // - The console lock must be held when calling this routine.
 // - This method is mainly a wrapper to allow an array to be used to
 // read into.
-DWORD InputBuffer::WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords)
+DWORD InputBuffer::WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD cInputRecords)
 {
     // change to a deque
     std::deque<INPUT_RECORD> inRecords;
@@ -480,8 +480,8 @@ size_t InputBuffer::WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
 // Note:
 // - The console lock must be held when calling this routine.
 HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
-                                        _Out_ size_t& eventsWritten,
-                                        _Out_ bool& setWaitEvent)
+                                  _Out_ size_t& eventsWritten,
+                                  _Out_ bool& setWaitEvent)
 {
     try
     {

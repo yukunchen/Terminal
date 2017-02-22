@@ -19,6 +19,7 @@ Author:
 
 Revision History:
 - Moved from input.h/input.cpp. (AustDi, 2017)
+- Refactored to class, added stl container usage (AustDi, 2017)
 --*/
 
 #pragma once
@@ -31,9 +32,7 @@ Revision History:
 
 #include <deque>
 
-#define INPUT_BUFFER_SIZE_INCREMENT 10
-
-class InputBuffer
+class InputBuffer final
 {
 public:
     ConsoleObjectHeader Header;
@@ -65,7 +64,7 @@ public:
     void Flush();
     HRESULT FlushAllButKeys();
 
-    NTSTATUS ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
+    NTSTATUS ReadInputBuffer(_Out_writes_(*pcLength) INPUT_RECORD* pInputRecord,
                             _Inout_ PDWORD pcLength,
                             _In_ BOOL const fPeek,
                             _In_ BOOL const fWaitForData,
@@ -78,29 +77,29 @@ public:
                             _In_ BOOLEAN const fWaitBlockExists,
                             _In_ BOOLEAN const fUnicode);
 
-    NTSTATUS PrependInputBuffer(_In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * const pcLength);
+    NTSTATUS PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength);
     size_t PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords);
 
-    DWORD WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords);
+    DWORD WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD cInputRecords);
     size_t WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords);
 
 private:
     std::deque<INPUT_RECORD> _storage;
 
-    NTSTATUS _ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
+    NTSTATUS _ReadBuffer(_Out_writes_to_(Length, *EventsRead) INPUT_RECORD* Buffer,
                          _In_ ULONG Length,
                          _Out_ PULONG EventsRead,
                          _In_ BOOL Peek,
                          _In_ BOOL StreamRead,
                          _Out_ PBOOL ResetWaitEvent,
                          _In_ BOOLEAN Unicode);
-    HRESULT _ReadBuffer(std::deque<INPUT_RECORD>& outRecords,
-                        const size_t readCount,
-                        size_t& eventsRead,
-                        const bool peek,
-                        const bool streamRead,
-                        bool& resetWaitEvent,
-                        const bool unicode);
+    HRESULT _ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
+                        _In_ const size_t readCount,
+                        _Out_ size_t& eventsRead,
+                        _In_ const bool peek,
+                        _In_ const bool streamRead,
+                        _Out_ bool& resetWaitEvent,
+                        _In_ const bool unicode);
 
     HRESULT _WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
                          _Out_ size_t& eventsWritten,
