@@ -34,7 +34,7 @@ public:
                       _In_ PVOID const pvClientPointer);
 
     HRESULT GetInputBuffer(_In_ const ACCESS_MASK amRequested,
-                           _Outptr_ InputBuffer** const ppInputInfo) const;
+                           _Outptr_ InputBuffer** const ppInputBuffer) const;
     HRESULT GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
                             _Outptr_ SCREEN_INFORMATION** const ppScreenInfo) const;
 

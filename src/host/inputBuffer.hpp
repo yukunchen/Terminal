@@ -114,4 +114,4 @@ private:
 #endif
 };
 
-void TerminateRead(_Inout_ InputBuffer* InputInfo, _In_ WaitTerminationReason Flag);
+void TerminateRead(_Inout_ InputBuffer* pInputBuffer, _In_ WaitTerminationReason Flag);

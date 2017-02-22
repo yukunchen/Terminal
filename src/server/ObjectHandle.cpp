@@ -100,18 +100,18 @@ bool ConsoleHandleData::IsWriteShared() const
 // - Retieves the properly typed Input Buffer from the Handle.
 // Arguments:
 // - amRequested - Access that the client would like for manipulating the buffer
-// - ppInputInfo - On success, filled with the referenced Input Buffer object
+// - ppInputBuffer - On success, filled with the referenced Input Buffer object
 // Return Value:
 // - HRESULT S_OK or suitable error.
 HRESULT ConsoleHandleData::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
-                                          _Outptr_ InputBuffer** const ppInputInfo) const
+                                          _Outptr_ InputBuffer** const ppInputBuffer) const
 {
-    *ppInputInfo = nullptr;
+    *ppInputBuffer = nullptr;
 
     RETURN_HR_IF(E_ACCESSDENIED, IsAnyFlagClear(_amAccess, amRequested));
     RETURN_HR_IF(E_HANDLE, IsAnyFlagClear(_ulHandleType, HandleType::Input));
 
-    *ppInputInfo = static_cast<InputBuffer*>(_pvClientPointer);
+    *ppInputBuffer = static_cast<InputBuffer*>(_pvClientPointer);
 
     return S_OK;
 }
@@ -120,7 +120,7 @@ HRESULT ConsoleHandleData::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
 // - Retieves the properly typed Screen Buffer from the Handle.
 // Arguments:
 // - amRequested - Access that the client would like for manipulating the buffer
-// - ppInputInfo - On success, filled with the referenced Screen Buffer object
+// - ppInputBuffer - On success, filled with the referenced Screen Buffer object
 // Return Value:
 // - HRESULT S_OK or suitable error.
 HRESULT ConsoleHandleData::GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
@@ -211,7 +211,7 @@ HRESULT ConsoleHandleData::CloseHandle()
 HRESULT ConsoleHandleData::_CloseInputHandle()
 {
     assert(_IsInput());
-    InputBuffer* pInputInfo = static_cast<InputBuffer*>(_pvClientPointer);
+    InputBuffer* pInputBuffer = static_cast<InputBuffer*>(_pvClientPointer);
     INPUT_READ_HANDLE_DATA* pReadHandleData = GetClientInput();
 
     if (IsFlagSet(pReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending))
@@ -231,7 +231,7 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
         pReadHandleData->UnlockReadCount();
         SetFlag(pReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing);
 
-        pInputInfo->WaitQueue.NotifyWaiters(TRUE);
+        pInputBuffer->WaitQueue.NotifyWaiters(TRUE);
 
         pReadHandleData->LockReadCount();
     }
@@ -243,11 +243,11 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
     pReadHandleData = nullptr;
 
     // TODO: MSFT: 9115192 - THIS IS BAD. It should use a destructor.
-    LOG_IF_FAILED(pInputInfo->Header.FreeIoHandle(this));
+    LOG_IF_FAILED(pInputBuffer->Header.FreeIoHandle(this));
 
-    if (!pInputInfo->Header.HasAnyOpenHandles())
+    if (!pInputBuffer->Header.HasAnyOpenHandles())
     {
-        pInputInfo->ReinitializeInputBuffer();
+        pInputBuffer->ReinitializeInputBuffer();
     }
 
     return S_OK;

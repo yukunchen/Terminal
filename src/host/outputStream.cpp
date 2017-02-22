@@ -102,9 +102,9 @@ void WriteBuffer::SetActiveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenIn
 }
 
 ConhostInternalGetSet::ConhostInternalGetSet(_In_ SCREEN_INFORMATION* const pScreenInfo,
-                                             _In_ InputBuffer* const pInputInfo) :
+                                             _In_ InputBuffer* const pInputBuffer) :
                                              _pScreenInfo(pScreenInfo),
-                                             _pInputInfo(pInputInfo)
+                                             _pInputBuffer(pInputBuffer)
 {
 }
 
@@ -283,7 +283,7 @@ BOOL ConhostInternalGetSet::WriteConsoleInputW(_In_reads_(nLength) INPUT_RECORD*
     msg.NumRecords = nLength;
     msg.Unicode = true;
 
-    BOOL fSuccess = NT_SUCCESS(DoSrvWriteConsoleInput(_pInputInfo, &msg, rgInputRecords));
+    BOOL fSuccess = NT_SUCCESS(DoSrvWriteConsoleInput(_pInputBuffer, &msg, rgInputRecords));
 
     *pNumberOfEventsWritten = msg.NumRecords;
 

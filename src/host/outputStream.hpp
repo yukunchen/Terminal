@@ -51,7 +51,7 @@ private:
 class ConhostInternalGetSet : public Microsoft::Console::VirtualTerminal::ConGetSet
 {
 public:
-    ConhostInternalGetSet(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ InputBuffer* const pInputInfo);
+    ConhostInternalGetSet(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ InputBuffer* const pInputBuffer);
 
     virtual BOOL GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const;
     virtual BOOL SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const;
@@ -113,7 +113,7 @@ public:
 
 private:
     SCREEN_INFORMATION* _pScreenInfo; // not const because switching to the alternate buffer will change this pointer.
-    InputBuffer* const _pInputInfo;
+    InputBuffer* const _pInputBuffer;
 
     BOOL _FillConsoleOutput(_In_ USHORT const usElement,
                             _In_ ULONG const ulElementType,

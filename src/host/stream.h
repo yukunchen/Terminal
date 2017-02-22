@@ -22,7 +22,7 @@ Revision History:
 // Routine Description:
 // - This routine is used in stream input.  It gets input and filters it for unicode characters.
 // Arguments:
-// - InputInfo - Pointer to input buffer information.
+// - pInputBuffer - Pointer to input buffer.
 // - Char - Unicode char input.
 // - Wait - TRUE if the routine shouldn't wait for input.
 // - Console - Pointer to console buffer information.
@@ -36,7 +36,7 @@ Revision History:
 // - CommandLinePopupKeys - if present, arrow keys will be returned. on output, if TRUE, Char contains virtual key code for arrow key.
 // Return Value:
 // - <none>
-NTSTATUS GetChar(_In_ InputBuffer* pInputInfo,
+NTSTATUS GetChar(_In_ InputBuffer* pInputBuffer,
                  _Out_ PWCHAR pwchChar,
                  _In_ const BOOL fWait,
                  _In_opt_ INPUT_READ_HANDLE_DATA* pHandleData,
