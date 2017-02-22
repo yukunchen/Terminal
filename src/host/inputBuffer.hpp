@@ -58,6 +58,12 @@ public:
 
     InputBuffer();
     ~InputBuffer();
+    void ReinitializeInputBuffer();
+    void WakeUpReadersWaitingForData();
+    void TerminateRead(_In_ WaitTerminationReason Flag);
+    size_t GetNumberOfReadyEvents();
+    void Flush();
+    HRESULT FlushAllButKeys();
 
     NTSTATUS ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
                             _Inout_ PDWORD pcLength,
@@ -72,27 +78,15 @@ public:
                             _In_ BOOLEAN const fWaitBlockExists,
                             _In_ BOOLEAN const fUnicode);
 
-    DWORD WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords);
-    size_t WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords);
-
     NTSTATUS PrependInputBuffer(_In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * const pcLength);
     size_t PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords);
-    void ReinitializeInputBuffer();
-    size_t GetNumberOfReadyEvents();
-    void Flush();
-    HRESULT FlushAllButKeys();
-    void WakeUpReadersWaitingForData();
-    void TerminateRead(_In_ WaitTerminationReason Flag);
+
+    DWORD WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords);
+    size_t WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords);
 
 private:
     std::deque<INPUT_RECORD> _storage;
 
-    HRESULT _HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD>& records);
-    bool _CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRecords);
-    bool _CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>& inRecords);
-    HRESULT _WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
-                         _Out_ size_t& eventsWritten,
-                         _Out_ bool& setWaitEvent);
     NTSTATUS _ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
                          _In_ ULONG Length,
                          _Out_ PULONG EventsRead,
@@ -107,6 +101,14 @@ private:
                         const bool streamRead,
                         bool& resetWaitEvent,
                         const bool unicode);
+
+    HRESULT _WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
+                         _Out_ size_t& eventsWritten,
+                         _Out_ bool& setWaitEvent);
+
+    bool _CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRecords);
+    bool _CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>& inRecords);
+    HRESULT _HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD>& records);
 
 #ifdef UNIT_TESTING
     friend class InputBufferTests;

@@ -34,6 +34,18 @@ InputBuffer::InputBuffer() :
 }
 
 // Routine Description:
+// - This routine frees the resources associated with an input buffer.
+// Arguments:
+// - None
+// Return Value:
+InputBuffer::~InputBuffer()
+{
+    // TODO: MSFT:8805366 check for null before trying to close this
+    // and check that it needs to be closing it in the first place.
+    CloseHandle(this->InputWaitEvent);
+}
+
+// Routine Description:
 // - This routine resets the input buffer information fields to their initial values.
 // Arguments:
 // Return Value:
@@ -47,15 +59,25 @@ void InputBuffer::ReinitializeInputBuffer()
 }
 
 // Routine Description:
-// - This routine frees the resources associated with an input buffer.
+// - Wakes up readers waiting for data to read.
 // Arguments:
 // - None
 // Return Value:
-InputBuffer::~InputBuffer()
+// - None
+void InputBuffer::WakeUpReadersWaitingForData()
 {
-    // TODO: MSFT:8805366 check for null before trying to close this
-    // and check that it needs to be closing it in the first place.
-    CloseHandle(this->InputWaitEvent);
+    this->WaitQueue.NotifyWaiters(false);
+}
+
+// Routine Description:
+// - Wakes up any readers waiting for data when a ctrl-c or ctrl-break is input.
+// Arguments:
+// - Flag - Indicates reason to terminate the readers.
+// Return Value:
+// - None
+void InputBuffer::TerminateRead(_In_ WaitTerminationReason Flag)
+{
+    WaitQueue.NotifyWaiters(true, Flag);
 }
 
 // Routine Description:
@@ -69,6 +91,20 @@ InputBuffer::~InputBuffer()
 size_t InputBuffer::GetNumberOfReadyEvents()
 {
     return _storage.size();
+}
+
+// Routine Description:
+// - This routine empties the input buffer
+// Arguments:
+// - None
+// Return Value:
+// - None
+// Note:
+// - The console lock must be held when calling this routine.
+void InputBuffer::Flush()
+{
+    _storage.clear();
+    ResetEvent(InputWaitEvent);
 }
 
 // Routine Description:
@@ -98,17 +134,72 @@ HRESULT InputBuffer::FlushAllButKeys()
 }
 
 // Routine Description:
-// - This routine empties the input buffer
+// - This routine reads from the input buffer.
 // Arguments:
-// - None
+// - pInputRecord - Buffer to read into.
+// - pcLength - On input, number of events to read.  On output, number of events read.
+// - fPeek - If TRUE, copy events to pInputRecord but don't remove them from the input buffer.
+// - fWaitForData - if TRUE, wait until an event is input.  if FALSE, return immediately
+// TODO fStreamRead never worked like this
+// - fStreamRead - if TRUE, events with repeat counts > 1 are returned as multiple events.  also, EventsRead == 1.
+// - pHandleData - Pointer to handle data structure.  This parameter is optional if fWaitForData is false.
+// - pConsoleMsg - if called from dll (not InputThread), points to api message.  this parameter is used for wait block processing.
+// - pfnWaitRoutine - Routine to call when wait is woken up.
+// - pvWaitParameter - Parameter to pass to wait routine.
+// - cbWaitParameter - Length of wait parameter.
+// - fWaitBlockExists - TRUE if wait block has already been created.
+// - fUnicode - TRUE if the data in key events should be treated as unicode.
 // Return Value:
-// - None
 // Note:
 // - The console lock must be held when calling this routine.
-void InputBuffer::Flush()
+NTSTATUS InputBuffer::ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
+                                            _Inout_ PDWORD pcLength,
+                                            _In_ BOOL const fPeek,
+                                            _In_ BOOL const fWaitForData,
+                                            _In_ BOOL const fStreamRead,
+                                            _In_ INPUT_READ_HANDLE_DATA* pHandleData,
+                                            _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
+                                            _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
+                                            _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
+                                            _In_ ULONG const cbWaitParameter,
+                                            _In_ BOOLEAN const fWaitBlockExists,
+                                            _In_ BOOLEAN const fUnicode)
 {
-    _storage.clear();
-    ResetEvent(InputWaitEvent);
+    NTSTATUS Status;
+    if (_storage.empty())
+    {
+        if (!fWaitForData)
+        {
+            *pcLength = 0;
+            return STATUS_SUCCESS;
+        }
+
+        pHandleData->IncrementReadCount();
+        Status = WaitForMoreToRead(pConsoleMsg, pfnWaitRoutine, pvWaitParameter, cbWaitParameter, fWaitBlockExists);
+        if (!NT_SUCCESS(Status))
+        {
+            if (Status != CONSOLE_STATUS_WAIT)
+            {
+                // WaitForMoreToRead failed, restore ReadCount and bail out
+                pHandleData->DecrementReadCount();
+            }
+
+            *pcLength = 0;
+            return Status;
+        }
+    }
+
+    // read from buffer
+    ULONG EventsRead;
+    BOOL ResetWaitEvent;
+    Status = _ReadBuffer(pInputRecord, *pcLength, &EventsRead, fPeek, fStreamRead, &ResetWaitEvent, fUnicode);
+    if (ResetWaitEvent)
+    {
+        ResetEvent(InputWaitEvent);
+    }
+
+    *pcLength = EventsRead;
+    return Status;
 }
 
 // Routine Description:
@@ -125,6 +216,8 @@ void InputBuffer::Flush()
 // - STATUS_SUCCESS on success.
 // Note:
 // - The console lock must be held when calling this routine.
+// - This method is mainly a wrapper to allow an array to be used to
+// read into.
 NTSTATUS InputBuffer::_ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
                                         _In_ ULONG Length,
                                         _Out_ PULONG EventsRead,
@@ -254,72 +347,180 @@ HRESULT InputBuffer::_ReadBuffer(std::deque<INPUT_RECORD>& outRecords,
 }
 
 // Routine Description:
-// - This routine reads from the input buffer.
+// -  Writes records to the beginning of the input buffer.
 // Arguments:
-// - pInputRecord - Buffer to read into.
-// - pcLength - On input, number of events to read.  On output, number of events read.
-// - fPeek - If TRUE, copy events to pInputRecord but don't remove them from the input buffer.
-// - fWaitForData - if TRUE, wait until an event is input.  if FALSE, return immediately
-// TODO fStreamRead never worked like this
-// - fStreamRead - if TRUE, events with repeat counts > 1 are returned as multiple events.  also, EventsRead == 1.
-// - pHandleData - Pointer to handle data structure.  This parameter is optional if fWaitForData is false.
-// - pConsoleMsg - if called from dll (not InputThread), points to api message.  this parameter is used for wait block processing.
-// - pfnWaitRoutine - Routine to call when wait is woken up.
-// - pvWaitParameter - Parameter to pass to wait routine.
-// - cbWaitParameter - Length of wait parameter.
-// - fWaitBlockExists - TRUE if wait block has already been created.
-// - fUnicode - TRUE if the data in key events should be treated as unicode.
+// - pInputRecord - Buffer to write from.
+// - pcLength - On input, number of events to write.  On output, number of events written.
 // Return Value:
+// - STATUS_SUCCESS on success.
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS InputBuffer::ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
-                                            _Inout_ PDWORD pcLength,
-                                            _In_ BOOL const fPeek,
-                                            _In_ BOOL const fWaitForData,
-                                            _In_ BOOL const fStreamRead,
-                                            _In_ INPUT_READ_HANDLE_DATA* pHandleData,
-                                            _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
-                                            _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
-                                            _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
-                                            _In_ ULONG const cbWaitParameter,
-                                            _In_ BOOLEAN const fWaitBlockExists,
-                                            _In_ BOOLEAN const fUnicode)
+// - This method is mainly a wrapper to allow an array to be used to
+// read into.
+NTSTATUS InputBuffer::PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength)
 {
-    NTSTATUS Status;
-    if (_storage.empty())
+    // change to a deque
+    std::deque<INPUT_RECORD> inRecords;
+    for (size_t i = 0; i < *pcLength; ++i)
     {
-        if (!fWaitForData)
-        {
-            *pcLength = 0;
-            return STATUS_SUCCESS;
-        }
+        inRecords.push_back(pInputRecord[i]);
+    }
+    size_t eventsWritten = PrependInputBuffer(inRecords);
 
-        pHandleData->IncrementReadCount();
-        Status = WaitForMoreToRead(pConsoleMsg, pfnWaitRoutine, pvWaitParameter, cbWaitParameter, fWaitBlockExists);
-        if (!NT_SUCCESS(Status))
+    LOG_IF_FAILED(SIZETToDWord(eventsWritten, pcLength));
+    return STATUS_SUCCESS;
+}
+
+// Routine Description:
+// -  Writes records to the beginning of the input buffer.
+// Arguments:
+// - inRecords - Records to write to buffer.
+// Return Value:
+// - The number of events written to the buffer.
+// Note:
+// - The console lock must be held when calling this routine.
+size_t InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
+{
+    LOG_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
+    if (inRecords.empty())
+    {
+        return STATUS_SUCCESS;
+    }
+    // read all of the records out of the buffer, then write the
+    // prepend ones, then write the original set. We need to do it
+    // this way to handle any coalescing that might occur.
+
+    // get all of the existing records, "emptying" the buffer
+    std::deque<INPUT_RECORD> existingStorage;
+    existingStorage.swap(_storage);
+
+    // write the prepend records
+    size_t prependEventsWritten;
+    bool setWaitEvent;
+    _WriteBuffer(inRecords, prependEventsWritten, setWaitEvent);
+
+    // write all previously existing records
+    size_t eventsWritten;
+    _WriteBuffer(existingStorage, eventsWritten, setWaitEvent);
+    if (setWaitEvent)
+    {
+        SetEvent(InputWaitEvent);
+    }
+    WakeUpReadersWaitingForData();
+    return prependEventsWritten;
+}
+
+// Routine Description:
+// - Writes records to the input buffer. Wakes up any readers that are
+// waiting for additional input events.
+// Arguments:
+// - pInputRecord - Buffer to write from.
+// - cInputRecords - On input, number of events to write.
+// Return Value:
+// - The number of events that were written to input buffer.
+// Note:
+// - The console lock must be held when calling this routine.
+// - This method is mainly a wrapper to allow an array to be used to
+// read into.
+DWORD InputBuffer::WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords)
+{
+    // change to a deque
+    std::deque<INPUT_RECORD> inRecords;
+    for (size_t i = 0; i < cInputRecords; ++i)
+    {
+        inRecords.push_back(pInputRecord[i]);
+    }
+    size_t EventsWritten = WriteInputBuffer(inRecords);
+    DWORD result;
+    LOG_IF_FAILED(SIZETToDWord(EventsWritten, &result));
+    return result;
+}
+
+// Routine Description:
+// - Writes records to the input buffer. Wakes up any readers that are
+// waiting for additional input events.
+// Arguments:
+// - inRecords - records to store in the buffer.
+// Return Value:
+// - The number of events that were written to input buffer.
+// Note:
+// - The console lock must be held when calling this routine.
+size_t InputBuffer::WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
+{
+    LOG_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
+    if (inRecords.empty())
+    {
+        return 0;
+    }
+
+    // Write to buffer.
+    size_t EventsWritten;
+    bool SetWaitEvent;
+    LOG_IF_FAILED(_WriteBuffer(inRecords, EventsWritten, SetWaitEvent));
+
+    if (SetWaitEvent)
+    {
+        SetEvent(InputWaitEvent);
+    }
+
+    // Alert any writers waiting for space.
+    WakeUpReadersWaitingForData();
+    return EventsWritten;
+}
+
+// Routine Description:
+// - Coalesces input events and transfers them to storage queue.
+// Arguments:
+// - inRecords - The events to store.
+// - eventsWritten - The number of events written since this function
+// was called.
+// - setWaitEvent - on exit, true if buffer became non-empty.
+// Return Value:
+// - S_OK on success.
+// Note:
+// - The console lock must be held when calling this routine.
+HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
+                                        _Out_ size_t& eventsWritten,
+                                        _Out_ bool& setWaitEvent)
+{
+    try
+    {
+        eventsWritten = 0;
+        setWaitEvent = false;
+        bool initiallyEmptyQueue = _storage.empty();
+        if (inRecords.size() == 1 && !_storage.empty())
         {
-            if (Status != CONSOLE_STATUS_WAIT)
+            bool coalesced = false;
+            // this looks kinda weird but we don't want to coalesce a
+            // mouse event and then try to coalesce a key event right after.
+            if (_CoalesceMouseMovedEvents(inRecords))
             {
-                // WaitForMoreToRead failed, restore ReadCount and bail out
-                pHandleData->DecrementReadCount();
+                coalesced = true;
             }
-
-            *pcLength = 0;
-            return Status;
+            else if (_CoalesceRepeatedKeyPressEvents(inRecords))
+            {
+                coalesced = true;
+            }
+            if (coalesced)
+            {
+                eventsWritten = 1;
+                return S_OK;
+            }
         }
+        // add all input records to the storage queue
+        while (!inRecords.empty())
+        {
+            _storage.push_back(inRecords.front());
+            inRecords.pop_front();
+            ++eventsWritten;
+        }
+        if (initiallyEmptyQueue && !_storage.empty())
+        {
+            setWaitEvent = true;
+        }
+        return S_OK;
     }
-
-    // read from buffer
-    ULONG EventsRead;
-    BOOL ResetWaitEvent;
-    Status = _ReadBuffer(pInputRecord, *pcLength, &EventsRead, fPeek, fStreamRead, &ResetWaitEvent, fUnicode);
-    if (ResetWaitEvent)
-    {
-        ResetEvent(InputWaitEvent);
-    }
-
-    *pcLength = EventsRead;
-    return Status;
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -401,61 +602,6 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>&
 }
 
 // Routine Description:
-// - Coalesces input events and transfers them to storage queue.
-// Arguments:
-// - inRecords - The events to store.
-// - eventsWritten - The number of events written since this function
-// was called.
-// - setWaitEvent - on exit, true if buffer became non-empty.
-// Return Value:
-// - S_OK on success.
-// Note:
-// - The console lock must be held when calling this routine.
-HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
-                                        _Out_ size_t& eventsWritten,
-                                        _Out_ bool& setWaitEvent)
-{
-    try
-    {
-        eventsWritten = 0;
-        setWaitEvent = false;
-        bool initiallyEmptyQueue = _storage.empty();
-        if (inRecords.size() == 1 && !_storage.empty())
-        {
-            bool coalesced = false;
-            // this looks kinda weird but we don't want to coalesce a
-            // mouse event and then try to coalesce a key event right after.
-            if (_CoalesceMouseMovedEvents(inRecords))
-            {
-                coalesced = true;
-            }
-            else if (_CoalesceRepeatedKeyPressEvents(inRecords))
-            {
-                coalesced = true;
-            }
-            if (coalesced)
-            {
-                eventsWritten = 1;
-                return S_OK;
-            }
-        }
-        // add all input records to the storage queue
-        while (!inRecords.empty())
-        {
-            _storage.push_back(inRecords.front());
-            inRecords.pop_front();
-            ++eventsWritten;
-        }
-        if (initiallyEmptyQueue && !_storage.empty())
-        {
-            setWaitEvent = true;
-        }
-        return S_OK;
-    }
-    CATCH_RETURN();
-}
-
-// Routine Description:
 // - Handles records that suspend/resume the console.
 // Arguments:
 // - records - records to check for pause/unpause events
@@ -492,144 +638,4 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD
         return S_OK;
     }
     CATCH_RETURN();
-}
-
-// Routine Description:
-// -  Writes records to the beginning of the input buffer.
-// Arguments:
-// - pInputRecord - Buffer to write from.
-// - pcLength - On input, number of events to write.  On output, number of events written.
-// Return Value:
-// - STATUS_SUCCESS on success.
-// Note:
-// - The console lock must be held when calling this routine.
-NTSTATUS InputBuffer::PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength)
-{
-    // change to a deque
-    std::deque<INPUT_RECORD> inRecords;
-    for (size_t i = 0; i < *pcLength; ++i)
-    {
-        inRecords.push_back(pInputRecord[i]);
-    }
-    size_t eventsWritten = PrependInputBuffer(inRecords);
-
-    LOG_IF_FAILED(SIZETToDWord(eventsWritten, pcLength));
-    return STATUS_SUCCESS;
-}
-
-// Routine Description:
-// -  Writes records to the beginning of the input buffer.
-// Arguments:
-// - inRecords - Records to write to buffer.
-// Return Value:
-// - The number of events written to the buffer.
-// Note:
-// - The console lock must be held when calling this routine.
-size_t InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
-{
-    LOG_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
-    if (inRecords.empty())
-    {
-        return STATUS_SUCCESS;
-    }
-    // read all of the records out of the buffer, then write the
-    // prepend ones, then write the original set. We need to do it
-    // this way to handle any coalescing that might occur.
-
-    // get all of the existing records, "emptying" the buffer
-    std::deque<INPUT_RECORD> existingStorage;
-    existingStorage.swap(_storage);
-
-    // write the prepend records
-    size_t prependEventsWritten;
-    bool setWaitEvent;
-    _WriteBuffer(inRecords, prependEventsWritten, setWaitEvent);
-
-    // write all previously existing records
-    size_t eventsWritten;
-    _WriteBuffer(existingStorage, eventsWritten, setWaitEvent);
-    if (setWaitEvent)
-    {
-        SetEvent(InputWaitEvent);
-    }
-    WakeUpReadersWaitingForData();
-    return prependEventsWritten;
-}
-
-// Routine Description:
-// - Writes records to the input buffer. Wakes up any readers that are
-// waiting for additional input events.
-// Arguments:
-// - pInputRecord - Buffer to write from.
-// - cInputRecords - On input, number of events to write.
-// Return Value:
-// - The number of events that were written to input buffer.
-// Note:
-// - The console lock must be held when calling this routine.
-DWORD InputBuffer::WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords)
-{
-    // change to a deque
-    std::deque<INPUT_RECORD> inRecords;
-    for (size_t i = 0; i < cInputRecords; ++i)
-    {
-        inRecords.push_back(pInputRecord[i]);
-    }
-    size_t EventsWritten = WriteInputBuffer(inRecords);
-    DWORD result;
-    LOG_IF_FAILED(SIZETToDWord(EventsWritten, &result));
-    return result;
-}
-
-// Routine Description:
-// - Writes records to the input buffer. Wakes up any readers that are
-// waiting for additional input events.
-// Arguments:
-// - inRecords - records to store in the buffer.
-// Return Value:
-// - The number of events that were written to input buffer.
-// Note:
-// - The console lock must be held when calling this routine.
-size_t InputBuffer::WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
-{
-    LOG_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
-    if (inRecords.empty())
-    {
-        return 0;
-    }
-
-    // Write to buffer.
-    size_t EventsWritten;
-    bool SetWaitEvent;
-    LOG_IF_FAILED(_WriteBuffer(inRecords, EventsWritten, SetWaitEvent));
-
-    if (SetWaitEvent)
-    {
-        SetEvent(InputWaitEvent);
-    }
-
-    // Alert any writers waiting for space.
-    WakeUpReadersWaitingForData();
-    return EventsWritten;
-}
-
-// Routine Description:
-// - Wakes up readers waiting for data to read.
-// Arguments:
-// - None
-// Return Value:
-// - None
-void InputBuffer::WakeUpReadersWaitingForData()
-{
-    this->WaitQueue.NotifyWaiters(false);
-}
-
-// Routine Description:
-// - Wakes up any readers waiting for data when a ctrl-c or ctrl-break is input.
-// Arguments:
-// - Flag - Indicates reason to terminate the readers.
-// Return Value:
-// - None
-void InputBuffer::TerminateRead(_In_ WaitTerminationReason Flag)
-{
-    WaitQueue.NotifyWaiters(true, Flag);
 }
