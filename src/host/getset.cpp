@@ -66,8 +66,8 @@ HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(_In_ INPUT_INFORMATION* c
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    // TODO: MSFT: 9574827 - Should this have a result code? It's void.
-    pContext->GetNumberOfReadyEvents(pEvents);
+    size_t readyEventCount = pContext->GetNumberOfReadyEvents();
+    RETURN_IF_FAILED(SizeTToULong(readyEventCount, pEvents));
 
     return S_OK;
 }

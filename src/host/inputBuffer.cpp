@@ -9,6 +9,10 @@
 #include "dbcs.h"
 #include "stream.h"
 
+#include <algorithm>
+
+#define INPUT_BUFFER_DEFAULT_INPUT_MODE (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT)
+
 // Routine Description:
 // - This routine creates an input buffer.  It allocates the circular buffer and initializes the information fields.
 // Arguments:
@@ -44,7 +48,7 @@ INPUT_INFORMATION::INPUT_INFORMATION(_In_ ULONG cEvents)
 
     // initialize buffer header
     this->InputBufferSize = cEvents;
-    this->InputMode = ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT;
+    this->InputMode = INPUT_BUFFER_DEFAULT_INPUT_MODE;
     this->First = (ULONG_PTR) this->InputBuffer;
     this->In = (ULONG_PTR) this->InputBuffer;
     this->Out = (ULONG_PTR) this->InputBuffer;
@@ -69,9 +73,8 @@ void INPUT_INFORMATION::ReinitializeInputBuffer()
 {
     ResetEvent(this->InputWaitEvent);
 
-    this->InputMode = ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT;
-    this->In = (ULONG_PTR) this->InputBuffer;
-    this->Out = (ULONG_PTR) this->InputBuffer;
+    this->InputMode = INPUT_BUFFER_DEFAULT_INPUT_MODE;
+    _storage.clear();
 }
 
 // Routine Description:
@@ -91,93 +94,39 @@ INPUT_INFORMATION::~INPUT_INFORMATION()
 // Routine Description:
 // - This routine returns the number of events in the input buffer.
 // Arguments:
-// - pcEvents - On output contains the number of events.
+// - None
 // Return Value:
+// The number of events currently in the input buffer.
 // Note:
 // - The console lock must be held when calling this routine.
-void INPUT_INFORMATION::GetNumberOfReadyEvents(_Out_ ULONG * const pcEvents)
+size_t INPUT_INFORMATION::GetNumberOfReadyEvents()
 {
-    if (this->In < this->Out)
-    {
-        *pcEvents = (ULONG)(this->Last - this->Out);
-        *pcEvents += (ULONG)(this->In - this->First);
-    }
-    else
-    {
-        *pcEvents = (ULONG)(this->In - this->Out);
-    }
-
-    *pcEvents /= sizeof(INPUT_RECORD);
+    return _storage.size();
 }
 
 // Routine Description:
 // - This routine removes all but the key events from the buffer.
 // Arguments:
 // Return Value:
+// - S_OK on success, other HRESULTS otherwise.
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS INPUT_INFORMATION::FlushAllButKeys()
+HRESULT INPUT_INFORMATION::FlushAllButKeys()
 {
-    if (this->In != this->Out)
+    try
     {
-        ULONG BufferSize;
-        // Allocate memory for temp buffer.
-
-        // TODO: MSFT:8805366 use hresults, fix DWordMult hiding
-        // non-overflow errors
-        if (FAILED(DWordMult(sizeof(INPUT_RECORD), this->InputBufferSize + 1, &BufferSize)))
+        std::deque<INPUT_RECORD> keyRecords;
+        for(auto it = _storage.begin(); it != _storage.end(); ++it)
         {
-            return STATUS_INTEGER_OVERFLOW;
-        }
-
-        PINPUT_RECORD TmpInputBuffer = (PINPUT_RECORD) new BYTE[BufferSize];
-        if (TmpInputBuffer == nullptr)
-        {
-            return STATUS_NO_MEMORY;
-        }
-        PINPUT_RECORD const TmpInputBufferPtr = TmpInputBuffer;
-
-        // copy input buffer. let ReadBuffer do any compaction work.
-        ULONG NumberOfEventsRead;
-        BOOL Dummy;
-        NTSTATUS Status = this->ReadBuffer(TmpInputBuffer, this->InputBufferSize, &NumberOfEventsRead, TRUE, FALSE, &Dummy, TRUE);
-
-        if (!NT_SUCCESS(Status))
-        {
-            delete[] TmpInputBuffer;
-            return Status;
-        }
-
-        this->Out = (ULONG_PTR) this->InputBuffer;
-        PINPUT_RECORD InPtr = this->InputBuffer;
-        for (ULONG i = 0; i < NumberOfEventsRead; i++)
-        {
-            // Prevent running off the end of the buffer even though ReadBuffer will surely make this shorter than when we started.
-            // We have to leave one free segment at the end for the In to point to when we're done.
-            if (InPtr >= (this->InputBuffer + this->InputBufferSize - 1))
+            if (it->EventType == KEY_EVENT)
             {
-                break;
+                keyRecords.push_back(*it);
             }
-
-            if (TmpInputBuffer->EventType == KEY_EVENT)
-            {
-                *InPtr = *TmpInputBuffer;
-                InPtr++;
-            }
-
-            TmpInputBuffer++;
         }
-
-        this->In = (ULONG_PTR) InPtr;
-        if (this->In == this->Out)
-        {
-            ResetEvent(this->InputWaitEvent);
-        }
-
-        delete[] TmpInputBufferPtr;
+        _storage.swap(keyRecords);
+        return S_OK;
     }
-
-    return STATUS_SUCCESS;
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -188,74 +137,11 @@ NTSTATUS INPUT_INFORMATION::FlushAllButKeys()
 // - The console lock must be held when calling this routine.
 void INPUT_INFORMATION::FlushInputBuffer()
 {
-    this->In = (ULONG_PTR) this->InputBuffer;
-    this->Out = (ULONG_PTR) this->InputBuffer;
-    ResetEvent(this->InputWaitEvent);
+    _storage.clear();
+    ResetEvent(InputWaitEvent);
 }
 
-// Routine Description:
-// - This routine resizes the input buffer.
-// Arguments:
-// - InputInformation - Pointer to input buffer information structure.
-// - Size - New size in number of events.
-// Return Value:
-// Note:
-// - The console lock must be held when calling this routine.
-NTSTATUS INPUT_INFORMATION::SetInputBufferSize(_In_ ULONG Size)
-{
-#if DBG
-    ULONG_PTR NumberOfEvents;
-    if (this->In < this->Out)
-    {
-        NumberOfEvents = this->Last - this->Out;
-        NumberOfEvents += this->In - this->First;
-    }
-    else
-    {
-        NumberOfEvents = this->In - this->Out;
-    }
-    NumberOfEvents /= sizeof(INPUT_RECORD);
-#endif
-    ASSERT(Size > this->InputBufferSize);
-
-    size_t BufferSize;
-    // Allocate memory for new input buffer.
-    if (FAILED(SizeTMult(sizeof(INPUT_RECORD), Size + 1, &BufferSize)))
-    {
-        return STATUS_INTEGER_OVERFLOW;
-    }
-
-    PINPUT_RECORD const InputBuffer = (PINPUT_RECORD) new BYTE[BufferSize];
-    if (InputBuffer == nullptr)
-    {
-        return STATUS_NO_MEMORY;
-    }
-
-    // Copy old input buffer. Let the ReadBuffer do any compaction work.
-    ULONG NumberOfEventsRead;
-    BOOL Dummy;
-    NTSTATUS Status = this->ReadBuffer(InputBuffer, Size, &NumberOfEventsRead, TRUE, FALSE, &Dummy, TRUE);
-
-    if (!NT_SUCCESS(Status))
-    {
-        delete[] InputBuffer;
-        return Status;
-    }
-    this->Out = (ULONG_PTR) InputBuffer;
-    this->In = (ULONG_PTR) InputBuffer + sizeof(INPUT_RECORD) * NumberOfEventsRead;
-
-    // adjust pointers
-    this->First = (ULONG_PTR) InputBuffer;
-    this->Last = (ULONG_PTR) InputBuffer + BufferSize;
-
-    // free old input buffer
-    delete[] this->InputBuffer;
-    this->InputBufferSize = Size;
-    this->InputBuffer = InputBuffer;
-
-    return Status;
-}
-
+// TODO docs
 // Routine Description:
 // - This routine reads from a buffer.  It does the actual circular buffer manipulation.
 // Arguments:
@@ -268,306 +154,119 @@ NTSTATUS INPUT_INFORMATION::SetInputBufferSize(_In_ ULONG Size)
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS
-INPUT_INFORMATION::ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
-                              _In_ ULONG Length,
-                              _Out_ PULONG EventsRead,
-                              _In_ BOOL Peek,
-                              _In_ BOOL StreamRead,
-                              _Out_ PBOOL ResetWaitEvent,
-                             _In_ BOOLEAN Unicode)
+NTSTATUS INPUT_INFORMATION::ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
+                                       _In_ ULONG Length,
+                                       _Out_ PULONG EventsRead,
+                                       _In_ BOOL Peek,
+                                       _In_ BOOL StreamRead,
+                                       _Out_ PBOOL ResetWaitEvent,
+                                       _In_ BOOLEAN Unicode)
 {
-    *ResetWaitEvent = FALSE;
+    std::deque<INPUT_RECORD> outRecords;
+    size_t eventsRead;
+    bool resetWaitEvent;
 
-    // If StreamRead, just return one record. If repeat count is greater than
-    // one, just decrement it. The repeat count is > 1 if more than one event
-    // of the same type was merged. We need to expand them back to individual
-    // events here.
-    if (StreamRead && ((PINPUT_RECORD) (this->Out))->EventType == KEY_EVENT)
+    // call inner func
+    LOG_IF_FAILED(ReadBuffer(outRecords,
+                             Length,
+                             eventsRead,
+                             !!Peek,
+                             !!StreamRead,
+                             resetWaitEvent,
+                             !!Unicode));
+
+    // move data back to original vars
+    *ResetWaitEvent = !!resetWaitEvent;
+    LOG_IF_FAILED(SizeTToULong(eventsRead, EventsRead));
+
+    // copy events over to the array
+    ASSERT(outRecords.size() < Length);
+    size_t currentIndex = 0;
+    while (!outRecords.empty())
     {
-
-        ASSERT(Length == 1);
-        ASSERT(this->In != this->Out);
-        memmove((PBYTE) Buffer, (PBYTE) this->Out, sizeof(INPUT_RECORD));
-        this->Out += sizeof(INPUT_RECORD);
-        if (this->Last == this->Out)
-        {
-            this->Out = this->First;
-        }
-
-        if (this->Out == this->In)
-        {
-            *ResetWaitEvent = TRUE;
-        }
-
-        *EventsRead = 1;
-        return STATUS_SUCCESS;
+        Buffer[currentIndex] = outRecords.front();
+        outRecords.pop_front();
+        ++currentIndex;
     }
 
-    ULONG BufferLengthInBytes = Length * sizeof(INPUT_RECORD);
-    ULONG TransferLength, OldTransferLength;
-    ULONG Length2;
-    PINPUT_RECORD BufferRecords = nullptr;
-    PINPUT_RECORD QueueRecords;
-    WCHAR UniChar;
-    WORD EventType;
+    return STATUS_SUCCESS;
 
-    // if in > out, buffer looks like this:
-    //
-    //         out     in
-    //    ______ _____________
-    //   |      |      |      |
-    //   | free | data | free |
-    //   |______|______|______|
-    //
-    // we transfer the requested number of events or the amount in the buffer
-    if (this->In > this->Out)
+}
+
+// TODO docs
+HRESULT INPUT_INFORMATION::ReadBuffer(std::deque<INPUT_RECORD>& outRecords,
+                                      const size_t readCount,
+                                      size_t& eventsRead,
+                                      const bool peek,
+                                      const bool streamRead,
+                                      bool& resetWaitEvent,
+                                      const bool unicode)
+{
+    try
     {
-        if ((this->In - this->Out) > BufferLengthInBytes)
-        {
-            TransferLength = BufferLengthInBytes;
-        }
-        else
-        {
-            TransferLength = (ULONG) (this->In - this->Out);
-        }
-        if (!Unicode)
-        {
-            BufferLengthInBytes = 0;
-            OldTransferLength = TransferLength / sizeof(INPUT_RECORD);
-            BufferRecords = (PINPUT_RECORD) Buffer;
-            QueueRecords = (PINPUT_RECORD) this->Out;
+        resetWaitEvent = false;
 
-            while (BufferLengthInBytes < Length && OldTransferLength)
+        // TODO is this still necessary? does streamRead actually do anything?
+        // legacy comment below:
+        //
+        // If StreamRead, just return one record. If repeat count is greater than
+        // one, just decrement it. The repeat count is > 1 if more than one event
+        // of the same type was merged. We need to expand them back to individual
+        // events here.
+        if (streamRead && _storage.back().EventType == KEY_EVENT)
+        {
+            ASSERT(readCount == 1);
+            ASSERT(!_storage.empty());
+            outRecords.push_back(_storage.front());
+            _storage.pop_front();
+            if (_storage.empty())
             {
-                UniChar = QueueRecords->Event.KeyEvent.uChar.UnicodeChar;
-                EventType = QueueRecords->EventType;
-                *BufferRecords++ = *QueueRecords++;
-                if (EventType == KEY_EVENT)
-                {
-                    if (IsCharFullWidth(UniChar))
-                    {
-                        BufferLengthInBytes += 2;
-                    }
-                    else
-                    {
-                        BufferLengthInBytes++;
-                    }
-                }
-                else
-                {
-                    BufferLengthInBytes++;
-                }
-
-                OldTransferLength--;
+                resetWaitEvent = true;
             }
-
-            ASSERT(TransferLength >= OldTransferLength * sizeof(INPUT_RECORD));
-            TransferLength -= OldTransferLength * sizeof(INPUT_RECORD);
-        }
-        else
-        {
-            memmove((PBYTE) Buffer, (PBYTE) this->Out, TransferLength);
-        }
-
-        *EventsRead = TransferLength / sizeof(INPUT_RECORD);
-        ASSERT(*EventsRead <= Length);
-
-        if (!Peek)
-        {
-            this->Out += TransferLength;
-            ASSERT(this->Out <= this->Last);
-        }
-
-        if (this->Out == this->In)
-        {
-            *ResetWaitEvent = TRUE;
-        }
-
-        return STATUS_SUCCESS;
-    }
-
-    // if out > in, buffer looks like this:
-    //
-    //         in     out
-    //    ______ _____________
-    //   |      |      |      |
-    //   | data | free | data |
-    //   |______|______|______|
-    //
-    // we read from the out pointer to the end of the buffer then from the
-    // beginning of the buffer, until we hit the in pointer or enough bytes
-    // are read.
-    else
-    {
-        if ((this->Last - this->Out) > BufferLengthInBytes)
-        {
-            TransferLength = BufferLengthInBytes;
-        }
-        else
-        {
-            TransferLength = (ULONG) (this->Last - this->Out);
-        }
-
-        if (!Unicode)
-        {
-            BufferLengthInBytes = 0;
-            OldTransferLength = TransferLength / sizeof(INPUT_RECORD);
-            BufferRecords = (PINPUT_RECORD) Buffer;
-            QueueRecords = (PINPUT_RECORD) this->Out;
-
-            while (BufferLengthInBytes < Length && OldTransferLength)
-            {
-                UniChar = QueueRecords->Event.KeyEvent.uChar.UnicodeChar;
-                EventType = QueueRecords->EventType;
-                *BufferRecords++ = *QueueRecords++;
-                if (EventType == KEY_EVENT)
-                {
-                    if (IsCharFullWidth(UniChar))
-                    {
-                        BufferLengthInBytes += 2;
-                    }
-                    else
-                    {
-                        BufferLengthInBytes++;
-                    }
-                }
-                else
-                {
-                    BufferLengthInBytes++;
-                }
-
-                OldTransferLength--;
-            }
-
-            ASSERT(TransferLength >= OldTransferLength * sizeof(INPUT_RECORD));
-            TransferLength -= OldTransferLength * sizeof(INPUT_RECORD);
-        }
-        else
-        {
-            memmove((PBYTE) Buffer, (PBYTE) this->Out, TransferLength);
-        }
-
-        *EventsRead = TransferLength / sizeof(INPUT_RECORD);
-        ASSERT(*EventsRead <= Length);
-
-        if (!Peek)
-        {
-            this->Out += TransferLength;
-            ASSERT(this->Out <= this->Last);
-            if (this->Out == this->Last)
-            {
-                this->Out = this->First;
-            }
-        }
-
-        if (!Unicode)
-        {
-            if (BufferLengthInBytes >= Length)
-            {
-                if (this->Out == this->In)
-                {
-                    *ResetWaitEvent = TRUE;
-                }
-                return STATUS_SUCCESS;
-            }
-        }
-        else if (*EventsRead == Length)
-        {
-            if (this->Out == this->In)
-            {
-                *ResetWaitEvent = TRUE;
-            }
-
+            eventsRead = 1;
             return STATUS_SUCCESS;
         }
 
-        // hit end of buffer, read from beginning
-        OldTransferLength = TransferLength;
-        Length2 = Length;
-        if (!Unicode)
+        // we need another var to keep track of how many we've read
+        // because dbcs records count for two when we aren't doing a
+        // unicode read but the eventsRead count should return the number
+        // of events actually put into outRecords.
+        size_t virtualReadCount = 0;
+        while (!_storage.empty() && virtualReadCount < readCount)
         {
-            ASSERT(Length > BufferLengthInBytes);
-            Length -= BufferLengthInBytes;
-            if (Length == 0)
+            outRecords.push_back(_storage.front());
+            ++virtualReadCount;
+            if (!unicode)
             {
-                if (this->Out == this->In)
+                if (_storage.front().EventType == KEY_EVENT &&
+                    IsCharFullWidth(_storage.front().Event.KeyEvent.uChar.UnicodeChar))
                 {
-                    *ResetWaitEvent = TRUE;
+                    ++virtualReadCount;
                 }
-                return STATUS_SUCCESS;
             }
-            BufferLengthInBytes = Length * sizeof(INPUT_RECORD);
+            _storage.pop_front();
+        }
 
-            if ((this->In - this->First) > BufferLengthInBytes)
+        // the amount of events that were actually read
+        eventsRead = outRecords.size();
+
+        // signal if we emptied the buffer
+        if (_storage.empty())
+        {
+            resetWaitEvent = true;
+        }
+
+        // copy the events back if we were supposed to peek
+        if (peek)
+        {
+            for (auto it = outRecords.crbegin(); it != outRecords.crend(); ++it)
             {
-                TransferLength = BufferLengthInBytes;
-            }
-            else
-            {
-                TransferLength = (ULONG) (this->In - this->First);
+                _storage.push_front(*it);
             }
         }
-        else if ((this->In - this->First) > (BufferLengthInBytes - OldTransferLength))
-        {
-            TransferLength = BufferLengthInBytes - OldTransferLength;
-        }
-        else
-        {
-            TransferLength = (ULONG) (this->In - this->First);
-        }
-        if (!Unicode)
-        {
-            BufferLengthInBytes = 0;
-            OldTransferLength = TransferLength / sizeof(INPUT_RECORD);
-            QueueRecords = (PINPUT_RECORD) this->First;
-
-            while (BufferLengthInBytes < Length && OldTransferLength)
-            {
-                UniChar = QueueRecords->Event.KeyEvent.uChar.UnicodeChar;
-                EventType = QueueRecords->EventType;
-                *BufferRecords++ = *QueueRecords++;
-                if (EventType == KEY_EVENT)
-                {
-                    if (IsCharFullWidth(UniChar))
-                    {
-                        BufferLengthInBytes += 2;
-                    }
-                    else
-                    {
-                        BufferLengthInBytes++;
-                    }
-                }
-                else
-                {
-                    BufferLengthInBytes++;
-                }
-                OldTransferLength--;
-            }
-
-            ASSERT(TransferLength >= OldTransferLength * sizeof(INPUT_RECORD));
-            TransferLength -= OldTransferLength * sizeof(INPUT_RECORD);
-        }
-        else
-        {
-            memmove((PBYTE) Buffer + OldTransferLength, (PBYTE) this->First, TransferLength);
-        }
-
-        *EventsRead += TransferLength / sizeof(INPUT_RECORD);
-        ASSERT(*EventsRead <= Length2);
-
-        if (!Peek)
-        {
-            this->Out = this->First + TransferLength;
-        }
-
-        if (this->Out == this->In)
-        {
-            *ResetWaitEvent = TRUE;
-        }
-
-        return STATUS_SUCCESS;
+        return S_OK;
     }
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -601,7 +300,7 @@ NTSTATUS INPUT_INFORMATION::ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECOR
                                             _In_ BOOLEAN const fUnicode)
 {
     NTSTATUS Status;
-    if (this->In == this->Out)
+    if (_storage.empty())
     {
         if (!fWaitForData)
         {
@@ -627,16 +326,74 @@ NTSTATUS INPUT_INFORMATION::ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECOR
     // read from buffer
     ULONG EventsRead;
     BOOL ResetWaitEvent;
-    Status = this->ReadBuffer(pInputRecord, *pcLength, &EventsRead, fPeek, fStreamRead, &ResetWaitEvent, fUnicode);
+    Status = ReadBuffer(pInputRecord, *pcLength, &EventsRead, fPeek, fStreamRead, &ResetWaitEvent, fUnicode);
     if (ResetWaitEvent)
     {
-        ResetEvent(this->InputWaitEvent);
+        ResetEvent(InputWaitEvent);
     }
 
     *pcLength = EventsRead;
     return Status;
 }
 
+bool INPUT_INFORMATION::_CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRecords)
+{
+    _ASSERT(inRecords.size() == 1);
+    const INPUT_RECORD& firstInRecord = inRecords.front();
+    INPUT_RECORD& lastStoredRecord = _storage.back();
+    if (firstInRecord.EventType == MOUSE_EVENT &&
+        firstInRecord.Event.MouseEvent.dwEventFlags == MOUSE_MOVED &&
+        lastStoredRecord.EventType == MOUSE_EVENT &&
+        lastStoredRecord.Event.MouseEvent.dwEventFlags == MOUSE_MOVED)
+    {
+        lastStoredRecord.Event.MouseEvent.dwMousePosition.X = firstInRecord.Event.MouseEvent.dwMousePosition.X;
+        lastStoredRecord.Event.MouseEvent.dwMousePosition.Y = firstInRecord.Event.MouseEvent.dwMousePosition.Y;
+        inRecords.pop_front();
+        return true;
+    }
+    return false;
+}
+
+bool INPUT_INFORMATION::_CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>& inRecords)
+{
+    _ASSERT(inRecords.size() == 1);
+    const INPUT_RECORD& firstInRecord = inRecords.front();
+    INPUT_RECORD& lastStoredRecord = _storage.back();
+    // both records need to be key down events
+    if (firstInRecord.EventType == KEY_EVENT &&
+        firstInRecord.Event.KeyEvent.bKeyDown &&
+        lastStoredRecord.EventType == KEY_EVENT &&
+        lastStoredRecord.Event.KeyEvent.bKeyDown &&
+        !IsCharFullWidth(firstInRecord.Event.KeyEvent.uChar.UnicodeChar))
+    {
+        const KEY_EVENT_RECORD inKeyEventRecord = firstInRecord.Event.KeyEvent;
+        const KEY_EVENT_RECORD lastKeyEventRecord = lastStoredRecord.Event.KeyEvent;
+        bool sameKey = false;
+        // ime key check
+        if (IsFlagSet(inKeyEventRecord.dwControlKeyState, NLS_IME_CONVERSION) &&
+            inKeyEventRecord.uChar.UnicodeChar == lastKeyEventRecord.uChar.UnicodeChar &&
+            inKeyEventRecord.dwControlKeyState == lastKeyEventRecord.dwControlKeyState)
+        {
+            sameKey = true;
+        }
+        // other key events check
+        else if (inKeyEventRecord.wVirtualScanCode == lastKeyEventRecord.wVirtualScanCode &&
+                 inKeyEventRecord.uChar.UnicodeChar == lastKeyEventRecord.uChar.UnicodeChar &&
+                 inKeyEventRecord.dwControlKeyState == lastKeyEventRecord.dwControlKeyState)
+        {
+            sameKey = true;
+        }
+        if (sameKey)
+        {
+            lastStoredRecord.Event.KeyEvent.wRepeatCount += firstInRecord.Event.KeyEvent.wRepeatCount;
+            inRecords.pop_front();
+            return true;
+        }
+    }
+    return false;
+}
+
+// TODO redo docs
 // Routine Description:
 // - This routine writes to a buffer.  It does the actual circular buffer manipulation.
 // Arguments:
@@ -648,193 +405,51 @@ NTSTATUS INPUT_INFORMATION::ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECOR
 // - ERROR_BROKEN_PIPE - no more readers.
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS INPUT_INFORMATION::WriteBuffer(_In_ PVOID Buffer, _In_ ULONG Length, _Out_ PULONG EventsWritten, _Out_ PBOOL SetWaitEvent)
+HRESULT INPUT_INFORMATION::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
+                                        _Out_ size_t& eventsWritten,
+                                        _Out_ bool& setWaitEvent)
 {
-    NTSTATUS Status;
-    ULONG TransferLength;
-    ULONG BufferLengthInBytes;
-
-    *SetWaitEvent = FALSE;
-
-    // windows sends a mouse_move message each time a window is updated.
-    // coalesce these.
-    if (Length == 1 && this->Out != this->In)
+    try
     {
-        PINPUT_RECORD InputEvent = (PINPUT_RECORD) Buffer;
-
-        // this bit coalesces mouse moved events (updating the (x, y)
-        // positions of the event already in the buffer)
-        if (InputEvent->EventType == MOUSE_EVENT && InputEvent->Event.MouseEvent.dwEventFlags == MOUSE_MOVED)
+        eventsWritten = 0;
+        setWaitEvent = false;
+        bool initiallyEmptyQueue = _storage.empty();
+        if (inRecords.size() == 1 && !_storage.empty())
         {
-            PINPUT_RECORD LastInputEvent;
-
-            if (this->In == this->First)
+            bool coalesced = false;
+            // this looks kinda weird but we don't want to coalesce a
+            // mouse event and then try to coalesce a key event right after.
+            if (_CoalesceMouseMovedEvents(inRecords))
             {
-                LastInputEvent = (PINPUT_RECORD) (this->Last - sizeof(INPUT_RECORD));
+                coalesced = true;
             }
-            else
+            else if (_CoalesceRepeatedKeyPressEvents(inRecords))
             {
-                LastInputEvent = (PINPUT_RECORD) (this->In - sizeof(INPUT_RECORD));
+                coalesced = true;
             }
-            if (LastInputEvent->EventType == MOUSE_EVENT && LastInputEvent->Event.MouseEvent.dwEventFlags == MOUSE_MOVED)
+            if (coalesced)
             {
-                LastInputEvent->Event.MouseEvent.dwMousePosition.X = InputEvent->Event.MouseEvent.dwMousePosition.X;
-                LastInputEvent->Event.MouseEvent.dwMousePosition.Y = InputEvent->Event.MouseEvent.dwMousePosition.Y;
-                *EventsWritten = 1;
-                return STATUS_SUCCESS;
+                eventsWritten = 1;
+                return S_OK;
             }
         }
-        // this bit coalesces key events (upping the repeat count of
-        // the event already in the buffer)
-        else if (InputEvent->EventType == KEY_EVENT && InputEvent->Event.KeyEvent.bKeyDown)
+        // add all input records to the storage queue
+        while (!inRecords.empty())
         {
-            PINPUT_RECORD LastInputEvent;
-            if (this->In == this->First)
-            {
-                LastInputEvent = (PINPUT_RECORD) (this->Last - sizeof(INPUT_RECORD));
-            }
-            else
-            {
-                LastInputEvent = (PINPUT_RECORD) (this->In - sizeof(INPUT_RECORD));
-            }
-
-            // don't coalesce the key event if it's a full width char
-            if (IsCharFullWidth(InputEvent->Event.KeyEvent.uChar.UnicodeChar))
-            {
-                /* do nothing */ ;
-            }
-            else if (InputEvent->Event.KeyEvent.dwControlKeyState & NLS_IME_CONVERSION)
-            {
-                if (LastInputEvent->EventType == KEY_EVENT &&
-                    LastInputEvent->Event.KeyEvent.bKeyDown &&
-                    (LastInputEvent->Event.KeyEvent.uChar.UnicodeChar == InputEvent->Event.KeyEvent.uChar.UnicodeChar) &&
-                    (LastInputEvent->Event.KeyEvent.dwControlKeyState == InputEvent->Event.KeyEvent.dwControlKeyState))
-                {
-                    LastInputEvent->Event.KeyEvent.wRepeatCount += InputEvent->Event.KeyEvent.wRepeatCount;
-                    *EventsWritten = 1;
-                    return STATUS_SUCCESS;
-                }
-            }
-            // this one checks that the scan code is the same and the
-            // one above doesn't.
-            else if (LastInputEvent->EventType == KEY_EVENT &&
-                     LastInputEvent->Event.KeyEvent.bKeyDown &&
-                     (LastInputEvent->Event.KeyEvent.wVirtualScanCode ==  InputEvent->Event.KeyEvent.wVirtualScanCode) && // scancode same
-                     (LastInputEvent->Event.KeyEvent.uChar.UnicodeChar == InputEvent->Event.KeyEvent.uChar.UnicodeChar) && // character same
-                     (LastInputEvent->Event.KeyEvent.dwControlKeyState == InputEvent->Event.KeyEvent.dwControlKeyState)) // ctrl/alt/shift state same
-            {
-                LastInputEvent->Event.KeyEvent.wRepeatCount += InputEvent->Event.KeyEvent.wRepeatCount;
-                *EventsWritten = 1;
-                return STATUS_SUCCESS;
-            }
+            _storage.push_back(inRecords.front());
+            inRecords.pop_front();
+            ++eventsWritten;
         }
+        if (initiallyEmptyQueue && !_storage.empty())
+        {
+            setWaitEvent = true;
+        }
+        return S_OK;
     }
-
-    BufferLengthInBytes = Length * sizeof(INPUT_RECORD);
-    *EventsWritten = 0;
-    while (*EventsWritten < Length)
-    {
-
-        // if out > in, buffer looks like this:
-        //
-        //             in     out
-        //        ______ _____________
-        //       |      |      |      |
-        //       | data | free | data |
-        //       |______|______|______|
-        //
-        // we can write from in to out-1
-        if (this->Out > this->In)
-        {
-            TransferLength = BufferLengthInBytes;
-            // check if we need to grow the input buffer size
-            if ((this->Out - this->In - sizeof(INPUT_RECORD)) < BufferLengthInBytes)
-            {
-                Status = this->SetInputBufferSize(this->InputBufferSize + Length + INPUT_BUFFER_SIZE_INCREMENT);
-                if (!NT_SUCCESS(Status))
-                {
-                    RIPMSG1(RIP_WARNING, "Couldn't grow input buffer, Status == 0x%x", Status);
-                    TransferLength = (ULONG) (this->Out - this->In - sizeof(INPUT_RECORD));
-                    if (TransferLength == 0)
-                    {
-                        return Status;
-                    }
-                }
-                else
-                {
-                    goto OutPath;   // after resizing, in > out
-                }
-            }
-            memmove((PBYTE) this->In, (PBYTE) Buffer, TransferLength);
-            Buffer = (PVOID) (((PBYTE) Buffer) + TransferLength);
-            *EventsWritten += TransferLength / sizeof(INPUT_RECORD);
-            BufferLengthInBytes -= TransferLength;
-            this->In += TransferLength;
-        }
-
-        // if in >= out, buffer looks like this:
-        //
-        //             out     in
-        //        ______ _____________
-        //       |      |      |      |
-        //       | free | data | free |
-        //       |______|______|______|
-        //
-        // we write from the in pointer to the end of the buffer then from the
-        // beginning of the buffer, until we hit the out pointer or enough bytes
-        // are written.
-        else
-        {
-            // check if we started out with an empty buffer
-            if (this->Out == this->In)
-            {
-                *SetWaitEvent = TRUE;
-            }
-OutPath:
-            if ((this->Last - this->In) > BufferLengthInBytes)
-            {
-                TransferLength = BufferLengthInBytes;
-            }
-            else
-            {
-                // buffer is totally full
-                if (this->First == this->Out && this->In == (this->Last - sizeof(INPUT_RECORD)))
-                {
-                    TransferLength = BufferLengthInBytes;
-                    Status = this->SetInputBufferSize(this->InputBufferSize + Length + INPUT_BUFFER_SIZE_INCREMENT);
-                    if (!NT_SUCCESS(Status))
-                    {
-                        RIPMSG1(RIP_WARNING, "Couldn't grow input buffer, Status == 0x%x", Status);
-                        return Status;
-                    }
-                }
-                else
-                {
-                    TransferLength = (ULONG) (this->Last - this->In);
-                    if (this->First == this->Out)
-                    {
-                        TransferLength -= sizeof(INPUT_RECORD);
-                    }
-                }
-            }
-            memmove((PBYTE) this->In, (PBYTE) Buffer, TransferLength);
-            Buffer = (PVOID) (((PBYTE) Buffer) + TransferLength);
-            *EventsWritten += TransferLength / sizeof(INPUT_RECORD);
-            BufferLengthInBytes -= TransferLength;
-            this->In += TransferLength;
-            if (this->In == this->Last)
-            {
-                this->In = this->First;
-            }
-        }
-        if (TransferLength == 0)
-        {
-            ASSERT(FALSE);
-        }
-    }
-    return STATUS_SUCCESS;
+    CATCH_RETURN();
 }
 
+// TODO docs
 // Routine Description:
 // - This routine processes special characters in the input stream.
 // Arguments:
@@ -845,38 +460,38 @@ OutPath:
 // - Number of events to write after special characters have been stripped.
 // Note:
 // - The console lock must be held when calling this routine.
-DWORD INPUT_INFORMATION::PreprocessInput(_In_ PINPUT_RECORD InputEvent, _In_ DWORD nLength)
+HRESULT INPUT_INFORMATION::_HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD>& records)
 {
-    for (ULONG NumEvents = nLength; NumEvents != 0; NumEvents--)
+    try
     {
-        if (InputEvent->EventType == KEY_EVENT && InputEvent->Event.KeyEvent.bKeyDown)
+        std::deque<INPUT_RECORD> outRecords;
+        for (size_t i = 0; i < records.size(); ++i)
         {
-            // if output is suspended, any keyboard input releases it.
-            if ((g_ciConsoleInformation.Flags & CONSOLE_SUSPENDED) && !IsSystemKey(InputEvent->Event.KeyEvent.wVirtualKeyCode))
+            INPUT_RECORD currEvent = records[i];
+            if (currEvent.EventType == KEY_EVENT && currEvent.Event.KeyEvent.bKeyDown)
             {
-
-                UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
-                memmove(InputEvent, InputEvent + 1, (NumEvents - 1) * sizeof(INPUT_RECORD));
-                nLength--;
-                continue;
+                if (IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_SUSPENDED) &&
+                    !IsSystemKey(currEvent.Event.KeyEvent.wVirtualKeyCode))
+                {
+                    UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
+                    continue;
+                }
+                else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
+                        currEvent.Event.KeyEvent.wVirtualKeyCode == VK_PAUSE || IsPauseKey(&currEvent.Event.KeyEvent))
+                {
+                    SetFlag(g_ciConsoleInformation.Flags, CONSOLE_SUSPENDED);
+                    continue;
+                }
             }
-
-            // intercept control-s
-            if ((this->InputMode & ENABLE_LINE_INPUT) &&
-                (InputEvent->Event.KeyEvent.wVirtualKeyCode == VK_PAUSE || IsPauseKey(&InputEvent->Event.KeyEvent)))
-            {
-
-                g_ciConsoleInformation.Flags |= CONSOLE_OUTPUT_SUSPENDED;
-                memmove(InputEvent, InputEvent + 1, (NumEvents - 1) * sizeof(INPUT_RECORD));
-                nLength--;
-                continue;
-            }
+            outRecords.push_back(currEvent);
         }
-        InputEvent++;
+        records.swap(outRecords);
+        return S_OK;
     }
-    return nLength;
+    CATCH_RETURN();
 }
 
+// TODO docs
 // Routine Description:
 // -  This routine writes to the beginning of the input buffer.
 // Arguments:
@@ -885,70 +500,49 @@ DWORD INPUT_INFORMATION::PreprocessInput(_In_ PINPUT_RECORD InputEvent, _In_ DWO
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS INPUT_INFORMATION::PrependInputBuffer(_In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * const pcLength)
+NTSTATUS INPUT_INFORMATION::PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength)
 {
-    DWORD cInputRecords = *pcLength;
-    cInputRecords = PreprocessInput(pInputRecord, cInputRecords);
-    if (cInputRecords == 0)
+    // change to a deque
+    std::deque<INPUT_RECORD> inRecords;
+    for (size_t i = 0; i < *pcLength; ++i)
+    {
+        inRecords.push_back(pInputRecord[i]);
+    }
+    size_t eventsWritten = PrependInputBuffer(inRecords);
+
+    LOG_IF_FAILED(SIZETToDWord(eventsWritten, pcLength));
+    return STATUS_SUCCESS;
+}
+
+size_t INPUT_INFORMATION::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
+{
+    LOG_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
+    if (inRecords.empty())
     {
         return STATUS_SUCCESS;
     }
+    // read all of the records out of the buffer, then write the
+    // prepend ones, then write the original set. We need to do it
+    // this way to handle any coalescing that might occur.
 
-    ULONG NumExistingEvents;
-    this->GetNumberOfReadyEvents(&NumExistingEvents);
+    // get all of the existing records, "emptying" the buffer
+    std::deque<INPUT_RECORD> existingStorage;
+    existingStorage.swap(_storage);
 
-    PINPUT_RECORD pExistingEvents;
-    ULONG EventsRead = 0;
-    BOOL Dummy;
-    if (NumExistingEvents)
+    // write the prepend records
+    size_t prependEventsWritten;
+    bool setWaitEvent;
+    _WriteBuffer(inRecords, prependEventsWritten, setWaitEvent);
+
+    // write all previously existing records
+    size_t eventsWritten;
+    _WriteBuffer(existingStorage, eventsWritten, setWaitEvent);
+    if (setWaitEvent)
     {
-        ULONG NumBytes;
-
-        if (FAILED(ULongMult(NumExistingEvents, sizeof(INPUT_RECORD), &NumBytes)))
-        {
-            return STATUS_INTEGER_OVERFLOW;
-        }
-
-        pExistingEvents = (PINPUT_RECORD) new BYTE[NumBytes];
-        if (pExistingEvents == nullptr)
-        {
-            return STATUS_NO_MEMORY;
-        }
-
-        NTSTATUS Status = this->ReadBuffer(pExistingEvents, NumExistingEvents, &EventsRead, FALSE, FALSE, &Dummy, TRUE);
-        if (!NT_SUCCESS(Status))
-        {
-            delete[] pExistingEvents;
-            return Status;
-        }
+        SetEvent(InputWaitEvent);
     }
-    else
-    {
-        pExistingEvents = nullptr;
-    }
-
-    ULONG EventsWritten;
-    BOOL SetWaitEvent;
-    // write new info to buffer
-    this->WriteBuffer(pInputRecord, cInputRecords, &EventsWritten, &SetWaitEvent);
-
-    // Write existing info to buffer.
-    if (pExistingEvents)
-    {
-        this->WriteBuffer(pExistingEvents, EventsRead, &EventsWritten, &Dummy);
-        delete[] pExistingEvents;
-    }
-
-    if (SetWaitEvent)
-    {
-        SetEvent(this->InputWaitEvent);
-    }
-
-    // alert any writers waiting for space
-    this->WakeUpReadersWaitingForData();
-
-    *pcLength = cInputRecords;
-    return STATUS_SUCCESS;
+    WakeUpReadersWaitingForData();
+    return prependEventsWritten;
 }
 
 // Routine Description:
@@ -961,25 +555,38 @@ NTSTATUS INPUT_INFORMATION::PrependInputBuffer(_In_ PINPUT_RECORD pInputRecord, 
 // - The console lock must be held when calling this routine.
 DWORD INPUT_INFORMATION::WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords)
 {
-    cInputRecords = PreprocessInput(pInputRecord, cInputRecords);
-    if (cInputRecords == 0)
+    // change to a deque
+    std::deque<INPUT_RECORD> inRecords;
+    for (size_t i = 0; i < cInputRecords; ++i)
+    {
+        inRecords.push_back(pInputRecord[i]);
+    }
+    size_t EventsWritten = WriteInputBuffer(inRecords);
+    DWORD result;
+    LOG_IF_FAILED(SIZETToDWord(EventsWritten, &result));
+    return result;
+}
+
+size_t INPUT_INFORMATION::WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
+{
+    LOG_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
+    if (inRecords.empty())
     {
         return 0;
     }
 
     // Write to buffer.
-    ULONG EventsWritten;
-    BOOL SetWaitEvent;
-    this->WriteBuffer(pInputRecord, cInputRecords, &EventsWritten, &SetWaitEvent);
+    size_t EventsWritten;
+    bool SetWaitEvent;
+    LOG_IF_FAILED(_WriteBuffer(inRecords, EventsWritten, SetWaitEvent));
 
     if (SetWaitEvent)
     {
-        SetEvent(this->InputWaitEvent);
+        SetEvent(InputWaitEvent);
     }
 
     // Alert any writers waiting for space.
-    this->WakeUpReadersWaitingForData();
-
+    WakeUpReadersWaitingForData();
     return EventsWritten;
 }
 
