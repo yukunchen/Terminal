@@ -38,7 +38,7 @@ class InputBufferTests
 
     TEST_METHOD(CanGetNumberOfReadyEvents)
     {
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
         INPUT_RECORD record = MakeKeyEvent(true, 1, 'a', 0, 'a', 0);
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1);
@@ -51,7 +51,7 @@ class InputBufferTests
 
     TEST_METHOD(CanInsertIntoInputBufferIndividually)
     {
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             INPUT_RECORD record;
@@ -63,7 +63,7 @@ class InputBufferTests
 
     TEST_METHOD(CanBulkInsertIntoInputBuffer)
     {
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
         INPUT_RECORD records[RECORD_INSERT_COUNT] = { 0 };
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
@@ -75,7 +75,7 @@ class InputBufferTests
 
     TEST_METHOD(InputBufferCoalescesMouseEvents)
     {
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
 
         INPUT_RECORD mouseRecord;
         mouseRecord.EventType = MOUSE_EVENT;
@@ -111,7 +111,7 @@ class InputBufferTests
     {
         Log::Comment(L"The input buffer should not coalesce mouse events if more than one event is sent at a time");
 
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
         INPUT_RECORD mouseRecords[RECORD_INSERT_COUNT];
 
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
@@ -132,7 +132,7 @@ class InputBufferTests
     {
         Log::Comment(L"The input buffer should coalesce identical key events if they are send one at a time");
 
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
         INPUT_RECORD record = MakeKeyEvent(true, 1, 'a', 0, L'a', 0);
 
         // send a bunch of identical events
@@ -168,7 +168,7 @@ class InputBufferTests
     {
         Log::Comment(L"The input buffer should not coalesce key events if more than one event is sent at a time");
 
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
         INPUT_RECORD keyRecords[RECORD_INSERT_COUNT];
 
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
@@ -186,7 +186,7 @@ class InputBufferTests
 
     TEST_METHOD(InputBufferDoesNotCoalesceFullWidthChars)
     {
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
         WCHAR hiraganaA = 0x3042; // U+3042 hiragana A
         INPUT_RECORD record = MakeKeyEvent(true, 1, hiraganaA, 0, hiraganaA, 0);
 
@@ -203,7 +203,7 @@ class InputBufferTests
 
     TEST_METHOD(CanFlushAllOutput)
     {
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
         INPUT_RECORD records[RECORD_INSERT_COUNT];
 
         // put some events in the buffer so we can remove them
@@ -221,7 +221,7 @@ class InputBufferTests
 
     TEST_METHOD(CanFlushAllButKeys)
     {
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
         INPUT_RECORD records[RECORD_INSERT_COUNT];
 
         // create alternating mouse and key events
@@ -259,7 +259,7 @@ class InputBufferTests
 
     TEST_METHOD(CanReadInput)
     {
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
         INPUT_RECORD records[RECORD_INSERT_COUNT];
 
         // write some input records
@@ -293,7 +293,7 @@ class InputBufferTests
 
     TEST_METHOD(CanPeekAtEvents)
     {
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
 
         // add some events so that we have something to peek at
         INPUT_RECORD records[RECORD_INSERT_COUNT];
@@ -330,7 +330,7 @@ class InputBufferTests
     {
         Log::Comment(L"ResetWaitEvent should be true if a read to the buffer completely empties it");
 
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
 
         // add some events so that we have something to stick in front of
         INPUT_RECORD records[RECORD_INSERT_COUNT];
@@ -344,25 +344,25 @@ class InputBufferTests
         INPUT_RECORD outRecord;
         ULONG eventsRead = 0;
         BOOL resetWaitEvent = false;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadBuffer(&outRecord,
-                                                       1,
-                                                       &eventsRead,
-                                                       false,
-                                                       false,
-                                                       &resetWaitEvent,
-                                                       true));
+        VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(&outRecord,
+                                                        1,
+                                                        &eventsRead,
+                                                        false,
+                                                        false,
+                                                        &resetWaitEvent,
+                                                        true));
         VERIFY_ARE_EQUAL(eventsRead, 1);
         VERIFY_IS_FALSE(!!resetWaitEvent);
 
         // read the rest, resetWaitEvent should be set to true
         INPUT_RECORD outBuffer[RECORD_INSERT_COUNT - 1];
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadBuffer(outBuffer,
-                                                       RECORD_INSERT_COUNT - 1,
-                                                       &eventsRead,
-                                                       false,
-                                                       false,
-                                                       &resetWaitEvent,
-                                                       true));
+        VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outBuffer,
+                                                        RECORD_INSERT_COUNT - 1,
+                                                        &eventsRead,
+                                                        false,
+                                                        false,
+                                                        &resetWaitEvent,
+                                                        true));
         VERIFY_ARE_EQUAL(eventsRead, RECORD_INSERT_COUNT - 1);
         VERIFY_IS_TRUE(!!resetWaitEvent);
     }
@@ -372,7 +372,7 @@ class InputBufferTests
         Log::Comment(L"During a non-unicode read, the output array should have a blank entry at the end of the array for each dbcs key event");
 
         // write a mouse event, key event, dbcs key event, mouse event
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
         const unsigned int RECORD_INSERT_COUNT = 4;
         INPUT_RECORD inRecords[RECORD_INSERT_COUNT];
         inRecords[0].EventType = MOUSE_EVENT;
@@ -388,13 +388,13 @@ class InputBufferTests
         INPUT_RECORD emptyRecord = outRecords[0];
         ULONG eventsRead = 0;
         BOOL resetWaitEvent = false;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadBuffer(outRecords,
-                                                       RECORD_INSERT_COUNT,
-                                                       &eventsRead,
-                                                       false,
-                                                       false,
-                                                       &resetWaitEvent,
-                                                       false));
+        VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outRecords,
+                                                        RECORD_INSERT_COUNT,
+                                                        &eventsRead,
+                                                        false,
+                                                        false,
+                                                        &resetWaitEvent,
+                                                        false));
         // the dbcs record should have counted for two elements int
         // the array, making it so that we get less events read than
         // the size of the array
@@ -408,7 +408,7 @@ class InputBufferTests
 
     TEST_METHOD(CanPrependEvents)
     {
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
 
         // add some events so that we have something to stick in front of
         INPUT_RECORD records[RECORD_INSERT_COUNT];
@@ -473,7 +473,7 @@ class InputBufferTests
 
     TEST_METHOD(CanReinitializeInputBuffer)
     {
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
         DWORD originalInputMode = inputBuffer.InputMode;
 
         // change the buffer's state a bit
@@ -491,7 +491,7 @@ class InputBufferTests
 
     TEST_METHOD(PreprocessInputRemovesPauseKeys)
     {
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
         INPUT_RECORD pauseRecord = MakeKeyEvent(true, 1, VK_PAUSE, 0, 0, 0);
 
         // make sure we aren't currently paused and have an empty buffer
@@ -514,7 +514,7 @@ class InputBufferTests
 
     TEST_METHOD(SystemKeysDontUnpauseConsole)
     {
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
         INPUT_RECORD pauseRecord = MakeKeyEvent(true, 1, VK_PAUSE, 0, 0, 0);
 
         // make sure we aren't currently paused and have an empty buffer
@@ -554,7 +554,7 @@ class InputBufferTests
 
     TEST_METHOD(WritingToEmptyBufferSignalsWaitEvent)
     {
-        INPUT_INFORMATION inputBuffer{ 0 };
+        InputBuffer inputBuffer{ 0 };
         INPUT_RECORD record = MakeKeyEvent(true, 1, VK_PAUSE, 0, 0, 0);
         size_t eventsWritten;
         bool waitEvent = false;

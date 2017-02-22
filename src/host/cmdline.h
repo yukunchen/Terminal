@@ -88,7 +88,7 @@ typedef struct _COMMAND_HISTORY
 class COOKED_READ_DATA
 {
 public:
-    INPUT_INFORMATION* pInputInfo;
+    InputBuffer* pInputInfo;
     PSCREEN_INFORMATION pScreenInfo;
     ConsoleHandleData* pTempHandle;
     ULONG UserBufferSize;   // doubled size in ansi case

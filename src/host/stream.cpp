@@ -28,7 +28,7 @@
 
 typedef struct _RAW_READ_DATA
 {
-    INPUT_INFORMATION* pInputInfo;
+    InputBuffer* pInputInfo;
     ULONG BufferSize;
     _Field_size_(BufferSize) PWCHAR BufPtr;
     ConsoleProcessHandle* pProcessData;
@@ -66,7 +66,7 @@ DWORD ConsKbdState[] = {
 // - CommandLineEditingKeys - if present, arrow keys will be returned. on output, if TRUE, Char contains virtual key code for arrow key.
 // - CommandLinePopupKeys - if present, arrow keys will be returned. on output, if TRUE, Char contains virtual key code for arrow key.
 // Return Value:
-NTSTATUS GetChar(_In_ INPUT_INFORMATION* pInputInfo,
+NTSTATUS GetChar(_In_ InputBuffer* pInputInfo,
                  _Out_ PWCHAR pwchOut,
                  _In_ const BOOL fWait,
                  _In_opt_ INPUT_READ_HANDLE_DATA* pHandleData,
@@ -1275,7 +1275,7 @@ BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
 // - NumBytes - On input, size of buffer.  On output, number of bytes read.
 // - HandleData - Pointer to handle data structure.
 // Return Value:
-NTSTATUS ReadChars(_In_ INPUT_INFORMATION* const pInputInfo,
+NTSTATUS ReadChars(_In_ InputBuffer* const pInputInfo,
                    _In_ ConsoleProcessHandle* const pProcessData,
                    _In_ PSCREEN_INFORMATION const pScreenInfo,
                    _Inout_updates_bytes_(*pdwNumBytes) PWCHAR pwchBuffer,
@@ -1707,7 +1707,7 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
     ConsoleProcessHandle* const ProcessData = m->GetProcessHandle();
 
     ConsoleHandleData* HandleData = m->GetObjectHandle();
-    INPUT_INFORMATION* pInputInfo;
+    InputBuffer* pInputInfo;
     Status = NTSTATUS_FROM_HRESULT(HandleData->GetInputBuffer(GENERIC_READ, &pInputInfo));
     if (!NT_SUCCESS(Status))
     {

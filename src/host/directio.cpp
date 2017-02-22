@@ -22,7 +22,7 @@ class CONSOLE_INFORMATION;
 
 typedef struct _DIRECT_READ_DATA
 {
-    INPUT_INFORMATION* pInputInfo;
+    InputBuffer* pInputInfo;
     CONSOLE_INFORMATION* pConsole;
     ConsoleProcessHandle* pProcessData;
     INPUT_READ_HANDLE_DATA* pInputReadHandleData;
@@ -414,7 +414,7 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
     }
 
     ConsoleHandleData* const HandleData = m->GetObjectHandle();
-    INPUT_INFORMATION* pInputInfo;
+    InputBuffer* pInputInfo;
     if (FAILED(HandleData->GetInputBuffer(GENERIC_READ, &pInputInfo)))
     {
         a->NumRecords = 0;
@@ -529,7 +529,7 @@ NTSTATUS SrvWriteConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
 
     if (NT_SUCCESS(Status))
     {
-        INPUT_INFORMATION* pInputInfo;
+        InputBuffer* pInputInfo;
         if (FAILED(HandleData->GetInputBuffer(GENERIC_WRITE, &pInputInfo)))
         {
             a->NumRecords = 0;
@@ -545,7 +545,7 @@ NTSTATUS SrvWriteConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
     return Status;
 }
 
-NTSTATUS DoSrvWriteConsoleInput(_In_ INPUT_INFORMATION* pInputInfo, _Inout_ CONSOLE_WRITECONSOLEINPUT_MSG* pMsg, _In_ INPUT_RECORD* const rgInputRecords)
+NTSTATUS DoSrvWriteConsoleInput(_In_ InputBuffer* pInputInfo, _Inout_ CONSOLE_WRITECONSOLEINPUT_MSG* pMsg, _In_ INPUT_RECORD* const rgInputRecords)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 

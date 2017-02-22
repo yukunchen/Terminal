@@ -36,7 +36,7 @@ Revision History:
 // - CommandLinePopupKeys - if present, arrow keys will be returned. on output, if TRUE, Char contains virtual key code for arrow key.
 // Return Value:
 // - <none>
-NTSTATUS GetChar(_In_ INPUT_INFORMATION* pInputInfo,
+NTSTATUS GetChar(_In_ InputBuffer* pInputInfo,
                  _Out_ PWCHAR pwchChar,
                  _In_ const BOOL fWait,
                  _In_opt_ INPUT_READ_HANDLE_DATA* pHandleData,

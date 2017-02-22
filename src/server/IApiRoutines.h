@@ -21,8 +21,8 @@ Revision History:
 class SCREEN_INFORMATION;
 typedef SCREEN_INFORMATION IConsoleOutputObject;
 
-struct INPUT_INFORMATION;
-typedef INPUT_INFORMATION IConsoleInputObject;
+class InputBuffer;
+typedef InputBuffer IConsoleInputObject;
 
 class IApiRoutines
 {

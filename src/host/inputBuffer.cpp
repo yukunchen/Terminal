@@ -18,7 +18,7 @@
 // Arguments:
 // - cEvents - The default size of the circular buffer (in INPUT_RECORDs)
 // Return Value:
-INPUT_INFORMATION::INPUT_INFORMATION(_In_ ULONG cEvents)
+InputBuffer::InputBuffer(_In_ ULONG cEvents)
 {
     if (0 == cEvents)
     {
@@ -32,27 +32,17 @@ INPUT_INFORMATION::INPUT_INFORMATION(_In_ ULONG cEvents)
         cEvents = DEFAULT_NUMBER_OF_EVENTS;
     }
 
-    ULONG const BufferSize = sizeof(INPUT_RECORD) * (cEvents + 1);
-    this->InputBuffer = (PINPUT_RECORD) new BYTE[BufferSize];
-    THROW_IF_NULL_ALLOC(this->InputBuffer);
-
     NTSTATUS Status = STATUS_SUCCESS;
     this->InputWaitEvent = g_hInputEvent.get();
 
     // TODO: MSFT:8805366 Is this if block still necessary?
     if (!NT_SUCCESS(Status))
     {
-        delete[] this->InputBuffer;
         THROW_NTSTATUS(Status);
     }
 
     // initialize buffer header
-    this->InputBufferSize = cEvents;
     this->InputMode = INPUT_BUFFER_DEFAULT_INPUT_MODE;
-    this->First = (ULONG_PTR) this->InputBuffer;
-    this->In = (ULONG_PTR) this->InputBuffer;
-    this->Out = (ULONG_PTR) this->InputBuffer;
-    this->Last = (ULONG_PTR) this->InputBuffer + BufferSize;
     this->ImeMode.Disable = FALSE;
     this->ImeMode.Unavailable = FALSE;
     this->ImeMode.Open = FALSE;
@@ -69,7 +59,7 @@ INPUT_INFORMATION::INPUT_INFORMATION(_In_ ULONG cEvents)
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-void INPUT_INFORMATION::ReinitializeInputBuffer()
+void InputBuffer::ReinitializeInputBuffer()
 {
     ResetEvent(this->InputWaitEvent);
 
@@ -82,13 +72,11 @@ void INPUT_INFORMATION::ReinitializeInputBuffer()
 // Arguments:
 // - None
 // Return Value:
-INPUT_INFORMATION::~INPUT_INFORMATION()
+InputBuffer::~InputBuffer()
 {
     // TODO: MSFT:8805366 check for null before trying to close this
     // and check that it needs to be closing it in the first place.
     CloseHandle(this->InputWaitEvent);
-    delete[] this->InputBuffer;
-    this->InputBuffer = nullptr;
 }
 
 // Routine Description:
@@ -99,7 +87,7 @@ INPUT_INFORMATION::~INPUT_INFORMATION()
 // The number of events currently in the input buffer.
 // Note:
 // - The console lock must be held when calling this routine.
-size_t INPUT_INFORMATION::GetNumberOfReadyEvents()
+size_t InputBuffer::GetNumberOfReadyEvents()
 {
     return _storage.size();
 }
@@ -111,7 +99,7 @@ size_t INPUT_INFORMATION::GetNumberOfReadyEvents()
 // - S_OK on success, other HRESULTS otherwise.
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT INPUT_INFORMATION::FlushAllButKeys()
+HRESULT InputBuffer::FlushAllButKeys()
 {
     try
     {
@@ -135,7 +123,7 @@ HRESULT INPUT_INFORMATION::FlushAllButKeys()
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-void INPUT_INFORMATION::FlushInputBuffer()
+void InputBuffer::FlushInputBuffer()
 {
     _storage.clear();
     ResetEvent(InputWaitEvent);
@@ -154,26 +142,26 @@ void INPUT_INFORMATION::FlushInputBuffer()
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS INPUT_INFORMATION::ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
-                                       _In_ ULONG Length,
-                                       _Out_ PULONG EventsRead,
-                                       _In_ BOOL Peek,
-                                       _In_ BOOL StreamRead,
-                                       _Out_ PBOOL ResetWaitEvent,
-                                       _In_ BOOLEAN Unicode)
+NTSTATUS InputBuffer::_ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
+                                        _In_ ULONG Length,
+                                        _Out_ PULONG EventsRead,
+                                        _In_ BOOL Peek,
+                                        _In_ BOOL StreamRead,
+                                        _Out_ PBOOL ResetWaitEvent,
+                                        _In_ BOOLEAN Unicode)
 {
     std::deque<INPUT_RECORD> outRecords;
     size_t eventsRead;
     bool resetWaitEvent;
 
     // call inner func
-    LOG_IF_FAILED(ReadBuffer(outRecords,
-                             Length,
-                             eventsRead,
-                             !!Peek,
-                             !!StreamRead,
-                             resetWaitEvent,
-                             !!Unicode));
+    LOG_IF_FAILED(_ReadBuffer(outRecords,
+                              Length,
+                              eventsRead,
+                              !!Peek,
+                              !!StreamRead,
+                              resetWaitEvent,
+                              !!Unicode));
 
     // move data back to original vars
     *ResetWaitEvent = !!resetWaitEvent;
@@ -194,13 +182,13 @@ NTSTATUS INPUT_INFORMATION::ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINP
 }
 
 // TODO docs
-HRESULT INPUT_INFORMATION::ReadBuffer(std::deque<INPUT_RECORD>& outRecords,
-                                      const size_t readCount,
-                                      size_t& eventsRead,
-                                      const bool peek,
-                                      const bool streamRead,
-                                      bool& resetWaitEvent,
-                                      const bool unicode)
+HRESULT InputBuffer::_ReadBuffer(std::deque<INPUT_RECORD>& outRecords,
+                                       const size_t readCount,
+                                       size_t& eventsRead,
+                                       const bool peek,
+                                       const bool streamRead,
+                                       bool& resetWaitEvent,
+                                       const bool unicode)
 {
     try
     {
@@ -286,7 +274,7 @@ HRESULT INPUT_INFORMATION::ReadBuffer(std::deque<INPUT_RECORD>& outRecords,
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS INPUT_INFORMATION::ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
+NTSTATUS InputBuffer::ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
                                             _Inout_ PDWORD pcLength,
                                             _In_ BOOL const fPeek,
                                             _In_ BOOL const fWaitForData,
@@ -326,7 +314,7 @@ NTSTATUS INPUT_INFORMATION::ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECOR
     // read from buffer
     ULONG EventsRead;
     BOOL ResetWaitEvent;
-    Status = ReadBuffer(pInputRecord, *pcLength, &EventsRead, fPeek, fStreamRead, &ResetWaitEvent, fUnicode);
+    Status = _ReadBuffer(pInputRecord, *pcLength, &EventsRead, fPeek, fStreamRead, &ResetWaitEvent, fUnicode);
     if (ResetWaitEvent)
     {
         ResetEvent(InputWaitEvent);
@@ -336,7 +324,7 @@ NTSTATUS INPUT_INFORMATION::ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECOR
     return Status;
 }
 
-bool INPUT_INFORMATION::_CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRecords)
+bool InputBuffer::_CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRecords)
 {
     _ASSERT(inRecords.size() == 1);
     const INPUT_RECORD& firstInRecord = inRecords.front();
@@ -354,7 +342,7 @@ bool INPUT_INFORMATION::_CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>&
     return false;
 }
 
-bool INPUT_INFORMATION::_CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>& inRecords)
+bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>& inRecords)
 {
     _ASSERT(inRecords.size() == 1);
     const INPUT_RECORD& firstInRecord = inRecords.front();
@@ -405,7 +393,7 @@ bool INPUT_INFORMATION::_CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RE
 // - ERROR_BROKEN_PIPE - no more readers.
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT INPUT_INFORMATION::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
+HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
                                         _Out_ size_t& eventsWritten,
                                         _Out_ bool& setWaitEvent)
 {
@@ -460,7 +448,7 @@ HRESULT INPUT_INFORMATION::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords
 // - Number of events to write after special characters have been stripped.
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT INPUT_INFORMATION::_HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD>& records)
+HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD>& records)
 {
     try
     {
@@ -500,7 +488,7 @@ HRESULT INPUT_INFORMATION::_HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-NTSTATUS INPUT_INFORMATION::PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength)
+NTSTATUS InputBuffer::PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength)
 {
     // change to a deque
     std::deque<INPUT_RECORD> inRecords;
@@ -514,7 +502,7 @@ NTSTATUS INPUT_INFORMATION::PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, 
     return STATUS_SUCCESS;
 }
 
-size_t INPUT_INFORMATION::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
+size_t InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
 {
     LOG_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
     if (inRecords.empty())
@@ -553,7 +541,7 @@ size_t INPUT_INFORMATION::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRe
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
-DWORD INPUT_INFORMATION::WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords)
+DWORD InputBuffer::WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords)
 {
     // change to a deque
     std::deque<INPUT_RECORD> inRecords;
@@ -567,7 +555,7 @@ DWORD INPUT_INFORMATION::WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ 
     return result;
 }
 
-size_t INPUT_INFORMATION::WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
+size_t InputBuffer::WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
 {
     LOG_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
     if (inRecords.empty())
@@ -596,7 +584,18 @@ size_t INPUT_INFORMATION::WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inReco
 // Return Value:
 // - TRUE - The operation was successful
 // - FALSE/nullptr - The operation failed.
-void INPUT_INFORMATION::WakeUpReadersWaitingForData()
+void InputBuffer::WakeUpReadersWaitingForData()
 {
     this->WaitQueue.NotifyWaiters(false);
+}
+
+// Routine Description:
+// - This routine wakes up any readers waiting for data when a ctrl-c or ctrl-break is input.
+// Arguments:
+// - InputInfo - pointer to input buffer
+// - Flag - flag indicating whether ctrl-break or ctrl-c was input.
+// TODO move to inputBuffer.hpp
+void TerminateRead(_Inout_ InputBuffer* InputInfo, _In_ WaitTerminationReason Flag)
+{
+    InputInfo->WaitQueue.NotifyWaiters(true, Flag);
 }

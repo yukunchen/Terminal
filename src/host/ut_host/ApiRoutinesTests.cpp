@@ -64,7 +64,7 @@ class ApiRoutinesTests
     void VerifySetConsoleInputModeImpl(_In_ HRESULT const hrExpected,
                                        _In_ ULONG const ulNewMode)
     {
-        INPUT_INFORMATION* const pii = g_ciConsoleInformation.pInputBuffer;
+        InputBuffer* const pii = g_ciConsoleInformation.pInputBuffer;
 
         // The expected mode set in the buffer is the mode given minus the flags that are stored in different fields.
         ULONG ulModeExpected = ulNewMode;
@@ -174,7 +174,7 @@ class ApiRoutinesTests
 
         Log::Comment(L"Verify that we cannot unset various extended flags without the ENABLE_EXTENDED_FLAGS flag.");
         PrepVerifySetConsoleInputModeImpl(ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION);
-        INPUT_INFORMATION* const pii = g_ciConsoleInformation.pInputBuffer;
+        InputBuffer* const pii = g_ciConsoleInformation.pInputBuffer;
         HRESULT const hr = _pApiRoutines->SetConsoleInputModeImpl(pii, 0);
 
         VERIFY_ARE_EQUAL(S_OK, hr);
@@ -191,7 +191,7 @@ class ApiRoutinesTests
         Log::Comment(L"Input mode should be set anyway despite FAILED return code.");
         VerifySetConsoleInputModeImpl(E_INVALIDARG, 0x1E4);
     }
-    
+
     TEST_METHOD(ApiGetConsoleTitleA)
     {
         g_ciConsoleInformation.Title = L"Test window title.";
@@ -243,13 +243,13 @@ class ApiRoutinesTests
     {
         g_ciConsoleInformation.OriginalTitle = L"Test original window title.";
 
-        int const iBytesNeeded = WideCharToMultiByte(g_ciConsoleInformation.OutputCP, 
-                                                     0, 
-                                                     g_ciConsoleInformation.OriginalTitle, 
-                                                     (int)wcslen(g_ciConsoleInformation.OriginalTitle), 
-                                                     nullptr, 
-                                                     0, 
-                                                     nullptr, 
+        int const iBytesNeeded = WideCharToMultiByte(g_ciConsoleInformation.OutputCP,
+                                                     0,
+                                                     g_ciConsoleInformation.OriginalTitle,
+                                                     (int)wcslen(g_ciConsoleInformation.OriginalTitle),
+                                                     nullptr,
+                                                     0,
+                                                     nullptr,
                                                      nullptr);
 
         wistd::unique_ptr<char[]> pszExpected = wil::make_unique_nothrow<char[]>(iBytesNeeded);

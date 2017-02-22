@@ -34,16 +34,11 @@ Revision History:
 #define DEFAULT_NUMBER_OF_EVENTS 50
 #define INPUT_BUFFER_SIZE_INCREMENT 10
 
-struct INPUT_INFORMATION
+class InputBuffer
 {
+public:
     ConsoleObjectHeader Header;
-    _Field_size_(InputBufferSize) PINPUT_RECORD InputBuffer;
-    DWORD InputBufferSize;  // size in events
     DWORD InputMode;
-    ULONG_PTR First;    // ptr to base of circular buffer
-    ULONG_PTR In;   // ptr to next free event
-    ULONG_PTR Out;  // ptr to next available event
-    ULONG_PTR Last; // ptr to end + 1 of buffer
     ConsoleWaitQueue WaitQueue; // formerly ReadWaitQueue
     struct
     {
@@ -63,24 +58,8 @@ struct INPUT_INFORMATION
     INPUT_RECORD ReadConInpDbcsLeadByte;
     INPUT_RECORD WriteConInpDbcsLeadByte[2];
 
-    INPUT_INFORMATION(_In_ ULONG cEvents);
-    ~INPUT_INFORMATION();
-
-    NTSTATUS ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
-                        _In_ ULONG Length,
-                        _Out_ PULONG EventsRead,
-                        _In_ BOOL Peek,
-                        _In_ BOOL StreamRead,
-                        _Out_ PBOOL ResetWaitEvent,
-                        _In_ BOOLEAN Unicode);
-
-    HRESULT ReadBuffer(std::deque<INPUT_RECORD>& outRecords,
-                       const size_t readCount,
-                       size_t& eventsRead,
-                       const bool peek,
-                       const bool streamRead,
-                       bool& resetWaitEvent,
-                       const bool unicode);
+    InputBuffer(_In_ ULONG cEvents);
+    ~InputBuffer();
 
     NTSTATUS ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
                             _Inout_ PDWORD pcLength,
@@ -98,7 +77,6 @@ struct INPUT_INFORMATION
     DWORD WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords);
     size_t WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords);
 
-    //NTSTATUS WriteBuffer(_In_ PVOID Buffer, _In_ ULONG Length, _Out_ PULONG EventsWritten, _Out_ PBOOL SetWaitEvent);
     NTSTATUS PrependInputBuffer(_In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * const pcLength);
     size_t PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords);
     void ReinitializeInputBuffer();
@@ -109,14 +87,31 @@ struct INPUT_INFORMATION
 
 private:
     std::deque<INPUT_RECORD> _storage;
+
     HRESULT _HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD>& records);
     bool _CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRecords);
     bool _CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>& inRecords);
     HRESULT _WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
                          _Out_ size_t& eventsWritten,
                          _Out_ bool& setWaitEvent);
+    NTSTATUS _ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
+                         _In_ ULONG Length,
+                         _Out_ PULONG EventsRead,
+                         _In_ BOOL Peek,
+                         _In_ BOOL StreamRead,
+                         _Out_ PBOOL ResetWaitEvent,
+                         _In_ BOOLEAN Unicode);
+    HRESULT _ReadBuffer(std::deque<INPUT_RECORD>& outRecords,
+                        const size_t readCount,
+                        size_t& eventsRead,
+                        const bool peek,
+                        const bool streamRead,
+                        bool& resetWaitEvent,
+                        const bool unicode);
 
 #ifdef UNIT_TESTING
     friend class InputBufferTests;
 #endif
 };
+
+void TerminateRead(_Inout_ InputBuffer* InputInfo, _In_ WaitTerminationReason Flag);

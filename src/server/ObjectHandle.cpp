@@ -104,14 +104,14 @@ bool ConsoleHandleData::IsWriteShared() const
 // Return Value:
 // - HRESULT S_OK or suitable error.
 HRESULT ConsoleHandleData::GetInputBuffer(_In_ const ACCESS_MASK amRequested,
-                                          _Outptr_ INPUT_INFORMATION** const ppInputInfo) const
+                                          _Outptr_ InputBuffer** const ppInputInfo) const
 {
     *ppInputInfo = nullptr;
 
     RETURN_HR_IF(E_ACCESSDENIED, IsAnyFlagClear(_amAccess, amRequested));
     RETURN_HR_IF(E_HANDLE, IsAnyFlagClear(_ulHandleType, HandleType::Input));
 
-    *ppInputInfo = static_cast<INPUT_INFORMATION*>(_pvClientPointer);
+    *ppInputInfo = static_cast<InputBuffer*>(_pvClientPointer);
 
     return S_OK;
 }
@@ -146,7 +146,7 @@ HRESULT ConsoleHandleData::GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWait
 {
     if (_IsInput())
     {
-        INPUT_INFORMATION* const pObj = static_cast<INPUT_INFORMATION*>(_pvClientPointer);
+        InputBuffer* const pObj = static_cast<InputBuffer*>(_pvClientPointer);
         *ppWaitQueue = &pObj->WaitQueue;
         return S_OK;
     }
@@ -211,7 +211,7 @@ HRESULT ConsoleHandleData::CloseHandle()
 HRESULT ConsoleHandleData::_CloseInputHandle()
 {
     assert(_IsInput());
-    INPUT_INFORMATION* pInputInfo = static_cast<INPUT_INFORMATION*>(_pvClientPointer);
+    InputBuffer* pInputInfo = static_cast<InputBuffer*>(_pvClientPointer);
     INPUT_READ_HANDLE_DATA* pReadHandleData = GetClientInput();
 
     if (IsFlagSet(pReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::InputPending))
