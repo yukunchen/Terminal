@@ -18,29 +18,9 @@
 // Arguments:
 // - cEvents - The default size of the circular buffer (in INPUT_RECORDs)
 // Return Value:
-InputBuffer::InputBuffer(_In_ ULONG cEvents)
+InputBuffer::InputBuffer()
 {
-    if (0 == cEvents)
-    {
-        cEvents = DEFAULT_NUMBER_OF_EVENTS;
-    }
-
-    // Allocate memory for circular buffer.
-    ULONG uTemp;
-    if (FAILED(DWordAdd(cEvents, 1, &uTemp)) || FAILED(DWordMult(sizeof(INPUT_RECORD), uTemp, &uTemp)))
-    {
-        cEvents = DEFAULT_NUMBER_OF_EVENTS;
-    }
-
-    NTSTATUS Status = STATUS_SUCCESS;
     this->InputWaitEvent = g_hInputEvent.get();
-
-    // TODO: MSFT:8805366 Is this if block still necessary?
-    if (!NT_SUCCESS(Status))
-    {
-        THROW_NTSTATUS(Status);
-    }
-
     // initialize buffer header
     this->InputMode = INPUT_BUFFER_DEFAULT_INPUT_MODE;
     this->ImeMode.Disable = FALSE;

@@ -31,7 +31,6 @@ Revision History:
 
 #include <deque>
 
-#define DEFAULT_NUMBER_OF_EVENTS 50
 #define INPUT_BUFFER_SIZE_INCREMENT 10
 
 class InputBuffer
@@ -58,7 +57,7 @@ public:
     INPUT_RECORD ReadConInpDbcsLeadByte;
     INPUT_RECORD WriteConInpDbcsLeadByte[2];
 
-    InputBuffer(_In_ ULONG cEvents);
+    InputBuffer();
     ~InputBuffer();
 
     NTSTATUS ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
