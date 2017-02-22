@@ -74,6 +74,7 @@ size_t InputBuffer::GetNumberOfReadyEvents()
 // Routine Description:
 // - This routine removes all but the key events from the buffer.
 // Arguments:
+// - None
 // Return Value:
 // - S_OK on success, other HRESULTS otherwise.
 // Note:
@@ -99,26 +100,29 @@ HRESULT InputBuffer::FlushAllButKeys()
 // Routine Description:
 // - This routine empties the input buffer
 // Arguments:
+// - None
 // Return Value:
+// - None
 // Note:
 // - The console lock must be held when calling this routine.
-void InputBuffer::FlushInputBuffer()
+void InputBuffer::Flush()
 {
     _storage.clear();
     ResetEvent(InputWaitEvent);
 }
 
-// TODO docs
 // Routine Description:
-// - This routine reads from a buffer.  It does the actual circular buffer manipulation.
+// - This routine reads from a buffer. It does the buffer manipulation.
 // Arguments:
 // - Buffer - buffer to read into
 // - Length - length of buffer in events
 // - EventsRead - where to store number of events read
 // - Peek - if TRUE, don't remove data from buffer, just copy it.
+// TODO StreamRead never had this behavior
 // - StreamRead - if TRUE, events with repeat counts > 1 are returned as multiple events.  also, EventsRead == 1.
 // - ResetWaitEvent - on exit, TRUE if buffer became empty.
 // Return Value:
+// - STATUS_SUCCESS on success.
 // Note:
 // - The console lock must be held when calling this routine.
 NTSTATUS InputBuffer::_ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
@@ -160,7 +164,20 @@ NTSTATUS InputBuffer::_ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RE
 
 }
 
-// TODO docs
+// Routine Description:
+// - This routine reads from a buffer. It does the buffer manipulation.
+// Arguments:
+// - outRecords - where read records are placed
+// - readCount - amount of records to read
+// - eventsRead - where to store number of events read
+// - peek - if TRUE, don't remove data from buffer, just copy it.
+// TODO StreamRead never had this behavior
+// - streamRead - if TRUE, events with repeat counts > 1 are returned as multiple events.  also, EventsRead == 1.
+// - resetWaitEvent - on exit, TRUE if buffer became empty.
+// Return Value:
+// - S_OK on success.
+// Note:
+// - The console lock must be held when calling this routine.
 HRESULT InputBuffer::_ReadBuffer(std::deque<INPUT_RECORD>& outRecords,
                                        const size_t readCount,
                                        size_t& eventsRead,
@@ -243,6 +260,7 @@ HRESULT InputBuffer::_ReadBuffer(std::deque<INPUT_RECORD>& outRecords,
 // - pcLength - On input, number of events to read.  On output, number of events read.
 // - fPeek - If TRUE, copy events to pInputRecord but don't remove them from the input buffer.
 // - fWaitForData - if TRUE, wait until an event is input.  if FALSE, return immediately
+// TODO fStreamRead never worked like this
 // - fStreamRead - if TRUE, events with repeat counts > 1 are returned as multiple events.  also, EventsRead == 1.
 // - pHandleData - Pointer to handle data structure.  This parameter is optional if fWaitForData is false.
 // - pConsoleMsg - if called from dll (not InputThread), points to api message.  this parameter is used for wait block processing.
@@ -250,6 +268,7 @@ HRESULT InputBuffer::_ReadBuffer(std::deque<INPUT_RECORD>& outRecords,
 // - pvWaitParameter - Parameter to pass to wait routine.
 // - cbWaitParameter - Length of wait parameter.
 // - fWaitBlockExists - TRUE if wait block has already been created.
+// - fUnicode - TRUE if the data in key events should be treated as unicode.
 // Return Value:
 // Note:
 // - The console lock must be held when calling this routine.
@@ -303,6 +322,17 @@ NTSTATUS InputBuffer::ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInp
     return Status;
 }
 
+// Routine Description:
+// - Checks if the last saved event and the first event of inRecords are
+// both MOUSE_MOVED events. If they are, the last saved event is
+// updated with the new mouse position and the first event of inRecords is
+// dropped.
+// Arguments:
+// - inRecords - The incoming records to process.
+// Return Value:
+// true if events were coalesced, false if they were not.
+// Note:
+// - The size of inRecords must be 1.
 bool InputBuffer::_CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRecords)
 {
     _ASSERT(inRecords.size() == 1);
@@ -321,6 +351,16 @@ bool InputBuffer::_CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRec
     return false;
 }
 
+// Routine Description::
+// - If the last input event saved and the first input event in inRecords
+// are both a keypress down event for the same key, update the repeat
+// count of the saved event and drop the first from inRecords.
+// Arguments:
+// - inRecords - The incoming records to process.
+// Return Value:
+// true if events were coalesced, false if they were not.
+// Note:
+// - The size of inRecords must be 1.
 bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>& inRecords)
 {
     _ASSERT(inRecords.size() == 1);
@@ -360,16 +400,15 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>&
     return false;
 }
 
-// TODO redo docs
 // Routine Description:
-// - This routine writes to a buffer.  It does the actual circular buffer manipulation.
+// - Coalesces input events and transfers them to storage queue.
 // Arguments:
-// - Buffer - buffer to write from
-// - Length - length of buffer in events
-// - EventsWritten - where to store number of events written.
-// - SetWaitEvent - on exit, TRUE if buffer became non-empty.
+// - inRecords - The events to store.
+// - eventsWritten - The number of events written since this function
+// was called.
+// - setWaitEvent - on exit, true if buffer became non-empty.
 // Return Value:
-// - ERROR_BROKEN_PIPE - no more readers.
+// - S_OK on success.
 // Note:
 // - The console lock must be held when calling this routine.
 HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
@@ -416,15 +455,12 @@ HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
     CATCH_RETURN();
 }
 
-// TODO docs
 // Routine Description:
-// - This routine processes special characters in the input stream.
+// - Handles records that suspend/resume the console.
 // Arguments:
-// - Console - Pointer to console structure.
-// - InputEvent - Buffer to write from.
-// - nLength - Number of events to write.
+// - records - records to check for pause/unpause events
 // Return Value:
-// - Number of events to write after special characters have been stripped.
+// - S_OK on success.
 // Note:
 // - The console lock must be held when calling this routine.
 HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD>& records)
@@ -458,13 +494,13 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD
     CATCH_RETURN();
 }
 
-// TODO docs
 // Routine Description:
-// -  This routine writes to the beginning of the input buffer.
+// -  Writes records to the beginning of the input buffer.
 // Arguments:
 // - pInputRecord - Buffer to write from.
-// - cInputRecords - On input, number of events to write.  On output, number of events written.
+// - pcLength - On input, number of events to write.  On output, number of events written.
 // Return Value:
+// - STATUS_SUCCESS on success.
 // Note:
 // - The console lock must be held when calling this routine.
 NTSTATUS InputBuffer::PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength)
@@ -481,6 +517,14 @@ NTSTATUS InputBuffer::PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout
     return STATUS_SUCCESS;
 }
 
+// Routine Description:
+// -  Writes records to the beginning of the input buffer.
+// Arguments:
+// - inRecords - Records to write to buffer.
+// Return Value:
+// - The number of events written to the buffer.
+// Note:
+// - The console lock must be held when calling this routine.
 size_t InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
 {
     LOG_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
@@ -513,11 +557,13 @@ size_t InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
 }
 
 // Routine Description:
-// - This routine writes to the input buffer.
+// - Writes records to the input buffer. Wakes up any readers that are
+// waiting for additional input events.
 // Arguments:
 // - pInputRecord - Buffer to write from.
 // - cInputRecords - On input, number of events to write.
 // Return Value:
+// - The number of events that were written to input buffer.
 // Note:
 // - The console lock must be held when calling this routine.
 DWORD InputBuffer::WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords)
@@ -534,6 +580,15 @@ DWORD InputBuffer::WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD 
     return result;
 }
 
+// Routine Description:
+// - Writes records to the input buffer. Wakes up any readers that are
+// waiting for additional input events.
+// Arguments:
+// - inRecords - records to store in the buffer.
+// Return Value:
+// - The number of events that were written to input buffer.
+// Note:
+// - The console lock must be held when calling this routine.
 size_t InputBuffer::WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
 {
     LOG_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
@@ -558,22 +613,22 @@ size_t InputBuffer::WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
 }
 
 // Routine Description:
-// - This routine wakes up readers waiting for data to read.
+// - Wakes up readers waiting for data to read.
 // Arguments:
+// - None
 // Return Value:
-// - TRUE - The operation was successful
-// - FALSE/nullptr - The operation failed.
+// - None
 void InputBuffer::WakeUpReadersWaitingForData()
 {
     this->WaitQueue.NotifyWaiters(false);
 }
 
-// TODO docs
 // Routine Description:
-// - This routine wakes up any readers waiting for data when a ctrl-c or ctrl-break is input.
+// - Wakes up any readers waiting for data when a ctrl-c or ctrl-break is input.
 // Arguments:
-// - pInputBuffer - pointer to input buffer
-// - Flag - flag indicating whether ctrl-break or ctrl-c was input.
+// - Flag - Indicates reason to terminate the readers.
+// Return Value:
+// - None
 void InputBuffer::TerminateRead(_In_ WaitTerminationReason Flag)
 {
     WaitQueue.NotifyWaiters(true, Flag);

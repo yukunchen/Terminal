@@ -324,7 +324,7 @@ HRESULT ApiRoutines::FlushConsoleInputBuffer(_In_ InputBuffer* const pContext)
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     // TODO: MSFT: 9574827 - shouldn't this have a status code?
-    pContext->FlushInputBuffer();
+    pContext->Flush();
 
     return S_OK;
 }

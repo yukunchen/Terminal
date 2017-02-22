@@ -119,7 +119,7 @@ class InputBufferTests
             mouseRecords[i].EventType = MOUSE_EVENT;
             mouseRecords[i].Event.MouseEvent.dwEventFlags = MOUSE_MOVED;
         }
-        inputBuffer.FlushInputBuffer();
+        inputBuffer.Flush();
         // send one mouse event to possibly coalesce into later
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(mouseRecords, 1), 0u);
         // write the others in bulk
@@ -136,7 +136,7 @@ class InputBufferTests
         INPUT_RECORD record = MakeKeyEvent(true, 1, 'a', 0, L'a', 0);
 
         // send a bunch of identical events
-        inputBuffer.FlushInputBuffer();
+        inputBuffer.Flush();
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
@@ -175,7 +175,7 @@ class InputBufferTests
         {
             keyRecords[i] = MakeKeyEvent(true, 1, 'a', 0, L'a', 0);
         }
-        inputBuffer.FlushInputBuffer();
+        inputBuffer.Flush();
         // send one key event to possibly coalesce into later
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(keyRecords, 1), 0u);
         // write the others in bulk
@@ -191,7 +191,7 @@ class InputBufferTests
         INPUT_RECORD record = MakeKeyEvent(true, 1, hiraganaA, 0, hiraganaA, 0);
 
         // send a bunch of identical events
-        inputBuffer.FlushInputBuffer();
+        inputBuffer.Flush();
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
@@ -215,7 +215,7 @@ class InputBufferTests
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
 
         // remove them
-        inputBuffer.FlushInputBuffer();
+        inputBuffer.Flush();
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0);
     }
 
@@ -380,7 +380,7 @@ class InputBufferTests
         inRecords[2] = MakeKeyEvent(TRUE, 1, 0x3042, 0, 0x3042, 0); // U+3042 hiragana A
         inRecords[3].EventType = MOUSE_EVENT;
 
-        inputBuffer.FlushInputBuffer();
+        inputBuffer.Flush();
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(inRecords, RECORD_INSERT_COUNT), 0u);
 
         // read them out non-unicode style and compare
@@ -558,7 +558,7 @@ class InputBufferTests
         INPUT_RECORD record = MakeKeyEvent(true, 1, VK_PAUSE, 0, 0, 0);
         size_t eventsWritten;
         bool waitEvent = false;
-        inputBuffer.FlushInputBuffer();
+        inputBuffer.Flush();
         // write one event to an empty buffer
         std::deque<INPUT_RECORD> storage = { record };
         VERIFY_SUCCEEDED(inputBuffer._WriteBuffer(storage, eventsWritten, waitEvent));

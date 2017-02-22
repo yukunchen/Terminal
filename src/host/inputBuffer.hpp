@@ -39,6 +39,10 @@ public:
     ConsoleObjectHeader Header;
     DWORD InputMode;
     ConsoleWaitQueue WaitQueue; // formerly ReadWaitQueue
+    HANDLE InputWaitEvent;
+    INPUT_RECORD ReadConInpDbcsLeadByte;
+    INPUT_RECORD WriteConInpDbcsLeadByte[2];
+
     struct
     {
         DWORD Disable:1;    // High   : specifies input code page or enable/disable in NLS state
@@ -51,10 +55,6 @@ public:
         DWORD Conversion;   // conversion mode of ime (i.e IME_CMODE_xxx).
         // this field uses by GetConsoleNlsMode
     } ImeMode;
-
-    HANDLE InputWaitEvent;
-    INPUT_RECORD ReadConInpDbcsLeadByte;
-    INPUT_RECORD WriteConInpDbcsLeadByte[2];
 
     InputBuffer();
     ~InputBuffer();
@@ -79,7 +79,7 @@ public:
     size_t PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords);
     void ReinitializeInputBuffer();
     size_t GetNumberOfReadyEvents();
-    void FlushInputBuffer();
+    void Flush();
     HRESULT FlushAllButKeys();
     void WakeUpReadersWaitingForData();
     void TerminateRead(_In_ WaitTerminationReason Flag);
