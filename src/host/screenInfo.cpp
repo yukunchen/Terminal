@@ -426,7 +426,7 @@ COORD SCREEN_INFORMATION::GetLargestWindowSizeInCharacters(_In_ COORD const coor
     // If renderer has been set up, instead retrieve it's font size
     if (g_pRender != nullptr)
     {
-        coordFont = g_pRender->GetFontSize();
+        coordFont = GetScreenFontSize();
     }
 
     coordClientAreaSize.X /= coordFont.X;

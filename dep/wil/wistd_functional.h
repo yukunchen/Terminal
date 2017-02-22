@@ -1,11 +1,5 @@
 // Windows Internal Libraries (wil)
 // Note: do not include this file directly, include "wil\Functional.h"
-//
-// wil Usage Guidelines:
-// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Internal%20Libraries%20for%20C++%20Usage%20Guide.docx?web=1
-//
-// wil Discussion Alias (wildisc):
-// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
 
 #pragma once
 
@@ -56,8 +50,8 @@ namespace wistd     // ("Windows Internal" std)
         class function_allocator
         {
         public:
-        	typedef _Ty *pointer;
-        	typedef size_t size_type;
+            typedef _Ty *pointer;
+            typedef size_t size_type;
 
             template<class _Other>
             struct rebind
@@ -67,10 +61,10 @@ namespace wistd     // ("Windows Internal" std)
 
             function_allocator() = default;
 
-	        template<class _Other>
-		    function_allocator(const function_allocator<_Other>&) WI_NOEXCEPT
-		    {
-		    }
+            template<class _Other>
+            function_allocator(const function_allocator<_Other>&) WI_NOEXCEPT
+            {
+            }
 
             void deallocate(pointer, size_type)
             {
@@ -2284,116 +2278,116 @@ public:
     typedef function<_Fty> _Myt;
     typedef typename _Get_function_impl<_Fty>::type _Mybase;
 
-	function() WI_NOEXCEPT
-		{	// construct empty function wrapper
-		this->_Reset();
-		}
+    function() WI_NOEXCEPT
+        {	// construct empty function wrapper
+        this->_Reset();
+        }
 
-	function(nullptr_t) WI_NOEXCEPT
-		{	// construct empty function wrapper from null pointer
-		this->_Reset();
-		}
+    function(nullptr_t) WI_NOEXCEPT
+        {	// construct empty function wrapper from null pointer
+        this->_Reset();
+        }
 
-	function(const _Myt& _Right)
-		{	// construct holding copy of _Right
-		this->_Reset((const _Mybase&)_Right);
-		}
+    function(const _Myt& _Right)
+        {	// construct holding copy of _Right
+        this->_Reset((const _Mybase&)_Right);
+        }
 
-	function(_Myt& _Right)
-		{	// construct holding copy of _Right
-		this->_Reset((const _Mybase&)_Right);
-		}
+    function(_Myt& _Right)
+        {	// construct holding copy of _Right
+        this->_Reset((const _Mybase&)_Right);
+        }
 
-	function(const _Myt&& _Right)
-		{	// construct holding copy of _Right
-		this->_Reset((const _Mybase&)_Right);
-		}
+    function(const _Myt&& _Right)
+        {	// construct holding copy of _Right
+        this->_Reset((const _Mybase&)_Right);
+        }
 
-	template<class _Fx>
-		function(const _Fx& _Func)
-		{	// construct wrapper holding copy of _Func
-		this->_Reset(_Func);
-		}
+    template<class _Fx>
+        function(const _Fx& _Func)
+        {	// construct wrapper holding copy of _Func
+        this->_Reset(_Func);
+        }
 
-	template<class _Fx>
-		function(reference_wrapper<_Fx> _Func)
-		{	// construct wrapper holding reference to _Func
-		this->_Reset(_Func);
-		}
+    template<class _Fx>
+        function(reference_wrapper<_Fx> _Func)
+        {	// construct wrapper holding reference to _Func
+        this->_Reset(_Func);
+        }
 
-	~function() WI_NOEXCEPT
-		{	// destroy the object
-		this->_Tidy();
-		}
+    ~function() WI_NOEXCEPT
+        {	// destroy the object
+        this->_Tidy();
+        }
 
-	_Myt& operator=(const _Myt& _Right)
-		{	// assign _Right
-		if (this != &_Right)
-			{	// clean up and copy
-			this->_Tidy();
-			this->_Reset((const _Mybase&)_Right);
-			}
-		return (*this);
-		}
+    _Myt& operator=(const _Myt& _Right)
+        {	// assign _Right
+        if (this != &_Right)
+            {	// clean up and copy
+            this->_Tidy();
+            this->_Reset((const _Mybase&)_Right);
+            }
+        return (*this);
+        }
 
-	_Myt& operator=(_Myt& _Right)
-		{	// assign _Right
-		if (this != &_Right)
-			{	// clean up and copy
-			this->_Tidy();
-			this->_Reset((const _Mybase&)_Right);
-			}
-		return (*this);
-		}
+    _Myt& operator=(_Myt& _Right)
+        {	// assign _Right
+        if (this != &_Right)
+            {	// clean up and copy
+            this->_Tidy();
+            this->_Reset((const _Mybase&)_Right);
+            }
+        return (*this);
+        }
 
-	function(_Myt&& _Right)
-		{	// construct holding moved copy of _Right
-		this->_Resetm(wistd::forward<_Myt>(_Right));
-		}
+    function(_Myt&& _Right)
+        {	// construct holding moved copy of _Right
+        this->_Resetm(wistd::forward<_Myt>(_Right));
+        }
 
-	template<class _Fx>
-		function(_Fx&& _Func)
-		{	// construct wrapper holding moved _Func
-		this->_Reset(wistd::forward<_Fx>(_Func));
-		}
+    template<class _Fx>
+        function(_Fx&& _Func)
+        {	// construct wrapper holding moved _Func
+        this->_Reset(wistd::forward<_Fx>(_Func));
+        }
 
-	_Myt& operator=(_Myt&& _Right)
-		{	// assign by moving _Right
-		if (this != &_Right)
-			{	// clean up and copy
-			this->_Tidy();
-			this->_Resetm(wistd::forward<_Myt>(_Right));
-			}
-		return (*this);
-		}
+    _Myt& operator=(_Myt&& _Right)
+        {	// assign by moving _Right
+        if (this != &_Right)
+            {	// clean up and copy
+            this->_Tidy();
+            this->_Resetm(wistd::forward<_Myt>(_Right));
+            }
+        return (*this);
+        }
 
-	template<class _Fx>
-		_Myt& operator=(_Fx&& _Func)
-		{	// move function object _Func
-		this->_Tidy();
-		this->_Reset(wistd::forward<_Fx>(_Func));
-		return (*this);
-		}
+    template<class _Fx>
+        _Myt& operator=(_Fx&& _Func)
+        {	// move function object _Func
+        this->_Tidy();
+        this->_Reset(wistd::forward<_Fx>(_Func));
+        return (*this);
+        }
 
-	function& operator=(nullptr_t)
-		{	// clear function object
-		this->_Tidy();
-		this->_Reset();
-		return (*this);
-		}
+    function& operator=(nullptr_t)
+        {	// clear function object
+        this->_Tidy();
+        this->_Reset();
+        return (*this);
+        }
 
-	template<class _Fx>
-		_Myt& operator=(reference_wrapper<_Fx> _Func) WI_NOEXCEPT
-		{	// assign wrapper holding reference to _Func
-		this->_Tidy();
-		this->_Reset(_Func);
-		return (*this);
-		}
+    template<class _Fx>
+        _Myt& operator=(reference_wrapper<_Fx> _Func) WI_NOEXCEPT
+        {	// assign wrapper holding reference to _Func
+        this->_Tidy();
+        this->_Reset(_Func);
+        return (*this);
+        }
 
-	void swap(_Myt& _Right) WI_NOEXCEPT
-		{	// swap with _Right
-		this->_Swap(_Right);
-		}
+    void swap(_Myt& _Right) WI_NOEXCEPT
+        {	// swap with _Right
+        this->_Swap(_Right);
+        }
 
     explicit operator bool() const WI_NOEXCEPT
     {	// test if wrapper holds null function pointer

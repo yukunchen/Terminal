@@ -34,6 +34,8 @@ ULONG gDebugFlag = 0;
 #define FE_SKIPFONT    1
 #define FE_FONTOK      2
 
+#define TERMINAL_FACENAME L"Terminal"
+
 /*
  * TTPoints -- Initial font pixel heights for TT fonts
  */
@@ -175,7 +177,7 @@ void RecreateFontHandles(_In_ const HWND hWnd)
 
 
 // Routine Description:
-// - Add the font desribed by the LOGFONT structure to the font table if
+// - Add the font described by the LOGFONT structure to the font table if
 //      it's not already there.
 int
 AddFont(
@@ -427,7 +429,6 @@ int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, 
     LPCTSTR ptszFace = pelf->elfLogFont.lfFaceName;
     PFACENODE pFN;
     PFONTENUMDATA pfed = (PFONTENUMDATA)lParam;
-    BOOL fIsEastAsianCP = IsEastAsianCP(gpStateInfo->CodePage);
 
     DBGFONTS(("  FontEnum \"%ls\" (%d,%d) weight 0x%lx(%d) %x -- %s\n",
             ptszFace,
@@ -452,9 +453,8 @@ int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, 
     }
 
     // reject non-TT fonts that aren't OEM
-    if ((nFontType != TRUETYPE_FONTTYPE) &&
-        (!fIsEastAsianCP || !IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet)) &&
-        (pelf->elfLogFont.lfCharSet != OEM_CHARSET)) {
+    if ((nFontType != TRUETYPE_FONTTYPE) && !IS_DBCS_OR_OEM_CHARSET(pelf->elfLogFont.lfCharSet))
+    {
         DBGFONTS(("    REJECT  face (not TT nor OEM)\n"));
         return FE_SKIPFONT;
     }
@@ -467,20 +467,20 @@ int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, 
     }
 
     // reject non-TT fonts that aren't terminal
-    if (fIsEastAsianCP && (nFontType != TRUETYPE_FONTTYPE) && (0 != lstrcmp(ptszFace, L"Terminal")))
+    if (g_fEastAsianSystem && (nFontType != TRUETYPE_FONTTYPE) && (0 != lstrcmp(ptszFace, TERMINAL_FACENAME)))
     {
         DBGFONTS(("    REJECT  face (not TT nor Terminal)\n"));
         return pfed->bFindFaces ? FE_SKIPFONT : FE_ABANDONFONT;
     }
 
     // reject East Asian TT fonts that aren't East Asian charset.
-    if (fIsEastAsianCP && !IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet)) {
+    if (g_fEastAsianSystem && (nFontType == TRUETYPE_FONTTYPE) && !IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet)) {
         DBGFONTS(("    REJECT  face (East Asian charset, but not East Asian TT)\n"));
         return FE_SKIPFONT;    // should be enumerate next charset.
     }
 
     // reject East Asian TT fonts on non-East Asian systems
-    if (!fIsEastAsianCP && IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet))
+    if (!g_fEastAsianSystem && (nFontType == TRUETYPE_FONTTYPE) && IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet))
     {
         DBGFONTS(("    REJECT  face (East Asian TT and not East Asian charset)\n"));
         return FE_SKIPFONT;    // should be enumerate next charset.
@@ -570,7 +570,6 @@ FontEnum(
     // reject variable width and italic fonts, also tt fonts with neg ac
     //
 
-
     if
     (
       !(pelf->elfLogFont.lfPitchAndFamily & FIXED_PITCH) ||
@@ -622,7 +621,7 @@ FontEnum(
      * reject non-TT fonts that aren't Terminal
      */
     if (g_fEastAsianSystem && (nFontType != TRUETYPE_FONTTYPE) &&
-        (0 != lstrcmp(ptszFace, TEXT("Terminal"))))
+        (0 != lstrcmp(ptszFace, TERMINAL_FACENAME)))
     {
         DBGFONTS(("    REJECT  face (not TT nor Terminal)\n"));
         return pfed->bFindFaces ? FE_SKIPFONT : FE_ABANDONFONT;
@@ -723,6 +722,16 @@ DoFontEnum(
     LogFont.lfCharSet = DEFAULT_CHARSET;
     if (ptszFace != nullptr) {
         StringCchCopy(LogFont.lfFaceName, LF_FACESIZE, ptszFace);
+
+        if (NumberOfFonts == 0 && // We've yet to enumerate fonts
+            g_fEastAsianSystem && // And we're currently using a CJK codepage
+            !IS_ANY_DBCS_CHARSET(CodePageToCharSet(OEMCP)) && // But the system codepage *isn't* CJK
+            0 == lstrcmp(ptszFace, TERMINAL_FACENAME)) {      // and we're looking at the raster font
+
+            // In this specific scenario, the raster font will only be enumerated if we ask for OEM_CHARSET rather than
+            // a CJK charset
+            LogFont.lfCharSet = OEM_CHARSET;
+        }
     }
 
     /*
@@ -954,7 +963,7 @@ EnumerateFonts(
         for (FontIndex = 0; FontIndex < NumberOfFonts; FontIndex++) {
             if (FontInfo[FontIndex].Size.X == DefaultFontSize.X &&
                 FontInfo[FontIndex].Size.Y == DefaultFontSize.Y &&
-                IS_ANY_DBCS_CHARSET(FontInfo[FontIndex].tmCharSet) &&
+                IS_DBCS_OR_OEM_CHARSET(FontInfo[FontIndex].tmCharSet) &&
                 FontInfo[FontIndex].Family == DefaultFontFamily) {
                 break;
             }

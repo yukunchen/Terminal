@@ -1,11 +1,5 @@
 // Windows Internal Libraries (wil)
 // Resource.h: RAII wrappers (smart pointers) and other thin usability pattern wrappers over common Windows patterns.
-//
-// wil Usage Guidelines:
-// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Internal%20Libraries%20for%20C++%20Usage%20Guide.docx?web=1
-//
-// wil Discussion Alias (wildisc):
-// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
 
 #pragma once
 #include <winreg.h>
