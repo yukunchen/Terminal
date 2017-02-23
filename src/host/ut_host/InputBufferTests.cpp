@@ -57,6 +57,7 @@ class InputBufferTests
             INPUT_RECORD record;
             record.EventType = MENU_EVENT;
             VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
+            VERIFY_ARE_EQUAL(record, inputBuffer._storage.back());
         }
     VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
     }
@@ -71,6 +72,11 @@ class InputBufferTests
         }
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
+        // verify that the events are the same in storage
+        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
+        {
+            VERIFY_ARE_EQUAL(inputBuffer._storage[i], records[i]);
+        }
     }
 
     TEST_METHOD(InputBufferCoalescesMouseEvents)
@@ -126,6 +132,12 @@ class InputBufferTests
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(mouseRecords, RECORD_INSERT_COUNT), 0u);
         // no events should have been coalesced
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT + 1);
+        // check that the events stored match those inserted
+        VERIFY_ARE_EQUAL(inputBuffer._storage.front(), mouseRecords[0]);
+        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
+        {
+            VERIFY_ARE_EQUAL(inputBuffer._storage[i + 1], mouseRecords[i]);
+        }
     }
 
     TEST_METHOD(InputBufferCoalescesKeyEvents)
@@ -181,6 +193,12 @@ class InputBufferTests
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(keyRecords, RECORD_INSERT_COUNT), 0u);
         // no events should have been coalesced
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT + 1);
+        // check that the events stored match those inserted
+        VERIFY_ARE_EQUAL(inputBuffer._storage.front(), keyRecords[0]);
+        for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
+        {
+            VERIFY_ARE_EQUAL(inputBuffer._storage[i + 1], keyRecords[i]);
+        }
     }
 
     TEST_METHOD(InputBufferDoesNotCoalesceFullWidthChars)
@@ -194,6 +212,7 @@ class InputBufferTests
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
+            VERIFY_ARE_EQUAL(inputBuffer._storage.back(), record);
         }
 
         // The events shouldn't be coalesced
@@ -480,7 +499,7 @@ class InputBufferTests
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0);
     }
 
-    TEST_METHOD(PreprocessInputRemovesPauseKeys)
+    TEST_METHOD(HandleConsoleSuspensionEventsRemovesPauseKeys)
     {
         InputBuffer inputBuffer;
         INPUT_RECORD pauseRecord = MakeKeyEvent(true, 1, VK_PAUSE, 0, 0, 0);
