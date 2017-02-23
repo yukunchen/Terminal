@@ -109,7 +109,6 @@ NTSTATUS GetChar(_In_ InputBuffer* pInputBuffer,
                                              &NumRead,
                                              FALSE, /*Peek*/
                                              fWait,
-                                             TRUE, /*StreamRead*/
                                              pHandleData,
                                              pConsoleMessage,
                                              pWaitRoutine,

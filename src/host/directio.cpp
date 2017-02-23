@@ -317,18 +317,17 @@ BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage,
         }
 
         Status = DirectReadData->pInputBuffer->ReadInputBuffer(Buffer,
-                                                             nLength,
-                                                             IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE),
-                                                             IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT),
-                                                             FALSE,
-                                                             DirectReadData->pInputReadHandleData,
-                                                             WaitReplyMessage,
-                                                             DirectReadWaitRoutine,
-                                                             &DirectReadData,
-                             #pragma prefast(suppress: 28132, "sizeof(DirectReadData) is used as an indicator of the recursion depth and needs to be the size of the pointer in this case. This is clearer as-is than measuring the pointer type.")
-                                                             sizeof(DirectReadData),
-                                                             TRUE,
-                                                             a->Unicode);
+                                                               nLength,
+                                                               IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE),
+                                                               IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT),
+                                                               DirectReadData->pInputReadHandleData,
+                                                               WaitReplyMessage,
+                                                               DirectReadWaitRoutine,
+                                                               &DirectReadData,
+#pragma prefast(suppress: 28132, "sizeof(DirectReadData) is used as an indicator of the recursion depth and needs to be the size of the pointer in this case. This is clearer as-is than measuring the pointer type.")
+                                                               sizeof(DirectReadData),
+                                                               TRUE,
+                                                               a->Unicode);
         if (Status == CONSOLE_STATUS_WAIT)
         {
             RetVal = FALSE;
@@ -457,17 +456,16 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
         }
 
         Status = pInputBuffer->ReadInputBuffer(Buffer,
-                                             nLength,
-                                             IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE),
-                                             IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT) && !fAddDbcsLead,
-                                             FALSE,
-                                             DirectReadData.pInputReadHandleData,
-                                             m,
-                                             DirectReadWaitRoutine,
-                                             &DirectReadData,
-                                             sizeof(DirectReadData),
-                                             FALSE,
-                                             a->Unicode);
+                                               nLength,
+                                               IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE),
+                                               IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT) && !fAddDbcsLead,
+                                               DirectReadData.pInputReadHandleData,
+                                               m,
+                                               DirectReadWaitRoutine,
+                                               &DirectReadData,
+                                               sizeof(DirectReadData),
+                                               FALSE,
+                                               a->Unicode);
         if (Status == CONSOLE_STATUS_WAIT)
         {
             *ReplyPending = TRUE;

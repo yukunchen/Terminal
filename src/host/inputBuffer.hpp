@@ -68,7 +68,6 @@ public:
                             _Inout_ PDWORD pcLength,
                             _In_ BOOL const fPeek,
                             _In_ BOOL const fWaitForData,
-                            _In_ BOOL const fStreamRead,
                             _In_ INPUT_READ_HANDLE_DATA* pHandleData,
                             _In_opt_ PCONSOLE_API_MSG pConsoleMessage,
                             _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
@@ -90,14 +89,13 @@ private:
                          _In_ ULONG Length,
                          _Out_ PULONG EventsRead,
                          _In_ BOOL Peek,
-                         _In_ BOOL StreamRead,
                          _Out_ PBOOL ResetWaitEvent,
                          _In_ BOOLEAN Unicode);
+
     HRESULT _ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
                         _In_ const size_t readCount,
                         _Out_ size_t& eventsRead,
                         _In_ const bool peek,
-                        _In_ const bool streamRead,
                         _Out_ bool& resetWaitEvent,
                         _In_ const bool unicode);
 

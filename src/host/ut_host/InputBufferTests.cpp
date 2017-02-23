@@ -153,7 +153,6 @@ class InputBufferTests
                                                             &length,
                                                             true,
                                                             false,
-                                                            false,
                                                             nullptr,
                                                             nullptr,
                                                             nullptr,
@@ -243,7 +242,6 @@ class InputBufferTests
                                                             &length,
                                                             false,
                                                             false,
-                                                            false,
                                                             nullptr,
                                                             nullptr,
                                                             nullptr,
@@ -274,7 +272,6 @@ class InputBufferTests
         DWORD length = RECORD_INSERT_COUNT;
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
                                                             &length,
-                                                            false,
                                                             false,
                                                             false,
                                                             nullptr,
@@ -309,7 +306,6 @@ class InputBufferTests
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
                                                             &length,
                                                             true,
-                                                            false,
                                                             false,
                                                             nullptr,
                                                             nullptr,
@@ -348,7 +344,6 @@ class InputBufferTests
                                                         1,
                                                         &eventsRead,
                                                         false,
-                                                        false,
                                                         &resetWaitEvent,
                                                         true));
         VERIFY_ARE_EQUAL(eventsRead, 1);
@@ -359,7 +354,6 @@ class InputBufferTests
         VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outBuffer,
                                                         RECORD_INSERT_COUNT - 1,
                                                         &eventsRead,
-                                                        false,
                                                         false,
                                                         &resetWaitEvent,
                                                         true));
@@ -391,7 +385,6 @@ class InputBufferTests
         VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outRecords,
                                                         RECORD_INSERT_COUNT,
                                                         &eventsRead,
-                                                        false,
                                                         false,
                                                         &resetWaitEvent,
                                                         false));
@@ -435,7 +428,6 @@ class InputBufferTests
                                                             &length,
                                                             false,
                                                             false,
-                                                            false,
                                                             nullptr,
                                                             nullptr,
                                                             nullptr,
@@ -453,7 +445,6 @@ class InputBufferTests
         // verify the rest of the records
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
                                                             &length,
-                                                            false,
                                                             false,
                                                             false,
                                                             nullptr,
@@ -541,7 +532,6 @@ class InputBufferTests
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
                                                             &length,
                                                             true,
-                                                            false,
                                                             false,
                                                             nullptr,
                                                             nullptr,

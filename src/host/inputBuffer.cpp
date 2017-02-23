@@ -140,8 +140,6 @@ HRESULT InputBuffer::FlushAllButKeys()
 // - pcLength - On input, number of events to read.  On output, number of events read.
 // - fPeek - If TRUE, copy events to pInputRecord but don't remove them from the input buffer.
 // - fWaitForData - if TRUE, wait until an event is input.  if FALSE, return immediately
-// TODO fStreamRead never worked like this
-// - fStreamRead - if TRUE, events with repeat counts > 1 are returned as multiple events.  also, EventsRead == 1.
 // - pHandleData - Pointer to handle data structure.  This parameter is optional if fWaitForData is false.
 // - pConsoleMsg - if called from dll (not InputThread), points to api message.  this parameter is used for wait block processing.
 // - pfnWaitRoutine - Routine to call when wait is woken up.
@@ -156,7 +154,6 @@ NTSTATUS InputBuffer::ReadInputBuffer(_Out_writes_(*pcLength) INPUT_RECORD* pInp
                                             _Inout_ PDWORD pcLength,
                                             _In_ BOOL const fPeek,
                                             _In_ BOOL const fWaitForData,
-                                            _In_ BOOL const fStreamRead,
                                             _In_ INPUT_READ_HANDLE_DATA* pHandleData,
                                             _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
                                             _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
@@ -192,7 +189,7 @@ NTSTATUS InputBuffer::ReadInputBuffer(_Out_writes_(*pcLength) INPUT_RECORD* pInp
     // read from buffer
     ULONG EventsRead;
     BOOL ResetWaitEvent;
-    Status = _ReadBuffer(pInputRecord, *pcLength, &EventsRead, fPeek, fStreamRead, &ResetWaitEvent, fUnicode);
+    Status = _ReadBuffer(pInputRecord, *pcLength, &EventsRead, fPeek, &ResetWaitEvent, fUnicode);
     if (ResetWaitEvent)
     {
         ResetEvent(InputWaitEvent);
@@ -209,8 +206,6 @@ NTSTATUS InputBuffer::ReadInputBuffer(_Out_writes_(*pcLength) INPUT_RECORD* pInp
 // - Length - length of buffer in events
 // - EventsRead - where to store number of events read
 // - Peek - if TRUE, don't remove data from buffer, just copy it.
-// TODO StreamRead never had this behavior
-// - StreamRead - if TRUE, events with repeat counts > 1 are returned as multiple events.  also, EventsRead == 1.
 // - ResetWaitEvent - on exit, TRUE if buffer became empty.
 // Return Value:
 // - STATUS_SUCCESS on success.
@@ -222,7 +217,6 @@ NTSTATUS InputBuffer::_ReadBuffer(_Out_writes_to_(Length, *EventsRead) INPUT_REC
                                   _In_ ULONG Length,
                                   _Out_ PULONG EventsRead,
                                   _In_ BOOL Peek,
-                                  _In_ BOOL StreamRead,
                                   _Out_ PBOOL ResetWaitEvent,
                                   _In_ BOOLEAN Unicode)
 {
@@ -235,7 +229,6 @@ NTSTATUS InputBuffer::_ReadBuffer(_Out_writes_to_(Length, *EventsRead) INPUT_REC
                               Length,
                               eventsRead,
                               !!Peek,
-                              !!StreamRead,
                               resetWaitEvent,
                               !!Unicode));
 
@@ -264,8 +257,6 @@ NTSTATUS InputBuffer::_ReadBuffer(_Out_writes_to_(Length, *EventsRead) INPUT_REC
 // - readCount - amount of records to read
 // - eventsRead - where to store number of events read
 // - peek - if TRUE, don't remove data from buffer, just copy it.
-// TODO StreamRead never had this behavior
-// - streamRead - if TRUE, events with repeat counts > 1 are returned as multiple events.  also, EventsRead == 1.
 // - resetWaitEvent - on exit, TRUE if buffer became empty.
 // Return Value:
 // - S_OK on success.
@@ -275,34 +266,12 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
                                  _In_ const size_t readCount,
                                  _Out_ size_t& eventsRead,
                                  _In_ const bool peek,
-                                 _In_ const bool streamRead,
                                  _Out_ bool& resetWaitEvent,
                                  _In_ const bool unicode)
 {
     try
     {
         resetWaitEvent = false;
-
-        // TODO is this still necessary? does streamRead actually do anything?
-        // legacy comment below:
-        //
-        // If StreamRead, just return one record. If repeat count is greater than
-        // one, just decrement it. The repeat count is > 1 if more than one event
-        // of the same type was merged. We need to expand them back to individual
-        // events here.
-        if (streamRead && _storage.back().EventType == KEY_EVENT)
-        {
-            ASSERT(readCount == 1);
-            ASSERT(!_storage.empty());
-            outRecords.push_back(_storage.front());
-            _storage.pop_front();
-            if (_storage.empty())
-            {
-                resetWaitEvent = true;
-            }
-            eventsRead = 1;
-            return STATUS_SUCCESS;
-        }
 
         // we need another var to keep track of how many we've read
         // because dbcs records count for two when we aren't doing a
