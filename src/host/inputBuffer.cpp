@@ -9,6 +9,7 @@
 #include "dbcs.h"
 #include "stream.h"
 
+
 #define INPUT_BUFFER_DEFAULT_INPUT_MODE (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT)
 
 // Routine Description:
@@ -29,8 +30,8 @@ InputBuffer::InputBuffer() :
     ImeMode.ReadyConversion = FALSE;
     ImeMode.InComposition = FALSE;
 
-    ZeroMemory(&this->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
-    ZeroMemory(&this->WriteConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+    ZeroMemory(&ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+    ZeroMemory(&WriteConInpDbcsLeadByte, sizeof(INPUT_RECORD));
 }
 
 // Routine Description:
@@ -42,7 +43,7 @@ InputBuffer::~InputBuffer()
 {
     // TODO: MSFT:8805366 check for null before trying to close this
     // and check that it needs to be closing it in the first place.
-    CloseHandle(this->InputWaitEvent);
+    CloseHandle(InputWaitEvent);
 }
 
 // Routine Description:
@@ -66,7 +67,7 @@ void InputBuffer::ReinitializeInputBuffer()
 // - None
 void InputBuffer::WakeUpReadersWaitingForData()
 {
-    this->WaitQueue.NotifyWaiters(false);
+    WaitQueue.NotifyWaiters(false);
 }
 
 // Routine Description:
@@ -162,41 +163,48 @@ NTSTATUS InputBuffer::ReadInputBuffer(_Out_writes_(*pcLength) INPUT_RECORD* pInp
                                             _In_ BOOLEAN const fWaitBlockExists,
                                             _In_ BOOLEAN const fUnicode)
 {
-    NTSTATUS Status;
-    if (_storage.empty())
+    try
     {
-        if (!fWaitForData)
+        NTSTATUS Status;
+        if (_storage.empty())
         {
-            *pcLength = 0;
-            return STATUS_SUCCESS;
-        }
-
-        pHandleData->IncrementReadCount();
-        Status = WaitForMoreToRead(pConsoleMsg, pfnWaitRoutine, pvWaitParameter, cbWaitParameter, fWaitBlockExists);
-        if (!NT_SUCCESS(Status))
-        {
-            if (Status != CONSOLE_STATUS_WAIT)
+            if (!fWaitForData)
             {
-                // WaitForMoreToRead failed, restore ReadCount and bail out
-                pHandleData->DecrementReadCount();
+                *pcLength = 0;
+                return STATUS_SUCCESS;
             }
 
-            *pcLength = 0;
-            return Status;
+            pHandleData->IncrementReadCount();
+            Status = WaitForMoreToRead(pConsoleMsg, pfnWaitRoutine, pvWaitParameter, cbWaitParameter, fWaitBlockExists);
+            if (!NT_SUCCESS(Status))
+            {
+                if (Status != CONSOLE_STATUS_WAIT)
+                {
+                    // WaitForMoreToRead failed, restore ReadCount and bail out
+                    pHandleData->DecrementReadCount();
+                }
+
+                *pcLength = 0;
+                return Status;
+            }
         }
-    }
 
-    // read from buffer
-    ULONG EventsRead;
-    BOOL ResetWaitEvent;
-    Status = _ReadBuffer(pInputRecord, *pcLength, &EventsRead, fPeek, &ResetWaitEvent, fUnicode);
-    if (ResetWaitEvent)
+        // read from buffer
+        ULONG EventsRead;
+        BOOL ResetWaitEvent;
+        Status = _ReadBuffer(pInputRecord, *pcLength, &EventsRead, fPeek, &ResetWaitEvent, fUnicode);
+        if (ResetWaitEvent)
+        {
+            ResetEvent(InputWaitEvent);
+        }
+
+        *pcLength = EventsRead;
+        return Status;
+    }
+    catch (...)
     {
-        ResetEvent(InputWaitEvent);
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
-
-    *pcLength = EventsRead;
-    return Status;
 }
 
 // Routine Description:
@@ -220,33 +228,42 @@ NTSTATUS InputBuffer::_ReadBuffer(_Out_writes_to_(Length, *EventsRead) INPUT_REC
                                   _Out_ PBOOL ResetWaitEvent,
                                   _In_ BOOLEAN Unicode)
 {
-    std::deque<INPUT_RECORD> outRecords;
-    size_t eventsRead;
-    bool resetWaitEvent;
-
-    // call inner func
-    LOG_IF_FAILED(_ReadBuffer(outRecords,
-                              Length,
-                              eventsRead,
-                              !!Peek,
-                              resetWaitEvent,
-                              !!Unicode));
-
-    // move data back to original vars
-    *ResetWaitEvent = !!resetWaitEvent;
-    LOG_IF_FAILED(SizeTToULong(eventsRead, EventsRead));
-
-    // copy events over to the array
-    ASSERT(outRecords.size() < Length);
-    size_t currentIndex = 0;
-    while (!outRecords.empty())
+    try
     {
-        Buffer[currentIndex] = outRecords.front();
-        outRecords.pop_front();
-        ++currentIndex;
-    }
+        std::deque<INPUT_RECORD> outRecords;
+        size_t eventsRead;
+        bool resetWaitEvent;
 
-    return STATUS_SUCCESS;
+        // call inner func
+        THROW_IF_FAILED(_ReadBuffer(outRecords,
+                                    Length,
+                                    eventsRead,
+                                    !!Peek,
+                                    resetWaitEvent,
+                                    !!Unicode));
+
+        // move data back to original vars
+        *ResetWaitEvent = !!resetWaitEvent;
+        THROW_IF_FAILED(SizeTToULong(eventsRead, EventsRead));
+
+        if (outRecords.size() > Length)
+        {
+            throw std::out_of_range("_ReadBuffer read more records than can fit in the output buffer");
+        };
+        size_t currentIndex = 0;
+        while (!outRecords.empty())
+        {
+            Buffer[currentIndex] = outRecords.front();
+            outRecords.pop_front();
+            ++currentIndex;
+        }
+
+        return STATUS_SUCCESS;
+    }
+    catch (...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
 
 }
 
@@ -328,55 +345,69 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
 // read into.
 NTSTATUS InputBuffer::PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength)
 {
-    // change to a deque
-    std::deque<INPUT_RECORD> inRecords;
-    for (size_t i = 0; i < *pcLength; ++i)
+    try
     {
-        inRecords.push_back(pInputRecord[i]);
-    }
-    size_t eventsWritten = PrependInputBuffer(inRecords);
+        // change to a deque
+        std::deque<INPUT_RECORD> inRecords;
+        for (size_t i = 0; i < *pcLength; ++i)
+        {
+            inRecords.push_back(pInputRecord[i]);
+        }
+        size_t eventsWritten;
+        THROW_IF_FAILED(PrependInputBuffer(inRecords, eventsWritten));
 
-    LOG_IF_FAILED(SIZETToDWord(eventsWritten, pcLength));
-    return STATUS_SUCCESS;
+        THROW_IF_FAILED(SizeTToDWord(eventsWritten, pcLength));
+        return STATUS_SUCCESS;
+    }
+    catch (...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
 }
 
 // Routine Description:
 // -  Writes records to the beginning of the input buffer.
 // Arguments:
 // - inRecords - Records to write to buffer.
+// - eventsWritten - The number of events written to the buffer on exit.
 // Return Value:
-// - The number of events written to the buffer.
+// S_OK if successful.
 // Note:
 // - The console lock must be held when calling this routine.
-size_t InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
+HRESULT InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords, _Out_ size_t& eventsWritten)
 {
-    LOG_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
-    if (inRecords.empty())
+    try
     {
-        return STATUS_SUCCESS;
+        THROW_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
+        if (inRecords.empty())
+        {
+            return STATUS_SUCCESS;
+        }
+        // read all of the records out of the buffer, then write the
+        // prepend ones, then write the original set. We need to do it
+        // this way to handle any coalescing that might occur.
+
+        // get all of the existing records, "emptying" the buffer
+        std::deque<INPUT_RECORD> existingStorage;
+        existingStorage.swap(_storage);
+
+        // write the prepend records
+        size_t prependEventsWritten;
+        bool setWaitEvent;
+        _WriteBuffer(inRecords, prependEventsWritten, setWaitEvent);
+
+        // write all previously existing records
+        size_t existingEventsWritten;
+        _WriteBuffer(existingStorage, existingEventsWritten, setWaitEvent);
+        if (setWaitEvent)
+        {
+            SetEvent(InputWaitEvent);
+        }
+        WakeUpReadersWaitingForData();
+        eventsWritten = prependEventsWritten;
+        return S_OK;
     }
-    // read all of the records out of the buffer, then write the
-    // prepend ones, then write the original set. We need to do it
-    // this way to handle any coalescing that might occur.
-
-    // get all of the existing records, "emptying" the buffer
-    std::deque<INPUT_RECORD> existingStorage;
-    existingStorage.swap(_storage);
-
-    // write the prepend records
-    size_t prependEventsWritten;
-    bool setWaitEvent;
-    _WriteBuffer(inRecords, prependEventsWritten, setWaitEvent);
-
-    // write all previously existing records
-    size_t eventsWritten;
-    _WriteBuffer(existingStorage, eventsWritten, setWaitEvent);
-    if (setWaitEvent)
-    {
-        SetEvent(InputWaitEvent);
-    }
-    WakeUpReadersWaitingForData();
-    return prependEventsWritten;
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -393,16 +424,23 @@ size_t InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
 // read into.
 DWORD InputBuffer::WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD cInputRecords)
 {
-    // change to a deque
-    std::deque<INPUT_RECORD> inRecords;
-    for (size_t i = 0; i < cInputRecords; ++i)
+    try
     {
-        inRecords.push_back(pInputRecord[i]);
+        // change to a deque
+        std::deque<INPUT_RECORD> inRecords;
+        for (size_t i = 0; i < cInputRecords; ++i)
+        {
+            inRecords.push_back(pInputRecord[i]);
+        }
+        size_t EventsWritten = WriteInputBuffer(inRecords);
+        DWORD result;
+        THROW_IF_FAILED(SIZETToDWord(EventsWritten, &result));
+        return result;
     }
-    size_t EventsWritten = WriteInputBuffer(inRecords);
-    DWORD result;
-    LOG_IF_FAILED(SIZETToDWord(EventsWritten, &result));
-    return result;
+    catch(...)
+    {
+        return 0;
+    }
 }
 
 // Routine Description:
@@ -416,25 +454,31 @@ DWORD InputBuffer::WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD 
 // - The console lock must be held when calling this routine.
 size_t InputBuffer::WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
 {
-    LOG_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
-    if (inRecords.empty())
+    try {
+        THROW_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
+        if (inRecords.empty())
+        {
+            return 0;
+        }
+
+        // Write to buffer.
+        size_t EventsWritten;
+        bool SetWaitEvent;
+        THROW_IF_FAILED(_WriteBuffer(inRecords, EventsWritten, SetWaitEvent));
+
+        if (SetWaitEvent)
+        {
+            SetEvent(InputWaitEvent);
+        }
+
+        // Alert any writers waiting for space.
+        WakeUpReadersWaitingForData();
+        return EventsWritten;
+    }
+    catch (...)
     {
         return 0;
     }
-
-    // Write to buffer.
-    size_t EventsWritten;
-    bool SetWaitEvent;
-    LOG_IF_FAILED(_WriteBuffer(inRecords, EventsWritten, SetWaitEvent));
-
-    if (SetWaitEvent)
-    {
-        SetEvent(InputWaitEvent);
-    }
-
-    // Alert any writers waiting for space.
-    WakeUpReadersWaitingForData();
-    return EventsWritten;
 }
 
 // Routine Description:

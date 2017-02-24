@@ -77,7 +77,7 @@ public:
                             _In_ BOOLEAN const fUnicode);
 
     NTSTATUS PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength);
-    size_t PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords);
+    HRESULT PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords, _Out_ size_t& eventsWritten);
 
     DWORD WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD cInputRecords);
     size_t WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords);
