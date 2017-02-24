@@ -454,7 +454,8 @@ DWORD InputBuffer::WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD 
 // - The console lock must be held when calling this routine.
 size_t InputBuffer::WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
 {
-    try {
+    try
+    {
         THROW_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
         if (inRecords.empty())
         {
