@@ -502,11 +502,20 @@ HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
         eventsWritten = 0;
         setWaitEvent = false;
         bool initiallyEmptyQueue = _storage.empty();
+        // we only check for possible coalescing when storing one
+        // record at a time because this is the original behavior of
+        // the input buffer. Changing this behavior may break stuff
+        // that was depending on it.
         if (inRecords.size() == 1 && !_storage.empty())
         {
             bool coalesced = false;
             // this looks kinda weird but we don't want to coalesce a
             // mouse event and then try to coalesce a key event right after.
+            //
+            // we also pass the whole deque to the coalescing methods
+            // even though they only want one event because it should
+            // be their responsibility to maintain the correct state
+            // of the deque if they process any records in it.
             if (_CoalesceMouseMovedEvents(inRecords))
             {
                 coalesced = true;
