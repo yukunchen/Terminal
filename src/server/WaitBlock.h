@@ -17,8 +17,9 @@ Revision History:
 #pragma once
 
 #include "..\host\conapi.h"
-
 #include "WaitTerminationReason.h"
+
+#include <list>
 
 class ConsoleWaitQueue;
 

@@ -355,7 +355,7 @@ STDMETHODIMP CConsoleTSF::OnEndComposition(ITfCompositionView* pCompView)
 
 //+---------------------------------------------------------------------------
 //
-// CConsoleTSF::::ITfTextEditSink::OnEndEdit
+// CConsoleTSF::ITfTextEditSink::OnEndEdit
 //
 //----------------------------------------------------------------------------
 

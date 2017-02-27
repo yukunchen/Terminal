@@ -22,7 +22,7 @@ Notes:
 
 class CConversionArea;
 
-class CConsoleTSF sealed:
+class CConsoleTSF final:
     public ITfContextOwner,
     public ITfContextOwnerCompositionSink,
     public ITfInputProcessorProfileActivationSink,

@@ -28,7 +28,7 @@
 
 typedef struct _RAW_READ_DATA
 {
-    PINPUT_INFORMATION pInputInfo;
+    INPUT_INFORMATION* pInputInfo;
     ULONG BufferSize;
     _Field_size_(BufferSize) PWCHAR BufPtr;
     ConsoleProcessHandle* pProcessData;
@@ -66,7 +66,7 @@ DWORD ConsKbdState[] = {
 // - CommandLineEditingKeys - if present, arrow keys will be returned. on output, if TRUE, Char contains virtual key code for arrow key.
 // - CommandLinePopupKeys - if present, arrow keys will be returned. on output, if TRUE, Char contains virtual key code for arrow key.
 // Return Value:
-NTSTATUS GetChar(_In_ PINPUT_INFORMATION pInputInfo,
+NTSTATUS GetChar(_In_ INPUT_INFORMATION* pInputInfo,
                  _Out_ PWCHAR pwchOut,
                  _In_ const BOOL fWait,
                  _In_opt_ INPUT_READ_HANDLE_DATA* pHandleData,
@@ -105,19 +105,18 @@ NTSTATUS GetChar(_In_ PINPUT_INFORMATION pInputInfo,
     {
         INPUT_RECORD Event;
         ULONG NumRead = 1;
-        Status = ReadInputBuffer(pInputInfo,
-                                 &Event,
-                                 &NumRead,
-                                 FALSE, /*Peek*/
-                                 fWait,
-                                 TRUE, /*StreamRead*/
-                                 pHandleData,
-                                 pConsoleMessage,
-                                 pWaitRoutine,
-                                 pvWaitParameter,
-                                 ulWaitParameterLength,
-                                 fWaitBlockExists,
-                                 TRUE); /*Unicode*/
+        Status = pInputInfo->ReadInputBuffer(&Event,
+                                             &NumRead,
+                                             FALSE, /*Peek*/
+                                             fWait,
+                                             TRUE, /*StreamRead*/
+                                             pHandleData,
+                                             pConsoleMessage,
+                                             pWaitRoutine,
+                                             pvWaitParameter,
+                                             ulWaitParameterLength,
+                                             fWaitBlockExists,
+                                             TRUE); /*Unicode*/
         if (!NT_SUCCESS(Status))
         {
             return Status;
@@ -1276,7 +1275,7 @@ BOOL CookedReadWaitRoutine(_In_ PCONSOLE_API_MSG pWaitReplyMessage,
 // - NumBytes - On input, size of buffer.  On output, number of bytes read.
 // - HandleData - Pointer to handle data structure.
 // Return Value:
-NTSTATUS ReadChars(_In_ PINPUT_INFORMATION const pInputInfo,
+NTSTATUS ReadChars(_In_ INPUT_INFORMATION* const pInputInfo,
                    _In_ ConsoleProcessHandle* const pProcessData,
                    _In_ PSCREEN_INFORMATION const pScreenInfo,
                    _Inout_updates_bytes_(*pdwNumBytes) PWCHAR pwchBuffer,

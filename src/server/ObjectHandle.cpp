@@ -175,7 +175,7 @@ INPUT_READ_HANDLE_DATA* ConsoleHandleData::GetClientInput() const
 }
 
 // Routine Description:
-// - Closes this handle destroying memory as appropriate and freeing ref counts. 
+// - Closes this handle destroying memory as appropriate and freeing ref counts.
 //   Do not use this handle after closing.
 // Arguments:
 // - <none>
@@ -247,7 +247,7 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
 
     if (!pInputInfo->Header.HasAnyOpenHandles())
     {
-        ReinitializeInputBuffer(pInputInfo);
+        pInputInfo->ReinitializeInputBuffer();
     }
 
     return S_OK;
