@@ -31,7 +31,7 @@ InputBuffer::InputBuffer() :
     ImeMode.InComposition = FALSE;
 
     ZeroMemory(&ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
-    ZeroMemory(&WriteConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+    ZeroMemory(&WriteConInpDbcsLeadByte, sizeof(INPUT_RECORD) * ARRAYSIZE(WriteConInpDbcsLeadByte));
 }
 
 // Routine Description:
@@ -121,7 +121,7 @@ HRESULT InputBuffer::FlushAllButKeys()
     try
     {
         std::deque<INPUT_RECORD> keyRecords;
-        for(auto it = _storage.begin(); it != _storage.end(); ++it)
+        for(auto it = _storage.cbegin(); it != _storage.cend(); ++it)
         {
             if (it->EventType == KEY_EVENT)
             {
@@ -557,6 +557,10 @@ HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
 // true if events were coalesced, false if they were not.
 // Note:
 // - The size of inRecords must be 1.
+// - Coalescing here means updating a record that already exists in
+// the buffer with updated values from an incoming event, instead of
+// storing the incoming event (which would make the original one
+// redundant/out of date with the most current state).
 bool InputBuffer::_CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRecords)
 {
     _ASSERT(inRecords.size() == 1);
@@ -585,6 +589,10 @@ bool InputBuffer::_CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRec
 // true if events were coalesced, false if they were not.
 // Note:
 // - The size of inRecords must be 1.
+// - Coalescing here means updating a record that already exists in
+// the buffer with updated values from an incoming event, instead of
+// storing the incoming event (which would make the original one
+// redundant/out of date with the most current state).
 bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>& inRecords)
 {
     _ASSERT(inRecords.size() == 1);
