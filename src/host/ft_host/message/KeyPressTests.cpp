@@ -57,7 +57,7 @@ class KeyPressTests
         // flush input buffer
         FlushConsoleInputBuffer(inputHandle);
         VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(inputHandle, &events));
-        VERIFY_ARE_EQUAL(events, 0);
+        VERIFY_ARE_EQUAL(events, 0u);
 
         // send context menu key event
         TurnOffModifierKeys(hwnd);
@@ -102,7 +102,7 @@ class KeyPressTests
         FlushConsoleInputBuffer(inputHandle);
         successBool = GetNumberOfConsoleInputEvents(inputHandle, &events);
         VERIFY_IS_TRUE(!!successBool);
-        VERIFY_ARE_EQUAL(events, 0);
+        VERIFY_ARE_EQUAL(events, 0u);
 
         // send a bunch of 'a' keypresses to the console
         DWORD repeatCount = 1;
@@ -125,7 +125,7 @@ class KeyPressTests
                          inputBuffer.get(),
                          1,
                          &events);
-        VERIFY_ARE_EQUAL(events, 1);
+        VERIFY_ARE_EQUAL(events, 1u);
         VERIFY_ARE_EQUAL(inputBuffer[0].EventType, KEY_EVENT);
         VERIFY_ARE_EQUAL(inputBuffer[0].Event.KeyEvent.wRepeatCount, messageSendCount, NoThrowString().Format(L"%d", inputBuffer[0].Event.KeyEvent.wRepeatCount));
     }
@@ -156,7 +156,7 @@ class KeyPressTests
         // flush input buffer
         FlushConsoleInputBuffer(inputHandle);
         VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(inputHandle, &events));
-        VERIFY_ARE_EQUAL(events, 0);
+        VERIFY_ARE_EQUAL(events, 0u);
 
         DWORD dwInMode = 0;
         GetConsoleMode(inputHandle, &dwInMode);
@@ -223,7 +223,7 @@ class KeyPressTests
                     Log::Comment(NoThrowString().Format(L"Another event type was found."));
             }
         }
-        VERIFY_ARE_EQUAL(events, 4);
+        VERIFY_ARE_EQUAL(events, 4u);
         VERIFY_ARE_EQUAL(inputBuffer[0].EventType, KEY_EVENT);
         VERIFY_ARE_EQUAL(inputBuffer[1].EventType, KEY_EVENT);
         VERIFY_ARE_EQUAL(inputBuffer[2].EventType, KEY_EVENT);
@@ -246,7 +246,7 @@ void KeyPressTests::TestAltGr()
     // flush input buffer
     FlushConsoleInputBuffer(inputHandle);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(inputHandle, &events));
-    VERIFY_ARE_EQUAL(events, 0);
+    VERIFY_ARE_EQUAL(events, 0u);
 
     // create german locale string
     std::wstringstream wss;
@@ -279,7 +279,7 @@ void KeyPressTests::TestAltGr()
     // flush input buffer in preparation of the key event
     FlushConsoleInputBuffer(inputHandle);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(inputHandle, &events));
-    VERIFY_ARE_EQUAL(events, 0);
+    VERIFY_ARE_EQUAL(events, 0u);
 
     // send the key event that will be turned into an '@'
     UINT scanCode = MapVirtualKey('Q', MAPVK_VK_TO_VSC);
