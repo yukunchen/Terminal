@@ -102,8 +102,8 @@ class InputBufferTests
         VERIFY_ARE_EQUAL(outNum, 1u);
         // check that the mouse position is being updated correctly
         INPUT_RECORD outRecord = *reinterpret_cast<INPUT_RECORD*>(inputBuffer.Out);
-        VERIFY_ARE_EQUAL(outRecord.Event.MouseEvent.dwMousePosition.X, RECORD_INSERT_COUNT);
-        VERIFY_ARE_EQUAL(outRecord.Event.MouseEvent.dwMousePosition.Y, RECORD_INSERT_COUNT * 2);
+        VERIFY_ARE_EQUAL(outRecord.Event.MouseEvent.dwMousePosition.X, (SHORT)RECORD_INSERT_COUNT);
+        VERIFY_ARE_EQUAL(outRecord.Event.MouseEvent.dwMousePosition.Y, (SHORT)(RECORD_INSERT_COUNT * 2));
 
         // add a key event and another mouse event to make sure that
         // an event between two mouse events stopped the coalescing.
