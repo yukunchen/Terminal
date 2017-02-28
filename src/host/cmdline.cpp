@@ -2682,7 +2682,7 @@ NTSTATUS ProcessCommandListInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _
         WCHAR Char;
         BOOLEAN CommandLinePopupKeys = FALSE;
 
-        Status = GetChar(pCookedReadData->pInputInfo,
+        Status = GetChar(pCookedReadData->pInputBuffer,
                          &Char,
                          TRUE,
                          pCookedReadData->pInputReadHandleData,
@@ -2886,7 +2886,7 @@ NTSTATUS ProcessCopyFromCharInput(_In_ PCOOKED_READ_DATA const pCookedReadData, 
     {
         WCHAR Char;
         BOOLEAN CommandLinePopupKeys = FALSE;
-        Status = GetChar(pCookedReadData->pInputInfo,
+        Status = GetChar(pCookedReadData->pInputBuffer,
                          &Char,
                          TRUE,
                          pCookedReadData->pInputReadHandleData,
@@ -2985,7 +2985,7 @@ NTSTATUS ProcessCopyToCharInput(_In_ PCOOKED_READ_DATA const pCookedReadData, _I
     {
         WCHAR Char;
         BOOLEAN CommandLinePopupKeys = FALSE;
-        Status = GetChar(pCookedReadData->pInputInfo,
+        Status = GetChar(pCookedReadData->pInputBuffer,
                          &Char,
                          TRUE,
                          pCookedReadData->pInputReadHandleData,
@@ -3088,7 +3088,7 @@ NTSTATUS ProcessCommandNumberInput(_In_ PCOOKED_READ_DATA const pCookedReadData,
         WCHAR Char;
         BOOLEAN CommandLinePopupKeys;
 
-        Status = GetChar(pCookedReadData->pInputInfo,
+        Status = GetChar(pCookedReadData->pInputBuffer,
                          &Char,
                          TRUE,
                          pCookedReadData->pInputReadHandleData,

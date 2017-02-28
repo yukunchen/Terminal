@@ -46,7 +46,7 @@ HRESULT ApiDispatchers::ServerGetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, 
     if (pObjectHandle->IsInputHandle())
     {
         handleType = L"input handle";
-        INPUT_INFORMATION* pObj;
+        InputBuffer* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_READ, &pObj));
         RETURN_HR(m->_pApiRoutines->GetConsoleInputModeImpl(pObj, &a->Mode));
     }
@@ -68,7 +68,7 @@ HRESULT ApiDispatchers::ServerSetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, 
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
     if (pObjectHandle->IsInputHandle())
     {
-        INPUT_INFORMATION* pObj;
+        InputBuffer* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pObj));
         return m->_pApiRoutines->SetConsoleInputModeImpl(pObj, a->Mode);
     }
@@ -88,7 +88,7 @@ HRESULT ApiDispatchers::ServerGetNumberOfInputEvents(_Inout_ CONSOLE_API_MSG * c
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
-    INPUT_INFORMATION* pObj;
+    InputBuffer* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_READ, &pObj));
 
     return m->_pApiRoutines->GetNumberOfConsoleInputEventsImpl(pObj, &a->ReadyEvents);
@@ -140,7 +140,7 @@ HRESULT ApiDispatchers::ServerFlushConsoleInputBuffer(_Inout_ CONSOLE_API_MSG * 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
-    INPUT_INFORMATION* pObj;
+    InputBuffer* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pObj));
 
     return m->_pApiRoutines->FlushConsoleInputBuffer(pObj);
