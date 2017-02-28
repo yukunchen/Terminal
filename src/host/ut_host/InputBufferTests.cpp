@@ -39,7 +39,7 @@ class InputBufferTests
     TEST_METHOD(CanGetNumberOfReadyEvents)
     {
         InputBuffer inputBuffer;
-        INPUT_RECORD record = MakeKeyEvent(true, 1, 'a', 0, 'a', 0);
+        INPUT_RECORD record = MakeKeyEvent(true, 1, L'a', 0, L'a', 0);
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1);
         // add another event, check again
@@ -59,7 +59,7 @@ class InputBufferTests
             VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
             VERIFY_ARE_EQUAL(record, inputBuffer._storage.back());
         }
-    VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
     }
 
     TEST_METHOD(CanBulkInsertIntoInputBuffer)
@@ -145,7 +145,7 @@ class InputBufferTests
         Log::Comment(L"The input buffer should coalesce identical key events if they are send one at a time");
 
         InputBuffer inputBuffer;
-        INPUT_RECORD record = MakeKeyEvent(true, 1, 'a', 0, L'a', 0);
+        INPUT_RECORD record = MakeKeyEvent(true, 1, L'a', 0, L'a', 0);
 
         // send a bunch of identical events
         inputBuffer.Flush();
@@ -184,7 +184,7 @@ class InputBufferTests
 
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            keyRecords[i] = MakeKeyEvent(true, 1, 'a', 0, L'a', 0);
+            keyRecords[i] = MakeKeyEvent(true, 1, L'a', 0, L'a', 0);
         }
         inputBuffer.Flush();
         // send one key event to possibly coalesce into later
@@ -282,7 +282,7 @@ class InputBufferTests
         // write some input records
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            records[i] = MakeKeyEvent(TRUE, 1, 'A' + i, 0, 'A' + i, 0);
+            records[i] = MakeKeyEvent(TRUE, 1, static_cast<WCHAR>(L'A' + i), 0, static_cast<WCHAR>(L'A' + i), 0);
         }
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
 
@@ -315,7 +315,7 @@ class InputBufferTests
         INPUT_RECORD records[RECORD_INSERT_COUNT];
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            records[i] = MakeKeyEvent(TRUE, 1, 'A' + i, 0, 'A' + i, 0);
+            records[i] = MakeKeyEvent(TRUE, 1, static_cast<WCHAR>(L'A' + i), 0, static_cast<WCHAR>(L'A' + i), 0);
         }
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
 
@@ -351,7 +351,7 @@ class InputBufferTests
         INPUT_RECORD records[RECORD_INSERT_COUNT];
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            records[i] = MakeKeyEvent(TRUE, 1, 'A' + i, 0, 'A' + i, 0);
+            records[i] = MakeKeyEvent(TRUE, 1, static_cast<WCHAR>(L'A' + i), 0, static_cast<WCHAR>(L'A' + i), 0);
         }
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
 
@@ -365,7 +365,7 @@ class InputBufferTests
                                                         false,
                                                         &resetWaitEvent,
                                                         true));
-        VERIFY_ARE_EQUAL(eventsRead, 1);
+        VERIFY_ARE_EQUAL(eventsRead, 1u);
         VERIFY_IS_FALSE(!!resetWaitEvent);
 
         // read the rest, resetWaitEvent should be set to true
@@ -389,7 +389,7 @@ class InputBufferTests
         const unsigned int RECORD_INSERT_COUNT = 4;
         INPUT_RECORD inRecords[RECORD_INSERT_COUNT];
         inRecords[0].EventType = MOUSE_EVENT;
-        inRecords[1] = MakeKeyEvent(TRUE, 1, 'A', 0, 'A', 0);
+        inRecords[1] = MakeKeyEvent(TRUE, 1, L'A', 0, L'A', 0);
         inRecords[2] = MakeKeyEvent(TRUE, 1, 0x3042, 0, 0x3042, 0); // U+3042 hiragana A
         inRecords[3].EventType = MOUSE_EVENT;
 
@@ -426,7 +426,7 @@ class InputBufferTests
         INPUT_RECORD records[RECORD_INSERT_COUNT];
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            records[i] = MakeKeyEvent(TRUE, 1, 'A' + i, 0, 'A' + i, 0);
+            records[i] = MakeKeyEvent(TRUE, 1, static_cast<WCHAR>(L'A' + i), 0, static_cast<WCHAR>(L'A' + i), 0);
         }
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
 
@@ -434,7 +434,7 @@ class InputBufferTests
         INPUT_RECORD prependRecords[RECORD_INSERT_COUNT];
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            prependRecords[i] = MakeKeyEvent(TRUE, 1, 'a' + i, 0, 'a' + i, 0);
+            prependRecords[i] = MakeKeyEvent(TRUE, 1, static_cast<WCHAR>(L'a' + i), 0, static_cast<WCHAR>(L'a' + i), 0);
         }
         DWORD prependCount = RECORD_INSERT_COUNT;
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.PrependInputBuffer(prependRecords, &prependCount));
@@ -515,7 +515,7 @@ class InputBufferTests
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0);
 
         // the next key press should unpause us but be discarded
-        INPUT_RECORD unpauseRecord = MakeKeyEvent(true, 1, 'a', 0, 'a', 0);
+        INPUT_RECORD unpauseRecord = MakeKeyEvent(true, 1, L'a', 0, L'a', 0);
         VERIFY_ARE_EQUAL(inputBuffer.WriteInputBuffer(&unpauseRecord, 1), 0u);
 
         VERIFY_IS_FALSE(IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_OUTPUT_SUSPENDED));
@@ -573,7 +573,7 @@ class InputBufferTests
         VERIFY_SUCCEEDED(inputBuffer._WriteBuffer(storage, eventsWritten, waitEvent));
         VERIFY_IS_TRUE(waitEvent);
         // write another, it shouldn't signal this time
-        INPUT_RECORD record2 = MakeKeyEvent(true, 1, 'b', 0, 'b', 0);
+        INPUT_RECORD record2 = MakeKeyEvent(true, 1, L'b', 0, L'b', 0);
         // write another event to a non-empty buffer
         waitEvent = false;
         storage.push_back(record2);
