@@ -12,25 +12,23 @@
 #include "window.hpp"
 
 // A helper function to create a SafeArray Version of an int array of a specified length
-SAFEARRAY * BuildIntSafeArray(_In_reads_(length) const int * data, _In_ int length)
+SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int const length)
 {
-    SAFEARRAY *sa = SafeArrayCreateVector(VT_I4, 0, length);
-    if (sa == NULL)
+    SAFEARRAY *psa = SafeArrayCreateVector(VT_I4, 0, length);
+    if (psa != nullptr)
     {
-        return NULL;
-    }
-
-    for (long i = 0; i < length; i++)
-    {
-        if (FAILED(SafeArrayPutElement(sa, &i, (void *)&(data[i]))))
+        for (long i = 0; i < length; i++)
         {
-            SafeArrayDestroy(sa);
-            sa = NULL;
-            break;
+            if (FAILED(SafeArrayPutElement(psa, &i, (void *)&(data[i]))))
+            {
+                SafeArrayDestroy(psa);
+                psa = nullptr;
+                break;
+            }
         }
     }
 
-    return sa;
+    return psa;
 }
 
 ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Window* const pParent, _In_ SCREEN_INFORMATION* const pScreenInfo) :
@@ -78,7 +76,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::QueryInterface(_In_ REFIID riid, _COM_Outp
     }
     else
     {
-        *ppInterface = NULL;
+        *ppInterface = nullptr;
         return E_NOINTERFACE;
     }
 
@@ -105,7 +103,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPatternProvider(_In_ PATTERNID patternI
 {
     UNREFERENCED_PARAMETER(patternId);
 
-    *ppInterface = NULL;
+    *ppInterface = nullptr;
 
     // TODO: MSFT: 7960168 - insert patterns here 
 
@@ -131,7 +129,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyI
     {
         // In a production application, this would be localized text.
         pVariant->bstrVal = SysAllocString(L"Text Area");
-        if (pVariant->bstrVal != NULL)
+        if (pVariant->bstrVal != nullptr)
         {
             pVariant->vt = VT_BSTR;
         }
@@ -139,7 +137,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyI
     else if (propertyId == UIA_AutomationIdPropertyId)
     {
         pVariant->bstrVal = SysAllocString(L"Text Area");
-        if (pVariant->bstrVal != NULL)
+        if (pVariant->bstrVal != nullptr)
         {
             pVariant->vt = VT_BSTR;
         }
@@ -167,7 +165,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyI
     else if (propertyId == UIA_ProviderDescriptionPropertyId)
     {
         pVariant->bstrVal = SysAllocString(L"Microsoft Console Host: Screen Information Text Area");
-        if (pVariant->bstrVal != NULL)
+        if (pVariant->bstrVal != nullptr)
         {
             pVariant->vt = VT_BSTR;
         }
@@ -178,7 +176,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyI
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
 {
-    *ppProvider = NULL;
+    *ppProvider = nullptr;
 
     return S_OK;
 }
@@ -188,7 +186,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_HostRawElementProvider(_COM_Outptr_res
 
 IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction, _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
-    *ppProvider = NULL;
+    *ppProvider = nullptr;
 
     if (direction == NavigateDirection_Parent)
     {
@@ -196,14 +194,14 @@ IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
         RETURN_IF_NULL_ALLOC(*ppProvider);
     }
 
-    // For the other directions the default of NULL is correct
+    // For the other directions the default of nullptr is correct
     return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId)
 {
     // Root defers this to host, others must implement it...
-    *ppRuntimeId = NULL;
+    *ppRuntimeId = nullptr;
 
     // AppendRuntimeId is a magic Number that tells UIAutomation to Append its own Runtime ID(From the HWND)
     int rId[] = { UiaAppendRuntimeId, -1 };
@@ -230,7 +228,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots)
 {
-    *ppRoots = NULL;
+    *ppRoots = nullptr;
     return S_OK;
 }
 

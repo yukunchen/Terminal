@@ -59,7 +59,7 @@ IFACEMETHODIMP WindowUiaProvider::QueryInterface(_In_ REFIID riid, _COM_Outptr_r
     }
     else
     {
-        *ppInterface = NULL;
+        *ppInterface = nullptr;
         return E_NOINTERFACE;
     }
 
@@ -89,7 +89,7 @@ IFACEMETHODIMP WindowUiaProvider::GetPatternProvider(_In_ PATTERNID patternId, _
     UNREFERENCED_PARAMETER(patternId);
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    *ppInterface = NULL;
+    *ppInterface = nullptr;
     return S_OK;
 }
 
@@ -111,7 +111,7 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _
     else if (propertyId == UIA_AutomationIdPropertyId)
     {
         pVariant->bstrVal = SysAllocString(L"Console Window");
-        if (pVariant->bstrVal != NULL)
+        if (pVariant->bstrVal != nullptr)
         {
             pVariant->vt = VT_BSTR;
         }
@@ -134,7 +134,7 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _
     else if (propertyId == UIA_ProviderDescriptionPropertyId)
     {
         pVariant->bstrVal = SysAllocString(L"Microsoft Console Host Window");
-        if (pVariant->bstrVal != NULL)
+        if (pVariant->bstrVal != nullptr)
         {
             pVariant->vt = VT_BSTR;
         }
@@ -162,7 +162,7 @@ IFACEMETHODIMP WindowUiaProvider::get_HostRawElementProvider(_COM_Outptr_result_
 IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
-    *ppProvider = NULL;
+    *ppProvider = nullptr;
 
     if (direction == NavigateDirection_FirstChild || direction == NavigateDirection_LastChild)
     {
@@ -170,7 +170,7 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
         RETURN_IF_NULL_ALLOC(*ppProvider);
     }
 
-    // For the other directions (parent, next, previous) the default of NULL is correct
+    // For the other directions (parent, next, previous) the default of nullptr is correct
     return S_OK;
 }
 
@@ -178,7 +178,7 @@ IFACEMETHODIMP WindowUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAFEARR
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
     // Root defers this to host, others must implement it...
-    *ppRuntimeId = NULL;
+    *ppRuntimeId = nullptr;
 
     return S_OK;
 }
@@ -203,7 +203,7 @@ IFACEMETHODIMP WindowUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_mayben
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    *ppRoots = NULL;
+    *ppRoots = nullptr;
     return S_OK;
 }
 
@@ -231,7 +231,7 @@ IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double x, _In_ d
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    *ppProvider = NULL;
+    *ppProvider = nullptr;
 
     UNREFERENCED_PARAMETER(x);
     UNREFERENCED_PARAMETER(y);
@@ -246,7 +246,7 @@ IFACEMETHODIMP WindowUiaProvider::GetFocus(_COM_Outptr_result_maybenull_ IRawEle
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    *ppProvider = NULL;
+    *ppProvider = nullptr;
     return S_OK;
 }
 
