@@ -28,30 +28,30 @@ public:
     // IUnknown methods
     IFACEMETHODIMP_(ULONG) AddRef();
     IFACEMETHODIMP_(ULONG) Release();
-    IFACEMETHODIMP QueryInterface(_In_ REFIID riid, _Outptr_result_maybenull_ void** ppInterface);
+    IFACEMETHODIMP QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface);
 
     // IRawElementProviderSimple methods
-    IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pRetVal);
-    IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID iid, _Outptr_result_maybenull_ IUnknown** ppRetVal);
-    IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp, _Out_ VARIANT* pRetVal);
-    IFACEMETHODIMP get_HostRawElementProvider(_Outptr_result_maybenull_ IRawElementProviderSimple** pRetVal);
+    IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions);
+    IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID iid, _COM_Outptr_result_maybenull_ IUnknown** ppInterface);
+    IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp, _Out_ VARIANT* pVariant);
+    IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider);
 
     // IRawElementProviderFragment methods
-    HRESULT STDMETHODCALLTYPE Navigate(_In_ NavigateDirection direction, _Outptr_result_maybenull_ IRawElementProviderFragment** ppRetVal);
-    HRESULT STDMETHODCALLTYPE GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
-    HRESULT STDMETHODCALLTYPE get_BoundingRectangle(_Out_ UiaRect* pRetVal);
-    HRESULT STDMETHODCALLTYPE GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
-    HRESULT STDMETHODCALLTYPE SetFocus();
-    HRESULT STDMETHODCALLTYPE get_FragmentRoot(_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppRetVal);
+    IFACEMETHODIMP Navigate(_In_ NavigateDirection direction, _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
+    IFACEMETHODIMP GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId);
+    IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect);
+    IFACEMETHODIMP GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots);
+    IFACEMETHODIMP SetFocus();
+    IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider);
 
     // IRawElementProviderFragmentRoot methods
-    HRESULT STDMETHODCALLTYPE ElementProviderFromPoint(_In_ double x, _In_ double y, _Outptr_result_maybenull_ IRawElementProviderFragment** ppRetVal);
-    HRESULT STDMETHODCALLTYPE GetFocus(_Outptr_result_maybenull_ IRawElementProviderFragment** ppRetVal);
+    IFACEMETHODIMP ElementProviderFromPoint(_In_ double x, _In_ double y, _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
+    IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
 
 private:
 
     // Ref counter for COM object
-    ULONG _refCount;
+    ULONG _cRefs;
 
     Window* const _pWindow;
 

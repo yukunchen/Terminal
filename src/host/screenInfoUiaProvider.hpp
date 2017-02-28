@@ -18,7 +18,7 @@ class SCREEN_INFORMATION;
 class Window;
 
 class ScreenInfoUiaProvider : public IRawElementProviderSimple,
-    public IRawElementProviderFragment
+                              public IRawElementProviderFragment
 {
 public:
     ScreenInfoUiaProvider(_In_ Window* const pParent, _In_ SCREEN_INFORMATION* const pScreenInfo);
@@ -27,26 +27,26 @@ public:
     // IUnknown methods
     IFACEMETHODIMP_(ULONG) AddRef();
     IFACEMETHODIMP_(ULONG) Release();
-    IFACEMETHODIMP QueryInterface(_In_ REFIID riid, _Outptr_result_maybenull_ void** ppInterface);
+    IFACEMETHODIMP QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface);
 
     // IRawElementProviderSimple methods
-    IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pRetVal);
-    IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID iid, _Outptr_result_maybenull_ IUnknown** ppRetVal);
-    IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp, _Out_ VARIANT* pRetVal);
-    IFACEMETHODIMP get_HostRawElementProvider(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal);
+    IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions);
+    IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID iid, _COM_Outptr_result_maybenull_ IUnknown** ppInterface);
+    IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp, _Out_ VARIANT* pVariant);
+    IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider);
 
     // IRawElementProviderFragment methods
-    HRESULT STDMETHODCALLTYPE Navigate(_In_ NavigateDirection direction, _Outptr_result_maybenull_ IRawElementProviderFragment** ppRetVal);
-    HRESULT STDMETHODCALLTYPE GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
-    HRESULT STDMETHODCALLTYPE get_BoundingRectangle(_Out_ UiaRect* pRetVal);
-    HRESULT STDMETHODCALLTYPE GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
-    HRESULT STDMETHODCALLTYPE SetFocus();
-    HRESULT STDMETHODCALLTYPE get_FragmentRoot(_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppRetVal);
+    IFACEMETHODIMP Navigate(_In_ NavigateDirection direction, _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
+    IFACEMETHODIMP GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId);
+    IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect);
+    IFACEMETHODIMP GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots);
+    IFACEMETHODIMP SetFocus();
+    IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider);
 
 private:
 
     // Ref counter for COM object
-    ULONG _refCount;
+    ULONG _cRefs;
 
     SCREEN_INFORMATION* const _pScreenInfo;
     Window* const _pWindow;
