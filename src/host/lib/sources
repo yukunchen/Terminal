@@ -19,6 +19,7 @@ SOURCES                         =   $(SOURCES)\
                                     ..\globals.cpp   \
                                     ..\handle.cpp    \
                                     ..\input.cpp     \
+                                    ..\inputBuffer.cpp \
                                     ..\consoleKeyInfo.cpp \
                                     ..\inputKeyInfo.cpp \
                                     ..\inputReadHandleData.cpp \

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
@@ -17,6 +17,7 @@
     <ClCompile Include="..\handle.cpp" />
     <ClCompile Include="..\icon.cpp" />
     <ClCompile Include="..\input.cpp" />
+    <ClCompile Include="..\inputBuffer.cpp" />
     <ClCompile Include="..\inputKeyInfo.cpp" />
     <ClCompile Include="..\inputReadHandleData.cpp" />
     <ClCompile Include="..\menu.cpp" />
@@ -73,6 +74,7 @@
     <ClInclude Include="..\handle.h" />
     <ClInclude Include="..\icon.hpp" />
     <ClInclude Include="..\input.h" />
+    <ClInclude Include="..\inputBuffer.hpp" />
     <ClInclude Include="..\menu.h" />
     <ClInclude Include="..\misc.h" />
     <ClInclude Include="..\newdelete.hpp" />

@@ -18,6 +18,7 @@ Revision History:
 #include "screenInfo.hpp"
 
 #include "settings.hpp"
+#include "inputBuffer.hpp"
 
 #include "conimeinfo.h"
 #include "..\terminal\adapter\terminalInput.hpp"
@@ -69,7 +70,7 @@ public:
     ~CONSOLE_INFORMATION();
 
     ConsoleProcessList ProcessHandleList;
-    PINPUT_INFORMATION pInputBuffer;
+    INPUT_INFORMATION* pInputBuffer;
 
     Window* pWindow;
     PSCREEN_INFORMATION CurrentScreenBuffer;
@@ -136,7 +137,3 @@ private:
 void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput);
 
 NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo);
-
-struct _INPUT_INFORMATION;
-typedef _INPUT_INFORMATION INPUT_INFORMATION;
-typedef _INPUT_INFORMATION *PINPUT_INFORMATION;

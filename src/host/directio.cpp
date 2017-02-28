@@ -22,7 +22,7 @@ class CONSOLE_INFORMATION;
 
 typedef struct _DIRECT_READ_DATA
 {
-    PINPUT_INFORMATION pInputInfo;
+    INPUT_INFORMATION* pInputInfo;
     CONSOLE_INFORMATION* pConsole;
     ConsoleProcessHandle* pProcessData;
     INPUT_READ_HANDLE_DATA* pInputReadHandleData;
@@ -316,20 +316,19 @@ BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage,
             nLength = &a->NumRecords;
         }
 
-        Status = ReadInputBuffer(DirectReadData->pInputInfo,
-                                 Buffer,
-                                 nLength,
-                                 IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE),
-                                 IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT),
-                                 FALSE,
-                                 DirectReadData->pInputReadHandleData,
-                                 WaitReplyMessage,
-                                 DirectReadWaitRoutine,
-                                 &DirectReadData,
-#pragma prefast(suppress: 28132, "sizeof(DirectReadData) is used as an indicator of the recursion depth and needs to be the size of the pointer in this case. This is clearer as-is than measuring the pointer type.")
-                                 sizeof(DirectReadData),
-                                 TRUE,
-                                 a->Unicode);
+        Status = DirectReadData->pInputInfo->ReadInputBuffer(Buffer,
+                                                             nLength,
+                                                             IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE),
+                                                             IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT),
+                                                             FALSE,
+                                                             DirectReadData->pInputReadHandleData,
+                                                             WaitReplyMessage,
+                                                             DirectReadWaitRoutine,
+                                                             &DirectReadData,
+                             #pragma prefast(suppress: 28132, "sizeof(DirectReadData) is used as an indicator of the recursion depth and needs to be the size of the pointer in this case. This is clearer as-is than measuring the pointer type.")
+                                                             sizeof(DirectReadData),
+                                                             TRUE,
+                                                             a->Unicode);
         if (Status == CONSOLE_STATUS_WAIT)
         {
             RetVal = FALSE;
@@ -457,19 +456,18 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
             }
         }
 
-        Status = ReadInputBuffer(pInputInfo,
-                                 Buffer,
-                                 nLength,
-                                 IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE),
-                                 IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT) && !fAddDbcsLead,
-                                 FALSE,
-                                 DirectReadData.pInputReadHandleData,
-                                 m,
-                                 DirectReadWaitRoutine,
-                                 &DirectReadData,
-                                 sizeof(DirectReadData),
-                                 FALSE,
-                                 a->Unicode);
+        Status = pInputInfo->ReadInputBuffer(Buffer,
+                                             nLength,
+                                             IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE),
+                                             IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT) && !fAddDbcsLead,
+                                             FALSE,
+                                             DirectReadData.pInputReadHandleData,
+                                             m,
+                                             DirectReadWaitRoutine,
+                                             &DirectReadData,
+                                             sizeof(DirectReadData),
+                                             FALSE,
+                                             a->Unicode);
         if (Status == CONSOLE_STATUS_WAIT)
         {
             *ReplyPending = TRUE;
@@ -558,11 +556,11 @@ NTSTATUS DoSrvWriteConsoleInput(_In_ INPUT_INFORMATION* pInputInfo, _Inout_ CONS
 
     if (pMsg->Append)
     {
-        pMsg->NumRecords = WriteInputBuffer(pInputInfo, rgInputRecords, pMsg->NumRecords);
+        pMsg->NumRecords = pInputInfo->WriteInputBuffer(rgInputRecords, pMsg->NumRecords);
     }
     else
     {
-        Status = PrependInputBuffer(pInputInfo, rgInputRecords, &pMsg->NumRecords);
+        Status = pInputInfo->PrependInputBuffer(rgInputRecords, &pMsg->NumRecords);
     }
 
     return Status;
