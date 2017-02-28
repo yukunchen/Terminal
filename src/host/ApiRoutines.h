@@ -21,7 +21,7 @@ Revision History:
 class ApiRoutines : public IApiRoutines
 {
 #pragma region ObjectManagement
-    /*HRESULT CreateInitialObjects(_Out_ INPUT_INFORMATION** const ppInputObject,
+    /*HRESULT CreateInitialObjects(_Out_ InputBuffer** const ppInputObject,
     _Out_ SCREEN_INFORMATION** const ppOutputObject);
     */
 
@@ -32,48 +32,48 @@ class ApiRoutines : public IApiRoutines
 
     HRESULT GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage);
 
-    HRESULT GetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pContext,
+    HRESULT GetConsoleInputModeImpl(_In_ InputBuffer* const pContext,
                                     _Out_ ULONG* const pMode);
 
     HRESULT GetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                      _Out_ ULONG* const pMode);
 
-    HRESULT SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pContext,
+    HRESULT SetConsoleInputModeImpl(_In_ InputBuffer* const pContext,
                                     _In_ ULONG const Mode);
 
     HRESULT SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pContext,
                                      _In_ ULONG const Mode);
 
-    HRESULT GetNumberOfConsoleInputEventsImpl(_In_ INPUT_INFORMATION* const pContext,
+    HRESULT GetNumberOfConsoleInputEventsImpl(_In_ InputBuffer* const pContext,
                                               _Out_ ULONG* const pEvents);
 
-    // HRESULT PeekConsoleInputAImpl(_In_ INPUT_INFORMATION* const pContext,
+    // HRESULT PeekConsoleInputAImpl(_In_ InputBuffer* const pContext,
     //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
     //                                       _In_ ULONG const InputRecordsBufferLength,
     //                                       _Out_ ULONG* const pRecordsWritten);
 
-    // HRESULT PeekConsoleInputWImpl(_In_ INPUT_INFORMATION* const pContext,
+    // HRESULT PeekConsoleInputWImpl(_In_ InputBuffer* const pContext,
     //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
     //                                       _In_ ULONG const InputRecordsBufferLength,
     //                                       _Out_ ULONG* const pRecordsWritten);
 
-    // HRESULT ReadConsoleInputAImpl(_In_ INPUT_INFORMATION* const pContext,
+    // HRESULT ReadConsoleInputAImpl(_In_ InputBuffer* const pContext,
     //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
     //                                       _In_ ULONG const InputRecordsBufferLength,
     //                                       _Out_ ULONG* const pRecordsWritten);
 
-    // HRESULT ReadConsoleInputWImpl(_In_ INPUT_INFORMATION* const pContext,
+    // HRESULT ReadConsoleInputWImpl(_In_ InputBuffer* const pContext,
     //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
     //                                       _In_ ULONG const InputRecordsBufferLength,
     //                                       _Out_ ULONG* const pRecordsWritten);
 
-    // HRESULT ReadConsoleAImpl(_In_ INPUT_INFORMATION* const pContext,
+    // HRESULT ReadConsoleAImpl(_In_ InputBuffer* const pContext,
     //                                  _Out_writes_to_(TextBufferLength, *pTextBufferWritten) char* const pTextBuffer,
     //                                  _In_ ULONG const TextBufferLength,
     //                                  _Out_ ULONG* const pTextBufferWritten,
     //                                  _In_opt_ CONSOLE_READCONSOLE_CONTROL* const pReadControl);
 
-    // HRESULT ReadConsoleWImpl(_In_ INPUT_INFORMATION* const pContext,
+    // HRESULT ReadConsoleWImpl(_In_ InputBuffer* const pContext,
     //                                  _Out_writes_to_(TextBufferLength, *pTextBufferWritten) wchar_t* const pTextBuffer,
     //                                  _In_ ULONG const TextBufferLength,
     //                                  _Out_ ULONG* const pTextBufferWritten,
@@ -121,7 +121,7 @@ class ApiRoutines : public IApiRoutines
 
     HRESULT SetConsoleActiveScreenBufferImpl(_In_ SCREEN_INFORMATION* const pNewContext);
 
-    HRESULT FlushConsoleInputBuffer(_In_ INPUT_INFORMATION* const pContext);
+    HRESULT FlushConsoleInputBuffer(_In_ InputBuffer* const pContext);
 
     HRESULT SetConsoleInputCodePageImpl(_In_ ULONG const CodePage);
 
@@ -190,12 +190,12 @@ class ApiRoutines : public IApiRoutines
     //                                                _In_ ULONG const TextBufferLength,
     //                                                _Out_ ULONG* const pTextBufferWritten);
 
-    //HRESULT WriteConsoleInputAImpl(_In_ INPUT_INFORMATION* const pContext,
+    //HRESULT WriteConsoleInputAImpl(_In_ InputBuffer* const pContext,
     //                                       _In_reads_(InputBufferLength) const INPUT_RECORD* const pInputBuffer,
     //                                       _In_ ULONG const InputBufferLength,
     //                                       _Out_ ULONG* const pInputBufferRead);
 
-    //HRESULT WriteConsoleInputWImpl(_In_ INPUT_INFORMATION* const pContext,
+    //HRESULT WriteConsoleInputWImpl(_In_ InputBuffer* const pContext,
     //                                       _In_reads_(InputBufferLength) const INPUT_RECORD* const pInputBuffer,
     //                                       _In_ ULONG const InputBufferLength,
     //                                       _Out_ ULONG* const pInputBufferRead);

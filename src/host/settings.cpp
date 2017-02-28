@@ -24,7 +24,6 @@ Settings::Settings() :
     // dwWindowSize initialized below
     // dwWindowOrigin initialized below
     _nFont(0),
-    _nInputBufferSize(0), // TODO: reconcile
     // dwFontSize initialized below
     _uFontFamily(0),
     _uFontWeight(0),
@@ -714,15 +713,6 @@ DWORD Settings::GetFont() const
 void Settings::SetFont(_In_ const DWORD nFont)
 {
     this->_nFont = nFont;
-}
-
-DWORD Settings::GetInputBufferSize() const
-{
-    return this->_nInputBufferSize;
-}
-void Settings::SetInputBufferSize(_In_ const DWORD nInputBufferSize)
-{
-    this->_nInputBufferSize = nInputBufferSize;
 }
 
 COORD Settings::GetFontSize() const

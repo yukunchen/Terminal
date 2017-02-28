@@ -19,6 +19,7 @@ Author:
 
 Revision History:
 - Moved from input.h/input.cpp. (AustDi, 2017)
+- Refactored to class, added stl container usage (AustDi, 2017)
 --*/
 
 #pragma once
@@ -29,44 +30,33 @@ Revision History:
 #include "../server/ObjectHandle.h"
 #include "../server/ObjectHeader.h"
 
+#include <deque>
 
-#define DEFAULT_NUMBER_OF_EVENTS 50
-#define INPUT_BUFFER_SIZE_INCREMENT 10
-
-struct INPUT_INFORMATION
+class InputBuffer final
 {
+public:
     ConsoleObjectHeader Header;
-    _Field_size_(InputBufferSize) PINPUT_RECORD InputBuffer;
-    DWORD InputBufferSize;  // size in events
     DWORD InputMode;
-    ULONG_PTR First;    // ptr to base of circular buffer
-    ULONG_PTR In;   // ptr to next free event
-    ULONG_PTR Out;  // ptr to next available event
-    ULONG_PTR Last; // ptr to end + 1 of buffer
     ConsoleWaitQueue WaitQueue; // formerly ReadWaitQueue
-    bool fInComposition;  // specifies if there's an ongoing text composition
-
     HANDLE InputWaitEvent;
-    struct _CONSOLE_INFORMATION *Console;
     INPUT_RECORD ReadConInpDbcsLeadByte;
     INPUT_RECORD WriteConInpDbcsLeadByte[2];
 
-    INPUT_INFORMATION(_In_ ULONG cEvents);
-    ~INPUT_INFORMATION();
+    bool fInComposition;  // specifies if there's an ongoing text composition
 
-    NTSTATUS ReadBuffer(_Out_writes_to_(Length, *EventsRead) PINPUT_RECORD Buffer,
-                        _In_ ULONG Length,
-                        _Out_ PULONG EventsRead,
-                        _In_ BOOL Peek,
-                        _In_ BOOL StreamRead,
-                        _Out_ PBOOL ResetWaitEvent,
-                        _In_ BOOLEAN Unicode);
+    InputBuffer();
+    ~InputBuffer();
+    void ReinitializeInputBuffer();
+    void WakeUpReadersWaitingForData();
+    void TerminateRead(_In_ WaitTerminationReason Flag);
+    size_t GetNumberOfReadyEvents();
+    void Flush();
+    HRESULT FlushAllButKeys();
 
-    NTSTATUS ReadInputBuffer(_Out_writes_(*pcLength) PINPUT_RECORD pInputRecord,
+    NTSTATUS ReadInputBuffer(_Out_writes_(*pcLength) INPUT_RECORD* pInputRecord,
                             _Inout_ PDWORD pcLength,
                             _In_ BOOL const fPeek,
                             _In_ BOOL const fWaitForData,
-                            _In_ BOOL const fStreamRead,
                             _In_ INPUT_READ_HANDLE_DATA* pHandleData,
                             _In_opt_ PCONSOLE_API_MSG pConsoleMessage,
                             _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
@@ -75,15 +65,38 @@ struct INPUT_INFORMATION
                             _In_ BOOLEAN const fWaitBlockExists,
                             _In_ BOOLEAN const fUnicode);
 
-    DWORD WriteInputBuffer(_In_ PINPUT_RECORD pInputRecord, _In_ DWORD cInputRecords);
+    NTSTATUS PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength);
+    HRESULT PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords, _Out_ size_t& eventsWritten);
 
-    NTSTATUS WriteBuffer(_In_ PVOID Buffer, _In_ ULONG Length, _Out_ PULONG EventsWritten, _Out_ PBOOL SetWaitEvent);
-    NTSTATUS PrependInputBuffer(_In_ PINPUT_RECORD pInputRecord, _Inout_ DWORD * const pcLength);
-    void ReinitializeInputBuffer();
-    void GetNumberOfReadyEvents(_Out_ PULONG pcEvents);
-    void FlushInputBuffer();
-    NTSTATUS FlushAllButKeys();
-    void WakeUpReadersWaitingForData();
-    NTSTATUS SetInputBufferSize(_In_ ULONG Size);
-    DWORD PreprocessInput(_In_ PINPUT_RECORD InputEvent, _In_ DWORD nLength);
+    DWORD WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD cInputRecords);
+    size_t WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords);
+
+private:
+    std::deque<INPUT_RECORD> _storage;
+
+    NTSTATUS _ReadBuffer(_Out_writes_to_(Length, *EventsRead) INPUT_RECORD* Buffer,
+                         _In_ ULONG Length,
+                         _Out_ PULONG EventsRead,
+                         _In_ BOOL Peek,
+                         _Out_ PBOOL ResetWaitEvent,
+                         _In_ BOOLEAN Unicode);
+
+    HRESULT _ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
+                        _In_ const size_t readCount,
+                        _Out_ size_t& eventsRead,
+                        _In_ const bool peek,
+                        _Out_ bool& resetWaitEvent,
+                        _In_ const bool unicode);
+
+    HRESULT _WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
+                         _Out_ size_t& eventsWritten,
+                         _Out_ bool& setWaitEvent);
+
+    bool _CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRecords);
+    bool _CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>& inRecords);
+    HRESULT _HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD>& records);
+
+#ifdef UNIT_TESTING
+    friend class InputBufferTests;
+#endif
 };

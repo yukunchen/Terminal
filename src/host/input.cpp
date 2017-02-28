@@ -436,16 +436,6 @@ ULONG ConvertMouseButtonState(_In_ ULONG Flag, _In_ ULONG State)
 }
 
 // Routine Description:
-// - This routine wakes up any readers waiting for data when a ctrl-c or ctrl-break is input.
-// Arguments:
-// - InputInfo - pointer to input buffer
-// - Flag - flag indicating whether ctrl-break or ctrl-c was input.
-void TerminateRead(_Inout_ INPUT_INFORMATION* InputInfo, _In_ WaitTerminationReason Flag)
-{
-    InputInfo->WaitQueue.NotifyWaiters(true, Flag);
-}
-
-// Routine Description:
 // - Returns TRUE if DefWindowProc should be called.
 BOOL HandleSysKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole)
 {
@@ -812,7 +802,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
             HandleCtrlEvent(CTRL_C_EVENT);
             if (g_ciConsoleInformation.PopupCount == 0)
             {
-                TerminateRead(g_ciConsoleInformation.pInputBuffer, WaitTerminationReason::CtrlC);
+                g_ciConsoleInformation.pInputBuffer->TerminateRead(WaitTerminationReason::CtrlC);
             }
 
             if (!(g_ciConsoleInformation.Flags & CONSOLE_SUSPENDED))
@@ -824,11 +814,11 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
         // check for ctrl-break.
         else if (InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_CANCEL)
         {
-            g_ciConsoleInformation.pInputBuffer->FlushInputBuffer();
+            g_ciConsoleInformation.pInputBuffer->Flush();
             HandleCtrlEvent(CTRL_BREAK_EVENT);
             if (g_ciConsoleInformation.PopupCount == 0)
             {
-                TerminateRead(g_ciConsoleInformation.pInputBuffer, WaitTerminationReason::CtrlBreak);
+                g_ciConsoleInformation.pInputBuffer->TerminateRead(WaitTerminationReason::CtrlBreak);
             }
 
             if (!(g_ciConsoleInformation.Flags & CONSOLE_SUSPENDED))
