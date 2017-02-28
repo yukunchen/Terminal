@@ -7,7 +7,6 @@
 #include "precomp.h"
 #include "window.hpp"
 #include "windowUiaProvider.hpp"
-#include "windowUiaTarget.hpp"
 #include "windowdpiapi.hpp"
 #include "userprivapi.hpp"
 

@@ -16,7 +16,9 @@ SAFEARRAY * BuildIntSafeArray(_In_reads_(length) const int * data, _In_ int leng
 {
     SAFEARRAY *sa = SafeArrayCreateVector(VT_I4, 0, length);
     if (sa == NULL)
+    {
         return NULL;
+    }
 
     for (long i = 0; i < length; i++)
     {
@@ -60,7 +62,7 @@ IFACEMETHODIMP_(ULONG) ScreenInfoUiaProvider::Release()
     return val;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::QueryInterface(REFIID riid, void** ppInterface)
+IFACEMETHODIMP ScreenInfoUiaProvider::QueryInterface(_In_ REFIID riid, _Outptr_result_maybenull_ void** ppInterface)
 {
     if (riid == __uuidof(IUnknown))
     {
@@ -91,7 +93,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::QueryInterface(REFIID riid, void** ppInter
 
 // Implementation of IRawElementProviderSimple::get_ProviderOptions.
 // Gets UI Automation provider options.
-IFACEMETHODIMP ScreenInfoUiaProvider::get_ProviderOptions(ProviderOptions* pRetVal)
+IFACEMETHODIMP ScreenInfoUiaProvider::get_ProviderOptions(_Out_ ProviderOptions* pRetVal)
 {
     *pRetVal = ProviderOptions_ServerSideProvider;
     return S_OK;
@@ -99,20 +101,20 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_ProviderOptions(ProviderOptions* pRetV
 
 // Implementation of IRawElementProviderSimple::get_PatternProvider.
 // Gets the object that supports ISelectionPattern.
-IFACEMETHODIMP ScreenInfoUiaProvider::GetPatternProvider(PATTERNID patternId, IUnknown** ppRetVal)
+IFACEMETHODIMP ScreenInfoUiaProvider::GetPatternProvider(_In_ PATTERNID patternId, _Outptr_result_maybenull_ IUnknown** ppRetVal)
 {
     UNREFERENCED_PARAMETER(patternId);
 
     *ppRetVal = NULL;
 
-    // TODO: insert patterns here 
+    // TODO: MSFT: 7960168 - insert patterns here 
 
     return S_OK;
 }
 
 // Implementation of IRawElementProviderSimple::get_PropertyValue.
 // Gets custom properties.
-IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(PROPERTYID propertyId, VARIANT* pRetVal)
+IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _Out_ VARIANT* pRetVal)
 {
     pRetVal->vt = VT_EMPTY;
 
@@ -174,9 +176,9 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(PROPERTYID propertyId, VA
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::get_HostRawElementProvider(IRawElementProviderSimple** pRetVal)
+IFACEMETHODIMP ScreenInfoUiaProvider::get_HostRawElementProvider(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal)
 {
-    *pRetVal = NULL;
+    *ppRetVal = NULL;
 
     return S_OK;
 }
@@ -184,21 +186,21 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_HostRawElementProvider(IRawElementProv
 
 #pragma region IRawElementProviderFragment
 
-HRESULT STDMETHODCALLTYPE ScreenInfoUiaProvider::Navigate(NavigateDirection direction, _Outptr_result_maybenull_ IRawElementProviderFragment ** retVal)
+HRESULT STDMETHODCALLTYPE ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction, _Outptr_result_maybenull_ IRawElementProviderFragment** ppRetVal)
 {
-    *retVal = NULL;
+    *ppRetVal = NULL;
 
     if (direction == NavigateDirection_Parent)
     {
-        *retVal = new WindowUiaProvider(_pWindow);
-        RETURN_IF_NULL_ALLOC(*retVal);
+        *ppRetVal = new WindowUiaProvider(_pWindow);
+        RETURN_IF_NULL_ALLOC(*ppRetVal);
     }
 
     // For the other directions the default of NULL is correct
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE ScreenInfoUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY ** ppRetVal)
+HRESULT STDMETHODCALLTYPE ScreenInfoUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
     // Root defers this to host, others must implement it...
     *ppRetVal = NULL;
@@ -212,23 +214,23 @@ HRESULT STDMETHODCALLTYPE ScreenInfoUiaProvider::GetRuntimeId(_Outptr_result_may
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect * retVal)
+HRESULT STDMETHODCALLTYPE ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRetVal)
 {
     RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, _pWindow);
 
     RECT const rc = _pWindow->GetWindowRect();
 
-    retVal->left = rc.left;
-    retVal->top = rc.top;
-    retVal->width = rc.right - rc.left;
-    retVal->height = rc.bottom - rc.top;
+    pRetVal->left = rc.left;
+    pRetVal->top = rc.top;
+    pRetVal->width = rc.right - rc.left;
+    pRetVal->height = rc.bottom - rc.top;
 
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE ScreenInfoUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY ** retVal)
+HRESULT STDMETHODCALLTYPE ScreenInfoUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    *retVal = NULL;
+    *ppRetVal = NULL;
     return S_OK;
 }
 
@@ -237,10 +239,10 @@ HRESULT STDMETHODCALLTYPE ScreenInfoUiaProvider::SetFocus()
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE ScreenInfoUiaProvider::get_FragmentRoot(_Outptr_result_maybenull_ IRawElementProviderFragmentRoot ** retVal)
+HRESULT STDMETHODCALLTYPE ScreenInfoUiaProvider::get_FragmentRoot(_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppRetVal)
 {
-    *retVal = new WindowUiaProvider(_pWindow);
-    RETURN_IF_NULL_ALLOC(*retVal);
+    *ppRetVal = new WindowUiaProvider(_pWindow);
+    RETURN_IF_NULL_ALLOC(*ppRetVal);
     return S_OK;
 }
 

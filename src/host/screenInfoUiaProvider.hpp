@@ -18,7 +18,7 @@ class SCREEN_INFORMATION;
 class Window;
 
 class ScreenInfoUiaProvider : public IRawElementProviderSimple,
-                              public IRawElementProviderFragment
+    public IRawElementProviderFragment
 {
 public:
     ScreenInfoUiaProvider(_In_ Window* const pParent, _In_ SCREEN_INFORMATION* const pScreenInfo);
@@ -27,21 +27,21 @@ public:
     // IUnknown methods
     IFACEMETHODIMP_(ULONG) AddRef();
     IFACEMETHODIMP_(ULONG) Release();
-    IFACEMETHODIMP QueryInterface(REFIID riid, void**ppInterface);
+    IFACEMETHODIMP QueryInterface(_In_ REFIID riid, _Outptr_result_maybenull_ void** ppInterface);
 
     // IRawElementProviderSimple methods
-    IFACEMETHODIMP get_ProviderOptions(ProviderOptions * pRetVal);
-    IFACEMETHODIMP GetPatternProvider(PATTERNID iid, IUnknown * * pRetVal);
-    IFACEMETHODIMP GetPropertyValue(PROPERTYID idProp, VARIANT * pRetVal);
-    IFACEMETHODIMP get_HostRawElementProvider(IRawElementProviderSimple ** pRetVal);
+    IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pRetVal);
+    IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID iid, _Outptr_result_maybenull_ IUnknown** ppRetVal);
+    IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp, _Out_ VARIANT* pRetVal);
+    IFACEMETHODIMP get_HostRawElementProvider(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal);
 
     // IRawElementProviderFragment methods
-    HRESULT STDMETHODCALLTYPE Navigate(NavigateDirection direction, _Outptr_result_maybenull_ IRawElementProviderFragment ** retVal);
-    HRESULT STDMETHODCALLTYPE GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY ** retVal);
-    HRESULT STDMETHODCALLTYPE get_BoundingRectangle(_Out_ UiaRect * retVal);
-    HRESULT STDMETHODCALLTYPE GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY ** retVal);
+    HRESULT STDMETHODCALLTYPE Navigate(_In_ NavigateDirection direction, _Outptr_result_maybenull_ IRawElementProviderFragment** ppRetVal);
+    HRESULT STDMETHODCALLTYPE GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
+    HRESULT STDMETHODCALLTYPE get_BoundingRectangle(_Out_ UiaRect* pRetVal);
+    HRESULT STDMETHODCALLTYPE GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
     HRESULT STDMETHODCALLTYPE SetFocus();
-    HRESULT STDMETHODCALLTYPE get_FragmentRoot(_Outptr_result_maybenull_ IRawElementProviderFragmentRoot * * retVal);
+    HRESULT STDMETHODCALLTYPE get_FragmentRoot(_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppRetVal);
 
 private:
 
