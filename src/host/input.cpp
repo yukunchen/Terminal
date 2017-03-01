@@ -757,6 +757,11 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
         return;
     }
 
+    if (g_ciConsoleInformation.pInputBuffer->fInComposition)
+    {
+        return;
+    }
+
     // ignore key strokes that will generate CHAR messages. this is only necessary while a dialog box is up.
     if (g_uiDialogBoxCount != 0)
     {
