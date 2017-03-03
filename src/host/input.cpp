@@ -55,7 +55,6 @@ bool IsInVirtualTerminalInputMode()
     return IsFlagSet(g_ciConsoleInformation.pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
 }
 
-
 // Routine Description:
 // - This routine waits for a writer to add data to the buffer.
 // Arguments:
@@ -572,7 +571,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
         RetrieveKeyInfo(hWnd,
                         &InputEvent.Event.KeyEvent.wVirtualKeyCode,
                         &InputEvent.Event.KeyEvent.wVirtualScanCode,
-                        !g_ciConsoleInformation.pInputBuffer->ImeMode.InComposition);
+                        !g_ciConsoleInformation.pInputBuffer->fInComposition);
 
         VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
         // --- END LOAD BEARING CODE ---
@@ -758,10 +757,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
         return;
     }
 
-    // IME stuff
-    if (!(g_ciConsoleInformation.pInputBuffer->ImeMode.Disable) &&
-        !g_ciConsoleInformation.pInputBuffer->ImeMode.Unavailable &&
-        g_ciConsoleInformation.pInputBuffer->ImeMode.InComposition)
+    if (g_ciConsoleInformation.pInputBuffer->fInComposition)
     {
         return;
     }

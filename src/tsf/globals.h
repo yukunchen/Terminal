@@ -54,7 +54,7 @@ Notes:
         (punk)->Release();      \
         (punk) = NULL;          \
     }                           \
-}                   
+}
 
 //+---------------------------------------------------------------------------
 //
@@ -64,14 +64,8 @@ Notes:
 
 #ifdef __cplusplus
 
-class CConsoleTable;
-
 // ConSrv protocol
 LRESULT ConsoleImeSendMessage(COPYDATASTRUCT* pCopyData);
 LRESULT ConsoleImeSendMessage2(ULONG_PTR dwData, DWORD cbData, __field_bcount(cbData) PVOID lpData);
 
-// Display composition
-void    GetCompositionStr(HWND hwnd, CConsoleTable* ConTbl, LPARAM CompFlag, WPARAM CompChar);
-
 #endif // __cplusplus
-

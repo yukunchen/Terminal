@@ -32,10 +32,6 @@ SOURCES =   contsf.cpp      \
            	TfDispAttr.cpp  \
             TfEditses.cpp   \
             TfTxtevCb.cpp   \
-            consubs.cpp     \
-            imecomp.cpp     \
 
 PRECOMPILED_CXX=1
 PRECOMPILED_INCLUDE=precomp.h
-
-

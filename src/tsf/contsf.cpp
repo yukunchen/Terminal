@@ -32,63 +32,6 @@ extern "C" void DeactivateTextServices()
     }
 }
 
-extern "C" BOOL NotifyTextServices(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT* lplResult)
-{
-    DebugMsg(TF_FUNC, "NotifyTextServices:: uMsg=%x, wParam=%x, lParam=%x", uMsg, wParam, lParam);
-    if (lplResult)
-    {
-        *lplResult = 0;
-    }
-    if (!g_pConsoleTSF)
-    {
-        return FALSE;
-    }
-
-    BOOL bRet = TRUE;
-    switch (uMsg)
-    {
-        case CONIME_SETFOCUS:
-            g_pConsoleTSF->SetFocus(TRUE);
-            break;
-
-        case CONIME_KILLFOCUS:
-            g_pConsoleTSF->SetFocus(FALSE);
-            break;
-        
-        default:
-            if (g_pConsoleTSF->HasFocus())
-            {
-                switch (uMsg)
-                {
-                    case WM_IME_STARTCOMPOSITION:
-                        g_pConsoleTSF->OnStartIMM32Composition();
-                        break;
-
-                    case WM_IME_ENDCOMPOSITION:
-                        g_pConsoleTSF->OnEndIMM32Composition();
-                        break;
-
-                    case WM_IME_COMPOSITION:
-                        g_pConsoleTSF->OnUpdateIMM32Composition(wParam, lParam);
-                        break;
-
-                    case WM_IME_NOTIFY:
-                        bRet = g_pConsoleTSF->OnImeNotify(wParam, lParam);
-                        break;
-                }
-            }
-            else
-            {
-                // Pass it to the DefProc
-                bRet = FALSE;
-            }
-            break;
-    }
-
-    return bRet;
-}
-
-
 //+---------------------------------------------------------------------------
 //
 // ConsoleImeSendMessage
@@ -115,4 +58,3 @@ LRESULT ConsoleImeSendMessage2(ULONG_PTR dwData, DWORD cbData, __field_bcount(cb
     copyData.lpData = lpData;
     return ConsoleImeSendMessage(&copyData);
 }
-

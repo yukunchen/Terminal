@@ -27,10 +27,8 @@ Notes:
 extern "C"
 {
     #include <winuser.h>
-    #include <imm.h>
-
     #include "uxtheme.h"
-    
+
     #include <stdlib.h>
     #include <string.h>
     #include <stdio.h>
@@ -52,5 +50,4 @@ extern "C"
 }
 
 #include "TfCtxtComp.h"
-#include "contbl.h"
 #include "ConsoleTSF.h"

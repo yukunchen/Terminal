@@ -42,18 +42,7 @@ public:
     INPUT_RECORD ReadConInpDbcsLeadByte;
     INPUT_RECORD WriteConInpDbcsLeadByte[2];
 
-    struct
-    {
-        DWORD Disable:1;    // High   : specifies input code page or enable/disable in NLS state
-        DWORD Unavailable:1;    // Middle : specifies console window doing menu loop or size move
-        DWORD Open:1;   // Low    : specifies open/close in NLS state or IME hot key
-
-        DWORD ReadyConversion:1;    // if conversion mode is ready by succeed communicate to ConIME.
-        // then this field is TRUE.
-        DWORD InComposition:1;  // specifies if there's an ongoing text composition
-        DWORD Conversion;   // conversion mode of ime (i.e IME_CMODE_xxx).
-        // this field uses by GetConsoleNlsMode
-    } ImeMode;
+    bool fInComposition;  // specifies if there's an ongoing text composition
 
     InputBuffer();
     ~InputBuffer();

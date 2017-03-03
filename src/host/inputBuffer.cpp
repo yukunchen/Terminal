@@ -9,7 +9,6 @@
 #include "dbcs.h"
 #include "stream.h"
 
-
 #define INPUT_BUFFER_DEFAULT_INPUT_MODE (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT)
 
 // Routine Description:
@@ -24,11 +23,7 @@ InputBuffer::InputBuffer() :
 {
     InputWaitEvent = g_hInputEvent.get();
     // initialize buffer header
-    ImeMode.Disable = FALSE;
-    ImeMode.Unavailable = FALSE;
-    ImeMode.Open = FALSE;
-    ImeMode.ReadyConversion = FALSE;
-    ImeMode.InComposition = FALSE;
+    fInComposition = false;
 
     ZeroMemory(&ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
     ZeroMemory(&WriteConInpDbcsLeadByte, sizeof(INPUT_RECORD) * ARRAYSIZE(WriteConInpDbcsLeadByte));
