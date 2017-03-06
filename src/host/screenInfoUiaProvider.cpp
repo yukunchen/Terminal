@@ -127,7 +127,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyI
     }
     else if (propertyId == UIA_NamePropertyId)
     {
-        // In a production application, this would be localized text.
+        // TODO: MSFT: 7960168 - These strings should be localized text in the final UIA work
         pVariant->bstrVal = SysAllocString(L"Text Area");
         if (pVariant->bstrVal != nullptr)
         {
