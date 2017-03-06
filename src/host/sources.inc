@@ -54,6 +54,7 @@ TARGETLIBS                      =   $(TARGETLIBS) \
                                     $(SDK_LIB_PATH)\uuid.lib \
                                     $(SDK_LIB_PATH)\gdi32.lib \
                                     $(SDK_LIB_PATH)\user32.lib \
+                                    $(SDK_LIB_PATH)\uiautomationcore.lib \
                                     $(WINCORE_OBJ_PATH)\console\open\src\tsf\$(O)\contsf.lib \
                                     $(WINCORE_OBJ_PATH)\console\open\src\propslib\$(O)\conprops.lib \
                                     $(WINCORE_OBJ_PATH)\console\open\src\terminal\adapter\lib\$(O)\ConTermAdapter.lib \
