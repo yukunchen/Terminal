@@ -313,12 +313,6 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
         // the amount of events that were actually read
         eventsRead = outRecords.size();
 
-        // signal if we emptied the buffer
-        if (_storage.empty())
-        {
-            resetWaitEvent = true;
-        }
-
         // copy the events back if we were supposed to peek
         if (peek)
         {
@@ -327,6 +321,13 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
                 _storage.push_front(*it);
             }
         }
+
+        // signal if we emptied the buffer
+        if (_storage.empty())
+        {
+            resetWaitEvent = true;
+        }
+
         return S_OK;
     }
     CATCH_RETURN();
