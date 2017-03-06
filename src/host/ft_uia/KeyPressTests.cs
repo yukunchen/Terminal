@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------------------------------------------------
-// <copyright file="VirtualTerminalTests.cs" company="Microsoft">
+// <copyright file="KeyPressTests.cs" company="Microsoft">
 //     Copyright (c) Microsoft Corporation.  All rights reserved.
 // </copyright>
 // <summary>UI Automation tests for the certain key presses.</summary>
