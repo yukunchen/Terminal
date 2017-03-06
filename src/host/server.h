@@ -70,7 +70,7 @@ public:
     ~CONSOLE_INFORMATION();
 
     ConsoleProcessList ProcessHandleList;
-    INPUT_INFORMATION* pInputBuffer;
+    InputBuffer* pInputBuffer;
 
     Window* pWindow;
     PSCREEN_INFORMATION CurrentScreenBuffer;

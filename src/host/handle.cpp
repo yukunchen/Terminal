@@ -68,7 +68,7 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
     // Initialize input buffer.
     try
     {
-        g_ciConsoleInformation.pInputBuffer = new INPUT_INFORMATION(g_ciConsoleInformation.GetInputBufferSize());
+        g_ciConsoleInformation.pInputBuffer = new InputBuffer();
         if (g_ciConsoleInformation.pInputBuffer == nullptr)
         {
             return STATUS_NO_MEMORY;
