@@ -41,12 +41,12 @@ class InputBufferTests
         InputBuffer inputBuffer;
         INPUT_RECORD record = MakeKeyEvent(true, 1, L'a', 0, L'a', 0);
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1u);
         // add another event, check again
         INPUT_RECORD record2;
         record2.EventType = MENU_EVENT;
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record2, 1), 0u);
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 2);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 2u);
     }
 
     TEST_METHOD(CanInsertIntoInputBufferIndividually)
@@ -96,11 +96,11 @@ class InputBufferTests
         }
 
         // check that they coalesced
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1u);
         // check that the mouse position is being updated correctly
         INPUT_RECORD outRecord = inputBuffer._storage.front();
-        VERIFY_ARE_EQUAL(outRecord.Event.MouseEvent.dwMousePosition.X, RECORD_INSERT_COUNT);
-        VERIFY_ARE_EQUAL(outRecord.Event.MouseEvent.dwMousePosition.Y, RECORD_INSERT_COUNT * 2);
+        VERIFY_ARE_EQUAL(outRecord.Event.MouseEvent.dwMousePosition.X, (SHORT)RECORD_INSERT_COUNT);
+        VERIFY_ARE_EQUAL(outRecord.Event.MouseEvent.dwMousePosition.Y, (SHORT)(RECORD_INSERT_COUNT * 2));
 
         // add a key event and another mouse event to make sure that
         // an event between two mouse events stopped the coalescing.
@@ -110,7 +110,7 @@ class InputBufferTests
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&mouseRecord, 1), 0u);
 
         // verify
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 3);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 3u);
     }
 
     TEST_METHOD(InputBufferDoesNotCoalesceBulkMouseEvents)
@@ -155,7 +155,7 @@ class InputBufferTests
         }
 
         // all events should have been coalesced into one
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1u);
 
         // the single event should have a repeat count for each
         // coalesced event
@@ -234,7 +234,7 @@ class InputBufferTests
 
         // remove them
         inputBuffer.Flush();
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
     }
 
     TEST_METHOD(CanFlushAllButKeys)
@@ -300,7 +300,7 @@ class InputBufferTests
                                                             0,
                                                             false,
                                                             false));
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             VERIFY_ARE_EQUAL(records[i], outRecords[i]);
@@ -473,7 +473,7 @@ class InputBufferTests
                                                             0,
                                                             false,
                                                             false));
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
         VERIFY_ARE_EQUAL(length, RECORD_INSERT_COUNT);
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
@@ -490,13 +490,13 @@ class InputBufferTests
         INPUT_RECORD record;
         record.EventType = MENU_EVENT;
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1u);
         inputBuffer.InputMode = 0x0;
         inputBuffer.ReinitializeInputBuffer();
 
         // check that the changes were reverted
         VERIFY_ARE_EQUAL(originalInputMode, inputBuffer.InputMode);
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
     }
 
     TEST_METHOD(HandleConsoleSuspensionEventsRemovesPauseKeys)
@@ -506,20 +506,20 @@ class InputBufferTests
 
         // make sure we aren't currently paused and have an empty buffer
         VERIFY_IS_FALSE(IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_OUTPUT_SUSPENDED));
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
 
         VERIFY_ARE_EQUAL(inputBuffer.WriteInputBuffer(&pauseRecord, 1), 0u);
 
         // we should now be paused and the input record should be discarded
         VERIFY_IS_TRUE(IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_OUTPUT_SUSPENDED));
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
 
         // the next key press should unpause us but be discarded
         INPUT_RECORD unpauseRecord = MakeKeyEvent(true, 1, L'a', 0, L'a', 0);
         VERIFY_ARE_EQUAL(inputBuffer.WriteInputBuffer(&unpauseRecord, 1), 0u);
 
         VERIFY_IS_FALSE(IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_OUTPUT_SUSPENDED));
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
     }
 
     TEST_METHOD(SystemKeysDontUnpauseConsole)
@@ -529,14 +529,14 @@ class InputBufferTests
 
         // make sure we aren't currently paused and have an empty buffer
         VERIFY_IS_FALSE(IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_OUTPUT_SUSPENDED));
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
 
         // pause the screen
         VERIFY_ARE_EQUAL(inputBuffer.WriteInputBuffer(&pauseRecord, 1), 0u);
 
         // we should now be paused and the input record should be discarded
         VERIFY_IS_TRUE(IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_OUTPUT_SUSPENDED));
-        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0);
+        VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
 
         // sending a system key event should not stop the pause and
         // the record should be stored in the input buffer

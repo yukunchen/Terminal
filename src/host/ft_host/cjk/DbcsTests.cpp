@@ -507,7 +507,7 @@ void DbcsWriteRead::SendOutput(_In_ HANDLE const hOut, _In_ unsigned int const u
     else if (fUseDwordWritten)
     {
         Log::Comment(NoThrowString().Format(L"Chars Written: %d", dwWritten));
-        VERIFY_ARE_EQUAL(cChars, dwWritten);
+        VERIFY_ARE_EQUAL((DWORD)cChars, dwWritten);
     }
 }
 

@@ -221,7 +221,7 @@ class ApiRoutinesTests
         size_t cchWritten = 0;
         VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleAImpl(pszTitle, ARRAYSIZE(pszTitle), &cchWritten));
 
-        VERIFY_ARE_NOT_EQUAL(0, cchWritten);
+        VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.Title) + 1, cchWritten);
         VERIFY_IS_TRUE(0 == strcmp(pszExpected.get(), pszTitle));
     }
@@ -234,7 +234,7 @@ class ApiRoutinesTests
         size_t cchWritten = 0;
         VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten));
 
-        VERIFY_ARE_NOT_EQUAL(0, cchWritten);
+        VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.Title) + 1, cchWritten);
         VERIFY_IS_TRUE(0 == wcscmp(g_ciConsoleInformation.Title, pwszTitle));
     }
@@ -268,7 +268,7 @@ class ApiRoutinesTests
         size_t cchWritten = 0;
         VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleAImpl(pszTitle, ARRAYSIZE(pszTitle), &cchWritten));
 
-        VERIFY_ARE_NOT_EQUAL(0, cchWritten);
+        VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.OriginalTitle) + 1, cchWritten);
         VERIFY_IS_TRUE(0 == strcmp(pszExpected.get(), pszTitle));
     }
@@ -281,7 +281,7 @@ class ApiRoutinesTests
         size_t cchWritten = 0;
         VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten));
 
-        VERIFY_ARE_NOT_EQUAL(0, cchWritten);
+        VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
         VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.OriginalTitle) + 1, cchWritten);
         VERIFY_IS_TRUE(0 == wcscmp(g_ciConsoleInformation.OriginalTitle, pwszTitle));
     }

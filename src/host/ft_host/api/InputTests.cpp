@@ -314,7 +314,7 @@ void TestMouseWheelReadConsoleInputHelper(_In_ UINT const msg, _In_ DWORD const 
     if (dwExpectedEvents == 1)
     {
         VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputW(hConsoleInput, &ir, 1, &dwRead), L"Read the event out.");
-        VERIFY_ARE_EQUAL(1, dwRead);
+        VERIFY_ARE_EQUAL(1u, dwRead);
 
         Log::Comment(L"Verify the event is what we expected. We only verify the fields relevant to this test.");
         VERIFY_ARE_EQUAL(MOUSE_EVENT, ir.EventType);
