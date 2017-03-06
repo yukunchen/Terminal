@@ -13,6 +13,7 @@ Author(s):
 --*/
 #pragma once
 
+class WindowUiaProvider;
 
 class Window sealed
 {
@@ -100,6 +101,11 @@ private:
     void _HandleDrop(_In_ const WPARAM wParam) const;
     HRESULT _HandlePaint() const;
     void _HandleWindowPosChanged(_In_ const LPARAM lParam);
+
+    // Accessibility/UI Automation
+    LRESULT _HandleGetObject(_In_ HWND const hwnd, _In_ WPARAM const wParam, _In_ LPARAM const lParam);
+    IRawElementProviderSimple* _GetUiaProvider();
+    WindowUiaProvider* _pUiaProvider = nullptr;
 
     // Dynamic Settings helpers
     static LRESULT s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle, _In_ const BOOL fAutoPos, _In_ const Window* const pWindow);

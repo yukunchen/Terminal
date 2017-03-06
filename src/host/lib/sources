@@ -33,6 +33,7 @@ SOURCES                         =   $(SOURCES)\
                                     ..\convarea.cpp  \
                                     ..\textBuffer.cpp \
                                     ..\screenInfo.cpp \
+                                    ..\screenInfoUiaProvider.cpp \
                                     ..\newdelete.cpp \
                                     ..\_output.cpp   \
                                     ..\_stream.cpp   \
@@ -44,6 +45,7 @@ SOURCES                         =   $(SOURCES)\
                                     ..\icon.cpp      \
                                     ..\window.cpp    \
                                     ..\windowproc.cpp \
+                                    ..\windowuiaprovider.cpp \
                                     ..\windowdpiapi.cpp \
                                     ..\userprivapi.cpp \
                                     ..\ntprivapi.cpp \

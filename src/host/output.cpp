@@ -113,6 +113,7 @@ VOID SetConsoleWindowOwner(_In_ HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pPr
     ConsoleOwner.ProcessId = dwProcessId;
     ConsoleOwner.ThreadId = dwThreadId;
 
+    // Comment out this line to enable UIA tree to be visible until UIAutomationCore.dll can support our scenario.
     UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetWindowOwner, &ConsoleOwner, sizeof(ConsoleOwner));
 }
 

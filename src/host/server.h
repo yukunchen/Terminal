@@ -18,7 +18,6 @@ Revision History:
 #include "screenInfo.hpp"
 
 #include "settings.hpp"
-#include "window.hpp"
 #include "inputBuffer.hpp"
 
 #include "conimeinfo.h"
@@ -62,6 +61,7 @@ Revision History:
 #define CONSOLE_SUSPENDED (CONSOLE_OUTPUT_SUSPENDED)
 
 class COOKED_READ_DATA;
+class Window;
 
 class CONSOLE_INFORMATION : public Settings
 {
