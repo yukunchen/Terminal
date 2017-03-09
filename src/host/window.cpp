@@ -30,6 +30,7 @@
 #include "renderData.hpp"
 
 // The following default masks are used in creating windows
+// Make sure that these flags match when switching to fullscreen and back
 #define CONSOLE_WINDOW_FLAGS (WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL)
 #define CONSOLE_WINDOW_EX_FLAGS (WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES | WS_EX_APPWINDOW )
 
@@ -1203,14 +1204,14 @@ void Window::SetIsFullscreen(_In_ bool const fFullscreenEnabled)
     {
         // moving to fullscreen. remove WS_OVERLAPPEDWINDOW, which specifies styles for non-fullscreen windows (e.g.
         // caption bar). add the WS_POPUP style to allow us to size ourselves to the monitor size.
-        dwWindowStyle = dwWindowStyle & ~WS_OVERLAPPEDWINDOW;
-        dwWindowStyle |= WS_POPUP;
+        ClearAllFlags(dwWindowStyle, WS_OVERLAPPEDWINDOW);
+        SetFlag(dwWindowStyle, WS_POPUP);
     }
     else
     {
         // coming back from fullscreen. undo what we did to get in to fullscreen in the first place.
-        dwWindowStyle = dwWindowStyle & ~WS_POPUP;
-        dwWindowStyle |= WS_OVERLAPPEDWINDOW;
+        ClearFlag(dwWindowStyle, WS_POPUP);
+        SetAllFlags(dwWindowStyle, WS_OVERLAPPEDWINDOW);
     }
     SetWindowLongW(hWnd, GWL_STYLE, dwWindowStyle);
 
@@ -1218,13 +1219,13 @@ void Window::SetIsFullscreen(_In_ bool const fFullscreenEnabled)
     LONG dwExWindowStyle = GetWindowLongW(hWnd, GWL_EXSTYLE);
     if (_fIsInFullscreen)
     {
-        // moving to fullscreen. remove the client edge style to avoid an ugly border when not focused.
-        dwExWindowStyle = dwExWindowStyle & ~WS_EX_CLIENTEDGE;
+        // moving to fullscreen. remove the window edge style to avoid an ugly border when not focused.
+        ClearFlag(dwExWindowStyle, WS_EX_WINDOWEDGE);
     }
     else
     {
         // coming back from fullscreen.
-        dwExWindowStyle |= WS_EX_CLIENTEDGE;
+        SetFlag(dwExWindowStyle, WS_EX_WINDOWEDGE);
     }
     SetWindowLongW(hWnd, GWL_EXSTYLE, dwExWindowStyle);
 
