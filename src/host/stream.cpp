@@ -1706,8 +1706,16 @@ NTSTATUS SrvReadConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
     ConsoleProcessHandle* const ProcessData = m->GetProcessHandle();
 
     ConsoleHandleData* HandleData = m->GetObjectHandle();
-    InputBuffer* pInputBuffer;
-    Status = NTSTATUS_FROM_HRESULT(HandleData->GetInputBuffer(GENERIC_READ, &pInputBuffer));
+    if (HandleData == nullptr)
+    {
+        Status = ERROR_INVALID_HANDLE;
+    }
+
+    InputBuffer* pInputBuffer = nullptr;
+    if (NT_SUCCESS(Status))
+    {
+        Status = NTSTATUS_FROM_HRESULT(HandleData->GetInputBuffer(GENERIC_READ, &pInputBuffer));
+    }
     if (!NT_SUCCESS(Status))
     {
         a->NumBytes = 0;
@@ -1794,8 +1802,16 @@ NTSTATUS SrvWriteConsole(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
 
     // Make sure we have a valid screen buffer.
     ConsoleHandleData* HandleData = m->GetObjectHandle();
-    SCREEN_INFORMATION* pScreenInfo;
-    Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
+    if (HandleData == nullptr)
+    {
+        Status = ERROR_INVALID_HANDLE;
+    }
+
+    SCREEN_INFORMATION* pScreenInfo = nullptr;
+    if (NT_SUCCESS(Status))
+    {
+        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
+    }
     if (NT_SUCCESS(Status))
     {
         Status = DoSrvWriteConsole(m, ReplyPending, Buffer, pScreenInfo);

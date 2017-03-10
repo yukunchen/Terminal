@@ -413,8 +413,9 @@ NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPendi
     }
 
     ConsoleHandleData* const HandleData = m->GetObjectHandle();
+
     InputBuffer* pInputBuffer;
-    if (FAILED(HandleData->GetInputBuffer(GENERIC_READ, &pInputBuffer)))
+    if (HandleData == nullptr || FAILED(HandleData->GetInputBuffer(GENERIC_READ, &pInputBuffer)))
     {
         a->NumRecords = 0;
         Status = STATUS_INVALID_HANDLE;
@@ -760,8 +761,17 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
     }
 
     ConsoleHandleData* HandleData = m->GetObjectHandle();
-    SCREEN_INFORMATION* pScreenInfo;
-    Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_READ, &pScreenInfo));
+    if (HandleData == nullptr)
+    {
+        Status = STATUS_INVALID_HANDLE;
+    }
+
+    SCREEN_INFORMATION* pScreenInfo = nullptr;
+    if (NT_SUCCESS(Status))
+    {
+        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_READ, &pScreenInfo));
+    }
+
     if (!NT_SUCCESS(Status))
     {
         // a region of zero size is indicated by the right and bottom coordinates being less than the left and top.
@@ -827,8 +837,16 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
     }
 
     ConsoleHandleData* HandleData = m->GetObjectHandle();
-    SCREEN_INFORMATION* pScreenInfo;
-    Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
+    if (HandleData == nullptr)
+    {
+        Status = STATUS_INVALID_HANDLE;
+    }
+
+    SCREEN_INFORMATION* pScreenInfo = nullptr;
+    if (NT_SUCCESS(Status))
+    {
+        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
+    }
     if (!NT_SUCCESS(Status))
     {
         // A region of zero size is indicated by the right and bottom coordinates being less than the left and top.
@@ -933,8 +951,16 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
     }
 
     ConsoleHandleData* HandleData = m->GetObjectHandle();
-    SCREEN_INFORMATION* pScreenInfo;
-    Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_READ, &pScreenInfo));
+    if (HandleData == nullptr)
+    {
+        Status = ERROR_INVALID_HANDLE;
+    }
+
+    SCREEN_INFORMATION* pScreenInfo = nullptr;
+    if (NT_SUCCESS(Status))
+    {
+        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_READ, &pScreenInfo));
+    }
     if (!NT_SUCCESS(Status))
     {
         // a region of zero size is indicated by the right and bottom coordinates being less than the left and top.
@@ -1006,8 +1032,16 @@ NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
     }
 
     ConsoleHandleData* HandleData = m->GetObjectHandle();
-    SCREEN_INFORMATION* pScreenInfo;
-    Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
+    if (HandleData == nullptr)
+    {
+        Status = ERROR_INVALID_HANDLE;
+    }
+
+    SCREEN_INFORMATION* pScreenInfo = nullptr;
+    if (NT_SUCCESS(Status))
+    {
+        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
+    }
     if (!NT_SUCCESS(Status))
     {
         a->NumRecords = 0;
@@ -1063,8 +1097,16 @@ NTSTATUS SrvFillConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
     }
 
     ConsoleHandleData* HandleData = m->GetObjectHandle();
-    SCREEN_INFORMATION* pScreenInfo;
-    Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
+    if (HandleData == nullptr)
+    {
+        Status = ERROR_INVALID_HANDLE;
+    }
+
+    SCREEN_INFORMATION* pScreenInfo = nullptr;
+    if (NT_SUCCESS(Status))
+    {
+        Status = NTSTATUS_FROM_HRESULT(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
+    }
     if (!NT_SUCCESS(Status))
     {
         a->Length = 0;
