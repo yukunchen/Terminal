@@ -263,6 +263,7 @@ HRESULT ApiDispatchers::ServerSetConsoleScreenBufferSize(_Inout_ CONSOLE_API_MSG
     CONSOLE_SETSCREENBUFFERSIZE_MSG* const a = &m->u.consoleMsgL2.SetConsoleScreenBufferSize;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));
