@@ -271,7 +271,7 @@ void InputTests::TestWriteConsoleInvalid()
 void TestMouseWheelReadConsoleInputHelper(_In_ UINT const msg, _In_ DWORD const dwEventFlagsExpected, _In_ DWORD const dwConsoleMode)
 {
     HWND const hwnd = GetConsoleWindow();
-    VERIFY_IS_NOT_NULL(hwnd, L"Get console window handle to inject wheel messages.");
+    VERIFY_IS_TRUE(!!IsWindow(hwnd), L"Get console window handle to inject wheel messages.");
 
     HANDLE const hConsoleInput = GetStdInputHandle();
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hConsoleInput, dwConsoleMode), L"Apply the requested console mode");

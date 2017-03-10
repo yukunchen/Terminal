@@ -65,7 +65,7 @@ void DimensionsTests::TestGetLargestConsoleWindowSize()
 
     // Get the window handle
     HWND const hWindow = GetConsoleWindow();
-    VerifySucceededGLE(VERIFY_ARE_NOT_EQUAL(hWindow, INVALID_HANDLE_VALUE, L"Get the window handle for the window."));
+    VerifySucceededGLE(VERIFY_IS_TRUE(!!IsWindow(hWindow), L"Get the window handle for the window."));
 
     // Get the dimensions of the monitor that the window is on.
     HMONITOR const hMonitor = MonitorFromWindow(hWindow, MONITOR_DEFAULTTONULL);

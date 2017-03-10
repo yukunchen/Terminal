@@ -184,6 +184,7 @@ void FontTests::TestSetFontAdjustsWindow()
 {
     const HANDLE hConsoleOutput = GetStdOutputHandle();
     const HWND hwnd = GetConsoleWindow();
+    VERIFY_IS_TRUE(!!IsWindow(hwnd));
     RECT rc = { 0 };
 
     CONSOLE_FONT_INFOEX cfiex = { 0 };
