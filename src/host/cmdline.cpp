@@ -4793,7 +4793,8 @@ NTSTATUS RetrieveCommand(_In_ PCOMMAND_HISTORY CommandHistory,
 
 HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                    _In_ size_t const cchTitleBufferSize,
-                                   _Out_ size_t* const pcchTitleBufferWrittenOrNeeded,
+                                   _Out_ size_t* const pcchTitleBufferWritten,
+                                   _Out_ size_t* const pcchTitleBufferNeeded,
                                    _In_ bool const fIsOriginal)
 {
     // Ensure output variables are initialized.
@@ -4818,15 +4819,15 @@ HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcch
         cchTitleLength = wcslen(g_ciConsoleInformation.Title);
     }
 
+    // Always report how much space we would need.
+    // We need +1 for the null that will always terminate the string.
+    *pcchTitleBufferWrittenOrNeeded = cchTitleLength + 1;
+
     // If we have a pointer to receive the data, then copy it out.
     if (nullptr != pwsTitleBuffer)
     {
         RETURN_IF_FAILED(StringCchCopyNW(pwsTitleBuffer, cchTitleBufferSize, pwszTitle, cchTitleLength));
     }
-
-    // Always report how much space we would need.
-    // We need +1 for the null that will always terminate the string.
-    *pcchTitleBufferWrittenOrNeeded = cchTitleLength + 1;
 
     return S_OK;
 }
@@ -4834,6 +4835,7 @@ HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcch
 HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
                                    _In_ size_t const cchTitleBufferSize,
                                    _Out_ size_t* const pcchTitleBufferWritten,
+                                   _Out_ size_t* const pcchTitleBufferNeeded,
                                    _In_ bool const fIsOriginal)
 {
     // Ensure output variables are initialized.
@@ -4878,7 +4880,8 @@ HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitl
 
 HRESULT ApiRoutines::GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
                                           _In_ size_t const cchTitleBufferSize,
-                                          _Out_ size_t* const pcchTitleBufferWritten)
+                                          _Out_ size_t* const pcchTitleBufferWritten,
+                                          _Out_ size_t* const pcchTitleBufferNeeded)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -4891,7 +4894,8 @@ HRESULT ApiRoutines::GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *p
 
 HRESULT ApiRoutines::GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                           _In_ size_t const cchTitleBufferSize,
-                                          _Out_ size_t* const pcchTitleBufferWritten)
+                                          _Out_ size_t* const pcchTitleBufferWritten,
+                                          _Out_ size_t* const pcchTitleBufferNeeded)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -4904,7 +4908,8 @@ HRESULT ApiRoutines::GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *p
 
 HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
                                                   _In_ size_t const cchTitleBufferSize,
-                                                  _Out_ size_t* const pcchTitleBufferWritten)
+                                                  _Out_ size_t* const pcchTitleBufferWritten,
+                                                  _Out_ size_t* const pcchTitleBufferNeeded)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -4917,7 +4922,8 @@ HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBuffer
 
 HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                                   _In_ size_t const cchTitleBufferSize,
-                                                  _Out_ size_t* const pcchTitleBufferWritten)
+                                                  _Out_ size_t* const pcchTitleBufferWritten,
+                                                  _Out_ size_t* const pcchTitleBufferNeeded)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });

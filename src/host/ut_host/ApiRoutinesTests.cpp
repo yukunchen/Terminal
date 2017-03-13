@@ -191,7 +191,7 @@ class ApiRoutinesTests
         Log::Comment(L"Input mode should be set anyway despite FAILED return code.");
         VerifySetConsoleInputModeImpl(E_INVALIDARG, 0x1E4);
     }
-
+    
     TEST_METHOD(ApiGetConsoleTitleA)
     {
         g_ciConsoleInformation.Title = L"Test window title.";
@@ -228,6 +228,7 @@ class ApiRoutinesTests
 
     TEST_METHOD(ApiGetConsoleTitleW)
     {
+        ApiGetConsoleTitleWHelper(L"Test window title.");
         g_ciConsoleInformation.Title = L"Test window title.";
 
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH

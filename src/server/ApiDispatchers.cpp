@@ -396,27 +396,28 @@ HRESULT ApiDispatchers::ServerGetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m,
     ULONG cbBuffer;
     RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBuffer));
 
-    // a->TitleLength contains length in bytes.
+    HRESULT hr = S_OK;
     if (a->Unicode)
     {
         wchar_t* const pwsBuffer = reinterpret_cast<wchar_t*>(pvBuffer);
         size_t const cchBuffer = cbBuffer / sizeof(wchar_t);
         size_t cchWritten;
+        size_t cchNeeded;
         if (a->Original)
         {
-            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleOriginalTitleWImpl(pwsBuffer,
-                                                                            cchBuffer,
-                                                                            &cchWritten));
+            hr = m->_pApiRoutines->GetConsoleOriginalTitleWImpl(pwsBuffer,
+                                                                cchBuffer,
+                                                                &cchWritten);
         }
         else
         {
-            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleTitleWImpl(pwsBuffer,
-                                                                    cchBuffer,
-                                                                    &cchWritten));
+            hr = m->_pApiRoutines->GetConsoleTitleWImpl(pwsBuffer,
+                                                        cchBuffer,
+                                                        &cchWritten);
         }
 
         // We must return the character length of the string in a->TitleLength
-        RETURN_IF_FAILED(SizeTToULong(cchWritten, &a->TitleLength));
+        LOG_IF_FAILED(SizeTToULong(cchWritten, &a->TitleLength));
 
         // Number of bytes written + the trailing null.
         m->SetReplyInformation((cchWritten + 1) * sizeof(wchar_t));
@@ -426,27 +427,30 @@ HRESULT ApiDispatchers::ServerGetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m,
         char* const psBuffer = reinterpret_cast<char*>(pvBuffer);
         size_t const cchBuffer = cbBuffer;
         size_t cchWritten;
+        size_t cchNeeded;
         if (a->Original)
         {
-            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleOriginalTitleAImpl(psBuffer,
-                                                                            cchBuffer,
-                                                                            &cchWritten));
+            hr = m->_pApiRoutines->GetConsoleOriginalTitleAImpl(psBuffer,
+                                                                cchBuffer,
+                                                                &cchWritten,
+                                                                &cchNeeded);
         }
         else
         {
-            RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleTitleAImpl(psBuffer,
-                                                                    cchBuffer,
-                                                                    &cchWritten));
+            hr = m->_pApiRoutines->GetConsoleTitleAImpl(psBuffer,
+                                                        cchBuffer,
+                                                        &cchWritten,
+                                                        &cchNeeded);
         }
 
-        // We must return the character length of the string in a->TitleLength
-        RETURN_IF_FAILED(SizeTToULong(cchWritten, &a->TitleLength));
+        // We must return the needed length of the title string in the TitleLength.
+        LOG_IF_FAILED(SizeTToULong(cchNeeded, &a->TitleLength));
 
-        // Number of bytes written. The title retrival routine enforces the trailing null in the count of written already.
+        // We must return the actually written length of the title string in the reply.
         m->SetReplyInformation(cchWritten * sizeof(char));
     }
 
-    return S_OK;
+    return hr;
 }
 
 HRESULT ApiDispatchers::ServerSetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
