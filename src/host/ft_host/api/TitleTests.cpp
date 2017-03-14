@@ -92,7 +92,6 @@ void TestGetConsoleTitleWPrepExpectedHelper(_In_reads_(cchTitle) const wchar_t* 
     // Prep expected data
     size_t const cchCopy = min(cchTitle, cchTryToRead);
     VERIFY_SUCCEEDED(StringCchCopyNW(wchReadExpected, cchReadBuffer, wchTitle, cchCopy - 1)); // Copy as much room as we said we had leaving space for null terminator
-    //wchReadExpected[cchCopy - 1] = L'\0'; // null terminate no matter what was copied
 }
 
 void TestGetConsoleTitleAVerifyHelper(_Inout_updates_(cchReadBuffer) char* const chReadBuffer,

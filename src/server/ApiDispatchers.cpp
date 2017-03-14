@@ -407,20 +407,22 @@ HRESULT ApiDispatchers::ServerGetConsoleTitle(_Inout_ CONSOLE_API_MSG * const m,
         {
             hr = m->_pApiRoutines->GetConsoleOriginalTitleWImpl(pwsBuffer,
                                                                 cchBuffer,
-                                                                &cchWritten);
+                                                                &cchWritten,
+                                                                &cchNeeded);
         }
         else
         {
             hr = m->_pApiRoutines->GetConsoleTitleWImpl(pwsBuffer,
                                                         cchBuffer,
-                                                        &cchWritten);
+                                                        &cchWritten,
+                                                        &cchNeeded);
         }
 
-        // We must return the character length of the string in a->TitleLength
-        LOG_IF_FAILED(SizeTToULong(cchWritten, &a->TitleLength));
+        // We must return the needed length of the title string in the TitleLength.
+        LOG_IF_FAILED(SizeTToULong(cchNeeded, &a->TitleLength));
 
-        // Number of bytes written + the trailing null.
-        m->SetReplyInformation((cchWritten + 1) * sizeof(wchar_t));
+        // We must return the actually written length of the title string in the reply.
+        m->SetReplyInformation(cchWritten * sizeof(wchar_t));
     }
     else
     {
