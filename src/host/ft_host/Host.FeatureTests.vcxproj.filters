@@ -66,6 +66,9 @@
     <ClCompile Include="cjk\DbcsTests.cpp">
       <Filter>Source Files\CJK</Filter>
     </ClCompile>
+    <ClCompile Include="api\TitleTests.cpp">
+      <Filter>Source Files\API</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.hpp">

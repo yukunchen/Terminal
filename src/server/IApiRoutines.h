@@ -254,19 +254,23 @@ public:
 
     virtual HRESULT GetConsoleTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
                                          _In_ size_t const cchTitleBufferSize,
-                                         _Out_ size_t* const pcchTitleBufferWritten) = 0;
+                                         _Out_ size_t* const pcchTitleBufferWritten,
+                                         _Out_ size_t* const pcchTitleBufferNeeded) = 0;
 
     virtual HRESULT GetConsoleTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                          _In_ size_t const cchTitleBufferSize,
-                                         _Out_ size_t* const pcchTitleBufferWritten) = 0;
+                                         _Out_ size_t* const pcchTitleBufferWritten,
+                                         _Out_ size_t* const pcchTitleBufferNeeded) = 0;
 
     virtual HRESULT GetConsoleOriginalTitleAImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) char* const psTitleBuffer,
                                                  _In_ size_t const cchTitleBufferSize,
-                                                 _Out_ size_t* const pcchTitleBufferWritten) = 0;
+                                                 _Out_ size_t* const pcchTitleBufferWritten,
+                                                 _Out_ size_t* const pcchTitleBufferNeeded) = 0;
 
     virtual HRESULT GetConsoleOriginalTitleWImpl(_Out_writes_to_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                                  _In_ size_t const cchTitleBufferSize,
-                                                 _Out_ size_t* const pcchTitleBufferWritten) = 0;
+                                                 _Out_ size_t* const pcchTitleBufferWritten,
+                                                 _Out_ size_t* const pcchTitleBufferNeeded) = 0;
 
     virtual HRESULT SetConsoleTitleAImpl(_In_reads_or_z_(cchTitleBufferSize) const char* const psTitleBuffer,
                                          _In_ size_t const cchTitleBufferSize) = 0;
