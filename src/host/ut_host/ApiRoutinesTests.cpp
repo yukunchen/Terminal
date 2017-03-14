@@ -191,7 +191,7 @@ class ApiRoutinesTests
         Log::Comment(L"Input mode should be set anyway despite FAILED return code.");
         VerifySetConsoleInputModeImpl(E_INVALIDARG, 0x1E4);
     }
-
+    
     TEST_METHOD(ApiGetConsoleTitleA)
     {
         g_ciConsoleInformation.Title = L"Test window title.";
@@ -219,10 +219,13 @@ class ApiRoutinesTests
 
         char pszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleAImpl(pszTitle, ARRAYSIZE(pszTitle), &cchWritten));
+        size_t cchNeeded = 0;
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleAImpl(pszTitle, ARRAYSIZE(pszTitle), &cchWritten, &cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
+        // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
         VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.Title) + 1, cchWritten);
+        VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.Title), cchNeeded);
         VERIFY_IS_TRUE(0 == strcmp(pszExpected.get(), pszTitle));
     }
 
@@ -232,10 +235,13 @@ class ApiRoutinesTests
 
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten));
+        size_t cchNeeded = 0;
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten, &cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
-        VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.Title) + 1, cchWritten);
+        // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
+        VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.Title), cchWritten);
+        VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.Title), cchNeeded);
         VERIFY_IS_TRUE(0 == wcscmp(g_ciConsoleInformation.Title, pwszTitle));
     }
 
@@ -266,10 +272,13 @@ class ApiRoutinesTests
 
         char pszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleAImpl(pszTitle, ARRAYSIZE(pszTitle), &cchWritten));
+        size_t cchNeeded = 0;
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleAImpl(pszTitle, ARRAYSIZE(pszTitle), &cchWritten, &cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
+        // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
         VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.OriginalTitle) + 1, cchWritten);
+        VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.OriginalTitle), cchNeeded);
         VERIFY_IS_TRUE(0 == strcmp(pszExpected.get(), pszTitle));
     }
 
@@ -279,10 +288,13 @@ class ApiRoutinesTests
 
         wchar_t pwszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;
-        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten));
+        size_t cchNeeded = 0;
+        VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten, &cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
-        VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.OriginalTitle) + 1, cchWritten);
+        // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
+        VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.OriginalTitle), cchWritten);
+        VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.OriginalTitle), cchNeeded);
         VERIFY_IS_TRUE(0 == wcscmp(g_ciConsoleInformation.OriginalTitle, pwszTitle));
     }
 };
