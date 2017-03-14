@@ -223,6 +223,7 @@ class ApiRoutinesTests
         VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleAImpl(pszTitle, ARRAYSIZE(pszTitle), &cchWritten, &cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
+        // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
         VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.Title) + 1, cchWritten);
         VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.Title), cchNeeded);
         VERIFY_IS_TRUE(0 == strcmp(pszExpected.get(), pszTitle));
@@ -238,6 +239,7 @@ class ApiRoutinesTests
         VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten, &cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
+        // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
         VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.Title), cchWritten);
         VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.Title), cchNeeded);
         VERIFY_IS_TRUE(0 == wcscmp(g_ciConsoleInformation.Title, pwszTitle));
@@ -274,6 +276,7 @@ class ApiRoutinesTests
         VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleAImpl(pszTitle, ARRAYSIZE(pszTitle), &cchWritten, &cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
+        // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
         VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.OriginalTitle) + 1, cchWritten);
         VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.OriginalTitle), cchNeeded);
         VERIFY_IS_TRUE(0 == strcmp(pszExpected.get(), pszTitle));
@@ -289,6 +292,7 @@ class ApiRoutinesTests
         VERIFY_SUCCEEDED(_pApiRoutines->GetConsoleOriginalTitleWImpl(pwszTitle, ARRAYSIZE(pwszTitle), &cchWritten, &cchNeeded));
 
         VERIFY_ARE_NOT_EQUAL(0u, cchWritten);
+        // NOTE: W version of API returns string length. A version of API returns buffer length (string + null).
         VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.OriginalTitle), cchWritten);
         VERIFY_ARE_EQUAL(wcslen(g_ciConsoleInformation.OriginalTitle), cchNeeded);
         VERIFY_IS_TRUE(0 == wcscmp(g_ciConsoleInformation.OriginalTitle, pwszTitle));

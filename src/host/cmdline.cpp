@@ -4895,7 +4895,7 @@ HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitl
                                            cchConverted);
 
 
-        // Insufficient buffer is allowed.If we return a partial string, that's still OK by historical/compat standards.
+        // Insufficient buffer is allowed. If we return a partial string, that's still OK by historical/compat standards.
         // Just say how much we managed to return.
         if (SUCCEEDED(hr) || STRSAFE_E_INSUFFICIENT_BUFFER == hr)
         {
