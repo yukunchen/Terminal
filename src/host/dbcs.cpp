@@ -452,17 +452,29 @@ DWORD RemoveDbcsMarkAll(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     }
 }
 
+// Routine Description:
+// - Checks if a char is a lead byte for a given code page.
+// Arguments:
+// - ch - the char to check.
+// - pCPInfo - the code page to check the char in.
+// Return Value:
+// true if ch is a lead byte, false otherwise.
 bool IsDBCSLeadByteConsole(_In_ const CHAR ch, _In_ const CPINFO * const pCPInfo)
 {
+    ASSERT(pCPInfo != nullptr);
     // NOTE: This must be unsigned for the comparison. If we compare signed, this will never hit
     // because lead bytes are ironically enough always above 0x80 (signed char negative range).
     unsigned char const uchComparison = (unsigned char)ch;
 
     int i = 0;
+    // this is ok because the the array is guaranteed to have 2
+    // null bytes at the end.
     while (pCPInfo->LeadByte[i])
     {
         if (pCPInfo->LeadByte[i] <= uchComparison && uchComparison <= pCPInfo->LeadByte[i + 1])
+        {
             return true;
+        }
         i += 2;
     }
     return false;

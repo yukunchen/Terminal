@@ -417,7 +417,7 @@ void PropertiesUpdate(_In_ PCONSOLE_STATE_INFO pStateInfo)
         g_ciConsoleInformation.SetInsertMode(pStateInfo->InsertMode != FALSE);
         if (g_ciConsoleInformation.lpCookedReadData)
         {
-            g_ciConsoleInformation.lpCookedReadData->InsertMode = !!g_ciConsoleInformation.GetInsertMode();
+            g_ciConsoleInformation.lpCookedReadData->_InsertMode = !!g_ciConsoleInformation.GetInsertMode();
         }
     }
 

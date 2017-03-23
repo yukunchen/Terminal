@@ -103,9 +103,6 @@ public:
 
     DWORD ReadConInpNumBytesUnicode;
 
-    DWORD WriteConOutNumBytesUnicode;
-    DWORD WriteConOutNumBytesTemp;
-
     COOKED_READ_DATA* lpCookedReadData;
 
     ConsoleImeInfo ConsoleIme;
@@ -121,10 +118,6 @@ public:
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
 };
-
-#include "..\server\ProcessHandle.h"
-
-#include "..\server\WaitBlock.h"
 
 #define ConsoleLocked() (g_ciConsoleInformation.ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)
 

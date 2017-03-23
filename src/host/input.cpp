@@ -43,8 +43,6 @@
 // Opacity is defined as 0-255. 12 is therefore approximately 5% per tick.
 #define OPACITY_DELTA_INTERVAL 12
 
-NTSTATUS InitWindowsStuff();
-
 bool IsInProcessedInputMode()
 {
     return (g_ciConsoleInformation.pInputBuffer->InputMode & ENABLE_PROCESSED_INPUT) != 0;
@@ -53,51 +51,6 @@ bool IsInProcessedInputMode()
 bool IsInVirtualTerminalInputMode()
 {
     return IsFlagSet(g_ciConsoleInformation.pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
-}
-
-// Routine Description:
-// - This routine waits for a writer to add data to the buffer.
-// Arguments:
-// - Console - Pointer to console buffer information.
-// - pConsoleMsg - if called from dll (not InputThread), points to api
-//             message.  this parameter is used for wait block processing.
-//             We'll get the correct input object from this message.
-// - pfnWaitRoutine - Routine to call when wait is woken up.
-// - pvWaitParameter - Parameter to pass to wait routine.
-// - cbWaitParameter - Length of wait parameter.
-// - fWaitBlockExists - TRUE if wait block has already been created.
-// Return Value:
-// - STATUS_WAIT - call was from client and wait block has been created.
-// - STATUS_SUCCESS - call was from server and wait has been satisfied.
-NTSTATUS WaitForMoreToRead(_In_opt_ PCONSOLE_API_MSG pConsoleMsg,
-                           _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
-                           _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
-                           _In_ const ULONG cbWaitParameter,
-                           _In_ const BOOLEAN fWaitBlockExists)
-{
-    if (!fWaitBlockExists)
-    {
-        PVOID const WaitParameterBuffer = new BYTE[cbWaitParameter];
-        if (WaitParameterBuffer == nullptr)
-        {
-            return STATUS_NO_MEMORY;
-        }
-        memmove(WaitParameterBuffer, pvWaitParameter, cbWaitParameter);
-        if (cbWaitParameter == sizeof(COOKED_READ_DATA) && g_ciConsoleInformation.lpCookedReadData == pvWaitParameter)
-        {
-            g_ciConsoleInformation.lpCookedReadData = (COOKED_READ_DATA*)WaitParameterBuffer;
-        }
-
-        HRESULT hr = ConsoleWaitQueue::s_CreateWait(pConsoleMsg, pfnWaitRoutine, WaitParameterBuffer);
-        if (FAILED(hr))
-        {
-            delete[] WaitParameterBuffer;
-            g_ciConsoleInformation.lpCookedReadData = nullptr;
-            return NTSTATUS_FROM_HRESULT(hr);
-        }
-    }
-
-    return CONSOLE_STATUS_WAIT;
 }
 
 BOOL IsSystemKey(_In_ WORD const wVirtualKeyCode)

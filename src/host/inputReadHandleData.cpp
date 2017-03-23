@@ -37,6 +37,7 @@ void INPUT_READ_HANDLE_DATA::IncrementReadCount()
 void INPUT_READ_HANDLE_DATA::DecrementReadCount()
 {
     LockReadCount();
+    assert(_ulReadCount > 0);
     _ulReadCount--;
     UnlockReadCount();
 }

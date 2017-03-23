@@ -70,8 +70,6 @@ private:
 // WHY IS THIS NOT POSITION % TAB_SIZE?!
 #define NUMBER_OF_SPACES_IN_TAB(POSITION) (TAB_SIZE - ((POSITION) & TAB_MASK))
 
-#define AT_EOL(COOKEDREADDATA) ((COOKEDREADDATA)->BytesRead == ((COOKEDREADDATA)->CurrentPosition*2))
-
 // these values are related to GetKeyboardState
 #define KEY_PRESSED 0x8000
 #define KEY_TOGGLED 0x01
@@ -88,15 +86,7 @@ private:
 
 void ClearKeyInfo(_In_ const HWND hWnd);
 
-
-NTSTATUS WaitForMoreToRead(_In_opt_ PCONSOLE_API_MSG pConsoleMsg,
-                           _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
-                           _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
-                           _In_ const ULONG cbWaitParameter,
-                           _In_ const BOOLEAN fWaitBlockExists);
-
 ULONG GetControlKeyState(_In_ const LPARAM lParam);
-
 
 BOOL HandleSysKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole);
 void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole);

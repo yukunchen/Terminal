@@ -165,12 +165,6 @@ class InputBufferTests
                                                             &length,
                                                             true,
                                                             false,
-                                                            nullptr,
-                                                            nullptr,
-                                                            nullptr,
-                                                            nullptr,
-                                                            0,
-                                                            false,
                                                             false));
         VERIFY_ARE_EQUAL(outRecord.Event.KeyEvent.wRepeatCount, RECORD_INSERT_COUNT);
     }
@@ -261,12 +255,6 @@ class InputBufferTests
                                                             &length,
                                                             false,
                                                             false,
-                                                            nullptr,
-                                                            nullptr,
-                                                            nullptr,
-                                                            nullptr,
-                                                            0,
-                                                            false,
                                                             false));
         for (size_t i = 0; i < length; ++i)
         {
@@ -292,12 +280,6 @@ class InputBufferTests
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
                                                             &length,
                                                             false,
-                                                            false,
-                                                            nullptr,
-                                                            nullptr,
-                                                            nullptr,
-                                                            nullptr,
-                                                            0,
                                                             false,
                                                             false));
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
@@ -325,12 +307,6 @@ class InputBufferTests
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
                                                             &length,
                                                             true,
-                                                            false,
-                                                            nullptr,
-                                                            nullptr,
-                                                            nullptr,
-                                                            nullptr,
-                                                            0,
                                                             false,
                                                             false));
         VERIFY_ARE_EQUAL(length, RECORD_INSERT_COUNT);
@@ -447,12 +423,6 @@ class InputBufferTests
                                                             &length,
                                                             false,
                                                             false,
-                                                            nullptr,
-                                                            nullptr,
-                                                            nullptr,
-                                                            nullptr,
-                                                            0,
-                                                            false,
                                                             false));
         VERIFY_ARE_EQUAL(length, RECORD_INSERT_COUNT);
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
@@ -465,12 +435,6 @@ class InputBufferTests
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
                                                             &length,
                                                             false,
-                                                            false,
-                                                            nullptr,
-                                                            nullptr,
-                                                            nullptr,
-                                                            nullptr,
-                                                            0,
                                                             false,
                                                             false));
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
@@ -551,12 +515,6 @@ class InputBufferTests
         VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
                                                             &length,
                                                             true,
-                                                            false,
-                                                            nullptr,
-                                                            nullptr,
-                                                            nullptr,
-                                                            nullptr,
-                                                            0,
                                                             false,
                                                             false));
     }

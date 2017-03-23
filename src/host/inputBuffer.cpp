@@ -116,7 +116,7 @@ HRESULT InputBuffer::FlushAllButKeys()
     try
     {
         std::deque<INPUT_RECORD> keyRecords;
-        for(auto it = _storage.cbegin(); it != _storage.cend(); ++it)
+        for (auto it = _storage.cbegin(); it != _storage.cend(); ++it)
         {
             if (it->EventType == KEY_EVENT)
             {
@@ -130,58 +130,38 @@ HRESULT InputBuffer::FlushAllButKeys()
 }
 
 // Routine Description:
-// - This routine reads from the input buffer.
-// Arguments:
-// - pInputRecord - Buffer to read into.
-// - pcLength - On input, number of events to read.  On output, number of events read.
-// - fPeek - If TRUE, copy events to pInputRecord but don't remove them from the input buffer.
-// - fWaitForData - if TRUE, wait until an event is input.  if FALSE, return immediately
-// - pHandleData - Pointer to handle data structure.  This parameter is optional if fWaitForData is false.
-// - pConsoleMsg - if called from dll (not InputThread), points to api message.  this parameter is used for wait block processing.
-// - pfnWaitRoutine - Routine to call when wait is woken up.
-// - pvWaitParameter - Parameter to pass to wait routine.
-// - cbWaitParameter - Length of wait parameter.
-// - fWaitBlockExists - TRUE if wait block has already been created.
-// - fUnicode - TRUE if the data in key events should be treated as unicode.
-// Return Value:
+// - This routine reads from the input buffer. 
+// - It can convert returned data to through the currently set Input CP, it can optionally return a wait condition
+//   if there isn't enough data in the buffer, and it can be set to not remove records as it reads them out.
 // Note:
 // - The console lock must be held when calling this routine.
+// Arguments:
+// - pInputRecord - Client provided buffer to read input events into.
+// - pcLength - On input, number of events to read.  On output, number of events read.
+// - fPeek - If TRUE, copy events to pInputRecord but don't remove them from the input buffer.
+// - fWaitForData - if TRUE, wait until an event is input (if there aren't enough to fill client buffer).  if FALSE, return immediately
+// - fUnicode - TRUE if the data in key events should be treated as unicode. FALSE if they should be converted by the current input CP.
+// Return Value:
+// - STATUS_SUCCESS if records were read into the client buffer and everything is OK.
+// - CONSOLE_STATUS_WAIT if there weren't enough records to satisfy the request (and waits are allowed)
+// - otherwise a suitable memory/math/string error in NTSTATUS form.
 NTSTATUS InputBuffer::ReadInputBuffer(_Out_writes_(*pcLength) INPUT_RECORD* pInputRecord,
-                                            _Inout_ PDWORD pcLength,
-                                            _In_ BOOL const fPeek,
-                                            _In_ BOOL const fWaitForData,
-                                            _In_ INPUT_READ_HANDLE_DATA* pHandleData,
-                                            _In_opt_ PCONSOLE_API_MSG pConsoleMsg,
-                                            _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
-                                            _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
-                                            _In_ ULONG const cbWaitParameter,
-                                            _In_ BOOLEAN const fWaitBlockExists,
-                                            _In_ BOOLEAN const fUnicode)
+                                      _Inout_ PDWORD pcLength,
+                                      _In_ BOOL const fPeek,
+                                      _In_ BOOL const fWaitForData,
+                                      _In_ BOOLEAN const fUnicode)
 {
     try
     {
         NTSTATUS Status;
         if (_storage.empty())
         {
+            *pcLength = 0;
             if (!fWaitForData)
             {
-                *pcLength = 0;
                 return STATUS_SUCCESS;
             }
-
-            pHandleData->IncrementReadCount();
-            Status = WaitForMoreToRead(pConsoleMsg, pfnWaitRoutine, pvWaitParameter, cbWaitParameter, fWaitBlockExists);
-            if (!NT_SUCCESS(Status))
-            {
-                if (Status != CONSOLE_STATUS_WAIT)
-                {
-                    // WaitForMoreToRead failed, restore ReadCount and bail out
-                    pHandleData->DecrementReadCount();
-                }
-
-                *pcLength = 0;
-                return Status;
-            }
+            return CONSOLE_STATUS_WAIT;
         }
 
         // read from buffer
@@ -433,8 +413,9 @@ DWORD InputBuffer::WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD 
         THROW_IF_FAILED(SIZETToDWord(EventsWritten, &result));
         return result;
     }
-    catch(...)
+    catch (...)
     {
+        LOG_HR(wil::ResultFromCaughtException());
         return 0;
     }
 }
@@ -474,6 +455,7 @@ size_t InputBuffer::WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
     }
     catch (...)
     {
+        LOG_HR(wil::ResultFromCaughtException());
         return 0;
     }
 }
@@ -653,7 +635,7 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD
                     continue;
                 }
                 else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
-                        currEvent.Event.KeyEvent.wVirtualKeyCode == VK_PAUSE || IsPauseKey(&currEvent.Event.KeyEvent))
+                         currEvent.Event.KeyEvent.wVirtualKeyCode == VK_PAUSE || IsPauseKey(&currEvent.Event.KeyEvent))
                 {
                     SetFlag(g_ciConsoleInformation.Flags, CONSOLE_SUSPENDED);
                     continue;

@@ -6,13 +6,17 @@
 
 #include "precomp.h"
 
+#include "ApiRoutines.h"
+
 #include "_stream.h"
 #include "stream.h"
+#include "writeData.hpp"
 
 #include "_output.h"
 #include "output.h"
 #include "cursor.h"
 #include "dbcs.h"
+#include "handle.h"
 #include "misc.h"
 #include "window.hpp"
 
@@ -93,9 +97,9 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
 
     if (fScrollUp || fScrollDown)
     {
-        SHORT diff = coordCursor.Y - (fScrollUp? srMargins.Top : srMargins.Bottom);
+        SHORT diff = coordCursor.Y - (fScrollUp ? srMargins.Top : srMargins.Bottom);
 
-        SMALL_RECT scrollRect = {0};
+        SMALL_RECT scrollRect = { 0 };
         scrollRect.Top = srMargins.Top;
         scrollRect.Bottom = srMargins.Bottom;
         scrollRect.Left = pScreenInfo->GetBufferViewport().Left;  // NOTE: Left/Right Scroll margins don't do anything currently.
@@ -111,7 +115,7 @@ NTSTATUS AdjustCursorPosition(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ COORD c
 
         ScrollRegion(pScreenInfo, &scrollRect, &scrollRect, dest, ciFill);
 
-        coordCursor.Y-=diff;
+        coordCursor.Y -= diff;
     }
 
     NTSTATUS Status = STATUS_SUCCESS;
@@ -538,7 +542,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 }
                 else
                 {
-                    #pragma prefast(suppress:26001, "This is fine. Tmp2 has to have advanced or it would equal pBuffer.")
+#pragma prefast(suppress:26001, "This is fine. Tmp2 has to have advanced or it would equal pBuffer.")
                     LastChar = *(Tmp2 - 1);
                 }
 
@@ -574,7 +578,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     {
                         NumChars = 1;
                         WriteOutputString(pScreenInfo, Blanks, CursorPosition, CONSOLE_FALSE_UNICODE,   // faster than real unicode
-                            &NumChars, nullptr);
+                                          &NumChars, nullptr);
                         Status = FillOutput(pScreenInfo, Attributes, CursorPosition, CONSOLE_ATTRIBUTE, &NumChars);
                     }
 
@@ -590,7 +594,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     {
                         NumChars = 1;
                         Status = WriteOutputString(pScreenInfo, Blanks, pCursor->GetPosition(), CONSOLE_FALSE_UNICODE, // faster than real unicode
-                            &NumChars, nullptr);
+                                                   &NumChars, nullptr);
                         Status = FillOutput(pScreenInfo, Attributes, pCursor->GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
                     }
                     CursorPosition.X -= 1;
@@ -610,7 +614,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             {
                 NumChars = 1;
                 WriteOutputString(pScreenInfo, Blanks, pCursor->GetPosition(), CONSOLE_FALSE_UNICODE,  //faster than real unicode
-                    &NumChars, nullptr);
+                                  &NumChars, nullptr);
                 Status = FillOutput(pScreenInfo, Attributes, pCursor->GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
             }
             if (pCursor->GetPosition().X == 0 && (pScreenInfo->OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT) && pwchBuffer > pwchBufferBackupLimit)
@@ -671,13 +675,13 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 else
                 {
                     NumChars = CursorPosition.X - pCursor->GetPosition().X;
-                    CursorPosition.Y =pCursor->GetPosition().Y;
+                    CursorPosition.Y = pCursor->GetPosition().Y;
                 }
 
                 if (!IsFlagSet(dwFlags, WC_NONDESTRUCTIVE_TAB))
                 {
                     WriteOutputString(pScreenInfo, Blanks, pCursor->GetPosition(), CONSOLE_FALSE_UNICODE,  // faster than real unicode
-                        &NumChars, nullptr);
+                                      &NumChars, nullptr);
                     FillOutput(pScreenInfo, Attributes, pCursor->GetPosition(), CONSOLE_ATTRIBUTE, &NumChars);
                 }
 
@@ -854,34 +858,37 @@ NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
     return Status;
 }
 
+// Routine Description:
+// - Takes the given text and inserts it into the given screen buffer.
 // Note:
 // - Console lock must be held when calling this routine
 // - String has been translated to unicode at this point.
-NTSTATUS DoWriteConsole(_In_ PCONSOLE_API_MSG m, _In_ PSCREEN_INFORMATION pScreenInfo)
+// Arguments:
+// - pwchBuffer - wide character text to be inserted into buffer
+// - pcbBuffer - byte count of pwchBuffer on the way in, number of bytes consumed on the way out.
+// - pScreenInfo - Screen Information class to write the text into at the current cursor position
+// - ppWaiter - If writing to the console is blocked for whatever reason, this will be filled with a pointer to context
+//              that can be used by the server to resume the call at a later time.
+// Return Value:
+// - STATUS_SUCCESS if OK. 
+// - CONSOLE_STATUS_WAIT if we couldn't finish now and need to be called back later (see ppWaiter). 
+// - Or a suitable NTSTATUS format error code for memory/string/math failures.
+NTSTATUS DoWriteConsole(_In_ PWCHAR pwchBuffer,
+                        _Inout_ ULONG* const pcbBuffer,
+                        _In_ PSCREEN_INFORMATION pScreenInfo,
+                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
-    PCONSOLE_WRITECONSOLE_MSG const a = &m->u.consoleMsgL1.WriteConsole;
-
-    if (g_ciConsoleInformation.Flags & (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING))
+    if (IsAnyFlagSet(g_ciConsoleInformation.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
-        PWCHAR TransBuffer;
-
-        TransBuffer = (PWCHAR)new BYTE[a->NumBytes];
-        if (TransBuffer == nullptr)
+        try
         {
-            return STATUS_NO_MEMORY;
+            *ppWaiter = new WriteData(pScreenInfo,
+                                      (wchar_t*)pwchBuffer,
+                                      *pcbBuffer);
         }
-
-        memmove(TransBuffer, m->State.TransBuffer, a->NumBytes);
-        m->State.TransBuffer = TransBuffer;
-        m->State.StackBuffer = FALSE;
-
-        HRESULT hr = ConsoleWaitQueue::s_CreateWait(m, WriteConsoleWaitRoutine, pScreenInfo);
-        if (FAILED(hr))
+        catch (...)
         {
-            delete[] TransBuffer;
-            m->State.TransBuffer = nullptr;
-            m->State.StackBuffer = TRUE;
-            return NTSTATUS_FROM_HRESULT(hr);
+            return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
         return CONSOLE_STATUS_WAIT;
@@ -889,86 +896,141 @@ NTSTATUS DoWriteConsole(_In_ PCONSOLE_API_MSG m, _In_ PSCREEN_INFORMATION pScree
 
     PTEXT_BUFFER_INFO const pTextBuffer = pScreenInfo->TextInfo;
     return WriteChars(pScreenInfo,
-                      m->State.TransBuffer,
-                      m->State.TransBuffer,
-                      m->State.TransBuffer,
-                      &a->NumBytes,
+                      pwchBuffer,
+                      pwchBuffer,
+                      pwchBuffer,
+                      pcbBuffer,
                       nullptr,
                       pTextBuffer->GetCursor()->GetPosition().X,
                       WC_LIMIT_BACKSPACE,
                       nullptr);
 }
 
-NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
-                           _Inout_ PBOOL ReplyPending,
-                           _Inout_ PVOID BufPtr,
-                           _In_ SCREEN_INFORMATION* const pScreenInfo)
+// Routine Description:
+// - This method performs the actual work of attempting to write to the console, converting data types as necessary
+//   to adapt from the server types to the legacy internal host types.
+// - It operates on Unicode data only. It's assumed the text is translated by this point.
+// Arguments:
+// - pOutContext - the console output object to write the new text into
+// - pwsTextBuffer - wide character text buffer provided by client application to insert
+// - cchTextBufferLength - text buffer counted in characters
+// - pcchTextBufferRead - character count of the number of characters we were able to insert before returning
+// - ppWaiter - If we are blocked from writing now and need to wait, this is filled with contextual data for the server to restore the call later
+// Return Value:
+// - S_OK if successful. 
+// - S_OK if we need to wait (check if ppWaiter is not nullptr).
+// - Or a suitable HRESULT code for math/string/memory failures.
+HRESULT WriteConsoleWImplHelper(_In_ IConsoleOutputObject* const pOutContext,
+                                _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
+                                _In_ size_t const cchTextBufferLength,
+                                _Out_ size_t* const pcchTextBufferRead,
+                                _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-    PCONSOLE_WRITECONSOLE_MSG const a = &m->u.consoleMsgL1.WriteConsole;
-    PSCREEN_INFORMATION const ScreenInfo = pScreenInfo->GetActiveBuffer();
-    std::unique_ptr<wchar_t[]> wideCharBuffer {nullptr};
-    static Utf8ToWideCharParser parser { g_ciConsoleInformation.OutputCP };
+    // Convert characters to bytes to give to DoWriteConsole.
+    size_t cbTextBufferLength;
+    RETURN_IF_FAILED(SizeTMult(cchTextBufferLength, sizeof(wchar_t), &cbTextBufferLength));
+
+    ULONG ulTextBufferLength;
+    RETURN_IF_FAILED(SizeTToULong(cbTextBufferLength, &ulTextBufferLength));
+
+    NTSTATUS Status = DoWriteConsole(const_cast<wchar_t*>(pwsTextBuffer), &ulTextBufferLength, pOutContext, ppWaiter);
+
+    // Convert back from bytes to characters for the resulting string length written.
+    *pcchTextBufferRead = ulTextBufferLength / sizeof(wchar_t);
+
+    if (Status == CONSOLE_STATUS_WAIT)
+    {
+        assert(nullptr != ppWaiter);
+        Status = STATUS_SUCCESS;
+    }
+
+    RETURN_NTSTATUS(Status);
+}
+
+// Routine Description:
+// - Writes non-Unicode formatted data into the given console output object.
+// - This method will convert from the given input into wide characters before chain calling the wide character version of the function.
+//   It uses the current Output Codepage for conversions (set via SetConsoleOutputCP).
+// - NOTE: This may be blocked for various console states and will return a wait context pointer if necessary.
+// Arguments:
+// - pOutContext - the console output object to write the new text into
+// - psTextBuffer - char/byte text buffer provided by client application to insert
+// - cchTextBufferLength - text buffer counted in characters (which is equivalent to bytes because this is the A version)
+// - pcchTextBufferRead - character count of the number of characters (also bytes because A version) we were able to insert before returning
+// - ppWaiter - If we are blocked from writing now and need to wait, this is filled with contextual data for the server to restore the call later
+// Return Value:
+// - S_OK if successful. 
+// - S_OK if we need to wait (check if ppWaiter is not nullptr).
+// - Or a suitable HRESULT code for math/string/memory failures.
+HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                       _In_reads_(cchTextBufferLength) const char* const psTextBuffer,
+                                       _In_ size_t const cchTextBufferLength,
+                                       _Out_ size_t* const pcchTextBufferRead,
+                                       _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+{
+    // Ensure output variables are initialized.
+    *pcchTextBufferRead = 0;
+    *ppWaiter = nullptr;
+
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    UINT const uiCodePage = g_ciConsoleInformation.OutputCP;
+
+    // Convert our input parameters to Unicode
+    std::unique_ptr<wchar_t[]> wideCharBuffer{ nullptr };
+    static Utf8ToWideCharParser parser{ g_ciConsoleInformation.OutputCP };
+
     // update current codepage in case it was changed from last time
-    // this was called.
+    // this was called. We do this outside the UTF-8 check because the parser drops its state
+    // when the codepage changes.
     parser.SetCodePage(g_ciConsoleInformation.OutputCP);
 
-    if (a->Unicode)
-    {
-        m->State.TransBuffer = (PWCHAR)BufPtr;
-    }
-    else if (g_ciConsoleInformation.OutputCP == CP_UTF8)
+    PSCREEN_INFORMATION const ScreenInfo = pOutContext->GetActiveBuffer();
+    wchar_t* pwchBuffer;
+    size_t cchBuffer;
+    if (uiCodePage == CP_UTF8)
     {
         wideCharBuffer.release();
-        unsigned int charCount = a->NumBytes;
-        HRESULT hresult = parser.Parse(reinterpret_cast<const byte*>(BufPtr), charCount, wideCharBuffer);
-        if (wideCharBuffer.get() == nullptr || FAILED(hresult))
-        {
-            m->SetReplyStatus(Status);
-            if (NT_SUCCESS(Status))
-            {
-                m->SetReplyInformation(a->NumBytes);
-            }
-            return Status;
-        }
-        else
-        {
-            m->State.TransBuffer = reinterpret_cast<wchar_t*>(wideCharBuffer.get());
-            m->State.StackBuffer = FALSE;
-            g_ciConsoleInformation.WriteConOutNumBytesTemp = a->NumBytes;
-            a->NumBytes = g_ciConsoleInformation.WriteConOutNumBytesUnicode = charCount * sizeof(WCHAR); // WriteCharsLegacy() counts up by sizeof(WCHAR)
-        }
+        unsigned int charCount;
+        RETURN_IF_FAILED(SizeTToUInt(cchTextBufferLength, &charCount));
+        RETURN_IF_FAILED(parser.Parse(reinterpret_cast<const byte*>(psTextBuffer), charCount, wideCharBuffer));
+        RETURN_IF_NULL_ALLOC(wideCharBuffer.get());
+
+        pwchBuffer = reinterpret_cast<wchar_t*>(wideCharBuffer.get());
+        cchBuffer = charCount;
     }
     else
     {
+        NTSTATUS Status = STATUS_SUCCESS;
         PWCHAR TransBuffer;
         PWCHAR TransBufferOriginalLocation;
         DWORD Length;
         ULONG dbcsNumBytes = 0;
         ULONG BufPtrNumBytes = 0;
+        const char* BufPtr = psTextBuffer;
 
-        // (a->NumBytes + 2) I think because we might be shoving another unicode char
+        // (cchTextBufferLength + 2) I think because we might be shoving another unicode char
         // from ScreenInfo->WriteConsoleDbcsLeadByte in front
-        TransBuffer = new WCHAR[a->NumBytes + 2];
-        if (TransBuffer == nullptr)
-        {
-            m->SetReplyStatus(STATUS_NO_MEMORY);
-            return STATUS_NO_MEMORY;
-        }
-        m->State.StackBuffer = FALSE;
+        TransBuffer = new WCHAR[cchTextBufferLength + 2];
+        RETURN_IF_NULL_ALLOC(TransBuffer);
+
         TransBufferOriginalLocation = TransBuffer;
 
-        if (!ScreenInfo->WriteConsoleDbcsLeadByte[0] || *(PUCHAR) BufPtr < (UCHAR) ' ')
+        unsigned int uiTextBufferLength;
+        RETURN_IF_FAILED(SizeTToUInt(cchTextBufferLength, &uiTextBufferLength));
+
+        if (!ScreenInfo->WriteConsoleDbcsLeadByte[0] || *(PUCHAR)BufPtr < (UCHAR) ' ')
         {
             dbcsNumBytes = 0;
-            BufPtrNumBytes = a->NumBytes;
+            BufPtrNumBytes = uiTextBufferLength;
         }
-        else if (a->NumBytes)
+        else if (cchTextBufferLength)
         {
             // there was a portion of a dbcs character stored from a previous
             // call so we take the 2nd half from BufPtr[0], put them together
             // and write the wide char to TransBuffer[0]
-            ScreenInfo->WriteConsoleDbcsLeadByte[1] = *(PCHAR) BufPtr;
+            ScreenInfo->WriteConsoleDbcsLeadByte[1] = *(PCHAR)BufPtr;
             dbcsNumBytes = sizeof(ScreenInfo->WriteConsoleDbcsLeadByte);
             /*
             * Convert the OEM characters to real Unicode according to
@@ -976,7 +1038,7 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
             */
             dbcsNumBytes = sizeof(WCHAR) * MultiByteToWideChar(g_ciConsoleInformation.OutputCP,
                                                                0,
-                                                               (LPCCH) ScreenInfo->WriteConsoleDbcsLeadByte,
+                                                               (LPCCH)ScreenInfo->WriteConsoleDbcsLeadByte,
                                                                dbcsNumBytes,
                                                                TransBuffer,
                                                                dbcsNumBytes);
@@ -987,8 +1049,8 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
             }
 
             TransBuffer++;
-            BufPtr = ((PBYTE) BufPtr) + (dbcsNumBytes / sizeof(WCHAR));
-            BufPtrNumBytes = a->NumBytes - 1;
+            BufPtr += (dbcsNumBytes / sizeof(WCHAR));
+            BufPtrNumBytes = uiTextBufferLength - 1;
         }
         else
         {
@@ -1001,10 +1063,10 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
         // if the last byte in BufPtr is a lead byte for the current code page,
         // save it for the next time this function is called and we can piece it
         // back together then
-        __analysis_assume(BufPtrNumBytes <= a->NumBytes);
-        if (BufPtrNumBytes && CheckBisectStringA((PCHAR) BufPtr, BufPtrNumBytes, &g_ciConsoleInformation.OutputCPInfo))
+        __analysis_assume(BufPtrNumBytes <= uiTextBufferLength);
+        if (BufPtrNumBytes && CheckBisectStringA((PCHAR)BufPtr, BufPtrNumBytes, &g_ciConsoleInformation.OutputCPInfo))
         {
-            ScreenInfo->WriteConsoleDbcsLeadByte[0] = *((PCHAR) BufPtr + BufPtrNumBytes - 1);
+            ScreenInfo->WriteConsoleDbcsLeadByte[0] = *((PCHAR)BufPtr + BufPtrNumBytes - 1);
             BufPtrNumBytes--;
         }
 
@@ -1013,7 +1075,7 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
             // convert the remaining bytes in BufPtr to wide chars
             Length = sizeof(WCHAR) * MultiByteToWideChar(g_ciConsoleInformation.OutputCP,
                                                          0,
-                                                         (LPCCH) BufPtr,
+                                                         (LPCCH)BufPtr,
                                                          BufPtrNumBytes,
                                                          TransBuffer,
                                                          BufPtrNumBytes);
@@ -1031,47 +1093,50 @@ NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
         {
             delete[] TransBuffer;
 
-            m->SetReplyStatus(Status);
-            if (NT_SUCCESS(Status))
-            {
-                m->SetReplyInformation(a->NumBytes);
-            }
-            return Status;
+            RETURN_NTSTATUS(Status);
         }
 
-        g_ciConsoleInformation.WriteConOutNumBytesTemp = a->NumBytes;
-        a->NumBytes = g_ciConsoleInformation.WriteConOutNumBytesUnicode = dbcsNumBytes + BufPtrNumBytes;
-        m->State.TransBuffer = TransBufferOriginalLocation;
+        pwchBuffer = TransBufferOriginalLocation;
+        cchBuffer = (dbcsNumBytes + BufPtrNumBytes) / sizeof(wchar_t);
     }
 
-    Status = DoWriteConsole(m, ScreenInfo);
-    if (Status == CONSOLE_STATUS_WAIT)
+    // Make the W version of the call
+    size_t cchBufferRead;
+    HRESULT const hr = WriteConsoleWImplHelper(ScreenInfo, pwchBuffer, cchBuffer, &cchBufferRead, ppWaiter);
+
+    // Calculate how many bytes of the original A buffer were consumed in the W version of the call to satisfy pcchTextBufferRead.
+    LOG_IF_FAILED(GetALengthFromW(uiCodePage, pwchBuffer, cchBufferRead, pcchTextBufferRead));
+
+    // Free remaining data
+    if (uiCodePage != CP_UTF8)
     {
-        *ReplyPending = TRUE;
-        return STATUS_SUCCESS;
-    }
-    else
-    {
-        if (!a->Unicode)
-        {
-            if (a->NumBytes == g_ciConsoleInformation.WriteConOutNumBytesUnicode)
-            {
-                a->NumBytes = g_ciConsoleInformation.WriteConOutNumBytesTemp;
-            }
-            else
-            {
-                a->NumBytes /= sizeof(WCHAR);
-            }
-
-            if (g_ciConsoleInformation.OutputCP != CP_UTF8)
-            {
-                delete[] m->State.TransBuffer;
-            }
-        }
-
-        m->SetReplyStatus(Status);
-        m->SetReplyInformation(a->NumBytes);
+        delete[] pwchBuffer;
     }
 
-    return Status;
+    return hr;
+}
+
+// Routine Description:
+// - Writes Unicode formatted data into the given console output object.
+// - NOTE: This may be blocked for various console states and will return a wait context pointer if necessary.
+// Arguments:
+// - pOutContext - the console output object to write the new text into
+// - pwsTextBuffer - wide character text buffer provided by client application to insert
+// - cchTextBufferLength - text buffer counted in characters
+// - pcchTextBufferRead - character count of the number of characters we were able to insert before returning
+// - ppWaiter - If we are blocked from writing now and need to wait, this is filled with contextual data for the server to restore the call later
+// Return Value:
+// - S_OK if successful. 
+// - S_OK if we need to wait (check if ppWaiter is not nullptr).
+// - Or a suitable HRESULT code for math/string/memory failures.
+HRESULT ApiRoutines::WriteConsoleWImpl(_In_ IConsoleOutputObject* const pOutContext,
+                                       _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
+                                       _In_ size_t const cchTextBufferLength,
+                                       _Out_ size_t* const pcchTextBufferRead,
+                                       _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    return WriteConsoleWImplHelper(pOutContext->GetActiveBuffer(), pwsTextBuffer, cchTextBufferLength, pcchTextBufferRead, ppWaiter);
 }

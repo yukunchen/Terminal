@@ -421,3 +421,124 @@ BOOL CheckBisectProcessW(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         return CheckBisectStringW(pwchBuffer, cWords, cBytes);
     }
 }
+
+// Routine Descriptions:
+// - Converts key event records' unicode char to the current code
+// page.
+// Arguments:
+// - InputRecords - On input, the input records to convert. on output,
+// the converted input records.
+// - NumRecords - The max number of input records that oculd fit in InputRecords
+// - UnicodeLength - The number of stored INPUT_RECORDs in InputRecords
+// - DbcsLeadInputRecord - if peeking, this is nullptr. otherwise, it is
+// the memory location where we should store any partial dbcs byte
+// sequences if necessary.
+// Return Value:
+// - 0 if a problem occured. On success, the number of records stored
+// in InputRecords upon completion.
+ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
+                          _In_ const ULONG NumRecords,    // in : ASCII byte count
+                          _In_ const ULONG UnicodeLength, // in : Number of events (char count)
+                          _Inout_opt_ PINPUT_RECORD DbcsLeadInputRecord)
+{
+    DBGCHARS(("TranslateInputToOem\n"));
+
+    ASSERT(NumRecords >= UnicodeLength);
+    __analysis_assume(NumRecords >= UnicodeLength);
+
+    ULONG NumBytes;
+    if (FAILED(DWordMult(NumRecords, sizeof(INPUT_RECORD), &NumBytes)))
+    {
+        return 0;
+    }
+
+    PINPUT_RECORD const TmpInpRec = (PINPUT_RECORD) new BYTE[NumBytes];
+    if (TmpInpRec == nullptr)
+    {
+        return 0;
+    }
+
+    // copy input data to a temp storage buffer so we can begin to
+    // overwrite InputRecords with converted data
+    memmove(TmpInpRec, InputRecords, NumBytes);
+    BYTE AsciiDbcs[2] = { 0 };
+    ULONG i, j;
+    for (i = 0, j = 0; i < UnicodeLength; i++, j++)
+    {
+        if (TmpInpRec[i].EventType == KEY_EVENT)
+        {
+            if (IsCharFullWidth(TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar))
+            {
+                NumBytes = sizeof(AsciiDbcs);
+                ConvertToOem(g_ciConsoleInformation.CP,
+                             &TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar,
+                             1,
+                             (LPSTR)& AsciiDbcs[0],
+                             NumBytes);
+                if (IsDBCSLeadByteConsole(AsciiDbcs[0], &g_ciConsoleInformation.CPInfo))
+                {
+                    if (j < NumRecords - 1)
+                    {   // -1 is safe DBCS in buffer
+                        InputRecords[j] = TmpInpRec[i];
+                        InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
+                        InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[0];
+                        j++;
+                        InputRecords[j] = TmpInpRec[i];
+                        InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
+                        InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[1];
+                        AsciiDbcs[1] = 0;
+                    }
+                    else if (j == NumRecords - 1)
+                    {
+                        InputRecords[j] = TmpInpRec[i];
+                        InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
+                        InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[0];
+                        j++;
+                        break;
+                    }
+                    else
+                    {
+                        AsciiDbcs[1] = 0;
+                        break;
+                    }
+                }
+                else
+                {
+                    InputRecords[j] = TmpInpRec[i];
+                    InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
+                    InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[0];
+                    AsciiDbcs[1] = 0;
+                }
+            }
+            else
+            {
+                InputRecords[j] = TmpInpRec[i];
+                ConvertToOem(g_ciConsoleInformation.CP,
+                             &InputRecords[j].Event.KeyEvent.uChar.UnicodeChar,
+                             1,
+                             &InputRecords[j].Event.KeyEvent.uChar.AsciiChar,
+                             1);
+            }
+        }
+    }
+    // if we were given a place to store any possible partial dbcs
+    // sequences, check if we need to store anything in it
+    if (DbcsLeadInputRecord)
+    {
+        // there is a partial that needs to be stored
+        if (AsciiDbcs[1])
+        {
+            ASSERT(i < UnicodeLength);
+            __analysis_assume(i < UnicodeLength);
+
+            *DbcsLeadInputRecord = TmpInpRec[i];
+            DbcsLeadInputRecord->Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[1];
+        }
+        else
+        {
+            ZeroMemory(DbcsLeadInputRecord, sizeof(INPUT_RECORD));
+        }
+    }
+    delete[] TmpInpRec;
+    return j;
+}

@@ -1,9 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\clipboard.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
+    <ClCompile Include="..\readDataCooked.cpp" />
     <ClCompile Include="..\conimeinfo.cpp" />
     <ClCompile Include="..\consoleInformation.cpp" />
     <ClCompile Include="..\consoleKeyInfo.cpp" />
@@ -11,6 +12,7 @@
     <ClCompile Include="..\cursor.cpp" />
     <ClCompile Include="..\dbcs.cpp" />
     <ClCompile Include="..\directio.cpp" />
+    <ClCompile Include="..\readDataDirect.cpp" />
     <ClCompile Include="..\find.cpp" />
     <ClCompile Include="..\getset.cpp" />
     <ClCompile Include="..\globals.cpp" />
@@ -29,6 +31,8 @@
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\readDataRaw.cpp" />
+    <ClCompile Include="..\readData.cpp" />
     <ClCompile Include="..\registry.cpp" />
     <ClCompile Include="..\renderData.cpp" />
     <ClCompile Include="..\renderFontDefaults.cpp" />
@@ -51,6 +55,7 @@
     <ClCompile Include="..\windowdpiapi.cpp" />
     <ClCompile Include="..\windowproc.cpp" />
     <ClCompile Include="..\windowUiaProvider.cpp" />
+    <ClCompile Include="..\writeData.cpp" />
     <ClCompile Include="..\_output.cpp" />
     <ClCompile Include="..\_stream.cpp" />
   </ItemGroup>
@@ -82,6 +87,10 @@
     <ClInclude Include="..\output.h" />
     <ClInclude Include="..\outputStream.hpp" />
     <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\readData.hpp" />
+    <ClInclude Include="..\readDataCooked.hpp" />
+    <ClInclude Include="..\rectreadDataDirect.hpp" />
+    <ClInclude Include="..\readDataRaw.hpp" />
     <ClInclude Include="..\registry.hpp" />
     <ClInclude Include="..\renderData.hpp" />
     <ClInclude Include="..\renderFontDefaults.hpp" />
@@ -103,6 +112,7 @@
     <ClInclude Include="..\window.hpp" />
     <ClInclude Include="..\windowdpiapi.hpp" />
     <ClInclude Include="..\windowUiaProvider.hpp" />
+    <ClInclude Include="..\writeData.hpp" />
     <ClInclude Include="..\_output.h" />
     <ClInclude Include="..\_stream.h" />
   </ItemGroup>

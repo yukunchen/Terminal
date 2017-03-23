@@ -37,8 +37,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // CPInfo initialized below
     // OutputCPInfo initialized below
     ReadConInpNumBytesUnicode(0),
-    WriteConOutNumBytesUnicode(0),
-    WriteConOutNumBytesTemp(0),
     lpCookedReadData(nullptr),
     // ConsoleIme initialized below
     termInput(HandleTerminalKeyEventCallback),

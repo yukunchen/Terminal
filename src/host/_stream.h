@@ -16,6 +16,8 @@ Revision History:
 
 #pragma once
 
+#include "..\server\IWaitRoutine.h"
+
 /*++
 Routine Description:
     This routine updates the cursor position.  Its input is the non-special
@@ -86,9 +88,7 @@ NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
 
 // NOTE: console lock must be held when calling this routine
 // String has been translated to unicode at this point.
-NTSTATUS DoWriteConsole(_In_ PCONSOLE_API_MSG m, _In_ PSCREEN_INFORMATION pScreenInfo);
-
-NTSTATUS DoSrvWriteConsole(_Inout_ PCONSOLE_API_MSG m,
-                           _Inout_ PBOOL ReplyPending,
-                           _Inout_ PVOID BufPtr,
-                           _In_ SCREEN_INFORMATION* const pScreenInfo);
+NTSTATUS DoWriteConsole(_In_ PWCHAR pwchBuffer, 
+                        _In_ ULONG* const pcbBuffer,
+                        _In_ PSCREEN_INFORMATION pScreenInfo,
+                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter);

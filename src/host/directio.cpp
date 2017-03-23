@@ -15,123 +15,15 @@
 #include "input.h"
 #include "handle.h"
 #include "misc.h"
+#include "readDataDirect.hpp"
+
+#include "ApiRoutines.h"
 
 #pragma hdrstop
 
 class CONSOLE_INFORMATION;
 
-typedef struct _DIRECT_READ_DATA
-{
-    InputBuffer* pInputBuffer;
-    CONSOLE_INFORMATION* pConsole;
-    ConsoleProcessHandle* pProcessData;
-    INPUT_READ_HANDLE_DATA* pInputReadHandleData;
-} DIRECT_READ_DATA, *PDIRECT_READ_DATA;
-
 #define UNICODE_DBCS_PADDING 0xffff
-
-ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
-                          _In_ ULONG NumRecords,    // in : ASCII byte count
-                          _In_ ULONG UnicodeLength, // in : Number of events (char count)
-                          _Inout_opt_ PINPUT_RECORD DbcsLeadInpRec)
-{
-    DBGCHARS(("TranslateInputToOem\n"));
-
-    ASSERT(NumRecords >= UnicodeLength);
-    __analysis_assume(NumRecords >= UnicodeLength);
-
-    ULONG NumBytes;
-    if (FAILED(DWordMult(NumRecords, sizeof(INPUT_RECORD), &NumBytes)))
-    {
-        return 0;
-    }
-
-    PINPUT_RECORD const TmpInpRec = (PINPUT_RECORD) new BYTE[NumBytes];
-    if (TmpInpRec == nullptr)
-    {
-        return 0;
-    }
-
-    memmove(TmpInpRec, InputRecords, NumBytes);
-    BYTE AsciiDbcs[2];
-    AsciiDbcs[1] = 0;
-    ULONG i, j;
-    for (i = 0, j = 0; i < UnicodeLength; i++, j++)
-    {
-        if (TmpInpRec[i].EventType == KEY_EVENT)
-        {
-            if (IsCharFullWidth(TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar))
-            {
-                NumBytes = sizeof(AsciiDbcs);
-                ConvertToOem(g_ciConsoleInformation.CP,
-                             &TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar,
-                             1,
-                             (LPSTR)& AsciiDbcs[0],
-                             NumBytes);
-                if (IsDBCSLeadByteConsole(AsciiDbcs[0], &g_ciConsoleInformation.CPInfo))
-                {
-                    if (j < NumRecords - 1)
-                    {   // -1 is safe DBCS in buffer
-                        InputRecords[j] = TmpInpRec[i];
-                        InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
-                        InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[0];
-                        j++;
-                        InputRecords[j] = TmpInpRec[i];
-                        InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
-                        InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[1];
-                        AsciiDbcs[1] = 0;
-                    }
-                    else if (j == NumRecords - 1)
-                    {
-                        InputRecords[j] = TmpInpRec[i];
-                        InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
-                        InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[0];
-                        j++;
-                        break;
-                    }
-                    else
-                    {
-                        AsciiDbcs[1] = 0;
-                        break;
-                    }
-                }
-                else
-                {
-                    InputRecords[j] = TmpInpRec[i];
-                    InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
-                    InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[0];
-                    AsciiDbcs[1] = 0;
-                }
-            }
-            else
-            {
-                InputRecords[j] = TmpInpRec[i];
-                ConvertToOem(g_ciConsoleInformation.CP,
-                             &InputRecords[j].Event.KeyEvent.uChar.UnicodeChar,
-                             1,
-                             &InputRecords[j].Event.KeyEvent.uChar.AsciiChar,
-                             1);
-            }
-        }
-    }
-    if (DbcsLeadInpRec)
-    {
-        if (AsciiDbcs[1])
-        {
-            ASSERT(i < UnicodeLength);
-            __analysis_assume(i < UnicodeLength);
-
-            *DbcsLeadInpRec = TmpInpRec[i];
-            DbcsLeadInpRec->Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[1];
-        }
-        else
-        {
-            ZeroMemory(DbcsLeadInpRec, sizeof(INPUT_RECORD));
-        }
-    }
-    delete[] TmpInpRec;
-    return j;
-}
 
 ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG NumRecords, _Inout_ PINPUT_RECORD DBCSLeadByte)
 {
@@ -204,297 +96,218 @@ ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG Num
 }
 
 // Routine Description:
-// - This routine is called to complete a direct read that blocked in
-//   ReadInputBuffer.  The context of the read was saved in the DirectReadData
-//   structure.  This routine is called when events have been written to
-//   the input buffer.  It is called in the context of the writing thread.
-// Arguments:
-// - WaitReplyMessage - Pointer to reply message to return to dll when read is completed.
-// - DirectReadData - Context of read.
-// - TerminationReason - Flags.
-// Return Value:
-BOOL DirectReadWaitRoutine(_In_ PCONSOLE_API_MSG WaitReplyMessage,
-                           _In_ PVOID WaitParameter,
-                           _In_ WaitTerminationReason const TerminationReason)
-{
-    PCONSOLE_GETCONSOLEINPUT_MSG const a = &WaitReplyMessage->u.consoleMsgL1.GetConsoleInput;
-
-    BOOLEAN RetVal = TRUE;
-    PDIRECT_READ_DATA DirectReadData = (PDIRECT_READ_DATA)WaitParameter;
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    // If ctrl-c or ctrl-break was seen, ignore it.
-    if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
-    {
-        return FALSE;
-    }
-
-    PINPUT_RECORD Buffer = nullptr;
-    if (!a->Unicode)
-    {
-        if (DirectReadData->pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
-        {
-            if (a->NumRecords == 1)
-            {
-                Buffer = (PINPUT_RECORD)WaitReplyMessage->State.OutputBuffer;
-                *Buffer = DirectReadData->pInputBuffer->ReadConInpDbcsLeadByte;
-                if (IsFlagClear(a->Flags, CONSOLE_READ_NOREMOVE))
-                {
-                    ZeroMemory(&DirectReadData->pInputBuffer->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
-                }
-
-                WaitReplyMessage->SetReplyStatus(STATUS_SUCCESS);
-                WaitReplyMessage->SetReplyInformation(sizeof(INPUT_RECORD));
-            }
-        }
-    }
-
-    BOOLEAN fAddDbcsLead = FALSE;
-    // this routine should be called by a thread owning the same lock on the same console as we're reading from.
-#ifdef DBG
-    DirectReadData->pInputReadHandleData->LockReadCount();
-    ASSERT(DirectReadData->pInputReadHandleData->GetReadCount() > 0);
-    DirectReadData->pInputReadHandleData->UnlockReadCount();
-#endif
-    DirectReadData->pInputReadHandleData->DecrementReadCount();
-
-    // See if called by CsrDestroyProcess or CsrDestroyThread
-    // via ConsoleNotifyWaitBlock. If so, just decrement the ReadCount and return.
-    if (IsFlagSet(TerminationReason, WaitTerminationReason::ThreadDying))
-    {
-        Status = STATUS_THREAD_IS_TERMINATING;
-    }
-    // We must see if we were woken up because the handle is being
-    // closed. If so, we decrement the read count. If it goes to
-    // zero, we wake up the close thread. Otherwise, we wake up any
-    // other thread waiting for data.
-    else if (IsFlagSet(DirectReadData->pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::Closing))
-    {
-        Status = STATUS_ALERTED;
-    }
-    else
-    {
-        // if we get to here, this routine was called either by the input
-        // thread or a write routine.  both of these callers grab the
-        // current console lock.
-
-        // this routine should be called by a thread owning the same
-        // lock on the same console as we're reading from.
-
-        ASSERT(g_ciConsoleInformation.IsConsoleLocked());
-
-        Buffer = (PINPUT_RECORD)WaitReplyMessage->State.OutputBuffer;
-
-        PDWORD nLength = nullptr;
-
-        g_ciConsoleInformation.ReadConInpNumBytesUnicode = a->NumRecords;
-        if (!a->Unicode)
-        {
-            // ASCII : a->NumRecords is ASCII byte count
-            if (DirectReadData->pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
-            {
-                // Saved DBCS Traling byte
-                if (g_ciConsoleInformation.ReadConInpNumBytesUnicode != 1)
-                {
-                    g_ciConsoleInformation.ReadConInpNumBytesUnicode--;
-                    Buffer++;
-                    fAddDbcsLead = TRUE;
-                    nLength = &g_ciConsoleInformation.ReadConInpNumBytesUnicode;
-                }
-                else
-                {
-                    ASSERT(g_ciConsoleInformation.ReadConInpNumBytesUnicode == 1);
-                }
-            }
-            else
-            {
-                nLength = &g_ciConsoleInformation.ReadConInpNumBytesUnicode;
-            }
-        }
-        else
-        {
-            nLength = &a->NumRecords;
-        }
-
-        Status = DirectReadData->pInputBuffer->ReadInputBuffer(Buffer,
-                                                               nLength,
-                                                               IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE),
-                                                               IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT),
-                                                               DirectReadData->pInputReadHandleData,
-                                                               WaitReplyMessage,
-                                                               DirectReadWaitRoutine,
-                                                               &DirectReadData,
-#pragma prefast(suppress: 28132, "sizeof(DirectReadData) is used as an indicator of the recursion depth and needs to be the size of the pointer in this case. This is clearer as-is than measuring the pointer type.")
-                                                               sizeof(DirectReadData),
-                                                               TRUE,
-                                                               a->Unicode);
-        if (Status == CONSOLE_STATUS_WAIT)
-        {
-            RetVal = FALSE;
-        }
-    }
-
-    // If the read was completed (status != wait), free the direct read data.
-    if (Status != CONSOLE_STATUS_WAIT)
-    {
-        if (Status == STATUS_SUCCESS && !a->Unicode)
-        {
-            if (fAddDbcsLead && DirectReadData->pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
-            {
-                a->NumRecords--;
-            }
-
-            a->NumRecords = TranslateInputToOem(Buffer,
-                                                a->NumRecords,
-                                                g_ciConsoleInformation.ReadConInpNumBytesUnicode,
-                                                IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE) ? nullptr : &DirectReadData->pInputBuffer->ReadConInpDbcsLeadByte);
-            if (fAddDbcsLead && DirectReadData->pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
-            {
-                *(Buffer - 1) = DirectReadData->pInputBuffer->ReadConInpDbcsLeadByte;
-                if (IsFlagClear(a->Flags, CONSOLE_READ_NOREMOVE))
-                {
-                    ZeroMemory(&DirectReadData->pInputBuffer->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
-                }
-                a->NumRecords++;
-                Buffer--;
-            }
-        }
-
-        WaitReplyMessage->SetReplyStatus(Status);
-        WaitReplyMessage->SetReplyInformation(a->NumRecords * sizeof(INPUT_RECORD));
-
-        delete[] DirectReadData;
-    }
-
-    return RetVal;
-}
-
-// Routine Description:
 // - This routine reads or peeks input events.  In both cases, the events
 //   are copied to the user's buffer.  In the read case they are removed
 //   from the input buffer and in the peek case they are not.
 // Arguments:
-// - m - message containing api parameters
-// - ReplyStatus - Indicates whether to reply to the dll port.
+// - pInputBuffer - The input buffer to take records from to return to the client
+// - pRecords - The user buffer given to us to fill with records
+// - pcRecords - On in, the size of the buffer (count of INPUT_RECORD).
+//             - On out, the number of INPUT_RECORDs used.
+// - fIsUnicode - Whether to operate on Unicode characters or convert on the current Input Codepage.
+// - fIsPeek - If this is a peek operation (a.k.a. do not remove characters from the input buffer while copying to client buffer.)
+// - ppWaiter - If we have to wait (not enough data to fill client buffer), this contains context that will allow the server to restore this call later.
 // Return Value:
-NTSTATUS SrvGetConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending)
+// - STATUS_SUCCESS - If data was found and ready for return to the client.
+// - CONSOLE_STATUS_WAIT - If we didn't have enough data or needed to block, this will be returned along with context in *ppWaiter.
+// - Or an out of memory/math/string error message in NTSTATUS format.
+NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
+                           _Out_writes_(*pcRecords) INPUT_RECORD* const pRecords,
+                           _Inout_ ULONG* const pcRecords,
+                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
+                           _In_ bool const fIsUnicode,
+                           _In_ bool const fIsPeek,
+                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
-    PCONSOLE_GETCONSOLEINPUT_MSG const a = &m->u.consoleMsgL1.GetConsoleInput;
+    *ppWaiter = nullptr;
 
-    if (IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE))
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    bool fAddDbcsLead = false;
+    PDWORD pnLength = pcRecords;
+    DIRECT_READ_DATA DirectReadData(pInputBuffer,
+                                    pInputReadHandleData,
+                                    pRecords,
+                                    *pcRecords,
+                                    fIsPeek);
+    DWORD nBytesUnicode = *pcRecords;
+
+    INPUT_RECORD* Buffer = pRecords;
+
+    if (!fIsUnicode)
     {
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::PeekConsoleInput, a->Unicode);
-    }
-    else
-    {
-        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleInput, a->Unicode);
-    }
+        // MSFT: 6429490 removed the usage of the ReadConInpNumBytesUnicode variable and the early return when the value was 1.
+        // This resolved an issue with returning DBCS codepages to getc() and ReadConsoleInput.
+        // There is another copy of the same pattern above in the Wait routine, but that usage scenario isn't 100% clear and
+        // doesn't affect the issue, so it's left alone for now.
 
-    // If any flags are set that are not within our enum, it's invalid.
-    if (IsAnyFlagSet(a->Flags, ~CONSOLE_READ_VALID))
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
+        pnLength = &nBytesUnicode;
 
-    PINPUT_RECORD Buffer;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetOutputBuffer((PVOID*)&Buffer, &a->NumRecords));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    a->NumRecords /= sizeof(INPUT_RECORD);
-
-    CONSOLE_INFORMATION *Console;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    ConsoleHandleData* const HandleData = m->GetObjectHandle();
-
-    InputBuffer* pInputBuffer;
-    if (HandleData == nullptr || FAILED(HandleData->GetInputBuffer(GENERIC_READ, &pInputBuffer)))
-    {
-        a->NumRecords = 0;
-        Status = STATUS_INVALID_HANDLE;
-    }
-    else
-    {
-        BOOLEAN fAddDbcsLead = FALSE;
-        PDWORD nLength = &a->NumRecords;
-        DIRECT_READ_DATA DirectReadData;
-        DWORD nBytesUnicode = a->NumRecords;
-
-        // if we're reading, wait for data.  if we're peeking, don't.
-        DirectReadData.pInputBuffer = pInputBuffer;
-        DirectReadData.pProcessData = m->GetProcessHandle();
-        DirectReadData.pInputReadHandleData = HandleData->GetClientInput();
-
-        if (!a->Unicode)
+        // if there is a saved partial byte for a dbcs char,
+        // move it to the buffer.
+        if (pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
         {
-            // MSFT: 6429490 removed the usage of the ReadConInpNumBytesUnicode variable and the early return when the value was 1.
-            // This resolved an issue with returning DBCS codepages to getc() and ReadConsoleInput.
-            // There is another copy of the same pattern above in the Wait routine, but that usage scenario isn't 100% clear and
-            // doesn't affect the issue, so it's left alone for now.
-
-            nLength = &nBytesUnicode;
-            // ASCII : a->NumRecords is ASCII byte count
-            if (pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+            // Saved DBCS Trailing byte
+            *Buffer = pInputBuffer->ReadConInpDbcsLeadByte;
+            if (!fIsPeek)
             {
-                // Saved DBCS Trailing byte
-                *Buffer = pInputBuffer->ReadConInpDbcsLeadByte;
-                if (IsFlagClear(a->Flags, CONSOLE_READ_NOREMOVE))
-                {
-                    ZeroMemory(&pInputBuffer->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
-                }
-
-                nBytesUnicode--;
-                Buffer++;
-                fAddDbcsLead = TRUE;
+                ZeroMemory(&pInputBuffer->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
             }
-        }
 
-        Status = pInputBuffer->ReadInputBuffer(Buffer,
-                                               nLength,
-                                               IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE),
-                                               IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT) && !fAddDbcsLead,
-                                               DirectReadData.pInputReadHandleData,
-                                               m,
-                                               DirectReadWaitRoutine,
-                                               &DirectReadData,
-                                               sizeof(DirectReadData),
-                                               FALSE,
-                                               a->Unicode);
-        if (Status == CONSOLE_STATUS_WAIT)
-        {
-            *ReplyPending = TRUE;
-        }
-        else if (!a->Unicode)
-        {
-            a->NumRecords = TranslateInputToOem(Buffer,
-                                                fAddDbcsLead ?
-                                                a->NumRecords - 1 :
-                                                a->NumRecords,
-                                                nBytesUnicode, IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE) ? nullptr : &pInputBuffer->ReadConInpDbcsLeadByte);
-            if (fAddDbcsLead)
-            {
-                a->NumRecords++;
-                Buffer--;
-            }
+            nBytesUnicode--;
+            Buffer++;
+            fAddDbcsLead = true;
         }
     }
 
-    UnlockConsole();
+    NTSTATUS Status = pInputBuffer->ReadInputBuffer(Buffer,
+                                                    pnLength,
+                                                    fIsPeek,
+                                                    true,
+                                                    fIsUnicode);
 
-    if (NT_SUCCESS(Status))
+    if (CONSOLE_STATUS_WAIT == Status)
     {
-        m->SetReplyInformation(a->NumRecords * sizeof(INPUT_RECORD));
+        // If we're told to wait until later, move all of our context from stack into a heap context and send it back up to the server.
+        *ppWaiter = new DIRECT_READ_DATA(std::move(DirectReadData));
+        if (*ppWaiter == nullptr)
+        {
+            Status = STATUS_NO_MEMORY;
+        }
+    }
+    else if (!fIsUnicode)
+    {
+        *pcRecords = TranslateInputToOem(Buffer,
+                                         fAddDbcsLead ? *pcRecords - 1 : *pcRecords,
+                                         nBytesUnicode,
+                                         fIsPeek ? nullptr : &pInputBuffer->ReadConInpDbcsLeadByte);
+        if (fAddDbcsLead)
+        {
+            (*pcRecords)++;
+            Buffer--;
+        }
     }
 
     return Status;
 }
+
+// Routine Description:
+// - Retrieves input records from the given input object and returns them to the client.
+// - The peek version will NOT remove records when it copies them out.
+// - The A version will convert to W using the console's current Input codepage (see SetConsoleCP)
+// Arguments:
+// - pInputBuffer - The input buffer to take records from to return to the client
+// - pRecords - The user buffer given to us to fill with records
+// - cRecords - The size of the buffer (count of INPUT_RECORD).
+// - pcRecordsWritten - The number of INPUT_RECORDs used in the client's buffer.
+// - pInputReadHandleData - A structure that will help us maintain some input context across various calls on the same input handle
+//                        - Primarily used to restore the "other piece" of partially returned strings (because client buffer wasn't big enough) on the next call.
+// - ppWaiter - If we have to wait (not enough data to fill client buffer), this contains context that will allow the server to restore this call later.
+HRESULT ApiRoutines::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
+                                           _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
+                                           _In_ size_t const cRecords,
+                                           _Out_ size_t* const pcRecordsWritten,
+                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
+                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+{
+    ULONG ulRecords;
+    RETURN_IF_FAILED(SizeTToULong(cRecords, &ulRecords));
+
+    HRESULT const hr = DoGetConsoleInput(pInContext, pRecords, &ulRecords, pInputReadHandleData, false, true, ppWaiter);
+
+    *pcRecordsWritten = ulRecords;
+
+    return hr;
+}
+
+// Routine Description:
+// - Retrieves input records from the given input object and returns them to the client.
+// - The peek version will NOT remove records when it copies them out.
+// - The W version accepts UCS-2 formatted characters (wide characters)
+// Arguments:
+// - pInputBuffer - The input buffer to take records from to return to the client
+// - pRecords - The user buffer given to us to fill with records
+// - cRecords - The size of the buffer (count of INPUT_RECORD).
+// - pcRecordsWritten - The number of INPUT_RECORDs used in the client's buffer.
+// - pInputReadHandleData - A structure that will help us maintain some input context across various calls on the same input handle
+//                        - Primarily used to restore the "other piece" of partially returned strings (because client buffer wasn't big enough) on the next call.
+// - ppWaiter - If we have to wait (not enough data to fill client buffer), this contains context that will allow the server to restore this call later.
+HRESULT ApiRoutines::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
+                                           _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
+                                           _In_ size_t const cRecords,
+                                           _Out_ size_t* const pcRecordsWritten,
+                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
+                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+{
+    ULONG ulRecords;
+    RETURN_IF_FAILED(SizeTToULong(cRecords, &ulRecords));
+
+    HRESULT const hr = DoGetConsoleInput(pInContext, pRecords, &ulRecords, pInputReadHandleData, true, true, ppWaiter);
+
+    *pcRecordsWritten = ulRecords;
+
+    return hr;
+}
+
+// Routine Description:
+// - Retrieves input records from the given input object and returns them to the client.
+// - The read version WILL remove records when it copies them out.
+// - The A version will convert to W using the console's current Input codepage (see SetConsoleCP)
+// Arguments:
+// - pInputBuffer - The input buffer to take records from to return to the client
+// - pRecords - The user buffer given to us to fill with records
+// - cRecords - The size of the buffer (count of INPUT_RECORD).
+// - pcRecordsWritten - The number of INPUT_RECORDs used in the client's buffer.
+// - pInputReadHandleData - A structure that will help us maintain some input context across various calls on the same input handle
+//                        - Primarily used to restore the "other piece" of partially returned strings (because client buffer wasn't big enough) on the next call.
+// - ppWaiter - If we have to wait (not enough data to fill client buffer), this contains context that will allow the server to restore this call later.
+HRESULT ApiRoutines::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
+                                           _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
+                                           _In_ size_t const cRecords,
+                                           _Out_ size_t* const pcRecordsWritten,
+                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
+                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+{
+    ULONG ulRecords;
+    RETURN_IF_FAILED(SizeTToULong(cRecords, &ulRecords));
+
+    HRESULT const hr = DoGetConsoleInput(pInContext, pRecords, &ulRecords, pInputReadHandleData, false, false, ppWaiter);
+
+    *pcRecordsWritten = ulRecords;
+
+    return hr;
+}
+
+// Routine Description:
+// - Retrieves input records from the given input object and returns them to the client.
+// - The read version WILL remove records when it copies them out.
+// - The W version accepts UCS-2 formatted characters (wide characters)
+// Arguments:
+// - pInputBuffer - The input buffer to take records from to return to the client
+// - pRecords - The user buffer given to us to fill with records
+// - cRecords - The size of the buffer (count of INPUT_RECORD).
+// - pcRecordsWritten - The number of INPUT_RECORDs used in the client's buffer.
+// - pInputReadHandleData - A structure that will help us maintain some input context across various calls on the same input handle
+//                        - Primarily used to restore the "other piece" of partially returned strings (because client buffer wasn't big enough) on the next call.
+// - ppWaiter - If we have to wait (not enough data to fill client buffer), this contains context that will allow the server to restore this call later.
+HRESULT ApiRoutines::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
+                                           _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
+                                           _In_ size_t const cRecords,
+                                           _Out_ size_t* const pcRecordsWritten,
+                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
+                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+{
+    ULONG ulRecords;
+    RETURN_IF_FAILED(SizeTToULong(cRecords, &ulRecords));
+
+    HRESULT const hr = DoGetConsoleInput(pInContext, pRecords, &ulRecords, pInputReadHandleData, true, false, ppWaiter);
+
+    *pcRecordsWritten = ulRecords;
+
+    return hr;
+}
+
 
 NTSTATUS SrvWriteConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
 {

@@ -253,7 +253,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _
             g_ciConsoleInformation.CurrentScreenBuffer->SetCursorDBMode(FALSE);
             if (g_ciConsoleInformation.lpCookedReadData != nullptr)
             {
-                g_ciConsoleInformation.lpCookedReadData->InsertMode = !!g_ciConsoleInformation.GetInsertMode();
+                g_ciConsoleInformation.lpCookedReadData->_InsertMode = !!g_ciConsoleInformation.GetInsertMode();
             }
         }
     }
