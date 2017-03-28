@@ -37,8 +37,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // CPInfo initialized below
     // OutputCPInfo initialized below
     ReadConInpNumBytesUnicode(0),
-    WriteConOutNumBytesUnicode(0),
-    WriteConOutNumBytesTemp(0),
     lpCookedReadData(nullptr),
     // ConsoleIme initialized below
     termInput(HandleTerminalKeyEventCallback),
@@ -92,5 +90,5 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
 // - <none>
 void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
 {
-    WriteInputBuffer(g_ciConsoleInformation.pInputBuffer, rgInput, cInput);
+    g_ciConsoleInformation.pInputBuffer->WriteInputBuffer(rgInput, cInput);
 }

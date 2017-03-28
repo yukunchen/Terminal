@@ -122,13 +122,30 @@ Error:
 }
 
 // Routine Description:
+// - This routine will handle a request to specifically close one of the console objects./
+// Arguments:
+// - pMessage - Supplies the message representing the close object IO.
+// Return Value:
+// - A pointer to the reply message.
+PCONSOLE_API_MSG IoDispatchers::ConsoleCloseObject(_In_ PCONSOLE_API_MSG pMessage)
+{
+    LockConsole();
+
+    LOG_IF_FAILED(pMessage->GetObjectHandle()->CloseHandle());
+    pMessage->SetReplyStatus(STATUS_SUCCESS);
+
+    UnlockConsole();
+    return pMessage;
+}
+
+// Routine Description:
 // - Used when a client application establishes an initial connection to this console server.
 // - This is supposed to represent accounting for the process, making the appropriate handles, etc.
 // Arguments:
 // - pReceiveMsg - The packet message received from the driver specifying that a client is connecting
 // Return Value:
 // - The response data to this request message.
-PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_Inout_ PCONSOLE_API_MSG pReceiveMsg)
+PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API_MSG pReceiveMsg)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AttachConsole);
 
@@ -256,10 +273,12 @@ Error:
 // Arguments:
 // - pProcessData - Pointer to the client's process information structure.
 // Return Value:
-// - <none>
-void IoDispatchers::ConsoleClientDisconnectRoutine(_Inout_ ConsoleProcessHandle* pProcessData)
+// - A pointer to the reply message.
+PCONSOLE_API_MSG IoDispatchers::ConsoleClientDisconnectRoutine(_In_ PCONSOLE_API_MSG pMessage)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::FreeConsole);
+
+    ConsoleProcessHandle* const pProcessData = pMessage->GetProcessHandle();
 
     NotifyWinEvent(EVENT_CONSOLE_END_APPLICATION, g_ciConsoleInformation.hWnd, pProcessData->dwProcessId, 0);
 
@@ -270,6 +289,10 @@ void IoDispatchers::ConsoleClientDisconnectRoutine(_Inout_ ConsoleProcessHandle*
     {
         TerminateProcess(GetCurrentProcess(), STATUS_SUCCESS);
     }
+
+    pMessage->SetReplyStatus(STATUS_SUCCESS);
+
+    return pMessage;
 }
 
 // Routine Description:
@@ -278,7 +301,7 @@ void IoDispatchers::ConsoleClientDisconnectRoutine(_Inout_ ConsoleProcessHandle*
 // - pMessage - Supplies the message representing the user IO.
 // Return Value:
 // - A pointer to the reply message, if this message is to be completed inline; nullptr if this message will pend now and complete later.
-PCONSOLE_API_MSG IoDispatchers::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG pMessage)
+PCONSOLE_API_MSG IoDispatchers::ConsoleDispatchRequest(_In_ PCONSOLE_API_MSG pMessage)
 {
     return ApiSorter::ConsoleDispatchRequest(pMessage);
 }

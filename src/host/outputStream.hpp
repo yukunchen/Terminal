@@ -41,9 +41,7 @@ private:
 
 #include "..\terminal\adapter\conGetSet.hpp"
 
-struct _INPUT_INFORMATION;
-typedef _INPUT_INFORMATION INPUT_INFORMATION;
-typedef _INPUT_INFORMATION *PINPUT_INFORMATION;
+#include "inputBuffer.hpp"
 
 // The ConhostInternalGetSet is for the Conhost process to call the entrypoints for its own Get/Set APIs.
 // Normally, these APIs are accessible from the outside of the conhost process (like by the process being "hosted") through
@@ -53,11 +51,11 @@ typedef _INPUT_INFORMATION *PINPUT_INFORMATION;
 class ConhostInternalGetSet : public Microsoft::Console::VirtualTerminal::ConGetSet
 {
 public:
-    ConhostInternalGetSet(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ INPUT_INFORMATION* const pInputInfo);
+    ConhostInternalGetSet(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ InputBuffer* const pInputBuffer);
 
     virtual BOOL GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const;
     virtual BOOL SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const;
-    
+
     virtual BOOL SetConsoleCursorPosition(_In_ COORD const coordCursorPosition);
 
     virtual BOOL GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) const;
@@ -81,12 +79,12 @@ public:
                                     _Out_ DWORD* const pNumberOfEventsWritten);
 
     virtual BOOL ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pScrollRectangle, _In_opt_ const SMALL_RECT* pClipRectangle, _In_ COORD coordDestinationOrigin, _In_ const CHAR_INFO* pFill);
-    
+
     virtual BOOL SetConsoleWindowInfo(_In_ BOOL const bAbsolute, _In_ const SMALL_RECT* const lpConsoleWindow);
-    
+
     virtual BOOL PrivateSetCursorKeysMode(_In_ bool const fApplicationMode);
     virtual BOOL PrivateSetKeypadMode(_In_ bool const fApplicationMode);
-    
+
     virtual BOOL PrivateAllowCursorBlinking(_In_ bool const fEnable);
 
     virtual BOOL PrivateSetScrollingRegion(_In_ const SMALL_RECT* const srScrollMargins);
@@ -112,10 +110,10 @@ public:
     virtual BOOL PrivateEnableButtonEventMouseMode(_In_ bool const fEnabled);
     virtual BOOL PrivateEnableAnyEventMouseMode(_In_ bool const fEnabled);
     virtual BOOL PrivateEnableAlternateScroll(_In_ bool const fEnabled);
-    
+
 private:
     SCREEN_INFORMATION* _pScreenInfo; // not const because switching to the alternate buffer will change this pointer.
-    INPUT_INFORMATION* const _pInputInfo;
+    InputBuffer* const _pInputBuffer;
 
     BOOL _FillConsoleOutput(_In_ USHORT const usElement,
                             _In_ ULONG const ulElementType,

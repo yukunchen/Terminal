@@ -18,7 +18,7 @@ Revision History:
 #include "screenInfo.hpp"
 
 #include "settings.hpp"
-#include "window.hpp"
+#include "inputBuffer.hpp"
 
 #include "conimeinfo.h"
 #include "..\terminal\adapter\terminalInput.hpp"
@@ -61,6 +61,7 @@ Revision History:
 #define CONSOLE_SUSPENDED (CONSOLE_OUTPUT_SUSPENDED)
 
 class COOKED_READ_DATA;
+class Window;
 
 class CONSOLE_INFORMATION : public Settings
 {
@@ -69,7 +70,7 @@ public:
     ~CONSOLE_INFORMATION();
 
     ConsoleProcessList ProcessHandleList;
-    PINPUT_INFORMATION pInputBuffer;
+    InputBuffer* pInputBuffer;
 
     Window* pWindow;
     PSCREEN_INFORMATION CurrentScreenBuffer;
@@ -102,9 +103,6 @@ public:
 
     DWORD ReadConInpNumBytesUnicode;
 
-    DWORD WriteConOutNumBytesUnicode;
-    DWORD WriteConOutNumBytesTemp;
-
     COOKED_READ_DATA* lpCookedReadData;
 
     ConsoleImeInfo ConsoleIme;
@@ -121,10 +119,6 @@ private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
 };
 
-#include "..\server\ProcessHandle.h"
-
-#include "..\server\WaitBlock.h"
-
 #define ConsoleLocked() (g_ciConsoleInformation.ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)
 
 #define CONSOLE_STATUS_WAIT 0xC0030001
@@ -136,7 +130,3 @@ private:
 void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput);
 
 NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo);
-
-struct _INPUT_INFORMATION;
-typedef _INPUT_INFORMATION INPUT_INFORMATION;
-typedef _INPUT_INFORMATION *PINPUT_INFORMATION;

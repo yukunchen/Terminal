@@ -19,6 +19,7 @@ SOURCES                         =   $(SOURCES)\
                                     ..\globals.cpp   \
                                     ..\handle.cpp    \
                                     ..\input.cpp     \
+                                    ..\inputBuffer.cpp \
                                     ..\consoleKeyInfo.cpp \
                                     ..\inputKeyInfo.cpp \
                                     ..\inputReadHandleData.cpp \
@@ -32,6 +33,7 @@ SOURCES                         =   $(SOURCES)\
                                     ..\convarea.cpp  \
                                     ..\textBuffer.cpp \
                                     ..\screenInfo.cpp \
+                                    ..\screenInfoUiaProvider.cpp \
                                     ..\newdelete.cpp \
                                     ..\_output.cpp   \
                                     ..\_stream.cpp   \
@@ -43,9 +45,15 @@ SOURCES                         =   $(SOURCES)\
                                     ..\icon.cpp      \
                                     ..\window.cpp    \
                                     ..\windowproc.cpp \
+                                    ..\windowuiaprovider.cpp \
                                     ..\windowdpiapi.cpp \
                                     ..\userprivapi.cpp \
                                     ..\ntprivapi.cpp \
+                                    ..\readData.cpp \
+                                    ..\readDataCooked.cpp \
+                                    ..\readDataDirect.cpp \
+                                    ..\readDataRaw.cpp \
+                                    ..\writeData.cpp \
                                     ..\renderData.cpp \
                                     ..\renderFontDefaults.cpp \
                                     ..\utf8ToWideCharParser.cpp \

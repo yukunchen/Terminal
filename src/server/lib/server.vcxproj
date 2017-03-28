@@ -35,6 +35,7 @@
     <ClInclude Include="..\IApiRoutines.h" />
     <ClInclude Include="..\IoDispatchers.h" />
     <ClInclude Include="..\IoSorter.h" />
+    <ClInclude Include="..\IWaitRoutine.h" />
     <ClInclude Include="..\ObjectHandle.h" />
     <ClInclude Include="..\ObjectHeader.h" />
     <ClInclude Include="..\precomp.h" />

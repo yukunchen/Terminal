@@ -122,21 +122,19 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
                                                              NULL));
 
         // UpdateProcThreadAttributes wants this as a bare array of handles and doesn't like our smart structures, 
-        // so set it up for its temporary use.
-        {
-            HANDLE HandleList[3];
-            HandleList[0] = StartupInformation.StartupInfo.hStdInput;
-            HandleList[1] = StartupInformation.StartupInfo.hStdOutput;
-            HandleList[2] = StartupInformation.StartupInfo.hStdError;
+        // so set it up for its use.
+        HANDLE HandleList[3];
+        HandleList[0] = StartupInformation.StartupInfo.hStdInput;
+        HandleList[1] = StartupInformation.StartupInfo.hStdOutput;
+        HandleList[2] = StartupInformation.StartupInfo.hStdError;
 
-            RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(StartupInformation.lpAttributeList,
-                                                                 0,
-                                                                 PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
-                                                                 &HandleList[0],
-                                                                 sizeof HandleList,
-                                                                 NULL,
-                                                                 NULL));
-        }
+        RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(StartupInformation.lpAttributeList,
+                                                                0,
+                                                                PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+                                                                &HandleList[0],
+                                                                sizeof HandleList,
+                                                                NULL,
+                                                                NULL));
 
         // We have to copy the command line string we're given because CreateProcessW has to be called with mutable data.
         if (wcslen(pwszCmdLine) == 0)

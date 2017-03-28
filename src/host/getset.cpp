@@ -32,7 +32,7 @@ COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE | COMMON_LVB_GRID_HORIZONTAL 
 #define OUTPUT_MODES (ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN | ENABLE_LVB_GRID_WORLDWIDE)
 #define PRIVATE_MODES (ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_EXTENDED_FLAGS)
 
-HRESULT ApiRoutines::GetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pContext, _Out_ ULONG* const pMode)
+HRESULT ApiRoutines::GetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _Out_ ULONG* const pMode)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleMode);
     LockConsole();
@@ -61,13 +61,13 @@ HRESULT ApiRoutines::GetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pCo
     return S_OK;
 }
 
-HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(_In_ INPUT_INFORMATION* const pContext, _Out_ ULONG* const pEvents)
+HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(_In_ InputBuffer* const pContext, _Out_ ULONG* const pEvents)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    // TODO: MSFT: 9574827 - Should this have a result code? It's void.
-    GetNumberOfReadyEvents(pContext, pEvents);
+    size_t readyEventCount = pContext->GetNumberOfReadyEvents();
+    RETURN_IF_FAILED(SizeTToULong(readyEventCount, pEvents));
 
     return S_OK;
 }
@@ -125,7 +125,7 @@ HRESULT ApiRoutines::GetConsoleSelectionInfoImpl(_Out_ CONSOLE_SELECTION_INFO* c
     {
         pSelection->GetPublicSelectionFlags(&pConsoleSelectionInfo->dwFlags);
 
-        SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS); 
+        SetFlag(pConsoleSelectionInfo->dwFlags, CONSOLE_SELECTION_IN_PROGRESS);
 
         pSelection->GetSelectionAnchor(&pConsoleSelectionInfo->dwSelectionAnchor);
         pSelection->GetSelectionRectangle(&pConsoleSelectionInfo->srSelection);
@@ -234,7 +234,7 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
     return S_OK;
 }
 
-HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pContext, _In_ ULONG const Mode)
+HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _In_ ULONG const Mode)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -253,7 +253,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pCont
             g_ciConsoleInformation.CurrentScreenBuffer->SetCursorDBMode(FALSE);
             if (g_ciConsoleInformation.lpCookedReadData != nullptr)
             {
-                g_ciConsoleInformation.lpCookedReadData->InsertMode = !!g_ciConsoleInformation.GetInsertMode();
+                g_ciConsoleInformation.lpCookedReadData->_InsertMode = !!g_ciConsoleInformation.GetInsertMode();
             }
         }
     }
@@ -272,7 +272,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ INPUT_INFORMATION* const pCont
     //       A prime example of this is that PSReadline module in Powershell will set the invalid mode 0x1e4
     //       which includes 0x4 for ECHO_INPUT but turns off 0x2 for LINE_INPUT. This is invalid, but PSReadline
     //       relies on it to properly receive the ^C printout and make a new line when the user presses Ctrl+C.
-    { 
+    {
         // Flags we don't understand are invalid.
         RETURN_HR_IF(E_INVALIDARG, IsAnyFlagSet(Mode, ~(INPUT_MODES | PRIVATE_MODES)));
 
@@ -318,13 +318,13 @@ HRESULT ApiRoutines::SetConsoleActiveScreenBufferImpl(_In_ SCREEN_INFORMATION* c
     RETURN_NTSTATUS(SetActiveScreenBuffer(pNewContext->GetActiveBuffer()));
 }
 
-HRESULT ApiRoutines::FlushConsoleInputBuffer(_In_ INPUT_INFORMATION* const pContext)
+HRESULT ApiRoutines::FlushConsoleInputBuffer(_In_ InputBuffer* const pContext)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     // TODO: MSFT: 9574827 - shouldn't this have a status code?
-    FlushInputBuffer(pContext);
+    pContext->Flush();
 
     return S_OK;
 }
@@ -420,7 +420,7 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
     // Despite the fact that this API takes in a srWindow for the viewport, it traditionally actually doesn't set
     //  anything using that member - for moving the viewport, you need SetConsoleWindowInfo
     //  (see https://msdn.microsoft.com/en-us/library/windows/desktop/ms686125(v=vs.85).aspx and DoSrvSetConsoleWindowInfo)
-    // Note that it also doesn't set cursor position. 
+    // Note that it also doesn't set cursor position.
 
     return S_OK;
 }

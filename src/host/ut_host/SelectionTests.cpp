@@ -463,10 +463,10 @@ class SelectionInputTests
         coordOldTextInfoPos.Y = pTextInfo->GetCursor()->GetPosition().Y;
 
         // set various cursor positions
-        pCooked->OriginalCursorPosition.X = 15;
-        pCooked->OriginalCursorPosition.Y = 3;
+        pCooked->_OriginalCursorPosition.X = 15;
+        pCooked->_OriginalCursorPosition.Y = 3;
 
-        pCooked->NumberOfVisibleChars = 200;
+        pCooked->_NumberOfVisibleChars = 200;
 
         pTextInfo->GetCursor()->SetXPosition(35);
         pTextInfo->GetCursor()->SetYPosition(35);
@@ -483,24 +483,24 @@ class SelectionInputTests
         VERIFY_IS_TRUE(fResult);
 
         // starting position/boundary should always be where the input line started
-        VERIFY_ARE_EQUAL(coordStart.X, pCooked->OriginalCursorPosition.X);
-        VERIFY_ARE_EQUAL(coordStart.Y, pCooked->OriginalCursorPosition.Y);
+        VERIFY_ARE_EQUAL(coordStart.X, pCooked->_OriginalCursorPosition.X);
+        VERIFY_ARE_EQUAL(coordStart.Y, pCooked->_OriginalCursorPosition.Y);
 
         // ending position can vary. it's in one of two spots
         // 1. If the original cooked cursor was valid (which it was this first time), it's NumberOfVisibleChars ahead.
         COORD coordFinalPos;
 
-        const short cCharsToAdjust = ((short)pCooked->NumberOfVisibleChars - 1); // then -1 to be on the last piece of text, not past it
+        const short cCharsToAdjust = ((short)pCooked->_NumberOfVisibleChars - 1); // then -1 to be on the last piece of text, not past it
 
-        coordFinalPos.X = (pCooked->OriginalCursorPosition.X + cCharsToAdjust) % sRowWidth;
-        coordFinalPos.Y = pCooked->OriginalCursorPosition.Y + ((pCooked->OriginalCursorPosition.X + cCharsToAdjust) / sRowWidth);
+        coordFinalPos.X = (pCooked->_OriginalCursorPosition.X + cCharsToAdjust) % sRowWidth;
+        coordFinalPos.Y = pCooked->_OriginalCursorPosition.Y + ((pCooked->_OriginalCursorPosition.X + cCharsToAdjust) / sRowWidth);
 
         VERIFY_ARE_EQUAL(coordEnd.X, coordFinalPos.X);
         VERIFY_ARE_EQUAL(coordEnd.Y, coordFinalPos.Y);
 
         // 2. if the original cooked cursor is invalid, then it's the text info cursor position
-        pCooked->OriginalCursorPosition.X = -1;
-        pCooked->OriginalCursorPosition.Y = -1;
+        pCooked->_OriginalCursorPosition.X = -1;
+        pCooked->_OriginalCursorPosition.Y = -1;
 
         fResult = Selection::s_GetInputLineBoundaries(nullptr, &coordEnd);
         VERIFY_IS_TRUE(fResult);

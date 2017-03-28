@@ -29,7 +29,7 @@ Notes:
 //
 //----------------------------------------------------------------------------
 
-BOOL CConsoleTSF::HasCompositionChanged(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord)
+BOOL CConsoleTSF::_HasCompositionChanged(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord)
 {
     BOOL fChanged;
     if (SUCCEEDED(pEditRecord->GetSelectionStatus(&fChanged)))
@@ -84,7 +84,7 @@ BOOL CConsoleTSF::HasCompositionChanged(ITfContext *pInputContext, TfEditCookie 
     }
 
     //
-    // if there is no track composition property, 
+    // if there is no track composition property,
     // the composition has been changed since we put it.
     //
     if (! bFound) {
@@ -102,7 +102,7 @@ BOOL CConsoleTSF::HasCompositionChanged(ITfContext *pInputContext, TfEditCookie 
     if (SUCCEEDED(FoundRange->Clone(&rangeTrackComposition))) {
 
         //
-        // get the text range that does not include read only area for 
+        // get the text range that does not include read only area for
         // reconversion.
         //
         CComPtr<ITfRange> rangeAllText;
@@ -114,7 +114,7 @@ BOOL CConsoleTSF::HasCompositionChanged(ITfContext *pInputContext, TfEditCookie 
 
                 //
                 // if the start position of the track composition range is not
-                // the beggining of IC, 
+                // the beggining of IC,
                 // the composition has been changed since we put it.
                 //
                 if (lResult != 0) {
@@ -124,13 +124,13 @@ BOOL CConsoleTSF::HasCompositionChanged(ITfContext *pInputContext, TfEditCookie 
 
                     //
                     // if the start position of the track composition range is not
-                    // the beggining of IC, 
+                    // the beggining of IC,
                     // the composition has been changed since we put it.
                     //
                     //
                     // If we find the changes in these property, we need to update hIMC.
                     //
-                    const GUID *guids[] = {&GUID_PROP_COMPOSING, 
+                    const GUID *guids[] = {&GUID_PROP_COMPOSING,
                                            &GUID_PROP_ATTRIBUTE};
                     const int guid_size = sizeof(guids) / sizeof(GUID*);
 
@@ -163,5 +163,3 @@ BOOL CConsoleTSF::HasCompositionChanged(ITfContext *pInputContext, TfEditCookie 
     }
     return bFound;
 }
-
-

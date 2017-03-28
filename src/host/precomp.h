@@ -34,6 +34,9 @@ Abstract:
 #include <conmsgl2.h>
 #include <conmsgl3.h>
 
+#include <propvarutil.h>
+#include <UIAutomation.h>
+
 #include <winuser.h>
 #include <winconp.h>
 #include <ntcon.h>
@@ -42,7 +45,6 @@ Abstract:
 #include "consrv.h"
 
 #include "conv.h"
-#include <imm.h>
 
 // STL
 #include <string>
@@ -55,7 +57,6 @@ Abstract:
 // WIL
 #include <wil\Common.h>
 #include <wil\Result.h>
-#include <wil\ResultException.h>
 
 #pragma prefast(push)
 #pragma prefast(disable:26071, "Range violation in Intsafe. Not ours.")

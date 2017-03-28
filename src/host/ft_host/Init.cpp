@@ -129,7 +129,7 @@ MODULE_SETUP(ModuleSetup)
     }
 
     // Verify we found a valid pid.
-    VERIFY_ARE_NOT_EQUAL(0, dwFindPid);
+    VERIFY_ARE_NOT_EQUAL(0u, dwFindPid);
 
     // Now detach from our current console (if we have one) and instead attach
     // to the one that belongs to the CMD.exe in the new OpenConsole.exe window.

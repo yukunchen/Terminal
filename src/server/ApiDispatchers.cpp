@@ -46,7 +46,7 @@ HRESULT ApiDispatchers::ServerGetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, 
     if (pObjectHandle->IsInputHandle())
     {
         handleType = L"input handle";
-        INPUT_INFORMATION* pObj;
+        InputBuffer* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_READ, &pObj));
         RETURN_HR(m->_pApiRoutines->GetConsoleInputModeImpl(pObj, &a->Mode));
     }
@@ -68,7 +68,7 @@ HRESULT ApiDispatchers::ServerSetConsoleMode(_Inout_ CONSOLE_API_MSG * const m, 
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
     if (pObjectHandle->IsInputHandle())
     {
-        INPUT_INFORMATION* pObj;
+        InputBuffer* pObj;
         RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pObj));
         return m->_pApiRoutines->SetConsoleInputModeImpl(pObj, a->Mode);
     }
@@ -88,7 +88,7 @@ HRESULT ApiDispatchers::ServerGetNumberOfInputEvents(_Inout_ CONSOLE_API_MSG * c
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
-    INPUT_INFORMATION* pObj;
+    InputBuffer* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_READ, &pObj));
 
     return m->_pApiRoutines->GetNumberOfConsoleInputEventsImpl(pObj, &a->ReadyEvents);
@@ -96,25 +96,375 @@ HRESULT ApiDispatchers::ServerGetNumberOfInputEvents(_Inout_ CONSOLE_API_MSG * c
 
 HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvGetConsoleInput(m, pbReplyPending));
+    *pbReplyPending = FALSE;
+
+    CONSOLE_GETCONSOLEINPUT_MSG* const a = &m->u.consoleMsgL1.GetConsoleInput;
+    if (IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE))
+    {
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::PeekConsoleInput, a->Unicode);
+    }
+    else
+    {
+        Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsoleInput, a->Unicode);
+    }
+
+    a->NumRecords = 0;
+
+    // If any flags are set that are not within our enum, it's invalid.
+    if (IsAnyFlagSet(a->Flags, ~CONSOLE_READ_VALID))
+    {
+        return E_INVALIDARG;
+    }
+
+    // Make sure we have a valid input buffer.
+    ConsoleHandleData* const pHandleData = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pHandleData);
+    InputBuffer* pInputBuffer;
+    RETURN_IF_FAILED(pHandleData->GetInputBuffer(GENERIC_READ, &pInputBuffer));
+
+    // Get output buffer.
+    PVOID pvBuffer;
+    ULONG cbBufferSize;
+    RETURN_IF_FAILED(m->GetOutputBuffer(&pvBuffer, &cbBufferSize));
+
+    INPUT_RECORD* const rgRecords = reinterpret_cast<INPUT_RECORD*>(pvBuffer);
+    size_t const cRecords = cbBufferSize / sizeof(INPUT_RECORD);
+
+    bool const fIsPeek = IsFlagSet(a->Flags, CONSOLE_READ_NOREMOVE);
+    bool const fIsWaitAllowed = IsFlagClear(a->Flags, CONSOLE_READ_NOWAIT);
+
+    INPUT_READ_HANDLE_DATA* const pInputReadHandleData = pHandleData->GetClientInput();
+
+    IWaitRoutine* pWaiter = nullptr;
+    HRESULT hr;
+    size_t cRecordsWritten;
+    if (a->Unicode)
+    {
+        if (fIsPeek)
+        {
+            hr = m->_pApiRoutines->PeekConsoleInputWImpl(pInputBuffer,
+                                                         rgRecords,
+                                                         cRecords,
+                                                         &cRecordsWritten,
+                                                         pInputReadHandleData,
+                                                         &pWaiter);
+        }
+        else
+        {
+            hr = m->_pApiRoutines->ReadConsoleInputWImpl(pInputBuffer,
+                                                         rgRecords,
+                                                         cRecords,
+                                                         &cRecordsWritten,
+                                                         pInputReadHandleData,
+                                                         &pWaiter);
+        }
+    }
+    else
+    {
+        if (fIsPeek)
+        {
+            hr = m->_pApiRoutines->PeekConsoleInputAImpl(pInputBuffer,
+                                                         rgRecords,
+                                                         cRecords,
+                                                         &cRecordsWritten,
+                                                         pInputReadHandleData,
+                                                         &pWaiter);
+        }
+        else
+        {
+            hr = m->_pApiRoutines->ReadConsoleInputAImpl(pInputBuffer,
+                                                         rgRecords,
+                                                         cRecords,
+                                                         &cRecordsWritten,
+                                                         pInputReadHandleData,
+                                                         &pWaiter);
+        }
+    }
+
+    // We must return the number of records in the message payload (to alert the client)
+    // as well as in the message headers (below in SetReplyInfomration) to alert the driver.
+    LOG_IF_FAILED(SizeTToULong(cRecordsWritten, &a->NumRecords));
+
+    size_t cbWritten;
+    LOG_IF_FAILED(SizeTMult(cRecordsWritten, sizeof(INPUT_RECORD), &cbWritten));
+
+    if (nullptr != pWaiter)
+    {
+        // In some circumstances, the read may have told us to wait because it didn't have data,
+        // but the client explicitly asked us to return immediate. In that case, we'll convert the
+        // wait request into a "0 bytes found, OK". 
+
+        if (fIsWaitAllowed)
+        {
+            hr = ConsoleWaitQueue::s_CreateWait(m, pWaiter);
+            if (FAILED(hr))
+            {
+                delete pWaiter;
+                pWaiter = nullptr;
+            }
+            else
+            {
+                *pbReplyPending = TRUE;
+                hr = CONSOLE_STATUS_WAIT;
+            }
+        }
+        else
+        {
+            // If wait isn't allowed and the routine generated a waiter, delete it and say there was nothing to be retrieved right now.
+            delete pWaiter;
+            pWaiter = nullptr;
+
+            cbWritten = 0;
+            hr = S_OK;
+        }
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        m->SetReplyInformation(cbWritten);
+    }
+
+    return hr;
 }
 
 HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    NTSTATUS Status = SrvReadConsole(m, pbReplyPending);
-    if (Status != CONSOLE_STATUS_WAIT)
+    *pbReplyPending = FALSE;
+
+    CONSOLE_READCONSOLE_MSG* const a = &m->u.consoleMsgL1.ReadConsole;
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::ReadConsole, a->Unicode);
+
+    a->NumBytes = 0; // we return 0 until proven otherwise.
+
+    // Make sure we have a valid input buffer.
+    ConsoleHandleData* const HandleData = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, HandleData);
+    InputBuffer* pInputBuffer;
+    RETURN_IF_FAILED(HandleData->GetInputBuffer(GENERIC_READ, &pInputBuffer));
+
+    // Get output parameter buffer.
+    PVOID pvBuffer;
+    ULONG cbBufferSize;
+    // TODO: This is dumb. We should find out how much we need, not guess.
+    // If the request is not in Unicode mode, we must allocate an output buffer that is twice as big as the actual caller buffer.
+    RETURN_IF_FAILED(m->GetAugmentedOutputBuffer((a->Unicode != FALSE) ? 1 : 2,
+                                                 &pvBuffer,
+                                                 &cbBufferSize));
+
+    // TODO: This is also rather strange and will also probably make more sense if we stop guessing that we need 2x buffer to convert.
+    // This might need to go on the other side of the fence (inside host) because the server doesn't know what we're going to do with initial num bytes.
+    // (This restriction exists because it's going to copy initial into the final buffer, but we don't know that.)
+    RETURN_HR_IF(E_INVALIDARG, a->InitialNumBytes > cbBufferSize); 
+
+    // Retrieve input parameters.
+    // 1. Exe name making the request
+    ULONG const cchExeName = a->ExeNameLength;
+    ULONG cbExeName;
+    RETURN_IF_FAILED(ULongMult(cchExeName, sizeof(wchar_t), &cbExeName));
+    wistd::unique_ptr<wchar_t[]> pwsExeName;
+    
+    if (cchExeName > 0)
     {
-        RETURN_NTSTATUS(Status);
+        pwsExeName = wil::make_unique_nothrow<wchar_t[]>(cchExeName);
+        RETURN_IF_NULL_ALLOC(pwsExeName);
+        RETURN_IF_FAILED(m->ReadMessageInput(0, pwsExeName.get(), cbExeName));
+    }
+
+    // 2. Existing data in the buffer that was passed in.
+    ULONG const cbInitialData = a->InitialNumBytes;
+    ULONG const cchInitialData = cbInitialData / sizeof(wchar_t);
+    wistd::unique_ptr<wchar_t[]> pwsInitialData;
+    
+    if (cbInitialData > 0)
+    {
+        pwsInitialData = wil::make_unique_nothrow<wchar_t[]>(cbInitialData);
+        RETURN_IF_NULL_ALLOC(pwsInitialData);
+
+        // This parameter starts immediately after the exe name so skip by that many bytes.
+        RETURN_IF_FAILED(m->ReadMessageInput(cbExeName, pwsInitialData.get(), cbInitialData));
+    }
+
+    // ReadConsole needs this to get the command history list associated with an attached process, but it can be an opaque value.
+    HANDLE const hConsoleClient = (HANDLE)m->GetProcessHandle();
+
+    // ReadConsole needs this to store context information across "processed reads" e.g. reads on the same handle
+    // across multiple calls when we are simulating a command prompt input line for the client application.
+    INPUT_READ_HANDLE_DATA* const pInputReadHandleData = HandleData->GetClientInput();
+
+    IWaitRoutine* pWaiter = nullptr;
+    size_t cbWritten;
+
+    HRESULT hr;
+    if (a->Unicode)
+    {
+        wchar_t* const pwsOutputBuffer = reinterpret_cast<wchar_t*>(pvBuffer);
+        size_t const cchOutputBuffer = cbBufferSize / sizeof(wchar_t);
+        size_t cchOutputWritten;
+
+        hr = m->_pApiRoutines->ReadConsoleWImpl(pInputBuffer,
+                                                pwsOutputBuffer,
+                                                cchOutputBuffer,
+                                                &cchOutputWritten,
+                                                &pWaiter,
+                                                pwsInitialData.get(),
+                                                cchInitialData,
+                                                pwsExeName.get(),
+                                                cchExeName,
+                                                pInputReadHandleData,
+                                                hConsoleClient,
+                                                a->CtrlWakeupMask,
+                                                &a->ControlKeyState);
+
+        // We must set the reply length in bytes. Convert back from characters.
+        LOG_IF_FAILED(SizeTMult(cchOutputWritten, sizeof(wchar_t), &cbWritten));
     }
     else
     {
-        return HRESULT_FROM_NT(Status);
+        char* const psOutputBuffer = reinterpret_cast<char*>(pvBuffer);
+        size_t const cchOutputBuffer = cbBufferSize;
+        size_t cchOutputWritten;
+
+        char* const psInitialData = reinterpret_cast<char*>(pwsInitialData.get());
+
+
+        hr = m->_pApiRoutines->ReadConsoleAImpl(pInputBuffer,
+                                                psOutputBuffer,
+                                                cchOutputBuffer,
+                                                &cchOutputWritten,
+                                                &pWaiter,
+                                                psInitialData,
+                                                cbInitialData,
+                                                pwsExeName.get(),
+                                                cchExeName,
+                                                pInputReadHandleData,
+                                                hConsoleClient,
+                                                a->CtrlWakeupMask,
+                                                &a->ControlKeyState);
+
+        cbWritten = cchOutputWritten;
     }
+
+    LOG_IF_FAILED(SizeTToULong(cbWritten, &a->NumBytes));
+
+    if (nullptr != pWaiter) 
+    {
+        // If we received a waiter, we need to queue the wait and not reply.
+        hr = ConsoleWaitQueue::s_CreateWait(m, pWaiter);
+        
+        if (FAILED(hr))
+        {
+            delete pWaiter;
+            pWaiter = nullptr;
+        }
+        else
+        {
+            *pbReplyPending = TRUE;
+        }
+    }
+    else 
+    {
+        // - This routine is called when a ReadConsole or ReadFile request is about to be completed.
+        // - It sets the number of bytes written as the information to be written with the completion status and,
+        //   if CTRL+Z processing is enabled and a CTRL+Z is detected, switches the number of bytes read to zero.
+        if (a->ProcessControlZ != FALSE &&
+            a->NumBytes > 0 &&
+            m->State.OutputBuffer != nullptr &&
+            *(PUCHAR)m->State.OutputBuffer == 0x1a)
+        {
+            a->NumBytes = 0;
+        }
+
+        m->SetReplyInformation(a->NumBytes);
+    }
+
+    return hr;
 }
 
 HRESULT ApiDispatchers::ServerWriteConsole(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
-    RETURN_NTSTATUS(SrvWriteConsole(m, pbReplyPending));
+    *pbReplyPending = FALSE;
+
+    CONSOLE_WRITECONSOLE_MSG* const a = &m->u.consoleMsgL1.WriteConsole;
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsole, a->Unicode);
+
+    // Make sure we have a valid screen buffer.
+    ConsoleHandleData* HandleData = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, HandleData);
+    SCREEN_INFORMATION* pScreenInfo;
+    RETURN_IF_FAILED(HandleData->GetScreenBuffer(GENERIC_WRITE, &pScreenInfo));
+
+    // Get input parameter buffer
+    PVOID pvBuffer;
+    ULONG cbBufferSize;
+    auto tracing = wil::ScopeExit([&]()
+    {
+        Tracing::s_TraceApi(pvBuffer, a);
+    });
+    RETURN_IF_FAILED(m->GetInputBuffer(&pvBuffer, &cbBufferSize));
+
+    IWaitRoutine* pWaiter = nullptr;
+    size_t cbRead;
+
+    // We have to hold onto the HR from the call and return it.
+    // We can't return some other error after the actual API call.
+    // This is because the write console function is allowed to write part of the string and then return an error.
+    // It then must report back how far it got before it failed.
+    HRESULT hr;
+    if (a->Unicode)
+    {
+        const wchar_t* const pwsInputBuffer = reinterpret_cast<wchar_t*>(pvBuffer);
+        size_t const cchInputBuffer = cbBufferSize / sizeof(wchar_t);
+        size_t cchInputRead;
+
+        hr = m->_pApiRoutines->WriteConsoleWImpl(pScreenInfo,
+                                                 pwsInputBuffer,
+                                                 cchInputBuffer,
+                                                 &cchInputRead,
+                                                 &pWaiter);
+
+        // We must set the reply length in bytes. Convert back from characters.
+        LOG_IF_FAILED(SizeTMult(cchInputRead, sizeof(wchar_t), &cbRead));
+    }
+    else
+    {
+        const char* const psInputBuffer = reinterpret_cast<char*>(pvBuffer);
+        size_t const cchInputBuffer = cbBufferSize;
+        size_t cchInputRead;
+
+        hr = m->_pApiRoutines->WriteConsoleAImpl(pScreenInfo,
+                                                 psInputBuffer,
+                                                 cchInputBuffer,
+                                                 &cchInputRead,
+                                                 &pWaiter);
+
+        // Reply length is already in bytes (chars), don't need to convert.
+        cbRead = cchInputRead;
+    }
+
+    // We must return the byte length of the read data in the message.
+    LOG_IF_FAILED(SizeTToULong(cbRead, &a->NumBytes));
+
+    if (nullptr != pWaiter)
+    {
+        // If we received a waiter, we need to queue the wait and not reply.
+        hr = ConsoleWaitQueue::s_CreateWait(m, pWaiter);
+        if (FAILED(hr))
+        {
+            delete pWaiter;
+            pWaiter = nullptr;
+        }
+        else
+        {
+            *pbReplyPending = TRUE;
+        }
+    }
+    else
+    {
+        // If no waiter, fill the response data and return.
+        m->SetReplyInformation(a->NumBytes);
+    }
+
+    return hr;
 }
 
 HRESULT ApiDispatchers::ServerFillConsoleOutput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
@@ -140,7 +490,7 @@ HRESULT ApiDispatchers::ServerFlushConsoleInputBuffer(_Inout_ CONSOLE_API_MSG * 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
     RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
-    INPUT_INFORMATION* pObj;
+    InputBuffer* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pObj));
 
     return m->_pApiRoutines->FlushConsoleInputBuffer(pObj);
@@ -263,6 +613,7 @@ HRESULT ApiDispatchers::ServerSetConsoleScreenBufferSize(_Inout_ CONSOLE_API_MSG
     CONSOLE_SETSCREENBUFFERSIZE_MSG* const a = &m->u.consoleMsgL2.SetConsoleScreenBufferSize;
 
     ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
 
     SCREEN_INFORMATION* pObj;
     RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_WRITE, &pObj));

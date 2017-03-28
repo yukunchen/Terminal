@@ -115,9 +115,6 @@ public:
     DWORD GetFont() const;
     void SetFont(_In_ const DWORD dwFont);
 
-    DWORD GetInputBufferSize() const;
-    void SetInputBufferSize(_In_ const DWORD dwInputBufferSize);
-
     COORD GetFontSize() const;
     void SetFontSize(_In_ const COORD dwFontSize);
 
@@ -174,7 +171,6 @@ private:
     COORD _dwWindowSize; // this is in characters.
     COORD _dwWindowOrigin; // used when window is created
     DWORD _nFont;
-    DWORD _nInputBufferSize;
     COORD _dwFontSize;
     UINT _uFontFamily;
     UINT _uFontWeight;

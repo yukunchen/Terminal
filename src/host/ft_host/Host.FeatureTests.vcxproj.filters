@@ -19,9 +19,6 @@
     <Filter Include="Source Files\Message">
       <UniqueIdentifier>{ac4e9c27-4849-46e8-bd03-0af91bcb6a87}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Resize">
-      <UniqueIdentifier>{757804fd-df05-4cdc-9ba5-aa96d3b2c973}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\CJK">
       <UniqueIdentifier>{f4d0ca10-abd1-4469-b871-ffc5098754e3}</UniqueIdentifier>
     </Filter>
@@ -59,9 +56,6 @@
     </ClCompile>
     <ClCompile Include="message\KeyPressTests.cpp">
       <Filter>Source Files\Message</Filter>
-    </ClCompile>
-    <ClCompile Include="resize\ResizeTests.cpp">
-      <Filter>Source Files\Resize</Filter>
     </ClCompile>
     <ClCompile Include="cjk\DbcsTests.cpp">
       <Filter>Source Files\CJK</Filter>

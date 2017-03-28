@@ -113,6 +113,7 @@ VOID SetConsoleWindowOwner(_In_ HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pPr
     ConsoleOwner.ProcessId = dwProcessId;
     ConsoleOwner.ThreadId = dwThreadId;
 
+    // Comment out this line to enable UIA tree to be visible until UIAutomationCore.dll can support our scenario.
     UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetWindowOwner, &ConsoleOwner, sizeof(ConsoleOwner));
 }
 
@@ -684,7 +685,7 @@ void ScreenBufferSizeChange(_In_ COORD const coordNewSize)
     InputEvent.EventType = WINDOW_BUFFER_SIZE_EVENT;
     InputEvent.Event.WindowBufferSizeEvent.dwSize = coordNewSize;
 
-    WriteInputBuffer(g_ciConsoleInformation.pInputBuffer, &InputEvent, 1);
+    g_ciConsoleInformation.pInputBuffer->WriteInputBuffer(&InputEvent, 1);
 }
 
 void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
@@ -1099,7 +1100,7 @@ NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
     pScreenInfo->RefreshFontWithRenderer();
 
     // Empty input buffer.
-    FlushAllButKeys();
+    g_ciConsoleInformation.pInputBuffer->FlushAllButKeys();
     SetScreenColors(pScreenInfo, pScreenInfo->GetAttributes().GetLegacyAttributes(), pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE);
 
     // Set window size.

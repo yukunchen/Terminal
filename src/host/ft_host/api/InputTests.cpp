@@ -271,7 +271,7 @@ void InputTests::TestWriteConsoleInvalid()
 void TestMouseWheelReadConsoleInputHelper(_In_ UINT const msg, _In_ DWORD const dwEventFlagsExpected, _In_ DWORD const dwConsoleMode)
 {
     HWND const hwnd = GetConsoleWindow();
-    VERIFY_IS_NOT_NULL(hwnd, L"Get console window handle to inject wheel messages.");
+    VERIFY_IS_TRUE(!!IsWindow(hwnd), L"Get console window handle to inject wheel messages.");
 
     HANDLE const hConsoleInput = GetStdInputHandle();
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hConsoleInput, dwConsoleMode), L"Apply the requested console mode");
@@ -314,7 +314,7 @@ void TestMouseWheelReadConsoleInputHelper(_In_ UINT const msg, _In_ DWORD const 
     if (dwExpectedEvents == 1)
     {
         VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInputW(hConsoleInput, &ir, 1, &dwRead), L"Read the event out.");
-        VERIFY_ARE_EQUAL(1, dwRead);
+        VERIFY_ARE_EQUAL(1u, dwRead);
 
         Log::Comment(L"Verify the event is what we expected. We only verify the fields relevant to this test.");
         VERIFY_ARE_EQUAL(MOUSE_EVENT, ir.EventType);

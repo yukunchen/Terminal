@@ -679,10 +679,10 @@ NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct)
             }
             break;
         case CI_ONSTARTCOMPOSITION:
-            g_ciConsoleInformation.pInputBuffer->ImeMode.InComposition = TRUE;
+            g_ciConsoleInformation.pInputBuffer->fInComposition = true;
             break;
         case CI_ONENDCOMPOSITION:
-            g_ciConsoleInformation.pInputBuffer->ImeMode.InComposition = FALSE;
+            g_ciConsoleInformation.pInputBuffer->fInComposition = false;
             break;
     }
 
@@ -720,7 +720,7 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
         TmpInputEvent++;
     }
 
-    WriteInputBuffer(g_ciConsoleInformation.pInputBuffer, InputEvent, (DWORD) (cchLen - 1));
+    g_ciConsoleInformation.pInputBuffer->WriteInputBuffer(InputEvent, (DWORD) (cchLen - 1));
 
     fResult = true;
 

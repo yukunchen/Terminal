@@ -3,9 +3,7 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props"/>
   <ItemGroup>
     <ClCompile Include="ConsoleTSF.cpp" />
-    <ClCompile Include="consubs.cpp" />
     <ClCompile Include="contsf.cpp" />
-    <ClCompile Include="imecomp.cpp" />
     <ClCompile Include="TfCatUtil.cpp" />
     <ClCompile Include="TfConvArea.cpp" />
     <ClCompile Include="TfDispAttr.cpp" />
@@ -17,7 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ConsoleTSF.h" />
-    <ClInclude Include="contbl.h" />
     <ClInclude Include="debug.h" />
     <ClInclude Include="globals.h" />
     <ClInclude Include="precomp.h" />

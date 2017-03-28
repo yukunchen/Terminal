@@ -19,9 +19,7 @@ Revision History:
 
 class INPUT_READ_HANDLE_DATA;
 
-struct _INPUT_INFORMATION;
-typedef _INPUT_INFORMATION INPUT_INFORMATION;
-typedef _INPUT_INFORMATION *PINPUT_INFORMATION;
+class InputBuffer;
 
 class SCREEN_INFORMATION;
 
@@ -36,7 +34,7 @@ public:
                       _In_ PVOID const pvClientPointer);
 
     HRESULT GetInputBuffer(_In_ const ACCESS_MASK amRequested,
-                           _Outptr_ INPUT_INFORMATION** const ppInputInfo) const;
+                           _Outptr_ InputBuffer** const ppInputBuffer) const;
     HRESULT GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
                             _Outptr_ SCREEN_INFORMATION** const ppScreenInfo) const;
 

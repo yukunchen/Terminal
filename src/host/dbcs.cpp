@@ -21,8 +21,6 @@
 
 #pragma hdrstop
 
-NTSTATUS ConsoleImeMessagePumpWorker(UINT Message, WPARAM wParam, LPARAM lParam, LRESULT * lplResult);
-
 // Routine Description:
 // - This routine setup of line character code.
 // Arguments:
@@ -454,17 +452,29 @@ DWORD RemoveDbcsMarkAll(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     }
 }
 
+// Routine Description:
+// - Checks if a char is a lead byte for a given code page.
+// Arguments:
+// - ch - the char to check.
+// - pCPInfo - the code page to check the char in.
+// Return Value:
+// true if ch is a lead byte, false otherwise.
 bool IsDBCSLeadByteConsole(_In_ const CHAR ch, _In_ const CPINFO * const pCPInfo)
 {
+    ASSERT(pCPInfo != nullptr);
     // NOTE: This must be unsigned for the comparison. If we compare signed, this will never hit
     // because lead bytes are ironically enough always above 0x80 (signed char negative range).
     unsigned char const uchComparison = (unsigned char)ch;
 
     int i = 0;
+    // this is ok because the the array is guaranteed to have 2
+    // null bytes at the end.
     while (pCPInfo->LeadByte[i])
     {
         if (pCPInfo->LeadByte[i] <= uchComparison && uchComparison <= pCPInfo->LeadByte[i + 1])
+        {
             return true;
+        }
         i += 2;
     }
     return false;
@@ -496,32 +506,6 @@ BOOL IsAvailableEastAsianCodePage(_In_ UINT const uiCodePage)
     default:
         return false;
     }
-}
-
-/*
- * Console IME message pump.
- *
- * Note for NT5 --- this function is build on bogus assumptions
- * (also has some nasty workaround for sloppy conime).
- * There's a chance that pConsole goes away while sendmessage
- * is processed by conime.
- * Keep in mind, anybody who calls this function should validate
- * the return status as appropriate.
- */
-
-NTSTATUS ConsoleImeMessagePumpWorker(UINT Message, WPARAM wParam, LPARAM lParam, LRESULT * lplResult)
-{
-    *lplResult = 0;
-    NotifyTextServices(Message, wParam, lParam, lplResult);
-
-    return STATUS_SUCCESS;
-}
-
-NTSTATUS ConsoleImeMessagePump(_In_ const UINT msg, _In_ const WPARAM wParam, _In_ const LPARAM lParam)
-{
-    LRESULT lResultDummy;
-
-    return ConsoleImeMessagePumpWorker(msg, wParam, lParam, &lResultDummy);
 }
 
 _Ret_range_(0, cbAnsi)

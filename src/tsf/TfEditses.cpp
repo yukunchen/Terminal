@@ -296,7 +296,7 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
         if (FAILED(hr = pCicDispAttr->GetDisplayAttributeTrackPropertyRange(ec, pic, range, &prop, &enumProp, &ulNumProp))) {
             return hr;
         }
-    
+
         // use text range for get text
         CComPtr<ITfRange> textRange;
         if (FAILED(hr = range->Clone(&textRange))) {
@@ -331,7 +331,7 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
             TfGuidAtom guidatom = TF_INVALID_GUIDATOM;
 
             pCicDispAttr->GetDisplayAttributeData(pCicCatMgr->GetCategoryMgr(), ec, prop, pPropRange, &da, &guidatom, ulNumProp);
-            
+
             //
             // Property range
             //
@@ -486,11 +486,11 @@ HRESULT CEditSessionObject::_GetTextAndAttributePropertyRange(TfEditCookie ec, I
             CompStr.Append(wstr0, ulcch0);
         }
         else if (bInWriteSession) {
-            // if there's no disp attribute attached, it probably means 
+            // if there's no disp attribute attached, it probably means
             // the part of string is finalized.
             //
             ResultStr.Append(wstr0, ulcch0);
-            
+
             // it was a 'determined' string
             // so the doc has to shrink
             //
@@ -602,13 +602,13 @@ HRESULT CEditSessionCompositionComplete::CompComplete(TfEditCookie ec)
     LONG cch;
 
     hr = GetAllTextRange(ec, pic, &spRange, &cch);
-    if (SUCCEEDED(hr)) 
+    if (SUCCEEDED(hr))
     {
         // Check if a part of the range has already been finalized but not removed yet.
         // Adjust the range appropriately to avoid inserting the same text twice.
         long cchCompleted = g_pConsoleTSF->GetCompletedRangeLength();
-        if ((cchCompleted > 0) && 
-            (cchCompleted < cch) && 
+        if ((cchCompleted > 0) &&
+            (cchCompleted < cch) &&
             SUCCEEDED(spRange->ShiftStart(ec, cchCompleted, &cchCompleted, NULL)))
         {
             Assert((cchCompleted > 0) && (cchCompleted < cch));
@@ -649,22 +649,20 @@ HRESULT CEditSessionCompositionComplete::CompComplete(TfEditCookie ec)
         //
         // Get the whole text, finalize it, and erase the whole text.
         //
-        if (SUCCEEDED(spRange->GetText(ec, TF_TF_IGNOREEND, wstr, (ULONG)cch, (ULONG*)&cch))) 
+        if (SUCCEEDED(spRange->GetText(ec, TF_TF_IGNOREEND, wstr, (ULONG)cch, (ULONG*)&cch)))
         {
 
             //
             // Make Result String.
             //
             CCompString ResultStr(wstr, cch);
-            CCompString ResultReadStr;
-
             hr = conv_area->DrawConversionAreaInfo(NULL,                 // composition string
                                                    NULL, 0,              // display attribute and length
                                                    ResultStr);           // result string
         }
         delete [] wstr;
 
-        // Update the stored length of the completed fragment. 
+        // Update the stored length of the completed fragment.
         g_pConsoleTSF->SetCompletedRangeLength(cchCompleted + cch);
     }
     return hr;
@@ -687,21 +685,21 @@ HRESULT CEditSessionCompositionCleanup::EmptyCompositionRange(TfEditCookie ec)
     {
         return S_OK;
     }
-    
+
     HRESULT hr = E_FAIL;
     ITfContext* pic = g_pConsoleTSF->GetInputContext();
-    if (pic != NULL) 
+    if (pic != NULL)
     {
         // Cleanup (empty the context range) after the last composition.
 
-        hr = S_OK; 
+        hr = S_OK;
         long cchCompleted = g_pConsoleTSF->GetCompletedRangeLength();
         if (cchCompleted != 0)
         {
             CComPtr<ITfRange> spRange;
             LONG cch;
             hr = GetAllTextRange(ec, pic, &spRange, &cch);
-            if (SUCCEEDED(hr)) 
+            if (SUCCEEDED(hr))
             {
                 // Clean up only the completed part (which start is expected to coincide with the start of the full range).
                 if (cchCompleted < cch)
@@ -737,7 +735,7 @@ HRESULT CEditSessionUpdateCompositionString::UpdateCompositionString(TfEditCooki
     g_pConsoleTSF->OnEditSession();
 
     // If the composition has been cancelled\finalized, no update necessary.
-    if (!g_pConsoleTSF->IsInComposition()) 
+    if (!g_pConsoleTSF->IsInComposition())
     {
         return S_OK;
     }
@@ -846,7 +844,7 @@ HRESULT CEditSessionUpdateCompositionString::_MakeCompositionString(TfEditCookie
                                          pCicCatMgr, pCicDispAttr))) {
         return hr;
     }
-    
+
     if (g_pConsoleTSF && g_pConsoleTSF->IsPendingCompositionCleanup())
     {
         // Don't draw the previous composition result if there was a cleanup session requested for it.
@@ -1121,4 +1119,3 @@ HRESULT CEditSessionUpdateCompositionString::_CreateCategoryAndDisplayAttributeM
 
     return hr;
 }
-
