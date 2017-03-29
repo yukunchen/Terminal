@@ -8,8 +8,12 @@
 
 #include "..\inc\FontInfo.hpp"
 
-#define DEFAULT_RASTER_FONT_FACENAME L"Terminal"
-
+bool operator==(const FontInfo& a, const FontInfo& b)
+{
+    return (static_cast<FontInfoBase>(a) == static_cast<FontInfoBase>(b) &&
+            a._coordSize == b._coordSize &&
+            a._coordSizeUnscaled == b._coordSizeUnscaled);
+}
 
 FontInfo::FontInfo(_In_ PCWSTR const pwszFaceName,
                    _In_ BYTE const bFamily,

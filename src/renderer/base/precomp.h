@@ -9,6 +9,8 @@ Abstract:
 - Avoid including internal project headers. Instead include them only in the classes that need them (helps with test project building).
 --*/
 
+#pragma once
+
 #include <wchar.h>
 #include <assert.h>
 #include <sal.h>
@@ -16,7 +18,10 @@ Abstract:
 #include <windows.h>
 #include <wincon.h>
 
+#include <cwchar>
+
 #include "..\..\inc\viewport.hpp"
+#include "..\..\inc\operators.hpp"
 
 #ifndef _NTSTATUS_DEFINED
 #define _NTSTATUS_DEFINED

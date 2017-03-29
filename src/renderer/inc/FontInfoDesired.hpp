@@ -35,6 +35,10 @@ public:
     COORD FontInfoDesired::GetEngineSize() const;
     bool IsDefaultRasterFont() const;
 
+    friend bool operator==(const FontInfoDesired& a, const FontInfoDesired& b);
+
 private:
     COORD _coordSizeDesired;
 };
+
+bool operator==(const FontInfoDesired& a, const FontInfoDesired& b);

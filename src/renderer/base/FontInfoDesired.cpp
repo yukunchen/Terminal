@@ -8,6 +8,11 @@
 
 #include "..\inc\FontInfoDesired.hpp"
 
+bool operator==(const FontInfoDesired& a, const FontInfoDesired& b)
+{
+    return (static_cast<FontInfoBase>(a) == static_cast<FontInfoBase>(b) &&
+            a._coordSizeDesired == b._coordSizeDesired);
+}
 
 COORD FontInfoDesired::GetEngineSize() const
 {

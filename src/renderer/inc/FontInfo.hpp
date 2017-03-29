@@ -50,12 +50,16 @@ public:
 
     static void s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList);
 
+    friend bool operator==(const FontInfo& a, const FontInfo& b);
+
 private:
     void _ValidateCoordSize();
 
     COORD _coordSize;
     COORD _coordSizeUnscaled;
 };
+
+bool operator==(const FontInfo& a, const FontInfo& b);
 
 
 // SET AND UNSET CONSOLE_OEMFONT_DISPLAY unless we can get rid of the stupid recoding in the conhost side.

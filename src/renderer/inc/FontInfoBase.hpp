@@ -53,6 +53,8 @@ public:
     static Microsoft::Console::Render::IFontDefaultList* s_pFontDefaultList;
     static void s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList);
 
+    friend bool operator==(const FontInfoBase& a, const FontInfoBase& b);
+
 protected:
     bool IsDefaultRasterFontNoSize() const;
 
@@ -63,3 +65,5 @@ private:
     UINT _uiCodePage;
     bool _fDefaultRasterSetFromEngine;
 };
+
+bool operator==(const FontInfoBase& a, const FontInfoBase& b);

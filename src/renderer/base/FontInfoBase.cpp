@@ -6,7 +6,19 @@
 
 #include "precomp.h"
 
+#include <cwchar>
+
 #include "..\inc\FontInfoBase.hpp"
+
+
+bool operator==(const FontInfoBase& a, const FontInfoBase& b)
+{
+    return (wcscmp(a._wszFaceName, b._wszFaceName) == 0 &&
+            a._lWeight == b._lWeight &&
+            a._bFamily == b._bFamily &&
+            a._uiCodePage == b._uiCodePage &&
+            a._fDefaultRasterSetFromEngine == b._fDefaultRasterSetFromEngine);
+}
 
 FontInfoBase::FontInfoBase(_In_ PCWSTR const pwszFaceName,
                            _In_ BYTE const bFamily,
