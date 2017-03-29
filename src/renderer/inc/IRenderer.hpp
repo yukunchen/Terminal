@@ -13,7 +13,7 @@ Author(s):
 
 #pragma once
 
-#include "FontInfo.hpp"
+#include "FontInfoDesired.hpp"
 
 namespace Microsoft
 {

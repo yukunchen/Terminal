@@ -60,6 +60,7 @@ filling in the last row, and updating the screen.
 //     Chars Left               Right                end of Chars buffer
 #include "cursor.h"
 #include "..\renderer\inc\FontInfo.hpp"
+#include "..\renderer\inc\FontInfoDesired.hpp"
 
 typedef struct _CHAR_ROW
 {

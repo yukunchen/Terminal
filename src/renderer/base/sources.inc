@@ -23,6 +23,8 @@ INCLUDES= \
 SOURCES= \
     $(SOURCES) \
     ..\FontInfo.cpp \
+    ..\FontInfoBase.cpp \
+    ..\FontInfoDesired.cpp \
     ..\math.cpp \
     ..\renderer.cpp \
     ..\thread.cpp \
@@ -33,5 +35,3 @@ TARGETLIBS= \
 
 PRECOMPILED_CXX=1
 PRECOMPILED_INCLUDE=..\precomp.h
-
-
