@@ -38,3 +38,4 @@ Here's some assorted notes on the way we do things. If you learn something about
 * [Exceptions in our legacy codebase](./doc/EXCEPTIONS.md)
 * [Helpful smart pointers and macros for interfacing with Windows in WIL](./doc/WIL.md)
 
+
