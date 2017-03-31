@@ -18,7 +18,8 @@ class SCREEN_INFORMATION;
 class Window;
 
 class ScreenInfoUiaProvider : public IRawElementProviderSimple,
-                              public IRawElementProviderFragment
+                              public IRawElementProviderFragment,
+                              public ITextProvider
 {
 public:
     ScreenInfoUiaProvider(_In_ Window* const pParent, _In_ SCREEN_INFORMATION* const pScreenInfo);
@@ -42,6 +43,16 @@ public:
     IFACEMETHODIMP GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots);
     IFACEMETHODIMP SetFocus();
     IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider);
+
+    // ITextProvider
+    IFACEMETHODIMP GetSelection(SAFEARRAY** ppRetVal);
+    IFACEMETHODIMP GetVisibleRanges(SAFEARRAY** ppRetVal);
+    IFACEMETHODIMP RangeFromChild(IRawElementProviderSimple* childElement,
+                                  ITextRangeProvider** ppRetVal);
+    IFACEMETHODIMP RangeFromPoint(UiaPoint point,
+                                  ITextRangeProvider** ppRetVal);
+    IFACEMETHODIMP get_DocumentRange(ITextRangeProvider** ppRetVal);
+    IFACEMETHODIMP get_SupportedTextSelection(SupportedTextSelection* pRetVal);
 
 private:
 

@@ -11,6 +11,8 @@
 #include "windowUiaProvider.hpp"
 #include "window.hpp"
 
+#include "UiaTextRange.hpp"
+
 // A helper function to create a SafeArray Version of an int array of a specified length
 SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int const length)
 {
@@ -74,6 +76,10 @@ IFACEMETHODIMP ScreenInfoUiaProvider::QueryInterface(_In_ REFIID riid, _COM_Outp
     {
         *ppInterface = static_cast<IRawElementProviderFragment*>(this);
     }
+    else if (riid == __uuidof(ITextProvider))
+    {
+        *ppInterface = static_cast<ITextProvider*>(this);
+    }
     else
     {
         *ppInterface = nullptr;
@@ -101,11 +107,14 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_ProviderOptions(_Out_ ProviderOptions*
 // Gets the object that supports ISelectionPattern.
 IFACEMETHODIMP ScreenInfoUiaProvider::GetPatternProvider(_In_ PATTERNID patternId, _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
-    UNREFERENCED_PARAMETER(patternId);
-
     *ppInterface = nullptr;
 
-    // TODO: MSFT: 7960168 - insert patterns here 
+    // TODO: MSFT: 7960168 - insert patterns here
+    if (patternId == UIA_TextPatternId)
+    {
+        *ppInterface = static_cast<ITextProvider*>(this);
+        (*ppInterface)->AddRef();
+    }
 
     return S_OK;
 }
@@ -241,6 +250,104 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_mayben
 {
     *ppProvider = new WindowUiaProvider(_pWindow);
     RETURN_IF_NULL_ALLOC(*ppProvider);
+    return S_OK;
+}
+
+#pragma endregion
+
+#pragma region ITextProvider
+
+IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(SAFEARRAY** ppRetVal)
+{
+    /*
+    Selection selection = Selection::Instance();
+    if (!selection.IsInSelectionState())
+    {
+        // TODO
+    }
+    */
+    UNREFERENCED_PARAMETER(ppRetVal);
+    return E_NOTIMPL;
+}
+
+IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
+{
+    const SMALL_RECT viewport = _pScreenInfo->GetBufferViewport();
+    TEXT_BUFFER_INFO* outputBuffer = _pScreenInfo->TextInfo;
+    const FontInfo currentFont = *outputBuffer->GetCurrentFont();
+    const COORD currentFontSize = currentFont.GetUnscaledSize();
+    const size_t charWidth = viewport.Right - viewport.Left + 1;
+
+    // make a safe array
+    const size_t rowCount = viewport.Bottom - viewport.Top + 1;
+    *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, static_cast<ULONG>(rowCount));
+    if (*ppRetVal == nullptr)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    // stuff each visible line in the safearray
+    for (size_t i = 0; i < rowCount; ++i)
+    {
+        ROW* row = outputBuffer->GetRowByOffset(static_cast<UINT>(i));
+		std::wstring wstr = L"";
+		if (row->CharRow.ContainsText())
+		{
+			wstr = std::wstring(row->CharRow.Chars + row->CharRow.Left,
+								row->CharRow.Chars + row->CharRow.Right);
+		}
+        size_t charTop = viewport.Top + i;
+
+        std::unique_ptr<UiaTextRange> range = std::make_unique<UiaTextRange>(this, wstr, charTop, charWidth, currentFontSize);
+        this->AddRef();
+
+        LONG currentIndex = static_cast<LONG>(i);
+        HRESULT hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.get());
+        range.release();
+        if (FAILED(hr))
+        {
+            SafeArrayDestroy(*ppRetVal);
+            *ppRetVal = nullptr;
+            return hr;
+        }
+    }
+    return S_OK;
+}
+
+IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(IRawElementProviderSimple* childElement,
+                                                 ITextRangeProvider** ppRetVal)
+{
+    UNREFERENCED_PARAMETER(childElement);
+    UNREFERENCED_PARAMETER(ppRetVal);
+    return E_NOTIMPL;
+}
+
+IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(UiaPoint point,
+                                                  ITextRangeProvider** ppRetVal)
+{
+    UNREFERENCED_PARAMETER(point);
+    UNREFERENCED_PARAMETER(ppRetVal);
+    return E_NOTIMPL;
+}
+
+IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(ITextRangeProvider** ppRetVal)
+{
+    const TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
+    const ROW* const row = pOutputBuffer->GetFirstRow();
+    if (row->CharRow.ContainsText())
+    {
+        ; // TODO
+    }
+    UNREFERENCED_PARAMETER(ppRetVal);
+    return E_NOTIMPL;
+}
+
+// TODO change this when selection is supported
+IFACEMETHODIMP ScreenInfoUiaProvider::get_SupportedTextSelection(SupportedTextSelection* pRetVal)
+{
+    //UNREFERENCED_PARAMETER(pRetVal);
+    *pRetVal = SupportedTextSelection::SupportedTextSelection_None;
+    //return E_NOTIMPL;
     return S_OK;
 }
 

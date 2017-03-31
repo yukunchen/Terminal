@@ -9,6 +9,7 @@
 #include "window.hpp"
 
 #include "screenInfoUiaProvider.hpp"
+#include "UiaTextRange.hpp"
 
 WindowUiaProvider::WindowUiaProvider(_In_ Window* const pWindow) :
     _pWindow(pWindow),
@@ -87,9 +88,9 @@ IFACEMETHODIMP WindowUiaProvider::get_ProviderOptions(_Out_ ProviderOptions* pOp
 IFACEMETHODIMP WindowUiaProvider::GetPatternProvider(_In_ PATTERNID patternId, _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
     UNREFERENCED_PARAMETER(patternId);
+    *ppInterface = nullptr;
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    *ppInterface = nullptr;
     return S_OK;
 }
 
@@ -121,6 +122,11 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _
         pVariant->vt = VT_BOOL;
         pVariant->boolVal = VARIANT_TRUE;
     }
+    else if (propertyId = UIA_IsContentElementPropertyId)
+    {
+        pVariant->vt = VT_BOOL;
+        pVariant->boolVal = VARIANT_TRUE;
+    }
     else if (propertyId == UIA_IsKeyboardFocusablePropertyId)
     {
         pVariant->vt = VT_BOOL;
@@ -144,7 +150,7 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _
 }
 
 // Implementation of IRawElementProviderSimple::get_HostRawElementProvider.
-// Gets the default UI Automation provider for the host window. This provider 
+// Gets the default UI Automation provider for the host window. This provider
 // supplies many properties.
 IFACEMETHODIMP WindowUiaProvider::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
 {
