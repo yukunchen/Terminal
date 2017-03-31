@@ -3,14 +3,14 @@
     "."
   ],
   "ContainsFilters": [
-    "/.git",
-    "/obj",
-    "/bin",
-    "/TestResults",
-    "/packages",
-    "/ipch",
-    "/dep",
-    "/.vs"
+    "/.git/",
+    "/obj/",
+    "/bin/",
+    "/TestResults/",
+    "/packages/",
+    "/ipch/",
+    "/dep/",
+    "/.vs/"
   ],
   "SuffixFilters": [
     ".dbb",
