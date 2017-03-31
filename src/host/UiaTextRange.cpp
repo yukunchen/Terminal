@@ -2,29 +2,74 @@
 #include "precomp.h"
 #include "UiaTextRange.hpp"
 
-// we don't check _cRefs because that is an internal implementation
-// detail and not relevant to the UIA data contained.
+// we are using the UIA API's idea of what equality is (the ranges match).
 bool operator==(const UiaTextRange& a, const UiaTextRange& b)
 {
-    return (a._text == b._text &&
-            a._charTop == b._charTop &&
-            a._charWidth == b._charWidth &&
-            a._currentFontSize == b._currentFontSize);
+    return (a._textUnit == b._textUnit &&
+            a._lineNumberStart == b._lineNumberStart,
+            a._lineNumberEnd == b._lineNumberEnd,
+            a._unitNumberStart == b._unitNumberStart,
+            a._unitNumberEnd == b._unitNumberEnd);
 }
 
+/*
 UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
-                           std::wstring text,
-                           const size_t charTop,
-                           const size_t charWidth,
+                           const TEXT_BUFFER* const pOutputBuffer,
+                           TextUnit textUnit,
                            const COORD currentFontSize) :
     _cRefs{ 1 },
     _pProvider{ pProvider },
-    _text{ text },
-    _charTop{ charTop },
-    _charWidth{ charWidth },
-    _currentFontSize{ currentFontSize }
+    _pOutputBuffer{ pOutputBuffer },
+    _textUnit{ textUnit },
+    _currentFontSize{ currentFontSize },
+    _lineNumberStart{ 0 },
+    _lineNumberEnd{ 0 },
+    _unitNumberStart{ 0 },
+    _unitNumberEnd{ 0 }
 {
 }
+*/
+
+UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
+                           const TEXT_BUFFER_INFO* const pOutputBuffer,
+                           TextUnit textUnit,
+                           const COORD currentFontSize,
+                           size_t lineNumber,
+                           size_t viewportLineNumber,
+                           SMALL_RECT viewport) :
+    _cRefs{ 1 },
+    _pProvider{ pProvider },
+    _pOutputBuffer{ pOutputBuffer },
+    _textUnit{ textUnit },
+    _currentFontSize{ currentFontSize },
+    _viewportLineNumber{ viewportLineNumber },
+    _lineNumberStart{ lineNumber },
+    _lineNumberEnd{ lineNumber + 1 },
+    _unitNumberStart{ 0 },
+    _unitNumberEnd{ 0 },
+    _viewport{ viewport }
+{
+}
+
+/*
+UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
+                           const TEXT_BUFFER* const pOutputBuffer,
+                           TextUnit textUnit,
+                           const COORD currentFontSize,
+                           size_t lineNumber,
+                           size_t unitNumber) :
+    _cRefs{ 1 },
+    _pProvider{ pProvider },
+    _pOutputBuffer{ pOutputBuffer },
+    _textUnit{ textUnit },
+    _currentFontSize{ currentFontSize },
+    _lineNumberStart{ lineNumber },
+    _lineNumberEnd{ lineNumber + 1 },
+    _unitNumberStart{ unitNumber },
+    _unitNumberEnd{ unitNumber + 1 }
+{
+}
+*/
 
 UiaTextRange::~UiaTextRange()
 {
@@ -173,12 +218,14 @@ IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttribut
 
 IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
+    // TODO for line only currently
     // get the font size
+    size_t charLineLength = _viewport.Right - _viewport.Left + 1;
     POINT topLeft;
     POINT bottomRight;
     topLeft.x = 0;
-    topLeft.y = static_cast<LONG>(_currentFontSize.Y * _charTop);
-    bottomRight.x = static_cast<LONG>(topLeft.x + (_currentFontSize.X * _charWidth));
+    topLeft.y = static_cast<LONG>(_currentFontSize.Y * _viewportLineNumber);
+    bottomRight.x = static_cast<LONG>(topLeft.x + (_currentFontSize.X * charLineLength));
     bottomRight.y = topLeft.y + _currentFontSize.Y; // only 1 line tall
 
 
@@ -208,8 +255,6 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
     inputData = bottomRight.y - topLeft.y;
 	SafeArrayPutElement(*ppRetVal, &currentElement, &inputData);
 
-    //UNREFERENCED_PARAMETER(ppRetVal);
-    //return E_NOTIMPL;
 	return S_OK;
 }
 
@@ -224,15 +269,22 @@ IFACEMETHODIMP UiaTextRange::GetEnclosingElement(_Outptr_result_maybenull_ IRawE
 
 IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 {
-    if (maxLength < _text.size())
+    std::wstring wstr = L"";
+    const ROW* const row = _pOutputBuffer->GetRowByOffset(static_cast<UINT>(_lineNumberStart));
+    if (row->CharRow.ContainsText())
     {
-        std::wstring tempString = _text;
-        tempString.resize(maxLength);
-        *pRetVal = SysAllocString(tempString.c_str());
+        wstr = std::wstring(row->CharRow.Chars + row->CharRow.Left,
+                            row->CharRow.Chars + row->CharRow.Right);
+    }
+
+    if (maxLength != -1 && static_cast<size_t>(maxLength) < wstr.size())
+    {
+        wstr.resize(maxLength);
+        *pRetVal = SysAllocString(wstr.c_str());
     }
     else
     {
-        *pRetVal = SysAllocString(_text.c_str());
+        *pRetVal = SysAllocString(wstr.c_str());
     }
     return S_OK;
 }

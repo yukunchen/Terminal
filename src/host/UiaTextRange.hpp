@@ -3,11 +3,37 @@
 class UiaTextRange : ITextRangeProvider
 {
 public:
+
+    // TODO:
+    // - turn the other constructors back on.
+    // - reorder args
+    // - possibly find a better way than constructor overloading to
+    // differentiate between the different needs of the range which
+    // change depending on the TextUnit
+    /*
     UiaTextRange(IRawElementProviderSimple* pProvider,
-                 std::wstring text,
-                 const size_t charTop,
-                 const size_t charWidth,
+                 const TEXT_BUFFER* const pOutputBuffer,
+                 TextUnit textUnit,
                  const COORD currentFontSize);
+    */
+
+    UiaTextRange(IRawElementProviderSimple* pProvider,
+                 const TEXT_BUFFER_INFO* const pOutputBuffer,
+                 TextUnit textUnit,
+                 const COORD currentFontSize,
+                 size_t lineNumber,
+                 size_t viewportLineNumber,
+                 SMALL_RECT viewport);
+
+    /*
+    UiaTextRange(IRawElementProviderSimple* pProvider,
+                 const TEXT_BUFFER* const pOutputBuffer,
+                 TextUnit textUnit,
+                 const COORD currentFontSize,
+                 size_t lineNumber,
+                 size_t unitNumber);
+    */
+
     ~UiaTextRange();
 
     // IUnknown methods
@@ -54,11 +80,17 @@ public:
 
 private:
     ULONG _cRefs;
-    std::wstring _text;
-    size_t _charTop;
-    size_t _charWidth;
+    const TEXT_BUFFER_INFO* const _pOutputBuffer;
+    TextUnit _textUnit;
     const COORD _currentFontSize;
     IRawElementProviderSimple* _pProvider;
+    size_t _viewportLineNumber;
+    SMALL_RECT _viewport;
+    // these describe ranges like [start, end) when applicable
+    size_t _lineNumberStart;
+    size_t _lineNumberEnd;
+    size_t _unitNumberStart;
+    size_t _unitNumberEnd;
 };
 
 bool operator==(const UiaTextRange& a, const UiaTextRange& b);

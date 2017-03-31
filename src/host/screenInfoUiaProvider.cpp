@@ -289,6 +289,17 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
     // stuff each visible line in the safearray
     for (size_t i = 0; i < rowCount; ++i)
     {
+        UiaTextRange* range = new UiaTextRange(this, outputBuffer, TextUnit_Line, currentFontSize, viewport.Top + i, i, viewport);
+        this->AddRef();
+        LONG currentIndex = static_cast<LONG>(i);
+        HRESULT hr = SafeArrayPutElement(*ppRetVal, &currentIndex, (void*)range);
+        if (FAILED(hr))
+        {
+            SafeArrayDestroy(*ppRetVal);
+            *ppRetVal = nullptr;
+            return hr;
+        }
+/*
         ROW* row = outputBuffer->GetRowByOffset(static_cast<UINT>(i));
 		std::wstring wstr = L"";
 		if (row->CharRow.ContainsText())
@@ -310,6 +321,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
             *ppRetVal = nullptr;
             return hr;
         }
+        */
     }
     return S_OK;
 }
