@@ -3,6 +3,7 @@
     "."
   ],
   "ContainsFilters": [
+    "/.",
     "/.git/",
     "/obj/",
     "/bin/",
