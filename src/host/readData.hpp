@@ -51,6 +51,6 @@ public:
     {}
 #endif
 protected:
-    InputBuffer* const _pInputBuffer;
-    INPUT_READ_HANDLE_DATA* const _pInputReadHandleData;
+    InputBuffer* _pInputBuffer;
+    INPUT_READ_HANDLE_DATA* _pInputReadHandleData;
 };

@@ -128,7 +128,7 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
     NTSTATUS status;
     DWORD dwNumBytes;
     DWORD dwControlKeyState;
-    BOOLEAN fIsUnicode;
+    BOOLEAN fIsUnicode = TRUE;
 
     // 1. Get unicode status of notify call based on message type.
     // We still need to know the Unicode status on reads as they will be converted after the wait operation.
