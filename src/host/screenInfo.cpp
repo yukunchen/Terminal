@@ -544,6 +544,7 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX, _In_ short con
         {
             NotifyWinEvent(EVENT_CONSOLE_UPDATE_REGION, g_ciConsoleInformation.hWnd, MAKELONG(sStartX, sStartY), MAKELONG(sEndX, sEndY));
         }
+        g_ciConsoleInformation.pWindow->SignalUia(UIA_Text_TextChangedEventId);
     }
 }
 

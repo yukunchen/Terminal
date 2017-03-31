@@ -25,6 +25,8 @@ public:
     WindowUiaProvider(_In_ Window* const pWindow);
     virtual ~WindowUiaProvider();
 
+    void Signal(_In_ EVENTID id);
+
     // IUnknown methods
     IFACEMETHODIMP_(ULONG) AddRef();
     IFACEMETHODIMP_(ULONG) Release();

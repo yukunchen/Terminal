@@ -1433,3 +1433,11 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
 
     return _pUiaProvider;
 }
+
+void Window::SignalUia(_In_ EVENTID id)
+{
+    if (_pUiaProvider != nullptr)
+    {
+        _pUiaProvider->Signal(id);
+    }
+}

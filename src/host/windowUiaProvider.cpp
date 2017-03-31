@@ -23,6 +23,13 @@ WindowUiaProvider::~WindowUiaProvider()
 
 }
 
+void WindowUiaProvider::Signal(_In_ EVENTID id)
+{
+    IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
+    this->AddRef();
+    UiaRaiseAutomationEvent(pProvider, id);
+}
+
 #pragma region IUnknown
 
 IFACEMETHODIMP_(ULONG) WindowUiaProvider::AddRef()

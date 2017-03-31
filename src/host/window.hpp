@@ -71,6 +71,8 @@ public:
 
     void SetWindowHasMoved(_In_ BOOL const fHasMoved);
 
+    void SignalUia(_In_ EVENTID id);
+
 protected:
     // prevent accidental generation of copies
     Window(Window const&) = delete;
