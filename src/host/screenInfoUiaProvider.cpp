@@ -13,6 +13,7 @@
 
 #include "UiaTextRange.hpp"
 #include "UiaLineTextRange.hpp"
+#include "UiaDocumentTextRange.hpp"
 
 // A helper function to create a SafeArray Version of an int array of a specified length
 SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int const length)
@@ -273,9 +274,9 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(SAFEARRAY** ppRetVal)
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
 {
+    TEXT_BUFFER_INFO* pOutputBuffer = _pScreenInfo->TextInfo;
     const SMALL_RECT viewport = _pScreenInfo->GetBufferViewport();
-    TEXT_BUFFER_INFO* outputBuffer = _pScreenInfo->TextInfo;
-    const FontInfo currentFont = *outputBuffer->GetCurrentFont();
+    const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
     const COORD currentFontSize = currentFont.GetUnscaledSize();
     const size_t charWidth = viewport.Right - viewport.Left + 1;
 
@@ -291,7 +292,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
     for (size_t i = 0; i < rowCount; ++i)
     {
         UiaLineTextRange* range = new UiaLineTextRange(this,
-                                                       outputBuffer,
+                                                       pOutputBuffer,
                                                        viewport,
                                                        currentFontSize,
                                                        viewport.Top + i);
@@ -326,7 +327,20 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(UiaPoint point,
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(ITextRangeProvider** ppRetVal)
 {
-    const TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
+    TEXT_BUFFER_INFO* pOutputBuffer = _pScreenInfo->TextInfo;
+    const SMALL_RECT viewport = _pScreenInfo->GetBufferViewport();
+    const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
+    const COORD currentFontSize = currentFont.GetUnscaledSize();
+
+    UiaDocumentTextRange* range = new UiaDocumentTextRange(this,
+                                                           pOutputBuffer,
+                                                           viewport,
+                                                           currentFontSize);
+    this->AddRef();
+    *ppRetVal = range;
+    return S_OK;
+
+    /*
     const ROW* const row = pOutputBuffer->GetFirstRow();
     if (row->CharRow.ContainsText())
     {
@@ -334,6 +348,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(ITextRangeProvider** ppR
     }
     UNREFERENCED_PARAMETER(ppRetVal);
     return E_NOTIMPL;
+    */
 }
 
 // TODO change this when selection is supported

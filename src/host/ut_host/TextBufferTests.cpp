@@ -87,7 +87,7 @@ class TextBufferTests
         }
 
         // the number of rows we iterated through should be the same as the window size.
-        VERIFY_ARE_EQUAL(pTbi->_TotalRowCount(), cRows);
+        VERIFY_ARE_EQUAL(pTbi->TotalRowCount(), cRows);
     }
 
     TEXT_BUFFER_INFO* GetTbi()

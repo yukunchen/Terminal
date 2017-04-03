@@ -55,6 +55,7 @@ SOURCES                         =   $(SOURCES)\
                                     ..\UiaTextProvider.cpp \
                                     ..\UiaTextRange.cpp \
                                     ..\UiaLineTextRange.cpp \
+                                    ..\UiaDocumentTextRange.cpp \
                                     ..\conimeinfo.cpp \
 
 INCLUDES                        =  $(INCLUDES); \

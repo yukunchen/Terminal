@@ -279,6 +279,8 @@ public:
     void SetFirstRowIndex(_In_ SHORT const FirstRowIndex);
     void SetCoordBufferSize(_In_ COORD const coordBufferSize);
 
+    UINT TotalRowCount() const;
+
     CHAR_INFO GetFill() const;
     void SetFill(_In_ const CHAR_INFO ciFill);
 
@@ -300,7 +302,6 @@ private:
     FontInfoDesired _fiDesiredFont;
 
     TEXT_BUFFER_INFO(_In_ const FontInfo* const pfiFont);
-    UINT _TotalRowCount() const;
 
     COORD GetPreviousFromCursor() const;
 

@@ -1076,7 +1076,7 @@ short TEXT_BUFFER_INFO::GetMinBufferWidthNeeded() const
 // - <none>
 //Return Value:
 // - Total number of rows in the buffer
-UINT TEXT_BUFFER_INFO::_TotalRowCount() const
+UINT TEXT_BUFFER_INFO::TotalRowCount() const
 {
     return _coordBufferSize.Y;
 }
@@ -1100,7 +1100,7 @@ ROW* TEXT_BUFFER_INFO::GetFirstRow() const
 // - Pointer to the requested row. Asserts if out of bounds.
 ROW* TEXT_BUFFER_INFO::GetRowByOffset(_In_ UINT const rowIndex) const
 {
-    UINT const totalRows = this->_TotalRowCount();
+    UINT const totalRows = this->TotalRowCount();
     ROW* retVal = nullptr;
 
     ASSERT(rowIndex < totalRows);
@@ -1128,7 +1128,7 @@ ROW* TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ ROW* const pRow) const
     ROW* pReturnRow = nullptr;
 
     int prevRowIndex = pRow->sRowId - 1;
-    int totalRows = (int)this->_TotalRowCount();
+    int totalRows = (int)this->TotalRowCount();
 
     ASSERT(totalRows >= 0);
 
@@ -1160,7 +1160,7 @@ ROW* TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ ROW* const pRow) const
     ROW* pReturnRow = nullptr;
 
     UINT nextRowIndex = pRow->sRowId + 1;
-    UINT totalRows = this->_TotalRowCount();
+    UINT totalRows = this->TotalRowCount();
 
     if (nextRowIndex >= totalRows)
     {
