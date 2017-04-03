@@ -3,6 +3,7 @@
 #include "UiaTextRange.hpp"
 
 // we are using the UIA API's idea of what equality is (the ranges match).
+/*
 bool operator==(const UiaTextRange& a, const UiaTextRange& b)
 {
     return (a._textUnit == b._textUnit &&
@@ -11,6 +12,7 @@ bool operator==(const UiaTextRange& a, const UiaTextRange& b)
             a._unitNumberStart == b._unitNumberStart,
             a._unitNumberEnd == b._unitNumberEnd);
 }
+*/
 
 /*
 UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
@@ -30,6 +32,7 @@ UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
 }
 */
 
+/*
 UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
                            const TEXT_BUFFER_INFO* const pOutputBuffer,
                            TextUnit textUnit,
@@ -50,6 +53,21 @@ UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
     _viewport{ viewport }
 {
 }
+*/
+
+UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
+                           const TEXT_BUFFER_INFO* const pOutputBuffer,
+                           SMALL_RECT viewport,
+                           const COORD currentFontSize) :
+    _cRefs{ 1 },
+    _pProvider{ pProvider },
+    _pOutputBuffer{ pOutputBuffer },
+    _viewport{ viewport },
+    _currentFontSize{ currentFontSize }
+{
+}
+
+
 
 /*
 UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
@@ -73,6 +91,7 @@ UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
 
 UiaTextRange::~UiaTextRange()
 {
+    _pProvider->Release();
 }
 
 #pragma region IUnknown
@@ -115,6 +134,7 @@ IFACEMETHODIMP UiaTextRange::QueryInterface(_In_ REFIID riid, _COM_Outptr_result
 
 #pragma endregion
 
+/*
 #pragma region ITextRangeProvider
 
 IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
@@ -209,11 +229,9 @@ IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttribut
     // TODO the rest. Do I need to implement all of these or just the
     // ones that we care about?
     return S_OK;
-    /*
-    UNREFERENCED_PARAMETER(textAttributeId);
-    UNREFERENCED_PARAMETER(pRetVal);
-    return E_NOTIMPL;
-    */
+    //UNREFERENCED_PARAMETER(textAttributeId);
+    //UNREFERENCED_PARAMETER(pRetVal);
+    //return E_NOTIMPL;
 }
 
 IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
@@ -351,3 +369,4 @@ IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** p
 
 
 #pragma endregion
+*/

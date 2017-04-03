@@ -12,6 +12,7 @@
 #include "window.hpp"
 
 #include "UiaTextRange.hpp"
+#include "UiaLineTextRange.hpp"
 
 // A helper function to create a SafeArray Version of an int array of a specified length
 SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int const length)
@@ -289,6 +290,21 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
     // stuff each visible line in the safearray
     for (size_t i = 0; i < rowCount; ++i)
     {
+        UiaLineTextRange* range = new UiaLineTextRange(this,
+                                                       outputBuffer,
+                                                       viewport,
+                                                       currentFontSize,
+                                                       viewport.Top + i);
+        this->AddRef();
+        LONG currentINdex = static_cast<LONG>(i);
+        HRESULT hr = SafeArrayPutElement(*ppRetVal, &currentINdex, (void*)range);
+        if (FAILED(hr))
+        {
+            SafeArrayDestroy(*ppRetVal);
+            *ppRetVal = nullptr;
+            return hr;
+        }
+        /*
         UiaTextRange* range = new UiaTextRange(this, outputBuffer, TextUnit_Line, currentFontSize, viewport.Top + i, i, viewport);
         this->AddRef();
         LONG currentIndex = static_cast<LONG>(i);
@@ -299,6 +315,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
             *ppRetVal = nullptr;
             return hr;
         }
+        */
 /*
         ROW* row = outputBuffer->GetRowByOffset(static_cast<UINT>(i));
 		std::wstring wstr = L"";

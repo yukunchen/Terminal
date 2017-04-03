@@ -1,6 +1,6 @@
 #pragma once
 
-class UiaTextRange : ITextRangeProvider
+class UiaTextRange : public ITextRangeProvider
 {
 public:
 
@@ -17,6 +17,7 @@ public:
                  const COORD currentFontSize);
     */
 
+    /*
     UiaTextRange(IRawElementProviderSimple* pProvider,
                  const TEXT_BUFFER_INFO* const pOutputBuffer,
                  TextUnit textUnit,
@@ -24,6 +25,7 @@ public:
                  size_t lineNumber,
                  size_t viewportLineNumber,
                  SMALL_RECT viewport);
+    */
 
     /*
     UiaTextRange(IRawElementProviderSimple* pProvider,
@@ -34,6 +36,11 @@ public:
                  size_t unitNumber);
     */
 
+    UiaTextRange(IRawElementProviderSimple* pProvider,
+                 const TEXT_BUFFER_INFO* const pOutputBuffer,
+                 SMALL_RECT viewport,
+                 const COORD currentFontSize);
+
     ~UiaTextRange();
 
     // IUnknown methods
@@ -42,55 +49,60 @@ public:
     IFACEMETHODIMP QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface);
 
     // ITextRangeProvider methods
-    IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
-    IFACEMETHODIMP Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal);
-    IFACEMETHODIMP CompareEndpoints(TextPatternRangeEndpoint endpoint,
+    virtual IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
+    virtual IFACEMETHODIMP Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal) = 0;
+    virtual IFACEMETHODIMP CompareEndpoints(TextPatternRangeEndpoint endpoint,
                                                _In_opt_ ITextRangeProvider* pTargetRange,
                                                _In_ TextPatternRangeEndpoint targetEndpoint,
-                                               _Out_ int* pRetVal);
-    IFACEMETHODIMP ExpandToEnclosingUnit(_In_ TextUnit unit);
-    IFACEMETHODIMP FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
+                                               _Out_ int* pRetVal) = 0;
+    virtual IFACEMETHODIMP ExpandToEnclosingUnit(_In_ TextUnit unit) = 0;
+    virtual IFACEMETHODIMP FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
                                             _In_ VARIANT val,
                                             _In_ BOOL searchBackward,
-                                            _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
-    IFACEMETHODIMP FindText(_In_ BSTR text,
+                                            _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
+    virtual IFACEMETHODIMP FindText(_In_ BSTR text,
                                        BOOL searchBackward,
                                        BOOL ignoreCase,
-                                       _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
-    IFACEMETHODIMP GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId, _Out_ VARIANT* pRetVal);
-    IFACEMETHODIMP GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
-    IFACEMETHODIMP GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal);
-    IFACEMETHODIMP GetText(_In_ int maxLength, _Out_ BSTR* pRetVal);
-    IFACEMETHODIMP Move(_In_ TextUnit unit, _In_ int count, _Out_ int* pRetVal);
-    IFACEMETHODIMP MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
+                                       _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
+    virtual IFACEMETHODIMP GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId, _Out_ VARIANT* pRetVal) = 0;
+    virtual IFACEMETHODIMP GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) = 0;
+    virtual IFACEMETHODIMP GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal) = 0;
+    virtual IFACEMETHODIMP GetText(_In_ int maxLength, _Out_ BSTR* pRetVal) = 0;
+    virtual IFACEMETHODIMP Move(_In_ TextUnit unit, _In_ int count, _Out_ int* pRetVal) = 0;
+    virtual IFACEMETHODIMP MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
                                                  _In_ TextUnit unit,
                                                  _In_ int count,
-                                                 _Out_ int* pRetVal);
-    IFACEMETHODIMP MoveEndpointByRange(_In_ TextPatternRangeEndpoint endpoint,
+                                                 _Out_ int* pRetVal) = 0;
+    virtual IFACEMETHODIMP MoveEndpointByRange(_In_ TextPatternRangeEndpoint endpoint,
                                                   _In_opt_ ITextRangeProvider* pTargetRange,
-                                                  _In_ TextPatternRangeEndpoint targetEndpoint);
-    IFACEMETHODIMP Select();
-    IFACEMETHODIMP AddToSelection();
-    IFACEMETHODIMP RemoveFromSelection();
-    IFACEMETHODIMP ScrollIntoView(_In_ BOOL alignToTop);
-    IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
+                                                  _In_ TextPatternRangeEndpoint targetEndpoint) = 0;
+    virtual IFACEMETHODIMP Select() = 0;
+    virtual IFACEMETHODIMP AddToSelection() = 0;
+    virtual IFACEMETHODIMP RemoveFromSelection() = 0;
+    virtual IFACEMETHODIMP ScrollIntoView(_In_ BOOL alignToTop) = 0;
+    virtual IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) = 0;
 
 
-    friend bool operator==(const UiaTextRange& a, const UiaTextRange& b);
+    //friend bool operator==(const UiaTextRange& a, const UiaTextRange& b);
+protected:
 
-private:
-    ULONG _cRefs;
     const TEXT_BUFFER_INFO* const _pOutputBuffer;
-    TextUnit _textUnit;
     const COORD _currentFontSize;
     IRawElementProviderSimple* _pProvider;
-    size_t _viewportLineNumber;
     SMALL_RECT _viewport;
+
+private:
+
+    ULONG _cRefs;
+    //TextUnit _textUnit;
+    //size_t _viewportLineNumber;
     // these describe ranges like [start, end) when applicable
+    /*
     size_t _lineNumberStart;
     size_t _lineNumberEnd;
     size_t _unitNumberStart;
     size_t _unitNumberEnd;
+    */
 };
 
-bool operator==(const UiaTextRange& a, const UiaTextRange& b);
+//bool operator==(const UiaTextRange& a, const UiaTextRange& b);

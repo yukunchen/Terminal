@@ -53,6 +53,8 @@ SOURCES                         =   $(SOURCES)\
                                     ..\renderFontDefaults.cpp \
                                     ..\utf8ToWideCharParser.cpp \
                                     ..\UiaTextProvider.cpp \
+                                    ..\UiaTextRange.cpp \
+                                    ..\UiaLineTextRange.cpp \
                                     ..\conimeinfo.cpp \
 
 INCLUDES                        =  $(INCLUDES); \
