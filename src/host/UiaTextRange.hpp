@@ -4,38 +4,6 @@ class UiaTextRange : public ITextRangeProvider
 {
 public:
 
-    // TODO:
-    // - turn the other constructors back on.
-    // - reorder args
-    // - possibly find a better way than constructor overloading to
-    // differentiate between the different needs of the range which
-    // change depending on the TextUnit
-    /*
-    UiaTextRange(IRawElementProviderSimple* pProvider,
-                 const TEXT_BUFFER* const pOutputBuffer,
-                 TextUnit textUnit,
-                 const COORD currentFontSize);
-    */
-
-    /*
-    UiaTextRange(IRawElementProviderSimple* pProvider,
-                 const TEXT_BUFFER_INFO* const pOutputBuffer,
-                 TextUnit textUnit,
-                 const COORD currentFontSize,
-                 size_t lineNumber,
-                 size_t viewportLineNumber,
-                 SMALL_RECT viewport);
-    */
-
-    /*
-    UiaTextRange(IRawElementProviderSimple* pProvider,
-                 const TEXT_BUFFER* const pOutputBuffer,
-                 TextUnit textUnit,
-                 const COORD currentFontSize,
-                 size_t lineNumber,
-                 size_t unitNumber);
-    */
-
     UiaTextRange(IRawElementProviderSimple* pProvider,
                  const TEXT_BUFFER_INFO* const pOutputBuffer,
                  SMALL_RECT viewport,
@@ -82,27 +50,12 @@ public:
     virtual IFACEMETHODIMP ScrollIntoView(_In_ BOOL alignToTop) = 0;
     virtual IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) = 0;
 
-
-    //friend bool operator==(const UiaTextRange& a, const UiaTextRange& b);
 protected:
-
     const TEXT_BUFFER_INFO* const _pOutputBuffer;
     const COORD _currentFontSize;
     IRawElementProviderSimple* _pProvider;
     SMALL_RECT _viewport;
 
 private:
-
     ULONG _cRefs;
-    //TextUnit _textUnit;
-    //size_t _viewportLineNumber;
-    // these describe ranges like [start, end) when applicable
-    /*
-    size_t _lineNumberStart;
-    size_t _lineNumberEnd;
-    size_t _unitNumberStart;
-    size_t _unitNumberEnd;
-    */
 };
-
-//bool operator==(const UiaTextRange& a, const UiaTextRange& b);

@@ -304,41 +304,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
             *ppRetVal = nullptr;
             return hr;
         }
-        /*
-        UiaTextRange* range = new UiaTextRange(this, outputBuffer, TextUnit_Line, currentFontSize, viewport.Top + i, i, viewport);
-        this->AddRef();
-        LONG currentIndex = static_cast<LONG>(i);
-        HRESULT hr = SafeArrayPutElement(*ppRetVal, &currentIndex, (void*)range);
-        if (FAILED(hr))
-        {
-            SafeArrayDestroy(*ppRetVal);
-            *ppRetVal = nullptr;
-            return hr;
-        }
-        */
-/*
-        ROW* row = outputBuffer->GetRowByOffset(static_cast<UINT>(i));
-		std::wstring wstr = L"";
-		if (row->CharRow.ContainsText())
-		{
-			wstr = std::wstring(row->CharRow.Chars + row->CharRow.Left,
-								row->CharRow.Chars + row->CharRow.Right);
-		}
-        size_t charTop = viewport.Top + i;
-
-        std::unique_ptr<UiaTextRange> range = std::make_unique<UiaTextRange>(this, wstr, charTop, charWidth, currentFontSize);
-        this->AddRef();
-
-        LONG currentIndex = static_cast<LONG>(i);
-        HRESULT hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range.get());
-        range.release();
-        if (FAILED(hr))
-        {
-            SafeArrayDestroy(*ppRetVal);
-            *ppRetVal = nullptr;
-            return hr;
-        }
-        */
     }
     return S_OK;
 }

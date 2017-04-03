@@ -89,7 +89,6 @@ IFACEMETHODIMP UiaLineTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttr
 
 IFACEMETHODIMP UiaLineTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    //size_t charLineLength = _viewport.Right - _viewport.Left + 1;
     POINT topLeft;
     POINT bottomRight;
 
