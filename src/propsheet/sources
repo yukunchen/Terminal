@@ -34,7 +34,7 @@ TARGETLIBS=\
            $(SDK_LIB_PATH)\uuid.lib \
            $(WINCORE_OBJ_PATH)\console\open\src\propslib\$(O)\conprops.lib \
            $(MINCORE_SDK_LIB_VPATH)\api-ms-win-core-winrt-error-l1.lib \
-           $(SHELL_LIB_PATH)\api-ms-win-shcore-scaling-l1-1-1.lib \
+           $(ONECORESHELL_LIB_PATH)\api-ms-win-shcore-scaling-l1-1-1.lib \
            
 DELAYLOAD=\
     api-ms-win-shcore-scaling-l1.dll; \
