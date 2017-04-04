@@ -47,8 +47,8 @@ ReadData::ReadData(ReadData&& other) :
     _pInputBuffer(other._pInputBuffer),
     _pInputReadHandleData(other._pInputReadHandleData)
 {
-    const_cast<InputBuffer*>(other._pInputBuffer) = nullptr;
-    const_cast<INPUT_READ_HANDLE_DATA*>(other._pInputReadHandleData) = nullptr;
+    other._pInputBuffer = nullptr;
+    other._pInputReadHandleData = nullptr;
 }
 
 // Routine Description:
