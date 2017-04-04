@@ -53,6 +53,7 @@ public:
 
 private:
 
+    TextUnit _normalizeToSupportedTextUnit(TextUnit textUnit);
     bool _isSupportedTextUnit(TextUnit textUnit);
 
 

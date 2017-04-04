@@ -173,6 +173,7 @@ IFACEMETHODIMP UiaLineTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ 
     // the documentation says to round up the smallest unit of
     // movement that we support if the get a unit smaller than the
     // ones we support.
+    unit = _normalizeToSupportedTextUnit(unit);
     if (!_isSupportedTextUnit(unit))
     {
         return E_NOTIMPL;
@@ -207,6 +208,7 @@ IFACEMETHODIMP UiaLineTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     // the documentation says to round up the smallest unit of
     // movement that we support if the get a unit smaller than the
     // ones we support.
+    unit = _normalizeToSupportedTextUnit(unit);
     if (!_isSupportedTextUnit(unit))
     {
         return E_NOTIMPL;
@@ -223,34 +225,31 @@ IFACEMETHODIMP UiaLineTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
         pInternalEndpoint = &_lineNumberEnd;
     }
 
-    // moving forward
-    int maxLineNumber = _pOutputBuffer->TotalRowCount() - 1;
-    if (*pInternalEndpoint + count > maxLineNumber)
+    // move the endpoint
+
+    // the endpoints are zero indexed but we don't correct
+    // maxLineNumber for that here because the endpoints are allowed
+    // to move 1 past the end of the lines.
+    int maxLineNumber = _pOutputBuffer->TotalRowCount();
+    if (count < 0)
     {
-        *pRetVal = maxLineNumber - static_cast<int>(*pInternalEndpoint);
-    }
-    // moving backward
-    else if (*pInternalEndpoint + count < 0)
-    {
-        *pRetVal = static_cast<int>(*pInternalEndpoint * -1);
+        *pRetVal = -1 * static_cast<int>(min(*pInternalEndpoint, abs(count)));
     }
     else
     {
-        *pRetVal = count;
+        *pRetVal = static_cast<int>(min(maxLineNumber - *pInternalEndpoint, count));
     }
     *pInternalEndpoint += *pRetVal;
 
     // fix the endpoints if they are out of order
     if (_lineNumberStart > _lineNumberEnd)
     {
-        // if it was the ending endpoint that we just moved, we need
-        // to move the starting one to match it.
-        if (endpoint = TextPatternRangeEndpoint_End)
+        if (endpoint == TextPatternRangeEndpoint_End)
         {
             _lineNumberStart = _lineNumberEnd;
         }
-        // vice versa
-        else {
+        else
+        {
             _lineNumberEnd = _lineNumberStart;
         }
     }
@@ -293,11 +292,20 @@ IFACEMETHODIMP UiaLineTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY
     return E_NOTIMPL;
 }
 
+// TODO update these as we support more
+TextUnit UiaLineTextRange::_normalizeToSupportedTextUnit(TextUnit textUnit)
+{
+    if (textUnit == TextUnit::TextUnit_Character ||
+        textUnit == TextUnit::TextUnit_Format ||
+        textUnit == TextUnit::TextUnit_Word ||
+        textUnit == TextUnit::TextUnit_Line)
+    {
+        return TextUnit::TextUnit_Line;
+    }
+    return textUnit;
+}
 
 bool UiaLineTextRange::_isSupportedTextUnit(TextUnit textUnit)
 {
-    return (textUnit == TextUnit::TextUnit_Character ||
-            textUnit == TextUnit::TextUnit_Format ||
-            textUnit == TextUnit::TextUnit_Word ||
-            textUnit == TextUnit::TextUnit_Line);
+    return (textUnit == TextUnit::TextUnit_Line);
 }
