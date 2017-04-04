@@ -206,7 +206,6 @@ IFACEMETHODIMP UiaLineTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ 
     return S_OK;
 }
 
-// TODO fix bugs in this
 IFACEMETHODIMP UiaLineTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
                                                 _In_ TextUnit unit,
                                                 _In_ int count,
@@ -269,8 +268,51 @@ IFACEMETHODIMP UiaLineTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoi
                                                 _In_opt_ ITextRangeProvider* pTargetRange,
                                                 _In_ TextPatternRangeEndpoint targetEndpoint)
 {
-    endpoint; pTargetRange; targetEndpoint;
-    return E_NOTIMPL;
+    // get the line text range that we're taking a value from
+    UiaLineTextRange* lineRange = dynamic_cast<UiaLineTextRange*>(pTargetRange);
+    if (lineRange == nullptr)
+    {
+        return E_NOINTERFACE;
+    }
+
+    // get the value that we're updating to
+    size_t newValue;
+    if (targetEndpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        newValue = lineRange->getLineNumberStart();
+    }
+    else
+    {
+        newValue = lineRange->getLineNumberEnd();
+    }
+
+    // get endpoint that we're changing
+    size_t* pInternalEndpoint;
+    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        pInternalEndpoint = &_lineNumberStart;
+    }
+    else
+    {
+        pInternalEndpoint = &_lineNumberEnd;
+    }
+
+    // update value, fix any reversed endpoints
+    *pInternalEndpoint = newValue;
+    if (_lineNumberStart > _lineNumberEnd)
+    {
+        // we move the endpoint that isn't being updated to be the
+        // same as the one that was just moved
+        if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+        {
+            _lineNumberEnd = _lineNumberStart;
+        }
+        else
+        {
+            _lineNumberStart = _lineNumberEnd;
+        }
+    }
+    return S_OK;
 }
 
 IFACEMETHODIMP UiaLineTextRange::Select()
