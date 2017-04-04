@@ -13,7 +13,8 @@ public:
                      const COORD currentFontSize,
                      size_t lineNumber);
 
-    const size_t getLineNumber() const;
+    const size_t getLineNumberStart() const;
+    const size_t getLineNumberEnd() const;
 
 
     // ITextRangeProvider methods
@@ -51,5 +52,12 @@ public:
     IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
 
 private:
-    size_t _lineNumber;
+
+    bool _isSupportedTextUnit(TextUnit textUnit);
+
+
+
+    // measure units in the form [start, end)
+    size_t _lineNumberStart;
+    size_t _lineNumberEnd;
 };

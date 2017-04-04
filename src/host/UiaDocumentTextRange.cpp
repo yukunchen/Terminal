@@ -157,8 +157,10 @@ IFACEMETHODIMP UiaDocumentTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRe
 
 IFACEMETHODIMP UiaDocumentTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ int* pRetVal)
 {
-    unit; count; pRetVal;
-    return E_NOTIMPL;
+    UNREFERENCED_PARAMETER(unit);
+    UNREFERENCED_PARAMETER(count);
+    *pRetVal = 0;
+    return S_OK;
 }
 
 IFACEMETHODIMP UiaDocumentTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
@@ -166,8 +168,11 @@ IFACEMETHODIMP UiaDocumentTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEnd
                                                 _In_ int count,
                                                 _Out_ int* pRetVal)
 {
-    endpoint; unit; count; pRetVal;
-    return E_NOTIMPL;
+    UNREFERENCED_PARAMETER(endpoint);
+    UNREFERENCED_PARAMETER(unit);
+    UNREFERENCED_PARAMETER(count);
+    *pRetVal = 0;
+    return S_OK;
 }
 
 IFACEMETHODIMP UiaDocumentTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint endpoint,

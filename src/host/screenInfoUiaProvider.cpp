@@ -166,12 +166,14 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyI
     else if (propertyId == UIA_IsKeyboardFocusablePropertyId)
     {
         pVariant->vt = VT_BOOL;
-        pVariant->boolVal = VARIANT_FALSE;
+        //pVariant->boolVal = VARIANT_FALSE;
+        pVariant->boolVal = VARIANT_TRUE;
     }
     else if (propertyId == UIA_HasKeyboardFocusPropertyId)
     {
         pVariant->vt = VT_BOOL;
-        pVariant->boolVal = VARIANT_FALSE;
+        //pVariant->boolVal = VARIANT_FALSE;
+        pVariant->boolVal = VARIANT_TRUE;
     }
     else if (propertyId == UIA_ProviderDescriptionPropertyId)
     {
@@ -339,24 +341,12 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(ITextRangeProvider** ppR
     this->AddRef();
     *ppRetVal = range;
     return S_OK;
-
-    /*
-    const ROW* const row = pOutputBuffer->GetFirstRow();
-    if (row->CharRow.ContainsText())
-    {
-        ; // TODO
-    }
-    UNREFERENCED_PARAMETER(ppRetVal);
-    return E_NOTIMPL;
-    */
 }
 
 // TODO change this when selection is supported
 IFACEMETHODIMP ScreenInfoUiaProvider::get_SupportedTextSelection(SupportedTextSelection* pRetVal)
 {
-    //UNREFERENCED_PARAMETER(pRetVal);
     *pRetVal = SupportedTextSelection::SupportedTextSelection_None;
-    //return E_NOTIMPL;
     return S_OK;
 }
 
