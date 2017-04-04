@@ -61,7 +61,6 @@ Revision History:
 #define CONSOLE_SUSPENDED (CONSOLE_OUTPUT_SUSPENDED)
 
 class COOKED_READ_DATA;
-class Window;
 
 class CONSOLE_INFORMATION : public Settings
 {
@@ -72,12 +71,8 @@ public:
     ConsoleProcessList ProcessHandleList;
     InputBuffer* pInputBuffer;
 
-    Window* pWindow;
     PSCREEN_INFORMATION CurrentScreenBuffer;
     PSCREEN_INFORMATION ScreenBuffers;  // singly linked list
-    HWND hWnd;
-    HMENU hMenu;    // handle to system menu
-    HMENU hHeirMenu;    // handle to menu we append to system menu
     ConsoleWaitQueue OutputQueue;
     LIST_ENTRY CommandHistoryList;
     LIST_ENTRY ExeAliasList;
@@ -119,7 +114,7 @@ private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
 };
 
-#define ConsoleLocked() (g_ciConsoleInformation.ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)
+#define ConsoleLocked() (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)
 
 #define CONSOLE_STATUS_WAIT 0xC0030001
 #define CONSOLE_STATUS_READ_COMPLETE 0xC0030002
@@ -127,6 +122,5 @@ private:
 
 #include "..\server\ObjectHandle.h"
 
-void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput);
 
 NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo);

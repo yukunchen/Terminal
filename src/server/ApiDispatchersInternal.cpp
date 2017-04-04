@@ -15,6 +15,8 @@
 
 #include "..\host\ntprivapi.hpp"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 HRESULT ApiDispatchers::ServerDeprecatedApi(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
     // log if we hit a deprecated API.
@@ -43,7 +45,7 @@ HRESULT ApiDispatchers::ServerGetConsoleProcessList(_Inout_ CONSOLE_API_MSG * co
 
     LPDWORD lpdwProcessList = (PDWORD)Buffer;
     size_t cProcessList = a->dwProcessCount;
-    if (SUCCEEDED(g_ciConsoleInformation.ProcessHandleList.GetProcessList(lpdwProcessList, &cProcessList)))
+    if (SUCCEEDED(ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.GetProcessList(lpdwProcessList, &cProcessList)))
     {
         m->SetReplyInformation(cProcessList * sizeof(ULONG));
     }
@@ -74,7 +76,7 @@ HRESULT ApiDispatchers::ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG *
     if (a->ProcessGroupId != 0)
     {
         ConsoleProcessHandle* ProcessHandle;
-        ProcessHandle = g_ciConsoleInformation.ProcessHandleList.FindProcessByGroupId(a->ProcessGroupId);
+        ProcessHandle = ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.FindProcessByGroupId(a->ProcessGroupId);
         if (ProcessHandle == nullptr)
         {
             ULONG ProcessId = a->ProcessGroupId;
@@ -82,9 +84,9 @@ HRESULT ApiDispatchers::ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG *
             // We didn't find a process with that group ID.
             // Let's see if the process with that ID exists and has a parent that is a member of this console.
             RETURN_IF_NTSTATUS_FAILED((NtPrivApi::s_GetProcessParentId(&ProcessId)));
-            ProcessHandle = g_ciConsoleInformation.ProcessHandleList.FindProcessInList(ProcessId);
+            ProcessHandle = ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.FindProcessInList(ProcessId);
             RETURN_HR_IF_NULL(E_INVALIDARG, ProcessHandle);
-            RETURN_IF_FAILED(g_ciConsoleInformation.ProcessHandleList.AllocProcessData(a->ProcessGroupId,
+            RETURN_IF_FAILED(ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.AllocProcessData(a->ProcessGroupId,
                                                                                        0,
                                                                                        a->ProcessGroupId,
                                                                                        ProcessHandle,
@@ -92,7 +94,7 @@ HRESULT ApiDispatchers::ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG *
         }
     }
 
-    g_ciConsoleInformation.LimitingProcessId = a->ProcessGroupId;
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->LimitingProcessId = a->ProcessGroupId;
     HandleCtrlEvent(a->CtrlEvent);
 
     return S_OK;

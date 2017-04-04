@@ -5,6 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
+
 #include "input.h"
 
 INPUT_KEY_INFO::INPUT_KEY_INFO(_In_ const WORD wVirtualKeyCode, _In_ const ULONG ulControlKeyState) :

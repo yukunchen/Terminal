@@ -9,112 +9,55 @@
 #include "_output.h"
 #include "output.h"
 
-#include "cursor.h"
-#include "dbcs.h"
 #include "getset.h"
-#include "globals.h"
 #include "misc.h"
-#include "srvinit.h"
-#include "window.hpp"
-#include "userprivapi.hpp"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
-
-
-// NOTE: we use this to communicate with progman - see Q105446 for details.
-typedef struct _PMIconData
-{
-    DWORD dwResSize;
-    DWORD dwVer;
-    BYTE iResource; // icon resource
-} PMICONDATA, *LPPMICONDATA;
 
 // This routine figures out what parameters to pass to CreateScreenBuffer based on the data from STARTUPINFO and the
 // registry defaults, and then calls CreateScreenBuffer.
 NTSTATUS DoCreateScreenBuffer()
 {
     CHAR_INFO Fill;
-    Fill.Attributes = g_ciConsoleInformation.GetFillAttribute();
+    Fill.Attributes = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetFillAttribute();
     Fill.Char.UnicodeChar = UNICODE_SPACE;
 
     CHAR_INFO PopupFill;
-    PopupFill.Attributes = g_ciConsoleInformation.GetPopupFillAttribute();
+    PopupFill.Attributes = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetPopupFillAttribute();
     PopupFill.Char.UnicodeChar = UNICODE_SPACE;
 
-    FontInfo fiFont(g_ciConsoleInformation.GetFaceName(),
-                    static_cast<BYTE>(g_ciConsoleInformation.GetFontFamily()),
-                    g_ciConsoleInformation.GetFontWeight(),
-                    g_ciConsoleInformation.GetFontSize(),
-                    g_ciConsoleInformation.GetCodePage());
+    FontInfo fiFont(ServiceLocator::LocateGlobals()->getConsoleInformation()->GetFaceName(),
+                    static_cast<BYTE>(ServiceLocator::LocateGlobals()->getConsoleInformation()->GetFontFamily()),
+                    ServiceLocator::LocateGlobals()->getConsoleInformation()->GetFontWeight(),
+                    ServiceLocator::LocateGlobals()->getConsoleInformation()->GetFontSize(),
+                    ServiceLocator::LocateGlobals()->getConsoleInformation()->GetCodePage());
 
     // For East Asian version, we want to get the code page from the registry or shell32, so we can specify console
     // codepage by console.cpl or shell32. The default codepage is OEMCP.
-    g_ciConsoleInformation.CP = g_ciConsoleInformation.GetCodePage();
-    g_ciConsoleInformation.OutputCP = g_ciConsoleInformation.GetCodePage();
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->CP = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetCodePage();
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetCodePage();
 
-    g_ciConsoleInformation.Flags |= CONSOLE_USE_PRIVATE_FLAGS;
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_USE_PRIVATE_FLAGS;
 
-    NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(g_ciConsoleInformation.GetWindowSize(),
+    NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(ServiceLocator::LocateGlobals()->getConsoleInformation()->GetWindowSize(),
                                                          &fiFont,
-                                                         g_ciConsoleInformation.GetScreenBufferSize(),
+                                                         ServiceLocator::LocateGlobals()->getConsoleInformation()->GetScreenBufferSize(),
                                                          Fill,
                                                          PopupFill,
-                                                         g_ciConsoleInformation.GetCursorSize(),
-                                                         &g_ciConsoleInformation.ScreenBuffers);
+                                                         ServiceLocator::LocateGlobals()->getConsoleInformation()->GetCursorSize(),
+                                                         &ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers);
 
     // TODO: MSFT 9355013: This needs to be resolved. We increment it once with no handle to ensure it's never cleaned up
     // and one always exists for the renderer (and potentially other functions.)
     // It's currently a load-bearing piece of code. http://osgvsowi/9355013
     if (NT_SUCCESS(Status))
     {
-        g_ciConsoleInformation.ScreenBuffers[0].Header.IncrementOriginalScreenBuffer();
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers[0].Header.IncrementOriginalScreenBuffer();
     }
 
     return Status;
-}
-
-/*
- * This routine tells win32k what process we want to use to masquerade as the
- * owner of conhost's window. If ProcessData is nullptr that means the root process
- * has exited so we need to find any old process to be the owner. If this console
- * has no processes attached to it -- it's only being kept alive by references
- * via IO handles -- then we'll just set the owner to conhost.exe itself.
- */
-VOID SetConsoleWindowOwner(_In_ HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData)
-{
-    ASSERT(g_ciConsoleInformation.IsConsoleLocked());
-
-    DWORD dwProcessId;
-    DWORD dwThreadId;
-    if (nullptr != pProcessData)
-    {
-        dwProcessId = pProcessData->dwProcessId;
-        dwThreadId = pProcessData->dwThreadId;
-    }
-    else
-    {
-        // Find a process to own the console window. If there are none then let's use conhost's.
-        pProcessData = g_ciConsoleInformation.ProcessHandleList.GetFirstProcess();
-        if (pProcessData != nullptr)
-        {
-            dwProcessId = pProcessData->dwProcessId;
-            dwThreadId = pProcessData->dwThreadId;
-            pProcessData->fRootProcess = true;
-        }
-        else
-        {
-            dwProcessId = GetCurrentProcessId();
-            dwThreadId = GetCurrentThreadId();
-        }
-    }
-
-    CONSOLEWINDOWOWNER ConsoleOwner;
-    ConsoleOwner.hwnd = hwnd;
-    ConsoleOwner.ProcessId = dwProcessId;
-    ConsoleOwner.ThreadId = dwThreadId;
-
-    // Comment out this line to enable UIA tree to be visible until UIAutomationCore.dll can support our scenario.
-    UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetWindowOwner, &ConsoleOwner, sizeof(ConsoleOwner));
 }
 
 // Routine Description:
@@ -196,7 +139,7 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
                 pciTargetPtr->Attributes = (bAttrR & CHAR_ROW::ATTR_DBCSSBCS_BYTE) << 8;
 
                 // Always copy the legacy attributes to the CHAR_INFO.
-                pciTargetPtr->Attributes |= g_ciConsoleInformation.GenerateLegacyAttributes(textAttr);
+                pciTargetPtr->Attributes |= ServiceLocator::LocateGlobals()->getConsoleInformation()->GenerateLegacyAttributes(textAttr);
 
                 if (fOutputTextAttributes)
                 {
@@ -666,7 +609,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
     if (ulStringType == CONSOLE_ASCII)
     {
-        UINT const Codepage = g_ciConsoleInformation.OutputCP;
+        UINT const Codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
 
         NumRead = ConvertToOem(Codepage, TransBuffer, NumRead, (LPSTR) pvBuffer, *pcRecords);
 
@@ -685,7 +628,7 @@ void ScreenBufferSizeChange(_In_ COORD const coordNewSize)
     InputEvent.EventType = WINDOW_BUFFER_SIZE_EVENT;
     InputEvent.Event.WindowBufferSizeEvent.dwSize = coordNewSize;
 
-    g_ciConsoleInformation.pInputBuffer->WriteInputBuffer(&InputEvent, 1);
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->WriteInputBuffer(&InputEvent, 1);
 }
 
 void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
@@ -693,16 +636,19 @@ void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
                   _In_opt_ const SMALL_RECT * const psrMerge,
                   _In_ const COORD coordTarget)
 {
+    NTSTATUS status = STATUS_SUCCESS;
+
     if (pScreenInfo->IsActiveScreenBuffer())
     {
-        // Notify accessibility that a scroll has occurred.
-        NotifyWinEvent(EVENT_CONSOLE_UPDATE_SCROLL,
-                       g_ciConsoleInformation.hWnd,
-                       coordTarget.X - psrScroll->Left,
-                       coordTarget.Y - psrScroll->Right);
+        IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+        status = NT_TESTNULL(pNotifier);
 
+        if (NT_SUCCESS(status))
+        {
+            pNotifier->NotifyConsoleUpdateScrollEvent(coordTarget.X - psrScroll->Left, coordTarget.Y - psrScroll->Right);
+        }
 
-        if (g_pRender != nullptr)
+        if (ServiceLocator::LocateGlobals()->pRender != nullptr)
         {
             // psrScroll is the source rectangle which gets written with the same dimensions to the coordTarget position.
             // Therefore the final rectangle starts with the top left corner at coordTarget
@@ -714,7 +660,7 @@ void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
             rcWritten.Right = rcWritten.Left + (psrScroll->Right - psrScroll->Left + 1);
             rcWritten.Bottom = rcWritten.Top + (psrScroll->Bottom - psrScroll->Top + 1);
 
-            g_pRender->TriggerRedraw(&rcWritten);
+            ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&rcWritten);
 
             // psrMerge was just filled exactly where it's stated.
             if (psrMerge != nullptr)
@@ -724,7 +670,7 @@ void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
                 rcMerge.Bottom++;
                 rcMerge.Right++;
 
-                g_pRender->TriggerRedraw(&rcMerge);
+                ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&rcMerge);
             }
         }
     }
@@ -761,12 +707,16 @@ bool StreamScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo)
             COORD coordDelta = { 0 };
             coordDelta.Y = -1;
 
-            // Notify accessibility that a scroll has occurred.
-            NotifyWinEvent(EVENT_CONSOLE_UPDATE_SCROLL, g_ciConsoleInformation.hWnd, coordDelta.X, coordDelta.Y);
-
-            if (g_pRender != nullptr)
+            IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+            if (pNotifier)
             {
-                g_pRender->TriggerScroll(&coordDelta);
+                // Notify accessibility that a scroll has occurred.
+                pNotifier->NotifyConsoleUpdateScrollEvent(coordDelta.X, coordDelta.Y);
+            }
+
+            if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+            {
+                ServiceLocator::LocateGlobals()->pRender->TriggerScroll(&coordDelta);
             }
         }
     }
@@ -1091,7 +1041,7 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
 
 NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
 {
-    g_ciConsoleInformation.CurrentScreenBuffer = pScreenInfo;
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer = pScreenInfo;
 
     // initialize cursor
     pScreenInfo->TextInfo->GetCursor()->SetIsOn(FALSE);
@@ -1100,13 +1050,13 @@ NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
     pScreenInfo->RefreshFontWithRenderer();
 
     // Empty input buffer.
-    g_ciConsoleInformation.pInputBuffer->FlushAllButKeys();
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->FlushAllButKeys();
     SetScreenColors(pScreenInfo, pScreenInfo->GetAttributes().GetLegacyAttributes(), pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE);
 
     // Set window size.
     pScreenInfo->PostUpdateWindowSize();
 
-    g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme.RefreshAreaAttributes();
 
     // Write data to screen.
     WriteToScreen(pScreenInfo, pScreenInfo->GetBufferViewport());
@@ -1122,7 +1072,7 @@ void CloseConsoleProcessState()
 
     // N.B. We can get into this state when a process has a reference to the console but hasn't connected. For example,
     //      when it's created suspended and never resumed.
-    if (g_ciConsoleInformation.ProcessHandleList.IsEmpty())
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.IsEmpty())
     {
         ExitProcess(STATUS_SUCCESS);
     }

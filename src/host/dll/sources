@@ -35,8 +35,10 @@ O_MANIFESTS                     =   \
                                     $(OBJ_PATH)\$(O)\SystemDefault.man \
                                     ConhostV2.man
 
-INCLUDES                        =  $(INCLUDES); \
-                                   $(OBJ_PATH)\$(O)
+INCLUDES                        =   $(INCLUDES); \
+                                    $(OBJ_PATH)\$(O)
 
-NTTARGETFILE0                   =  \
-                                   $(O_MANIFESTS)
+NTTARGETFILE0                   =   \
+                                    $(O_MANIFESTS)
+
+DLOAD_ERROR_HANDLER             =   kernelbase

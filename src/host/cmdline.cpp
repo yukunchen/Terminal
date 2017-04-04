@@ -11,17 +11,15 @@
 #include "output.h"
 #include "stream.h"
 #include "_stream.h"
-#include "cursor.h"
 #include "dbcs.h"
-#include "directio.h"
 #include "handle.h"
-#include "menu.h"
 #include "misc.h"
 #include "srvinit.h"
-#include "utils.hpp"
-#include "window.hpp"
+#include "resource.h"
 
 #include "ApiRoutines.h"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -321,7 +319,7 @@ void InitExtendedEditKeys(_In_opt_ ExtKeyDefBuf const * const pKeyDefBuf)
 const ExtKeySubst *ParseEditKeyInfo(_Inout_ PKEY_EVENT_RECORD const pKeyEvent)
 {
     // If not extended mode, or Control key or Alt key is not pressed, or virtual keycode is out of range, just bail.
-    if (!g_ciConsoleInformation.GetExtendedEditKey() ||
+    if (!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey() ||
         (pKeyEvent->dwControlKeyState & (CTRL_PRESSED | ALT_PRESSED)) == 0 ||
         pKeyEvent->wVirtualKeyCode < 'A' || pKeyEvent->wVirtualKeyCode > 'Z')
     {
@@ -371,7 +369,7 @@ const ExtKeySubst *ParseEditKeyInfo(_Inout_ PKEY_EVENT_RECORD const pKeyEvent)
 bool IsPauseKey(_In_ PKEY_EVENT_RECORD const pKeyEvent)
 {
     bool fIsPauseKey = false;
-    if (g_ciConsoleInformation.GetExtendedEditKey())
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey())
     {
         KEY_EVENT_RECORD KeyEvent = *pKeyEvent;
         CONST ExtKeySubst *pKeySubst = ParseEditKeyInfo(&KeyEvent);
@@ -387,12 +385,12 @@ bool IsPauseKey(_In_ PKEY_EVENT_RECORD const pKeyEvent)
 // - Detects Word delimiters
 bool IsWordDelim(_In_ WCHAR const wch)
 {
-    // Before it reaches here, L' ' case should have beeen already detected, and gaWordDelimChars is specified.
-    ASSERT(wch != L' ' && gaWordDelimChars[0]);
+    // Before it reaches here, L' ' case should have beeen already detected, and ServiceLocator::LocateGlobals()->aWordDelimChars is specified.
+    ASSERT(wch != L' ' && ServiceLocator::LocateGlobals()->aWordDelimChars[0]);
 
-    for (int i = 0; i < WORD_DELIM_MAX && gaWordDelimChars[i]; ++i)
+    for (int i = 0; i < WORD_DELIM_MAX && ServiceLocator::LocateGlobals()->aWordDelimChars[i]; ++i)
     {
-        if (wch == gaWordDelimChars[i])
+        if (wch == ServiceLocator::LocateGlobals()->aWordDelimChars[i])
         {
             return true;
         }
@@ -431,11 +429,11 @@ PEXE_ALIAS_LIST AddExeAliasList(_In_ LPVOID ExeName,
             delete AliasList;
             return nullptr;
         }
-        AliasList->ExeLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (LPSTR)ExeName, ExeLength, AliasList->ExeName, ExeLength);
+        AliasList->ExeLength = (USHORT)ConvertInputToUnicode(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, (LPSTR)ExeName, ExeLength, AliasList->ExeName, ExeLength);
         AliasList->ExeLength *= 2;
     }
     InitializeListHead(&AliasList->AliasList);
-    InsertHeadList(&g_ciConsoleInformation.ExeAliasList, &AliasList->ListLink);
+    InsertHeadList(&ServiceLocator::LocateGlobals()->getConsoleInformation()->ExeAliasList, &AliasList->ListLink);
     return AliasList;
 }
 
@@ -455,10 +453,10 @@ PEXE_ALIAS_LIST FindExe(_In_ LPVOID ExeName,
         UnicodeExeName = new WCHAR[ExeLength];
         if (UnicodeExeName == nullptr)
             return nullptr;
-        ExeLength = (USHORT)ConvertInputToUnicode(g_ciConsoleInformation.CP, (LPSTR)ExeName, ExeLength, UnicodeExeName, ExeLength);
+        ExeLength = (USHORT)ConvertInputToUnicode(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, (LPSTR)ExeName, ExeLength, UnicodeExeName, ExeLength);
         ExeLength *= 2;
     }
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ExeAliasList;
+    PLIST_ENTRY const ListHead = &ServiceLocator::LocateGlobals()->getConsoleInformation()->ExeAliasList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
@@ -597,7 +595,7 @@ void FreeAliasList(_In_ PEXE_ALIAS_LIST ExeAliasList)
 
 void FreeAliasBuffers()
 {
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ExeAliasList;
+    PLIST_ENTRY const ListHead = &ServiceLocator::LocateGlobals()->getConsoleInformation()->ExeAliasList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
@@ -626,7 +624,7 @@ HRESULT ApiRoutines::AddConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength)
                                           _In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                           _In_ size_t const cchExeNameBufferLength)
 {
-    UINT const uiCodePage = g_ciConsoleInformation.CP;
+    UINT const uiCodePage = ServiceLocator::LocateGlobals()->getConsoleInformation()->CP;
 
     wistd::unique_ptr<wchar_t[]> pwsSource;
     size_t cchSource;
@@ -801,7 +799,7 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength)
                                           _In_reads_or_z_(cchExeNameBufferLength) const char* const psExeNameBuffer,
                                           _In_ size_t const cchExeNameBufferLength)
 {
-    UINT const uiCodePage = g_ciConsoleInformation.CP;
+    UINT const uiCodePage = ServiceLocator::LocateGlobals()->getConsoleInformation()->CP;
 
     // Ensure output variables are initialized
     *pcchTargetBufferWritten = 0;
@@ -967,7 +965,7 @@ HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(_In_reads_or_z_(cchExeNameBuff
                                                   _In_ size_t const cchExeNameBufferLength,
                                                   _Out_ size_t* const pcchAliasesBufferRequired)
 {
-    UINT const uiCodePage = g_ciConsoleInformation.CP;
+    UINT const uiCodePage = ServiceLocator::LocateGlobals()->getConsoleInformation()->CP;
 
     // Ensure output variables are initialized
     *pcchAliasesBufferRequired = 0;
@@ -1139,7 +1137,7 @@ HRESULT ApiRoutines::GetConsoleAliasesAImpl(_In_reads_or_z_(cchExeNameBufferLeng
                                             _In_ size_t const cchAliasBufferLength,
                                             _Out_ size_t* const pcchAliasBufferWritten)
 {
-    UINT const uiCodePage = g_ciConsoleInformation.CP;
+    UINT const uiCodePage = ServiceLocator::LocateGlobals()->getConsoleInformation()->CP;
 
     // Ensure output variables are initialized
     *pcchAliasBufferWritten = 0;
@@ -1228,7 +1226,7 @@ HRESULT GetConsoleAliasExesLengthImplHelper(_In_ bool const fCountInUnicode, _In
     // Each alias exe will be made up of the string payload and a null terminator.
     size_t const cchNull = 1;
 
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ExeAliasList;
+    PLIST_ENTRY const ListHead = &ServiceLocator::LocateGlobals()->getConsoleInformation()->ExeAliasList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
@@ -1266,7 +1264,7 @@ HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(_Out_ size_t* const pcchAlia
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    return GetConsoleAliasExesLengthImplHelper(false, g_ciConsoleInformation.CP, pcchAliasExesBufferRequired);
+    return GetConsoleAliasExesLengthImplHelper(false, ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, pcchAliasExesBufferRequired);
 }
 
 // Routine Description:
@@ -1313,7 +1311,7 @@ HRESULT GetConsoleAliasExesWImplHelper(_Out_writes_to_opt_(cchAliasExesBufferLen
 
     size_t const cchNull = 1;
 
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.ExeAliasList;
+    PLIST_ENTRY const ListHead = &ServiceLocator::LocateGlobals()->getConsoleInformation()->ExeAliasList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
@@ -1366,7 +1364,7 @@ HRESULT ApiRoutines::GetConsoleAliasExesAImpl(_Out_writes_to_(cchAliasExesBuffer
                                               _In_ size_t const cchAliasExesBufferLength,
                                               _Out_ size_t* const pcchAliasExesBufferWritten)
 {
-    UINT const uiCodePage = g_ciConsoleInformation.CP;
+    UINT const uiCodePage = ServiceLocator::LocateGlobals()->getConsoleInformation()->CP;
 
     // Ensure output variables are initialized
     *pcchAliasExesBufferWritten = 0;
@@ -1695,7 +1693,7 @@ HRESULT ApiRoutines::ExpungeConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNam
 {
     wistd::unique_ptr<wchar_t[]> pwsExeName;
     size_t cchExeName;
-    RETURN_IF_FAILED(ConvertToW(g_ciConsoleInformation.CP, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
+    RETURN_IF_FAILED(ConvertToW(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
 
 
     return ExpungeConsoleCommandHistoryWImpl(pwsExeName.get(),
@@ -1739,7 +1737,7 @@ HRESULT ApiRoutines::SetConsoleNumberOfCommandsAImpl(_In_reads_or_z_(cchExeNameB
 {
     wistd::unique_ptr<wchar_t[]> pwsExeName;
     size_t cchExeName;
-    RETURN_IF_FAILED(ConvertToW(g_ciConsoleInformation.CP, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
+    RETURN_IF_FAILED(ConvertToW(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, psExeNameBuffer, cchExeNameBufferLength, pwsExeName, cchExeName));
 
     return SetConsoleNumberOfCommandsWImpl(pwsExeName.get(),
                                            cchExeName,
@@ -1849,7 +1847,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthAImpl(_In_reads_or_z_(cchExeN
                                                          _In_ size_t const cchExeNameBufferLength,
                                                          _Out_ size_t* const pcchCommandHistoryLength)
 {
-    UINT const uiCodePage = g_ciConsoleInformation.CP;
+    UINT const uiCodePage = ServiceLocator::LocateGlobals()->getConsoleInformation()->CP;
 
     // Ensure output variables are initialized
     *pcchCommandHistoryLength = 0;
@@ -1981,7 +1979,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(_In_reads_or_z_(cchExeNameBuf
                                                    _In_ size_t const cchCommandHistoryBufferLength,
                                                    _Out_ size_t* const pcchCommandHistoryBufferWritten)
 {
-    UINT const uiCodePage = g_ciConsoleInformation.CP;
+    UINT const uiCodePage = ServiceLocator::LocateGlobals()->getConsoleInformation()->CP;
 
     // Ensure output variables are initialized
     *pcchCommandHistoryBufferWritten = 0;
@@ -2084,7 +2082,7 @@ PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandH
 
     RemoveEntryList(&CurrentCommandHistory->ListLink);
     InitializeListHead(&History->PopupList);
-    InsertHeadList(&g_ciConsoleInformation.CommandHistoryList, &History->ListLink);
+    InsertHeadList(&ServiceLocator::LocateGlobals()->getConsoleInformation()->CommandHistoryList, &History->ListLink);
 
     delete[] CurrentCommandHistory;
     return History;
@@ -2100,7 +2098,7 @@ PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, 
         {
             return nullptr;
         }
-        AppNameLength = ConvertInputToUnicode(g_ciConsoleInformation.CP, (PSTR)AppName, AppNameLength, AppNamePtr, AppNameLength);
+        AppNameLength = ConvertInputToUnicode(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, (PSTR)AppName, AppNameLength, AppNamePtr, AppNameLength);
         AppNameLength *= 2;
     }
     else
@@ -2108,7 +2106,7 @@ PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, 
         AppNamePtr = (PWCHAR)AppName;
     }
 
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.CommandHistoryList;
+    PLIST_ENTRY const ListHead = &ServiceLocator::LocateGlobals()->getConsoleInformation()->CommandHistoryList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
@@ -2141,7 +2139,7 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
 {
     // Reuse a history buffer.  The buffer must be !CLE_ALLOCATED.
     // If possible, the buffer should have the same app name.
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.CommandHistoryList;
+    PLIST_ENTRY const ListHead = &ServiceLocator::LocateGlobals()->getConsoleInformation()->CommandHistoryList;
     PLIST_ENTRY ListNext = ListHead->Blink;
     PCOMMAND_HISTORY BestCandidate = nullptr;
     PCOMMAND_HISTORY History = nullptr;
@@ -2171,11 +2169,11 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
 
     // if there isn't a free buffer for the app name and the maximum number of
     // command history buffers hasn't been allocated, allocate a new one.
-    if (!SameApp && g_ciConsoleInformation.NumCommandHistories < g_ciConsoleInformation.GetNumberOfHistoryBuffers())
+    if (!SameApp && ServiceLocator::LocateGlobals()->getConsoleInformation()->NumCommandHistories < ServiceLocator::LocateGlobals()->getConsoleInformation()->GetNumberOfHistoryBuffers())
     {
         size_t Size, TotalSize;
 
-        if (FAILED(SizeTMult(g_ciConsoleInformation.GetHistoryBufferSize(), sizeof(PCOMMAND), &Size)))
+        if (FAILED(SizeTMult(ServiceLocator::LocateGlobals()->getConsoleInformation()->GetHistoryBufferSize(), sizeof(PCOMMAND), &Size)))
         {
             return nullptr;
         }
@@ -2205,9 +2203,9 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
         History->LastAdded = -1;
         History->LastDisplayed = -1;
         History->FirstCommand = 0;
-        History->MaximumNumberOfCommands = (SHORT)g_ciConsoleInformation.GetHistoryBufferSize();
-        InsertHeadList(&g_ciConsoleInformation.CommandHistoryList, &History->ListLink);
-        g_ciConsoleInformation.NumCommandHistories += 1;
+        History->MaximumNumberOfCommands = (SHORT)ServiceLocator::LocateGlobals()->getConsoleInformation()->GetHistoryBufferSize();
+        InsertHeadList(&ServiceLocator::LocateGlobals()->getConsoleInformation()->CommandHistoryList, &History->ListLink);
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->NumCommandHistories += 1;
         History->ProcessHandle = hProcess;
         InitializeListHead(&History->PopupList);
         return History;
@@ -2251,7 +2249,7 @@ PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszA
 
         // move to the front of the list
         RemoveEntryList(&BestCandidate->ListLink);
-        InsertHeadList(&g_ciConsoleInformation.CommandHistoryList, &BestCandidate->ListLink);
+        InsertHeadList(&ServiceLocator::LocateGlobals()->getConsoleInformation()->CommandHistoryList, &BestCandidate->ListLink);
     }
 
     return BestCandidate;
@@ -2317,8 +2315,8 @@ NTSTATUS BeginPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY C
     TargetRect.Bottom = Popup->Region.Bottom;
     ReadScreenBuffer(ScreenInfo, Popup->OldContents, &TargetRect);
 
-    g_ciConsoleInformation.PopupCount++;
-    if (1 == g_ciConsoleInformation.PopupCount)
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->PopupCount++;
+    if (1 == ServiceLocator::LocateGlobals()->getConsoleInformation()->PopupCount)
     {
         // If this is the first popup to be shown, stop the cursor from appearing/blinking
         ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(TRUE);
@@ -2356,9 +2354,9 @@ NTSTATUS EndPopup(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ PCOMMAND_HISTORY Com
     RemoveEntryList(&Popup->ListLink);
     delete[] Popup->OldContents;
     delete Popup;
-    g_ciConsoleInformation.PopupCount--;
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->PopupCount--;
 
-    if (g_ciConsoleInformation.PopupCount == 0)
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->PopupCount == 0)
     {
         // Notify we're done showing popups.
         ScreenInfo->TextInfo->GetCursor()->SetIsPopupShown(FALSE);
@@ -2399,7 +2397,7 @@ CommandLine& CommandLine::Instance()
 
 bool CommandLine::IsEditLineEmpty() const
 {
-    const COOKED_READ_DATA* const pTyped = g_ciConsoleInformation.lpCookedReadData;
+    const COOKED_READ_DATA* const pTyped = ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData;
 
     if (nullptr == pTyped)
     {
@@ -2422,7 +2420,7 @@ void CommandLine::Hide(_In_ bool const fUpdateFields)
 {
     if (!IsEditLineEmpty())
     {
-        COOKED_READ_DATA* CookedReadData = g_ciConsoleInformation.lpCookedReadData;
+        COOKED_READ_DATA* CookedReadData = ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData;
         DeleteCommandLine(CookedReadData, fUpdateFields);
     }
 }
@@ -2431,7 +2429,7 @@ void CommandLine::Show()
 {
     if (!IsEditLineEmpty())
     {
-        COOKED_READ_DATA* CookedReadData = g_ciConsoleInformation.lpCookedReadData;
+        COOKED_READ_DATA* CookedReadData = ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData;
         RedrawCommandLine(CookedReadData);
     }
 }
@@ -2591,7 +2589,7 @@ bool IsCommandLinePopupKey(_In_ PKEY_EVENT_RECORD const pKeyEvent)
     }
 
     // Extended key handling
-    if (g_ciConsoleInformation.GetExtendedEditKey() && ParseEditKeyInfo(pKeyEvent))
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey() && ParseEditKeyInfo(pKeyEvent))
     {
         return pKeyEvent->uChar.UnicodeChar == 0;
     }
@@ -2645,7 +2643,7 @@ bool IsCommandLineEditingKey(_In_ PKEY_EVENT_RECORD const pKeyEvent)
     }
 
     // Extended edit key handling
-    if (g_ciConsoleInformation.GetExtendedEditKey() && ParseEditKeyInfo(pKeyEvent))
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey() && ParseEditKeyInfo(pKeyEvent))
     {
         // If wUnicodeChar is specified in KeySubst,
         // the key should be handled as a normal key.
@@ -2842,7 +2840,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                     return STATUS_NO_MEMORY;
                 }
 
-                dwNumBytes = (ULONG)ConvertToOem(g_ciConsoleInformation.CP,
+                dwNumBytes = (ULONG)ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
                                                  pCookedReadData->_UserBuffer,
                                                  dwNumBytes / sizeof(WCHAR),
                                                  TransBuffer,
@@ -3247,15 +3245,15 @@ NTSTATUS CopyFromCharPopup(_In_ COOKED_READ_DATA* CookedReadData)
     WCHAR ItemString[70];
     int ItemLength = 0;
     LANGID LangId;
-    NTSTATUS Status = GetConsoleLangId(g_ciConsoleInformation.OutputCP, &LangId);
+    NTSTATUS Status = GetConsoleLangId(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP, &LangId);
     if (NT_SUCCESS(Status))
     {
-        ItemLength = LoadStringEx(g_hInstance, ID_CONSOLE_MSGCMDLINEF4, ItemString, ARRAYSIZE(ItemString), LangId);
+        ItemLength = LoadStringEx(ServiceLocator::LocateGlobals()->hInstance, ID_CONSOLE_MSGCMDLINEF4, ItemString, ARRAYSIZE(ItemString), LangId);
     }
 
     if (!NT_SUCCESS(Status) || ItemLength == 0)
     {
-        ItemLength = LoadStringW(g_hInstance, ID_CONSOLE_MSGCMDLINEF4, ItemString, ARRAYSIZE(ItemString));
+        ItemLength = LoadStringW(ServiceLocator::LocateGlobals()->hInstance, ID_CONSOLE_MSGCMDLINEF4, ItemString, ARRAYSIZE(ItemString));
     }
 
     PCOMMAND_HISTORY const CommandHistory = CookedReadData->_CommandHistory;
@@ -3278,15 +3276,15 @@ NTSTATUS CopyToCharPopup(_In_ COOKED_READ_DATA* CookedReadData)
     int ItemLength = 0;
     LANGID LangId;
 
-    NTSTATUS Status = GetConsoleLangId(g_ciConsoleInformation.OutputCP, &LangId);
+    NTSTATUS Status = GetConsoleLangId(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP, &LangId);
     if (NT_SUCCESS(Status))
     {
-        ItemLength = LoadStringEx(g_hInstance, ID_CONSOLE_MSGCMDLINEF2, ItemString, ARRAYSIZE(ItemString), LangId);
+        ItemLength = LoadStringEx(ServiceLocator::LocateGlobals()->hInstance, ID_CONSOLE_MSGCMDLINEF2, ItemString, ARRAYSIZE(ItemString), LangId);
     }
 
     if (!NT_SUCCESS(Status) || ItemLength == 0)
     {
-        ItemLength = LoadStringW(g_hInstance, ID_CONSOLE_MSGCMDLINEF2, ItemString, ARRAYSIZE(ItemString));
+        ItemLength = LoadStringW(ServiceLocator::LocateGlobals()->hInstance, ID_CONSOLE_MSGCMDLINEF2, ItemString, ARRAYSIZE(ItemString));
     }
 
     PCOMMAND_HISTORY const CommandHistory = CookedReadData->_CommandHistory;
@@ -3307,14 +3305,14 @@ NTSTATUS CommandNumberPopup(_In_ COOKED_READ_DATA* const CookedReadData)
     int ItemLength = 0;
     LANGID LangId;
 
-    NTSTATUS Status = GetConsoleLangId(g_ciConsoleInformation.OutputCP, &LangId);
+    NTSTATUS Status = GetConsoleLangId(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP, &LangId);
     if (NT_SUCCESS(Status))
     {
-        ItemLength = LoadStringEx(g_hInstance, ID_CONSOLE_MSGCMDLINEF9, ItemString, ARRAYSIZE(ItemString), LangId);
+        ItemLength = LoadStringEx(ServiceLocator::LocateGlobals()->hInstance, ID_CONSOLE_MSGCMDLINEF9, ItemString, ARRAYSIZE(ItemString), LangId);
     }
     if (!NT_SUCCESS(Status) || ItemLength == 0)
     {
-        ItemLength = LoadStringW(g_hInstance, ID_CONSOLE_MSGCMDLINEF9, ItemString, ARRAYSIZE(ItemString));
+        ItemLength = LoadStringW(ServiceLocator::LocateGlobals()->hInstance, ID_CONSOLE_MSGCMDLINEF9, ItemString, ARRAYSIZE(ItemString));
     }
 
     PCOMMAND_HISTORY const CommandHistory = CookedReadData->_CommandHistory;
@@ -3600,7 +3598,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                 BOOL NonSpaceCharSeen = FALSE;
                 if (pCookedReadData->_BufPtr != pCookedReadData->_BackupLimit)
                 {
-                    if (!g_ciConsoleInformation.GetExtendedEditKey())
+                    if (!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey())
                     {
                         LastWord = pCookedReadData->_BufPtr - 1;
                         while (LastWord != pCookedReadData->_BackupLimit)
@@ -3743,7 +3741,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                     {
                         PWCHAR NextWord = pCookedReadData->_BufPtr;
 
-                        if (!g_ciConsoleInformation.GetExtendedEditKey())
+                        if (!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey())
                         {
                             SHORT i;
 
@@ -4078,7 +4076,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             break;
         case VK_INSERT:
             pCookedReadData->_InsertMode = !pCookedReadData->_InsertMode;
-            pCookedReadData->_pScreenInfo->SetCursorDBMode((BOOLEAN)(pCookedReadData->_InsertMode != g_ciConsoleInformation.GetInsertMode()));
+            pCookedReadData->_pScreenInfo->SetCursorDBMode((BOOLEAN)(pCookedReadData->_InsertMode != ServiceLocator::LocateGlobals()->getConsoleInformation()->GetInsertMode()));
             break;
         case VK_DELETE:
             if (!AT_EOL(pCookedReadData))
@@ -4545,7 +4543,7 @@ void UpdateCommandListPopup(_In_ SHORT Delta,
 // - <none>
 PCOMMAND_HISTORY FindCommandHistory(_In_ const HANDLE hProcess)
 {
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.CommandHistoryList;
+    PLIST_ENTRY const ListHead = &ServiceLocator::LocateGlobals()->getConsoleInformation()->CommandHistoryList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
@@ -4579,7 +4577,7 @@ void FreeCommandHistory(_In_ HANDLE const hProcess)
 
 void FreeCommandHistoryBuffers()
 {
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.CommandHistoryList;
+    PLIST_ENTRY const ListHead = &ServiceLocator::LocateGlobals()->getConsoleInformation()->CommandHistoryList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
@@ -4611,9 +4609,9 @@ void FreeCommandHistoryBuffers()
 void ResizeCommandHistoryBuffers(_In_ UINT const cCommands)
 {
     ASSERT(cCommands <= SHORT_MAX);
-    g_ciConsoleInformation.SetHistoryBufferSize(cCommands);
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->SetHistoryBufferSize(cCommands);
 
-    PLIST_ENTRY const ListHead = &g_ciConsoleInformation.CommandHistoryList;
+    PLIST_ENTRY const ListHead = &ServiceLocator::LocateGlobals()->getConsoleInformation()->CommandHistoryList;
     PLIST_ENTRY ListNext = ListHead->Flink;
     while (ListNext != ListHead)
     {
@@ -4621,7 +4619,7 @@ void ResizeCommandHistoryBuffers(_In_ UINT const cCommands)
         ListNext = ListNext->Flink;
 
         PCOMMAND_HISTORY const NewHistory = ReallocCommandHistory(History, cCommands);
-        COOKED_READ_DATA* const CookedReadData = g_ciConsoleInformation.lpCookedReadData;
+        COOKED_READ_DATA* const CookedReadData = ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData;
         if (CookedReadData && CookedReadData->_CommandHistory == History)
         {
             CookedReadData->_CommandHistory = NewHistory;
@@ -4790,13 +4788,13 @@ HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcch
 
     if (fIsOriginal)
     {
-        pwszTitle = g_ciConsoleInformation.OriginalTitle;
-        cchTitleLength = wcslen(g_ciConsoleInformation.OriginalTitle);
+        pwszTitle = ServiceLocator::LocateGlobals()->getConsoleInformation()->OriginalTitle;
+        cchTitleLength = wcslen(ServiceLocator::LocateGlobals()->getConsoleInformation()->OriginalTitle);
     }
     else
     {
-        pwszTitle = g_ciConsoleInformation.Title;
-        cchTitleLength = wcslen(g_ciConsoleInformation.Title);
+        pwszTitle = ServiceLocator::LocateGlobals()->getConsoleInformation()->Title;
+        cchTitleLength = wcslen(ServiceLocator::LocateGlobals()->getConsoleInformation()->Title);
     }
 
     // Always report how much space we would need.
@@ -4852,7 +4850,7 @@ HRESULT GetConsoleTitleAImplHelper(_Out_writes_to_(cchTitleBufferSize, *pcchTitl
     // Convert result to A
     wistd::unique_ptr<char[]> psConverted;
     size_t cchConverted;
-    RETURN_IF_FAILED(ConvertToA(g_ciConsoleInformation.CP,
+    RETURN_IF_FAILED(ConvertToA(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
                                 pwsUnicodeTitleBuffer.get(),
                                 cchUnicodeTitleBufferWritten,
                                 psConverted,
@@ -4966,7 +4964,7 @@ HRESULT ApiRoutines::SetConsoleTitleAImpl(_In_reads_or_z_(cchTitleBufferSize) co
 {
     wistd::unique_ptr<wchar_t[]> pwsUnicodeTitleBuffer;
     size_t cchUnicodeTitleBuffer;
-    RETURN_IF_FAILED(ConvertToW(g_ciConsoleInformation.CP,
+    RETURN_IF_FAILED(ConvertToW(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
                                 psTitleBuffer,
                                 cchTitleBufferSize,
                                 pwsUnicodeTitleBuffer,
@@ -5003,10 +5001,10 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
         // Safe string copy will ensure null termination.
         RETURN_IF_FAILED(StringCchCopyNW(pwszNewTitle.get(), cchDest, pwsBuffer, cchBuffer));
     }
-    delete[] g_ciConsoleInformation.Title;
-    g_ciConsoleInformation.Title = pwszNewTitle.release();
+    delete[] ServiceLocator::LocateGlobals()->getConsoleInformation()->Title;
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->Title = pwszNewTitle.release();
 
-    RETURN_HR_IF_FALSE(E_FAIL, g_ciConsoleInformation.pWindow->PostUpdateTitleWithCopy(g_ciConsoleInformation.Title));
+    RETURN_HR_IF_FALSE(E_FAIL, ServiceLocator::LocateConsoleWindow()->PostUpdateTitleWithCopy(ServiceLocator::LocateGlobals()->getConsoleInformation()->Title));
 
     return S_OK;
 }

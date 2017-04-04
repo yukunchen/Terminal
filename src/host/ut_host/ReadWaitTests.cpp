@@ -11,6 +11,8 @@
 #include "misc.h"
 #include "dbcs.h"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 using namespace WEX::Logging;
 
 class InputRecordConversionTests
@@ -22,16 +24,16 @@ class InputRecordConversionTests
 
     TEST_CLASS_SETUP(ClassSetup)
     {
-        savedCodepage = g_ciConsoleInformation.CP;
-        g_ciConsoleInformation.CP = CP_JAPANESE;
-        VERIFY_IS_TRUE(!!GetCPInfo(g_ciConsoleInformation.CP, &g_ciConsoleInformation.CPInfo));
+        savedCodepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->CP;
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->CP = CP_JAPANESE;
+        VERIFY_IS_TRUE(!!GetCPInfo(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, &ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo));
         return true;
     }
 
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
-        g_ciConsoleInformation.CP = savedCodepage;
-        VERIFY_IS_TRUE(!!GetCPInfo(g_ciConsoleInformation.CP, &g_ciConsoleInformation.CPInfo));
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->CP = savedCodepage;
+        VERIFY_IS_TRUE(!!GetCPInfo(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, &ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo));
         return true;
     }
 
@@ -96,7 +98,7 @@ class InputRecordConversionTests
         VERIFY_ARE_EQUAL(outNum, INPUT_RECORD_COUNT * 2);
         // create the data to compare the output to
         char dbcsChars[INPUT_RECORD_COUNT * 2] = { 0 };
-        int writtenBytes = WideCharToMultiByte(g_ciConsoleInformation.CP,
+        int writtenBytes = WideCharToMultiByte(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
                                                0,
                                                inChars,
                                                INPUT_RECORD_COUNT,
@@ -130,7 +132,7 @@ class InputRecordConversionTests
         VERIFY_ARE_EQUAL(outNum, (INPUT_RECORD_COUNT * 2) - 1);
         // create the data to compare the output to
         char dbcsChars[INPUT_RECORD_COUNT * 2] = { 0 };
-        int writtenBytes = WideCharToMultiByte(g_ciConsoleInformation.CP,
+        int writtenBytes = WideCharToMultiByte(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
                                                0,
                                                inChars,
                                                INPUT_RECORD_COUNT,

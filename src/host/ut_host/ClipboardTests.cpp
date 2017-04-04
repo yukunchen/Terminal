@@ -9,13 +9,17 @@
 #include "CommonState.hpp"
 
 #include "globals.h"
-#include "clipboard.hpp"
+#include "..\interactivity\win32\Clipboard.hpp"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
 #include "UnicodeLiteral.hpp"
+
+using namespace Microsoft::Console::Interactivity::Win32;
 
 class ClipboardTests
 {
@@ -60,7 +64,7 @@ class ClipboardTests
         // Please see CommonState.cpp for information on the buffer state per row, the row contents, etc.
 
         // set up and try to retrieve the first 4 rows from the buffer
-        SCREEN_INFORMATION* pScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
+        SCREEN_INFORMATION* pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
 
         SMALL_RECT* rgsrSelection = new SMALL_RECT[cRectsSelected];
 
@@ -80,12 +84,12 @@ class ClipboardTests
         PWCHAR* rgTempRows = new PWCHAR[cRectsSelected];
         size_t* rgTempRowLengths = new size_t[cRectsSelected];
 
-        NTSTATUS status = Clipboard::s_RetrieveTextFromBuffer(pScreenInfo,
-                                                              fLineSelection,
-                                                              cRectsSelected,
-                                                              rgsrSelection,
-                                                              rgTempRows,
-                                                              rgTempRowLengths);
+        NTSTATUS status = Clipboard::Instance().RetrieveTextFromBuffer(pScreenInfo,
+                                                                       fLineSelection,
+                                                                       cRectsSelected,
+                                                                       rgsrSelection,
+                                                                       rgTempRows,
+                                                                       rgTempRowLengths);
 
         // function successful
         VERIFY_IS_TRUE(NT_SUCCESS(status));

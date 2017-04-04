@@ -19,6 +19,8 @@
 #define API_NUMBER_READCONSOLE      0x01000005
 #define API_NUMBER_WRITECONSOLE     0x01000006
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 // Routine Description:
 // - Initializes a ConsoleWaitBlock
 // - ConsoleWaitBlocks will self-manage their position in their two queues.
@@ -194,7 +196,7 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
 
         _WaitReplyMessage.ReleaseMessageBuffers();
 
-        LOG_IF_FAILED(g_pDeviceComm->CompleteIo(&_WaitReplyMessage.Complete));
+        LOG_IF_FAILED(ServiceLocator::LocateGlobals()->pDeviceComm->CompleteIo(&_WaitReplyMessage.Complete));
 
         fRetVal = true;
     }

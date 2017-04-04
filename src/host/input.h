@@ -23,6 +23,14 @@ Revision History:
 #include "inputReadHandleData.h"
 #include "inputBuffer.hpp"
 
+// indicates how much to change the opacity at each mouse/key toggle
+// Opacity is defined as 0-255. 12 is therefore approximately 5% per tick.
+#define OPACITY_DELTA_INTERVAL 12
+
+#define MAX_CHARS_FROM_1_KEYSTROKE 6
+
+#define KEY_TRANSITION_UP 0x80000000
+
 class INPUT_KEY_INFO
 {
 public:
@@ -88,15 +96,16 @@ void ClearKeyInfo(_In_ const HWND hWnd);
 
 ULONG GetControlKeyState(_In_ const LPARAM lParam);
 
-BOOL HandleSysKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole);
-void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole);
-BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam);
+bool IsInProcessedInputMode();
+bool IsInVirtualTerminalInputMode();
+bool ShouldTakeOverKeyboardShortcuts();
+
 void HandleMenuEvent(_In_ const DWORD wParam);
 void HandleFocusEvent(_In_ const BOOL fSetFocus);
 void HandleCtrlEvent(_In_ const DWORD EventType);
+bool HandleTerminalKeyEvent(_In_ const INPUT_RECORD* const pInputRecord);
+void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak);
+
 void ProcessCtrlEvents();
 
-bool HandleTerminalKeyEvent(_In_ const INPUT_RECORD* const pInputRecord);
-
-BOOL IsPrintableKey(WORD const wVirtualKeyCode);
 BOOL IsSystemKey(_In_ WORD const wVirtualKeyCode);

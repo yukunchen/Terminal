@@ -3,7 +3,8 @@
 SOURCES_USED                    =   $(WINCORE_PATH)\core.inc
 
 # C4201: nonstandard extension used : nameless struct/union
-MSC_WARNING_LEVEL               =   /W4 /WX /wd4201
+# C4213: nonstandard extension used : cast on l-value
+MSC_WARNING_LEVEL               =   /W4 /WX /wd4201 /wd4213
 
 W32_SB                          =   1
 
@@ -62,11 +63,19 @@ TARGETLIBS                      =   $(TARGETLIBS) \
                                     $(WINCORE_OBJ_PATH)\console\open\src\renderer\base\lib\$(O)\ConRenderBase.lib \
                                     $(WINCORE_OBJ_PATH)\console\open\src\renderer\gdi\lib\$(O)\ConRenderGdi.lib \
                                     $(WINCORE_OBJ_PATH)\console\open\src\server\lib\$(O)\ConServer.lib \
+                                    $(WINCORE_OBJ_PATH)\console\open\src\interactivity\base\lib\$(O)\ConInteractivityBaseLib.lib \
+                                    $(WINCORE_OBJ_PATH)\console\open\src\interactivity\win32\lib\$(O)\ConInteractivityWin32Lib.lib \
+                                    $(WINCORE_OBJ_PATH)\console\open\src\interactivity\onecore\lib\$(O)\ConInteractivityOneCoreLib.lib \
 
-DELAYLOAD                       =   \
-                                    winmm.dll; \
-                                    api-ms-win-shcore-scaling-l1.dll; \
+DELAYLOAD                       =   winmm.dll; \
+                                    propsys.dll; \
                                     shell32.dll; \
+                                    uuid.dll; \
+                                    gdi32.dll; \
+                                    user32.dll; \
+                                    oleaut32.dll; \
+                                    uiautomationcore.dll; \
+                                    api-ms-win-shcore-scaling-l1.dll; \
 
 DLOAD_ERROR_HANDLER             =   kernelbase
 

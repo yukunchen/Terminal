@@ -13,6 +13,8 @@
 #include "selection.hpp"
 #include "cmdline.h"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -192,7 +194,7 @@ class SelectionTests
                     if (!fIsLastLine)
                     {
                         // buffer size = 80, then selection goes 0 to 79. Thus X - 1.
-                        VERIFY_ARE_EQUAL(psrRect->Right, g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->GetCoordBufferSize().X - 1);
+                        VERIFY_ARE_EQUAL(psrRect->Right, ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCoordBufferSize().X - 1);
                     }
 
                     // for all lines except the first, the line should reach the left edge of the buffer
@@ -316,7 +318,7 @@ class SelectionTests
 
     void TestBisectSelectionDelta(SHORT sTargetX, SHORT sTargetY, SHORT sLength, SHORT sDeltaLeft, SHORT sDeltaRight)
     {
-        SCREEN_INFORMATION* pScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
+        SCREEN_INFORMATION* pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
 
         short sStringLength;
         COORD coordTargetPoint;
@@ -447,17 +449,17 @@ class SelectionInputTests
         srectEdges.Right = srectEdges.Bottom = sRowWidth - 1;
 
         // false when no cooked read data exists
-        ASSERT(g_ciConsoleInformation.lpCookedReadData == nullptr);
+        ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData == nullptr);
 
         bool fResult = Selection::s_GetInputLineBoundaries(nullptr, nullptr);
         VERIFY_IS_FALSE(fResult);
 
         // prepare some read data
         m_state->PrepareCookedReadData();
-        COOKED_READ_DATA* pCooked = g_ciConsoleInformation.lpCookedReadData;
+        COOKED_READ_DATA* pCooked = ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData;
 
         // backup text info position over remainder of text execution duration
-        TEXT_BUFFER_INFO* pTextInfo = g_ciConsoleInformation.CurrentScreenBuffer->TextInfo;
+        TEXT_BUFFER_INFO* pTextInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo;
         COORD coordOldTextInfoPos;
         coordOldTextInfoPos.X = pTextInfo->GetCursor()->GetPosition().X;
         coordOldTextInfoPos.Y = pTextInfo->GetCursor()->GetPosition().Y;

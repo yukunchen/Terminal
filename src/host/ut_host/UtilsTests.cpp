@@ -14,6 +14,8 @@
 
 #include "utils.hpp"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -215,7 +217,7 @@ class UtilsTests
         COORD coordMaxBuffer;
         coordMaxBuffer.X = SHORT_MAX;
         coordMaxBuffer.Y = SHORT_MAX;
-        g_ciConsoleInformation.CurrentScreenBuffer->SetScreenBufferSize(coordMaxBuffer);
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->SetScreenBufferSize(coordMaxBuffer);
 
         Log::Comment(L"#1: 0 case. Coords equal");
         FillBothCoordsSameRandom(&coordA, &coordB);

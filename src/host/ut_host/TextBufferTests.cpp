@@ -13,6 +13,8 @@
 
 #include "input.h"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -92,17 +94,17 @@ class TextBufferTests
 
     TEXT_BUFFER_INFO* GetTbi()
     {
-        return g_ciConsoleInformation.CurrentScreenBuffer->TextInfo;
+        return ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo;
     }
 
     SHORT GetBufferWidth()
     {
-        return g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->_coordBufferSize.X;
+        return ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->_coordBufferSize.X;
     }
 
     SHORT GetBufferHeight()
     {
-        return g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->_coordBufferSize.Y;
+        return ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->_coordBufferSize.Y;
     }
 
     TEST_METHOD(TestBufferRowIteration)
@@ -243,7 +245,7 @@ class TextBufferTests
         TEXT_BUFFER_INFO* pOtherTbi = GetTbi();
 
         TEXT_BUFFER_INFO* pNewTbi = new TEXT_BUFFER_INFO(&pOtherTbi->_fiCurrentFont);
-        pNewTbi->_pCursor = new Cursor(40);// value is irrelevant for this test
+        pNewTbi->_pCursor = new Cursor(ServiceLocator::LocateAccessibilityNotifier(), 40);// value is irrelevant for this test
         // set initial mapping values
         pNewTbi->GetCursor()->SetHasMoved(FALSE);
         pOtherTbi->GetCursor()->SetHasMoved(TRUE);

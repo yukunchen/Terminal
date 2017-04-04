@@ -26,10 +26,15 @@ Revision History:
 #include "..\terminal\adapter\adaptDispatch.hpp"
 #include "..\terminal\parser\stateMachine.hpp"
 #include "..\server\ObjectHeader.h"
+
+#include "..\interactivity\inc\IAccessibilityNotifier.hpp"
+#include "..\interactivity\inc\IConsoleWindow.hpp"
+#include "..\interactivity\inc\IWindowMetrics.hpp"
+
+using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::VirtualTerminal;
 
-class Window; // forward decl window. circular reference
-class ConversionAreaInfo;
+class ConversionAreaInfo; // forward decl window. circular reference
 
 class SCREEN_INFORMATION
 {
@@ -163,10 +168,13 @@ public:
     void SetPopupAttributes(_In_ const TextAttribute* const pPopupAttributes);
 
 private:
-    SCREEN_INFORMATION(_In_ const CHAR_INFO ciFill, _In_ const CHAR_INFO ciPopupFill);
+    SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
+                       _In_ IAccessibilityNotifier *pNotifier,
+                       _In_ const CHAR_INFO ciFill,
+                       _In_ const CHAR_INFO ciPopupFill);
 
-    _Must_inspect_result_
-        Window* _GetWindow() const;
+    IWindowMetrics *_pConsoleWindowMetrics;
+    IAccessibilityNotifier *_pAccessibilityNotifier;
 
     HRESULT _AdjustScreenBufferHelper(_In_ const RECT* const prcClientNew,
                                       _In_ COORD const coordBufferOld,

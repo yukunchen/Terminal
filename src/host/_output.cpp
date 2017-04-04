@@ -7,13 +7,11 @@
 #include "precomp.h"
 
 #include "_output.h"
-#include "output.h"
 
-#include "clipboard.hpp"
-#include "cursor.h"
 #include "dbcs.h"
-#include "globals.h"
 #include "misc.h"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -22,12 +20,6 @@
 #define WCHAR_OF_PCI(p) (((PCHAR_INFO)(p))->Char.UnicodeChar)
 #define ATTR_OF_PCI(p)  (((PCHAR_INFO)(p))->Attributes)
 #define SIZEOF_CI_CELL  sizeof(CHAR_INFO)
-
-typedef struct _KEISEN_INFORMATION
-{
-    COORD Coord;
-    WORD n;
-} KEISEN_INFORMATION, *PKEISEN_INFORMATION;
 
 void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
                                _In_ SHORT cchBuffer,
@@ -101,11 +93,11 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
 // Return Value:
 // - <none>
 NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimensions.Y * sizeof(CHAR_INFO)) PBYTE const prgbSrc,
-                             _In_ const COORD coordSrcDimensions,
-                             _In_ const SMALL_RECT * const psrSrc,
-                             _In_ PSCREEN_INFORMATION pScreenInfo,
-                             _In_ const COORD coordDest,
-                             _In_reads_opt_(coordSrcDimensions.X * coordSrcDimensions.Y) TextAttribute* const pTextAttributes)
+                                 _In_ const COORD coordSrcDimensions,
+                                 _In_ const SMALL_RECT * const psrSrc,
+                                 _In_ PSCREEN_INFORMATION pScreenInfo,
+                                 _In_ const COORD coordDest,
+                                 _In_reads_opt_(coordSrcDimensions.X * coordSrcDimensions.Y) TextAttribute* const pTextAttributes)
 {
     DBGOUTPUT(("WriteRectToScreenBuffer\n"));
     const bool fWriteAttributes = pTextAttributes != nullptr;
@@ -301,14 +293,14 @@ void WriteRegionToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PSMALL_RECT 
 {
     if (pScreenInfo->IsActiveScreenBuffer())
     {
-        if (g_pRender != nullptr)
+        if (ServiceLocator::LocateGlobals()->pRender != nullptr)
         {
             // convert inclusive rectangle to exclusive rectangle
             SMALL_RECT srExclusive = *psrRegion;
             srExclusive.Right++;
             srExclusive.Bottom++;
 
-            g_pRender->TriggerRedraw(&srExclusive);
+            ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&srExclusive);
         }
     }
 }
@@ -324,7 +316,8 @@ void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT s
 {
     DBGOUTPUT(("WriteToScreen\n"));
     // update to screen, if we're not iconic.
-    if (!pScreenInfo->IsActiveScreenBuffer() || (g_ciConsoleInformation.Flags & (CONSOLE_IS_ICONIC | CONSOLE_NO_WINDOW)))
+    if (!pScreenInfo->IsActiveScreenBuffer() ||
+        (ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags & (CONSOLE_IS_ICONIC | CONSOLE_NO_WINDOW)))
     {
         return;
     }
@@ -396,7 +389,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
     BOOL fLocalHeap = FALSE;
     if (ulStringType == CONSOLE_ASCII)
     {
-        UINT const Codepage = g_ciConsoleInformation.OutputCP;
+        UINT const Codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
 
         if (*pcRecords >= ARRAYSIZE(rgwchBuffer) ||
             *pcRecords >= ARRAYSIZE(rgbBufferA))
@@ -434,7 +427,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 break;
             }
 
-            if (IsDBCSLeadByteConsole(*TmpBuf, &g_ciConsoleInformation.OutputCPInfo))
+            if (IsDBCSLeadByteConsole(*TmpBuf, &ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCPInfo))
             {
                 if (i + 1 >= *pcRecords)
                 {
@@ -798,10 +791,10 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
 
     if (ulElementType == CONSOLE_ASCII)
     {
-        UINT const Codepage = g_ciConsoleInformation.OutputCP;
+        UINT const Codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
         if (pScreenInfo->FillOutDbcsLeadChar == 0)
         {
-            if (IsDBCSLeadByteConsole((CHAR) wElement, &g_ciConsoleInformation.OutputCPInfo))
+            if (IsDBCSLeadByteConsole((CHAR) wElement, &ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCPInfo))
             {
                 pScreenInfo->FillOutDbcsLeadChar = (CHAR) wElement;
                 *pcElements = 0;
@@ -1025,14 +1018,14 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
         if (Y != coordWrite.Y)
         {
             WriteRegion.Left = 0;
-            WriteRegion.Right = (SHORT)(g_ciConsoleInformation.CurrentScreenBuffer->GetScreenBufferSize().X - 1);
+            WriteRegion.Right = (SHORT)(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetScreenBufferSize().X - 1);
         }
         else
         {
             WriteRegion.Left = coordWrite.X + pScreenInfo->GetBufferViewport().Top + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.X;
             WriteRegion.Right = X + pScreenInfo->GetBufferViewport().Top + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.X;
         }
-        WriteConvRegionToScreen(g_ciConsoleInformation.CurrentScreenBuffer, WriteRegion);
+        WriteConvRegionToScreen(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer, WriteRegion);
         *pcElements = NumWritten;
         return STATUS_SUCCESS;
     }

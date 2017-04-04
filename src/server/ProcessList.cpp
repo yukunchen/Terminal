@@ -11,7 +11,8 @@
 #include "..\host\conwinuserrefs.h"
 #include "..\host\globals.h"
 #include "..\host\telemetry.hpp"
-#include "..\host\userprivapi.hpp"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 // Routine Description:
 // - Allocates and stores in a list the process information given.
@@ -33,7 +34,7 @@ HRESULT ConsoleProcessList::AllocProcessData(_In_ DWORD const dwProcessId,
                                              _In_opt_ ConsoleProcessHandle* const pParentProcessData,
                                              _Outptr_opt_ ConsoleProcessHandle** const ppProcessData)
 {
-    assert(g_ciConsoleInformation.IsConsoleLocked());
+    assert(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
 
     ConsoleProcessHandle* pProcessData = FindProcessInList(dwProcessId);
     if (nullptr != pProcessData)
@@ -84,7 +85,7 @@ HRESULT ConsoleProcessList::AllocProcessData(_In_ DWORD const dwProcessId,
 // - <none>
 void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProcessData)
 {
-    assert(g_ciConsoleInformation.IsConsoleLocked());
+    assert(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
 
     // Assert that the item exists in the list. If it doesn't exist, the end/last will be returned.
     assert(_processes.cend() != std::find(_processes.cbegin(), _processes.cend(), pProcessData));
@@ -338,11 +339,5 @@ bool ConsoleProcessList::IsEmpty() const
 // - <none>
 void ConsoleProcessList::_ModifyProcessForegroundRights(_In_ HANDLE const hProcess, _In_ bool const fForeground) const
 {
-    CONSOLESETFOREGROUND Flags;
-    Flags.hProcess = hProcess;
-    Flags.bForeground = fForeground;
-
-    LOG_IF_NTSTATUS_FAILED(UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetForeground,
-                                                         &Flags,
-                                                         sizeof(Flags)));
+    LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(hProcess, fForeground));
 }

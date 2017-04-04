@@ -1,4 +1,6 @@
 DIRS=\
+     coniosrv \
+     interactivity \
      host \
      propsheet \
      propslib \

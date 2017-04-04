@@ -9,6 +9,8 @@
 #include "dbcs.h"
 #include "stream.h"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 // Routine Description:
 // - Constructs raw read data class to hold context across sessions generally when there's not enough data to return
 //   Also used a bit internally to just pass some information along the stack (regardless of wait necessity).
@@ -60,7 +62,7 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
                            _Out_ DWORD* const pNumBytes,
                            _Out_ DWORD* const pControlKeyState)
 {
-    ASSERT(g_ciConsoleInformation.IsConsoleLocked());
+    ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
 
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;
@@ -112,7 +114,7 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
         // This routine should be called by a thread owning the same lock on
         // the same console as we're reading from.
 
-        ASSERT(g_ciConsoleInformation.IsConsoleLocked());
+        ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
 
         lpBuffer = _BufPtr;
 

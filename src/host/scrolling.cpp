@@ -8,22 +8,22 @@
 
 #include "scrolling.hpp"
 
-#include "menu.h"
 #include "selection.hpp"
-#include "window.hpp"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 ULONG Scrolling::s_ucWheelScrollLines = 0;
 ULONG Scrolling::s_ucWheelScrollChars = 0;
 
 void Scrolling::s_UpdateSystemMetrics()
 {
-    SystemParametersInfoW(SPI_GETWHEELSCROLLLINES, 0, &s_ucWheelScrollLines, FALSE);
-    SystemParametersInfoW(SPI_GETWHEELSCROLLCHARS, 0, &s_ucWheelScrollChars, FALSE);
+    s_ucWheelScrollLines = ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfWheelScrollLines();
+    s_ucWheelScrollChars = ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfWheelScrollCharacters();
 }
 
 bool Scrolling::s_IsInScrollMode()
 {
-    return IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_SCROLLING);
+    return IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_SCROLLING);
 }
 
 void Scrolling::s_DoScroll()
@@ -33,39 +33,42 @@ void Scrolling::s_DoScroll()
         // clear any selection we may have -- can't scroll and select at the same time
         Selection::Instance().ClearSelection();
 
-        g_ciConsoleInformation.Flags |= CONSOLE_SCROLLING;
-        UpdateWinText();
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_SCROLLING;
+        ServiceLocator::LocateConsoleWindow()->UpdateWindowText();
     }
 }
 
 void Scrolling::s_ClearScroll()
 {
-    g_ciConsoleInformation.Flags &= ~CONSOLE_SCROLLING;
-    UpdateWinText();
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags &= ~CONSOLE_SCROLLING;
+    ServiceLocator::LocateConsoleWindow()->UpdateWindowText();
 }
 
 void Scrolling::s_ScrollIfNecessary(_In_ const SCREEN_INFORMATION * const pScreenInfo)
 {
+    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    ASSERT(pWindow);
+
     Selection* const pSelection = &Selection::Instance();
 
     if (pSelection->IsInSelectingState() && pSelection->IsMouseButtonDown())
     {
         POINT CursorPos;
-        if (!GetCursorPos(&CursorPos))
+        if (!pWindow->GetCursorPosition(&CursorPos))
         {
             return;
         }
 
         RECT ClientRect;
-        if (!GetClientRect(g_ciConsoleInformation.hWnd, &ClientRect))
+        if (!pWindow->GetClientRectangle(&ClientRect))
         {
             return;
         }
 
-        MapWindowPoints(g_ciConsoleInformation.hWnd, nullptr, (LPPOINT) & ClientRect, 2);
-        if (!(PtInRect(&ClientRect, CursorPos)))
+        pWindow->MapPoints((LPPOINT) & ClientRect, 2);
+        if (!(s_IsPointInRectangle(&ClientRect, CursorPos)))
         {
-            ScreenToClient(g_ciConsoleInformation.hWnd, &CursorPos);
+            pWindow->ConvertScreenToClient(&CursorPos);
 
             COORD MousePosition;
             MousePosition.X = (SHORT)CursorPos.x;
@@ -84,26 +87,26 @@ void Scrolling::s_ScrollIfNecessary(_In_ const SCREEN_INFORMATION * const pScree
     }
 }
 
-void Scrolling::s_HandleMouseWheel(_In_ const UINT msg, _In_ const WPARAM wParam, PSCREEN_INFORMATION pScreenInfo)
+void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWheel, _In_ short wheelDelta, _In_ bool hasShift, _In_ PSCREEN_INFORMATION pScreenInfo)
 {
     COORD NewOrigin;
     NewOrigin.X = pScreenInfo->GetBufferViewport().Left;
     NewOrigin.Y = pScreenInfo->GetBufferViewport().Top;
 
     // s_ucWheelScrollLines == 0 means that it is turned off.
-    if ((msg == WM_MOUSEWHEEL) && (s_ucWheelScrollLines > 0))
+    if (isMouseWheel && s_ucWheelScrollLines > 0)
     {
         // Rounding could cause this to be zero if gucWSL is bigger than 240 or so.
         ULONG const ulActualDelta = max(WHEEL_DELTA / s_ucWheelScrollLines, 1);
 
         // If we change direction we need to throw away any remainder we may have in the other direction.
-        if ((pScreenInfo->WheelDelta > 0) == ((short)HIWORD(wParam) > 0))
+        if ((pScreenInfo->WheelDelta > 0) == (wheelDelta > 0))
         {
-            pScreenInfo->WheelDelta += (short)HIWORD(wParam);
+            pScreenInfo->WheelDelta += wheelDelta;
         }
         else
         {
-            pScreenInfo->WheelDelta = (short)HIWORD(wParam);
+            pScreenInfo->WheelDelta = wheelDelta;
         }
 
         if ((ULONG)abs(pScreenInfo->WheelDelta) >= ulActualDelta)
@@ -114,7 +117,7 @@ void Scrolling::s_HandleMouseWheel(_In_ const UINT msg, _In_ const WPARAM wParam
             * size. This value can be modified in the registry.
             */
             SHORT delta = 1;
-            if (wParam & MK_SHIFT)
+            if (hasShift)
             {
                 delta = (SHORT)max((pScreenInfo->GetScreenWindowSizeY() * pScreenInfo->ScrollScale) / 2, 1);
 
@@ -141,24 +144,24 @@ void Scrolling::s_HandleMouseWheel(_In_ const UINT msg, _In_ const WPARAM wParam
             pScreenInfo->SetViewportOrigin(TRUE, NewOrigin);
         }
     }
-    else if ((msg == WM_MOUSEHWHEEL) && (s_ucWheelScrollChars > 0))
+    else if (isMouseHWheel && s_ucWheelScrollChars > 0)
     {
         ULONG const ulActualDelta = max(WHEEL_DELTA / s_ucWheelScrollChars, 1);
 
-        if ((pScreenInfo->HWheelDelta > 0) == ((short)HIWORD(wParam) > 0))
+        if ((pScreenInfo->HWheelDelta > 0) == (wheelDelta > 0))
         {
-            pScreenInfo->HWheelDelta += (short)HIWORD(wParam);
+            pScreenInfo->HWheelDelta += wheelDelta;
         }
         else
         {
-            pScreenInfo->HWheelDelta = (short)HIWORD(wParam);
+            pScreenInfo->HWheelDelta = wheelDelta;
         }
 
         if ((ULONG)abs(pScreenInfo->HWheelDelta) >= ulActualDelta)
         {
             SHORT delta = 1;
 
-            if (wParam & MK_SHIFT)
+            if (hasShift)
             {
                 delta = max(pScreenInfo->GetScreenWindowSizeX() - 1, 1);
             }
@@ -184,7 +187,8 @@ void Scrolling::s_HandleMouseWheel(_In_ const UINT msg, _In_ const WPARAM wParam
 
 bool Scrolling::s_HandleKeyScrollingEvent(_In_ const INPUT_KEY_INFO* const pKeyInfo)
 {
-    Window* const pWindow = g_ciConsoleInformation.pWindow;
+    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    ASSERT(pWindow);
 
     const WORD VirtualKeyCode = pKeyInfo->GetVirtualKey();
     const bool fIsCtrlPressed = pKeyInfo->IsCtrlPressed();
@@ -242,7 +246,7 @@ bool Scrolling::s_HandleKeyScrollingEvent(_In_ const INPUT_KEY_INFO* const pKeyI
                 if (fIsEditLineEmpty)
                 {
                     // Ctrl-End when edit line is empty will scroll to last line in the buffer.
-                    g_ciConsoleInformation.CurrentScreenBuffer->MakeCurrentCursorVisible();
+                    ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->MakeCurrentCursorVisible();
                     return true;
                 }
                 else
@@ -304,4 +308,10 @@ bool Scrolling::s_HandleKeyScrollingEvent(_In_ const INPUT_KEY_INFO* const pKeyI
     }
 
     return true;
+}
+
+BOOL Scrolling::s_IsPointInRectangle(_In_ CONST RECT * prc, _In_ POINT pt)
+{
+    return ((pt.x >= prc->left) && (pt.x < prc->right) &&
+            (pt.y >= prc->top) && (pt.y < prc->bottom));
 }

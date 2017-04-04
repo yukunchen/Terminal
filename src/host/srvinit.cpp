@@ -5,168 +5,41 @@
 ********************************************************/
 
 #include "precomp.h"
+
 #include "srvinit.h"
 
 #include "dbcs.h"
-#include "directio.h"
-#include "getset.h"
-#include "globals.h"
 #include "handle.h"
-#include "icon.hpp"
-#include "misc.h"
-#include "output.h"
 #include "registry.hpp"
-#include "stream.h"
 #include "renderFontDefaults.hpp"
-#include "windowdpiapi.hpp"
-#include "userprivapi.hpp"
 
 #include "ApiRoutines.h"
 
 #include "..\server\Entrypoints.h"
 #include "..\server\IoSorter.h"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 #pragma hdrstop
 
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
-void LoadLinkInfo(_Inout_ Settings* pLinkSettings,
-                  _Inout_updates_bytes_(*pdwTitleLength) LPWSTR pwszTitle,
-                  _Inout_ PDWORD pdwTitleLength,
-                  _In_ PCWSTR pwszCurrDir,
-                  _In_ PCWSTR pwszAppName)
-{
-    WCHAR wszIconLocation[MAX_PATH] = { 0 };
-    int iIconIndex = 0;
-
-    pLinkSettings->SetCodePage(g_uiOEMCP);
-
-    // Did we get started from a link?
-    if (pLinkSettings->GetStartupFlags() & STARTF_TITLEISLINKNAME)
-    {
-        if (SUCCEEDED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED)))
-        {
-            const size_t cbTitle = (*pdwTitleLength + 1) * sizeof(WCHAR);
-            g_ciConsoleInformation.LinkTitle = (PWSTR) new BYTE[cbTitle];
-
-            NTSTATUS Status = NT_TESTNULL(g_ciConsoleInformation.LinkTitle);
-            if (NT_SUCCESS(Status))
-            {
-                if (FAILED(StringCbCopyNW(g_ciConsoleInformation.LinkTitle, cbTitle, pwszTitle, *pdwTitleLength)))
-                {
-                    Status = STATUS_UNSUCCESSFUL;
-                }
-
-                if (NT_SUCCESS(Status))
-                {
-                    CONSOLE_STATE_INFO csi = { 0 };
-                    csi.LinkTitle = g_ciConsoleInformation.LinkTitle;
-                    WCHAR wszShortcutTitle[MAX_PATH];
-                    BOOL fReadConsoleProperties;
-                    WORD wShowWindow = pLinkSettings->GetShowWindow();
-                    DWORD dwHotKey = pLinkSettings->GetHotKey();
-
-                    int iShowWindow;
-                    WORD wHotKey;
-                    Status = ShortcutSerialization::s_GetLinkValues(&csi,
-                                                                    &fReadConsoleProperties,
-                                                                    wszShortcutTitle,
-                                                                    ARRAYSIZE(wszShortcutTitle),
-                                                                    wszIconLocation,
-                                                                    ARRAYSIZE(wszIconLocation),
-                                                                    &iIconIndex,
-                                                                    &iShowWindow,
-                                                                    &wHotKey);
-
-                    // Convert results back to appropriate types and set.
-                    if (SUCCEEDED(IntToWord(iShowWindow, &wShowWindow)))
-                    {
-                        pLinkSettings->SetShowWindow(wShowWindow);
-                    }
-
-                    dwHotKey = wHotKey;
-                    pLinkSettings->SetHotKey(dwHotKey);
-
-                    // if we got a title, use it. even on overall link value load failure, the title will be correct if
-                    // filled out.
-                    if (wszShortcutTitle[0] != L'\0')
-                    {
-                        // guarantee null termination to make OACR happy.
-                        wszShortcutTitle[ARRAYSIZE(wszShortcutTitle) - 1] = L'\0';
-                        StringCbCopyW(pwszTitle, *pdwTitleLength, wszShortcutTitle);
-
-                        // OACR complains about the use of a DWORD here, so roundtrip through a size_t
-                        size_t cbTitleLength;
-                        if (SUCCEEDED(StringCbLengthW(pwszTitle, *pdwTitleLength, &cbTitleLength)))
-                        {
-                            // don't care about return result -- the buffer is guaranteed null terminated to at least
-                            // the length of Title
-                            (void)SizeTToDWord(cbTitleLength, pdwTitleLength);
-                        }
-                    }
-
-                    if (NT_SUCCESS(Status) && fReadConsoleProperties)
-                    {
-                        // copy settings
-                        pLinkSettings->InitFromStateInfo(&csi);
-
-                        // since we were launched via shortcut, make sure we don't let the invoker's STARTUPINFO pollute the
-                        // shortcut's settings
-                        pLinkSettings->UnsetStartupFlag(STARTF_USESIZE | STARTF_USECOUNTCHARS);
-                    }
-                    else
-                    {
-                        // if we didn't find any console properties, or otherwise failed to load link properties, pretend
-                        // like we weren't launched from a shortcut -- this allows us to at least try to find registry
-                        // settings based on title.
-                        pLinkSettings->UnsetStartupFlag(STARTF_TITLEISLINKNAME);
-                    }
-                }
-            }
-            CoUninitialize();
-        }
-    }
-
-    // Go get the icon
-    if (wszIconLocation[0] == L'\0')
-    {
-        // search for the application along the path so that we can load its icons (if we didn't find one explicitly in
-        // the shortcut)
-        const DWORD dwLinkLen = SearchPathW(pwszCurrDir, pwszAppName, nullptr, ARRAYSIZE(wszIconLocation), wszIconLocation, nullptr);
-        if (dwLinkLen <= 0 || dwLinkLen > sizeof(wszIconLocation))
-        {
-            StringCchCopyW(wszIconLocation, ARRAYSIZE(wszIconLocation), pwszAppName);
-        }
-    }
-
-    if (wszIconLocation[0] != L'\0')
-    {
-        Icon::Instance().LoadIconsFromPath(wszIconLocation, iIconIndex);
-    }
-
-    if (!IsValidCodePage(pLinkSettings->GetCodePage()))
-    {
-        // make sure we don't leave this function with an invalid codepage
-        pLinkSettings->SetCodePage(g_uiOEMCP);
-    }
-}
-
 HRESULT ConsoleServerInitialization(_In_ HANDLE Server)
 {
     try
     {
-        g_pDeviceComm = new DeviceComm(Server);
+        ServiceLocator::LocateGlobals()->pDeviceComm = new DeviceComm(Server);
     }
     CATCH_RETURN();
 
-    g_uiOEMCP = GetOEMCP();
-    g_uiWindowsCP = GetACP();
+    ServiceLocator::LocateGlobals()->uiOEMCP = GetOEMCP();
+    ServiceLocator::LocateGlobals()->uiWindowsCP = GetACP();
 
-    g_pFontDefaultList = new RenderFontDefaults();
-    RETURN_IF_NULL_ALLOC(g_pFontDefaultList);
+    ServiceLocator::LocateGlobals()->pFontDefaultList = new RenderFontDefaults();
+    RETURN_IF_NULL_ALLOC(ServiceLocator::LocateGlobals()->pFontDefaultList);
 
-    FontInfo::s_SetFontDefaultList(g_pFontDefaultList);
+    FontInfo::s_SetFontDefaultList(ServiceLocator::LocateGlobals()->pFontDefaultList);
 
     // Removed allocation of scroll buffer here.
     return S_OK;
@@ -189,59 +62,68 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 
     // 4. Initializing Settings will establish hardcoded defaults.
     // Set to reference of global console information since that's the only place we need to hold the settings.
-    Settings& settings = g_ciConsoleInformation;
+    auto settings = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     // 3. Read the default registry values.
-    Registry reg(&settings);
+    Registry reg(settings);
     reg.LoadGlobalsFromRegistry();
     reg.LoadDefaultFromRegistry();
 
     // 2. Read specific settings
 
     // Link is expecting the flags from the process to be in already, so apply that first
-    settings.SetStartupFlags(pStartupSettings->GetStartupFlags());
+    settings->SetStartupFlags(pStartupSettings->GetStartupFlags());
 
     // We need to see if we were spawned from a link. If we were, we need to
     // call back into the shell to try to get all the console information from the link.
-    LoadLinkInfo(&settings, Title, &TitleLength, CurDir, AppName);
+    ServiceLocator::LocateSystemConfigurationProvider()->GetSettingsFromLink(settings, Title, &TitleLength, CurDir, AppName);
 
     // If we weren't started from a link, this will already be set.
     // If LoadLinkInfo couldn't find anything, it will remove the flag so we can dig in the registry.
-    if (!(settings.IsStartupTitleIsLinkNameSet()))
+    if (!(settings->IsStartupTitleIsLinkNameSet()))
     {
         reg.LoadFromRegistry(Title);
     }
 
     // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
-    settings.ApplyStartupInfo(pStartupSettings);
+    settings->ApplyStartupInfo(pStartupSettings);
 
     // Validate all applied settings for correctness against final rules.
-    settings.Validate();
+    settings->Validate();
 
     // As of the graphics refactoring to library based, all fonts are now DPI aware. Scaling is performed at the Blt time for raster fonts.
     // Note that we can only declare our DPI awareness once per process launch.
     // Set the process's default dpi awareness context to PMv2 so that new top level windows
     // inherit their WM_DPICHANGED* broadcast mode (and more, like dialog scaling) from the thread.
-    if (!WindowDpiApi::s_SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
-    {
-        // Fallback to per-monitor aware V1 if the API isn't available.
-        SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
 
-        // Allow child dialogs (i.e. Properties and Find) to scale automatically based on DPI if we're currently DPI aware.
-        // Note that we don't need to do this if we're PMv2.
-        WindowDpiApi::s_EnablePerMonitorDialogScaling();
+    IHighDpiApi *pHighDpiApi = ServiceLocator::LocateHighDpiApi();
+    if (pHighDpiApi)
+    {
+        // N.B.: There is no high DPI support on OneCore (non-UAP) systems.
+        //       Instead of implementing a no-op interface, just skip all high
+        //       DPI configuration if it is not supported. All callers into the
+        //       high DPI API are in the Win32-specific interactivity DLL.
+        if (!pHighDpiApi->SetProcessDpiAwarenessContext())
+        {
+            // Fallback to per-monitor aware V1 if the API isn't available.
+            pHighDpiApi->SetProcessPerMonitorDpiAwareness();
+
+            // Allow child dialogs (i.e. Properties and Find) to scale automatically based on DPI if we're currently DPI aware.
+            // Note that we don't need to do this if we're PMv2.
+            pHighDpiApi->EnablePerMonitorDialogScaling();
+        }
     }
 
     //Save initial font name for comparison on exit. We want telemetry when the font has changed
-    if (settings.IsFaceNameSet())
+    if (settings->IsFaceNameSet())
     {
-        settings.SetLaunchFaceName(settings.GetFaceName(), LF_FACESIZE);
+        settings->SetLaunchFaceName(settings->GetFaceName(), LF_FACESIZE);
     }
 
     // Now we need to actually create the console using the settings given.
 #pragma prefast(suppress:26018, "PREfast can't detect null termination status of Title.")
 
-// Allocate console will read the global g_ciConsoleInformation for the settings we just set.
+// Allocate console will read the global ServiceLocator::LocateGlobals()->getConsoleInformation for the settings we just set.
     NTSTATUS Status = AllocateConsole(Title, TitleLength);
     if (!NT_SUCCESS(Status))
     {
@@ -260,11 +142,15 @@ NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
     FreeCommandHistory((HANDLE)ProcessData);
 
     bool const fRecomputeOwner = ProcessData->fRootProcess;
-    g_ciConsoleInformation.ProcessHandleList.FreeProcessData(ProcessData);
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.FreeProcessData(ProcessData);
 
     if (fRecomputeOwner)
     {
-        SetConsoleWindowOwner(g_ciConsoleInformation.hWnd, nullptr);
+        IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+        if (pWindow != nullptr)
+        {
+            pWindow->SetOwner();
+        }
     }
 
     UnlockConsole();
@@ -273,8 +159,6 @@ NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
 }
 
 DWORD ConsoleIoThread();
-
-DWORD ConsoleInputThread(LPVOID lpParameter);
 
 void ConsoleCheckDebug()
 {
@@ -307,14 +191,14 @@ HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server)
     ConsoleCheckDebug();
 
     RETURN_IF_FAILED(ConsoleServerInitialization(Server));
-    RETURN_IF_FAILED(g_hConsoleInputInitEvent.create(wil::EventOptions::None));
+    RETURN_IF_FAILED(ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.create(wil::EventOptions::None));
 
     // Set up and tell the driver about the input available event.
-    RETURN_IF_FAILED(g_hInputEvent.create(wil::EventOptions::ManualReset));
+    RETURN_IF_FAILED(ServiceLocator::LocateGlobals()->hInputEvent.create(wil::EventOptions::ManualReset));
 
     CD_IO_SERVER_INFORMATION ServerInformation;
-    ServerInformation.InputAvailableEvent = g_hInputEvent.get();
-    RETURN_IF_FAILED(g_pDeviceComm->SetServerInformation(&ServerInformation));
+    ServerInformation.InputAvailableEvent = ServiceLocator::LocateGlobals()->hInputEvent.get();
+    RETURN_IF_FAILED(ServiceLocator::LocateGlobals()->pDeviceComm->SetServerInformation(&ServerInformation));
 
     HANDLE const hThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ConsoleIoThread, 0, 0, nullptr);
     RETURN_IF_HANDLE_NULL(hThread);
@@ -443,7 +327,7 @@ NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLang
     // I would also highly advise against expanding the LANGIDs returned here or modifying them in any way until the cascading impacts
     // discovered in MSFT: 9808579 are vetted against any changes.
     // -- END WARNING --
-    if (IsAvailableEastAsianCodePage(g_uiWindowsCP))
+    if (IsAvailableEastAsianCodePage(ServiceLocator::LocateGlobals()->uiWindowsCP))
     {
         if (pLangId != nullptr)
         {
@@ -477,7 +361,7 @@ HRESULT ApiRoutines::GetConsoleLangIdImpl(_Out_ LANGID* const pLangId)
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    RETURN_NTSTATUS(GetConsoleLangId(g_ciConsoleInformation.OutputCP, pLangId));
+    RETURN_NTSTATUS(GetConsoleLangId(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP, pLangId));
 }
 
 // Routine Description:
@@ -550,26 +434,33 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 
     if (NT_SUCCESS(Status) && p->WindowVisible)
     {
-        HANDLE Thread;
+        HANDLE Thread = nullptr;
 
-        Thread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ConsoleInputThread, nullptr, 0, &g_dwInputThreadId);
+        IConsoleInputThread *pNewThread = nullptr;
+        ServiceLocator::CreateConsoleInputThread(&pNewThread);
+
+        ASSERT(pNewThread);
+
+        Thread = pNewThread->Start();
         if (Thread == nullptr)
         {
             Status = STATUS_NO_MEMORY;
         }
         else
         {
+            ServiceLocator::LocateGlobals()->dwInputThreadId = pNewThread->GetThreadId();
+
             // The ConsoleInputThread needs to lock the console so we must first unlock it ourselves.
             UnlockConsole();
-            g_hConsoleInputInitEvent.wait();
+            ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.wait();
             LockConsole();
 
             CloseHandle(Thread);
-            g_hConsoleInputInitEvent.release();
+            ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.release();
 
-            if (!NT_SUCCESS(g_ntstatusConsoleInputInitStatus))
+            if (!NT_SUCCESS(ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus))
             {
-                Status = g_ntstatusConsoleInputInitStatus;
+                Status = ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus;
             }
             else
             {
@@ -587,12 +478,12 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
              *      is only called when a window is created.
              */
 
-            LOG_IF_FAILED(g_pDeviceComm->AllowUIAccess());
+            LOG_IF_FAILED(ServiceLocator::LocateGlobals()->pDeviceComm->AllowUIAccess());
         }
     }
     else
     {
-        g_ciConsoleInformation.Flags |= CONSOLE_NO_WINDOW;
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_NO_WINDOW;
     }
 
     return Status;
@@ -610,7 +501,7 @@ DWORD ConsoleIoThread()
     ApiRoutines Routines;
     CONSOLE_API_MSG ReceiveMsg;
     ReceiveMsg._pApiRoutines = &Routines;
-    ReceiveMsg._pDeviceComm = g_pDeviceComm;
+    ReceiveMsg._pDeviceComm = ServiceLocator::LocateGlobals()->pDeviceComm;
     PCONSOLE_API_MSG ReplyMsg = nullptr;
 
     bool fShouldExit = false;
@@ -622,7 +513,7 @@ DWORD ConsoleIoThread()
         }
 
         // TODO: 9115192 correct mixed NTSTATUS/HRESULT
-        HRESULT hr = g_pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
+        HRESULT hr = ServiceLocator::LocateGlobals()->pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
         if (FAILED(hr))
         {
             if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))

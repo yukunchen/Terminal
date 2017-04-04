@@ -9,6 +9,8 @@
 
 #include "_stream.h"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 // Routine Description:
 // - Creates a new write data object for used in servicing write console requests
 // Arguments:
@@ -72,7 +74,7 @@ BOOL WriteData::Notify(_In_ WaitTerminationReason const TerminationReason,
     // This routine should be called by a thread owning the same lock on the
     // same console as we're reading from.
 
-    ASSERT(g_ciConsoleInformation.IsConsoleLocked());
+    ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
 
     IWaitRoutine* pWaiter = nullptr;
     ULONG cbContext = _cbContext;

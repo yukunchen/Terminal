@@ -10,14 +10,14 @@
 
 #include "_output.h"
 #include "output.h"
-#include "cursor.h"
 #include "dbcs.h"
-#include "input.h"
 #include "handle.h"
 #include "misc.h"
 #include "readDataDirect.hpp"
 
 #include "ApiRoutines.h"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -53,7 +53,11 @@ ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG Num
 
                 WCHAR UnicodeDbcs[2];
                 ULONG NumBytes = sizeof(Strings);
-                NumBytes = ConvertInputToUnicode(g_ciConsoleInformation.CP, &Strings[0], NumBytes, &UnicodeDbcs[0], NumBytes);
+                NumBytes = ConvertInputToUnicode(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
+                                                 &Strings[0],
+                                                 NumBytes,
+                                                 &UnicodeDbcs[0],
+                                                 NumBytes);
 
                 PWCHAR Uni = &UnicodeDbcs[0];
                 while (NumBytes--)
@@ -66,7 +70,7 @@ ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG Num
                 if (DBCSLeadByte->Event.KeyEvent.uChar.AsciiChar)
                     ZeroMemory(DBCSLeadByte, sizeof(INPUT_RECORD));
             }
-            else if (IsDBCSLeadByteConsole(InputRecords[i].Event.KeyEvent.uChar.AsciiChar, &g_ciConsoleInformation.CPInfo))
+            else if (IsDBCSLeadByteConsole(InputRecords[i].Event.KeyEvent.uChar.AsciiChar, &ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo))
             {
                 if (i < NumRecords - 1)
                 {
@@ -83,7 +87,11 @@ ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG Num
             {
                 InputRecords[j] = InputRecords[i];
                 CHAR const c = InputRecords[i].Event.KeyEvent.uChar.AsciiChar;
-                ConvertInputToUnicode(g_ciConsoleInformation.CP, &c, 1, &InputRecords[j].Event.KeyEvent.uChar.UnicodeChar, 1);
+                ConvertInputToUnicode(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
+                                      &c,
+                                      1,
+                                      &InputRecords[j].Event.KeyEvent.uChar.UnicodeChar,
+                                      1);
                 j++;
             }
         }
@@ -399,7 +407,7 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
         return STATUS_NO_MEMORY;
     }
 
-    UINT const Codepage = g_ciConsoleInformation.OutputCP;
+    UINT const Codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
 
     memmove(TmpBuffer, OutputBuffer, Size.X * Size.Y * sizeof(CHAR_INFO));
 
@@ -455,14 +463,14 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
 //   UnicodeOem or Unicode in the buffer, depending on font
 NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
 {
-    UINT const Codepage = g_ciConsoleInformation.OutputCP;
+    UINT const Codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
 
     for (int i = 0; i < Size.Y; i++)
     {
         for (int j = 0; j < Size.X; j++)
         {
             ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
-            if (IsDBCSLeadByteConsole(OutputBuffer->Char.AsciiChar, &g_ciConsoleInformation.OutputCPInfo))
+            if (IsDBCSLeadByteConsole(OutputBuffer->Char.AsciiChar, &ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCPInfo))
             {
                 if (j < Size.X - 1)
                 {   // -1 is safe DBCS in buffer
@@ -965,7 +973,7 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
 
     ConsoleHandleData::HandleType const HandleType = ConsoleHandleData::HandleType::Output;
 
-    const SCREEN_INFORMATION* const psiExisting = g_ciConsoleInformation.CurrentScreenBuffer;
+    const SCREEN_INFORMATION* const psiExisting = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
 
     // Create new screen buffer.
     CHAR_INFO Fill;

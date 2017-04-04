@@ -14,19 +14,17 @@
 
 #include "_output.h"
 #include "output.h"
-#include "cursor.h"
 #include "dbcs.h"
 #include "handle.h"
 #include "misc.h"
-#include "window.hpp"
-
-#include "outputStream.hpp"
 
 #include "utf8ToWidecharParser.hpp"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 #pragma hdrstop
 
-// this is probably dead too.
+// Used by WriteCharsLegacy.
 #define IS_GLYPH_CHAR(wch)   (((wch) < L' ') || ((wch) == 0x007F))
 
 // Routine Description:
@@ -399,7 +397,11 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                         GetStringTypeW(CT_CTYPE1, &RealUnicodeChar, 1, &CharType);
                         if (CharType == C1_CNTRL)
                         {
-                            ConvertOutputToUnicode(g_ciConsoleInformation.OutputCP, (LPSTR)& RealUnicodeChar, 1, LocalBufPtr, 1);
+                            ConvertOutputToUnicode(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP,
+                                                   (LPSTR)& RealUnicodeChar,
+                                                   1,
+                                                   LocalBufPtr,
+                                                   1);
                         }
                         else if (Char == UNICODE_NULL)
                         {
@@ -705,7 +707,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             // move cursor to the next line.
             pwchBuffer++;
 
-            if (g_ciConsoleInformation.IsReturnOnNewlineAutomatic())
+            if (ServiceLocator::LocateGlobals()->getConsoleInformation()->IsReturnOnNewlineAutomatic())
             {
                 // Traditionally, we reset the X position to 0 with a newline automatically.
                 // Some things might not want this automatic "ONLCR line discipline" (for example, things that are expecting a *NIX behavior.)
@@ -878,7 +880,7 @@ NTSTATUS DoWriteConsole(_In_ PWCHAR pwchBuffer,
                         _In_ PSCREEN_INFORMATION pScreenInfo,
                         _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
-    if (IsAnyFlagSet(g_ciConsoleInformation.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
+    if (IsAnyFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         try
         {
@@ -975,16 +977,16 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    UINT const uiCodePage = g_ciConsoleInformation.OutputCP;
+    UINT const uiCodePage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
 
     // Convert our input parameters to Unicode
     std::unique_ptr<wchar_t[]> wideCharBuffer{ nullptr };
-    static Utf8ToWideCharParser parser{ g_ciConsoleInformation.OutputCP };
+    static Utf8ToWideCharParser parser{ ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP };
 
     // update current codepage in case it was changed from last time
     // this was called. We do this outside the UTF-8 check because the parser drops its state
     // when the codepage changes.
-    parser.SetCodePage(g_ciConsoleInformation.OutputCP);
+    parser.SetCodePage(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP);
 
     PSCREEN_INFORMATION const ScreenInfo = pOutContext->GetActiveBuffer();
     wchar_t* pwchBuffer;
@@ -1036,7 +1038,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
             * Convert the OEM characters to real Unicode according to
             * OutputCP. First find out if any special chars are involved.
             */
-            dbcsNumBytes = sizeof(WCHAR) * MultiByteToWideChar(g_ciConsoleInformation.OutputCP,
+            dbcsNumBytes = sizeof(WCHAR) * MultiByteToWideChar(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP,
                                                                0,
                                                                (LPCCH)ScreenInfo->WriteConsoleDbcsLeadByte,
                                                                dbcsNumBytes,
@@ -1064,7 +1066,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
         // save it for the next time this function is called and we can piece it
         // back together then
         __analysis_assume(BufPtrNumBytes <= uiTextBufferLength);
-        if (BufPtrNumBytes && CheckBisectStringA((PCHAR)BufPtr, BufPtrNumBytes, &g_ciConsoleInformation.OutputCPInfo))
+        if (BufPtrNumBytes && CheckBisectStringA((PCHAR)BufPtr, BufPtrNumBytes, &ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCPInfo))
         {
             ScreenInfo->WriteConsoleDbcsLeadByte[0] = *((PCHAR)BufPtr + BufPtrNumBytes - 1);
             BufPtrNumBytes--;
@@ -1073,7 +1075,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
         if (BufPtrNumBytes != 0)
         {
             // convert the remaining bytes in BufPtr to wide chars
-            Length = sizeof(WCHAR) * MultiByteToWideChar(g_ciConsoleInformation.OutputCP,
+            Length = sizeof(WCHAR) * MultiByteToWideChar(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP,
                                                          0,
                                                          (LPCCH)BufPtr,
                                                          BufPtrNumBytes,

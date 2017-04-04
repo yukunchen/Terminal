@@ -8,14 +8,9 @@
 
 #include "misc.h"
 
-#include "_output.h"
-#include "output.h"
-
-#include "consrv.h"
-#include "cursor.h"
 #include "dbcs.h"
-#include "utils.hpp"
-#include "window.hpp"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -247,9 +242,9 @@ WCHAR CharToWchar(_In_reads_(cch) const char * const pch, _In_ const UINT cch)
 {
     WCHAR wc = L'\0';
 
-    ASSERT(IsDBCSLeadByteConsole(*pch, &g_ciConsoleInformation.OutputCPInfo) || cch == 1);
+    ASSERT(IsDBCSLeadByteConsole(*pch, &ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCPInfo) || cch == 1);
 
-    ConvertOutputToUnicode(g_ciConsoleInformation.OutputCP, pch, cch, &wc, 1);
+    ConvertOutputToUnicode(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP, pch, cch, &wc, 1);
 
     return wc;
 }
@@ -262,28 +257,34 @@ void SetConsoleCPInfo(_In_ const BOOL fOutput)
         // to pick a more appropriate font should the current one be unable to render in the new codepage.
         // To do this, we create a copy of the existing font but we change the codepage value to be the new one that was just set in the global structures.
         // NOTE: We need to do this only if everything is set up. This can get called while we're still initializing, so carefully check things for nullptr.
-        SCREEN_INFORMATION* const psi = g_ciConsoleInformation.CurrentScreenBuffer;
+        SCREEN_INFORMATION* const psi = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
         if (psi != nullptr)
         {
             TEXT_BUFFER_INFO* const pti = psi->TextInfo;
             if (pti != nullptr)
             {
                 const FontInfo* const pfiOld = pti->GetCurrentFont();
-                FontInfo fiNew(pfiOld->GetFaceName(), pfiOld->GetFamily(), pfiOld->GetWeight(), pfiOld->GetUnscaledSize(), g_ciConsoleInformation.OutputCP);
+                FontInfo fiNew(pfiOld->GetFaceName(),
+                               pfiOld->GetFamily(),
+                               pfiOld->GetWeight(),
+                               pfiOld->GetUnscaledSize(),
+                               ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP);
                 psi->UpdateFont(&fiNew);
             }
         }
 
-        if (!GetCPInfo(g_ciConsoleInformation.OutputCP, &g_ciConsoleInformation.OutputCPInfo))
+        if (!GetCPInfo(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP,
+                       &ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCPInfo))
         {
-            g_ciConsoleInformation.OutputCPInfo.LeadByte[0] = 0;
+            ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCPInfo.LeadByte[0] = 0;
         }
     }
     else
     {
-        if (!GetCPInfo(g_ciConsoleInformation.CP, &g_ciConsoleInformation.CPInfo))
+        if (!GetCPInfo(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
+                       &ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo))
         {
-            g_ciConsoleInformation.CPInfo.LeadByte[0] = 0;
+            ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo.LeadByte[0] = 0;
         }
     }
 }
@@ -470,12 +471,12 @@ ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
             if (IsCharFullWidth(TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar))
             {
                 NumBytes = sizeof(AsciiDbcs);
-                ConvertToOem(g_ciConsoleInformation.CP,
+                ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
                              &TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar,
                              1,
                              (LPSTR)& AsciiDbcs[0],
                              NumBytes);
-                if (IsDBCSLeadByteConsole(AsciiDbcs[0], &g_ciConsoleInformation.CPInfo))
+                if (IsDBCSLeadByteConsole(AsciiDbcs[0], &ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo))
                 {
                     if (j < NumRecords - 1)
                     {   // -1 is safe DBCS in buffer
@@ -513,7 +514,7 @@ ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
             else
             {
                 InputRecords[j] = TmpInpRec[i];
-                ConvertToOem(g_ciConsoleInformation.CP,
+                ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
                              &InputRecords[j].Event.KeyEvent.uChar.UnicodeChar,
                              1,
                              &InputRecords[j].Event.KeyEvent.uChar.AsciiChar,

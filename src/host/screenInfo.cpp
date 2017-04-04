@@ -8,23 +8,22 @@
 
 #include "screenInfo.hpp"
 
-#include "conv.h"
-#include "cursor.h"
 #include "dbcs.h"
-#include "globals.h"
-#include "handle.h"
 #include "output.h"
-#include "stream.h"
-#include "tracing.hpp"
-#include "utils.hpp"
-#include "window.hpp"
+
 #include <math.h>
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
 #pragma region Construct/Destruct
 
-SCREEN_INFORMATION::SCREEN_INFORMATION(_In_ const CHAR_INFO ciFill, _In_ const CHAR_INFO ciPopupFill) :
+SCREEN_INFORMATION::SCREEN_INFORMATION(
+    _In_ IWindowMetrics *pMetrics,
+    _In_ IAccessibilityNotifier *pNotifier,
+    _In_ const CHAR_INFO ciFill,
+    _In_ const CHAR_INFO ciPopupFill) :
     OutputMode(ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT),
     ResizingWindow(0),
     Next(nullptr),
@@ -33,6 +32,8 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(_In_ const CHAR_INFO ciFill, _In_ const C
     FillOutDbcsLeadChar(0),
     ConvScreenInfo(nullptr),
     ScrollScale(1ul),
+    _pConsoleWindowMetrics(pMetrics),
+    _pAccessibilityNotifier(pNotifier),
     _pConApi(nullptr),
     _pAdapter(nullptr),
     _pStateMachine(nullptr),
@@ -43,7 +44,7 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(_In_ const CHAR_INFO ciFill, _In_ const C
     this->_srScrollMargins = {0};
     _Attributes = TextAttribute(ciFill.Attributes);
     _PopupAttributes = TextAttribute(ciPopupFill.Attributes);
-    if (g_ciConsoleInformation.GetVirtTermLevel() != 0)
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetVirtTermLevel() != 0)
     {
         OutputMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     }
@@ -81,12 +82,22 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
 {
     *ppScreen = nullptr;
 
-    NTSTATUS Status = STATUS_SUCCESS;
+    NTSTATUS status = STATUS_SUCCESS;
 
-    PSCREEN_INFORMATION const pScreen = new SCREEN_INFORMATION(ciFill, ciPopupFill);
+    IWindowMetrics *pMetrics = ServiceLocator::LocateWindowMetrics();
+    status = NT_TESTNULL(pMetrics);
 
-    Status = NT_TESTNULL(pScreen);
-    if (NT_SUCCESS(Status))
+    ASSERT(NT_SUCCESS(status));
+
+    IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+    status = NT_TESTNULL(pNotifier);
+
+    ASSERT(NT_SUCCESS(status));
+
+    PSCREEN_INFORMATION const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, ciFill, ciPopupFill);
+
+    status = NT_TESTNULL(pScreen);
+    if (NT_SUCCESS(status))
     {
         pScreen->SetScreenBufferSize(coordScreenBufferSize);
 
@@ -97,23 +108,23 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
 
         pScreen->SetScreenBufferSize(coordScreenBufferSize);
 
-        Status = TEXT_BUFFER_INFO::CreateInstance(pfiFont, coordScreenBufferSize, ciFill, uiCursorSize, &pScreen->TextInfo);
+        status = TEXT_BUFFER_INFO::CreateInstance(pfiFont, coordScreenBufferSize, ciFill, uiCursorSize, &pScreen->TextInfo);
 
-        if (NT_SUCCESS(Status))
+        if (NT_SUCCESS(status))
         {
             SetLineChar(pScreen);
 
-            Status = pScreen->_InitializeOutputStateMachine();
+            status = pScreen->_InitializeOutputStateMachine();
 
-            if (NT_SUCCESS(Status))
+            if (NT_SUCCESS(status))
             {
                 *ppScreen = pScreen;
             }
         }
     }
 
-    LOG_IF_NTSTATUS_FAILED(Status);
-    return Status;
+    LOG_IF_NTSTATUS_FAILED(status);
+    return status;
 }
 
 void SCREEN_INFORMATION::SetScreenBufferSize(_In_ const COORD coordNewBufferSize)
@@ -153,10 +164,10 @@ StateMachine* SCREEN_INFORMATION::GetStateMachine() const
 // - The console lock must be held when calling this routine.
 void SCREEN_INFORMATION::s_InsertScreenBuffer(_In_ PSCREEN_INFORMATION pScreenInfo)
 {
-    ASSERT(g_ciConsoleInformation.IsConsoleLocked());
+    ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
 
-    pScreenInfo->Next = g_ciConsoleInformation.ScreenBuffers;
-    g_ciConsoleInformation.ScreenBuffers = pScreenInfo;
+    pScreenInfo->Next = ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers;
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers = pScreenInfo;
 }
 
 // Routine Description:
@@ -168,13 +179,13 @@ void SCREEN_INFORMATION::s_InsertScreenBuffer(_In_ PSCREEN_INFORMATION pScreenIn
 // - The console lock must be held when calling this routine.
 void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo)
 {
-    if (pScreenInfo == g_ciConsoleInformation.ScreenBuffers)
+    if (pScreenInfo == ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers)
     {
-        g_ciConsoleInformation.ScreenBuffers = pScreenInfo->Next;
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers = pScreenInfo->Next;
     }
     else
     {
-        PSCREEN_INFORMATION Cur = g_ciConsoleInformation.ScreenBuffers;
+        PSCREEN_INFORMATION Cur = ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers;
         PSCREEN_INFORMATION Prev = Cur;
         while (Cur != nullptr)
         {
@@ -192,16 +203,16 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
         Prev->Next = Cur->Next;
     }
 
-    if (pScreenInfo == g_ciConsoleInformation.CurrentScreenBuffer &&
-        g_ciConsoleInformation.ScreenBuffers != g_ciConsoleInformation.CurrentScreenBuffer)
+    if (pScreenInfo == ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer &&
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers != ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer)
     {
-        if (g_ciConsoleInformation.ScreenBuffers != nullptr)
+        if (ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers != nullptr)
         {
-            SetActiveScreenBuffer(g_ciConsoleInformation.ScreenBuffers);
+            SetActiveScreenBuffer(ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers);
         }
         else
         {
-            g_ciConsoleInformation.CurrentScreenBuffer = nullptr;
+            ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer = nullptr;
         }
     }
 
@@ -215,7 +226,7 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
 NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
 {
     ASSERT(_pConApi == nullptr);
-    _pConApi = new ConhostInternalGetSet(this, g_ciConsoleInformation.pInputBuffer);
+    _pConApi = new ConhostInternalGetSet(this, ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer);
     NTSTATUS status = NT_TESTNULL(_pConApi);
 
     if (NT_SUCCESS(status))
@@ -289,30 +300,12 @@ void SCREEN_INFORMATION::_FreeOutputStateMachine()
 
 #pragma region Get Data
 
-// Routine Description:
-// - Retrieves the window handle attached to this screen information.
-// - NOTE: that this can be null if we're running headless.
-//   If we were explicitly told to not show a window when starting up (srvinit.cpp), then
-//   a window and the corresponding input thread won't be created and CONSOLE_NO_WINDOW flag
-//   will be set on the global flags.
-// - ALSO: Null is perfectly okay! Just don't do whatever you were about to do because it
-//   doesn't matter when we have no window.
-// Arguments:
-// - <none>
-// Return Value:
-// - The handle to the window using this screen buffer for rendering or nullptr if no window is attached (headless).
-_Must_inspect_result_
-Window* SCREEN_INFORMATION::_GetWindow() const
-{
-    return g_ciConsoleInformation.pWindow;
-}
-
 BOOL SCREEN_INFORMATION::IsActiveScreenBuffer() const
 {
     // the following macro returns TRUE if the given screen buffer is the active screen buffer.
 
-    //#define ACTIVE_SCREEN_BUFFER(SCREEN_INFO) (g_ciConsoleInformation.CurrentScreenBuffer == SCREEN_INFO)
-    return (g_ciConsoleInformation.CurrentScreenBuffer == this);
+    //#define ACTIVE_SCREEN_BUFFER(SCREEN_INFO) (ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer == SCREEN_INFO)
+    return (ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer == this);
 }
 
 // Routine Description:
@@ -344,7 +337,7 @@ SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
     *pwPopupAttributes = this->_PopupAttributes.GetLegacyAttributes();
 
     // the copy length must be constant for now to keep OACR happy with buffer overruns.
-    memmove(lpColorTable, g_ciConsoleInformation.GetColorTable(), COLOR_TABLE_SIZE * sizeof(COLORREF));
+    memmove(lpColorTable, ServiceLocator::LocateGlobals()->getConsoleInformation()->GetColorTable(), COLOR_TABLE_SIZE * sizeof(COLORREF));
 
     *pcoordMaximumWindowSize = this->GetMaxWindowSizeInCharacters();
 
@@ -360,7 +353,7 @@ SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
 COORD SCREEN_INFORMATION::GetMinWindowSizeInCharacters(_In_ COORD const coordFontSize /*= { 1, 1 }*/) const
 {
     // prepare rectangle
-    RECT const rcWindowInPixels = Window::s_GetMinClientRectInPixels();
+    RECT const rcWindowInPixels = _pConsoleWindowMetrics->GetMinClientRectInPixels();
 
     // assign the pixel widths and heights to the final output
     COORD coordClientAreaSize;
@@ -413,7 +406,7 @@ COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(_In_ COORD const coordFon
 // - COORD containing the width and height representing the largest character grid that can be rendered on the current monitor with the maximum size window.
 COORD SCREEN_INFORMATION::GetLargestWindowSizeInCharacters(_In_ COORD const coordFontSize /*= { 1, 1 }*/) const
 {
-    RECT const rcClientInPixels = Window::s_GetMaxClientRectInPixels();
+    RECT const rcClientInPixels = _pConsoleWindowMetrics->GetMaxClientRectInPixels();
 
     // first assign the pixel widths and heights to the final output
     COORD coordClientAreaSize;
@@ -424,7 +417,7 @@ COORD SCREEN_INFORMATION::GetLargestWindowSizeInCharacters(_In_ COORD const coor
     COORD coordFont = coordFontSize; // by default, use the size we were given
 
     // If renderer has been set up, instead retrieve it's font size
-    if (g_pRender != nullptr)
+    if (ServiceLocator::LocateGlobals()->pRender != nullptr)
     {
         coordFont = GetScreenFontSize();
     }
@@ -437,10 +430,14 @@ COORD SCREEN_INFORMATION::GetLargestWindowSizeInCharacters(_In_ COORD const coor
 
 COORD SCREEN_INFORMATION::GetScrollBarSizesInCharacters() const
 {
-    COORD coordFont = GetScreenFontSize();
+    COORD coordFont = GetScreenFontSize();;
+
+    SHORT vScrollSize = ServiceLocator::LocateGlobals()->sVerticalScrollSize;
+    SHORT hScrollSize = ServiceLocator::LocateGlobals()->sHorizontalScrollSize;
+
     COORD coordBarSizes;
-    coordBarSizes.X = (g_sVerticalScrollSize / coordFont.X) + ((g_sVerticalScrollSize % coordFont.X) != 0 ? 1 : 0);
-    coordBarSizes.Y = (g_sHorizontalScrollSize / coordFont.Y) + ((g_sHorizontalScrollSize % coordFont.Y) != 0 ? 1 : 0);
+    coordBarSizes.X = (vScrollSize / coordFont.X) + ((vScrollSize % coordFont.X) != 0 ? 1 : 0);
+    coordBarSizes.Y = (hScrollSize / coordFont.Y) + ((hScrollSize % coordFont.Y) != 0 ? 1 : 0);
 
     return coordBarSizes;
 }
@@ -469,10 +466,10 @@ COORD SCREEN_INFORMATION::GetScreenFontSize() const
     // If we have no renderer, then we don't really need any sort of pixel math. so the "font size" for the scale factor
     // (which is used almost everywhere around the code as * and / calls) should just be 1,1 so those operations will do
     // effectively nothing.
-    COORD coordRet = {1,1};
-    if (g_pRender != nullptr)
+    COORD coordRet = { 1,1 };
+    if (ServiceLocator::LocateGlobals()->pRender != nullptr)
     {
-        coordRet = g_pRender->GetFontSize();
+        coordRet = ServiceLocator::LocateGlobals()->pRender->GetFontSize();
     }
 
     // For sanity's sake, make sure not to leak 0 out as a possible value. These values are used in division operations.
@@ -491,11 +488,12 @@ void SCREEN_INFORMATION::RefreshFontWithRenderer()
     if (IsActiveScreenBuffer())
     {
         // Hand the handle to our internal structure to the font change trigger in case it updates it based on what's appropriate.
-        if (g_pRender != nullptr)
+        if (ServiceLocator::LocateGlobals()->pRender != nullptr)
         {
-            g_pRender->TriggerFontChange(g_dpi,
-                                         TextInfo->GetDesiredFont(),
-                                         TextInfo->GetCurrentFont());
+            ServiceLocator::LocateGlobals()->pRender
+                ->TriggerFontChange(ServiceLocator::LocateGlobals()->dpi,
+                                    TextInfo->GetDesiredFont(),
+                                    TextInfo->GetCurrentFont());
         }
     }
 }
@@ -535,14 +533,18 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX, _In_ short con
             TextAttributeRun* pAttrRun;
             Row->AttrRow.FindAttrIndex(sStartX, &pAttrRun, &CountOfAttr);
 
-            NotifyWinEvent(EVENT_CONSOLE_UPDATE_SIMPLE,
-                           g_ciConsoleInformation.hWnd,
-                           MAKELONG(sStartX, sStartY),
-                           MAKELONG(Char, g_ciConsoleInformation.GenerateLegacyAttributes(pAttrRun->GetAttributes())));
+            LONG charAndAttr = MAKELONG(
+                Char,
+                ServiceLocator::LocateGlobals()->getConsoleInformation()
+                    ->GenerateLegacyAttributes(pAttrRun->GetAttributes()));
+
+            _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
+                                                                    charAndAttr);
         }
         else
         {
-            NotifyWinEvent(EVENT_CONSOLE_UPDATE_REGION, g_ciConsoleInformation.hWnd, MAKELONG(sStartX, sStartY), MAKELONG(sEndX, sEndY));
+            _pAccessibilityNotifier->NotifyConsoleUpdateRegionEvent(MAKELONG(sStartX, sStartY),
+                                                                    MAKELONG(sEndX, sEndY));
         }
     }
 }
@@ -558,25 +560,22 @@ VOID SCREEN_INFORMATION::UpdateScrollBars()
         return;
     }
 
-    if (g_ciConsoleInformation.Flags & CONSOLE_UPDATING_SCROLL_BARS)
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags & CONSOLE_UPDATING_SCROLL_BARS)
     {
         return;
     }
 
-    g_ciConsoleInformation.Flags |= CONSOLE_UPDATING_SCROLL_BARS;
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_UPDATING_SCROLL_BARS;
 
-    Window* const pWindow = _GetWindow();
-    if (pWindow != nullptr)
+    if (ServiceLocator::LocateConsoleWindow() != nullptr)
     {
-        pWindow->PostUpdateScrollBars();
+        ServiceLocator::LocateConsoleWindow()->PostUpdateScrollBars();
     }
 }
 
 VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 {
-    SCROLLINFO si;
-
-    g_ciConsoleInformation.Flags &= ~CONSOLE_UPDATING_SCROLL_BARS;
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags &= ~CONSOLE_UPDATING_SCROLL_BARS;
     if (!this->IsActiveScreenBuffer())
     {
         return;
@@ -588,28 +587,24 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
     //   The alt might come through and disable the scroll bars, this is the only way to re-enable it.
     if(!_IsAltBuffer())
     {
-        EnableScrollBar(g_ciConsoleInformation.hWnd, SB_BOTH, ESB_ENABLE_BOTH);
+        ServiceLocator::LocateConsoleWindow()->EnableBothScrollBars();
     }
 
     const COORD coordScreenBufferSize = GetScreenBufferSize();
-    si.cbSize = sizeof(si);
-    si.fMask = (this->_IsAltBuffer()) ? SIF_ALL | SIF_DISABLENOSCROLL : SIF_ALL;
-    si.nPage = this->GetScreenWindowSizeY();
-    si.nMin = 0;
-    si.nMax = coordScreenBufferSize.Y - 1;
-    si.nPos = this->_srBufferViewport.Top;
-    SetScrollInfo(g_ciConsoleInformation.hWnd, SB_VERT, &si, TRUE);
 
-    si.cbSize = sizeof(si);
-    si.fMask = (this->_IsAltBuffer()) ? SIF_ALL | SIF_DISABLENOSCROLL : SIF_ALL;
-    si.nPage = this->GetScreenWindowSizeX();
-    si.nMin = 0;
-    si.nMax = coordScreenBufferSize.X - 1;
-    si.nPos = this->_srBufferViewport.Left;
-    SetScrollInfo(g_ciConsoleInformation.hWnd, SB_HORZ, &si, TRUE);
+    ServiceLocator::LocateConsoleWindow()->UpdateScrollBar(true,
+                                           this->_IsAltBuffer(),
+                                           this->GetScreenWindowSizeY(),
+                                           coordScreenBufferSize.Y - 1,
+                                           this->_srBufferViewport.Top);
+    ServiceLocator::LocateConsoleWindow()->UpdateScrollBar(false,
+                                           this->_IsAltBuffer(),
+                                           this->GetScreenWindowSizeX(),
+                                           coordScreenBufferSize.X - 1,
+                                           this->_srBufferViewport.Left);
 
     // Fire off an event to let accessibility apps know the layout has changed.
-    NotifyWinEvent(EVENT_CONSOLE_LAYOUT, g_ciConsoleInformation.hWnd, 0, 0);
+    _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
 
     this->ResizingWindow--;
 }
@@ -670,12 +665,10 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ c
 
     if (IsActiveScreenBuffer())
     {
-        Window* const pWindow = _GetWindow();
-
-        if (pWindow != nullptr)
+        if (ServiceLocator::LocateConsoleWindow() != nullptr)
         {
             // Tell the window that it needs to set itself to the new origin if we're the active buffer.
-            pWindow->SetViewportOrigin(NewWindow);
+            ServiceLocator::LocateConsoleWindow()->SetViewportOrigin(NewWindow);
         }
     }
     else
@@ -737,10 +730,9 @@ BOOL SCREEN_INFORMATION::SendNotifyBeep() const
 {
     if (IsActiveScreenBuffer())
     {
-        Window* const pWindow = _GetWindow();
-        if (pWindow != nullptr)
+        if (ServiceLocator::LocateConsoleWindow() != nullptr)
         {
-            return pWindow->SendNotifyBeep();
+            return ServiceLocator::LocateConsoleWindow()->SendNotifyBeep();
         }
     }
 
@@ -751,10 +743,9 @@ BOOL SCREEN_INFORMATION::PostUpdateWindowSize() const
 {
     if (IsActiveScreenBuffer())
     {
-        Window* const pWindow = _GetWindow();
-        if (pWindow != nullptr)
+        if (ServiceLocator::LocateConsoleWindow() != nullptr)
         {
-            return pWindow->PostUpdateWindowSize();
+            return ServiceLocator::LocateConsoleWindow()->PostUpdateWindowSize();
         }
     }
 
@@ -832,11 +823,11 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBufferHelper(_In_ const RECT* const prc
 
     if (fIsHorizontalVisible)
     {
-        sizeClientNewPixels.cy -= g_sHorizontalScrollSize;
+        sizeClientNewPixels.cy -= ServiceLocator::LocateGlobals()->sHorizontalScrollSize;
     }
     if (fIsVerticalVisible)
     {
-        sizeClientNewPixels.cx -= g_sVerticalScrollSize;
+        sizeClientNewPixels.cx -= ServiceLocator::LocateGlobals()->sVerticalScrollSize;
     }
 
     // Now with the scroll bars removed, calculate how many characters could fit into the new window area.
@@ -868,7 +859,7 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(_In_ const RECT* const prcClient
 
     // If we're in wrap text mode, then we want to be fixed to the window size. So use the character calculation we just got
     // to fix the buffer and window width together.
-    if (g_ciConsoleInformation.GetWrapText())
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetWrapText())
     {
         coordBufferSizeNew.X = coordClientNewCharacters.X;
     }
@@ -942,11 +933,11 @@ void SCREEN_INFORMATION::_CalculateViewportSize(_In_ const RECT* const prcClient
 
     if (fIsHorizontalVisible)
     {
-        sizeClientPixels.cy -= g_sHorizontalScrollSize;
+        sizeClientPixels.cy -= ServiceLocator::LocateGlobals()->sHorizontalScrollSize;
     }
     if (fIsVerticalVisible)
     {
-        sizeClientPixels.cx -= g_sVerticalScrollSize;
+        sizeClientPixels.cx -= ServiceLocator::LocateGlobals()->sVerticalScrollSize;
     }
 
     pcoordSize->X = (SHORT)(sizeClientPixels.cx / coordFontSize.X);
@@ -1165,7 +1156,7 @@ void SCREEN_INFORMATION::s_CalculateScrollbarVisibility(_In_ const RECT* const p
         *pfIsHorizontalVisible = true;
 
         // If we have a horizontal bar, remove it from available vertical space and check that remaining client area is enough.
-        sizeClientPixels.cy -= g_sHorizontalScrollSize;
+        sizeClientPixels.cy -= ServiceLocator::LocateGlobals()->sHorizontalScrollSize;
 
         if (sizeBufferPixels.cy > sizeClientPixels.cy)
         {
@@ -1177,7 +1168,7 @@ void SCREEN_INFORMATION::s_CalculateScrollbarVisibility(_In_ const RECT* const p
         *pfIsVerticalVisible = true;
 
         // If we have a vertical bar, remove it from available horizontal space and check that remaining client area is enough.
-        sizeClientPixels.cx -= g_sVerticalScrollSize;
+        sizeClientPixels.cx -= ServiceLocator::LocateGlobals()->sVerticalScrollSize;
 
         if (sizeBufferPixels.cx > sizeClientPixels.cx)
         {
@@ -1602,7 +1593,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(_In_ const COORD coordNewScreenS
     // cancel any active selection before resizing or it will not necessarily line up with the new buffer positions
     Selection::Instance().ClearSelection();
 
-    const bool fWrapText = g_ciConsoleInformation.GetWrapText();
+    const bool fWrapText = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetWrapText();
     if (fWrapText)
     {
         status = ResizeWithReflow(coordNewScreenSize);
@@ -1633,7 +1624,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(_In_ const COORD coordNewScreenS
         // Fire off an event to let accessibility apps know the layout has changed.
         if (this->IsActiveScreenBuffer())
         {
-            NotifyWinEvent(EVENT_CONSOLE_LAYOUT, g_ciConsoleInformation.hWnd, 0, 0);
+            _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
         }
 
         if (fDoScrollBarUpdate)
@@ -1772,7 +1763,7 @@ NTSTATUS SCREEN_INFORMATION::SetCursorPosition(_In_ COORD const Position, _In_ B
     pCursor->SetPosition(Position);
 
     // if we have the focus, adjust the cursor state
-    if (g_ciConsoleInformation.Flags & CONSOLE_HAS_FOCUS)
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags & CONSOLE_HAS_FOCUS)
     {
         if (TurnOn)
         {
@@ -1954,7 +1945,7 @@ NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
         ScreenBufferSizeChange(psiNewAltBuffer->GetScreenBufferSize());
 
         // Tell the VT MouseInput handler that we're in the Alt buffer now
-        g_ciConsoleInformation.terminalMouseInput.UseAlternateScreenBuffer();
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->terminalMouseInput.UseAlternateScreenBuffer();
 
     }
     return Status;
@@ -1991,7 +1982,7 @@ NTSTATUS SCREEN_INFORMATION::UseMainScreenBuffer()
             // deleting the alt buffer will give the GetSet back to it's main
 
             // Tell the VT MouseInput handler that we're in the main buffer now
-            g_ciConsoleInformation.terminalMouseInput.UseMainScreenBuffer();
+            ServiceLocator::LocateGlobals()->getConsoleInformation()->terminalMouseInput.UseMainScreenBuffer();
         }
     }
     return Status;
