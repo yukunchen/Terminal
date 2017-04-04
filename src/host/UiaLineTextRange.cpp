@@ -150,18 +150,26 @@ IFACEMETHODIMP UiaLineTextRange::GetEnclosingElement(_Outptr_result_maybenull_ I
 
 IFACEMETHODIMP UiaLineTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 {
-    // TODO support multiple lines
     std::wstring wstr = L"";
-    const ROW* const row = _pOutputBuffer->GetRowByOffset(static_cast<UINT>(_lineNumberStart));
-    if (row->CharRow.ContainsText())
+    const bool getPartialText = maxLength != -1;
+
+    for (UINT i = 0; i < _lineNumberEnd - _lineNumberStart; ++i)
     {
-        wstr = std::wstring(row->CharRow.Chars + row->CharRow.Left,
-                            row->CharRow.Chars + row->CharRow.Right);
+        const ROW* const row = _pOutputBuffer->GetRowByOffset(static_cast<UINT>(_lineNumberStart + i));
+        if (row->CharRow.ContainsText())
+        {
+            std::wstring tempString = std::wstring(row->CharRow.Chars + row->CharRow.Left,
+                                                   row->CharRow.Chars + row->CharRow.Right);
+            wstr += tempString;
+        }
+        wstr += L"\r\n";
+        if (getPartialText && wstr.size() > maxLength)
+        {
+            wstr.resize(maxLength);
+            break;
+        }
     }
-    if (maxLength != -1 && static_cast<size_t>(maxLength) < wstr.size())
-    {
-        wstr.resize(maxLength);
-    }
+
     *pRetVal = SysAllocString(wstr.c_str());
     return S_OK;
 }
