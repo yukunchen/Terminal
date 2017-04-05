@@ -12,11 +12,11 @@
 #include "dbcs.h"
 #include "handle.h"
 #include "misc.h"
-#include "output.h"
-#include "cursor.h"
 #include "readDataRaw.hpp"
 
 #include "ApiRoutines.h"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -192,7 +192,7 @@ NTSTATUS GetChar(_In_ InputBuffer* pInputBuffer,
                     return STATUS_SUCCESS;
                 }
 
-                sTmp = VkKeyScanW(0);
+                sTmp = ServiceLocator::LocateInputServices()->VkKeyScanW(0);
 
 #pragma prefast(suppress:26019, "Legacy. PREfast has a theoretical VK which jumps the table. Leaving.")
                 if ((LOBYTE(sTmp) == Event.Event.KeyEvent.wVirtualKeyCode) && KEYEVENTSTATE_EQUAL_WINMODS(Event, HIBYTE(sTmp)))
@@ -321,7 +321,7 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    SCREEN_INFORMATION* const pScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
+    SCREEN_INFORMATION* const pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
     if (nullptr == pScreenInfo)
     {
         return STATUS_UNSUCCESSFUL;
@@ -535,7 +535,7 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
                                         dwCtrlWakeupMask,
                                         pCommandHistory,
                                         Echo,
-                                        !!g_ciConsoleInformation.GetInsertMode(),
+                                        !!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetInsertMode(),
                                         IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT),
                                         IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT),
                                         pTempHandleData);
@@ -569,7 +569,7 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
             memcpy_s(CookedReadData.ExeName, CookedReadData.ExeNameLength, pwsExeName, cbExeName);
         }
 
-        g_ciConsoleInformation.lpCookedReadData = &CookedReadData;
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData = &CookedReadData;
 
         Status = CookedRead(&CookedReadData, !!fUnicode, pdwNumBytes, pControlKeyState);
         if (CONSOLE_STATUS_WAIT == Status)
@@ -581,14 +581,14 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
             }
             else
             {
-                g_ciConsoleInformation.lpCookedReadData = pCookedReadWaiter;
+                ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData = pCookedReadWaiter;
                 *ppWaiter = pCookedReadWaiter;
             }
         }
 
         if (CONSOLE_STATUS_WAIT != Status)
         {
-            g_ciConsoleInformation.lpCookedReadData = nullptr;
+            ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData = nullptr;
         }
 
         return Status;
@@ -821,11 +821,11 @@ HRESULT ApiRoutines::ReadConsoleWImpl(_In_ IConsoleInputObject* const pInContext
 
 VOID UnblockWriteConsole(_In_ const DWORD dwReason)
 {
-    g_ciConsoleInformation.Flags &= ~dwReason;
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags &= ~dwReason;
 
-    if (AreAllFlagsClear(g_ciConsoleInformation.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
+    if (AreAllFlagsClear(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         // There is no longer any reason to suspend output, so unblock it.
-        g_ciConsoleInformation.OutputQueue.NotifyWaiters(true);
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputQueue.NotifyWaiters(true);
     }
 }

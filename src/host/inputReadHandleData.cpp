@@ -5,6 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
+
 #include "inputReadHandleData.h"
 
 INPUT_READ_HANDLE_DATA::INPUT_READ_HANDLE_DATA()

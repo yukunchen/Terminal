@@ -11,16 +11,13 @@
 #include "_output.h"
 #include "_stream.h"
 #include "output.h"
-#include "cursor.h"
 #include "dbcs.h"
 #include "handle.h"
-#include "icon.hpp"
 #include "misc.h"
-#include "srvinit.h"
-#include "tracing.hpp"
-#include "window.hpp"
 
 #include "ApiRoutines.h"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -40,12 +37,12 @@ HRESULT ApiRoutines::GetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _
 
     *pMode = pContext->InputMode;
 
-    if (IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_USE_PRIVATE_FLAGS))
+    if (IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_USE_PRIVATE_FLAGS))
     {
         SetFlag(*pMode, ENABLE_EXTENDED_FLAGS);
-        SetFlagIf(*pMode, ENABLE_INSERT_MODE, g_ciConsoleInformation.GetInsertMode());
-        SetFlagIf(*pMode, ENABLE_QUICK_EDIT_MODE, IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_QUICK_EDIT_MODE));
-        SetFlagIf(*pMode, ENABLE_AUTO_POSITION, IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_AUTO_POSITION));
+        SetFlagIf(*pMode, ENABLE_INSERT_MODE, ServiceLocator::LocateGlobals()->getConsoleInformation()->GetInsertMode());
+        SetFlagIf(*pMode, ENABLE_QUICK_EDIT_MODE, IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_QUICK_EDIT_MODE));
+        SetFlagIf(*pMode, ENABLE_AUTO_POSITION, IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_AUTO_POSITION));
     }
 
     return S_OK;
@@ -143,7 +140,7 @@ HRESULT ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(_Out_ ULONG* const pButt
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    *pButtons = GetSystemMetrics(SM_CMOUSEBUTTONS);
+    *pButtons = ServiceLocator::LocateSystemConfigurationProvider()->GetNumberOfMouseButtons();
 
     return S_OK;
 }
@@ -216,7 +213,7 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
                 static_cast<BYTE>(pConsoleFontInfoEx->FontFamily),
                 pConsoleFontInfoEx->FontWeight,
                 pConsoleFontInfoEx->dwFontSize,
-                g_ciConsoleInformation.OutputCP);
+                ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP);
 
     // TODO: MSFT: 9574827 - should this have a failure case?
     psi->UpdateFont(&fi);
@@ -224,7 +221,7 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(_In_ SCREEN_INFORMATION* const 
     // If this is the active screen buffer, also cause the window to refresh its viewport size.
     if (psi->IsActiveScreenBuffer())
     {
-        Window* const pWindow = g_ciConsoleInformation.pWindow;
+        IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
         if (nullptr != pWindow)
         {
             pWindow->PostUpdateWindowSize();
@@ -241,25 +238,25 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _
 
     if (IsAnyFlagSet(Mode, PRIVATE_MODES))
     {
-        SetFlag(g_ciConsoleInformation.Flags, CONSOLE_USE_PRIVATE_FLAGS);
+        SetFlag(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_USE_PRIVATE_FLAGS);
 
-        UpdateFlag(g_ciConsoleInformation.Flags, CONSOLE_QUICK_EDIT_MODE, IsFlagSet(Mode, ENABLE_QUICK_EDIT_MODE));
-        UpdateFlag(g_ciConsoleInformation.Flags, CONSOLE_AUTO_POSITION, IsFlagSet(Mode, ENABLE_AUTO_POSITION));
+        UpdateFlag(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_QUICK_EDIT_MODE, IsFlagSet(Mode, ENABLE_QUICK_EDIT_MODE));
+        UpdateFlag(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_AUTO_POSITION, IsFlagSet(Mode, ENABLE_AUTO_POSITION));
 
-        BOOL const PreviousInsertMode = g_ciConsoleInformation.GetInsertMode();
-        g_ciConsoleInformation.SetInsertMode(IsFlagSet(Mode, ENABLE_INSERT_MODE));
-        if (g_ciConsoleInformation.GetInsertMode() != PreviousInsertMode)
+        BOOL const PreviousInsertMode = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetInsertMode();
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->SetInsertMode(IsFlagSet(Mode, ENABLE_INSERT_MODE));
+        if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetInsertMode() != PreviousInsertMode)
         {
-            g_ciConsoleInformation.CurrentScreenBuffer->SetCursorDBMode(FALSE);
-            if (g_ciConsoleInformation.lpCookedReadData != nullptr)
+            ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->SetCursorDBMode(FALSE);
+            if (ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData != nullptr)
             {
-                g_ciConsoleInformation.lpCookedReadData->_InsertMode = !!g_ciConsoleInformation.GetInsertMode();
+                ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData->_InsertMode = !!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetInsertMode();
             }
         }
     }
     else
     {
-        ClearFlag(g_ciConsoleInformation.Flags, CONSOLE_USE_PRIVATE_FLAGS);
+        ClearFlag(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_USE_PRIVATE_FLAGS);
     }
 
     pContext->InputMode = Mode;
@@ -303,9 +300,9 @@ HRESULT ApiRoutines::SetConsoleOutputModeImpl(_In_ SCREEN_INFORMATION* const pCo
         // jiggle the handle
         pScreenInfo->GetStateMachine()->ResetState();
     }
-    g_ciConsoleInformation.SetVirtTermLevel(IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? 1 : 0);
-    g_ciConsoleInformation.SetAutomaticReturnOnNewline(IsFlagSet(pScreenInfo->OutputMode, DISABLE_NEWLINE_AUTO_RETURN) ? false : true);
-    g_ciConsoleInformation.SetGridRenderingAllowedWorldwide(IsFlagSet(pScreenInfo->OutputMode, ENABLE_LVB_GRID_WORLDWIDE));
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->SetVirtTermLevel(IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? 1 : 0);
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->SetAutomaticReturnOnNewline(IsFlagSet(pScreenInfo->OutputMode, DISABLE_NEWLINE_AUTO_RETURN) ? false : true);
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->SetGridRenderingAllowedWorldwide(IsFlagSet(pScreenInfo->OutputMode, ENABLE_LVB_GRID_WORLDWIDE));
 
     return S_OK;
 }
@@ -399,7 +396,7 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
         pCommandLine->Show();
     }
 
-    g_ciConsoleInformation.SetColorTable(pInfo->ColorTable, ARRAYSIZE(pInfo->ColorTable));
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->SetColorTable(pInfo->ColorTable, ARRAYSIZE(pInfo->ColorTable));
     SetScreenColors(pScreenInfo, pInfo->wAttributes, pInfo->wPopupAttributes, TRUE);
 
     COORD NewSize;
@@ -407,14 +404,14 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
     NewSize.Y = min((pInfo->srWindow.Bottom - pInfo->srWindow.Top), pInfo->dwMaximumWindowSize.Y);
 
     // If wrap text is on, then the window width must be the same size as the buffer width
-    if (g_ciConsoleInformation.GetWrapText())
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetWrapText())
     {
         NewSize.X = coordScreenBufferSize.X;
     }
 
     if (NewSize.X != pScreenInfo->GetScreenWindowSizeX() || NewSize.Y != pScreenInfo->GetScreenWindowSizeY())
     {
-        g_ciConsoleInformation.pWindow->UpdateWindowSize(NewSize);
+        ServiceLocator::LocateConsoleWindow()->UpdateWindowSize(NewSize);
     }
 
     // Despite the fact that this API takes in a srWindow for the viewport, it traditionally actually doesn't set
@@ -617,7 +614,7 @@ VOID UpdatePopups(IN WORD NewAttributes, IN WORD NewPopupAttributes, IN WORD Old
 {
     WORD const InvertedOldPopupAttributes = (WORD)(((OldPopupAttributes << 4) & 0xf0) | ((OldPopupAttributes >> 4) & 0x0f));
     WORD const InvertedNewPopupAttributes = (WORD)(((NewPopupAttributes << 4) & 0xf0) | ((NewPopupAttributes >> 4) & 0x0f));
-    PLIST_ENTRY const HistoryListHead = &g_ciConsoleInformation.CommandHistoryList;
+    PLIST_ENTRY const HistoryListHead = &ServiceLocator::LocateGlobals()->getConsoleInformation()->CommandHistoryList;
     PLIST_ENTRY HistoryListNext = HistoryListHead->Blink;
     while (HistoryListNext != HistoryListHead)
     {
@@ -665,7 +662,7 @@ NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attribut
     TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
     ScreenInfo->SetAttributes(NewPrimaryAttributes);
     ScreenInfo->SetPopupAttributes(&NewPopupAttributes);
-    g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme.RefreshAreaAttributes();
 
     if (UpdateWholeScreen)
     {
@@ -683,7 +680,7 @@ NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attribut
             Row->AttrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
         }
 
-        if (g_ciConsoleInformation.PopupCount)
+        if (ServiceLocator::LocateGlobals()->getConsoleInformation()->PopupCount)
         {
             UpdatePopups(Attributes, PopupAttributes, DefaultAttributes, DefaultPopupAttributes);
         }
@@ -726,11 +723,11 @@ NTSTATUS DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* pScre
         bool fBright = (iXtermTableEntry & 0x08) > 0;
         WORD iWinEntry = (fRed ? 0x4 : 0x0) | (fGreen ? 0x2 : 0x0) | (fBlue ? 0x1 : 0x0) | (fBright ? 0x8 : 0x0);
 
-        rgbColor = g_ciConsoleInformation.GetColorTableEntry(iWinEntry);
+        rgbColor = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetColorTableEntry(iWinEntry);
     }
     else
     {
-        rgbColor = g_ciConsoleInformation.GetColorTableEntry(iXtermTableEntry);
+        rgbColor = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetColorTableEntry(iXtermTableEntry);
     }
 
     NewAttributes.SetColor(rgbColor, fIsForeground);
@@ -759,10 +756,10 @@ HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(_In_ ULONG const CodePage)
     RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidCodePage(CodePage));
 
     // Do nothing if no change.
-    if (g_ciConsoleInformation.OutputCP != CodePage)
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP != CodePage)
     {
         // Set new code page
-        g_ciConsoleInformation.OutputCP = CodePage;
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP = CodePage;
 
         SetConsoleCPInfo(TRUE);
     }
@@ -779,10 +776,10 @@ HRESULT ApiRoutines::SetConsoleInputCodePageImpl(_In_ ULONG const CodePage)
     RETURN_HR_IF_FALSE(E_INVALIDARG, IsValidCodePage(CodePage));
 
     // Do nothing if no change.
-    if (g_ciConsoleInformation.CP != CodePage)
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->CP != CodePage)
     {
         // Set new code page
-        g_ciConsoleInformation.CP = CodePage;
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->CP = CodePage;
 
         SetConsoleCPInfo(FALSE);
     }
@@ -795,7 +792,7 @@ HRESULT ApiRoutines::GetConsoleInputCodePageImpl(_Out_ ULONG* const pCodePage)
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    *pCodePage = g_ciConsoleInformation.CP;
+    *pCodePage = ServiceLocator::LocateGlobals()->getConsoleInformation()->CP;
 
     return S_OK;
 }
@@ -805,7 +802,7 @@ HRESULT ApiRoutines::GetConsoleOutputCodePageImpl(_Out_ ULONG* const pCodePage)
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    *pCodePage = g_ciConsoleInformation.OutputCP;
+    *pCodePage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
 
     return S_OK;
 }
@@ -814,8 +811,15 @@ HRESULT ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
-
-    *pHwnd = g_ciConsoleInformation.hWnd;
+    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr) 
+    {
+        *pHwnd = pWindow->GetWindowHandle();
+    }
+    else
+    {
+        *pHwnd = NULL;
+    }
 
     return S_OK;
 }
@@ -825,9 +829,9 @@ HRESULT ApiRoutines::GetConsoleHistoryInfoImpl(_Out_ CONSOLE_HISTORY_INFO* const
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    pConsoleHistoryInfo->HistoryBufferSize = g_ciConsoleInformation.GetHistoryBufferSize();
-    pConsoleHistoryInfo->NumberOfHistoryBuffers = g_ciConsoleInformation.GetNumberOfHistoryBuffers();
-    SetFlagIf(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG, IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_HISTORY_NODUP));
+    pConsoleHistoryInfo->HistoryBufferSize = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetHistoryBufferSize();
+    pConsoleHistoryInfo->NumberOfHistoryBuffers = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetNumberOfHistoryBuffers();
+    SetFlagIf(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG, IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_HISTORY_NODUP));
 
     return S_OK;
 }
@@ -842,9 +846,9 @@ HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* 
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     ResizeCommandHistoryBuffers(pConsoleHistoryInfo->HistoryBufferSize);
-    g_ciConsoleInformation.SetNumberOfHistoryBuffers(pConsoleHistoryInfo->NumberOfHistoryBuffers);
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->SetNumberOfHistoryBuffers(pConsoleHistoryInfo->NumberOfHistoryBuffers);
 
-    UpdateFlag(g_ciConsoleInformation.Flags, CONSOLE_HISTORY_NODUP, IsFlagSet(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG));
+    UpdateFlag(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_HISTORY_NODUP, IsFlagSet(pConsoleHistoryInfo->dwFlags, HISTORY_NO_DUP_FLAG));
 
     return S_OK;
 }
@@ -859,7 +863,8 @@ HRESULT ApiRoutines::GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const /*
     // Initialize flags portion of structure
     *pFlags = 0;
 
-    if (g_ciConsoleInformation.pWindow != nullptr && g_ciConsoleInformation.pWindow->IsInFullscreen())
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr && pWindow->IsInFullscreen())
     {
         SetFlag(*pFlags, CONSOLE_FULLSCREEN_MODE);
     }
@@ -901,11 +906,11 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pC
 
     if (IsFlagSet(Flags, CONSOLE_FULLSCREEN_MODE))
     {
-        g_ciConsoleInformation.pWindow->SetIsFullscreen(true);
+        ServiceLocator::LocateConsoleWindow()->SetIsFullscreen(true);
     }
     else if (IsFlagSet(Flags, CONSOLE_WINDOWED_MODE))
     {
-        g_ciConsoleInformation.pWindow->SetIsFullscreen(false);
+        ServiceLocator::LocateConsoleWindow()->SetIsFullscreen(false);
     }
     else
     {
@@ -924,7 +929,7 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pC
 // - True if handled successfully. False otherwise.
 NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode)
 {
-    g_ciConsoleInformation.termInput.ChangeCursorKeysMode(fApplicationMode);
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->termInput.ChangeCursorKeysMode(fApplicationMode);
 
     return STATUS_SUCCESS;
 }
@@ -938,7 +943,7 @@ NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode)
 // - True if handled successfully. False otherwise.
 NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
 {
-    g_ciConsoleInformation.termInput.ChangeKeypadMode(fApplicationMode);
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->termInput.ChangeKeypadMode(fApplicationMode);
 
     return STATUS_SUCCESS;
 }
@@ -1041,7 +1046,7 @@ NTSTATUS DoSrvPrivateUseMainScreenBuffer(_In_ SCREEN_INFORMATION* const psiCurr)
 // - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
 NTSTATUS DoSrvPrivateHorizontalTabSet()
 {
-    SCREEN_INFORMATION* const pScreenBuffer = g_ciConsoleInformation.CurrentScreenBuffer;
+    SCREEN_INFORMATION* const pScreenBuffer = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
 
     const COORD cursorPos = pScreenBuffer->TextInfo->GetCursor()->GetPosition();
     return pScreenBuffer->AddTabStop(cursorPos.X);
@@ -1056,7 +1061,7 @@ NTSTATUS DoSrvPrivateHorizontalTabSet()
 // - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
 NTSTATUS DoPrivateTabHelper(_In_ SHORT const sNumTabs, _In_ bool fForward)
 {
-    SCREEN_INFORMATION* const pScreenBuffer = g_ciConsoleInformation.CurrentScreenBuffer;
+    SCREEN_INFORMATION* const pScreenBuffer = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
 
     NTSTATUS Status = STATUS_SUCCESS;
     ASSERT(sNumTabs >= 0);
@@ -1107,7 +1112,7 @@ NTSTATUS DoSrvPrivateBackwardsTab(_In_ SHORT const sNumTabs)
 // - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
 NTSTATUS DoSrvPrivateTabClear(_In_ bool const fClearAll)
 {
-    SCREEN_INFORMATION* const pScreenBuffer = g_ciConsoleInformation.CurrentScreenBuffer;
+    SCREEN_INFORMATION* const pScreenBuffer = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
     if (fClearAll)
     {
         pScreenBuffer->ClearTabStops();
@@ -1128,7 +1133,7 @@ NTSTATUS DoSrvPrivateTabClear(_In_ bool const fClearAll)
 // - STATUS_SUCCESS always.
 NTSTATUS DoSrvPrivateEnableVT200MouseMode(_In_ bool const fEnable)
 {
-    g_ciConsoleInformation.terminalMouseInput.EnableDefaultTracking(fEnable);
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->terminalMouseInput.EnableDefaultTracking(fEnable);
 
     return STATUS_SUCCESS;
 }
@@ -1141,7 +1146,7 @@ NTSTATUS DoSrvPrivateEnableVT200MouseMode(_In_ bool const fEnable)
 // - STATUS_SUCCESS always.
 NTSTATUS DoSrvPrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnable)
 {
-    g_ciConsoleInformation.terminalMouseInput.SetUtf8ExtendedMode(fEnable);
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->terminalMouseInput.SetUtf8ExtendedMode(fEnable);
 
     return STATUS_SUCCESS;
 }
@@ -1154,7 +1159,7 @@ NTSTATUS DoSrvPrivateEnableUTF8ExtendedMouseMode(_In_ bool const fEnable)
 // - STATUS_SUCCESS always.
 NTSTATUS DoSrvPrivateEnableSGRExtendedMouseMode(_In_ bool const fEnable)
 {
-    g_ciConsoleInformation.terminalMouseInput.SetSGRExtendedMode(fEnable);
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->terminalMouseInput.SetSGRExtendedMode(fEnable);
 
     return STATUS_SUCCESS;
 }
@@ -1167,7 +1172,7 @@ NTSTATUS DoSrvPrivateEnableSGRExtendedMouseMode(_In_ bool const fEnable)
 // - STATUS_SUCCESS always.
 NTSTATUS DoSrvPrivateEnableButtonEventMouseMode(_In_ bool const fEnable)
 {
-    g_ciConsoleInformation.terminalMouseInput.EnableButtonEventTracking(fEnable);
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->terminalMouseInput.EnableButtonEventTracking(fEnable);
 
     return STATUS_SUCCESS;
 }
@@ -1180,7 +1185,7 @@ NTSTATUS DoSrvPrivateEnableButtonEventMouseMode(_In_ bool const fEnable)
 // - STATUS_SUCCESS always.
 NTSTATUS DoSrvPrivateEnableAnyEventMouseMode(_In_ bool const fEnable)
 {
-    g_ciConsoleInformation.terminalMouseInput.EnableAnyEventTracking(fEnable);
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->terminalMouseInput.EnableAnyEventTracking(fEnable);
 
     return STATUS_SUCCESS;
 }
@@ -1193,7 +1198,7 @@ NTSTATUS DoSrvPrivateEnableAnyEventMouseMode(_In_ bool const fEnable)
 // - STATUS_SUCCESS always.
 NTSTATUS DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable)
 {
-    g_ciConsoleInformation.terminalMouseInput.EnableAlternateScroll(fEnable);
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->terminalMouseInput.EnableAlternateScroll(fEnable);
 
     return STATUS_SUCCESS;
 }

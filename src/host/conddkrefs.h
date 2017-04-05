@@ -12,6 +12,8 @@ Abstract:
 
 #pragma once
 
+#ifndef _DDK_INCLUDED
+
 #pragma region wdm.h (public DDK)
 //
 // Define the base asynchronous I/O argument types
@@ -281,3 +283,5 @@ extern "C"
 };
 
 #pragma endregion
+
+#endif // _DDK_INCLUDED

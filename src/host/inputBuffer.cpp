@@ -9,6 +9,8 @@
 #include "dbcs.h"
 #include "stream.h"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 #define INPUT_BUFFER_DEFAULT_INPUT_MODE (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT)
 
 // Routine Description:
@@ -21,7 +23,7 @@ InputBuffer::InputBuffer() :
     InputMode{ INPUT_BUFFER_DEFAULT_INPUT_MODE },
     WaitQueue{}
 {
-    InputWaitEvent = g_hInputEvent.get();
+    InputWaitEvent = ServiceLocator::LocateGlobals()->hInputEvent.get();
     // initialize buffer header
     fInComposition = false;
 
@@ -628,7 +630,7 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD
             INPUT_RECORD currEvent = records[i];
             if (currEvent.EventType == KEY_EVENT && currEvent.Event.KeyEvent.bKeyDown)
             {
-                if (IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_SUSPENDED) &&
+                if (IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_SUSPENDED) &&
                     !IsSystemKey(currEvent.Event.KeyEvent.wVirtualKeyCode))
                 {
                     UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
@@ -637,7 +639,7 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD
                 else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
                          currEvent.Event.KeyEvent.wVirtualKeyCode == VK_PAUSE || IsPauseKey(&currEvent.Event.KeyEvent))
                 {
-                    SetFlag(g_ciConsoleInformation.Flags, CONSOLE_SUSPENDED);
+                    SetFlag(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_SUSPENDED);
                     continue;
                 }
             }

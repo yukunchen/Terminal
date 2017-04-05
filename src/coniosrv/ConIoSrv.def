@@ -1,0 +1,4 @@
+LIBRARY ConIoSrv
+
+EXPORTS
+ ServerDllInitialization PRIVATE

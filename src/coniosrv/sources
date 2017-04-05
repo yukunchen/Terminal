@@ -1,0 +1,62 @@
+# -------------------------------------
+# Program Information
+# -------------------------------------
+
+TARGETNAME              = ConIoSrv
+TARGETTYPE              = DYNLINK
+UMTYPE                  = windows
+TARGET_DESTINATION      = retail
+
+# -------------------------------------
+# CRT Configuration
+# -------------------------------------
+
+USE_NTDLL               = 1
+
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
+
+C_DEFINES				= $(C_DEFINES) -DUNICODE -D_UNICODE
+
+# -------------------------------------
+# Compiler Settings
+# -------------------------------------
+
+MSC_WARNING_LEVEL		= /W4 /WX /wd4201
+
+# -------------------------------------
+# Build System Settings
+# -------------------------------------
+
+BUILD_FOR_CORESYSTEM	= 1
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+SOURCES = \
+    Client.c \
+    Csr.c \
+    Display.c \
+    Input.c \
+    Keyboard.c \
+    Server.c \
+    Trust.c \
+    Xlate.c \
+    res.rc \
+
+INCLUDES = \
+    ..\; \
+    $(MINWIN_PRIV_INC_PATH); \
+    $(MINWIN_PRIV_SDK_INC_PATH); \
+    $(MINCORE_PRIV_SDK_INC_PATH); \
+    $(ONECOREWINDOWS_INC_PATH); \
+    $(DS_INC_PATH); \
+
+TARGETLIBS = \
+    $(MINWIN_SDK_LIB_PATH)\ntdll.lib \
+    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+    $(SDK_LIB_PATH)\wintrust.lib \
+
+MUI_VERIFY_NO_LOC_RESOURCE = 1

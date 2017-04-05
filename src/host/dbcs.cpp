@@ -8,16 +8,9 @@
 
 #include "dbcs.h"
 
-#include "_output.h"
-#include "output.h"
-
-#include "consrv.h"
-#include "conv.h"
-#include "globals.h"
 #include "misc.h"
-#include "srvinit.h"
-#include "utils.hpp"
-#include "window.hpp"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -313,9 +306,9 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
     // Currently we do not support codepoints above 0xffff
     else
     {
-        if (g_pRender != nullptr)
+        if (ServiceLocator::LocateGlobals()->pRender != nullptr)
         {
-            return g_pRender->IsCharFullWidthByFont(wch);
+            return ServiceLocator::LocateGlobals()->pRender->IsCharFullWidthByFont(wch);
         }
     }
 
@@ -532,8 +525,8 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
         if (IsCharFullWidth(TmpUni[i]))
         {
             ULONG const NumBytes = sizeof(AsciiDbcs);
-            ConvertToOem(g_ciConsoleInformation.CP, &TmpUni[i], 1, (LPSTR) & AsciiDbcs[0], NumBytes);
-            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &g_ciConsoleInformation.CPInfo))
+            ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, &TmpUni[i], 1, (LPSTR) & AsciiDbcs[0], NumBytes);
+            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo))
             {
                 if (j < cbAnsi - 1)
                 {   // -1 is safe DBCS in buffer
@@ -556,7 +549,7 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
         }
         else
         {
-            ConvertToOem(g_ciConsoleInformation.CP, &TmpUni[i], 1, &pchAnsi[j], 1);
+            ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, &TmpUni[i], 1, &pchAnsi[j], 1);
         }
     }
 

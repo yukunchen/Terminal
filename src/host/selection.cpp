@@ -6,16 +6,11 @@
 
 #include "precomp.h"
 
-#include "selection.hpp"
-
 #include "_output.h"
-#include "clipboard.hpp"
-#include "cursor.h"
-#include "menu.h"
-#include "output.h"
 #include "stream.h"
 #include "scrolling.hpp"
-#include "window.hpp"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 Selection::Selection() :
     _fSelectionVisible(false),
@@ -36,6 +31,7 @@ Selection::~Selection()
 Selection& Selection::Instance()
 {
     static Selection s;
+
     return s;
 }
 
@@ -73,7 +69,7 @@ NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) 
 
     if (NT_SUCCESS(status))
     {
-        const PSCREEN_INFORMATION pScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
+        const PSCREEN_INFORMATION pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
 
         const SMALL_RECT * const pSelectionRect = &_srSelectionRect;
         const UINT cRectangles = pSelectionRect->Bottom - pSelectionRect->Top + 1;
@@ -321,9 +317,9 @@ void Selection::_SetSelectionVisibility(_In_ bool const fMakeVisible)
 //  - <none>
 void Selection::_PaintSelection() const
 {
-    if (g_pRender != nullptr)
+    if (ServiceLocator::LocateGlobals()->pRender != nullptr)
     {
-        g_pRender->TriggerSelection();
+        ServiceLocator::LocateGlobals()->pRender->TriggerSelection();
     }
 }
 
@@ -354,10 +350,11 @@ void Selection::InitializeMouseSelection(_In_ const COORD coordBufferPos)
     CheckAndSetAlternateSelection();
 
     // set window title to mouse selection mode
-    UpdateWinText();
+    ServiceLocator::LocateConsoleWindow()->UpdateWindowText();
 
     // Fire off an event to let accessibility apps know the selection has changed.
-    NotifyWinEvent(EVENT_CONSOLE_CARET, g_ciConsoleInformation.hWnd, CONSOLE_CARET_SELECTION, PACKCOORD(coordBufferPos));
+
+    ServiceLocator::LocateAccessibilityNotifier()->NotifyConsoleCaretEvent(IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection, PACKCOORD(coordBufferPos));
 }
 
 // Routine Description:
@@ -384,7 +381,7 @@ void Selection::AdjustSelection(_In_ const COORD coordSelectionStart, _In_ const
 // - <none>
 void Selection::ExtendSelection(_In_ COORD coordBufferPos)
 {
-    SCREEN_INFORMATION* pScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
+    SCREEN_INFORMATION* pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
 
     // ensure position is within buffer bounds. Not less than 0 and not greater than the screen buffer size.
     pScreenInfo->ClipToScreenBuffer(&coordBufferPos);
@@ -443,7 +440,7 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
     _PaintSelection();
 
     // Fire off an event to let accessibility apps know the selection has changed.
-    NotifyWinEvent(EVENT_CONSOLE_CARET, g_ciConsoleInformation.hWnd, CONSOLE_CARET_SELECTION, PACKCOORD(coordBufferPos));
+    ServiceLocator::LocateAccessibilityNotifier()->NotifyConsoleCaretEvent(IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection, PACKCOORD(coordBufferPos));
 }
 
 // Routine Description:
@@ -454,7 +451,7 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
 // - <none>
 void Selection::_CancelMouseSelection()
 {
-    SCREEN_INFORMATION* pScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
+    SCREEN_INFORMATION* pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
 
     // invert old select rect.  if we're selecting by mouse, we
     // always have a selection rect.
@@ -463,7 +460,7 @@ void Selection::_CancelMouseSelection()
     // turn off selection flag
     _SetSelectingState(false);
 
-    UpdateWinText();
+    ServiceLocator::LocateConsoleWindow()->UpdateWindowText();
 
     // Mark the cursor position as changed so we'll fire off a win event.
     pScreenInfo->TextInfo->GetCursor()->SetHasMoved(TRUE);
@@ -477,7 +474,7 @@ void Selection::_CancelMouseSelection()
 // - <none>
 void Selection::_CancelMarkSelection()
 {
-    SCREEN_INFORMATION* pScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
+    SCREEN_INFORMATION* pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
 
     // Hide existing selection, if we have one.
     if (IsAreaSelected())
@@ -488,7 +485,7 @@ void Selection::_CancelMarkSelection()
     // Turn off selection flag.
     _SetSelectingState(false);
 
-    UpdateWinText();
+    ServiceLocator::LocateConsoleWindow()->UpdateWindowText();
 
     // restore text cursor
     _RestoreCursorData(pScreenInfo);
@@ -554,7 +551,7 @@ void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, _In_ ULONG const 
     ASSERT(ulAttr <= 0xff);
 
     // Read selection rectangle, assumed already clipped to buffer.
-    SCREEN_INFORMATION* pScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
+    SCREEN_INFORMATION* pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
 
     COORD coordTargetSize;
     coordTargetSize.X = CalcWindowSizeX(&_srSelectionRect);
@@ -591,7 +588,7 @@ void Selection::InitializeMarkSelection()
     _dwSelectionFlags = 0;
 
     // save old cursor position and make console cursor into selection cursor.
-    SCREEN_INFORMATION* pScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
+    SCREEN_INFORMATION* pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
     _SaveCursorData(pScreenInfo->TextInfo);
     pScreenInfo->SetCursorInformation(100, TRUE);
 
@@ -604,7 +601,7 @@ void Selection::InitializeMarkSelection()
     _coordSelectionAnchor = coordPosition;
 
     // set frame title text
-    UpdateWinText();
+    ServiceLocator::LocateConsoleWindow()->UpdateWindowText();
 }
 
 // Routine Description:
@@ -639,7 +636,7 @@ void Selection::SelectNewRegion(_In_ COORD const coordStart, _In_ COORD const co
 void Selection::SelectAll()
 {
     // save the old window position
-    SCREEN_INFORMATION* pScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
+    SCREEN_INFORMATION* pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
 
     COORD coordWindowOrigin;
     coordWindowOrigin.X = pScreenInfo->GetBufferViewport().Left;
@@ -710,7 +707,7 @@ void Selection::SelectAll()
             // Check if both anchor and opposite corner are exactly the bounds of the input line
             const bool fAllInputSelected =
                 ((Utils::s_CompareCoords(coordInputStart, coordOldAnchor) == 0 && Utils::s_CompareCoords(coordInputEnd, coordOldAnchorOpposite) == 0) ||
-                (Utils::s_CompareCoords(coordInputStart, coordOldAnchorOpposite) == 0 && Utils::s_CompareCoords(coordInputEnd, coordOldAnchor) == 0));
+                 (Utils::s_CompareCoords(coordInputStart, coordOldAnchorOpposite) == 0 && Utils::s_CompareCoords(coordInputEnd, coordOldAnchor) == 0));
 
             if (fIsOldSelWithinInput && !fAllInputSelected)
             {

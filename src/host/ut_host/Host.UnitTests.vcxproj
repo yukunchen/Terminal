@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
@@ -22,6 +22,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\interactivity\base\lib\InteractivityBase.vcxproj">
+      <Project>{06ec74cb-9a12-429c-b551-8562ec964846}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\interactivity\win32\lib\win32.LIB.vcxproj">
+      <Project>{06ec74cb-9a12-429c-b551-8532ec964726}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\propslib\propslib.vcxproj">
       <Project>{345fd5a4-b32b-4f29-bd1c-b033bd2c35cc}</Project>
     </ProjectReference>

@@ -9,6 +9,8 @@
 #include "dbcs.h"
 #include "misc.h"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 // Routine Description:
 // - Constructs direct read data class to hold context across sessions generally when there's not enough data to return
 //   Also used a bit internally to just pass some information along the stack (regardless of wait necessity).
@@ -61,7 +63,7 @@ BOOL DIRECT_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
                               _Out_ DWORD* const pNumBytes,
                               _Out_ DWORD* const pControlKeyState)
 {
-    ASSERT(g_ciConsoleInformation.IsConsoleLocked());
+    ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
 
     BOOLEAN RetVal = TRUE;
     *pReplyStatus = STATUS_SUCCESS;
@@ -126,34 +128,34 @@ BOOL DIRECT_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         // this routine should be called by a thread owning the same
         // lock on the same console as we're reading from.
 
-        ASSERT(g_ciConsoleInformation.IsConsoleLocked());
+        ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
 
         Buffer = _pUserBuffer;
 
         PDWORD nLength = nullptr;
 
-        g_ciConsoleInformation.ReadConInpNumBytesUnicode = NumRecords;
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->ReadConInpNumBytesUnicode = NumRecords;
         if (!fIsUnicode)
         {
             // ASCII : a->NumRecords is ASCII byte count
             if (_pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
             {
                 // Saved DBCS Traling byte
-                if (g_ciConsoleInformation.ReadConInpNumBytesUnicode != 1)
+                if (ServiceLocator::LocateGlobals()->getConsoleInformation()->ReadConInpNumBytesUnicode != 1)
                 {
-                    g_ciConsoleInformation.ReadConInpNumBytesUnicode--;
+                    ServiceLocator::LocateGlobals()->getConsoleInformation()->ReadConInpNumBytesUnicode--;
                     Buffer++;
                     fAddDbcsLead = TRUE;
-                    nLength = &g_ciConsoleInformation.ReadConInpNumBytesUnicode;
+                    nLength = &ServiceLocator::LocateGlobals()->getConsoleInformation()->ReadConInpNumBytesUnicode;
                 }
                 else
                 {
-                    ASSERT(g_ciConsoleInformation.ReadConInpNumBytesUnicode == 1);
+                    ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->ReadConInpNumBytesUnicode == 1);
                 }
             }
             else
             {
-                nLength = &g_ciConsoleInformation.ReadConInpNumBytesUnicode;
+                nLength = &ServiceLocator::LocateGlobals()->getConsoleInformation()->ReadConInpNumBytesUnicode;
             }
         }
         else
@@ -184,7 +186,7 @@ BOOL DIRECT_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
 
             NumRecords = TranslateInputToOem(Buffer,
                                              NumRecords,
-                                             g_ciConsoleInformation.ReadConInpNumBytesUnicode,
+                                             ServiceLocator::LocateGlobals()->getConsoleInformation()->ReadConInpNumBytesUnicode,
                                              _fIsPeek ? nullptr : &_pInputBuffer->ReadConInpDbcsLeadByte);
             if (fAddDbcsLead && _pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
             {

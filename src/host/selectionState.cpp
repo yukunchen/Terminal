@@ -5,11 +5,8 @@
 ********************************************************/
 
 #include "precomp.h"
-#include "selection.hpp"
 
-#include "globals.h"
-
-#include "cursor.h"
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 // Routine Description:
 // - Determines whether the console is in a selecting state
@@ -19,7 +16,7 @@
 // - True if the console is in a selecting state. False otherwise.
 bool Selection::IsInSelectingState() const
 {
-    return (g_ciConsoleInformation.Flags & CONSOLE_SELECTING) != 0;
+    return (ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags & CONSOLE_SELECTING) != 0;
 }
 
 // Routine Description:
@@ -32,11 +29,11 @@ void Selection::_SetSelectingState(_In_ const bool fSelectingOn)
 {
     if (fSelectingOn)
     {
-        g_ciConsoleInformation.Flags |= CONSOLE_SELECTING;
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_SELECTING;
     }
     else
     {
-        g_ciConsoleInformation.Flags &= ~CONSOLE_SELECTING;
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags &= ~CONSOLE_SELECTING;
     }
 }
 
@@ -49,7 +46,7 @@ void Selection::_SetSelectingState(_In_ const bool fSelectingOn)
 // - True if quick edit mode is enabled. False otherwise.
 bool Selection::IsInQuickEditMode() const
 {
-    return (g_ciConsoleInformation.Flags & CONSOLE_QUICK_EDIT_MODE) != 0;
+    return (ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags & CONSOLE_QUICK_EDIT_MODE) != 0;
 }
 
 // Routine Description:
@@ -150,14 +147,14 @@ void Selection::MouseDown()
     _dwSelectionFlags |= CONSOLE_MOUSE_DOWN;
 
     // We must capture the mouse on button down to ensure we receive messages if it comes back up outside the window.
-    SetCapture(g_ciConsoleInformation.hWnd);
+    ServiceLocator::LocateConsoleWindow()->CaptureMouse();
 }
 
 void Selection::MouseUp()
 {
     _dwSelectionFlags &= ~CONSOLE_MOUSE_DOWN;
 
-    ReleaseCapture();
+    ServiceLocator::LocateConsoleWindow()->ReleaseMouse();
 }
 
 // Routine Description:

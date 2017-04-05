@@ -21,9 +21,6 @@
     <ClCompile Include="..\_stream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\clipboard.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\cmdline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -42,19 +39,10 @@
     <ClCompile Include="..\directio.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\find.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\getset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\globals.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\handle.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\icon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\input.cpp">
@@ -67,9 +55,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\inputReadHandleData.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\menu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\misc.cpp">
@@ -129,19 +114,7 @@
     <ClCompile Include="..\tracing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\userprivapi.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\utils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\windowdpiapi.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\windowproc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\conimeinfo.cpp">
@@ -153,13 +126,13 @@
     <ClCompile Include="..\ntprivapi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\consoleKeyInfo.cpp">
+    <ClCompile Include="..\search.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\windowUiaProvider.cpp">
+    <ClCompile Include="..\init.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\screenInfoUiaProvider.cpp">
+    <ClCompile Include="..\globals.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\readData.cpp">
@@ -189,9 +162,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\renderFontDefaults.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\screenInfo.hpp">
@@ -224,25 +194,13 @@
     <ClInclude Include="..\tracing.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\userprivapi.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\utils.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\window.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\windowdpiapi.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\_output.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\_stream.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\clipboard.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\cmdline.h">
@@ -275,9 +233,6 @@
     <ClInclude Include="..\directio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\find.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\getset.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -287,16 +242,10 @@
     <ClInclude Include="..\handle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\icon.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\inputBuffer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\menu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\misc.h">
@@ -320,13 +269,13 @@
     <ClInclude Include="..\ntprivapi.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\consoleKeyInfo.hpp">
+    <ClInclude Include="..\search.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\windowUiaProvider.hpp">
+    <ClInclude Include="..\init.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\screenInfoUiaProvider.hpp">
+    <ClInclude Include="..\resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\readData.hpp">

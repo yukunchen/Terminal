@@ -188,7 +188,7 @@ void InitExtendedEditKeys(_In_opt_ ExtKeyDefBuf const * const pKeyDefBuf);
 bool IsPauseKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
 
 // Word delimiters
-#define IS_WORD_DELIM(wch)  ((wch) == L' ' || (gaWordDelimChars[0] && IsWordDelim(wch)))
+#define IS_WORD_DELIM(wch)  ((wch) == L' ' || (ServiceLocator::LocateGlobals()->aWordDelimChars[0] && IsWordDelim(wch)))
 bool IsWordDelim(_In_ WCHAR const wch);
 
 HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pwsBuffer,

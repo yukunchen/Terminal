@@ -8,6 +8,8 @@
 #include "WexTestClass.h"
 #include "..\..\inc\consoletaeftemplates.hpp"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 #define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(SUCCEEDED_NTSTATUS(x))
 
 using namespace WEX::Logging;
@@ -469,20 +471,20 @@ class InputBufferTests
         INPUT_RECORD pauseRecord = MakeKeyEvent(true, 1, VK_PAUSE, 0, 0, 0);
 
         // make sure we aren't currently paused and have an empty buffer
-        VERIFY_IS_FALSE(IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_OUTPUT_SUSPENDED));
+        VERIFY_IS_FALSE(IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_OUTPUT_SUSPENDED));
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
 
         VERIFY_ARE_EQUAL(inputBuffer.WriteInputBuffer(&pauseRecord, 1), 0u);
 
         // we should now be paused and the input record should be discarded
-        VERIFY_IS_TRUE(IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_OUTPUT_SUSPENDED));
+        VERIFY_IS_TRUE(IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_OUTPUT_SUSPENDED));
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
 
         // the next key press should unpause us but be discarded
         INPUT_RECORD unpauseRecord = MakeKeyEvent(true, 1, L'a', 0, L'a', 0);
         VERIFY_ARE_EQUAL(inputBuffer.WriteInputBuffer(&unpauseRecord, 1), 0u);
 
-        VERIFY_IS_FALSE(IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_OUTPUT_SUSPENDED));
+        VERIFY_IS_FALSE(IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_OUTPUT_SUSPENDED));
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
     }
 
@@ -492,14 +494,14 @@ class InputBufferTests
         INPUT_RECORD pauseRecord = MakeKeyEvent(true, 1, VK_PAUSE, 0, 0, 0);
 
         // make sure we aren't currently paused and have an empty buffer
-        VERIFY_IS_FALSE(IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_OUTPUT_SUSPENDED));
+        VERIFY_IS_FALSE(IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_OUTPUT_SUSPENDED));
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
 
         // pause the screen
         VERIFY_ARE_EQUAL(inputBuffer.WriteInputBuffer(&pauseRecord, 1), 0u);
 
         // we should now be paused and the input record should be discarded
-        VERIFY_IS_TRUE(IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_OUTPUT_SUSPENDED));
+        VERIFY_IS_TRUE(IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_OUTPUT_SUSPENDED));
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
 
         // sending a system key event should not stop the pause and
@@ -507,7 +509,7 @@ class InputBufferTests
         INPUT_RECORD systemRecord = MakeKeyEvent(true, 1, VK_CONTROL, 0, 0, 0);
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&systemRecord, 1), 0u);
 
-        VERIFY_IS_TRUE(IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_OUTPUT_SUSPENDED));
+        VERIFY_IS_TRUE(IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_OUTPUT_SUSPENDED));
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1u);
 
         INPUT_RECORD outRecords[2];

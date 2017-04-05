@@ -15,7 +15,7 @@ Author(s):
 #pragma once
 
 // Fusion Application Manifest
-#define IDR_SYSTEM_MANIFEST             100
+#define IDR_SYSTEM_MANIFEST 100
 
 // IDs of various STRINGTABLE entries
 #define ID_CONSOLE_MSGCMDLINEF2     0x1008

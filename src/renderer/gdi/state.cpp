@@ -320,7 +320,15 @@ HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDe
         }
         else
         {
-            lf.lfCharSet = pfiFontDesired->GetCharSet();
+            CHARSETINFO csi;
+            if (!TranslateCharsetInfo((DWORD *)IntToPtr(pfiFontDesired->GetCodePage()), &csi, TCI_SRCCODEPAGE))
+            {
+                // if we failed to translate from codepage to charset, choose our charset depending on what kind of font we're
+                // dealing with. Raster Fonts need to be presented with the OEM charset, while TT fonts need to be ANSI.
+                csi.ciCharset = (((pfiFontDesired->GetFamily()) & TMPF_TRUETYPE) == TMPF_TRUETYPE) ? ANSI_CHARSET : OEM_CHARSET;
+            }
+
+            lf.lfCharSet = (BYTE)csi.ciCharset;
         }
 
         lf.lfQuality = DRAFT_QUALITY;

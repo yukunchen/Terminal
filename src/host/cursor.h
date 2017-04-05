@@ -16,27 +16,26 @@ Revision History:
 
 #pragma once
 
+#include "..\interactivity\inc\IConsoleWindow.hpp"
+#include "..\interactivity\inc\IAccessibilityNotifier.hpp"
+
 // the following values are used to create the textmode cursor.
 #define CURSOR_SMALL_SIZE 25    // large enough to be one pixel on a six pixel font
 class SCREEN_INFORMATION;
 typedef SCREEN_INFORMATION *PSCREEN_INFORMATION;
 
+
 class Cursor sealed
 {
 public:
-
-    Cursor(_In_ ULONG const ulSize);
+    Cursor(_In_ Microsoft::Console::Interactivity::IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize);
     static NTSTATUS CreateInstance(_In_ ULONG const ulSize, _Outptr_ Cursor ** const ppCursor);
     ~Cursor();
 
-    // These all have to do with the one console CURSOR_TIMER and
-    //    windows.h:GetCaretBlinkTime, so they should stay static
-    static void s_UpdateSystemMetrics();
-    static void s_SettingsChanged(_In_ HWND const hWnd);
-    static void s_FocusStart(_In_ HWND const hWnd);
-    static void s_FocusEnd(_In_ HWND const hWnd);
-    static UINT s_GetCaretBlinkTime();
-
+    void UpdateSystemMetrics();
+    void SettingsChanged();
+    void FocusStart();
+    void FocusEnd();
 
     const BOOLEAN HasMoved() const;
     const BOOLEAN IsVisible() const;
@@ -80,6 +79,8 @@ public:
     BOOL IsDelayedEOLWrap() const;
 
 private:
+    Microsoft::Console::Interactivity::IAccessibilityNotifier *_pAccessibilityNotifier;
+
     //TODO: seperate the rendering and text placement
 
     // NOTE: If you are adding a property here, go add it to CopyProperties.
@@ -103,11 +104,16 @@ private:
 
     ULONG _ulSize;
 
-    static void s_SetCaretTimer(_In_ HWND const hWnd);
-    static void s_KillCaretTimer(_In_ HWND const hWnd);
+    // These use Timer Queues:
+    // https://msdn.microsoft.com/en-us/library/windows/desktop/ms687003(v=vs.85).aspx
+    HANDLE _hCaretBlinkTimer; // timer used to peridically blink the cursor
+    HANDLE _hCaretBlinkTimerQueue; // timer queue where the blink timer lives
+
+    void SetCaretTimer();
+    void KillCaretTimer();
 
     void _RedrawCursor();
     void _RedrawCursorAlways();
 
-    static UINT s_uCaretBlinkTime;
+    UINT _uCaretBlinkTime;
 };

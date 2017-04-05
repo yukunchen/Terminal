@@ -30,10 +30,12 @@ public:
     static void s_DoScroll();
     static void s_ClearScroll();
     static void s_ScrollIfNecessary(_In_ const SCREEN_INFORMATION * const pScreenInfo);
-    static void s_HandleMouseWheel(_In_ const UINT Message, _In_ const WPARAM wParam, PSCREEN_INFORMATION pScreenInfo);
+    static void s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWheel, _In_ short wheelDelta, _In_ bool hasShift, _In_ PSCREEN_INFORMATION pScreenInfo);
     static bool s_HandleKeyScrollingEvent(_In_ const INPUT_KEY_INFO* const pKeyInfo);
 
 private:
+    static BOOL s_IsPointInRectangle(_In_ CONST RECT *prc, _In_ POINT pt);
+
     static ULONG s_ucWheelScrollLines;
     static ULONG s_ucWheelScrollChars;
 };

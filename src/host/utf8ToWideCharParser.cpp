@@ -5,6 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
+
 #include "utf8ToWideCharParser.hpp"
 
 #ifndef WIL_ENABLE_EXCEPTIONS
