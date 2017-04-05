@@ -60,8 +60,50 @@ IFACEMETHODIMP UiaLineTextRange::CompareEndpoints(TextPatternRangeEndpoint endpo
                                             _In_ TextPatternRangeEndpoint targetEndpoint,
                                             _Out_ int* pRetVal)
 {
-    endpoint; pTargetRange; targetEndpoint; pRetVal;
-    return E_NOTIMPL;
+    // get the line text range that we're comparing to
+    UiaLineTextRange* lineRange = dynamic_cast<UiaLineTextRange*>(pTargetRange);
+    if (lineRange == nullptr)
+    {
+        return E_NOINTERFACE;
+    }
+
+    // get value that we're comparing to
+    size_t theirValue;
+    if (targetEndpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        theirValue = lineRange->getLineNumberStart();
+    }
+    else
+    {
+        theirValue = lineRange->getLineNumberEnd();
+    }
+
+    // get the value of our endpoint
+    size_t ourValue;
+    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        ourValue = _lineNumberStart;
+    }
+    else
+    {
+        ourValue = _lineNumberEnd;
+    }
+
+    // compare them
+    if (ourValue < theirValue)
+    {
+        *pRetVal = -1;
+    }
+    else if (ourValue > theirValue)
+    {
+        *pRetVal = 1;
+    }
+    else
+    {
+        *pRetVal = 0;
+    }
+
+    return S_OK;
 }
 
 IFACEMETHODIMP UiaLineTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
