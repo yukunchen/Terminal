@@ -108,8 +108,14 @@ IFACEMETHODIMP UiaLineTextRange::CompareEndpoints(TextPatternRangeEndpoint endpo
 
 IFACEMETHODIMP UiaLineTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
 {
-    unit;
-    return E_NOTIMPL;
+    // next biggest up right now is a document range, so we're going
+    // to expand to the whole document
+    if (unit > TextUnit::TextUnit_Line)
+    {
+        _lineNumberStart = 0;
+        _lineNumberEnd = _pOutputBuffer->TotalRowCount();
+    }
+    return S_OK;
 }
 
 IFACEMETHODIMP UiaLineTextRange::FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
