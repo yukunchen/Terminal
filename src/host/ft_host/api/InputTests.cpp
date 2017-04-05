@@ -32,6 +32,8 @@ class InputTests
     TEST_METHOD(TestReadConsoleInvalid);
     TEST_METHOD(TestWriteConsoleInvalid);
 
+    TEST_METHOD(TestReadConsolePasswordScenario);
+
     TEST_METHOD(TestMouseWheelReadConsoleMouseInput);
     TEST_METHOD(TestMouseHorizWheelReadConsoleMouseInput);
     TEST_METHOD(TestMouseWheelReadConsoleNoMouseInput);
@@ -266,6 +268,103 @@ void InputTests::TestWriteConsoleInvalid()
     INPUT_RECORD irWrite = {0};
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInput(hConsoleInput, &irWrite, 0, &nWrite));
     VERIFY_ARE_EQUAL(nWrite, (DWORD)0);
+}
+
+void FillInputRecordHelper(_Inout_ INPUT_RECORD* const pir, _In_ wchar_t wch, _In_ bool fIsKeyDown)
+{
+    pir->EventType = KEY_EVENT;
+    pir->Event.KeyEvent.wRepeatCount = 1;
+    pir->Event.KeyEvent.dwControlKeyState = 0;
+    pir->Event.KeyEvent.bKeyDown = !!fIsKeyDown;
+    pir->Event.KeyEvent.uChar.UnicodeChar = wch;
+
+    // This only holds true for capital letters from A-Z.
+    VERIFY_IS_TRUE(wch >= 'A' && wch <= 'Z');
+    pir->Event.KeyEvent.wVirtualKeyCode = wch;
+
+    pir->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(pir->Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC));
+}
+
+void InputTests::TestReadConsolePasswordScenario()
+{
+    // Scenario inspired by net use's password capture code.
+    HANDLE const hIn = GetStdHandle(STD_INPUT_HANDLE);
+
+    // 1. Set up our mode to be raw input (mimicing method used by "net use")
+    DWORD mode = ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_MOUSE_INPUT;
+    GetConsoleMode(hIn, &mode);
+
+    SetConsoleMode(hIn, (~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT)) & mode);
+
+    // 2. Flush and write some text into the input buffer (added for sake of test.)
+    PCWSTR pwszExpected = L"QUE";
+    DWORD const cBuffer = static_cast<DWORD>(wcslen(pwszExpected) * 2);
+    wistd::unique_ptr<INPUT_RECORD[]> irBuffer = wil::make_unique_nothrow<INPUT_RECORD[]>(cBuffer);
+    FillInputRecordHelper(&irBuffer.get()[0], pwszExpected[0], true);
+    FillInputRecordHelper(&irBuffer.get()[1], pwszExpected[0], false);
+    FillInputRecordHelper(&irBuffer.get()[2], pwszExpected[1], true);
+    FillInputRecordHelper(&irBuffer.get()[3], pwszExpected[1], false);
+    FillInputRecordHelper(&irBuffer.get()[4], pwszExpected[2], true);
+    FillInputRecordHelper(&irBuffer.get()[5], pwszExpected[2], false);
+
+    DWORD dwWritten;
+    FlushConsoleInputBuffer(hIn);
+    WriteConsoleInputW(hIn, irBuffer.get(), cBuffer, &dwWritten);
+
+    // Press "enter" key on the window to signify the user pressing enter at the end of the password.
+    PostMessageW(GetConsoleWindow(), WM_KEYDOWN, VK_RETURN, 0);
+
+    // 3. Set up our read loop (mimicing password capture methodology from "net use" command.)
+    size_t const buflen = (cBuffer / 2) + 1; // key down and key up will be coalesced into one.
+    wistd::unique_ptr<wchar_t[]> buf = wil::make_unique_nothrow<wchar_t[]>(buflen);
+    size_t len = 0;
+    VERIFY_IS_NOT_NULL(buf);
+    wchar_t* bufPtr = buf.get();
+
+    while (true)
+    {
+        wchar_t ch;
+        DWORD c;
+        int err = ReadConsoleW(hIn, &ch, 1, &c, 0);
+
+        if (!err || c != 1)
+        {
+            ch = 0xffff; // end of line
+        }
+
+        if ((ch == 0xD) || (ch == 0xffff)) // CR or end of line
+        {
+            break;
+        }
+
+        if (ch == 0x8) // backspace
+        {
+            if (bufPtr != buf.get())
+            {
+                bufPtr--;
+                len--;
+            }
+        }
+        else
+        {
+            *bufPtr = ch;
+            if (len < buflen)
+            {
+                bufPtr++;
+            }
+            len++;
+        }
+    }
+
+    // 4. Restore console mode and terminate string (mimics "net use" behavior)
+    SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), mode);
+
+    *bufPtr = L'\0'; // null terminate string
+    putchar('\n');
+
+    // 5. Verify our string got read back (added for sake of the test)
+    VERIFY_ARE_EQUAL(String(pwszExpected), String(buf.get()));
+    VERIFY_ARE_EQUAL(wcslen(pwszExpected), len);
 }
 
 void TestMouseWheelReadConsoleInputHelper(_In_ UINT const msg, _In_ DWORD const dwEventFlagsExpected, _In_ DWORD const dwConsoleMode)

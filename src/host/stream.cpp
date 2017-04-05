@@ -716,6 +716,12 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
 
                 delete[] TransBuffer;
             }
+            else
+            {
+                // We always return the byte count for A & W modes, so in the Unicode case where we didn't translate back,
+                // set the return to the byte count that we assembled while pulling characters from the internal buffers.
+                *pdwNumBytes = NumToWrite;
+            }
         }
     }
 
@@ -749,18 +755,18 @@ HRESULT ApiRoutines::ReadConsoleAImpl(_In_ IConsoleInputObject* const pInContext
     RETURN_IF_FAILED(SizeTToULong(cbExeName, &ulExeName));
 
     NTSTATUS const Status = DoReadConsole(pInContext,
-                                           hConsoleClient,
-                                           (wchar_t*)psTextBuffer,
-                                           &ulTextBuffer,
-                                           pdwControlKeyState,
-                                           (wchar_t*)psInitialData,
-                                           ulInitialData,
-                                           dwControlWakeupMask,
-                                           pHandleData,
-                                           pwsExeName,
-                                           ulExeName,
-                                           false,
-                                           ppWaiter);
+                                          hConsoleClient,
+                                          (wchar_t*)psTextBuffer,
+                                          &ulTextBuffer,
+                                          pdwControlKeyState,
+                                          (wchar_t*)psInitialData,
+                                          ulInitialData,
+                                          dwControlWakeupMask,
+                                          pHandleData,
+                                          pwsExeName,
+                                          ulExeName,
+                                          false,
+                                          ppWaiter);
 
     *pcchTextBufferWritten = ulTextBuffer;
 
@@ -800,21 +806,21 @@ HRESULT ApiRoutines::ReadConsoleWImpl(_In_ IConsoleInputObject* const pInContext
     RETURN_IF_FAILED(SizeTToULong(cbExeName, &ulExeName));
 
     NTSTATUS const Status = DoReadConsole(pInContext,
-                                           hConsoleClient,
-                                           pwsTextBuffer,
-                                           &ulTextBuffer,
-                                           pdwControlKeyState,
-                                           pwsInitialData,
-                                           ulInitialData,
-                                           dwControlWakeupMask,
-                                           pHandleData,
-                                           pwsExeName,
-                                           ulExeName,
-                                           true,
-                                           ppWaiter);
+                                          hConsoleClient,
+                                          pwsTextBuffer,
+                                          &ulTextBuffer,
+                                          pdwControlKeyState,
+                                          pwsInitialData,
+                                          ulInitialData,
+                                          dwControlWakeupMask,
+                                          pHandleData,
+                                          pwsExeName,
+                                          ulExeName,
+                                          true,
+                                          ppWaiter);
 
-    assert(ulInitialData % sizeof(wchar_t) == 0);
-    *pcchTextBufferWritten = ulInitialData / sizeof(wchar_t);
+    assert(ulTextBuffer % sizeof(wchar_t) == 0);
+    *pcchTextBufferWritten = ulTextBuffer / sizeof(wchar_t);
 
     return HRESULT_FROM_NT(Status);
 }
