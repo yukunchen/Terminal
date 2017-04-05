@@ -42,14 +42,33 @@ IFACEMETHODIMP UiaDocumentTextRange::CompareEndpoints(TextPatternRangeEndpoint e
                                             _In_ TextPatternRangeEndpoint targetEndpoint,
                                             _Out_ int* pRetVal)
 {
-    endpoint; pTargetRange; targetEndpoint; pRetVal;
-    return E_NOTIMPL;
+    UiaDocumentTextRange* documentRange = dynamic_cast<UiaDocumentTextRange*>(pTargetRange);
+    if (documentRange == nullptr)
+    {
+        return E_NOINTERFACE;
+    }
+
+    if (endpoint == targetEndpoint)
+    {
+        *pRetVal = 0;
+    }
+    else if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start &&
+             targetEndpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_End)
+    {
+        return -1;
+    }
+    else
+    {
+        return 1;
+    }
+    return S_OK;
 }
 
 IFACEMETHODIMP UiaDocumentTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
 {
-    unit;
-    return E_NOTIMPL;
+    // we have nothing we can expand to
+    UNREFERENCED_PARAMETER(unit);
+    return S_OK;
 }
 
 IFACEMETHODIMP UiaDocumentTextRange::FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
@@ -157,6 +176,7 @@ IFACEMETHODIMP UiaDocumentTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRe
 
 IFACEMETHODIMP UiaDocumentTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ int* pRetVal)
 {
+    // we can't move
     UNREFERENCED_PARAMETER(unit);
     UNREFERENCED_PARAMETER(count);
     *pRetVal = 0;
@@ -168,6 +188,7 @@ IFACEMETHODIMP UiaDocumentTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEnd
                                                 _In_ int count,
                                                 _Out_ int* pRetVal)
 {
+    // we can't move
     UNREFERENCED_PARAMETER(endpoint);
     UNREFERENCED_PARAMETER(unit);
     UNREFERENCED_PARAMETER(count);
@@ -179,8 +200,11 @@ IFACEMETHODIMP UiaDocumentTextRange::MoveEndpointByRange(_In_ TextPatternRangeEn
                                                 _In_opt_ ITextRangeProvider* pTargetRange,
                                                 _In_ TextPatternRangeEndpoint targetEndpoint)
 {
-    endpoint; pTargetRange; targetEndpoint;
-    return E_NOTIMPL;
+    // we can't move
+    UNREFERENCED_PARAMETER(endpoint);
+    UNREFERENCED_PARAMETER(pTargetRange);
+    UNREFERENCED_PARAMETER(targetEndpoint);
+    return S_OK;
 }
 
 IFACEMETHODIMP UiaDocumentTextRange::Select()
