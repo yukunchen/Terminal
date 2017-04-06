@@ -68,13 +68,7 @@ TARGETLIBS                      =   $(TARGETLIBS) \
                                     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\onecore\lib\$(O)\ConInteractivityOneCoreLib.lib \
 
 DELAYLOAD                       =   winmm.dll; \
-                                    propsys.dll; \
                                     shell32.dll; \
-                                    uuid.dll; \
-                                    gdi32.dll; \
-                                    user32.dll; \
-                                    oleaut32.dll; \
-                                    uiautomationcore.dll; \
                                     api-ms-win-shcore-scaling-l1.dll; \
 
 DLOAD_ERROR_HANDLER             =   kernelbase
