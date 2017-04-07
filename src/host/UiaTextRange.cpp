@@ -322,83 +322,6 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
     }
 
     return S_OK;
-
-
-
-
-    /*
-
-
-    for (int i = 0; i < totalLinesInRange; ++i)
-    {
-        const int currentLineNumber = _lineNumberStart + i;
-        // width of viewport (measured in chars)
-        const int viewportWidth = _viewport.Right - _viewport.Left + 1;
-        const int viewportLineNumber = currentLineNumber - _viewport.Top;
-        if (!_isLineInViewport(currentLineNumber))
-        {
-            continue;
-        }
-
-        // measure boundaries, in pixels
-        POINT topLeft;
-        POINT bottomRight;
-
-        if (i == 0)
-        {
-            // special logic for first line since we might not start at
-            // the left edge of the viewport
-            topLeft.x = _charStart * _currentFontSize.X;
-        }
-        else
-        {
-            // we're a full line so we start at the far left of the
-            // viewport
-            topLeft.x = 0;
-        }
-
-        topLeft.y = viewportLineNumber * _currentFontSize.Y;
-
-        if (i + 1 == totalLinesInRange)
-        {
-            // special logic for last lince since we might not end at
-            // the right edge of the viewport
-            bottomRight.x = _charEnd * _currentFontSize.X;
-        }
-        else
-        {
-            // we're a full line, so we go the full width of the
-            // viewport
-            bottomRight.x = viewportWidth * _currentFontSize.X;
-        }
-
-        // +1 because we are adding each line individually
-        bottomRight.y = topLeft.y + 1;
-
-        // convert the coords to be relative to the screen instead of
-        // the client window
-        HWND hwnd = g_ciConsoleInformation.hWnd;
-        ClientToScreen(hwnd, &topLeft);
-        ClientToScreen(hwnd, &bottomRight);
-
-        // insert the coords
-        LONG width = bottomRight.x - topLeft.x;
-        LONG height = bottomRight.y - topLeft.y;
-        coords.push_back(topLeft.x);
-        coords.push_back(topLeft.y);
-        coords.push_back(width);
-        coords.push_back(height);
-    }
-
-    // convert to a safearray
-    *ppRetVal = SafeArrayCreateVector(VT_R8, 0, static_cast<ULONG>(coords.size()));
-    for (LONG i = 0; i < coords.size(); ++i)
-    {
-        SafeArrayPutElement(*ppRetVal, &i, &coords[i]);
-    }
-
-    return S_OK;
-    */
 }
 
 IFACEMETHODIMP UiaTextRange::GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal)
@@ -410,9 +333,33 @@ IFACEMETHODIMP UiaTextRange::GetEnclosingElement(_Outptr_result_maybenull_ IRawE
 
 IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 {
-    maxLength;
-    pRetVal;
-    return E_NOTIMPL;
+    std::wstring wstr = L"";
+    const bool getPartialText = maxLength != -1;
+    const COORD screenBufferCoords = g_ciConsoleInformation.GetScreenBufferSize();
+    const int totalLines = screenBufferCoords.Y;
+    const int startLine = _endpointToRow(_start);
+    const int endLine = _endpointToRow(_end);
+    const int totalLinesInRange = (endLine > startLine) ? endLine - startLine : endLine - startLine + totalLines;
+
+    for (int i = 0; i < totalLinesInRange; ++i)
+    {
+        const ROW* const row = _pOutputBuffer->GetRowByOffset(startLine + i);
+        if (row->CharRow.ContainsText())
+        {
+            std::wstring tempString = std::wstring(row->CharRow.Chars + row->CharRow.Left,
+                                                   row->CharRow.Chars + row->CharRow.Right);
+            wstr += tempString;
+        }
+        wstr += L"\r\n";
+        if (getPartialText && wstr.size() > maxLength)
+        {
+            wstr.resize(maxLength);
+            break;
+        }
+    }
+
+    *pRetVal = SysAllocString(wstr.c_str());
+    return S_OK;
 }
 
 IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ int* pRetVal)
