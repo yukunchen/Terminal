@@ -54,8 +54,6 @@ SOURCES                         =   $(SOURCES)\
                                     ..\utf8ToWideCharParser.cpp \
                                     ..\UiaTextProvider.cpp \
                                     ..\UiaTextRange.cpp \
-                                    ..\UiaLineTextRange.cpp \
-                                    ..\UiaDocumentTextRange.cpp \
                                     ..\conimeinfo.cpp \
 
 INCLUDES                        =  $(INCLUDES); \

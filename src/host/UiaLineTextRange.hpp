@@ -16,7 +16,6 @@ public:
     const size_t getLineNumberStart() const;
     const size_t getLineNumberEnd() const;
 
-
     // ITextRangeProvider methods
     IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
     IFACEMETHODIMP Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal);

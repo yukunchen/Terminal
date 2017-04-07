@@ -46,8 +46,6 @@
     <ClCompile Include="..\tracing.cpp" />
     <ClCompile Include="..\userprivapi.cpp" />
     <ClCompile Include="..\UiaTextRange.cpp" />
-    <ClCompile Include="..\UiaLineTextRange.cpp" />
-    <ClCompile Include="..\UiaDocumentTextRange.cpp" />
     <ClCompile Include="..\utils.cpp" />
     <ClCompile Include="..\utf8ToWideCharParser.cpp" />
     <ClCompile Include="..\window.cpp" />
@@ -101,8 +99,6 @@
     <ClInclude Include="..\textbuffer.hpp" />
     <ClInclude Include="..\tracing.hpp" />
     <ClInclude Include="..\UiaTextRange.hpp" />
-    <ClInclude Include="..\UiaLineTextRange.hpp" />
-    <ClInclude Include="..\UiaDocumentTextRange.hpp" />
     <ClInclude Include="..\userprivapi.hpp" />
     <ClInclude Include="..\utils.hpp" />
     <ClInclude Include="..\utf8ToWideCharParser.hpp" />

@@ -12,8 +12,6 @@
 #include "window.hpp"
 
 #include "UiaTextRange.hpp"
-#include "UiaLineTextRange.hpp"
-#include "UiaDocumentTextRange.hpp"
 
 // A helper function to create a SafeArray Version of an int array of a specified length
 SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int const length)
@@ -276,6 +274,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(SAFEARRAY** ppRetVal)
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
 {
+    /*
     TEXT_BUFFER_INFO* pOutputBuffer = _pScreenInfo->TextInfo;
     const SMALL_RECT viewport = _pScreenInfo->GetBufferViewport();
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
@@ -309,6 +308,9 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
         }
     }
     return S_OK;
+    */
+    ppRetVal;
+    return E_NOTIMPL;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(IRawElementProviderSimple* childElement,
@@ -333,14 +335,28 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(ITextRangeProvider** ppR
     const SMALL_RECT viewport = _pScreenInfo->GetBufferViewport();
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
     const COORD currentFontSize = currentFont.GetUnscaledSize();
+    const int documentLines = pOutputBuffer->TotalRowCount();
+    const int lineWidth = g_ciConsoleInformation.GetScreenBufferSize().X;
 
-    UiaDocumentTextRange* range = new UiaDocumentTextRange(this,
-                                                           pOutputBuffer,
-                                                           viewport,
-                                                           currentFontSize);
-    this->AddRef();
-    *ppRetVal = range;
-    return S_OK;
+
+    try
+    {
+        UiaTextRange* range = new UiaTextRange(this,
+                                               pOutputBuffer,
+                                               viewport,
+                                               currentFontSize,
+                                               0,
+                                               documentLines * lineWidth);
+
+        this->AddRef();
+        *ppRetVal = range;
+        return S_OK;
+    }
+    catch (...)
+    {
+        *ppRetVal = nullptr;
+        return wil::ResultFromCaughtException();
+    }
 }
 
 // TODO change this when selection is supported
