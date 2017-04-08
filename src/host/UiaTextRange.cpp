@@ -382,32 +382,26 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ int*
     int currentRow = currentStartRow;
 
     // moving forward
-    if (count > 0)
+    int incrementAmount = 1;
+    int limitingRow = bottomRow;
+    if (count < 0)
     {
-        for (int i = 0; i < count; ++i)
-        {
-            if (currentRow == bottomRow)
-            {
-                break;
-            }
-            currentRow = (currentRow + 1) % totalRows;
-            //currentRow = (currentStartRow + i + 1) % totalRows;
-            ++(*pRetVal);
-        }
+        // moving backward
+        incrementAmount = -1;
+        limitingRow = topRow;
     }
-    else
+
+    for (int i = 0; i < abs(count); ++i)
     {
-        for (int i = 0; i < abs(count); ++i)
+        if (currentRow == limitingRow)
         {
-            if (currentRow == topRow)
-            {
-                break;
-            }
-            currentRow = (currentRow - 1 + totalRows) % totalRows;
-            //currentRow = (currentStartRow + i + 1) % totalRows;
-            --(*pRetVal);
+            break;
         }
+        currentRow = (currentRow + incrementAmount + totalRows) % totalRows;
+        *pRetVal += incrementAmount;
     }
+
+    // update endpoints
     const int rowWidth = _getRowWidth();
     _start = currentRow * rowWidth;
     _end = _start + rowWidth;
