@@ -10,12 +10,12 @@ int clamp(int val, int low, int high)
 // degenerate range constructor
 UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
                            const TEXT_BUFFER_INFO* const pOutputBuffer,
-                           SMALL_RECT viewport,
+                           SCREEN_INFORMATION* const pScreenInfo,
                            const COORD currentFontSize) :
     _cRefs{ 1 },
     _pProvider{ pProvider },
     _pOutputBuffer{ pOutputBuffer },
-    _viewport{ viewport },
+    _pScreenInfo{ pScreenInfo },
     _currentFontSize{ currentFontSize },
     _start{ 0 },
     _end{ 0 }
@@ -24,14 +24,14 @@ UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
 
 UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
                            const TEXT_BUFFER_INFO* const pOutputBuffer,
-                           SMALL_RECT viewport,
+                           SCREEN_INFORMATION* const pScreenInfo,
                            const COORD currentFontSize,
                            const int start,
                            const int end) :
     _cRefs{ 1 },
     _pProvider{ pProvider },
     _pOutputBuffer{ pOutputBuffer },
-    _viewport{ viewport },
+    _pScreenInfo{ pScreenInfo },
     _currentFontSize{ currentFontSize },
     _start{ start },
     _end{ end }
@@ -251,7 +251,8 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
     //const int totalLinesInRange = (endLine - startLine + totalLines) % totalLines;
     const int totalLinesInRange = (endLine > startLine) ? endLine - startLine : endLine - startLine + totalLines;
     // width of viewport (measured in chars)
-    const int viewportWidth = _viewport.Right - _viewport.Left + 1;
+    const SMALL_RECT viewport = _getViewport();
+    const int viewportWidth = viewport.Right - viewport.Left + 1;
 
     for (int i = 0; i < totalLinesInRange; ++i)
     {
@@ -364,8 +365,57 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 
 IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ int* pRetVal)
 {
-    unit; count; pRetVal;
-    return E_NOTIMPL;
+    // for now, we only support line movement
+    // TODO add more
+
+	*pRetVal = 0;
+    if (count == 0)
+    {
+        return S_OK;
+    }
+
+    const int totalRows = _getTotalRows();
+    const int topRow = _pOutputBuffer->GetFirstRowIndex();
+    const int bottomRow = (topRow - 1 + totalRows) % totalRows;
+    const int currentStartRow = _endpointToRow(_start);
+
+    int currentRow = currentStartRow;
+
+    // moving forward
+    if (count > 0)
+    {
+        for (int i = 0; i < count; ++i)
+        {
+            if (currentRow == bottomRow)
+            {
+                break;
+            }
+            currentRow = (currentRow + 1) % totalRows;
+            //currentRow = (currentStartRow + i + 1) % totalRows;
+            ++(*pRetVal);
+        }
+    }
+    else
+    {
+        for (int i = 0; i < abs(count); ++i)
+        {
+            if (currentRow == topRow)
+            {
+                break;
+            }
+            currentRow = (currentRow - 1 + totalRows) % totalRows;
+            //currentRow = (currentStartRow + i + 1) % totalRows;
+            --(*pRetVal);
+        }
+    }
+    const int rowWidth = _getRowWidth();
+    _start = currentRow * rowWidth;
+    _end = _start + rowWidth;
+
+
+
+    UNREFERENCED_PARAMETER(unit);
+    return S_OK;
 }
 
 IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
@@ -423,12 +473,13 @@ bool UiaTextRange::_isDegenerate()
 // TODO find a better way to do this
 bool UiaTextRange::_isLineInViewport(int lineNumber)
 {
-    const int viewportHeight = _viewport.Bottom - _viewport.Top + 1;
+    const SMALL_RECT viewport = _getViewport();
+    const int viewportHeight = viewport.Bottom - viewport.Top + 1;
     const COORD screenBufferCoords = g_ciConsoleInformation.GetScreenBufferSize();
 
     for (int i = 0; i < viewportHeight; ++i)
     {
-        int currentLineNumber = (_viewport.Top + i) % screenBufferCoords.Y;
+        int currentLineNumber = (viewport.Top + i) % screenBufferCoords.Y;
         if (currentLineNumber == lineNumber)
         {
             return true;
@@ -439,12 +490,13 @@ bool UiaTextRange::_isLineInViewport(int lineNumber)
 
 int UiaTextRange::_lineNumberToViewport(int lineNumber)
 {
-    const int viewportHeight = _viewport.Bottom - _viewport.Top + 1;
+    const SMALL_RECT viewport = _getViewport();
+    const int viewportHeight = viewport.Bottom - viewport.Top + 1;
     const COORD screenBufferCoords = g_ciConsoleInformation.GetScreenBufferSize();
 
     for (int i = 0; i < viewportHeight; ++i)
     {
-        int currentLineNumber = (_viewport.Top + i) % screenBufferCoords.Y;
+        int currentLineNumber = (viewport.Top + i) % screenBufferCoords.Y;
         if (currentLineNumber == lineNumber)
         {
             return i;
@@ -465,4 +517,24 @@ const int UiaTextRange::_endpointToColumn(const int endpoint)
 {
     const COORD screenBufferCoords = g_ciConsoleInformation.GetScreenBufferSize();
     return endpoint % screenBufferCoords.X;
+}
+
+const int UiaTextRange::_getTotalRows() const
+{
+    const COORD screenBufferCoords = g_ciConsoleInformation.GetScreenBufferSize();
+    const int totalRows = screenBufferCoords.Y;
+    return totalRows;
+}
+
+const int UiaTextRange::_getRowWidth() const
+{
+    const COORD screenBufferCoords = g_ciConsoleInformation.GetScreenBufferSize();
+    const int rowWidth = screenBufferCoords.X;
+    return rowWidth;
+
+}
+
+const SMALL_RECT UiaTextRange::_getViewport() const
+{
+    return _pScreenInfo->GetBufferViewport();
 }

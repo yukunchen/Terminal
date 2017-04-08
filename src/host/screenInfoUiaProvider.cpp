@@ -298,13 +298,13 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
         int end = start + screenBufferCoords.X;
         UiaTextRange* range = new UiaTextRange(this,
                                                pOutputBuffer,
-                                               viewport,
+                                               _pScreenInfo,
                                                currentFontSize,
                                                start,
                                                end);
         this->AddRef();
-        LONG currentINdex = static_cast<LONG>(i);
-        HRESULT hr = SafeArrayPutElement(*ppRetVal, &currentINdex, (void*)range);
+        LONG currentIndex = static_cast<LONG>(i);
+        HRESULT hr = SafeArrayPutElement(*ppRetVal, &currentIndex, (void*)range);
         if (FAILED(hr))
         {
             SafeArrayDestroy(*ppRetVal);
@@ -334,7 +334,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(UiaPoint point,
 IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(ITextRangeProvider** ppRetVal)
 {
     TEXT_BUFFER_INFO* pOutputBuffer = _pScreenInfo->TextInfo;
-    const SMALL_RECT viewport = _pScreenInfo->GetBufferViewport();
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
     const COORD currentFontSize = currentFont.GetUnscaledSize();
     const int documentLines = pOutputBuffer->TotalRowCount();
@@ -345,7 +344,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(ITextRangeProvider** ppR
     {
         UiaTextRange* range = new UiaTextRange(this,
                                                pOutputBuffer,
-                                               viewport,
+                                               _pScreenInfo,
                                                currentFontSize,
                                                0,
                                                documentLines * lineWidth);

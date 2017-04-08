@@ -7,13 +7,13 @@ public:
     // degenerate range
     UiaTextRange(IRawElementProviderSimple* pProvider,
                  const TEXT_BUFFER_INFO* const pOutputBuffer,
-                 SMALL_RECT viewport,
+                 SCREEN_INFORMATION* const pScreenInfo,
                  const COORD currentFontSize);
 
     // specific range
     UiaTextRange(IRawElementProviderSimple* pProvider,
                  const TEXT_BUFFER_INFO* const pOutputBuffer,
-                 SMALL_RECT viewport,
+                 SCREEN_INFORMATION* const pScreenInfo,
                  const COORD currentFontSize,
                  const int start,
                  const int end);
@@ -84,7 +84,8 @@ protected:
     const TEXT_BUFFER_INFO* const _pOutputBuffer;
     const COORD _currentFontSize;
     IRawElementProviderSimple* _pProvider;
-    SMALL_RECT _viewport;
+    //SMALL_RECT _viewport;
+    SCREEN_INFORMATION* const _pScreenInfo;
 
 private:
     ULONG _cRefs;
@@ -104,5 +105,9 @@ private:
     int _lineNumberToViewport(int lineNumber);
     const int _endpointToRow(const int endpoint);
     const int _endpointToColumn(const int endpoint);
+    const int _getTotalRows() const;
+    const int _getRowWidth() const;
+    const SMALL_RECT _getViewport() const;
+
 
 };
