@@ -4,17 +4,21 @@ class UiaTextRange : public ITextRangeProvider
 {
 public:
 
+    // degenerate range
     UiaTextRange(IRawElementProviderSimple* pProvider,
                  const TEXT_BUFFER_INFO* const pOutputBuffer,
                  SMALL_RECT viewport,
                  const COORD currentFontSize);
 
+    // specific range
     UiaTextRange(IRawElementProviderSimple* pProvider,
                  const TEXT_BUFFER_INFO* const pOutputBuffer,
                  SMALL_RECT viewport,
                  const COORD currentFontSize,
                  const int start,
                  const int end);
+
+
     /*
     UiaTextRange(IRawElementProviderSimple* pProvider,
                  const TEXT_BUFFER_INFO* const pOutputBuffer,

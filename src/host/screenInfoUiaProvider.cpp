@@ -274,12 +274,13 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(SAFEARRAY** ppRetVal)
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
 {
-    /*
     TEXT_BUFFER_INFO* pOutputBuffer = _pScreenInfo->TextInfo;
     const SMALL_RECT viewport = _pScreenInfo->GetBufferViewport();
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
     const COORD currentFontSize = currentFont.GetUnscaledSize();
     const size_t charWidth = viewport.Right - viewport.Left + 1;
+    const COORD screenBufferCoords = g_ciConsoleInformation.GetScreenBufferSize();
+    const int totalLines = screenBufferCoords.Y;
 
     // make a safe array
     const size_t rowCount = viewport.Bottom - viewport.Top + 1;
@@ -292,11 +293,15 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
     // stuff each visible line in the safearray
     for (size_t i = 0; i < rowCount; ++i)
     {
-        UiaLineTextRange* range = new UiaLineTextRange(this,
-                                                       pOutputBuffer,
-                                                       viewport,
-                                                       currentFontSize,
-                                                       viewport.Top + i);
+        int lineNumber = viewport.Top + i % totalLines;
+        int start = lineNumber * screenBufferCoords.X;
+        int end = start + screenBufferCoords.X;
+        UiaTextRange* range = new UiaTextRange(this,
+                                               pOutputBuffer,
+                                               viewport,
+                                               currentFontSize,
+                                               start,
+                                               end);
         this->AddRef();
         LONG currentINdex = static_cast<LONG>(i);
         HRESULT hr = SafeArrayPutElement(*ppRetVal, &currentINdex, (void*)range);
@@ -308,9 +313,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
         }
     }
     return S_OK;
-    */
-    ppRetVal;
-    return E_NOTIMPL;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(IRawElementProviderSimple* childElement,

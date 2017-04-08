@@ -428,7 +428,7 @@ bool UiaTextRange::_isLineInViewport(int lineNumber)
 
     for (int i = 0; i < viewportHeight; ++i)
     {
-        int currentLineNumber = (viewportHeight + i) % screenBufferCoords.Y;
+        int currentLineNumber = (_viewport.Top + i) % screenBufferCoords.Y;
         if (currentLineNumber == lineNumber)
         {
             return true;
@@ -444,7 +444,7 @@ int UiaTextRange::_lineNumberToViewport(int lineNumber)
 
     for (int i = 0; i < viewportHeight; ++i)
     {
-        int currentLineNumber = (viewportHeight + i) % screenBufferCoords.Y;
+        int currentLineNumber = (_viewport.Top + i) % screenBufferCoords.Y;
         if (currentLineNumber == lineNumber)
         {
             return i;
