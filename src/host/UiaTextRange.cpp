@@ -232,27 +232,44 @@ IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttribut
 // TODO test this
 IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    // degenerate range returns an empty safearray
-    if (_isDegenerate())
-    {
-        *ppRetVal = SafeArrayCreateVector(VT_R8, 0, 0);
-        return S_OK;
-    }
+    const COORD screenBufferCoords = g_ciConsoleInformation.GetScreenBufferSize();
+    const int totalLines = screenBufferCoords.Y;
+    const int startLine = _endpointToRow(_start);
+    const int endLine = _endpointToRow(_end);
+    const int totalLinesInRange = (endLine >= startLine) ? endLine - startLine : endLine - startLine + totalLines;
+    // width of viewport (measured in chars)
+    const SMALL_RECT viewport = _getViewport();
+    const int viewportWidth = viewport.Right - viewport.Left + 1;
 
     // vector to put coords into. they go in as four doubles in the
     // order: left, top, width, height. each line will have its own
     // set of coords.
     std::vector<double> coords;
 
-    const COORD screenBufferCoords = g_ciConsoleInformation.GetScreenBufferSize();
-    const int totalLines = screenBufferCoords.Y;
-    const int startLine = _endpointToRow(_start);
-    const int endLine = _endpointToRow(_end);
-    //const int totalLinesInRange = (endLine - startLine + totalLines) % totalLines;
-    const int totalLinesInRange = (endLine > startLine) ? endLine - startLine : endLine - startLine + totalLines;
-    // width of viewport (measured in chars)
-    const SMALL_RECT viewport = _getViewport();
-    const int viewportWidth = viewport.Right - viewport.Left + 1;
+    if (_isDegenerate() && _isLineInViewport(startLine))
+    {
+        POINT topLeft;
+        POINT bottomRight;
+        topLeft.x = _endpointToColumn(_start) * _currentFontSize.X;
+        topLeft.y = _lineNumberToViewport(startLine) * _currentFontSize.Y;
+
+        bottomRight.x = topLeft.x;
+        bottomRight.y = topLeft.y + _currentFontSize.Y;
+        // convert the coords to be relative to the screen instead of
+        // the client window
+        HWND hwnd = g_ciConsoleInformation.hWnd;
+        ClientToScreen(hwnd, &topLeft);
+        ClientToScreen(hwnd, &bottomRight);
+
+        // insert the coords
+        LONG width = bottomRight.x - topLeft.x;
+        LONG height = bottomRight.y - topLeft.y;
+        coords.push_back(topLeft.x);
+        coords.push_back(topLeft.y);
+        coords.push_back(width);
+        coords.push_back(height);
+    }
+
 
     for (int i = 0; i < totalLinesInRange; ++i)
     {
@@ -297,8 +314,8 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
             bottomRight.x = viewportWidth * _currentFontSize.X;
         }
 
-        // +1 because we are adding each line individually
-        bottomRight.y = topLeft.y + (1 * _currentFontSize.Y);
+        // + 1 of the font height because we are adding each line individually
+        bottomRight.y = topLeft.y + _currentFontSize.Y;
 
         // convert the coords to be relative to the screen instead of
         // the client window
@@ -417,8 +434,85 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
                                                 _In_ int count,
                                                 _Out_ int* pRetVal)
 {
-    endpoint; unit; count; pRetVal;
-    return E_NOTIMPL;
+    // for now, we only support line movement
+    // TODO add more
+    UNREFERENCED_PARAMETER(unit);
+
+    *pRetVal = 0;
+    if (count == 0)
+    {
+        return S_OK;
+    }
+
+    const int totalRows = _getTotalRows();
+    const int topRow = _pOutputBuffer->GetFirstRowIndex();
+    const int bottomRow = (topRow - 1 + totalRows) % totalRows;
+    const bool isDegenerate = _isDegenerate();
+    const bool shrinkingRange = (count < 0 &&
+                                 endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_End) ||
+                                (count > 0 &&
+                                 endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start);
+
+
+    // determine which endpoint we're moving
+    int* pInternalEndpoint;
+    int otherEndpoint;
+    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        pInternalEndpoint = &_start;
+        otherEndpoint = _end;
+    }
+    else
+    {
+        pInternalEndpoint = &_end;
+        otherEndpoint = _start;
+    }
+    const int currentStartRow = _endpointToRow(*pInternalEndpoint);
+    int currentRow = currentStartRow;
+
+    // set values depending on move direction
+
+    // moving forward
+    int incrementAmount = 1;
+    int limitingRow = bottomRow;
+    if (count < 0)
+    {
+        // moving backward
+        incrementAmount = -1;
+        limitingRow = topRow;
+    }
+
+    // move the endpoint
+    bool crossedEndpoints = false;
+    for (int i = 0; i < abs(count); ++i)
+    {
+        if (currentRow == limitingRow)
+        {
+            break;
+        }
+        if (currentRow == otherEndpoint)
+        {
+            crossedEndpoints = true;
+        }
+        currentRow = (currentRow + incrementAmount + totalRows) % totalRows;
+        *pRetVal += incrementAmount;
+    }
+    const int rowWidth = _getRowWidth();
+    *pInternalEndpoint = currentRow * rowWidth;
+
+    // fix out of order endpoints
+    if (crossedEndpoints || (isDegenerate && shrinkingRange))
+    {
+        if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+        {
+            _end = _start;
+        }
+        else
+        {
+            _start = _end;
+        }
+    }
+    return S_OK;
 }
 
 IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint endpoint,
