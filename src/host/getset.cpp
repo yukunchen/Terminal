@@ -384,6 +384,8 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* c
 
 HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
 {
+    CONSOLE_INFORMATION* const pConsoleInfo = ServiceLocator::LocateGlobals()->getConsoleInformation();
+
     COORD const coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
     if (pInfo->dwSize.X != coordScreenBufferSize.X || (pInfo->dwSize.Y != coordScreenBufferSize.Y))
     {
@@ -396,7 +398,7 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
         pCommandLine->Show();
     }
 
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->SetColorTable(pInfo->ColorTable, ARRAYSIZE(pInfo->ColorTable));
+    pConsoleInfo->SetColorTable(pInfo->ColorTable, ARRAYSIZE(pInfo->ColorTable));
     SetScreenColors(pScreenInfo, pInfo->wAttributes, pInfo->wPopupAttributes, TRUE);
 
     COORD NewSize;
@@ -404,14 +406,20 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
     NewSize.Y = min((pInfo->srWindow.Bottom - pInfo->srWindow.Top), pInfo->dwMaximumWindowSize.Y);
 
     // If wrap text is on, then the window width must be the same size as the buffer width
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetWrapText())
+    if (pConsoleInfo->GetWrapText())
     {
         NewSize.X = coordScreenBufferSize.X;
     }
 
     if (NewSize.X != pScreenInfo->GetScreenWindowSizeX() || NewSize.Y != pScreenInfo->GetScreenWindowSizeY())
     {
-        ServiceLocator::LocateConsoleWindow()->UpdateWindowSize(NewSize);
+        pConsoleInfo->CurrentScreenBuffer->SetViewportSize(&NewSize);
+
+        IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+        if (pWindow != nullptr)
+        {
+            pWindow->UpdateWindowSize(NewSize);
+        }
     }
 
     // Despite the fact that this API takes in a srWindow for the viewport, it traditionally actually doesn't set
@@ -904,13 +912,20 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pC
         RETURN_HR_IF_FALSE(E_INVALIDARG, pScreenInfo->IsActiveScreenBuffer());
     }
 
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
     if (IsFlagSet(Flags, CONSOLE_FULLSCREEN_MODE))
     {
-        ServiceLocator::LocateConsoleWindow()->SetIsFullscreen(true);
+        if (pWindow != nullptr)
+        {
+            pWindow->SetIsFullscreen(true);
+        }
     }
     else if (IsFlagSet(Flags, CONSOLE_WINDOWED_MODE))
     {
-        ServiceLocator::LocateConsoleWindow()->SetIsFullscreen(false);
+        if (pWindow != nullptr)
+        {
+            pWindow->SetIsFullscreen(false);
+        }
     }
     else
     {
