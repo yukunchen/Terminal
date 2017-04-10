@@ -519,8 +519,50 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
                                                 _In_opt_ ITextRangeProvider* pTargetRange,
                                                 _In_ TextPatternRangeEndpoint targetEndpoint)
 {
-    endpoint; pTargetRange; targetEndpoint;
-    return E_NOTIMPL;
+    UiaTextRange* range = dynamic_cast<UiaTextRange*>(pTargetRange);
+    if (range == nullptr)
+    {
+        return E_NOINTERFACE;
+    }
+
+    // get the value that we're updating to
+    int newValue;
+    if (targetEndpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        newValue = range->getStart();
+    }
+    else
+    {
+        newValue = range->getEnd();
+    }
+
+    // get the endpoint that we're changing
+    int* pInternalEndpoint;
+    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        pInternalEndpoint = &_start;
+    }
+    else
+    {
+        pInternalEndpoint = &_end;
+    }
+
+    // update value, fix any reversed endpoints
+    *pInternalEndpoint = newValue;
+    if (_start > _end)
+    {
+        // we move the endpoint that isn't being updated to be the
+        // same as the one that was just moved
+        if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+        {
+            _end = _start;
+        }
+        else
+        {
+            _start = _end;
+        }
+    }
+    return S_OK;
 }
 
 IFACEMETHODIMP UiaTextRange::Select()
