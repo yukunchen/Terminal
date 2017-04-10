@@ -79,6 +79,12 @@ void CONSOLE_INFORMATION::LockConsole()
 }
 
 #pragma prefast(suppress:26135, "Adding lock annotation spills into entire project. Future work.")
+BOOL CONSOLE_INFORMATION::TryLockConsole()
+{
+    return TryEnterCriticalSection(&_csConsoleLock);
+}
+
+#pragma prefast(suppress:26135, "Adding lock annotation spills into entire project. Future work.")
 void CONSOLE_INFORMATION::UnlockConsole()
 {
     LeaveCriticalSection(&_csConsoleLock);

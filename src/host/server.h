@@ -106,6 +106,7 @@ public:
     Microsoft::Console::VirtualTerminal::MouseInput terminalMouseInput;
 
     void LockConsole();
+    BOOL TryLockConsole();
     void UnlockConsole();
     bool IsConsoleLocked() const;
     ULONG GetCSRecursionCount();

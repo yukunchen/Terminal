@@ -488,12 +488,44 @@ void Cursor::FocusStart()
 
 void CALLBACK CursorTimerRoutineWrapper(_In_ PVOID /* lpParam */, _In_ BOOL /* TimerOrWaitFired */)
 {
-    LockConsole();
+    // Suppose the following sequence of events takes place:
+    //
+    // 1. The user resizes the console;
+    // 2. The console acquires the console lock;
+    // 3. The current SCREEN_INFORMATION instance is deleted;
+    // 4. This causes the current Cursor instance to be deleted, too;
+    // 5. The Cursor's destructor is called;
+    // => Somewhere between 1 and 5, the timer fires:
+    //    Timer queue timer callbacks execute asynchronously with respect to
+    //    the UI thread under which the numbered steps are taking place.
+    //    Because the callback touches console state, it needs to acquire the
+    //    console lock. But what if the timer callback fires at just the right
+    //    time such that 2 has already acquired the lock?
+    // 6. The Cursor's destructor deletes the timer queue and thereby destroys
+    //    the timer queue timer used for blinking. However, because this
+    //    timer's callback modifies console state, it is prudent to not
+    //    continue the destruction if the callback has already started but has
+    //    not yet finished. Therefore, the destructor waits for the callback to
+    //    finish executing.
+    // => Meanwhile, the callback just happens to be stuck waiting for the
+    //    console lock acquired in step 2. Since the destructor is waiting on
+    //    the callback to complete, and the callback is waiting on the lock,
+    //    which will only be released way after the Cursor instance is deleted,
+    //    the console has now deadlocked.
+    //
+    // As a solution, skip the blink if the console lock is already being held.
+    // Note that critical sections to not have a waitable synchronization
+    // object unless there readily is contention on it. As a result, if we
+    // wanted to wait until the lock became available under the condition of
+    // not being destroyed, things get too complicated.
 
-    Cursor *cursor = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor();
-    cursor->TimerRoutine(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer);
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->TryLockConsole() != FALSE)
+    {
+        Cursor *cursor = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor();
+        cursor->TimerRoutine(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer);
 
-    UnlockConsole();
+        UnlockConsole();
+    }
 }
 
 // Routine Description:
