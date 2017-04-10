@@ -5004,7 +5004,11 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
     delete[] ServiceLocator::LocateGlobals()->getConsoleInformation()->Title;
     ServiceLocator::LocateGlobals()->getConsoleInformation()->Title = pwszNewTitle.release();
 
-    RETURN_HR_IF_FALSE(E_FAIL, ServiceLocator::LocateConsoleWindow()->PostUpdateTitleWithCopy(ServiceLocator::LocateGlobals()->getConsoleInformation()->Title));
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr)
+    {
+        RETURN_HR_IF_FALSE(E_FAIL, pWindow->PostUpdateTitleWithCopy(ServiceLocator::LocateGlobals()->getConsoleInformation()->Title));
+    }
 
     return S_OK;
 }
