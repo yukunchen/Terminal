@@ -751,6 +751,9 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
         {
             return TRUE;
         }
+
+        // We're done processing the messages for selection. We need to return
+        return FALSE;
     }
 
     if (IsFlagClear(ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->InputMode, ENABLE_MOUSE_INPUT))
