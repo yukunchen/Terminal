@@ -2,8 +2,12 @@
 #include "precomp.h"
 #include "UiaTextRange.hpp"
 
+// returns val if (low <= val <= high)
+// returns low if (val < low)
+// returns high if (val > high)
 int clamp(int val, int low, int high)
 {
+    ASSERT(low <= high);
     return max(low, min(val, high));
 }
 
@@ -38,39 +42,18 @@ UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
 {
 }
 
-/*
-UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
-                           const TEXT_BUFFER_INFO* const pOutputBuffer,
-                           SMALL_RECT viewport,
-                           const COORD currentFontSize,
-                           int lineNumberStart,
-                           int lineNumberEnd,
-                           int charStart,
-                           int charEnd) :
+UiaTextRange::UiaTextRange(const UiaTextRange& a) :
     _cRefs{ 1 },
-    _pProvider{ pProvider },
-    _pOutputBuffer{ pOutputBuffer },
-    _viewport{ viewport },
-    _currentFontSize{ currentFontSize },
-    _lineNumberStart{ lineNumberStart },
-    _lineNumberEnd{ lineNumberEnd },
-    _charStart{ charStart },
-    _charEnd{ charEnd }
+    _pProvider{ a._pProvider },
+    _pOutputBuffer{ a._pOutputBuffer },
+    _pScreenInfo{ a._pScreenInfo },
+    _currentFontSize{ a._currentFontSize },
+    _start{ a._start },
+    _end{ a._end }
+
 {
-    if (lineNumberEnd < lineNumberStart)
-    {
-        throw std::invalid_argument("lineNumberEnd can't be less than lineNumberStart");
-    }
-    if (lineNumberStart == lineNumberEnd && charStart != charEnd)
-    {
-        throw std::invalid_argument("degenerate range can't have mismatched char endpoints");
-    }
-    if (lineNumberStart + 1 == lineNumberEnd && charEnd < charStart)
-    {
-        throw std::invalid_argument("single line range may not have charEnd less than charStart");
-    }
+    _pProvider->AddRef();
 }
-*/
 
 UiaTextRange::~UiaTextRange()
 {

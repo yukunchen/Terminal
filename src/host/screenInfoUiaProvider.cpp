@@ -113,7 +113,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPatternProvider(_In_ PATTERNID patternI
     if (patternId == UIA_TextPatternId)
     {
         *ppInterface = static_cast<ITextProvider*>(this);
-        (*ppInterface)->AddRef();
+        (static_cast<IUnknown*>(*ppInterface))->AddRef();
     }
 
     return S_OK;
@@ -164,14 +164,14 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyI
     else if (propertyId == UIA_IsKeyboardFocusablePropertyId)
     {
         pVariant->vt = VT_BOOL;
-        //pVariant->boolVal = VARIANT_FALSE;
-        pVariant->boolVal = VARIANT_TRUE;
+        pVariant->boolVal = VARIANT_FALSE;
+        //pVariant->boolVal = VARIANT_TRUE;
     }
     else if (propertyId == UIA_HasKeyboardFocusPropertyId)
     {
         pVariant->vt = VT_BOOL;
-        //pVariant->boolVal = VARIANT_FALSE;
-        pVariant->boolVal = VARIANT_TRUE;
+        pVariant->boolVal = VARIANT_FALSE;
+        //pVariant->boolVal = VARIANT_TRUE;
     }
     else if (propertyId == UIA_ProviderDescriptionPropertyId)
     {
@@ -201,6 +201,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
 
     if (direction == NavigateDirection_Parent)
     {
+        // TODO why does this not uset the existing one?
         *ppProvider = new WindowUiaProvider(_pWindow);
         RETURN_IF_NULL_ALLOC(*ppProvider);
     }
@@ -250,6 +251,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
 {
+    // TODO why does this not use the existing one?
     *ppProvider = new WindowUiaProvider(_pWindow);
     RETURN_IF_NULL_ALLOC(*ppProvider);
     return S_OK;
@@ -349,15 +351,15 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(ITextRangeProvider** ppR
                                                0,
                                                documentLines * lineWidth);
 
-        this->AddRef();
         *ppRetVal = range;
-        return S_OK;
     }
     catch (...)
     {
         *ppRetVal = nullptr;
         return wil::ResultFromCaughtException();
     }
+    this->AddRef();
+    return S_OK;
 }
 
 // TODO change this when selection is supported

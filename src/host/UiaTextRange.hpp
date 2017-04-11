@@ -18,26 +18,11 @@ public:
                  const int start,
                  const int end);
 
-
-    /*
-    UiaTextRange(IRawElementProviderSimple* pProvider,
-                 const TEXT_BUFFER_INFO* const pOutputBuffer,
-                 SMALL_RECT viewport,
-                 const COORD currentFontSize,
-                 int lineNumberStart,
-                 int lineNumberEnd,
-                 int charStart,
-                 int charEnd);
-    */
+    UiaTextRange(const UiaTextRange& a);
 
     ~UiaTextRange();
 
-    /*
-    const int getLineNumberStart() const;
-    const int getLineNumberEnd() const;
-    const int getCharStart() const;
-    const int getCharEnd() const;
-    */
+
     const int getStart() const;
     const int getEnd() const;
 
@@ -84,7 +69,6 @@ protected:
     const TEXT_BUFFER_INFO* const _pOutputBuffer;
     const COORD _currentFontSize;
     IRawElementProviderSimple* _pProvider;
-    //SMALL_RECT _viewport;
     SCREEN_INFORMATION* const _pScreenInfo;
 
 private:
@@ -93,12 +77,6 @@ private:
     // measure units in the form [start, end)
     int _start;
     int _end;
-    /*
-    int _lineNumberStart;
-    int _lineNumberEnd;
-    int _charStart;
-    int _charEnd;
-    */
 
     bool _isDegenerate();
     bool _isLineInViewport(int lineNumber);
