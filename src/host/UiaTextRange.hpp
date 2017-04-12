@@ -18,6 +18,13 @@ public:
                  const int start,
                  const int end);
 
+    // range from a UiaPoint
+    UiaTextRange(IRawElementProviderSimple* pProvider,
+                 const TEXT_BUFFER_INFO* const pOutputBuffer,
+                 SCREEN_INFORMATION* const pScreenInfo,
+                 const COORD currentFontSize,
+                 const UiaPoint point);
+
     UiaTextRange(const UiaTextRange& a);
 
     ~UiaTextRange();
@@ -83,6 +90,7 @@ private:
     int _lineNumberToViewport(int lineNumber);
     const int _endpointToRow(const int endpoint);
     const int _endpointToColumn(const int endpoint);
+    const int _rowToEndpoint(const int row);
     const int _getTotalRows() const;
     const int _getRowWidth() const;
     const SMALL_RECT _getViewport() const;

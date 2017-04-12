@@ -1,6 +1,7 @@
 
 #include "precomp.h"
 #include "UiaTextRange.hpp"
+#include "window.hpp"
 
 // returns val if (low <= val <= high)
 // returns low if (val < low)
@@ -40,6 +41,46 @@ UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
     _start{ start },
     _end{ end }
 {
+}
+
+// returns a degenerate text range of the start of the line closest to the y value of point
+UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
+                           const TEXT_BUFFER_INFO* const pOutputBuffer,
+                           SCREEN_INFORMATION* const pScreenInfo,
+                           const COORD currentFontSize,
+                           const UiaPoint point) :
+    _cRefs{ 1 },
+    _pProvider{ pProvider },
+    _pOutputBuffer{ pOutputBuffer },
+    _pScreenInfo{ pScreenInfo },
+    _currentFontSize{ currentFontSize }
+{
+
+    POINT clientPoint;
+    clientPoint.x = static_cast<LONG>(point.x);
+    clientPoint.y = static_cast<LONG>(point.y);
+    // get row that point resides in
+    const RECT windowRect = g_ciConsoleInformation.pWindow->GetWindowRect();
+    const SMALL_RECT viewport = _getViewport();
+    int row;
+    if (clientPoint.y <= windowRect.top)
+    {
+        row = viewport.Top;
+    }
+    else if (clientPoint.y >= windowRect.bottom)
+    {
+        row = viewport.Bottom;
+    }
+    else
+    {
+        // change point coords to pixels relative to window
+        HWND hwnd = g_ciConsoleInformation.hWnd;
+        ScreenToClient(hwnd, &clientPoint);
+
+        row = (clientPoint.y / currentFontSize.Y) + viewport.Top;
+    }
+    _start = _rowToEndpoint(row);
+	_end = _start;
 }
 
 UiaTextRange::UiaTextRange(const UiaTextRange& a) :
@@ -572,8 +613,8 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
 
 IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    ppRetVal;
-    return E_NOTIMPL;
+    *ppRetVal = SafeArrayCreateVector(VT_R8, 0, 0);
+    return S_OK;
 }
 
 #pragma endregion
@@ -631,6 +672,13 @@ const int UiaTextRange::_endpointToColumn(const int endpoint)
     const COORD screenBufferCoords = g_ciConsoleInformation.GetScreenBufferSize();
     return endpoint % screenBufferCoords.X;
 }
+
+const int UiaTextRange::_rowToEndpoint(const int row)
+{
+    const COORD screenBufferCoords = g_ciConsoleInformation.GetScreenBufferSize();
+    return row * screenBufferCoords.X;
+}
+
 
 const int UiaTextRange::_getTotalRows() const
 {

@@ -181,6 +181,11 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyI
             pVariant->vt = VT_BSTR;
         }
     }
+    else if (propertyId == UIA_IsEnabledPropertyId)
+    {
+        pVariant->vt = VT_BOOL;
+        pVariant->boolVal = VARIANT_TRUE;
+    }
 
     return S_OK;
 }
@@ -328,9 +333,26 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(IRawElementProviderSimple* 
 IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(UiaPoint point,
                                                   ITextRangeProvider** ppRetVal)
 {
-    UNREFERENCED_PARAMETER(point);
-    UNREFERENCED_PARAMETER(ppRetVal);
-    return E_NOTIMPL;
+
+    TEXT_BUFFER_INFO* pOutputBuffer = _pScreenInfo->TextInfo;
+    const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
+    const COORD currentFontSize = currentFont.GetUnscaledSize();
+
+    try
+    {
+        *ppRetVal = new UiaTextRange(this,
+                                     pOutputBuffer,
+                                     _pScreenInfo,
+                                     currentFontSize,
+                                     point);
+    }
+    catch(...)
+    {
+        *ppRetVal = nullptr;
+        return wil::ResultFromCaughtException();
+    }
+    this->AddRef();
+    return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(ITextRangeProvider** ppRetVal)
