@@ -324,7 +324,7 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
         {
             // special logic for last line since we might not end at
             // the right edge of the viewport. We need to subtract 1
-            // from end because it it not an inclusive range and this
+            // from end because it is not an inclusive range and this
             // might affect what line _endpointToColumn thinks the
             // endpoint lays on but we need to add 1 back to the to
             // total because we want the bounding rectangle to
@@ -622,25 +622,38 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
     {
         const SMALL_RECT oldViewport = _getViewport();
         SMALL_RECT newViewport;
-        const short viewportHeight = oldViewport.Bottom - oldViewport.Top;
-        const int topRow = _endpointToRow(_start);
+        const short viewportHeight = oldViewport.Bottom - oldViewport.Top + 1;
+        const COORD screenBufferCoords = g_ciConsoleInformation.GetScreenBufferSize();
+        const int totalRows = screenBufferCoords.Y;
+        const int startRow = _endpointToRow(_start);
+        const int endRow = _endpointToRow(_end);
+        const int topRow = _pOutputBuffer->GetFirstRowIndex();
+        const int bottomRow = (topRow - 1 + totalRows) % totalRows;
 
+        // create a new viewport at the top of the screen buffer
         newViewport.Left = oldViewport.Left;
         newViewport.Right = oldViewport.Right;
-        newViewport.Top = oldViewport.Top;
-        newViewport.Bottom = oldViewport.Bottom;
+        newViewport.Top = static_cast<SHORT>(topRow);
+        // -1 because SMALL_RECTs are inclusive on both sides
+        newViewport.Bottom = static_cast<SHORT>(((viewportHeight - 1) + topRow) % totalRows);
+
+        // shift the viewport down one line at a time until we have
+        // the range at the correct edge of the viewport or we hit
+        // the bottom edge of the screen buffer
         if (alignToTop)
         {
-            newViewport.Top = static_cast<SHORT>(topRow);
-            newViewport.Bottom = newViewport.Top + viewportHeight;
+            while (newViewport.Top != startRow && newViewport.Bottom != bottomRow)
+            {
+                newViewport.Top = (newViewport.Top + 1) % totalRows;
+                newViewport.Bottom = (newViewport.Bottom + 1) % totalRows;
+            }
         }
         else
         {
-            // TODO this is buggy
-            while (!_isLineInViewport(topRow, newViewport))
+            while (newViewport.Bottom != endRow && newViewport.Bottom != bottomRow)
             {
-                newViewport.Top += 1;
-                newViewport.Bottom = newViewport.Top + viewportHeight;
+                newViewport.Top = (newViewport.Top + 1) % totalRows;
+                newViewport.Bottom = (newViewport.Bottom + 1) % totalRows;
             }
         }
 
