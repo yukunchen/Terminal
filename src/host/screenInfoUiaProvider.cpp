@@ -326,8 +326,24 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(IRawElementProviderSimple* 
                                                  ITextRangeProvider** ppRetVal)
 {
     UNREFERENCED_PARAMETER(childElement);
-    UNREFERENCED_PARAMETER(ppRetVal);
-    return E_NOTIMPL;
+    TEXT_BUFFER_INFO* pOutputBuffer = _pScreenInfo->TextInfo;
+    const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
+    const COORD currentFontSize = currentFont.GetUnscaledSize();
+
+    try
+    {
+        *ppRetVal = new UiaTextRange(this,
+                                     pOutputBuffer,
+                                     _pScreenInfo,
+                                     currentFontSize);
+    }
+    catch (...)
+    {
+        *ppRetVal = nullptr;
+        return wil::ResultFromCaughtException();
+    }
+    this->AddRef();
+    return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(UiaPoint point,

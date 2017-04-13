@@ -63,8 +63,7 @@ bool Selection::IsLineSelection() const
     // if line selection is on and alternate is off -OR-
     // if line selection is off and alternate is on...
 
-    return ((_fLineSelection && !_fUseAlternateSelection) ||
-        (!_fLineSelection && _fUseAlternateSelection));
+    return (_fLineSelection != _fUseAlternateSelection);
 }
 
 // Routine Description:

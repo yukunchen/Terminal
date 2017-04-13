@@ -39,16 +39,6 @@ Selection& Selection::Instance()
     return s;
 }
 
-Selection::Selection(Selection const&)
-{
-    ASSERT(false); // we don't want copies of the singleton
-}
-
-void Selection::operator=(Selection const&)
-{
-    ASSERT(false); // we don't want copies of the singleton
-}
-
 // Routine Description:
 // - Detemines the line-by-line selection rectangles based on global selection state.
 // Arguments:

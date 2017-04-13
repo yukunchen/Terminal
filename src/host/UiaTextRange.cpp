@@ -591,15 +591,26 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
 
 IFACEMETHODIMP UiaTextRange::Select()
 {
+    COORD coordStart;
+    COORD coordEnd;
 
-    return E_NOTIMPL;
+    coordStart.X = static_cast<SHORT>(_endpointToColumn(_start));
+    coordStart.Y = static_cast<SHORT>(_endpointToRow(_start));
+
+    coordEnd.X = static_cast<SHORT>(_endpointToColumn(_end - 1));
+    coordEnd.Y = static_cast<SHORT>(_endpointToRow(_end - 1));
+
+    Selection::Instance().SelectNewRegion(coordStart, coordEnd);
+    return S_OK;
 }
 
+// we don't support this
 IFACEMETHODIMP UiaTextRange::AddToSelection()
 {
     return E_NOTIMPL;
 }
 
+// we don't support this
 IFACEMETHODIMP UiaTextRange::RemoveFromSelection()
 {
     return E_NOTIMPL;
@@ -607,13 +618,41 @@ IFACEMETHODIMP UiaTextRange::RemoveFromSelection()
 
 IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
 {
-    alignToTop;
-    return E_NOTIMPL;
+    if (!_isLineInViewport(_endpointToRow(_start)))
+    {
+        const SMALL_RECT oldViewport = _getViewport();
+        SMALL_RECT newViewport;
+        const short viewportHeight = oldViewport.Bottom - oldViewport.Top;
+        const int topRow = _endpointToRow(_start);
+
+        newViewport.Left = oldViewport.Left;
+        newViewport.Right = oldViewport.Right;
+        newViewport.Top = oldViewport.Top;
+        newViewport.Bottom = oldViewport.Bottom;
+        if (alignToTop)
+        {
+            newViewport.Top = static_cast<SHORT>(topRow);
+            newViewport.Bottom = newViewport.Top + viewportHeight;
+        }
+        else
+        {
+            // TODO this is buggy
+            while (!_isLineInViewport(topRow, newViewport))
+            {
+                newViewport.Top += 1;
+                newViewport.Bottom = newViewport.Top + viewportHeight;
+            }
+        }
+
+        g_ciConsoleInformation.pWindow->SetViewportOrigin(newViewport);
+    }
+
+    return S_OK;
 }
 
 IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    *ppRetVal = SafeArrayCreateVector(VT_R8, 0, 0);
+    *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 0);
     return S_OK;
 }
 
@@ -624,10 +663,15 @@ bool UiaTextRange::_isDegenerate()
     return (_start == _end);
 }
 
-// TODO find a better way to do this
-bool UiaTextRange::_isLineInViewport(int lineNumber)
+bool UiaTextRange::_isLineInViewport(const int lineNumber)
 {
     const SMALL_RECT viewport = _getViewport();
+    return _isLineInViewport(lineNumber, viewport);
+}
+
+// TODO find a better way to do this
+bool UiaTextRange::_isLineInViewport(const int lineNumber, const SMALL_RECT viewport)
+{
     const int viewportHeight = viewport.Bottom - viewport.Top + 1;
     const COORD screenBufferCoords = g_ciConsoleInformation.GetScreenBufferSize();
 

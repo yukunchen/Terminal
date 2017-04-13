@@ -86,7 +86,8 @@ private:
     int _end;
 
     bool _isDegenerate();
-    bool _isLineInViewport(int lineNumber);
+    bool _isLineInViewport(const int lineNumber);
+    bool _isLineInViewport(const int lineNumber, const SMALL_RECT viewport);
     int _lineNumberToViewport(int lineNumber);
     const int _endpointToRow(const int endpoint);
     const int _endpointToColumn(const int endpoint);
