@@ -120,7 +120,7 @@ IFACEMETHODIMP_(ULONG) UiaTextRange::AddRef()
 
 IFACEMETHODIMP_(ULONG) UiaTextRange::Release()
 {
-    long val = InterlockedDecrement(&_cRefs);
+    const long val = InterlockedDecrement(&_cRefs);
     if (val == 0)
     {
         delete this;
@@ -225,10 +225,28 @@ IFACEMETHODIMP UiaTextRange::CompareEndpoints(TextPatternRangeEndpoint endpoint,
 
 IFACEMETHODIMP UiaTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
 {
-    unit;
-    return E_NOTIMPL;
+    const int totalRows = _getTotalRows();
+    const int topRow = _pOutputBuffer->GetFirstRowIndex();
+    const int bottomRow = (topRow - 1 + totalRows) % totalRows;
+    const int lineWidth = g_ciConsoleInformation.GetScreenBufferSize().X;
+
+    if (unit <= TextUnit::TextUnit_Line)
+    {
+        // expand to line
+        _start = _rowToEndpoint(_endpointToRow(_start));
+        _end = _start + lineWidth;
+    }
+    else
+    {
+        // expand to document
+        _start = _rowToEndpoint(topRow);
+        _end = _rowToEndpoint(bottomRow + 1);
+    }
+
+    return S_OK;
 }
 
+// we don't support this currently
 IFACEMETHODIMP UiaTextRange::FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
                                         _In_ VARIANT val,
                                         _In_ BOOL searchBackward,
@@ -238,6 +256,7 @@ IFACEMETHODIMP UiaTextRange::FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
     return E_NOTIMPL;
 }
 
+// we don't support this currently
 IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
                                     BOOL searchBackward,
                                     BOOL ignoreCase,
@@ -247,13 +266,13 @@ IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
     return E_NOTIMPL;
 }
 
+// we don't support this currently
 IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId, _Out_ VARIANT* pRetVal)
 {
     textAttributeId; pRetVal;
     return E_NOTIMPL;
 }
 
-// TODO test this
 IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
     const COORD screenBufferCoords = g_ciConsoleInformation.GetScreenBufferSize();
@@ -286,8 +305,8 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
         ClientToScreen(hwnd, &bottomRight);
 
         // insert the coords
-        LONG width = bottomRight.x - topLeft.x;
-        LONG height = bottomRight.y - topLeft.y;
+        const LONG width = bottomRight.x - topLeft.x;
+        const LONG height = bottomRight.y - topLeft.y;
         coords.push_back(topLeft.x);
         coords.push_back(topLeft.y);
         coords.push_back(width);
@@ -348,8 +367,8 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
         ClientToScreen(hwnd, &bottomRight);
 
         // insert the coords
-        LONG width = bottomRight.x - topLeft.x;
-        LONG height = bottomRight.y - topLeft.y;
+        const LONG width = bottomRight.x - topLeft.x;
+        const LONG height = bottomRight.y - topLeft.y;
         coords.push_back(topLeft.x);
         coords.push_back(topLeft.y);
         coords.push_back(width);
@@ -407,7 +426,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ int* pRetVal)
 {
     // for now, we only support line movement
-    // TODO add more
+    UNREFERENCED_PARAMETER(unit);
 
 	*pRetVal = 0;
     if (count == 0)
@@ -447,9 +466,6 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ int*
     _start = currentRow * rowWidth;
     _end = _start + rowWidth;
 
-
-
-    UNREFERENCED_PARAMETER(unit);
     return S_OK;
 }
 
@@ -459,7 +475,6 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
                                                 _Out_ int* pRetVal)
 {
     // for now, we only support line movement
-    // TODO add more
     UNREFERENCED_PARAMETER(unit);
 
     *pRetVal = 0;
