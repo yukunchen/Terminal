@@ -181,6 +181,10 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
     {
         *ppProvider = _GetScreenInfoProvider();
         RETURN_IF_NULL_ALLOC(*ppProvider);
+        // signal that the focus changed
+        IRawElementProviderSimple* pSimpleProvider;
+        (*ppProvider)->QueryInterface(__uuidof(IRawElementProviderSimple), reinterpret_cast<void**>(&pSimpleProvider));
+        UiaRaiseAutomationEvent(pSimpleProvider, UIA_AutomationFocusChangedEventId);
     }
 
     // For the other directions (parent, next, previous) the default of nullptr is correct

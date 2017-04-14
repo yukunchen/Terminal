@@ -251,6 +251,9 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_ma
 
 IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 {
+    IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
+    this->AddRef();
+    UiaRaiseAutomationEvent(pProvider, UIA_AutomationFocusChangedEventId);
     return S_OK;
 }
 
