@@ -12,7 +12,7 @@
 #include "UiaTextRange.hpp"
 
 WindowUiaProvider::WindowUiaProvider(_In_ Window* const pWindow) :
-    _pWindow(pWindow),
+    _pWindow(THROW_HR_IF_NULL(E_INVALIDARG, pWindow)),
     _cRefs(1)
 {
 
@@ -271,12 +271,10 @@ IFACEMETHODIMP WindowUiaProvider::GetFocus(_COM_Outptr_result_maybenull_ IRawEle
 
 HWND WindowUiaProvider::_GetWindowHandle() const
 {
-    HWND hwnd = nullptr;
+    ASSERT(_pWindow != nullptr);
 
-    if (nullptr != _pWindow)
-    {
-        hwnd = _pWindow->GetWindowHandle();
-    }
+    HWND hwnd = nullptr;
+    hwnd = _pWindow->GetWindowHandle();
 
     return hwnd;
 }
@@ -292,13 +290,11 @@ HRESULT WindowUiaProvider::_EnsureValidHwnd() const
 
 ScreenInfoUiaProvider* WindowUiaProvider::_GetScreenInfoProvider() const
 {
-    ScreenInfoUiaProvider* pProvider = nullptr;
+    ASSERT(_pWindow != nullptr);
 
-    if (nullptr != _pWindow)
-    {
-        SCREEN_INFORMATION* const pScreenInfo = _pWindow->GetScreenInfo();
-        pProvider = new ScreenInfoUiaProvider(_pWindow, pScreenInfo);
-    }
+    ScreenInfoUiaProvider* pProvider = nullptr;
+    SCREEN_INFORMATION* const pScreenInfo = _pWindow->GetScreenInfo();
+    pProvider = new ScreenInfoUiaProvider(_pWindow, pScreenInfo);
 
     return pProvider;
 }

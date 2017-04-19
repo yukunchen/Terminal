@@ -1428,7 +1428,14 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
 {
     if (nullptr == _pUiaProvider)
     {
-        _pUiaProvider = new WindowUiaProvider(this);
+        try
+        {
+            _pUiaProvider = new WindowUiaProvider(this);
+        }
+        catch (...)
+        {
+            _pUiaProvider = nullptr;
+        }
     }
 
     return _pUiaProvider;

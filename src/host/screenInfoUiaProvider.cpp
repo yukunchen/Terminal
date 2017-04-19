@@ -206,8 +206,16 @@ IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
 
     if (direction == NavigateDirection_Parent)
     {
-        // TODO why does this not uset the existing one?
-        *ppProvider = new WindowUiaProvider(_pWindow);
+        // TODO why does this not use the existing one?
+        try
+        {
+            *ppProvider = new WindowUiaProvider(_pWindow);
+        }
+        catch (...)
+        {
+            *ppProvider = nullptr;
+            return wil::ResultFromCaughtException();
+        }
         RETURN_IF_NULL_ALLOC(*ppProvider);
     }
 
@@ -260,7 +268,15 @@ IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
 {
     // TODO why does this not use the existing one?
-    *ppProvider = new WindowUiaProvider(_pWindow);
+    try
+    {
+        *ppProvider = new WindowUiaProvider(_pWindow);
+    }
+    catch (...)
+    {
+        *ppProvider = nullptr;
+        return wil::ResultFromCaughtException();
+    }
     RETURN_IF_NULL_ALLOC(*ppProvider);
     return S_OK;
 }
