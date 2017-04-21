@@ -11,6 +11,8 @@
 #include "IoDispatchers.h"
 #include "ApiDispatchers.h"
 
+#include "ApiSorter.h"
+
 #include "..\host\globals.h"
 
 #include "..\host\getset.h"
@@ -52,7 +54,7 @@ void IoSorter::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg,
 
     case CONSOLE_IO_RAW_WRITE:
         ZeroMemory(&pMsg->u.consoleMsgL1.WriteConsole, sizeof(CONSOLE_WRITECONSOLE_MSG));
-
+        pMsg->msgHeader.ApiNumber = API_NUMBER_WRITECONSOLE; // Required for Wait blocks to identify the right callback.
         ReplyPending = FALSE;
         hr = ApiDispatchers::ServerWriteConsole(pMsg, &ReplyPending);
         Status = NTSTATUS_FROM_HRESULT(hr);
@@ -70,6 +72,7 @@ void IoSorter::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg,
 
     case CONSOLE_IO_RAW_READ:
         ZeroMemory(&pMsg->u.consoleMsgL1.ReadConsole, sizeof(CONSOLE_READCONSOLE_MSG));
+        pMsg->msgHeader.ApiNumber = API_NUMBER_READCONSOLE; // Required for Wait blocks to identify the right callback.
         pMsg->u.consoleMsgL1.ReadConsole.ProcessControlZ = TRUE;
         ReplyPending = FALSE;
         hr = ApiDispatchers::ServerReadConsole(pMsg, &ReplyPending);

@@ -9,15 +9,10 @@
 #include "WaitBlock.h"
 #include "WaitQueue.h"
 
+#include "ApiSorter.h"
+
 #include "..\host\globals.h"
 #include "..\host\utils.hpp"
-
-// See ApiSorter.cpp to see how these are created.
-// 0x01 stands for level 1 API (layers are 1-based)
-// 0x000004 stands for the 5th one down in the layer structure (call IDs are 0-based)
-#define API_NUMBER_GETCONSOLEINPUT  0x01000004
-#define API_NUMBER_READCONSOLE      0x01000005
-#define API_NUMBER_WRITECONSOLE     0x01000006
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
