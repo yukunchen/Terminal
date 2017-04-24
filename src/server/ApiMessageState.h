@@ -24,7 +24,4 @@ typedef struct _CONSOLE_API_STATE
     ULONG OutputBufferSize;
     PVOID InputBuffer;
     PVOID OutputBuffer;
-
-    PWCHAR TransBuffer; // exists to hold a pre-created buffer for the entire duration of a WriteConsole wait.
-    BOOLEAN StackBuffer; // written but never read...
 } CONSOLE_API_STATE, *PCONSOLE_API_STATE, *const PCCONSOLE_API_STATE;

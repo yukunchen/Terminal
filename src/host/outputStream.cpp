@@ -9,12 +9,8 @@
 #include "outputStream.hpp"
 
 #include "_stream.h"
-#include "stream.h"
-#include "_output.h"
-#include "misc.h"
 #include "getset.h"
 #include "directio.h"
-#include "cursor.h"
 
 #pragma hdrstop
 

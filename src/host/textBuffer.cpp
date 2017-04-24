@@ -7,10 +7,8 @@
 #include "precomp.h"
 
 #include "textBuffer.hpp"
-#include "consrv.h"
-#include "globals.h"
-#include "output.h"
-#include "utils.hpp"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -276,9 +274,9 @@ COLORREF TextAttribute::_GetRgbForeground() const
         const byte iColorTableIndex = LOBYTE(_wAttrLegacy) & 0x0F;
 
         ASSERT(iColorTableIndex >= 0);
-        ASSERT(iColorTableIndex < g_ciConsoleInformation.GetColorTableSize());
+        ASSERT(iColorTableIndex < ServiceLocator::LocateGlobals()->getConsoleInformation()->GetColorTableSize());
 
-        rgbColor = g_ciConsoleInformation.GetColorTable()[iColorTableIndex];
+        rgbColor = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetColorTable()[iColorTableIndex];
     }
     return rgbColor;
 }
@@ -295,9 +293,9 @@ COLORREF TextAttribute::_GetRgbBackground() const
         const byte iColorTableIndex = (LOBYTE(_wAttrLegacy) & 0xF0) >> 4;
 
         ASSERT(iColorTableIndex >= 0);
-        ASSERT(iColorTableIndex < g_ciConsoleInformation.GetColorTableSize());
+        ASSERT(iColorTableIndex < ServiceLocator::LocateGlobals()->getConsoleInformation()->GetColorTableSize());
 
-        rgbColor = g_ciConsoleInformation.GetColorTable()[iColorTableIndex];
+        rgbColor = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetColorTable()[iColorTableIndex];
     }
     return rgbColor;
 }

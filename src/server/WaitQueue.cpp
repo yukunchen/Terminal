@@ -32,31 +32,28 @@ ConsoleWaitQueue::~ConsoleWaitQueue()
 // - Establishes a wait (call me back later) for a particular message with a given callback routine and its parameter
 // Arguments:
 // - pWaitReplyMessage - The API message that we're deferring until data is available later.
-// - pfnWaitRoutine - The function to callback later when data becomes available.
-// - pvWaitContext - The parameter to pass to the callback function.
+// - pWaiter - The context/callback information to restore and dispatch the call later.
 // Return Value:
 // - S_OK if enqueued appropriately and everything is alright. Or suitable HRESULT failure otherwise.
 HRESULT ConsoleWaitQueue::s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
-                                       _In_ ConsoleWaitRoutine const pfnWaitRoutine,
-                                       _In_ PVOID const pvWaitContext)
+                                       _In_ IWaitRoutine* const pWaiter)
 {
     // Normally we'd have the Wait Queue handle the insertion of the block into the queue, but
     // the console does queues in a somewhat special way.
     //
-    // Each block belongs in two queues: 
+    // Each block belongs in two queues:
     // 1. The process queue of the client that dispatched the request
     // 2. The object queue that the request will be serviced by
     // As such, when a wait occurs, it gets added to both queues.
     //
-    // It will end up being serviced by one or the other queue, but when it is serviced, it must be 
+    // It will end up being serviced by one or the other queue, but when it is serviced, it must be
     // removed from both so it is not double processed.
     //
     // Therefore, I've inverted the queue management responsibility into the WaitBlock itself
     // and made it a friend to this WaitQueue class.
 
     return ConsoleWaitBlock::s_CreateWait(pWaitReplyMessage,
-                                          pfnWaitRoutine,
-                                          pvWaitContext);
+                                          pWaiter);
 }
 
 // Routine Description:

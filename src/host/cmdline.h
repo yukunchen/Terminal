@@ -82,40 +82,14 @@ typedef struct _COMMAND_HISTORY
     PCOMMAND Commands[0]; // TODO: refactor
 } COMMAND_HISTORY, *PCOMMAND_HISTORY;
 
+#include "readDataCooked.hpp"
+
 #define DEFAULT_NUMBER_OF_COMMANDS 25
 #define DEFAULT_NUMBER_OF_BUFFERS 4
 
-class COOKED_READ_DATA
-{
-public:
-    InputBuffer* pInputBuffer;
-    PSCREEN_INFORMATION pScreenInfo;
-    ConsoleHandleData* pTempHandle;
-    ULONG UserBufferSize;   // doubled size in ansi case
-    PWCHAR UserBuffer;
-    ULONG BufferSize;
-    ULONG BytesRead;
-    ULONG CurrentPosition;  // char position, not byte position
-    PWCHAR BufPtr;
-    PWCHAR BackupLimit;
-    COORD OriginalCursorPosition;
-    DWORD NumberOfVisibleChars;
-    PCOMMAND_HISTORY CommandHistory;
-    BOOLEAN Echo;
-    BOOLEAN Processed;
-    BOOLEAN Line;
-    BOOLEAN InsertMode;
-    ConsoleProcessHandle* pProcessData;
-    INPUT_READ_HANDLE_DATA* pInputReadHandleData;
-    PWCHAR ExeName;
-    USHORT ExeNameLength;
-    ULONG CtrlWakeupMask;
-    ULONG ControlKeyState;
-    COORD BeforeDialogCursorPosition; // Currently only used for F9 (ProcessCommandNumberInput) since it's the only pop-up to move the cursor when it starts.
-};
-typedef COOKED_READ_DATA *PCOOKED_READ_DATA;
-
-typedef NTSTATUS(*PCLE_POPUP_INPUT_ROUTINE) (_In_ PCOOKED_READ_DATA CookedReadData, _In_ PCONSOLE_API_MSG WaitReplyMessage, _In_ BOOLEAN WaitRoutine);
+typedef NTSTATUS(*PCLE_POPUP_INPUT_ROUTINE) (_In_ COOKED_READ_DATA* CookedReadData,
+                                             _Inout_opt_ IWaitRoutine** ppWaiter,
+                                             _In_ BOOLEAN WaitRoutine);
 
 typedef struct _CLE_POPUP
 {
@@ -174,15 +148,13 @@ protected:
     CommandLine& operator=(CommandLine const&) = delete;
 };
 
-NTSTATUS ProcessCommandLine(_In_ PCOOKED_READ_DATA pCookedReadData,
+NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
                             _In_ WCHAR wch,
-                            _In_ const DWORD dwKeyState,
-                            _In_opt_ PCONSOLE_API_MSG pWaitReplyMessage,
-                            _In_ const BOOLEAN fWaitRoutine);
+                            _In_ const DWORD dwKeyState);
 
-void DeleteCommandLine(_Inout_ PCOOKED_READ_DATA pCookedReadData, _In_ const BOOL fUpdateFields);
+void DeleteCommandLine(_Inout_ COOKED_READ_DATA* pCookedReadData, _In_ const BOOL fUpdateFields);
 
-void RedrawCommandLine(_Inout_ PCOOKED_READ_DATA CookedReadData);
+void RedrawCommandLine(_Inout_ COOKED_READ_DATA* CookedReadData);
 
 PCOMMAND_HISTORY FindCommandHistory(_In_ const HANDLE hProcess);
 
@@ -190,7 +162,7 @@ bool IsCommandLinePopupKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
 
 bool IsCommandLineEditingKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
 
-void CleanUpPopups(_In_ PCOOKED_READ_DATA const CookedReadData);
+void CleanUpPopups(_In_ COOKED_READ_DATA* const CookedReadData);
 
 // Values for WriteChars(), WriteCharsLegacy() dwFlags
 #define WC_DESTRUCTIVE_BACKSPACE 0x01
@@ -216,7 +188,7 @@ void InitExtendedEditKeys(_In_opt_ ExtKeyDefBuf const * const pKeyDefBuf);
 bool IsPauseKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
 
 // Word delimiters
-#define IS_WORD_DELIM(wch)  ((wch) == L' ' || (gaWordDelimChars[0] && IsWordDelim(wch)))
+#define IS_WORD_DELIM(wch)  ((wch) == L' ' || (ServiceLocator::LocateGlobals()->aWordDelimChars[0] && IsWordDelim(wch)))
 bool IsWordDelim(_In_ WCHAR const wch);
 
 HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pwsBuffer,

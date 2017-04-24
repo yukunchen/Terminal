@@ -13,6 +13,8 @@
 #include "..\host\input.h"
 #include "..\host\screenInfo.hpp"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 ConsoleHandleData::ConsoleHandleData(_In_ ULONG const ulHandleType,
                                      _In_ ACCESS_MASK const amAccess,
                                      _In_ ULONG const ulShareAccess,
@@ -153,7 +155,7 @@ HRESULT ConsoleHandleData::GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWait
     else if (_IsOutput())
     {
         // TODO MSFT 9405322: shouldn't the output queue be per output object target, not global? https://osgvsowi/9405322
-        *ppWaitQueue = &g_ciConsoleInformation.OutputQueue;
+        *ppWaitQueue = &ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputQueue;
         return S_OK;
     }
     else

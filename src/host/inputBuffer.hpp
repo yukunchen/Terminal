@@ -25,8 +25,8 @@ Revision History:
 #pragma once
 
 #include "inputReadHandleData.h"
+#include "readData.hpp"
 
-#include "../server/WaitBlock.h"
 #include "../server/ObjectHandle.h"
 #include "../server/ObjectHeader.h"
 
@@ -57,12 +57,6 @@ public:
                             _Inout_ PDWORD pcLength,
                             _In_ BOOL const fPeek,
                             _In_ BOOL const fWaitForData,
-                            _In_ INPUT_READ_HANDLE_DATA* pHandleData,
-                            _In_opt_ PCONSOLE_API_MSG pConsoleMessage,
-                            _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
-                            _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
-                            _In_ ULONG const cbWaitParameter,
-                            _In_ BOOLEAN const fWaitBlockExists,
                             _In_ BOOLEAN const fUnicode);
 
     NTSTATUS PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength);

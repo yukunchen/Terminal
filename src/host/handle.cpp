@@ -9,28 +9,27 @@
 #include "handle.h"
 
 #include "misc.h"
-#include "input.h"
 #include "output.h"
 #include "srvinit.h"
-#include "stream.h"
-#include "utils.hpp"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
 void LockConsole()
 {
-    g_ciConsoleInformation.LockConsole();
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
 }
 
 void UnlockConsole()
 {
-    if (g_ciConsoleInformation.GetCSRecursionCount() == 1)
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetCSRecursionCount() == 1)
     {
         ProcessCtrlEvents();
     }
     else
     {
-        g_ciConsoleInformation.UnlockConsole();
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
     }
 }
 
@@ -38,7 +37,7 @@ NTSTATUS RevalidateConsole(_Out_ CONSOLE_INFORMATION ** const ppConsole)
 {
     LockConsole();
 
-    *ppConsole = &g_ciConsoleInformation;
+    *ppConsole = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     return STATUS_SUCCESS;
 }
@@ -46,21 +45,21 @@ NTSTATUS RevalidateConsole(_Out_ CONSOLE_INFORMATION ** const ppConsole)
 // Routine Description:
 // - This routine allocates and initialized a console and its associated
 //   data - input buffer and screen buffer.
-// - NOTE: Will read global g_ciConsoleInformation expecting Settings to already be filled.
+// - NOTE: Will read global ServiceLocator::LocateGlobals()->getConsoleInformation expecting Settings to already be filled.
 // Arguments:
 // - Title - Window Title to display
 // - TitleLength - Length of Window Title string
 // Return Value:
-// - <none> - Updates global g_ciConsoleInformation.
+// - <none> - Updates global ServiceLocator::LocateGlobals()->getConsoleInformation()->
 NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, _In_ const DWORD cbTitle)
 {
     // Synchronize flags
-    SetFlagIf(g_ciConsoleInformation.Flags, CONSOLE_AUTO_POSITION, !!g_ciConsoleInformation.GetAutoPosition());
-    SetFlagIf(g_ciConsoleInformation.Flags, CONSOLE_QUICK_EDIT_MODE, !!g_ciConsoleInformation.GetQuickEdit());
-    SetFlagIf(g_ciConsoleInformation.Flags, CONSOLE_HISTORY_NODUP, !!g_ciConsoleInformation.GetHistoryNoDup());
+    SetFlagIf(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_AUTO_POSITION, !!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetAutoPosition());
+    SetFlagIf(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_QUICK_EDIT_MODE, !!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetQuickEdit());
+    SetFlagIf(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_HISTORY_NODUP, !!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetHistoryNoDup());
 
     Selection* const pSelection = &Selection::Instance();
-    pSelection->SetLineSelection(!!g_ciConsoleInformation.GetLineSelection());
+    pSelection->SetLineSelection(!!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetLineSelection());
 
     SetConsoleCPInfo(TRUE);
     SetConsoleCPInfo(FALSE);
@@ -68,8 +67,8 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
     // Initialize input buffer.
     try
     {
-        g_ciConsoleInformation.pInputBuffer = new InputBuffer();
-        if (g_ciConsoleInformation.pInputBuffer == nullptr)
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer = new InputBuffer();
+        if (ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer == nullptr)
         {
             return STATUS_NO_MEMORY;
         }
@@ -81,18 +80,19 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
 
     NTSTATUS Status;
     // Byte count + 1 so dividing by 2 always rounds up. +1 more for trailing null guard.
-    g_ciConsoleInformation.Title = new WCHAR[((cbTitle + 1) / sizeof(WCHAR)) + 1];
-    if (g_ciConsoleInformation.Title == nullptr)
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->Title = new WCHAR[((cbTitle + 1) / sizeof(WCHAR)) + 1];
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->Title == nullptr)
     {
         Status = STATUS_NO_MEMORY;
         goto ErrorExit2;
     }
 
     #pragma prefast(suppress:26035, "If this fails, we just display an empty title, which is ok.")
-    StringCbCopyW(g_ciConsoleInformation.Title, cbTitle + sizeof(WCHAR), pwchTitle);
+    StringCbCopyW(ServiceLocator::LocateGlobals()->getConsoleInformation()->Title, cbTitle + sizeof(WCHAR), pwchTitle);
 
-    g_ciConsoleInformation.OriginalTitle = TranslateConsoleTitle(g_ciConsoleInformation.Title, TRUE, FALSE);
-    if (g_ciConsoleInformation.OriginalTitle == nullptr)
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->OriginalTitle =
+        TranslateConsoleTitle(ServiceLocator::LocateGlobals()->getConsoleInformation()->Title, TRUE, FALSE);
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->OriginalTitle == nullptr)
     {
         Status = STATUS_NO_MEMORY;
         goto ErrorExit1;
@@ -104,11 +104,13 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
         goto ErrorExit1b;
     }
 
-    g_ciConsoleInformation.CurrentScreenBuffer = g_ciConsoleInformation.ScreenBuffers;
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer =
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers;
 
-    g_ciConsoleInformation.CurrentScreenBuffer->ScrollScale = g_ciConsoleInformation.GetScrollScale();
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->ScrollScale =
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->GetScrollScale();
 
-    g_ciConsoleInformation.ConsoleIme.RefreshAreaAttributes();
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme.RefreshAreaAttributes();
 
     if (NT_SUCCESS(Status))
     {
@@ -117,19 +119,19 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
 
     RIPMSG1(RIP_WARNING, "Console init failed with status 0x%x", Status);
 
-    delete g_ciConsoleInformation.ScreenBuffers;
-    g_ciConsoleInformation.ScreenBuffers = nullptr;
+    delete ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers;
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers = nullptr;
 
 ErrorExit1b:
-    delete[] g_ciConsoleInformation.Title;
-    g_ciConsoleInformation.Title = nullptr;
+    delete[] ServiceLocator::LocateGlobals()->getConsoleInformation()->Title;
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->Title = nullptr;
 
 ErrorExit1:
-    delete[] g_ciConsoleInformation.OriginalTitle;
-    g_ciConsoleInformation.OriginalTitle = nullptr;
+    delete[] ServiceLocator::LocateGlobals()->getConsoleInformation()->OriginalTitle;
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->OriginalTitle = nullptr;
 
 ErrorExit2:
-    delete g_ciConsoleInformation.pInputBuffer;
+    delete ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer;
 
     ASSERT(!NT_SUCCESS(Status));
     return Status;

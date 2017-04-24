@@ -5,21 +5,30 @@
 ********************************************************/
 
 #include "precomp.h"
-#include "globals.h"
-#include "server.h"
-#include <intsafe.h>
-#include "telemetry.hpp"
-#include "utils.hpp"
 
+#include <intsafe.h>
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
+
+// Routine Description:
+// - Handler for inserting key sequences into the buffer when the terminal emulation layer
+//   has determined a key can be converted appropriately into a sequence of inputs
+// Arguments:
+// - rgInput - Series of input records to insert into the buffer
+// - cInput - Length of input records array
+// Return Value:
+// - <none>
+void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
+{
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->WriteInputBuffer(rgInput, cInput);
+}
 
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // ProcessHandleList initializes itself
     pInputBuffer(nullptr),
     CurrentScreenBuffer(nullptr),
     ScreenBuffers(nullptr),
-    hWnd(nullptr),
-    hMenu(nullptr),
-    hHeirMenu(nullptr),
     OutputQueue(),
     // CommandHistoryList initialized below
     // ExeAliasList initialized below
@@ -37,8 +46,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // CPInfo initialized below
     // OutputCPInfo initialized below
     ReadConInpNumBytesUnicode(0),
-    WriteConOutNumBytesUnicode(0),
-    WriteConOutNumBytesTemp(0),
     lpCookedReadData(nullptr),
     // ConsoleIme initialized below
     termInput(HandleTerminalKeyEventCallback),
@@ -72,6 +79,12 @@ void CONSOLE_INFORMATION::LockConsole()
 }
 
 #pragma prefast(suppress:26135, "Adding lock annotation spills into entire project. Future work.")
+BOOL CONSOLE_INFORMATION::TryLockConsole()
+{
+    return TryEnterCriticalSection(&_csConsoleLock);
+}
+
+#pragma prefast(suppress:26135, "Adding lock annotation spills into entire project. Future work.")
 void CONSOLE_INFORMATION::UnlockConsole()
 {
     LeaveCriticalSection(&_csConsoleLock);
@@ -80,17 +93,4 @@ void CONSOLE_INFORMATION::UnlockConsole()
 ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
 {
     return _csConsoleLock.RecursionCount;
-}
-
-// Routine Description:
-// - Handler for inserting key sequences into the buffer when the terminal emulation layer
-//   has determined a key can be converted appropriately into a sequence of inputs
-// Arguments:
-// - rgInput - Series of input records to insert into the buffer
-// - cInput - Length of input records array
-// Return Value:
-// - <none>
-void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
-{
-    g_ciConsoleInformation.pInputBuffer->WriteInputBuffer(rgInput, cInput);
 }

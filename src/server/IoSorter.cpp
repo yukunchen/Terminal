@@ -20,6 +20,7 @@ void IoSorter::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg,
                                   _Out_ CONSOLE_API_MSG** ReplyMsg)
 {
     NTSTATUS Status;
+    HRESULT hr;
     BOOL ReplyPending = FALSE;
 
     ZeroMemory(&pMsg->State, sizeof(pMsg->State));
@@ -38,9 +39,7 @@ void IoSorter::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg,
         break;
 
     case CONSOLE_IO_DISCONNECT:
-        IoDispatchers::ConsoleClientDisconnectRoutine(pMsg->GetProcessHandle());
-        pMsg->SetReplyStatus(STATUS_SUCCESS);
-        *ReplyMsg = pMsg;
+        *ReplyMsg = IoDispatchers::ConsoleClientDisconnectRoutine(pMsg);
         break;
 
     case CONSOLE_IO_CREATE_OBJECT:
@@ -48,16 +47,15 @@ void IoSorter::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg,
         break;
 
     case CONSOLE_IO_CLOSE_OBJECT:
-        SrvCloseHandle(pMsg);
-        pMsg->SetReplyStatus(STATUS_SUCCESS);
-        *ReplyMsg = pMsg;
+        *ReplyMsg = IoDispatchers::ConsoleCloseObject(pMsg);
         break;
 
     case CONSOLE_IO_RAW_WRITE:
         ZeroMemory(&pMsg->u.consoleMsgL1.WriteConsole, sizeof(CONSOLE_WRITECONSOLE_MSG));
 
         ReplyPending = FALSE;
-        Status = SrvWriteConsole(pMsg, &ReplyPending);
+        hr = ApiDispatchers::ServerWriteConsole(pMsg, &ReplyPending);
+        Status = NTSTATUS_FROM_HRESULT(hr);
         if (ReplyPending)
         {
             *ReplyMsg = nullptr;
@@ -74,7 +72,8 @@ void IoSorter::ServiceIoOperation(_In_ CONSOLE_API_MSG* const pMsg,
         ZeroMemory(&pMsg->u.consoleMsgL1.ReadConsole, sizeof(CONSOLE_READCONSOLE_MSG));
         pMsg->u.consoleMsgL1.ReadConsole.ProcessControlZ = TRUE;
         ReplyPending = FALSE;
-        Status = SrvReadConsole(pMsg, &ReplyPending);
+        hr = ApiDispatchers::ServerReadConsole(pMsg, &ReplyPending);
+        Status = NTSTATUS_FROM_HRESULT(hr);
         if (ReplyPending)
         {
             *ReplyMsg = nullptr;

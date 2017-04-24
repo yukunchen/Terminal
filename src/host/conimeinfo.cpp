@@ -5,7 +5,10 @@
 ********************************************************/
 
 #include "precomp.h"
+
 #include "conimeinfo.h"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 ConversionAreaBufferInfo::ConversionAreaBufferInfo(_In_ COORD const coordBufferSize) :
     coordCaBuffer(coordBufferSize),
@@ -34,7 +37,7 @@ NTSTATUS ConversionAreaInfo::s_CreateInstance(_Outptr_ ConversionAreaInfo** cons
     NTSTATUS Status = STATUS_SUCCESS;
     *ppInfo = nullptr;
 
-    if (g_ciConsoleInformation.CurrentScreenBuffer == nullptr)
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer == nullptr)
     {
         Status = STATUS_UNSUCCESSFUL;
     }
@@ -42,20 +45,20 @@ NTSTATUS ConversionAreaInfo::s_CreateInstance(_Outptr_ ConversionAreaInfo** cons
     if (NT_SUCCESS(Status))
     {
         // Each conversion area represents one row of the current screen buffer.
-        COORD coordCaBuffer = g_ciConsoleInformation.CurrentScreenBuffer->GetScreenBufferSize();
+        COORD coordCaBuffer = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetScreenBufferSize();
         coordCaBuffer.Y = 1;
 
         COORD dwWindowSize;
-        dwWindowSize.X = g_ciConsoleInformation.CurrentScreenBuffer->GetScreenWindowSizeX();
-        dwWindowSize.Y = g_ciConsoleInformation.CurrentScreenBuffer->GetScreenWindowSizeY();
+        dwWindowSize.X = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetScreenWindowSizeX();
+        dwWindowSize.Y = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetScreenWindowSizeY();
 
         CHAR_INFO Fill;
-        Fill.Attributes = g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes();
+        Fill.Attributes = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetAttributes().GetLegacyAttributes();
 
         CHAR_INFO PopupFill;
-        PopupFill.Attributes = g_ciConsoleInformation.CurrentScreenBuffer->GetPopupAttributes()->GetLegacyAttributes();
+        PopupFill.Attributes = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetPopupAttributes()->GetLegacyAttributes();
 
-        const FontInfo* const pfiFont = g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->GetCurrentFont();
+        const FontInfo* const pfiFont = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCurrentFont();
 
         SCREEN_INFORMATION* pNewScreen;
         Status = SCREEN_INFORMATION::CreateInstance(dwWindowSize,
@@ -150,7 +153,7 @@ ConsoleImeInfo::~ConsoleImeInfo()
 // - <none>
 void ConsoleImeInfo::RefreshAreaAttributes()
 {
-    TextAttribute const Attributes = g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes();
+    TextAttribute const Attributes = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetAttributes();
 
     for (unsigned int i = 0; i < ConvAreaCompStr.size(); ++i)
     {

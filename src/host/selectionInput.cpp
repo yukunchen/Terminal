@@ -6,15 +6,9 @@
 
 #include "precomp.h"
 
-#include "selection.hpp"
+#include "search.h"
 
-#include "clipboard.hpp"
-#include "cursor.h"
-#include "find.h"
-#include "input.h"
-#include "menu.h"
-#include "stream.h"
-#include "telemetry.hpp"
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 // Routine Description:
 // - Handles a keyboard event for extending the current selection
@@ -23,7 +17,7 @@
 // - pInputKeyInfo : The key press state information from the keyboard
 // Return Value:
 // - True if the event is handled. False otherwise.
-bool Selection::HandleKeySelectionEvent(_In_ const INPUT_KEY_INFO* const pInputKeyInfo)
+Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(_In_ const INPUT_KEY_INFO* const pInputKeyInfo)
 {
     ASSERT(IsInSelectingState());
 
@@ -35,23 +29,25 @@ bool Selection::HandleKeySelectionEvent(_In_ const INPUT_KEY_INFO* const pInputK
         if (wVirtualKeyCode == VK_ESCAPE)
         {
             ClearSelection();
-            return true;
+            return Selection::KeySelectionEventResult::EventHandled;
         }
         else if (wVirtualKeyCode == VK_RETURN ||
-                 ((GetKeyState(VK_CONTROL) & KEY_PRESSED) &&
+                 ((ServiceLocator::LocateInputServices()->GetKeyState(VK_CONTROL) & KEY_PRESSED) &&
                   (wVirtualKeyCode == 'C' || // Ctrl-c
                    wVirtualKeyCode == VK_INSERT))) // Ctrl-INS
         {
             Telemetry::Instance().SetKeyboardTextEditingUsed();
+
             // copy selection
-            Clipboard::s_DoCopy();
-            return true;
+            return Selection::KeySelectionEventResult::CopyToClipboard;
         }
-        else if (g_ciConsoleInformation.GetEnableColorSelection() && ('0' <= wVirtualKeyCode) && ('9' >= wVirtualKeyCode))
+        else if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetEnableColorSelection() &&
+                 ('0' <= wVirtualKeyCode) &&
+                 ('9' >= wVirtualKeyCode))
         {
             if (_HandleColorSelection(pInputKeyInfo))
             {
-                return true;
+                return Selection::KeySelectionEventResult::EventHandled;
             }
         }
     }
@@ -60,7 +56,7 @@ bool Selection::HandleKeySelectionEvent(_In_ const INPUT_KEY_INFO* const pInputK
     {
         if (_HandleMarkModeSelectionNav(pInputKeyInfo))
         {
-            return true;
+            return Selection::KeySelectionEventResult::EventHandled;
         }
     }
     else if (!IsMouseButtonDown())
@@ -71,7 +67,7 @@ bool Selection::HandleKeySelectionEvent(_In_ const INPUT_KEY_INFO* const pInputK
             // try to handle it first if we've used a valid keyboard command to extend the selection
             if (HandleKeyboardLineSelectionEvent(pInputKeyInfo))
             {
-                return true;
+                return Selection::KeySelectionEventResult::EventHandled;
             }
         }
 
@@ -81,7 +77,7 @@ bool Selection::HandleKeySelectionEvent(_In_ const INPUT_KEY_INFO* const pInputK
         }
     }
 
-    return false;
+    return Selection::KeySelectionEventResult::EventNotHandled;
 }
 
 // Routine Description:
@@ -145,7 +141,7 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
                                     _In_ const COORD coordAnchor,
                                     _Inout_ COORD *pcoordSelPoint) const
 {
-    TEXT_BUFFER_INFO* const pTextInfo = g_ciConsoleInformation.CurrentScreenBuffer->TextInfo;
+    TEXT_BUFFER_INFO* const pTextInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo;
 
     // first move one character in the requested direction
     if (!fReverse)
@@ -237,7 +233,7 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
         }
 
         // get the character associated with the new position
-        pRow = g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->GetRowByOffset(pcoordSelPoint->Y);
+        pRow = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetRowByOffset(pcoordSelPoint->Y);
         ASSERT(pRow != nullptr);
         __analysis_assume(pRow != nullptr);
         wchTest = pRow->CharRow.Chars[pcoordSelPoint->X];
@@ -299,7 +295,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
     // if we're not currently selecting anything, start a new mouse selection
     if (!IsInSelectingState())
     {
-        InitializeMouseSelection(g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->GetCursor()->GetPosition());
+        InitializeMouseSelection(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor()->GetPosition());
 
         // force that this is a line selection
         _AlignAlternateSelection(true);
@@ -333,7 +329,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
     SMALL_RECT srectEdges;
     Utils::s_GetCurrentBufferEdges(&srectEdges);
 
-    const SHORT sWindowHeight = g_ciConsoleInformation.CurrentScreenBuffer->GetScreenWindowSizeY();
+    const SHORT sWindowHeight = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetScreenWindowSizeY();
 
     ASSERT(coordSelPoint.X >= srectEdges.Left && coordSelPoint.X <= srectEdges.Right);
     ASSERT(coordSelPoint.Y >= srectEdges.Top && coordSelPoint.Y <= srectEdges.Bottom);
@@ -359,7 +355,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
         {
             Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
 
-            const TEXT_BUFFER_INFO* const pTextInfo = g_ciConsoleInformation.CurrentScreenBuffer->TextInfo;
+            const TEXT_BUFFER_INFO* const pTextInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo;
             const ROW* const pRow = pTextInfo->GetRowByOffset(coordSelPoint.Y);
             const BYTE bAttr = pRow->CharRow.KAttrs[coordSelPoint.X];
 
@@ -581,7 +577,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
     }
 
     // ensure we're not planting the cursor in the middle of a double-wide character.
-    const TEXT_BUFFER_INFO* const pTextInfo = g_ciConsoleInformation.CurrentScreenBuffer->TextInfo;
+    const TEXT_BUFFER_INFO* const pTextInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo;
     ROW* const pRow = pTextInfo->GetRowByOffset(coordSelPoint.Y);
     ASSERT(pRow != nullptr);
     __analysis_assume(pRow != nullptr);
@@ -613,7 +609,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
 // - <none>
 void Selection::CheckAndSetAlternateSelection()
 {
-    _fUseAlternateSelection = !!(GetKeyState(VK_MENU) & KEY_PRESSED);
+    _fUseAlternateSelection = !!(ServiceLocator::LocateInputServices()->GetKeyState(VK_MENU) & KEY_PRESSED);
 }
 
 // Routine Description:
@@ -650,7 +646,7 @@ bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKey
         fCtrlPressed = pInputKeyInfo->IsCtrlPressed();
     }
 
-    SCREEN_INFORMATION* const pScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
+    SCREEN_INFORMATION* const pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
 
     //  Clip the selection to within the console buffer
     pScreenInfo->ClipToScreenBuffer(psrSelection);
@@ -669,14 +665,14 @@ bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKey
         else
         {
             // Set foreground color. Maintain the current console bg color.
-            ulAttr |= g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes() & 0xf0;
+            ulAttr |= ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetAttributes().GetLegacyAttributes() & 0xf0;
         }
 
         // If shift was pressed as well, then this is actually a
         // find-and-color request. Otherwise just color the selection.
         if (fShiftPressed)
         {
-            SCREEN_INFORMATION* pScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
+            SCREEN_INFORMATION* pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
 
             ULONG cLength = psrSelection->Right - psrSelection->Left + 1;
             if (cLength > SEARCH_STRING_LENGTH)
@@ -701,7 +697,6 @@ bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKey
             ClearSelection();
 
             SearchForString(pScreenInfo, pwszSearchString, (USHORT)cLength, TRUE, FALSE, TRUE, ulAttr, nullptr);
-
         }
         else
         {
@@ -735,7 +730,7 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
         wVirtualKeyCode == VK_END ||
         wVirtualKeyCode == VK_HOME)
     {
-        SCREEN_INFORMATION* const pScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
+        SCREEN_INFORMATION* const pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
         TEXT_BUFFER_INFO* const pTextInfo = pScreenInfo->TextInfo;
         BYTE bKAttrs;
         SHORT iNextRightX;
@@ -880,7 +875,7 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
         }
 
         // see if shift is down. if so, we're extending the selection. otherwise, we're resetting the anchor
-        if (GetKeyState(VK_SHIFT) & KEY_PRESSED)
+        if (ServiceLocator::LocateInputServices()->GetKeyState(VK_SHIFT) & KEY_PRESSED)
         {
             // if we're just starting to "extend" our selection from moving around as a cursor
             // then attempt to set the alternate selection state based on the ALT key right now
@@ -928,17 +923,17 @@ bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart
     SMALL_RECT srectEdges;
     Utils::s_GetCurrentBufferEdges(&srectEdges);
 
-    const COOKED_READ_DATA* const pCookedReadData = g_ciConsoleInformation.lpCookedReadData;
-    const TEXT_BUFFER_INFO* const pTextInfo = g_ciConsoleInformation.CurrentScreenBuffer->TextInfo;
+    const COOKED_READ_DATA* const pCookedReadData = ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData;
+    const TEXT_BUFFER_INFO* const pTextInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo;
 
     // if we have no read data, we have no input line
-    if (pCookedReadData == nullptr || pCookedReadData->NumberOfVisibleChars <= 0)
+    if (pCookedReadData == nullptr || pCookedReadData->_NumberOfVisibleChars <= 0)
     {
         return false;
     }
 
-    const COORD coordStart = pCookedReadData->OriginalCursorPosition;
-    COORD coordEnd = pCookedReadData->OriginalCursorPosition;
+    const COORD coordStart = pCookedReadData->_OriginalCursorPosition;
+    COORD coordEnd = pCookedReadData->_OriginalCursorPosition;
 
     if (coordEnd.X < 0 && coordEnd.Y < 0)
     {
@@ -948,7 +943,7 @@ bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart
     else
     {
         // otherwise, we need to add the number of characters in the input line to the original cursor position
-        Utils::s_AddToPosition(srectEdges, pCookedReadData->NumberOfVisibleChars, &coordEnd);
+        Utils::s_AddToPosition(srectEdges, pCookedReadData->_NumberOfVisibleChars, &coordEnd);
     }
 
     // - 1 so the coordinate is on top of the last position of the text, not one past it.
@@ -993,7 +988,7 @@ void Selection::GetValidAreaBoundaries(_Out_opt_ COORD* const pcoordValidStart, 
         }
         else
         {
-            coordEnd = g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->GetCursor()->GetPosition();
+            coordEnd = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor()->GetPosition();
         }
     }
 

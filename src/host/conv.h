@@ -22,8 +22,6 @@ Revision History:
 void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                              _In_ const SMALL_RECT srConvRegion);
 
-RECT GetImeSuggestionWindowPos();
-
 NTSTATUS ConsoleImeResizeCompStrView();
 NTSTATUS ConsoleImeResizeCompStrScreenBuffer(_In_ COORD const coordNewScreenSize);
 

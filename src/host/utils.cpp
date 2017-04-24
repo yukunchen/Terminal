@@ -4,9 +4,10 @@
 *                                                       *
 ********************************************************/
 #include "precomp.h"
+
 #include "utils.hpp"
 
-#include "globals.h"
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 short CalcWindowSizeX(_In_ const SMALL_RECT * const pRect)
 {
@@ -139,7 +140,7 @@ bool Utils::s_DoIncrementScreenCoordinate(_In_ const SMALL_RECT srectEdges, _Ino
 int Utils::s_CompareCoords(_In_ const COORD coordFirst, _In_ const COORD coordSecond)
 {
     // find the width of one row
-    const COORD coordScreenBufferSize = g_ciConsoleInformation.CurrentScreenBuffer->GetScreenBufferSize();
+    const COORD coordScreenBufferSize = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetScreenBufferSize();
     const short cRowWidth = coordScreenBufferSize.X;
 
     // Assert that our coordinates are within the expected boundaries
@@ -243,5 +244,5 @@ bool Utils::s_AddToPosition(_In_ const SMALL_RECT srectEdges, _In_ const int iAd
 // - <none>
 void Utils::s_GetCurrentBufferEdges(_Out_ SMALL_RECT* const psrectEdges)
 {
-    g_ciConsoleInformation.CurrentScreenBuffer->GetScreenEdges(psrectEdges);
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetScreenEdges(psrectEdges);
 }

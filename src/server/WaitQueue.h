@@ -20,6 +20,7 @@ Revision History:
 
 #include "..\host\conapi.h"
 
+#include "IWaitRoutine.h"
 #include "WaitBlock.h"
 #include "WaitTerminationReason.h"
 
@@ -36,8 +37,7 @@ public:
                        _In_ WaitTerminationReason const TerminationReason);
 
     static HRESULT s_CreateWait(_Inout_ CONSOLE_API_MSG* const pWaitReplyMessage,
-                                _In_ ConsoleWaitRoutine const pfnWaitRoutine,
-                                _In_ PVOID const pvWaitContext);
+                                _In_ IWaitRoutine* const pWaiter);
 
 private:
     bool _NotifyBlock(_In_ ConsoleWaitBlock* pWaitBlock,

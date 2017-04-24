@@ -5,7 +5,6 @@ TARGETTYPE                      =   LIBRARY
 UMTYPE                          =   windows
 
 SOURCES                         =   $(SOURCES)\
-                                    ..\clipboard.cpp \
                                     ..\selection.cpp \
                                     ..\selectionInput.cpp \
                                     ..\selectionState.cpp \
@@ -13,17 +12,16 @@ SOURCES                         =   $(SOURCES)\
                                     ..\cmdline.cpp   \
                                     ..\consoleInformation.cpp \
                                     ..\cursor.cpp    \
+                                    ..\search.cpp    \
                                     ..\directio.cpp  \
-                                    ..\find.cpp      \
                                     ..\getset.cpp    \
                                     ..\globals.cpp   \
                                     ..\handle.cpp    \
+                                    ..\init.cpp      \
                                     ..\input.cpp     \
                                     ..\inputBuffer.cpp \
-                                    ..\consoleKeyInfo.cpp \
                                     ..\inputKeyInfo.cpp \
                                     ..\inputReadHandleData.cpp \
-                                    ..\menu.cpp      \
                                     ..\misc.cpp      \
                                     ..\output.cpp    \
                                     ..\srvinit.cpp   \
@@ -33,7 +31,6 @@ SOURCES                         =   $(SOURCES)\
                                     ..\convarea.cpp  \
                                     ..\textBuffer.cpp \
                                     ..\screenInfo.cpp \
-                                    ..\screenInfoUiaProvider.cpp \
                                     ..\newdelete.cpp \
                                     ..\_output.cpp   \
                                     ..\_stream.cpp   \
@@ -42,18 +39,15 @@ SOURCES                         =   $(SOURCES)\
                                     ..\tracing.cpp   \
                                     ..\registry.cpp  \
                                     ..\settings.cpp  \
-                                    ..\icon.cpp      \
-                                    ..\window.cpp    \
-                                    ..\windowproc.cpp \
-                                    ..\windowuiaprovider.cpp \
-                                    ..\windowdpiapi.cpp \
-                                    ..\userprivapi.cpp \
                                     ..\ntprivapi.cpp \
+                                    ..\readData.cpp \
+                                    ..\readDataCooked.cpp \
+                                    ..\readDataDirect.cpp \
+                                    ..\readDataRaw.cpp \
+                                    ..\writeData.cpp \
                                     ..\renderData.cpp \
                                     ..\renderFontDefaults.cpp \
                                     ..\utf8ToWideCharParser.cpp \
-                                    ..\UiaTextProvider.cpp \
-                                    ..\UiaTextRange.cpp \
                                     ..\conimeinfo.cpp \
 
 INCLUDES                        =  $(INCLUDES); \

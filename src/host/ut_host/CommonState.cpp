@@ -10,6 +10,8 @@
 #include "globals.h"
 #include "newdelete.hpp"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 static const SHORT s_csWindowWidth = 80;
 static const SHORT s_csWindowHeight = 80;
 static const SHORT s_csBufferWidth = 80;
@@ -59,32 +61,32 @@ void CommonState::PrepareGlobalScreenBuffer()
     ciPopupFill.Attributes = FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED;
     UINT uiCursorSize = 12;
 
-    SCREEN_INFORMATION::CreateInstance(coordWindowSize, m_pFontInfo, coordScreenBufferSize, ciFill, ciPopupFill, uiCursorSize, &g_ciConsoleInformation.CurrentScreenBuffer);
+    SCREEN_INFORMATION::CreateInstance(coordWindowSize, m_pFontInfo, coordScreenBufferSize, ciFill, ciPopupFill, uiCursorSize, &ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer);
 }
 
 void CommonState::CleanupGlobalScreenBuffer()
 {
-    delete g_ciConsoleInformation.CurrentScreenBuffer;
+    delete ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
 }
 
 void CommonState::PrepareGlobalInputBuffer()
 {
-    g_ciConsoleInformation.pInputBuffer = new InputBuffer();
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer = new InputBuffer();
 }
 
 void CommonState::CleanupGlobalInputBuffer()
 {
-    delete g_ciConsoleInformation.pInputBuffer;
+    delete ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer;
 }
 
 void CommonState::PrepareCookedReadData()
 {
-    g_ciConsoleInformation.lpCookedReadData = new COOKED_READ_DATA();
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData = new COOKED_READ_DATA();
 }
 
 void CommonState::CleanupCookedReadData()
 {
-    delete g_ciConsoleInformation.lpCookedReadData;
+    delete ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData;
 }
 
 void CommonState::PrepareNewTextBufferInfo()
@@ -96,17 +98,17 @@ void CommonState::PrepareNewTextBufferInfo()
     ciFill.Attributes = FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY;
     UINT uiCursorSize = 12;
 
-    m_backupTextBufferInfo = g_ciConsoleInformation.CurrentScreenBuffer->TextInfo;
+    m_backupTextBufferInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo;
 
-    m_ntstatusTextBufferInfo = TEXT_BUFFER_INFO::CreateInstance(m_pFontInfo, coordScreenBufferSize, ciFill, uiCursorSize, &g_ciConsoleInformation.CurrentScreenBuffer->TextInfo);
+    m_ntstatusTextBufferInfo = TEXT_BUFFER_INFO::CreateInstance(m_pFontInfo, coordScreenBufferSize, ciFill, uiCursorSize, &ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo);
 }
 
 void CommonState::CleanupNewTextBufferInfo()
 {
-    ASSERT(g_ciConsoleInformation.CurrentScreenBuffer != nullptr);
-    delete g_ciConsoleInformation.CurrentScreenBuffer->TextInfo;
+    ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer != nullptr);
+    delete ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo;
 
-    g_ciConsoleInformation.CurrentScreenBuffer->TextInfo = m_backupTextBufferInfo;
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo = m_backupTextBufferInfo;
 }
 
 void FillRow(ROW* pRow)
@@ -178,7 +180,7 @@ void FillBisect(ROW *pRow)
     pRow->CharRow.KAttrs[79] = CHAR_ROW::ATTR_LEADING_BYTE;
 
     // everything gets default attributes
-    pRow->AttrRow.Initialize(80, g_ciConsoleInformation.CurrentScreenBuffer->GetAttributes());
+    pRow->AttrRow.Initialize(80, ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetAttributes());
 
     pRow->CharRow.SetWrapStatus(true);
 }
@@ -187,10 +189,10 @@ typedef void(*PFNFillMethod)(ROW*);
 
 void FillTextBufferGeneric(PFNFillMethod pfnFill, SHORT cRowsToFill)
 {
-    ASSERT(g_ciConsoleInformation.CurrentScreenBuffer != nullptr);
-    ASSERT(g_ciConsoleInformation.CurrentScreenBuffer->TextInfo != nullptr);
+    ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer != nullptr);
+    ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo != nullptr);
 
-    TEXT_BUFFER_INFO* pTextInfo = g_ciConsoleInformation.CurrentScreenBuffer->TextInfo;
+    TEXT_BUFFER_INFO* pTextInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo;
 
     for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
     {

@@ -71,3 +71,8 @@ BOOL CheckBisectProcessW(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                          _In_ DWORD cBytes,
                          _In_ SHORT sOriginalXPosition,
                          _In_ BOOL fEcho);
+
+ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
+                          _In_ const ULONG NumRecords,    // in : ASCII byte count
+                          _In_ const ULONG UnicodeLength, // in : Number of events (char count)
+                          _Inout_opt_ PINPUT_RECORD DbcsLeadInputRecord);

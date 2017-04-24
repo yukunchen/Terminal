@@ -13,6 +13,8 @@
 #include "selection.hpp"
 #include "cmdline.h"
 
+#include "..\interactivity\inc\ServiceLocator.hpp"
+
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -192,7 +194,7 @@ class SelectionTests
                     if (!fIsLastLine)
                     {
                         // buffer size = 80, then selection goes 0 to 79. Thus X - 1.
-                        VERIFY_ARE_EQUAL(psrRect->Right, g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->GetCoordBufferSize().X - 1);
+                        VERIFY_ARE_EQUAL(psrRect->Right, ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCoordBufferSize().X - 1);
                     }
 
                     // for all lines except the first, the line should reach the left edge of the buffer
@@ -316,7 +318,7 @@ class SelectionTests
 
     void TestBisectSelectionDelta(SHORT sTargetX, SHORT sTargetY, SHORT sLength, SHORT sDeltaLeft, SHORT sDeltaRight)
     {
-        SCREEN_INFORMATION* pScreenInfo = g_ciConsoleInformation.CurrentScreenBuffer;
+        SCREEN_INFORMATION* pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
 
         short sStringLength;
         COORD coordTargetPoint;
@@ -447,26 +449,26 @@ class SelectionInputTests
         srectEdges.Right = srectEdges.Bottom = sRowWidth - 1;
 
         // false when no cooked read data exists
-        ASSERT(g_ciConsoleInformation.lpCookedReadData == nullptr);
+        ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData == nullptr);
 
         bool fResult = Selection::s_GetInputLineBoundaries(nullptr, nullptr);
         VERIFY_IS_FALSE(fResult);
 
         // prepare some read data
         m_state->PrepareCookedReadData();
-        COOKED_READ_DATA* pCooked = g_ciConsoleInformation.lpCookedReadData;
+        COOKED_READ_DATA* pCooked = ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData;
 
         // backup text info position over remainder of text execution duration
-        TEXT_BUFFER_INFO* pTextInfo = g_ciConsoleInformation.CurrentScreenBuffer->TextInfo;
+        TEXT_BUFFER_INFO* pTextInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo;
         COORD coordOldTextInfoPos;
         coordOldTextInfoPos.X = pTextInfo->GetCursor()->GetPosition().X;
         coordOldTextInfoPos.Y = pTextInfo->GetCursor()->GetPosition().Y;
 
         // set various cursor positions
-        pCooked->OriginalCursorPosition.X = 15;
-        pCooked->OriginalCursorPosition.Y = 3;
+        pCooked->_OriginalCursorPosition.X = 15;
+        pCooked->_OriginalCursorPosition.Y = 3;
 
-        pCooked->NumberOfVisibleChars = 200;
+        pCooked->_NumberOfVisibleChars = 200;
 
         pTextInfo->GetCursor()->SetXPosition(35);
         pTextInfo->GetCursor()->SetYPosition(35);
@@ -483,24 +485,24 @@ class SelectionInputTests
         VERIFY_IS_TRUE(fResult);
 
         // starting position/boundary should always be where the input line started
-        VERIFY_ARE_EQUAL(coordStart.X, pCooked->OriginalCursorPosition.X);
-        VERIFY_ARE_EQUAL(coordStart.Y, pCooked->OriginalCursorPosition.Y);
+        VERIFY_ARE_EQUAL(coordStart.X, pCooked->_OriginalCursorPosition.X);
+        VERIFY_ARE_EQUAL(coordStart.Y, pCooked->_OriginalCursorPosition.Y);
 
         // ending position can vary. it's in one of two spots
         // 1. If the original cooked cursor was valid (which it was this first time), it's NumberOfVisibleChars ahead.
         COORD coordFinalPos;
 
-        const short cCharsToAdjust = ((short)pCooked->NumberOfVisibleChars - 1); // then -1 to be on the last piece of text, not past it
+        const short cCharsToAdjust = ((short)pCooked->_NumberOfVisibleChars - 1); // then -1 to be on the last piece of text, not past it
 
-        coordFinalPos.X = (pCooked->OriginalCursorPosition.X + cCharsToAdjust) % sRowWidth;
-        coordFinalPos.Y = pCooked->OriginalCursorPosition.Y + ((pCooked->OriginalCursorPosition.X + cCharsToAdjust) / sRowWidth);
+        coordFinalPos.X = (pCooked->_OriginalCursorPosition.X + cCharsToAdjust) % sRowWidth;
+        coordFinalPos.Y = pCooked->_OriginalCursorPosition.Y + ((pCooked->_OriginalCursorPosition.X + cCharsToAdjust) / sRowWidth);
 
         VERIFY_ARE_EQUAL(coordEnd.X, coordFinalPos.X);
         VERIFY_ARE_EQUAL(coordEnd.Y, coordFinalPos.Y);
 
         // 2. if the original cooked cursor is invalid, then it's the text info cursor position
-        pCooked->OriginalCursorPosition.X = -1;
-        pCooked->OriginalCursorPosition.Y = -1;
+        pCooked->_OriginalCursorPosition.X = -1;
+        pCooked->_OriginalCursorPosition.Y = -1;
 
         fResult = Selection::s_GetInputLineBoundaries(nullptr, &coordEnd);
         VERIFY_IS_TRUE(fResult);

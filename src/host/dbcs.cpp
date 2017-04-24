@@ -8,16 +8,9 @@
 
 #include "dbcs.h"
 
-#include "_output.h"
-#include "output.h"
-
-#include "consrv.h"
-#include "conv.h"
-#include "globals.h"
 #include "misc.h"
-#include "srvinit.h"
-#include "utils.hpp"
-#include "window.hpp"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -313,9 +306,9 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
     // Currently we do not support codepoints above 0xffff
     else
     {
-        if (g_pRender != nullptr)
+        if (ServiceLocator::LocateGlobals()->pRender != nullptr)
         {
-            return g_pRender->IsCharFullWidthByFont(wch);
+            return ServiceLocator::LocateGlobals()->pRender->IsCharFullWidthByFont(wch);
         }
     }
 
@@ -452,17 +445,29 @@ DWORD RemoveDbcsMarkAll(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     }
 }
 
+// Routine Description:
+// - Checks if a char is a lead byte for a given code page.
+// Arguments:
+// - ch - the char to check.
+// - pCPInfo - the code page to check the char in.
+// Return Value:
+// true if ch is a lead byte, false otherwise.
 bool IsDBCSLeadByteConsole(_In_ const CHAR ch, _In_ const CPINFO * const pCPInfo)
 {
+    ASSERT(pCPInfo != nullptr);
     // NOTE: This must be unsigned for the comparison. If we compare signed, this will never hit
     // because lead bytes are ironically enough always above 0x80 (signed char negative range).
     unsigned char const uchComparison = (unsigned char)ch;
 
     int i = 0;
+    // this is ok because the the array is guaranteed to have 2
+    // null bytes at the end.
     while (pCPInfo->LeadByte[i])
     {
         if (pCPInfo->LeadByte[i] <= uchComparison && uchComparison <= pCPInfo->LeadByte[i + 1])
+        {
             return true;
+        }
         i += 2;
     }
     return false;
@@ -520,8 +525,8 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
         if (IsCharFullWidth(TmpUni[i]))
         {
             ULONG const NumBytes = sizeof(AsciiDbcs);
-            ConvertToOem(g_ciConsoleInformation.CP, &TmpUni[i], 1, (LPSTR) & AsciiDbcs[0], NumBytes);
-            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &g_ciConsoleInformation.CPInfo))
+            ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, &TmpUni[i], 1, (LPSTR) & AsciiDbcs[0], NumBytes);
+            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo))
             {
                 if (j < cbAnsi - 1)
                 {   // -1 is safe DBCS in buffer
@@ -544,7 +549,7 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
         }
         else
         {
-            ConvertToOem(g_ciConsoleInformation.CP, &TmpUni[i], 1, &pchAnsi[j], 1);
+            ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, &TmpUni[i], 1, &pchAnsi[j], 1);
         }
     }
 

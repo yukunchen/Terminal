@@ -8,14 +8,9 @@
 
 #include "misc.h"
 
-#include "_output.h"
-#include "output.h"
-
-#include "consrv.h"
-#include "cursor.h"
 #include "dbcs.h"
-#include "utils.hpp"
-#include "window.hpp"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -247,9 +242,9 @@ WCHAR CharToWchar(_In_reads_(cch) const char * const pch, _In_ const UINT cch)
 {
     WCHAR wc = L'\0';
 
-    ASSERT(IsDBCSLeadByteConsole(*pch, &g_ciConsoleInformation.OutputCPInfo) || cch == 1);
+    ASSERT(IsDBCSLeadByteConsole(*pch, &ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCPInfo) || cch == 1);
 
-    ConvertOutputToUnicode(g_ciConsoleInformation.OutputCP, pch, cch, &wc, 1);
+    ConvertOutputToUnicode(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP, pch, cch, &wc, 1);
 
     return wc;
 }
@@ -262,28 +257,34 @@ void SetConsoleCPInfo(_In_ const BOOL fOutput)
         // to pick a more appropriate font should the current one be unable to render in the new codepage.
         // To do this, we create a copy of the existing font but we change the codepage value to be the new one that was just set in the global structures.
         // NOTE: We need to do this only if everything is set up. This can get called while we're still initializing, so carefully check things for nullptr.
-        SCREEN_INFORMATION* const psi = g_ciConsoleInformation.CurrentScreenBuffer;
+        SCREEN_INFORMATION* const psi = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
         if (psi != nullptr)
         {
             TEXT_BUFFER_INFO* const pti = psi->TextInfo;
             if (pti != nullptr)
             {
                 const FontInfo* const pfiOld = pti->GetCurrentFont();
-                FontInfo fiNew(pfiOld->GetFaceName(), pfiOld->GetFamily(), pfiOld->GetWeight(), pfiOld->GetUnscaledSize(), g_ciConsoleInformation.OutputCP);
+                FontInfo fiNew(pfiOld->GetFaceName(),
+                               pfiOld->GetFamily(),
+                               pfiOld->GetWeight(),
+                               pfiOld->GetUnscaledSize(),
+                               ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP);
                 psi->UpdateFont(&fiNew);
             }
         }
 
-        if (!GetCPInfo(g_ciConsoleInformation.OutputCP, &g_ciConsoleInformation.OutputCPInfo))
+        if (!GetCPInfo(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP,
+                       &ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCPInfo))
         {
-            g_ciConsoleInformation.OutputCPInfo.LeadByte[0] = 0;
+            ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCPInfo.LeadByte[0] = 0;
         }
     }
     else
     {
-        if (!GetCPInfo(g_ciConsoleInformation.CP, &g_ciConsoleInformation.CPInfo))
+        if (!GetCPInfo(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
+                       &ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo))
         {
-            g_ciConsoleInformation.CPInfo.LeadByte[0] = 0;
+            ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo.LeadByte[0] = 0;
         }
     }
 }
@@ -420,4 +421,125 @@ BOOL CheckBisectProcessW(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     {
         return CheckBisectStringW(pwchBuffer, cWords, cBytes);
     }
+}
+
+// Routine Descriptions:
+// - Converts key event records' unicode char to the current code
+// page.
+// Arguments:
+// - InputRecords - On input, the input records to convert. on output,
+// the converted input records.
+// - NumRecords - The max number of input records that oculd fit in InputRecords
+// - UnicodeLength - The number of stored INPUT_RECORDs in InputRecords
+// - DbcsLeadInputRecord - if peeking, this is nullptr. otherwise, it is
+// the memory location where we should store any partial dbcs byte
+// sequences if necessary.
+// Return Value:
+// - 0 if a problem occured. On success, the number of records stored
+// in InputRecords upon completion.
+ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
+                          _In_ const ULONG NumRecords,    // in : ASCII byte count
+                          _In_ const ULONG UnicodeLength, // in : Number of events (char count)
+                          _Inout_opt_ PINPUT_RECORD DbcsLeadInputRecord)
+{
+    DBGCHARS(("TranslateInputToOem\n"));
+
+    ASSERT(NumRecords >= UnicodeLength);
+    __analysis_assume(NumRecords >= UnicodeLength);
+
+    ULONG NumBytes;
+    if (FAILED(DWordMult(NumRecords, sizeof(INPUT_RECORD), &NumBytes)))
+    {
+        return 0;
+    }
+
+    PINPUT_RECORD const TmpInpRec = (PINPUT_RECORD) new BYTE[NumBytes];
+    if (TmpInpRec == nullptr)
+    {
+        return 0;
+    }
+
+    // copy input data to a temp storage buffer so we can begin to
+    // overwrite InputRecords with converted data
+    memmove(TmpInpRec, InputRecords, NumBytes);
+    BYTE AsciiDbcs[2] = { 0 };
+    ULONG i, j;
+    for (i = 0, j = 0; i < UnicodeLength; i++, j++)
+    {
+        if (TmpInpRec[i].EventType == KEY_EVENT)
+        {
+            if (IsCharFullWidth(TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar))
+            {
+                NumBytes = sizeof(AsciiDbcs);
+                ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
+                             &TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar,
+                             1,
+                             (LPSTR)& AsciiDbcs[0],
+                             NumBytes);
+                if (IsDBCSLeadByteConsole(AsciiDbcs[0], &ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo))
+                {
+                    if (j < NumRecords - 1)
+                    {   // -1 is safe DBCS in buffer
+                        InputRecords[j] = TmpInpRec[i];
+                        InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
+                        InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[0];
+                        j++;
+                        InputRecords[j] = TmpInpRec[i];
+                        InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
+                        InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[1];
+                        AsciiDbcs[1] = 0;
+                    }
+                    else if (j == NumRecords - 1)
+                    {
+                        InputRecords[j] = TmpInpRec[i];
+                        InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
+                        InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[0];
+                        j++;
+                        break;
+                    }
+                    else
+                    {
+                        AsciiDbcs[1] = 0;
+                        break;
+                    }
+                }
+                else
+                {
+                    InputRecords[j] = TmpInpRec[i];
+                    InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
+                    InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[0];
+                    AsciiDbcs[1] = 0;
+                }
+            }
+            else
+            {
+                InputRecords[j] = TmpInpRec[i];
+                ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
+                             &InputRecords[j].Event.KeyEvent.uChar.UnicodeChar,
+                             1,
+                             &InputRecords[j].Event.KeyEvent.uChar.AsciiChar,
+                             1);
+            }
+        }
+    }
+    // if we were given a place to store any possible partial dbcs
+    // sequences, check if we need to store anything in it
+    if (DbcsLeadInputRecord)
+    {
+        // there is a partial that needs to be stored
+        if (AsciiDbcs[1])
+        {
+            ASSERT(i < UnicodeLength);
+            __analysis_assume(i < UnicodeLength);
+
+            *DbcsLeadInputRecord = TmpInpRec[i];
+            DbcsLeadInputRecord->Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[1];
+        }
+        else
+        {
+            ZeroMemory(DbcsLeadInputRecord, sizeof(INPUT_RECORD));
+        }
+    }
+    delete[] TmpInpRec;
+    return j;
 }

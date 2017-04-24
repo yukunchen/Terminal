@@ -23,6 +23,14 @@ Revision History:
 #include "inputReadHandleData.h"
 #include "inputBuffer.hpp"
 
+// indicates how much to change the opacity at each mouse/key toggle
+// Opacity is defined as 0-255. 12 is therefore approximately 5% per tick.
+#define OPACITY_DELTA_INTERVAL 12
+
+#define MAX_CHARS_FROM_1_KEYSTROKE 6
+
+#define KEY_TRANSITION_UP 0x80000000
+
 class INPUT_KEY_INFO
 {
 public:
@@ -70,8 +78,6 @@ private:
 // WHY IS THIS NOT POSITION % TAB_SIZE?!
 #define NUMBER_OF_SPACES_IN_TAB(POSITION) (TAB_SIZE - ((POSITION) & TAB_MASK))
 
-#define AT_EOL(COOKEDREADDATA) ((COOKEDREADDATA)->BytesRead == ((COOKEDREADDATA)->CurrentPosition*2))
-
 // these values are related to GetKeyboardState
 #define KEY_PRESSED 0x8000
 #define KEY_TOGGLED 0x01
@@ -88,25 +94,18 @@ private:
 
 void ClearKeyInfo(_In_ const HWND hWnd);
 
-
-NTSTATUS WaitForMoreToRead(_In_opt_ PCONSOLE_API_MSG pConsoleMsg,
-                           _In_opt_ ConsoleWaitRoutine pfnWaitRoutine,
-                           _In_reads_bytes_opt_(cbWaitParameter) PVOID pvWaitParameter,
-                           _In_ const ULONG cbWaitParameter,
-                           _In_ const BOOLEAN fWaitBlockExists);
-
 ULONG GetControlKeyState(_In_ const LPARAM lParam);
 
+bool IsInProcessedInputMode();
+bool IsInVirtualTerminalInputMode();
+bool ShouldTakeOverKeyboardShortcuts();
 
-BOOL HandleSysKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole);
-void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole);
-BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam);
 void HandleMenuEvent(_In_ const DWORD wParam);
 void HandleFocusEvent(_In_ const BOOL fSetFocus);
 void HandleCtrlEvent(_In_ const DWORD EventType);
+bool HandleTerminalKeyEvent(_In_ const INPUT_RECORD* const pInputRecord);
+void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak);
+
 void ProcessCtrlEvents();
 
-bool HandleTerminalKeyEvent(_In_ const INPUT_RECORD* const pInputRecord);
-
-BOOL IsPrintableKey(WORD const wVirtualKeyCode);
 BOOL IsSystemKey(_In_ WORD const wVirtualKeyCode);

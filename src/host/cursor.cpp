@@ -9,19 +9,19 @@
 #include "cursor.h"
 
 #include "dbcs.h"
-#include "output.h"
-#include "window.hpp"
-#include "userprivapi.hpp"
+#include "handle.h"
+#include "scrolling.hpp"
+
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
-
-#define CURSOR_TIMER 1
 
 // Routine Description:
 // - Constructor to set default properties for Cursor
 // Arguments:
 // - ulSize - The height of the cursor within this buffer
-Cursor::Cursor(_In_ ULONG const ulSize) :
+Cursor::Cursor(IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize) :
+    _pAccessibilityNotifier(pNotifier),
     _ulSize(ulSize),
     _fHasMoved(FALSE),
     _fIsVisible(TRUE),
@@ -32,15 +32,22 @@ Cursor::Cursor(_In_ ULONG const ulSize) :
     _fDelay(FALSE),
     _fDelayedEolWrap(FALSE),
     _fDeferCursorRedraw(FALSE),
-    _fHaveDeferredCursorRedraw(FALSE)
+    _fHaveDeferredCursorRedraw(FALSE),
+    _hCaretBlinkTimer(INVALID_HANDLE_VALUE),
+    _uCaretBlinkTime(INFINITE) // default to no blink
 {
     _cPosition = {0};
     _coordDelayedAt = {0};
+
+    _hCaretBlinkTimerQueue = CreateTimerQueue();
 }
 
 Cursor::~Cursor()
 {
-
+    if (_hCaretBlinkTimerQueue)
+    {
+        DeleteTimerQueueEx(_hCaretBlinkTimerQueue, INVALID_HANDLE_VALUE);
+    }
 }
 
 // Routine Description:
@@ -54,12 +61,24 @@ NTSTATUS Cursor::CreateInstance(_In_ ULONG const ulSize, _Outptr_ Cursor ** cons
 {
     *ppCursor = nullptr;
 
-    Cursor* pCursor = new Cursor(ulSize);
-    NTSTATUS status = NT_TESTNULL(pCursor);
+    NTSTATUS status = STATUS_SUCCESS;
+
+    IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+    status = NT_TESTNULL(pNotifier);
 
     if (NT_SUCCESS(status))
     {
-        *ppCursor = pCursor;
+        Cursor* pCursor = new Cursor(pNotifier, ulSize);
+        status = NT_TESTNULL(pCursor);
+
+        if (NT_SUCCESS(status))
+        {
+            *ppCursor = pCursor;
+        }
+        else
+        {
+            delete pCursor;
+        }
     }
 
     return status;
@@ -98,7 +117,13 @@ const BOOLEAN Cursor::IsDouble() const
 const BOOLEAN Cursor::IsDoubleWidth() const
 {
     // Check with the current screen buffer to see if the character under the cursor is double-width.
-    return !!IsCharFullWidth(g_ciConsoleInformation.CurrentScreenBuffer->TextInfo->GetRowByOffset(_cPosition.Y)->CharRow.Chars[_cPosition.X]);
+    auto c = ServiceLocator::LocateGlobals()
+        ->getConsoleInformation()
+        ->CurrentScreenBuffer
+        ->TextInfo
+        ->GetRowByOffset(_cPosition.Y)
+        ->CharRow.Chars[_cPosition.X];
+    return !!IsCharFullWidth(c);
 }
 
 const BOOLEAN Cursor::IsConversionArea() const
@@ -209,17 +234,17 @@ void Cursor::_RedrawCursor()
 // - <none>
 void Cursor::_RedrawCursorAlways()
 {
-    if (g_pRender != nullptr)
+    if (ServiceLocator::LocateGlobals()->pRender != nullptr)
     {
         // Always trigger update of the cursor as one character width
-        g_pRender->TriggerRedraw(&_cPosition);
+        ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&_cPosition);
 
         // In case of a double width character, we need to invalidate the spot one to the right of the cursor as well.
         if (IsDoubleWidth())
         {
             COORD cExtra = _cPosition;
             cExtra.X++;
-            g_pRender->TriggerRedraw(&cExtra);
+            ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&cExtra);
         }
     }
 }
@@ -313,9 +338,13 @@ void Cursor::CopyProperties(_In_ const Cursor* const pOtherCursor)
 
     // Size will be handled seperately in the resize operation.
     //this->_ulSize                       = pOtherCursor->_ulSize;
-}
 
-UINT Cursor::s_uCaretBlinkTime = INFINITE; // default to no blink
+    // This property is set only once on console startup, and might change
+    // during the lifetime of the console, but is not set again anywhere when a
+    // cursor is replaced during reflow. This wasn't necessary when this
+    // property and the cursor timer were static.
+    this->_uCaretBlinkTime              = pOtherCursor->_uCaretBlinkTime;
+}
 
 // Routine Description:
 // - This routine is called when the timer in the console with the focus goes off.  It blinks the cursor.
@@ -325,9 +354,11 @@ UINT Cursor::s_uCaretBlinkTime = INFINITE; // default to no blink
 // - <none>
 void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
 {
-    if ((g_ciConsoleInformation.Flags & CONSOLE_HAS_FOCUS) == 0)
+    ServiceLocator::LocateConsoleWindow()->SetWindowHasMoved(false);
+
+    if ((ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags & CONSOLE_HAS_FOCUS) == 0)
     {
-        return;
+        goto DoScroll;
     }
 
     // Update the cursor pos in USER so accessibility will work.
@@ -335,29 +366,29 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
     {
         this->SetHasMoved(FALSE);
 
-        CONSOLE_CARET_INFO ConsoleCaretInfo;
-        ConsoleCaretInfo.hwnd = g_ciConsoleInformation.hWnd;
-        ConsoleCaretInfo.rc.left = (this->GetPosition().X - ScreenInfo->GetBufferViewport().Left) * ScreenInfo->GetScreenFontSize().X;
-        ConsoleCaretInfo.rc.top = (this->GetPosition().Y - ScreenInfo->GetBufferViewport().Top) * ScreenInfo->GetScreenFontSize().Y;
-        ConsoleCaretInfo.rc.right = ConsoleCaretInfo.rc.left + ScreenInfo->GetScreenFontSize().X;
-        ConsoleCaretInfo.rc.bottom = ConsoleCaretInfo.rc.top + ScreenInfo->GetScreenFontSize().Y;
-        UserPrivApi::s_ConsoleControl(UserPrivApi::CONSOLECONTROL::ConsoleSetCaretInfo, &ConsoleCaretInfo, sizeof(ConsoleCaretInfo));
+        RECT rc;
+        rc.left = (this->GetPosition().X - ScreenInfo->GetBufferViewport().Left) * ScreenInfo->GetScreenFontSize().X;
+        rc.top = (this->GetPosition().Y - ScreenInfo->GetBufferViewport().Top) * ScreenInfo->GetScreenFontSize().Y;
+        rc.right = rc.left + ScreenInfo->GetScreenFontSize().X;
+        rc.bottom = rc.top + ScreenInfo->GetScreenFontSize().Y;
+
+        _pAccessibilityNotifier->NotifyConsoleCaretEvent(rc);
 
         // Send accessibility information
         {
-            DWORD dwFlags = 0;
+            IAccessibilityNotifier::ConsoleCaretEventFlags flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretInvisible;
 
             // Flags is expected to be 2, 1, or 0. 2 in selecting (whether or not visible), 1 if just visible, 0 if invisible/noselect.
-            if (IsFlagSet(g_ciConsoleInformation.Flags, CONSOLE_SELECTING))
+            if (IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_SELECTING))
             {
-                dwFlags = CONSOLE_CARET_SELECTION;
+                flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection;
             }
             else if (this->IsVisible())
             {
-                dwFlags = CONSOLE_CARET_VISIBLE;
+                flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretVisible;
             }
 
-            NotifyWinEvent(EVENT_CONSOLE_CARET, g_ciConsoleInformation.hWnd, dwFlags, PACKCOORD(this->GetPosition()));
+            _pAccessibilityNotifier->NotifyConsoleCaretEvent(flags, PACKCOORD(this->GetPosition()));
         }
     }
 
@@ -367,13 +398,16 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
     if (this->GetDelay())
     {
         this->SetDelay(FALSE);
-        return;
+        goto DoScroll;
     }
 
     // Don't blink the cursor for remote sessions.
-    if ((!GetSystemMetrics(SM_CARETBLINKINGENABLED) || s_uCaretBlinkTime == -1 || (!this->IsBlinkingAllowed())) && this->IsOn())
+    if ((!ServiceLocator::LocateSystemConfigurationProvider()->IsCaretBlinkingEnabled() ||
+         _uCaretBlinkTime == -1 ||
+        (!this->IsBlinkingAllowed())) &&
+       this->IsOn())
     {
-        return;
+        goto DoScroll;
     }
 
     // Blink only if the cursor isn't turned off via the API
@@ -381,6 +415,9 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
     {
         this->SetIsOn(!this->IsOn());
     }
+
+DoScroll:
+    Scrolling::s_ScrollIfNecessary(ScreenInfo);
 }
 
 void Cursor::DelayEOLWrap(_In_ const COORD coordDelayedAt)
@@ -416,40 +453,79 @@ void Cursor::EndDeferDrawing()
     {
         _RedrawCursorAlways();
     }
+
     _fDeferCursorRedraw = FALSE;
+    SetCaretTimer();
 }
 
-UINT Cursor::s_GetCaretBlinkTime()
-{
-    return s_uCaretBlinkTime;
-}
-
-void Cursor::s_UpdateSystemMetrics()
+void Cursor::UpdateSystemMetrics()
 {
     // This can be -1 in a TS session
-    s_uCaretBlinkTime = GetCaretBlinkTime();
+    _uCaretBlinkTime = ServiceLocator::LocateSystemConfigurationProvider()->GetCaretBlinkTime();
 }
 
-void Cursor::s_SettingsChanged(_In_ HWND const hWnd)
+void Cursor::SettingsChanged()
 {
-    DWORD const dwCaretBlinkTime = GetCaretBlinkTime();
+    DWORD const dwCaretBlinkTime = ServiceLocator::LocateSystemConfigurationProvider()->GetCaretBlinkTime();
 
-    if (dwCaretBlinkTime != s_uCaretBlinkTime)
+    if (dwCaretBlinkTime != _uCaretBlinkTime)
     {
-        s_KillCaretTimer(hWnd);
-        s_uCaretBlinkTime = dwCaretBlinkTime;
-        s_SetCaretTimer(hWnd);
+        KillCaretTimer();
+        _uCaretBlinkTime = dwCaretBlinkTime;
+        SetCaretTimer();
     }
 }
 
-void Cursor::s_FocusEnd(_In_ HWND const hWnd)
+void Cursor::FocusEnd()
 {
-    s_KillCaretTimer(hWnd);
+    KillCaretTimer();
 }
 
-void Cursor::s_FocusStart(_In_ HWND const hWnd)
+void Cursor::FocusStart()
 {
-    s_SetCaretTimer(hWnd);
+    SetCaretTimer();
+}
+
+void CALLBACK CursorTimerRoutineWrapper(_In_ PVOID /* lpParam */, _In_ BOOL /* TimerOrWaitFired */)
+{
+    // Suppose the following sequence of events takes place:
+    //
+    // 1. The user resizes the console;
+    // 2. The console acquires the console lock;
+    // 3. The current SCREEN_INFORMATION instance is deleted;
+    // 4. This causes the current Cursor instance to be deleted, too;
+    // 5. The Cursor's destructor is called;
+    // => Somewhere between 1 and 5, the timer fires:
+    //    Timer queue timer callbacks execute asynchronously with respect to
+    //    the UI thread under which the numbered steps are taking place.
+    //    Because the callback touches console state, it needs to acquire the
+    //    console lock. But what if the timer callback fires at just the right
+    //    time such that 2 has already acquired the lock?
+    // 6. The Cursor's destructor deletes the timer queue and thereby destroys
+    //    the timer queue timer used for blinking. However, because this
+    //    timer's callback modifies console state, it is prudent to not
+    //    continue the destruction if the callback has already started but has
+    //    not yet finished. Therefore, the destructor waits for the callback to
+    //    finish executing.
+    // => Meanwhile, the callback just happens to be stuck waiting for the
+    //    console lock acquired in step 2. Since the destructor is waiting on
+    //    the callback to complete, and the callback is waiting on the lock,
+    //    which will only be released way after the Cursor instance is deleted,
+    //    the console has now deadlocked.
+    //
+    // As a solution, skip the blink if the console lock is already being held.
+    // Note that critical sections to not have a waitable synchronization
+    // object unless there readily is contention on it. As a result, if we
+    // wanted to wait until the lock became available under the condition of
+    // not being destroyed, things get too complicated.
+
+    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->TryLockConsole() != FALSE)
+    {
+        Cursor *cursor = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor();
+        cursor->TimerRoutine(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer);
+
+        UnlockConsole();
+    }
 }
 
 // Routine Description:
@@ -457,14 +533,46 @@ void Cursor::s_FocusStart(_In_ HWND const hWnd)
 //   need to make sure it gets drawn, so we'll set a short timer. When that
 //   goes off, we'll hit CursorTimerRoutine, and it'll do the right thing if
 //   guCaretBlinkTime is -1.
-void Cursor::s_SetCaretTimer(_In_ HWND const hWnd)
+void Cursor::SetCaretTimer()
 {
     static const DWORD dwDefTimeout = 0x212;
 
-    SetTimer(hWnd, CURSOR_TIMER, s_uCaretBlinkTime == -1 ? dwDefTimeout : s_uCaretBlinkTime, nullptr);
+    KillCaretTimer();
+
+    if (_hCaretBlinkTimer == INVALID_HANDLE_VALUE)
+    {
+        BOOL  bRet = TRUE;
+        DWORD dwEffectivePeriod = _uCaretBlinkTime == -1 ? dwDefTimeout : _uCaretBlinkTime;
+
+        bRet = CreateTimerQueueTimer(&_hCaretBlinkTimer,
+                                     _hCaretBlinkTimerQueue,
+                                     (WAITORTIMERCALLBACKFUNC)CursorTimerRoutineWrapper,
+                                     this,
+                                     dwEffectivePeriod,
+                                     dwEffectivePeriod,
+                                     0);
+
+        LOG_LAST_ERROR_IF_FALSE(bRet);
+    }
 }
 
-void Cursor::s_KillCaretTimer(_In_ HWND const hWnd)
+void Cursor::KillCaretTimer()
 {
-    KillTimer(hWnd, CURSOR_TIMER);
+    if (_hCaretBlinkTimer != INVALID_HANDLE_VALUE)
+    {
+        BOOL bRet = TRUE;
+
+        bRet = DeleteTimerQueueTimer(_hCaretBlinkTimerQueue,
+                                     _hCaretBlinkTimer,
+                                     NULL);
+
+        if (bRet == FALSE)
+        {
+            LOG_LAST_ERROR();
+        }
+        else
+        {
+            _hCaretBlinkTimer = INVALID_HANDLE_VALUE;
+        }
+    }
 }

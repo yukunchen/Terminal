@@ -19,6 +19,11 @@ Revision History:
 
 #include "input.h"
 
+#include "..\interactivity\inc\IAccessibilityNotifier.hpp"
+#include "..\interactivity\inc\IConsoleWindow.hpp"
+
+using namespace Microsoft::Console::Interactivity;
+
 class Selection
 {
 public:
@@ -73,8 +78,21 @@ private:
 // -------------------------------------------------------------------------------------------------------
 // input handling (selectionInput.cpp)
 public:
+
     // key handling
-    bool HandleKeySelectionEvent(_In_ const INPUT_KEY_INFO* const pInputKeyInfo);
+
+    // N.B.: This enumeration helps push up calling clipboard functions into
+    //       the caller. This way, all of the selection code is independent of
+    //       the clipboard and thus more easily shareable with Windows editions
+    //       that do not have a clipboard (i.e. OneCore).
+    enum class KeySelectionEventResult
+    {
+        EventHandled,
+        EventNotHandled,
+        CopyToClipboard
+    };
+
+    KeySelectionEventResult HandleKeySelectionEvent(_In_ const INPUT_KEY_INFO* const pInputKeyInfo);
     static bool s_IsValidKeyboardLineSelection(_In_ const INPUT_KEY_INFO* const pInputKeyInfo);
     bool HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* const pInputKeyInfo);
 
@@ -133,7 +151,7 @@ private:
     // TODO: consider putting word delims in here
 
     // -- State/Flags --
-    // This replaces/deprecates CONSOLE_SELECTION_INVERTED on g_ciConsoleInformation.SelectionFlags
+    // This replaces/deprecates CONSOLE_SELECTION_INVERTED on ServiceLocator::LocateGlobals()->getConsoleInformation()->SelectionFlags
     bool _fSelectionVisible;
 
     bool _fLineSelection; // whether to use line selection or block selection

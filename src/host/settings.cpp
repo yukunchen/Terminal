@@ -8,8 +8,7 @@
 
 #include "settings.hpp"
 
-#include "cursor.h"
-#include "misc.h"
+#include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -37,7 +36,7 @@ Settings::Settings() :
     _uNumberOfHistoryBuffers(DEFAULT_NUMBER_OF_BUFFERS),
     _bHistoryNoDup(false),
     // ColorTable initialized below
-    _uCodePage(g_uiOEMCP),
+    _uCodePage(ServiceLocator::LocateGlobals()->uiOEMCP),
     _uScrollScale(1),
     _bLineSelection(false),
     _bWrapText(false),
@@ -505,9 +504,9 @@ void Settings::SetGridRenderingAllowedWorldwide(_In_ bool const fGridRenderingAl
     {
         this->_fRenderGridWorldwide = fGridRenderingAllowed;
 
-        if (g_pRender != nullptr)
+        if (ServiceLocator::LocateGlobals()->pRender != nullptr)
         {
-            g_pRender->TriggerRedrawAll();
+            ServiceLocator::LocateGlobals()->pRender->TriggerRedrawAll();
         }
     }
 }

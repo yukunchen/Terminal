@@ -5,6 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
+
 #include "inputReadHandleData.h"
 
 INPUT_READ_HANDLE_DATA::INPUT_READ_HANDLE_DATA()
@@ -37,6 +38,7 @@ void INPUT_READ_HANDLE_DATA::IncrementReadCount()
 void INPUT_READ_HANDLE_DATA::DecrementReadCount()
 {
     LockReadCount();
+    assert(_ulReadCount > 0);
     _ulReadCount--;
     UnlockReadCount();
 }

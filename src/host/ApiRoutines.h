@@ -46,48 +46,74 @@ class ApiRoutines : public IApiRoutines
 
     HRESULT GetNumberOfConsoleInputEventsImpl(_In_ InputBuffer* const pContext,
                                               _Out_ ULONG* const pEvents);
+    
+    HRESULT PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
+                                  _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
+                                  _In_ size_t const cRecords,
+                                  _Out_ size_t* const pcRecordsWritten,
+                                  _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
+                                  _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter);
 
-    // HRESULT PeekConsoleInputAImpl(_In_ InputBuffer* const pContext,
-    //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
-    //                                       _In_ ULONG const InputRecordsBufferLength,
-    //                                       _Out_ ULONG* const pRecordsWritten);
+    HRESULT PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
+                                  _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
+                                  _In_ size_t const cRecords,
+                                  _Out_ size_t* const pcRecordsWritten,
+                                  _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
+                                  _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter);
 
-    // HRESULT PeekConsoleInputWImpl(_In_ InputBuffer* const pContext,
-    //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
-    //                                       _In_ ULONG const InputRecordsBufferLength,
-    //                                       _Out_ ULONG* const pRecordsWritten);
+    HRESULT ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
+                                  _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
+                                  _In_ size_t const cRecords,
+                                  _Out_ size_t* const pcRecordsWritten,
+                                  _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
+                                  _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter);
 
-    // HRESULT ReadConsoleInputAImpl(_In_ InputBuffer* const pContext,
-    //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
-    //                                       _In_ ULONG const InputRecordsBufferLength,
-    //                                       _Out_ ULONG* const pRecordsWritten);
+    HRESULT ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
+                                  _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
+                                  _In_ size_t const cRecords,
+                                  _Out_ size_t* const pcRecordsWritten,
+                                  _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
+                                  _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter);
 
-    // HRESULT ReadConsoleInputWImpl(_In_ InputBuffer* const pContext,
-    //                                       _Out_writes_to_(InputRecordsBufferLength, *pRecordsWritten) INPUT_RECORD* const pInputRecordsBuffer,
-    //                                       _In_ ULONG const InputRecordsBufferLength,
-    //                                       _Out_ ULONG* const pRecordsWritten);
+    HRESULT ReadConsoleAImpl(_In_ IConsoleInputObject* const pInContext,
+                             _Out_writes_to_(cchTextBuffer, *pcchTextBufferWritten) char* const psTextBuffer,
+                             _In_ size_t const cchTextBuffer,
+                             _Out_ size_t* const pcchTextBufferWritten,
+                             _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
+                             _In_reads_opt_(cchInitialData) char* const psInitialData,
+                             _In_ size_t const cchInitialData,
+                             _In_reads_opt_(cchExeNameLength) wchar_t* const pwsExeName,
+                             _In_ size_t const cchExeName,
+                             _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
+                             _In_ HANDLE const hConsoleClient,
+                             _In_ DWORD const dwControlWakeupMask,
+                             _Out_ DWORD* const pdwControlKeyState);
 
-    // HRESULT ReadConsoleAImpl(_In_ InputBuffer* const pContext,
-    //                                  _Out_writes_to_(TextBufferLength, *pTextBufferWritten) char* const pTextBuffer,
-    //                                  _In_ ULONG const TextBufferLength,
-    //                                  _Out_ ULONG* const pTextBufferWritten,
-    //                                  _In_opt_ CONSOLE_READCONSOLE_CONTROL* const pReadControl);
+    HRESULT ReadConsoleWImpl(_In_ IConsoleInputObject* const pInContext,
+                             _Out_writes_to_(cchTextBuffer, *pcchTextBufferWritten) wchar_t* const pwsTextBuffer,
+                             _In_ size_t const cchTextBuffer,
+                             _Out_ size_t* const pcchTextBufferWritten,
+                             _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
+                             _In_reads_opt_(cchInitialData) wchar_t* const pwsInitialData,
+                             _In_ size_t const cchInitialData,
+                             _In_reads_opt_(cchExeNameLength) wchar_t* const pwsExeName,
+                             _In_ size_t const cchExeName,
+                             _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
+                             _In_ HANDLE const hConsoleClient,
+                             _In_ DWORD const dwControlWakeupMask,
+                             _Out_ DWORD* const pdwControlKeyState);
 
-    // HRESULT ReadConsoleWImpl(_In_ InputBuffer* const pContext,
-    //                                  _Out_writes_to_(TextBufferLength, *pTextBufferWritten) wchar_t* const pTextBuffer,
-    //                                  _In_ ULONG const TextBufferLength,
-    //                                  _Out_ ULONG* const pTextBufferWritten,
-    //                                  _In_opt_ CONSOLE_READCONSOLE_CONTROL* const pReadControl);
+    HRESULT WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutContext,
+                              _In_reads_(cchTextBufferLength) const char* const psTextBuffer,
+                              _In_ size_t const cchTextBufferLength,
+                              _Out_ size_t* const pcchTextBufferRead,
+                              _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter);
 
-    // HRESULT WriteConsoleAImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                   _In_reads_(TextBufferLength) char* const pTextBuffer,
-    //                                   _In_ ULONG const TextBufferLength,
-    //                                   _Out_ ULONG* const pTextBufferRead);
-
-    // HRESULT WriteConsoleWImpl(_In_ SCREEN_INFORMATION* const pContext,
-    //                                   _In_reads_(TextBufferLength) wchar_t* const pTextBuffer,
-    //                                   _In_ ULONG const TextBufferLength,
-    //                                   _Out_ ULONG* const pTextBufferRead);
+    HRESULT WriteConsoleWImpl(_In_ IConsoleOutputObject* const pOutContext,
+                              _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
+                              _In_ size_t const cchTextBufferLength,
+                              _Out_ size_t* const pcchTextBufferRead,
+                              _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter);
 
 #pragma region ThreadCreationInfo
     HRESULT GetConsoleLangIdImpl(_Out_ LANGID* const pLangId);
