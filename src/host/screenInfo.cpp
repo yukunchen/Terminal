@@ -542,7 +542,11 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX, _In_ short con
             _pAccessibilityNotifier->NotifyConsoleUpdateRegionEvent(MAKELONG(sStartX, sStartY),
                                                                     MAKELONG(sEndX, sEndY));
         }
-        ServiceLocator::LocateConsoleWindow()->SignalUia(UIA_Text_TextChangedEventId);
+        IConsoleWindow* pConsoleWindow = ServiceLocator::LocateConsoleWindow();
+        if (pConsoleWindow)
+        {
+            pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId);
+        }
     }
 }
 
