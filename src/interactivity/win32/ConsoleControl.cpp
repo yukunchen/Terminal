@@ -42,11 +42,15 @@ NTSTATUS ConsoleControl::SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForegrou
 
 NTSTATUS ConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
 {
+    auto pConsoleWindow = ServiceLocator::LocateConsoleWindow();
+
     CONSOLEENDTASK ConsoleEndTaskParams;
     ConsoleEndTaskParams.ProcessId = hProcessId;
     ConsoleEndTaskParams.ConsoleEventCode = dwEventType;
     ConsoleEndTaskParams.ConsoleFlags = ulCtrlFlags;
-    ConsoleEndTaskParams.hwnd = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+    ConsoleEndTaskParams.hwnd = pConsoleWindow == nullptr
+        ? nullptr
+        : pConsoleWindow->GetWindowHandle();
     
     return Control(ControlType::ConsoleEndTask,
                    &ConsoleEndTaskParams,
