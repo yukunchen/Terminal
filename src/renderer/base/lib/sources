@@ -1,10 +1,8 @@
 !include ..\sources.inc
 
-# Check out https://osgwiki.com/wiki/Dev_14_Migration for more details about -Zc:implicitNoexcept-
-USER_C_FLAGS=$(USER_C_FLAGS) -Zc:implicitNoexcept-
+# -------------------------------------
+# Program Information
+# -------------------------------------
 
-TARGETNAME = ConRenderBase
-TARGETTYPE = LIBRARY
-
-
-
+TARGETNAME              = ConRenderBase
+TARGETTYPE              = LIBRARY

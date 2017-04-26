@@ -8,7 +8,7 @@
 
 #include "InputServer.hpp"
 
-#include "..\..\ConIoSrv\ConIoSrv.h"
+#include "ConIoSrv.h"
 
 #include "..\..\host\input.h"
 #include "..\inc\ServiceLocator.hpp"

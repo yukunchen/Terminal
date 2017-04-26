@@ -43,7 +43,7 @@
       <!--<WarningLevel>EnableAllWarnings</WarningLevel>-->
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4312;4467</DisableSpecificWarnings>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>EXTERNAL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>

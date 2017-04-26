@@ -1,28 +1,53 @@
-# C4201: nonstandard extension used : nameless struct/union
-# C4702: unreachable code detected : intentionally unreachable exit code during startup
-MSC_WARNING_LEVEL=/W4 /WX /wd4201 /wd4702
+# -------------------------------------
+# Windows Console 
+# - Console Server Communications Layer
+# -------------------------------------
 
-USE_UNICRT=1
-USE_MSVCRT=1
-USE_STL=1
-STL_VER=STL_VER_CURRENT
-USE_NATIVE_EH=1
+# This module encapsulates the communication layer between the console driver
+# and the console server application.
+# All IOCTL driver communications are handled in this layer as well as management
+# activities like process and handle tracking.
 
-USE_DEFAULT_WIN32_LIBS=0
-BUILD_FOR_CORESYSTEM=1
+# -------------------------------------
+# CRT Configuration
+# -------------------------------------
 
-_NT_TARGET_VERSION              =   $(_NT_TARGET_VERSION_LATEST)
+USE_UNICRT              = 1
+USE_MSVCRT              = 1
 
-C_DEFINES=-DUNICODE -D_UNICODE
+USE_STL                 = 1
+STL_VER                 = STL_VER_CURRENT
+USE_NATIVE_EH           = 1
 
-INCLUDES= \
-    $(INCLUDES); \
-    $(MINCORE_PRIV_SDK_INC_PATH); \
-    $(MINWIN_PRIV_SDK_INC_PATH); \
-    ..; \
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
+
+UNICODE                 = 1
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
+
+# -------------------------------------
+# Compiler Settings
+# -------------------------------------
+
+# Warning 4201: nonstandard extension used: nameless struct/union
+# Warning 4702: unreachable code
+MSC_WARNING_LEVEL       = /W4 /WX /wd4201 /wd4702
+
+# -------------------------------------
+# Build System Settings
+# -------------------------------------
+
+# Code in the OneCore depot automatically excludes default Win32 libraries.
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+PRECOMPILED_CXX         = 1
+PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES= \
-    $(SOURCES) \
     ..\ApiDispatchers.cpp \
     ..\ApiDispatchersInternal.cpp \
     ..\ApiMessage.cpp \
@@ -42,9 +67,7 @@ SOURCES= \
     ..\WaitQueue.cpp \
     ..\WinNTControl.cpp \
 
-TARGETLIBS= \
-    $(TARGETLIBS) \
-    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
-
-PRECOMPILED_CXX=1
-PRECOMPILED_INCLUDE=..\precomp.h
+INCLUDES= \
+    ..; \
+    $(ONECORE_SDK_INC_PATH); \
+    $(MINWIN_PRIV_SDK_INC_PATH); \

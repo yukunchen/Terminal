@@ -1,19 +1,8 @@
 !include ..\sources.inc
 
-TARGETNAME = ConInteractivityOneCoreLib
-TARGETTYPE = LIBRARY
-UMTYPE     = windows
+# -------------------------------------
+# Program Information
+# -------------------------------------
 
-SOURCES= \
-    $(SOURCES) \
-    ..\AccessibilityNotifier.cpp \
-    ..\BgfxEngine.cpp \
-    ..\ConsoleControl.cpp \
-    ..\ConsoleInputThread.cpp \
-    ..\ConsoleWindow.cpp \
-    ..\InputServer.cpp \
-    ..\SystemConfigurationProvider.cpp \
-    ..\WindowMetrics.cpp \
-
-INCLUDES                        =  $(INCLUDES); \
-                                   $(OBJ_PATH)\$(O)
+TARGETNAME              = ConInteractivityOneCoreLib
+TARGETTYPE              = LIBRARY

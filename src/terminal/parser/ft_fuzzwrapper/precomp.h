@@ -9,7 +9,9 @@ Abstract:
 - Avoid including internal project headers. Instead include them only in the classes that need them (helps with test project building).
 --*/
 
-#define _CRT_SECURE_NO_WARNINGS
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS 1
+#endif
 
 #include <windows.h>
 

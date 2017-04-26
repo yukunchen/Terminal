@@ -58,6 +58,11 @@
     <ProjectName>InteractivityWin32</ProjectName>
     <TargetName>ConInteractivityWin32Lib</TargetName>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\..\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.lib.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />

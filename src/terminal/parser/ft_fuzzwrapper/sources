@@ -1,32 +1,71 @@
-TARGETNAME                      =   ConTerm.Parser.FuzzWrapper
-TARGETTYPE                      =   PROGRAM
-UMTYPE                          =   console
-UMENTRY                         =   wmain
-TARGET_DESTINATION              =   UnitTests
-DLLDEF = 
+# -------------------------------------
+# Windows Console 
+# - Console Virtual Terminal Parser Fuzz Wrapper
+# -------------------------------------
 
-USE_MSVCRT                      =   1
-TEST_CODE                       =   1
-NT_SIGNCODE                     =   1
+# This program wraps the Virtual Terminal Parser lib in a simple
+# console application that can be used for fuzz testing purposes.
+# It will simply read in text in a variety of formats and inject the text
+# into the parsing engine.
+# It is expected that this binary is monitored during its runtime for 
+# various security concerns (overruns, heap issues, etc.)
 
-USE_DEFAULT_WIN32_LIBS          =   0
-BUILD_FOR_CORESYSTEM            =   1
+# -------------------------------------
+# Program Information
+# -------------------------------------
 
-C_DEFINES                       =   $(C_DEFINES) -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTING
+TARGETNAME              = ConTerm.Parser.FuzzWrapper
+TARGETTYPE              = PROGRAM
+UMTYPE                  = console
+UMENTRY                 = wmain
+TARGET_DESTINATION      = UnitTests
+DLLDEF                  = 
 
-INCLUDES                        =   $(INCLUDES); \
-                                    $(MINCORE_PRIV_SDK_INC_PATH); \
-                                    $(MINWIN_PRIV_SDK_INC_PATH); \
-                                    ..; \
+TEST_CODE               = 1
 
-SOURCES                         =   $(SOURCES) \
-                                    main.cpp \
-                                    echoDispatch.cpp \
+# -------------------------------------
+# CRT Configuration
+# -------------------------------------
 
-TARGETLIBS                      =   $(TARGETLIBS) \
-                                    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
-                                    $(OBJ_PATH)\..\lib\$(O)\ConTermParser.lib \
+USE_UNICRT              = 1
+USE_MSVCRT              = 1
 
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
 
-PRECOMPILED_CXX                 =   1
-PRECOMPILED_INCLUDE             =   precomp.h
+UNICODE                 = 1
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTING
+
+# -------------------------------------
+# Compiler Settings
+# -------------------------------------
+
+MSC_WARNING_LEVEL       = /W4 /WX 
+
+# -------------------------------------
+# Build System Settings
+# -------------------------------------
+
+# Code in the OneCore depot automatically excludes default Win32 libraries.
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+PRECOMPILED_CXX         =   1
+PRECOMPILED_INCLUDE     =   precomp.h
+
+SOURCES = \
+    main.cpp \
+    echoDispatch.cpp \
+
+INCLUDES = \
+    $(INCLUDES); \
+    $(ONECORE_SDK_INC_PATH); \
+    $(MINWIN_PRIV_SDK_INC_PATH); \
+                                    
+TARGETLIBS = \
+    $(TARGETLIBS) \
+    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+    $(OBJ_PATH)\..\lib\$(O)\ConTermParser.lib \

@@ -156,7 +156,7 @@ HRESULT BgfxEngine::PaintBufferLine(PCWCHAR const pwsLine, size_t const cchLine,
 
     USHORT PaletteEntry = GetColorPaletteEntry(_currentForegroundColor);
 
-    for (size_t i = 0 ; i < cchLine && i < _displayWidth ; i++)
+    for (size_t i = 0 ; i < cchLine && i < (size_t)_displayWidth ; i++)
     {
         NewRun[coord.X + i].Character = pwsLine[i];
         NewRun[coord.X + i].Atribute = PaletteEntry;

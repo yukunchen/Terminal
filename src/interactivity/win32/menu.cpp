@@ -5,7 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
-#include <cpl.h>
+#include <cpl_core.h>
 
 #include "menu.hpp"
 #include "icon.hpp"
