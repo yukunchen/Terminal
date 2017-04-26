@@ -1,29 +1,8 @@
 !include ..\sources.inc
 
-TARGETNAME = ConInteractivityWin32Lib
-TARGETTYPE = LIBRARY
-UMTYPE     = windows
+# -------------------------------------
+# Program Information
+# -------------------------------------
 
-SOURCES= \
-    $(SOURCES) \
-    ..\AccessibilityNotifier.cpp \
-    ..\clipboard.cpp \
-    ..\ConsoleControl.cpp \
-    ..\ConsoleInputThread.cpp \
-    ..\consoleKeyInfo.cpp \
-    ..\find.cpp \
-    ..\icon.cpp \
-    ..\InputServices.cpp \
-    ..\menu.cpp \
-    ..\screenInfoUiaProvider.cpp \
-    ..\SystemConfigurationProvider.cpp \
-    ..\window.cpp \
-    ..\windowdpiapi.cpp \
-    ..\windowime.cpp \
-    ..\windowio.cpp \
-    ..\WindowMetrics.cpp \
-    ..\windowproc.cpp \
-    ..\windowUiaProvider.cpp \
-
-INCLUDES                        =  $(INCLUDES); \
-                                   $(OBJ_PATH)\$(O)
+TARGETNAME              = ConInteractivityWin32Lib
+TARGETTYPE              = LIBRARY

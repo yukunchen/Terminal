@@ -906,12 +906,6 @@ void Window::s_CalculateWindowRect(_In_ COORD const coordWindowInChars,
     {
         dwStyle = GetWindowStyle(hWnd);
         dwExStyle = GetWindowExStyle(hWnd);
-
-        HMENU hMenu = GetMenu(hWnd);
-        if (hMenu != nullptr)
-        {
-            fMenu = TRUE;
-        }
     }
 
     // 3. Perform adjustment

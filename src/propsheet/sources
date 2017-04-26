@@ -1,78 +1,114 @@
-!include $(NTMAKEENV)\system_defaultmk.inc
-!include $(WINCORE_PATH)\core.inc
-SOURCES_USED                    =  $(SOURCES_USED) $(WINCORE_PATH)\core.inc
+# -------------------------------------
+# Windows Console 
+# - Console Property Sheet
+# -------------------------------------
 
-_NT_TARGET_VERSION=$(_NT_TARGET_VERSION_LATEST)
+# This module draws the Properties or Defaults page that allows
+# the user to configure their settings in a running console session.
 
-W32_SB=1
+# -------------------------------------
+# Program Information
+# -------------------------------------
+
+TARGETNAME              = console
+TARGETTYPE              = DYNLINK
+TARGETEXT               = dll
+UMTYPE                  = windows
+TARGET_DESTINATION      = retail
+DLLENTRY                = _DllMainCRTStartup
+
+# -------------------------------------
+# CRT Configuration
+# -------------------------------------
+
+USE_UNICRT              = 1
+USE_MSVCRT              = 1
+USE_NOTHROW_NEW         = 1 # use the CRT's non-throwing stock new/delete impl
+
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
+
+UNICODE                 = 1
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DISOLATION_AWARE_ENABLED -DWIN32 -D_WIN32 -DSTRICT_CONST -DNT
 
 
+# -------------------------------------
+# Compiler Settings
+# -------------------------------------
 
-TARGETNAME=console
-TARGETTYPE=DYNLINK
-TARGETEXT=dll
-DLLENTRY=_DllMainCRTStartup
+MSC_WARNING_LEVEL       = /W3 /WX 
 
-INCLUDES =  $(INCLUDES); \
-            $(WINCORE_PATH)\console\open\src\propslib; \
-            $(WINCORE_PATH)\w32inc; \
-            $(SHELL_INC_PATH); \
 
-                                  
+# -------------------------------------
+# Build System Settings
+# -------------------------------------
 
-TARGETLIBS=\
-           $(SDK_LIB_PATH)\ntdll.lib  \
-           $(MINCORE_SDK_LIB_VPATH)\mincore.lib \
-           $(SDK_LIB_PATH)\kernel32.lib \
-           $(SDK_LIB_PATH)\user32.lib  \
-           $(SDK_LIB_PATH)\gdi32.lib \
-           $(SDK_LIB_PATH)\advapi32.lib \
-           $(SDK_LIB_PATH)\comctl32.lib \
-           $(SDK_LIB_PATH)\shell32.lib \
-           $(SDK_LIB_PATH)\propsys.lib \
-           $(SDK_LIB_PATH)\shlwapi.lib \
-           $(SDK_LIB_PATH)\uuid.lib \
-           $(WINCORE_OBJ_PATH)\console\open\src\propslib\$(O)\conprops.lib \
-           $(MINCORE_SDK_LIB_VPATH)\api-ms-win-core-winrt-error-l1.lib \
-           $(ONECORESHELL_LIB_PATH)\api-ms-win-shcore-scaling-l1-1-1.lib \
-           
-DELAYLOAD=\
-    api-ms-win-shcore-scaling-l1.dll; \
+# Code in the OneCore depot automatically excludes default Win32 libraries.
 
-DLOAD_ERROR_HANDLER=kernelbase
+# Defines IME and Codepage support
+W32_SB                  = 1
 
-USE_MSVCRT=1
-USE_UNICRT=1
-USE_NOTHROW_NEW=1 # use the CRT's non-throwing stock new/delete impl
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
 
-C_DEFINES=$(C_DEFINES) -DISOLATION_AWARE_ENABLED -DUNICODE -D_UNICODE -DWIN32 -D_WIN32 -DSTRICT_CONST -DNT
+PRECOMPILED_CXX         = 1
+PRECOMPILED_INCLUDE     = precomp.h
+PRECOMPILED_PCH         = precomp.pch
+PRECOMPILED_OBJ         = precomp.obj
 
-UMTYPE=windows
+SOURCES = \
+    dll.cpp              \
+    readLink.cpp         \
+    util.cpp             \
+    console.cpp          \
+    globals.cpp          \
+    fontdlg.cpp          \
+    OptionsPage.cpp      \
+    ColorsPage.cpp       \
+    LayoutPage.cpp       \
+    init.cpp             \
+    misc.cpp             \
+    preview.cpp          \
+    registry.cpp         \
+    dbcs.cpp             \
+    strid.mc             \
+    PropSheetHandler.cpp \
+    console.rc
 
-SOURCES=dll.cpp              \
-        readLink.cpp         \
-        util.cpp             \
-        console.cpp          \
-        globals.cpp          \
-        fontdlg.cpp          \
-        OptionsPage.cpp      \
-        ColorsPage.cpp       \
-        LayoutPage.cpp       \
-        init.cpp             \
-        misc.cpp             \
-        preview.cpp          \
-        registry.cpp         \
-        dbcs.cpp             \
-        strid.mc             \
-        PropSheetHandler.cpp \
-        console.rc
- 
-SXS_APPLICATION_MANIFEST=WindowsShell.Manifest
+INCLUDES = \
+    ..\inc; \
+    $(ONECORE_SDK_INC_PATH); \
+
+TARGETLIBS = \
+    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+    $(ONECORE_SDK_LIB_VPATH)\onecoreuap.lib \
+    $(ONECORE_PRIV_SDK_LIB_VPATH)\onecore_internal.lib \
+    $(ONECORE_PRIV_SDK_LIB_VPATH)\onecoreuap_internal.lib \
+    $(INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-gdi-dc-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-gdi-dc-create-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-gdi-draw-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-gdi-font-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-dialogbox-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-draw-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-keyboard-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-gui-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-misc-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-window-l1.lib\
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-gdi-object-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-cursor-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-dc-access-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-syscolors-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-sysparams-l1.lib\
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-shell-shell32-l1.lib \
+    $(ONECOREUAPWINDOWS_LIB_PATH)\ext-ms-win-gdi-internal-desktop-l1-1-1.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\propslib\$(O)\conprops.lib \
+
+# -------------------------------------
+# Side-by-side Manifesting
+# -------------------------------------
+
+SXS_APPLICATION_MANIFEST = WindowsShell.Manifest
 SXS_MANIFEST_SOURCE = $(PROJECT_ROOT)
-
-PRECOMPILED_CXX                 =   1
-PRECOMPILED_INCLUDE             =   precomp.h
-PRECOMPILED_PCH                 =   precomp.pch
-PRECOMPILED_OBJ                 =   precomp.obj
-
-TARGET_DESTINATION=retail

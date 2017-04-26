@@ -1,54 +1,64 @@
 !include ..\sources.inc
 
-TARGETNAME                      =   ConhostV2
-TARGETTYPE                      =   LIBRARY
-UMTYPE                          =   windows
+# -------------------------------------
+# Program Information
+# -------------------------------------
 
-SOURCES                         =   $(SOURCES)\
-                                    ..\selection.cpp \
-                                    ..\selectionInput.cpp \
-                                    ..\selectionState.cpp \
-                                    ..\scrolling.cpp \
-                                    ..\cmdline.cpp   \
-                                    ..\consoleInformation.cpp \
-                                    ..\cursor.cpp    \
-                                    ..\search.cpp    \
-                                    ..\directio.cpp  \
-                                    ..\getset.cpp    \
-                                    ..\globals.cpp   \
-                                    ..\handle.cpp    \
-                                    ..\init.cpp      \
-                                    ..\input.cpp     \
-                                    ..\inputBuffer.cpp \
-                                    ..\inputKeyInfo.cpp \
-                                    ..\inputReadHandleData.cpp \
-                                    ..\misc.cpp      \
-                                    ..\output.cpp    \
-                                    ..\srvinit.cpp   \
-                                    ..\outputStream.cpp \
-                                    ..\stream.cpp    \
-                                    ..\dbcs.cpp      \
-                                    ..\convarea.cpp  \
-                                    ..\textBuffer.cpp \
-                                    ..\screenInfo.cpp \
-                                    ..\newdelete.cpp \
-                                    ..\_output.cpp   \
-                                    ..\_stream.cpp   \
-                                    ..\utils.cpp     \
-                                    ..\telemetry.cpp \
-                                    ..\tracing.cpp   \
-                                    ..\registry.cpp  \
-                                    ..\settings.cpp  \
-                                    ..\ntprivapi.cpp \
-                                    ..\readData.cpp \
-                                    ..\readDataCooked.cpp \
-                                    ..\readDataDirect.cpp \
-                                    ..\readDataRaw.cpp \
-                                    ..\writeData.cpp \
-                                    ..\renderData.cpp \
-                                    ..\renderFontDefaults.cpp \
-                                    ..\utf8ToWideCharParser.cpp \
-                                    ..\conimeinfo.cpp \
+TARGETNAME              = ConhostV2
+TARGETTYPE              = LIBRARY
+UMTYPE                  = windows
 
-INCLUDES                        =  $(INCLUDES); \
-                                   $(OBJ_PATH)\$(O)
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+SOURCES = \
+    $(SOURCES) \
+    ..\selection.cpp \
+    ..\selectionInput.cpp \
+    ..\selectionState.cpp \
+    ..\scrolling.cpp \
+    ..\cmdline.cpp   \
+    ..\consoleInformation.cpp \
+    ..\cursor.cpp    \
+    ..\search.cpp    \
+    ..\directio.cpp  \
+    ..\getset.cpp    \
+    ..\globals.cpp   \
+    ..\handle.cpp    \
+    ..\init.cpp      \
+    ..\input.cpp     \
+    ..\inputBuffer.cpp \
+    ..\inputKeyInfo.cpp \
+    ..\inputReadHandleData.cpp \
+    ..\misc.cpp      \
+    ..\output.cpp    \
+    ..\srvinit.cpp   \
+    ..\outputStream.cpp \
+    ..\stream.cpp    \
+    ..\dbcs.cpp      \
+    ..\convarea.cpp  \
+    ..\textBuffer.cpp \
+    ..\screenInfo.cpp \
+    ..\newdelete.cpp \
+    ..\_output.cpp   \
+    ..\_stream.cpp   \
+    ..\utils.cpp     \
+    ..\telemetry.cpp \
+    ..\tracing.cpp   \
+    ..\registry.cpp  \
+    ..\settings.cpp  \
+    ..\ntprivapi.cpp \
+    ..\readData.cpp \
+    ..\readDataCooked.cpp \
+    ..\readDataDirect.cpp \
+    ..\readDataRaw.cpp \
+    ..\writeData.cpp \
+    ..\renderData.cpp \
+    ..\renderFontDefaults.cpp \
+    ..\utf8ToWideCharParser.cpp \
+    ..\conimeinfo.cpp \
+
+INCLUDES = \
+    $(INCLUDES); \
+    $(OBJ_PATH)\$(O);

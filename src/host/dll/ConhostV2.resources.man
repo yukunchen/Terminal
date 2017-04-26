@@ -8,7 +8,7 @@
   <assemblyIdentity
       buildType="$(build.buildType)"
       language="en-us"
-      name="Microsoft-Windows-ConsoleHostV2.Resources"
+      name="Microsoft-OneCore-Console-Host-Core.Resources"
       processorArchitecture="$(build.arch)"
       publicKeyToken="$(Build.WindowsPublicKeyToken)"
       version="$(build.version)"
@@ -26,11 +26,11 @@
       <stringTable>
         <string
             id="displayName"
-            value="Console Host v2 resources (English)"
+            value="Console Host resources (English)"
             />
         <string
             id="description"
-            value="Windows Console Host v2 MUI resources (English)"
+            value="Windows Console Host MUI resources (English)"
             />
       </stringTable>
     </resources>

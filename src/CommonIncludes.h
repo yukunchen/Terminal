@@ -25,7 +25,7 @@ typedef NTSTATUS *PNTSTATUS;
 #pragma warning(pop)
 
 #include <initguid.h>
-#include <shlobj.h>
+#include <shlobj_core.h>
 #include <winuser.h>
 
 // Only remaining item from w32gdip.h. There's probably a better way to do this as well.

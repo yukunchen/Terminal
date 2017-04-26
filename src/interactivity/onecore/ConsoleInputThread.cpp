@@ -14,7 +14,7 @@
 #include "..\..\host\input.h"
 #include "..\..\host\renderData.hpp"
 #include "..\..\renderer\base\renderer.hpp"
-#include "..\..\ConIoSrv\ConIoSrv.h"
+#include "ConIoSrv.h"
 
 #include "..\inc\ServiceLocator.hpp"
 

@@ -15,7 +15,7 @@ Author(s):
 
 #include <condrv.h>
 
-#include "..\..\ConIoSrv\ConIoSrv.h"
+#include "ConIoSrv.h"
 #include "..\..\inc\IInputServices.hpp"
 
 #include "InputServer.hpp"

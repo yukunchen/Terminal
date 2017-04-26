@@ -1,40 +1,55 @@
-MSC_WARNING_LEVEL=/W4 /WX
+# -------------------------------------
+# Windows Console 
+# - Console Renderer for GDI
+# -------------------------------------
 
-USE_UNICRT=1
-USE_MSVCRT=1
+# This module provides a rendering engine implementation that 
+# utilizes the GDI framework for drawing the console to a window.
 
-USE_STL=1
-STL_VER=STL_VER_CURRENT
-USE_NATIVE_EH=1
+# -------------------------------------
+# CRT Configuration
+# -------------------------------------
 
-USE_DEFAULT_WIN32_LIBS=0
-BUILD_FOR_CORESYSTEM=1
+USE_UNICRT              = 1
+USE_MSVCRT              = 1
 
-C_DEFINES=-DUNICODE -D_UNICODE
+USE_STL                 = 1
+STL_VER                 = STL_VER_CURRENT
+USE_NATIVE_EH           = 1
 
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
 
-INCLUDES= \
-    $(INCLUDES); \
-    ..; \
-    ..\..\inc; \
-    ..\..\..\host; \
-    $(MINCORE_PRIV_SDK_INC_PATH); \
-    $(MINWIN_PRIV_SDK_INC_PATH); \
+UNICODE                 = 1
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
 
-SOURCES= \
-    $(SOURCES) \
+# -------------------------------------
+# Compiler Settings
+# -------------------------------------
+
+MSC_WARNING_LEVEL       = /W4 /WX 
+
+# -------------------------------------
+# Build System Settings
+# -------------------------------------
+
+# Code in the OneCore depot automatically excludes default Win32 libraries.
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+PRECOMPILED_CXX         = 1
+PRECOMPILED_INCLUDE     = ..\precomp.h
+
+SOURCES = \
     ..\invalidate.cpp \
     ..\math.cpp \
     ..\paint.cpp \
     ..\state.cpp \
 
-TARGETLIBS= \
-    $(TARGETLIBS) \
-    $(WINCORE_OBJ_PATH)\console\open\src\renderer\base\lib\$(O)\ConRenderBase.lib \
-    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
-
-
-PRECOMPILED_CXX=1
-PRECOMPILED_INCLUDE=..\precomp.h
-
-
+INCLUDES = \
+    ..; \
+    $(ONECORE_SDK_INC_PATH); \
+    $(MINWIN_PRIV_SDK_INC_PATH); \

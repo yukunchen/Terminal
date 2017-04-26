@@ -38,7 +38,8 @@ public:
                 return;
             }
 
-            if (_pData = (BYTE *)LocalAlloc(LPTR, ulBufferSize))
+            _pData = (BYTE *)LocalAlloc(LPTR, ulBufferSize);
+            if (_pData)
             {
                 _iAllocatedSize = iInitSize;
             }

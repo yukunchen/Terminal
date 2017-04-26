@@ -1,7 +1,8 @@
 !include ..\sources.inc
 
-TARGETNAME = ConTermAdapter
-TARGETTYPE = LIBRARY
+# -------------------------------------
+# Program Information
+# -------------------------------------
 
-
-
+TARGETNAME              = ConTermAdapter
+TARGETTYPE              = LIBRARY

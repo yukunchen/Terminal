@@ -755,18 +755,18 @@ HRESULT ApiRoutines::ReadConsoleAImpl(_In_ IConsoleInputObject* const pInContext
     RETURN_IF_FAILED(SizeTToULong(cbExeName, &ulExeName));
 
     NTSTATUS const Status = DoReadConsole(pInContext,
-                                          hConsoleClient,
-                                          (wchar_t*)psTextBuffer,
-                                          &ulTextBuffer,
-                                          pdwControlKeyState,
-                                          (wchar_t*)psInitialData,
-                                          ulInitialData,
-                                          dwControlWakeupMask,
-                                          pHandleData,
-                                          pwsExeName,
-                                          ulExeName,
-                                          false,
-                                          ppWaiter);
+                                           hConsoleClient,
+                                           (wchar_t*)psTextBuffer,
+                                           &ulTextBuffer,
+                                           pdwControlKeyState,
+                                           (wchar_t*)psInitialData,
+                                           ulInitialData,
+                                           dwControlWakeupMask,
+                                           pHandleData,
+                                           pwsExeName,
+                                           ulExeName,
+                                           false,
+                                           ppWaiter);
 
     *pcchTextBufferWritten = ulTextBuffer;
 
@@ -806,18 +806,18 @@ HRESULT ApiRoutines::ReadConsoleWImpl(_In_ IConsoleInputObject* const pInContext
     RETURN_IF_FAILED(SizeTToULong(cbExeName, &ulExeName));
 
     NTSTATUS const Status = DoReadConsole(pInContext,
-                                          hConsoleClient,
-                                          pwsTextBuffer,
-                                          &ulTextBuffer,
-                                          pdwControlKeyState,
-                                          pwsInitialData,
-                                          ulInitialData,
-                                          dwControlWakeupMask,
-                                          pHandleData,
-                                          pwsExeName,
-                                          ulExeName,
-                                          true,
-                                          ppWaiter);
+                                           hConsoleClient,
+                                           pwsTextBuffer,
+                                           &ulTextBuffer,
+                                           pdwControlKeyState,
+                                           pwsInitialData,
+                                           ulInitialData,
+                                           dwControlWakeupMask,
+                                           pHandleData,
+                                           pwsExeName,
+                                           ulExeName,
+                                           true,
+                                           ppWaiter);
 
     assert(ulTextBuffer % sizeof(wchar_t) == 0);
     *pcchTextBufferWritten = ulTextBuffer / sizeof(wchar_t);

@@ -1,28 +1,53 @@
 !include ..\sources.inc
 
-TARGETNAME                      =   ConTerm.Adapter.Tests
-TARGETTYPE                      =   DYNLINK
-TARGET_DESTINATION              =   UnitTests
-DLLDEF = 
+# -------------------------------------
+# Program Information
+# -------------------------------------
 
-TEST_CODE                       =   1
-NT_SIGNCODE                     =   1
-USE_NATIVE_EH                   =   1
+TARGETNAME              = ConTerm.Adapter.Tests
+TARGETTYPE              = DYNLINK
+TARGET_DESTINATION      = UnitTests
+DLLDEF                  =
+
+TEST_CODE               = 1
+
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
 
 C_DEFINES                       =   $(C_DEFINES) -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTING
 
-INCLUDES                        =   $(INCLUDES); \
-                                    ..\..\..\inc; \
-                                    $(SDKTOOLS_INC_PATH)\WexTest\Cue; \
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
 
-SOURCES                         =   $(SOURCES) \
-                                    adapterTest.cpp \
-                                    inputTest.cpp \
-                                    MouseInputTest.cpp \
+SOURCES = \
+    $(SOURCES) \
+    adapterTest.cpp \
+    inputTest.cpp \
+    MouseInputTest.cpp \
 
-TARGETLIBS                      =   $(TARGETLIBS) \
-                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Common.lib \
-                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Logger.lib \
-                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Te.Common.lib \
-                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Mock10.lib \
+INCLUDES = \
+    $(INCLUDES); \
+    $(SDKTOOLS_INC_PATH)\WexTest\Cue; \
+
+TARGETLIBS = \
+    $(TARGETLIBS) \
+    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Common.lib \
+    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Logger.lib \
+    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Te.Common.lib \
+
+
+#INCLUDES                        =   $(INCLUDES); \
+#                                    ..\..\..\inc; \
+#                                    $(SDKTOOLS_INC_PATH)\WexTest\Cue; \
+#
+#SOURCES                         =   $(SOURCES) \
+#                                    
+#
+#TARGETLIBS                      =   $(TARGETLIBS) \
+#                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Common.lib \
+#                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Logger.lib \
+#                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Te.Common.lib \
+#                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Mock10.lib \
 
