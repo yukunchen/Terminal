@@ -47,10 +47,10 @@ PRECOMPILED_INCLUDE     = ..\precomp.h
 SOURCES = \
     ..\AccessibilityNotifier.cpp \
     ..\BgfxEngine.cpp \
+    ..\ConIoSrvComm.cpp \
     ..\ConsoleControl.cpp \
     ..\ConsoleInputThread.cpp \
     ..\ConsoleWindow.cpp \
-    ..\InputServer.cpp \
     ..\SystemConfigurationProvider.cpp \
     ..\WindowMetrics.cpp \
 

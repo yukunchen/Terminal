@@ -226,6 +226,9 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMA
             }
 
             status = NT_TESTNULL(ServiceLocator::LocateGlobals()->pRender);
+
+            // Allow the renderer to paint.
+            pNewRenderer->EnablePainting();
         }
 
         if (NT_SUCCESS(status))

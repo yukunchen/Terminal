@@ -166,8 +166,10 @@ HRESULT GdiEngine::s_SetWindowLongWHelper(_In_ HWND const hWnd, _In_ int const n
 // - wTextAttributes - A console attributes bit field specifying the brush colors we should use.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
-HRESULT GdiEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ bool const fIncludeBackgrounds)
+HRESULT GdiEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds)
 {
+    UNREFERENCED_PARAMETER(legacyColorAttribute);
+
     RETURN_IF_FAILED(_FlushBufferLines());
 
     RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _hdcMemoryContext);
