@@ -55,6 +55,7 @@ SOURCES = \
     ..\ApiDetector.cpp \
     ..\InteractivityFactory.cpp \
     ..\ServiceLocator.cpp \
+    ..\VtApiRedirection.cpp \
 
 INCLUDES = \
     ..; \

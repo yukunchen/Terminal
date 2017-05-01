@@ -16,6 +16,10 @@ using namespace Microsoft::Console::VirtualTerminal;
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil\Common.h>
 
+#ifdef BUILD_ONECORE_INTERACTIVITY
+#include "..\..\interactivity\inc\VtApiRedirection.hpp"
+#endif
+
 // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
 #define KEY_PRESSED 0x8000
