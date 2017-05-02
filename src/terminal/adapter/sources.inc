@@ -24,7 +24,7 @@ USE_NATIVE_EH           = 1
 # -------------------------------------
 
 UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DBUILD_ONECORE_INTERACTIVITY
 
 # -------------------------------------
 # Compiler Settings

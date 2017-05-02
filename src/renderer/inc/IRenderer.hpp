@@ -45,6 +45,9 @@ namespace Microsoft
 
                 virtual COORD GetFontSize() = 0;
                 virtual bool IsCharFullWidthByFont(_In_ WCHAR const wch) = 0;
+
+                virtual void EnablePainting() = 0;
+                virtual void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) = 0;
             };
         };
     };

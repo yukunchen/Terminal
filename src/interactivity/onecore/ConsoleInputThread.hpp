@@ -14,7 +14,7 @@ Author(s):
 #pragma once
 
 #include "..\inc\IConsoleInputThread.hpp"
-#include "InputServer.hpp"
+#include "ConIoSrvComm.hpp"
 
 #pragma hdrstop
 
@@ -31,10 +31,10 @@ namespace Microsoft
                 public:
                     HANDLE Start();
 
-                    InputServer *GetInputServer();
+                    ConIoSrvComm *GetConIoSrvComm();
                 
                 private:
-                    InputServer *_inputServer;
+                    ConIoSrvComm *_pConIoSrvComm;
                 };
             };
         };

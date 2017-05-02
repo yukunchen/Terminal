@@ -13,6 +13,10 @@
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil\Common.h>
 
+#ifdef BUILD_ONECORE_INTERACTIVITY
+#include "..\..\interactivity\inc\VtApiRedirection.hpp"
+#endif
+
 using namespace Microsoft::Console::VirtualTerminal;
 
 DWORD const dwAltGrFlags = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
@@ -361,7 +365,7 @@ bool TerminalInput::HandleKey(_In_ const INPUT_RECORD* const pInput) const
                 // For Alt+Ctrl+Key messages, the UnicodeChar is NOT the Ctrl+key char, it's null.
                 //      So we need to get the char from the vKey.
                 //      EXCEPT for Alt+Ctrl+Space. Then the UnicodeChar is space, not NUL.
-                wchar_t wchPressedChar = (wchar_t) MapVirtualKey(key.wVirtualKeyCode, MAPVK_VK_TO_CHAR);
+                wchar_t wchPressedChar = (wchar_t) MapVirtualKeyW(key.wVirtualKeyCode, MAPVK_VK_TO_CHAR);
                 // This is a trick - C-Spc is supposed to send NUL. So quick change space -> @ (0x40)
                 wchPressedChar = (wchPressedChar == 0x20)? 0x40 : wchPressedChar;
                 if (wchPressedChar >= 0x40 && wchPressedChar < 0x7F) 

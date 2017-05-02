@@ -7,7 +7,7 @@
 #include "..\onecore\ConsoleControl.hpp"
 #include "..\onecore\ConsoleInputThread.hpp"
 #include "..\onecore\ConsoleWindow.hpp"
-#include "..\onecore\InputServer.hpp"
+#include "..\onecore\ConIoSrvComm.hpp"
 #include "..\onecore\SystemConfigurationProvider.hpp"
 #include "..\onecore\WindowMetrics.hpp"
 #endif
@@ -37,7 +37,7 @@ NTSTATUS InteractivityFactory::CreateConsoleControl(_Outptr_result_nullonfailure
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
-    status = ApiDetector::DetectConsoleWindowSupport(&level);
+    status = ApiDetector::DetectNtUserWindow(&level);
 
     if (NT_SUCCESS(status))
     {
@@ -74,7 +74,7 @@ NTSTATUS InteractivityFactory::CreateConsoleInputThread(_Outptr_result_nullonfai
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
-    status = ApiDetector::DetectConsoleWindowSupport(&level);
+    status = ApiDetector::DetectNtUserWindow(&level);
 
     if (NT_SUCCESS(status))
     {
@@ -111,7 +111,7 @@ NTSTATUS InteractivityFactory::CreateHighDpiApi(_Outptr_result_nullonfailure_ IH
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
-    status = ApiDetector::DetectHighDpiSupport(&level);
+    status = ApiDetector::DetectNtUserWindow(&level);
 
     if (NT_SUCCESS(status))
     {
@@ -148,7 +148,7 @@ NTSTATUS InteractivityFactory::CreateWindowMetrics(_Outptr_result_nullonfailure_
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
-    status = ApiDetector::DetectConsoleWindowSupport(&level);
+    status = ApiDetector::DetectNtUserWindow(&level);
 
     if (NT_SUCCESS(status))
     {
@@ -185,7 +185,7 @@ NTSTATUS InteractivityFactory::CreateAccessibilityNotifier(_Outptr_result_nullon
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
-    status = ApiDetector::DetectAccessibilityNotificationSupport(&level);
+    status = ApiDetector::DetectNtUserWindow(&level);
 
     if (NT_SUCCESS(status))
     {
@@ -222,7 +222,7 @@ NTSTATUS InteractivityFactory::CreateSystemConfigurationProvider(_Outptr_result_
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
-    status = ApiDetector::DetectConsoleWindowSupport(&level);
+    status = ApiDetector::DetectNtUserWindow(&level);
 
     if (NT_SUCCESS(status))
     {
@@ -259,7 +259,7 @@ NTSTATUS InteractivityFactory::CreateInputServices(_Outptr_result_nullonfailure_
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
-    status = ApiDetector::DetectConsoleWindowSupport(&level);
+    status = ApiDetector::DetectNtUserWindow(&level);
 
     if (NT_SUCCESS(status))
     {
@@ -272,7 +272,7 @@ NTSTATUS InteractivityFactory::CreateInputServices(_Outptr_result_nullonfailure_
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
         case ApiLevel::OneCore:
-            pNewServices = new Microsoft::Console::Interactivity::OneCore::InputServer();
+            pNewServices = new Microsoft::Console::Interactivity::OneCore::ConIoSrvComm();
             break;
 #endif
         }

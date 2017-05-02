@@ -327,6 +327,30 @@ bool Renderer::IsCharFullWidthByFont(_In_ WCHAR const wch)
 }
 
 // Routine Description:
+// - Sets an event in the render thread that allows it to proceed, thus enabling painting.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::EnablePainting()
+{
+    _pThread->EnablePainting();
+}
+
+// Routine Description:
+// - Waits for the current paint operation to complete, if any, up to the specified timeout.
+// - Resets an event in the render thread that precludes it from advancing, thus disabling rendering.
+// - If no paint operation is currently underway, returns immediately.
+// Arguments:
+// - dwTimeoutMs - Milliseconds to wait for the current paint operation to complete, if any (can be INFINITE).
+// Return Value:
+// - <none>
+void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
+{
+    _pThread->WaitForPaintCompletionAndDisable(dwTimeoutMs);
+}
+
+// Routine Description:
 // - Paint helper to fill in the background color of the invalid area within the frame.
 // Arguments:
 // - <none>
@@ -839,6 +863,7 @@ HRESULT Renderer::_UpdateDrawingBrushes(_In_ const TextAttribute textAttributes,
 {
     COLORREF rgbForeground = textAttributes.GetRgbForeground();
     COLORREF rgbBackground = textAttributes.GetRgbBackground();
+    WORD legacyAttributes = textAttributes.GetLegacyAttributes();
 
     // Only update if the foreground or background are different from the last time we attempted to set it.
 
@@ -850,7 +875,7 @@ HRESULT Renderer::_UpdateDrawingBrushes(_In_ const TextAttribute textAttributes,
     // Otherwise, only update if something has changed.
     if (fIncludeBackground || rgbForeground != rgbLastForeground || rgbBackground != rgbLastBackground)
     {
-        RETURN_IF_FAILED(_pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, fIncludeBackground));
+        RETURN_IF_FAILED(_pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, legacyAttributes, fIncludeBackground));
 
         rgbLastForeground = rgbForeground;
         rgbLastBackground = rgbBackground;

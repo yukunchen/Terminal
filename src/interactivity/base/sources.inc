@@ -23,7 +23,7 @@ USE_NATIVE_EH           = 1
 # -------------------------------------
 
 UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DBUILD_ONECORE_INTERACTIVITY
 
 # -------------------------------------
 # Compiler Settings
@@ -55,8 +55,10 @@ SOURCES = \
     ..\ApiDetector.cpp \
     ..\InteractivityFactory.cpp \
     ..\ServiceLocator.cpp \
+    ..\VtApiRedirection.cpp \
 
 INCLUDES = \
     ..; \
+    ..\..\..\..\..\ConIoSrv; \
     $(ONECORE_SDK_INC_PATH); \
     $(MINWIN_PRIV_SDK_INC_PATH); \

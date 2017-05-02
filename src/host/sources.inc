@@ -91,15 +91,9 @@ TARGETLIBS = \
     $(INTERNAL_SDK_LIB_PATH)\onecoreuuid.lib \
     $(INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
     $(ONECORE_PRIV_SDK_LIB_VPATH)\onecore_internal.lib \
-    $(ONECORE_PRIV_SDK_LIB_VPATH)\onecoreuap_internal.lib \
     $(MINCORE_PRIV_SDK_LIB_PATH)\isapisetpresent.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-gdi-object-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-gdi-rgn-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-cursor-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-dc-access-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-rawinput-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-sysparams-l1.lib \
-    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-window-ext-l1.lib \
+    $(SDK_LIB_PATH)\propsys.lib \
+    $(MODERNCORE_PRIV_SDK_LIB_VPATH)\api-ms-win-mm-playsound-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-gdi-dc-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-gdi-dc-create-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-gdi-draw-l1.lib \
@@ -113,30 +107,37 @@ TARGETLIBS = \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-menu-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-misc-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-mouse-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-rectangle-ext-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-server-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-window-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-gdi-object-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-gdi-rgn-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-console-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-cursor-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-dc-access-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-rawinput-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-sysparams-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-ntuser-window-ext-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-shell-shell32-l1.lib \
+    $(MODERNCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-uiacore-l1.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\tsf\$(O)\contsf.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\propslib\$(O)\conprops.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\terminal\adapter\lib\$(O)\ConTermAdapter.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\terminal\parser\lib\$(O)\ConTermParser.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\base\lib\$(O)\ConRenderBase.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\gdi\lib\$(O)\ConRenderGdi.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\renderer\wddmcon\lib\$(O)\ConRenderWddmCon.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\server\lib\$(O)\ConServer.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\base\lib\$(O)\ConInteractivityBaseLib.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\win32\lib\$(O)\ConInteractivityWin32Lib.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\onecore\lib\$(O)\ConInteractivityOneCoreLib.lib \
 
 DELAYLOAD = \
+    PROPSYS.dll; \
+    OLEAUT32.dll; \
     api-ms-win-mm-playsound-l1-1-0.dll; \
     api-ms-win-shcore-scaling-l1-1-0.dll; \
     api-ms-win-shell-namespace-l1-1-0.dll; \
-    ext-ms-win-rtcore-gdi-object-l1.dll; \
-    ext-ms-win-rtcore-gdi-rgn-l1.dll; \
-    ext-ms-win-rtcore-ntuser-cursor-l1.dll; \
-    ext-ms-win-rtcore-ntuser-dc-access-l1.dll; \
-    ext-ms-win-rtcore-ntuser-rawinput-l1.dll; \
-    ext-ms-win-rtcore-ntuser-sysparams-l1.dll; \
-    ext-ms-win-rtcore-ntuser-window-ext-l1.dll; \
     ext-ms-win-gdi-dc-l1.dll; \
     ext-ms-win-gdi-dc-create-l1.dll; \
     ext-ms-win-gdi-draw-l1.dll; \
@@ -150,7 +151,18 @@ DELAYLOAD = \
     ext-ms-win-ntuser-menu-l1.dll; \
     ext-ms-win-ntuser-misc-l1.dll; \
     ext-ms-win-ntuser-mouse-l1.dll; \
+    ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll; \
+    ext-ms-win-ntuser-server-l1-1-0.dll; \
     ext-ms-win-ntuser-window-l1.dll; \
-    ext-ms-win-shell-shell32-l1.dll; \  
+    ext-ms-win-rtcore-gdi-object-l1.dll; \
+    ext-ms-win-rtcore-gdi-rgn-l1.dll; \
+    ext-ms-win-rtcore-ntuser-console-l1.dll; \
+    ext-ms-win-rtcore-ntuser-cursor-l1.dll; \
+    ext-ms-win-rtcore-ntuser-dc-access-l1.dll; \
+    ext-ms-win-rtcore-ntuser-rawinput-l1.dll; \
+    ext-ms-win-rtcore-ntuser-sysparams-l1.dll; \
+    ext-ms-win-rtcore-ntuser-window-ext-l1.dll; \
+    ext-ms-win-shell-shell32-l1.dll; \
+    ext-ms-win-uiacore-l1-1-0.dll; \
 
 DLOAD_ERROR_HANDLER = kernelbase
