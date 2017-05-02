@@ -546,6 +546,7 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX, _In_ short con
         if (pConsoleWindow)
         {
             pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId);
+            pConsoleWindow->SignalUia(UIA_LayoutInvalidatedEventId);
         }
     }
 }

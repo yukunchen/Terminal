@@ -1,9 +1,16 @@
 
 #include "precomp.h"
 #include "UiaTextRange.hpp"
-#include "window.hpp"
-
 #include "../inc/ServiceLocator.hpp"
+
+#include "window.hpp"
+#include "windowdpiapi.hpp"
+
+using namespace Microsoft::Console::Interactivity::Win32;
+
+#if _DEBUG
+unsigned long long UiaTextRange::id = 0;
+#endif
 
 // returns val if (low <= val <= high)
 // returns low if (val < low)
@@ -27,6 +34,10 @@ UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
     _start{ 0 },
     _end{ 0 }
 {
+#if _DEBUG
+   _id = id;
+   ++id;
+#endif
 }
 
 UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
@@ -43,6 +54,10 @@ UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
     _start{ start },
     _end{ end }
 {
+#if _DEBUG
+   _id = id;
+   ++id;
+#endif
 }
 
 // returns a degenerate text range of the start of the line closest to the y value of point
@@ -57,6 +72,10 @@ UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
     _pScreenInfo{ pScreenInfo },
     _currentFontSize{ currentFontSize }
 {
+#if _DEBUG
+   _id = id;
+   ++id;
+#endif
 
     POINT clientPoint;
     clientPoint.x = static_cast<LONG>(point.x);
@@ -82,7 +101,7 @@ UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
         row = (clientPoint.y / currentFontSize.Y) + viewport.Top;
     }
     _start = _rowToEndpoint(row);
-	_end = _start;
+   _end = _start;
 }
 
 UiaTextRange::UiaTextRange(const UiaTextRange& a) :
@@ -96,6 +115,10 @@ UiaTextRange::UiaTextRange(const UiaTextRange& a) :
 
 {
     _pProvider->AddRef();
+#if _DEBUG
+   _id = id;
+   ++id;
+#endif
 }
 
 UiaTextRange::~UiaTextRange()
@@ -306,6 +329,31 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
         ClientToScreen(hwnd, &topLeft);
         ClientToScreen(hwnd, &bottomRight);
 
+        // take window dpi into account
+        IHighDpiApi* highDpiApi = ServiceLocator::LocateHighDpiApi();
+        if (highDpiApi)
+        {
+            WindowDpiApi* windowDpiApi = dynamic_cast<WindowDpiApi*>(highDpiApi);
+            if (windowDpiApi)
+            {
+                RECT rect;
+                rect.left = topLeft.x;
+                rect.top = topLeft.y;
+                rect.right = bottomRight.x;
+                rect.bottom = bottomRight.y;
+                HWND windowHandle = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+                windowDpiApi->AdjustWindowRectExForDpi(&rect,
+                                                    0,
+                                                    false,
+                                                    0,
+                                                    windowDpiApi->GetWindowDPI(windowHandle));
+                topLeft.x = rect.left;
+                topLeft.y = rect.top;
+                bottomRight.x = rect.right;
+                bottomRight.y = rect.bottom;
+            }
+        }
+
         // insert the coords
         const LONG width = bottomRight.x - topLeft.x;
         const LONG height = bottomRight.y - topLeft.y;
@@ -430,7 +478,7 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ int*
     // for now, we only support line movement
     UNREFERENCED_PARAMETER(unit);
 
-	*pRetVal = 0;
+   *pRetVal = 0;
     if (count == 0)
     {
         return S_OK;
@@ -440,7 +488,6 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ int*
     const int topRow = _pOutputBuffer->GetFirstRowIndex();
     const int bottomRow = (topRow - 1 + totalRows) % totalRows;
     const int currentStartRow = _endpointToRow(_start);
-
     int currentRow = currentStartRow;
 
     // moving forward
@@ -464,9 +511,9 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ int*
     }
 
     // update endpoints
-    const int rowWidth = _getRowWidth();
-    _start = currentRow * rowWidth;
-    _end = _start + rowWidth;
+   _start = _rowToEndpoint(currentRow);
+   const int nextRow = (currentRow + 1 + totalRows) % totalRows;
+   _end = _rowToEndpoint(nextRow);
 
     return S_OK;
 }
@@ -508,8 +555,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
         pInternalEndpoint = &_end;
         otherEndpoint = _start;
     }
-    const int currentStartRow = _endpointToRow(*pInternalEndpoint);
-    int currentRow = currentStartRow;
+    int currentRow = _endpointToRow(*pInternalEndpoint);
 
     // set values depending on move direction
 
@@ -531,12 +577,12 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
         {
             break;
         }
+        currentRow = (currentRow + incrementAmount + totalRows) % totalRows;
+        *pRetVal += incrementAmount;
         if (currentRow == otherEndpoint)
         {
             crossedEndpoints = true;
         }
-        currentRow = (currentRow + incrementAmount + totalRows) % totalRows;
-        *pRetVal += incrementAmount;
     }
     const int rowWidth = _getRowWidth();
     *pInternalEndpoint = currentRow * rowWidth;

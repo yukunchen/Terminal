@@ -80,6 +80,11 @@ protected:
     IRawElementProviderSimple* _pProvider;
     SCREEN_INFORMATION* const _pScreenInfo;
 
+#if _DEBUG
+   static unsigned long long id;
+   unsigned long long _id;
+#endif
+
 private:
     ULONG _cRefs;
 

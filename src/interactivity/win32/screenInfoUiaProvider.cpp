@@ -11,6 +11,7 @@
 
 #include "windowUiaProvider.hpp"
 #include "window.hpp"
+#include "windowdpiapi.hpp"
 
 #include "UiaTextRange.hpp"
 
@@ -244,7 +245,22 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect
 {
     RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, _pWindow);
 
-    RECT const rc = _pWindow->GetWindowRect();
+    RECT rc = _pWindow->GetWindowRect();
+
+    IHighDpiApi* highDpiApi = ServiceLocator::LocateHighDpiApi();
+    if (highDpiApi)
+    {
+        WindowDpiApi* windowDpiApi = dynamic_cast<WindowDpiApi*>(highDpiApi);
+        if (windowDpiApi)
+        {
+            HWND windowHandle = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
+            windowDpiApi->AdjustWindowRectExForDpi(&rc,
+                                                   0,
+                                                   false,
+                                                   0,
+                                                   windowDpiApi->GetWindowDPI(windowHandle));
+        }
+    }
 
     pRect->left = rc.left;
     pRect->top = rc.top;
