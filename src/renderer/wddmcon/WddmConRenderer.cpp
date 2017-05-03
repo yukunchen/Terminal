@@ -256,7 +256,7 @@ HRESULT WddmConEngine::PaintBufferLine(PCWCHAR const pwsLine, size_t const cchLi
 
     if (_hWddmConCtx != INVALID_HANDLE_VALUE)
     {
-        for (size_t i = 0 ; i < cchLine && i < _displayWidth ; i++)
+        for (size_t i = 0 ; i < cchLine && i < (size_t)_displayWidth ; i++)
         {
             OldChar = &_displayState[coord.Y]->Old[coord.X + i];
             NewChar = &_displayState[coord.Y]->New[coord.X + i];
