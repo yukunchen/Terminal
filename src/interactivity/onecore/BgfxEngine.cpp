@@ -134,7 +134,7 @@ HRESULT BgfxEngine::PaintBufferLine(PCWCHAR const pwsLine, size_t const cchLine,
     PVOID NewRunBase = (PVOID)(_sharedViewBase + (coord.Y * 2 * _runLength) + _runLength);
     PCD_IO_CHARACTER NewRun = (PCD_IO_CHARACTER)NewRunBase;
 
-    for (size_t i = 0 ; i < cchLine && i < _displayWidth ; i++)
+    for (size_t i = 0 ; i < cchLine && i < (size_t)_displayWidth ; i++)
     {
         NewRun[coord.X + i].Character = pwsLine[i];
         NewRun[coord.X + i].Atribute = _currentLegacyColorAttribute;
