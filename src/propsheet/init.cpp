@@ -11,7 +11,7 @@
  *
 \*************************************************************/
 #include "precomp.h"
-#include <cpl.h>
+#include "cpl_core.h"
 
 
 HINSTANCE ghInstance;

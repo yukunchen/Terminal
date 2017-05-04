@@ -8,7 +8,7 @@
   <assemblyIdentity
       buildType="$(build.buildType)"
       language="neutral"
-      name="Microsoft-Windows-console"
+      name="Microsoft-OneCore-Console-Host-PropSheet"
       processorArchitecture="$(build.arch)"
       publicKeyToken="$(Build.WindowsPublicKeyToken)"
       version="$(build.version)"
@@ -23,7 +23,7 @@
       <assemblyIdentity
           buildType="$(build.buildType)"
           language="*"
-          name="Microsoft-Windows-console.Resources"
+          name="Microsoft-OneCore-Console-Host-PropSheet.Resources"
           processorArchitecture="$(build.arch)"
           publicKeyToken="$(Build.WindowsPublicKeyToken)"
           version="$(build.version)"

@@ -21,7 +21,12 @@ typedef NTSTATUS *PNTSTATUS;
 #include <ntstatus.h>
 #pragma warning(pop)
 
-#include <shlobj.h>
+#ifdef EXTERNAL_BUILD
+#include <ShlObj.h>
+#else
+#include <shlobj_core.h>
+#endif
+
 #include <strsafe.h>
 #include <sal.h>
 

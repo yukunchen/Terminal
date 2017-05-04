@@ -75,7 +75,9 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _InsertMode{ InsertMode },
     _Processed{ Processed },
     _Line{ Line },
-    _pTempHandle{ pTempHandle }
+    _pTempHandle{ pTempHandle },
+    ExeName{ nullptr },
+    ExeNameLength{ 0 }
 
 {
 }

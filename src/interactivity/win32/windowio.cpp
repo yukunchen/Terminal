@@ -869,8 +869,6 @@ LRESULT DialogHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 // - This routine gets called by the console input thread to set up the console window.
 NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 {
-    ServiceLocator::LocateGlobals()->hInstance = GetModuleHandle(L"ConhostV2.dll");
-
     ConsoleProcessHandle* ProcessData = ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.FindProcessInList(ConsoleProcessList::ROOT_PROCESS_ID);
     ASSERT(ProcessData != nullptr && ProcessData->fRootProcess);
 

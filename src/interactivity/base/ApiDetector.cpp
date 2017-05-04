@@ -9,48 +9,25 @@
 using namespace Microsoft::Console::Interactivity;
 
 // API Sets
-#define API_SET_NTUSER_WINEVENT_L1 L"api-ms-win-rtcore-ntuser-winevent-l1-1-0"
-#define API_SET_NTUSER_WINDOW_L1   L"api-ms-win-rtcore-ntuser-window-l1-1-0"
+#define EXT_API_SET_NTUSER_WINDOW  L"ext-ms-win-ntuser-window-l1-1-0"
 
 // This may not be defined depending on the SDK version being targetted.
 #ifndef LOAD_LIBRARY_SEARCH_SYSTEM32_NO_FORWARDER
-#define LOAD_LIBRARY_SEARCH_SYSTEM32_NO_FORWARDER 0x00004000
+#define LOAD_LIBRARY_SEARCH_SYSTEM32_NO_FORWARDER  0x00004000
 #endif
 
 #pragma region Public Methods
 
 // Routine Description
-// - This routine detects whether the system supports creating windows.
-// - Asserts the presence of CreateWindowExW on the system.
+// - This routine detects whether the system hosts the extension API set that
+//   includes, among others, CreateWindowExW.
 // Arguments:
-// - level - pointer to an APILevel enum stating the level of support the system offers for the
-//           given functionality.
-NTSTATUS ApiDetector::DetectConsoleWindowSupport(_Out_ ApiLevel* level)
-{
-    return DetectApiSupport(API_SET_NTUSER_WINDOW_L1, nullptr, level);
-}
-
-// Routine Description
-// - This routine detects whether the system has high DPI support.
-// - Asserts the presence of SetProcessDpiAwarenessContext on the system.
-// Arguments:
-// - level - pointer to an APILevel enum stating the level of support the system offers for the
-//           given functionality.
-NTSTATUS ApiDetector::DetectHighDpiSupport(_Out_ ApiLevel* level)
-{
-    return DetectApiSupport(API_SET_NTUSER_WINDOW_L1, nullptr, level);
-}
-
-// Routine Description
-// - This routine detects whether the system supports accessibility notifications via NotifyWinEvent.
-// - Attempts to load the API set that contains NotifyWinEvent.
-// Arguments:
-// - level - pointer to an APILevel enum stating the level of support the system offers for the
-//           given functionality.
-NTSTATUS ApiDetector::DetectAccessibilityNotificationSupport(_Out_ ApiLevel* level)
+// - level - pointer to an APILevel enum stating the level of support the
+//           system offers for the given functionality.
+NTSTATUS ApiDetector::DetectNtUserWindow(_Out_ ApiLevel* level)
 {
     // N.B.: Testing for the API set implies the function is present.
-    return DetectApiSupport(API_SET_NTUSER_WINEVENT_L1, nullptr, level);
+    return DetectApiSupport(EXT_API_SET_NTUSER_WINDOW, nullptr, level);
 }
 
 #pragma endregion

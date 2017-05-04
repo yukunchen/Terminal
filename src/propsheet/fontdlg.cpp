@@ -1440,7 +1440,7 @@ PreviewUpdate(
                             MAX_PIXEL_HEIGHT);
 
             GetWindowText(hDlg, wszBuf, ARRAYSIZE(wszBuf));
-            MessageBoxEx(hDlg, wszText, wszBuf, MB_OK|MB_ICONINFORMATION, 0L);
+            MessageBox(hDlg, wszText, wszBuf, MB_OK|MB_ICONINFORMATION);
             SetFocus(hWndList);
             gbPointSizeError = FALSE;
             return FALSE;

@@ -8,7 +8,7 @@
   <assemblyIdentity
       buildType="$(build.buildType)"
       language="neutral"
-      name="Microsoft-Windows-ConsoleHostV2"
+      name="Microsoft-OneCore-Console-Host-Core"
       processorArchitecture="$(build.processorArchitecture)"
       publicKeyToken="$(Build.WindowsPublicKeyToken)"
       version="$(build.version)"
@@ -23,7 +23,7 @@
       <assemblyIdentity
           buildType="$(build.buildType)"
           language="*"
-          name="Microsoft-Windows-ConsoleHostV2.Resources"
+          name="Microsoft-OneCore-Console-Host-Core.Resources"
           processorArchitecture="$(build.processorArchitecture)"
           publicKeyToken="$(Build.WindowsPublicKeyToken)"
           version="$(build.version)"
@@ -42,11 +42,11 @@
       <stringTable>
         <string
             id="displayName0"
-            value="Microsoft-Windows-ConsoleHostV2"
+            value="Microsoft-Windows-Console-Host"
             />
         <string
             id="description1"
-            value="Microsoft-Windows-ConsoleHostV2"
+            value="Microsoft-Windows-Console-Host"
             />
       </stringTable>
     </resources>

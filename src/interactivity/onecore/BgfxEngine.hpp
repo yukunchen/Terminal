@@ -55,7 +55,7 @@ namespace Microsoft
                 HRESULT PaintCursor(COORD const coordCursor, ULONG const ulCursorHeightPercent, bool const fIsDoubleWidth);
                 HRESULT ClearCursor();
 
-                HRESULT UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, bool const fIncludeBackgrounds);
+                HRESULT UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, bool const fIncludeBackgrounds);
                 HRESULT UpdateFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo);
                 HRESULT UpdateDpi(int const iDpi);
 
@@ -74,10 +74,7 @@ namespace Microsoft
 
                 COORD _fontSize;
 
-                DWORD _currentForegroundColor;
-                DWORD _currentBackgroundColor;
-
-                USHORT GetColorPaletteEntry(_In_ DWORD dwColor);
+                WORD _currentLegacyColorAttribute;
             };
         };
     };

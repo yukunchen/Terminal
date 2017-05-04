@@ -1,29 +1,64 @@
-MSC_WARNING_LEVEL=/W4 /WX
-W32_SB=1
-UMTYPE=console
+# -------------------------------------
+# Windows Console 
+# - Console Properties Library
+# -------------------------------------
 
-USE_UNICRT = 1
-USE_MSVCRT = 1
-USE_NATIVE_EH = 1
-USE_STL = 1
-STL_VER = STL_VER_CURRENT
+# This module defines a layer to access user configurable properties
+# or "preferences" that will be stored in a user's registry or embedded within
+# the LNK shortcut file that they used to start the console.
+# It also loads some system configuration information from the registry.
 
-TARGETNAME = ConProps
-TARGETTYPE = LIBRARY
+# -------------------------------------
+# Program Information
+# -------------------------------------
 
-INCLUDES=\
-            ..\host;                          \
+TARGETNAME              = ConProps
+TARGETTYPE              = LIBRARY
 
+# -------------------------------------
+# CRT Configuration
+# -------------------------------------
 
-C_DEFINES= $(C_DEFINES) -DWIN32 -DNT -DUNICODE -D_UNICODE
+USE_UNICRT              = 1
+USE_MSVCRT              = 1
 
+USE_STL                 = 1
+STL_VER                 = STL_VER_CURRENT
+USE_NATIVE_EH           = 1
 
-SOURCES =   ShortcutSerialization.cpp \
-            RegistrySerialization.cpp \
-            TrueTypeFontList.cpp \
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
 
+UNICODE                 = 1
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DNT -DWIN32
 
+# -------------------------------------
+# Compiler Settings
+# -------------------------------------
 
-PRECOMPILED_CXX=1
-PRECOMPILED_INCLUDE=precomp.h
+MSC_WARNING_LEVEL       = /W4 /WX 
 
+# -------------------------------------
+# Build System Settings
+# -------------------------------------
+
+# Code in the OneCore depot automatically excludes default Win32 libraries.
+
+# Defines IME and Codepage support
+W32_SB                  = 1
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+PRECOMPILED_CXX         = 1
+PRECOMPILED_INCLUDE     = precomp.h
+
+SOURCES = \
+    ShortcutSerialization.cpp \
+    RegistrySerialization.cpp \
+    TrueTypeFontList.cpp \
+
+INCLUDES = \
+    $(ONECORE_SDK_INC_PATH); \

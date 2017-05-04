@@ -17,10 +17,7 @@ namespace Microsoft
             class ApiDetector
             {
             public:
-                static NTSTATUS DetectConsoleWindowSupport(_Out_ ApiLevel* level);
-
-                static NTSTATUS DetectHighDpiSupport(_Out_ ApiLevel* level);
-                static NTSTATUS DetectAccessibilityNotificationSupport(_Out_ ApiLevel* level);
+                static NTSTATUS DetectNtUserWindow(_Out_ ApiLevel* level);
 
             private:
                 static NTSTATUS DetectApiSupport(_In_ LPCWSTR lpLibrary, _In_ LPCSTR lpApi, _Out_ ApiLevel* level);

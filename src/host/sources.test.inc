@@ -1,16 +1,29 @@
 !include ..\sources.inc
 
-TARGET_DESTINATION              =   UnitTests
+# -------------------------------------
+# Program Information
+# -------------------------------------
 
-TEST_CODE                       =   1
-NT_SIGNCODE                     =   1
+TARGET_DESTINATION      = UnitTests
 
-C_DEFINES                       =   $(C_DEFINES) -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTING
+TEST_CODE               = 1
 
-INCLUDES                        =   $(INCLUDES); \
-                                    $(SDKTOOLS_INC_PATH)\WexTest\Cue; \
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
 
-TARGETLIBS                      =   $(TARGETLIBS) \
-                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Common.lib \
-                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Logger.lib \
-                                    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Te.Common.lib \
+C_DEFINES               = $(C_DEFINES) -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTING
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+INCLUDES = \
+    $(INCLUDES); \
+    $(SDKTOOLS_INC_PATH)\WexTest\Cue; \
+
+TARGETLIBS = \
+    $(TARGETLIBS) \
+    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Common.lib \
+    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Logger.lib \
+    $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Te.Common.lib \

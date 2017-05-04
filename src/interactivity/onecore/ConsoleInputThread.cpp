@@ -8,17 +8,74 @@
 
 #include "ConsoleInputThread.hpp"
 #include "BgfxEngine.hpp"
-#include "InputServer.hpp"
+#include "ConIoSrvComm.hpp"
 #include "ConsoleWindow.hpp"
+
+#include "ConIoSrv.h"
 
 #include "..\..\host\input.h"
 #include "..\..\host\renderData.hpp"
 #include "..\..\renderer\base\renderer.hpp"
-#include "..\..\ConIoSrv\ConIoSrv.h"
+#include "..\..\renderer\wddmcon\wddmconrenderer.hpp"
 
 #include "..\inc\ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity::OneCore;
+
+NTSTATUS InitializeBgfx()
+{
+    NTSTATUS Status;
+
+    Globals * const Globals = ServiceLocator::LocateGlobals();
+    IWindowMetrics * const Metrics = ServiceLocator::LocateWindowMetrics();
+    const ConIoSrvComm * const Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
+
+    // Fetch the display size from the console driver.
+    const RECT DisplaySize = Metrics->GetMaxClientRectInPixels();
+    Status = GetLastError();
+
+    if (NT_SUCCESS(Status))
+    {
+        // Same with the font size.
+        CD_IO_FONT_SIZE FontSize = { 0 };
+        Status = Server->RequestGetFontSize(&FontSize);
+
+        if (NT_SUCCESS(Status))
+        {
+            // Create and set the render engine.
+            BgfxEngine* const pBgfxEngine = new BgfxEngine(Server->GetSharedViewBase(),
+                                                           DisplaySize.bottom / FontSize.Height,
+                                                           DisplaySize.right / FontSize.Width,
+                                                           FontSize.Width,
+                                                           FontSize.Height);
+            Status = NT_TESTNULL(pBgfxEngine);
+
+            if (NT_SUCCESS(Status))
+            {
+                Globals->pRenderEngine = pBgfxEngine;
+            }
+        }
+    }
+
+    return Status;
+}
+
+NTSTATUS InitializeWddmCon()
+{
+    NTSTATUS Status;
+
+    Globals * const Globals = ServiceLocator::LocateGlobals();
+
+    WddmConEngine * const pWddmConEngine = new WddmConEngine();
+    Status = NT_TESTNULL(pWddmConEngine);
+
+    if (NT_SUCCESS(Status))
+    {
+        Globals->pRenderEngine = pWddmConEngine;
+    }
+
+    return Status;
+}
 
 DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
 {
@@ -26,45 +83,39 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
 
     NTSTATUS Status;
 
-    Globals *Globals = ServiceLocator::LocateGlobals();
-    IWindowMetrics *Metrics = ServiceLocator::LocateWindowMetrics();
-    InputServer *Server = ServiceLocator::LocateInputServices<InputServer>();
+    Globals * const Globals = ServiceLocator::LocateGlobals();
 
+    ConIoSrvComm * const Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
     Status = Server->Connect();
 
     if (NT_SUCCESS(Status))
     {
-        Globals->hInstance = GetModuleHandle(L"ConhostV2.dll");
-        
-        // Create and set the console window.
-        auto wnd = new ConsoleWindow();
-        Status = NT_TESTNULL(wnd);
+        USHORT DisplayMode;
+        Status = Server->RequestGetDisplayMode(&DisplayMode);
 
-        if (NT_SUCCESS(Status))
+        if (NT_SUCCESS(Status) && DisplayMode != CIS_DISPLAY_MODE_NONE)
         {
-            ServiceLocator::SetConsoleWindowInstance(wnd);
-
-            // Fetch the display size from the console driver.
-            RECT DisplaySize = Metrics->GetMaxClientRectInPixels();
-            
-            // Same with the font size.
-            CD_IO_FONT_SIZE FontSize = { 0 };
-            Status = Server->RequestGetFontSize(&FontSize);
+            // Create and set the console window.
+            ConsoleWindow * const wnd = new ConsoleWindow();
+            Status = NT_TESTNULL(wnd);
 
             if (NT_SUCCESS(Status))
             {
-                // Create and set the render engine.
-                BgfxEngine* pBgfxEngine = new BgfxEngine(Server->GetSharedViewBase(),
-                                                         DisplaySize.bottom,
-                                                         DisplaySize.right,
-                                                         FontSize.Width,
-                                                         FontSize.Height);
-                Status = NT_TESTNULL(pBgfxEngine);
+                ServiceLocator::SetConsoleWindowInstance(wnd);
+
+                switch (DisplayMode)
+                {
+                case CIS_DISPLAY_MODE_BGFX:
+                    Status = InitializeBgfx();
+                    break;
+
+                case CIS_DISPLAY_MODE_DIRECTX:
+                    Status = InitializeWddmCon();
+                    break;
+                }
 
                 if (NT_SUCCESS(Status))
                 {
-                    Globals->pRenderEngine = pBgfxEngine;
-
                     // Create and set the render data.
                     Globals->pRenderData = new RenderData();
                     Status = NT_TESTNULL(Globals->pRenderData);
@@ -74,16 +125,13 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
                         // Create and set the renderer.
                         Renderer* pNewRenderer = nullptr;
                         Renderer::s_CreateInstance(Globals->pRenderData,
-                                                Globals->pRenderEngine,
-                                                &pNewRenderer);
+                                                   Globals->pRenderEngine,
+                                                   &pNewRenderer);
                         Status = NT_TESTNULL(pNewRenderer);
 
                         if (NT_SUCCESS(Status))
                         {
                             Globals->pRender = pNewRenderer;
-
-                            // Singal that input is ready to go.
-                            Globals->hConsoleInputInitEvent.SetEvent();
 
                             // Start listening for input (returns on failure only).
                             Status = Server->ServiceInputPipe();
@@ -92,12 +140,18 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
                 }
             }
         }
+        else
+        {
+            // Nothing to do input-wise, but we must let the rest of the console
+            // continue.
+            Server->SignalInputEventIfNecessary();
+        }
     }
 
     // General error case.
     if (!NT_SUCCESS(Status))
     {
-        // If we can't connect, there is no point in hanging around.
+        // If anything went wrong, there is no point in continuing.
         TerminateProcess(GetCurrentProcess(), Status);
     }
 
@@ -114,7 +168,7 @@ HANDLE ConsoleInputThread::Start()
     hThread = CreateThread(nullptr,
                            0,
                            (LPTHREAD_START_ROUTINE)ConsoleInputThreadProcOneCore,
-                           _inputServer,
+                           _pConIoSrvComm,
                            0,
                            &dwThreadId);
     if (hThread)
@@ -126,7 +180,7 @@ HANDLE ConsoleInputThread::Start()
     return hThread;
 }
 
-InputServer *ConsoleInputThread::GetInputServer()
+ConIoSrvComm *ConsoleInputThread::GetConIoSrvComm()
 {
-    return _inputServer;
+    return _pConIoSrvComm;
 }

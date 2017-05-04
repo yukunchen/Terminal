@@ -53,6 +53,9 @@ namespace Microsoft
                 COORD GetFontSize();
                 bool IsCharFullWidthByFont(_In_ WCHAR const wch);
 
+                void EnablePainting();
+                void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs);
+
             private:
                 Renderer(_In_ IRenderData* const pData, _In_ IRenderEngine* const pEngine);
                 IRenderEngine* _pEngine;

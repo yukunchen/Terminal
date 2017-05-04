@@ -2,10 +2,10 @@
 Copyright (c) Microsoft Corporation
 
 Module Name:
-- InputServer.hpp
+- ConIoSrvComm.hpp
 
 Abstract:
-- OneCore implementation of the IInputServer interface.
+- OneCore implementation of the IConIoSrvComm interface.
 
 Author(s):
 - Hernan Gatta (HeGatta) 29-Mar-2017
@@ -15,10 +15,10 @@ Author(s):
 
 #include <condrv.h>
 
-#include "..\..\ConIoSrv\ConIoSrv.h"
+#include "ConIoSrv.h"
 #include "..\..\inc\IInputServices.hpp"
 
-#include "InputServer.hpp"
+#include "ConIoSrvComm.hpp"
 
 #pragma hdrstop
 
@@ -30,22 +30,28 @@ namespace Microsoft
         {
             namespace OneCore
             {
-                class InputServer sealed : public IInputServices
+                class ConIoSrvComm sealed : public IInputServices
                 {
                 public:
+                    ConIoSrvComm();
+
                     NTSTATUS Connect();
                     NTSTATUS ServiceInputPipe();
 
-                    NTSTATUS RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisplaySize);
-                    NTSTATUS RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize);
-                    NTSTATUS RequestSetCursor(_In_ CD_IO_CURSOR_INFORMATION* const pCdCursorInformation);
-                    NTSTATUS RequestUpdateDisplay(_In_ SHORT RowIndex);
+                    NTSTATUS RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisplaySize) const;
+                    NTSTATUS RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize) const;
+                    NTSTATUS RequestSetCursor(_In_ CD_IO_CURSOR_INFORMATION* const pCdCursorInformation) const;
+                    NTSTATUS RequestUpdateDisplay(_In_ SHORT RowIndex) const;
 
                     NTSTATUS RequestMapVirtualKey(_In_ UINT uCode, _In_ UINT uMapType, _Out_ UINT* puReturnValue);
                     NTSTATUS RequestVkKeyScan(_In_ WCHAR wCharacter, _Out_ SHORT* psReturnValue);
                     NTSTATUS RequestGetKeyState(_In_ int iVirtualKey, _Out_ SHORT *psReturnValue);
+                    
+                    NTSTATUS RequestGetDisplayMode(_Out_ USHORT *psDisplayMode);
 
-                    PVOID GetSharedViewBase();
+                    PVOID GetSharedViewBase() const;
+                    
+                    VOID SignalInputEventIfNecessary();
 
                     // IInputServices Members
                     UINT MapVirtualKeyW(UINT uCode, UINT uMapType);
@@ -54,13 +60,21 @@ namespace Microsoft
                     BOOL TranslateCharsetInfo(DWORD * lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags);
                 
                 private:
-                    NTSTATUS SendRequestReceiveReply(PCIS_MSG Message);
+                    NTSTATUS EnsureConnection();
+                    NTSTATUS SendRequestReceiveReply(PCIS_MSG Message) const;
+
+                    VOID HandleFocusEvent(PCIS_EVENT const FocusEvent);
 
                     HANDLE _pipeReadHandle;
+                    HANDLE _pipeWriteHandle;
 
                     HANDLE _alpcClientCommunicationPort;
                     SIZE_T _alpcSharedViewSize;
                     PVOID _alpcSharedViewBase;
+                    
+                    USHORT _displayMode;
+
+                    bool _fIsInputInitialized;
                 };
             };
         };

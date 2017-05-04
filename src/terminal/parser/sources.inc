@@ -1,30 +1,59 @@
-MSC_WARNING_LEVEL=/W4 /WX
+# -------------------------------------
+# Windows Console 
+# - Console Virtual Terminal Parser
+# -------------------------------------
 
-USE_STL                         =   1
-USE_MSVCRT                      =   1
+# This module provides the ability to parse an incoming stream
+# of text for Virtual Terminal Sequences. 
+# These sequences are in-band signaling embedded within the stream
+# that signals the console to do something special (beyond just displaying as text).
 
-USE_DEFAULT_WIN32_LIBS          =   0
-BUILD_FOR_CORESYSTEM            =   1
+# -------------------------------------
+# CRT Configuration
+# -------------------------------------
 
-C_DEFINES                       =   -DUNICODE -D_UNICODE
+USE_UNICRT              = 1
+USE_MSVCRT              = 1
 
-INCLUDES                        =   \
-                                    $(INCLUDES); \
-                                    $(MINCORE_PRIV_SDK_INC_PATH); \
-                                    $(MINWIN_PRIV_SDK_INC_PATH); \
-                                    ..; \
+USE_STL                 = 1
+STL_VER                 = STL_VER_CURRENT
+USE_NATIVE_EH           = 1
 
-SOURCES                         =   \
-                                    $(SOURCES) \
-                                    ..\stateMachine.cpp \
-                                    ..\telemetry.cpp \
-                                    ..\tracing.cpp \
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
 
-TARGETLIBS                      =   \
-                                    $(TARGETLIBS) \
-                                    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+UNICODE                 = 1
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
 
-PRECOMPILED_CXX                 =   1
-PRECOMPILED_INCLUDE             =   ..\precomp.h
+# -------------------------------------
+# Compiler Settings
+# -------------------------------------
 
+MSC_WARNING_LEVEL       = /W4 /WX 
 
+# -------------------------------------
+# Build System Settings
+# -------------------------------------
+
+# Code in the OneCore depot automatically excludes default Win32 libraries.
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+PRECOMPILED_CXX         = 1
+PRECOMPILED_INCLUDE     = ..\precomp.h
+
+SOURCES = \
+    ..\stateMachine.cpp \
+    ..\telemetry.cpp \
+    ..\tracing.cpp \
+
+INCLUDES = \
+    ..; \
+    $(ONECORE_SDK_INC_PATH); \
+    $(MINWIN_PRIV_SDK_INC_PATH); \
+
+TARGETLIBS = \
+    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \

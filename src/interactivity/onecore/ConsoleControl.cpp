@@ -8,8 +8,8 @@
 
 #include "ConsoleControl.hpp"
 
-#include "kernelbase.h"
-#include "csrmsg.h"
+#include <ntcsrdll.h>
+#include <csrmsg.h>
 
 using namespace Microsoft::Console::Interactivity::OneCore;
 
@@ -44,8 +44,6 @@ NTSTATUS ConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType,
                                NULL,
                                CSR_MAKE_API_NUMBER(USERSRV_SERVERDLL_INDEX, UserpEndTask),
                                sizeof(*a));
-
-    return 0;
 }
 
 #pragma endregion

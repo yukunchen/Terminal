@@ -51,7 +51,6 @@ Telemetry::Telemetry()
     TraceLoggingWriteStart(_activity, "ActivityStart");
     // initialize wil tracelogging
     wil::SetResultLoggingCallback(&Tracing::TraceFailure);
-    wil::g_pfnShouldOutputDebugString = [] { return !!IsDebuggerPresent(); };
 }
 #pragma warning(pop)
 

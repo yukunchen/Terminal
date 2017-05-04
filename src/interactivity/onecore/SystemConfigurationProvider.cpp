@@ -8,6 +8,8 @@
 
 #include "SystemConfigurationProvider.hpp"
 
+#define DEFAULT_TT_FONT_FACENAME L"__DefaultTTFont__"
+
 #define DEFAULT_CARET_BLINK_TIME                  0x212
 #define DEFAULT_IS_CARET_BLINKING_ENABLED         true
 #define DEFAULT_NUMBER_OF_MOUSE_BUTTONS           3
@@ -48,11 +50,22 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     _In_ PCWSTR pwszCurrDir,
     _In_ PCWSTR pwszAppName)
 {
-    UNREFERENCED_PARAMETER(pLinkSettings);
     UNREFERENCED_PARAMETER(pwszTitle);
     UNREFERENCED_PARAMETER(pdwTitleLength);
     UNREFERENCED_PARAMETER(pwszCurrDir);
     UNREFERENCED_PARAMETER(pwszAppName);
+
+    // While both OneCore console renderers use TrueType fonts, there is no
+    // advanced font support on that platform. Namely, there is no way to pick
+    // neither the font nor the font size. Since this choice of TrueType font
+    // is made implicitly by the renderers, the rest of the console is not aware
+    // of it and the renderer procedure goes on to translate output text so that
+    // it be renderable with raster fonts, which messes up the final output.
+    // Hence, we make it seem like the console is in fact configred to use a
+    // TrueType font by the user.
+
+    pLinkSettings->SetFaceName(DEFAULT_TT_FONT_FACENAME, ARRAYSIZE(DEFAULT_TT_FONT_FACENAME));
+    pLinkSettings->SetFontFamily(TMPF_TRUETYPE);
 
     return;
 }

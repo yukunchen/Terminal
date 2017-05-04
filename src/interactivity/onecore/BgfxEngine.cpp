@@ -8,45 +8,25 @@
 
 #include "BgfxEngine.hpp"
 
-#include "InputServer.hpp"
+#include "ConIoSrvComm.hpp"
 #include "..\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
+//
+// Default non-bright white.
+//
+
+#define DEFAULT_COLOR_ATTRIBUTE (0xC)
+
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Interactivity::OneCore;
-
-// !!! ATTENTION !!!
-// Palette entries must match those in condrv\display.c.
-
-#define PALETTE_ENTRY(Red, Green, Blue) \
-    ((Red << 16) | (Green << 8) | (Blue))
-
-const ULONG CdpPalette[] = {
-    PALETTE_ENTRY(0x00, 0x00, 0x00),
-    PALETTE_ENTRY(0x00, 0x00, 0x80),
-    PALETTE_ENTRY(0x00, 0x80, 0x00),
-    PALETTE_ENTRY(0x00, 0x80, 0x80),
-    PALETTE_ENTRY(0x80, 0x00, 0x00),
-    PALETTE_ENTRY(0x80, 0x00, 0x80),
-    PALETTE_ENTRY(0x80, 0x80, 0x00),
-    PALETTE_ENTRY(0xC0, 0xC0, 0xC0),
-    PALETTE_ENTRY(0x80, 0x80, 0x80),
-    PALETTE_ENTRY(0x00, 0x00, 0xFF),
-    PALETTE_ENTRY(0x00, 0xFF, 0x00),
-    PALETTE_ENTRY(0x00, 0xFF, 0xFF),
-    PALETTE_ENTRY(0xFF, 0x00, 0x00),
-    PALETTE_ENTRY(0xFF, 0x00, 0xFF),
-    PALETTE_ENTRY(0xFF, 0xFF, 0x00),
-    PALETTE_ENTRY(0xFF, 0xFF, 0xFF),
-};
 
 BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWidth, LONG FontWidth, LONG FontHeight)
     : _sharedViewBase((ULONG_PTR)SharedViewBase),
       _displayHeight(DisplayHeight),
       _displayWidth(DisplayWidth),
-      _currentForegroundColor(0),
-      _currentBackgroundColor(0)
+      _currentLegacyColorAttribute(DEFAULT_COLOR_ATTRIBUTE)
 {
     _runLength = sizeof(CD_IO_CHARACTER) * DisplayWidth;
     
@@ -100,7 +80,7 @@ HRESULT BgfxEngine::EndPaint()
     PVOID OldRunBase;
     PVOID NewRunBase;
 
-    Status = ServiceLocator::LocateInputServices<InputServer>()->RequestUpdateDisplay(0);
+    Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestUpdateDisplay(0);
     
     if (NT_SUCCESS(Status))
     {
@@ -154,12 +134,10 @@ HRESULT BgfxEngine::PaintBufferLine(PCWCHAR const pwsLine, size_t const cchLine,
     PVOID NewRunBase = (PVOID)(_sharedViewBase + (coord.Y * 2 * _runLength) + _runLength);
     PCD_IO_CHARACTER NewRun = (PCD_IO_CHARACTER)NewRunBase;
 
-    USHORT PaletteEntry = GetColorPaletteEntry(_currentForegroundColor);
-
-    for (size_t i = 0 ; i < cchLine && i < _displayWidth ; i++)
+    for (size_t i = 0 ; i < cchLine && i < (size_t)_displayWidth ; i++)
     {
         NewRun[coord.X + i].Character = pwsLine[i];
-        NewRun[coord.X + i].Atribute = PaletteEntry;
+        NewRun[coord.X + i].Atribute = _currentLegacyColorAttribute;
     }
 
     return S_OK;
@@ -197,7 +175,7 @@ HRESULT BgfxEngine::PaintCursor(COORD const coordCursor, ULONG const ulCursorHei
     CursorInfo.Height = ulCursorHeightPercent;
     CursorInfo.IsVisible = TRUE;
 
-    Status = ServiceLocator::LocateInputServices<InputServer>()->RequestSetCursor(&CursorInfo);
+    Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestSetCursor(&CursorInfo);
 
     return HRESULT_FROM_NT(Status);
 }
@@ -209,17 +187,18 @@ HRESULT BgfxEngine::ClearCursor()
     CD_IO_CURSOR_INFORMATION CursorInfo = { 0 };
     CursorInfo.IsVisible = FALSE;
 
-    Status = ServiceLocator::LocateInputServices<InputServer>()->RequestSetCursor(&CursorInfo);
+    Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestSetCursor(&CursorInfo);
 
     return HRESULT_FROM_NT(Status);
 }
 
-HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, bool const fIncludeBackgrounds)
+HRESULT BgfxEngine::UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, bool const fIncludeBackgrounds)
 {
+    UNREFERENCED_PARAMETER(colorForeground);
+    UNREFERENCED_PARAMETER(colorBackground);
     UNREFERENCED_PARAMETER(fIncludeBackgrounds);
 
-    _currentForegroundColor = colorForeground;
-    _currentBackgroundColor = colorBackground;
+    _currentLegacyColorAttribute = legacyColorAttribute;
 
     return S_OK;
 }
@@ -269,69 +248,4 @@ bool BgfxEngine::IsCharFullWidthByFont(WCHAR const wch)
     UNREFERENCED_PARAMETER(wch);
 
     return false;
-}
-
-USHORT BgfxEngine::GetColorPaletteEntry(DWORD dwColor)
-{
-    USHORT PaletteEntry = USHORT_MAX;
-
-    BYTE Red   = (BYTE)((dwColor & 0x000000FF) >> 0);
-    BYTE Green = (BYTE)((dwColor & 0x0000FF00) >> 8);
-    BYTE Blue  = (BYTE)((dwColor & 0x00FF0000) >> 16);
-
-    //
-    // Try to find an exact match in the color palette.
-    //
-
-    for (USHORT i = 0 ; i < 15 ; i++)
-    {
-        if (CdpPalette[i] == (ULONG)PALETTE_ENTRY(Red, Green, Blue))
-        {
-            PaletteEntry = i;
-            break;
-        }
-    }
-
-    //
-    // If that didn't work, find a color in the palette that is close enough.
-    //
-
-    if (PaletteEntry == USHORT_MAX)
-    {
-        if (Red > 0 && Green > 0 && Blue > 0)
-        {
-            PaletteEntry = 15;
-        }
-        else if (Red == 0 && Green > 0 && Blue > 0)
-        {
-            PaletteEntry = 11;
-        }
-        else if (Red > 0 && Green == 0 && Blue > 0)
-        {
-            PaletteEntry = 13;
-        }
-        else if (Red > 0 && Green > 0 && Blue == 0)
-        {
-            PaletteEntry = 14;
-        }
-        else if (Red > 0 && Green == 0 && Blue == 0)
-        {
-            PaletteEntry = 12;
-        }
-        else if (Red == 0 && Green > 0 && Blue == 0)
-        {
-            PaletteEntry = 10;
-        }
-        else if (Red == 0 && Green == 0 && Blue > 0)
-        {
-            PaletteEntry = 9;
-        }
-        else
-        {
-            // White in all other cases so that the text remain visible.
-            PaletteEntry = 15;
-        }
-    }
-
-    return PaletteEntry;
 }

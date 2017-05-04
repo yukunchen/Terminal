@@ -28,6 +28,9 @@ namespace Microsoft
 
                 void NotifyPaint() const;
 
+                void EnablePainting();
+                void WaitForPaintCompletionAndDisable(DWORD dwTimeoutMs);
+
                 ~RenderThread();
 
             private:
@@ -40,6 +43,9 @@ namespace Microsoft
 
                 HANDLE _hThread;
                 HANDLE _hEvent;
+
+                HANDLE _hPaintEnabledEvent;
+                HANDLE _hPaintCompletedEvent;
 
                 IRenderer* const _pRenderer;
 
