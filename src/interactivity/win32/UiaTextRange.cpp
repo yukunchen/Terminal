@@ -439,7 +439,7 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
 
     // convert to a safearray
     *ppRetVal = SafeArrayCreateVector(VT_R8, 0, static_cast<ULONG>(coords.size()));
-    for (LONG i = 0; i < coords.size(); ++i)
+    for (LONG i = 0; i < static_cast<LONG>(coords.size()); ++i)
     {
         SafeArrayPutElement(*ppRetVal, &i, &coords[i]);
     }
@@ -474,7 +474,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
             wstr += tempString;
         }
         wstr += L"\r\n";
-        if (getPartialText && wstr.size() > maxLength)
+        if (getPartialText && wstr.size() > static_cast<size_t>(maxLength))
         {
             wstr.resize(maxLength);
             break;
