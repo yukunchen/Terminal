@@ -36,7 +36,7 @@ namespace Conhost.UIA.Tests
     [TestClass]
     class AccessibilityTests
     {
-        public TestContext TestContext { get; set; } 
+        public TestContext TestContext { get; set; }
 
         private AutomationElement GetWindowUiaElement(CmdApp app)
         {
@@ -109,7 +109,7 @@ namespace Conhost.UIA.Tests
                         Rectangle rect = new Rectangle(0, 0, screenInfo.dwSize.X, screenInfo.dwSize.Y);
                         IEnumerable<string> viewportText = area.GetLinesInRectangle(hConsole, rect);
 
-                        // the uia api does not return spaces beyond the last 
+                        // the uia api does not return spaces beyond the last
                         // non -whitespace character so we need to trim those from
                         // the viewportText. The uia api also inserts \r\n to indicate
                         // a new linen so we need to add those back in after trimming.
@@ -163,7 +163,7 @@ namespace Conhost.UIA.Tests
 
         /*
         // TODO this is commented out because it will fail. It fails because the c# api of RangeFromPoint
-        // throws an exception when passed a point that is outside the bounds of the window, which is 
+        // throws an exception when passed a point that is outside the bounds of the window, which is
         // allowed in the c++ version and exactly what we want to test. Another way to test this case needs
         // to be found that doesn't go through the c# api.
         [TestMethod]
@@ -203,7 +203,7 @@ namespace Conhost.UIA.Tests
                         textPatternRanges.Add(textPattern.RangeFromPoint(p));
                     }
 
-                    // ranges should be in correct order (starting at top and 
+                    // ranges should be in correct order (starting at top and
                     // going down screen)
                     Rect lastBoundingRect = textPatternRanges.ElementAt(0).GetBoundingRectangles()[0];
                     foreach (TextPatternRange range in textPatternRanges)
@@ -257,16 +257,16 @@ namespace Conhost.UIA.Tests
                     TextPattern textPattern = textAreaUiaElement.GetCurrentPattern(TextPattern.Pattern) as TextPattern;
                     TextPatternRange textPatternRange = textPattern.DocumentRange;
                     // comparing an endpoint to itself should be the same
-                    Verify.AreEqual(0, textPatternRange.CompareEndpoints(TextPatternRangeEndpoint.Start, 
-                                                                         textPatternRange, 
+                    Verify.AreEqual(0, textPatternRange.CompareEndpoints(TextPatternRangeEndpoint.Start,
+                                                                         textPatternRange,
                                                                          TextPatternRangeEndpoint.Start));
                     // comparing an earlier endpoint to a later one should be negative
-                    Verify.IsGreaterThan(0, textPatternRange.CompareEndpoints(TextPatternRangeEndpoint.Start, 
-                                                                              textPatternRange, 
+                    Verify.IsGreaterThan(0, textPatternRange.CompareEndpoints(TextPatternRangeEndpoint.Start,
+                                                                              textPatternRange,
                                                                               TextPatternRangeEndpoint.End));
                     // comparing a later endpoint to an earlier one should be positive
-                    Verify.IsLessThan(0, textPatternRange.CompareEndpoints(TextPatternRangeEndpoint.End, 
-                                                                           textPatternRange, 
+                    Verify.IsLessThan(0, textPatternRange.CompareEndpoints(TextPatternRangeEndpoint.End,
+                                                                           textPatternRange,
                                                                            TextPatternRangeEndpoint.Start));
                 }
             }
@@ -287,8 +287,8 @@ namespace Conhost.UIA.Tests
                     TextPatternRange firstRange = visibleRanges[0].Clone();
                     // change firstRange to a degenerate range and then expand to a line
                     firstRange.MoveEndpointByRange(TextPatternRangeEndpoint.End, firstRange, TextPatternRangeEndpoint.Start);
-                    Verify.AreEqual(0, firstRange.CompareEndpoints(TextPatternRangeEndpoint.Start, 
-                                                                   firstRange, 
+                    Verify.AreEqual(0, firstRange.CompareEndpoints(TextPatternRangeEndpoint.Start,
+                                                                   firstRange,
                                                                    TextPatternRangeEndpoint.End));
                     firstRange.ExpandToEnclosingUnit(TextUnit.Line);
                     Verify.IsTrue(firstRange.Compare(visibleRanges[0]));
@@ -302,6 +302,8 @@ namespace Conhost.UIA.Tests
             }
         }
 
+        //TODO this needs more work
+        /*
         [TestMethod]
         public void CanGetBoundingRectangles()
         {
@@ -334,7 +336,6 @@ namespace Conhost.UIA.Tests
                     bottomRight.y = screenInfo.srWindow.Bottom;
                     User32.ClientToScreen(handle, ref topLeft);
                     User32.ClientToScreen(handle, ref bottomRight);
-                    System.Diagnostics.Debugger.Break();
                     // verify the bounds
                     Verify.AreEqual(topLeft.x, boundingRects[0].Left);
                     Verify.AreEqual(topLeft.y, boundingRects[0].Top);
@@ -345,7 +346,8 @@ namespace Conhost.UIA.Tests
                 }
             }
         }
-      
+        */
+
 
 
 
