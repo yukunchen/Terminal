@@ -216,7 +216,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
 
     if (direction == NavigateDirection_Parent)
     {
-        // TODO why does this not use the existing one?
+        // TODO MSFT 7960168 why does this not use the existing one?
         try
         {
             *ppProvider = new WindowUiaProvider(_pWindow);
@@ -270,7 +270,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_ma
 IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 {
     IRawElementProviderSimple* pProvider;
-    HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple), reinterpret_cast<void**>(&pProvider));
+    const HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
+                                            reinterpret_cast<void**>(&pProvider));
     if (SUCCEEDED(hr))
     {
         UiaRaiseAutomationEvent(pProvider, UIA_AutomationFocusChangedEventId);
@@ -280,7 +281,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
 {
-    // TODO why does this not use the existing one?
+    // TODO MSFT 7960168 why does this not use the existing one?
     try
     {
         *ppProvider = new WindowUiaProvider(_pWindow);
@@ -300,20 +301,82 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_mayben
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    /*
-    Selection selection = Selection::Instance();
-    if (!selection.IsInSelectionState())
+    if (!Selection::Instance().IsAreaSelected())
     {
-        // TODO
+        *ppRetVal = nullptr;
+        return S_OK;
     }
-    */
-    UNREFERENCED_PARAMETER(ppRetVal);
-    return E_NOTIMPL;
+
+    HRESULT hr;
+
+    // get the selection rects
+    SMALL_RECT* pSelectionRects;
+    UINT rectCount;
+    NTSTATUS status = Selection::Instance().GetSelectionRects(&pSelectionRects, &rectCount);
+    RETURN_IF_NTSTATUS_FAILED(status);
+    auto selectionRectCleanup = wil::ScopeExit([&] { delete[] pSelectionRects; });
+
+    // make a safe array
+    *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, static_cast<ULONG>(rectCount));
+    if (*ppRetVal == nullptr)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    // stuff the selected lines into the safe array
+    TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
+    const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
+    const COORD currentFontSize = currentFont.GetUnscaledSize();
+    const COORD screenBufferCoords = _getScreenBufferCoords();
+    const int totalLines = screenBufferCoords.Y;
+
+    for (size_t i = 0; i < rectCount; ++i)
+    {
+        IRawElementProviderSimple* pProvider;
+        hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
+                                          reinterpret_cast<void**>(&pProvider));
+        if (FAILED(hr))
+        {
+            SafeArrayDestroy(*ppRetVal);
+            *ppRetVal = nullptr;
+            return hr;
+        }
+        const int lineNumber = pSelectionRects[i].Top;
+        const int start = lineNumber * screenBufferCoords.X;
+        const int end = start + screenBufferCoords.X;
+
+        UiaTextRange* range;
+        try
+        {
+            range = new UiaTextRange(pProvider,
+                                     pOutputBuffer,
+                                     _pScreenInfo,
+                                     currentFontSize,
+                                     start,
+                                     end);
+        }
+        catch (...)
+        {
+            (static_cast<IUnknown*>(pProvider))->Release();
+            SafeArrayDestroy(*ppRetVal);
+            *ppRetVal = nullptr;
+            return wil::ResultFromCaughtException();
+        }
+        LONG currentIndex = static_cast<LONG>(i);
+        hr = SafeArrayPutElement(*ppRetVal, &currentIndex, reinterpret_cast<void*>(range));
+        if (FAILED(hr))
+        {
+            SafeArrayDestroy(*ppRetVal);
+            *ppRetVal = nullptr;
+            return hr;
+        }
+    }
+    return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    TEXT_BUFFER_INFO* pOutputBuffer = _pScreenInfo->TextInfo;
+    TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
     const SMALL_RECT viewport = _pScreenInfo->GetBufferViewport();
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
     const COORD currentFontSize = currentFont.GetUnscaledSize();
@@ -332,16 +395,18 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
     // stuff each visible line in the safearray
     for (size_t i = 0; i < rowCount; ++i)
     {
-        int lineNumber = (viewport.Top + i) % totalLines;
-        int start = lineNumber * screenBufferCoords.X;
-        int end = start + screenBufferCoords.X;
+        const int lineNumber = (viewport.Top + i) % totalLines;
+        const int start = lineNumber * screenBufferCoords.X;
+        const int end = start + screenBufferCoords.X;
 
         IRawElementProviderSimple* pProvider;
         HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
                                           reinterpret_cast<void**>(&pProvider));
         if (FAILED(hr))
         {
-            return E_FAIL;
+            SafeArrayDestroy(*ppRetVal);
+            *ppRetVal = nullptr;
+            return hr;
         }
 
         UiaTextRange* range;
@@ -378,17 +443,13 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSim
 {
     UNREFERENCED_PARAMETER(childElement);
 
-    TEXT_BUFFER_INFO* pOutputBuffer = _pScreenInfo->TextInfo;
+    TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
     const COORD currentFontSize = currentFont.GetUnscaledSize();
 
     IRawElementProviderSimple* pProvider;
-    HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
-                                      reinterpret_cast<void**>(&pProvider));
-    if (FAILED(hr))
-    {
-        return E_FAIL;
-    }
+    RETURN_IF_FAILED(this->QueryInterface(__uuidof(IRawElementProviderSimple),
+                                          reinterpret_cast<void**>(&pProvider)));
 
     try
     {
@@ -410,17 +471,13 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
                                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
 
-    TEXT_BUFFER_INFO* pOutputBuffer = _pScreenInfo->TextInfo;
+    TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
     const COORD currentFontSize = currentFont.GetUnscaledSize();
 
     IRawElementProviderSimple* pProvider;
-    HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
-                                      reinterpret_cast<void**>(&pProvider));
-    if (FAILED(hr))
-    {
-        return E_FAIL;
-    }
+    RETURN_IF_FAILED(this->QueryInterface(__uuidof(IRawElementProviderSimple),
+                                          reinterpret_cast<void**>(&pProvider)));
 
     try
     {
@@ -441,19 +498,15 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-    TEXT_BUFFER_INFO* pOutputBuffer = _pScreenInfo->TextInfo;
+    TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
     const COORD currentFontSize = currentFont.GetUnscaledSize();
     const int documentLines = pOutputBuffer->TotalRowCount();
     const int lineWidth = _getScreenBufferCoords().X;
 
     IRawElementProviderSimple* pProvider;
-    HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
-                                      reinterpret_cast<void**>(&pProvider));
-    if (FAILED(hr))
-    {
-        return E_FAIL;
-    }
+    RETURN_IF_FAILED(this->QueryInterface(__uuidof(IRawElementProviderSimple),
+                                          reinterpret_cast<void**>(&pProvider)));
 
     try
     {
@@ -475,7 +528,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybe
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal)
 {
-    *pRetVal = SupportedTextSelection::SupportedTextSelection_None;
+    *pRetVal = SupportedTextSelection::SupportedTextSelection_Single;
     return S_OK;
 }
 

@@ -1308,12 +1308,13 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
     return _pUiaProvider;
 }
 
-void Window::SignalUia(_In_ EVENTID id)
+HRESULT Window::SignalUia(_In_ EVENTID id)
 {
     if (_pUiaProvider != nullptr)
     {
-        _pUiaProvider->Signal(id);
+        return _pUiaProvider->Signal(id);
     }
+    return E_POINTER;
 }
 
 void Window::SetOwner()

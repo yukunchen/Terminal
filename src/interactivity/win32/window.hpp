@@ -94,7 +94,7 @@ namespace Microsoft
 
                     void SetWindowHasMoved(_In_ BOOL const fHasMoved);
 
-                    void SignalUia(_In_ EVENTID id);
+                    HRESULT SignalUia(_In_ EVENTID id);
 
                     void SetOwner();
                     BOOL GetCursorPosition(_Out_ LPPOINT lpPoint);

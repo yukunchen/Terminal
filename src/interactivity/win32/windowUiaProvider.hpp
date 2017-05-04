@@ -13,6 +13,7 @@ Abstract:
 
 Author(s):
 - Michael Niksa (MiNiksa)     2017
+- Austin Diviness (AustDi)    2017
 --*/
 
 #pragma once

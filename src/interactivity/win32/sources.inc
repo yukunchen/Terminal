@@ -1,5 +1,5 @@
 # -------------------------------------
-# Windows Console 
+# Windows Console
 # - Console Interactivity for Win32
 # -------------------------------------
 
@@ -59,6 +59,7 @@ SOURCES = \
     ..\menu.cpp \
     ..\screenInfoUiaProvider.cpp \
     ..\SystemConfigurationProvider.cpp \
+    ..\UiaTextRange.cpp \
     ..\window.cpp \
     ..\windowdpiapi.cpp \
     ..\windowime.cpp \
