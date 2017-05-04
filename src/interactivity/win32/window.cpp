@@ -170,20 +170,30 @@ void Window::_UpdateSystemMetrics() const
 {
     Scrolling::s_UpdateSystemMetrics();
 
-    ServiceLocator::LocateGlobals()->sVerticalScrollSize = (SHORT)ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetSystemMetricsForDpi(SM_CXVSCROLL, ServiceLocator::LocateGlobals()->dpi);
-    ServiceLocator::LocateGlobals()->sHorizontalScrollSize = (SHORT)ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetSystemMetricsForDpi(SM_CYHSCROLL, ServiceLocator::LocateGlobals()->dpi);
+    ServiceLocator::LocateGlobals()->sVerticalScrollSize =
+        (SHORT)ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->
+        GetSystemMetricsForDpi(SM_CXVSCROLL,
+                               ServiceLocator::LocateGlobals()->dpi);
 
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor()->UpdateSystemMetrics();
+    ServiceLocator::LocateGlobals()->sHorizontalScrollSize =
+        (SHORT)ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->
+        GetSystemMetricsForDpi(SM_CYHSCROLL,
+                               ServiceLocator::LocateGlobals()->dpi);
+
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->
+        CurrentScreenBuffer->TextInfo->GetCursor()->UpdateSystemMetrics();
 }
 
 // Routine Description:
-// - This will call the system to create a window for the console, set up settings, and prepare for rendering
+// - This will call the system to create a window for the console, set
+//   up settings, and prepare for rendering.
 // Arguments:
 // - pSettings - Load user-configurable settings from this structure
 // - pScreen - Attach to this screen for rendering the client area of the window
 // Return Value:
 // - STATUS_SUCCESS, invalid parameters, or various potential errors from calling CreateWindow
-NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMATION* const pScreen)
+NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
+                             _In_ SCREEN_INFORMATION* const pScreen)
 {
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -220,7 +230,9 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMA
             ServiceLocator::LocateGlobals()->pRenderEngine = pGdiEngine;
 
             Renderer* pNewRenderer = nullptr;
-            if (SUCCEEDED(Renderer::s_CreateInstance(ServiceLocator::LocateGlobals()->pRenderData, ServiceLocator::LocateGlobals()->pRenderEngine, &pNewRenderer)))
+            if (SUCCEEDED(Renderer::s_CreateInstance(ServiceLocator::LocateGlobals()->pRenderData,
+                                                     ServiceLocator::LocateGlobals()->pRenderEngine,
+                                                     &pNewRenderer)))
             {
                 ServiceLocator::LocateGlobals()->pRender = pNewRenderer;
             }
@@ -250,9 +262,13 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMA
                 //if launched from a shortcut, ensure window is visible on screen
                 if (pSettings->IsStartupTitleIsLinkNameSet())
                 {
-                    //if window would be fully OFFscreen, change position so it is ON screen.
-                    //This doesn't change the actual coordinates stored in the link, just the starting position of the window
-                    //When the user reconnects the other monitor, the window will be where he left it. Great for take home laptop scenario
+                    // if window would be fully OFFscreen, change position so it is ON screen.
+                    // This doesn't change the actual coordinates
+                    // stored in the link, just the starting position
+                    // of the window.
+                    // When the user reconnects the other monitor, the
+                    // window will be where he left it. Great for take
+                    // home laptop scenario.
                     if (!MonitorFromRect(&rectProposed, MONITOR_DEFAULTTONULL))
                     {
                         //Monitor we'll move to
@@ -268,7 +284,9 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMA
                         rectProposed.right = mi.rcWork.left + RECT_WIDTH(&rectProposed);
                         rectProposed.bottom = mi.rcWork.top + RECT_HEIGHT(&rectProposed);
 
-                        //Move origin to top left of nearest monitor's WORKAREA (accounting for taskbar and any app toolbars)
+                        // Move origin to top left of nearest
+                        // monitor's WORKAREA (accounting for taskbar
+                        // and any app toolbars)
                         rectProposed.left = mi.rcWork.left;
                         rectProposed.top = mi.rcWork.top;
                     }
@@ -281,7 +299,8 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMA
                 CONSOLE_WINDOW_CLASS,
                 ServiceLocator::LocateGlobals()->getConsoleInformation()->Title,
                 CONSOLE_WINDOW_FLAGS,
-                IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_AUTO_POSITION) ? CW_USEDEFAULT : rectProposed.left,
+                IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags,
+                          CONSOLE_AUTO_POSITION) ? CW_USEDEFAULT : rectProposed.left,
                 rectProposed.top, // field is ignored if CW_USEDEFAULT was chosen above
                 RECT_WIDTH(&rectProposed),
                 RECT_HEIGHT(&rectProposed),
@@ -310,7 +329,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMA
                     ApplyWindowOpacity();
 
                     status = Menu::CreateInstance(hWnd);
-                    
+
                     if (NT_SUCCESS(status))
                     {
                         ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme.RefreshAreaAttributes();
@@ -1276,10 +1295,26 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
 {
     if (nullptr == _pUiaProvider)
     {
-        _pUiaProvider = new WindowUiaProvider(this);
+        try
+        {
+            _pUiaProvider = new WindowUiaProvider(this);
+        }
+        catch (...)
+        {
+            _pUiaProvider = nullptr;
+        }
     }
 
     return _pUiaProvider;
+}
+
+HRESULT Window::SignalUia(_In_ EVENTID id)
+{
+    if (_pUiaProvider != nullptr)
+    {
+        return _pUiaProvider->Signal(id);
+    }
+    return E_POINTER;
 }
 
 void Window::SetOwner()

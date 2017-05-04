@@ -1,5 +1,5 @@
 # -------------------------------------
-# Windows Console 
+# Windows Console
 # - Console Renderer Base
 # -------------------------------------
 
@@ -30,7 +30,7 @@ C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
 # Compiler Settings
 # -------------------------------------
 
-MSC_WARNING_LEVEL       = /W4 /WX 
+MSC_WARNING_LEVEL       = /W4 /WX
 
 # Check out https://osgwiki.com/wiki/Dev_14_Migration for more details about -Zc:implicitNoexcept-
 USER_C_FLAGS=$(USER_C_FLAGS) -Zc:implicitNoexcept-
@@ -50,6 +50,8 @@ PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES = \
     ..\FontInfo.cpp \
+    ..\FontInfoBase.cpp \
+    ..\FontInfoDesired.cpp \
     ..\math.cpp \
     ..\renderer.cpp \
     ..\thread.cpp \

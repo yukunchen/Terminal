@@ -55,12 +55,12 @@ public:
     void ClearSelection(_In_ bool const fStartingNewSelection);
     void ColorSelection(_In_ SMALL_RECT* const psrRect, _In_ ULONG const ulAttr);
 
+    // delete these or we can accidentally get copies of the singleton
+    Selection(Selection const&) = delete;
+    void operator=(Selection const&) = delete;
+
 protected:
     Selection();
-
-    // hide these or we can accidentally get copies of the singleton
-    Selection(Selection const&);
-    void operator=(Selection const&);
 
 private:
     void _SetSelectionVisibility(_In_ bool const fMakeVisible);

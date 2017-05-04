@@ -13,7 +13,7 @@ Author(s):
 
 #pragma once
 
-#include "FontInfo.hpp"
+#include "FontInfoDesired.hpp"
 
 namespace Microsoft
 {
@@ -39,9 +39,13 @@ namespace Microsoft
                 virtual void TriggerScroll() = 0;
                 virtual void TriggerScroll(_In_ const COORD* const pcoordDelta) = 0;
 
-                virtual void TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo) = 0;
+                virtual void TriggerFontChange(_In_ int const iDpi,
+                                               _In_ FontInfoDesired const * const pFontInfoDesired,
+                                               _Out_ FontInfo* const pFontInfo) = 0;
 
-                virtual HRESULT GetProposedFont(_In_ int const iDpi,  _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo) = 0;
+                virtual HRESULT GetProposedFont(_In_ int const iDpi,
+                                                _In_ FontInfoDesired const * const pFontInfoDesired,
+                                                _Out_ FontInfo* const pFontInfo) = 0;
 
                 virtual COORD GetFontSize() = 0;
                 virtual bool IsCharFullWidthByFont(_In_ WCHAR const wch) = 0;

@@ -26,11 +26,11 @@ namespace Microsoft
             {
                 class WindowUiaProvider;
 
-                class Window sealed : public IConsoleWindow
+                class Window final : public IConsoleWindow
                 {
                 public:
                     static NTSTATUS CreateInstance(_In_ Settings* const pSettings,
-                        _In_ SCREEN_INFORMATION* const pScreen);
+                                                   _In_ SCREEN_INFORMATION* const pScreen);
 
                     NTSTATUS ActivateAndShow(_In_ WORD const wShowWindow);
 
@@ -51,11 +51,17 @@ namespace Microsoft
 
                     NTSTATUS SetViewportOrigin(_In_ SMALL_RECT NewWindow);
 
-                    void VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbsoluteChange) const;
-                    void HorizontalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbsoluteChange) const;
+                    void VerticalScroll(_In_ const WORD wScrollCommand,
+                                        _In_ const WORD wAbsoluteChange) const;
+                    void HorizontalScroll(_In_ const WORD wScrollCommand,
+                                          _In_ const WORD wAbsoluteChange) const;
 
                     BOOL EnableBothScrollBars();
-                    int UpdateScrollBar(bool isVertical, bool isAltBuffer, UINT pageSize, int maxSize, int viewportPosition);
+                    int UpdateScrollBar(bool isVertical,
+                                        bool isAltBuffer,
+                                        UINT pageSize,
+                                        int maxSize,
+                                        int viewportPosition);
 
                     void UpdateWindowSize(_In_ COORD const coordSizeInChars) const;
                     void UpdateWindowPosition(_In_ POINT const ptNewPos) const;
@@ -64,10 +70,14 @@ namespace Microsoft
                     void CaptureMouse();
                     BOOL ReleaseMouse();
 
-                    // Dispatchers (requests from other parts of the console get dispatched onto the window message queue/thread)
+                    // Dispatchers (requests from other parts of the
+                    // console get dispatched onto the window message
+                    // queue/thread)
                     BOOL SendNotifyBeep() const;
                     BOOL PostUpdateTitle(_In_ const PCWSTR pwszNewTitle) const;
-                    // makes a copy of the original string before sending the message. The windowproc is responsible for the copy's lifetime.
+                    // makes a copy of the original string before
+                    // sending the message. The windowproc is
+                    // responsible for the copy's lifetime.
                     BOOL PostUpdateTitleWithCopy(_In_ const PCWSTR pwszNewTitle) const;
                     BOOL PostUpdateScrollBars() const;
                     BOOL PostUpdateWindowSize() const;
@@ -75,17 +85,22 @@ namespace Microsoft
 
                     // Dynamic Settings helpers
                     static void s_PersistWindowPosition(_In_ PCWSTR pwszLinkTitle,
-                        _In_ PCWSTR pwszOriginalTitle,
-                        _In_ const DWORD dwFlags,
-                        _In_ const Window* const pWindow);
-                    static void s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle, _In_ PCWSTR pwszOriginalTitle, _In_ const Window* const pWindow);
+                                                        _In_ PCWSTR pwszOriginalTitle,
+                                                        _In_ const DWORD dwFlags,
+                                                        _In_ const Window* const pWindow);
+                    static void s_PersistWindowOpacity(_In_ PCWSTR pwszLinkTitle,
+                                                       _In_ PCWSTR pwszOriginalTitle,
+                                                       _In_ const Window* const pWindow);
 
                     void SetWindowHasMoved(_In_ BOOL const fHasMoved);
+
+                    HRESULT SignalUia(_In_ EVENTID id);
 
                     void SetOwner();
                     BOOL GetCursorPosition(_Out_ LPPOINT lpPoint);
                     BOOL GetClientRectangle(_Out_ LPRECT lpRect);
-                    int MapPoints(_Inout_updates_(cPoints) LPPOINT lpPoints, _In_ UINT cPoints);
+                    int MapPoints(_Inout_updates_(cPoints) LPPOINT lpPoints,
+                                  _In_ UINT cPoints);
                     BOOL ConvertScreenToClient(_Inout_ LPPOINT lpPoint);
 
 
@@ -99,7 +114,8 @@ namespace Microsoft
 
                     // Registration/init
                     static NTSTATUS s_RegisterWindowClass();
-                    NTSTATUS _MakeWindow(_In_ Settings* const pSettings, _In_ SCREEN_INFORMATION* const pScreen);
+                    NTSTATUS _MakeWindow(_In_ Settings* const pSettings,
+                                         _In_ SCREEN_INFORMATION* const pScreen);
                     void _CloseWindow() const;
 
                     static ATOM s_atomWindowClass;
@@ -114,8 +130,14 @@ namespace Microsoft
                     void _UpdateSystemMetrics() const;
 
                     // Wndproc
-                    static LRESULT CALLBACK s_ConsoleWindowProc(_In_ HWND hwnd, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam);
-                    LRESULT CALLBACK ConsoleWindowProc(_In_ HWND, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam);
+                    static LRESULT CALLBACK s_ConsoleWindowProc(_In_ HWND hwnd,
+                                                                _In_ UINT uMsg,
+                                                                _In_ WPARAM wParam,
+                                                                _In_ LPARAM lParam);
+                    LRESULT CALLBACK ConsoleWindowProc(_In_ HWND,
+                                                       _In_ UINT uMsg,
+                                                       _In_ WPARAM wParam,
+                                                       _In_ LPARAM lParam);
 
                     // Wndproc helpers
                     void _HandleDrop(_In_ const WPARAM wParam) const;
@@ -123,16 +145,22 @@ namespace Microsoft
                     void _HandleWindowPosChanged(_In_ const LPARAM lParam);
 
                     // Accessibility/UI Automation
-                    LRESULT _HandleGetObject(_In_ HWND const hwnd, _In_ WPARAM const wParam, _In_ LPARAM const lParam);
+                    LRESULT _HandleGetObject(_In_ HWND const hwnd,
+                                             _In_ WPARAM const wParam,
+                                             _In_ LPARAM const lParam);
                     IRawElementProviderSimple* _GetUiaProvider();
                     WindowUiaProvider* _pUiaProvider = nullptr;
 
                     // Dynamic Settings helpers
-                    static LRESULT s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle, _In_ const BOOL fAutoPos, _In_ const Window* const pWindow);
-                    static LRESULT s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle, _In_ const Window* const pWindow);
+                    static LRESULT s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
+                                                         _In_ const BOOL fAutoPos,
+                                                         _In_ const Window* const pWindow);
+                    static LRESULT s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle,
+                                                             _In_ const Window* const pWindow);
 
-                    // The size/position of the window on the most recent update
-                    // This is remembered so we can figure out which size the client was resized from
+                    // The size/position of the window on the most recent update.
+                    // This is remembered so we can figure out which
+                    // size the client was resized from.
                     RECT _rcClientLast;
 
                     // Full screen
@@ -144,13 +172,14 @@ namespace Microsoft
                     RECT _rcNonFullscreenWindowSize;
 
                     // math helpers
-                    void _CalculateWindowRect(_In_ COORD const coordWindowInChars, _Inout_ RECT* const prectWindow) const;
+                    void _CalculateWindowRect(_In_ COORD const coordWindowInChars,
+                                              _Inout_ RECT* const prectWindow) const;
                     static void s_CalculateWindowRect(_In_ COORD const coordWindowInChars,
-                        _In_ int const iDpi,
-                        _In_ COORD const coordFontSize,
-                        _In_ COORD const coordBufferSize,
-                        _In_opt_ HWND const hWnd,
-                        _Inout_ RECT* const prectWindow);
+                                                      _In_ int const iDpi,
+                                                      _In_ COORD const coordFontSize,
+                                                      _In_ COORD const coordBufferSize,
+                                                      _In_opt_ HWND const hWnd,
+                                                      _Inout_ RECT* const prectWindow);
 
                     static void s_ReinitializeFontsForDPIChange();
                     RECT _rcWhenDpiChanges = { 0 };
@@ -159,7 +188,8 @@ namespace Microsoft
                     SIZE _sizeSuggested = { 0 };
 
 
-                    static void s_ConvertWindowPosToWindowRect(_In_ LPWINDOWPOS const lpWindowPos, _Out_ RECT* const prc);
+                    static void s_ConvertWindowPosToWindowRect(_In_ LPWINDOWPOS const lpWindowPos,
+                                                               _Out_ RECT* const prc);
 
                     BOOL _fHasMoved;
                 };

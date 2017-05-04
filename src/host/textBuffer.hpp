@@ -60,6 +60,7 @@ filling in the last row, and updating the screen.
 //     Chars Left               Right                end of Chars buffer
 #include "cursor.h"
 #include "..\renderer\inc\FontInfo.hpp"
+#include "..\renderer\inc\FontInfoDesired.hpp"
 
 typedef struct _CHAR_ROW
 {
@@ -278,6 +279,8 @@ public:
     void SetFirstRowIndex(_In_ SHORT const FirstRowIndex);
     void SetCoordBufferSize(_In_ COORD const coordBufferSize);
 
+    UINT TotalRowCount() const;
+
     CHAR_INFO GetFill() const;
     void SetFill(_In_ const CHAR_INFO ciFill);
 
@@ -299,7 +302,6 @@ private:
     FontInfoDesired _fiDesiredFont;
 
     TEXT_BUFFER_INFO(_In_ const FontInfo* const pfiFont);
-    UINT _TotalRowCount() const;
 
     COORD GetPreviousFromCursor() const;
 

@@ -7,12 +7,9 @@
 #include "precomp.h"
 
 #include "screenInfo.hpp"
-
 #include "dbcs.h"
 #include "output.h"
-
 #include <math.h>
-
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
@@ -363,7 +360,7 @@ COORD SCREEN_INFORMATION::GetMinWindowSizeInCharacters(_In_ COORD const coordFon
     // now retrieve the font size and divide the pixel counts into character counts
     COORD coordFont = coordFontSize; // by default, use the size we were given
 
-    // If text info has been set up, instead retrieve it's font size
+    // If text info has been set up, instead retrieve its font size
     if (this->TextInfo != nullptr)
     {
         coordFont = this->GetScreenFontSize();
@@ -416,7 +413,7 @@ COORD SCREEN_INFORMATION::GetLargestWindowSizeInCharacters(_In_ COORD const coor
     // now retrieve the font size and divide the pixel counts into character counts
     COORD coordFont = coordFontSize; // by default, use the size we were given
 
-    // If renderer has been set up, instead retrieve it's font size
+    // If renderer has been set up, instead retrieve its font size
     if (ServiceLocator::LocateGlobals()->pRender != nullptr)
     {
         coordFont = GetScreenFontSize();
@@ -430,7 +427,7 @@ COORD SCREEN_INFORMATION::GetLargestWindowSizeInCharacters(_In_ COORD const coor
 
 COORD SCREEN_INFORMATION::GetScrollBarSizesInCharacters() const
 {
-    COORD coordFont = GetScreenFontSize();;
+    COORD coordFont = GetScreenFontSize();
 
     SHORT vScrollSize = ServiceLocator::LocateGlobals()->sVerticalScrollSize;
     SHORT hScrollSize = ServiceLocator::LocateGlobals()->sHorizontalScrollSize;
@@ -466,7 +463,7 @@ COORD SCREEN_INFORMATION::GetScreenFontSize() const
     // If we have no renderer, then we don't really need any sort of pixel math. so the "font size" for the scale factor
     // (which is used almost everywhere around the code as * and / calls) should just be 1,1 so those operations will do
     // effectively nothing.
-    COORD coordRet = { 1,1 };
+    COORD coordRet = { 1, 1 };
     if (ServiceLocator::LocateGlobals()->pRender != nullptr)
     {
         coordRet = ServiceLocator::LocateGlobals()->pRender->GetFontSize();
@@ -533,10 +530,9 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX, _In_ short con
             TextAttributeRun* pAttrRun;
             Row->AttrRow.FindAttrIndex(sStartX, &pAttrRun, &CountOfAttr);
 
-            LONG charAndAttr = MAKELONG(
-                Char,
-                ServiceLocator::LocateGlobals()->getConsoleInformation()
-                    ->GenerateLegacyAttributes(pAttrRun->GetAttributes()));
+            LONG charAndAttr = MAKELONG(Char,
+                                        ServiceLocator::LocateGlobals()->getConsoleInformation()
+                                            ->GenerateLegacyAttributes(pAttrRun->GetAttributes()));
 
             _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
                                                                     charAndAttr);
@@ -545,6 +541,12 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX, _In_ short con
         {
             _pAccessibilityNotifier->NotifyConsoleUpdateRegionEvent(MAKELONG(sStartX, sStartY),
                                                                     MAKELONG(sEndX, sEndY));
+        }
+        IConsoleWindow* pConsoleWindow = ServiceLocator::LocateConsoleWindow();
+        if (pConsoleWindow)
+        {
+            pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId);
+            pConsoleWindow->SignalUia(UIA_LayoutInvalidatedEventId);
         }
     }
 }
@@ -593,15 +595,15 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
     const COORD coordScreenBufferSize = GetScreenBufferSize();
 
     ServiceLocator::LocateConsoleWindow()->UpdateScrollBar(true,
-                                           this->_IsAltBuffer(),
-                                           this->GetScreenWindowSizeY(),
-                                           coordScreenBufferSize.Y - 1,
-                                           this->_srBufferViewport.Top);
+                                                           this->_IsAltBuffer(),
+                                                           this->GetScreenWindowSizeY(),
+                                                           coordScreenBufferSize.Y - 1,
+                                                           this->_srBufferViewport.Top);
     ServiceLocator::LocateConsoleWindow()->UpdateScrollBar(false,
-                                           this->_IsAltBuffer(),
-                                           this->GetScreenWindowSizeX(),
-                                           coordScreenBufferSize.X - 1,
-                                           this->_srBufferViewport.Left);
+                                                           this->_IsAltBuffer(),
+                                                           this->GetScreenWindowSizeX(),
+                                                           coordScreenBufferSize.X - 1,
+                                                           this->_srBufferViewport.Left);
 
     // Fire off an event to let accessibility apps know the layout has changed.
     _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
@@ -802,8 +804,8 @@ void SCREEN_INFORMATION::ProcessResizeWindow(_In_ const RECT* const prcClientNew
 // Return Value:
 // - S_OK if math was successful. Check with SUCCEEDED/FAILED macro.
 HRESULT SCREEN_INFORMATION::_AdjustScreenBufferHelper(_In_ const RECT* const prcClientNew,
-                                                   _In_ COORD const coordBufferOld,
-                                                   _Out_ COORD* const pcoordClientNewCharacters)
+                                                      _In_ COORD const coordBufferOld,
+                                                      _Out_ COORD* const pcoordClientNewCharacters)
 {
     // Get the font size ready.
     COORD const coordFontSize = GetScreenFontSize();
@@ -849,7 +851,7 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(_In_ const RECT* const prcClient
 {
     // Prepare the buffer sizes.
     // We need the main's size here to maintain the right scrollbar visibility.
-    COORD const coordBufferSizeOld = _IsAltBuffer()? _psiMainBuffer->GetScreenBufferSize() : GetScreenBufferSize();
+    COORD const coordBufferSizeOld = _IsAltBuffer() ? _psiMainBuffer->GetScreenBufferSize() : GetScreenBufferSize();
     COORD coordBufferSizeNew = coordBufferSizeOld;
 
     // First figure out how many characters we could fit into the new window given the old buffer size
@@ -929,7 +931,11 @@ void SCREEN_INFORMATION::_CalculateViewportSize(_In_ const RECT* const prcClient
 
     bool fIsHorizontalVisible;
     bool fIsVerticalVisible;
-    s_CalculateScrollbarVisibility(prcClientArea, &coordBufferSize, &coordFontSize, &fIsHorizontalVisible, &fIsVerticalVisible);
+    s_CalculateScrollbarVisibility(prcClientArea,
+                                   &coordBufferSize,
+                                   &coordFontSize,
+                                   &fIsHorizontalVisible,
+                                   &fIsVerticalVisible);
 
     if (fIsHorizontalVisible)
     {
@@ -953,13 +959,16 @@ void SCREEN_INFORMATION::_CalculateViewportSize(_In_ const RECT* const prcClient
 // - fResizeFromBottom - If false, will trim/add to top of viewport first. If true, will trim/add to left.
 // Return Value:
 // - <none>
-void SCREEN_INFORMATION::_InternalSetViewportSize(_In_ const COORD* const pcoordSize, _In_ bool const fResizeFromTop, _In_ bool const fResizeFromLeft)
+void SCREEN_INFORMATION::_InternalSetViewportSize(_In_ const COORD* const pcoordSize,
+                                                  _In_ bool const fResizeFromTop,
+                                                  _In_ bool const fResizeFromLeft)
 {
     short const DeltaX = pcoordSize->X - GetScreenWindowSizeX();
     short const DeltaY = pcoordSize->Y - GetScreenWindowSizeY();
     const COORD coordScreenBufferSize = GetScreenBufferSize();
 
-    // Now we need to determine what our new Window size should be. Note that Window here refers to the character/row window.
+    // Now we need to determine what our new Window size should
+    // be. Note that Window here refers to the character/row window.
     if (fResizeFromLeft)
     {
         // we're being horizontally sized from the left border
@@ -971,7 +980,8 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(_In_ const COORD* const pcoord
         }
         else
         {
-            // if we're resizing horizontally, we want to show as much content above as we can, but we can't show more
+            // if we're resizing horizontally, we want to show as much
+            // content above as we can, but we can't show more
             // than the left of the window
             this->_srBufferViewport.Left = 0;
             this->_srBufferViewport.Right += (SHORT)abs(sLeftProposed);
@@ -998,8 +1008,12 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(_In_ const COORD* const pcoord
         // we're being vertically sized from the top border
         if (sTopProposed >= 0)
         {
-            // Special case: Only modify the top position if we're not on the 0th row of the buffer.
-            // If we're on the 0th row, people expect it to stay stuck to the top of the window, not to start collapsing down and hiding the top rows.
+            // Special case: Only modify the top position if we're not
+            // on the 0th row of the buffer.
+
+            // If we're on the 0th row, people expect it to stay stuck
+            // to the top of the window, not to start collapsing down
+            // and hiding the top rows.
             if (this->_srBufferViewport.Top > 0)
             {
                 // there's enough room in the backlog to just expand the top
@@ -1007,15 +1021,18 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(_In_ const COORD* const pcoord
             }
             else
             {
-                // If we didn't adjust the top, we need to trim off the number of rows from the bottom instead.
-                // NOTE: It's += because DeltaY will be negative already for this circumstance.
+                // If we didn't adjust the top, we need to trim off
+                // the number of rows from the bottom instead.
+                // NOTE: It's += because DeltaY will be negative
+                // already for this circumstance.
                 ASSERT(DeltaY <= 0);
                 this->_srBufferViewport.Bottom += DeltaY;
             }
         }
         else
         {
-            // if we're resizing vertically, we want to show as much content above as we can, but we can't show more
+            // if we're resizing vertically, we want to show as much
+            // content above as we can, but we can't show more
             // than the top of the window
             this->_srBufferViewport.Top = 0;
             this->_srBufferViewport.Bottom += (SHORT)abs(sTopProposed);
@@ -1030,22 +1047,28 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(_In_ const COORD* const pcoord
             // If the new bottom is supposed to be before the final line of the buffer
             // Check to ensure that we don't hide the prompt by collapsing the window.
 
-            // The final valid end position will be the coordinates of the last character displayed
-            // (including any characters in the input line)
+            // The final valid end position will be the coordinates of
+            // the last character displayed (including any characters
+            // in the input line)
             COORD coordValidEnd;
             Selection::Instance().GetValidAreaBoundaries(nullptr, &coordValidEnd);
 
-            // If the bottom of the window when adjusted would be above the final line of valid text...
+            // If the bottom of the window when adjusted would be
+            // above the final line of valid text...
             if (this->_srBufferViewport.Bottom + DeltaY < coordValidEnd.Y)
             {
-                // Adjust the top of the window instead of the bottom (so the lines slide upward)
+                // Adjust the top of the window instead of the bottom
+                // (so the lines slide upward)
                 this->_srBufferViewport.Top -= DeltaY;
 
-                // If we happened to move the top of the window past the 0th row (first row in the buffer)
+                // If we happened to move the top of the window past
+                // the 0th row (first row in the buffer)
                 if (this->_srBufferViewport.Top < 0)
                 {
-                    // Find the amount we went past 0, correct the top of the window back to 0,
-                    // and instead adjust the bottom even though it will cause us to lose the prompt line.
+                    // Find the amount we went past 0, correct the top
+                    // of the window back to 0, and instead adjust the
+                    // bottom even though it will cause us to lose the
+                    // prompt line.
                     const short cRemainder = 0 - this->_srBufferViewport.Top;
                     _srBufferViewport.Top += cRemainder;
                     ASSERT(_srBufferViewport.Top == 0);
@@ -1094,17 +1117,25 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(_In_ const COORD* const pcoord
 // - pcoordSize - Requested viewport width/heights in characters
 // Return Value:
 // - <none>
-void SCREEN_INFORMATION::_AdjustViewportSize(_In_ const RECT* const prcClientNew, _In_ const RECT* const prcClientOld, _In_ const COORD* const pcoordSize)
+void SCREEN_INFORMATION::_AdjustViewportSize(_In_ const RECT* const prcClientNew,
+                                             _In_ const RECT* const prcClientOld,
+                                             _In_ const COORD* const pcoordSize)
 {
-    // If the left is the only one that changed (and not the right also), then adjust from the left.
-    // Otherwise if the right changes or both changed, bias toward leaving the top-left corner in place and resize from the bottom right.
+    // If the left is the only one that changed (and not the right
+    // also), then adjust from the left. Otherwise if the right
+    // changes or both changed, bias toward leaving the top-left
+    // corner in place and resize from the bottom right.
     // --
-    // Resizing from the bottom right is more expected by users.
-    // Normally only one dimension (or one corner) will change at a time if the user is moving it.
-    // However, if the window is being dragged and forced to resize at a monitor boundary, all 4 will change.
-    // In this case especially, users expect the top left to stay in place and the bottom right to adapt.
-    bool const fResizeFromLeft = prcClientNew->left != prcClientOld->left && prcClientNew->right == prcClientOld->right;
-    bool const fResizeFromTop = prcClientNew->top != prcClientOld->top && prcClientNew->bottom == prcClientOld->bottom;
+    // Resizing from the bottom right is more expected by
+    // users. Normally only one dimension (or one corner) will change
+    // at a time if the user is moving it. However, if the window is
+    // being dragged and forced to resize at a monitor boundary, all 4
+    // will change. In this case especially, users expect the top left
+    // to stay in place and the bottom right to adapt.
+    bool const fResizeFromLeft = prcClientNew->left != prcClientOld->left &&
+                                 prcClientNew->right == prcClientOld->right;
+    bool const fResizeFromTop = prcClientNew->top != prcClientOld->top &&
+                                prcClientNew->bottom == prcClientOld->bottom;
 
     _InternalSetViewportSize(pcoordSize, fResizeFromLeft, fResizeFromTop);
 }
@@ -1117,8 +1148,10 @@ void SCREEN_INFORMATION::_AdjustViewportSize(_In_ const RECT* const prcClientNew
 // - prcClientArea - Client area in pixels of the available space for rendering
 // - pcoordBufferSize - Buffer size in characters
 // - pcoordFontSize - Font size in pixels per character
-// - pfIsHorizontalVisible - Indicates whether the horizontal scroll bar (consuming vertical space) will need to be visible
-// - pfIsVerticalVisible - Indicates whether the vertical scroll bar (consuming horizontal space) will need to be visible
+// - pfIsHorizontalVisible - Indicates whether the horizontal scroll
+//   bar (consuming vertical space) will need to be visible
+// - pfIsVerticalVisible - Indicates whether the vertical scroll bar
+//   (consuming horizontal space) will need to be visible
 // Return Value:
 // - <none>
 void SCREEN_INFORMATION::s_CalculateScrollbarVisibility(_In_ const RECT* const prcClientArea,
@@ -1149,13 +1182,17 @@ void SCREEN_INFORMATION::s_CalculateScrollbarVisibility(_In_ const RECT* const p
     sizeBufferPixels.cy = pcoordBufferSize->Y * pcoordFontSize->Y;
 
     // Now figure out whether we need one or both scroll bars.
-    // Showing a scroll bar in one direction may necessitate showing the scroll bar in the other (as it will consume client area space).
+    // Showing a scroll bar in one direction may necessitate showing
+    // the scroll bar in the other (as it will consume client area
+    // space).
 
     if (sizeBufferPixels.cx > sizeClientPixels.cx)
     {
         *pfIsHorizontalVisible = true;
 
-        // If we have a horizontal bar, remove it from available vertical space and check that remaining client area is enough.
+        // If we have a horizontal bar, remove it from available
+        // vertical space and check that remaining client area is
+        // enough.
         sizeClientPixels.cy -= ServiceLocator::LocateGlobals()->sHorizontalScrollSize;
 
         if (sizeBufferPixels.cy > sizeClientPixels.cy)
@@ -1167,7 +1204,9 @@ void SCREEN_INFORMATION::s_CalculateScrollbarVisibility(_In_ const RECT* const p
     {
         *pfIsVerticalVisible = true;
 
-        // If we have a vertical bar, remove it from available horizontal space and check that remaining client area is enough.
+        // If we have a vertical bar, remove it from available
+        // horizontal space and check that remaining client area is
+        // enough.
         sizeClientPixels.cx -= ServiceLocator::LocateGlobals()->sVerticalScrollSize;
 
         if (sizeBufferPixels.cx > sizeClientPixels.cx)
@@ -1232,15 +1271,16 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
         // skip any drawing updates that might occur as we manipulate the new buffer
         pNewCursor->StartDeferDrawing();
 
-        // We need to save the old cursor position so that we can place the new cursor back on the equivalent character
-        //   in the new buffer.
+        // We need to save the old cursor position so that we can
+        // place the new cursor back on the equivalent character in
+        // the new buffer.
         COORD cOldCursorPos = pOldCursor->GetPosition();
         COORD cOldLastChar = TextInfo->GetLastNonSpaceCharacter();
 
         short const cOldRowsTotal = cOldLastChar.Y + 1;
         short const cOldColsTotal = GetScreenBufferSize().X;
 
-        COORD cNewCursorPos = {0};
+        COORD cNewCursorPos = { 0 };
         bool fFoundCursorPos = false;
         // Loop through all the rows of the old buffer and reprint them into the new buffer
         for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
@@ -1249,24 +1289,33 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             const ROW* const pRow = TextInfo->GetRowByOffset(iOldRow);
             short iRight = pRow->CharRow.Right;
 
-            // There is a special case here. If the row has a "wrap" flag on it, but the right isn't equal to the width (one index past the final valid index in the row)
-            // then there were a bunch trailing of spaces in the row.
-            // (But the measuring functions for each row Left/Right do not count spaces as "displayable" so they're not included.)
-            // As such, adjust the "right" to be the width of the row to capture all these spaces
+            // There is a special case here. If the row has a "wrap"
+            // flag on it, but the right isn't equal to the width (one
+            // index past the final valid index in the row) then there
+            // were a bunch trailing of spaces in the row.
+            // (But the measuring functions for each row Left/Right do
+            // not count spaces as "displayable" so they're not
+            // included.)
+            // As such, adjust the "right" to be the width of the row
+            // to capture all these spaces
             if (pRow->CharRow.WasWrapForced())
             {
                 iRight = cOldColsTotal;
 
                 // And a combined special case.
-                // If we wrapped off the end of the row by adding a piece of padding because of a double byte LEADING character,
-                // then remove one from the "right" to leave this padding out of the copy process.
+                // If we wrapped off the end of the row by adding a
+                // piece of padding because of a double byte LEADING
+                // character, then remove one from the "right" to
+                // leave this padding out of the copy process.
                 if (pRow->CharRow.WasDoubleBytePadded())
                 {
                     iRight--;
                 }
             }
 
-            // Loop through every character in the current row (up to the "right" boundary, which is one past the final valid character)
+            // Loop through every character in the current row (up to
+            // the "right" boundary, which is one past the final valid
+            // character)
             for (short iOldCol = 0; iOldCol < iRight; iOldCol++)
             {
                 // Retrieve old character and double-byte attributes
@@ -1294,19 +1343,25 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             }
             if (NT_SUCCESS(status))
             {
-                // If we didn't have a full row to copy, insert a new line into the new buffer.
-                // Only do so if we were not forced to wrap. If we did force a word wrap, then the existing line break was only because we ran out of space.
+                // If we didn't have a full row to copy, insert a new
+                // line into the new buffer.
+                // Only do so if we were not forced to wrap. If we did
+                // force a word wrap, then the existing line break was
+                // only because we ran out of space.
                 if (iRight < cOldColsTotal && !pRow->CharRow.WasWrapForced())
                 {
-                    if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y){
+                    if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
+                    {
                         cNewCursorPos = pNewCursor->GetPosition();
                         fFoundCursorPos = true;
                     }
                     // Only do this if it's not the final line in the buffer.
-                    // On the final line, we want the cursor to sit where it is done printing for the cursor adjustment to follow.
+                    // On the final line, we want the cursor to sit
+                    // where it is done printing for the cursor
+                    // adjustment to follow.
                     if (iOldRow < cOldRowsTotal - 1)
                     {
-                        status = pNewBuffer->NewlineCursor()? status : STATUS_NO_MEMORY;
+                        status = pNewBuffer->NewlineCursor() ? status : STATUS_NO_MEMORY;
                     }
                 }
             }
@@ -1336,7 +1391,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
                 ROW* pLastRow = pNewBuffer->GetRowByOffset(cNewLastChar.Y);
                 if (pLastRow->CharRow.WasWrapForced())
                 {
-                    iNewlines = max(iNewlines-1, 0);
+                    iNewlines = max(iNewlines - 1, 0);
                 }
                 else
                 {
@@ -1345,7 +1400,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
                     pLastRow = TextInfo->GetRowByOffset(cOldLastChar.Y);
                     if (pLastRow->CharRow.WasWrapForced())
                     {
-                        iNewlines = max(iNewlines-1, 0);
+                        iNewlines = max(iNewlines - 1, 0);
                     }
                 }
 
@@ -1359,7 +1414,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
                 }
                 if (NT_SUCCESS(status))
                 {
-                    for (int c = 0; c < iIncrements-1; c++)
+                    for (int c = 0; c < iIncrements - 1; c++)
                     {
                         if (!pNewBuffer->IncrementCursor())
                         {
@@ -1880,7 +1935,13 @@ NTSTATUS SCREEN_INFORMATION::_CreateAltBuffer(_Out_ SCREEN_INFORMATION** const p
 
     const FontInfo* const pfiExistingFont = this->TextInfo->GetCurrentFont();
 
-    NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize, pfiExistingFont, WindowSize, Fill, Fill, CURSOR_SMALL_SIZE, ppsiNewScreenBuffer);
+    NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
+                                                         pfiExistingFont,
+                                                         WindowSize,
+                                                         Fill,
+                                                         Fill,
+                                                         CURSOR_SMALL_SIZE,
+                                                         ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
     {
         s_InsertScreenBuffer(*ppsiNewScreenBuffer);

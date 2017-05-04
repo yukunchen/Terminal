@@ -32,6 +32,6 @@ namespace Microsoft
                 IHighDpiApi(IHighDpiApi const&) = delete;
                 IHighDpiApi& operator=(IHighDpiApi const&) = delete;
             };
-        };
-    };
-};
+        }
+    }
+}

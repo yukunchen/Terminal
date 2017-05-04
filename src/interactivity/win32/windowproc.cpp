@@ -164,11 +164,11 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         break;
     }
 
-    /*case WM_GETOBJECT:
+    case WM_GETOBJECT:
     {
         Status = _HandleGetObject(hWnd, wParam, lParam);
         break;
-    }*/
+    }
 
     case WM_SIZING:
     {
@@ -846,7 +846,7 @@ HRESULT Window::_HandlePaint() const
     PAINTSTRUCT ps;
     HDC const hdc = BeginPaint(hwnd, &ps);
     RETURN_HR_IF_NULL(E_FAIL, hdc);
-    
+
     if (ServiceLocator::LocateGlobals()->pRender != nullptr)
     {
         // In lieu of actually painting right now, we're just going to aggregate this information in the renderer
@@ -907,7 +907,7 @@ LRESULT Window::_HandleGetObject(_In_ HWND const hwnd, _In_ WPARAM const wParam,
         // NOTE: Deliverable MSFT: 10881045 is required before this will work properly.
         // The UIAutomationCore.dll cannot currently handle the fact that our HWND is assigned to the child PID.
         // It will attempt to set up events/pipes on the wrong PID/HWND combination when called here.
-        // A temporary workaround until that is delivered is to disable window handle reparenting using 
+        // A temporary workaround until that is delivered is to disable window handle reparenting using
         // ConsoleControl's ConsoleSetWindowOwner call.
         retVal = UiaReturnRawElementProvider(hwnd, wParam, lParam, _GetUiaProvider());
     }
