@@ -9,11 +9,12 @@
 #include "window.hpp"
 
 #include "screenInfoUiaProvider.hpp"
+#include "UiaTextRange.hpp"
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
 WindowUiaProvider::WindowUiaProvider(_In_ Window* const pWindow) :
-    _pWindow(pWindow),
+    _pWindow(THROW_HR_IF_NULL(E_INVALIDARG, pWindow)),
     _cRefs(1)
 {
 
@@ -22,6 +23,18 @@ WindowUiaProvider::WindowUiaProvider(_In_ Window* const pWindow) :
 WindowUiaProvider::~WindowUiaProvider()
 {
 
+}
+
+HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
+{
+    IRawElementProviderSimple* pProvider;
+    HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
+                                      reinterpret_cast<void**>(&pProvider));
+    if (SUCCEEDED(hr))
+    {
+        UiaRaiseAutomationEvent(pProvider, id);
+    }
+    return hr;
 }
 
 #pragma region IUnknown
@@ -89,9 +102,9 @@ IFACEMETHODIMP WindowUiaProvider::get_ProviderOptions(_Out_ ProviderOptions* pOp
 IFACEMETHODIMP WindowUiaProvider::GetPatternProvider(_In_ PATTERNID patternId, _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
     UNREFERENCED_PARAMETER(patternId);
+    *ppInterface = nullptr;
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    *ppInterface = nullptr;
     return S_OK;
 }
 
@@ -123,6 +136,11 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _
         pVariant->vt = VT_BOOL;
         pVariant->boolVal = VARIANT_TRUE;
     }
+    else if (propertyId = UIA_IsContentElementPropertyId)
+    {
+        pVariant->vt = VT_BOOL;
+        pVariant->boolVal = VARIANT_TRUE;
+    }
     else if (propertyId == UIA_IsKeyboardFocusablePropertyId)
     {
         pVariant->vt = VT_BOOL;
@@ -146,7 +164,7 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _
 }
 
 // Implementation of IRawElementProviderSimple::get_HostRawElementProvider.
-// Gets the default UI Automation provider for the host window. This provider 
+// Gets the default UI Automation provider for the host window. This provider
 // supplies many properties.
 IFACEMETHODIMP WindowUiaProvider::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
 {
@@ -170,6 +188,15 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
     {
         *ppProvider = _GetScreenInfoProvider();
         RETURN_IF_NULL_ALLOC(*ppProvider);
+
+        // signal that the focus changed
+        IRawElementProviderSimple* pSimpleProvider;
+        HRESULT hr = (*ppProvider)->QueryInterface(__uuidof(IRawElementProviderSimple),
+                                                   reinterpret_cast<void**>(&pSimpleProvider));
+        if (SUCCEEDED(hr))
+        {
+            UiaRaiseAutomationEvent(pSimpleProvider, UIA_AutomationFocusChangedEventId);
+        }
     }
 
     // For the other directions (parent, next, previous) the default of nullptr is correct
@@ -256,14 +283,9 @@ IFACEMETHODIMP WindowUiaProvider::GetFocus(_COM_Outptr_result_maybenull_ IRawEle
 
 HWND WindowUiaProvider::_GetWindowHandle() const
 {
-    HWND hwnd = nullptr;
+    ASSERT(_pWindow != nullptr);
 
-    if (nullptr != _pWindow)
-    {
-        hwnd = _pWindow->GetWindowHandle();
-    }
-
-    return hwnd;
+    return _pWindow->GetWindowHandle();
 }
 
 HRESULT WindowUiaProvider::_EnsureValidHwnd() const
@@ -277,13 +299,11 @@ HRESULT WindowUiaProvider::_EnsureValidHwnd() const
 
 ScreenInfoUiaProvider* WindowUiaProvider::_GetScreenInfoProvider() const
 {
-    ScreenInfoUiaProvider* pProvider = nullptr;
+    ASSERT(_pWindow != nullptr);
 
-    if (nullptr != _pWindow)
-    {
-        SCREEN_INFORMATION* const pScreenInfo = _pWindow->GetScreenInfo();
-        pProvider = new ScreenInfoUiaProvider(_pWindow, pScreenInfo);
-    }
+    ScreenInfoUiaProvider* pProvider = nullptr;
+    SCREEN_INFORMATION* const pScreenInfo = _pWindow->GetScreenInfo();
+    pProvider = new ScreenInfoUiaProvider(_pWindow, pScreenInfo);
 
     return pProvider;
 }

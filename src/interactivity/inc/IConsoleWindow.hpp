@@ -14,6 +14,9 @@ Author(s):
 
 #pragma once
 
+// copied typedef from uiautomationcore.h
+typedef int EVENTID;
+
 namespace Microsoft
 {
     namespace Console
@@ -62,6 +65,8 @@ namespace Microsoft
                                               _In_ const WORD wAbsoluteChange) const = 0;
                 virtual void VerticalScroll(_In_ const WORD wScrollCommand,
                                             _In_ const WORD wAbsoluteChange) const = 0;
+                virtual HRESULT SignalUia(_In_ EVENTID id) = 0;
+                virtual RECT GetWindowRect() const = 0;
             };
         };
     };

@@ -149,7 +149,9 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
             {
                 get
                 {
-                    return (short)(this.Right - this.Left + 1); // The API returns bottom/right as the inclusive lower-right corner, so we need +1 for the true width
+                    // The API returns bottom/right as the inclusive lower-right 
+                    // corner, so we need +1 for the true width
+                    return (short)(this.Right - this.Left + 1);
                 }
             }
 
@@ -157,7 +159,9 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
             {
                 get
                 {
-                    return (short)(this.Bottom - this.Top + 1); // The API returns bottom/right as the inclusive lower-right corner, so we need +1 for the true height
+                    // The API returns bottom/right as the inclusive lower-right 
+                    // corner, so we need +1 for the true height
+                    return (short)(this.Bottom - this.Top + 1);
                 }
             }
 
@@ -394,6 +398,9 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
 
         [DllImport("user32.dll")]
         public static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
+
+        [DllImport("user32.dll")]
+        public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
         public const int GWL_STYLE = (-16);
         public const int GWL_EXSTYLE = (-20);

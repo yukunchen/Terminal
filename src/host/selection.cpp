@@ -31,18 +31,7 @@ Selection::~Selection()
 Selection& Selection::Instance()
 {
     static Selection s;
-
     return s;
-}
-
-Selection::Selection(Selection const&)
-{
-    ASSERT(false); // we don't want copies of the singleton
-}
-
-void Selection::operator=(Selection const&)
-{
-    ASSERT(false); // we don't want copies of the singleton
 }
 
 // Routine Description:

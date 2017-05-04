@@ -35,7 +35,8 @@ typedef enum DPI_AWARENESS {
 
 #endif
 
-// This type is being defined in RS2 but is percolating through the tree. Def it here if it hasn't collided with our branch yet.
+// This type is being defined in RS2 but is percolating through the
+// tree. Def it here if it hasn't collided with our branch yet.
 #ifndef DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2
 #define DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 ((DPI_AWARENESS_CONTEXT)-4)
 #endif
@@ -48,7 +49,7 @@ namespace Microsoft
         {
             namespace Win32
             {
-                class WindowDpiApi sealed : public IHighDpiApi
+                class WindowDpiApi final : public IHighDpiApi
                 {
                 public:
                     // IHighDpi Interface
@@ -59,15 +60,16 @@ namespace Microsoft
                     // Module-internal Functions
                     BOOL SetProcessDpiAwarenessContext(_In_ DPI_AWARENESS_CONTEXT dpiContext);
                     BOOL EnableChildWindowDpiMessage(_In_ HWND const hwnd,
-                        _In_ BOOL const fEnable);
+                                                     _In_ BOOL const fEnable);
                     BOOL AdjustWindowRectExForDpi(_Inout_ LPRECT const lpRect,
-                        _In_ DWORD const dwStyle,
-                        _In_ BOOL const bMenu,
-                        _In_ DWORD const dwExStyle,
-                        _In_ UINT const dpi);
+                                                  _In_ DWORD const dwStyle,
+                                                  _In_ BOOL const bMenu,
+                                                  _In_ DWORD const dwExStyle,
+                                                  _In_ UINT const dpi);
 
                     int GetWindowDPI(_In_ HWND const hwnd);
-                    int GetSystemMetricsForDpi(_In_ int const nIndex, _In_ UINT const dpi);
+                    int GetSystemMetricsForDpi(_In_ int const nIndex,
+                                               _In_ UINT const dpi);
 
 #ifdef CON_DPIAPI_INDIRECT
                     WindowDpiApi();
@@ -77,7 +79,7 @@ namespace Microsoft
                     HMODULE _hUser32;
 #endif
                 };
-            };
-        };
-    };
-};
+            }
+        }
+    }
+}

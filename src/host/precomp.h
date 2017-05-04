@@ -100,6 +100,7 @@ BOOL IsConsoleFullWidth(_In_ HDC hDC, _In_ DWORD CodePage, _In_ WCHAR wch);
 #endif
 
 #include "..\inc\contsf.h"
+#include "..\inc\operators.hpp"
 
 // TODO: MSFT 9355094 Find a better way of doing this. http://osgvsowi/9355094
 #define NTSTATUS_FROM_HRESULT(H) \
