@@ -14,6 +14,7 @@ Author(s):
 
 #pragma once
 
+// copied typedef from uiautomationcore.h
 typedef int EVENTID;
 
 namespace Microsoft
