@@ -680,7 +680,7 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
                                  nullptr);
                 if (!NT_SUCCESS(Status))
                 {
-                    return STATUS_SUCCESS;
+                    break;
                 }
                 IsCharFullWidth(*pwchBuffer) ? *pdwNumBytes += 2 : ++*pdwNumBytes;
                 pwchBuffer++;
