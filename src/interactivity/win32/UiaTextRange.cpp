@@ -1,3 +1,8 @@
+/********************************************************
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
 
 #include "precomp.h"
 #include "UiaTextRange.hpp"
@@ -22,14 +27,14 @@ int clamp(int val, int low, int high)
 }
 
 // degenerate range constructor
-UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
-                           const TEXT_BUFFER_INFO* const pOutputBuffer,
-                           SCREEN_INFORMATION* const pScreenInfo,
-                           const COORD currentFontSize) :
+UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                           _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
+                           _In_ const SCREEN_INFORMATION* const pScreenInfo,
+                           _In_ const COORD currentFontSize) :
     _cRefs{ 1 },
-    _pProvider{ pProvider },
-    _pOutputBuffer{ pOutputBuffer },
-    _pScreenInfo{ pScreenInfo },
+    _pProvider{ THROW_HR_IF_NULL(E_INVALIDARG, pProvider) },
+    _pOutputBuffer{ THROW_HR_IF_NULL(E_INVALIDARG, pOutputBuffer) },
+    _pScreenInfo{ THROW_HR_IF_NULL(E_INVALIDARG, pScreenInfo) },
     _currentFontSize{ currentFontSize },
     _start{ 0 },
     _end{ 0 }
@@ -40,16 +45,16 @@ UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
 #endif
 }
 
-UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
-                           const TEXT_BUFFER_INFO* const pOutputBuffer,
-                           SCREEN_INFORMATION* const pScreenInfo,
-                           const COORD currentFontSize,
-                           const int start,
-                           const int end) :
+UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                           _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
+                           _In_ const SCREEN_INFORMATION* const pScreenInfo,
+                           _In_ const COORD currentFontSize,
+                           _In_ const int start,
+                           _In_ const int end) :
     _cRefs{ 1 },
-    _pProvider{ pProvider },
-    _pOutputBuffer{ pOutputBuffer },
-    _pScreenInfo{ pScreenInfo },
+    _pProvider{ THROW_HR_IF_NULL(E_INVALIDARG, pProvider) },
+    _pOutputBuffer{ THROW_HR_IF_NULL(E_INVALIDARG, pOutputBuffer) },
+    _pScreenInfo{ THROW_HR_IF_NULL(E_INVALIDARG, pScreenInfo) },
     _currentFontSize{ currentFontSize },
     _start{ start },
     _end{ end }
@@ -61,15 +66,15 @@ UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
 }
 
 // returns a degenerate text range of the start of the line closest to the y value of point
-UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
-                           const TEXT_BUFFER_INFO* const pOutputBuffer,
-                           SCREEN_INFORMATION* const pScreenInfo,
-                           const COORD currentFontSize,
-                           const UiaPoint point) :
+UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                           _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
+                           _In_ const SCREEN_INFORMATION* const pScreenInfo,
+                           _In_ const COORD currentFontSize,
+                           _In_ const UiaPoint point) :
     _cRefs{ 1 },
-    _pProvider{ pProvider },
-    _pOutputBuffer{ pOutputBuffer },
-    _pScreenInfo{ pScreenInfo },
+    _pProvider{ THROW_HR_IF_NULL(E_INVALIDARG, pProvider) },
+    _pOutputBuffer{ THROW_HR_IF_NULL(E_INVALIDARG, pOutputBuffer) },
+    _pScreenInfo{ THROW_HR_IF_NULL(E_INVALIDARG, pScreenInfo) },
     _currentFontSize{ currentFontSize }
 {
 #if _DEBUG
@@ -97,14 +102,13 @@ UiaTextRange::UiaTextRange(IRawElementProviderSimple* pProvider,
         // change point coords to pixels relative to window
         HWND hwnd = _getWindowHandle();
         ScreenToClient(hwnd, &clientPoint);
-
         row = (clientPoint.y / currentFontSize.Y) + viewport.Top;
     }
     _start = _rowToEndpoint(row);
    _end = _start;
 }
 
-UiaTextRange::UiaTextRange(const UiaTextRange& a) :
+UiaTextRange::UiaTextRange(_In_ const UiaTextRange& a) :
     _cRefs{ 1 },
     _pProvider{ a._pProvider },
     _pOutputBuffer{ a._pOutputBuffer },
@@ -114,7 +118,7 @@ UiaTextRange::UiaTextRange(const UiaTextRange& a) :
     _end{ a._end }
 
 {
-    _pProvider->AddRef();
+    (static_cast<IUnknown*>(_pProvider))->AddRef();
 #if _DEBUG
    _id = id;
    ++id;
@@ -123,7 +127,7 @@ UiaTextRange::UiaTextRange(const UiaTextRange& a) :
 
 UiaTextRange::~UiaTextRange()
 {
-    _pProvider->Release();
+    (static_cast<IUnknown*>(_pProvider))->Release();
 }
 
 const int UiaTextRange::getStart() const
@@ -208,8 +212,8 @@ IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ 
 }
 
 
-IFACEMETHODIMP UiaTextRange::CompareEndpoints(TextPatternRangeEndpoint endpoint,
-                                            _In_opt_ ITextRangeProvider* pTargetRange,
+IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
+                                            _In_ ITextRangeProvider* pTargetRange,
                                             _In_ TextPatternRangeEndpoint targetEndpoint,
                                             _Out_ int* pRetVal)
 {
@@ -277,24 +281,32 @@ IFACEMETHODIMP UiaTextRange::FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
                                         _In_ BOOL searchBackward,
                                         _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-    textAttributeId; val; searchBackward; ppRetVal;
+    UNREFERENCED_PARAMETER(textAttributeId);
+    UNREFERENCED_PARAMETER(val);
+    UNREFERENCED_PARAMETER(searchBackward);
+    UNREFERENCED_PARAMETER(ppRetVal);
     return E_NOTIMPL;
 }
 
 // we don't support this currently
 IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
-                                    BOOL searchBackward,
-                                    BOOL ignoreCase,
-                                    _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
+                                      _In_ BOOL searchBackward,
+                                      _In_ BOOL ignoreCase,
+                                      _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-    text; searchBackward; ignoreCase; ppRetVal;
+    UNREFERENCED_PARAMETER(text);
+    UNREFERENCED_PARAMETER(searchBackward);
+    UNREFERENCED_PARAMETER(ignoreCase);
+    UNREFERENCED_PARAMETER(ppRetVal);
     return E_NOTIMPL;
 }
 
 // we don't support this currently
-IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId, _Out_ VARIANT* pRetVal)
+IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
+                                               _Out_ VARIANT* pRetVal)
 {
-    textAttributeId; pRetVal;
+    UNREFERENCED_PARAMETER(textAttributeId);
+    UNREFERENCED_PARAMETER(pRetVal);
     return E_NOTIMPL;
 }
 
@@ -438,7 +450,7 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
 IFACEMETHODIMP UiaTextRange::GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal)
 {
     *ppRetVal = _pProvider;
-    _pProvider->AddRef();
+    (static_cast<IUnknown*>(_pProvider))->AddRef();
     return S_OK;
 }
 
@@ -603,8 +615,8 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
 }
 
 IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint endpoint,
-                                                _In_opt_ ITextRangeProvider* pTargetRange,
-                                                _In_ TextPatternRangeEndpoint targetEndpoint)
+                                                 _In_ ITextRangeProvider* pTargetRange,
+                                                 _In_ TextPatternRangeEndpoint targetEndpoint)
 {
     UiaTextRange* range = dynamic_cast<UiaTextRange*>(pTargetRange);
     if (range == nullptr)
@@ -660,6 +672,7 @@ IFACEMETHODIMP UiaTextRange::Select()
     coordStart.X = static_cast<SHORT>(_endpointToColumn(_start));
     coordStart.Y = static_cast<SHORT>(_endpointToRow(_start));
 
+    // -1 because end is an exclusive endpoint
     coordEnd.X = static_cast<SHORT>(_endpointToColumn(_end - 1));
     coordEnd.Y = static_cast<SHORT>(_endpointToRow(_end - 1));
 
@@ -728,25 +741,26 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
 
 IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
+    // we don't have any children
     *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 0);
     return S_OK;
 }
 
 #pragma endregion
 
-bool UiaTextRange::_isDegenerate()
+bool UiaTextRange::_isDegenerate() const
 {
     return (_start == _end);
 }
 
-bool UiaTextRange::_isLineInViewport(const int lineNumber)
+bool UiaTextRange::_isLineInViewport(const int lineNumber) const
 {
     const SMALL_RECT viewport = _getViewport();
     return _isLineInViewport(lineNumber, viewport);
 }
 
 // TODO find a better way to do this
-bool UiaTextRange::_isLineInViewport(const int lineNumber, const SMALL_RECT viewport)
+bool UiaTextRange::_isLineInViewport(const int lineNumber, const SMALL_RECT viewport) const
 {
     const int viewportHeight = viewport.Bottom - viewport.Top + 1;
     const COORD screenBufferCoords = _getScreenBufferCoords();
@@ -762,7 +776,7 @@ bool UiaTextRange::_isLineInViewport(const int lineNumber, const SMALL_RECT view
     return false;
 }
 
-int UiaTextRange::_lineNumberToViewport(int lineNumber)
+int UiaTextRange::_lineNumberToViewport(const int lineNumber) const
 {
     const SMALL_RECT viewport = _getViewport();
     const int viewportHeight = viewport.Bottom - viewport.Top + 1;
@@ -781,19 +795,19 @@ int UiaTextRange::_lineNumberToViewport(int lineNumber)
 
 }
 
-const int UiaTextRange::_endpointToRow(const int endpoint)
+const int UiaTextRange::_endpointToRow(const int endpoint) const
 {
     const COORD screenBufferCoords = _getScreenBufferCoords();
     return endpoint / screenBufferCoords.X;
 }
 
-const int UiaTextRange::_endpointToColumn(const int endpoint)
+const int UiaTextRange::_endpointToColumn(const int endpoint) const
 {
     const COORD screenBufferCoords = _getScreenBufferCoords();
     return endpoint % screenBufferCoords.X;
 }
 
-const int UiaTextRange::_rowToEndpoint(const int row)
+const int UiaTextRange::_rowToEndpoint(const int row) const
 {
     const COORD screenBufferCoords = _getScreenBufferCoords();
     return row * screenBufferCoords.X;

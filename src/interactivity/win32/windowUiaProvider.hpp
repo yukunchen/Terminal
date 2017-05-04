@@ -29,15 +29,15 @@ namespace Microsoft
                 class Window;
                 class ScreenInfoUiaProvider;
 
-                class WindowUiaProvider : public IRawElementProviderSimple,
-                                          public IRawElementProviderFragment,
-                                          public IRawElementProviderFragmentRoot
+                class WindowUiaProvider final : public IRawElementProviderSimple,
+                                                public IRawElementProviderFragment,
+                                                public IRawElementProviderFragmentRoot
                 {
                 public:
                     WindowUiaProvider(_In_ Window* const pWindow);
                     virtual ~WindowUiaProvider();
 
-                    void Signal(_In_ EVENTID id);
+                    HRESULT Signal(_In_ EVENTID id);
 
                     // IUnknown methods
                     IFACEMETHODIMP_(ULONG) AddRef();

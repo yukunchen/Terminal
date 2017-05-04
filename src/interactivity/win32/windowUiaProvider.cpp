@@ -25,11 +25,16 @@ WindowUiaProvider::~WindowUiaProvider()
 
 }
 
-void WindowUiaProvider::Signal(_In_ EVENTID id)
+HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
 {
-    IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
-    this->AddRef();
-    UiaRaiseAutomationEvent(pProvider, id);
+    IRawElementProviderSimple* pProvider;
+    HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
+                                      reinterpret_cast<void**>(&pProvider));
+    if (SUCCEEDED(hr))
+    {
+        UiaRaiseAutomationEvent(pProvider, id);
+    }
+    return hr;
 }
 
 #pragma region IUnknown

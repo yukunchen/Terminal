@@ -3,6 +3,7 @@
 *   Copyright (C) Microsoft. All rights reserved.       *
 *                                                       *
 ********************************************************/
+
 #include "precomp.h"
 
 #include "screenInfoUiaProvider.hpp"
@@ -37,7 +38,8 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int 
     return psa;
 }
 
-ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Window* const pParent, _In_ SCREEN_INFORMATION* const pScreenInfo) :
+ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Window* const pParent,
+                                             _In_ SCREEN_INFORMATION* const pScreenInfo) :
     _pWindow(pParent),
     _pScreenInfo(pScreenInfo),
     _cRefs(1)
@@ -66,7 +68,8 @@ IFACEMETHODIMP_(ULONG) ScreenInfoUiaProvider::Release()
     return val;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface)
+IFACEMETHODIMP ScreenInfoUiaProvider::QueryInterface(_In_ REFIID riid,
+                                                     _COM_Outptr_result_maybenull_ void** ppInterface)
 {
     if (riid == __uuidof(IUnknown))
     {
@@ -109,23 +112,27 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_ProviderOptions(_Out_ ProviderOptions*
 
 // Implementation of IRawElementProviderSimple::get_PatternProvider.
 // Gets the object that supports ISelectionPattern.
-IFACEMETHODIMP ScreenInfoUiaProvider::GetPatternProvider(_In_ PATTERNID patternId, _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
+IFACEMETHODIMP ScreenInfoUiaProvider::GetPatternProvider(_In_ PATTERNID patternId,
+                                                         _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
     *ppInterface = nullptr;
+    HRESULT hr = S_OK;
 
-    // TODO: MSFT: 7960168 - insert patterns here
     if (patternId == UIA_TextPatternId)
     {
-        *ppInterface = static_cast<ITextProvider*>(this);
-        (static_cast<IUnknown*>(*ppInterface))->AddRef();
+        hr = this->QueryInterface(__uuidof(ITextProvider), reinterpret_cast<void**>(ppInterface));
+        if (FAILED(hr))
+        {
+            *ppInterface = nullptr;
+        }
     }
-
-    return S_OK;
+    return hr;
 }
 
 // Implementation of IRawElementProviderSimple::get_PropertyValue.
 // Gets custom properties.
-IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _Out_ VARIANT* pVariant)
+IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId,
+                                                       _Out_ VARIANT* pVariant)
 {
     pVariant->vt = VT_EMPTY;
 
@@ -168,13 +175,11 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyI
     else if (propertyId == UIA_IsKeyboardFocusablePropertyId)
     {
         pVariant->vt = VT_BOOL;
-        //pVariant->boolVal = VARIANT_FALSE;
         pVariant->boolVal = VARIANT_TRUE;
     }
     else if (propertyId == UIA_HasKeyboardFocusPropertyId)
     {
         pVariant->vt = VT_BOOL;
-        //pVariant->boolVal = VARIANT_FALSE;
         pVariant->boolVal = VARIANT_TRUE;
     }
     else if (propertyId == UIA_ProviderDescriptionPropertyId)
@@ -204,7 +209,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_HostRawElementProvider(_COM_Outptr_res
 
 #pragma region IRawElementProviderFragment
 
-IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction, _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
+IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
+                                               _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
     *ppProvider = nullptr;
 
@@ -247,21 +253,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect
 
     RECT rc = _pWindow->GetWindowRect();
 
-    IHighDpiApi* highDpiApi = ServiceLocator::LocateHighDpiApi();
-    if (highDpiApi)
-    {
-        WindowDpiApi* windowDpiApi = dynamic_cast<WindowDpiApi*>(highDpiApi);
-        if (windowDpiApi)
-        {
-            HWND windowHandle = ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
-            windowDpiApi->AdjustWindowRectExForDpi(&rc,
-                                                   0,
-                                                   false,
-                                                   0,
-                                                   windowDpiApi->GetWindowDPI(windowHandle));
-        }
-    }
-
     pRect->left = rc.left;
     pRect->top = rc.top;
     pRect->width = rc.right - rc.left;
@@ -278,9 +269,12 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_ma
 
 IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 {
-    IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
-    this->AddRef();
-    UiaRaiseAutomationEvent(pProvider, UIA_AutomationFocusChangedEventId);
+    IRawElementProviderSimple* pProvider;
+    HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple), reinterpret_cast<void**>(&pProvider));
+    if (SUCCEEDED(hr))
+    {
+        UiaRaiseAutomationEvent(pProvider, UIA_AutomationFocusChangedEventId);
+    }
     return S_OK;
 }
 
@@ -304,7 +298,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_mayben
 
 #pragma region ITextProvider
 
-IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(SAFEARRAY** ppRetVal)
+IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
     /*
     Selection selection = Selection::Instance();
@@ -317,7 +311,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(SAFEARRAY** ppRetVal)
     return E_NOTIMPL;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
+IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
     TEXT_BUFFER_INFO* pOutputBuffer = _pScreenInfo->TextInfo;
     const SMALL_RECT viewport = _pScreenInfo->GetBufferViewport();
@@ -338,18 +332,37 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
     // stuff each visible line in the safearray
     for (size_t i = 0; i < rowCount; ++i)
     {
-        int lineNumber = viewport.Top + i % totalLines;
+        int lineNumber = (viewport.Top + i) % totalLines;
         int start = lineNumber * screenBufferCoords.X;
         int end = start + screenBufferCoords.X;
-        UiaTextRange* range = new UiaTextRange(this,
-                                               pOutputBuffer,
-                                               _pScreenInfo,
-                                               currentFontSize,
-                                               start,
-                                               end);
-        this->AddRef();
+
+        IRawElementProviderSimple* pProvider;
+        HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
+                                          reinterpret_cast<void**>(&pProvider));
+        if (FAILED(hr))
+        {
+            return E_FAIL;
+        }
+
+        UiaTextRange* range;
+        try
+        {
+            range = new UiaTextRange(pProvider,
+                                     pOutputBuffer,
+                                     _pScreenInfo,
+                                     currentFontSize,
+                                     start,
+                                     end);
+        }
+        catch (...)
+        {
+            (static_cast<IUnknown*>(pProvider))->Release();
+            SafeArrayDestroy(*ppRetVal);
+            *ppRetVal = nullptr;
+            return wil::ResultFromCaughtException();
+        }
         LONG currentIndex = static_cast<LONG>(i);
-        HRESULT hr = SafeArrayPutElement(*ppRetVal, &currentIndex, (void*)range);
+        hr = SafeArrayPutElement(*ppRetVal, &currentIndex, reinterpret_cast<void*>(range));
         if (FAILED(hr))
         {
             SafeArrayDestroy(*ppRetVal);
@@ -360,17 +373,26 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(SAFEARRAY** ppRetVal)
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(IRawElementProviderSimple* childElement,
-                                                 ITextRangeProvider** ppRetVal)
+IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSimple* childElement,
+                                                     _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
     UNREFERENCED_PARAMETER(childElement);
+
     TEXT_BUFFER_INFO* pOutputBuffer = _pScreenInfo->TextInfo;
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
     const COORD currentFontSize = currentFont.GetUnscaledSize();
 
+    IRawElementProviderSimple* pProvider;
+    HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
+                                      reinterpret_cast<void**>(&pProvider));
+    if (FAILED(hr))
+    {
+        return E_FAIL;
+    }
+
     try
     {
-        *ppRetVal = new UiaTextRange(this,
+        *ppRetVal = new UiaTextRange(pProvider,
                                      pOutputBuffer,
                                      _pScreenInfo,
                                      currentFontSize);
@@ -378,23 +400,31 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(IRawElementProviderSimple* 
     catch (...)
     {
         *ppRetVal = nullptr;
+        (static_cast<IUnknown*>(pProvider))->Release();
         return wil::ResultFromCaughtException();
     }
-    this->AddRef();
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(UiaPoint point,
-                                                  ITextRangeProvider** ppRetVal)
+IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
+                                                     _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
 
     TEXT_BUFFER_INFO* pOutputBuffer = _pScreenInfo->TextInfo;
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
     const COORD currentFontSize = currentFont.GetUnscaledSize();
 
+    IRawElementProviderSimple* pProvider;
+    HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
+                                      reinterpret_cast<void**>(&pProvider));
+    if (FAILED(hr))
+    {
+        return E_FAIL;
+    }
+
     try
     {
-        *ppRetVal = new UiaTextRange(this,
+        *ppRetVal = new UiaTextRange(pProvider,
                                      pOutputBuffer,
                                      _pScreenInfo,
                                      currentFontSize,
@@ -403,13 +433,13 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(UiaPoint point,
     catch(...)
     {
         *ppRetVal = nullptr;
+        (static_cast<IUnknown*>(pProvider))->Release();
         return wil::ResultFromCaughtException();
     }
-    this->AddRef();
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(ITextRangeProvider** ppRetVal)
+IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
     TEXT_BUFFER_INFO* pOutputBuffer = _pScreenInfo->TextInfo;
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
@@ -417,28 +447,33 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(ITextRangeProvider** ppR
     const int documentLines = pOutputBuffer->TotalRowCount();
     const int lineWidth = _getScreenBufferCoords().X;
 
+    IRawElementProviderSimple* pProvider;
+    HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
+                                      reinterpret_cast<void**>(&pProvider));
+    if (FAILED(hr))
+    {
+        return E_FAIL;
+    }
 
     try
     {
-        UiaTextRange* range = new UiaTextRange(this,
-                                               pOutputBuffer,
-                                               _pScreenInfo,
-                                               currentFontSize,
-                                               0,
-                                               documentLines * lineWidth);
-
-        *ppRetVal = range;
+        *ppRetVal = new UiaTextRange(pProvider,
+                                     pOutputBuffer,
+                                     _pScreenInfo,
+                                     currentFontSize,
+                                     0,
+                                     documentLines * lineWidth);
     }
     catch (...)
     {
         *ppRetVal = nullptr;
+        (static_cast<IUnknown*>(pProvider))->Release();
         return wil::ResultFromCaughtException();
     }
-    this->AddRef();
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::get_SupportedTextSelection(SupportedTextSelection* pRetVal)
+IFACEMETHODIMP ScreenInfoUiaProvider::get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal)
 {
     *pRetVal = SupportedTextSelection::SupportedTextSelection_None;
     return S_OK;
