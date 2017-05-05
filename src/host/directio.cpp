@@ -194,6 +194,10 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
             Buffer--;
         }
     }
+    else
+    {
+        *pcRecords = nBytesUnicode;
+    }
 
     return Status;
 }
