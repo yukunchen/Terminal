@@ -133,13 +133,17 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     bool fAddDbcsLead = false;
-    PDWORD pnLength = pcRecords;
+    DWORD const cRecords = *pcRecords;
+    *pcRecords = 0;
+
     DIRECT_READ_DATA DirectReadData(pInputBuffer,
                                     pInputReadHandleData,
                                     pRecords,
-                                    *pcRecords,
+                                    cRecords,
                                     fIsPeek);
-    DWORD nBytesUnicode = *pcRecords;
+
+    
+    DWORD nBytesUnicode = cRecords;
 
     INPUT_RECORD* Buffer = pRecords;
 
@@ -149,8 +153,6 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
         // This resolved an issue with returning DBCS codepages to getc() and ReadConsoleInput.
         // There is another copy of the same pattern above in the Wait routine, but that usage scenario isn't 100% clear and
         // doesn't affect the issue, so it's left alone for now.
-
-        pnLength = &nBytesUnicode;
 
         // if there is a saved partial byte for a dbcs char,
         // move it to the buffer.
@@ -170,7 +172,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
     }
 
     NTSTATUS Status = pInputBuffer->ReadInputBuffer(Buffer,
-                                                    pnLength,
+                                                    &nBytesUnicode,
                                                     fIsPeek,
                                                     true,
                                                     fIsUnicode);
@@ -187,7 +189,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
     else if (!fIsUnicode)
     {
         *pcRecords = TranslateInputToOem(Buffer,
-                                         fAddDbcsLead ? *pcRecords - 1 : *pcRecords,
+                                         fAddDbcsLead ? cRecords - 1 : cRecords,
                                          nBytesUnicode,
                                          fIsPeek ? nullptr : &pInputBuffer->ReadConInpDbcsLeadByte);
         if (fAddDbcsLead)
@@ -195,6 +197,10 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
             (*pcRecords)++;
             Buffer--;
         }
+    }
+    else
+    {
+        *pcRecords = nBytesUnicode;
     }
 
     return Status;
