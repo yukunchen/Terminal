@@ -126,6 +126,10 @@ void FontInfoBase::ValidateFont()
                                                                                  ARRAYSIZE(pwszDefaultFontFace))))
             {
                 wcscpy_s(_wszFaceName, ARRAYSIZE(_wszFaceName), pwszDefaultFontFace);
+
+                // If we're assigning a default true type font name, make sure the family is also set to TrueType
+                // to help GDI select the appropriate font when we actually create it.
+                _bFamily = TMPF_TRUETYPE;
             }
         }
     }
