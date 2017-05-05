@@ -1,4 +1,4 @@
-/********************************************************
+﻿/********************************************************
 *                                                       *
 *   Copyright (C) Microsoft. All rights reserved.       *
 *                                                       *
@@ -64,7 +64,6 @@ void FontInfo::SetFromEngine(_In_ PCWSTR const pwszFaceName,
 
     _ValidateCoordSize();
 }
-
 
 void FontInfo::ValidateFont()
 {
