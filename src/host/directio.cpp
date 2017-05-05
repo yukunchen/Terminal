@@ -133,13 +133,13 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     bool fAddDbcsLead = false;
-    PDWORD pnLength = pcRecords;
     DIRECT_READ_DATA DirectReadData(pInputBuffer,
                                     pInputReadHandleData,
                                     pRecords,
                                     *pcRecords,
                                     fIsPeek);
     DWORD nBytesUnicode = *pcRecords;
+    *pcRecords = 0;
 
     INPUT_RECORD* Buffer = pRecords;
 
@@ -149,8 +149,6 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
         // This resolved an issue with returning DBCS codepages to getc() and ReadConsoleInput.
         // There is another copy of the same pattern above in the Wait routine, but that usage scenario isn't 100% clear and
         // doesn't affect the issue, so it's left alone for now.
-
-        pnLength = &nBytesUnicode;
 
         // if there is a saved partial byte for a dbcs char,
         // move it to the buffer.
@@ -170,7 +168,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
     }
 
     NTSTATUS Status = pInputBuffer->ReadInputBuffer(Buffer,
-                                                    pnLength,
+                                                    &nBytesUnicode,
                                                     fIsPeek,
                                                     true,
                                                     fIsUnicode);
