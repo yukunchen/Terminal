@@ -155,3 +155,15 @@ void ConsoleWindow::VerticalScroll(const WORD wScrollCommand, const WORD wAbsolu
     UNREFERENCED_PARAMETER(wScrollCommand);
     UNREFERENCED_PARAMETER(wAbsoluteChange);
 }
+
+HRESULT ConsoleWindow::SignalUia(_In_ EVENTID id)
+{
+    UNREFERENCED_PARAMETER(id);
+    return E_NOTIMPL;
+}
+
+RECT ConsoleWindow::GetWindowRect() const
+{
+    RECT rc = {0};
+    return rc;
+}

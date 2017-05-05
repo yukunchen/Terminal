@@ -61,6 +61,9 @@ namespace Microsoft
 
                     void HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const;
                     void VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const;
+
+                    HRESULT SignalUia(_In_ EVENTID id);
+                    RECT GetWindowRect() const;
                 };
             };
         };

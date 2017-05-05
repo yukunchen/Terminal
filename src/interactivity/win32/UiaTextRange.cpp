@@ -185,7 +185,7 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
 IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal)
 {
     *pRetVal = FALSE;
-    UiaTextRange* other = dynamic_cast<UiaTextRange*>(pRange);
+    UiaTextRange* other = static_cast<UiaTextRange*>(pRange);
     if (other)
     {
         *pRetVal = !!(_start == other->getStart() &&
@@ -201,7 +201,7 @@ IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endp
                                             _Out_ int* pRetVal)
 {
     // get the text range that we're comparing to
-    UiaTextRange* range = dynamic_cast<UiaTextRange*>(pTargetRange);
+    UiaTextRange* range = static_cast<UiaTextRange*>(pTargetRange);
     if (range == nullptr)
     {
         return E_INVALIDARG;
@@ -558,7 +558,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
         incrementAmount = 1;
         limitingRow = bottomRow;
     }
-    if (count < 0)
+    else
     {
         // moving backward
         incrementAmount = -1;
@@ -604,7 +604,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
                                                  _In_ ITextRangeProvider* pTargetRange,
                                                  _In_ TextPatternRangeEndpoint targetEndpoint)
 {
-    UiaTextRange* range = dynamic_cast<UiaTextRange*>(pTargetRange);
+    UiaTextRange* range = static_cast<UiaTextRange*>(pTargetRange);
     if (range == nullptr)
     {
         return E_INVALIDARG;
