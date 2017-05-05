@@ -136,7 +136,7 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _
         pVariant->vt = VT_BOOL;
         pVariant->boolVal = VARIANT_TRUE;
     }
-    else if (propertyId = UIA_IsContentElementPropertyId)
+    else if (propertyId == UIA_IsContentElementPropertyId)
     {
         pVariant->vt = VT_BOOL;
         pVariant->boolVal = VARIANT_TRUE;
