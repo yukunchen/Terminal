@@ -133,13 +133,17 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
     bool fAddDbcsLead = false;
+    DWORD const cRecords = *pcRecords;
+    *pcRecords = 0;
+
     DIRECT_READ_DATA DirectReadData(pInputBuffer,
                                     pInputReadHandleData,
                                     pRecords,
-                                    *pcRecords,
+                                    cRecords,
                                     fIsPeek);
-    DWORD nBytesUnicode = *pcRecords;
-    *pcRecords = 0;
+
+    
+    DWORD nBytesUnicode = cRecords;
 
     INPUT_RECORD* Buffer = pRecords;
 
@@ -185,7 +189,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
     else if (!fIsUnicode)
     {
         *pcRecords = TranslateInputToOem(Buffer,
-                                         fAddDbcsLead ? *pcRecords - 1 : *pcRecords,
+                                         fAddDbcsLead ? cRecords - 1 : cRecords,
                                          nBytesUnicode,
                                          fIsPeek ? nullptr : &pInputBuffer->ReadConInpDbcsLeadByte);
         if (fAddDbcsLead)
