@@ -37,7 +37,10 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(_In_ const
         else if (wVirtualKeyCode == VK_RETURN ||
                  ((ServiceLocator::LocateInputServices()->GetKeyState(VK_CONTROL) & KEY_PRESSED) &&
                   (wVirtualKeyCode == 'C' || // Ctrl-c
-                   wVirtualKeyCode == VK_INSERT))) // Ctrl-INS
+                   wVirtualKeyCode == VK_INSERT)) ||
+                 ((ServiceLocator::LocateInputServices()->GetKeyState(VK_CONTROL) & KEY_PRESSED) &&
+                  (ServiceLocator::LocateInputServices()->GetKeyState(VK_SHIFT) & KEY_PRESSED) &&
+                  (wVirtualKeyCode == 'C'))) // C-S-c
         {
             Telemetry::Instance().SetKeyboardTextEditingUsed();
 

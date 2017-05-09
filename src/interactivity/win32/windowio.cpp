@@ -343,6 +343,18 @@ void HandleKeyEvent(_In_ const HWND hWnd,
             }
         }
     }
+    else if (IsInVirtualTerminalInputMode() && inputKeyInfo.IsShiftAndCtrlOnly())
+    {
+        // In VT Mode, C-S-v pastes, and in HandleKeySelectionEvent, C-S-c copies too
+        switch (VirtualKeyCode)
+        {
+        case 'V':
+            // the user is attempting to paste from the clipboard
+            Telemetry::Instance().SetKeyboardTextEditingUsed();
+            Clipboard::Instance().Paste();
+            return;
+        }
+    }
 
     // Then attempt to process more complicated selection/scrolling commands that require state.
     // These selection and scrolling functions must go after the simple key-chord combinations
