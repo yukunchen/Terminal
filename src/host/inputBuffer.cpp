@@ -369,15 +369,27 @@ HRESULT InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords
         std::deque<INPUT_RECORD> existingStorage;
         existingStorage.swap(_storage);
 
+        // We will need this variable to pass to _WriteBuffer so it can attempt to determine wait status.
+        // However, because we swapped the storage out from under it with an empty deque, it will always
+        // return true after the first one (as it is filling the newly emptied backing deque.)
+        // Then after the second one, because we've inserted some input, it will always say false.
+        bool unusedWaitStatus = false;
+
         // write the prepend records
         size_t prependEventsWritten;
-        bool setWaitEvent;
-        _WriteBuffer(inRecords, prependEventsWritten, setWaitEvent);
+        _WriteBuffer(inRecords, prependEventsWritten, unusedWaitStatus);
+        assert(unusedWaitStatus);
 
         // write all previously existing records
         size_t existingEventsWritten;
-        _WriteBuffer(existingStorage, existingEventsWritten, setWaitEvent);
-        if (setWaitEvent)
+        _WriteBuffer(existingStorage, existingEventsWritten, unusedWaitStatus);
+        assert(!unusedWaitStatus);
+
+        // We need to set the wait event if there were 0 events in the input queue when we started.
+        // Because we did interesting manipulation of the wait queue in order to prepend, we can't trust what _WriteBuffer said
+        // and instead need to set the event if the original backing buffer (the one we swapped out at the top) was empty
+        // when this whole thing started.
+        if (existingStorage.empty())
         {
             SetEvent(InputWaitEvent);
         }

@@ -5,6 +5,8 @@
 ********************************************************/
 #include "precomp.h"
 
+#include <thread>
+
 // some assumptions have been made on this value. only change it if you have a good reason to.
 #define NUMBER_OF_SCENARIO_INPUTS 10
 #define READ_BATCH 3
@@ -31,6 +33,8 @@ class InputTests
     TEST_METHOD(TestPeekConsoleInvalid);
     TEST_METHOD(TestReadConsoleInvalid);
     TEST_METHOD(TestWriteConsoleInvalid);
+
+    TEST_METHOD(TestReadWaitOnHandle);
 
     TEST_METHOD(TestReadConsolePasswordScenario);
 
@@ -458,4 +462,94 @@ void InputTests::TestMouseHorizWheelReadConsoleInputQuickEdit()
 {
     const DWORD dwInputMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS | ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE;
     TestMouseWheelReadConsoleInputHelper(WM_MOUSEHWHEEL, MOUSE_HWHEELED, dwInputMode);
+}
+
+void InputTests::TestReadWaitOnHandle()
+{
+    HANDLE const hIn = GetStdInputHandle();
+    VERIFY_IS_NOT_NULL(hIn, L"Check input handle is not null.");
+
+    // Set up events and background thread to wait.
+    bool fAbortWait = false;
+
+    // this will be signaled when we want the thread to start waiting on the input handle
+    // It is an auto-reset.
+    wil::unique_event doWait; 
+    doWait.create();
+    
+    // the thread will signal this when it is done waiting on the input handle.
+    // It is an auto-reset.
+    wil::unique_event doneWaiting; 
+    doneWaiting.create();
+
+    std::thread bgThread([&] {
+        while (!fAbortWait)
+        {
+            doWait.wait();
+
+            if (fAbortWait)
+            {
+                break;
+            }
+
+            HANDLE waits[2];
+            waits[0] = doWait.get();
+            waits[1] = hIn;
+            WaitForMultipleObjects(2, waits, FALSE, INFINITE);
+
+            if (fAbortWait)
+            {
+                break;
+            }
+
+            doneWaiting.SetEvent();
+        }
+    });
+
+    auto onExit = wil::ScopeExit([&] {
+        Log::Comment(L"Tell our background thread to abort waiting, signal it, then wait for it to exit before we finish the test.");
+        fAbortWait = true;
+        doWait.SetEvent();
+        bgThread.join();
+    });
+
+    Log::Comment(L"Test 1: Waiting for text to be appended to the buffer.");
+    // Empty the buffer and tell the thread to start waiting
+    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Ensure input buffer is empty.");
+    doWait.SetEvent();
+
+    // Send some input into the console.
+    INPUT_RECORD ir;
+    ir.EventType = MOUSE_EVENT;
+    ir.Event.MouseEvent.dwMousePosition.X = 1;
+    ir.Event.MouseEvent.dwMousePosition.Y = 1;
+    ir.Event.MouseEvent.dwButtonState = FROM_LEFT_1ST_BUTTON_PRESSED;
+    ir.Event.MouseEvent.dwControlKeyState = NUMLOCK_ON;
+    ir.Event.MouseEvent.dwEventFlags = 0;
+
+    DWORD dwWritten = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInputW(hIn, &ir, 1, &dwWritten), L"Inject input event into queue.");
+    VERIFY_ARE_EQUAL(1u, dwWritten, L"Ensure 1 event was written.");
+
+    VERIFY_IS_TRUE(doneWaiting.wait(5000), L"The input handle should have been signaled on our background thread within our 5 second timeout.");
+
+    Log::Comment(L"Test 2: Trigger a VT response so the buffer will be prepended (things inserted at the front).");
+
+    HANDLE const hOut = GetStdOutputHandle();
+    DWORD dwMode = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(hOut, &dwMode), L"Get existing console mode.");
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING), L"Ensure VT mode is on.");
+
+    // Empty the buffer and tell the thread to start waiting
+    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Ensure input buffer is empty.");
+    doWait.SetEvent();
+
+    // Send a VT command that will trigger a response.
+    PCWSTR pwszDeviceAttributeRequest = L"\x1b[c";
+    DWORD cchDeviceAttributeRequest = static_cast<DWORD>(wcslen(pwszDeviceAttributeRequest));
+    dwWritten = 0;
+    WriteConsoleW(hOut, pwszDeviceAttributeRequest, cchDeviceAttributeRequest, &dwWritten, nullptr);
+    VERIFY_ARE_EQUAL(cchDeviceAttributeRequest, dwWritten, L"Verify string was written");
+
+    VERIFY_IS_TRUE(doneWaiting.wait(5000), L"The input handle should have been signaled on our background thread within our 5 second timeout.");
 }
