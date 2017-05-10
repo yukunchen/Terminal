@@ -29,13 +29,11 @@ int clamp(int val, int low, int high)
 // degenerate range constructor
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
                            _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
-                           _In_ const SCREEN_INFORMATION* const pScreenInfo,
-                           _In_ const COORD currentFontSize) :
+                           _In_ const SCREEN_INFORMATION* const pScreenInfo) :
     _cRefs{ 1 },
     _pProvider{ THROW_HR_IF_NULL(E_INVALIDARG, pProvider) },
     _pOutputBuffer{ THROW_HR_IF_NULL(E_INVALIDARG, pOutputBuffer) },
     _pScreenInfo{ THROW_HR_IF_NULL(E_INVALIDARG, pScreenInfo) },
-    _currentFontSize{ currentFontSize },
     _start{ 0 },
     _end{ 0 }
 {
@@ -48,10 +46,9 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
                            _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
                            _In_ const SCREEN_INFORMATION* const pScreenInfo,
-                           _In_ const COORD currentFontSize,
                            _In_ const int start,
                            _In_ const int end) :
-    UiaTextRange(pProvider, pOutputBuffer, pScreenInfo, currentFontSize)
+    UiaTextRange(pProvider, pOutputBuffer, pScreenInfo)
 {
     _start = start;
     _end = end;
@@ -61,9 +58,8 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
                            _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
                            _In_ const SCREEN_INFORMATION* const pScreenInfo,
-                           _In_ const COORD currentFontSize,
                            _In_ const UiaPoint point) :
-    UiaTextRange(pProvider, pOutputBuffer, pScreenInfo, currentFontSize)
+    UiaTextRange(pProvider, pOutputBuffer, pScreenInfo)
 {
     POINT clientPoint;
     clientPoint.x = static_cast<LONG>(point.x);
@@ -85,6 +81,7 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
         // change point coords to pixels relative to window
         HWND hwnd = _getWindowHandle();
         ScreenToClient(hwnd, &clientPoint);
+        const COORD currentFontSize = _pScreenInfo->GetScreenFontSize();
         row = (clientPoint.y / currentFontSize.Y) + viewport.Top;
     }
     _start = _rowToEndpoint(row);
@@ -96,7 +93,6 @@ UiaTextRange::UiaTextRange(_In_ const UiaTextRange& a) :
     _pProvider{ a._pProvider },
     _pOutputBuffer{ a._pOutputBuffer },
     _pScreenInfo{ a._pScreenInfo },
-    _currentFontSize{ a._currentFontSize },
     _start{ a._start },
     _end{ a._end }
 
@@ -303,7 +299,7 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
     // width of viewport (measured in chars)
     const SMALL_RECT viewport = _getViewport();
     const int viewportWidth = viewport.Right - viewport.Left + 1;
-
+    const COORD currentFontSize = _pScreenInfo->GetScreenFontSize();
     *ppRetVal = nullptr;
 
     // vector to put coords into. they go in as four doubles in the
@@ -315,20 +311,17 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
     {
         POINT topLeft;
         POINT bottomRight;
-        topLeft.x = _endpointToColumn(_start) * _currentFontSize.X;
-        topLeft.y = _lineNumberToViewport(startLine) * _currentFontSize.Y;
+        topLeft.x = _endpointToColumn(_start) * currentFontSize.X;
+        topLeft.y = _lineNumberToViewport(startLine) * currentFontSize.Y;
 
         bottomRight.x = topLeft.x;
-        bottomRight.y = topLeft.y + _currentFontSize.Y;
+        bottomRight.y = topLeft.y + currentFontSize.Y;
+
         // convert the coords to be relative to the screen instead of
         // the client window
         HWND hwnd = _getWindowHandle();
         ClientToScreen(hwnd, &topLeft);
         ClientToScreen(hwnd, &bottomRight);
-
-        // take window dpi into account
-        // TODO: MSFT 7960168 need to figure out window dpi weirdness
-        // in narrator
 
         // insert the coords
         const LONG width = bottomRight.x - topLeft.x;
@@ -342,7 +335,6 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
         }
         CATCH_RETURN();
     }
-
 
     for (int i = 0; i < totalLinesInRange; ++i)
     {
@@ -360,14 +352,14 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
         {
             // special logic for first line since we might not start at
             // the left edge of the viewport
-            topLeft.x = _endpointToColumn(_start) * _currentFontSize.X;
+            topLeft.x = _endpointToColumn(_start) * currentFontSize.X;
         }
         else
         {
             topLeft.x = 0;
         }
 
-        topLeft.y = _lineNumberToViewport(currentLineNumber) * _currentFontSize.Y;
+        topLeft.y = _lineNumberToViewport(currentLineNumber) * currentFontSize.Y;
 
         if (i + 1 == totalLinesInRange)
         {
@@ -378,17 +370,17 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
             // endpoint lays on but we need to add 1 back to the to
             // total because we want the bounding rectangle to
             // encompass that column.
-            bottomRight.x = (_endpointToColumn(_end - 1) + 1) * _currentFontSize.X;
+            bottomRight.x = (_endpointToColumn(_end - 1) + 1) * currentFontSize.X;
         }
         else
         {
             // we're a full line, so we go the full width of the
             // viewport
-            bottomRight.x = viewportWidth * _currentFontSize.X;
+            bottomRight.x = viewportWidth * currentFontSize.X;
         }
 
         // + 1 of the font height because we are adding each line individually
-        bottomRight.y = topLeft.y + _currentFontSize.Y;
+        bottomRight.y = topLeft.y + currentFontSize.Y;
 
         // convert the coords to be relative to the screen instead of
         // the client window
@@ -396,9 +388,10 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
         ClientToScreen(hwnd, &topLeft);
         ClientToScreen(hwnd, &bottomRight);
 
-        // insert the coords
         const LONG width = bottomRight.x - topLeft.x;
         const LONG height = bottomRight.y - topLeft.y;
+
+        // insert the coords
         try
         {
             coords.push_back(topLeft.x);

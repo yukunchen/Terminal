@@ -326,7 +326,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
     // stuff the selected lines into the safe array
     TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
-    const COORD currentFontSize = currentFont.GetUnscaledSize();
     const COORD screenBufferCoords = _getScreenBufferCoords();
     const int totalLines = screenBufferCoords.Y;
 
@@ -351,7 +350,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
             range = new UiaTextRange(pProvider,
                                      pOutputBuffer,
                                      _pScreenInfo,
-                                     currentFontSize,
                                      start,
                                      end);
         }
@@ -379,7 +377,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
     TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
     const SMALL_RECT viewport = _pScreenInfo->GetBufferViewport();
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
-    const COORD currentFontSize = currentFont.GetUnscaledSize();
     const size_t charWidth = viewport.Right - viewport.Left + 1;
     const COORD screenBufferCoords = _getScreenBufferCoords();
     const int totalLines = screenBufferCoords.Y;
@@ -415,7 +412,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
             range = new UiaTextRange(pProvider,
                                      pOutputBuffer,
                                      _pScreenInfo,
-                                     currentFontSize,
                                      start,
                                      end);
         }
@@ -445,7 +441,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSim
 
     TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
-    const COORD currentFontSize = currentFont.GetUnscaledSize();
 
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(__uuidof(IRawElementProviderSimple),
@@ -455,8 +450,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSim
     {
         *ppRetVal = new UiaTextRange(pProvider,
                                      pOutputBuffer,
-                                     _pScreenInfo,
-                                     currentFontSize);
+                                     _pScreenInfo);
     }
     catch (...)
     {
@@ -473,7 +467,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
 
     TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
-    const COORD currentFontSize = currentFont.GetUnscaledSize();
 
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(__uuidof(IRawElementProviderSimple),
@@ -484,7 +477,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
         *ppRetVal = new UiaTextRange(pProvider,
                                      pOutputBuffer,
                                      _pScreenInfo,
-                                     currentFontSize,
                                      point);
     }
     catch(...)
@@ -500,7 +492,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybe
 {
     TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
-    const COORD currentFontSize = currentFont.GetUnscaledSize();
     const int documentLines = pOutputBuffer->TotalRowCount();
     const int lineWidth = _getScreenBufferCoords().X;
 
@@ -513,7 +504,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybe
         *ppRetVal = new UiaTextRange(pProvider,
                                      pOutputBuffer,
                                      _pScreenInfo,
-                                     currentFontSize,
                                      0,
                                      documentLines * lineWidth);
     }

@@ -32,14 +32,12 @@ namespace Microsoft
                     // degenerate range
                     UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                  _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
-                                 _In_ const SCREEN_INFORMATION* const pScreenInfo,
-                                 _In_ const COORD currentFontSize);
+                                 _In_ const SCREEN_INFORMATION* const pScreenInfo);
 
                     // specific range
                     UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                  _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
                                  _In_ const SCREEN_INFORMATION* const pScreenInfo,
-                                 _In_ const COORD currentFontSize,
                                  _In_ const int start,
                                  _In_ const int end);
 
@@ -47,7 +45,6 @@ namespace Microsoft
                     UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                  _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
                                  _In_ const SCREEN_INFORMATION* const pScreenInfo,
-                                 _In_ const COORD currentFontSize,
                                  _In_ const UiaPoint point);
 
                     UiaTextRange(_In_ const UiaTextRange& a);
@@ -106,7 +103,6 @@ namespace Microsoft
                     IRawElementProviderSimple* const _pProvider;
                     const TEXT_BUFFER_INFO* const _pOutputBuffer;
                     const SCREEN_INFORMATION* const _pScreenInfo;
-                    const COORD _currentFontSize;
 
                     #if _DEBUG
                     // used to debug objects passed back and forth
