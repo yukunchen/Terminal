@@ -144,12 +144,12 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _
     else if (propertyId == UIA_IsKeyboardFocusablePropertyId)
     {
         pVariant->vt = VT_BOOL;
-        pVariant->boolVal = VARIANT_FALSE;
+        pVariant->boolVal = VARIANT_TRUE;
     }
     else if (propertyId == UIA_HasKeyboardFocusPropertyId)
     {
         pVariant->vt = VT_BOOL;
-        pVariant->boolVal = VARIANT_FALSE;
+        pVariant->boolVal = VARIANT_TRUE;
     }
     else if (propertyId == UIA_ProviderDescriptionPropertyId)
     {
