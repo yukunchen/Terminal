@@ -82,9 +82,13 @@ bool ConsoleWaitQueue::NotifyWaiters(_In_ bool const fNotifyAll,
     // Blocks are pushed into the head to make storing constant time iterators easy. (See WaitBlock constructor.)
     // To ensure it acted as a queue, we need to therefore pull items off the end (reverse iterator).
     auto it = _blocks.crbegin();
-    while (nullptr != *it && !_blocks.empty() && it != _blocks.crend())
+    while (!_blocks.empty() && it != _blocks.crend())
     {
         ConsoleWaitBlock* const WaitBlock = (*it);
+        if (nullptr == WaitBlock)
+        {
+            break;
+        }
 
         auto const nextIt = std::next(it); // we have to capture next before it is potentially erased
 
