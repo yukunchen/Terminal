@@ -722,13 +722,13 @@ const bool UiaTextRange::_isDegenerate() const
     return (_start == _end);
 }
 
-const bool UiaTextRange::_isLineInViewport(const int lineNumber) const
+const bool UiaTextRange::_isLineInViewport(_In_ const int lineNumber) const
 {
     const SMALL_RECT viewport = _getViewport();
     return _isLineInViewport(lineNumber, viewport);
 }
 
-const bool UiaTextRange::_isLineInViewport(const int lineNumber, const SMALL_RECT viewport) const
+const bool UiaTextRange::_isLineInViewport(_In_ const int lineNumber, _In_ const SMALL_RECT viewport) const
 {
     if (viewport.Top < viewport.Bottom)
     {
@@ -743,7 +743,7 @@ const bool UiaTextRange::_isLineInViewport(const int lineNumber, const SMALL_REC
 }
 
 // returns 0-indexed
-const int UiaTextRange::_lineNumberToViewport(const int lineNumber) const
+const int UiaTextRange::_lineNumberToViewport(_In_ const int lineNumber) const
 {
     const SMALL_RECT viewport = _getViewport();
 
@@ -764,17 +764,17 @@ const int UiaTextRange::_lineNumberToViewport(const int lineNumber) const
     }
 }
 
-const int UiaTextRange::_endpointToRow(const int endpoint) const
+const int UiaTextRange::_endpointToRow(_In_ const int endpoint) const
 {
     return endpoint / _getRowWidth();
 }
 
-const int UiaTextRange::_endpointToColumn(const int endpoint) const
+const int UiaTextRange::_endpointToColumn(_In_ const int endpoint) const
 {
     return endpoint % _getRowWidth();
 }
 
-const int UiaTextRange::_rowToEndpoint(const int row) const
+const int UiaTextRange::_rowToEndpoint(_In_ const int row) const
 {
     return row * _getRowWidth();
 }
@@ -789,14 +789,14 @@ const int UiaTextRange::_getRowWidth() const
     return _getScreenBufferCoords().X;
 }
 
-const int UiaTextRange::_getViewportHeight(const SMALL_RECT viewport) const
+const int UiaTextRange::_getViewportHeight(_In_ const SMALL_RECT viewport) const
 {
     // + 1 because COORD is inclusive on both sides so subtracting top
     // and bottom gets rid of 1 more then it should.
     return _normalizeRow(viewport.Bottom - viewport.Top + 1);
 }
 
-const int UiaTextRange::_getViewportWidth(const SMALL_RECT viewport) const
+const int UiaTextRange::_getViewportWidth(_In_ const SMALL_RECT viewport) const
 {
     // + 1 because COORD is inclusive on both sides so subtracting left
     // and right gets rid of 1 more then it should.
@@ -823,7 +823,7 @@ const COORD UiaTextRange::_getScreenBufferCoords() const
     return ServiceLocator::LocateGlobals()->getConsoleInformation()->GetScreenBufferSize();
 }
 
-const int UiaTextRange::_normalizeRow(const int row) const
+const int UiaTextRange::_normalizeRow(_In_ const int row) const
 {
     const int totalRows = _getTotalRows();
     return ((row + totalRows) % totalRows);

@@ -121,19 +121,19 @@ namespace Microsoft
 
                     const bool _isDegenerate() const;
 
-                    const bool _isLineInViewport(const int lineNumber) const;
-                    const bool _isLineInViewport(const int lineNumber, const SMALL_RECT viewport) const;
+                    const bool _isLineInViewport(_In_ const int lineNumber) const;
+                    const bool _isLineInViewport(_In_ const int lineNumber, _In_ const SMALL_RECT viewport) const;
 
-                    const int _lineNumberToViewport(const int lineNumber) const;
-                    const int _endpointToRow(const int endpoint) const;
-                    const int _endpointToColumn(const int endpoint) const;
-                    const int _rowToEndpoint(const int row) const;
+                    const int _lineNumberToViewport(_In_ const int lineNumber) const;
+                    const int _endpointToRow(_In_ const int endpoint) const;
+                    const int _endpointToColumn(_In_ const int endpoint) const;
+                    const int _rowToEndpoint(_In_ const int row) const;
 
                     const int _getTotalRows() const;
                     const int _getRowWidth() const;
-                    const int _normalizeRow(const int row) const;
-                    const int _getViewportHeight(const SMALL_RECT viewport) const;
-                    const int _getViewportWidth(const SMALL_RECT viewport) const;
+                    const int _normalizeRow(_In_ const int row) const;
+                    const int _getViewportHeight(_In_ const SMALL_RECT viewport) const;
+                    const int _getViewportWidth(_In_ const SMALL_RECT viewport) const;
 
                     const SMALL_RECT _getViewport() const;
                     HWND _getWindowHandle();
