@@ -120,18 +120,28 @@ namespace Microsoft
                     int _end;
 
                     const bool _isDegenerate() const;
+
                     const bool _isLineInViewport(const int lineNumber) const;
                     const bool _isLineInViewport(const int lineNumber, const SMALL_RECT viewport) const;
+
                     const int _lineNumberToViewport(const int lineNumber) const;
                     const int _endpointToRow(const int endpoint) const;
                     const int _endpointToColumn(const int endpoint) const;
                     const int _rowToEndpoint(const int row) const;
+
                     const int _getTotalRows() const;
                     const int _getRowWidth() const;
+                    const int _normalizeRow(const int row) const;
+                    const int _getViewportHeight(const SMALL_RECT viewport) const;
+                    const int _getViewportWidth(const SMALL_RECT viewport) const;
+
                     const SMALL_RECT _getViewport() const;
                     HWND _getWindowHandle();
                     IConsoleWindow* _getWindow();
+
                     const COORD _getScreenBufferCoords() const;
+                    const int _getScreenBufferTopRow() const;
+                    const int _getScreenBufferBottomRow() const;
                 };
             }
         }

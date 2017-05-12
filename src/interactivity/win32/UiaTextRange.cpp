@@ -192,9 +192,9 @@ IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ 
 
 
 IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
-                                            _In_ ITextRangeProvider* pTargetRange,
-                                            _In_ TextPatternRangeEndpoint targetEndpoint,
-                                            _Out_ int* pRetVal)
+                                              _In_ ITextRangeProvider* pTargetRange,
+                                              _In_ TextPatternRangeEndpoint targetEndpoint,
+                                              _Out_ int* pRetVal)
 {
     // get the text range that we're comparing to
     UiaTextRange* range = static_cast<UiaTextRange*>(pTargetRange);
@@ -233,9 +233,8 @@ IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endp
 
 IFACEMETHODIMP UiaTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
 {
-    const int totalRows = _getTotalRows();
-    const int topRow = _pOutputBuffer->GetFirstRowIndex();
-    const int bottomRow = (topRow - 1 + totalRows) % totalRows;
+    const int topRow = _getScreenBufferTopRow();
+    const int bottomRow = _getScreenBufferBottomRow();
     const int lineWidth = _getScreenBufferCoords().X;
 
     if (unit <= TextUnit::TextUnit_Line)
@@ -256,9 +255,9 @@ IFACEMETHODIMP UiaTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
 
 // we don't support this currently
 IFACEMETHODIMP UiaTextRange::FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
-                                        _In_ VARIANT val,
-                                        _In_ BOOL searchBackward,
-                                        _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
+                                           _In_ VARIANT val,
+                                           _In_ BOOL searchBackward,
+                                           _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
     UNREFERENCED_PARAMETER(textAttributeId);
     UNREFERENCED_PARAMETER(val);
@@ -291,14 +290,13 @@ IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttribut
 
 IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    const COORD screenBufferCoords = _getScreenBufferCoords();
-    const int totalLines = screenBufferCoords.Y;
+    const int totalLines = _getTotalRows();
     const int startLine = _endpointToRow(_start);
     const int endLine = _endpointToRow(_end);
     const int totalLinesInRange = (endLine >= startLine) ? endLine - startLine : endLine - startLine + totalLines;
     // width of viewport (measured in chars)
     const SMALL_RECT viewport = _getViewport();
-    const int viewportWidth = viewport.Right - viewport.Left + 1;
+    const int viewportWidth = _getViewportWidth(viewport);
     const COORD currentFontSize = _pScreenInfo->GetScreenFontSize();
     *ppRetVal = nullptr;
 
@@ -338,7 +336,7 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
 
     for (int i = 0; i < totalLinesInRange; ++i)
     {
-        const int currentLineNumber = (startLine + i) % totalLines;
+        const int currentLineNumber = _normalizeRow(startLine + i);
         if (!_isLineInViewport(currentLineNumber))
         {
             continue;
@@ -422,8 +420,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 {
     std::wstring wstr = L"";
     const bool getPartialText = maxLength != -1;
-    const COORD screenBufferCoords = _getScreenBufferCoords();
-    const int totalLines = screenBufferCoords.Y;
+    const int totalLines = _getTotalRows();
     const int startLine = _endpointToRow(_start);
     const int endLine = _endpointToRow(_end);
     const int totalLinesInRange = (endLine > startLine) ? endLine - startLine : endLine - startLine + totalLines;
@@ -464,40 +461,38 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ int*
         return S_OK;
     }
 
-    const int totalRows = _getTotalRows();
-    const int topRow = _pOutputBuffer->GetFirstRowIndex();
-    const int bottomRow = (topRow - 1 + totalRows) % totalRows;
-    const int currentStartRow = _endpointToRow(_start);
-    int currentRow = currentStartRow;
-
     int incrementAmount;
     int limitingRow;
     if (count > 0)
     {
         // moving forward
         incrementAmount = 1;
-        limitingRow = bottomRow;
+        limitingRow = _getScreenBufferBottomRow();
     }
     else
     {
         // moving backward
         incrementAmount = -1;
-        limitingRow = topRow;
+        limitingRow = _getScreenBufferTopRow();
     }
 
+    int currentRow = _endpointToRow(_start);
     for (int i = 0; i < abs(count); ++i)
     {
         if (currentRow == limitingRow)
         {
             break;
         }
-        currentRow = (currentRow + incrementAmount + totalRows) % totalRows;
+        currentRow = _normalizeRow(currentRow + incrementAmount);
         *pRetVal += incrementAmount;
     }
 
     // update endpoints
    _start = _rowToEndpoint(currentRow);
-   const int nextRow = (currentRow + 1 + totalRows) % totalRows;
+   // we don't need to normalize because the ending endpoint is
+   // an exclusive range so normalizing would break it if we're at the
+   // bottom edge the output buffer.
+   const int nextRow = currentRow + 1;
    _end = _rowToEndpoint(nextRow);
 
     return S_OK;
@@ -517,9 +512,6 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
         return S_OK;
     }
 
-    const int totalRows = _getTotalRows();
-    const int topRow = _pOutputBuffer->GetFirstRowIndex();
-    const int bottomRow = (topRow - 1 + totalRows) % totalRows;
     const bool isDegenerate = _isDegenerate();
     const bool shrinkingRange = (count < 0 &&
                                  endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_End) ||
@@ -549,13 +541,13 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
     {
         // moving forward
         incrementAmount = 1;
-        limitingRow = bottomRow;
+        limitingRow = _getScreenBufferBottomRow();
     }
     else
     {
         // moving backward
         incrementAmount = -1;
-        limitingRow = topRow;
+        limitingRow = _getScreenBufferTopRow();
     }
 
     // move the endpoint
@@ -566,15 +558,14 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
         {
             break;
         }
-        currentRow = (currentRow + incrementAmount + totalRows) % totalRows;
+        currentRow = _normalizeRow(currentRow + incrementAmount);
         *pRetVal += incrementAmount;
         if (currentRow == otherEndpoint)
         {
             crossedEndpoints = true;
         }
     }
-    const int rowWidth = _getRowWidth();
-    *pInternalEndpoint = currentRow * rowWidth;
+    *pInternalEndpoint = _rowToEndpoint(currentRow);
 
     // fix out of order endpoints. If they crossed then the it is
     // turned into a degenerate range at the point where the endpoint
@@ -673,47 +664,46 @@ IFACEMETHODIMP UiaTextRange::RemoveFromSelection()
 
 IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
 {
-    if (!_isLineInViewport(_endpointToRow(_start)))
+    const SMALL_RECT oldViewport = _getViewport();
+    const int viewportHeight = _getViewportHeight(oldViewport);
+    const int totalRows = _getTotalRows();
+    // range rows
+    const int startRow = _endpointToRow(_start);
+    // -1 to account for exclusivity
+    const int endRow = _endpointToRow(_end - 1);
+    // screen buffer rows
+    const int topRow = _getScreenBufferTopRow();
+    const int bottomRow = _getScreenBufferBottomRow();
+
+    SMALL_RECT newViewport = oldViewport;
+    newViewport.Top = static_cast<SHORT>(topRow);
+    // -1 because SMALL_RECTs are inclusive on both sides
+    newViewport.Bottom = static_cast<SHORT>(_normalizeRow(newViewport.Top + viewportHeight - 1));
+
+    // shift the viewport down one line at a time until we have
+    // the range at the correct edge of the viewport or we hit
+    // the bottom edge of the screen buffer
+    if (alignToTop)
     {
-        const SMALL_RECT oldViewport = _getViewport();
-        SMALL_RECT newViewport;
-        const short viewportHeight = oldViewport.Bottom - oldViewport.Top + 1;
-        const COORD screenBufferCoords = _getScreenBufferCoords();
-        const int totalRows = screenBufferCoords.Y;
-        const int startRow = _endpointToRow(_start);
-        const int endRow = _endpointToRow(_end);
-        const int topRow = _pOutputBuffer->GetFirstRowIndex();
-        const int bottomRow = (topRow - 1 + totalRows) % totalRows;
-
-        // create a new viewport at the top of the screen buffer
-        newViewport.Left = oldViewport.Left;
-        newViewport.Right = oldViewport.Right;
-        newViewport.Top = static_cast<SHORT>(topRow);
-        // -1 because SMALL_RECTs are inclusive on both sides
-        newViewport.Bottom = static_cast<SHORT>(((viewportHeight - 1) + topRow) % totalRows);
-
-        // shift the viewport down one line at a time until we have
-        // the range at the correct edge of the viewport or we hit
-        // the bottom edge of the screen buffer
-        if (alignToTop)
+        while (newViewport.Top != startRow && newViewport.Bottom != bottomRow)
         {
-            while (newViewport.Top != startRow && newViewport.Bottom != bottomRow)
-            {
-                newViewport.Top = (newViewport.Top + 1) % totalRows;
-                newViewport.Bottom = (newViewport.Bottom + 1) % totalRows;
-            }
+            newViewport.Top = static_cast<SHORT>(_normalizeRow(newViewport.Top + 1));
+            newViewport.Bottom = static_cast<SHORT>(_normalizeRow(newViewport.Bottom + 1));
         }
-        else
-        {
-            while (newViewport.Bottom != endRow && newViewport.Bottom != bottomRow)
-            {
-                newViewport.Top = (newViewport.Top + 1) % totalRows;
-                newViewport.Bottom = (newViewport.Bottom + 1) % totalRows;
-            }
-        }
-
-        _getWindow()->SetViewportOrigin(newViewport);
     }
+    else if (!_isLineInViewport(endRow, newViewport))
+    {
+
+        while (newViewport.Bottom != endRow && newViewport.Bottom != bottomRow)
+        {
+            newViewport.Top = static_cast<SHORT>(_normalizeRow(newViewport.Top + 1));
+            newViewport.Bottom = static_cast<SHORT>(_normalizeRow(newViewport.Bottom + 1));
+        }
+    }
+
+    assert(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport));
+
+    _getWindow()->SetViewportOrigin(newViewport);
 
     return S_OK;
 }
@@ -738,73 +728,79 @@ const bool UiaTextRange::_isLineInViewport(const int lineNumber) const
     return _isLineInViewport(lineNumber, viewport);
 }
 
-// TODO MSFT 7960168 find a better way to do this
 const bool UiaTextRange::_isLineInViewport(const int lineNumber, const SMALL_RECT viewport) const
 {
-    const int viewportHeight = viewport.Bottom - viewport.Top + 1;
-    const COORD screenBufferCoords = _getScreenBufferCoords();
-
-    for (int i = 0; i < viewportHeight; ++i)
+    if (viewport.Top < viewport.Bottom)
     {
-        int currentLineNumber = (viewport.Top + i) % screenBufferCoords.Y;
-        if (currentLineNumber == lineNumber)
-        {
-            return true;
-        }
+        return (lineNumber >= viewport.Top &&
+                lineNumber <= viewport.Bottom);
     }
-    return false;
+    else
+    {
+        return (lineNumber >= viewport.Top ||
+                lineNumber <= viewport.Bottom);
+    }
 }
 
+// returns 0-indexed
 const int UiaTextRange::_lineNumberToViewport(const int lineNumber) const
 {
     const SMALL_RECT viewport = _getViewport();
-    const int viewportHeight = viewport.Bottom - viewport.Top + 1;
-    const COORD screenBufferCoords = _getScreenBufferCoords();
 
-    for (int i = 0; i < viewportHeight; ++i)
+    // we return a failure value if the line is not currently visible
+    if (!_isLineInViewport(lineNumber))
     {
-        int currentLineNumber = (viewport.Top + i) % screenBufferCoords.Y;
-        if (currentLineNumber == lineNumber)
-        {
-            return i;
-        }
+        // TODO MSFT 7960168 better failure value
+        return -1;
     }
-    // TODO MSFT 7960168 better failure value
-    return -1;
 
+    if (lineNumber >= viewport.Top)
+    {
+        return lineNumber - viewport.Top;
+    }
+    else
+    {
+        return _getViewportHeight(viewport) - viewport.Bottom + lineNumber;
+    }
 }
 
 const int UiaTextRange::_endpointToRow(const int endpoint) const
 {
-    const COORD screenBufferCoords = _getScreenBufferCoords();
-    return endpoint / screenBufferCoords.X;
+    return endpoint / _getRowWidth();
 }
 
 const int UiaTextRange::_endpointToColumn(const int endpoint) const
 {
-    const COORD screenBufferCoords = _getScreenBufferCoords();
-    return endpoint % screenBufferCoords.X;
+    return endpoint % _getRowWidth();
 }
 
 const int UiaTextRange::_rowToEndpoint(const int row) const
 {
-    const COORD screenBufferCoords = _getScreenBufferCoords();
-    return row * screenBufferCoords.X;
+    return row * _getRowWidth();
 }
-
 
 const int UiaTextRange::_getTotalRows() const
 {
-    const COORD screenBufferCoords = _getScreenBufferCoords();
-    const int totalRows = screenBufferCoords.Y;
-    return totalRows;
+    return _getScreenBufferCoords().Y;
 }
 
 const int UiaTextRange::_getRowWidth() const
 {
-    const COORD screenBufferCoords = _getScreenBufferCoords();
-    const int rowWidth = screenBufferCoords.X;
-    return rowWidth;
+    return _getScreenBufferCoords().X;
+}
+
+const int UiaTextRange::_getViewportHeight(const SMALL_RECT viewport) const
+{
+    // + 1 because COORD is inclusive on both sides so subtracting top
+    // and bottom gets rid of 1 more then it should.
+    return _normalizeRow(viewport.Bottom - viewport.Top + 1);
+}
+
+const int UiaTextRange::_getViewportWidth(const SMALL_RECT viewport) const
+{
+    // + 1 because COORD is inclusive on both sides so subtracting left
+    // and right gets rid of 1 more then it should.
+    return (viewport.Right - viewport.Left + 1);
 }
 
 const SMALL_RECT UiaTextRange::_getViewport() const
@@ -825,4 +821,20 @@ HWND UiaTextRange::_getWindowHandle()
 const COORD UiaTextRange::_getScreenBufferCoords() const
 {
     return ServiceLocator::LocateGlobals()->getConsoleInformation()->GetScreenBufferSize();
+}
+
+const int UiaTextRange::_normalizeRow(const int row) const
+{
+    const int totalRows = _getTotalRows();
+    return ((row + totalRows) % totalRows);
+}
+
+const int UiaTextRange::_getScreenBufferTopRow() const
+{
+    return _pOutputBuffer->GetFirstRowIndex();
+}
+
+const int UiaTextRange::_getScreenBufferBottomRow() const
+{
+    return _normalizeRow(_getScreenBufferTopRow() - 1);
 }
