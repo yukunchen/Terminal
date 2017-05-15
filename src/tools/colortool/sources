@@ -1,7 +1,5 @@
 MSC_WARNING_LEVEL=/W4 /WX
 !include $(NTMAKEENV)\system_defaultmk.inc
-!include $(WINCORE_PATH)\core.inc
-SOURCES_USED=$(WINCORE_PATH)\core.inc
 
 TARGETNAME=colortool
 TARGETTYPE=PROGRAM
