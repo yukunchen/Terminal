@@ -767,12 +767,12 @@ HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const 
     size_t cchNeeded;
     RETURN_IF_FAILED(SizeTAdd(cchTarget, cchNull, &cchNeeded));
 
+    *pcchTargetBufferWrittenOrNeeded = cchNeeded;
+
     if (nullptr != pwsTargetBuffer)
     {
-        RETURN_IF_FAILED(StringCchCopyNW(pwsTargetBuffer, cchTargetBufferLength, pAlias->Target, cchTarget));
+        StringCchCopyNW(pwsTargetBuffer, cchTargetBufferLength, pAlias->Target, cchTarget);
     }
-
-    *pcchTargetBufferWrittenOrNeeded = cchNeeded;
 
     return S_OK;
 }
