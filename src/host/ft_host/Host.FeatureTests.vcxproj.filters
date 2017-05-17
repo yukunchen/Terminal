@@ -63,12 +63,18 @@
     <ClCompile Include="api\TitleTests.cpp">
       <Filter>Source Files\API</Filter>
     </ClCompile>
+    <ClCompile Include="api\AliasTests.cpp">
+      <Filter>Source Files\API</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="precomp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="api\AliasTestsHelpers.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
