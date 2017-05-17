@@ -824,6 +824,9 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength)
     // If there's nothing to get, then simply return.
     RETURN_HR_IF(S_OK, 0 == cchTargetBufferNeeded);
 
+    // If the user hasn't given us a buffer at all and we need one, return an error.
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), 0 == cchTargetBufferLength);
+
     // Allocate a unicode buffer of the right size.
     wistd::unique_ptr<wchar_t[]> pwsTarget = wil::make_unique_nothrow<wchar_t[]>(cchTargetBufferNeeded);
     RETURN_IF_NULL_ALLOC(pwsTarget);
