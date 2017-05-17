@@ -159,7 +159,7 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename, _Ou
         pwszShortcutTitle[0] = L'\0';
 
         WCHAR szTemp[MAX_PATH];
-        NTSTATUS Status = StringCchCopyW(szTemp, ARRAYSIZE(szTemp), pwszShortcutFilename);
+        Status = StringCchCopyW(szTemp, ARRAYSIZE(szTemp), pwszShortcutFilename);
         if (NT_SUCCESS(Status))
         {
             // Now load the localized title for the shortcut

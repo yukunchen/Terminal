@@ -87,7 +87,6 @@ NTSTATUS Menu::CreateInstance(HWND hWnd)
         // - Edits the indicated control to one word.
         // - Trim the Accelerator key text off of the end of the standard menu
         //   items because we don't support the accelerators.
-        WCHAR ItemString[30];
         ItemLength = LoadStringW(ServiceLocator::LocateGlobals()->hInstance,
                                  SC_CLOSE,
                                  ItemString,
