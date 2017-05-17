@@ -754,10 +754,10 @@ HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const 
     RETURN_IF_FAILED(GetUShortByteCount(cchSourceBufferLength, &cbSourceBufferLength));
 
     PEXE_ALIAS_LIST const pExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_NOT_FOUND), nullptr == pExeAliasList);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), nullptr == pExeAliasList);
 
     PALIAS const pAlias = FindAlias(pExeAliasList, pwsSourceBuffer, cbSourceBufferLength);
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_NOT_FOUND), nullptr == pAlias);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), nullptr == pAlias);
 
     // TargetLength is a byte count, convert to characters.
     size_t cchTarget = pAlias->TargetLength / sizeof(wchar_t);
