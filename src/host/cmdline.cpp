@@ -838,6 +838,11 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength)
     size_t cchTargetBufferWritten;
     RETURN_IF_FAILED(GetConsoleAliasWImplHelper(pwsSource.get(), cchSource, pwsTarget.get(), cchTargetBufferNeeded, &cchTargetBufferWritten, pwsExeName.get(), cchExeName));
 
+    // Set the return size copied to the size given before we attempt to copy.
+    // Then multiply by sizeof(wchar_t) due to a long standing bug that we must preserve for compatibility.
+    // On failure, the API has historically given back this value.
+    *pcchTargetBufferWritten = cchTargetBufferLength * sizeof(wchar_t);
+
     // Convert result to A
     wistd::unique_ptr<char[]> psConverted;
     size_t cchConverted;
