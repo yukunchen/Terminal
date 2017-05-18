@@ -872,10 +872,10 @@ NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
 // - ppWaiter - If writing to the console is blocked for whatever reason, this will be filled with a pointer to context
 //              that can be used by the server to resume the call at a later time.
 // Return Value:
-// - STATUS_SUCCESS if OK. 
-// - CONSOLE_STATUS_WAIT if we couldn't finish now and need to be called back later (see ppWaiter). 
+// - STATUS_SUCCESS if OK.
+// - CONSOLE_STATUS_WAIT if we couldn't finish now and need to be called back later (see ppWaiter).
 // - Or a suitable NTSTATUS format error code for memory/string/math failures.
-NTSTATUS DoWriteConsole(_In_ PWCHAR pwchBuffer,
+NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
                         _Inout_ ULONG* const pcbBuffer,
                         _In_ PSCREEN_INFORMATION pScreenInfo,
                         _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
@@ -919,7 +919,7 @@ NTSTATUS DoWriteConsole(_In_ PWCHAR pwchBuffer,
 // - pcchTextBufferRead - character count of the number of characters we were able to insert before returning
 // - ppWaiter - If we are blocked from writing now and need to wait, this is filled with contextual data for the server to restore the call later
 // Return Value:
-// - S_OK if successful. 
+// - S_OK if successful.
 // - S_OK if we need to wait (check if ppWaiter is not nullptr).
 // - Or a suitable HRESULT code for math/string/memory failures.
 HRESULT WriteConsoleWImplHelper(_In_ IConsoleOutputObject* const pOutContext,
@@ -961,7 +961,7 @@ HRESULT WriteConsoleWImplHelper(_In_ IConsoleOutputObject* const pOutContext,
 // - pcchTextBufferRead - character count of the number of characters (also bytes because A version) we were able to insert before returning
 // - ppWaiter - If we are blocked from writing now and need to wait, this is filled with contextual data for the server to restore the call later
 // Return Value:
-// - S_OK if successful. 
+// - S_OK if successful.
 // - S_OK if we need to wait (check if ppWaiter is not nullptr).
 // - Or a suitable HRESULT code for math/string/memory failures.
 HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutContext,
@@ -1128,7 +1128,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
 // - pcchTextBufferRead - character count of the number of characters we were able to insert before returning
 // - ppWaiter - If we are blocked from writing now and need to wait, this is filled with contextual data for the server to restore the call later
 // Return Value:
-// - S_OK if successful. 
+// - S_OK if successful.
 // - S_OK if we need to wait (check if ppWaiter is not nullptr).
 // - Or a suitable HRESULT code for math/string/memory failures.
 HRESULT ApiRoutines::WriteConsoleWImpl(_In_ IConsoleOutputObject* const pOutContext,
