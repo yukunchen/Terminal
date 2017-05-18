@@ -17,6 +17,11 @@ HRESULT Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle)
     return ConsoleCreateIoThreadLegacy(ServerHandle);
 }
 
+// this function has unreachable code due to its unusual lifetime. We
+// disable the warning about it here.
+#pragma warning(push)
+#pragma warning(disable:4702)
+
 HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
 {
     // Create a scope because we're going to exit thread if everything goes well.
@@ -86,7 +91,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
                 StartupInformation.StartupInfo.dwFlags |= STARTF_TITLEISLINKNAME;
             }
         }
-        
+
         // Create the extended attributes list that will pass the console server information into the child process.
 
         // Call first time to find size
@@ -121,7 +126,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
                                                              NULL,
                                                              NULL));
 
-        // UpdateProcThreadAttributes wants this as a bare array of handles and doesn't like our smart structures, 
+        // UpdateProcThreadAttributes wants this as a bare array of handles and doesn't like our smart structures,
         // so set it up for its use.
         HANDLE HandleList[3];
         HandleList[0] = StartupInformation.StartupInfo.hStdInput;
@@ -176,3 +181,4 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
     assert(false);
     return S_OK;
 }
+#pragma warning(pop)

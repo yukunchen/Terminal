@@ -20,21 +20,21 @@
 // - pInputBuffer - Buffer that data will be read from.
 // - pInputReadHandleData - Context stored across calls from the same input handle to return partial data appropriately.
 // - pScreenInfo - Output buffer that will be used for 'echoing' the line back to the user so they can see/manipulate it
-// - BufferSize - 
-// - BytesRead - 
-// - CurrentPosition - 
-// - BufPtr - 
-// - BackupLimit - 
+// - BufferSize -
+// - BytesRead -
+// - CurrentPosition -
+// - BufPtr -
+// - BackupLimit -
 // - UserBufferSize - The byte count of the buffer presented by the client
 // - UserBuffer - The buffer that was presented by the client for filling with input data on read conclusion/return from server/host.
-// - OriginalCursorPosition - 
+// - OriginalCursorPosition -
 // - NumberOfVisibleChars
 // - CtrlWakeupMask - Special client parameter to interrupt editing, end the wait, and return control to the client application
-// - CommandHistory - 
+// - CommandHistory -
 // - Echo -
-// - InsertMode - 
-// - Processed - 
-// - Line - 
+// - InsertMode -
+// - Processed -
+// - Line -
 // - pTempHandle - A handle to the output buffer to prevent it from being destroyed while we're using it to present 'edit line' text.
 // Return Value:
 // - THROW: Throws E_INVALIDARG for invalid pointers.
@@ -271,7 +271,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
         if (CommandLineEditingKeys)
         {
             // TODO: this is super weird for command line popups only
-            pCookedReadData->fIsUnicode = fIsUnicode;
+            pCookedReadData->_fIsUnicode = fIsUnicode;
             pCookedReadData->pdwNumBytes = cbNumBytes;
 
             Status = ProcessCommandLine(pCookedReadData, Char, KeyState);
@@ -498,7 +498,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
 }
 
 // Routine Description:
-// - This method handles the various actions that occur on the edit line like pressing keys left/right/up/down, paging, and 
+// - This method handles the various actions that occur on the edit line like pressing keys left/right/up/down, paging, and
 //   the final ENTER key press that will end the wait and finally return the data.
 // Arguments:
 // - pCookedReadData - Pointer to cooked read data information (edit line, client buffer, etc.)

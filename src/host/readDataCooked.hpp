@@ -88,7 +88,7 @@ public:
     USHORT ExeNameLength;
     ULONG ControlKeyState;
     COORD BeforeDialogCursorPosition; // Currently only used for F9 (ProcessCommandNumberInput) since it's the only pop-up to move the cursor when it starts.
-    BOOLEAN fIsUnicode;
+    BOOLEAN _fIsUnicode;
     DWORD* pdwNumBytes;
 
 // TODO MSFT:11285829 this is a temporary kludge until the constructors are ironed
