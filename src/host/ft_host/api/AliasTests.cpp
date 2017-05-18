@@ -5,20 +5,28 @@
 ********************************************************/
 #include "precomp.h"
 
+// This particular block is necessary so we can include both a UNICODE and non-UNICODE version
+// of our test supporting function so we can accurately portray and measure both types of text
+// and test both versions of the console API.
 
+// 1. Turn on Unicode if it isn't on already (it really should be) and include the headers
 #ifndef UNICODE
 #define UNICODE
 #endif 
 #ifndef _UNICODE
 #define _UNICODE
 #endif
-
 #include "AliasTestsHelpers.hpp"
+
+// 2. Undefine Unicode and include the header again to get the other version of the functions
 #undef UNICODE
 #undef _UNICODE
 #include "AliasTestsHelpers.hpp"
+
+// 3. Finish up by putting Unicode back on for the rest of the code (like it should have been in the first place)
 #define UNICODE
 #define _UNICODE
+// End double include block.
 
 // This class is intended to test:
 // GetConsoleAlias

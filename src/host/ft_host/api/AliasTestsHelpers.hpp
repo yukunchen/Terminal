@@ -1,3 +1,9 @@
+/********************************************************
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
+
 #ifdef TestGetConsoleAliasHelper
 #undef TestGetConsoleAliasHelper
 #endif
