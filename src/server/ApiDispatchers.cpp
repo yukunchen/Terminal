@@ -1048,6 +1048,15 @@ HRESULT ApiDispatchers::ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
 
     m->SetReplyInformation(a->TargetLength);
 
+    // See conlibk.lib. For any "buffer too small condition", we must send the exact status code
+    // NTSTATUS = STATUS_BUFFER_TOO_SMALL. If we send Win32 or HRESULT equivalents, the client library
+    // will zero out our DWORD return value set in a->TargetLength on our behalf.
+    if (ERROR_INSUFFICIENT_BUFFER == hr ||
+        HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER) == hr)
+    {
+        hr = STATUS_BUFFER_TOO_SMALL;
+    }
+
     return hr;
 }
 
