@@ -184,7 +184,11 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
                 _WaitReplyMessage.State.OutputBuffer != nullptr &&
                 *(PUCHAR)_WaitReplyMessage.State.OutputBuffer == 0x1a)
             {
+                // On changing this, we also need to notify the Reply Information because it was stowed above into the reply packet.
                 a->NumBytes = 0;
+                // Setting the reply length to 0 and returning successfully from a blocked wait 
+                // will imply that the user has reached "End of File" on a raw read file stream.
+                _WaitReplyMessage.SetReplyInformation(0); 
             }
         }
         // There is nothing to tell WriteConsole on the way out, that's why it doesn't have an else if case here.
