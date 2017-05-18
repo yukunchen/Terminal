@@ -875,8 +875,9 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(_In_ const RECT* const prcClient
     {
         // The alt buffer always wants to be exactly the size of the screen, never more or less.
         // This prevents scrollbars when you increase the alt buffer size, then decrease it.
-        coordBufferSizeNew.X = coordClientNewCharacters.X;
-        coordBufferSizeNew.Y = coordClientNewCharacters.Y;
+        // Can't have a buffer dimension of 0 - that'll cause divide by zeros in the future.
+        coordBufferSizeNew.X = max(coordClientNewCharacters.X, 1);
+        coordBufferSizeNew.Y = max(coordClientNewCharacters.Y, 1);
     }
     else
     {
