@@ -29,8 +29,8 @@ Settings::Settings() :
     // FaceName initialized below
     _uCursorSize(CURSOR_SMALL_SIZE),
     _bFullScreen(false),
-    _bQuickEdit(false),
-    _bInsertMode(false),
+    _bQuickEdit(true),
+    _bInsertMode(true),
     _bAutoPosition(true),
     _uHistoryBufferSize(DEFAULT_NUMBER_OF_COMMANDS),
     _uNumberOfHistoryBuffers(DEFAULT_NUMBER_OF_BUFFERS),
@@ -38,14 +38,14 @@ Settings::Settings() :
     // ColorTable initialized below
     _uCodePage(ServiceLocator::LocateGlobals()->uiOEMCP),
     _uScrollScale(1),
-    _bLineSelection(false),
-    _bWrapText(false),
+    _bLineSelection(true),
+    _bWrapText(true),
     _fCtrlKeyShortcutsDisabled(false),
     _bWindowAlpha(BYTE_MAX), // 255 alpha = opaque. 0 = transparent.
     _fFilterOnPaste(false),
     _fTrimLeadingZeros(FALSE),
     _fEnableColorSelection(FALSE),
-    _fExtendedEditKey(false),
+    _fExtendedEditKey(true),
     _fAllowAltF4Close(true),
     _dwVirtTermLevel(0),
     _fUseWindowSizePixels(false),
@@ -64,8 +64,12 @@ Settings::Settings() :
     _dwWindowOrigin.X = 0;
     _dwWindowOrigin.Y = 0;
 
-    ZeroMemory((void*)&_dwFontSize, sizeof(_dwFontSize));
+    _dwFontSize.X = 0;
+    _dwFontSize.Y = 16;
+
     ZeroMemory((void*)&_FaceName, sizeof(_FaceName));
+    wcscpy_s(_FaceName, DEFAULT_TT_FONT_FACENAME);
+
     ZeroMemory((void*)&_LaunchFaceName, sizeof(_LaunchFaceName));
 
     _ColorTable[0] = RGB(0x0000, 0x0000, 0x0000);
