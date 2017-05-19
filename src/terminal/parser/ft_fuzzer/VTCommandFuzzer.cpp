@@ -180,7 +180,7 @@ CStringA GenerateFuzzedOscToken(
     return s;
 }
 
-// For SGR attributes, multiple can be specified in a row separated by ; and processed accordingly. 
+// For SGR attributes, multiple can be specified in a row separated by ; and processed accordingly.
 // For instance, 37;1;44m will do foreground white (low intensity, so effectively a gray) then set high intensity blue background.
 CStringA GenerateSGRToken()
 {
@@ -235,7 +235,7 @@ CStringA GenerateCUXToken2()
 CStringA GenerateCUXToken3()
 {
     const LPSTR tokens[]{ "H" };
-    const _fuzz_type_entry<CStringA> map[] = 
+    const _fuzz_type_entry<CStringA> map[] =
     {
         {60, [](CStringA) { CStringA s; s.AppendFormat("%d;%d", CFuzzChance::GetRandom<BYTE>(), CFuzzChance::GetRandom<BYTE>()); return s; } }, // 60% give us two numbers in the valid range
         {10, [](CStringA) { return CStringA(";"); } }, // 10% give us just a ;
@@ -364,10 +364,10 @@ CStringA GenerateOscTitleToken()
     const LPSTR tokens[] = { "\x7" };
     const _fuzz_type_entry<CStringA> map[] =
     {
-        { 
+        {
             100,
-            [](CStringA) { 
-                CStringA s; 
+            [](CStringA) {
+                CStringA s;
                 SHORT limit = CFuzzChance::GetRandom<SHORT>(0, 10);
                 // append up to 10 numbers for the param
                 for(SHORT i = 0; i < limit; i++)
@@ -381,8 +381,8 @@ CStringA GenerateOscTitleToken()
                 {
                     s.AppendFormat("%c", CFuzzChance::GetRandom<BYTE>());
                 }
-                return s; 
-            } 
+                return s;
+            }
         }
     };
 
@@ -416,7 +416,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
                 outputFile.AppendFormat(L"\\%s.bin", sGuid.TrimLeft(L'{').TrimRight(L'}').GetBuffer());
 
                 CStringA text;
-                for (int i = 0; i < CFuzzChance::GetRandom<BYTE>(); i++)
+                for (int j = 0; j < CFuzzChance::GetRandom<BYTE>(); j++)
                 {
                     text.Append(GenerateToken().GetBuffer());
                 }

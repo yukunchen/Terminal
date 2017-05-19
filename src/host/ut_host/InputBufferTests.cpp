@@ -364,23 +364,23 @@ class InputBufferTests
 
         // write a mouse event, key event, dbcs key event, mouse event
         InputBuffer inputBuffer;
-        const unsigned int RECORD_INSERT_COUNT = 4;
-        INPUT_RECORD inRecords[RECORD_INSERT_COUNT];
+        const unsigned int recordInsertCount = 4;
+        INPUT_RECORD inRecords[recordInsertCount];
         inRecords[0].EventType = MOUSE_EVENT;
         inRecords[1] = MakeKeyEvent(TRUE, 1, L'A', 0, L'A', 0);
         inRecords[2] = MakeKeyEvent(TRUE, 1, 0x3042, 0, 0x3042, 0); // U+3042 hiragana A
         inRecords[3].EventType = MOUSE_EVENT;
 
         inputBuffer.Flush();
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(inRecords, RECORD_INSERT_COUNT), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(inRecords, recordInsertCount), 0u);
 
         // read them out non-unicode style and compare
-        INPUT_RECORD outRecords[RECORD_INSERT_COUNT] = { 0 };
+        INPUT_RECORD outRecords[recordInsertCount] = { 0 };
         INPUT_RECORD emptyRecord = outRecords[0];
         ULONG eventsRead = 0;
         BOOL resetWaitEvent = false;
         VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outRecords,
-                                                        RECORD_INSERT_COUNT,
+                                                        recordInsertCount,
                                                         &eventsRead,
                                                         false,
                                                         &resetWaitEvent,
@@ -388,7 +388,7 @@ class InputBufferTests
         // the dbcs record should have counted for two elements int
         // the array, making it so that we get less events read than
         // the size of the array
-        VERIFY_ARE_EQUAL(eventsRead, RECORD_INSERT_COUNT - 1);
+        VERIFY_ARE_EQUAL(eventsRead, recordInsertCount - 1);
         for (size_t i = 0; i < eventsRead; ++i)
         {
             VERIFY_ARE_EQUAL(outRecords[i], inRecords[i]);

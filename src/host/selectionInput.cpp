@@ -672,8 +672,6 @@ bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKey
         // find-and-color request. Otherwise just color the selection.
         if (fShiftPressed)
         {
-            SCREEN_INFORMATION* pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
-
             ULONG cLength = psrSelection->Right - psrSelection->Left + 1;
             if (cLength > SEARCH_STRING_LENGTH)
             {

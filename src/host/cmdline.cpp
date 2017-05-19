@@ -754,10 +754,10 @@ HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const 
     RETURN_IF_FAILED(GetUShortByteCount(cchSourceBufferLength, &cbSourceBufferLength));
 
     PEXE_ALIAS_LIST const pExeAliasList = FindExe((LPVOID)pwsExeNameBuffer, cbExeNameBufferLength, TRUE);
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_NOT_FOUND), nullptr == pExeAliasList);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), nullptr == pExeAliasList);
 
     PALIAS const pAlias = FindAlias(pExeAliasList, pwsSourceBuffer, cbSourceBufferLength);
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_NOT_FOUND), nullptr == pAlias);
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_GEN_FAILURE), nullptr == pAlias);
 
     // TargetLength is a byte count, convert to characters.
     size_t cchTarget = pAlias->TargetLength / sizeof(wchar_t);
@@ -767,12 +767,15 @@ HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const 
     size_t cchNeeded;
     RETURN_IF_FAILED(SizeTAdd(cchTarget, cchNull, &cchNeeded));
 
+    *pcchTargetBufferWrittenOrNeeded = cchNeeded;
+
     if (nullptr != pwsTargetBuffer)
     {
+        // if the user didn't give us enough space, return with insufficient buffer code early.
+        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), cchTargetBufferLength < cchNeeded);
+
         RETURN_IF_FAILED(StringCchCopyNW(pwsTargetBuffer, cchTargetBufferLength, pAlias->Target, cchTarget));
     }
-
-    *pcchTargetBufferWrittenOrNeeded = cchNeeded;
 
     return S_OK;
 }
@@ -824,6 +827,9 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength)
     // If there's nothing to get, then simply return.
     RETURN_HR_IF(S_OK, 0 == cchTargetBufferNeeded);
 
+    // If the user hasn't given us a buffer at all and we need one, return an error.
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), 0 == cchTargetBufferLength);
+
     // Allocate a unicode buffer of the right size.
     wistd::unique_ptr<wchar_t[]> pwsTarget = wil::make_unique_nothrow<wchar_t[]>(cchTargetBufferNeeded);
     RETURN_IF_NULL_ALLOC(pwsTarget);
@@ -831,6 +837,11 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength)
     // Call the Unicode version of this method
     size_t cchTargetBufferWritten;
     RETURN_IF_FAILED(GetConsoleAliasWImplHelper(pwsSource.get(), cchSource, pwsTarget.get(), cchTargetBufferNeeded, &cchTargetBufferWritten, pwsExeName.get(), cchExeName));
+
+    // Set the return size copied to the size given before we attempt to copy.
+    // Then multiply by sizeof(wchar_t) due to a long standing bug that we must preserve for compatibility.
+    // On failure, the API has historically given back this value.
+    *pcchTargetBufferWritten = cchTargetBufferLength * sizeof(wchar_t);
 
     // Convert result to A
     wistd::unique_ptr<char[]> psConverted;
@@ -869,7 +880,14 @@ HRESULT ApiRoutines::GetConsoleAliasWImpl(_In_reads_or_z_(cchSourceBufferLength)
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    return GetConsoleAliasWImplHelper(pwsSourceBuffer, cchSourceBufferLength, pwsTargetBuffer, cchTargetBufferLength, pcchTargetBufferWritten, pwsExeNameBuffer, cchExeNameBufferLength);
+    HRESULT hr = GetConsoleAliasWImplHelper(pwsSourceBuffer, cchSourceBufferLength, pwsTargetBuffer, cchTargetBufferLength, pcchTargetBufferWritten, pwsExeNameBuffer, cchExeNameBufferLength);
+
+    if (FAILED(hr))
+    {
+        *pcchTargetBufferWritten = cchTargetBufferLength;
+    }
+
+    return hr;
 }
 
 // These variables define the seperator character and the length of the string.
@@ -1533,20 +1551,20 @@ NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
     Tmp = SourcePtr;
     LPWSTR Args[MAX_ARGS];
     USHORT ArgsLength[MAX_ARGS];    // in bytes
-    for (USHORT i = 0, j = 0; i < ArgCount; i++)
+    for (USHORT i = 0, k = 0; i < ArgCount; i++)
     {
-        if (j < SourceRemainderLength)
+        if (k < SourceRemainderLength)
         {
             Args[NumSourceArgs] = Tmp;
             ArgsLength[NumSourceArgs] = 0;
-            while (j++ < SourceRemainderLength && *Tmp++ != (WCHAR)' ')
+            while (k++ < SourceRemainderLength && *Tmp++ != (WCHAR)' ')
             {
                 ArgsLength[NumSourceArgs] += sizeof(WCHAR);
             }
 
-            while (j < SourceRemainderLength && *Tmp == (WCHAR)' ')
+            while (k < SourceRemainderLength && *Tmp == (WCHAR)' ')
             {
-                j++;
+                k++;
                 Tmp++;
             }
 
@@ -2829,7 +2847,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                 memmove(pCookedReadData->_UserBuffer, pCookedReadData->_BackupLimit, dwNumBytes);
             }
 
-            if (!pCookedReadData->fIsUnicode)
+            if (!pCookedReadData->_fIsUnicode)
             {
                 PCHAR TransBuffer;
 
@@ -3421,7 +3439,6 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
     DWORD CharsToWrite;
     NTSTATUS Status;
     SHORT ScrollY = 0;
-    BOOL fStartFromDelim;
     const SHORT sScreenBufferSizeX = pCookedReadData->_pScreenInfo->GetScreenBufferSize().X;
 
     BOOL UpdateCursorPosition = FALSE;
@@ -4083,7 +4100,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             {
                 COORD CursorPosition;
 
-                fStartFromDelim = IS_WORD_DELIM(*pCookedReadData->_BufPtr);
+                BOOL fStartFromDelim = IS_WORD_DELIM(*pCookedReadData->_BufPtr);
 
             del_repeat:
                 // save cursor position
