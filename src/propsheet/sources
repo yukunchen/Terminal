@@ -111,4 +111,4 @@ TARGETLIBS = \
 # -------------------------------------
 
 SXS_APPLICATION_MANIFEST = WindowsShell.Manifest
-SXS_MANIFEST_SOURCE = $(PROJECT_ROOT)
+SXS_MANIFEST_SOURCE = .

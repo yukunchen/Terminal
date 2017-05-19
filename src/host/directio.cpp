@@ -142,7 +142,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
                                     cRecords,
                                     fIsPeek);
 
-    
+
     DWORD nBytesUnicode = cRecords;
 
     INPUT_RECORD* Buffer = pRecords;
@@ -179,28 +179,33 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
 
     if (CONSOLE_STATUS_WAIT == Status)
     {
-        // If we're told to wait until later, move all of our context from stack into a heap context and send it back up to the server.
+        // If we're told to wait until later, move all of our context
+        // from stack into a heap context and send it back up to the
+        // server.
         *ppWaiter = new DIRECT_READ_DATA(std::move(DirectReadData));
         if (*ppWaiter == nullptr)
         {
             Status = STATUS_NO_MEMORY;
         }
     }
-    else if (!fIsUnicode)
+    else if (NT_SUCCESS(Status))
     {
-        *pcRecords = TranslateInputToOem(Buffer,
-                                         fAddDbcsLead ? cRecords - 1 : cRecords,
-                                         nBytesUnicode,
-                                         fIsPeek ? nullptr : &pInputBuffer->ReadConInpDbcsLeadByte);
-        if (fAddDbcsLead)
+        if (!fIsUnicode)
         {
-            (*pcRecords)++;
-            Buffer--;
+            *pcRecords = TranslateInputToOem(Buffer,
+                                            fAddDbcsLead ? cRecords - 1 : cRecords,
+                                            nBytesUnicode,
+                                            fIsPeek ? nullptr : &pInputBuffer->ReadConInpDbcsLeadByte);
+            if (fAddDbcsLead)
+            {
+                (*pcRecords)++;
+                Buffer--;
+            }
         }
-    }
-    else
-    {
-        *pcRecords = nBytesUnicode;
+        else
+        {
+            *pcRecords = nBytesUnicode;
+        }
     }
 
     return Status;

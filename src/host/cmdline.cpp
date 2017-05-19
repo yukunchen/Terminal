@@ -1551,20 +1551,20 @@ NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
     Tmp = SourcePtr;
     LPWSTR Args[MAX_ARGS];
     USHORT ArgsLength[MAX_ARGS];    // in bytes
-    for (USHORT i = 0, j = 0; i < ArgCount; i++)
+    for (USHORT i = 0, k = 0; i < ArgCount; i++)
     {
-        if (j < SourceRemainderLength)
+        if (k < SourceRemainderLength)
         {
             Args[NumSourceArgs] = Tmp;
             ArgsLength[NumSourceArgs] = 0;
-            while (j++ < SourceRemainderLength && *Tmp++ != (WCHAR)' ')
+            while (k++ < SourceRemainderLength && *Tmp++ != (WCHAR)' ')
             {
                 ArgsLength[NumSourceArgs] += sizeof(WCHAR);
             }
 
-            while (j < SourceRemainderLength && *Tmp == (WCHAR)' ')
+            while (k < SourceRemainderLength && *Tmp == (WCHAR)' ')
             {
-                j++;
+                k++;
                 Tmp++;
             }
 
@@ -2847,7 +2847,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                 memmove(pCookedReadData->_UserBuffer, pCookedReadData->_BackupLimit, dwNumBytes);
             }
 
-            if (!pCookedReadData->fIsUnicode)
+            if (!pCookedReadData->_fIsUnicode)
             {
                 PCHAR TransBuffer;
 
@@ -3439,7 +3439,6 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
     DWORD CharsToWrite;
     NTSTATUS Status;
     SHORT ScrollY = 0;
-    BOOL fStartFromDelim;
     const SHORT sScreenBufferSizeX = pCookedReadData->_pScreenInfo->GetScreenBufferSize().X;
 
     BOOL UpdateCursorPosition = FALSE;
@@ -4101,7 +4100,7 @@ NTSTATUS ProcessCommandLine(_In_ COOKED_READ_DATA* pCookedReadData,
             {
                 COORD CursorPosition;
 
-                fStartFromDelim = IS_WORD_DELIM(*pCookedReadData->_BufPtr);
+                BOOL fStartFromDelim = IS_WORD_DELIM(*pCookedReadData->_BufPtr);
 
             del_repeat:
                 // save cursor position

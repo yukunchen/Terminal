@@ -24,8 +24,8 @@ class WriteData : public IWaitRoutine
 {
 public:
     WriteData(_In_ SCREEN_INFORMATION* const psiContext,
-              _In_ wchar_t* const pwchContext,
-              _In_ ULONG const cchContext);
+              _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
+              _In_ ULONG const cbContext);
     ~WriteData();
 
     BOOL Notify(_In_ WaitTerminationReason const TerminationReason,

@@ -8,8 +8,38 @@ rem skip the setup if we're already ready.
 if not "%OpenConBuild%" == "" goto :END
 
 rem Add path to MSBuild Binaries
-if exist "%ProgramFiles%\MSBuild\14.0\bin" set PATH=%ProgramFiles%\MSBuild\14.0\bin;%PATH%
-if exist "%ProgramFiles(x86)%\MSBuild\14.0\bin" set PATH=%ProgramFiles(x86)%\MSBuild\14.0\bin;%PATH%
+set MSBUILD=()
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe" (
+    set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe"
+    goto :FOUND_MSBUILD
+)
+if exist "%ProgramFiles%\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe" (
+    set MSBUILD="%ProgramFiles%\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe"
+    goto :FOUND_MSBUILD
+)
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\msbuild.exe" (
+    set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\msbuild.exe"
+    goto :FOUND_MSBUILD
+)
+if exist "%ProgramFiles%\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\msbuild.exe" (
+    set MSBUILD="%ProgramFiles%\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\msbuild.exe"
+    goto :FOUND_MSBUILD
+)
+if exist "%ProgramFiles(x86)%\MSBuild\14.0\bin" (
+    set MSBUILD="%ProgramFiles(x86)%\MSBuild\14.0\bin\msbuild.exe"
+    goto :FOUND_MSBUILD
+)
+if exist "%ProgramFiles%\MSBuild\14.0\bin" (
+    set MSBUILD="%ProgramFiles%\MSBuild\14.0\bin\msbuild.exe"
+    goto :FOUND_MSBUILD
+)
+
+if %MSBUILD%==() (
+    echo "Could not find MsBuild on your machine. It may be installed somewhere else."
+    goto :EXIT
+)
+
+:FOUND_MSBUILD
 
 rem Add Opencon build scripts to path
 set PATH=%PATH%;%~dp0;
@@ -69,3 +99,5 @@ set OpenConBuild=true
 
 :END
 echo The dev environment is ready to go!
+
+:EXIT

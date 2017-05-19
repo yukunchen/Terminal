@@ -24,10 +24,13 @@ shift
 goto :ARGS_LOOP
 
 :POST_ARGS_LOOP
-echo starting build
+echo Starting build...
 
 nuget.exe restore %OPENCON%\OpenConsole.sln
-msbuild.exe %OPENCON%\OpenConsole.sln /t:%_MSBUILD_TARGET% /m /nr:true /p:Configuration=%_LAST_BUILD_CONF%
+
+echo %MSBUILD% %OPENCON%\OpenConsole.sln /t:%_MSBUILD_TARGET% /m /p:Configuration=%_LAST_BUILD_CONF%
+
+%MSBUILD% %OPENCON%\OpenConsole.sln /t:%_MSBUILD_TARGET% /m /p:Configuration=%_LAST_BUILD_CONF%
 
 rem Cleanup unused variables here. Note we cannot use setlocal because we need to pass modified
 rem _LAST_BUILD_CONF out to OpenCon.cmd later.

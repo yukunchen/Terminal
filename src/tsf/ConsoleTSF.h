@@ -193,11 +193,11 @@ private:
     GetSuggestionWindowPos _pfnPosition;
 
     // Miscellaneous flags
-    BOOL _fModifyingDoc : 1;            // Set TRUE, when calls ITfRange::SetText
-    BOOL _fCoInitialized : 1;
-    BOOL _fEditSessionRequested : 1;
-    BOOL _fCleanupSessionRequested : 1;
-    BOOL _fCompositionCleanupSkipped : 1;
+    BOOL _fModifyingDoc;            // Set TRUE, when calls ITfRange::SetText
+    BOOL _fCoInitialized;
+    BOOL _fEditSessionRequested;
+    BOOL _fCleanupSessionRequested;
+    BOOL _fCompositionCleanupSkipped;
 
     int  _cCompositions;
     long _cchCompleted;     // length of completed composition waiting for cleanup

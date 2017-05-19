@@ -46,7 +46,7 @@ class ApiRoutines : public IApiRoutines
 
     HRESULT GetNumberOfConsoleInputEventsImpl(_In_ InputBuffer* const pContext,
                                               _Out_ ULONG* const pEvents);
-    
+
     HRESULT PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
                                   _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
                                   _In_ size_t const cRecords,
@@ -82,7 +82,7 @@ class ApiRoutines : public IApiRoutines
                              _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
                              _In_reads_opt_(cchInitialData) char* const psInitialData,
                              _In_ size_t const cchInitialData,
-                             _In_reads_opt_(cchExeNameLength) wchar_t* const pwsExeName,
+                             _In_reads_opt_(cchExeName) wchar_t* const pwsExeName,
                              _In_ size_t const cchExeName,
                              _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
                              _In_ HANDLE const hConsoleClient,
@@ -96,7 +96,7 @@ class ApiRoutines : public IApiRoutines
                              _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
                              _In_reads_opt_(cchInitialData) wchar_t* const pwsInitialData,
                              _In_ size_t const cchInitialData,
-                             _In_reads_opt_(cchExeNameLength) wchar_t* const pwsExeName,
+                             _In_reads_opt_(cchExeName) wchar_t* const pwsExeName,
                              _In_ size_t const cchExeName,
                              _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
                              _In_ HANDLE const hConsoleClient,

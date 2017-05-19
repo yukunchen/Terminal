@@ -132,7 +132,7 @@ HRESULT InputBuffer::FlushAllButKeys()
 }
 
 // Routine Description:
-// - This routine reads from the input buffer. 
+// - This routine reads from the input buffer.
 // - It can convert returned data to through the currently set Input CP, it can optionally return a wait condition
 //   if there isn't enough data in the buffer, and it can be set to not remove records as it reads them out.
 // Note:
@@ -228,7 +228,8 @@ NTSTATUS InputBuffer::_ReadBuffer(_Out_writes_to_(Length, *EventsRead) INPUT_REC
             throw std::out_of_range("_ReadBuffer read more records than can fit in the output buffer");
         };
         size_t currentIndex = 0;
-        while (!outRecords.empty())
+        // we check both to satisfy static analysis
+        while (!outRecords.empty() && currentIndex < Length)
         {
             Buffer[currentIndex] = outRecords.front();
             outRecords.pop_front();
