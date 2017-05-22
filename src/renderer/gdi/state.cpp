@@ -122,7 +122,7 @@ HRESULT GdiEngine::SetHwnd(_In_ HWND const hwnd)
     _hwndTargetWindow = hwnd;
     _hdcMemoryContext = hdcNewMemoryContext;
 
-    // If we have a font, apply it to the context. 
+    // If we have a font, apply it to the context.
     if (nullptr != _hfont)
     {
         LOG_LAST_ERROR_IF_NULL(SelectFont(_hdcMemoryContext, _hfont));
@@ -223,7 +223,7 @@ HRESULT GdiEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired,
     _hfont = hFont.release();
 
     InvalidateAll();
-    
+
     return S_OK;
 }
 
@@ -277,12 +277,13 @@ HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDe
 
     // Get a special engine size because TT fonts can't specify X or we'll get weird scaling under some circumstances.
     COORD coordFontRequested = pfiFontDesired->GetEngineSize();
-    
+
     // First, check to see if we're asking for the default raster font.
     if (pfiFontDesired->IsDefaultRasterFont())
     {
         // We're being asked for the default raster font, which gets special handling. In particular, it's the font
         // returned by GetStockObject(OEM_FIXED_FONT).
+#pragma prefast(suppress:38037, "raster fonts get special handling, we need to get it this way")
         hFont.reset((HFONT)GetStockObject(OEM_FIXED_FONT));
     }
     else
@@ -307,9 +308,9 @@ HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDe
         lf.lfWeight = pfiFontDesired->GetWeight();
 
         // If we're searching for Terminal, our supported Raster Font, then we must use OEM_CHARSET.
-        // If the System's Non-Unicode Setting is set to English (United States) which is 437 
+        // If the System's Non-Unicode Setting is set to English (United States) which is 437
         // and we try to enumerate Terminal with the console codepage as 932, that will turn into SHIFTJIS_CHARSET.
-        // Despite C:\windows\fonts\vga932.fon always being present, GDI will refuse to load the Terminal font 
+        // Despite C:\windows\fonts\vga932.fon always being present, GDI will refuse to load the Terminal font
         // that doesn't correspond to the current System Non-Unicode Setting. It will then fall back to a TrueType
         // font that does support the SHIFTJIS_CHARSET (because Terminal with CP 437 a.k.a. C:\windows\fonts\vgaoem.fon does NOT support it.)
         // This is OK for display purposes (things will render properly) but not OK for API purposes.
@@ -362,7 +363,7 @@ HRESULT GdiEngine::_GetProposedFont(_In_ FontInfoDesired const * const pfiFontDe
     coordFont.Y = static_cast<SHORT>(sz.cy);
 
     // The extent point won't necessarily be perfect for the width, so get the ABC metrics for the 0 if possible to improve the measurement.
-    // This will fail for non-TrueType fonts and we'll fall back to what GetTextExtentPoint said. 
+    // This will fail for non-TrueType fonts and we'll fall back to what GetTextExtentPoint said.
     {
         ABC abc;
         if (0 != GetCharABCWidthsW(hdcTemp.get(), '0', '0', &abc))
