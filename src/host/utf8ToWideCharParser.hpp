@@ -22,7 +22,11 @@ class Utf8ToWideCharParser final
 public:
     Utf8ToWideCharParser(_In_ const unsigned int codePage);
     void SetCodePage(_In_ const unsigned int codePage);
-    HRESULT Parse(_In_reads_(cch) const byte* const pBytes, _Inout_ unsigned int& cch, _Inout_ std::unique_ptr<wchar_t[]>& converted);
+    HRESULT Parse(_In_reads_(cch) const byte* const pBytes, 
+                  _In_ unsigned int const cchBuffer, 
+                  _Out_ unsigned int * const cchConsumed,
+                  _Inout_ std::unique_ptr<wchar_t[]>& converted,
+                  _Out_ unsigned int * const cchConverted);
 
 private:
     enum class _State
