@@ -37,6 +37,8 @@ void FileTests::TestUtf8WriteFileInvalid()
     char* str;
     DWORD cbStr;
 
+    // \x80 is an invalid UTF-8 continuation
+    // \x40 is the @ symbol which is valid.
     str = "\x80\x40";
     cbStr = (DWORD)strlen(str);
     dwWritten = 0;
@@ -45,6 +47,8 @@ void FileTests::TestUtf8WriteFileInvalid()
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteFile(hOut, str, cbStr, &dwWritten, nullptr));
     VERIFY_ARE_EQUAL(dwExpectedWritten, dwWritten);
 
+    // \x80 is an invalid UTF-8 continuation
+    // \x40 is the @ symbol which is valid.
     str = "\x80\x40\x40";
     cbStr = (DWORD)strlen(str);
     dwWritten = 0;
@@ -53,6 +57,8 @@ void FileTests::TestUtf8WriteFileInvalid()
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteFile(hOut, str, cbStr, &dwWritten, nullptr));
     VERIFY_ARE_EQUAL(dwExpectedWritten, dwWritten);
 
+    // \x80 is an invalid UTF-8 continuation
+    // \x40 is the @ symbol which is valid.
     str = "\x80\x80\x80\x40";
     cbStr = (DWORD)strlen(str);
     dwWritten = 0;

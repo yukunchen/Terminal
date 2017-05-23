@@ -24,9 +24,9 @@ public:
     void SetCodePage(_In_ const unsigned int codePage);
     HRESULT Parse(_In_reads_(cch) const byte* const pBytes, 
                   _In_ unsigned int const cchBuffer, 
-                  _Out_ unsigned int * const cchConsumed,
+                  _Out_ unsigned int& cchConsumed,
                   _Inout_ std::unique_ptr<wchar_t[]>& converted,
-                  _Out_ unsigned int * const cchConverted);
+                  _Out_ unsigned int& cchConverted);
 
 private:
     enum class _State

@@ -36,7 +36,7 @@ class Utf8ToWideCharParserTests
         unsigned int generated = 0;
         unique_ptr<wchar_t[]> output { nullptr };
 
-        parser.Parse(hello, count, &consumed, output, &generated);
+        parser.Parse(hello, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)5);
         VERIFY_ARE_EQUAL(generated, (unsigned int)5);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
@@ -60,7 +60,7 @@ class Utf8ToWideCharParserTests
         unsigned int generated = 0;
         unique_ptr<wchar_t[]> output { nullptr };
 
-        parser.Parse(sushi, count, &consumed, output, &generated);
+        parser.Parse(sushi, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)6);
         VERIFY_ARE_EQUAL(generated, (unsigned int)2);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
@@ -86,14 +86,14 @@ class Utf8ToWideCharParserTests
 
         for (int i = 0; i < 2; ++i)
         {
-            parser.Parse(shi + i, count, &consumed, output, &generated);
+            parser.Parse(shi + i, count, consumed, output, generated);
             VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
             VERIFY_ARE_EQUAL(generated, (unsigned int)0);
             VERIFY_ARE_EQUAL(output.get(), nullptr);
             count = 1;
         }
 
-        parser.Parse(shi + 2, count, &consumed, output, &generated);
+        parser.Parse(shi + 2, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
         VERIFY_ARE_EQUAL(generated, (unsigned int)1);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
@@ -117,7 +117,7 @@ class Utf8ToWideCharParserTests
         unique_ptr<wchar_t[]> output { nullptr };
         auto parser = Utf8ToWideCharParser { utf8CodePage };
 
-        parser.Parse(sushi, count, &consumed, output, &generated);
+        parser.Parse(sushi, count, consumed, output, generated);
         // check that we got the first wide char back
         VERIFY_ARE_EQUAL(consumed, (unsigned int)4);
         VERIFY_ARE_EQUAL(generated, (unsigned int)1);
@@ -134,7 +134,7 @@ class Utf8ToWideCharParserTests
         consumed = 0;
         generated = 0;
         output.release();
-        parser.Parse(sushi + 4, count, &consumed, output, &generated);
+        parser.Parse(sushi + 4, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
         VERIFY_ARE_EQUAL(generated, (unsigned int)0);
         VERIFY_ARE_EQUAL(output.get(), nullptr);
@@ -144,7 +144,7 @@ class Utf8ToWideCharParserTests
         consumed = 0;
         generated = 0;
         output.release();
-        parser.Parse(sushi + 5, count, &consumed, output, &generated);
+        parser.Parse(sushi + 5, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
         VERIFY_ARE_EQUAL(generated, (unsigned int)1);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
@@ -187,7 +187,7 @@ class Utf8ToWideCharParserTests
         unique_ptr<wchar_t[]> output { nullptr };
         auto parser = Utf8ToWideCharParser { utf8CodePage };
 
-        parser.Parse(doomoArigatoo, count, &consumed, output, &generated);
+        parser.Parse(doomoArigatoo, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)4);
         VERIFY_ARE_EQUAL(generated, (unsigned int)1);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
@@ -203,7 +203,7 @@ class Utf8ToWideCharParserTests
         consumed = 0;
         generated = 0;
         output.release();
-        parser.Parse(doomoArigatoo + 4, count, &consumed, output, &generated);
+        parser.Parse(doomoArigatoo + 4, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)16);
         VERIFY_ARE_EQUAL(generated, (unsigned int)5);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
@@ -219,7 +219,7 @@ class Utf8ToWideCharParserTests
         consumed = 0;
         generated = 0;
         output.release();
-        parser.Parse(doomoArigatoo + 20, count, &consumed, output, &generated);
+        parser.Parse(doomoArigatoo + 20, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)4);
         VERIFY_ARE_EQUAL(generated, (unsigned int)2);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
@@ -247,7 +247,7 @@ class Utf8ToWideCharParserTests
         unique_ptr<wchar_t[]> output { nullptr };
         auto parser = Utf8ToWideCharParser { utf8CodePage };
 
-        parser.Parse(sushi, count, &consumed, output, &generated);
+        parser.Parse(sushi, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)9);
         VERIFY_ARE_EQUAL(generated, (unsigned int)2);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
@@ -270,7 +270,7 @@ class Utf8ToWideCharParserTests
         unsigned int consumed = 0;
         unsigned int generated = 0;
         unique_ptr<wchar_t[]> output { nullptr };
-        parser.Parse(partialSequence, count, &consumed, output, &generated);
+        parser.Parse(partialSequence, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(parser._currentState, Utf8ToWideCharParser::_State::BeginPartialParse);
         VERIFY_ARE_EQUAL(parser._bytesStored, inputSize);
         // set the codepage to the same one it currently is, ensure

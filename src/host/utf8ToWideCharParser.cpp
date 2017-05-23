@@ -68,12 +68,12 @@ void Utf8ToWideCharParser::SetCodePage(_In_ const unsigned int codePage)
 // - <none>
 HRESULT Utf8ToWideCharParser::Parse(_In_reads_(cch) const byte* const pBytes,
                                     _In_ unsigned int const cchBuffer,
-                                    _Out_ unsigned int * const cchConsumed,
+                                    _Out_ unsigned int& cchConsumed,
                                     _Inout_ std::unique_ptr<wchar_t[]>& converted,
-                                    _Out_ unsigned int * const cchConverted)
+                                    _Out_ unsigned int& cchConverted)
 {
-    *cchConsumed = 0;
-    *cchConverted = 0;
+    cchConsumed = 0;
+    cchConverted = 0;
 
     // we shouldn't be parsing if the current codepage isn't UTF8
     if (_currentCodePage != CP_UTF8)
@@ -104,12 +104,12 @@ HRESULT Utf8ToWideCharParser::Parse(_In_reads_(cch) const byte* const pBytes,
                     break;
                 case _State::Finished:
                     _currentState = _State::Ready;
-                    *cchConsumed = cchBuffer;
+                    cchConsumed = cchBuffer;
                     loop = false;
                     break;
                 case _State::AwaitingMoreBytes:
                     _currentState = _State::BeginPartialParse;
-                    *cchConsumed = cchBuffer;
+                    cchConsumed = cchBuffer;
                     loop = false;
                     break;
                 default:
@@ -118,7 +118,7 @@ HRESULT Utf8ToWideCharParser::Parse(_In_reads_(cch) const byte* const pBytes,
             }
         }
         converted.swap(_convertedWideChars);
-        *cchConverted = wideCharCount;
+        cchConverted = wideCharCount;
     }
     catch (...)
     {

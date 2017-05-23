@@ -1000,9 +1000,9 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
         RETURN_IF_FAILED(SizeTToUInt(cchTextBufferLength, &charCount));
         RETURN_IF_FAILED(parser.Parse(reinterpret_cast<const byte*>(psTextBuffer), 
                                       charCount, 
-                                      &charsConsumed,
+                                      charsConsumed,
                                       wideCharBuffer,
-                                      &charsGenerated));
+                                      charsGenerated));
         RETURN_IF_NULL_ALLOC(wideCharBuffer.get());
 
         pwchBuffer = reinterpret_cast<wchar_t*>(wideCharBuffer.get());
