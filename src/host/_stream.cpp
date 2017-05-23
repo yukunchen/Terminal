@@ -995,12 +995,19 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
     {
         wideCharBuffer.release();
         unsigned int charCount;
+        unsigned int charsConsumed;
+        unsigned int charsGenerated;
         RETURN_IF_FAILED(SizeTToUInt(cchTextBufferLength, &charCount));
-        RETURN_IF_FAILED(parser.Parse(reinterpret_cast<const byte*>(psTextBuffer), charCount, wideCharBuffer));
+        RETURN_IF_FAILED(parser.Parse(reinterpret_cast<const byte*>(psTextBuffer), 
+                                      charCount, 
+                                      charsConsumed,
+                                      wideCharBuffer,
+                                      charsGenerated));
         RETURN_IF_NULL_ALLOC(wideCharBuffer.get());
 
         pwchBuffer = reinterpret_cast<wchar_t*>(wideCharBuffer.get());
-        cchBuffer = charCount;
+        cchBuffer = charsGenerated;
+        *pcchTextBufferRead = charsConsumed;
     }
     else
     {
@@ -1107,7 +1114,11 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
     HRESULT const hr = WriteConsoleWImplHelper(ScreenInfo, pwchBuffer, cchBuffer, &cchBufferRead, ppWaiter);
 
     // Calculate how many bytes of the original A buffer were consumed in the W version of the call to satisfy pcchTextBufferRead.
-    LOG_IF_FAILED(GetALengthFromW(uiCodePage, pwchBuffer, cchBufferRead, pcchTextBufferRead));
+    // For UTF-8 conversions, we've already returned this information above.
+    if (CP_UTF8 != uiCodePage)
+    {
+        LOG_IF_FAILED(GetALengthFromW(uiCodePage, pwchBuffer, cchBufferRead, pcchTextBufferRead));
+    }
 
     // Free remaining data
     if (uiCodePage != CP_UTF8)

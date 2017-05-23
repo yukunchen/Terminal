@@ -6,6 +6,7 @@
     <ClCompile Include="api\BufferTests.cpp" />
     <ClCompile Include="api\CursorTests.cpp" />
     <ClCompile Include="api\DimensionsTests.cpp" />
+    <ClCompile Include="api\FileTests.cpp" />
     <ClCompile Include="api\FontTests.cpp" />
     <ClCompile Include="api\InputTests.cpp" />
     <ClCompile Include="api\ModeTests.cpp" />
