@@ -151,6 +151,7 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
 // Apr-30-2015 MiNiksa  Corrected unknown character code assumption. Max Width in Text Metric
 //                      is not reliable for calculating half/full width. Must use current
 //                      display font data (cached) instead.
+// May-23-2017 migrie   Forced Box-Drawing Characters (x2500-x257F) to narrow. 
 BOOL IsCharFullWidth(_In_ WCHAR wch)
 {
     // See http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
@@ -175,6 +176,13 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
     else if (0x1160 <= wch && wch <= 0x200F)
     {
         // From Unicode 9.0, this range is narrow (assorted languages)
+        return FALSE;
+    }
+    // 0x2500 - 0x257F is the box drawing character range - 
+    // Technically, these are ambiguous width characters, but applications that
+    // use them generally assume that they're narrow to ensure proper alignment.
+    else if (0x2500 <= wch && wch <= 0x257F)
+    {
         return FALSE;
     }
     // 0x2010 - 0x2B59 varies between narrow, ambiguous, and wide by character and font (Unicode 9.0)
