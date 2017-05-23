@@ -280,12 +280,6 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleClientDisconnectRoutine(_In_ PCONSOLE_API
 
     RemoveConsole(pProcessData);
 
-    // If there are no more clients connected, terminate our process.
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.IsEmpty())
-    {
-        TerminateProcess(GetCurrentProcess(), STATUS_SUCCESS);
-    }
-
     pMessage->SetReplyStatus(STATUS_SUCCESS);
 
     return pMessage;
