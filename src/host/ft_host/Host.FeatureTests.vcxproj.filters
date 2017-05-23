@@ -66,6 +66,9 @@
     <ClCompile Include="api\AliasTests.cpp">
       <Filter>Source Files\API</Filter>
     </ClCompile>
+    <ClCompile Include="api\FileTests.cpp">
+      <Filter>Source Files\API</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.hpp">
