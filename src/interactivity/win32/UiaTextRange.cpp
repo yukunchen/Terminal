@@ -17,6 +17,12 @@ using namespace Microsoft::Console::Interactivity::Win32;
 unsigned long long UiaTextRange::id = 0;
 #endif
 
+// Routine Description:
+// -
+// Arguments:
+// -
+// Return Value:
+// -
 // returns val if (low <= val <= high)
 // returns low if (val < low)
 // returns high if (val > high)
@@ -310,7 +316,7 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
         POINT topLeft;
         POINT bottomRight;
         topLeft.x = _endpointToColumn(_start) * currentFontSize.X;
-        topLeft.y = _lineNumberToViewport(startLine) * currentFontSize.Y;
+        topLeft.y = _rowToViewport(startLine) * currentFontSize.Y;
 
         bottomRight.x = topLeft.x;
         bottomRight.y = topLeft.y + currentFontSize.Y;
@@ -357,7 +363,7 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
             topLeft.x = 0;
         }
 
-        topLeft.y = _lineNumberToViewport(currentLineNumber) * currentFontSize.Y;
+        topLeft.y = _rowToViewport(currentLineNumber) * currentFontSize.Y;
 
         if (i + 1 == totalLinesInRange)
         {
@@ -717,17 +723,37 @@ IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** p
 
 #pragma endregion
 
+// Routine Description:
+// -
+// Arguments:
+// -
+// Return Value:
+// -
 const bool UiaTextRange::_isDegenerate() const
 {
     return (_start == _end);
 }
 
+// Routine Description:
+// -
+// Arguments:
+// -
+// Return Value:
+// -
 const bool UiaTextRange::_isLineInViewport(_In_ const int lineNumber) const
 {
     const SMALL_RECT viewport = _getViewport();
     return _isLineInViewport(lineNumber, viewport);
 }
 
+// TODw
+// Routine Description:
+// - checks if the row is currently visible in the viewport
+// Arguments:
+// - row - the row to check
+// - viewport - the viewport to use for the bounds
+// Return Value:
+// - true if the row is within the bounds of the viewport
 const bool UiaTextRange::_isLineInViewport(_In_ const int lineNumber, _In_ const SMALL_RECT viewport) const
 {
     if (viewport.Top < viewport.Bottom)
@@ -742,53 +768,95 @@ const bool UiaTextRange::_isLineInViewport(_In_ const int lineNumber, _In_ const
     }
 }
 
-// returns 0-indexed
-const int UiaTextRange::_lineNumberToViewport(_In_ const int lineNumber) const
+// Routine Description:
+// - converts a row index to an index of the current viewport. Is
+// 0-indexed.
+// Arguments:
+// - row - the row to convert
+// Return Value:
+// - The index of the row in the viewport.
+const int UiaTextRange::_rowToViewport(_In_ const int row) const
 {
     const SMALL_RECT viewport = _getViewport();
 
     // we return a failure value if the line is not currently visible
-    if (!_isLineInViewport(lineNumber))
+    if (!_isLineInViewport(row))
     {
         // TODO MSFT 7960168 better failure value
         return -1;
     }
 
-    if (lineNumber >= viewport.Top)
+    if (row >= viewport.Top)
     {
-        return lineNumber - viewport.Top;
+        return row - viewport.Top;
     }
     else
     {
-        return _getViewportHeight(viewport) - viewport.Bottom + lineNumber;
+        return _getViewportHeight(viewport) - viewport.Bottom + row;
     }
 }
 
+// Routine Description:
+// - calculates the row refered to by the endpoint.
+// Arguments:
+// - endpoint - the endpoint to translate
+// Return Value:
+// - the row value
 const int UiaTextRange::_endpointToRow(_In_ const int endpoint) const
 {
     return endpoint / _getRowWidth();
 }
 
+// Routine Description:
+// - calculates the column refered to by the endpoint.
+// Arguments:
+// - endpoint - the endpoint to translate
+// Return Value:
+// - the column value
 const int UiaTextRange::_endpointToColumn(_In_ const int endpoint) const
 {
     return endpoint % _getRowWidth();
 }
 
+// Routine Description:
+// - Converts a row to an endpoint value for the beginning of the row.
+// Arguments:
+// - row - the row to convert.
+// Return Value:
+// - the converted endpoint value.
 const int UiaTextRange::_rowToEndpoint(_In_ const int row) const
 {
     return row * _getRowWidth();
 }
 
+// Routine Description:
+// - Gets the number of rows in the output text buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - The number of rows
 const int UiaTextRange::_getTotalRows() const
 {
     return _getScreenBufferCoords().Y;
 }
 
+// Routine Description:
+// - Gets the width of the text buffer rows
+// Arguments:
+// - <none>
+// Return Value:
+// - The row width
 const int UiaTextRange::_getRowWidth() const
 {
     return _getScreenBufferCoords().X;
 }
 
+// Routine Description:
+// - Gets the viewport height, measured in char rows.
+// Arguments:
+// - viewport - The viewport to measure
+// Return Value:
+// - The viewport height
 const int UiaTextRange::_getViewportHeight(_In_ const SMALL_RECT viewport) const
 {
     // + 1 because COORD is inclusive on both sides so subtracting top
@@ -796,6 +864,12 @@ const int UiaTextRange::_getViewportHeight(_In_ const SMALL_RECT viewport) const
     return _normalizeRow(viewport.Bottom - viewport.Top + 1);
 }
 
+// Routine Description:
+// - Gets the viewport width, measured in char columns.
+// Arguments:
+// - viewport - The viewport to measure
+// Return Value:
+// - The viewport width
 const int UiaTextRange::_getViewportWidth(_In_ const SMALL_RECT viewport) const
 {
     // + 1 because COORD is inclusive on both sides so subtracting left
@@ -803,37 +877,82 @@ const int UiaTextRange::_getViewportWidth(_In_ const SMALL_RECT viewport) const
     return (viewport.Right - viewport.Left + 1);
 }
 
+// Routine Description:
+// - Gets the current viewport
+// Arguments:
+// - <none>
+// Return Value:
+// - The viewport
 const SMALL_RECT UiaTextRange::_getViewport() const
 {
     return _pScreenInfo->GetBufferViewport();
 }
 
+// Routine Description:
+// - Gets the current window
+// Arguments:
+// - <none>
+// Return Value:
+// - The current window. May return nullptr if there is no current
+// window.
 IConsoleWindow* UiaTextRange::_getWindow()
 {
     return ServiceLocator::LocateConsoleWindow();
 }
 
+// Routine Description:
+// - gets the current window handle
+// Arguments:
+// - <none>
+// Return Value
+// - the current window handle
 HWND UiaTextRange::_getWindowHandle()
 {
     return ServiceLocator::LocateConsoleWindow()->GetWindowHandle();
 }
 
+// Routine Description:
+// - gets the current screen buffer size.
+// Arguments:
+// - <none>
+// Return Value:
+// - The screen buffer size
 const COORD UiaTextRange::_getScreenBufferCoords() const
 {
     return ServiceLocator::LocateGlobals()->getConsoleInformation()->GetScreenBufferSize();
 }
 
+// Routine Description:
+// - normalizes the row index to within the bounds of the output buffer.
+// Arguments:
+// - the non-normalized row index
+// Return Value:
+// - the normalized row index
 const int UiaTextRange::_normalizeRow(_In_ const int row) const
 {
     const int totalRows = _getTotalRows();
     return ((row + totalRows) % totalRows);
 }
 
+// Routine Description:
+// - gets the 0-indexed row number that is currently the first row of
+// the screen buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - the top row index of the screen buffer.
 const int UiaTextRange::_getScreenBufferTopRow() const
 {
     return _pOutputBuffer->GetFirstRowIndex();
 }
 
+// Routine Description:
+// - gets the 0-indexed row number that is currently the last row of
+// the screen buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - the bottom row index of the screen buffer.
 const int UiaTextRange::_getScreenBufferBottomRow() const
 {
     return _normalizeRow(_getScreenBufferTopRow() - 1);

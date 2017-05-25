@@ -17,6 +17,10 @@ Author(s):
 
 #include "../inc/IConsoleWindow.hpp"
 
+#ifdef UNIT_TESTING
+class UiaTextRangeTests;
+#endif
+
 namespace Microsoft
 {
     namespace Console
@@ -124,7 +128,7 @@ namespace Microsoft
                     const bool _isLineInViewport(_In_ const int lineNumber) const;
                     const bool _isLineInViewport(_In_ const int lineNumber, _In_ const SMALL_RECT viewport) const;
 
-                    const int _lineNumberToViewport(_In_ const int lineNumber) const;
+                    const int _rowToViewport(_In_ const int lineNumber) const;
                     const int _endpointToRow(_In_ const int endpoint) const;
                     const int _endpointToColumn(_In_ const int endpoint) const;
                     const int _rowToEndpoint(_In_ const int row) const;
@@ -142,6 +146,10 @@ namespace Microsoft
                     const COORD _getScreenBufferCoords() const;
                     const int _getScreenBufferTopRow() const;
                     const int _getScreenBufferBottomRow() const;
+
+                    #ifdef UNIT_TESTING
+                    friend class ::UiaTextRangeTests;
+                    #endif
                 };
             }
         }
