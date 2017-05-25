@@ -11,12 +11,6 @@
 #include "UiaTextRange.hpp"
 #include "../../../host/textBuffer.hpp"
 
-/*
-#ifdef UNIT_TESTING
-#error here
-#endif
-*/
-
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
@@ -71,68 +65,30 @@ class UiaTextRangeTests
 {
     TEST_CLASS(UiaTextRangeTests);
 
-    FontInfo* CreateFontInfo()
-    {
+    CommonState* _state;
 
-        COORD coordFontSize;
-        coordFontSize.X = 8;
-        coordFontSize.Y = 12;
-        FontInfo* pRet  = new FontInfo(L"Consolas", 0, 0, coordFontSize, 0);
-        return pRet;
+    TEST_METHOD_SETUP(MethodSetup)
+    {
+        _state = new CommonState();
+        _state->PrepareGlobalFont();
+        _state->PrepareGlobalScreenBuffer();
+        return true;
     }
 
-    TEXT_BUFFER_INFO* CreateTextBuffer(FontInfo* pFontInfo)
+    TEST_METHOD_CLEANUP(MethodCleanup)
     {
-        TEXT_BUFFER_INFO* pTextBuffer;
-        COORD screenBufferSize;
-        screenBufferSize.X = 100;
-        screenBufferSize.Y = 200;
-        CHAR_INFO fill;
-        fill.Attributes = FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY;
-        UINT cursorSize = 12;
-        TEXT_BUFFER_INFO::CreateInstance(pFontInfo,
-                                         screenBufferSize,
-                                         fill,
-                                         cursorSize,
-                                         &pTextBuffer);
-        return pTextBuffer;
-    }
-
-    SCREEN_INFORMATION* CreateScreenInfo(FontInfo* pFontInfo)
-    {
-        COORD windowSize;
-        windowSize.X = 200;
-        windowSize.Y = 100;
-        COORD screenBufferSize;
-        screenBufferSize.X = 100;
-        screenBufferSize.Y = 200;
-        CHAR_INFO fill;
-        fill.Attributes = FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY;
-        UINT cursorSize = 12;
-        SCREEN_INFORMATION* pScreenInfo;
-        SCREEN_INFORMATION::CreateInstance(windowSize,
-                                           pFontInfo,
-                                           screenBufferSize,
-                                           fill,
-                                           fill,
-                                           cursorSize,
-                                           &pScreenInfo);
-        return pScreenInfo;
+        _state->CleanupGlobalScreenBuffer();
+        _state->CleanupGlobalFont();
+        delete _state;
+        return true;
     }
 
     TEST_METHOD(DegenerateRangesDetected)
     {
         // make required dependency objects
         DummyElementProvider dummyProvider;
-
-        FontInfo* pFontInfo = CreateFontInfo();
-        auto deleteFontInfo = wil::ScopeExit([&] { delete pFontInfo; });
-
-        TEXT_BUFFER_INFO* pTextBuffer = CreateTextBuffer(pFontInfo);
-        auto deleteTextBuffer = wil::ScopeExit([&] { delete pTextBuffer; });
-
-        SCREEN_INFORMATION* pScreenInfo = CreateScreenInfo(pFontInfo);
-        auto deleteScreenInfo = wil::ScopeExit([&] { delete pScreenInfo; });
+        SCREEN_INFORMATION* pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        TEXT_BUFFER_INFO* pTextBuffer = pScreenInfo->TextInfo;
 
         // make a degenerate range and verify that it reports degenerate
         UiaTextRange degenerate {
