@@ -6,7 +6,6 @@
     <ClCompile Include="AttrRowTests.cpp" />
     <ClCompile Include="CharRowTests.cpp" />
     <ClCompile Include="ClipboardTests.cpp" />
-    <ClCompile Include="CommonState.cpp" />
     <ClCompile Include="DbcsTests.cpp" />
     <ClCompile Include="InitTests.cpp" />
     <ClCompile Include="ScreenBufferTests.cpp" />
@@ -54,8 +53,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\inc\CommonState.hpp" />
     <ClInclude Include="..\precomp.h" />
-    <ClInclude Include="CommonState.hpp" />
     <ClInclude Include="UnicodeLiteral.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -70,7 +69,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;$(SolutionDir)src\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
