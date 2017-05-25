@@ -47,3 +47,6 @@ __inline int NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTAT
 // WIL
 #include <wil\Common.h>
 #include <wil\Result.h>
+
+// CPP 2017 utilities.
+#include "..\..\inc\cpp2017.hpp"

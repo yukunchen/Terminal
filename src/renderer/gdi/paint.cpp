@@ -58,8 +58,6 @@ HRESULT GdiEngine::ScrollFrame()
     // If we don't have any scrolling to do, return early.
     RETURN_HR_IF(S_OK, 0 == _szInvalidScroll.cx && 0 == _szInvalidScroll.cy);
 
-    RECT rcUpdate = { 0 };
-
     // We have to limit the region that can be scrolled to not include the gutters.
     // Gutters are defined as sub-character width pixels at the bottom or right of the screen.
     COORD const coordFontSize = _GetFontSize();
@@ -83,6 +81,7 @@ HRESULT GdiEngine::ScrollFrame()
                                            nullptr,
                                            0));
 
+    RECT rcUpdate = { 0 };
     LOG_LAST_ERROR_IF_FALSE(ScrollDC(_hdcMemoryContext, _szInvalidScroll.cx, _szInvalidScroll.cy, &rcScrollLimit, &rcScrollLimit, nullptr, &rcUpdate));
 
     _InvalidCombine(&rcUpdate);
