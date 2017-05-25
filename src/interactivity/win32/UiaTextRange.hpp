@@ -125,10 +125,10 @@ namespace Microsoft
 
                     const bool _isDegenerate() const;
 
-                    const bool _isLineInViewport(_In_ const int lineNumber) const;
-                    const bool _isLineInViewport(_In_ const int lineNumber, _In_ const SMALL_RECT viewport) const;
+                    const bool _isRowInViewport(_In_ const int row) const;
+                    const bool _isRowInViewport(_In_ const int row, _In_ const SMALL_RECT viewport) const;
 
-                    const int _rowToViewport(_In_ const int lineNumber) const;
+                    const int _rowToViewport(_In_ const int row) const;
                     const int _endpointToRow(_In_ const int endpoint) const;
                     const int _endpointToColumn(_In_ const int endpoint) const;
                     const int _rowToEndpoint(_In_ const int row) const;

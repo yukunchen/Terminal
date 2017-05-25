@@ -60,7 +60,7 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
     _end = end;
 }
 
-// returns a degenerate text range of the start of the line closest to the y value of point
+// returns a degenerate text range of the start of the row closest to the y value of point
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
                            _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
                            _In_ const SCREEN_INFORMATION* const pScreenInfo,
@@ -241,13 +241,13 @@ IFACEMETHODIMP UiaTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
 {
     const int topRow = _getScreenBufferTopRow();
     const int bottomRow = _getScreenBufferBottomRow();
-    const int lineWidth = _getScreenBufferCoords().X;
+    const int rowWidth = _getRowWidth();
 
     if (unit <= TextUnit::TextUnit_Line)
     {
         // expand to line
         _start = _rowToEndpoint(_endpointToRow(_start));
-        _end = _start + lineWidth;
+        _end = _start + rowWidth;
     }
     else
     {
@@ -296,10 +296,10 @@ IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttribut
 
 IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    const int totalLines = _getTotalRows();
-    const int startLine = _endpointToRow(_start);
-    const int endLine = _endpointToRow(_end);
-    const int totalLinesInRange = (endLine >= startLine) ? endLine - startLine : endLine - startLine + totalLines;
+    const int totalRows = _getTotalRows();
+    const int startRow = _endpointToRow(_start);
+    const int endRow = _endpointToRow(_end);
+    const int totalRowsInRange = (endRow >= startRow) ? endRow - startRow : endRow - startRow + totalRows;
     // width of viewport (measured in chars)
     const SMALL_RECT viewport = _getViewport();
     const int viewportWidth = _getViewportWidth(viewport);
@@ -311,12 +311,12 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
     // set of coords.
     std::vector<double> coords;
 
-    if (_isDegenerate() && _isLineInViewport(startLine))
+    if (_isDegenerate() && _isRowInViewport(startRow))
     {
         POINT topLeft;
         POINT bottomRight;
         topLeft.x = _endpointToColumn(_start) * currentFontSize.X;
-        topLeft.y = _rowToViewport(startLine) * currentFontSize.Y;
+        topLeft.y = _rowToViewport(startRow) * currentFontSize.Y;
 
         bottomRight.x = topLeft.x;
         bottomRight.y = topLeft.y + currentFontSize.Y;
@@ -340,10 +340,10 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
         CATCH_RETURN();
     }
 
-    for (int i = 0; i < totalLinesInRange; ++i)
+    for (int i = 0; i < totalRowsInRange; ++i)
     {
-        const int currentLineNumber = _normalizeRow(startLine + i);
-        if (!_isLineInViewport(currentLineNumber))
+        const int currentRowNumber = _normalizeRow(startRow + i);
+        if (!_isRowInViewport(currentRowNumber))
         {
             continue;
         }
@@ -363,9 +363,9 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
             topLeft.x = 0;
         }
 
-        topLeft.y = _rowToViewport(currentLineNumber) * currentFontSize.Y;
+        topLeft.y = _rowToViewport(currentRowNumber) * currentFontSize.Y;
 
-        if (i + 1 == totalLinesInRange)
+        if (i + 1 == totalRowsInRange)
         {
             // special logic for last line since we might not end at
             // the right edge of the viewport. We need to subtract 1
@@ -426,16 +426,16 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 {
     std::wstring wstr = L"";
     const bool getPartialText = maxLength != -1;
-    const int totalLines = _getTotalRows();
-    const int startLine = _endpointToRow(_start);
-    const int endLine = _endpointToRow(_end);
-    const int totalLinesInRange = (endLine > startLine) ? endLine - startLine : endLine - startLine + totalLines;
+    const int totalRows = _getTotalRows();
+    const int startRow = _endpointToRow(_start);
+    const int endRow = _endpointToRow(_end);
+    const int totalRowsInRange = (endRow > startRow) ? endRow - startRow : endRow - startRow + totalRows;
 
-    for (int i = 0; i < totalLinesInRange; ++i)
+    for (int i = 0; i < totalRowsInRange; ++i)
     {
         try
         {
-            const ROW* const row = _pOutputBuffer->GetRowByOffset(startLine + i);
+            const ROW* const row = _pOutputBuffer->GetRowByOffset(startRow + i);
             if (row->CharRow.ContainsText())
             {
                 std::wstring tempString = std::wstring(row->CharRow.Chars + row->CharRow.Left,
@@ -697,7 +697,7 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
             newViewport.Bottom = static_cast<SHORT>(_normalizeRow(newViewport.Bottom + 1));
         }
     }
-    else if (!_isLineInViewport(endRow, newViewport))
+    else if (!_isRowInViewport(endRow, newViewport))
     {
 
         while (newViewport.Bottom != endRow && newViewport.Bottom != bottomRow)
@@ -740,10 +740,10 @@ const bool UiaTextRange::_isDegenerate() const
 // -
 // Return Value:
 // -
-const bool UiaTextRange::_isLineInViewport(_In_ const int lineNumber) const
+const bool UiaTextRange::_isRowInViewport(_In_ const int row) const
 {
     const SMALL_RECT viewport = _getViewport();
-    return _isLineInViewport(lineNumber, viewport);
+    return _isRowInViewport(row, viewport);
 }
 
 // TODw
@@ -754,17 +754,17 @@ const bool UiaTextRange::_isLineInViewport(_In_ const int lineNumber) const
 // - viewport - the viewport to use for the bounds
 // Return Value:
 // - true if the row is within the bounds of the viewport
-const bool UiaTextRange::_isLineInViewport(_In_ const int lineNumber, _In_ const SMALL_RECT viewport) const
+const bool UiaTextRange::_isRowInViewport(_In_ const int row, _In_ const SMALL_RECT viewport) const
 {
     if (viewport.Top < viewport.Bottom)
     {
-        return (lineNumber >= viewport.Top &&
-                lineNumber <= viewport.Bottom);
+        return (row >= viewport.Top &&
+                row <= viewport.Bottom);
     }
     else
     {
-        return (lineNumber >= viewport.Top ||
-                lineNumber <= viewport.Bottom);
+        return (row >= viewport.Top ||
+                row <= viewport.Bottom);
     }
 }
 
@@ -780,7 +780,7 @@ const int UiaTextRange::_rowToViewport(_In_ const int row) const
     const SMALL_RECT viewport = _getViewport();
 
     // we return a failure value if the line is not currently visible
-    if (!_isLineInViewport(row))
+    if (!_isRowInViewport(row))
     {
         // TODO MSFT 7960168 better failure value
         return -1;

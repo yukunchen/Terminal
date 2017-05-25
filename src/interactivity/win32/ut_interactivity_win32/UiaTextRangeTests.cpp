@@ -111,7 +111,7 @@ class UiaTextRangeTests
         VERIFY_IS_FALSE(notDegenerate._isDegenerate());
     }
 
-    TEST_METHOD(CanCheckIfLineIsInViewport)
+    TEST_METHOD(CanCheckIfRowIsInViewport)
     {
     }
 
