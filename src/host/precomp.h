@@ -103,5 +103,7 @@ BOOL IsConsoleFullWidth(_In_ HDC hDC, _In_ DWORD CodePage, _In_ WCHAR wch);
 #include "..\inc\operators.hpp"
 
 // TODO: MSFT 9355094 Find a better way of doing this. http://osgvsowi/9355094
-#define NTSTATUS_FROM_HRESULT(H) \
-    NTSTATUS_FROM_WIN32(HRESULT_CODE(H))
+inline NTSTATUS NTSTATUS_FROM_HRESULT(HRESULT hr)
+{
+    return NTSTATUS_FROM_WIN32(HRESULT_CODE(hr));
+}

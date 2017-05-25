@@ -98,5 +98,7 @@ __inline NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(
 #include <wil\resource.h>
 
 // TODO: MSFT 9355094 Find a better way of doing this. http://osgvsowi/9355094
-#define NTSTATUS_FROM_HRESULT(H) \
-    NTSTATUS_FROM_WIN32(HRESULT_CODE(H))
+inline NTSTATUS NTSTATUS_FROM_HRESULT(HRESULT hr)
+{
+    return NTSTATUS_FROM_WIN32(HRESULT_CODE(hr));
+}
