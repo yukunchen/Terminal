@@ -149,8 +149,9 @@ HRESULT GdiEngine::_InvalidOffset(_In_ const POINT* const ppt)
         RETURN_IF_FAILED(LongAdd(_rcInvalid.top, ppt->y, &rcInvalidNew.top));
         RETURN_IF_FAILED(LongAdd(_rcInvalid.bottom, ppt->y, &rcInvalidNew.bottom));
 
-        // If all math succeeded, store the new invalid rect.
-        _rcInvalid = rcInvalidNew;
+        // Add the scrolled invalid rectangle to what was left behind to get the new invalid area.
+        // This is the equivalent of adding in the "update rectangle" that we would get out of ScrollWindowEx/ScrollDC.
+        UnionRect(&_rcInvalid, &_rcInvalid, &rcInvalidNew);
 
         // Ensure invalid areas remain within bounds of window.
         RETURN_IF_FAILED(_InvalidRestrict());
@@ -173,10 +174,10 @@ HRESULT GdiEngine::_InvalidRestrict()
     // Do restriction only if retrieving the client rect was successful.
     RETURN_LAST_ERROR_IF_FALSE(GetClientRect(_hwndTargetWindow, &rcClient));
 
-    _rcInvalid.left = max(_rcInvalid.left, rcClient.left);
-    _rcInvalid.right = min(_rcInvalid.right, rcClient.right);
-    _rcInvalid.top = max(_rcInvalid.top, rcClient.top);
-    _rcInvalid.bottom = min(_rcInvalid.bottom, rcClient.bottom);
+    _rcInvalid.left = clamp(_rcInvalid.left, rcClient.left, rcClient.right);
+    _rcInvalid.right = clamp(_rcInvalid.right, rcClient.left, rcClient.right);
+    _rcInvalid.top = clamp(_rcInvalid.top, rcClient.top, rcClient.bottom);
+    _rcInvalid.bottom = clamp(_rcInvalid.bottom, rcClient.top, rcClient.bottom);
 
     return S_OK;
 }
