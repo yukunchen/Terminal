@@ -20,8 +20,8 @@ unit testing projects in the codebase without a bunch of overhead.
 #pragma once
 
 #include "precomp.h"
-#include "globals.h"
-#include "newdelete.hpp"
+#include "../host/globals.h"
+#include "../host/newdelete.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 
@@ -262,7 +262,4 @@ private:
 
         pRow->CharRow.SetWrapStatus(true);
     }
-
-
-
 };

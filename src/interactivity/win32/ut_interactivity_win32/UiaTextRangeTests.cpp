@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
+#include "CommonState.hpp"
 
 #include "UiaTextRange.hpp"
 #include "../../../host/textBuffer.hpp"
