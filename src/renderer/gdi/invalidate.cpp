@@ -174,10 +174,10 @@ HRESULT GdiEngine::_InvalidRestrict()
     // Do restriction only if retrieving the client rect was successful.
     RETURN_LAST_ERROR_IF_FALSE(GetClientRect(_hwndTargetWindow, &rcClient));
 
-    _rcInvalid.left = min(max(_rcInvalid.left, rcClient.left), rcClient.right);
-    _rcInvalid.right = max(min(_rcInvalid.right, rcClient.right), rcClient.left);
-    _rcInvalid.top = min(max(_rcInvalid.top, rcClient.top), rcClient.bottom);
-    _rcInvalid.bottom = max(min(_rcInvalid.bottom, rcClient.bottom), rcClient.top);
+    _rcInvalid.left = clamp(_rcInvalid.left, rcClient.left, rcClient.right);
+    _rcInvalid.right = clamp(_rcInvalid.right, rcClient.left, rcClient.right);
+    _rcInvalid.top = clamp(_rcInvalid.top, rcClient.top, rcClient.bottom);
+    _rcInvalid.bottom = clamp(_rcInvalid.bottom, rcClient.top, rcClient.bottom);
 
     return S_OK;
 }

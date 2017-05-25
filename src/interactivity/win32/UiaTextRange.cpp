@@ -17,15 +17,6 @@ using namespace Microsoft::Console::Interactivity::Win32;
 unsigned long long UiaTextRange::id = 0;
 #endif
 
-// returns val if (low <= val <= high)
-// returns low if (val < low)
-// returns high if (val > high)
-int clamp(int val, int low, int high)
-{
-    ASSERT(low <= high);
-    return max(low, min(val, high));
-}
-
 // degenerate range constructor
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
                            _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
