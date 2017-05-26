@@ -18,6 +18,7 @@ BOOL g_fHostedInFileProperties = FALSE;
 
 UINT OEMCP;
 BOOL g_fEastAsianSystem;
+bool g_fIsComCtlV6Present;
 
 const wchar_t g_szPreviewText[] = \
     L"C:\\WINDOWS> dir                       \n" \

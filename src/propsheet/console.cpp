@@ -460,7 +460,14 @@ BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, _In_ co
         
         pOptionsPage->dwSize      = sizeof(PROPSHEETPAGE);
         pOptionsPage->hInstance   = ghInstance;
-        pOptionsPage->pszTemplate = (gpStateInfo->Defaults)? MAKEINTRESOURCE(DID_SETTINGS) : MAKEINTRESOURCE(DID_SETTINGS2);
+        if (g_fIsComCtlV6Present)
+        {
+            pOptionsPage->pszTemplate = (gpStateInfo->Defaults) ? MAKEINTRESOURCE(DID_SETTINGS) : MAKEINTRESOURCE(DID_SETTINGS2);
+        }
+        else
+        {
+            pOptionsPage->pszTemplate = (gpStateInfo->Defaults) ? MAKEINTRESOURCE(DID_SETTINGS_COMCTL5) : MAKEINTRESOURCE(DID_SETTINGS2_COMCTL5);
+        }
         pOptionsPage->pfnDlgProc  = SettingsDlgProc;
         pOptionsPage->lParam      = OPTIONS_PAGE_INDEX;
         pOptionsPage->dwFlags      = PSP_DEFAULT;
