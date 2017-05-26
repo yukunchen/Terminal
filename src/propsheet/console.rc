@@ -29,7 +29,7 @@ IDI_CONSOLE      ICON   "..\\..\\res\\console.ico"
 
 
 //
-// This is the template for the settings dialog
+// This is the template for the defaults settings dialog for use with ComCtlv6
 //
 
 DID_SETTINGS DIALOG  0, 0, 240, 226
@@ -88,7 +88,7 @@ BEGIN
 END
 
 //
-// This is the template for the settings dialog called from console
+// This is the template for the specifics settings dialog for use with ComCtlv6
 //
 
 DID_SETTINGS2 DIALOG  0, 0, 245, 226
@@ -139,6 +139,114 @@ BEGIN
 
     CONTROL         "Find out more about <A HREF=""https://go.microsoft.com/fwlink/?LinkId=507549"">new console features</A>",
                     IDD_HELP_SYSLINK, "SysLink", WS_TABSTOP, 10, 206, 200, 10
+END
+
+//
+// This is the template for the defaults settings dialog for use with ComCtlv5
+// At the time of writing, this only differed from the above by the Hyperlink control (which is only in v6)
+//
+
+DID_SETTINGS_COMCTL5 DIALOG  0, 0, 240, 226
+CAPTION " Options "
+STYLE WS_VISIBLE | WS_CAPTION | WS_CHILD | DS_MODALFRAME
+FONT 8,"MS Shell Dlg"
+BEGIN
+    GROUPBOX        "Cursor Size", -1, 10, 11, 100, 56
+    AUTORADIOBUTTON "&Small", IDD_CURSOR_SMALL, 14, 23, 84, 10,
+                    WS_TABSTOP | WS_GROUP
+    AUTORADIOBUTTON "&Medium", IDD_CURSOR_MEDIUM, 14, 33, 84, 10,
+    AUTORADIOBUTTON "&Large", IDD_CURSOR_LARGE, 14, 43, 84, 10,
+
+    GROUPBOX        "Command History", -1, 115, 11, 120, 56, WS_GROUP
+    LTEXT           "&Buffer Size:", -1, 119, 25, 78, 9
+    EDITTEXT        IDD_HISTORY_SIZE, 197, 23, 31, 12, WS_GROUP | WS_TABSTOP
+    CONTROL         "", IDD_HISTORY_SIZESCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    LTEXT           "&Number of Buffers:", -1, 119, 40, 78, 9
+    EDITTEXT        IDD_HISTORY_NUM, 197, 38, 31, 12, WS_GROUP | WS_TABSTOP
+    CONTROL         "", IDD_HISTORY_NUMSCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    AUTOCHECKBOX    "&Discard Old Duplicates", IDD_HISTORY_NODUP, 119,55, 108, 9
+
+    GROUPBOX        "Edit Options",-1,10,70,225,54
+    CONTROL         "&QuickEdit Mode", IDD_QUICKEDIT, "Button",
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 14, 82, 75, 10
+    CONTROL         "&Insert Mode", IDD_INSERT, "Button",
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 14, 92, 75, 10
+    CONTROL         "Enable Ctrl &key shortcuts", IDD_CTRL_KEYS_ENABLED, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 102, 200, 10
+    CONTROL         "&Filter clipboard contents on paste", IDD_FILTER_ON_PASTE, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 112, 200, 10
+
+    GROUPBOX        "Text Selection",-1,10,126,225,32
+    CONTROL         "&Enable line wrapping selection", IDD_LINE_SELECTION, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 136, 200, 10
+    CONTROL         "E&xtended text selection keys", IDD_EDIT_KEYS, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 146, 200, 10
+
+    GROUPBOX        "Default code page", IDD_LANGUAGE_GROUPBOX,   10, 160, 225, 29, WS_GROUP
+    COMBOBOX        IDD_LANGUAGELIST, 16, 171, 213, 78,
+                    CBS_SORT |
+                    CBS_DISABLENOSCROLL |
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP | WS_GROUP
+
+    CONTROL         "&Use legacy console (requires relaunch)", IDD_FORCEV2, "Button",
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 194, 200, 10
+
+END
+
+//
+// This is the template for the specifics settings dialog for use with ComCtlv5
+// At the time of writing, this only differed from the above by the Hyperlink control (which is only in v6)
+//
+
+DID_SETTINGS2_COMCTL5 DIALOG  0, 0, 245, 226
+CAPTION " Options "
+STYLE WS_VISIBLE | WS_CAPTION | WS_CHILD | DS_MODALFRAME
+FONT 8,"MS Shell Dlg"
+BEGIN
+    GROUPBOX        "Cursor Size", -1, 10, 11, 100, 56
+    AUTORADIOBUTTON "&Small", IDD_CURSOR_SMALL, 14, 23, 84, 10,
+                    WS_TABSTOP | WS_GROUP
+    AUTORADIOBUTTON "&Medium", IDD_CURSOR_MEDIUM, 14, 33, 84, 10,
+    AUTORADIOBUTTON "&Large", IDD_CURSOR_LARGE, 14, 43, 84, 10,
+
+    GROUPBOX        "Command History", -1, 115, 11, 120, 56, WS_GROUP
+    LTEXT           "&Buffer Size:", -1, 119, 25, 78, 9
+    EDITTEXT        IDD_HISTORY_SIZE, 197, 23, 31, 12, WS_GROUP | WS_TABSTOP
+    CONTROL         "", IDD_HISTORY_SIZESCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    LTEXT           "&Number of Buffers:", -1, 119, 40, 78, 9
+    EDITTEXT        IDD_HISTORY_NUM, 197, 38, 31, 12, WS_GROUP | WS_TABSTOP
+    CONTROL         "", IDD_HISTORY_NUMSCROLL, UPDOWN_CLASS,
+                    UDS_AUTOBUDDY | UDS_SETBUDDYINT | UDS_ALIGNRIGHT |
+                    UDS_ARROWKEYS | UDS_NOTHOUSANDS, 0, 0, 0, 0
+    AUTOCHECKBOX    "&Discard Old Duplicates", IDD_HISTORY_NODUP, 119,55, 108, 9
+
+    GROUPBOX        "Edit Options",-1,10,70,225,54
+    CONTROL         "&QuickEdit Mode", IDD_QUICKEDIT, "Button",
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 14, 82, 75, 10
+    CONTROL         "&Insert Mode", IDD_INSERT, "Button",
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 14, 92, 75, 10
+    CONTROL         "Enable Ctrl &key shortcuts", IDD_CTRL_KEYS_ENABLED, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 102, 200, 10
+    CONTROL         "&Filter clipboard contents on paste", IDD_FILTER_ON_PASTE, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 112, 200, 10
+
+    GROUPBOX        "Text Selection",-1,10,126,225,32
+    CONTROL         "&Enable line wrapping selection", IDD_LINE_SELECTION, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 136, 200, 10
+    CONTROL         "E&xtended text selection keys", IDD_EDIT_KEYS, "Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP, 14, 146, 200, 10
+
+    GROUPBOX        "Current code page", IDD_LANGUAGE_GROUPBOX, 10, 160, 225, 24, WS_GROUP
+    LTEXT           "",IDD_LANGUAGE, 16, 171, 184, 10, WS_GROUP
+
+    CONTROL         "&Use legacy console (requires relaunch)", IDD_FORCEV2, "Button",
+                    BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP, 10, 194, 200, 10
 END
 
 //
