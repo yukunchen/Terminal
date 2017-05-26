@@ -472,11 +472,12 @@ bool ATTR_ROW::Resize(_In_ const short sOldWidth, _In_ const short sNewWidth)
     {
         // Unpack the row, then pack the row with the new width.
         // This will only store the runs up until the new width.
-        TextAttribute* rAttrs = new TextAttribute[this->_TotalLength()];
+        UINT const uiExistingTotal = this->_TotalLength();
+        TextAttribute* rAttrs = new TextAttribute[uiExistingTotal];
         fSuccess = rAttrs != nullptr;
         if (fSuccess)
         {
-            UnpackAttrs(rAttrs, this->Length);
+            UnpackAttrs(rAttrs, uiExistingTotal);
             PackAttrs(rAttrs, sNewWidth);
             delete[] rAttrs;
             fSuccess = true;
