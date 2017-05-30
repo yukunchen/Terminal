@@ -2819,7 +2819,33 @@ public:
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
         VERIFY_IS_FALSE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
+
+        Log::Comment(L"Test 6: Verify Setting margins to (0, height) clears them");
+        // First set,
+        _pTest->_fPrivateSetScrollingRegionResult = TRUE;
+        _pTest->_SetMarginsHelper(&srTestMargins, 2, 6);
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        // Then clear
+        _pTest->_srExpectedScrollRegion.Top = 0;
+        _pTest->_srExpectedScrollRegion.Bottom = 0;
+        _pTest->_SetMarginsHelper(&srTestMargins, 0, 7);
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+
+
+        Log::Comment(L"Test 7: Verify Setting margins to (1, height) clears them");
+        // First set,
+        _pTest->_fPrivateSetScrollingRegionResult = TRUE;
+        _pTest->_SetMarginsHelper(&srTestMargins, 2, 6);
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        // Then clear
+        _pTest->_srExpectedScrollRegion.Top = 0;
+        _pTest->_srExpectedScrollRegion.Bottom = 0;
+        _pTest->_SetMarginsHelper(&srTestMargins, 0, 7);
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+
     }
+
+
     TEST_METHOD(TabSetClearTests)
     {
         Log::Comment(L"Starting test...");
