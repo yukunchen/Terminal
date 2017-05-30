@@ -754,12 +754,17 @@ const bool UiaTextRange::_isRowInViewport(_In_ const int row) const
 // - viewport - the viewport to use for the bounds
 // Return Value:
 // - true if the row is within the bounds of the viewport
-const bool UiaTextRange::_isRowInViewport(_In_ const int row, _In_ const SMALL_RECT viewport) const
+const bool UiaTextRange::_isRowInViewport(_In_ const int row,
+                                          _In_ const SMALL_RECT viewport) const
 {
     if (viewport.Top < viewport.Bottom)
     {
         return (row >= viewport.Top &&
                 row <= viewport.Bottom);
+    }
+    else if (viewport.Top == viewport.Bottom)
+    {
+        return row == viewport.Top;
     }
     else
     {
@@ -778,9 +783,14 @@ const bool UiaTextRange::_isRowInViewport(_In_ const int row, _In_ const SMALL_R
 const int UiaTextRange::_rowToViewport(_In_ const int row) const
 {
     const SMALL_RECT viewport = _getViewport();
+    return _rowToViewport(row, viewport);
+}
 
+const int UiaTextRange::_rowToViewport(_In_ const int row,
+                                       _In_ const SMALL_RECT viewport) const
+{
     // we return a failure value if the line is not currently visible
-    if (!_isRowInViewport(row))
+    if (!_isRowInViewport(row, viewport))
     {
         // TODO MSFT 7960168 better failure value
         return -1;
@@ -837,7 +847,7 @@ const int UiaTextRange::_rowToEndpoint(_In_ const int row) const
 // - The number of rows
 const int UiaTextRange::_getTotalRows() const
 {
-    return _getScreenBufferCoords().Y;
+    return _pOutputBuffer->TotalRowCount();
 }
 
 // Routine Description:
@@ -859,9 +869,19 @@ const int UiaTextRange::_getRowWidth() const
 // - The viewport height
 const int UiaTextRange::_getViewportHeight(_In_ const SMALL_RECT viewport) const
 {
-    // + 1 because COORD is inclusive on both sides so subtracting top
-    // and bottom gets rid of 1 more then it should.
-    return _normalizeRow(viewport.Bottom - viewport.Top + 1);
+    if (viewport.Top <= viewport.Bottom)
+    {
+        // + 1 because COORD is inclusive on both sides so subtracting top
+        // and bottom gets rid of 1 more then it should.
+        return _normalizeRow(viewport.Bottom - viewport.Top + 1);
+    }
+    else
+    {
+        // the text buffer has cycled through its buffer enough that
+        // the 0th row is somewhere in the viewport
+        const int totalRows = _getTotalRows();
+        return totalRows - viewport.Top + viewport.Bottom + 1;
+    }
 }
 
 // Routine Description:
