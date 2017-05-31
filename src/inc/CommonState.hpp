@@ -193,7 +193,9 @@ private:
     {
         // fill a row
         // 9 characters, 6 spaces. 15 total
-        PCWSTR pwszText = L"ABかかCききDE      ";
+        // か = \x304b
+        // き = \x304d
+        PCWSTR pwszText = L"AB" L"\x304b\x304b" L"C" L"\x304d\x304d" L"DE      ";
         memcpy_s(pRow->CharRow.Chars, CommonState::s_csBufferWidth, pwszText, wcslen(pwszText));
         pRow->CharRow.Left = 0;
         pRow->CharRow.Right = 9; // 1 past the last valid character in the array
@@ -241,8 +243,17 @@ private:
     void FillBisect(ROW *pRow)
     {
         // length 80 string of text with bisecting characters at the beginning and end.
-        // positions of き are at 0, 27-28, 39-40, 67-68, 79
-        PWCHAR pwszText = L"きABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789ききABCDEFGHIJKLMNOPQRSTUVWXYZきき0123456789き";
+        // positions of き(\x304d) are at 0, 27-28, 39-40, 67-68, 79
+        PWCHAR pwszText =
+            L"\x304d"
+            L"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            L"\x304d\x304d"
+            L"0123456789"
+            L"\x304d\x304d"
+            L"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            L"\x304d\x304d"
+            L"0123456789"
+            L"\x304d";
         memcpy_s(pRow->CharRow.Chars, CommonState::s_csBufferWidth, pwszText, wcslen(pwszText));
         pRow->CharRow.Left = 0;
         pRow->CharRow.Right = 80; // 1 past the last valid character in the array
