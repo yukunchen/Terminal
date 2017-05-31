@@ -254,7 +254,7 @@ HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _In
     // TODO: This is also rather strange and will also probably make more sense if we stop guessing that we need 2x buffer to convert.
     // This might need to go on the other side of the fence (inside host) because the server doesn't know what we're going to do with initial num bytes.
     // (This restriction exists because it's going to copy initial into the final buffer, but we don't know that.)
-    RETURN_HR_IF(E_INVALIDARG, a->InitialNumBytes > cbBufferSize); 
+    RETURN_HR_IF(E_INVALIDARG, a->InitialNumBytes > cbBufferSize);
 
     // Retrieve input parameters.
     // 1. Exe name making the request
@@ -262,7 +262,7 @@ HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _In
     ULONG cbExeName;
     RETURN_IF_FAILED(ULongMult(cchExeName, sizeof(wchar_t), &cbExeName));
     wistd::unique_ptr<wchar_t[]> pwsExeName;
-    
+
     if (cchExeName > 0)
     {
         pwsExeName = wil::make_unique_nothrow<wchar_t[]>(cchExeName);
@@ -274,7 +274,7 @@ HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _In
     ULONG const cbInitialData = a->InitialNumBytes;
     ULONG const cchInitialData = cbInitialData / sizeof(wchar_t);
     wistd::unique_ptr<wchar_t[]> pwsInitialData;
-    
+
     if (cbInitialData > 0)
     {
         pwsInitialData = wil::make_unique_nothrow<wchar_t[]>(cbInitialData);
@@ -346,11 +346,11 @@ HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _In
 
     LOG_IF_FAILED(SizeTToULong(cbWritten, &a->NumBytes));
 
-    if (nullptr != pWaiter) 
+    if (nullptr != pWaiter)
     {
         // If we received a waiter, we need to queue the wait and not reply.
         hr = ConsoleWaitQueue::s_CreateWait(m, pWaiter);
-        
+
         if (FAILED(hr))
         {
             delete pWaiter;
@@ -361,7 +361,7 @@ HRESULT ApiDispatchers::ServerReadConsole(_Inout_ CONSOLE_API_MSG * const m, _In
             *pbReplyPending = TRUE;
         }
     }
-    else 
+    else
     {
         // - This routine is called when a ReadConsole or ReadFile request is about to be completed.
         // - It sets the number of bytes written as the information to be written with the completion status and,
@@ -997,6 +997,7 @@ HRESULT ApiDispatchers::ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
     ULONG cbOutputBufferSize;
     RETURN_IF_FAILED(m->GetOutputBuffer(&pvOutputBuffer, &cbOutputBufferSize));
 
+    HRESULT hr;
     size_t cbWritten;
     if (a->Unicode)
     {
@@ -1009,13 +1010,13 @@ HRESULT ApiDispatchers::ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
         size_t const cchOutputBuffer = cbOutputBufferSize / sizeof(wchar_t);
         size_t cchWritten;
 
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasWImpl(pwsInputSource,
-                                                                cchInputSource,
-                                                                pwsOutputBuffer,
-                                                                cchOutputBuffer,
-                                                                &cchWritten,
-                                                                pwsInputExe,
-                                                                cchInputExe));
+        hr = m->_pApiRoutines->GetConsoleAliasWImpl(pwsInputSource,
+                                                    cchInputSource,
+                                                    pwsOutputBuffer,
+                                                    cchOutputBuffer,
+                                                    &cchWritten,
+                                                    pwsInputExe,
+                                                    cchInputExe);
 
         // We must set the reply length in bytes. Convert back from characters.
         RETURN_IF_FAILED(SizeTMult(cchWritten, sizeof(wchar_t), &cbWritten));
@@ -1031,13 +1032,13 @@ HRESULT ApiDispatchers::ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
         size_t const cchOutputBuffer = cbOutputBufferSize;
         size_t cchWritten;
 
-        RETURN_IF_FAILED(m->_pApiRoutines->GetConsoleAliasAImpl(psInputSource,
-                                                                cchInputSource,
-                                                                psOutputBuffer,
-                                                                cchOutputBuffer,
-                                                                &cchWritten,
-                                                                psInputExe,
-                                                                cchInputExe));
+        hr = m->_pApiRoutines->GetConsoleAliasAImpl(psInputSource,
+                                                    cchInputSource,
+                                                    psOutputBuffer,
+                                                    cchOutputBuffer,
+                                                    &cchWritten,
+                                                    psInputExe,
+                                                    cchInputExe);
 
         cbWritten = cchWritten;
     }
@@ -1047,7 +1048,16 @@ HRESULT ApiDispatchers::ServerGetConsoleAlias(_Inout_ CONSOLE_API_MSG * const m,
 
     m->SetReplyInformation(a->TargetLength);
 
-    return S_OK;
+    // See conlibk.lib. For any "buffer too small condition", we must send the exact status code
+    // NTSTATUS = STATUS_BUFFER_TOO_SMALL. If we send Win32 or HRESULT equivalents, the client library
+    // will zero out our DWORD return value set in a->TargetLength on our behalf.
+    if (ERROR_INSUFFICIENT_BUFFER == hr ||
+        HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER) == hr)
+    {
+        hr = STATUS_BUFFER_TOO_SMALL;
+    }
+
+    return hr;
 }
 
 HRESULT ApiDispatchers::ServerGetConsoleAliasesLength(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)

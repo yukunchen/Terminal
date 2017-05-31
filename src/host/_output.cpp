@@ -262,11 +262,11 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             {
                 ROW* pRow = pScreenInfo->TextInfo->GetRowByOffset(y);
                 TextAttribute* rTargetAttributes = new TextAttribute[rowWidth];
-                NTSTATUS Status = NT_TESTNULL(rTargetAttributes);
-                if (SUCCEEDED(Status))
+                NTSTATUS Status2 = NT_TESTNULL(rTargetAttributes);
+                if (NT_SUCCESS(Status2))
                 {
-                    Status = pRow->AttrRow.UnpackAttrs(rTargetAttributes, rowWidth);
-                    if (SUCCEEDED(Status))
+                    Status2 = pRow->AttrRow.UnpackAttrs(rTargetAttributes, rowWidth);
+                    if (NT_SUCCESS(Status2))
                     {
                         for (int x = coordDest.X; x < srcWidth + coordDest.X; x++)
                         {

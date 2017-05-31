@@ -305,18 +305,18 @@ ULONG RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 // - HandleData - Pointer to handle data structure.
 // Return Value:
 NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
-                        _In_ HANDLE ProcessData,
-                        _In_ PWCHAR pwchBuffer,
-                        _Inout_ ULONG* pdwNumBytes,
-                        _Inout_ ULONG* pControlKeyState,
-                        _In_reads_opt_(cbInitialData) PWCHAR pwsInitialData,
-                        _In_ ULONG cbInitialData,
-                        _In_ DWORD dwCtrlWakeupMask,
-                        _In_ INPUT_READ_HANDLE_DATA* pHandleData,
-                        _In_reads_opt_(cbExeName) PWCHAR pwsExeName,
-                        _In_ ULONG cbExeName,
-                        _In_ BOOL fUnicode,
-                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+                       _In_ HANDLE ProcessData,
+                       _Out_writes_bytes_(*pdwNumBytes) WCHAR* pwchBuffer,
+                       _Inout_ ULONG* pdwNumBytes,
+                       _Inout_ ULONG* pControlKeyState,
+                       _In_reads_bytes_opt_(cbInitialData) PWCHAR pwsInitialData,
+                       _In_ ULONG cbInitialData,
+                       _In_ DWORD dwCtrlWakeupMask,
+                       _In_ INPUT_READ_HANDLE_DATA* pHandleData,
+                       _In_reads_bytes_opt_(cbExeName) PWCHAR pwsExeName,
+                       _In_ ULONG cbExeName,
+                       _In_ BOOL fUnicode,
+                       _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
@@ -368,7 +368,9 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
 
                 if (pHandleData->BytesAvailable == 0 || BufferSize == 0)
                 {
-                    ClearAllFlags(pHandleData->InputHandleFlags, (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending | INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
+                    ClearAllFlags(pHandleData->InputHandleFlags,
+                                  (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending |
+                                   INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
                     delete[] pHandleData->BufPtr;
                     *pdwNumBytes = 1;
                     return STATUS_SUCCESS;
@@ -376,7 +378,9 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
                 else
                 {
                     for (NumToWrite = 0, Tmp = pHandleData->CurrentBufPtr, NumToBytes = 0;
-                         NumToBytes < pHandleData->BytesAvailable && NumToBytes < BufferSize / sizeof(WCHAR) && *Tmp != UNICODE_LINEFEED;
+                         NumToBytes < pHandleData->BytesAvailable &&
+                         NumToBytes < BufferSize / sizeof(WCHAR) &&
+                         *Tmp != UNICODE_LINEFEED;
                          (IsCharFullWidth(*Tmp) ? NumToBytes += 2 : NumToBytes++), Tmp++, NumToWrite += sizeof(WCHAR));
                 }
             }
@@ -405,7 +409,9 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
                 }
                 if (pHandleData->BytesAvailable == 0)
                 {
-                    ClearAllFlags(pHandleData->InputHandleFlags, (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending | INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
+                    ClearAllFlags(pHandleData->InputHandleFlags,
+                                  (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending |
+                                   INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
                     delete[] pHandleData->BufPtr;
                     *pdwNumBytes = 1;
                     return STATUS_SUCCESS;
@@ -735,7 +741,7 @@ HRESULT ApiRoutines::ReadConsoleAImpl(_In_ IConsoleInputObject* const pInContext
                                       _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
                                       _In_reads_opt_(cchInitialData) char* const psInitialData,
                                       _In_ size_t const cchInitialData,
-                                      _In_reads_opt_(cchExeNameLength) wchar_t* const pwsExeName,
+                                      _In_reads_opt_(cchExeName) wchar_t* const pwsExeName,
                                       _In_ size_t const cchExeName,
                                       _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
                                       _In_ HANDLE const hConsoleClient,
@@ -748,11 +754,18 @@ HRESULT ApiRoutines::ReadConsoleAImpl(_In_ IConsoleInputObject* const pInContext
     size_t cbExeName;
     RETURN_IF_FAILED(SizeTMult(cchExeName, sizeof(wchar_t), &cbExeName));
 
+    ULONG ulExeName;
+    RETURN_IF_FAILED(SizeTToULong(cbExeName, &ulExeName));
+
     ULONG ulInitialData;
     RETURN_IF_FAILED(SizeTToULong(cchInitialData, &ulInitialData));
 
-    ULONG ulExeName;
-    RETURN_IF_FAILED(SizeTToULong(cbExeName, &ulExeName));
+    // DoReadConsole performs the same check, but having this here
+    // before the function call makes the static analyzer happy.
+    if (ulTextBuffer < sizeof(WCHAR))
+    {
+        return HRESULT_FROM_NT(STATUS_BUFFER_TOO_SMALL);
+    }
 
     NTSTATUS const Status = DoReadConsole(pInContext,
                                           hConsoleClient,
@@ -780,7 +793,7 @@ HRESULT ApiRoutines::ReadConsoleWImpl(_In_ IConsoleInputObject* const pInContext
                                       _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
                                       _In_reads_opt_(cchInitialData) wchar_t* const pwsInitialData,
                                       _In_ size_t const cchInitialData,
-                                      _In_reads_opt_(cchExeNameLength) wchar_t* const pwsExeName,
+                                      _In_reads_opt_(cchExeName) wchar_t* const pwsExeName,
                                       _In_ size_t const cchExeName,
                                       _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
                                       _In_ HANDLE const hConsoleClient,

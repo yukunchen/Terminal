@@ -38,6 +38,8 @@ Revision History:
 #define DID_SETTINGS2               114
 #define IDD_LANGUAGE                115
 #define IDD_LANGUAGE_GROUPBOX       116
+#define DID_SETTINGS_COMCTL5        117
+#define DID_SETTINGS2_COMCTL5       118
 
 #define DID_FONTDLG                 200
 #define IDD_STATIC                  201

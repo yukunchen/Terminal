@@ -132,7 +132,7 @@ HRESULT InputBuffer::FlushAllButKeys()
 }
 
 // Routine Description:
-// - This routine reads from the input buffer. 
+// - This routine reads from the input buffer.
 // - It can convert returned data to through the currently set Input CP, it can optionally return a wait condition
 //   if there isn't enough data in the buffer, and it can be set to not remove records as it reads them out.
 // Note:
@@ -228,7 +228,8 @@ NTSTATUS InputBuffer::_ReadBuffer(_Out_writes_to_(Length, *EventsRead) INPUT_REC
             throw std::out_of_range("_ReadBuffer read more records than can fit in the output buffer");
         };
         size_t currentIndex = 0;
-        while (!outRecords.empty())
+        // we check both to satisfy static analysis
+        while (!outRecords.empty() && currentIndex < Length)
         {
             Buffer[currentIndex] = outRecords.front();
             outRecords.pop_front();
@@ -369,15 +370,27 @@ HRESULT InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords
         std::deque<INPUT_RECORD> existingStorage;
         existingStorage.swap(_storage);
 
+        // We will need this variable to pass to _WriteBuffer so it can attempt to determine wait status.
+        // However, because we swapped the storage out from under it with an empty deque, it will always
+        // return true after the first one (as it is filling the newly emptied backing deque.)
+        // Then after the second one, because we've inserted some input, it will always say false.
+        bool unusedWaitStatus = false;
+
         // write the prepend records
         size_t prependEventsWritten;
-        bool setWaitEvent;
-        _WriteBuffer(inRecords, prependEventsWritten, setWaitEvent);
+        _WriteBuffer(inRecords, prependEventsWritten, unusedWaitStatus);
+        assert(unusedWaitStatus);
 
         // write all previously existing records
         size_t existingEventsWritten;
-        _WriteBuffer(existingStorage, existingEventsWritten, setWaitEvent);
-        if (setWaitEvent)
+        _WriteBuffer(existingStorage, existingEventsWritten, unusedWaitStatus);
+        assert(!unusedWaitStatus);
+
+        // We need to set the wait event if there were 0 events in the input queue when we started.
+        // Because we did interesting manipulation of the wait queue in order to prepend, we can't trust what _WriteBuffer said
+        // and instead need to set the event if the original backing buffer (the one we swapped out at the top) was empty
+        // when this whole thing started.
+        if (existingStorage.empty())
         {
             SetEvent(InputWaitEvent);
         }

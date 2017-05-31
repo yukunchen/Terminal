@@ -85,6 +85,10 @@ bool ConsoleWaitQueue::NotifyWaiters(_In_ bool const fNotifyAll,
     while (!_blocks.empty() && it != _blocks.crend())
     {
         ConsoleWaitBlock* const WaitBlock = (*it);
+        if (nullptr == WaitBlock)
+        {
+            break;
+        }
 
         auto const nextIt = std::next(it); // we have to capture next before it is potentially erased
 

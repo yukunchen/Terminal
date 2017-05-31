@@ -20,7 +20,7 @@
 // Return Value:
 // - THROW: Throws if space cannot be allocated to copy the given string
 WriteData::WriteData(_In_ SCREEN_INFORMATION* const psiContext,
-                     _In_ wchar_t* const pwchContext,
+                     _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
                      _In_ ULONG const cbContext) :
     IWaitRoutine(ReplyDataType::Write),
     _psiContext(psiContext),

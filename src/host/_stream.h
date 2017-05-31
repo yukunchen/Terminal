@@ -88,7 +88,7 @@ NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
 
 // NOTE: console lock must be held when calling this routine
 // String has been translated to unicode at this point.
-NTSTATUS DoWriteConsole(_In_ PWCHAR pwchBuffer, 
+NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
                         _In_ ULONG* const pcbBuffer,
                         _In_ PSCREEN_INFORMATION pScreenInfo,
                         _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter);

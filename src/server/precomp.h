@@ -31,6 +31,7 @@ typedef long NTSTATUS;
 #define STATUS_INSUFFICIENT_RESOURCES ((DWORD)0xC000009AL)
 #define STATUS_ILLEGAL_FUNCTION ((DWORD)0xC00000AFL)
 #define STATUS_PIPE_DISCONNECTED ((DWORD)0xC00000B0L)
+#define STATUS_BUFFER_TOO_SMALL ((DWORD)0xC0000023L)
 
 //
 // Map a WIN32 error value into an NTSTATUS
@@ -97,5 +98,7 @@ __inline NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(
 #include <wil\resource.h>
 
 // TODO: MSFT 9355094 Find a better way of doing this. http://osgvsowi/9355094
-#define NTSTATUS_FROM_HRESULT(H) \
-    NTSTATUS_FROM_WIN32(HRESULT_CODE(H))
+inline NTSTATUS NTSTATUS_FROM_HRESULT(HRESULT hr)
+{
+    return NTSTATUS_FROM_WIN32(HRESULT_CODE(hr));
+}

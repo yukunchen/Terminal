@@ -78,7 +78,7 @@ DWORD ParseRgb(wchar_t* arg)
     int green = 0;
     int blue = 0;
     int* pColor = &red;
-    for (int i = 0; i < lstrlen(arg); i++)
+    for (int i = 0; i < wcslen(arg); i++)
     {
         wchar_t wch = arg[i];
         if (wch == ',')
@@ -185,7 +185,7 @@ void PrintTable()
 
 int __cdecl wmain(int argc, WCHAR* argv[])
 {
-    if (argc != 17)
+    if (argc != 17 && argc != 1)
     {
         usage();
         return -1;
@@ -200,28 +200,35 @@ int __cdecl wmain(int argc, WCHAR* argv[])
         outModes |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
         SetConsoleMode(hOut, outModes);
 
-        CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
-        sbiex.cbSize = sizeof(sbiex);
-
-        BOOL fSuccess = GetConsoleScreenBufferInfoEx(hOut, &sbiex);
-
-        if (fSuccess)
+        if (argc == 1)
         {
-            sbiex.srWindow.Bottom++; // hack because the API sucks at roundtrip
-
-            CONSOLE_SCREEN_BUFFER_INFOEX sbiexBackup = sbiex;
-
-            for (int i = 0; i < 16; i++)
-            {
-                sbiex.ColorTable[i] = ParseColor(argv[i+1]);
-            }
-
-            SetConsoleScreenBufferInfoEx(hOut, &sbiex);
             PrintTable();
-            // Run everything else. Do stuff.
+        }
+        else
+        {
+            CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
+            sbiex.cbSize = sizeof(sbiex);
 
-            // Before exiting... set colors back to not affect any other applications.
-            // SetConsoleScreenBufferInfoEx(hOut, &sbiexBackup);
+            BOOL fSuccess = GetConsoleScreenBufferInfoEx(hOut, &sbiex);
+
+            if (fSuccess)
+            {
+                sbiex.srWindow.Bottom++; // hack because the API sucks at roundtrip
+
+                CONSOLE_SCREEN_BUFFER_INFOEX sbiexBackup = sbiex;
+
+                for (int i = 0; i < 16; i++)
+                {
+                    sbiex.ColorTable[i] = ParseColor(argv[i+1]);
+                }
+
+                SetConsoleScreenBufferInfoEx(hOut, &sbiex);
+                PrintTable();
+                // Run everything else. Do stuff.
+
+                // Before exiting... set colors back to not affect any other applications.
+                // SetConsoleScreenBufferInfoEx(hOut, &sbiexBackup);
+            }
         }
     }
 

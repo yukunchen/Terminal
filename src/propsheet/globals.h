@@ -40,6 +40,7 @@ extern BOOL       g_fHostedInFileProperties;
 
 extern UINT OEMCP;
 extern BOOL g_fEastAsianSystem;
+extern bool g_fIsComCtlV6Present;
 
 extern BOOL fChangeCodePage;
 

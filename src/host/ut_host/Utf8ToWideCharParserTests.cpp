@@ -32,10 +32,13 @@ class Utf8ToWideCharParserTests
         const unsigned char hello[5] = { 0x48, 0x65, 0x6c, 0x6c, 0x6f };
         const unsigned char wideHello[10] = { 0x48, 0x00, 0x65, 0x00, 0x6c, 0x00, 0x6c, 0x00, 0x6f, 0x00 };
         unsigned int count = 5;
+        unsigned int consumed = 0;
+        unsigned int generated = 0;
         unique_ptr<wchar_t[]> output { nullptr };
 
-        parser.Parse(hello, count, output);
-        VERIFY_ARE_EQUAL(count, (unsigned int)5);
+        parser.Parse(hello, count, consumed, output, generated);
+        VERIFY_ARE_EQUAL(consumed, (unsigned int)5);
+        VERIFY_ARE_EQUAL(generated, (unsigned int)5);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -53,10 +56,13 @@ class Utf8ToWideCharParserTests
         const unsigned char sushi[6] = { 0xe3, 0x81, 0x99, 0xe3, 0x81, 0x97};
         const unsigned char wideSushi[4] = { 0x59, 0x30, 0x57, 0x30 };
         unsigned int count = 6;
+        unsigned int consumed = 0;
+        unsigned int generated = 0;
         unique_ptr<wchar_t[]> output { nullptr };
 
-        parser.Parse(sushi, count, output);
-        VERIFY_ARE_EQUAL(count, (unsigned int)2);
+        parser.Parse(sushi, count, consumed, output, generated);
+        VERIFY_ARE_EQUAL(consumed, (unsigned int)6);
+        VERIFY_ARE_EQUAL(generated, (unsigned int)2);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -74,18 +80,22 @@ class Utf8ToWideCharParserTests
         unsigned char wideShi[2] = { 0x57, 0x30 };
         auto parser = Utf8ToWideCharParser { utf8CodePage };
         unsigned int count = 1;
+        unsigned int consumed = 0;
+        unsigned int generated = 0;
         unique_ptr<wchar_t[]> output { nullptr };
 
         for (int i = 0; i < 2; ++i)
         {
-            parser.Parse(shi + i, count, output);
-            VERIFY_ARE_EQUAL(count, (unsigned int)0);
+            parser.Parse(shi + i, count, consumed, output, generated);
+            VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
+            VERIFY_ARE_EQUAL(generated, (unsigned int)0);
             VERIFY_ARE_EQUAL(output.get(), nullptr);
             count = 1;
         }
 
-        parser.Parse(shi + 2, count, output);
-        VERIFY_ARE_EQUAL(count, (unsigned int)1);
+        parser.Parse(shi + 2, count, consumed, output, generated);
+        VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
+        VERIFY_ARE_EQUAL(generated, (unsigned int)1);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -102,12 +112,15 @@ class Utf8ToWideCharParserTests
         const unsigned char sushi[6] = { 0xe3, 0x81, 0x99, 0xe3, 0x81, 0x97 };
         const unsigned char wideSushi[4] = { 0x59, 0x30, 0x57, 0x30 };
         unsigned int count = 4;
+        unsigned int consumed = 0;
+        unsigned int generated = 0;
         unique_ptr<wchar_t[]> output { nullptr };
         auto parser = Utf8ToWideCharParser { utf8CodePage };
 
-        parser.Parse(sushi, count, output);
+        parser.Parse(sushi, count, consumed, output, generated);
         // check that we got the first wide char back
-        VERIFY_ARE_EQUAL(count, (unsigned int)1);
+        VERIFY_ARE_EQUAL(consumed, (unsigned int)4);
+        VERIFY_ARE_EQUAL(generated, (unsigned int)1);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -118,16 +131,22 @@ class Utf8ToWideCharParserTests
 
         // add byte 2 of 3 to parser
         count = 1;
+        consumed = 0;
+        generated = 0;
         output.release();
-        parser.Parse(sushi + 4, count, output);
-        VERIFY_ARE_EQUAL(count, (unsigned int)0);
+        parser.Parse(sushi + 4, count, consumed, output, generated);
+        VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
+        VERIFY_ARE_EQUAL(generated, (unsigned int)0);
         VERIFY_ARE_EQUAL(output.get(), nullptr);
 
         // add last byte
         count = 1;
+        consumed = 0;
+        generated = 0;
         output.release();
-        parser.Parse(sushi + 5, count, output);
-        VERIFY_ARE_EQUAL(count, (unsigned int)1);
+        parser.Parse(sushi + 5, count, consumed, output, generated);
+        VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
+        VERIFY_ARE_EQUAL(generated, (unsigned int)1);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -163,11 +182,14 @@ class Utf8ToWideCharParserTests
         };
         // send first 4 bytes
         unsigned int count = 4;
+        unsigned int consumed = 0;
+        unsigned int generated = 0;
         unique_ptr<wchar_t[]> output { nullptr };
         auto parser = Utf8ToWideCharParser { utf8CodePage };
 
-        parser.Parse(doomoArigatoo, count, output);
-        VERIFY_ARE_EQUAL(count, (unsigned int)1);
+        parser.Parse(doomoArigatoo, count, consumed, output, generated);
+        VERIFY_ARE_EQUAL(consumed, (unsigned int)4);
+        VERIFY_ARE_EQUAL(generated, (unsigned int)1);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -178,9 +200,12 @@ class Utf8ToWideCharParserTests
 
         // send next 16 bytes
         count = 16;
+        consumed = 0;
+        generated = 0;
         output.release();
-        parser.Parse(doomoArigatoo + 4, count, output);
-        VERIFY_ARE_EQUAL(count, (unsigned int)5);
+        parser.Parse(doomoArigatoo + 4, count, consumed, output, generated);
+        VERIFY_ARE_EQUAL(consumed, (unsigned int)16);
+        VERIFY_ARE_EQUAL(generated, (unsigned int)5);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -191,9 +216,12 @@ class Utf8ToWideCharParserTests
 
         // send last 4 bytes
         count = 4;
+        consumed = 0;
+        generated = 0;
         output.release();
-        parser.Parse(doomoArigatoo + 20, count, output);
-        VERIFY_ARE_EQUAL(count, (unsigned int)2);
+        parser.Parse(doomoArigatoo + 20, count, consumed, output, generated);
+        VERIFY_ARE_EQUAL(consumed, (unsigned int)4);
+        VERIFY_ARE_EQUAL(generated, (unsigned int)2);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -214,11 +242,14 @@ class Utf8ToWideCharParserTests
         };
         const unsigned char wideSushi[4] = { 0x59, 0x30, 0x57, 0x30 };
         unsigned int count = 9;
+        unsigned int consumed = 0;
+        unsigned int generated = 0;
         unique_ptr<wchar_t[]> output { nullptr };
         auto parser = Utf8ToWideCharParser { utf8CodePage };
 
-        parser.Parse(sushi, count, output);
-        VERIFY_ARE_EQUAL(count, (unsigned int)2);
+        parser.Parse(sushi, count, consumed, output, generated);
+        VERIFY_ARE_EQUAL(consumed, (unsigned int)9);
+        VERIFY_ARE_EQUAL(generated, (unsigned int)2);
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
@@ -236,8 +267,10 @@ class Utf8ToWideCharParserTests
         const unsigned int inputSize = 2;
         const unsigned char partialSequence[inputSize] = { 0xF0, 0x80 };
         unsigned int count = inputSize;
+        unsigned int consumed = 0;
+        unsigned int generated = 0;
         unique_ptr<wchar_t[]> output { nullptr };
-        parser.Parse(partialSequence, count, output);
+        parser.Parse(partialSequence, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(parser._currentState, Utf8ToWideCharParser::_State::BeginPartialParse);
         VERIFY_ARE_EQUAL(parser._bytesStored, inputSize);
         // set the codepage to the same one it currently is, ensure

@@ -349,6 +349,9 @@ SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
 // - COORD containing the width and height representing the minimum character grid that can be rendered in the window.
 COORD SCREEN_INFORMATION::GetMinWindowSizeInCharacters(_In_ COORD const coordFontSize /*= { 1, 1 }*/) const
 {
+    assert(coordFontSize.X != 0);
+    assert(coordFontSize.Y != 0);
+
     // prepare rectangle
     RECT const rcWindowInPixels = _pConsoleWindowMetrics->GetMinClientRectInPixels();
 
@@ -366,6 +369,9 @@ COORD SCREEN_INFORMATION::GetMinWindowSizeInCharacters(_In_ COORD const coordFon
         coordFont = this->GetScreenFontSize();
     }
 
+    assert(coordFont.X != 0);
+    assert(coordFont.Y != 0);
+
     coordClientAreaSize.X /= coordFont.X;
     coordClientAreaSize.Y /= coordFont.Y;
 
@@ -381,6 +387,9 @@ COORD SCREEN_INFORMATION::GetMinWindowSizeInCharacters(_In_ COORD const coordFon
 // - COORD containing the width and height representing the largest character grid that can be rendered on the current monitor and/or from the current buffer size.
 COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(_In_ COORD const coordFontSize /*= { 1, 1 }*/) const
 {
+    assert(coordFontSize.X != 0);
+    assert(coordFontSize.Y != 0);
+
     COORD coordWindowRestrictedSize = GetLargestWindowSizeInCharacters(coordFontSize);
 
     COORD coordClientAreaSize;
@@ -403,6 +412,9 @@ COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(_In_ COORD const coordFon
 // - COORD containing the width and height representing the largest character grid that can be rendered on the current monitor with the maximum size window.
 COORD SCREEN_INFORMATION::GetLargestWindowSizeInCharacters(_In_ COORD const coordFontSize /*= { 1, 1 }*/) const
 {
+    assert(coordFontSize.X != 0);
+    assert(coordFontSize.Y != 0);
+
     RECT const rcClientInPixels = _pConsoleWindowMetrics->GetMaxClientRectInPixels();
 
     // first assign the pixel widths and heights to the final output
@@ -418,6 +430,9 @@ COORD SCREEN_INFORMATION::GetLargestWindowSizeInCharacters(_In_ COORD const coor
     {
         coordFont = GetScreenFontSize();
     }
+
+    assert(coordFont.X != 0);
+    assert(coordFont.Y != 0);
 
     coordClientAreaSize.X /= coordFont.X;
     coordClientAreaSize.Y /= coordFont.Y;
@@ -875,8 +890,9 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(_In_ const RECT* const prcClient
     {
         // The alt buffer always wants to be exactly the size of the screen, never more or less.
         // This prevents scrollbars when you increase the alt buffer size, then decrease it.
-        coordBufferSizeNew.X = coordClientNewCharacters.X;
-        coordBufferSizeNew.Y = coordClientNewCharacters.Y;
+        // Can't have a buffer dimension of 0 - that'll cause divide by zeros in the future.
+        coordBufferSizeNew.X = max(coordClientNewCharacters.X, 1);
+        coordBufferSizeNew.Y = max(coordClientNewCharacters.Y, 1);
     }
     else
     {
