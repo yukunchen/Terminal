@@ -27,8 +27,8 @@ class DummyElementProvider final : public IRawElementProviderSimple
 {
 public:
     // IUnknown methods
-    IFACEMETHODIMP_(ULONG) AddRef() { return E_NOTIMPL; }
-    IFACEMETHODIMP_(ULONG) Release() { return E_NOTIMPL; }
+    IFACEMETHODIMP_(ULONG) AddRef() { return 1; }
+    IFACEMETHODIMP_(ULONG) Release() { return 1; }
     IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
                                   _COM_Outptr_result_maybenull_ void** ppInterface)
     {
