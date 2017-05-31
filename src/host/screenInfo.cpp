@@ -561,7 +561,8 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX, _In_ short con
         if (pConsoleWindow)
         {
             pConsoleWindow->SignalUia(UIA_Text_TextChangedEventId);
-            pConsoleWindow->SignalUia(UIA_LayoutInvalidatedEventId);
+            // TODO MSFT 7960168 do we really need this event to not signal?
+            //pConsoleWindow->SignalUia(UIA_LayoutInvalidatedEventId);
         }
     }
 }

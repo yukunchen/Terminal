@@ -39,16 +39,18 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int 
 }
 
 ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Window* const pParent,
-                                             _In_ SCREEN_INFORMATION* const pScreenInfo) :
+                                             _In_ SCREEN_INFORMATION* const pScreenInfo,
+                                             _In_ WindowUiaProvider* const pUiaParent) :
     _pWindow(pParent),
     _pScreenInfo(pScreenInfo),
+    _pUiaParent(pUiaParent),
     _cRefs(1)
 {
 }
 
 ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
 {
-
+    _pUiaParent->Release();
 }
 
 #pragma region IUnknown
@@ -216,10 +218,10 @@ IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
 
     if (direction == NavigateDirection_Parent)
     {
-        // TODO MSFT 7960168 why does this not use the existing one?
         try
         {
-            *ppProvider = new WindowUiaProvider(_pWindow);
+            _pUiaParent->QueryInterface(__uuidof(IRawElementProviderFragment),
+                                        reinterpret_cast<void**>(ppProvider));
         }
         catch (...)
         {
@@ -281,10 +283,10 @@ IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
 {
-    // TODO MSFT 7960168 why does this not use the existing one?
     try
     {
-        *ppProvider = new WindowUiaProvider(_pWindow);
+        _pUiaParent->QueryInterface(__uuidof(IRawElementProviderFragment),
+                                    reinterpret_cast<void**>(ppProvider));
     }
     catch (...)
     {

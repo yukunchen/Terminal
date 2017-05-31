@@ -79,7 +79,7 @@ namespace Microsoft
                     HWND _GetWindowHandle() const;
                     HRESULT _EnsureValidHwnd() const;
 
-                    ScreenInfoUiaProvider* _GetScreenInfoProvider() const;
+                    ScreenInfoUiaProvider* _GetScreenInfoProvider();
                 };
             }
         }
