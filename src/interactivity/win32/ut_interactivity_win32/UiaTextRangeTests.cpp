@@ -175,7 +175,7 @@ class UiaTextRangeTests
 
     TEST_METHOD(CanTranslateRowToViewport)
     {
-        const auto totalRows = _pTextBuffer->TotalRowCount();
+        const int totalRows = _pTextBuffer->TotalRowCount();
 
         SMALL_RECT viewport;
         viewport.Top = 0;
@@ -185,7 +185,7 @@ class UiaTextRangeTests
         VERIFY_ARE_EQUAL(-1, _range->_rowToViewport(-5, viewport));
         VERIFY_ARE_EQUAL(-1, _range->_rowToViewport(totalRows, viewport));
 
-        std::vector<std::pair<size_t, size_t>> viewportSizes =
+        std::vector<std::pair<int, int>> viewportSizes =
         {
             { 0, 10 }, // viewport at top
             { 2, 10 }, // shifted viewport
@@ -286,7 +286,7 @@ class UiaTextRangeTests
         _pTextBuffer->SetFirstRowIndex(static_cast<SHORT>(totalRows - 5));
         viewport.Top = static_cast<SHORT>(totalRows - 3);
         viewport.Bottom = 5;
-        const size_t expectedHeight = totalRows - viewport.Top + viewport.Bottom + 1;
+        const int expectedHeight = totalRows - viewport.Top + viewport.Bottom + 1;
         VERIFY_ARE_EQUAL(expectedHeight, _range->_getViewportHeight(viewport));
     }
 
