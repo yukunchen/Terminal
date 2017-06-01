@@ -21,6 +21,12 @@ Author(s):
 class UiaTextRangeTests;
 #endif
 
+typedef unsigned int Row;
+typedef unsigned int Column;
+typedef unsigned int Endpoint;
+typedef unsigned int ViewportRow;
+
+
 namespace Microsoft
 {
     namespace Console
@@ -42,8 +48,8 @@ namespace Microsoft
                     UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                  _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
                                  _In_ const SCREEN_INFORMATION* const pScreenInfo,
-                                 _In_ const unsigned int start,
-                                 _In_ const unsigned int end);
+                                 _In_ const Endpoint start,
+                                 _In_ const Endpoint end);
 
                     // range from a UiaPoint
                     UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
@@ -56,8 +62,8 @@ namespace Microsoft
                     ~UiaTextRange();
 
 
-                    const unsigned int getStart() const;
-                    const unsigned int getEnd() const;
+                    const Endpoint getStart() const;
+                    const Endpoint getEnd() const;
 
                     // IUnknown methods
                     IFACEMETHODIMP_(ULONG) AddRef();
@@ -120,26 +126,26 @@ namespace Microsoft
                     ULONG _cRefs;
 
                     // measure units in the form [start, end)
-                    unsigned int _start;
-                    unsigned int _end;
+                    Endpoint _start;
+                    Endpoint _end;
 
                     const bool _isDegenerate() const;
 
-                    const bool _isRowInViewport(_In_ const unsigned int row) const;
-                    const bool _isRowInViewport(_In_ const unsigned int row,
+                    const bool _isRowInViewport(_In_ const Row row) const;
+                    const bool _isRowInViewport(_In_ const Row row,
                                                 _In_ const SMALL_RECT viewport) const;
 
-                    const unsigned int _rowToViewport(_In_ const unsigned int row) const;
-                    const unsigned int _rowToViewport(_In_ const unsigned int row,
-                                             _In_ const SMALL_RECT viewport) const;
+                    const ViewportRow _rowToViewport(_In_ const Row row) const;
+                    const ViewportRow _rowToViewport(_In_ const Row row,
+                                                     _In_ const SMALL_RECT viewport) const;
 
-                    const unsigned int _endpointToRow(_In_ const unsigned int endpoint) const;
-                    const unsigned int _endpointToColumn(_In_ const unsigned int endpoint) const;
-                    const unsigned int _rowToEndpoint(_In_ const unsigned int row) const;
+                    const Row _endpointToRow(_In_ const Endpoint endpoint) const;
+                    const Column _endpointToColumn(_In_ const Endpoint endpoint) const;
+                    const Endpoint _rowToEndpoint(_In_ const Row row) const;
 
                     const unsigned int _getTotalRows() const;
                     const unsigned int _getRowWidth() const;
-                    const unsigned int _normalizeRow(_In_ const unsigned int row) const;
+                    const Row _normalizeRow(_In_ const Row row) const;
                     const unsigned int _getViewportHeight(_In_ const SMALL_RECT viewport) const;
                     const unsigned int _getViewportWidth(_In_ const SMALL_RECT viewport) const;
 
@@ -148,8 +154,8 @@ namespace Microsoft
                     IConsoleWindow* _getWindow();
 
                     const COORD _getScreenBufferCoords() const;
-                    const unsigned int _getScreenBufferTopRow() const;
-                    const unsigned int _getScreenBufferBottomRow() const;
+                    const Row _getScreenBufferTopRow() const;
+                    const Row _getScreenBufferBottomRow() const;
 
                     #ifdef UNIT_TESTING
                     friend class ::UiaTextRangeTests;
