@@ -690,8 +690,8 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
     // the bottom edge of the screen buffer
     if (alignToTop)
     {
-        while (static_cast<unsigned int>(newViewport.Top) != startRow &&
-               static_cast<unsigned int>(newViewport.Bottom) != bottomRow)
+        while (static_cast<Row>(newViewport.Top) != startRow &&
+               static_cast<Row>(newViewport.Bottom) != bottomRow)
         {
             newViewport.Top = static_cast<SHORT>(_normalizeRow(newViewport.Top + 1));
             newViewport.Bottom = static_cast<SHORT>(_normalizeRow(newViewport.Bottom + 1));
@@ -700,8 +700,8 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
     else if (!_isRowInViewport(endRow, newViewport))
     {
 
-        while (static_cast<unsigned int>(newViewport.Bottom) != endRow &&
-               static_cast<unsigned int>(newViewport.Bottom) != bottomRow)
+        while (static_cast<Row>(newViewport.Bottom) != endRow &&
+               static_cast<Row>(newViewport.Bottom) != bottomRow)
         {
             newViewport.Top = static_cast<SHORT>(_normalizeRow(newViewport.Top + 1));
             newViewport.Bottom = static_cast<SHORT>(_normalizeRow(newViewport.Bottom + 1));
@@ -760,17 +760,17 @@ const bool UiaTextRange::_isRowInViewport(_In_ const Row row,
 {
     if (viewport.Top < viewport.Bottom)
     {
-        return (row >= static_cast<unsigned int>(viewport.Top) &&
-                row <= static_cast<unsigned int>(viewport.Bottom));
+        return (row >= static_cast<Row>(viewport.Top) &&
+                row <= static_cast<Row>(viewport.Bottom));
     }
     else if (viewport.Top == viewport.Bottom)
     {
-        return row == static_cast<unsigned int>(viewport.Top);
+        return row == static_cast<Row>(viewport.Top);
     }
     else
     {
-        return (row >= static_cast<unsigned int>(viewport.Top) ||
-                row <= static_cast<unsigned int>(viewport.Bottom));
+        return (row >= static_cast<Row>(viewport.Top) ||
+                row <= static_cast<Row>(viewport.Bottom));
     }
 }
 
@@ -798,7 +798,7 @@ const ViewportRow UiaTextRange::_rowToViewport(_In_ const Row row,
         throw std::out_of_range(row + " is not in viewport");
     }
 
-    if (row >= static_cast<unsigned int>(viewport.Top))
+    if (row >= static_cast<Row>(viewport.Top))
     {
         return row - viewport.Top;
     }
