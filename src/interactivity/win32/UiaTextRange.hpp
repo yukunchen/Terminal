@@ -156,6 +156,7 @@ namespace Microsoft
                     const COORD _getScreenBufferCoords() const;
                     const Row _getScreenBufferTopRow() const;
                     const Row _getScreenBufferBottomRow() const;
+                    const unsigned int _rowCountInRange() const;
 
                     #ifdef UNIT_TESTING
                     friend class ::UiaTextRangeTests;

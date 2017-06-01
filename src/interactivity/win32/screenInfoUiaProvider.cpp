@@ -220,8 +220,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
     {
         try
         {
-            _pUiaParent->QueryInterface(__uuidof(IRawElementProviderFragment),
-                                        reinterpret_cast<void**>(ppProvider));
+            _pUiaParent->QueryInterface(IID_PPV_ARGS(ppProvider));
         }
         catch (...)
         {
@@ -272,8 +271,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_ma
 IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 {
     IRawElementProviderSimple* pProvider;
-    const HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
-                                            reinterpret_cast<void**>(&pProvider));
+    const HRESULT hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
     if (SUCCEEDED(hr))
     {
         UiaRaiseAutomationEvent(pProvider, UIA_AutomationFocusChangedEventId);
@@ -285,8 +283,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_mayben
 {
     try
     {
-        _pUiaParent->QueryInterface(__uuidof(IRawElementProviderFragment),
-                                    reinterpret_cast<void**>(ppProvider));
+        _pUiaParent->QueryInterface(IID_PPV_ARGS(ppProvider));
     }
     catch (...)
     {
@@ -334,8 +331,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
     for (size_t i = 0; i < rectCount; ++i)
     {
         IRawElementProviderSimple* pProvider;
-        hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
-                                          reinterpret_cast<void**>(&pProvider));
+        hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
         if (FAILED(hr))
         {
             SafeArrayDestroy(*ppRetVal);
@@ -399,8 +395,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
         const int end = start + screenBufferCoords.X;
 
         IRawElementProviderSimple* pProvider;
-        HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
-                                          reinterpret_cast<void**>(&pProvider));
+        HRESULT hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
         if (FAILED(hr))
         {
             SafeArrayDestroy(*ppRetVal);
@@ -445,8 +440,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSim
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
 
     IRawElementProviderSimple* pProvider;
-    RETURN_IF_FAILED(this->QueryInterface(__uuidof(IRawElementProviderSimple),
-                                          reinterpret_cast<void**>(&pProvider)));
+    RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 
     try
     {
@@ -471,8 +465,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
 
     IRawElementProviderSimple* pProvider;
-    RETURN_IF_FAILED(this->QueryInterface(__uuidof(IRawElementProviderSimple),
-                                          reinterpret_cast<void**>(&pProvider)));
+    RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 
     try
     {
@@ -498,8 +491,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybe
     const int lineWidth = _getScreenBufferCoords().X;
 
     IRawElementProviderSimple* pProvider;
-    RETURN_IF_FAILED(this->QueryInterface(__uuidof(IRawElementProviderSimple),
-                                          reinterpret_cast<void**>(&pProvider)));
+    RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 
     try
     {

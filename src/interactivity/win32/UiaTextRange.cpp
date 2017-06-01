@@ -291,7 +291,7 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
     const unsigned int totalRows = _getTotalRows();
     const Row startRow = _endpointToRow(_start);
     const Row endRow = _endpointToRow(_end);
-    const unsigned int totalRowsInRange = (endRow >= startRow) ? endRow - startRow : endRow - startRow + totalRows;
+    const unsigned int totalRowsInRange = _rowCountInRange();
     // width of viewport (measured in chars)
     const SMALL_RECT viewport = _getViewport();
     const unsigned int viewportWidth = _getViewportWidth(viewport);
@@ -429,7 +429,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
     const unsigned int totalRows = _getTotalRows();
     const Row startRow = _endpointToRow(_start);
     const Row endRow = _endpointToRow(_end);
-    const unsigned int totalRowsInRange = (endRow > startRow) ? endRow - startRow : endRow - startRow + totalRows;
+    const unsigned int totalRowsInRange = _rowCountInRange();
 
     for (unsigned int i = 0; i < totalRowsInRange; ++i)
     {
@@ -725,29 +725,29 @@ IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** p
 #pragma endregion
 
 // Routine Description:
-// -
+// - returns true if the range is currently degenerate (empty range).
 // Arguments:
-// -
+// - <none>
 // Return Value:
-// -
+// - true if range is degenerate, false otherwise.
 const bool UiaTextRange::_isDegenerate() const
 {
     return (_start == _end);
 }
 
 // Routine Description:
-// -
+// - checks if the row is currently visible in the viewport. Uses the
+// default viewport.
 // Arguments:
-// -
+// - row - the row to check
 // Return Value:
-// -
+// - true if the row is within the bounds of the viewport
 const bool UiaTextRange::_isRowInViewport(_In_ const Row row) const
 {
     const SMALL_RECT viewport = _getViewport();
     return _isRowInViewport(row, viewport);
 }
 
-// TODO
 // Routine Description:
 // - checks if the row is currently visible in the viewport
 // Arguments:
@@ -860,7 +860,8 @@ const unsigned int UiaTextRange::_getTotalRows() const
 // - The row width
 const unsigned int UiaTextRange::_getRowWidth() const
 {
-    return _getScreenBufferCoords().X;
+    // make sure that we can't leak a 0
+    return max(_getScreenBufferCoords().X, 1);
 }
 
 // Routine Description:
@@ -906,7 +907,7 @@ const unsigned int UiaTextRange::_getViewportWidth(_In_ const SMALL_RECT viewpor
 // Arguments:
 // - <none>
 // Return Value:
-// - The viewport
+// - The screen info's current viewport
 const SMALL_RECT UiaTextRange::_getViewport() const
 {
     return _pScreenInfo->GetBufferViewport();
@@ -982,4 +983,28 @@ const Row UiaTextRange::_getScreenBufferTopRow() const
 const Row UiaTextRange::_getScreenBufferBottomRow() const
 {
     return _normalizeRow(_getScreenBufferTopRow() - 1);
+}
+
+// Routine Description:
+// - counts the number of rows that are fully or partially part of the
+// range.
+// the screen buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - The numbe rof rows in the range.
+const unsigned int UiaTextRange::_rowCountInRange() const
+{
+    const unsigned int totalRows = _getTotalRows();
+    const Row startRow = _endpointToRow(_start);
+    const Row endRow = _endpointToRow(_end);
+
+    if (endRow >= startRow)
+    {
+        return endRow - startRow;
+    }
+    else
+    {
+        return totalRows + endRow - startRow;
+    }
 }
