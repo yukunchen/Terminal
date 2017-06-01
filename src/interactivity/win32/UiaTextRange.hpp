@@ -42,8 +42,8 @@ namespace Microsoft
                     UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                  _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
                                  _In_ const SCREEN_INFORMATION* const pScreenInfo,
-                                 _In_ const int start,
-                                 _In_ const int end);
+                                 _In_ const unsigned int start,
+                                 _In_ const unsigned int end);
 
                     // range from a UiaPoint
                     UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
@@ -56,8 +56,8 @@ namespace Microsoft
                     ~UiaTextRange();
 
 
-                    const int getStart() const;
-                    const int getEnd() const;
+                    const unsigned int getStart() const;
+                    const unsigned int getEnd() const;
 
                     // IUnknown methods
                     IFACEMETHODIMP_(ULONG) AddRef();
@@ -120,36 +120,36 @@ namespace Microsoft
                     ULONG _cRefs;
 
                     // measure units in the form [start, end)
-                    int _start;
-                    int _end;
+                    unsigned int _start;
+                    unsigned int _end;
 
                     const bool _isDegenerate() const;
 
-                    const bool _isRowInViewport(_In_ const int row) const;
-                    const bool _isRowInViewport(_In_ const int row,
+                    const bool _isRowInViewport(_In_ const unsigned int row) const;
+                    const bool _isRowInViewport(_In_ const unsigned int row,
                                                 _In_ const SMALL_RECT viewport) const;
 
-                    const int _rowToViewport(_In_ const int row) const;
-                    const int _rowToViewport(_In_ const int row,
+                    const unsigned int _rowToViewport(_In_ const unsigned int row) const;
+                    const unsigned int _rowToViewport(_In_ const unsigned int row,
                                              _In_ const SMALL_RECT viewport) const;
 
-                    const int _endpointToRow(_In_ const int endpoint) const;
-                    const int _endpointToColumn(_In_ const int endpoint) const;
-                    const int _rowToEndpoint(_In_ const int row) const;
+                    const unsigned int _endpointToRow(_In_ const unsigned int endpoint) const;
+                    const unsigned int _endpointToColumn(_In_ const unsigned int endpoint) const;
+                    const unsigned int _rowToEndpoint(_In_ const unsigned int row) const;
 
-                    const int _getTotalRows() const;
-                    const int _getRowWidth() const;
-                    const int _normalizeRow(_In_ const int row) const;
-                    const int _getViewportHeight(_In_ const SMALL_RECT viewport) const;
-                    const int _getViewportWidth(_In_ const SMALL_RECT viewport) const;
+                    const unsigned int _getTotalRows() const;
+                    const unsigned int _getRowWidth() const;
+                    const unsigned int _normalizeRow(_In_ const unsigned int row) const;
+                    const unsigned int _getViewportHeight(_In_ const SMALL_RECT viewport) const;
+                    const unsigned int _getViewportWidth(_In_ const SMALL_RECT viewport) const;
 
                     const SMALL_RECT _getViewport() const;
                     HWND _getWindowHandle();
                     IConsoleWindow* _getWindow();
 
                     const COORD _getScreenBufferCoords() const;
-                    const int _getScreenBufferTopRow() const;
-                    const int _getScreenBufferBottomRow() const;
+                    const unsigned int _getScreenBufferTopRow() const;
+                    const unsigned int _getScreenBufferBottomRow() const;
 
                     #ifdef UNIT_TESTING
                     friend class ::UiaTextRangeTests;

@@ -114,7 +114,7 @@ class UiaTextRangeTests
         return true;
     }
 
-    const int _getRowWidth() const
+    const unsigned int _getRowWidth() const
     {
         const CHAR_ROW charRow = _pTextBuffer->GetFirstRow()->CharRow;
         return charRow.Left - charRow.Right;
@@ -181,9 +181,9 @@ class UiaTextRangeTests
         viewport.Top = 0;
         viewport.Bottom = 10;
 
-        // invalid rows return -1
-        VERIFY_ARE_EQUAL(-1, _range->_rowToViewport(-5, viewport));
-        VERIFY_ARE_EQUAL(-1, _range->_rowToViewport(totalRows, viewport));
+        // invalid rows throw std::out_of_range exception
+        VERIFY_THROWS(_range->_rowToViewport(viewport.Bottom + 1u, viewport), std::out_of_range);
+        VERIFY_THROWS(_range->_rowToViewport(totalRows, viewport), std::out_of_range);
 
         std::vector<std::pair<int, int>> viewportSizes =
         {
@@ -196,7 +196,7 @@ class UiaTextRangeTests
         {
             viewport.Top = static_cast<SHORT>(it->first);
             viewport.Bottom = static_cast<SHORT>(it->second);
-            for (auto i = viewport.Top; _range->_isRowInViewport(i, viewport); ++i)
+            for (unsigned int i = viewport.Top; _range->_isRowInViewport(i, viewport); ++i)
             {
                 VERIFY_ARE_EQUAL(i - viewport.Top, _range->_rowToViewport(i, viewport));
             }
@@ -216,7 +216,7 @@ class UiaTextRangeTests
     TEST_METHOD(CanTranslateRowToEndpoint)
     {
         const auto rowWidth = _getRowWidth();
-        for (auto i = 0; i < 5; ++i)
+        for (unsigned int i = 0; i < 5; ++i)
         {
             VERIFY_ARE_EQUAL(i * rowWidth, _range->_rowToEndpoint(i));
             // make sure that the translation is reversible
@@ -236,7 +236,7 @@ class UiaTextRangeTests
 
     TEST_METHOD(CanGetTotalRows)
     {
-        const int totalRows = _pTextBuffer->TotalRowCount();
+        const auto totalRows = _pTextBuffer->TotalRowCount();
         VERIFY_ARE_EQUAL(totalRows,
                          _range->_getTotalRows());
     }
@@ -250,7 +250,7 @@ class UiaTextRangeTests
     TEST_METHOD(CanNormalizeRow)
     {
         const int totalRows = _pTextBuffer->TotalRowCount();
-        std::vector<std::pair<int, int>> rowMappings =
+        std::vector<std::pair<unsigned int, unsigned int>> rowMappings =
         {
             { 0, 0 },
             { totalRows / 2, totalRows / 2 },
@@ -273,12 +273,12 @@ class UiaTextRangeTests
         viewport.Bottom = 0;
 
         // SMALL_RECTs are inclusive, so Top == Bottom really means 1 row
-        VERIFY_ARE_EQUAL(1, _range->_getViewportHeight(viewport));
+        VERIFY_ARE_EQUAL(1u, _range->_getViewportHeight(viewport));
 
         // make the viewport 10 rows tall
         viewport.Top = 3;
         viewport.Bottom = 12;
-        VERIFY_ARE_EQUAL(10, _range->_getViewportHeight(viewport));
+        VERIFY_ARE_EQUAL(10u, _range->_getViewportHeight(viewport));
 
         // make sure that viewport height is still properly calculated
         // when the 0th row lies within the viewport
@@ -286,7 +286,7 @@ class UiaTextRangeTests
         _pTextBuffer->SetFirstRowIndex(static_cast<SHORT>(totalRows - 5));
         viewport.Top = static_cast<SHORT>(totalRows - 3);
         viewport.Bottom = 5;
-        const int expectedHeight = totalRows - viewport.Top + viewport.Bottom + 1;
+        const unsigned int expectedHeight = totalRows - viewport.Top + viewport.Bottom + 1;
         VERIFY_ARE_EQUAL(expectedHeight, _range->_getViewportHeight(viewport));
     }
 
@@ -297,10 +297,10 @@ class UiaTextRangeTests
         viewport.Right = 0;
 
         // SMALL_RECTs are inclusive, Left == Right is really 1 column
-        VERIFY_ARE_EQUAL(1, _range->_getViewportWidth(viewport));
+        VERIFY_ARE_EQUAL(1u, _range->_getViewportWidth(viewport));
 
         // test a more normal size
         viewport.Right = 300;
-        VERIFY_ARE_EQUAL(viewport.Right + 1, _range->_getViewportWidth(viewport));
+        VERIFY_ARE_EQUAL(viewport.Right + 1u, _range->_getViewportWidth(viewport));
     }
 };
