@@ -596,7 +596,7 @@ class ScreenBufferTests
         VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
         VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
         VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
-        // DebugBreak();
+
         psi->VtEraseAll();
         
         VERIFY_ARE_EQUAL(cursor->GetPosition().X, 0);
@@ -640,7 +640,6 @@ class ScreenBufferTests
         VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
         VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 277);
         viewport = psi->GetBufferViewport();
-        // VERIFY_ARE_EQUAL(viewport.Top, 1);
         Log::Comment(NoThrowString().Format(
             L"viewport={L:%d,T:%d,R:%d,B:%d}", 
             viewport.Left, viewport.Top, viewport.Right, viewport.Bottom

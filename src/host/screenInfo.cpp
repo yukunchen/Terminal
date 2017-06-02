@@ -2348,6 +2348,17 @@ void SCREEN_INFORMATION::SetBufferViewport(SMALL_RECT srBufferViewport)
     _srBufferViewport = srBufferViewport;
 }
 
+// Method Description:
+// - Performs a VT Erase All operation. Im most terminals, this is done by 
+//      moving the viewport into the scrollback, clearing out the current screen.
+//      For them, there can never be any characters beneath the viewport, as the 
+//      viewport is always at the bottom. So, we can accomplish the same behavior 
+//      by using the LastNonspaceCharacter as the "bottom", and placing the new 
+//      viewport underneath that character.
+// Parameters:
+//  <none>
+// Return value:
+// - STATUS_SUCCESS if we succeeded, or another status if there was a failure.
 NTSTATUS SCREEN_INFORMATION::VtEraseAll()
 {
     const COORD coordLastChar = TextInfo->GetLastNonSpaceCharacter();
