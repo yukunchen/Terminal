@@ -13,6 +13,7 @@
 #include "screenInfo.hpp"
 
 #include "input.h"
+#include "getset.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -175,6 +176,81 @@ class ScreenBufferTests
                 }
             }
         }
+    }
+
+    TEST_METHOD(TestReverseLineFeed)
+    {
+        SCREEN_INFORMATION* const psi = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        auto bufferWriter = psi->GetBufferWriter();
+        auto cursor = psi->TextInfo->GetCursor();
+        auto viewport = psi->GetBufferViewport();
+        VERIFY_IS_NOT_NULL(bufferWriter);
+        VERIFY_IS_NOT_NULL(cursor);
+
+        VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
+
+        ////////////////////////////////////////////////////////////////////////
+        Log::Comment(L"Case 1: RI from below top of viewport");
+
+        bufferWriter->PrintString(L"foo\nfoo", 7);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 1);
+        VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
+
+        DoSrvPrivateReverseLineFeed(psi);
+        
+        VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
+        viewport = psi->GetBufferViewport();
+        VERIFY_ARE_EQUAL(viewport.Top, 0);
+        Log::Comment(NoThrowString().Format(
+            L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+            viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        ));
+
+        ////////////////////////////////////////////////////////////////////////
+        Log::Comment(L"Case 2: RI from top of viewport");
+        cursor->SetPosition({0, 0});
+        bufferWriter->PrintString(L"123456789", 9);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
+        VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
+
+        DoSrvPrivateReverseLineFeed(psi);
+        
+        VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
+        viewport = psi->GetBufferViewport();
+        VERIFY_ARE_EQUAL(viewport.Top, 0);
+        Log::Comment(NoThrowString().Format(
+            L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+            viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        ));
+        auto c = psi->TextInfo->GetLastNonSpaceCharacter();
+        VERIFY_ARE_EQUAL(c.Y, 2); // This is the coordinates of the second "foo" from before.
+
+        ////////////////////////////////////////////////////////////////////////
+        Log::Comment(L"Case 3: RI from top of viewport, when viewport is below top of buffer");
+
+        cursor->SetPosition({0, 5});
+        psi->SetViewportOrigin(TRUE, {0, 5});
+        bufferWriter->PrintString(L"ABCDEFGH", 9);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 5);
+        VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 5);
+
+        DoSrvPrivateReverseLineFeed(psi);
+        
+        VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 5);
+        viewport = psi->GetBufferViewport();
+        VERIFY_ARE_EQUAL(viewport.Top, 5);
+        Log::Comment(NoThrowString().Format(
+            L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+            viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        ));
+        c = psi->TextInfo->GetLastNonSpaceCharacter();
+        VERIFY_ARE_EQUAL(c.Y, 6);
     }
 
     size_t const cSampleListTabs = 5;
