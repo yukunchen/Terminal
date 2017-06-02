@@ -557,6 +557,16 @@ public:
         }
         return _fPrivateEnableAlternateScrollResult;
     }
+    virtual BOOL PrivateEraseAll()
+    {
+        Log::Comment(L"PrivateEraseAll MOCK called...");
+        // if (_fPrivateEnableAlternateScrollResult)
+        // {
+        //     VERIFY_ARE_EQUAL(_fExpectedAlternateScrollEnabled, fEnabled);
+        // }
+        //TODO
+        return TRUE;
+    }
 
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {

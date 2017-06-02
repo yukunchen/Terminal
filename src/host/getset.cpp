@@ -1217,3 +1217,16 @@ NTSTATUS DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable)
 
     return STATUS_SUCCESS;
 }
+
+// Routine Description:
+// - A private API call for enabling alternate scroll mode
+// Parameters:
+// - fEnable - true to enable alternate scroll mode, false to disable.
+// Return value:
+// - STATUS_SUCCESS always.
+NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* pScreenInfo)
+{
+    SCREEN_INFORMATION* const pScreenBuffer = pScreenInfo->GetActiveBuffer();
+
+    return pScreenBuffer->VtEraseAll();
+}

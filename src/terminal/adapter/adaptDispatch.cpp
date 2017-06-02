@@ -720,9 +720,14 @@ bool AdaptDispatch::EraseInDisplay(_In_ EraseType const eraseType)
     // First things first. If this is a "Scrollback" clear, then just do that.
     // Scrollback clears erase everything in the "scrollback" of a *nix terminal
     //      Everything that's scrolled off the screen so far.
+    // Or if it's 
     if (eraseType == EraseType::Scrollback)
     {
         return _EraseScrollback();
+    }
+    else if (eraseType == EraseType::All)
+    {
+        return _EraseAll();
     }
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
@@ -1657,6 +1662,71 @@ bool AdaptDispatch::_EraseScrollback()
     }
     return fSuccess;
 }
+
+//Routine Description:
+// Erase Scrollback (^[[3J - ED extension by xterm)
+
+//Arguments:
+// <none>
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::_EraseAll()
+{
+    return !!_pConApi->PrivateEraseAll();
+    //    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    // csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    // bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    // if (fSuccess)
+    // { 
+    //     const SMALL_RECT Screen = csbiex.srWindow;
+    //     const short sWidth = Screen.Right - Screen.Left;
+    //     const short sHeight = Screen.Bottom - Screen.Top;
+
+    //     // If the viewport will be below the bottom of the buffer, scroll everything up
+    //     // Otherwise just move the viewport down
+    //     short sNewTop = Screen.Top + sHeight;
+    //     const short sNewBottom = Screen.Bottom + sHeight;
+    //     if (sNewBottom > csbiex.dwSize.Y)
+    //     {
+    //         sNewTop = csbiex.dwSize.Y - sHeight;
+
+    //         // Rectangle to cut out of the existing buffer
+    //         SMALL_RECT srScroll = {0};
+    //         srScroll.Bottom = csbiex.dwSize.Y;
+    //         srScroll.Right = csbiex.dwSize.X;
+    //         srScroll.Top = sHeight;
+
+    //         // Paste coordinate for cut text above
+    //         COORD coordDestination;
+    //         coordDestination.X = 0;
+    //         coordDestination.Y = 0;
+
+    //         // Fill character for remaining space left behind by "cut" operation (or for fill if we "cut" the entire line)
+    //         CHAR_INFO ciFill;
+    //         ciFill.Attributes = csbiex.wAttributes;
+    //         ciFill.Char.UnicodeChar = static_cast<WCHAR>(0x20); // space character. use 0x20 instead of literal space because we can't assume the compiler will always turn ' ' into 0x20.
+    //         fSuccess = !!_pConApi->ScrollConsoleScreenBufferW(&srScroll, nullptr, coordDestination, &ciFill);
+    //     }
+    //     else
+    //     {
+    //         SMALL_RECT srNewViewport = {0};
+    //         srNewViewport.Top = sHeight;
+    //         srNewViewport.Bottom = sHeight;
+    //         fSuccess = !!_pConApi->SetConsoleWindowInfo(false, &srNewViewport);
+
+    //     }
+                    
+    //     if (fSuccess)
+    //     {
+    //         // const COORD newCursor = {0, Screen.Bottom};
+    //         const COORD newCursor = {0, sNewTop};
+    //         fSuccess = !!_pConApi->SetConsoleCursorPosition(newCursor);
+    //     }
+
+    // }
+    // return fSuccess;
+}
+
 
 //Routine Description:
 // Enable VT200 Mouse Mode - Enables/disables the mouse input handler in default tracking mode.
