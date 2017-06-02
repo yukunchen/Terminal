@@ -565,7 +565,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
         }
         currentRow = _normalizeRow(currentRow + incrementAmount);
         *pRetVal += incrementAmount;
-        if (currentRow == otherEndpoint)
+        if (currentRow == _endpointToRow(otherEndpoint))
         {
             crossedEndpoints = true;
         }
