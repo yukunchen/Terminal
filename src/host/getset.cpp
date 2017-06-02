@@ -1219,14 +1219,13 @@ NTSTATUS DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable)
 }
 
 // Routine Description:
-// - A private API call for enabling alternate scroll mode
+// - A private API call for performing a VT-style erase all operation on the buffer.
+//      See SCREEN_INFORMATION::VtEraseAll's description for details.
 // Parameters:
-// - fEnable - true to enable alternate scroll mode, false to disable.
+//  The ScreenBuffer to perform the erase on.
 // Return value:
-// - STATUS_SUCCESS always.
+// - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
 NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* pScreenInfo)
 {
-    SCREEN_INFORMATION* const pScreenBuffer = pScreenInfo->GetActiveBuffer();
-
-    return pScreenBuffer->VtEraseAll();
+    return NTSTATUS_FROM_HRESULT(pScreenInfo->GetActiveBuffer()->VtEraseAll());
 }

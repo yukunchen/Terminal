@@ -559,7 +559,7 @@ BOOL ConhostInternalGetSet::PrivateEnableAlternateScroll(_In_ bool const fEnable
 // Routine Description:
 // - Connects the PrivateEraseAll call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateEraseAll is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
+//     but it is not represented as a function call on our public API surface.
 // Arguments:
 // <none>
 // Return Value:

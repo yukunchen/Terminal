@@ -1653,9 +1653,9 @@ bool AdaptDispatch::_EraseScrollback()
 }
 
 //Routine Description:
-// Erase All (^[[2J - ED 
+// Erase All (^[[2J - ED)
 //  Erase the current contents of the viewport. In most terminals, because they 
-//      only have a scrollback (and not a buffer per-say), they implement this 
+//      only have a scrollback (and not a buffer per-se), they implement this 
 //      by scrolling the current contents of the buffer off of the screen.
 //  We can't properly replicate this behavior with only the public API, because
 //      we need to know where the last character in the buffer is. (it may be below the viewport)

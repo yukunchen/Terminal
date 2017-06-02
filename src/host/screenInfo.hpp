@@ -167,7 +167,7 @@ public:
     void SetAttributes(_In_ const TextAttribute attributes);
     void SetPopupAttributes(_In_ const TextAttribute* const pPopupAttributes);
 
-    NTSTATUS VtEraseAll();
+    HRESULT VtEraseAll();
     
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
