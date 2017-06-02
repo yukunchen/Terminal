@@ -814,7 +814,7 @@ const ViewportRow UiaTextRange::_rowToViewport(_In_ const Row row,
 // - endpoint - the endpoint to translate
 // Return Value:
 // - the row value
-const Row UiaTextRange::_endpointToRow(_In_ const Endpoint endpoint) const
+const Row UiaTextRange::_endpointToRow(_In_ const Endpoint endpoint)
 {
     return endpoint / _getRowWidth();
 }
@@ -825,7 +825,7 @@ const Row UiaTextRange::_endpointToRow(_In_ const Endpoint endpoint) const
 // - endpoint - the endpoint to translate
 // Return Value:
 // - the column value
-const Column UiaTextRange::_endpointToColumn(_In_ const Endpoint endpoint) const
+const Column UiaTextRange::_endpointToColumn(_In_ const Endpoint endpoint)
 {
     return endpoint % _getRowWidth();
 }
@@ -858,7 +858,7 @@ const unsigned int UiaTextRange::_getTotalRows() const
 // - <none>
 // Return Value:
 // - The row width
-const unsigned int UiaTextRange::_getRowWidth() const
+const unsigned int UiaTextRange::_getRowWidth()
 {
     // make sure that we can't leak a 0
     return max(_getScreenBufferCoords().X, 1);
@@ -893,7 +893,7 @@ const unsigned int UiaTextRange::_getViewportHeight(_In_ const SMALL_RECT viewpo
 // - viewport - The viewport to measure
 // Return Value:
 // - The viewport width
-const unsigned int UiaTextRange::_getViewportWidth(_In_ const SMALL_RECT viewport) const
+const unsigned int UiaTextRange::_getViewportWidth(_In_ const SMALL_RECT viewport)
 {
     assert(viewport.Right >= viewport.Left);
 
@@ -942,7 +942,7 @@ HWND UiaTextRange::_getWindowHandle()
 // - <none>
 // Return Value:
 // - The screen buffer size
-const COORD UiaTextRange::_getScreenBufferCoords() const
+const COORD UiaTextRange::_getScreenBufferCoords()
 {
     return ServiceLocator::LocateGlobals()->getConsoleInformation()->GetScreenBufferSize();
 }

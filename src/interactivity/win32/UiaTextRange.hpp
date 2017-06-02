@@ -139,21 +139,21 @@ namespace Microsoft
                     const ViewportRow _rowToViewport(_In_ const Row row,
                                                      _In_ const SMALL_RECT viewport) const;
 
-                    const Row _endpointToRow(_In_ const Endpoint endpoint) const;
-                    const Column _endpointToColumn(_In_ const Endpoint endpoint) const;
+                    static const Row _endpointToRow(_In_ const Endpoint endpoint);
+                    static const Column _endpointToColumn(_In_ const Endpoint endpoint);
                     const Endpoint _rowToEndpoint(_In_ const Row row) const;
 
                     const unsigned int _getTotalRows() const;
-                    const unsigned int _getRowWidth() const;
+                    static const unsigned int _getRowWidth();
                     const Row _normalizeRow(_In_ const Row row) const;
                     const unsigned int _getViewportHeight(_In_ const SMALL_RECT viewport) const;
-                    const unsigned int _getViewportWidth(_In_ const SMALL_RECT viewport) const;
+                    static const unsigned int _getViewportWidth(_In_ const SMALL_RECT viewport);
 
                     const SMALL_RECT _getViewport() const;
-                    HWND _getWindowHandle();
-                    IConsoleWindow* _getWindow();
+                    static HWND _getWindowHandle();
+                    static IConsoleWindow* _getWindow();
 
-                    const COORD _getScreenBufferCoords() const;
+                    static const COORD _getScreenBufferCoords();
                     const Row _getScreenBufferTopRow() const;
                     const Row _getScreenBufferBottomRow() const;
                     const unsigned int _rowCountInRange() const;
