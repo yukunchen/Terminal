@@ -596,9 +596,8 @@ void Renderer::_PaintBufferOutputDoubleByteHelper(_In_reads_(cchLine) PCWCHAR co
 
     // We need to filter out double-copies of characters that get introduced for full-width characters (sometimes "double-width" or erroneously "double-byte")
     WCHAR* pwsSegment = new WCHAR[cchLine];
+    unsigned char* rgSegmentWidth = new unsigned char[cchLine]; // We will need to pass the expected widths along so characters can be spaced to fit.
     size_t cchSegment = 0;
-    size_t cchCharWidths = 0;
-
     if (pwsSegment != nullptr)
     {
         // Walk through the line given character by character and copy necessary items into our local array.
@@ -608,14 +607,15 @@ void Renderer::_PaintBufferOutputDoubleByteHelper(_In_reads_(cchLine) PCWCHAR co
             if ((pbKAttrsLine[iLine] & CHAR_ROW::ATTR_TRAILING_BYTE) == 0)
             {
                 pwsSegment[cchSegment] = pwsLine[iLine];
-                cchSegment++;
-                cchCharWidths++;
+                rgSegmentWidth[cchSegment] = 1;
 
                 // If this is a leading byte, add 1 more to width as it is double wide
                 if ((pbKAttrsLine[iLine] & CHAR_ROW::ATTR_LEADING_BYTE) != 0)
                 {
-                    cchCharWidths++;
+                    rgSegmentWidth[cchSegment] = 2;
                 }
+
+                cchSegment++;
             }
             else if (iLine == 0)
             {
@@ -627,10 +627,10 @@ void Renderer::_PaintBufferOutputDoubleByteHelper(_In_reads_(cchLine) PCWCHAR co
 
                 // Copy character
                 pwsSegment[cchSegment] = pwsLine[iLine];
-                cchSegment++;
 
                 // This character is double-width
-                cchCharWidths += 2;
+                rgSegmentWidth[cchSegment] = 2;
+                cchSegment++;
 
                 // Move the target back one so we can strike left of what we want.
                 coordTargetAdjustable.X--;
@@ -643,8 +643,9 @@ void Renderer::_PaintBufferOutputDoubleByteHelper(_In_reads_(cchLine) PCWCHAR co
         }
 
         // Draw the line
-        LOG_IF_FAILED(_pEngine->PaintBufferLine(pwsSegment, cchSegment, coordTargetAdjustable, cchCharWidths, fTrimLeft));
+        LOG_IF_FAILED(_pEngine->PaintBufferLine(pwsSegment, rgSegmentWidth, cchSegment, coordTargetAdjustable, fTrimLeft));
 
+        delete[] rgSegmentWidth;
         delete[] pwsSegment;
     }
 }
