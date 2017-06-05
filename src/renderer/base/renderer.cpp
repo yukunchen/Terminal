@@ -557,7 +557,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ const ROW* const pRow, _In_rea
         }
 
         // Draw the line via double-byte helper to strip duplicates
-        _PaintBufferOutputDoubleByteHelper(pwsSegment, pbKAttrsSegment, cchSegment, coordOffset);
+        LOG_IF_FAILED(_PaintBufferOutputDoubleByteHelper(pwsSegment, pbKAttrsSegment, cchSegment, coordOffset));
 
         // Draw the grid shapes without the double-byte helper as they need to be exactly proportional to what's in the buffer
         if (_pData->IsGridLineDrawingAllowed())
@@ -587,67 +587,68 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ const ROW* const pRow, _In_rea
 // - cchLine - The length of both pwsLine and pbKAttrsLine.
 // - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from. pwsLine[0] will be the character at position coordTarget within the original console buffer before it was prepared for this function.
 // Return Value:
-// - <none>
-void Renderer::_PaintBufferOutputDoubleByteHelper(_In_reads_(cchLine) PCWCHAR const pwsLine, _In_reads_(cchLine) PBYTE const pbKAttrsLine, _In_ size_t const cchLine, _In_ COORD const coordTarget)
+// - S_OK or memory allocation error
+HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_reads_(cchLine) PCWCHAR const pwsLine, _In_reads_(cchLine) PBYTE const pbKAttrsLine, _In_ size_t const cchLine, _In_ COORD const coordTarget)
 {
     // We need the ability to move the target back to the left slightly in case we start with a trailing byte character.
     COORD coordTargetAdjustable = coordTarget;
     bool fTrimLeft = false;
 
     // We need to filter out double-copies of characters that get introduced for full-width characters (sometimes "double-width" or erroneously "double-byte")
-    WCHAR* pwsSegment = new WCHAR[cchLine];
-    unsigned char* rgSegmentWidth = new unsigned char[cchLine]; // We will need to pass the expected widths along so characters can be spaced to fit.
+    wistd::unique_ptr<WCHAR[]> pwsSegment = wil::make_unique_nothrow<WCHAR[]>(cchLine);
+    RETURN_IF_NULL_ALLOC(pwsSegment);
+
+    // We will need to pass the expected widths along so characters can be spaced to fit.
+    wistd::unique_ptr<unsigned char[]> rgSegmentWidth = wil::make_unique_nothrow<unsigned char[]>(cchLine);
+    RETURN_IF_NULL_ALLOC(rgSegmentWidth);
+
     size_t cchSegment = 0;
-    if (pwsSegment != nullptr)
+    // Walk through the line given character by character and copy necessary items into our local array.
+    for (size_t iLine = 0; iLine < cchLine; iLine++)
     {
-        // Walk through the line given character by character and copy necessary items into our local array.
-        for (size_t iLine = 0; iLine < cchLine; iLine++)
+        // skip copy of trailing bytes. we'll copy leading and single bytes into the final write array.
+        if ((pbKAttrsLine[iLine] & CHAR_ROW::ATTR_TRAILING_BYTE) == 0)
         {
-            // skip copy of trailing bytes. we'll copy leading and single bytes into the final write array.
-            if ((pbKAttrsLine[iLine] & CHAR_ROW::ATTR_TRAILING_BYTE) == 0)
+            pwsSegment[cchSegment] = pwsLine[iLine];
+            rgSegmentWidth[cchSegment] = 1;
+
+            // If this is a leading byte, add 1 more to width as it is double wide
+            if ((pbKAttrsLine[iLine] & CHAR_ROW::ATTR_LEADING_BYTE) != 0)
             {
-                pwsSegment[cchSegment] = pwsLine[iLine];
-                rgSegmentWidth[cchSegment] = 1;
-
-                // If this is a leading byte, add 1 more to width as it is double wide
-                if ((pbKAttrsLine[iLine] & CHAR_ROW::ATTR_LEADING_BYTE) != 0)
-                {
-                    rgSegmentWidth[cchSegment] = 2;
-                }
-
-                cchSegment++;
-            }
-            else if (iLine == 0)
-            {
-                // If we are a trailing byte, but we're the first character in the run, it's a special case.
-                // Someone has asked us to redraw the right half of the character, but we can't do that.
-                // We'll have to draw the entire thing at once which requires:
-                // 1. We have to copy the character into the segment buffer (which we normally don't do for trailing bytes)
-                // 2. We have to back the draw target up by one character width so the right half will be struck over where we expect
-
-                // Copy character
-                pwsSegment[cchSegment] = pwsLine[iLine];
-
-                // This character is double-width
                 rgSegmentWidth[cchSegment] = 2;
-                cchSegment++;
-
-                // Move the target back one so we can strike left of what we want.
-                coordTargetAdjustable.X--;
-
-                // And set the flag so the engine will trim off the extra left half of the character
-                // Clipping the left half of the character is important because leaving it there will interfere with the line drawing routines
-                // which have no knowledge of the half/fullwidthness of characters and won't necessarily restrike the lines on the left half of the character.
-                fTrimLeft = true;
             }
+
+            cchSegment++;
         }
+        else if (iLine == 0)
+        {
+            // If we are a trailing byte, but we're the first character in the run, it's a special case.
+            // Someone has asked us to redraw the right half of the character, but we can't do that.
+            // We'll have to draw the entire thing at once which requires:
+            // 1. We have to copy the character into the segment buffer (which we normally don't do for trailing bytes)
+            // 2. We have to back the draw target up by one character width so the right half will be struck over where we expect
 
-        // Draw the line
-        LOG_IF_FAILED(_pEngine->PaintBufferLine(pwsSegment, rgSegmentWidth, cchSegment, coordTargetAdjustable, fTrimLeft));
+            // Copy character
+            pwsSegment[cchSegment] = pwsLine[iLine];
 
-        delete[] rgSegmentWidth;
-        delete[] pwsSegment;
+            // This character is double-width
+            rgSegmentWidth[cchSegment] = 2;
+            cchSegment++;
+
+            // Move the target back one so we can strike left of what we want.
+            coordTargetAdjustable.X--;
+
+            // And set the flag so the engine will trim off the extra left half of the character
+            // Clipping the left half of the character is important because leaving it there will interfere with the line drawing routines
+            // which have no knowledge of the half/fullwidthness of characters and won't necessarily restrike the lines on the left half of the character.
+            fTrimLeft = true;
+        }
     }
+
+    // Draw the line
+    LOG_IF_FAILED(_pEngine->PaintBufferLine(pwsSegment.get(), rgSegmentWidth.get(), cchSegment, coordTargetAdjustable, fTrimLeft));
+
+    return S_OK;
 }
 
 // Routine Description:
