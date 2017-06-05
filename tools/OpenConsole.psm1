@@ -67,7 +67,8 @@ function Invoke-TaefInNewWindow()
 #
 #.PARAMETER Test
 # Can be used to specify that only a particular test should be run.
-# Current values allowed are: host, terminal, adapter, feature, uia.
+# Current values allowed are: host, interactivityWin32, terminal, adapter,
+# feature, uia.
 #
 #.PARAMETER TaefArgs
 # Used to pass any additional arguments to the test runner.
