@@ -256,6 +256,17 @@ public:
 
         return _fSetConsoleTextAttributeResult;
     }
+    
+    virtual BOOL VtSetLegacyAttributes(_In_ WORD const wAttr, _In_ bool fForeground, _In_ bool fBackground, _In_ bool fMeta)
+    {
+        Log::Comment(L"VtSetLegacyAttributes MOCK called...");
+        wAttr;
+        fForeground;
+        fBackground;
+        fMeta;
+        return FALSE;
+        // FIXME
+    }
 
     virtual BOOL SetConsoleXtermTextAttribute(_In_ int const iXtermTableEntry, _In_ const bool fIsForeground)
     {

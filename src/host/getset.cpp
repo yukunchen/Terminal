@@ -22,8 +22,10 @@
 #pragma hdrstop
 
 // The following mask is used to test for valid text attributes.
-#define VALID_TEXT_ATTRIBUTES (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY | \
-COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE | COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE )
+#define FG_ATTRS (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY)
+#define BG_ATTRS (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)
+#define META_ATTRS (COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE | COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE )
+#define VALID_TEXT_ATTRIBUTES (FG_ATTRS | BG_ATTRS | META_ATTRS)
 
 #define INPUT_MODES (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT)
 #define OUTPUT_MODES (ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN | ENABLE_LVB_GRID_WORLDWIDE)
@@ -716,6 +718,54 @@ HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ 
     RETURN_NTSTATUS(SetScreenColors(pScreenInfo, Attribute, pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE));
 }
 
+HRESULT DoSrvVtSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute, _In_ bool fForeground, _In_ bool fBackground, _In_ bool fMeta)
+{
+    TextAttribute NewAttributes;
+    NewAttributes.SetFrom(pScreenInfo->GetAttributes());
+    auto gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+
+    if (NewAttributes.IsLegacy())
+    {
+        WORD wNewLegacy = NewAttributes.GetLegacyAttributes();
+        if (fForeground)
+        {
+            wNewLegacy = (wNewLegacy & ~(FG_ATTRS)) | (Attribute & FG_ATTRS);
+        }
+        if (fBackground)
+        {
+            wNewLegacy = (wNewLegacy & ~(BG_ATTRS)) | (Attribute & BG_ATTRS);
+        }
+        if (fMeta)
+        {
+            wNewLegacy = (wNewLegacy & ~(META_ATTRS)) | (Attribute & META_ATTRS);
+        }
+        NewAttributes.SetFromLegacy(wNewLegacy);
+    }
+    else
+    {
+        if (fForeground)
+        {
+            COLORREF rgbColor = gci->GetColorTableEntry(Attribute & FG_ATTRS);
+            NewAttributes.SetColor(rgbColor, true);
+        }
+        if (fBackground)
+        {
+            COLORREF rgbColor = gci->GetColorTableEntry((Attribute >> 4) & FG_ATTRS);
+            NewAttributes.SetColor(rgbColor, false);
+        }
+        if (fMeta)
+        {
+            NewAttributes.SetMetaAttributes(Attribute);
+        }
+
+    }
+
+    pScreenInfo->SetAttributes(NewAttributes);
+
+    return STATUS_SUCCESS;
+}
+
+
 NTSTATUS DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ int const iXtermTableEntry, _In_ bool fIsForeground)
 {
     TextAttribute NewAttributes;
@@ -1022,9 +1072,41 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(_In_ SCREEN_INFORMATION* pScreenInfo, _I
 // - True if handled successfully. False otherwise.
 NTSTATUS DoSrvPrivateReverseLineFeed(_In_ SCREEN_INFORMATION* pScreenInfo)
 {
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    auto viewport = pScreenInfo->GetBufferViewport();
     COORD newCursorPosition = pScreenInfo->TextInfo->GetCursor()->GetPosition();
-    newCursorPosition.Y -= 1;
-    return AdjustCursorPosition(pScreenInfo, newCursorPosition, TRUE, nullptr);
+
+    // If the cursor is at the top of the viewport, we don't want to shift the viewport up.
+    // We want it to stay exactly where it is.
+    // In that case, shift the buffer contents down, to emulate inserting a line
+    //      at the top of the buffer.
+    if (newCursorPosition.Y > viewport.Top)
+    {
+        // Cursor is below the top line of the viewport
+        newCursorPosition.Y -= 1;
+        Status = AdjustCursorPosition(pScreenInfo, newCursorPosition, TRUE, nullptr);
+    }
+    else 
+    {
+        // Cursor is at the top of the viewport
+        auto bufferSize = pScreenInfo->GetScreenBufferSize();
+        // Rectangle to cut out of the existing buffer
+        SMALL_RECT srScroll;
+        srScroll.Left = 0;
+        srScroll.Right = bufferSize.X;
+        srScroll.Top = viewport.Top;
+        srScroll.Bottom = viewport.Bottom - 1;
+        // Paste coordinate for cut text above
+        COORD coordDestination;
+        coordDestination.X = 0;
+        coordDestination.Y = viewport.Top + 1;
+
+        SMALL_RECT srClip = viewport;
+
+        Status = DoSrvScrollConsoleScreenBufferW(pScreenInfo, &srScroll, &coordDestination, &srClip, L' ', pScreenInfo->GetAttributes().GetLegacyAttributes());
+    }
+    return Status;
 }
 
 // Routine Description:

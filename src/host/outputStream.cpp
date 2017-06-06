@@ -229,6 +229,7 @@ BOOL ConhostInternalGetSet::_FillConsoleOutput(_In_ USHORT const usElement, _In_
 
 // Routine Description:
 // - Connects the SetConsoleTextAttribute API call directly into our Driver Message servicing call inside Conhost.exe
+//     Sets BOTH the FG and the BG component of the attributes.
 // Arguments:
 // - wAttr - new color/graphical attributes to apply as default within the console text buffer
 // Return Value:
@@ -236,6 +237,18 @@ BOOL ConhostInternalGetSet::_FillConsoleOutput(_In_ USHORT const usElement, _In_
 BOOL ConhostInternalGetSet::SetConsoleTextAttribute(_In_ WORD const wAttr)
 {
     return SUCCEEDED(DoSrvSetConsoleTextAttribute(_pScreenInfo, wAttr));
+}
+
+// Routine Description:
+// - Connects the SetConsoleTextAttribute API call directly into our Driver Message servicing call inside Conhost.exe
+//     Sets BOTH the FG and the BG component of the attributes.
+// Arguments:
+// - wAttr - new color/graphical attributes to apply as default within the console text buffer
+// Return Value:
+// - TRUE if successful (see DoSrvSetConsoleTextAttribute). FALSE otherwise.
+BOOL ConhostInternalGetSet::VtSetLegacyAttributes(_In_ WORD const wAttr, _In_ bool fForeground, _In_ bool fBackground, _In_ bool fMeta)
+{
+    return SUCCEEDED(DoSrvVtSetLegacyAttributes(_pScreenInfo, wAttr, fForeground, fBackground, fMeta));
 }
 
 // Routine Description:

@@ -154,6 +154,10 @@ namespace Microsoft
 
                 bool _fIsSetColumnsEnabled;
 
+                bool _fChangedForeground;
+                bool _fChangedBackground;
+                bool _fChangedMetaAttrs;
+
                 bool _SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, 
                                          _In_ size_t const cOptions, 
                                          _Out_ COLORREF* const prgbColor, 

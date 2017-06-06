@@ -33,6 +33,7 @@ namespace Microsoft
                 virtual BOOL FillConsoleOutputCharacterW(_In_ WCHAR const wch, _In_ DWORD const nLength, _In_ COORD const dwWriteCoord, _Out_ DWORD* const pNumberOfCharsWritten) = 0;
                 virtual BOOL FillConsoleOutputAttribute(_In_ WORD const wAttribute, _In_ DWORD const nLength, _In_ COORD const dwWriteCoord, _Out_ DWORD* const pNumberOfAttrsWritten) = 0;
                 virtual BOOL SetConsoleTextAttribute(_In_ WORD const wAttr) = 0;
+                virtual BOOL VtSetLegacyAttributes(_In_ WORD const wAttr, _In_ bool fForeground, _In_ bool fBackground, _In_ bool fMeta) = 0;
                 virtual BOOL SetConsoleXtermTextAttribute(_In_ int const iXtermTableEntry, _In_ const bool fIsForeground) = 0;
                 virtual BOOL SetConsoleRGBTextAttribute(_In_ COLORREF const rgbColor, _In_ const bool fIsForeground) = 0;
                 virtual BOOL WriteConsoleInputW(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords, _In_ DWORD const nLength, _Out_ DWORD* const pNumberOfEventsWritten) = 0;
