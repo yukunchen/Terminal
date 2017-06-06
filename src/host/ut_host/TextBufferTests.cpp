@@ -523,4 +523,44 @@ class TextBufferTests
             VERIFY_IS_FALSE(pFirstRow->CharRow.ContainsText());
         }
     }
+    TEST_METHOD(TestMixedRgbAndLegacy);
 };
+
+    
+void TextBufferTests::TestMixedRgbAndLegacy()
+{
+    BOOL fSuccess = TRUE;
+    // CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
+    // sbiex.cbSize = sizeof(sbiex);
+    // fSuccess = CreateColorGrid(VT_256_GRID_MODE);
+    // if (fSuccess)
+    // {
+    //     GetConsoleScreenBufferInfoEx(g_hOut, &sbiex);
+    //     COORD actualPos = sbiex.dwCursorPosition;
+    //     // Subtract the size of the grid to get back to the top of it.
+    //     actualPos.Y -= g_cWriteSize.Y;
+    //     fSuccess = Validate256GridToLegacy(actualPos);
+    VERIFY_WIN32_BOOL_SUCCEEDED(fSuccess, L"Validated VT 256 Color Grid to Legacy Attributes");
+    // }
+
+    // Case 1 - 
+    // Write '\E[38;2;64;128;255mX\E[49mX\E[m'
+    // Make sure that the second X has RGB attributes (FG and BG)
+    // FG = rgb(64;128;255), BG = rgb(default)
+    VERIFY_ARE_EQUAL(true, false);
+
+    // Case 2 - 
+    // \E[48;2;64;128;255mX\E[39mX\E[m
+    // Make sure that the second X has RGB attributes (FG and BG)
+    // FG = rgb(default), BG = rgb(64;128;255)
+    VERIFY_ARE_EQUAL(true, false);
+
+    // Case 3 - 
+    // '\E[48;2;64;128;255mX\E[4mX\E[m'
+    // Make sure that the second X has RGB attributes AND underline
+    VERIFY_ARE_EQUAL(true, false);
+
+    // Case 4 - 
+    // Make sure resetting restored to default attrs (legacy style)
+    VERIFY_ARE_EQUAL(true, false);
+}
