@@ -301,8 +301,31 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
 
                     return;
                 }
-
             }
+        }
+
+        // Capture telemetry data when a user presses ctrl+shift+c or v in processed mode
+        if (inputKeyInfo.IsShiftAndCtrlOnly() && VirtualKeyCode == 'V')
+        {
+            Telemetry::Instance().LogCtrlShiftVProcUsed();
+        }
+
+        if (inputKeyInfo.IsShiftAndCtrlOnly() && VirtualKeyCode == 'C')
+        {
+            Telemetry::Instance().LogCtrlShiftCProcUsed();
+        }
+    }
+    else // To capture telemetry data for when an application is only in raw mode
+    {
+        // Capture telemetry data when a user presses ctrl+shift+c or v in raw mode
+        if (inputKeyInfo.IsShiftAndCtrlOnly() && VirtualKeyCode == 'V')
+        {
+            Telemetry::Instance().LogCtrlShiftVRawUsed();
+        }
+
+        if (inputKeyInfo.IsShiftAndCtrlOnly() && VirtualKeyCode == 'C')
+        {
+            Telemetry::Instance().LogCtrlShiftCRawUsed();
         }
     }
 
