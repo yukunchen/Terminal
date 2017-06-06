@@ -460,7 +460,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSim
 IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
                                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-
     TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
     const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
 
