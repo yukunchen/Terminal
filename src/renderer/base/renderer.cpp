@@ -646,7 +646,7 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_reads_(cchLine) PCWCHAR
     }
 
     // Draw the line
-    LOG_IF_FAILED(_pEngine->PaintBufferLine(pwsSegment.get(), rgSegmentWidth.get(), cchSegment, coordTargetAdjustable, fTrimLeft));
+    RETURN_IF_FAILED(_pEngine->PaintBufferLine(pwsSegment.get(), rgSegmentWidth.get(), cchSegment, coordTargetAdjustable, fTrimLeft));
 
     return S_OK;
 }
