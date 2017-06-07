@@ -654,4 +654,82 @@ class ScreenBufferTests
 
         psi->_ptsTabs = nullptr; // don't let global free try to clean this up
     }
+
+    TEST_METHOD(EraseAllTests)
+    {
+        SCREEN_INFORMATION* const psi = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        auto bufferWriter = psi->GetBufferWriter();
+        auto cursor = psi->TextInfo->GetCursor();
+        VERIFY_IS_NOT_NULL(bufferWriter);
+        VERIFY_IS_NOT_NULL(cursor);
+
+        VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
+
+        ////////////////////////////////////////////////////////////////////////
+        Log::Comment(L"Case 1: Erase a single line of text in the buffer\n");
+
+        bufferWriter->PrintString(L"foo", 3);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
+        VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
+
+        psi->VtEraseAll();
+        
+        VERIFY_ARE_EQUAL(cursor->GetPosition().X, 0);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 1);
+        auto viewport = psi->GetBufferViewport();
+        VERIFY_ARE_EQUAL(viewport.Top, 1);
+        Log::Comment(NoThrowString().Format(
+            L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+            viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        ));
+
+        ////////////////////////////////////////////////////////////////////////
+        Log::Comment(L"Case 2: Erase multiple lines, below the top of the buffer\n");
+
+        bufferWriter->PrintString(L"bar\nbar\nbar", 11);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 3);
+        viewport = psi->GetBufferViewport();
+        VERIFY_ARE_EQUAL(viewport.Top, 1);
+        Log::Comment(NoThrowString().Format(
+            L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+            viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        ));
+
+        psi->VtEraseAll();
+        VERIFY_ARE_EQUAL(cursor->GetPosition().X, 0);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 4);
+        viewport = psi->GetBufferViewport();
+        VERIFY_ARE_EQUAL(viewport.Top, 4);
+        Log::Comment(NoThrowString().Format(
+            L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+            viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        ));
+
+
+        ////////////////////////////////////////////////////////////////////////
+        Log::Comment(L"Case 3: multiple lines at the bottom of the buffer\n");
+
+        cursor->SetPosition({0, 275});
+        bufferWriter->PrintString(L"bar\nbar\nbar", 11);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 277);
+        viewport = psi->GetBufferViewport();
+        Log::Comment(NoThrowString().Format(
+            L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+            viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        ));
+        psi->VtEraseAll();
+        
+        viewport = psi->GetBufferViewport();
+        auto heightFromBottom = psi->GetScreenBufferSize().Y - (viewport.Bottom - viewport.Top + 1);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().X, 0);
+        VERIFY_ARE_EQUAL(cursor->GetPosition().Y, heightFromBottom);
+        VERIFY_ARE_EQUAL(viewport.Top, heightFromBottom);
+        Log::Comment(NoThrowString().Format(
+            L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+            viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
+        ));
+    }
 };

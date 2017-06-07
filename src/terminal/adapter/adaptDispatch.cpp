@@ -720,9 +720,15 @@ bool AdaptDispatch::EraseInDisplay(_In_ EraseType const eraseType)
     // First things first. If this is a "Scrollback" clear, then just do that.
     // Scrollback clears erase everything in the "scrollback" of a *nix terminal
     //      Everything that's scrolled off the screen so far.
+    // Or if it's an Erase All, then we also need to handle that specially
+    //      by moving the current contents of the viewport into the scrollback.
     if (eraseType == EraseType::Scrollback)
     {
         return _EraseScrollback();
+    }
+    else if (eraseType == EraseType::All)
+    {
+        return _EraseAll();
     }
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
@@ -741,10 +747,8 @@ bool AdaptDispatch::EraseInDisplay(_In_ EraseType const eraseType)
         // C. All - Erase 1, 2, and 3.
 
         // 1. Lines before cursor line
-        switch (eraseType)
+        if (eraseType == EraseType::FromBeginning)
         {
-        case EraseType::FromBeginning:
-        case EraseType::All:
             // For beginning and all, erase all complete lines before (above vertically) from the cursor position.
             for (SHORT sStartLine = csbiex.srWindow.Top; sStartLine < csbiex.dwCursorPosition.Y; sStartLine++)
             {
@@ -754,11 +758,7 @@ bool AdaptDispatch::EraseInDisplay(_In_ EraseType const eraseType)
                 {
                     break;
                 }
-            }
-            break;
-        case EraseType::ToEnd:
-            // Do Nothing before the cursor line for ToEnd operation.
-            break;
+            }            
         }
 
         if (fSuccess)
@@ -770,10 +770,8 @@ bool AdaptDispatch::EraseInDisplay(_In_ EraseType const eraseType)
         if (fSuccess)
         {
             // 3. Lines after cursor line
-            switch (eraseType)
+            if (eraseType == EraseType::ToEnd)
             {
-            case EraseType::ToEnd:
-            case EraseType::All:
                 // For beginning and all, erase all complete lines after (below vertically) the cursor position.
                 // Remember that the viewport bottom value is 1 beyond the viewable area of the viewport.
                 for (SHORT sStartLine = csbiex.dwCursorPosition.Y + 1; sStartLine < csbiex.srWindow.Bottom; sStartLine++)
@@ -785,10 +783,6 @@ bool AdaptDispatch::EraseInDisplay(_In_ EraseType const eraseType)
                         break;
                     }
                 }
-                break;
-            case EraseType::FromBeginning:
-                // Do Nothing after the cursor line for FromBeginning operation.
-                break;
             }
         }
     }
@@ -1656,6 +1650,22 @@ bool AdaptDispatch::_EraseScrollback()
         }
     }
     return fSuccess;
+}
+
+//Routine Description:
+// Erase All (^[[2J - ED)
+//  Erase the current contents of the viewport. In most terminals, because they 
+//      only have a scrollback (and not a buffer per-se), they implement this 
+//      by scrolling the current contents of the buffer off of the screen.
+//  We can't properly replicate this behavior with only the public API, because
+//      we need to know where the last character in the buffer is. (it may be below the viewport)
+//Arguments:
+// <none>
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::_EraseAll()
+{
+    return !!_pConApi->PrivateEraseAll();
 }
 
 //Routine Description:

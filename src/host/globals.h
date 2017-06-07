@@ -42,7 +42,7 @@ public:
      HINSTANCE hInstance;
      UINT uiDialogBoxCount;
 
-     CONSOLE_INFORMATION *getConsoleInformation();
+     CONSOLE_INFORMATION* getConsoleInformation();
 
      DeviceComm* pDeviceComm;
 
@@ -65,5 +65,5 @@ public:
      IFontDefaultList* pFontDefaultList;
 
 private:
-     CONSOLE_INFORMATION *ciConsoleInformation;
+     CONSOLE_INFORMATION* ciConsoleInformation;
 };
