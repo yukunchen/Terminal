@@ -329,7 +329,6 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
         topLeft.x = 0;
         topLeft.y = _screenInfoRowToViewportRow(screenInfoRow) * currentFontSize.Y;
 
-        //bottomRight.x = _getViewportWidth(_getViewport()) * currentFontSize.X;
         bottomRight.x = topLeft.x + currentFontSize.X;
         // we add the font height only once here because we are adding each line individually
         bottomRight.y = topLeft.y + currentFontSize.Y;
