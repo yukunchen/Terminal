@@ -52,6 +52,7 @@ class ScreenBufferTests
     TEST_METHOD_SETUP(MethodSetup)
     {
         m_state->PrepareNewTextBufferInfo();
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->SetViewportOrigin(true, {0,0});
 
         return true;
     }
