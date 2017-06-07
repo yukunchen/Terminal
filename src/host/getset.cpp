@@ -1022,9 +1022,41 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(_In_ SCREEN_INFORMATION* pScreenInfo, _I
 // - True if handled successfully. False otherwise.
 NTSTATUS DoSrvPrivateReverseLineFeed(_In_ SCREEN_INFORMATION* pScreenInfo)
 {
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    auto viewport = pScreenInfo->GetBufferViewport();
     COORD newCursorPosition = pScreenInfo->TextInfo->GetCursor()->GetPosition();
-    newCursorPosition.Y -= 1;
-    return AdjustCursorPosition(pScreenInfo, newCursorPosition, TRUE, nullptr);
+
+    // If the cursor is at the top of the viewport, we don't want to shift the viewport up.
+    // We want it to stay exactly where it is.
+    // In that case, shift the buffer contents down, to emulate inserting a line
+    //      at the top of the buffer.
+    if (newCursorPosition.Y > viewport.Top)
+    {
+        // Cursor is below the top line of the viewport
+        newCursorPosition.Y -= 1;
+        Status = AdjustCursorPosition(pScreenInfo, newCursorPosition, TRUE, nullptr);
+    }
+    else 
+    {
+        // Cursor is at the top of the viewport
+        auto bufferSize = pScreenInfo->GetScreenBufferSize();
+        // Rectangle to cut out of the existing buffer
+        SMALL_RECT srScroll;
+        srScroll.Left = 0;
+        srScroll.Right = bufferSize.X;
+        srScroll.Top = viewport.Top;
+        srScroll.Bottom = viewport.Bottom - 1;
+        // Paste coordinate for cut text above
+        COORD coordDestination;
+        coordDestination.X = 0;
+        coordDestination.Y = viewport.Top + 1;
+
+        SMALL_RECT srClip = viewport;
+
+        Status = DoSrvScrollConsoleScreenBufferW(pScreenInfo, &srScroll, &coordDestination, &srClip, L' ', pScreenInfo->GetAttributes().GetLegacyAttributes());
+    }
+    return Status;
 }
 
 // Routine Description:
