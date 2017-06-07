@@ -45,10 +45,10 @@ Telemetry::Telemetry()
     _fKeyboardTextSelectionUsed(false),
     _fUserInteractiveForTelemetry(false),
     _fCtrlPgUpPgDnUsed(false),
-    _fCtrlShiftCProcUsed(0),
-    _fCtrlShiftCRawUsed(0),
-    _fCtrlShiftVProcUsed(0),
-    _fCtrlShiftVRawUsed(0)
+    _uiCtrlShiftCProcUsed(0),
+    _uiCtrlShiftCRawUsed(0),
+    _uiCtrlShiftVProcUsed(0),
+    _uiCtrlShiftVRawUsed(0)
 {
     time(&_tStartedAt);
     TraceLoggingRegister(g_hConhostV2EventTraceProvider);
@@ -77,25 +77,25 @@ void Telemetry::SetCtrlPgUpPgDnUsed()
 
 void Telemetry::LogCtrlShiftCProcUsed()
 {
-    _fCtrlShiftCProcUsed++;
+    _uiCtrlShiftCProcUsed++;
     SetUserInteractive();
 }
 
 void Telemetry::LogCtrlShiftCRawUsed()
 {
-    _fCtrlShiftCRawUsed++;
+    _uiCtrlShiftCRawUsed++;
     SetUserInteractive();
 }
 
 void Telemetry::LogCtrlShiftVProcUsed()
 {
-    _fCtrlShiftVProcUsed++;
+    _uiCtrlShiftVProcUsed++;
     SetUserInteractive();
 }
 
 void Telemetry::LogCtrlShiftVRawUsed()
 {
-    _fCtrlShiftVRawUsed++;
+    _uiCtrlShiftVRawUsed++;
     SetUserInteractive();
 }
 
@@ -338,10 +338,10 @@ void Telemetry::WriteFinalTraceLog()
                 TraceLoggingBool(_fCtrlPgUpPgDnUsed, "CtrlPgUpPgDnUsed"),
                 TraceLoggingBool(_fKeyboardTextEditingUsed, "KeyboardTextEditingUsed"),
                 TraceLoggingBool(_fKeyboardTextSelectionUsed, "KeyboardTextSelectionUsed"),
-                TraceLoggingUInt32(_fCtrlShiftCProcUsed, "CtrlShiftCProcUsed"),
-                TraceLoggingUInt32(_fCtrlShiftCRawUsed, "CtrlShiftCRawUsed"),
-                TraceLoggingUInt32(_fCtrlShiftVProcUsed, "CtrlShiftVProcUsed"),
-                TraceLoggingUInt32(_fCtrlShiftVRawUsed, "CtrlShiftVRawUsed"),
+                TraceLoggingUInt32(_uiCtrlShiftCProcUsed, "CtrlShiftCProcUsed"),
+                TraceLoggingUInt32(_uiCtrlShiftCRawUsed, "CtrlShiftCRawUsed"),
+                TraceLoggingUInt32(_uiCtrlShiftVProcUsed, "CtrlShiftVProcUsed"),
+                TraceLoggingUInt32(_uiCtrlShiftVRawUsed, "CtrlShiftVRawUsed"),
                 TraceLoggingBool(ServiceLocator::LocateGlobals()->getConsoleInformation()->LinkTitle == nullptr, "LaunchedFromShortcut"),
                 // Normally we would send out a single array containing the name and count,
                 // but that's difficult to do with our telemetry system, so send out two separate arrays.

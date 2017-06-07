@@ -168,10 +168,12 @@ private:
     bool _fKeyboardTextSelectionUsed;
     bool _fUserInteractiveForTelemetry;
     bool _fCtrlPgUpPgDnUsed;
-    unsigned int _fCtrlShiftCProcUsed;
-    unsigned int _fCtrlShiftCRawUsed;
-    unsigned int _fCtrlShiftVProcUsed;
-    unsigned int _fCtrlShiftVRawUsed;
+
+    // Linux copy and paste keyboard shortcut telemetry
+    unsigned int _uiCtrlShiftCProcUsed;
+    unsigned int _uiCtrlShiftCRawUsed;
+    unsigned int _uiCtrlShiftVProcUsed;
+    unsigned int _uiCtrlShiftVRawUsed;
 };
 
 #ifdef ASSERT
