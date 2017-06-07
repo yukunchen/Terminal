@@ -340,7 +340,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         }
         const int lineNumber = pSelectionRects[i].Top;
         const int start = lineNumber * screenBufferCoords.X;
-        const int end = start + screenBufferCoords.X;
+        // - 1 to get the last column in the row
+        const int end = start + screenBufferCoords.X - 1;
 
         UiaTextRange* range;
         try
@@ -392,7 +393,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
     {
         const int lineNumber = (viewport.Top + i) % totalLines;
         const int start = lineNumber * screenBufferCoords.X;
-        const int end = start + screenBufferCoords.X;
+        // - 1 to get the last column in the row
+        const int end = start + screenBufferCoords.X - 1;
 
         IRawElementProviderSimple* pProvider;
         HRESULT hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
@@ -494,11 +496,12 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybe
 
     try
     {
+        // - 1 to get the last column in the row
         *ppRetVal = new UiaTextRange(pProvider,
                                      pOutputBuffer,
                                      _pScreenInfo,
                                      0,
-                                     documentLines * lineWidth);
+                                     documentLines * lineWidth - 1);
     }
     catch (...)
     {

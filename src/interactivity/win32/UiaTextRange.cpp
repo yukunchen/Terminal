@@ -21,7 +21,11 @@ unsigned long long UiaTextRange::id = 0;
 // The msdn documentation (and hence this file) talks a bunch about a
 // degenerate range. A range is degenerate if it contains
 // no text (both the start and end endpoints are the same). Note that
-// a degenerate range may have a position in the text.
+// a degenerate range may have a position in the text. We indicate a
+// degenerate range internally with a bool. If a range is degenerate
+// then both endpoints will contain the same value. Passing an ending
+// value that is less than the starting value for endpoints to a
+// constructor will make the range degenerate.
 
 
 // degenerate range constructor.
@@ -33,7 +37,8 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
     _pOutputBuffer{ THROW_HR_IF_NULL(E_INVALIDARG, pOutputBuffer) },
     _pScreenInfo{ THROW_HR_IF_NULL(E_INVALIDARG, pScreenInfo) },
     _start{ 0 },
-    _end{ 0 }
+    _end{ 0 },
+    _degenerate{ true }
 {
 #if _DEBUG
    _id = id;
@@ -48,8 +53,9 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
                            _In_ const Endpoint end) :
     UiaTextRange(pProvider, pOutputBuffer, pScreenInfo)
 {
+    _degenerate = end < start;
     _start = start;
-    _end = end;
+    _end = _degenerate ? start : end;
 }
 
 // returns a degenerate text range of the start of the row closest to the y value of point
@@ -84,6 +90,7 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
     }
     _start = _screenInfoRowToEndpoint(row);
     _end = _start;
+    _degenerate = true;
 }
 
 UiaTextRange::UiaTextRange(_In_ const UiaTextRange& a) :
@@ -92,7 +99,8 @@ UiaTextRange::UiaTextRange(_In_ const UiaTextRange& a) :
     _pOutputBuffer{ a._pOutputBuffer },
     _pScreenInfo{ a._pScreenInfo },
     _start{ a._start },
-    _end{ a._end }
+    _end{ a._end },
+    _degenerate{ a._degenerate }
 
 {
     (static_cast<IUnknown*>(_pProvider))->AddRef();
@@ -115,6 +123,17 @@ const Endpoint UiaTextRange::getStart() const
 const Endpoint UiaTextRange::getEnd() const
 {
     return _end;
+}
+
+// Routine Description:
+// - returns true if the range is currently degenerate (empty range).
+// Arguments:
+// - <none>
+// Return Value:
+// - true if range is degenerate, false otherwise.
+const bool UiaTextRange::IsDegenerate() const
+{
+    return _degenerate;
 }
 
 #pragma region IUnknown
@@ -183,7 +202,8 @@ IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ 
     if (other)
     {
         *pRetVal = !!(_start == other->getStart() &&
-                      _end == other->getEnd());
+                      _end == other->getEnd() &&
+                      _degenerate == other->IsDegenerate());
     }
     return S_OK;
 }
@@ -239,16 +259,15 @@ IFACEMETHODIMP UiaTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
     {
         // expand to line
         _start = _textBufferRowToEndpoint(_endpointToTextBufferRow(_start));
-        _end = _start + rowWidth;
+        // (rowWidth - 1) is the last column of the row
+        _end = _start + rowWidth - 1;
     }
     else
     {
         // expand to document
         _start = _screenInfoRowToEndpoint(topRow);
-        // we don't need to normalize because the ending endpoint is
-        // an exclusive range so normalizing would break it if we're at the
-        // bottom edge the output buffer.
-        _end = _textBufferRowToEndpoint(_screenInfoRowToTextBufferRowNoNormalize(bottomRow + 1));
+        // (rowWidth - 1) is the last column of the row
+        _end = _screenInfoRowToEndpoint(bottomRow) + rowWidth - 1;
     }
 
     return S_OK;
@@ -301,7 +320,7 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
     // set of coords.
     std::vector<double> coords;
 
-    if (_isDegenerate() && _isScreenInfoRowInViewport(startRow))
+    if (_degenerate && _isScreenInfoRowInViewport(startRow))
     {
         POINT topLeft;
         POINT bottomRight;
@@ -310,7 +329,8 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
         topLeft.x = 0;
         topLeft.y = _screenInfoRowToViewportRow(screenInfoRow) * currentFontSize.Y;
 
-        bottomRight.x = _getViewportWidth(_getViewport()) * currentFontSize.X;
+        //bottomRight.x = _getViewportWidth(_getViewport()) * currentFontSize.X;
+        bottomRight.x = topLeft.x + currentFontSize.X;
         // we add the font height only once here because we are adding each line individually
         bottomRight.y = topLeft.y + currentFontSize.Y;
 
@@ -393,9 +413,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 {
     std::wstring wstr = L"";
     const bool getPartialText = maxLength != -1;
-    const unsigned int totalRows = _getTotalRows();
     const TextBufferRow startTextBufferRow = _endpointToTextBufferRow(_start);
-    const TextBufferRow endTextBufferRow = _endpointToTextBufferRow(_end);
     const unsigned int totalRowsInRange = _rowCountInRange();
 
     for (unsigned int i = 0; i < totalRowsInRange; ++i)
@@ -462,10 +480,12 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ int*
 
     // update endpoints
     _start = _screenInfoRowToEndpoint(screenInfoRow);
-    // we don't need to normalize because the ending endpoint is
-    // an exclusive range so normalizing would break it if we're at the
-    // bottom edge the output buffer.
-    _end = _textBufferRowToEndpoint(_screenInfoRowToTextBufferRowNoNormalize(screenInfoRow + 1));
+    // (_getRowWidth() - 1) is the last column in the row
+    _end = _start + _getRowWidth() - 1;
+
+    // a range can't be degenerate after both endpoints have been
+    // moved.
+    _degenerate = false;
 
     return S_OK;
 }
@@ -484,7 +504,6 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
         return S_OK;
     }
 
-    const bool isDegenerate = _isDegenerate();
     const bool shrinkingRange = (count < 0 &&
                                  endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_End) ||
                                 (count > 0 &&
@@ -543,7 +562,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
     // fix out of order endpoints. If they crossed then the it is
     // turned into a degenerate range at the point where the endpoint
     // we moved stops at.
-    if (crossedEndpoints || (isDegenerate && shrinkingRange))
+    if (crossedEndpoints || (_degenerate && shrinkingRange))
     {
         if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
         {
@@ -553,7 +572,13 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
         {
             _start = _end;
         }
+        _degenerate = true;
     }
+    else
+    {
+        _degenerate = false;
+    }
+
     return S_OK;
 }
 
@@ -615,9 +640,8 @@ IFACEMETHODIMP UiaTextRange::Select()
     coordStart.X = static_cast<SHORT>(_endpointToColumn(_start));
     coordStart.Y = static_cast<SHORT>(_endpointToScreenInfoRow(_start));
 
-    // - 1 because end is an exclusive endpoint
-    coordEnd.X = static_cast<SHORT>(_endpointToColumn(_end - 1));
-    coordEnd.Y = static_cast<SHORT>(_endpointToScreenInfoRow(_end - 1));
+    coordEnd.X = static_cast<SHORT>(_endpointToColumn(_end));
+    coordEnd.Y = static_cast<SHORT>(_endpointToScreenInfoRow(_end));
 
     Selection::Instance().SelectNewRegion(coordStart, coordEnd);
     return S_OK;
@@ -643,8 +667,7 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
 
     // range rows
     const ScreenInfoRow startScreenInfoRow = _endpointToScreenInfoRow(_start);
-    // - 1 to account for exclusivity
-    const ScreenInfoRow endScreenInfoRow = _endpointToScreenInfoRow(_end - 1);
+    const ScreenInfoRow endScreenInfoRow = _endpointToScreenInfoRow(_end);
 
     // screen buffer rows
     const ScreenInfoRow topRow = 0;
@@ -707,17 +730,6 @@ IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** p
 }
 
 #pragma endregion
-
-// Routine Description:
-// - returns true if the range is currently degenerate (empty range).
-// Arguments:
-// - <none>
-// Return Value:
-// - true if range is degenerate, false otherwise.
-const bool UiaTextRange::_isDegenerate() const
-{
-    return (_start == _end);
-}
 
 // Routine Description:
 // - Gets the current viewport
@@ -819,10 +831,12 @@ const TextBufferRow UiaTextRange::_endpointToTextBufferRow(_In_ const Endpoint e
 // - The number of rows in the range.
 const unsigned int UiaTextRange::_rowCountInRange() const
 {
-    const unsigned int totalRows = _getTotalRows();
-    TextBufferRow textBufferStartRow = _endpointToTextBufferRow(_start);
-    // - 1 for end endpoint exclusivity
-    TextBufferRow textBufferEndRow = _endpointToTextBufferRow(_end - 1);
+    if (_degenerate)
+    {
+        return 0;
+    }
+    const TextBufferRow textBufferStartRow = _endpointToTextBufferRow(_start);
+    const TextBufferRow textBufferEndRow = _endpointToTextBufferRow(_end);
     // + 1 to balance subtracting TextBufferRows from each other
     return textBufferEndRow - textBufferStartRow + 1;
 }
@@ -835,7 +849,7 @@ const unsigned int UiaTextRange::_rowCountInRange() const
 // - the equivalent ScreenInfoRow.
 const ScreenInfoRow UiaTextRange::_textBufferRowToScreenInfoRow(_In_ const TextBufferRow row) const
 {
-    TextBufferRow firstRowIndex = _pOutputBuffer->GetFirstRowIndex();
+    const TextBufferRow firstRowIndex = _pOutputBuffer->GetFirstRowIndex();
     return _normalizeRow(row - firstRowIndex);
 }
 
@@ -944,19 +958,6 @@ const TextBufferRow UiaTextRange::_screenInfoRowToTextBufferRow(_In_ const Scree
 {
     const TextBufferRow firstRowIndex = _pOutputBuffer->GetFirstRowIndex();
     return _normalizeRow(row + firstRowIndex);
-}
-
-// Routine Description:
-// - Converts a ScreenInfoRow to a TextBufferRow. Will not normalize
-// the value.
-// Arguments:
-// - row - the ScreenInfoRow to convert
-// Return Value:
-// - the equivalent TextBufferRow.
-const TextBufferRow UiaTextRange::_screenInfoRowToTextBufferRowNoNormalize(_In_ const ScreenInfoRow row) const
-{
-    const TextBufferRow firstRowIndex = _pOutputBuffer->GetFirstRowIndex();
-    return row + firstRowIndex;
 }
 
 // Routine Description:

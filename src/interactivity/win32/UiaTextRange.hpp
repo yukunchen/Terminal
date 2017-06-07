@@ -97,6 +97,7 @@ namespace Microsoft
 
                     const Endpoint getStart() const;
                     const Endpoint getEnd() const;
+                    const bool IsDegenerate() const;
 
                     // IUnknown methods
                     IFACEMETHODIMP_(ULONG) AddRef();
@@ -158,11 +159,11 @@ namespace Microsoft
                     // Ref counter for COM object
                     ULONG _cRefs;
 
-                    // measure units in the form [start, end)
+                    // measure units in the form [start, end]
                     Endpoint _start;
                     Endpoint _end;
 
-                    const bool _isDegenerate() const;
+                    bool _degenerate;
 
                     const Viewport _getViewport() const;
                     static HWND _getWindowHandle();
@@ -177,7 +178,6 @@ namespace Microsoft
                     const ScreenInfoRow _textBufferRowToScreenInfoRow(_In_ const TextBufferRow row) const;
 
                     const TextBufferRow _screenInfoRowToTextBufferRow(_In_ const ScreenInfoRow row) const;
-                    const TextBufferRow _screenInfoRowToTextBufferRowNoNormalize(_In_ const ScreenInfoRow row) const;
                     const Endpoint _textBufferRowToEndpoint(_In_ const TextBufferRow row) const;
 
                     const ScreenInfoRow _endpointToScreenInfoRow(_In_ const Endpoint endpoint) const;

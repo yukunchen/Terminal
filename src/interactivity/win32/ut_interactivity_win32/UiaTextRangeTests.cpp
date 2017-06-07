@@ -130,12 +130,24 @@ class UiaTextRangeTests
             _pTextBuffer,
             _pScreenInfo,
             20,
-            20
+            19
         };
-        VERIFY_IS_TRUE(degenerate._isDegenerate());
+        VERIFY_IS_TRUE(degenerate.IsDegenerate());
+        VERIFY_ARE_EQUAL(0u, degenerate._rowCountInRange());
 
         // make a non-degenerate range and verify that it reports as such
-        UiaTextRange notDegenerate
+        UiaTextRange notDegenerate1
+        {
+            &_dummyProvider,
+            _pTextBuffer,
+            _pScreenInfo,
+            20,
+            20
+        };
+        VERIFY_IS_FALSE(notDegenerate1.IsDegenerate());
+        VERIFY_ARE_EQUAL(1u, notDegenerate1._rowCountInRange());
+
+        UiaTextRange notDegenerate2
         {
             &_dummyProvider,
             _pTextBuffer,
@@ -143,7 +155,8 @@ class UiaTextRangeTests
             20,
             35
         };
-        VERIFY_IS_FALSE(notDegenerate._isDegenerate());
+        VERIFY_IS_FALSE(notDegenerate2.IsDegenerate());
+        VERIFY_ARE_EQUAL(1u, notDegenerate2._rowCountInRange());
     }
 
     TEST_METHOD(CanCheckIfScreenInfoRowIsInViewport)
