@@ -100,6 +100,8 @@ public:
     BOOL SendNotifyBeep() const;
     BOOL PostUpdateWindowSize() const;
 
+    bool InVTMode() const;
+
     ConsoleObjectHeader Header;
 
     // TODO: MSFT 9355062 these methods should probably be a part of construction/destruction. http://osgvsowi/9355062

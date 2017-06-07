@@ -974,7 +974,22 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             // Recalculate the last non-space char and merge the two
             // attribute strings.
             AttrRun.SetLength((SHORT)((Y == coordWrite.Y) ? (X - coordWrite.X + 1) : (X + 1)));
-            AttrRun.SetAttributesFromLegacy(wElement & ~COMMON_LVB_SBCSDBCS);
+
+            // Here we're being a little clever - 
+            // Because RGB color can't roundtrip the API, certain VT sequences will forget the RGB color
+            // because their first call to GetScreenBufferInfo returned a legacy attr.
+            // If they're calling this with the default attrs, they likely wanted to use the RGB default attrs.
+            // This could create a scenario where someone emitted RGB with VT, 
+            // THEN used the API to FillConsoleOutput with the default attrs, and DIDN'T want the RGB color
+            // they had set. 
+            if (pScreenInfo->InVTMode() && pScreenInfo->GetAttributes().GetLegacyAttributes() == wElement)
+            {
+                AttrRun.SetAttributes(pScreenInfo->GetAttributes());
+            }
+            else
+            {
+                AttrRun.SetAttributesFromLegacy(wElement & ~COMMON_LVB_SBCSDBCS);
+            }
 
             Row->AttrRow.InsertAttrRuns(&AttrRun, 1, (SHORT)(X - AttrRun.GetLength() + 1), X, coordScreenBufferSize.X);
 

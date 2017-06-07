@@ -524,6 +524,7 @@ class TextBufferTests
         }
     }
     TEST_METHOD(TestMixedRgbAndLegacy);
+    TEST_METHOD(TestRgbEraseLine);
 };
 
     
@@ -694,4 +695,68 @@ void TextBufferTests::TestMixedRgbAndLegacy()
         stateMachine->ProcessString(&reset[0], reset.length());
     }
 
+}  
+
+void TextBufferTests::TestRgbEraseLine()
+{
+    auto gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    auto psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    psi->OutputMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    auto tbi = psi->TextInfo;
+
+    auto stateMachine = psi->GetStateMachine();
+    auto cursor = tbi->GetCursor();
+    VERIFY_IS_NOT_NULL(stateMachine);
+    VERIFY_IS_NOT_NULL(cursor);
+
+    // This is an assumption to make a lot of math easier.
+    VERIFY_ARE_EQUAL(tbi->GetFirstRowIndex(), 0);
+    cursor->SetXPosition(0);
+    // Case 1 - 
+    //      Write '\E[48;2;64;128;255X\E[48;2;128;128;255\E[KX'
+    //      Make sure that all the characters after the first have the rgb attrs
+    //      BG = rgb(128;128;255)
+    {
+        std::wstring sequence = L"\x1b[48;2;64;128;255mX\x1b[48;2;128;128;255m\x1b[KX";
+        stateMachine->ProcessString(&sequence[0], sequence.length());
+
+        const auto x = cursor->GetPosition().X;
+        const auto y = cursor->GetPosition().Y;
+
+        Log::Comment(NoThrowString().Format(
+            L"cursor={X:%d,Y:%d}", 
+            x, y
+        ));
+        VERIFY_ARE_EQUAL(x, 2);
+        VERIFY_ARE_EQUAL(y, 0);
+
+        const auto row = tbi->GetRowByOffset(y);
+        const auto attrRow = row->AttrRow;
+        const auto len = tbi->_coordBufferSize.X;
+        const auto attrs = new TextAttribute[len];
+        VERIFY_IS_NOT_NULL(attrs);
+        attrRow.UnpackAttrs(attrs, len);
+
+        const auto attr0 = attrs[0];
+
+        VERIFY_ARE_EQUAL(attr0.IsLegacy(), false);
+        VERIFY_ARE_EQUAL(attr0.GetRgbBackground(), RGB(64,128,255));
+        for (auto i = 1; i < len; i++)
+        {
+            const auto attr = attrs[i];
+            Log::Comment(NoThrowString().Format(
+                L"attr={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+                attr.IsLegacy(), attr.GetLegacyAttributes()
+            ));
+            Log::Comment(NoThrowString().Format(
+                L"attr={FG:0x%x,BG:0x%x}", 
+                attr.GetRgbForeground(), attr.GetRgbBackground()
+            ));
+            VERIFY_ARE_EQUAL(attr.IsLegacy(), false);
+            VERIFY_ARE_EQUAL(attr.GetRgbBackground(), RGB(128,128,255));
+
+        }
+        std::wstring reset = L"\x1b[0m";
+        stateMachine->ProcessString(&reset[0], reset.length());
+    }
 }
