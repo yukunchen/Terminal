@@ -681,13 +681,10 @@ NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ c
         return STATUS_INVALID_PARAMETER;
     }
 
-    if (IsActiveScreenBuffer())
+    if (IsActiveScreenBuffer() && ServiceLocator::LocateConsoleWindow() != nullptr)
     {
-        if (ServiceLocator::LocateConsoleWindow() != nullptr)
-        {
-            // Tell the window that it needs to set itself to the new origin if we're the active buffer.
-            ServiceLocator::LocateConsoleWindow()->SetViewportOrigin(NewWindow);
-        }
+        // Tell the window that it needs to set itself to the new origin if we're the active buffer.
+        ServiceLocator::LocateConsoleWindow()->SetViewportOrigin(NewWindow);
     }
     else
     {
@@ -2350,4 +2347,42 @@ SMALL_RECT SCREEN_INFORMATION::GetBufferViewport() const
 void SCREEN_INFORMATION::SetBufferViewport(SMALL_RECT srBufferViewport)
 {
     _srBufferViewport = srBufferViewport;
+}
+
+// Method Description:
+// - Performs a VT Erase All operation. In most terminals, this is done by 
+//      moving the viewport into the scrollback, clearing out the current screen.
+//      For them, there can never be any characters beneath the viewport, as the 
+//      viewport is always at the bottom. So, we can accomplish the same behavior 
+//      by using the LastNonspaceCharacter as the "bottom", and placing the new 
+//      viewport underneath that character.
+// Parameters:
+//  <none>
+// Return value:
+// - S_OK if we succeeded, or another status if there was a failure.
+HRESULT SCREEN_INFORMATION::VtEraseAll()
+{
+    const COORD coordLastChar = TextInfo->GetLastNonSpaceCharacter();
+    short sNewTop = coordLastChar.Y + 1;
+    const SMALL_RECT oldViewport = GetBufferViewport();
+
+    short delta = (sNewTop + GetScreenWindowSizeY()) - (GetScreenBufferSize().Y);
+    bool fRedrawAll = delta > 0;
+    for (auto i = 0; i < delta; i++)
+    {
+        TextInfo->IncrementCircularBuffer();
+        sNewTop--;
+    }
+
+    const COORD coordNewCursor = {0, sNewTop};
+    RETURN_IF_FAILED(SetViewportOrigin(TRUE, coordNewCursor));
+    RETURN_IF_FAILED(SetCursorPosition(coordNewCursor, FALSE));
+
+    // When the viewport was already at the bottom, the renderer needs to repaint all the new lines.
+    if (fRedrawAll && ServiceLocator::LocateGlobals()->pRender != nullptr)
+    {
+        ServiceLocator::LocateGlobals()->pRender->TriggerRedrawAll();
+    }
+
+    return S_OK;
 }
