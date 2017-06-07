@@ -42,7 +42,7 @@ class UiaTextRangeTests;
 //
 // TextBufferRow is a row from the text buffer. It is not a ROW
 // struct, but rather the index of a row. This is also 0-indexed. A
-// TextBufferRow with a value of 0 does not necessarilly refer to the
+// TextBufferRow with a value of 0 does not necessarily refer to the
 // top row of the console.
 
 typedef unsigned int Row;
