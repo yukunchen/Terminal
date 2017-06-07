@@ -21,11 +21,44 @@ Author(s):
 class UiaTextRangeTests;
 #endif
 
-typedef unsigned int Row;
-typedef unsigned int Column;
-typedef unsigned int Endpoint;
-typedef unsigned int ViewportRow;
 
+// The UiaTextRange deals with several data structures that have
+// similar semantics. In order to keep the information from these data
+// structures separated, each structure has its own naming for a
+// row.
+//
+// There is the generic Row, which does not know which data structure
+// the row came from.
+//
+// There is the ViewportRow, which is a 0-indexed row value from the
+// viewport. The top row of the viewport is at 0, rows below the top
+// row increase in value and rows above the top row get increasingly
+// negative.
+//
+// ScreenInfoRow is a row from the screen info data structure. They
+// start at 0 at the top of screen info buffer. Their positions do not
+// change but their associated row in the text buffer does change each
+// time a new line is written.
+//
+// TextBufferRow is a row from the text buffer. It is not a ROW
+// struct, but rather the index of a row. This is also 0-indexed. A
+// TextBufferRow with a value of 0 does not necessarily refer to the
+// top row of the console.
+
+typedef unsigned int Row;
+typedef int ViewportRow;
+typedef unsigned int ScreenInfoRow;
+typedef unsigned int TextBufferRow;
+
+typedef SMALL_RECT Viewport;
+
+// A Column is a row agnostic value that refers to the column an
+// endpoint is equivalent to. It is 0-indexed.
+typedef unsigned int Column;
+
+// an endpoint is a char location in the text buffer. endpoint 0 is
+// the first char of the 0th row in the text buffer row array.
+typedef unsigned int Endpoint;
 
 namespace Microsoft
 {
@@ -131,32 +164,39 @@ namespace Microsoft
 
                     const bool _isDegenerate() const;
 
-                    const bool _isRowInViewport(_In_ const Row row) const;
-                    const bool _isRowInViewport(_In_ const Row row,
-                                                _In_ const SMALL_RECT viewport) const;
-
-                    const ViewportRow _rowToViewport(_In_ const Row row) const;
-                    const ViewportRow _rowToViewport(_In_ const Row row,
-                                                     _In_ const SMALL_RECT viewport) const;
-
-                    static const Row _endpointToRow(_In_ const Endpoint endpoint);
-                    static const Column _endpointToColumn(_In_ const Endpoint endpoint);
-                    const Endpoint _rowToEndpoint(_In_ const Row row) const;
-
-                    const unsigned int _getTotalRows() const;
-                    static const unsigned int _getRowWidth();
-                    const Row _normalizeRow(_In_ const Row row) const;
-                    const unsigned int _getViewportHeight(_In_ const SMALL_RECT viewport) const;
-                    static const unsigned int _getViewportWidth(_In_ const SMALL_RECT viewport);
-
-                    const SMALL_RECT _getViewport() const;
+                    const Viewport _getViewport() const;
                     static HWND _getWindowHandle();
                     static IConsoleWindow* _getWindow();
-
+                    const unsigned int _getTotalRows() const;
+                    static const unsigned int _getRowWidth();
                     static const COORD _getScreenBufferCoords();
-                    const Row _getScreenBufferTopRow() const;
-                    const Row _getScreenBufferBottomRow() const;
+
                     const unsigned int _rowCountInRange() const;
+
+                    const TextBufferRow _endpointToTextBufferRow(_In_ const Endpoint endpoint) const;
+                    const ScreenInfoRow _textBufferRowToScreenInfoRow(_In_ const TextBufferRow row) const;
+
+                    const TextBufferRow _screenInfoRowToTextBufferRow(_In_ const ScreenInfoRow row) const;
+                    const TextBufferRow _screenInfoRowToTextBufferRowNoNormalize(_In_ const ScreenInfoRow row) const;
+                    const Endpoint _textBufferRowToEndpoint(_In_ const TextBufferRow row) const;
+
+                    const ScreenInfoRow _endpointToScreenInfoRow(_In_ const Endpoint endpoint) const;
+                    const Endpoint _screenInfoRowToEndpoint(_In_ const ScreenInfoRow row) const;
+
+                    static const Column _endpointToColumn(_In_ const Endpoint endpoint);
+
+                    const Row _normalizeRow(_In_ const Row row) const;
+
+                    const ViewportRow _screenInfoRowToViewportRow(_In_ const ScreenInfoRow row) const;
+                    const ViewportRow _screenInfoRowToViewportRow(_In_ const ScreenInfoRow row,
+                                                                  _In_ const Viewport viewport) const;
+
+                    const bool _isScreenInfoRowInViewport(_In_ const ScreenInfoRow row) const;
+                    const bool _isScreenInfoRowInViewport(_In_ const ScreenInfoRow row,
+                                                          _In_ const Viewport viewport) const;
+
+                    static const unsigned int _getViewportHeight(_In_ const Viewport viewport);
+                    static const unsigned int _getViewportWidth(_In_ const Viewport viewport);
 
                     #ifdef UNIT_TESTING
                     friend class ::UiaTextRangeTests;

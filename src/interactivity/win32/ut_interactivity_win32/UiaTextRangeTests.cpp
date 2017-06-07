@@ -17,6 +17,7 @@ using namespace WEX::TestExecution;
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
+
 // UiaTextRange takes an object that implements
 // IRawElementProviderSimple as a constructor argument. Making a real
 // one would involve setting up the window which we don't want to do
@@ -145,45 +146,34 @@ class UiaTextRangeTests
         VERIFY_IS_FALSE(notDegenerate._isDegenerate());
     }
 
-    TEST_METHOD(CanCheckIfRowIsInViewport)
+    TEST_METHOD(CanCheckIfScreenInfoRowIsInViewport)
     {
         // check a viewport that's one line tall
-        SMALL_RECT viewport;
+        Viewport viewport;
         viewport.Top = 0;
         viewport.Bottom = 0;
 
-        VERIFY_IS_TRUE(_range->_isRowInViewport(0, viewport));
-        VERIFY_IS_FALSE(_range->_isRowInViewport(1, viewport));
+        VERIFY_IS_TRUE(_range->_isScreenInfoRowInViewport(0, viewport));
+        VERIFY_IS_FALSE(_range->_isScreenInfoRowInViewport(1, viewport));
 
         // check a slightly larger viewport
         viewport.Bottom = 5;
         for (auto i = 0; i <= viewport.Bottom; ++i)
         {
-            VERIFY_IS_TRUE(_range->_isRowInViewport(i, viewport),
+            VERIFY_IS_TRUE(_range->_isScreenInfoRowInViewport(i, viewport),
                            NoThrowString().Format(L"%d should be in viewport", i));
         }
-        VERIFY_IS_FALSE(_range->_isRowInViewport(viewport.Bottom + 1, viewport));
-
-        // check a viewport that contains the 0th row;
-        const auto totalRows = _pTextBuffer->TotalRowCount();
-        _pTextBuffer->SetFirstRowIndex(static_cast<SHORT>(totalRows - 5));
-        viewport.Top = static_cast<SHORT>(totalRows - 3);
-
-        VERIFY_IS_TRUE(_range->_isRowInViewport(0, viewport));
-        VERIFY_IS_FALSE(_range->_isRowInViewport(viewport.Bottom + 2, viewport));
+        VERIFY_IS_FALSE(_range->_isScreenInfoRowInViewport(viewport.Bottom + 1, viewport));
     }
 
-    TEST_METHOD(CanTranslateRowToViewport)
+    TEST_METHOD(CanTranslateScreenInfoRowToViewport)
     {
         const int totalRows = _pTextBuffer->TotalRowCount();
 
-        SMALL_RECT viewport;
+        Viewport viewport;
         viewport.Top = 0;
         viewport.Bottom = 10;
 
-        // invalid rows throw std::out_of_range exception
-        VERIFY_THROWS(_range->_rowToViewport(viewport.Bottom + 1u, viewport), std::out_of_range);
-        VERIFY_THROWS(_range->_rowToViewport(totalRows, viewport), std::out_of_range);
 
         std::vector<std::pair<int, int>> viewportSizes =
         {
@@ -196,31 +186,48 @@ class UiaTextRangeTests
         {
             viewport.Top = static_cast<SHORT>(it->first);
             viewport.Bottom = static_cast<SHORT>(it->second);
-            for (unsigned int i = viewport.Top; _range->_isRowInViewport(i, viewport); ++i)
+            for (int i = viewport.Top; _range->_isScreenInfoRowInViewport(i, viewport); ++i)
             {
-                VERIFY_ARE_EQUAL(i - viewport.Top, _range->_rowToViewport(i, viewport));
+                VERIFY_ARE_EQUAL(i - viewport.Top, _range->_screenInfoRowToViewportRow(i, viewport));
             }
         }
+
+        // ScreenInfoRows that are above the viewport return a
+        // negative value
+        viewport.Top = 5;
+        viewport.Bottom = 10;
+
+        VERIFY_ARE_EQUAL(-1, _range->_screenInfoRowToViewportRow(4, viewport));
+        VERIFY_ARE_EQUAL(-2, _range->_screenInfoRowToViewportRow(3, viewport));
     }
 
-    TEST_METHOD(CanTranslateEndpointToRow)
+    TEST_METHOD(CanTranslateEndpointToTextBufferRow)
     {
         const auto rowWidth = _getRowWidth();
         for (auto i = 0; i < 300; ++i)
         {
-            VERIFY_ARE_EQUAL(i / rowWidth, _range->_endpointToRow(i));
+            VERIFY_ARE_EQUAL(i / rowWidth, _range->_endpointToTextBufferRow(i));
         }
     }
 
 
-    TEST_METHOD(CanTranslateRowToEndpoint)
+    TEST_METHOD(CanTranslateTextBufferRowToEndpoint)
     {
         const auto rowWidth = _getRowWidth();
         for (unsigned int i = 0; i < 5; ++i)
         {
-            VERIFY_ARE_EQUAL(i * rowWidth, _range->_rowToEndpoint(i));
+            VERIFY_ARE_EQUAL(i * rowWidth, _range->_textBufferRowToEndpoint(i));
             // make sure that the translation is reversible
-            VERIFY_ARE_EQUAL(i , _range->_endpointToRow(_range->_rowToEndpoint(i)));
+            VERIFY_ARE_EQUAL(i , _range->_endpointToTextBufferRow(_range->_textBufferRowToEndpoint(i)));
+        }
+    }
+
+    TEST_METHOD(CanTranslateTextBufferRowToScreenInfoRow)
+    {
+        const auto rowWidth = _getRowWidth();
+        for (unsigned int i = 0; i < 5; ++i)
+        {
+            VERIFY_ARE_EQUAL(i , _range->_textBufferRowToScreenInfoRow(_range->_screenInfoRowToTextBufferRow(i)));
         }
     }
 
@@ -268,35 +275,26 @@ class UiaTextRangeTests
 
     TEST_METHOD(CanGetViewportHeight)
     {
-        SMALL_RECT viewport;
+        Viewport viewport;
         viewport.Top = 0;
         viewport.Bottom = 0;
 
-        // SMALL_RECTs are inclusive, so Top == Bottom really means 1 row
+        // Viewports are inclusive, so Top == Bottom really means 1 row
         VERIFY_ARE_EQUAL(1u, _range->_getViewportHeight(viewport));
 
         // make the viewport 10 rows tall
         viewport.Top = 3;
         viewport.Bottom = 12;
         VERIFY_ARE_EQUAL(10u, _range->_getViewportHeight(viewport));
-
-        // make sure that viewport height is still properly calculated
-        // when the 0th row lies within the viewport
-        const auto totalRows = _pTextBuffer->TotalRowCount();
-        _pTextBuffer->SetFirstRowIndex(static_cast<SHORT>(totalRows - 5));
-        viewport.Top = static_cast<SHORT>(totalRows - 3);
-        viewport.Bottom = 5;
-        const unsigned int expectedHeight = totalRows - viewport.Top + viewport.Bottom + 1;
-        VERIFY_ARE_EQUAL(expectedHeight, _range->_getViewportHeight(viewport));
     }
 
     TEST_METHOD(CanGetViewportWidth)
     {
-        SMALL_RECT viewport;
+        Viewport viewport;
         viewport.Left = 0;
         viewport.Right = 0;
 
-        // SMALL_RECTs are inclusive, Left == Right is really 1 column
+        // Viewports are inclusive, Left == Right is really 1 column
         VERIFY_ARE_EQUAL(1u, _range->_getViewportWidth(viewport));
 
         // test a more normal size
