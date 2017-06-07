@@ -44,7 +44,11 @@ Telemetry::Telemetry()
     _fKeyboardTextEditingUsed(false),
     _fKeyboardTextSelectionUsed(false),
     _fUserInteractiveForTelemetry(false),
-    _fCtrlPgUpPgDnUsed(false)
+    _fCtrlPgUpPgDnUsed(false),
+    _uiCtrlShiftCProcUsed(0),
+    _uiCtrlShiftCRawUsed(0),
+    _uiCtrlShiftVProcUsed(0),
+    _uiCtrlShiftVRawUsed(0)
 {
     time(&_tStartedAt);
     TraceLoggingRegister(g_hConhostV2EventTraceProvider);
@@ -68,6 +72,30 @@ void Telemetry::SetUserInteractive()
 void Telemetry::SetCtrlPgUpPgDnUsed()
 {
     _fCtrlPgUpPgDnUsed = true;
+    SetUserInteractive();
+}
+
+void Telemetry::LogCtrlShiftCProcUsed()
+{
+    _uiCtrlShiftCProcUsed++;
+    SetUserInteractive();
+}
+
+void Telemetry::LogCtrlShiftCRawUsed()
+{
+    _uiCtrlShiftCRawUsed++;
+    SetUserInteractive();
+}
+
+void Telemetry::LogCtrlShiftVProcUsed()
+{
+    _uiCtrlShiftVProcUsed++;
+    SetUserInteractive();
+}
+
+void Telemetry::LogCtrlShiftVRawUsed()
+{
+    _uiCtrlShiftVRawUsed++;
     SetUserInteractive();
 }
 
@@ -310,6 +338,10 @@ void Telemetry::WriteFinalTraceLog()
                 TraceLoggingBool(_fCtrlPgUpPgDnUsed, "CtrlPgUpPgDnUsed"),
                 TraceLoggingBool(_fKeyboardTextEditingUsed, "KeyboardTextEditingUsed"),
                 TraceLoggingBool(_fKeyboardTextSelectionUsed, "KeyboardTextSelectionUsed"),
+                TraceLoggingUInt32(_uiCtrlShiftCProcUsed, "CtrlShiftCProcUsed"),
+                TraceLoggingUInt32(_uiCtrlShiftCRawUsed, "CtrlShiftCRawUsed"),
+                TraceLoggingUInt32(_uiCtrlShiftVProcUsed, "CtrlShiftVProcUsed"),
+                TraceLoggingUInt32(_uiCtrlShiftVRawUsed, "CtrlShiftVRawUsed"),
                 TraceLoggingBool(ServiceLocator::LocateGlobals()->getConsoleInformation()->LinkTitle == nullptr, "LaunchedFromShortcut"),
                 // Normally we would send out a single array containing the name and count,
                 // but that's difficult to do with our telemetry system, so send out two separate arrays.

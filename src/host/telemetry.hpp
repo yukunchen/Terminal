@@ -33,6 +33,10 @@ public:
     void SetKeyboardTextSelectionUsed();
     void SetKeyboardTextEditingUsed();
     void SetCtrlPgUpPgDnUsed();
+    void LogCtrlShiftCProcUsed();
+    void LogCtrlShiftCRawUsed();
+    void LogCtrlShiftVProcUsed();
+    void LogCtrlShiftVRawUsed();
 
     void LogFindDialogNextClicked(_In_ const unsigned int iStringLength, _In_ const bool fDirectionDown, _In_ const bool fMatchCase);
     void LogProcessConnected(_In_ const HANDLE hProcess);
@@ -164,6 +168,12 @@ private:
     bool _fKeyboardTextSelectionUsed;
     bool _fUserInteractiveForTelemetry;
     bool _fCtrlPgUpPgDnUsed;
+
+    // Linux copy and paste keyboard shortcut telemetry
+    unsigned int _uiCtrlShiftCProcUsed;
+    unsigned int _uiCtrlShiftCRawUsed;
+    unsigned int _uiCtrlShiftVProcUsed;
+    unsigned int _uiCtrlShiftVRawUsed;
 };
 
 #ifdef ASSERT
