@@ -164,7 +164,7 @@ namespace Microsoft
 
                     const bool _isDegenerate() const;
 
-                    const SMALL_RECT _getViewport() const;
+                    const Viewport _getViewport() const;
                     static HWND _getWindowHandle();
                     static IConsoleWindow* _getWindow();
                     const unsigned int _getTotalRows() const;

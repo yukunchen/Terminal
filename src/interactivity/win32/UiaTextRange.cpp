@@ -311,7 +311,7 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
         topLeft.y = _screenInfoRowToViewportRow(screenInfoRow) * currentFontSize.Y;
 
         bottomRight.x = _getViewportWidth(_getViewport()) * currentFontSize.X;
-        // + 1 of the font height because we are adding each line individually
+        // we add the font height only once here because we are adding each line individually
         bottomRight.y = topLeft.y + currentFontSize.Y;
 
         // convert the coords to be relative to the screen instead of
@@ -350,7 +350,7 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
         topLeft.y = _screenInfoRowToViewportRow(screenInfoRow) * currentFontSize.Y;
 
         bottomRight.x = _getViewportWidth(_getViewport()) * currentFontSize.X;
-        // + 1 of the font height because we are adding each line individually
+        // we add the font height only once here because we are adding each line individually
         bottomRight.y = topLeft.y + currentFontSize.Y;
 
         // convert the coords to be relative to the screen instead of
@@ -449,8 +449,7 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ int*
         limitingRow = 0;
     }
 
-    const TextBufferRow textBufferRow = _endpointToTextBufferRow(_start);
-    ScreenInfoRow screenInfoRow = _textBufferRowToScreenInfoRow(textBufferRow);
+    ScreenInfoRow screenInfoRow = _endpointToScreenInfoRow(_start);
     for (int i = 0; i < abs(count); ++i)
     {
         if (screenInfoRow == limitingRow)
@@ -506,8 +505,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
         otherEndpoint = _start;
     }
 
-    const TextBufferRow textBufferRow = _endpointToTextBufferRow(*pInternalEndpoint);
-    ScreenInfoRow screenInfoRow = _textBufferRowToScreenInfoRow(textBufferRow);
+    ScreenInfoRow screenInfoRow = _endpointToScreenInfoRow(*pInternalEndpoint);
 
     // set values depending on move direction
     int incrementAmount;
@@ -615,11 +613,11 @@ IFACEMETHODIMP UiaTextRange::Select()
     COORD coordEnd;
 
     coordStart.X = static_cast<SHORT>(_endpointToColumn(_start));
-    coordStart.Y = static_cast<SHORT>(_textBufferRowToScreenInfoRow(_endpointToTextBufferRow(_start)));
+    coordStart.Y = static_cast<SHORT>(_endpointToScreenInfoRow(_start));
 
     // - 1 because end is an exclusive endpoint
     coordEnd.X = static_cast<SHORT>(_endpointToColumn(_end - 1));
-    coordEnd.Y = static_cast<SHORT>(_textBufferRowToScreenInfoRow(_endpointToTextBufferRow(_end - 1)));
+    coordEnd.Y = static_cast<SHORT>(_endpointToScreenInfoRow(_end - 1));
 
     Selection::Instance().SelectNewRegion(coordStart, coordEnd);
     return S_OK;
@@ -727,7 +725,7 @@ const bool UiaTextRange::_isDegenerate() const
 // - <none>
 // Return Value:
 // - The screen info's current viewport
-const SMALL_RECT UiaTextRange::_getViewport() const
+const Viewport UiaTextRange::_getViewport() const
 {
     return _pScreenInfo->GetBufferViewport();
 }
@@ -825,6 +823,7 @@ const unsigned int UiaTextRange::_rowCountInRange() const
     TextBufferRow textBufferStartRow = _endpointToTextBufferRow(_start);
     // - 1 for end endpoint exclusivity
     TextBufferRow textBufferEndRow = _endpointToTextBufferRow(_end - 1);
+    // + 1 to balance subtracting TextBufferRows from each other
     return textBufferEndRow - textBufferStartRow + 1;
 }
 
