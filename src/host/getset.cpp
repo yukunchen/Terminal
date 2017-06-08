@@ -720,38 +720,45 @@ HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ 
 
 HRESULT DoSrvVtSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute, _In_ bool fForeground, _In_ bool fBackground, _In_ bool fMeta)
 {
+    TextAttribute OldAttributes = pScreenInfo->GetAttributes();
     TextAttribute NewAttributes;
-    NewAttributes.SetFrom(pScreenInfo->GetAttributes());
+
+    NewAttributes.SetFrom(OldAttributes);
     auto gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
-    if (NewAttributes.IsLegacy())
+    // Always update the lecacy component. This prevents the 1m in "^[[32m^[[1m"
+    //       from resetting the colors set by the 32m. (for example)
+    WORD wNewLegacy = NewAttributes.GetLegacyAttributes();
+    if (fForeground)
     {
-        WORD wNewLegacy = NewAttributes.GetLegacyAttributes();
-        if (fForeground)
-        {
-            wNewLegacy = (wNewLegacy & ~(FG_ATTRS)) | (Attribute & FG_ATTRS);
-        }
-        if (fBackground)
-        {
-            wNewLegacy = (wNewLegacy & ~(BG_ATTRS)) | (Attribute & BG_ATTRS);
-        }
-        if (fMeta)
-        {
-            wNewLegacy = (wNewLegacy & ~(META_ATTRS)) | (Attribute & META_ATTRS);
-        }
-        NewAttributes.SetFromLegacy(wNewLegacy);
+        wNewLegacy = (wNewLegacy & ~(FG_ATTRS)) | (Attribute & FG_ATTRS);
     }
-    else
+    if (fBackground)
     {
+        wNewLegacy = (wNewLegacy & ~(BG_ATTRS)) | (Attribute & BG_ATTRS);
+    }
+    if (fMeta)
+    {
+        wNewLegacy = (wNewLegacy & ~(META_ATTRS)) | (Attribute & META_ATTRS);
+    }
+    NewAttributes.SetFromLegacy(wNewLegacy);
+
+
+    if (! OldAttributes.IsLegacy())
+    {
+        // The previous call to SetFromLegacy is gonna trash our RGB.
+        // Restore it.
+        NewAttributes.SetForeground(OldAttributes.GetRgbForeground());
+        NewAttributes.SetBackground(OldAttributes.GetRgbBackground());
         if (fForeground)
         {
             COLORREF rgbColor = gci->GetColorTableEntry(Attribute & FG_ATTRS);
-            NewAttributes.SetColor(rgbColor, true);
+            NewAttributes.SetForeground(rgbColor);
         }
         if (fBackground)
         {
             COLORREF rgbColor = gci->GetColorTableEntry((Attribute >> 4) & FG_ATTRS);
-            NewAttributes.SetColor(rgbColor, false);
+            NewAttributes.SetBackground(rgbColor);
         }
         if (fMeta)
         {
