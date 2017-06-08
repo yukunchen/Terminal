@@ -48,7 +48,7 @@ namespace Microsoft
                 HRESULT ScrollFrame();
 
                 HRESULT PaintBackground();
-                HRESULT PaintBufferLine(PCWCHAR const pwsLine, size_t const cchLine, COORD const coord, size_t const cchCharWidths, bool const fTrimLeft);
+                HRESULT PaintBufferLine(PCWCHAR const pwsLine, const unsigned char* const rgWidths, size_t const cchLine, COORD const coord, bool const fTrimLeft);
                 HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget);
                 HRESULT PaintSelection(SMALL_RECT* const rgsrSelection, UINT const cRectangles);
 
