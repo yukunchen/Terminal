@@ -758,10 +758,30 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
             {
                 if (pSelection->IsInSelectingState())
                 {
+                    // Capture data on when quick edit copy is used in proc or raw mode
+                    if (IsInProcessedInputMode())
+                    {
+                        Telemetry::Instance().LogQuickEditCopyProcUsed();
+                    }
+                    else
+                    {
+                        Telemetry::Instance().LogQuickEditCopyRawUsed();
+                    }
+
                     Clipboard::Instance().Copy();
                 }
                 else if (ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags & CONSOLE_QUICK_EDIT_MODE)
                 {
+                    // Capture data on when quick edit paste is used in proc or raw mode
+                    if (IsInProcessedInputMode())
+                    {
+                        Telemetry::Instance().LogQuickEditPasteProcUsed();
+                    }
+                    else
+                    {
+                        Telemetry::Instance().LogQuickEditPasteRawUsed();
+                    }
+
                     Clipboard::Instance().Paste();
                 }
                 ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_IGNORE_NEXT_MOUSE_INPUT;
