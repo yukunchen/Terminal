@@ -582,17 +582,17 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
 void TextBufferTests::TestMixedRgbAndLegacy()
 {
-    auto gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    auto psi = gci->CurrentScreenBuffer->GetActiveBuffer();
-    auto tbi = psi->TextInfo;
-    auto stateMachine = psi->GetStateMachine();
-    auto cursor = tbi->GetCursor();
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
+    StateMachine* const stateMachine = psi->GetStateMachine();
+    const Cursor* const cursor = tbi->GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
     VERIFY_IS_NOT_NULL(cursor);
 
-    for (auto i = 0; i < 16; i++)
+    for (int i = 0; i < 16; i++)
     {
-        auto color = gci->GetColorTableEntry(i);
+        COLORREF color = gci->GetColorTableEntry(i);
         Log::Comment(NoThrowString().Format(
             L"ColorTable[%d]={0x%x}", 
             i, color
@@ -607,9 +607,9 @@ void TextBufferTests::TestMixedRgbAndLegacy()
     {
         std::wstring sequence = L"\x1b[38;2;64;128;255mX\x1b[49mX\x1b[m";
         stateMachine->ProcessString(&sequence[0], sequence.length());
-        const auto x = cursor->GetPosition().X;
-        const auto y = cursor->GetPosition().Y;
-        const auto row = tbi->GetRowByOffset(y);
+        const short x = cursor->GetPosition().X;
+        const short y = cursor->GetPosition().Y;
+        const ROW* const row = tbi->GetRowByOffset(y);
         const auto attrRow = row->AttrRow;
         const auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
         VERIFY_IS_NOT_NULL(attrs);
