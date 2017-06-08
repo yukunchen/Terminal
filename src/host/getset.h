@@ -33,7 +33,7 @@ HRESULT DoSrvScrollConsoleScreenBufferW(_In_ SCREEN_INFORMATION* pScreenInfo,
                                         _In_ WORD const attrFill);
 
 HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute);
-HRESULT DoSrvVtSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute, _In_ bool fForeground, _In_ bool fBackground, _In_ bool fMeta);
+HRESULT DoSrvVtSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute, _In_ bool const fForeground, _In_ const bool fBackground, _In_ const bool fMeta);
 NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attributes, _In_ WORD PopupAttributes, _In_ BOOL UpdateWholeScreen);
 
 NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode);

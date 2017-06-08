@@ -526,14 +526,11 @@ class TextBufferTests
     TEST_METHOD(TestMixedRgbAndLegacy);
 };
 
-    
 void TextBufferTests::TestMixedRgbAndLegacy()
 {
-    // BOOL fSuccess = TRUE;
     auto gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     auto psi = gci->CurrentScreenBuffer->GetActiveBuffer();
     auto tbi = psi->TextInfo;
-    // auto bufferWriter = psi->GetBufferWriter();
     auto stateMachine = psi->GetStateMachine();
     auto cursor = tbi->GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
@@ -559,15 +556,15 @@ void TextBufferTests::TestMixedRgbAndLegacy()
     {
         std::wstring sequence = L"\x1b[38;2;64;128;255mX\x1b[49mX\x1b[m";
         stateMachine->ProcessString(&sequence[0], sequence.length());
-        auto x = cursor->GetPosition().X;
-        auto y = cursor->GetPosition().Y;
-        auto row = tbi->GetRowByOffset(y);
-        auto attrRow = row->AttrRow;
-        auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
+        const auto x = cursor->GetPosition().X;
+        const auto y = cursor->GetPosition().Y;
+        const auto row = tbi->GetRowByOffset(y);
+        const auto attrRow = row->AttrRow;
+        const auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
         VERIFY_IS_NOT_NULL(attrs);
         attrRow.UnpackAttrs(attrs, tbi->_coordBufferSize.X);
-        auto attrA = attrs[x-2];
-        auto attrB = attrs[x-1];
+        const auto attrA = attrs[x-2];
+        const auto attrB = attrs[x-1];
         Log::Comment(NoThrowString().Format(
             L"cursor={X:%d,Y:%d}", 
             x, y
@@ -610,15 +607,15 @@ void TextBufferTests::TestMixedRgbAndLegacy()
     {
         std::wstring sequence = L"\x1b[48;2;64;128;255mX\x1b[39mX\x1b[m";
         stateMachine->ProcessString(&sequence[0], sequence.length());
-        auto x = cursor->GetPosition().X;
-        auto y = cursor->GetPosition().Y;
-        auto row = tbi->GetRowByOffset(y);
-        auto attrRow = row->AttrRow;
-        auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
+        const auto x = cursor->GetPosition().X;
+        const auto y = cursor->GetPosition().Y;
+        const auto row = tbi->GetRowByOffset(y);
+        const auto attrRow = row->AttrRow;
+        const auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
         VERIFY_IS_NOT_NULL(attrs);
         attrRow.UnpackAttrs(attrs, tbi->_coordBufferSize.X);
-        auto attrA = attrs[x-2];
-        auto attrB = attrs[x-1];
+        const auto attrA = attrs[x-2];
+        const auto attrB = attrs[x-1];
         Log::Comment(NoThrowString().Format(
             L"cursor={X:%d,Y:%d}", 
             x, y
@@ -660,15 +657,15 @@ void TextBufferTests::TestMixedRgbAndLegacy()
     {
         std::wstring sequence = L"\x1b[48;2;64;128;255mX\x1b[4mX\x1b[m";
         stateMachine->ProcessString(&sequence[0], sequence.length());
-        auto x = cursor->GetPosition().X;
-        auto y = cursor->GetPosition().Y;
-        auto row = tbi->GetRowByOffset(y);
-        auto attrRow = row->AttrRow;
-        auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
+        const auto x = cursor->GetPosition().X;
+        const auto y = cursor->GetPosition().Y;
+        const auto row = tbi->GetRowByOffset(y);
+        const auto attrRow = row->AttrRow;
+        const auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
         VERIFY_IS_NOT_NULL(attrs);
         attrRow.UnpackAttrs(attrs, tbi->_coordBufferSize.X);
-        auto attrA = attrs[x-2];
-        auto attrB = attrs[x-1];
+        const auto attrA = attrs[x-2];
+        const auto attrB = attrs[x-1];
         Log::Comment(NoThrowString().Format(
             L"cursor={X:%d,Y:%d}", 
             x, y
@@ -711,21 +708,21 @@ void TextBufferTests::TestMixedRgbAndLegacy()
     //      Make sure that the second X is a BRIGHT green, not white.
     Log::Comment(L"Case 4 ;\"\\E[32mX\\E[1mX\"");
     {
-        auto dark_green = gci->GetColorTableEntry(2);
-        auto bright_green = gci->GetColorTableEntry(10);
+        const auto dark_green = gci->GetColorTableEntry(2);
+        const auto bright_green = gci->GetColorTableEntry(10);
         VERIFY_ARE_NOT_EQUAL(dark_green, bright_green);
 
         std::wstring sequence = L"\x1b[32mX\x1b[1mX";
         stateMachine->ProcessString(&sequence[0], sequence.length());
-        auto x = cursor->GetPosition().X;
-        auto y = cursor->GetPosition().Y;
-        auto row = tbi->GetRowByOffset(y);
-        auto attrRow = row->AttrRow;
-        auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
+        const auto x = cursor->GetPosition().X;
+        const auto y = cursor->GetPosition().Y;
+        const auto row = tbi->GetRowByOffset(y);
+        const auto attrRow = row->AttrRow;
+        const auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
         VERIFY_IS_NOT_NULL(attrs);
         attrRow.UnpackAttrs(attrs, tbi->_coordBufferSize.X);
-        auto attrA = attrs[x-2];
-        auto attrB = attrs[x-1];
+        const auto attrA = attrs[x-2];
+        const auto attrB = attrs[x-1];
         Log::Comment(NoThrowString().Format(
             L"cursor={X:%d,Y:%d}", 
             x, y
@@ -751,13 +748,7 @@ void TextBufferTests::TestMixedRgbAndLegacy()
         VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
         VERIFY_ARE_EQUAL(attrA.GetRgbForeground(), dark_green);
-        // VERIFY_ARE_EQUAL(attrA.GetRgbForeground(), psi->GetAttributes().GetRgbForeground());
-
         VERIFY_ARE_EQUAL(attrB.GetRgbForeground(), bright_green);
-        // VERIFY_ARE_EQUAL(attrB.GetRgbForeground(), psi->GetAttributes().GetRgbForeground());
-
-        // VERIFY_ARE_EQUAL(attrA.GetLegacyAttributes()&COMMON_LVB_UNDERSCORE, 0);
-        // VERIFY_ARE_EQUAL(attrB.GetLegacyAttributes()&COMMON_LVB_UNDERSCORE, COMMON_LVB_UNDERSCORE);
 
         std::wstring reset = L"\x1b[0m";
         stateMachine->ProcessString(&reset[0], reset.length());

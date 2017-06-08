@@ -319,7 +319,7 @@ void TextAttribute::SetFromLegacy(_In_ const WORD wLegacy)
 
 void TextAttribute::SetMetaAttributes(_In_ const WORD wMeta)
 {
-    _wAttrLegacy = (_wAttrLegacy & ~(META_ATTRS)) | (wMeta & META_ATTRS);
+    UpdateFlagsInMask(_wAttrLegacy, META_ATTRS, wMeta);
 }
 
 void TextAttribute::SetForeground(_In_ const COLORREF rgbForeground)

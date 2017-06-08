@@ -718,7 +718,7 @@ HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ 
     RETURN_NTSTATUS(SetScreenColors(pScreenInfo, Attribute, pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE));
 }
 
-HRESULT DoSrvVtSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute, _In_ bool fForeground, _In_ bool fBackground, _In_ bool fMeta)
+HRESULT DoSrvVtSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta)
 {
     TextAttribute OldAttributes = pScreenInfo->GetAttributes();
     TextAttribute NewAttributes;
@@ -731,19 +731,19 @@ HRESULT DoSrvVtSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WO
     WORD wNewLegacy = NewAttributes.GetLegacyAttributes();
     if (fForeground)
     {
-        wNewLegacy = (wNewLegacy & ~(FG_ATTRS)) | (Attribute & FG_ATTRS);
+        UpdateFlagsInMask(wNewLegacy, FG_ATTRS, Attribute);
     }
     if (fBackground)
     {
-        wNewLegacy = (wNewLegacy & ~(BG_ATTRS)) | (Attribute & BG_ATTRS);
+        UpdateFlagsInMask(wNewLegacy, BG_ATTRS, Attribute);
     }
     if (fMeta)
     {
-        wNewLegacy = (wNewLegacy & ~(META_ATTRS)) | (Attribute & META_ATTRS);
+        UpdateFlagsInMask(wNewLegacy, META_ATTRS, Attribute);
     }
     NewAttributes.SetFromLegacy(wNewLegacy);
 
-
+ 
     if (! OldAttributes.IsLegacy())
     {
         // The previous call to SetFromLegacy is gonna trash our RGB.

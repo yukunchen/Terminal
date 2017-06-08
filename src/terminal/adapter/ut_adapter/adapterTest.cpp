@@ -260,7 +260,7 @@ public:
         return _fSetConsoleTextAttributeResult;
     }
     
-    virtual BOOL VtSetLegacyAttributes(_In_ WORD const wAttr, _In_ bool fForeground, _In_ bool fBackground, _In_ bool fMeta)
+    virtual BOOL VtSetLegacyAttributes(_In_ WORD const wAttr, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta)
     {
         Log::Comment(L"VtSetLegacyAttributes MOCK called...");
         if (_fVtSetLegacyAttributesResult)
@@ -270,21 +270,20 @@ public:
             VERIFY_ARE_EQUAL(_fExpectedMeta, fMeta);
             if (fForeground)
             {
-                _wAttribute = (_wAttribute & ~FG_ATTRS) | (wAttr & FG_ATTRS);
+                UpdateFlagsInMask(_wAttribute, FG_ATTRS, wAttr);
             }
             if (fBackground)
             {
-                _wAttribute = (_wAttribute & ~BG_ATTRS) | (wAttr & BG_ATTRS);
+                UpdateFlagsInMask(_wAttribute, BG_ATTRS, wAttr);
             }
             if (fMeta)
             {
-                _wAttribute = (_wAttribute & ~META_ATTRS) | (wAttr & META_ATTRS);
+                UpdateFlagsInMask(_wAttribute, META_ATTRS, wAttr);
             }
             VERIFY_ARE_EQUAL(_wExpectedAttribute, wAttr);
         }
 
         return _fVtSetLegacyAttributesResult;
-        // FIXME
     }
 
     virtual BOOL SetConsoleXtermTextAttribute(_In_ int const iXtermTableEntry, _In_ const bool fIsForeground)
@@ -3149,6 +3148,10 @@ public:
         // Cursor to 1,1
         _pTest->_coordExpectedCursorPos = {0, 0};
         _pTest->_fSetConsoleCursorPositionResult = true;
+        _pTest->_fVtSetLegacyAttributesResult = true;
+        _pTest->_fExpectedForeground = true;
+        _pTest->_fExpectedBackground = true;
+        _pTest->_fExpectedMeta = true;
         const COORD coordExpectedCursorPos = {0, 0};
 
         // Sets the SGR state to normal.

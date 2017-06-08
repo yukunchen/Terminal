@@ -241,12 +241,15 @@ BOOL ConhostInternalGetSet::SetConsoleTextAttribute(_In_ WORD const wAttr)
 
 // Routine Description:
 // - Connects the SetConsoleTextAttribute API call directly into our Driver Message servicing call inside Conhost.exe
-//     Sets BOTH the FG and the BG component of the attributes.
+//     Sets only the components of the attributes requested with the fForeground, fBackground, and fMeta flags.
 // Arguments:
 // - wAttr - new color/graphical attributes to apply as default within the console text buffer
+// - fForeground - The new attributes contain an update to the foreground attributes
+// - fBackground - The new attributes contain an update to the background attributes
+// - fMeta - The new attributes contain an update to the meta attributes
 // Return Value:
-// - TRUE if successful (see DoSrvSetConsoleTextAttribute). FALSE otherwise.
-BOOL ConhostInternalGetSet::VtSetLegacyAttributes(_In_ WORD const wAttr, _In_ bool fForeground, _In_ bool fBackground, _In_ bool fMeta)
+// - TRUE if successful (see DoSrvVtSetLegacyAttributes). FALSE otherwise.
+BOOL ConhostInternalGetSet::VtSetLegacyAttributes(_In_ WORD const wAttr, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta)
 {
     return SUCCEEDED(DoSrvVtSetLegacyAttributes(_pScreenInfo, wAttr, fForeground, fBackground, fMeta));
 }
