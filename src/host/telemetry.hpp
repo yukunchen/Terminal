@@ -37,6 +37,10 @@ public:
     void LogCtrlShiftCRawUsed();
     void LogCtrlShiftVProcUsed();
     void LogCtrlShiftVRawUsed();
+    void LogQuickEditCopyProcUsed();
+    void LogQuickEditCopyRawUsed();
+    void LogQuickEditPasteProcUsed();
+    void LogQuickEditPasteRawUsed();
 
     void LogFindDialogNextClicked(_In_ const unsigned int iStringLength, _In_ const bool fDirectionDown, _In_ const bool fMatchCase);
     void LogProcessConnected(_In_ const HANDLE hProcess);
@@ -174,6 +178,12 @@ private:
     unsigned int _uiCtrlShiftCRawUsed;
     unsigned int _uiCtrlShiftVProcUsed;
     unsigned int _uiCtrlShiftVRawUsed;
+
+    // Quick edit copy and paste usage telemetry
+    unsigned int _uiQuickEditCopyProcUsed;
+    unsigned int _uiQuickEditCopyRawUsed;
+    unsigned int _uiQuickEditPasteProcUsed;
+    unsigned int _uiQuickEditPasteRawUsed;
 };
 
 #ifdef ASSERT
