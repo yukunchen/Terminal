@@ -240,7 +240,7 @@ BOOL ConhostInternalGetSet::SetConsoleTextAttribute(_In_ WORD const wAttr)
 }
 
 // Routine Description:
-// - Connects the SetConsoleTextAttribute API call directly into our Driver Message servicing call inside Conhost.exe
+// - Connects the PrivateSetLegacyAttributes API call directly into our Driver Message servicing call inside Conhost.exe
 //     Sets only the components of the attributes requested with the fForeground, fBackground, and fMeta flags.
 // Arguments:
 // - wAttr - new color/graphical attributes to apply as default within the console text buffer
@@ -249,9 +249,9 @@ BOOL ConhostInternalGetSet::SetConsoleTextAttribute(_In_ WORD const wAttr)
 // - fMeta - The new attributes contain an update to the meta attributes
 // Return Value:
 // - TRUE if successful (see DoSrvVtSetLegacyAttributes). FALSE otherwise.
-BOOL ConhostInternalGetSet::VtSetLegacyAttributes(_In_ WORD const wAttr, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta)
+BOOL ConhostInternalGetSet::PrivateSetLegacyAttributes(_In_ WORD const wAttr, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta)
 {
-    return SUCCEEDED(DoSrvVtSetLegacyAttributes(_pScreenInfo, wAttr, fForeground, fBackground, fMeta));
+    return SUCCEEDED(DoSrvPrivateSetLegacyAttributes(_pScreenInfo, wAttr, fForeground, fBackground, fMeta));
 }
 
 // Routine Description:

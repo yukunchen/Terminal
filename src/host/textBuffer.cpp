@@ -12,12 +12,6 @@
 
 #pragma hdrstop
 
-// TODO This should probably only have one definition
-// The following mask is used to test for valid text attributes.
-#define FG_ATTRS (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY)
-#define BG_ATTRS (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)
-#define META_ATTRS (COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE | COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE )
-
 // Characters used for padding out the buffer with invalid/empty space
 #define PADDING_CHAR UNICODE_SPACE
 #define PADDING_KATTR '\0'

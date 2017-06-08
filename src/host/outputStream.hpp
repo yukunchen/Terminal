@@ -71,7 +71,7 @@ public:
                                             _Out_ DWORD* const pNumberOfAttrsWritten);
 
     virtual BOOL SetConsoleTextAttribute(_In_ WORD const wAttr);
-    virtual BOOL VtSetLegacyAttributes(_In_ WORD const wAttr, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta);
+    virtual BOOL PrivateSetLegacyAttributes(_In_ WORD const wAttr, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta);
     virtual BOOL SetConsoleXtermTextAttribute(_In_ int const iXtermTableEntry, _In_ const bool fIsForeground);
     virtual BOOL SetConsoleRGBTextAttribute(_In_ COLORREF const rgbColor, _In_ const bool fIsForeground);
 

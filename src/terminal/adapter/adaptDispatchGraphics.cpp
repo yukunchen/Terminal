@@ -397,7 +397,7 @@ bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOpti
             {
                 _SetGraphicsOptionHelper(opt, &attr);
 
-                fSuccess = !!_pConApi->VtSetLegacyAttributes(attr, _fChangedForeground, _fChangedBackground, _fChangedMetaAttrs);
+                fSuccess = !!_pConApi->PrivateSetLegacyAttributes(attr, _fChangedForeground, _fChangedBackground, _fChangedMetaAttrs);
 
                 _fChangedForeground = false;
                 _fChangedBackground = false;

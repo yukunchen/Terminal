@@ -22,9 +22,6 @@
 #pragma hdrstop
 
 // The following mask is used to test for valid text attributes.
-#define FG_ATTRS (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY)
-#define BG_ATTRS (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)
-#define META_ATTRS (COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE | COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE )
 #define VALID_TEXT_ATTRIBUTES (FG_ATTRS | BG_ATTRS | META_ATTRS)
 
 #define INPUT_MODES (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT)
@@ -718,16 +715,16 @@ HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ 
     RETURN_NTSTATUS(SetScreenColors(pScreenInfo, Attribute, pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE));
 }
 
-HRESULT DoSrvVtSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta)
+HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta)
 {
     TextAttribute OldAttributes = pScreenInfo->GetAttributes();
     TextAttribute NewAttributes;
 
     NewAttributes.SetFrom(OldAttributes);
-    auto gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
-    // Always update the lecacy component. This prevents the 1m in "^[[32m^[[1m"
-    //       from resetting the colors set by the 32m. (for example)
+    // Always update the legacy component. This prevents the 1m in "^[[32m^[[1m"
+    //  from resetting the colors set by the 32m. (for example)
     WORD wNewLegacy = NewAttributes.GetLegacyAttributes();
     if (fForeground)
     {
@@ -742,11 +739,10 @@ HRESULT DoSrvVtSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WO
         UpdateFlagsInMask(wNewLegacy, META_ATTRS, Attribute);
     }
     NewAttributes.SetFromLegacy(wNewLegacy);
-
  
-    if (! OldAttributes.IsLegacy())
+    if (!OldAttributes.IsLegacy())
     {
-        // The previous call to SetFromLegacy is gonna trash our RGB.
+        // The previous call to SetFromLegacy is going to trash our RGB.
         // Restore it.
         NewAttributes.SetForeground(OldAttributes.GetRgbForeground());
         NewAttributes.SetBackground(OldAttributes.GetRgbBackground());
@@ -764,14 +760,12 @@ HRESULT DoSrvVtSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WO
         {
             NewAttributes.SetMetaAttributes(Attribute);
         }
-
     }
 
     pScreenInfo->SetAttributes(NewAttributes);
 
     return STATUS_SUCCESS;
 }
-
 
 NTSTATUS DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ int const iXtermTableEntry, _In_ bool fIsForeground)
 {
