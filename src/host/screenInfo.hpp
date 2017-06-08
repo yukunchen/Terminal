@@ -167,8 +167,6 @@ public:
     void SetAttributes(_In_ const TextAttribute attributes);
     void SetPopupAttributes(_In_ const TextAttribute* const pPopupAttributes);
 
-    HRESULT VtEraseAll();
-    
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
                        _In_ IAccessibilityNotifier *pNotifier,

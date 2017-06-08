@@ -42,9 +42,9 @@ namespace Microsoft
 
                 HRESULT PaintBackground();
                 HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
-                                        _In_reads_(cchLine) const unsigned char* const rgWidths,
                                         _In_ size_t const cchLine,
                                         _In_ COORD const coordTarget,
+                                        _In_ size_t const cchCharWidths,
                                         _In_ bool const fTrimLeft);
                 HRESULT PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget);
                 HRESULT PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);

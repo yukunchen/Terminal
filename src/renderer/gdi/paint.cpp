@@ -230,9 +230,10 @@ HRESULT GdiEngine::PaintBackground()
 // - This will now be cached in a PolyText buffer and flushed periodically instead of drawing every individual segment. Note this means that the PolyText buffer must be flushed before some operations (changing the brush color, drawing lines on top of the characters, inverting for cursor/selection, etc.)
 // Arguments:
 // - pwsLine - string of text to be written
-// - rgWidths - array specifying how many column widths that the console is expecting each character to take
 // - cchLine - length of line to be read
 // - coord - character coordinate target to render within viewport
+// - cchCharWidths - This is the length of the string before double-wide characters are stripped. Used for determining clipping rectangle size 
+//                 - The clipping rectangle is the font width * this many characters expected.
 // - fTrimLeft - This specifies whether to trim one character width off the left side of the output. Used for drawing the right-half only of a double-wide character.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
@@ -246,9 +247,9 @@ HRESULT GdiEngine::PaintBackground()
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
 HRESULT GdiEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
-                                   _In_reads_(cchLine) const unsigned char* const rgWidths,
                                    _In_ size_t const cchLine,
                                    _In_ COORD const coord,
+                                   _In_ size_t const cchCharWidths,
                                    _In_ bool const fTrimLeft)
 {
     // Exit early if there are no lines to draw.
@@ -259,26 +260,14 @@ HRESULT GdiEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
 
     POLYTEXTW* const pPolyTextLine = &_pPolyText[_cPolyText];
 
-    wistd::unique_ptr<wchar_t[]> pwsPoly = wil::make_unique_nothrow<wchar_t[]>(cchLine);
+    PWCHAR pwsPoly = new wchar_t[cchLine];
     RETURN_IF_NULL_ALLOC(pwsPoly);
 
-    wmemcpy_s(pwsPoly.get(), cchLine, pwsLine, cchLine);
+    wmemcpy_s(pwsPoly, cchLine, pwsLine, cchLine);
 
     COORD const coordFontSize = _GetFontSize();
 
-    wistd::unique_ptr<int[]> rgdxPoly = wil::make_unique_nothrow<int[]>(cchLine);
-    RETURN_IF_NULL_ALLOC(rgdxPoly);
-
-    // Sum up the total widths the entire line/run is expected to take while
-    // copying the pixel widths into a structure to direct GDI how many pixels to use per character.
-    size_t cchCharWidths = 0;
-    for (size_t i = 0; i < cchLine; i++)
-    {
-        rgdxPoly[i] = rgWidths[i] * coordFontSize.X;
-        cchCharWidths += rgWidths[i];
-    }
-
-    pPolyTextLine->lpstr = pwsPoly.release();
+    pPolyTextLine->lpstr = pwsPoly;
     pPolyTextLine->n = (UINT)cchLine;
     pPolyTextLine->x = ptDraw.x;
     pPolyTextLine->y = ptDraw.y;
@@ -287,7 +276,6 @@ HRESULT GdiEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
     pPolyTextLine->rcl.top = pPolyTextLine->y;
     pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + ((SHORT)cchCharWidths * coordFontSize.X);
     pPolyTextLine->rcl.bottom = pPolyTextLine->rcl.top + coordFontSize.Y;
-    pPolyTextLine->pdx = rgdxPoly.release();
 
     if (fTrimLeft)
     {
@@ -327,13 +315,6 @@ HRESULT GdiEngine::_FlushBufferLines()
             if (nullptr != _pPolyText[iPoly].lpstr)
             {
                 delete[] _pPolyText[iPoly].lpstr;
-                _pPolyText[iPoly].lpstr = nullptr;
-            }
-
-            if (nullptr != _pPolyText[iPoly].pdx)
-            {
-                delete[] _pPolyText[iPoly].pdx;
-                _pPolyText[iPoly].pdx = nullptr;
             }
         }
 

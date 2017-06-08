@@ -39,12 +39,13 @@ bool GdiEngine::IsCharFullWidthByFont(_In_ WCHAR const wch)
 {
     bool isFullWidth = false;
 
+    
     if (_IsFontTrueType())
     {
         ABC abc;
         if (GetCharABCWidthsW(_hdcMemoryContext, wch, wch, &abc))
         {
-            int const totalWidth = abc.abcA + abc.abcB + abc.abcC;
+            int const totalWidth = abc.abcB;
 
             isFullWidth = totalWidth > _GetFontSize().X;
         }

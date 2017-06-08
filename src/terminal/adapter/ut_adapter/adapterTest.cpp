@@ -558,12 +558,6 @@ public:
         return _fPrivateEnableAlternateScrollResult;
     }
 
-    virtual BOOL PrivateEraseAll()
-    {
-        Log::Comment(L"PrivateEraseAll MOCK called...");
-        return TRUE;
-    }
-
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {
         pcoord->X++;
@@ -2045,16 +2039,6 @@ public:
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"fEraseScreen", fEraseScreen));
 
         Log::Comment(L"Starting test...");
-
-        // This combiniation is a simple VT api call
-        // Verify that the adapter calls that function, and do nothing else.
-        // This functionality is covered by ScreenBufferTests::EraseAllTests
-        if (eraseType == TermDispatch::EraseType::All && fEraseScreen)
-        {
-            Log::Comment(L"Testing Erase in Display - All");
-            VERIFY_IS_TRUE(_pDispatch->EraseInDisplay(eraseType));
-            return;
-        }
 
         Log::Comment(L"Test 1: Perform standard erase operation.");
         switch (eraseType)

@@ -56,7 +56,6 @@ namespace Microsoft
                 virtual BOOL PrivateEnableButtonEventMouseMode(_In_ bool const fEnabled) = 0;
                 virtual BOOL PrivateEnableAnyEventMouseMode(_In_ bool const fEnabled) = 0;
                 virtual BOOL PrivateEnableAlternateScroll(_In_ bool const fEnabled) = 0;
-                virtual BOOL PrivateEraseAll() = 0;
             };
         };
     };

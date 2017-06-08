@@ -110,7 +110,6 @@ public:
     virtual BOOL PrivateEnableButtonEventMouseMode(_In_ bool const fEnabled);
     virtual BOOL PrivateEnableAnyEventMouseMode(_In_ bool const fEnabled);
     virtual BOOL PrivateEnableAlternateScroll(_In_ bool const fEnabled);
-    virtual BOOL PrivateEraseAll();
 
 private:
     SCREEN_INFORMATION* _pScreenInfo; // not const because switching to the alternate buffer will change this pointer.
