@@ -48,7 +48,11 @@ Telemetry::Telemetry()
     _uiCtrlShiftCProcUsed(0),
     _uiCtrlShiftCRawUsed(0),
     _uiCtrlShiftVProcUsed(0),
-    _uiCtrlShiftVRawUsed(0)
+    _uiCtrlShiftVRawUsed(0),
+    _uiQuickEditCopyProcUsed(0),
+    _uiQuickEditCopyRawUsed(0),
+    _uiQuickEditPasteProcUsed(0),
+    _uiQuickEditPasteRawUsed(0)
 {
     time(&_tStartedAt);
     TraceLoggingRegister(g_hConhostV2EventTraceProvider);
@@ -96,6 +100,30 @@ void Telemetry::LogCtrlShiftVProcUsed()
 void Telemetry::LogCtrlShiftVRawUsed()
 {
     _uiCtrlShiftVRawUsed++;
+    SetUserInteractive();
+}
+
+void Telemetry::LogQuickEditCopyProcUsed()
+{
+    _uiQuickEditCopyProcUsed++;
+    SetUserInteractive();
+}
+
+void Telemetry::LogQuickEditCopyRawUsed()
+{
+    _uiQuickEditCopyRawUsed++;
+    SetUserInteractive();
+}
+
+void Telemetry::LogQuickEditPasteProcUsed()
+{
+    _uiQuickEditPasteProcUsed++;
+    SetUserInteractive();
+}
+
+void Telemetry::LogQuickEditPasteRawUsed()
+{
+    _uiQuickEditPasteRawUsed++;
     SetUserInteractive();
 }
 
@@ -342,6 +370,10 @@ void Telemetry::WriteFinalTraceLog()
                 TraceLoggingUInt32(_uiCtrlShiftCRawUsed, "CtrlShiftCRawUsed"),
                 TraceLoggingUInt32(_uiCtrlShiftVProcUsed, "CtrlShiftVProcUsed"),
                 TraceLoggingUInt32(_uiCtrlShiftVRawUsed, "CtrlShiftVRawUsed"),
+                TraceLoggingUInt32(_uiQuickEditCopyProcUsed, "QuickEditCopyProcUsed"),
+                TraceLoggingUInt32(_uiQuickEditCopyRawUsed, "QuickEditCopyRawUsed"),
+                TraceLoggingUInt32(_uiQuickEditPasteProcUsed, "QuickEditPasteProcUsed"),
+                TraceLoggingUInt32(_uiQuickEditPasteRawUsed, "QuickEditPasteRawUsed"),
                 TraceLoggingBool(ServiceLocator::LocateGlobals()->getConsoleInformation()->LinkTitle == nullptr, "LaunchedFromShortcut"),
                 // Normally we would send out a single array containing the name and count,
                 // but that's difficult to do with our telemetry system, so send out two separate arrays.
