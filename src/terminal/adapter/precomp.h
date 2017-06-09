@@ -29,3 +29,5 @@ Abstract:
 #include <wil\Common.h>
 #include <wil\Result.h>
 
+
+#include "..\..\inc\conattrs.hpp"
