@@ -130,6 +130,7 @@ namespace Microsoft
                 bool _EraseAreaHelper(_In_ COORD const coordStartPosition, _In_ COORD const coordLastPosition, _In_ WORD const wFillColor);
                 bool _EraseSingleLineDistanceHelper(_In_ COORD const coordStartPosition, _In_ DWORD const dwLength, _In_ WORD const wFillColor) const;
                 bool _EraseScrollback();
+                bool _EraseAll();
                 void _SetGraphicsOptionHelper(_In_ GraphicsOptions const opt, _Inout_ WORD* const pAttr) const;
                 bool _InsertDeleteHelper(_In_ unsigned int const uiCount, _In_ bool const fIsInsert) const;
                 bool _ScrollMovement(_In_ ScrollDirection const dir, _In_ unsigned int const uiDistance) const;

@@ -142,7 +142,8 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
     // Validate the argument size and call the API.
     if ((Message->Descriptor.InputSize < sizeof(CONSOLE_MSG_HEADER)) ||
         (Message->msgHeader.ApiDescriptorSize > sizeof(Message->u)) ||
-        (Message->msgHeader.ApiDescriptorSize > Message->Descriptor.InputSize - sizeof(CONSOLE_MSG_HEADER)) || (Message->msgHeader.ApiDescriptorSize < Descriptor->RequiredSize))
+        (Message->msgHeader.ApiDescriptorSize > Message->Descriptor.InputSize - sizeof(CONSOLE_MSG_HEADER)) ||
+        (Message->msgHeader.ApiDescriptorSize < Descriptor->RequiredSize))
     {
         Status = STATUS_ILLEGAL_FUNCTION;
         goto Complete;
@@ -154,9 +155,15 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
     Message->State.WriteOffset = Message->msgHeader.ApiDescriptorSize;
     Message->State.ReadOffset = Message->msgHeader.ApiDescriptorSize + sizeof(CONSOLE_MSG_HEADER);
 
-    // TODO: MSFT 9574400: This currently causes an issue with double printing some lines. To be corrected.
-    //Status = NTSTATUS_FROM_HRESULT((*Descriptor->Routine) (Message, &ReplyPending));
-    Status = (*Descriptor->Routine)(Message, &ReplyPending);
+    // Unfortunately, we can't be as clear-cut with our error codes as we'd like since we have some callers that take
+    // hard dependencies on NTSTATUS codes that aren't readily expressible as an HRESULT. There's currently only one
+    // such known code -- STATUS_BUFFER_TOO_SMALL. There's a conlibk dependency on this being returned from the console
+    // alias API.
+	Status = (*Descriptor->Routine)(Message, &ReplyPending);
+	if (Status != STATUS_BUFFER_TOO_SMALL)
+	{
+        Status = NTSTATUS_FROM_HRESULT(Status);
+	}
 
     if (!ReplyPending)
     {

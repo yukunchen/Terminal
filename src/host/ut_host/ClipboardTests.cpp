@@ -61,7 +61,7 @@ class ClipboardTests
     void SetupRetrieveFromBuffers(bool fLineSelection, SMALL_RECT** prgsrSelection, PWCHAR** prgTempRows, size_t** prgTempRowLengths)
     {
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
-        // Please see CommonState.cpp for information on the buffer state per row, the row contents, etc.
+        // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
         // set up and try to retrieve the first 4 rows from the buffer
         SCREEN_INFORMATION* pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
@@ -144,7 +144,7 @@ class ClipboardTests
     TEST_METHOD(TestRetrieveFromBuffer)
     {
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
-        // Please see CommonState.cpp for information on the buffer state per row, the row contents, etc.
+        // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
         SMALL_RECT* rgsrSelection = nullptr;
         PWCHAR* rgTempRows = nullptr;
@@ -153,7 +153,7 @@ class ClipboardTests
         SetupRetrieveFromBuffers(false, &rgsrSelection, &rgTempRows, &rgTempRowLengths);
 
         // verify trailing bytes were trimmed
-        // there are 2 double-byte characters in our sample string (see CommonState.cpp for sample)
+        // there are 2 double-byte characters in our sample string (see CommonState.hpp for sample)
         // the width is right - left
         VERIFY_ARE_EQUAL((short)wcslen(rgTempRows[0]), rgsrSelection[0].Right - rgsrSelection[0].Left);
 
@@ -182,7 +182,7 @@ class ClipboardTests
     TEST_METHOD(TestRetrieveLineSelectionFromBuffer)
     {
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
-        // Please see CommonState.cpp for information on the buffer state per row, the row contents, etc.
+        // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
         SMALL_RECT* rgsrSelection = nullptr;
         PWCHAR* rgTempRows = nullptr;

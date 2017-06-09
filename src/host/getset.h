@@ -60,3 +60,4 @@ NTSTATUS DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable);
 NTSTATUS DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ int const iXtermTableEntry, _In_ const bool fIsForeground);
 NTSTATUS DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ COLORREF const rgbColor, _In_ const bool fIsForeground);
 
+NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* pScreenInfo);

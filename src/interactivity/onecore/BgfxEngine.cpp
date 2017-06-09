@@ -126,9 +126,9 @@ HRESULT BgfxEngine::PaintBackground()
     return S_OK;
 }
 
-HRESULT BgfxEngine::PaintBufferLine(PCWCHAR const pwsLine, size_t const cchLine, COORD const coord, size_t const cchCharWidths, bool const fTrimLeft)
+HRESULT BgfxEngine::PaintBufferLine(PCWCHAR const pwsLine, const unsigned char* const rgWidths, size_t const cchLine, COORD const coord, bool const fTrimLeft)
 {
-    UNREFERENCED_PARAMETER(cchCharWidths);
+    UNREFERENCED_PARAMETER(rgWidths);
     UNREFERENCED_PARAMETER(fTrimLeft);
 
     PVOID NewRunBase = (PVOID)(_sharedViewBase + (coord.Y * 2 * _runLength) + _runLength);
