@@ -24,9 +24,6 @@
     <ClCompile Include="ClipboardTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CommonState.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DbcsTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -60,15 +57,18 @@
     <ClCompile Include="InputBufferTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ReadWaitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CommonState.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="UnicodeLiteral.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\precomp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\CommonState.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

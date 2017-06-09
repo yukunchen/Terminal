@@ -144,12 +144,12 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _
     else if (propertyId == UIA_IsKeyboardFocusablePropertyId)
     {
         pVariant->vt = VT_BOOL;
-        pVariant->boolVal = VARIANT_FALSE;
+        pVariant->boolVal = VARIANT_TRUE;
     }
     else if (propertyId == UIA_HasKeyboardFocusPropertyId)
     {
         pVariant->vt = VT_BOOL;
-        pVariant->boolVal = VARIANT_FALSE;
+        pVariant->boolVal = VARIANT_TRUE;
     }
     else if (propertyId == UIA_ProviderDescriptionPropertyId)
     {
@@ -297,13 +297,21 @@ HRESULT WindowUiaProvider::_EnsureValidHwnd() const
     return S_OK;
 }
 
-ScreenInfoUiaProvider* WindowUiaProvider::_GetScreenInfoProvider() const
+ScreenInfoUiaProvider* WindowUiaProvider::_GetScreenInfoProvider()
 {
     ASSERT(_pWindow != nullptr);
 
     ScreenInfoUiaProvider* pProvider = nullptr;
     SCREEN_INFORMATION* const pScreenInfo = _pWindow->GetScreenInfo();
-    pProvider = new ScreenInfoUiaProvider(_pWindow, pScreenInfo);
+    try
+    {
+        pProvider = new ScreenInfoUiaProvider(_pWindow, pScreenInfo, this);
+    }
+    catch(...)
+    {
+        return nullptr;
+    }
+    this->AddRef();
 
     return pProvider;
 }
