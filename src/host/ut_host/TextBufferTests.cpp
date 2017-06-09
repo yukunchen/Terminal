@@ -600,6 +600,7 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     Log::Comment(L"Case 1 \"\\E[38;2;64;128;255mX\\E[49mX\\E[m\"");
     
     wchar_t* sequence = L"\x1b[38;2;64;128;255mX\x1b[49mX\x1b[m";
+
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
     const short x = cursor->GetPosition().X;
     const short y = cursor->GetPosition().Y;
