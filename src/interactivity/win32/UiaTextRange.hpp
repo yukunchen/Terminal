@@ -95,8 +95,8 @@ namespace Microsoft
                     ~UiaTextRange();
 
 
-                    const Endpoint getStart() const;
-                    const Endpoint getEnd() const;
+                    const Endpoint GetStart() const;
+                    const Endpoint GetEnd() const;
                     const bool IsDegenerate() const;
 
                     // IUnknown methods

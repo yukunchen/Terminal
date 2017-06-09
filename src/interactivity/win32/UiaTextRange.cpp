@@ -115,12 +115,12 @@ UiaTextRange::~UiaTextRange()
     (static_cast<IUnknown*>(_pProvider))->Release();
 }
 
-const Endpoint UiaTextRange::getStart() const
+const Endpoint UiaTextRange::GetStart() const
 {
     return _start;
 }
 
-const Endpoint UiaTextRange::getEnd() const
+const Endpoint UiaTextRange::GetEnd() const
 {
     return _end;
 }
@@ -201,8 +201,8 @@ IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ 
     UiaTextRange* other = static_cast<UiaTextRange*>(pRange);
     if (other)
     {
-        *pRetVal = !!(_start == other->getStart() &&
-                      _end == other->getEnd() &&
+        *pRetVal = !!(_start == other->GetStart() &&
+                      _end == other->GetEnd() &&
                       _degenerate == other->IsDegenerate());
     }
     return S_OK;
@@ -225,11 +225,11 @@ IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endp
     Endpoint theirValue;
     if (targetEndpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
     {
-        theirValue = range->getStart();
+        theirValue = range->GetStart();
     }
     else
     {
-        theirValue = range->getEnd();
+        theirValue = range->GetEnd();
     }
 
     // get the values of our endpoint
@@ -595,11 +595,11 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
     Endpoint newValue;
     if (targetEndpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
     {
-        newValue = range->getStart();
+        newValue = range->GetStart();
     }
     else
     {
-        newValue = range->getEnd();
+        newValue = range->GetEnd();
     }
 
     // get the endpoint that we're changing
