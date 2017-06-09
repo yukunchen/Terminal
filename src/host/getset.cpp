@@ -717,7 +717,7 @@ HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ 
 
 HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta)
 {
-    TextAttribute OldAttributes = pScreenInfo->GetAttributes();
+    const TextAttribute OldAttributes = pScreenInfo->GetAttributes();
     TextAttribute NewAttributes;
 
     NewAttributes.SetFrom(OldAttributes);
@@ -1075,7 +1075,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(_In_ SCREEN_INFORMATION* pScreenInfo)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
-    auto viewport = pScreenInfo->GetBufferViewport();
+    const SMALL_RECT viewport = pScreenInfo->GetBufferViewport();
     COORD newCursorPosition = pScreenInfo->TextInfo->GetCursor()->GetPosition();
 
     // If the cursor is at the top of the viewport, we don't want to shift the viewport up.
