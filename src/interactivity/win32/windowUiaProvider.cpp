@@ -15,6 +15,8 @@ using namespace Microsoft::Console::Interactivity::Win32;
 
 WindowUiaProvider::WindowUiaProvider(_In_ Window* const pWindow) :
     _pWindow(THROW_HR_IF_NULL(E_INVALIDARG, pWindow)),
+    _signalEventFiring{ false },
+    _navigateEventFiring{ false },
     _cRefs(1)
 {
 
@@ -30,9 +32,11 @@ HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
     IRawElementProviderSimple* pProvider;
     HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
                                       reinterpret_cast<void**>(&pProvider));
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr) && !_signalEventFiring)
     {
+        _signalEventFiring = true;
         UiaRaiseAutomationEvent(pProvider, id);
+        _signalEventFiring = false;
     }
     return hr;
 }
@@ -193,9 +197,11 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
         IRawElementProviderSimple* pSimpleProvider;
         HRESULT hr = (*ppProvider)->QueryInterface(__uuidof(IRawElementProviderSimple),
                                                    reinterpret_cast<void**>(&pSimpleProvider));
-        if (SUCCEEDED(hr))
+        if (SUCCEEDED(hr) && !_navigateEventFiring)
         {
+            _navigateEventFiring = true;
             UiaRaiseAutomationEvent(pSimpleProvider, UIA_AutomationFocusChangedEventId);
+            _navigateEventFiring = false;
         }
     }
 
@@ -311,7 +317,6 @@ ScreenInfoUiaProvider* WindowUiaProvider::_GetScreenInfoProvider()
     {
         return nullptr;
     }
-    this->AddRef();
 
     return pProvider;
 }
