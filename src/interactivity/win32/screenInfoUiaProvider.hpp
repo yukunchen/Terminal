@@ -84,6 +84,7 @@ namespace Microsoft
                     SCREEN_INFORMATION* const _pScreenInfo;
                     Window* const _pWindow;
                     WindowUiaProvider* const _pUiaParent;
+                    bool _focusEventFiring;
 
                     const COORD _getScreenBufferCoords() const;
                 };
