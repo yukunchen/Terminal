@@ -1091,7 +1091,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(_In_ SCREEN_INFORMATION* pScreenInfo)
     else 
     {
         // Cursor is at the top of the viewport
-        auto bufferSize = pScreenInfo->GetScreenBufferSize();
+        const COORD bufferSize = pScreenInfo->GetScreenBufferSize();
         // Rectangle to cut out of the existing buffer
         SMALL_RECT srScroll;
         srScroll.Left = 0;
@@ -1308,7 +1308,7 @@ NTSTATUS DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable)
 //  The ScreenBuffer to perform the erase on.
 // Return value:
 // - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
-NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* pScreenInfo)
+NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo)
 {
     return NTSTATUS_FROM_HRESULT(pScreenInfo->GetActiveBuffer()->VtEraseAll());
 }
