@@ -310,6 +310,12 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         return S_OK;
     }
 
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    auto Unlock = wil::ScopeExit([&]
+    {
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+    });
+
     HRESULT hr;
 
     // get the selection rects
@@ -328,7 +334,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
 
     // stuff the selected lines into the safe array
     TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
-    const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
     const COORD screenBufferCoords = _getScreenBufferCoords();
     const int totalLines = screenBufferCoords.Y;
 
@@ -377,10 +382,14 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    auto Unlock = wil::ScopeExit([&]
+    {
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+    });
+
     TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
     const SMALL_RECT viewport = _pScreenInfo->GetBufferViewport();
-    const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
-    const size_t charWidth = viewport.Right - viewport.Left + 1;
     const COORD screenBufferCoords = _getScreenBufferCoords();
     const int totalLines = screenBufferCoords.Y;
 
@@ -443,7 +452,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSim
     UNREFERENCED_PARAMETER(childElement);
 
     TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
-    const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
 
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
@@ -467,7 +475,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
                                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
     TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
-    const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
 
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
@@ -491,7 +498,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
 IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
     TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
-    const FontInfo currentFont = *pOutputBuffer->GetCurrentFont();
     const int documentLines = pOutputBuffer->TotalRowCount();
     const int lineWidth = _getScreenBufferCoords().X;
 
