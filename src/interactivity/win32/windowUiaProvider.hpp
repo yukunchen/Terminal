@@ -80,6 +80,9 @@ namespace Microsoft
                     HRESULT _EnsureValidHwnd() const;
 
                     ScreenInfoUiaProvider* _GetScreenInfoProvider();
+
+                    bool _signalEventFiring;
+                    bool _navigateEventFiring;
                 };
             }
         }
