@@ -33,6 +33,7 @@ HRESULT DoSrvScrollConsoleScreenBufferW(_In_ SCREEN_INFORMATION* pScreenInfo,
                                         _In_ WORD const attrFill);
 
 HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute);
+HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute, _In_ bool const fForeground, _In_ const bool fBackground, _In_ const bool fMeta);
 NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attributes, _In_ WORD PopupAttributes, _In_ BOOL UpdateWholeScreen);
 
 NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode);
@@ -59,4 +60,4 @@ NTSTATUS DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable);
 NTSTATUS DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ int const iXtermTableEntry, _In_ const bool fIsForeground);
 NTSTATUS DoSrvPrivateSetConsoleRGBTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ COLORREF const rgbColor, _In_ const bool fIsForeground);
 
-NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* pScreenInfo);
+NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo);

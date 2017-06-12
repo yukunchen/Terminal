@@ -79,6 +79,10 @@ void AdaptDispatch::_SetGraphicsOptionHelper(_In_ GraphicsOptions const opt, _In
         *pAttr |= _wDefaultTextAttributes;
         // Clear out any stored brightness state.
         _wBrightnessState = 0;
+
+        _fChangedForeground = true;
+        _fChangedBackground = true;
+        _fChangedMetaAttrs = true;
         break;
     case GraphicsOptions::BoldBright:
         *pAttr |= FOREGROUND_INTENSITY;
@@ -86,150 +90,190 @@ void AdaptDispatch::_SetGraphicsOptionHelper(_In_ GraphicsOptions const opt, _In
         // This is so that 9x series sequences, which are always bright. don't interfere with setting this state.
         // 3x sequences are ONLY bright if this flag is set, and without this the brightness of a 9x could bleed into a 3x.
         _wBrightnessState |= FOREGROUND_INTENSITY;
+
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::Negative:
         *pAttr |= COMMON_LVB_REVERSE_VIDEO;
+        _fChangedMetaAttrs = true;
         break;
     case GraphicsOptions::Underline:
         *pAttr |= COMMON_LVB_UNDERSCORE;
+        _fChangedMetaAttrs = true;
         break;
     case GraphicsOptions::Positive:
         *pAttr &= ~COMMON_LVB_REVERSE_VIDEO;
+        _fChangedMetaAttrs = true;
         break;
     case GraphicsOptions::NoUnderline:
         *pAttr &= ~COMMON_LVB_UNDERSCORE;
+        _fChangedMetaAttrs = true;
         break;
     case GraphicsOptions::ForegroundBlack:
         s_DisableAllColors(pAttr, true); // turn off all color flags first.
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::ForegroundBlue:
         s_DisableAllColors(pAttr, true); // turn off all color flags first.
         *pAttr |= FOREGROUND_BLUE;
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::ForegroundGreen:
         s_DisableAllColors(pAttr, true); // turn off all color flags first.
         *pAttr |= FOREGROUND_GREEN;
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::ForegroundCyan:
         s_DisableAllColors(pAttr, true); // turn off all color flags first.
         *pAttr |= FOREGROUND_BLUE | FOREGROUND_GREEN;
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::ForegroundRed:
         s_DisableAllColors(pAttr, true); // turn off all color flags first.
         *pAttr |= FOREGROUND_RED;
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::ForegroundMagenta:
         s_DisableAllColors(pAttr, true); // turn off all color flags first.
         *pAttr |= FOREGROUND_BLUE | FOREGROUND_RED;
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::ForegroundYellow:
         s_DisableAllColors(pAttr, true); // turn off all color flags first.
         *pAttr |= FOREGROUND_GREEN | FOREGROUND_RED;
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::ForegroundWhite:
         s_DisableAllColors(pAttr, true); // turn off all color flags first.
         *pAttr |= FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::ForegroundDefault:
         s_ApplyColors(pAttr, _wDefaultTextAttributes, true);
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::BackgroundBlack:
         s_DisableAllColors(pAttr, false); // turn off all color flags first.
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BackgroundBlue:
         s_DisableAllColors(pAttr, false); // turn off all color flags first.
         *pAttr |= BACKGROUND_BLUE;
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BackgroundGreen:
         s_DisableAllColors(pAttr, false); // turn off all color flags first.
         *pAttr |= BACKGROUND_GREEN;
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BackgroundCyan:
         s_DisableAllColors(pAttr, false); // turn off all color flags first.
         *pAttr |= BACKGROUND_BLUE | BACKGROUND_GREEN;
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BackgroundRed:
         s_DisableAllColors(pAttr, false); // turn off all color flags first.
         *pAttr |= BACKGROUND_RED;
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BackgroundMagenta:
         s_DisableAllColors(pAttr, false); // turn off all color flags first.
         *pAttr |= BACKGROUND_BLUE | BACKGROUND_RED;
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BackgroundYellow:
         s_DisableAllColors(pAttr, false); // turn off all color flags first.
         *pAttr |= BACKGROUND_GREEN | BACKGROUND_RED;
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BackgroundWhite:
         s_DisableAllColors(pAttr, false); // turn off all color flags first.
         *pAttr |= BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED;
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BackgroundDefault:
         s_ApplyColors(pAttr, _wDefaultTextAttributes, false);
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BrightForegroundBlack:
         _SetGraphicsOptionHelper(GraphicsOptions::ForegroundBlack, pAttr);
         *pAttr |= FOREGROUND_INTENSITY;
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::BrightForegroundBlue:
         _SetGraphicsOptionHelper(GraphicsOptions::ForegroundBlue, pAttr);
         *pAttr |= FOREGROUND_INTENSITY;
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::BrightForegroundGreen:
         _SetGraphicsOptionHelper(GraphicsOptions::ForegroundGreen, pAttr);
         *pAttr |= FOREGROUND_INTENSITY;
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::BrightForegroundCyan:
         _SetGraphicsOptionHelper(GraphicsOptions::ForegroundCyan, pAttr);
         *pAttr |= FOREGROUND_INTENSITY;
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::BrightForegroundRed:
         _SetGraphicsOptionHelper(GraphicsOptions::ForegroundRed, pAttr);
         *pAttr |= FOREGROUND_INTENSITY;
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::BrightForegroundMagenta:
         _SetGraphicsOptionHelper(GraphicsOptions::ForegroundMagenta, pAttr);
         *pAttr |= FOREGROUND_INTENSITY;
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::BrightForegroundYellow:
         _SetGraphicsOptionHelper(GraphicsOptions::ForegroundYellow, pAttr);
         *pAttr |= FOREGROUND_INTENSITY;
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::BrightForegroundWhite:
         _SetGraphicsOptionHelper(GraphicsOptions::ForegroundWhite, pAttr);
         *pAttr |= FOREGROUND_INTENSITY;
+        _fChangedForeground = true;
         break;
     case GraphicsOptions::BrightBackgroundBlack:
         _SetGraphicsOptionHelper(GraphicsOptions::BackgroundBlack, pAttr);
         *pAttr |= BACKGROUND_INTENSITY;
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BrightBackgroundBlue:
         _SetGraphicsOptionHelper(GraphicsOptions::BackgroundBlue, pAttr);
         *pAttr |= BACKGROUND_INTENSITY;
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BrightBackgroundGreen:
         _SetGraphicsOptionHelper(GraphicsOptions::BackgroundGreen, pAttr);
         *pAttr |= BACKGROUND_INTENSITY;
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BrightBackgroundCyan:
         _SetGraphicsOptionHelper(GraphicsOptions::BackgroundCyan, pAttr);
         *pAttr |= BACKGROUND_INTENSITY;
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BrightBackgroundRed:
         _SetGraphicsOptionHelper(GraphicsOptions::BackgroundRed, pAttr);
         *pAttr |= BACKGROUND_INTENSITY;
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BrightBackgroundMagenta:
         _SetGraphicsOptionHelper(GraphicsOptions::BackgroundMagenta, pAttr);
         *pAttr |= BACKGROUND_INTENSITY;
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BrightBackgroundYellow:
         _SetGraphicsOptionHelper(GraphicsOptions::BackgroundYellow, pAttr);
         *pAttr |= BACKGROUND_INTENSITY;
+        _fChangedBackground = true;
         break;
     case GraphicsOptions::BrightBackgroundWhite:
         _SetGraphicsOptionHelper(GraphicsOptions::BackgroundWhite, pAttr);
         *pAttr |= BACKGROUND_INTENSITY;
+        _fChangedBackground = true;
         break;
     }
     // Apply the stored brightness state
@@ -352,8 +396,12 @@ bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOpti
             else
             {
                 _SetGraphicsOptionHelper(opt, &attr);
-                fSuccess = !!_pConApi->SetConsoleTextAttribute(attr);
 
+                fSuccess = !!_pConApi->PrivateSetLegacyAttributes(attr, _fChangedForeground, _fChangedBackground, _fChangedMetaAttrs);
+
+                _fChangedForeground = false;
+                _fChangedBackground = false;
+                _fChangedMetaAttrs = false;
             }
         }
 

@@ -22,8 +22,7 @@
 #pragma hdrstop
 
 // The following mask is used to test for valid text attributes.
-#define VALID_TEXT_ATTRIBUTES (FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY | \
-COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE | COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE )
+#define VALID_TEXT_ATTRIBUTES (FG_ATTRS | BG_ATTRS | META_ATTRS)
 
 #define INPUT_MODES (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT)
 #define OUTPUT_MODES (ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN | ENABLE_LVB_GRID_WORLDWIDE)
@@ -716,6 +715,58 @@ HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ 
     RETURN_NTSTATUS(SetScreenColors(pScreenInfo, Attribute, pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE));
 }
 
+HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta)
+{
+    const TextAttribute OldAttributes = pScreenInfo->GetAttributes();
+    TextAttribute NewAttributes;
+
+    NewAttributes.SetFrom(OldAttributes);
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+
+    // Always update the legacy component. This prevents the 1m in "^[[32m^[[1m"
+    //  from resetting the colors set by the 32m. (for example)
+    WORD wNewLegacy = NewAttributes.GetLegacyAttributes();
+    if (fForeground)
+    {
+        UpdateFlagsInMask(wNewLegacy, FG_ATTRS, Attribute);
+    }
+    if (fBackground)
+    {
+        UpdateFlagsInMask(wNewLegacy, BG_ATTRS, Attribute);
+    }
+    if (fMeta)
+    {
+        UpdateFlagsInMask(wNewLegacy, META_ATTRS, Attribute);
+    }
+    NewAttributes.SetFromLegacy(wNewLegacy);
+ 
+    if (!OldAttributes.IsLegacy())
+    {
+        // The previous call to SetFromLegacy is going to trash our RGB.
+        // Restore it.
+        NewAttributes.SetForeground(OldAttributes.GetRgbForeground());
+        NewAttributes.SetBackground(OldAttributes.GetRgbBackground());
+        if (fForeground)
+        {
+            COLORREF rgbColor = gci->GetColorTableEntry(Attribute & FG_ATTRS);
+            NewAttributes.SetForeground(rgbColor);
+        }
+        if (fBackground)
+        {
+            COLORREF rgbColor = gci->GetColorTableEntry((Attribute >> 4) & FG_ATTRS);
+            NewAttributes.SetBackground(rgbColor);
+        }
+        if (fMeta)
+        {
+            NewAttributes.SetMetaAttributes(Attribute);
+        }
+    }
+
+    pScreenInfo->SetAttributes(NewAttributes);
+
+    return STATUS_SUCCESS;
+}
+
 NTSTATUS DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ int const iXtermTableEntry, _In_ bool fIsForeground)
 {
     TextAttribute NewAttributes;
@@ -1024,7 +1075,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(_In_ SCREEN_INFORMATION* pScreenInfo)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
-    auto viewport = pScreenInfo->GetBufferViewport();
+    const SMALL_RECT viewport = pScreenInfo->GetBufferViewport();
     COORD newCursorPosition = pScreenInfo->TextInfo->GetCursor()->GetPosition();
 
     // If the cursor is at the top of the viewport, we don't want to shift the viewport up.
@@ -1040,7 +1091,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(_In_ SCREEN_INFORMATION* pScreenInfo)
     else 
     {
         // Cursor is at the top of the viewport
-        auto bufferSize = pScreenInfo->GetScreenBufferSize();
+        const COORD bufferSize = pScreenInfo->GetScreenBufferSize();
         // Rectangle to cut out of the existing buffer
         SMALL_RECT srScroll;
         srScroll.Left = 0;
@@ -1257,7 +1308,7 @@ NTSTATUS DoSrvPrivateEnableAlternateScroll(_In_ bool const fEnable)
 //  The ScreenBuffer to perform the erase on.
 // Return value:
 // - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
-NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* pScreenInfo)
+NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo)
 {
     return NTSTATUS_FROM_HRESULT(pScreenInfo->GetActiveBuffer()->VtEraseAll());
 }
