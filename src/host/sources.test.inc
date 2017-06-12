@@ -20,6 +20,7 @@ C_DEFINES               = $(C_DEFINES) -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTIN
 
 INCLUDES = \
     $(INCLUDES); \
+    ..\..\inc\test; \
     $(SDKTOOLS_INC_PATH)\WexTest\Cue; \
 
 TARGETLIBS = \
