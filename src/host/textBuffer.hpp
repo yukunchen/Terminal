@@ -142,6 +142,8 @@ public:
     bool IsRightVerticalDisplayed() const;
 
     void SetFromLegacy(_In_ const WORD wLegacy);
+    void SetMetaAttributes(_In_ const WORD wMeta);
+    
     void SetFrom(_In_ const TextAttribute& otherAttr);
     bool IsEqual(_In_ const TextAttribute& otherAttr) const;
     bool IsEqualToLegacy(_In_ const WORD wLegacy) const;

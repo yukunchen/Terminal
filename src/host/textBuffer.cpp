@@ -311,6 +311,11 @@ void TextAttribute::SetFromLegacy(_In_ const WORD wLegacy)
     _fUseRgbColor = false;
 }
 
+void TextAttribute::SetMetaAttributes(_In_ const WORD wMeta)
+{
+    UpdateFlagsInMask(_wAttrLegacy, META_ATTRS, wMeta);
+}
+
 void TextAttribute::SetForeground(_In_ const COLORREF rgbForeground)
 {
     _rgbForeground = rgbForeground;
