@@ -41,11 +41,13 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int 
 ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Window* const pParent,
                                              _In_ SCREEN_INFORMATION* const pScreenInfo,
                                              _In_ WindowUiaProvider* const pUiaParent) :
-    _pWindow(pParent),
-    _pScreenInfo(pScreenInfo),
-    _pUiaParent(pUiaParent),
+    _pWindow(THROW_HR_IF_NULL(E_INVALIDARG, pParent)),
+    _pScreenInfo(THROW_HR_IF_NULL(E_INVALIDARG, pScreenInfo)),
+    _pUiaParent(THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
+    _focusEventFiring{ false },
     _cRefs(1)
 {
+    _pUiaParent->AddRef();
 }
 
 ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
@@ -272,9 +274,11 @@ IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 {
     IRawElementProviderSimple* pProvider;
     const HRESULT hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr) && !_focusEventFiring)
     {
+        _focusEventFiring = true;
         UiaRaiseAutomationEvent(pProvider, UIA_AutomationFocusChangedEventId);
+        _focusEventFiring = false;
     }
     return S_OK;
 }
