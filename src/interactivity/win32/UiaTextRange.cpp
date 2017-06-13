@@ -423,13 +423,11 @@ IFACEMETHODIMP UiaTextRange::GetEnclosingElement(_Outptr_result_maybenull_ IRawE
 
 IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 {
-    /*
     ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
         ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
     });
-    */
 
     assert(_start <= _end);
 
