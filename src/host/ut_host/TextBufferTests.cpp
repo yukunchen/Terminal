@@ -839,7 +839,7 @@ void TextBufferTests::TestRgbEraseLine()
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor* const cursor = tbi->GetCursor();
-    psi->OutputMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
     VERIFY_IS_NOT_NULL(cursor);
 

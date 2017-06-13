@@ -988,7 +988,9 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             }
             else
             {
-                AttrRun.SetAttributesFromLegacy(wElement & ~COMMON_LVB_SBCSDBCS);
+                WORD wActual = wElement;
+                ClearAllFlags(wActual, COMMON_LVB_SBCSDBCS);
+                AttrRun.SetAttributesFromLegacy(wActual);
             }
 
             Row->AttrRow.InsertAttrRuns(&AttrRun, 1, (SHORT)(X - AttrRun.GetLength() + 1), X, coordScreenBufferSize.X);
