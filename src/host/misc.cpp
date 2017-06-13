@@ -514,11 +514,18 @@ ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
             else
             {
                 InputRecords[j] = TmpInpRec[i];
+
+                // We have to use a temporary local for the converted value.
+                // We cannot give it the other part of the union as the destination as the conversion
+                // function will determine that both the source and destination are the same memory region and fail.
+                char chConverted;
                 ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
                              &InputRecords[j].Event.KeyEvent.uChar.UnicodeChar,
                              1,
-                             &InputRecords[j].Event.KeyEvent.uChar.AsciiChar,
+                             &chConverted,
                              1);
+
+                InputRecords[j].Event.KeyEvent.uChar.AsciiChar = chConverted;
             }
         }
     }
