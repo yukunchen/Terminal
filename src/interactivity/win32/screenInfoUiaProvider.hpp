@@ -31,13 +31,16 @@ namespace Microsoft
             {
                 class Window;
 
+                class WindowUiaProvider;
+
                 class ScreenInfoUiaProvider final : public IRawElementProviderSimple,
                                                     public IRawElementProviderFragment,
                                                     public ITextProvider
                 {
                 public:
                     ScreenInfoUiaProvider(_In_ Window* const pParent,
-                                          _In_ SCREEN_INFORMATION* const pScreenInfo);
+                                          _In_ SCREEN_INFORMATION* const pScreenInfo,
+                                          _In_ WindowUiaProvider* const pUiaParent);
                     virtual ~ScreenInfoUiaProvider();
 
                     // IUnknown methods
@@ -80,6 +83,8 @@ namespace Microsoft
 
                     SCREEN_INFORMATION* const _pScreenInfo;
                     Window* const _pWindow;
+                    WindowUiaProvider* const _pUiaParent;
+                    bool _focusEventFiring;
 
                     const COORD _getScreenBufferCoords() const;
                 };

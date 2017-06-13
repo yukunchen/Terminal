@@ -15,6 +15,8 @@ using namespace Microsoft::Console::Interactivity::Win32;
 
 WindowUiaProvider::WindowUiaProvider(_In_ Window* const pWindow) :
     _pWindow(THROW_HR_IF_NULL(E_INVALIDARG, pWindow)),
+    _signalEventFiring{ false },
+    _navigateEventFiring{ false },
     _cRefs(1)
 {
 
@@ -30,9 +32,11 @@ HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
     IRawElementProviderSimple* pProvider;
     HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
                                       reinterpret_cast<void**>(&pProvider));
-    if (SUCCEEDED(hr))
+    if (SUCCEEDED(hr) && !_signalEventFiring)
     {
+        _signalEventFiring = true;
         UiaRaiseAutomationEvent(pProvider, id);
+        _signalEventFiring = false;
     }
     return hr;
 }
@@ -144,12 +148,12 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _
     else if (propertyId == UIA_IsKeyboardFocusablePropertyId)
     {
         pVariant->vt = VT_BOOL;
-        pVariant->boolVal = VARIANT_FALSE;
+        pVariant->boolVal = VARIANT_TRUE;
     }
     else if (propertyId == UIA_HasKeyboardFocusPropertyId)
     {
         pVariant->vt = VT_BOOL;
-        pVariant->boolVal = VARIANT_FALSE;
+        pVariant->boolVal = VARIANT_TRUE;
     }
     else if (propertyId == UIA_ProviderDescriptionPropertyId)
     {
@@ -193,9 +197,11 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
         IRawElementProviderSimple* pSimpleProvider;
         HRESULT hr = (*ppProvider)->QueryInterface(__uuidof(IRawElementProviderSimple),
                                                    reinterpret_cast<void**>(&pSimpleProvider));
-        if (SUCCEEDED(hr))
+        if (SUCCEEDED(hr) && !_navigateEventFiring)
         {
+            _navigateEventFiring = true;
             UiaRaiseAutomationEvent(pSimpleProvider, UIA_AutomationFocusChangedEventId);
+            _navigateEventFiring = false;
         }
     }
 
@@ -297,13 +303,20 @@ HRESULT WindowUiaProvider::_EnsureValidHwnd() const
     return S_OK;
 }
 
-ScreenInfoUiaProvider* WindowUiaProvider::_GetScreenInfoProvider() const
+ScreenInfoUiaProvider* WindowUiaProvider::_GetScreenInfoProvider()
 {
     ASSERT(_pWindow != nullptr);
 
     ScreenInfoUiaProvider* pProvider = nullptr;
     SCREEN_INFORMATION* const pScreenInfo = _pWindow->GetScreenInfo();
-    pProvider = new ScreenInfoUiaProvider(_pWindow, pScreenInfo);
+    try
+    {
+        pProvider = new ScreenInfoUiaProvider(_pWindow, pScreenInfo, this);
+    }
+    catch(...)
+    {
+        return nullptr;
+    }
 
     return pProvider;
 }

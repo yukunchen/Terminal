@@ -38,9 +38,16 @@ public:
 
     static Selection& Instance();
 
-    // Key selection generally refers to "mark mode" selection where the cursor is present and used to navigate 100% with the keyboard
-    // Mouse selection means either the block or line mode selection usually initiated by the mouse.
-    // However, Mouse mode can also mean initiated with our shift+directional commands as no block cursor is required for navigation
+    // Key selection generally refers to "mark mode" selection where
+    // the cursor is present and used to navigate 100% with the
+    // keyboard.
+    //
+    // Mouse selection means either the block or line mode selection
+    // usually initiated by the mouse.
+    //
+    // However, Mouse mode can also mean initiated with our
+    // shift+directional commands as no block cursor is required for
+    // navigation.
 
     void InitializeMarkSelection();
     void InitializeMouseSelection(_In_ const COORD coordBufferPos);

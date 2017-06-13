@@ -4,7 +4,7 @@
 # Program Information
 # -------------------------------------
 
-TARGETNAME              = Conhost.Unit.Tests
+TARGETNAME              = Conhost.Interactivity.Win32.Unit.Tests
 TARGETTYPE              = DYNLINK
 DLLDEF                  =
 
@@ -14,19 +14,7 @@ DLLDEF                  =
 
 SOURCES = \
     $(SOURCES) \
-    ApiRoutinesTests.cpp \
-    UtilsTests.cpp \
-    AttrRowTests.cpp \
-    CharRowTests.cpp \
-    DbcsTests.cpp \
-    ScreenBufferTests.cpp \
-    TextBufferTests.cpp \
-    ClipboardTests.cpp \
-    SelectionTests.cpp \
-    Utf8ToWideCharParserTests.cpp \
-    InitTests.cpp \
-    TitleTests.cpp \
-    InputBufferTests.cpp \
+    UiaTextRangeTests.cpp \
     DefaultResource.rc \
 
 # -------------------------------------
