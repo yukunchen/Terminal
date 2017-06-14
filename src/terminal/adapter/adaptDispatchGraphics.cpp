@@ -93,6 +93,11 @@ void AdaptDispatch::_SetGraphicsOptionHelper(_In_ GraphicsOptions const opt, _In
 
         _fChangedForeground = true;
         break;
+    case GraphicsOptions::UnBold:
+        ClearFlag(*pAttr, FOREGROUND_INTENSITY);
+        ClearFlag(_wBrightnessState, FOREGROUND_INTENSITY);
+        _fChangedForeground = true;
+        break;
     case GraphicsOptions::Negative:
         *pAttr |= COMMON_LVB_REVERSE_VIDEO;
         _fChangedMetaAttrs = true;
