@@ -100,17 +100,21 @@ class TextBufferTests
     void TestLastNonSpace(short const cursorPosY);
 
     TEST_METHOD(TestGetLastNonSpaceCharacter);
+    
     TEST_METHOD(TestSetWrapOnCurrentRow);
+    
     TEST_METHOD(TestIncrementCircularBuffer);
+    
     TEST_METHOD(TestMixedRgbAndLegacyForeground);
     TEST_METHOD(TestMixedRgbAndLegacyBackground);
     TEST_METHOD(TestMixedRgbAndLegacyUnderline);
     TEST_METHOD(TestMixedRgbAndLegacyBrightness);
+    
     TEST_METHOD(TestRgbEraseLine);
+    
     TEST_METHOD(TestUnBold);
     TEST_METHOD(TestUnBoldRgb);
     TEST_METHOD(TestComplexUnBold);
-
 
 };
 
@@ -848,7 +852,6 @@ void TextBufferTests::TestRgbEraseLine()
     VERIFY_IS_NOT_NULL(stateMachine);
     VERIFY_IS_NOT_NULL(cursor);
 
-
     cursor->SetXPosition(0);
     // Case 1 - 
     //      Write '\E[48;2;64;128;255X\E[48;2;128;128;255\E[KX'
@@ -899,7 +902,6 @@ void TextBufferTests::TestRgbEraseLine()
     }
 }
 
-
 void TextBufferTests::TestUnBold()
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
@@ -910,7 +912,6 @@ void TextBufferTests::TestUnBold()
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
     VERIFY_IS_NOT_NULL(cursor);
-
 
     cursor->SetXPosition(0);
     // Case 1 - 
@@ -979,7 +980,6 @@ void TextBufferTests::TestUnBoldRgb()
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
     VERIFY_IS_NOT_NULL(cursor);
-
 
     cursor->SetXPosition(0);
     // Case 2 - 
@@ -1052,7 +1052,6 @@ void TextBufferTests::TestComplexUnBold()
     SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
     VERIFY_IS_NOT_NULL(stateMachine);
     VERIFY_IS_NOT_NULL(cursor);
-
 
     cursor->SetXPosition(0);
     // Case 3 - 
