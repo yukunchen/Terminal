@@ -453,17 +453,16 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
     const bool getPartialText = maxLength != -1;
     const TextBufferRow startTextBufferRow = _endpointToTextBufferRow(_start);
     const unsigned int totalRowsInRange = _rowCountInRange();
-    const int firstTextBufferRow = _pOutputBuffer->GetFirstRowIndex();
 
     for (unsigned int i = 0; i < totalRowsInRange; ++i)
     {
         try
         {
-            const ROW* const row = _pOutputBuffer->GetRowByOffset(_normalizeRow(firstTextBufferRow + startTextBufferRow + i));
-            if (row->CharRow.ContainsText())
+            const ROW row = _pOutputBuffer->Rows[_normalizeRow(startTextBufferRow + i)];
+            if (row.CharRow.ContainsText())
             {
-                std::wstring tempString = std::wstring(row->CharRow.Chars + row->CharRow.Left,
-                                                       row->CharRow.Chars + row->CharRow.Right);
+                std::wstring tempString = std::wstring(row.CharRow.Chars + row.CharRow.Left,
+                                                       row.CharRow.Chars + row.CharRow.Right);
                 wstr += tempString;
             }
             wstr += L"\r\n";
