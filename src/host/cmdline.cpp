@@ -376,8 +376,11 @@ bool IsPauseKey(_In_ PKEY_EVENT_RECORD const pKeyEvent)
 
         fIsPauseKey = (pKeySubst != nullptr && pKeySubst->wVirKey == VK_PAUSE);
     }
-
-    fIsPauseKey = fIsPauseKey || (pKeyEvent->wVirtualKeyCode == L'S' && CTRL_BUT_NOT_ALT(pKeyEvent->dwControlKeyState));
+    else
+    {
+        fIsPauseKey = pKeyEvent->wVirtualKeyCode == L'S' && CTRL_BUT_NOT_ALT(pKeyEvent->dwControlKeyState);
+    }
+    
     return fIsPauseKey;
 }
 
