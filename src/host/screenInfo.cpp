@@ -152,6 +152,17 @@ StateMachine* SCREEN_INFORMATION::GetStateMachine() const
     return _pStateMachine;
 }
 
+// Method Description:
+// - returns true if this buffer is in Virtual Terminal Output mode.
+// Arguments:
+// <none>
+// Return Value:
+// true iff this buffer is in Virtual Terminal Output mode.
+bool SCREEN_INFORMATION::InVTMode() const
+{
+    return IsFlagSet(OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+}
+
 // Routine Description:
 // - This routine inserts the screen buffer pointer into the console's list of screen buffers.
 // Arguments:
