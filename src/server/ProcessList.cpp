@@ -92,12 +92,6 @@ void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProce
 
     _processes.remove(pProcessData);
 
-    // If no one is left attached to this host, exit.
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.IsEmpty())
-    {
-        ExitProcess(STATUS_SUCCESS);
-    }
-
     delete pProcessData;
 }
 
