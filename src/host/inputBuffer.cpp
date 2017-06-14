@@ -650,7 +650,7 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD
                     continue;
                 }
                 else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
-                         currEvent.Event.KeyEvent.wVirtualKeyCode == VK_PAUSE || IsPauseKey(&currEvent.Event.KeyEvent))
+                         (currEvent.Event.KeyEvent.wVirtualKeyCode == VK_PAUSE || IsPauseKey(&currEvent.Event.KeyEvent)))
                 {
                     SetFlag(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_SUSPENDED);
                     continue;
