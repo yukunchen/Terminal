@@ -282,7 +282,7 @@ class UiaTextRangeTests
 
         for (auto it = rowMappings.begin(); it != rowMappings.end(); ++it)
         {
-            VERIFY_ARE_EQUAL(it->second, _range->_normalizeRow(it->first));
+            VERIFY_ARE_EQUAL(static_cast<int>(it->second), _range->_normalizeRow(it->first));
         }
     }
 
