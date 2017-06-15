@@ -35,7 +35,7 @@ namespace Microsoft
                                                 public IRawElementProviderFragmentRoot
                 {
                 public:
-                    WindowUiaProvider(_In_ Window* const pWindow);
+                    WindowUiaProvider();
                     virtual ~WindowUiaProvider();
 
                     HRESULT Signal(_In_ EVENTID id);
@@ -74,10 +74,9 @@ namespace Microsoft
                     // Ref counter for COM object
                     ULONG _cRefs;
 
-                    Window* const _pWindow;
-
                     HWND _GetWindowHandle() const;
                     HRESULT _EnsureValidHwnd() const;
+                    static IConsoleWindow* const _getIConsoleWindow();
 
                     ScreenInfoUiaProvider* _GetScreenInfoProvider();
 

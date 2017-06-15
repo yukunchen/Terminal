@@ -73,21 +73,15 @@ namespace Microsoft
                 public:
 
                     // degenerate range
-                    UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                 _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
-                                 _In_ const SCREEN_INFORMATION* const pScreenInfo);
+                    UiaTextRange(_In_ IRawElementProviderSimple* const pProvider);
 
                     // specific range
                     UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                 _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
-                                 _In_ const SCREEN_INFORMATION* const pScreenInfo,
                                  _In_ const Endpoint start,
                                  _In_ const Endpoint end);
 
                     // range from a UiaPoint
                     UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                 _In_ const TEXT_BUFFER_INFO* const pOutputBuffer,
-                                 _In_ const SCREEN_INFORMATION* const pScreenInfo,
                                  _In_ const UiaPoint point);
 
                     UiaTextRange(_In_ const UiaTextRange& a);
@@ -144,10 +138,6 @@ namespace Microsoft
                     IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
 
                 protected:
-                    IRawElementProviderSimple* const _pProvider;
-                    const TEXT_BUFFER_INFO* const _pOutputBuffer;
-                    const SCREEN_INFORMATION* const _pScreenInfo;
-
                     #if _DEBUG
                     // used to debug objects passed back and forth
                     // between the provider and the client
@@ -156,6 +146,8 @@ namespace Microsoft
 
                     void _outputRowConversions();
                     #endif
+
+                    IRawElementProviderSimple* const _pProvider;
 
                 private:
                     // Ref counter for COM object
@@ -169,10 +161,12 @@ namespace Microsoft
 
                     const Viewport _getViewport() const;
                     static HWND _getWindowHandle();
-                    static IConsoleWindow* _getWindow();
+                    static IConsoleWindow* const _getIConsoleWindow();
                     const unsigned int _getTotalRows() const;
                     static const unsigned int _getRowWidth();
                     static const COORD _getScreenBufferCoords();
+                    static SCREEN_INFORMATION* const _getScreenInfo();
+                    static TEXT_BUFFER_INFO* const _getTextBuffer();
 
                     const unsigned int _rowCountInRange() const;
 

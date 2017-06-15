@@ -85,6 +85,7 @@ class UiaTextRangeTests
         _state = new CommonState();
         _state->PrepareGlobalFont();
         _state->PrepareGlobalScreenBuffer();
+        _state->PrepareNewTextBufferInfo();
 
         // set up pointers
         _pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
@@ -94,8 +95,6 @@ class UiaTextRangeTests
         _range = new UiaTextRange
         {
             &_dummyProvider,
-            _pTextBuffer,
-            _pScreenInfo,
             0,
             0
         };
@@ -105,6 +104,7 @@ class UiaTextRangeTests
 
     TEST_METHOD_CLEANUP(MethodCleanup)
     {
+        _state->CleanupNewTextBufferInfo();
         _state->CleanupGlobalScreenBuffer();
         _state->CleanupGlobalFont();
         delete _state;
@@ -127,8 +127,6 @@ class UiaTextRangeTests
         UiaTextRange degenerate
         {
             &_dummyProvider,
-            _pTextBuffer,
-            _pScreenInfo,
             20,
             19
         };
@@ -139,8 +137,6 @@ class UiaTextRangeTests
         UiaTextRange notDegenerate1
         {
             &_dummyProvider,
-            _pTextBuffer,
-            _pScreenInfo,
             20,
             20
         };
@@ -150,8 +146,6 @@ class UiaTextRangeTests
         UiaTextRange notDegenerate2
         {
             &_dummyProvider,
-            _pTextBuffer,
-            _pScreenInfo,
             20,
             35
         };
