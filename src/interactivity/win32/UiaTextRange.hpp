@@ -45,7 +45,7 @@ class UiaTextRangeTests;
 // TextBufferRow with a value of 0 does not necessarily refer to the
 // top row of the console.
 
-typedef unsigned int Row;
+typedef int Row;
 typedef int ViewportRow;
 typedef unsigned int ScreenInfoRow;
 typedef unsigned int TextBufferRow;
@@ -153,6 +153,8 @@ namespace Microsoft
                     // between the provider and the client
                     static unsigned long long id;
                     unsigned long long _id;
+
+                    void _outputRowConversions();
                     #endif
 
                 private:

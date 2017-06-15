@@ -15,6 +15,24 @@ using namespace Microsoft::Console::Interactivity::Win32;
 
 #if _DEBUG
 unsigned long long UiaTextRange::id = 0;
+
+#include <sstream>
+// This is a debugging function that prints out the current
+// relationship between screen info rows, text buffer rows, and
+// endpoints.
+void UiaTextRange::_outputRowConversions()
+{
+    unsigned int totalRows = _getTotalRows();
+    OutputDebugString(L"screenBuffer\ttextBuffer\tendpoint\n");
+    for (unsigned int i = 0; i < totalRows; ++i)
+    {
+        std::wstringstream ss;
+        ss << i << "\t" << _screenInfoRowToTextBufferRow (i) << "\t" << _screenInfoRowToEndpoint(i) << "\n";
+        std::wstring str = ss.str();
+        OutputDebugString(str.c_str());
+    }
+    OutputDebugString(L"\n");
+}
 #endif
 
 
@@ -440,11 +458,11 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
     {
         try
         {
-            const ROW* const row = _pOutputBuffer->GetRowByOffset(startTextBufferRow + i);
-            if (row->CharRow.ContainsText())
+            const ROW row = _pOutputBuffer->Rows[_normalizeRow(startTextBufferRow + i)];
+            if (row.CharRow.ContainsText())
             {
-                std::wstring tempString = std::wstring(row->CharRow.Chars + row->CharRow.Left,
-                                                       row->CharRow.Chars + row->CharRow.Right);
+                std::wstring tempString = std::wstring(row.CharRow.Chars + row.CharRow.Left,
+                                                       row.CharRow.Chars + row.CharRow.Right);
                 wstr += tempString;
             }
             wstr += L"\r\n";
@@ -892,7 +910,7 @@ const unsigned int UiaTextRange::_rowCountInRange() const
 // - the equivalent ScreenInfoRow.
 const ScreenInfoRow UiaTextRange::_textBufferRowToScreenInfoRow(_In_ const TextBufferRow row) const
 {
-    const TextBufferRow firstRowIndex = _pOutputBuffer->GetFirstRowIndex();
+    const int firstRowIndex = _pOutputBuffer->GetFirstRowIndex();
     return _normalizeRow(row - firstRowIndex);
 }
 
