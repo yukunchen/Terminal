@@ -194,6 +194,8 @@ namespace Microsoft
                     static const unsigned int _getViewportHeight(_In_ const Viewport viewport);
                     static const unsigned int _getViewportWidth(_In_ const Viewport viewport);
 
+                    const void _addScreenInfoRowBoundaries(_In_ const ScreenInfoRow screenInfoRow,
+                                                           _In_ std::vector<double>& coords);
                     #ifdef UNIT_TESTING
                     friend class ::UiaTextRangeTests;
                     #endif
