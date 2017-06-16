@@ -1115,14 +1115,14 @@ const ScreenInfoRow UiaTextRange::_endpointToScreenInfoRow(_In_ const Endpoint e
 // - <none>
 // Notes:
 // - alters coords. may throw an exception.
-const void UiaTextRange::_addScreenInfoRowBoundaries(_In_ const ScreenInfoRow screenInfoRow,
-                                                     _In_ std::vector<double>& coords)
+void UiaTextRange::_addScreenInfoRowBoundaries(_In_ const ScreenInfoRow screenInfoRow,
+                                               _Inout_ std::vector<double>& coords)
 {
-    POINT topLeft;
-    POINT bottomRight;
-
     const SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
     const COORD currentFontSize = pScreenInfo->GetScreenFontSize();
+
+    POINT topLeft;
+    POINT bottomRight;
 
     topLeft.x = 0;
     topLeft.y = _screenInfoRowToViewportRow(screenInfoRow) * currentFontSize.Y;
