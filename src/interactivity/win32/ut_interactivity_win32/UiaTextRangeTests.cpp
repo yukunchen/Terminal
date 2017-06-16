@@ -30,40 +30,32 @@ public:
     // IUnknown methods
     IFACEMETHODIMP_(ULONG) AddRef() { return 1; }
     IFACEMETHODIMP_(ULONG) Release() { return 1; }
-    IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                  _COM_Outptr_result_maybenull_ void** ppInterface)
+    IFACEMETHODIMP QueryInterface(_In_ REFIID /*riid*/,
+                                  _COM_Outptr_result_maybenull_ void** /*ppInterface*/)
     {
-        UNREFERENCED_PARAMETER(riid);
-        UNREFERENCED_PARAMETER(ppInterface);
         return E_NOTIMPL;
     };
 
     // IRawElementProviderSimple methods
-    IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions)
+    IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* /*pOptions*/)
     {
-        UNREFERENCED_PARAMETER(pOptions);
         return E_NOTIMPL;
     }
 
-    IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID iid,
-                                        _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
+    IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID /*iid*/,
+                                      _COM_Outptr_result_maybenull_ IUnknown** /*ppInterface*/)
     {
-        UNREFERENCED_PARAMETER(iid);
-        UNREFERENCED_PARAMETER(ppInterface);
         return E_NOTIMPL;
     }
 
-    IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp,
-                                    _Out_ VARIANT* pVariant)
+    IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID /*idProp*/,
+                                    _Out_ VARIANT* /*pVariant*/)
     {
-        UNREFERENCED_PARAMETER(idProp);
-        UNREFERENCED_PARAMETER(pVariant);
         return E_NOTIMPL;
     }
 
-    IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
+    IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** /*ppProvider*/)
     {
-        UNREFERENCED_PARAMETER(ppProvider);
         return E_NOTIMPL;
     }
 };
@@ -85,6 +77,7 @@ class UiaTextRangeTests
         _state = new CommonState();
         _state->PrepareGlobalFont();
         _state->PrepareGlobalScreenBuffer();
+        _state->PrepareNewTextBufferInfo();
 
         // set up pointers
         _pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
@@ -94,8 +87,6 @@ class UiaTextRangeTests
         _range = new UiaTextRange
         {
             &_dummyProvider,
-            _pTextBuffer,
-            _pScreenInfo,
             0,
             0
         };
@@ -105,6 +96,7 @@ class UiaTextRangeTests
 
     TEST_METHOD_CLEANUP(MethodCleanup)
     {
+        _state->CleanupNewTextBufferInfo();
         _state->CleanupGlobalScreenBuffer();
         _state->CleanupGlobalFont();
         delete _state;
@@ -127,8 +119,6 @@ class UiaTextRangeTests
         UiaTextRange degenerate
         {
             &_dummyProvider,
-            _pTextBuffer,
-            _pScreenInfo,
             20,
             19
         };
@@ -139,8 +129,6 @@ class UiaTextRangeTests
         UiaTextRange notDegenerate1
         {
             &_dummyProvider,
-            _pTextBuffer,
-            _pScreenInfo,
             20,
             20
         };
@@ -150,8 +138,6 @@ class UiaTextRangeTests
         UiaTextRange notDegenerate2
         {
             &_dummyProvider,
-            _pTextBuffer,
-            _pScreenInfo,
             20,
             35
         };

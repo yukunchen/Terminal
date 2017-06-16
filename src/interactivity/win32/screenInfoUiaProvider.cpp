@@ -38,11 +38,7 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int 
     return psa;
 }
 
-ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Window* const pParent,
-                                             _In_ SCREEN_INFORMATION* const pScreenInfo,
-                                             _In_ WindowUiaProvider* const pUiaParent) :
-    _pWindow(THROW_HR_IF_NULL(E_INVALIDARG, pParent)),
-    _pScreenInfo(THROW_HR_IF_NULL(E_INVALIDARG, pScreenInfo)),
+ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent) :
     _pUiaParent(THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
     _focusEventFiring{ false },
     _cRefs(1)
@@ -252,9 +248,10 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAF
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect)
 {
-    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, _pWindow);
+    const IConsoleWindow* const pIConsoleWindow = _getIConsoleWindow();
+    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, pIConsoleWindow);
 
-    RECT rc = _pWindow->GetWindowRect();
+    RECT rc = pIConsoleWindow->GetWindowRect();
 
     pRect->left = rc.left;
     pRect->top = rc.top;
@@ -333,7 +330,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
     }
 
     // stuff the selected lines into the safe array
-    TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
     const COORD screenBufferCoords = _getScreenBufferCoords();
     const int totalLines = screenBufferCoords.Y;
 
@@ -356,8 +352,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         try
         {
             range = new UiaTextRange(pProvider,
-                                     pOutputBuffer,
-                                     _pScreenInfo,
                                      start,
                                      end);
         }
@@ -388,8 +382,9 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
         ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
     });
 
-    TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
-    const SMALL_RECT viewport = _pScreenInfo->GetBufferViewport();
+    const SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
+    RETURN_HR_IF_NULL(E_POINTER, pScreenInfo);
+    const SMALL_RECT viewport = pScreenInfo->GetBufferViewport();
     const COORD screenBufferCoords = _getScreenBufferCoords();
     const int totalLines = screenBufferCoords.Y;
 
@@ -422,8 +417,6 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
         try
         {
             range = new UiaTextRange(pProvider,
-                                     pOutputBuffer,
-                                     _pScreenInfo,
                                      start,
                                      end);
         }
@@ -446,21 +439,15 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSimple* childElement,
+IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSimple* /*childElement*/,
                                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-    UNREFERENCED_PARAMETER(childElement);
-
-    TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
-
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 
     try
     {
-        *ppRetVal = new UiaTextRange(pProvider,
-                                     pOutputBuffer,
-                                     _pScreenInfo);
+        *ppRetVal = new UiaTextRange(pProvider);
     }
     catch (...)
     {
@@ -474,16 +461,12 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSim
 IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
                                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-    TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
-
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 
     try
     {
         *ppRetVal = new UiaTextRange(pProvider,
-                                     pOutputBuffer,
-                                     _pScreenInfo,
                                      point);
     }
     catch(...)
@@ -497,7 +480,12 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-    TEXT_BUFFER_INFO* const pOutputBuffer = _pScreenInfo->TextInfo;
+    const SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
+    RETURN_HR_IF_NULL(E_POINTER, pScreenInfo);
+
+    const TEXT_BUFFER_INFO* const pOutputBuffer = pScreenInfo->TextInfo;
+    RETURN_HR_IF_NULL(E_POINTER, pOutputBuffer);
+
     const int documentLines = pOutputBuffer->TotalRowCount();
     const int lineWidth = _getScreenBufferCoords().X;
 
@@ -506,10 +494,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybe
 
     try
     {
-        // - 1 to get the last column in the row
+        // - 1 to get the last column in the last row
         *ppRetVal = new UiaTextRange(pProvider,
-                                     pOutputBuffer,
-                                     _pScreenInfo,
                                      0,
                                      documentLines * lineWidth - 1);
     }
@@ -533,4 +519,14 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_SupportedTextSelection(_Out_ Supported
 const COORD ScreenInfoUiaProvider::_getScreenBufferCoords() const
 {
     return ServiceLocator::LocateGlobals()->getConsoleInformation()->GetScreenBufferSize();
+}
+
+SCREEN_INFORMATION* const ScreenInfoUiaProvider::_getScreenInfo()
+{
+    return ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+}
+
+IConsoleWindow* const ScreenInfoUiaProvider::_getIConsoleWindow()
+{
+    return ServiceLocator::LocateConsoleWindow();
 }

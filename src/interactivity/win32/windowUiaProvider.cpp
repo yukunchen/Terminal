@@ -11,10 +11,11 @@
 #include "screenInfoUiaProvider.hpp"
 #include "UiaTextRange.hpp"
 
+#include "../inc/ServiceLocator.hpp"
+
 using namespace Microsoft::Console::Interactivity::Win32;
 
-WindowUiaProvider::WindowUiaProvider(_In_ Window* const pWindow) :
-    _pWindow(THROW_HR_IF_NULL(E_INVALIDARG, pWindow)),
+WindowUiaProvider::WindowUiaProvider() :
     _signalEventFiring{ false },
     _navigateEventFiring{ false },
     _cRefs(1)
@@ -103,9 +104,9 @@ IFACEMETHODIMP WindowUiaProvider::get_ProviderOptions(_Out_ ProviderOptions* pOp
 
 // Implementation of IRawElementProviderSimple::get_PatternProvider.
 // Gets the object that supports ISelectionPattern.
-IFACEMETHODIMP WindowUiaProvider::GetPatternProvider(_In_ PATTERNID patternId, _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
+IFACEMETHODIMP WindowUiaProvider::GetPatternProvider(_In_ PATTERNID /*patternId*/,
+                                                     _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
-    UNREFERENCED_PARAMETER(patternId);
     *ppInterface = nullptr;
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
@@ -172,12 +173,15 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _
 // supplies many properties.
 IFACEMETHODIMP WindowUiaProvider::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
 {
-    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, _pWindow);
-
-    HWND const hwnd = _pWindow->GetWindowHandle();
-    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, hwnd);
-
-    return UiaHostProviderFromHwnd(hwnd, ppProvider);
+    try
+    {
+        const HWND hwnd = _GetWindowHandle();
+        return UiaHostProviderFromHwnd(hwnd, ppProvider);
+    }
+    catch(...)
+    {
+        return static_cast<HRESULT>(UIA_E_ELEMENTNOTAVAILABLE);
+    }
 }
 #pragma endregion
 
@@ -222,9 +226,10 @@ IFACEMETHODIMP WindowUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, _pWindow);
+    const IConsoleWindow* const pIConsoleWindow = _getIConsoleWindow();
+    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, pIConsoleWindow);
 
-    RECT const rc = _pWindow->GetWindowRect();
+    RECT const rc = pIConsoleWindow->GetWindowRect();
 
     pRect->left = rc.left;
     pRect->top = rc.top;
@@ -262,14 +267,11 @@ IFACEMETHODIMP WindowUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_
 
 #pragma region IRawElementProviderFragmentRoot
 
-IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double x, _In_ double y, _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
+IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double /*x*/,
+                                                           _In_ double /*y*/,
+                                                           _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
-
-    *ppProvider = nullptr;
-
-    UNREFERENCED_PARAMETER(x);
-    UNREFERENCED_PARAMETER(y);
 
     *ppProvider = _GetScreenInfoProvider();
     RETURN_IF_NULL_ALLOC(*ppProvider);
@@ -289,29 +291,29 @@ IFACEMETHODIMP WindowUiaProvider::GetFocus(_COM_Outptr_result_maybenull_ IRawEle
 
 HWND WindowUiaProvider::_GetWindowHandle() const
 {
-    ASSERT(_pWindow != nullptr);
+    IConsoleWindow* const pIConsoleWindow = _getIConsoleWindow();
+    THROW_HR_IF_NULL(E_POINTER, pIConsoleWindow);
 
-    return _pWindow->GetWindowHandle();
+    return pIConsoleWindow->GetWindowHandle();
 }
 
 HRESULT WindowUiaProvider::_EnsureValidHwnd() const
 {
-    HWND const hwnd = _GetWindowHandle();
-
-    RETURN_HR_IF_FALSE((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, IsWindow(hwnd));
-
+    try
+    {
+        HWND const hwnd = _GetWindowHandle();
+        RETURN_HR_IF_FALSE((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, IsWindow(hwnd));
+    }
+    CATCH_RETURN();
     return S_OK;
 }
 
 ScreenInfoUiaProvider* WindowUiaProvider::_GetScreenInfoProvider()
 {
-    ASSERT(_pWindow != nullptr);
-
     ScreenInfoUiaProvider* pProvider = nullptr;
-    SCREEN_INFORMATION* const pScreenInfo = _pWindow->GetScreenInfo();
     try
     {
-        pProvider = new ScreenInfoUiaProvider(_pWindow, pScreenInfo, this);
+        pProvider = new ScreenInfoUiaProvider(this);
     }
     catch(...)
     {
@@ -319,4 +321,9 @@ ScreenInfoUiaProvider* WindowUiaProvider::_GetScreenInfoProvider()
     }
 
     return pProvider;
+}
+
+IConsoleWindow* const WindowUiaProvider::_getIConsoleWindow()
+{
+    return ServiceLocator::LocateConsoleWindow();
 }

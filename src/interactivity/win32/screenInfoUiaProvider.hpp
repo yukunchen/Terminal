@@ -38,9 +38,7 @@ namespace Microsoft
                                                     public ITextProvider
                 {
                 public:
-                    ScreenInfoUiaProvider(_In_ Window* const pParent,
-                                          _In_ SCREEN_INFORMATION* const pScreenInfo,
-                                          _In_ WindowUiaProvider* const pUiaParent);
+                    ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent);
                     virtual ~ScreenInfoUiaProvider();
 
                     // IUnknown methods
@@ -81,12 +79,12 @@ namespace Microsoft
                     // Ref counter for COM object
                     ULONG _cRefs;
 
-                    SCREEN_INFORMATION* const _pScreenInfo;
-                    Window* const _pWindow;
                     WindowUiaProvider* const _pUiaParent;
                     bool _focusEventFiring;
 
                     const COORD _getScreenBufferCoords() const;
+                    static SCREEN_INFORMATION* const _getScreenInfo();
+                    static IConsoleWindow* const _getIConsoleWindow();
                 };
             }
         }
