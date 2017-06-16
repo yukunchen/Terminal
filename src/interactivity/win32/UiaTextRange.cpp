@@ -305,37 +305,27 @@ IFACEMETHODIMP UiaTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
 }
 
 // we don't support this currently
-IFACEMETHODIMP UiaTextRange::FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
-                                           _In_ VARIANT val,
-                                           _In_ BOOL searchBackward,
-                                           _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
+IFACEMETHODIMP UiaTextRange::FindAttribute(_In_ TEXTATTRIBUTEID /*textAttributeId*/,
+                                           _In_ VARIANT /*val*/,
+                                           _In_ BOOL /*searchBackward*/,
+                                           _Outptr_result_maybenull_ ITextRangeProvider** /*ppRetVal*/)
 {
-    UNREFERENCED_PARAMETER(textAttributeId);
-    UNREFERENCED_PARAMETER(val);
-    UNREFERENCED_PARAMETER(searchBackward);
-    UNREFERENCED_PARAMETER(ppRetVal);
     return E_NOTIMPL;
 }
 
 // we don't support this currently
-IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
-                                      _In_ BOOL searchBackward,
-                                      _In_ BOOL ignoreCase,
-                                      _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
+IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR /*text*/,
+                                      _In_ BOOL /*searchBackward*/,
+                                      _In_ BOOL /*ignoreCase*/,
+                                      _Outptr_result_maybenull_ ITextRangeProvider** /*ppRetVal*/)
 {
-    UNREFERENCED_PARAMETER(text);
-    UNREFERENCED_PARAMETER(searchBackward);
-    UNREFERENCED_PARAMETER(ignoreCase);
-    UNREFERENCED_PARAMETER(ppRetVal);
     return E_NOTIMPL;
 }
 
 // we don't support this currently
-IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
-                                               _Out_ VARIANT* pRetVal)
+IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID /*textAttributeId*/,
+                                               _Out_ VARIANT* /*pRetVal*/)
 {
-    UNREFERENCED_PARAMETER(textAttributeId);
-    UNREFERENCED_PARAMETER(pRetVal);
     return E_NOTIMPL;
 }
 
@@ -451,10 +441,11 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ int* pRetVal)
+IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit /*unit*/,
+                                  _In_ int count,
+                                  _Out_ int* pRetVal)
 {
-    // for now, we only support line movement
-    UNREFERENCED_PARAMETER(unit);
+    // N.B. we only support line movement currently
 
     assert(_start <= _end);
 
@@ -520,12 +511,11 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit, _In_ int count, _Out_ int*
 }
 
 IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
-                                                _In_ TextUnit unit,
+                                                _In_ TextUnit /*unit*/,
                                                 _In_ int count,
                                                 _Out_ int* pRetVal)
 {
-    // for now, we only support line movement
-    UNREFERENCED_PARAMETER(unit);
+    // N.B. we only support line movement currently
 
     assert(_start <= _end);
 

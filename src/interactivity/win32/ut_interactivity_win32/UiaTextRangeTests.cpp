@@ -30,40 +30,32 @@ public:
     // IUnknown methods
     IFACEMETHODIMP_(ULONG) AddRef() { return 1; }
     IFACEMETHODIMP_(ULONG) Release() { return 1; }
-    IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                  _COM_Outptr_result_maybenull_ void** ppInterface)
+    IFACEMETHODIMP QueryInterface(_In_ REFIID /*riid*/,
+                                  _COM_Outptr_result_maybenull_ void** /*ppInterface*/)
     {
-        UNREFERENCED_PARAMETER(riid);
-        UNREFERENCED_PARAMETER(ppInterface);
         return E_NOTIMPL;
     };
 
     // IRawElementProviderSimple methods
-    IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions)
+    IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* /*pOptions*/)
     {
-        UNREFERENCED_PARAMETER(pOptions);
         return E_NOTIMPL;
     }
 
-    IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID iid,
-                                        _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
+    IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID /*iid*/,
+                                      _COM_Outptr_result_maybenull_ IUnknown** /*ppInterface*/)
     {
-        UNREFERENCED_PARAMETER(iid);
-        UNREFERENCED_PARAMETER(ppInterface);
         return E_NOTIMPL;
     }
 
-    IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp,
-                                    _Out_ VARIANT* pVariant)
+    IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID /*idProp*/,
+                                    _Out_ VARIANT* /*pVariant*/)
     {
-        UNREFERENCED_PARAMETER(idProp);
-        UNREFERENCED_PARAMETER(pVariant);
         return E_NOTIMPL;
     }
 
-    IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
+    IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** /*ppProvider*/)
     {
-        UNREFERENCED_PARAMETER(ppProvider);
         return E_NOTIMPL;
     }
 };

@@ -439,11 +439,9 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSimple* childElement,
+IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSimple* /*childElement*/,
                                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-    UNREFERENCED_PARAMETER(childElement);
-
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 

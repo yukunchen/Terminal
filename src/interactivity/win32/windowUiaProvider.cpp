@@ -104,9 +104,9 @@ IFACEMETHODIMP WindowUiaProvider::get_ProviderOptions(_Out_ ProviderOptions* pOp
 
 // Implementation of IRawElementProviderSimple::get_PatternProvider.
 // Gets the object that supports ISelectionPattern.
-IFACEMETHODIMP WindowUiaProvider::GetPatternProvider(_In_ PATTERNID patternId, _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
+IFACEMETHODIMP WindowUiaProvider::GetPatternProvider(_In_ PATTERNID /*patternId*/,
+                                                     _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
-    UNREFERENCED_PARAMETER(patternId);
     *ppInterface = nullptr;
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
@@ -267,14 +267,11 @@ IFACEMETHODIMP WindowUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_
 
 #pragma region IRawElementProviderFragmentRoot
 
-IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double x, _In_ double y, _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
+IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double /*x*/,
+                                                           _In_ double /*y*/,
+                                                           _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
-
-    *ppProvider = nullptr;
-
-    UNREFERENCED_PARAMETER(x);
-    UNREFERENCED_PARAMETER(y);
 
     *ppProvider = _GetScreenInfoProvider();
     RETURN_IF_NULL_ALLOC(*ppProvider);
