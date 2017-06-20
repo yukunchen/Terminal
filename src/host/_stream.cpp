@@ -977,6 +977,11 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
+    if (cchTextBufferLength == 0)
+    {
+        return S_OK;
+    }
+
     UINT const uiCodePage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
 
     // Convert our input parameters to Unicode
@@ -998,8 +1003,8 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
         unsigned int charsConsumed;
         unsigned int charsGenerated;
         RETURN_IF_FAILED(SizeTToUInt(cchTextBufferLength, &charCount));
-        RETURN_IF_FAILED(parser.Parse(reinterpret_cast<const byte*>(psTextBuffer), 
-                                      charCount, 
+        RETURN_IF_FAILED(parser.Parse(reinterpret_cast<const byte*>(psTextBuffer),
+                                      charCount,
                                       charsConsumed,
                                       wideCharBuffer,
                                       charsGenerated));

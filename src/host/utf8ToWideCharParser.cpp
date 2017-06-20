@@ -59,9 +59,9 @@ void Utf8ToWideCharParser::SetCodePage(_In_ const unsigned int codePage)
 // - Parses the input multi-byte sequence.
 // Arguments:
 // - pBytes - The byte sequence to parse.
-// - cch - The amount of bytes in pBytes. This will contain the
+// - cchBuffer - The amount of bytes in pBytes. This will contain the
 // number of wide chars contained by converted after this function is
-// run, or 0 if an error occurs.
+// run, or 0 if an error occurs (or if pBytes is 0).
 // - converted - a valid unique_ptr to store the parsed wide chars
 // in. On error this will contain nullptr instead of an array.
 // Return Value:
@@ -75,6 +75,11 @@ HRESULT Utf8ToWideCharParser::Parse(_In_reads_(cch) const byte* const pBytes,
     cchConsumed = 0;
     cchConverted = 0;
 
+    // we can't parse anything if we weren't given any data to parse
+    if (cchBuffer == 0)
+    {
+        return S_OK;
+    }
     // we shouldn't be parsing if the current codepage isn't UTF8
     if (_currentCodePage != CP_UTF8)
     {
