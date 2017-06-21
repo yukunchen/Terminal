@@ -81,11 +81,6 @@ TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 #define DbgRaiseAssertionFailure() __int2c()
 #endif
 
-extern "C"
-{
-    BOOLEAN IsPlaySoundPresent();
-};
-
 #include <ShellScalingApi.h>
 #include "..\propslib\conpropsp.hpp"
 

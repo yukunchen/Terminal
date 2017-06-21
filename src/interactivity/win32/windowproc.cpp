@@ -676,10 +676,10 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
     {
         UnlockConsole();
         Unlock = FALSE;
-        if (!PlaySoundW((LPCWSTR)SND_ALIAS_SYSTEMHAND, nullptr, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY))
-        {
-            Beep(800, 200);
-        }
+
+        // Don't fall back to Beep() on win32 systems -- if the user configures their system for no sound, we should
+        // respect that.
+        PlaySoundW((LPCWSTR)SND_ALIAS_SYSTEMHAND, nullptr, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
         break;
     }
 
