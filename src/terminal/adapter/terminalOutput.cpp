@@ -44,7 +44,7 @@ const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayC
      L'\u2510', // L'\x6b',   -> Upper-right corner
      L'\u250c', // L'\x6c',   -> Upper-left corner
      L'\u2514', // L'\x6d',   -> Lower-left corner
-     L'\u2530', // L'\x6e',   -> crossing lines
+     L'\u253C', // L'\x6e',   -> crossing lines
      L'\u23ba', // L'\x6f',   -> HORIZONTAL SCAN LINE-3
      L'\u23bb', // L'\x70',   -> HORIZONTAL SCAN LINE-3
      L'\u2500', // L'\x71',   -> HORIZONTAL SCAN LINE-5
