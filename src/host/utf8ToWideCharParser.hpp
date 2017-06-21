@@ -22,8 +22,8 @@ class Utf8ToWideCharParser final
 public:
     Utf8ToWideCharParser(_In_ const unsigned int codePage);
     void SetCodePage(_In_ const unsigned int codePage);
-    HRESULT Parse(_In_reads_(cch) const byte* const pBytes, 
-                  _In_ unsigned int const cchBuffer, 
+    HRESULT Parse(_In_reads_(cchBuffer) const byte* const pBytes,
+                  _In_ unsigned int const cchBuffer,
                   _Out_ unsigned int& cchConsumed,
                   _Inout_ std::unique_ptr<wchar_t[]>& converted,
                   _Out_ unsigned int& cchConverted);
@@ -46,7 +46,8 @@ private:
     unsigned int _Utf8SequenceSize(_In_ byte ch);
     unsigned int _ParseFullRange(_In_reads_(cb) const byte* const _InputChars, _In_ const unsigned int cb);
     unsigned int _InvolvedParse(_In_reads_(cb) const byte* const pInputChars, _In_ const unsigned int cb);
-    std::pair<std::unique_ptr<byte[]>, unsigned int> _RemoveInvalidSequences(_In_reads_(cb) const byte* const pInputChars, _In_ const unsigned int cb);
+    std::pair<std::unique_ptr<byte[]>, unsigned int> _RemoveInvalidSequences(_In_reads_(cb) const byte* const pInputChars,
+                                                                             _In_ const unsigned int cb);
     void _StorePartialSequence(_In_reads_(cb) const byte* const pLeadByte, _In_ const unsigned int cb);
     void _Reset();
 
