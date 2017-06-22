@@ -101,10 +101,7 @@ IFACEMETHODIMP_(ULONG) WindowUiaProvider::AddRef()
 IFACEMETHODIMP_(ULONG) WindowUiaProvider::Release()
 {
     long val = InterlockedDecrement(&_cRefs);
-    // we delete when the ref count is at 1 and not 0 because
-    // WindowUiaProvider and ScreenInfoUiaProvider have references to
-    // each other so this breaks the cyclic dependency.
-    if (val == 1)
+    if (val == 0)
     {
         delete this;
     }

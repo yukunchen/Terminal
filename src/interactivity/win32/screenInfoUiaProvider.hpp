@@ -81,6 +81,7 @@ namespace Microsoft
                     // Ref counter for COM object
                     ULONG _cRefs;
 
+                    // weak reference to uia parent
                     WindowUiaProvider* const _pUiaParent;
                     bool _signalEventFiring;
 

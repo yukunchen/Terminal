@@ -43,12 +43,10 @@ ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaP
     _signalEventFiring{ false },
     _cRefs(1)
 {
-    _pUiaParent->AddRef();
 }
 
 ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
 {
-    _pUiaParent->Release();
 }
 
 HRESULT ScreenInfoUiaProvider::Signal(_In_ EVENTID id)
