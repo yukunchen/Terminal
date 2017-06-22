@@ -27,7 +27,7 @@ namespace Microsoft
         {
             namespace Win32
             {
-                class AccessibilityNotifier sealed : public IAccessibilityNotifier
+                class AccessibilityNotifier final : public IAccessibilityNotifier
                 {
                 public:
                     void NotifyConsoleCaretEvent(_In_ RECT rectangle);
@@ -43,4 +43,3 @@ namespace Microsoft
         };
     };
 };
-
