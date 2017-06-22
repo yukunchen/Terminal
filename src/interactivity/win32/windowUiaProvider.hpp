@@ -35,7 +35,7 @@ namespace Microsoft
                                                 public IRawElementProviderFragmentRoot
                 {
                 public:
-                    WindowUiaProvider();
+                    static WindowUiaProvider* Create();
                     virtual ~WindowUiaProvider();
 
                     HRESULT Signal(_In_ EVENTID id);
@@ -70,18 +70,18 @@ namespace Microsoft
                     IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
 
                 private:
-
-                    // Ref counter for COM object
-                    ULONG _cRefs;
+                    WindowUiaProvider();
 
                     HWND _GetWindowHandle() const;
                     HRESULT _EnsureValidHwnd() const;
                     static IConsoleWindow* const _getIConsoleWindow();
 
-                    ScreenInfoUiaProvider* _GetScreenInfoProvider();
-
                     bool _signalEventFiring;
                     bool _navigateEventFiring;
+                    ScreenInfoUiaProvider* _pScreenInfoProvider;
+
+                    // Ref counter for COM object
+                    ULONG _cRefs;
                 };
             }
         }

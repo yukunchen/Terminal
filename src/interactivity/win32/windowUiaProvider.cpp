@@ -18,6 +18,7 @@ using namespace Microsoft::Console::Interactivity::Win32;
 WindowUiaProvider::WindowUiaProvider() :
     _signalEventFiring{ false },
     _navigateEventFiring{ false },
+    _pScreenInfoProvider{ nullptr },
     _cRefs(1)
 {
 
@@ -25,18 +26,66 @@ WindowUiaProvider::WindowUiaProvider() :
 
 WindowUiaProvider::~WindowUiaProvider()
 {
+    if (_pScreenInfoProvider)
+    {
+        _pScreenInfoProvider->Release();
+    }
+}
 
+WindowUiaProvider* WindowUiaProvider::Create()
+{
+    WindowUiaProvider* pWindowProvider = new WindowUiaProvider();
+    if (pWindowProvider == nullptr)
+    {
+        return nullptr;
+    }
+
+    ScreenInfoUiaProvider* pScreenInfoProvider;
+    try
+    {
+        pScreenInfoProvider = new ScreenInfoUiaProvider(pWindowProvider);
+        if (pScreenInfoProvider == nullptr)
+        {
+            pWindowProvider->Release();
+            return nullptr;
+        }
+    }
+    catch(...)
+    {
+        pWindowProvider->Release();
+        return nullptr;
+    }
+
+    pWindowProvider->_pScreenInfoProvider = pScreenInfoProvider;
+
+    return pWindowProvider;
 }
 
 HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
 {
-    IRawElementProviderSimple* pProvider;
-    HRESULT hr = this->QueryInterface(__uuidof(IRawElementProviderSimple),
-                                      reinterpret_cast<void**>(&pProvider));
-    if (SUCCEEDED(hr) && !_signalEventFiring)
+    HRESULT hr = S_OK;
+    // ScreenInfoUiaProvider is responsible for signaling selection
+    // changed events
+    if (id == UIA_Text_TextSelectionChangedEventId)
+    {
+        if (_pScreenInfoProvider)
+        {
+            hr = _pScreenInfoProvider->Signal(id);
+        }
+        else
+        {
+            hr = E_POINTER;
+        }
+    }
+    else if (!_signalEventFiring)
     {
         _signalEventFiring = true;
-        UiaRaiseAutomationEvent(pProvider, id);
+        IRawElementProviderSimple* pProvider;
+        hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
+        if (SUCCEEDED(hr))
+        {
+            UiaRaiseAutomationEvent(pProvider, id);
+        }
         _signalEventFiring = false;
     }
     return hr;
@@ -52,7 +101,10 @@ IFACEMETHODIMP_(ULONG) WindowUiaProvider::AddRef()
 IFACEMETHODIMP_(ULONG) WindowUiaProvider::Release()
 {
     long val = InterlockedDecrement(&_cRefs);
-    if (val == 0)
+    // we delete when the ref count is at 1 and not 0 because
+    // WindowUiaProvider and ScreenInfoUiaProvider have references to
+    // each other so this breaks the cyclic dependency.
+    if (val == 1)
     {
         delete this;
     }
@@ -194,8 +246,8 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
 
     if (direction == NavigateDirection_FirstChild || direction == NavigateDirection_LastChild)
     {
-        *ppProvider = _GetScreenInfoProvider();
-        RETURN_IF_NULL_ALLOC(*ppProvider);
+        *ppProvider = _pScreenInfoProvider;
+        (*ppProvider)->AddRef();
 
         // signal that the focus changed
         IRawElementProviderSimple* pSimpleProvider;
@@ -273,8 +325,8 @@ IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double /*x*/,
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    *ppProvider = _GetScreenInfoProvider();
-    RETURN_IF_NULL_ALLOC(*ppProvider);
+    *ppProvider = _pScreenInfoProvider;
+    (*ppProvider)->AddRef();
 
     return S_OK;
 }
@@ -306,21 +358,6 @@ HRESULT WindowUiaProvider::_EnsureValidHwnd() const
     }
     CATCH_RETURN();
     return S_OK;
-}
-
-ScreenInfoUiaProvider* WindowUiaProvider::_GetScreenInfoProvider()
-{
-    ScreenInfoUiaProvider* pProvider = nullptr;
-    try
-    {
-        pProvider = new ScreenInfoUiaProvider(this);
-    }
-    catch(...)
-    {
-        return nullptr;
-    }
-
-    return pProvider;
 }
 
 IConsoleWindow* const WindowUiaProvider::_getIConsoleWindow()
