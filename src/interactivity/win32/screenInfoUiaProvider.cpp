@@ -301,19 +301,65 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_mayben
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    if (!Selection::Instance().IsAreaSelected())
-    {
-        *ppRetVal = nullptr;
-        return S_OK;
-    }
-
     ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
         ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
     });
 
+    *ppRetVal = nullptr;
     HRESULT hr;
+
+    if (!Selection::Instance().IsAreaSelected())
+    {
+        // return a degenrate range at the cursor position
+        SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
+        RETURN_HR_IF_NULL(E_POINTER, pScreenInfo);
+        TEXT_BUFFER_INFO* const pTextBuffer = pScreenInfo->TextInfo;
+        RETURN_HR_IF_NULL(E_POINTER, pTextBuffer);
+        const Cursor* const pCursor = pTextBuffer->GetCursor();
+        RETURN_HR_IF_NULL(E_POINTER, pCursor);
+
+        // make a safe array
+        *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 1);
+        if (*ppRetVal == nullptr)
+        {
+            return E_OUTOFMEMORY;
+        }
+
+        IRawElementProviderSimple* pProvider;
+        hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
+        if (FAILED(hr))
+        {
+            SafeArrayDestroy(*ppRetVal);
+            *ppRetVal = nullptr;
+            return hr;
+        }
+
+        UiaTextRange* range;
+        try
+        {
+            range = new UiaTextRange(pProvider,
+                                     pCursor);
+        }
+        catch (...)
+        {
+            (static_cast<IUnknown*>(pProvider))->Release();
+            SafeArrayDestroy(*ppRetVal);
+            *ppRetVal = nullptr;
+            return wil::ResultFromCaughtException();
+        }
+
+        LONG currentIndex = 0;
+        hr = SafeArrayPutElement(*ppRetVal, &currentIndex, reinterpret_cast<void*>(range));
+        if (FAILED(hr))
+        {
+            SafeArrayDestroy(*ppRetVal);
+            *ppRetVal = nullptr;
+            return hr;
+        }
+        return S_OK;
+    }
 
     // get the selection rects
     SMALL_RECT* pSelectionRects;
