@@ -16,6 +16,7 @@ Author(s):
 #pragma once
 
 #include "../inc/IConsoleWindow.hpp"
+#include "../../host/cursor.h"
 
 #ifdef UNIT_TESTING
 class UiaTextRangeTests;
@@ -74,6 +75,10 @@ namespace Microsoft
 
                     // degenerate range
                     UiaTextRange(_In_ IRawElementProviderSimple* const pProvider);
+
+                    // degenerate range at cursor position
+                    UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                 _In_ const Cursor* const pCursor);
 
                     // specific range
                     UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,

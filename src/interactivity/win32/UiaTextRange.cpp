@@ -68,6 +68,17 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider) :
 }
 
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                           _In_ const Cursor* const pCursor) :
+    UiaTextRange(pProvider)
+{
+    THROW_HR_IF_NULL(E_POINTER, pCursor);
+
+    _degenerate = true;
+    _start = _screenInfoRowToEndpoint(pCursor->GetPosition().Y);
+    _end = _start;
+}
+
+UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
                            _In_ const Endpoint start,
                            _In_ const Endpoint end) :
     UiaTextRange(pProvider)
