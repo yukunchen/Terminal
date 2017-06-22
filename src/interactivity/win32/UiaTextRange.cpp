@@ -322,11 +322,16 @@ IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR /*text*/,
     return E_NOTIMPL;
 }
 
-// we don't support this currently
-IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID /*textAttributeId*/,
-                                               _Out_ VARIANT* /*pRetVal*/)
+IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
+                                               _Out_ VARIANT* pRetVal)
 {
-    return E_NOTIMPL;
+    pRetVal->vt = VT_EMPTY;
+    if (textAttributeId == UIA_IsReadOnlyAttributeId)
+    {
+        pRetVal->vt = VT_BOOL;
+        pRetVal->boolVal = VARIANT_FALSE;
+    }
+    return S_OK;
 }
 
 IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
