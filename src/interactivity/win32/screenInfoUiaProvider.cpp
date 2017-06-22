@@ -40,7 +40,7 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int 
 
 ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent) :
     _pUiaParent(THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
-    _focusEventFiring{ false },
+    _signalEventFiring{ false },
     _cRefs(1)
 {
     _pUiaParent->AddRef();
@@ -49,6 +49,23 @@ ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaP
 ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
 {
     _pUiaParent->Release();
+}
+
+HRESULT ScreenInfoUiaProvider::Signal(_In_ EVENTID id)
+{
+    HRESULT hr = S_OK;
+    if (!_signalEventFiring)
+    {
+        _signalEventFiring = true;
+        IRawElementProviderSimple* pProvider;
+        hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
+        if (SUCCEEDED(hr))
+        {
+            UiaRaiseAutomationEvent(pProvider, id);
+        }
+        _signalEventFiring = false;
+    }
+    return hr;
 }
 
 #pragma region IUnknown
@@ -269,15 +286,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_ma
 
 IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 {
-    IRawElementProviderSimple* pProvider;
-    const HRESULT hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
-    if (SUCCEEDED(hr) && !_focusEventFiring)
-    {
-        _focusEventFiring = true;
-        UiaRaiseAutomationEvent(pProvider, UIA_AutomationFocusChangedEventId);
-        _focusEventFiring = false;
-    }
-    return S_OK;
+    return Signal(UIA_AutomationFocusChangedEventId);
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)

@@ -41,6 +41,8 @@ namespace Microsoft
                     ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent);
                     virtual ~ScreenInfoUiaProvider();
 
+                    HRESULT Signal(_In_ EVENTID id);
+
                     // IUnknown methods
                     IFACEMETHODIMP_(ULONG) AddRef();
                     IFACEMETHODIMP_(ULONG) Release();
@@ -80,7 +82,7 @@ namespace Microsoft
                     ULONG _cRefs;
 
                     WindowUiaProvider* const _pUiaParent;
-                    bool _focusEventFiring;
+                    bool _signalEventFiring;
 
                     const COORD _getScreenBufferCoords() const;
                     static SCREEN_INFORMATION* const _getScreenInfo();
