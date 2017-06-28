@@ -16,6 +16,10 @@ class FileTests
 
     TEST_METHOD(TestUtf8WriteFileInvalid);
 
+    BEGIN_TEST_METHOD(TestWriteFile)
+
+    END_TEST_METHOD()
+
 };
 
 void FileTests::TestUtf8WriteFileInvalid()
@@ -66,4 +70,9 @@ void FileTests::TestUtf8WriteFileInvalid()
 
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteFile(hOut, str, cbStr, &dwWritten, nullptr));
     VERIFY_ARE_EQUAL(dwExpectedWritten, dwWritten);
+}
+
+void FileTests::TestWriteFile()
+{
+
 }
