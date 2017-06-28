@@ -40,7 +40,7 @@ namespace Conhost.UIA.Tests.Elements
 
         private IntPtr job;
         private int pid;
-        
+
         public IOSDriver<IOSElement> Session { get; private set; }
         public Actions Actions { get; private set; }
         public AppiumWebElement UIRoot { get; private set; }
@@ -145,7 +145,7 @@ namespace Conhost.UIA.Tests.Elements
 
             return (int)cols;
         }
-        
+
         public void ScrollWindow(int scrolls = -1)
         {
             User32.SendMessage(WinCon.GetConsoleWindow(), User32.WindowMessages.WM_MOUSEWHEEL, (User32.WHEEL_DELTA * scrolls) << 16, IntPtr.Zero);
@@ -321,6 +321,12 @@ namespace Conhost.UIA.Tests.Elements
             NativeMethods.Win32BoolHelper(WinCon.FreeConsole(), "Free existing console bindings.");
             NativeMethods.Win32BoolHelper(WinCon.AttachConsole((uint)pid), "Bind to the new PID for console APIs.");
 
+            // we need to wait here because there is currently an odd
+            // interaction between the conhost accessibility code and
+            // the on-screen keyboard which causes deadlock for a few
+            // seconds initially. Once this issue has been resolved
+            // this sleep should be able to be removed.
+            System.Threading.Thread.Sleep(Globals.Timeout * 6);
             NativeMethods.Win32BoolHelper(WinCon.SetConsoleTitle(WindowTitleToFind), "Set the window title so AppDriver can find it.");
 
             DesiredCapabilities appCapabilities = new DesiredCapabilities();
@@ -386,7 +392,7 @@ namespace Conhost.UIA.Tests.Elements
 
         private void ExitCmdProcess()
         {
-            // Release attachment to the child process console. 
+            // Release attachment to the child process console.
             WinCon.FreeConsole();
 
             this.UIRoot = null;

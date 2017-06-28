@@ -60,6 +60,26 @@ namespace Conhost.UIA.Tests
             throw new InvalidElementException();
         }
 
+        private int _GetTotalRows(CmdApp app)
+        {
+            WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX screenBufferInfo = app.GetScreenBufferInfo();
+            return screenBufferInfo.dwSize.Y;
+        }
+
+        private void _FillOutputBufferWithData(CmdApp app)
+        {
+            for (int i = 0; i < _GetTotalRows(app) * 2 / 3; ++i)
+            {
+                // each echo command uses up 3 lines in the buffer:
+                // 1. output text
+                // 2. newline
+                // 3. new prompt line
+                app.UIRoot.SendKeys("echo ");
+                app.UIRoot.SendKeys(i.ToString());
+                app.UIRoot.SendKeys(Keys.Enter);
+            }
+        }
+
         [TestMethod]
         public void CanAccessAccessibilityTree()
         {
@@ -283,21 +303,244 @@ namespace Conhost.UIA.Tests
                     AutomationElement textAreaUiaElement = GetTextAreaUiaElement(app);
                     TextPattern textPattern = textAreaUiaElement.GetCurrentPattern(TextPattern.Pattern) as TextPattern;
                     TextPatternRange[] visibleRanges = textPattern.GetVisibleRanges();
-                    // copy the first range
-                    TextPatternRange firstRange = visibleRanges[0].Clone();
-                    // change firstRange to a degenerate range and then expand to a line
-                    firstRange.MoveEndpointByRange(TextPatternRangeEndpoint.End, firstRange, TextPatternRangeEndpoint.Start);
-                    Verify.AreEqual(0, firstRange.CompareEndpoints(TextPatternRangeEndpoint.Start,
-                                                                   firstRange,
+                    TextPatternRange testRange = visibleRanges.First().Clone();
+
+                    // change testRange to a degenerate range and then expand to a line
+                    testRange.MoveEndpointByRange(TextPatternRangeEndpoint.End, testRange, TextPatternRangeEndpoint.Start);
+                    Verify.AreEqual(0, testRange.CompareEndpoints(TextPatternRangeEndpoint.Start,
+                                                                   testRange,
                                                                    TextPatternRangeEndpoint.End));
-                    firstRange.ExpandToEnclosingUnit(TextUnit.Line);
-                    Verify.IsTrue(firstRange.Compare(visibleRanges[0]));
+                    testRange.ExpandToEnclosingUnit(TextUnit.Line);
+                    Verify.IsTrue(testRange.Compare(visibleRanges[0]));
+
                     // expand to document size
-                    firstRange.ExpandToEnclosingUnit(TextUnit.Document);
-                    Verify.IsTrue(firstRange.Compare(textPattern.DocumentRange));
+                    testRange.ExpandToEnclosingUnit(TextUnit.Document);
+                    Verify.IsTrue(testRange.Compare(textPattern.DocumentRange));
+
                     // shrink back to a line
-                    firstRange.ExpandToEnclosingUnit(TextUnit.Line);
-                    Verify.IsTrue(firstRange.Compare(visibleRanges[0]));
+                    testRange.ExpandToEnclosingUnit(TextUnit.Line);
+                    Verify.IsTrue(testRange.Compare(visibleRanges[0]));
+
+                    // make the text buffer start to cycle its buffer
+                    _FillOutputBufferWithData(app);
+
+                    // expand to document range again
+                    testRange.ExpandToEnclosingUnit(TextUnit.Document);
+                    Verify.IsTrue(testRange.Compare(textPattern.DocumentRange));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void CanMoveRange()
+        {
+            using (RegistryHelper reg = new RegistryHelper())
+            {
+                reg.BackupRegistry();
+                using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
+                {
+                    AutomationElement textAreaUiaElement = GetTextAreaUiaElement(app);
+                    TextPattern textPattern = textAreaUiaElement.GetCurrentPattern(TextPattern.Pattern) as TextPattern;
+                    TextPatternRange[] visibleRanges = textPattern.GetVisibleRanges();
+                    TextPatternRange testRange = visibleRanges.First().Clone();
+
+
+                    // assumes range is at the top of the screen buffer
+                    Action<TextPatternRange> testMovement = delegate (TextPatternRange range)
+                    {
+                        // the range is at the top of the screen
+                        // buffer, we shouldn't be able to move up.
+                        int moveAmount = range.Move(TextUnit.Line, -1);
+                        Verify.AreEqual(0, moveAmount);
+
+                        // move to the bottom of the screen
+                        // - 1 because we're already on the 0th row
+                        int rowsToMove = _GetTotalRows(app) - 1;
+                        moveAmount = range.Move(TextUnit.Line, rowsToMove);
+                        Verify.AreEqual(rowsToMove, moveAmount);
+
+                        // try to move one more row down, we should not be able to
+                        moveAmount = range.Move(TextUnit.Line, 1);
+                        Verify.AreEqual(0, moveAmount);
+
+                        // move the range up to the top again, one row at a time,
+                        // making sure that we have only one line being encompassed
+                        // by the range. We check this by counting the number of
+                        // bounding rectangles that represent the range.
+                        for (int i = 0; i < rowsToMove; ++i)
+                        {
+                            moveAmount = range.Move(TextUnit.Line, -1);
+                            // we need to scroll into view or getting the boundary
+                            // rectangles might return 0
+                            Verify.AreEqual(-1, moveAmount);
+                            range.ScrollIntoView(true);
+                            Rect[] boundingRects = range.GetBoundingRectangles();
+                            Verify.AreEqual(1, boundingRects.GetLength(0));
+                        }
+
+                        // and back down to the bottom, one row at a time
+                        for (int i = 0; i < rowsToMove; ++i)
+                        {
+                            moveAmount = range.Move(TextUnit.Line, 1);
+                            // we need to scroll into view or getting the boundary
+                            // rectangles might return 0
+                            Verify.AreEqual(1, moveAmount);
+                            range.ScrollIntoView(true);
+                            Rect[] boundingRects = range.GetBoundingRectangles();
+                            Verify.AreEqual(1, boundingRects.GetLength(0));
+                        }
+
+                    };
+
+                    testMovement(testRange);
+
+                    // test again with unaligned text buffer and screen buffer
+                    _FillOutputBufferWithData(app);
+                    Globals.WaitForTimeout();
+
+                    visibleRanges = textPattern.GetVisibleRanges();
+                    testRange = visibleRanges.First().Clone();
+                    // move range back to the top
+                    while (true)
+                    {
+                        int moveCount = testRange.Move(TextUnit.Line, -1);
+                        if (moveCount == 0)
+                        {
+                            break;
+                        }
+                    }
+
+                    testMovement(testRange);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void CanMoveEndpointByUnitNearTopBoundary()
+        {
+            using (RegistryHelper reg = new RegistryHelper())
+            {
+                reg.BackupRegistry();
+                using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
+                {
+                    AutomationElement textAreaUiaElement = GetTextAreaUiaElement(app);
+                    TextPattern textPattern = textAreaUiaElement.GetCurrentPattern(TextPattern.Pattern) as TextPattern;
+                    TextPatternRange[] visibleRanges = textPattern.GetVisibleRanges();
+                    TextPatternRange testRange = visibleRanges.First().Clone();
+
+                    // assumes that range is a line range at the top of the screen buffer
+                    Action<TextPatternRange> testTopBoundary = delegate(TextPatternRange range)
+                    {
+                        // the first visible range is at the top of the screen
+                        // buffer, we shouldn't be able to move the starting endpoint up
+                        int moveAmount = range.MoveEndpointByUnit(TextPatternRangeEndpoint.Start, TextUnit.Line, -1);
+                        Verify.AreEqual(0, moveAmount);
+
+                        // we should be able to move the ending endpoint back, creating a degenerate range
+                        moveAmount = range.MoveEndpointByUnit(TextPatternRangeEndpoint.End, TextUnit.Line, -1);
+                        Verify.AreEqual(-1, moveAmount);
+
+                        // the range should now be degenerate and the ending
+                        // endpoint should not be able to be moved back again
+                        string rangeText = range.GetText(-1);
+                        Verify.AreEqual("", rangeText);
+                        moveAmount = range.MoveEndpointByUnit(TextPatternRangeEndpoint.End, TextUnit.Line, -1);
+                        Verify.AreEqual(-1, moveAmount);
+                    };
+
+                    testTopBoundary(testRange);
+
+                    // we want to test that the boundaries are still observed
+                    // when the screen buffer index and text buffer index don't align.
+                    // write a bunch of text to the screen to fill up the text
+                    // buffer and make it start to reuse its buffer
+                    _FillOutputBufferWithData(app);
+                    Globals.WaitForTimeout();
+
+                    // move all the way to the bottom
+                    visibleRanges = textPattern.GetVisibleRanges();
+                    testRange = visibleRanges.Last().Clone();
+                    while (true)
+                    {
+                        int moved = testRange.Move(TextUnit.Line, 1);
+                        if (moved == 0)
+                        {
+                            break;
+                        }
+                    }
+                    // we're at the bottom of the screen buffer, so move back to the top
+                    // so we can test
+                    int rowsToMove = -1 * (_GetTotalRows(app) - 1);
+                    int moveCount = testRange.Move(TextUnit.Line, rowsToMove);
+                    Verify.AreEqual(rowsToMove, moveCount);
+                    testRange.ScrollIntoView(true);
+
+                    testTopBoundary(testRange);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void CanMoveEndpointByUnitNearBottomBoundary()
+        {
+            using (RegistryHelper reg = new RegistryHelper())
+            {
+                reg.BackupRegistry();
+                using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
+                {
+                    AutomationElement textAreaUiaElement = GetTextAreaUiaElement(app);
+                    TextPattern textPattern = textAreaUiaElement.GetCurrentPattern(TextPattern.Pattern) as TextPattern;
+                    TextPatternRange[] visibleRanges = textPattern.GetVisibleRanges();
+                    TextPatternRange testRange = visibleRanges.First().Clone();
+
+                    // assumes that range is a line range at the bottom of the screen buffer
+                    Action<TextPatternRange> testBottomBoundary = delegate (TextPatternRange range)
+                    {
+                        // the range is at the bottom of the screen buffer, we
+                        // shouldn't be able to move the endpoint endpoint down
+                        int moveAmount = range.MoveEndpointByUnit(TextPatternRangeEndpoint.End, TextUnit.Line, 1);
+                        Verify.AreEqual(0, moveAmount);
+
+                        // we shouldn't be able to move the starting endpoint down either
+                        moveAmount = range.MoveEndpointByUnit(TextPatternRangeEndpoint.Start, TextUnit.Line, 1);
+                        Verify.AreEqual(0, moveAmount);
+                    };
+
+                    // move the range to the bottom of the screen
+                    int rowsToMove = _GetTotalRows(app) - 1;
+                    int moveCount = testRange.Move(TextUnit.Line, rowsToMove);
+                    Verify.AreEqual(rowsToMove, moveCount);
+
+                    testBottomBoundary(testRange);
+
+                    // we want to test that the boundaries are still observed
+                    // when the screen buffer index and text buffer index don't align.
+                    // write a bunch of text to the screen to fill up the text
+                    // buffer and make it start to reuse its buffer
+                    _FillOutputBufferWithData(app);
+                    Globals.WaitForTimeout();
+
+                    // move all the way to the top
+                    visibleRanges = textPattern.GetVisibleRanges();
+                    testRange = visibleRanges.First().Clone();
+                    while (true)
+                    {
+                        int moved = testRange.Move(TextUnit.Line, -1);
+                        if (moved == 0)
+                        {
+                            break;
+                        }
+                    }
+
+                    // we're at the top of the screen buffer, so move back to the bottom
+                    // so we can test
+                    rowsToMove = _GetTotalRows(app) - 1;
+                    moveCount = testRange.Move(TextUnit.Line, rowsToMove);
+                    Verify.AreEqual(rowsToMove, moveCount);
+                    testRange.ScrollIntoView(true);
+
+                    testBottomBoundary(testRange);
+
                 }
             }
         }

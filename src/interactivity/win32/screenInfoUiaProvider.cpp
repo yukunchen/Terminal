@@ -406,7 +406,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         {
             range = new UiaTextRange(pProvider,
                                      start,
-                                     end);
+                                     end,
+                                     false);
         }
         catch (...)
         {
@@ -471,7 +472,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
         {
             range = new UiaTextRange(pProvider,
                                      start,
-                                     end);
+                                     end,
+                                     false);
         }
         catch (...)
         {
@@ -533,24 +535,14 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-    const SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
-    RETURN_HR_IF_NULL(E_POINTER, pScreenInfo);
-
-    const TEXT_BUFFER_INFO* const pOutputBuffer = pScreenInfo->TextInfo;
-    RETURN_HR_IF_NULL(E_POINTER, pOutputBuffer);
-
-    const int documentLines = pOutputBuffer->TotalRowCount();
-    const int lineWidth = _getScreenBufferCoords().X;
-
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 
     try
     {
-        // - 1 to get the last column in the last row
-        *ppRetVal = new UiaTextRange(pProvider,
-                                     0,
-                                     documentLines * lineWidth - 1);
+        *ppRetVal = new UiaTextRange(pProvider);
+        RETURN_HR_IF_NULL(E_OUTOFMEMORY, *ppRetVal);
+        (*ppRetVal)->ExpandToEnclosingUnit(TextUnit::TextUnit_Document);
     }
     catch (...)
     {
