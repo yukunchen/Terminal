@@ -335,7 +335,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
                         ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme.RefreshAreaAttributes();
 
                         // Do WM_GETICON workaround. Must call WM_SETICON once or apps calling WM_GETICON will get null.
-                        Icon::Instance().ApplyWindowMessageWorkaround();
+                        Icon::Instance().ApplyWindowMessageWorkaround(hWnd);
 
                         // Set up the hot key for this window.
                         if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetHotKey() != 0)
