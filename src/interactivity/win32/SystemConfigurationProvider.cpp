@@ -148,9 +148,19 @@ void SystemConfigurationProvider::GetSettingsFromLink(
         // search for the application along the path so that we can load its icons (if we didn't find one explicitly in
         // the shortcut)
         const DWORD dwLinkLen = SearchPathW(pwszCurrDir, pwszAppName, nullptr, ARRAYSIZE(wszIconLocation), wszIconLocation, nullptr);
+
+        // If we cannot find the application in the path, then try to fall back and see if the window title is a valid path and use that.
         if (dwLinkLen <= 0 || dwLinkLen > sizeof(wszIconLocation))
         {
-            StringCchCopyW(wszIconLocation, ARRAYSIZE(wszIconLocation), pwszAppName);
+            if (PathFileExistsW(pwszTitle) && (wcslen(pwszTitle) < sizeof(wszIconLocation)))
+            {
+                StringCchCopyW(wszIconLocation, ARRAYSIZE(wszIconLocation), pwszTitle);
+            }
+            else
+            {
+                // If all else fails, just stick the app name into the path and try to resolve just the app name.
+                StringCchCopyW(wszIconLocation, ARRAYSIZE(wszIconLocation), pwszAppName);
+            }
         }
     }
 
