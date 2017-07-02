@@ -211,8 +211,3 @@ void FreeAliasBuffers();
 void FreeCommandHistory(_In_ HANDLE const hProcess);
 void FreeCommandHistoryBuffers();
 void ResizeCommandHistoryBuffers(_In_ UINT const cCommands);
-
-int MyStringCompareW(_In_reads_bytes_(cbLength) const WCHAR *Str1,
-                     _In_reads_bytes_(cbLength) const WCHAR *Str2,
-                     _In_ const USHORT cbLength,
-                     _In_ const BOOLEAN fCaseInsensitive);
