@@ -65,7 +65,7 @@ HRESULT ConsoleProcessList::AllocProcessData(_In_ DWORD const dwProcessId,
 
         RETURN_IF_NULL_ALLOC(pProcessData);
 
-        _processes.push_back(pProcessData);
+        _processes.push_front(pProcessData);
 
         if (nullptr != ppProcessData)
         {
