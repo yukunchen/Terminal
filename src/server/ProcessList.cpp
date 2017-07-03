@@ -65,6 +65,9 @@ HRESULT ConsoleProcessList::AllocProcessData(_In_ DWORD const dwProcessId,
 
         RETURN_IF_NULL_ALLOC(pProcessData);
 
+        // Some applications, when reading the process list through the GetConsoleProcessList API, are expecting
+        // the returned list of attached process IDs to be from newest to oldest.
+        // As such, we have to put the newest process into the head of the list.
         _processes.push_front(pProcessData);
 
         if (nullptr != ppProcessData)
