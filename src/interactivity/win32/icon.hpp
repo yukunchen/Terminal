@@ -32,7 +32,7 @@ namespace Microsoft
 
                     HRESULT LoadIconsFromPath(_In_ PCWSTR pwszIconLocation, _In_ int const nIconIndex);
 
-                    HRESULT ApplyWindowMessageWorkaround();
+                    HRESULT ApplyWindowMessageWorkaround(_In_ HWND const hwnd);
 
                 protected:
                     Icon();
