@@ -155,10 +155,10 @@ HRESULT Icon::LoadIconsFromPath(_In_ PCWSTR pwszIconLocation, _In_  int const nI
 //   then any call to WM_GETICON will return NULL for the specified icon instead of returning the window class value.
 //   By calling WM_SETICON once, we ensure that third-party apps calling WM_GETICON will receive the icon we specify.
 // Arguments:
-// - <none>
+// - hwnd - Handle to apply message workaround to.
 // Return Value:
 // - S_OK or HRESULT failure code.
-HRESULT Icon::ApplyWindowMessageWorkaround() 
+HRESULT Icon::ApplyWindowMessageWorkaround(_In_ HWND const hwnd) 
 {
     HICON hIcon;
     HICON hSmIcon;
@@ -167,16 +167,8 @@ HRESULT Icon::ApplyWindowMessageWorkaround()
 
     if (SUCCEEDED(hr))
     {
-        if (ServiceLocator::LocateConsoleWindow() == nullptr)
-        {
-            hr = E_HANDLE;
-        }
-
-        if (SUCCEEDED(hr))
-        {
-            SendMessageW(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-            SendMessageW(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), WM_SETICON, ICON_SMALL, (LPARAM)hSmIcon);
-        }
+        SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+        SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hSmIcon);
     }
 
     return hr;
