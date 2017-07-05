@@ -85,6 +85,12 @@ void FileTests::TestUtf8WriteFileInvalid()
 
 void FileTests::TestWriteFileRaw()
 {
+    // \x7 is bell
+    // \x8 is backspace
+    // \x9 is tab
+    // \xa is linefeed
+    // \xd is carriage return
+    // All should be ignored/printed in raw mode.
     PCSTR strTest = "a\x7s\x8d\x9f\xag\xdh";
     DWORD cchTest = (DWORD)strlen(strTest);
     String strReadBackExpected(strTest);
