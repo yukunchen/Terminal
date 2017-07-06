@@ -23,6 +23,7 @@ class FileTests
 
     TEST_METHOD(TestWriteFileRaw);
     TEST_METHOD(TestWriteFileProcessed);
+    TEST_METHOD(TestWriteFileWrapEOL);
 
 };
 
@@ -318,4 +319,39 @@ void FileTests::TestWriteFileProcessed()
         ReadBackHelper(hOut, csbiexBefore.dwCursorPosition, cchReadBack, pszReadBack);
         VERIFY_ARE_EQUAL(String(pszReadBackExpected), String(pszReadBack.get()), L"Verify text matches what we expected to be written into the buffer.");
     }
+}
+
+void FileTests::TestWriteFileWrapEOL()
+{
+    HANDLE hOut = GetStdOutputHandle();
+    VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
+    csbiexOriginal.cbSize = sizeof(csbiexOriginal);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexOriginal), L"Retrieve screen buffer properties at beginning of test.");
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, ENABLE_WRAP_AT_EOL_OUTPUT), L"Set wrap at EOL.");
+
+    COORD const coordZero = { 0 };
+    VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"Cursor should be at 0,0 in fresh buffer.");
+
+    // Fill first row of the buffer with Z characters until 1 away from the end.
+    for (SHORT i = 0; i < csbiexOriginal.dwSize.X - 1; i++)
+    {
+        VERIFY_WIN32_BOOL_SUCCEEDED(WriteFile(hOut, "Z", 1, nullptr, nullptr), L"Write of character succeeded.");
+    }
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiexBefore = { 0 };
+    csbiexBefore.cbSize = sizeof(csbiexBefore);
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiexAfter = { 0 };
+    csbiexAfter.cbSize = sizeof(csbiexAfter);
+    COORD coordExpected = { 0 };
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexBefore), L"Get cursor position information before attempting to wrap at end of line.");
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteFile(hOut, "Y", 1, nullptr, nullptr), L"Write of final character in line succeeded.");
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexAfter), L"Get cursor position information after attempting to wrap at end of line.");
+    coordExpected = csbiexBefore.dwCursorPosition;
+    coordExpected.Y++;
+    coordExpected.X = 0;
+    VERIFY_ARE_EQUAL(coordExpected, csbiexAfter.dwCursorPosition, L"Verify cursor moved down a row and to beginning of line when EOL wrap flag was on.");
 }
