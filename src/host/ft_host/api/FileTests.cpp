@@ -30,6 +30,10 @@ class FileTests
         TEST_METHOD_PROPERTY(L"Data:fProcessedOn", L"{true, false}")
         END_TEST_METHOD();
 
+    BEGIN_TEST_METHOD(TestWriteFileDisableNewlineAutoReturn)
+        TEST_METHOD_PROPERTY(L"Data:fDisableAutoReturn", L"{true, false}")
+        TEST_METHOD_PROPERTY(L"Data:fProcessedOn", L"{true, false}")
+        END_TEST_METHOD();
 };
 
 void FileTests::TestUtf8WriteFileInvalid()
@@ -429,4 +433,63 @@ void FileTests::TestWriteFileVTProcessing()
         ReadBackHelper(hOut, coordZero, cchTest, pszReadBack);
         VERIFY_ARE_EQUAL(String(pszTestString), String(pszReadBack.get()), L"Verify that original test string was printed into the buffer.");
     }
+}
+
+void FileTests::TestWriteFileDisableNewlineAutoReturn()
+{
+    bool fDisableAutoReturn;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"fDisableAutoReturn", fDisableAutoReturn));
+
+    bool fProcessedOn;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"fProcessedOn", fProcessedOn));
+
+    HANDLE hOut = GetStdOutputHandle();
+    VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
+    csbiexOriginal.cbSize = sizeof(csbiexOriginal);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexOriginal), L"Retrieve screen buffer properties at beginning of test.");
+
+    DWORD dwMode = 0;
+    SetFlagIf(dwMode, DISABLE_NEWLINE_AUTO_RETURN, fDisableAutoReturn);
+    SetFlagIf(dwMode, ENABLE_PROCESSED_OUTPUT, fProcessedOn);
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, dwMode), L"Set console mode for test.");
+
+    COORD const coordZero = { 0 };
+    VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"Cursor should be at 0,0 in fresh buffer.");
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiexBefore = { 0 };
+    csbiexBefore.cbSize = sizeof(csbiexBefore);
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiexAfter = { 0 };
+    csbiexAfter.cbSize = sizeof(csbiexAfter);
+    COORD coordExpected = { 0 };
+
+    WriteFileHelper(hOut, csbiexBefore, csbiexAfter, "abc", 3);
+    coordExpected = csbiexBefore.dwCursorPosition;
+    coordExpected.X += 3;
+    VERIFY_ARE_EQUAL(coordExpected, csbiexAfter.dwCursorPosition, L"Cursor should have moved right to the end of the text written.");
+
+    WriteFileHelper(hOut, csbiexBefore, csbiexAfter, "\n", 1);
+
+    if (fProcessedOn)
+    {
+        if (fDisableAutoReturn)
+        {
+            coordExpected = csbiexBefore.dwCursorPosition;
+            coordExpected.Y += 1;
+        }
+        else
+        {
+            coordExpected = csbiexBefore.dwCursorPosition;
+            coordExpected.Y += 1;
+            coordExpected.X = 0;
+        }
+    }
+    else
+    {
+        coordExpected = csbiexBefore.dwCursorPosition;
+        coordExpected.X += 1;
+    }
+
+    VERIFY_ARE_EQUAL(coordExpected, csbiexAfter.dwCursorPosition, L"Cursor should move to expected position.");
 }
