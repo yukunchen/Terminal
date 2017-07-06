@@ -14,10 +14,7 @@ class FileTests
 {
     BEGIN_TEST_CLASS(FileTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Method")
-    END_TEST_CLASS();
-
-    TEST_METHOD_SETUP(FileTestSetup);
-    TEST_METHOD_CLEANUP(FileTestCleanup);
+        END_TEST_CLASS();
 
     TEST_METHOD(TestUtf8WriteFileInvalid);
 
@@ -26,19 +23,14 @@ class FileTests
 
     BEGIN_TEST_METHOD(TestWriteFileWrapEOL)
         TEST_METHOD_PROPERTY(L"Data:fFlagOn", L"{true, false}")
-    END_TEST_METHOD()
+        END_TEST_METHOD();
+
+    BEGIN_TEST_METHOD(TestWriteFileVTProcessing)
+        TEST_METHOD_PROPERTY(L"Data:fVtOn", L"{true, false}")
+        TEST_METHOD_PROPERTY(L"Data:fProcessedOn", L"{true, false}")
+        END_TEST_METHOD();
 
 };
-
-bool FileTests::FileTestSetup()
-{
-    return true;
-}
-
-bool FileTests::FileTestCleanup()
-{
-    return true;
-}
 
 void FileTests::TestUtf8WriteFileInvalid()
 {
@@ -378,4 +370,63 @@ void FileTests::TestWriteFileWrapEOL()
     }
 
     VERIFY_ARE_EQUAL(coordExpected, csbiexAfter.dwCursorPosition, L"Verify cursor moved as expected based on flag state.");
+}
+
+void FileTests::TestWriteFileVTProcessing()
+{
+    bool fVtOn;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"fVtOn", fVtOn));
+
+    bool fProcessedOn;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"fProcessedOn", fProcessedOn));
+
+    HANDLE hOut = GetStdOutputHandle();
+    VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
+    csbiexOriginal.cbSize = sizeof(csbiexOriginal);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexOriginal), L"Retrieve screen buffer properties at beginning of test.");
+
+    DWORD dwFlags = 0;
+    SetFlagIf(dwFlags, ENABLE_VIRTUAL_TERMINAL_PROCESSING, fVtOn);
+    SetFlagIf(dwFlags, ENABLE_PROCESSED_OUTPUT, fProcessedOn);
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, dwFlags), L"Turn on relevant flags for test.");
+
+    COORD const coordZero = { 0 };
+    VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"Cursor should be at 0,0 in fresh buffer.");
+
+    PCSTR pszTestString = "\x1b" "[14m";
+    DWORD const cchTest = (DWORD)strlen(pszTestString);
+    
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiexBefore = { 0 };
+    csbiexBefore.cbSize = sizeof(csbiexBefore);
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiexAfter = { 0 };
+    csbiexAfter.cbSize = sizeof(csbiexAfter);
+
+    WriteFileHelper(hOut, csbiexBefore, csbiexAfter, pszTestString, cchTest);
+
+    // We only expect characters to be processed and not printed if both processed mode and VT mode are on.
+    bool const fProcessedNotPrinted = fProcessedOn && fVtOn;
+
+    if (fProcessedNotPrinted)
+    {
+        PCSTR pszReadBackExpected = "      ";
+        DWORD const cchReadBackExpected = (DWORD)strlen(pszReadBackExpected);
+
+        VERIFY_ARE_EQUAL(csbiexBefore.dwCursorPosition, csbiexAfter.dwCursorPosition, L"Verify cursor didn't move because the VT sequence was processed instead of printed.");
+
+        wistd::unique_ptr<char[]> pszReadBack;
+        ReadBackHelper(hOut, coordZero, cchReadBackExpected, pszReadBack);
+        VERIFY_ARE_EQUAL(String(pszReadBackExpected), String(pszReadBack.get()), L"Verify that nothing was printed into the buffer.");
+    }
+    else
+    {
+        COORD coordExpected = csbiexBefore.dwCursorPosition;
+        coordExpected.X += (SHORT)cchTest;
+        VERIFY_ARE_EQUAL(coordExpected, csbiexAfter.dwCursorPosition, L"Verify cursor moved as characters should have been emitted, not consumed.");
+
+        wistd::unique_ptr<char[]> pszReadBack;
+        ReadBackHelper(hOut, coordZero, cchTest, pszReadBack);
+        VERIFY_ARE_EQUAL(String(pszTestString), String(pszReadBack.get()), L"Verify that original test string was printed into the buffer.");
+    }
 }
