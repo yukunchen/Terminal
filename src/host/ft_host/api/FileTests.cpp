@@ -23,7 +23,10 @@ class FileTests
 
     TEST_METHOD(TestWriteFileRaw);
     TEST_METHOD(TestWriteFileProcessed);
-    TEST_METHOD(TestWriteFileWrapEOL);
+
+    BEGIN_TEST_METHOD(TestWriteFileWrapEOL)
+        TEST_METHOD_PROPERTY(L"Data:fFlagOn", L"{true, false}")
+    END_TEST_METHOD()
 
 };
 
@@ -323,6 +326,9 @@ void FileTests::TestWriteFileProcessed()
 
 void FileTests::TestWriteFileWrapEOL()
 {
+    bool fFlagOn;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"fFlagOn", fFlagOn));
+
     HANDLE hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
@@ -330,7 +336,14 @@ void FileTests::TestWriteFileWrapEOL()
     csbiexOriginal.cbSize = sizeof(csbiexOriginal);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexOriginal), L"Retrieve screen buffer properties at beginning of test.");
 
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, ENABLE_WRAP_AT_EOL_OUTPUT), L"Set wrap at EOL.");
+    if (fFlagOn)
+    {
+        VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, ENABLE_WRAP_AT_EOL_OUTPUT), L"Set wrap at EOL.");
+    }
+    else
+    {
+        VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, 0), L"Make sure wrap at EOL is off.");
+    }
 
     COORD const coordZero = { 0 };
     VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"Cursor should be at 0,0 in fresh buffer.");
@@ -338,7 +351,7 @@ void FileTests::TestWriteFileWrapEOL()
     // Fill first row of the buffer with Z characters until 1 away from the end.
     for (SHORT i = 0; i < csbiexOriginal.dwSize.X - 1; i++)
     {
-        VERIFY_WIN32_BOOL_SUCCEEDED(WriteFile(hOut, "Z", 1, nullptr, nullptr), L"Write of character succeeded.");
+        WriteFile(hOut, "Z", 1, nullptr, nullptr);
     }
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexBefore = { 0 };
@@ -350,8 +363,19 @@ void FileTests::TestWriteFileWrapEOL()
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexBefore), L"Get cursor position information before attempting to wrap at end of line.");
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteFile(hOut, "Y", 1, nullptr, nullptr), L"Write of final character in line succeeded.");
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexAfter), L"Get cursor position information after attempting to wrap at end of line.");
-    coordExpected = csbiexBefore.dwCursorPosition;
-    coordExpected.Y++;
-    coordExpected.X = 0;
-    VERIFY_ARE_EQUAL(coordExpected, csbiexAfter.dwCursorPosition, L"Verify cursor moved down a row and to beginning of line when EOL wrap flag was on.");
+
+    if (fFlagOn)
+    {
+        Log::Comment(L"Cursor should go down a row if we tried to print at end of line.");
+        coordExpected = csbiexBefore.dwCursorPosition;
+        coordExpected.Y++;
+        coordExpected.X = 0;
+    }
+    else
+    {
+        Log::Comment(L"Cursor shouldn't move when printing at end of line.");
+        coordExpected = csbiexBefore.dwCursorPosition;
+    }
+
+    VERIFY_ARE_EQUAL(coordExpected, csbiexAfter.dwCursorPosition, L"Verify cursor moved as expected based on flag state.");
 }
