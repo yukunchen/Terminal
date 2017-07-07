@@ -7,6 +7,8 @@
 
 #include "Common.hpp"
 
+#include <future>
+
 // This class is intended to test:
 // WriteFile
 
@@ -34,6 +36,8 @@ class FileTests
         TEST_METHOD_PROPERTY(L"Data:fDisableAutoReturn", L"{true, false}")
         TEST_METHOD_PROPERTY(L"Data:fProcessedOn", L"{true, false}")
         END_TEST_METHOD();
+
+    TEST_METHOD(TestWriteFileSuspended);
 };
 
 void FileTests::TestUtf8WriteFileInvalid()
@@ -492,4 +496,56 @@ void FileTests::TestWriteFileDisableNewlineAutoReturn()
     }
 
     VERIFY_ARE_EQUAL(coordExpected, csbiexAfter.dwCursorPosition, L"Cursor should move to expected position.");
+}
+
+void SendKeyHelper(HANDLE hIn, WORD vk)
+{
+    INPUT_RECORD irPause = { 0 };
+    irPause.EventType = KEY_EVENT;
+    irPause.Event.KeyEvent.bKeyDown = TRUE;
+    irPause.Event.KeyEvent.wVirtualKeyCode = vk;
+
+    DWORD dwWritten = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInputW(hIn, &irPause, 1u, &dwWritten), L"Key event sent.");
+}
+
+void PauseHelper(HANDLE hIn)
+{
+    SendKeyHelper(hIn, VK_PAUSE);
+}
+
+void UnpauseHelper(HANDLE hIn)
+{
+    SendKeyHelper(hIn, VK_ESCAPE);
+}
+
+void FileTests::TestWriteFileSuspended()
+{
+    HANDLE hOut = GetStdOutputHandle();
+    VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
+
+    HANDLE hIn = GetStdInputHandle();
+    VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
+    csbiexOriginal.cbSize = sizeof(csbiexOriginal);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexOriginal), L"Retrieve screen buffer properties at beginning of test.");
+
+    DWORD dwMode = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hOut, dwMode), L"Set console mode for test.");
+
+    COORD const coordZero = { 0 };
+    VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"Cursor should be at 0,0 in fresh buffer.");
+    
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteFile(hOut, "abc", 3, nullptr, nullptr), L"Test first write success.");
+    PauseHelper(hIn);
+
+    auto BlockedWrite = std::async([&] { 
+        Log::Comment(L"Background WriteFile scheduled."); 
+        VERIFY_WIN32_BOOL_SUCCEEDED(WriteFile(hOut, "def", 3, nullptr, nullptr), L"Test second write success.");  
+    });
+
+    UnpauseHelper(hIn);
+
+    BlockedWrite.wait();
 }
