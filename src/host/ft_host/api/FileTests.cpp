@@ -41,6 +41,7 @@ class FileTests
 
     TEST_METHOD(TestReadFileBasic);
     TEST_METHOD(TestReadFileBasicSync);
+    TEST_METHOD(TestReadFileBasicEmpty);
     TEST_METHOD(TestReadFileLine);
     TEST_METHOD(TestReadFileLineSync);
 
@@ -565,6 +566,7 @@ void SendFullKeyStrokeHelper(HANDLE hIn, char ch)
     ZeroMemory(ir, ARRAYSIZE(ir) * sizeof(INPUT_RECORD));
     ir[0].EventType = KEY_EVENT;
     ir[0].Event.KeyEvent.bKeyDown = TRUE;
+    ir[0].Event.KeyEvent.dwControlKeyState = ch < 0x20 ? LEFT_CTRL_PRESSED : 0; // set left_ctrl_pressed for control keys.
     ir[0].Event.KeyEvent.uChar.AsciiChar = ch;
     ir[0].Event.KeyEvent.wVirtualKeyCode = VkKeyScanA(ir[0].Event.KeyEvent.uChar.AsciiChar);
     ir[0].Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKeyA(ir[0].Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC);
@@ -619,6 +621,29 @@ void FileTests::TestReadFileBasicSync()
     ReadFile(hIn, &ch, 1, nullptr, nullptr);
 
     VERIFY_ARE_EQUAL(chExpected, ch);
+}
+
+void FileTests::TestReadFileBasicEmpty()
+{
+    HANDLE hIn = GetStdInputHandle();
+    VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
+
+    DWORD dwMode = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hIn, dwMode), L"Set input mode for test.");
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
+
+    char ch = '\0';
+    Log::Comment(L"Queue background blocking read file operation.");
+    auto BackgroundRead = std::async([&] { ReadFile(hIn, &ch, 1, nullptr, nullptr); });
+
+    char const chExpected = '\x1a'; // ctrl+z character
+    Log::Comment(L"Send a key into the console.");
+    SendFullKeyStrokeHelper(hIn, chExpected);
+
+    Log::Comment(L"Wait for background to unblock.");
+    BackgroundRead.wait();
+    VERIFY_ARE_EQUAL('\0', ch);
 }
 
 void FileTests::TestReadFileLine()
