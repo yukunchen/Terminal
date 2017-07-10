@@ -38,6 +38,8 @@ class FileTests
         END_TEST_METHOD();
 
     TEST_METHOD(TestWriteFileSuspended);
+
+    TEST_METHOD(TestReadFileRaw);
 };
 
 void FileTests::TestUtf8WriteFileInvalid()
@@ -548,4 +550,42 @@ void FileTests::TestWriteFileSuspended()
     UnpauseHelper(hIn);
 
     BlockedWrite.wait();
+}
+
+void SendFullKeyStrokeHelper(HANDLE hIn, char ch)
+{
+    INPUT_RECORD ir[2];
+    ZeroMemory(ir, ARRAYSIZE(ir) * sizeof(INPUT_RECORD));
+    ir[0].EventType = KEY_EVENT;
+    ir[0].Event.KeyEvent.bKeyDown = TRUE;
+    ir[0].Event.KeyEvent.uChar.AsciiChar = ch;
+    ir[0].Event.KeyEvent.wVirtualKeyCode = VkKeyScanA(ir[0].Event.KeyEvent.uChar.AsciiChar);
+    ir[0].Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKeyA(ir[0].Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC);
+    ir[0].Event.KeyEvent.wRepeatCount = 1;
+    ir[1] = ir[0];
+    ir[1].Event.KeyEvent.bKeyDown = FALSE;
+    
+    DWORD dwWritten = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInputA(hIn, ir, (DWORD)ARRAYSIZE(ir), &dwWritten), L"Writing key stroke.");
+    VERIFY_ARE_EQUAL((DWORD)ARRAYSIZE(ir), dwWritten, L"Written matches expected.");
+}
+
+void FileTests::TestReadFileRaw()
+{
+    HANDLE hIn = GetStdInputHandle();
+    VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
+
+    DWORD dwMode = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hIn, dwMode), L"Set input mode for test.");
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
+
+    char const chExpected = 'a';
+    char ch;
+    auto BackgroundRead = std::async([&] { ReadFile(hIn, &ch, 1, nullptr, nullptr); });
+
+    SendFullKeyStrokeHelper(hIn, chExpected);
+        
+    BackgroundRead.wait();
+    VERIFY_ARE_EQUAL(chExpected, ch);
 }
