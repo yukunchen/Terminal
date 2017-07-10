@@ -40,7 +40,9 @@ class FileTests
     TEST_METHOD(TestWriteFileSuspended);
 
     TEST_METHOD(TestReadFileBasic);
+    TEST_METHOD(TestReadFileBasicSync);
     TEST_METHOD(TestReadFileLine);
+    TEST_METHOD(TestReadFileLineSync);
 };
 
 void FileTests::TestUtf8WriteFileInvalid()
@@ -580,7 +582,6 @@ void FileTests::TestReadFileBasic()
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hIn, dwMode), L"Set input mode for test.");
 
     VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
-
     
     char ch = '\0';
     Log::Comment(L"Queue background blocking read file operation.");
@@ -592,6 +593,27 @@ void FileTests::TestReadFileBasic()
         
     Log::Comment(L"Wait for background to unblock.");
     BackgroundRead.wait();
+    VERIFY_ARE_EQUAL(chExpected, ch);
+}
+
+void FileTests::TestReadFileBasicSync()
+{
+    HANDLE hIn = GetStdInputHandle();
+    VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
+
+    DWORD dwMode = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hIn, dwMode), L"Set input mode for test.");
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
+
+    char const chExpected = 'a';
+    Log::Comment(L"Send a key into the console.");
+    SendFullKeyStrokeHelper(hIn, chExpected);
+
+    char ch = '\0';
+    Log::Comment(L"Read with synchronous blocking read.");
+    ReadFile(hIn, &ch, 1, nullptr, nullptr);
+
     VERIFY_ARE_EQUAL(chExpected, ch);
 }
 
@@ -617,6 +639,12 @@ void FileTests::TestReadFileLine()
     VERIFY_ARE_EQUAL(std::future_status::timeout, status, L"We should still be waiting for a result.");
     VERIFY_ARE_EQUAL('\0', ch, L"Character shouldn't be filled by background read yet.");
 
+    Log::Comment(L"Send a line feed character, we should stay blocked.");
+    SendFullKeyStrokeHelper(hIn, '\n');
+    status = BackgroundRead.wait_for(std::chrono::milliseconds(250));
+    VERIFY_ARE_EQUAL(std::future_status::timeout, status, L"We should still be waiting for a result.");
+    VERIFY_ARE_EQUAL('\0', ch, L"Character shouldn't be filled by background read yet.");
+
     Log::Comment(L"Now send a carriage return into the console to signify the end of the input line.");
     SendFullKeyStrokeHelper(hIn, '\r');
 
@@ -624,3 +652,26 @@ void FileTests::TestReadFileLine()
     BackgroundRead.wait();
     VERIFY_ARE_EQUAL(chExpected, ch);
 }
+
+void FileTests::TestReadFileLineSync()
+{
+    HANDLE hIn = GetStdInputHandle();
+    VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
+
+    DWORD dwMode = ENABLE_LINE_INPUT;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hIn, dwMode), L"Set input mode for test.");
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
+
+    char const chExpected = 'a';
+    Log::Comment(L"Send a key into the console followed by a carriage return.");
+    SendFullKeyStrokeHelper(hIn, chExpected);
+    SendFullKeyStrokeHelper(hIn, '\r');
+
+    char ch = '\0';
+    Log::Comment(L"Read back the input with a synchronous blocking read.");
+    ReadFile(hIn, &ch, 1, nullptr, nullptr);
+
+    VERIFY_ARE_EQUAL(chExpected, ch);
+}
+
