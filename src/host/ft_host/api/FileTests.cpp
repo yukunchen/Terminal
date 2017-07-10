@@ -59,7 +59,7 @@ void FileTests::TestUtf8WriteFileInvalid()
         SetConsoleOutputCP(uiOriginalCP);
     });
 
-    HANDLE hOut = GetStdOutputHandle();
+    HANDLE const hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleOutputCP(CP_UTF8), L"Set output codepage to UTF8");
@@ -112,7 +112,7 @@ void FileTests::TestWriteFileRaw()
     DWORD cchTest = (DWORD)strlen(strTest);
     String strReadBackExpected(strTest);
 
-    HANDLE hOut = GetStdOutputHandle();
+    HANDLE const hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexBefore = { 0 };
@@ -193,7 +193,7 @@ void FileTests::TestWriteFileProcessed()
     // \xd is carriage return
     // All should cause activity in processed mode.
 
-    HANDLE hOut = GetStdOutputHandle();
+    HANDLE const hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
@@ -339,7 +339,7 @@ void FileTests::TestWriteFileWrapEOL()
     bool fFlagOn;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fFlagOn", fFlagOn));
 
-    HANDLE hOut = GetStdOutputHandle();
+    HANDLE const hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
@@ -398,7 +398,7 @@ void FileTests::TestWriteFileVTProcessing()
     bool fProcessedOn;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fProcessedOn", fProcessedOn));
 
-    HANDLE hOut = GetStdOutputHandle();
+    HANDLE const hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
@@ -457,7 +457,7 @@ void FileTests::TestWriteFileDisableNewlineAutoReturn()
     bool fProcessedOn;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fProcessedOn", fProcessedOn));
 
-    HANDLE hOut = GetStdOutputHandle();
+    HANDLE const hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
@@ -531,10 +531,10 @@ void UnpauseHelper(HANDLE hIn)
 
 void FileTests::TestWriteFileSuspended()
 {
-    HANDLE hOut = GetStdOutputHandle();
+    HANDLE const hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
-    HANDLE hIn = GetStdInputHandle();
+    HANDLE const hIn = GetStdInputHandle();
     VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
@@ -581,7 +581,7 @@ void SendFullKeyStrokeHelper(HANDLE hIn, char ch)
 
 void FileTests::TestReadFileBasic()
 {
-    HANDLE hIn = GetStdInputHandle();
+    HANDLE const hIn = GetStdInputHandle();
     VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
 
     DWORD dwMode = 0;
@@ -591,7 +591,11 @@ void FileTests::TestReadFileBasic()
     
     char ch = '\0';
     Log::Comment(L"Queue background blocking read file operation.");
-    auto BackgroundRead = std::async([&] { ReadFile(hIn, &ch, 1, nullptr, nullptr); });
+    auto BackgroundRead = std::async([&] { 
+        DWORD dwRead = 0;
+        VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, &dwRead, nullptr), L"Read file was successful."); 
+        VERIFY_ARE_EQUAL(1u, dwRead, L"Verify we read 1 character.");
+    });
 
     char const chExpected = 'a';
     Log::Comment(L"Send a key into the console.");
@@ -604,7 +608,7 @@ void FileTests::TestReadFileBasic()
 
 void FileTests::TestReadFileBasicSync()
 {
-    HANDLE hIn = GetStdInputHandle();
+    HANDLE const hIn = GetStdInputHandle();
     VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
 
     DWORD dwMode = 0;
@@ -618,14 +622,16 @@ void FileTests::TestReadFileBasicSync()
 
     char ch = '\0';
     Log::Comment(L"Read with synchronous blocking read.");
-    ReadFile(hIn, &ch, 1, nullptr, nullptr);
+    DWORD dwRead = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, &dwRead, nullptr), L"Read file was successful.");
+    VERIFY_ARE_EQUAL(1u, dwRead, L"Verify we read 1 character.");
 
     VERIFY_ARE_EQUAL(chExpected, ch);
 }
 
 void FileTests::TestReadFileBasicEmpty()
 {
-    HANDLE hIn = GetStdInputHandle();
+    HANDLE const hIn = GetStdInputHandle();
     VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
 
     DWORD dwMode = 0;
@@ -635,7 +641,11 @@ void FileTests::TestReadFileBasicEmpty()
 
     char ch = '\0';
     Log::Comment(L"Queue background blocking read file operation.");
-    auto BackgroundRead = std::async([&] { ReadFile(hIn, &ch, 1, nullptr, nullptr); });
+    auto BackgroundRead = std::async([&] { 
+        DWORD dwRead = 0;
+        VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, &dwRead, nullptr), L"Read file was successful."); 
+        VERIFY_ARE_EQUAL(0u, dwRead, L"We should have read nothing back. It should just return from Ctrl+Z");
+    });
 
     char const chExpected = '\x1a'; // ctrl+z character
     Log::Comment(L"Send a key into the console.");
@@ -648,7 +658,7 @@ void FileTests::TestReadFileBasicEmpty()
 
 void FileTests::TestReadFileLine()
 {
-    HANDLE hIn = GetStdInputHandle();
+    HANDLE const hIn = GetStdInputHandle();
     VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
 
     DWORD dwMode = ENABLE_LINE_INPUT;
@@ -658,7 +668,11 @@ void FileTests::TestReadFileLine()
 
     char ch = '\0';
     Log::Comment(L"Queue background blocking read file operation.");
-    auto BackgroundRead = std::async([&] { ReadFile(hIn, &ch, 1, nullptr, nullptr); });
+    auto BackgroundRead = std::async([&] { 
+        DWORD dwRead = 0;
+        VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, &dwRead, nullptr), L"Read file was successful."); 
+        VERIFY_ARE_EQUAL(1u, dwRead, L"Verify we read 1 character.");
+    });
 
     char const chExpected = 'a';
     Log::Comment(L"Send a key into the console.");
@@ -684,7 +698,7 @@ void FileTests::TestReadFileLine()
 
 void FileTests::TestReadFileLineSync()
 {
-    HANDLE hIn = GetStdInputHandle();
+    HANDLE const hIn = GetStdInputHandle();
     VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
 
     DWORD dwMode = ENABLE_LINE_INPUT;
@@ -699,7 +713,9 @@ void FileTests::TestReadFileLineSync()
 
     char ch = '\0';
     Log::Comment(L"Read back the input with a synchronous blocking read.");
-    ReadFile(hIn, &ch, 1, nullptr, nullptr);
+    DWORD dwRead = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, nullptr, nullptr), L"Read file was successful.");
+    VERIFY_ARE_EQUAL(0u, dwRead, L"Verify we read 0 characters.");
 
     VERIFY_ARE_EQUAL(chExpected, ch);
 }
@@ -709,10 +725,10 @@ void FileTests::TestReadFileEcho()
     bool fUseBlockedRead;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"fUseBlockedRead", fUseBlockedRead));
 
-    HANDLE hOut = GetStdOutputHandle();
+    HANDLE const hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
-    HANDLE hIn = GetStdInputHandle();
+    HANDLE const hIn = GetStdInputHandle();
     VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
 
     DWORD dwMode = ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT;
@@ -732,7 +748,11 @@ void FileTests::TestReadFileEcho()
     if (fUseBlockedRead)
     {
         Log::Comment(L"Queue background blocking read file operation.");
-        BackgroundRead = std::async([&] { ReadFile(hIn, &ch, 1, nullptr, nullptr); });
+        BackgroundRead = std::async([&] { 
+            DWORD dwRead = 0;
+            VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, nullptr, nullptr), L"Read file was successful."); 
+            VERIFY_ARE_EQUAL(0u, dwRead, L"Verify we read 0 characters.");
+        });
     }
 
     Log::Comment(L"Read back the first line of the buffer to see that it is empty.");
