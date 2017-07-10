@@ -14,9 +14,12 @@
 
 class FileTests
 {
+    // Method isolation level will completely close and re-open the OpenConsole session for every
+    // TEST_METHOD below. This saves us the time of cleaning up the mode state and the contents of
+    // the buffer and cursor position for each test. Launching a new OpenConsole is much quicker.
     BEGIN_TEST_CLASS(FileTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Method")
-        END_TEST_CLASS();
+    END_TEST_CLASS();
 
     TEST_METHOD(TestUtf8WriteFileInvalid);
 
@@ -25,17 +28,17 @@ class FileTests
 
     BEGIN_TEST_METHOD(TestWriteFileWrapEOL)
         TEST_METHOD_PROPERTY(L"Data:fFlagOn", L"{true, false}")
-        END_TEST_METHOD();
+    END_TEST_METHOD();
 
     BEGIN_TEST_METHOD(TestWriteFileVTProcessing)
         TEST_METHOD_PROPERTY(L"Data:fVtOn", L"{true, false}")
         TEST_METHOD_PROPERTY(L"Data:fProcessedOn", L"{true, false}")
-        END_TEST_METHOD();
+    END_TEST_METHOD();
 
     BEGIN_TEST_METHOD(TestWriteFileDisableNewlineAutoReturn)
         TEST_METHOD_PROPERTY(L"Data:fDisableAutoReturn", L"{true, false}")
         TEST_METHOD_PROPERTY(L"Data:fProcessedOn", L"{true, false}")
-        END_TEST_METHOD();
+    END_TEST_METHOD();
 
     TEST_METHOD(TestWriteFileSuspended);
 
@@ -47,7 +50,7 @@ class FileTests
 
     BEGIN_TEST_METHOD(TestReadFileEcho)
         TEST_METHOD_PROPERTY(L"Data:fUseBlockedRead", L"{true, false}")
-        END_TEST_METHOD();
+    END_TEST_METHOD();
 };
 
 void FileTests::TestUtf8WriteFileInvalid()
@@ -109,7 +112,7 @@ void FileTests::TestWriteFileRaw()
     // \xd is carriage return
     // All should be ignored/printed in raw mode.
     PCSTR strTest = "z\x7y\x8z\x9y\xaz\xdy";
-    DWORD cchTest = (DWORD)strlen(strTest);
+    DWORD const cchTest = (DWORD)strlen(strTest);
     String strReadBackExpected(strTest);
 
     HANDLE const hOut = GetStdOutputHandle();
@@ -135,9 +138,8 @@ void FileTests::TestWriteFileRaw()
     csbiexBefore.dwCursorPosition.X += (SHORT)cchTest;
     VERIFY_ARE_EQUAL(csbiexBefore.dwCursorPosition, csbiexAfter.dwCursorPosition, L"Verify cursor moved expected number of squares for the write length.");
 
-    DWORD cbReadBackBuffer = cchTest + 2; // +1 so we can read back a "space" that should be after what we wrote. +1 more so this can be null terminated for String class comparison.
-    wistd::unique_ptr<char[]> strReadBack = wil::make_unique_nothrow<char[]>(cbReadBackBuffer);
-    VERIFY_IS_NOT_NULL(strReadBack, L"Verify allocated buffer for string readback isn't null.");
+    DWORD const cbReadBackBuffer = cchTest + 2; // +1 so we can read back a "space" that should be after what we wrote. +1 more so this can be null terminated for String class comparison.
+    wistd::unique_ptr<char[]> strReadBack = wil::make_unique_failfast<char[]>(cbReadBackBuffer);
     ZeroMemory(strReadBack.get(), cbReadBackBuffer * sizeof(char));
 
     DWORD dwRead = 0;
@@ -173,8 +175,7 @@ void ReadBackHelper(HANDLE hOut,
 {
     // Add one so it can be zero terminated.
     DWORD cbBuffer = dwReadBackLength + 1;
-    wistd::unique_ptr<char[]> pszRead = wil::make_unique_nothrow<char[]>(cbBuffer);
-    VERIFY_IS_NOT_NULL(pszRead, L"Verify allocated buffer for readback is not null.");
+    wistd::unique_ptr<char[]> pszRead = wil::make_unique_failfast<char[]>(cbBuffer);
     ZeroMemory(pszRead.get(), cbBuffer * sizeof(char));
 
     DWORD dwRead = 0;
