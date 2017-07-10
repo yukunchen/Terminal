@@ -43,6 +43,7 @@ class FileTests
     TEST_METHOD(TestReadFileBasicSync);
     TEST_METHOD(TestReadFileLine);
     TEST_METHOD(TestReadFileLineSync);
+    TEST_METHOD(TestReadFileEcho);
 };
 
 void FileTests::TestUtf8WriteFileInvalid()
@@ -675,3 +676,59 @@ void FileTests::TestReadFileLineSync()
     VERIFY_ARE_EQUAL(chExpected, ch);
 }
 
+void FileTests::TestReadFileEcho()
+{
+    HANDLE hOut = GetStdOutputHandle();
+    VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
+
+    HANDLE hIn = GetStdInputHandle();
+    VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
+
+    DWORD dwMode = ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hIn, dwMode), L"Set input mode for test.");
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiexOriginal = { 0 };
+    csbiexOriginal.cbSize = sizeof(csbiexOriginal);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexOriginal), L"Retrieve output screen buffer information.");
+
+    COORD const coordZero = { 0 };
+    VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"We expect the cursor to be at 0,0 for the start of this test.");
+
+    char ch = '\0';
+    Log::Comment(L"Queue background blocking read file operation.");
+    auto BackgroundRead = std::async([&] { ReadFile(hIn, &ch, 1, nullptr, nullptr); });
+
+    Log::Comment(L"Read back the first line of the buffer to see that it is empty.");
+    wistd::unique_ptr<char[]> pszBefore;
+    PCSTR pszBeforeExpected = "     ";
+    DWORD const cchBeforeExpected = (DWORD)strlen(pszBeforeExpected);
+    ReadBackHelper(hOut, coordZero, cchBeforeExpected, pszBefore);
+    VERIFY_ARE_EQUAL(String(pszBeforeExpected), String(pszBefore.get()), L"Verify the first few characters of the buffer are empty (spaces)");
+
+    PCSTR pszAfterExpected = "qzmp ";
+    COORD coordCursorAfter = { 0 };
+    DWORD const cchAfterExpected = (DWORD)strlen(pszAfterExpected);
+
+    Log::Comment(L"Now write in a few input characters to the buffer.");
+    for (DWORD i = 0; i < cchAfterExpected - 1; i++)
+    {
+        SendFullKeyStrokeHelper(hIn, pszAfterExpected[i]);
+        coordCursorAfter.X++;
+    }
+
+    Log::Comment(L"Read back the first line of the buffer to see if we've echoed characters.");
+    wistd::unique_ptr<char[]> pszAfter;
+    ReadBackHelper(hOut, coordZero, cchAfterExpected, pszAfter);
+    VERIFY_ARE_EQUAL(String(pszAfterExpected), String(pszAfter.get()), L"Verify the characters written were echoed into the buffer.");
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiexAfter = { 0 };
+    csbiexAfter.cbSize = sizeof(csbiexAfter);
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexAfter), L"Get the cursor position after the writes.");
+    VERIFY_ARE_EQUAL(coordCursorAfter, csbiexAfter.dwCursorPosition, L"Cursor should have moved with the writes.");
+
+    Log::Comment(L"Send newline to unblock the read.");
+    SendFullKeyStrokeHelper(hIn, '\r');
+    BackgroundRead.wait();
+}
