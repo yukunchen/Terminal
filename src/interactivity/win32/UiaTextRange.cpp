@@ -13,6 +13,10 @@
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
+// toggle these for additional logging in a debug build
+//#define UIATEXTRANGE_DEBUG_MSGS 1
+#undef UIATEXTRANGE_DEBUG_MSGS
+
 #if _DEBUG
 unsigned long long UiaTextRange::id = 0;
 
@@ -39,6 +43,20 @@ void UiaTextRange::_outputRowConversions()
     {
         LOG_HR(wil::ResultFromCaughtException());
     }
+}
+
+void UiaTextRange::_outputObjectState()
+{
+    std::wstringstream ss;
+    ss << "Object State";
+    ss << " _id: " << _id;
+    ss << " _start: " << _start;
+    ss << " _end: " << _end;
+    ss << " _degenerate: " << _degenerate;
+
+    std::wstring str = ss.str();
+    OutputDebugString(str.c_str());
+    OutputDebugString(L"\n");
 }
 #endif
 
@@ -67,6 +85,11 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
     _degenerate = true;
     _start = _screenInfoRowToEndpoint(pCursor->GetPosition().Y);
     _end = _start;
+
+#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
+    OutputDebugString(L"Constructor\n");
+    _outputObjectState();
+#endif
 }
 
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
@@ -78,6 +101,11 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
     _degenerate = degenerate;
     _start = start;
     _end = degenerate ? start : end;
+
+#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
+    OutputDebugString(L"Constructor\n");
+    _outputObjectState();
+#endif
 }
 
 // returns a degenerate text range of the start of the row closest to the y value of point
@@ -116,6 +144,11 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
     _start = _screenInfoRowToEndpoint(row);
     _end = _start;
     _degenerate = true;
+
+#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
+    OutputDebugString(L"Constructor\n");
+    _outputObjectState();
+#endif
 }
 
 UiaTextRange::UiaTextRange(_In_ const UiaTextRange& a) :
@@ -129,6 +162,11 @@ UiaTextRange::UiaTextRange(_In_ const UiaTextRange& a) :
 #if _DEBUG
    _id = id;
    ++id;
+#endif
+
+#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
+    OutputDebugString(L"Copy Constructor\n");
+    _outputObjectState();
 #endif
 }
 
@@ -214,6 +252,15 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     {
         return E_OUTOFMEMORY;
     }
+
+#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
+    OutputDebugString(L"Clone\n");
+    std::wstringstream ss;
+    ss << _id << L" cloned to " << (static_cast<UiaTextRange*>(*ppRetVal))->_id;
+    std::wstring str = ss.str();
+    OutputDebugString(str.c_str());
+    OutputDebugString(L"\n");
+#endif
     return S_OK;
 }
 
@@ -413,8 +460,7 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
 
 IFACEMETHODIMP UiaTextRange::GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal)
 {
-    return _pProvider->QueryInterface(__uuidof(IRawElementProviderSimple),
-                                      reinterpret_cast<void**>(ppRetVal));
+    return _pProvider->QueryInterface(IID_PPV_ARGS(ppRetVal));
 }
 
 IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
@@ -475,6 +521,18 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit /*unit*/,
     {
         return S_OK;
     }
+
+#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
+    OutputDebugString(L"Move\n");
+    _outputObjectState();
+
+    std::wstringstream ss;
+    ss << L" count: " << count;
+    std::wstring data = ss.str();
+    OutputDebugString(data.c_str());
+    OutputDebugString(L"\n");
+    _outputRowConversions();
+#endif
 
     int incrementAmount;
     ScreenInfoRow limitingRow;
@@ -542,6 +600,19 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
     {
         return S_OK;
     }
+
+#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
+    OutputDebugString(L"MoveEndpointByUnit\n");
+    _outputObjectState();
+
+    std::wstringstream ss;
+    ss << L" endpoint: " << endpoint;
+    ss << L" count: " << count;
+    std::wstring data = ss.str();
+    OutputDebugString(data.c_str());
+    OutputDebugString(L"\n");
+    _outputRowConversions();
+#endif
 
     const bool initialCrossedEndpoints = _start > _end;
     const bool shrinkingRange = (count < 0 &&
@@ -673,6 +744,20 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
     {
         return E_INVALIDARG;
     }
+
+#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
+    OutputDebugString(L"MoveEndpointByRange\n");
+    _outputObjectState();
+
+    std::wstringstream ss;
+    ss << L" endpoint: " << endpoint;
+    ss << L" targetRange: " << range->_id;
+    ss << L" targetEndpoint: " << targetEndpoint;
+    std::wstring data = ss.str();
+    OutputDebugString(data.c_str());
+    OutputDebugString(L"\n");
+    _outputRowConversions();
+#endif
 
     const bool initialCrossedEndpoints = _start > _end;
 

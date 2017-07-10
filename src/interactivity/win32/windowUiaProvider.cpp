@@ -248,8 +248,7 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
 
         // signal that the focus changed
         IRawElementProviderSimple* pSimpleProvider;
-        HRESULT hr = (*ppProvider)->QueryInterface(__uuidof(IRawElementProviderSimple),
-                                                   reinterpret_cast<void**>(&pSimpleProvider));
+        HRESULT hr = (*ppProvider)->QueryInterface(IID_PPV_ARGS(&pSimpleProvider));
         if (SUCCEEDED(hr) && !_navigateEventFiring)
         {
             _navigateEventFiring = true;

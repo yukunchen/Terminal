@@ -151,6 +151,7 @@ namespace Microsoft
                     unsigned long long _id;
 
                     void _outputRowConversions();
+                    void _outputObjectState();
                     #endif
 
                     IRawElementProviderSimple* const _pProvider;
