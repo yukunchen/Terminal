@@ -43,7 +43,10 @@ class FileTests
     TEST_METHOD(TestReadFileBasicSync);
     TEST_METHOD(TestReadFileLine);
     TEST_METHOD(TestReadFileLineSync);
-    TEST_METHOD(TestReadFileEcho);
+
+    BEGIN_TEST_METHOD(TestReadFileEcho)
+        TEST_METHOD_PROPERTY(L"Data:fUseBlockedRead", L"{true, false}")
+        END_TEST_METHOD();
 };
 
 void FileTests::TestUtf8WriteFileInvalid()
@@ -678,6 +681,9 @@ void FileTests::TestReadFileLineSync()
 
 void FileTests::TestReadFileEcho()
 {
+    bool fUseBlockedRead;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"fUseBlockedRead", fUseBlockedRead));
+
     HANDLE hOut = GetStdOutputHandle();
     VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
 
@@ -697,8 +703,12 @@ void FileTests::TestReadFileEcho()
     VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"We expect the cursor to be at 0,0 for the start of this test.");
 
     char ch = '\0';
-    Log::Comment(L"Queue background blocking read file operation.");
-    auto BackgroundRead = std::async([&] { ReadFile(hIn, &ch, 1, nullptr, nullptr); });
+    std::future<void> BackgroundRead;
+    if (fUseBlockedRead)
+    {
+        Log::Comment(L"Queue background blocking read file operation.");
+        BackgroundRead = std::async([&] { ReadFile(hIn, &ch, 1, nullptr, nullptr); });
+    }
 
     Log::Comment(L"Read back the first line of the buffer to see that it is empty.");
     wistd::unique_ptr<char[]> pszBefore;
@@ -721,14 +731,33 @@ void FileTests::TestReadFileEcho()
     Log::Comment(L"Read back the first line of the buffer to see if we've echoed characters.");
     wistd::unique_ptr<char[]> pszAfter;
     ReadBackHelper(hOut, coordZero, cchAfterExpected, pszAfter);
-    VERIFY_ARE_EQUAL(String(pszAfterExpected), String(pszAfter.get()), L"Verify the characters written were echoed into the buffer.");
+
+    if (fUseBlockedRead)
+    {
+        VERIFY_ARE_EQUAL(String(pszAfterExpected), String(pszAfter.get()), L"Verify the characters written were echoed into the buffer.");
+    }
+    else
+    {
+        VERIFY_ARE_EQUAL(String(pszBeforeExpected), String(pszAfter.get()), L"Verify nothing should have been printed while no one was waiting on a read.");
+    }
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexAfter = { 0 };
     csbiexAfter.cbSize = sizeof(csbiexAfter);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hOut, &csbiexAfter), L"Get the cursor position after the writes.");
-    VERIFY_ARE_EQUAL(coordCursorAfter, csbiexAfter.dwCursorPosition, L"Cursor should have moved with the writes.");
 
-    Log::Comment(L"Send newline to unblock the read.");
-    SendFullKeyStrokeHelper(hIn, '\r');
-    BackgroundRead.wait();
+    if (fUseBlockedRead)
+    {
+        VERIFY_ARE_EQUAL(coordCursorAfter, csbiexAfter.dwCursorPosition, L"Cursor should have moved with the writes.");
+    }
+    else
+    {
+        VERIFY_ARE_EQUAL(coordZero, csbiexAfter.dwCursorPosition, L"Cursor shouldn't move if no one is waiting with a read.");
+    }
+
+    if (fUseBlockedRead)
+    {
+        Log::Comment(L"Send newline to unblock the read.");
+        SendFullKeyStrokeHelper(hIn, '\r');
+        BackgroundRead.wait();
+    }
 }
