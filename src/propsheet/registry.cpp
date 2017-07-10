@@ -78,22 +78,47 @@ VOID InitRegistryValues(
     pStateInfo->HistoryBufferSize = 25;
     pStateInfo->NumberOfHistoryBuffers = 4;
     pStateInfo->HistoryNoDup = 0;
-    pStateInfo->ColorTable[ 0] = RGB(0,   0,   0   );
-    pStateInfo->ColorTable[ 1] = RGB(0,   0,   0x80);
-    pStateInfo->ColorTable[ 2] = RGB(0,   0x80,0   );
-    pStateInfo->ColorTable[ 3] = RGB(0,   0x80,0x80);
-    pStateInfo->ColorTable[ 4] = RGB(0x80,0,   0   );
-    pStateInfo->ColorTable[ 5] = RGB(0x80,0,   0x80);
-    pStateInfo->ColorTable[ 6] = RGB(0x80,0x80,0   );
-    pStateInfo->ColorTable[ 7] = RGB(0xC0,0xC0,0xC0);
-    pStateInfo->ColorTable[ 8] = RGB(0x80,0x80,0x80);
-    pStateInfo->ColorTable[ 9] = RGB(0,   0,   0xFF);
-    pStateInfo->ColorTable[10] = RGB(0,   0xFF,0   );
-    pStateInfo->ColorTable[11] = RGB(0,   0xFF,0xFF);
-    pStateInfo->ColorTable[12] = RGB(0xFF,0,   0   );
-    pStateInfo->ColorTable[13] = RGB(0xFF,0,   0xFF);
-    pStateInfo->ColorTable[14] = RGB(0xFF,0xFF,0   );
-    pStateInfo->ColorTable[15] = RGB(0xFF,0xFF,0xFF);
+
+    if (pStateInfo->fIsV2Console)
+    {
+        // if we're servicing a v2 console instance, default to the new color defaults
+        pStateInfo->ColorTable[ 0] = RGB( 12,  12,  12); // Black
+        pStateInfo->ColorTable[ 1] = RGB( 0,   55, 218); // Dark Blue
+        pStateInfo->ColorTable[ 2] = RGB( 19, 161,  14); // Dark Green
+        pStateInfo->ColorTable[ 3] = RGB( 58, 150, 221); // Dark Cyan
+        pStateInfo->ColorTable[ 4] = RGB(197,  15,  31); // Dark Red
+        pStateInfo->ColorTable[ 5] = RGB(136,  23, 152); // Dark Magenta
+        pStateInfo->ColorTable[ 6] = RGB(193, 156,   0); // Dark Yellow
+        pStateInfo->ColorTable[ 7] = RGB(204, 204, 204); // Dark White
+        pStateInfo->ColorTable[ 8] = RGB(118, 118, 118); // Bright Black
+        pStateInfo->ColorTable[ 9] = RGB( 59, 120, 255); // Bright Blue
+        pStateInfo->ColorTable[10] = RGB( 22, 198,  12); // Bright Green
+        pStateInfo->ColorTable[11] = RGB( 97, 214, 214); // Bright Cyan
+        pStateInfo->ColorTable[12] = RGB(231,  72,  86); // Bright Red
+        pStateInfo->ColorTable[13] = RGB(180,   0, 158); // Bright Magenta
+        pStateInfo->ColorTable[14] = RGB(249, 241, 165); // Bright Yellow
+        pStateInfo->ColorTable[15] = RGB(242, 242, 242); // White
+    }
+    else
+    {
+        pStateInfo->ColorTable[ 0] = RGB(0,   0,   0   );
+        pStateInfo->ColorTable[ 1] = RGB(0,   0,   0x80);
+        pStateInfo->ColorTable[ 2] = RGB(0,   0x80,0   );
+        pStateInfo->ColorTable[ 3] = RGB(0,   0x80,0x80);
+        pStateInfo->ColorTable[ 4] = RGB(0x80,0,   0   );
+        pStateInfo->ColorTable[ 5] = RGB(0x80,0,   0x80);
+        pStateInfo->ColorTable[ 6] = RGB(0x80,0x80,0   );
+        pStateInfo->ColorTable[ 7] = RGB(0xC0,0xC0,0xC0);
+        pStateInfo->ColorTable[ 8] = RGB(0x80,0x80,0x80);
+        pStateInfo->ColorTable[ 9] = RGB(0,   0,   0xFF);
+        pStateInfo->ColorTable[10] = RGB(0,   0xFF,0   );
+        pStateInfo->ColorTable[11] = RGB(0,   0xFF,0xFF);
+        pStateInfo->ColorTable[12] = RGB(0xFF,0,   0   );
+        pStateInfo->ColorTable[13] = RGB(0xFF,0,   0xFF);
+        pStateInfo->ColorTable[14] = RGB(0xFF,0xFF,0   );
+        pStateInfo->ColorTable[15] = RGB(0xFF,0xFF,0xFF);
+    }
+    
     pStateInfo->CodePage = OEMCP;
     pStateInfo->hWnd = NULL;
     pStateInfo->OriginalTitle = NULL;

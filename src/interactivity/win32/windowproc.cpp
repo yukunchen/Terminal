@@ -164,11 +164,11 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         break;
     }
 
-    case WM_GETOBJECT:
-    {
-        Status = _HandleGetObject(hWnd, wParam, lParam);
-        break;
-    }
+    // case WM_GETOBJECT:
+    // {
+    //     Status = _HandleGetObject(hWnd, wParam, lParam);
+    //     break;
+    // }
 
     case WM_SIZING:
     {
