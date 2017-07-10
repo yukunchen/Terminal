@@ -39,7 +39,8 @@ class FileTests
 
     TEST_METHOD(TestWriteFileSuspended);
 
-    TEST_METHOD(TestReadFileRaw);
+    TEST_METHOD(TestReadFileBasic);
+    TEST_METHOD(TestReadFileLine);
 };
 
 void FileTests::TestUtf8WriteFileInvalid()
@@ -570,7 +571,7 @@ void SendFullKeyStrokeHelper(HANDLE hIn, char ch)
     VERIFY_ARE_EQUAL((DWORD)ARRAYSIZE(ir), dwWritten, L"Written matches expected.");
 }
 
-void FileTests::TestReadFileRaw()
+void FileTests::TestReadFileBasic()
 {
     HANDLE hIn = GetStdInputHandle();
     VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
@@ -580,12 +581,46 @@ void FileTests::TestReadFileRaw()
 
     VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
 
-    char const chExpected = 'a';
-    char ch;
+    
+    char ch = '\0';
+    Log::Comment(L"Queue background blocking read file operation.");
     auto BackgroundRead = std::async([&] { ReadFile(hIn, &ch, 1, nullptr, nullptr); });
 
+    char const chExpected = 'a';
+    Log::Comment(L"Send a key into the console.");
     SendFullKeyStrokeHelper(hIn, chExpected);
         
+    Log::Comment(L"Wait for background to unblock.");
+    BackgroundRead.wait();
+    VERIFY_ARE_EQUAL(chExpected, ch);
+}
+
+void FileTests::TestReadFileLine()
+{
+    HANDLE hIn = GetStdInputHandle();
+    VERIFY_IS_NOT_NULL(hIn, L"Verify we have the standard input handle.");
+
+    DWORD dwMode = ENABLE_LINE_INPUT;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(hIn, dwMode), L"Set input mode for test.");
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn), L"Flush input buffer in preparation for test.");
+
+    char ch = '\0';
+    Log::Comment(L"Queue background blocking read file operation.");
+    auto BackgroundRead = std::async([&] { ReadFile(hIn, &ch, 1, nullptr, nullptr); });
+
+    char const chExpected = 'a';
+    Log::Comment(L"Send a key into the console.");
+    SendFullKeyStrokeHelper(hIn, chExpected);
+
+    auto status = BackgroundRead.wait_for(std::chrono::milliseconds(250));
+    VERIFY_ARE_EQUAL(std::future_status::timeout, status, L"We should still be waiting for a result.");
+    VERIFY_ARE_EQUAL('\0', ch, L"Character shouldn't be filled by background read yet.");
+
+    Log::Comment(L"Now send a carriage return into the console to signify the end of the input line.");
+    SendFullKeyStrokeHelper(hIn, '\r');
+
+    Log::Comment(L"Wait for background thread to unblock.");
     BackgroundRead.wait();
     VERIFY_ARE_EQUAL(chExpected, ch);
 }
