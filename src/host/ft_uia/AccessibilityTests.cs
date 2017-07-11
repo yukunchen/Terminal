@@ -280,8 +280,8 @@ namespace Conhost.UIA.Tests
                 // change testRange to a degenerate range and then expand to a line
                 testRange.MoveEndpointByRange(TextPatternRangeEndpoint.End, testRange, TextPatternRangeEndpoint.Start);
                 Verify.AreEqual(0, testRange.CompareEndpoints(TextPatternRangeEndpoint.Start,
-                                                                testRange,
-                                                                TextPatternRangeEndpoint.End));
+                                                              testRange,
+                                                              TextPatternRangeEndpoint.End));
                 testRange.ExpandToEnclosingUnit(TextUnit.Line);
                 Verify.IsTrue(testRange.Compare(visibleRanges[0]));
 
