@@ -310,6 +310,11 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->InsertMode = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetInsertMode();
     pStateInfo->ScreenAttributes = ScreenInfo->GetAttributes().GetLegacyAttributes();
     pStateInfo->PopupAttributes = ScreenInfo->GetPopupAttributes()->GetLegacyAttributes();
+
+    // Ensure that attributes are only describing colors to the properties dialog
+    ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
+    ClearAllFlags(pStateInfo->PopupAttributes, ~(FG_ATTRS | BG_ATTRS));
+
     pStateInfo->HistoryBufferSize = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetHistoryBufferSize();
     pStateInfo->NumberOfHistoryBuffers = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetNumberOfHistoryBuffers();
     pStateInfo->HistoryNoDup = !!(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags & CONSOLE_HISTORY_NODUP);
@@ -499,6 +504,10 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     }
 
     ServiceLocator::LocateGlobals()->getConsoleInformation()->SetColorTable(pStateInfo->ColorTable, ServiceLocator::LocateGlobals()->getConsoleInformation()->GetColorTableSize());
+
+    // Ensure that attributes only contain color specification.
+    ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
+    ClearAllFlags(pStateInfo->PopupAttributes, ~(FG_ATTRS | BG_ATTRS));
 
     SetScreenColors(ScreenInfo, pStateInfo->ScreenAttributes, pStateInfo->PopupAttributes, TRUE);
     ScreenInfo->GetAdapterDispatch()->UpdateDefaultColor(pStateInfo->ScreenAttributes);
