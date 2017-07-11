@@ -466,6 +466,10 @@ void Settings::Validate()
         _dwWindowSize.X = _dwScreenBufferSize.X;
     }
 
+    // Ensure that our fill attributes only contain colors and not any box drawing or invert attributes.
+    ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
+    ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
+
     ASSERT(_dwWindowSize.X > 0);
     ASSERT(_dwWindowSize.Y > 0);
     ASSERT(_dwScreenBufferSize.X > 0);
@@ -641,7 +645,12 @@ WORD Settings::GetFillAttribute() const
 }
 void Settings::SetFillAttribute(_In_ const WORD wFillAttribute)
 {
-    this->_wFillAttribute = wFillAttribute;
+    _wFillAttribute = wFillAttribute;
+
+    // Do not allow the default fill attribute to use any attrs other than fg/bg colors.
+    // This prevents us from accidentally inverting everything or suddenly drawing lines 
+    // everywhere by defualt.
+    ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 }
 
 WORD Settings::GetPopupFillAttribute() const
@@ -650,7 +659,12 @@ WORD Settings::GetPopupFillAttribute() const
 }
 void Settings::SetPopupFillAttribute(_In_ const WORD wPopupFillAttribute)
 {
-    this->_wPopupFillAttribute = wPopupFillAttribute;
+    _wPopupFillAttribute = wPopupFillAttribute;
+
+    // Do not allow the default popup fill attribute to use any attrs other than fg/bg colors.
+    // This prevents us from accidentally inverting everything or suddenly drawing lines 
+    // everywhere by defualt.
+    ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 }
 
 WORD Settings::GetShowWindow() const
