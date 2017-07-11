@@ -245,7 +245,7 @@ static HANDLE makeJob() {
 
 static std::wstring exeName() {
     std::array<wchar_t, 4096> self {};
-    DWORD len = GetModuleFileNameW(nullptr, self.data(), self.size());
+    DWORD len = GetModuleFileNameW(nullptr, self.data(), (DWORD)self.size());
     assert(len >= 1 && len < self.size() && "GetModuleFileNameW failed");
     return self.data();
 }
@@ -271,10 +271,10 @@ static void trace(const char *fmt, ...) {
 static std::vector<DWORD> getConsoleProcessList() {
     std::vector<DWORD> ret;
     ret.resize(1);
-    const DWORD count1 = GetConsoleProcessList(&ret[0], ret.size());
+    const DWORD count1 = GetConsoleProcessList(&ret[0], (DWORD)ret.size());
     assert(count1 >= 1 && "GetConsoleProcessList failed");
     ret.resize(count1);
-    const DWORD count2 = GetConsoleProcessList(&ret[0], ret.size());
+    const DWORD count2 = GetConsoleProcessList(&ret[0], (DWORD)ret.size());
     assert(count1 == count2 && "GetConsoleProcessList failed");
     return ret;
 }
@@ -369,6 +369,7 @@ static void genBatch(bool forward, bool useJob, bool useGapProcess, int allocChu
     handles.push_back(job);
 
     auto genVictim = [&](int n, int n2) {
+        UNREFERENCED_PARAMETER(n2);
         genChild(n, L"", allocChunk, out);
         if (useJob) {
             out.push_back(kChildCommand_Job);
