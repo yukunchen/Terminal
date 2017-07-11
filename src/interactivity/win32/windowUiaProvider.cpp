@@ -80,12 +80,8 @@ HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
     else if (!_signalEventFiring)
     {
         _signalEventFiring = true;
-        IRawElementProviderSimple* pProvider;
-        hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
-        if (SUCCEEDED(hr))
-        {
-            UiaRaiseAutomationEvent(pProvider, id);
-        }
+        IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
+        hr = UiaRaiseAutomationEvent(pProvider, id);
         _signalEventFiring = false;
     }
     return hr;
@@ -240,6 +236,7 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
     *ppProvider = nullptr;
+    HRESULT hr = S_OK;
 
     if (direction == NavigateDirection_FirstChild || direction == NavigateDirection_LastChild)
     {
@@ -247,18 +244,17 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
         (*ppProvider)->AddRef();
 
         // signal that the focus changed
-        IRawElementProviderSimple* pSimpleProvider;
-        HRESULT hr = (*ppProvider)->QueryInterface(IID_PPV_ARGS(&pSimpleProvider));
-        if (SUCCEEDED(hr) && !_navigateEventFiring)
+        IRawElementProviderSimple* pSimpleProvider = static_cast<IRawElementProviderSimple*>(_pScreenInfoProvider);
+        if (!_navigateEventFiring)
         {
             _navigateEventFiring = true;
-            UiaRaiseAutomationEvent(pSimpleProvider, UIA_AutomationFocusChangedEventId);
+            hr = UiaRaiseAutomationEvent(pSimpleProvider, UIA_AutomationFocusChangedEventId);
             _navigateEventFiring = false;
         }
     }
 
     // For the other directions (parent, next, previous) the default of nullptr is correct
-    return S_OK;
+    return hr;
 }
 
 IFACEMETHODIMP WindowUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId)

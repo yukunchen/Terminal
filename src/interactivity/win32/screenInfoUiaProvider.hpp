@@ -83,6 +83,10 @@ namespace Microsoft
 
                     // weak reference to uia parent
                     WindowUiaProvider* const _pUiaParent;
+
+                    // this bool is used to prevent the object from
+                    // signaling an event while it is already in the
+                    // process of signalling another event.
                     bool _signalEventFiring;
 
                     const COORD _getScreenBufferCoords() const;

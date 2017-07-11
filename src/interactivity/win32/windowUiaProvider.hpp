@@ -76,8 +76,13 @@ namespace Microsoft
                     HRESULT _EnsureValidHwnd() const;
                     static IConsoleWindow* const _getIConsoleWindow();
 
+
+                    // these bools iare used to prevent the object from
+                    // signaling an event while it is already in the
+                    // process of signalling another event.
                     bool _signalEventFiring;
                     bool _navigateEventFiring;
+
                     ScreenInfoUiaProvider* _pScreenInfoProvider;
 
                     // Ref counter for COM object

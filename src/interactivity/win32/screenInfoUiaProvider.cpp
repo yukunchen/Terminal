@@ -55,12 +55,8 @@ HRESULT ScreenInfoUiaProvider::Signal(_In_ EVENTID id)
     if (!_signalEventFiring)
     {
         _signalEventFiring = true;
-        IRawElementProviderSimple* pProvider;
-        hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
-        if (SUCCEEDED(hr))
-        {
-            UiaRaiseAutomationEvent(pProvider, id);
-        }
+        IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
+        hr = UiaRaiseAutomationEvent(pProvider, id);
         _signalEventFiring = false;
     }
     return hr;
@@ -319,7 +315,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
 
     if (!Selection::Instance().IsAreaSelected())
     {
-        // return a degenrate range at the cursor position
+        // return a degenerate range at the cursor position
         SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
         RETURN_HR_IF_NULL(E_POINTER, pScreenInfo);
         TEXT_BUFFER_INFO* const pTextBuffer = pScreenInfo->TextInfo;

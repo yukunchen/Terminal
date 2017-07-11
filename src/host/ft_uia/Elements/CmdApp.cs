@@ -321,12 +321,9 @@ namespace Conhost.UIA.Tests.Elements
             NativeMethods.Win32BoolHelper(WinCon.FreeConsole(), "Free existing console bindings.");
             NativeMethods.Win32BoolHelper(WinCon.AttachConsole((uint)pid), "Bind to the new PID for console APIs.");
 
-            // we need to wait here because there is currently an odd
-            // interaction between the conhost accessibility code and
-            // the on-screen keyboard which causes deadlock for a few
-            // seconds initially. Once this issue has been resolved
-            // this sleep should be able to be removed.
-            System.Threading.Thread.Sleep(Globals.Timeout * 6);
+            // we need to wait here for a bit or else
+            // setting the console window title will fail.
+            System.Threading.Thread.Sleep(Globals.Timeout * 5);
             NativeMethods.Win32BoolHelper(WinCon.SetConsoleTitle(WindowTitleToFind), "Set the window title so AppDriver can find it.");
 
             DesiredCapabilities appCapabilities = new DesiredCapabilities();
