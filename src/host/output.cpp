@@ -86,31 +86,32 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
     const int ScreenBufferWidth = pScreenInfo->GetScreenBufferSize().X;
 
     ROW* pRow = pScreenInfo->TextInfo->GetRowByOffset(coordSourcePoint.Y);
-    NTSTATUS Status = STATUS_SUCCESS;
-    for (short iRow = 0; iRow < sYSize; iRow++)
+
+    // Allocate the TextAttributes once for every row to unpack them
+    TextAttribute* rgUnpackedRowAttributes = new TextAttribute[ScreenBufferWidth];
+    NTSTATUS Status = NT_TESTNULL(rgUnpackedRowAttributes);
+    if (NT_SUCCESS(Status))
     {
-        PCHAR_INFO pciTargetPtr = (PCHAR_INFO)((PBYTE)pciTarget + SCREEN_BUFFER_POINTER(psrTargetRect->Left,
-                                                                                        psrTargetRect->Top + iRow,
-                                                                                        coordTargetSize.X,
-                                                                                        sizeof(CHAR_INFO)));
-
-        TextAttribute* pTargetAttributes = nullptr;
-        if (fOutputTextAttributes)
+        for (short iRow = 0; iRow < sYSize; iRow++)
         {
-            pTargetAttributes = (TextAttribute*)(pTextAttributes + SCREEN_BUFFER_POINTER(psrTargetRect->Left,
-                                                                                         psrTargetRect->Top + iRow,
-                                                                                         coordTargetSize.X,
-                                                                                         1));
-        }
+            PCHAR_INFO pciTargetPtr = (PCHAR_INFO)((PBYTE)pciTarget + SCREEN_BUFFER_POINTER(psrTargetRect->Left,
+                                                                                            psrTargetRect->Top + iRow,
+                                                                                            coordTargetSize.X,
+                                                                                            sizeof(CHAR_INFO)));
 
-        // copy the chars and attrs from their respective arrays
-        PWCHAR pwChar = &pRow->CharRow.Chars[coordSourcePoint.X];
+            TextAttribute* pTargetAttributes = nullptr;
+            if (fOutputTextAttributes)
+            {
+                pTargetAttributes = (TextAttribute*)(pTextAttributes + SCREEN_BUFFER_POINTER(psrTargetRect->Left,
+                                                                                             psrTargetRect->Top + iRow,
+                                                                                             coordTargetSize.X,
+                                                                                             1));
+            }
 
-        // Unpack the attributes into an array so we can iterate over them.
-        TextAttribute* rgUnpackedRowAttributes = new TextAttribute[ScreenBufferWidth];
-        Status = NT_TESTNULL(rgUnpackedRowAttributes);
-        if (NT_SUCCESS(Status))
-        {
+            // copy the chars and attrs from their respective arrays
+            PWCHAR pwChar = &pRow->CharRow.Chars[coordSourcePoint.X];
+
+            // Unpack the attributes into an array so we can iterate over them.
             pRow->AttrRow.UnpackAttrs(rgUnpackedRowAttributes, ScreenBufferWidth);
 
             PBYTE pbAttrP = &pRow->CharRow.KAttrs[coordSourcePoint.X];
@@ -148,16 +149,11 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
                 }
 
                 iCol += 1;
-
             }
-            delete[] rgUnpackedRowAttributes;
-        }
-        else
-        {
-            break;
-        }
 
-        pRow = pScreenInfo->TextInfo->GetNextRowNoWrap(pRow);
+            pRow = pScreenInfo->TextInfo->GetNextRowNoWrap(pRow);
+        }
+        delete[] rgUnpackedRowAttributes;
     }
     return Status;
 }
