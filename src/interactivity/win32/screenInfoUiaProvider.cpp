@@ -40,15 +40,26 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int 
 
 ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent) :
     _pUiaParent(THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
-    _focusEventFiring{ false },
+    _signalEventFiring{ false },
     _cRefs(1)
 {
-    _pUiaParent->AddRef();
 }
 
 ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
 {
-    _pUiaParent->Release();
+}
+
+HRESULT ScreenInfoUiaProvider::Signal(_In_ EVENTID id)
+{
+    HRESULT hr = S_OK;
+    if (!_signalEventFiring)
+    {
+        _signalEventFiring = true;
+        IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
+        hr = UiaRaiseAutomationEvent(pProvider, id);
+        _signalEventFiring = false;
+    }
+    return hr;
 }
 
 #pragma region IUnknown
@@ -269,15 +280,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_ma
 
 IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 {
-    IRawElementProviderSimple* pProvider;
-    const HRESULT hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
-    if (SUCCEEDED(hr) && !_focusEventFiring)
-    {
-        _focusEventFiring = true;
-        UiaRaiseAutomationEvent(pProvider, UIA_AutomationFocusChangedEventId);
-        _focusEventFiring = false;
-    }
-    return S_OK;
+    return Signal(UIA_AutomationFocusChangedEventId);
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
@@ -301,19 +304,65 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_mayben
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    if (!Selection::Instance().IsAreaSelected())
-    {
-        *ppRetVal = nullptr;
-        return S_OK;
-    }
-
     ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
         ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
     });
 
+    *ppRetVal = nullptr;
     HRESULT hr;
+
+    if (!Selection::Instance().IsAreaSelected())
+    {
+        // return a degenerate range at the cursor position
+        SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
+        RETURN_HR_IF_NULL(E_POINTER, pScreenInfo);
+        TEXT_BUFFER_INFO* const pTextBuffer = pScreenInfo->TextInfo;
+        RETURN_HR_IF_NULL(E_POINTER, pTextBuffer);
+        const Cursor* const pCursor = pTextBuffer->GetCursor();
+        RETURN_HR_IF_NULL(E_POINTER, pCursor);
+
+        // make a safe array
+        *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 1);
+        if (*ppRetVal == nullptr)
+        {
+            return E_OUTOFMEMORY;
+        }
+
+        IRawElementProviderSimple* pProvider;
+        hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
+        if (FAILED(hr))
+        {
+            SafeArrayDestroy(*ppRetVal);
+            *ppRetVal = nullptr;
+            return hr;
+        }
+
+        UiaTextRange* range;
+        try
+        {
+            range = new UiaTextRange(pProvider,
+                                     pCursor);
+        }
+        catch (...)
+        {
+            (static_cast<IUnknown*>(pProvider))->Release();
+            SafeArrayDestroy(*ppRetVal);
+            *ppRetVal = nullptr;
+            return wil::ResultFromCaughtException();
+        }
+
+        LONG currentIndex = 0;
+        hr = SafeArrayPutElement(*ppRetVal, &currentIndex, reinterpret_cast<void*>(range));
+        if (FAILED(hr))
+        {
+            SafeArrayDestroy(*ppRetVal);
+            *ppRetVal = nullptr;
+            return hr;
+        }
+        return S_OK;
+    }
 
     // get the selection rects
     SMALL_RECT* pSelectionRects;
@@ -353,7 +402,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         {
             range = new UiaTextRange(pProvider,
                                      start,
-                                     end);
+                                     end,
+                                     false);
         }
         catch (...)
         {
@@ -418,7 +468,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
         {
             range = new UiaTextRange(pProvider,
                                      start,
-                                     end);
+                                     end,
+                                     false);
         }
         catch (...)
         {
@@ -480,24 +531,14 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-    const SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
-    RETURN_HR_IF_NULL(E_POINTER, pScreenInfo);
-
-    const TEXT_BUFFER_INFO* const pOutputBuffer = pScreenInfo->TextInfo;
-    RETURN_HR_IF_NULL(E_POINTER, pOutputBuffer);
-
-    const int documentLines = pOutputBuffer->TotalRowCount();
-    const int lineWidth = _getScreenBufferCoords().X;
-
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 
     try
     {
-        // - 1 to get the last column in the last row
-        *ppRetVal = new UiaTextRange(pProvider,
-                                     0,
-                                     documentLines * lineWidth - 1);
+        *ppRetVal = new UiaTextRange(pProvider);
+        RETURN_HR_IF_NULL(E_OUTOFMEMORY, *ppRetVal);
+        (*ppRetVal)->ExpandToEnclosingUnit(TextUnit::TextUnit_Document);
     }
     catch (...)
     {

@@ -18,3 +18,8 @@ inline bool operator==(const COORD& a, const COORD& b)
     return (a.X == b.X &&
             a.X == b.Y);
 }
+
+inline bool operator!=(const COORD& a, const COORD& b)
+{
+    return !(a == b);
+}

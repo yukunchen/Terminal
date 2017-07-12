@@ -1319,7 +1319,7 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
     {
         try
         {
-            _pUiaProvider = new WindowUiaProvider();
+            _pUiaProvider = WindowUiaProvider::Create();
         }
         catch (...)
         {

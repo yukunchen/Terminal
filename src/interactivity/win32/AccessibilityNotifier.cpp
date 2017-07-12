@@ -42,6 +42,31 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
                    ServiceLocator::LocateConsoleWindow()->GetWindowHandle(),
                    dwFlags,
                    position);
+
+    // UIA event notification
+    static COORD previousCursorLocation = { 0, 0 };
+    IConsoleWindow* pIConsoleWindow = ServiceLocator::LocateConsoleWindow();
+    if (pIConsoleWindow)
+    {
+        SCREEN_INFORMATION* const pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        if (pScreenInfo)
+        {
+            TEXT_BUFFER_INFO* const pTextBuffer = pScreenInfo->TextInfo;
+            if (pTextBuffer)
+            {
+                Cursor* const pCursor = pTextBuffer->GetCursor();
+                if (pCursor)
+                {
+                    COORD currentCursorPosition = pCursor->GetPosition();
+                    if (currentCursorPosition != previousCursorLocation)
+                    {
+                        pIConsoleWindow->SignalUia(UIA_Text_TextSelectionChangedEventId);
+                    }
+                    previousCursorLocation = currentCursorPosition;
+                }
+            }
+        }
+    }
 }
 
 void AccessibilityNotifier::NotifyConsoleUpdateScrollEvent(_In_ LONG x, _In_ LONG y)

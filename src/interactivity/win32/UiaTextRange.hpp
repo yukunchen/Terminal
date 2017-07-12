@@ -16,6 +16,7 @@ Author(s):
 #pragma once
 
 #include "../inc/IConsoleWindow.hpp"
+#include "../../host/cursor.h"
 
 #ifdef UNIT_TESTING
 class UiaTextRangeTests;
@@ -75,10 +76,15 @@ namespace Microsoft
                     // degenerate range
                     UiaTextRange(_In_ IRawElementProviderSimple* const pProvider);
 
-                    // specific range
+                    // degenerate range at cursor position
+                    UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                 _In_ const Cursor* const pCursor);
+
+                    // specific endpoint range
                     UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                  _In_ const Endpoint start,
-                                 _In_ const Endpoint end);
+                                 _In_ const Endpoint end,
+                                 _In_ const bool degenerate);
 
                     // range from a UiaPoint
                     UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
@@ -145,6 +151,7 @@ namespace Microsoft
                     unsigned long long _id;
 
                     void _outputRowConversions();
+                    void _outputObjectState();
                     #endif
 
                     IRawElementProviderSimple* const _pProvider;
@@ -153,10 +160,27 @@ namespace Microsoft
                     // Ref counter for COM object
                     ULONG _cRefs;
 
-                    // measure units in the form [start, end]
+                    // measure units in the form [_start, _end]. _start
+                    // may be a bigger number than _end if the range
+                    // wraps around the end of the text buffer.
+                    //
+                    // In this scenario, _start <= _end
+                    // 0 ............... N (text buffer line indices)
+                    //      s-----e        (_start to _end)
+                    //
+                    // In this scenario, _start >= end
+                    // 0 ............... N (text buffer line indices)
+                    //   ---e     s-----   (_start to _end)
+                    //
                     Endpoint _start;
                     Endpoint _end;
 
+                    // The msdn documentation (and hence this class) talks a bunch about a
+                    // degenerate range. A range is degenerate if it contains
+                    // no text (both the start and end endpoints are the same). Note that
+                    // a degenerate range may have a position in the text. We indicate a
+                    // degenerate range internally with a bool. If a range is degenerate
+                    // then both endpoints will contain the same value.
                     bool _degenerate;
 
                     const Viewport _getViewport() const;
@@ -167,6 +191,8 @@ namespace Microsoft
                     static const COORD _getScreenBufferCoords();
                     static SCREEN_INFORMATION* const _getScreenInfo();
                     static TEXT_BUFFER_INFO* const _getTextBuffer();
+                    const unsigned int _getFirstScreenInfoRowIndex() const;
+                    const unsigned int _getLastScreenInfoRowIndex() const;
 
                     const unsigned int _rowCountInRange() const;
 
