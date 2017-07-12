@@ -41,6 +41,8 @@ namespace Microsoft
                     ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent);
                     virtual ~ScreenInfoUiaProvider();
 
+                    HRESULT Signal(_In_ EVENTID id);
+
                     // IUnknown methods
                     IFACEMETHODIMP_(ULONG) AddRef();
                     IFACEMETHODIMP_(ULONG) Release();
@@ -79,8 +81,21 @@ namespace Microsoft
                     // Ref counter for COM object
                     ULONG _cRefs;
 
+                    // weak reference to uia parent
                     WindowUiaProvider* const _pUiaParent;
-                    bool _focusEventFiring;
+
+                    // this bool is used to prevent the object from
+                    // signaling an event while it is already in the
+                    // process of signalling another event.
+                    // This fixes a problem with JAWS where it would
+                    // call a public method that calls
+                    // UiaRaiseAutomationEvent to signal something
+                    // happened, which JAWS then detects the signal
+                    // and calls the same method in response,
+                    // eventually overflowing the stack.
+                    // We aren't using this as a cheap locking
+                    // mechanism for multi-threaded code.
+                    bool _signalEventFiring;
 
                     const COORD _getScreenBufferCoords() const;
                     static SCREEN_INFORMATION* const _getScreenInfo();

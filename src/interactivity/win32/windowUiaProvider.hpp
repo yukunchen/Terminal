@@ -35,7 +35,7 @@ namespace Microsoft
                                                 public IRawElementProviderFragmentRoot
                 {
                 public:
-                    WindowUiaProvider();
+                    static WindowUiaProvider* Create();
                     virtual ~WindowUiaProvider();
 
                     HRESULT Signal(_In_ EVENTID id);
@@ -70,18 +70,31 @@ namespace Microsoft
                     IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
 
                 private:
-
-                    // Ref counter for COM object
-                    ULONG _cRefs;
+                    WindowUiaProvider();
 
                     HWND _GetWindowHandle() const;
                     HRESULT _EnsureValidHwnd() const;
                     static IConsoleWindow* const _getIConsoleWindow();
 
-                    ScreenInfoUiaProvider* _GetScreenInfoProvider();
 
+                    // these bools iare used to prevent the object from
+                    // signaling an event while it is already in the
+                    // process of signalling another event.
+                    // This fixes a problem with JAWS where it would
+                    // call a public method that calls
+                    // UiaRaiseAutomationEvent to signal something
+                    // happened, which JAWS then detects the signal
+                    // and calls the same method in response,
+                    // eventually overflowing the stack.
+                    // We aren't using this as a cheap locking
+                    // mechanism for multi-threaded code.
                     bool _signalEventFiring;
                     bool _navigateEventFiring;
+
+                    ScreenInfoUiaProvider* _pScreenInfoProvider;
+
+                    // Ref counter for COM object
+                    ULONG _cRefs;
                 };
             }
         }
