@@ -974,6 +974,9 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
     *pcchTextBufferRead = 0;
     *ppWaiter = nullptr;
 
+    bool fLeadByteCaptured = false;
+    bool fLeadByteConsumed = false;
+
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -1065,6 +1068,11 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
             TransBuffer++;
             BufPtr += (dbcsNumBytes / sizeof(WCHAR));
             BufPtrNumBytes = uiTextBufferLength - 1;
+
+            // Note that we used a stored lead byte from a previous call in order to complete this write
+            // Use this to offset the "number of bytes consumed" calculation at the end by -1 to account
+            // for using a byte we had internally, not off the stream.
+            fLeadByteConsumed = true;
         }
         else
         {
@@ -1082,6 +1090,11 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
         {
             ScreenInfo->WriteConsoleDbcsLeadByte[0] = *((PCHAR)BufPtr + BufPtrNumBytes - 1);
             BufPtrNumBytes--;
+
+            // Note that we captured a lead byte during this call, but won't actually draw it until later.
+            // Use this to offset the "number of bytes consumed" calculation at the end by +1 to account
+            // for taking a byte off the stream.
+            fLeadByteCaptured = true;
         }
 
         if (BufPtrNumBytes != 0)
@@ -1101,15 +1114,6 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
             BufPtrNumBytes = Length;
         }
 
-        // there's nothing to write (though we might've started with just a lead
-        // byte) so just exit
-        if ((dbcsNumBytes + BufPtrNumBytes) == 0)
-        {
-            delete[] TransBuffer;
-
-            RETURN_NTSTATUS(Status);
-        }
-
         pwchBuffer = TransBufferOriginalLocation;
         cchBuffer = (dbcsNumBytes + BufPtrNumBytes) / sizeof(wchar_t);
     }
@@ -1122,7 +1126,28 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
     // For UTF-8 conversions, we've already returned this information above.
     if (CP_UTF8 != uiCodePage)
     {
-        LOG_IF_FAILED(GetALengthFromW(uiCodePage, pwchBuffer, cchBufferRead, pcchTextBufferRead));
+        size_t cchTextBufferRead = 0;
+
+        // Start by counting the number of A bytes we used in printing our W string to the screen.
+        LOG_IF_FAILED(GetALengthFromW(uiCodePage, pwchBuffer, cchBufferRead, &cchTextBufferRead));
+        
+        // If we captured a byte off the string this time around up above, it means we didn't feed
+        // it into the WriteConsoleW above, and therefore its consumption isn't accounted for
+        // in the count we just made. Add +1 to compensate.
+        if (fLeadByteCaptured)
+        {
+            cchTextBufferRead++;
+        }
+
+        // If we consumed an internally-stored lead byte this time around up above, it means that we
+        // fed a byte into WriteConsoleW that wasn't a part of this particular call's request.
+        // We need to -1 to compensate and tell the caller the right number of bytes consumed this request.
+        if (fLeadByteConsumed)
+        {
+            cchTextBufferRead--;
+        }
+
+        *pcchTextBufferRead = cchTextBufferRead;
     }
 
     // Free remaining data
