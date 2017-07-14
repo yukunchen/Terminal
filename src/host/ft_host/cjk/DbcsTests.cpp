@@ -6,6 +6,8 @@
 #include "precomp.h"
 #include <io.h>
 #include <fcntl.h>
+#include <iostream>
+#include <iomanip>
 
 #define ENGLISH_US_CP 437u
 #define JAPANESE_CP 932u
@@ -237,6 +239,18 @@ class DbcsTests
     END_TEST_METHOD()
 
     TEST_METHOD(TestDbcsBisect);
+
+    BEGIN_TEST_METHOD(TestDbcsOneByOne)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestDbcsTrailLead)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestDbcsStdCoutScenario)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD()
 };
 
 HANDLE hScreen = INVALID_HANDLE_VALUE;
@@ -2179,4 +2193,145 @@ void DbcsTests::TestMultibyteInputRetrieval()
     }
 
     FlushConsoleInputBuffer(hIn);
+}
+
+void DbcsTests::TestDbcsOneByOne()
+{
+    HANDLE const hOut = GetStdOutputHandle();
+    VERIFY_IS_NOT_NULL(hOut, L"Verify output handle is valid.");
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleOutputCP(936), L"Ensure output codepage is set to Simplified Chinese 936.");
+
+    // This is Unicode characters U+6D4B U+8BD5 U+4E2D U+6587 in Simplified Chinese Codepage 936.
+    // The English translation is "Test Chinese".
+    // We write the bytes in hex to prevent storage/interpretation issues by the source control and compiler.
+    char test[] = "\xb2\xe2\xca\xd4\xd6\xd0\xce\xc4";
+
+    // Prepare structures for readback.
+    COORD coordReadPos = { 0 };
+    DWORD const cchReadBack = 2u;
+    char chReadBack[2];
+    DWORD dwReadOrWritten = 0u;
+
+    for (size_t i = 0; i < strlen(test); i++)
+    {
+        bool const fIsLeadByte = (i % 2 == 0);
+        Log::Comment(fIsLeadByte ? L"Writing lead byte." : L"Writing trailing byte.");
+        VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleA(hOut, &(test[i]), 1u, &dwReadOrWritten, nullptr));
+        VERIFY_ARE_EQUAL(1u, dwReadOrWritten, L"Verify the byte was reported written.");
+
+        dwReadOrWritten = 0;
+        VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterA(hOut, chReadBack, cchReadBack, coordReadPos, &dwReadOrWritten), L"Read back character.");
+        if (fIsLeadByte)
+        {
+            Log::Comment(L"Characters should be empty (space) because we only wrote a lead. It should be held for later.");
+            VERIFY_ARE_EQUAL((unsigned char)' ', (unsigned char)chReadBack[0]);
+            VERIFY_ARE_EQUAL((unsigned char)' ', (unsigned char)chReadBack[1]);
+        }
+        else
+        {
+            Log::Comment(L"After trailing is written, character should be valid from Chinese plane (not checking exactly, just that it was composed.");
+            VERIFY_IS_LESS_THAN((unsigned char)'\x80', (unsigned char)chReadBack[0]);
+            VERIFY_IS_LESS_THAN((unsigned char)'\x80', (unsigned char)chReadBack[1]);
+            coordReadPos.X += 2; // advance X for next read back. Move 2 positions because it's a wide char.
+        }
+    }
+}
+
+void DbcsTests::TestDbcsTrailLead()
+{
+    HANDLE const hOut = GetStdOutputHandle();
+    VERIFY_IS_NOT_NULL(hOut, L"Verify output handle is valid.");
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleOutputCP(936), L"Ensure output codepage is set to Simplified Chinese 936.");
+
+    // This is Unicode characters U+6D4B U+8BD5 U+4E2D U+6587 in Simplified Chinese Codepage 936.
+    // The English translation is "Test Chinese".
+    // We write the bytes in hex to prevent storage/interpretation issues by the source control and compiler.
+    char test[] = "\xb2";
+    char test2[] = "\xe2\xca";
+    char test3[] = "\xd4\xd6\xd0\xce\xc4";
+
+    // Prepare structures for readback.
+    COORD const coordReadPos = { 0 };
+    DWORD const cchReadBack = 8u;
+    char chReadBack[9];
+    DWORD dwReadOrWritten = 0u;
+    DWORD cchTestLength = 0;
+
+    Log::Comment(L"1. Write lead byte only.");
+    cchTestLength = (DWORD)strlen(test);
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleA(hOut, test, cchTestLength, &dwReadOrWritten, nullptr), L"Write the string.");
+    VERIFY_ARE_EQUAL(cchTestLength, dwReadOrWritten, L"Verify all characters reported as written.");
+    dwReadOrWritten = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterA(hOut, chReadBack, 2, coordReadPos, &dwReadOrWritten), L"Read back buffer.");
+    Log::Comment(L"Verify nothing is written/displayed yet. The read byte should have been consumed/stored but not yet displayed.");
+    VERIFY_ARE_EQUAL((unsigned char)' ', (unsigned char)chReadBack[0]);
+    VERIFY_ARE_EQUAL((unsigned char)' ', (unsigned char)chReadBack[1]);
+
+    Log::Comment(L"2. Write trailing and next lead.");
+    cchTestLength = (DWORD)strlen(test2);
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleA(hOut, test2, cchTestLength, &dwReadOrWritten, nullptr), L"Write the string.");
+    VERIFY_ARE_EQUAL(cchTestLength, dwReadOrWritten, L"Verify all characters reported as written.");
+    dwReadOrWritten = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterA(hOut, chReadBack, 4, coordReadPos, &dwReadOrWritten), L"Read back buffer.");
+    Log::Comment(L"Verify previous lead and the trailing we just wrote formed a character. The final lead should have been consumed/stored and not yet displayed.");
+    VERIFY_ARE_EQUAL((unsigned char)test[0], (unsigned char)chReadBack[0]);
+    VERIFY_ARE_EQUAL((unsigned char)test2[0], (unsigned char)chReadBack[1]);
+    VERIFY_ARE_EQUAL((unsigned char)' ', (unsigned char)chReadBack[2]);
+    VERIFY_ARE_EQUAL((unsigned char)' ', (unsigned char)chReadBack[3]);
+
+    Log::Comment(L"3. Write trailing and finish string.");
+    cchTestLength = (DWORD)strlen(test3);
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleA(hOut, test3, cchTestLength, &dwReadOrWritten, nullptr), L"Write the string.");
+    VERIFY_ARE_EQUAL(cchTestLength, dwReadOrWritten, L"Verify all characters reported as written.");
+    dwReadOrWritten = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterA(hOut, chReadBack, cchReadBack, coordReadPos, &dwReadOrWritten), L"Read back buffer.");
+    Log::Comment(L"Verify everything is displayed now that we've finished it off with the final trailing and rest of the string.");
+    VERIFY_ARE_EQUAL((unsigned char)test[0], (unsigned char)chReadBack[0]);
+    VERIFY_ARE_EQUAL((unsigned char)test2[0], (unsigned char)chReadBack[1]);
+    VERIFY_ARE_EQUAL((unsigned char)test2[1], (unsigned char)chReadBack[2]);
+    VERIFY_ARE_EQUAL((unsigned char)test3[0], (unsigned char)chReadBack[3]);
+    VERIFY_ARE_EQUAL((unsigned char)test3[1], (unsigned char)chReadBack[4]);
+    VERIFY_ARE_EQUAL((unsigned char)test3[2], (unsigned char)chReadBack[5]);
+    VERIFY_ARE_EQUAL((unsigned char)test3[3], (unsigned char)chReadBack[6]);
+    VERIFY_ARE_EQUAL((unsigned char)test3[4], (unsigned char)chReadBack[7]);
+}
+
+void DbcsTests::TestDbcsStdCoutScenario()
+{
+    HANDLE const hOut = GetStdOutputHandle();
+    VERIFY_IS_NOT_NULL(hOut, L"Verify output handle is valid.");
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleOutputCP(936), L"Ensure output codepage is set to Simplified Chinese 936.");
+
+    // This is Unicode characters U+6D4B U+8BD5 U+4E2D U+6587 in Simplified Chinese Codepage 936.
+    // The English translation is "Test Chinese".
+    // We write the bytes in hex to prevent storage/interpretation issues by the source control and compiler.
+    char test[] = "\xb2\xe2\xca\xd4\xd6\xd0\xce\xc4";
+    Log::Comment(L"Write string using printf.");
+    printf("%s\n", test);
+
+    // Prepare structures for readback.
+    COORD coordReadPos = { 0 };
+    DWORD const cchReadBack = (DWORD)strlen(test);
+    wistd::unique_ptr<char[]> const psReadBack = wil::make_unique_failfast<char[]>(cchReadBack + 1);
+    DWORD dwRead = 0;
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterA(hOut, psReadBack.get(), cchReadBack, coordReadPos, &dwRead), L"Read back printf line.");
+    VERIFY_ARE_EQUAL(cchReadBack, dwRead, L"We should have read as many characters as we expected (length of original printed line.)");
+    VERIFY_ARE_EQUAL(String(test), String(psReadBack.get()), L"String should match what we wrote.");
+
+    // Clean up and move down a line for next test.
+    ZeroMemory(psReadBack.get(), cchReadBack);
+    dwRead = 0;
+    coordReadPos.Y++;
+
+    Log::Comment(L"Write string using std::cout.");
+    std::cout << test << std::endl;
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterA(hOut, psReadBack.get(), cchReadBack, coordReadPos, &dwRead), L"Read back std::cout line.");
+    VERIFY_ARE_EQUAL(cchReadBack, dwRead, L"We should have read as many characters as we expected (length of original printed line.)");
+    VERIFY_ARE_EQUAL(String(test), String(psReadBack.get()), L"String should match what we wrote.");
+
 }
