@@ -240,9 +240,17 @@ class DbcsTests
 
     TEST_METHOD(TestDbcsBisect);
 
-    TEST_METHOD(TestDbcsOneByOne);
-    TEST_METHOD(TestDbcsTrailLead);
-    TEST_METHOD(TestDbcsStdCoutScenario);
+    BEGIN_TEST_METHOD(TestDbcsOneByOne)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestDbcsTrailLead)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestDbcsStdCoutScenario)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD()
 };
 
 HANDLE hScreen = INVALID_HANDLE_VALUE;
