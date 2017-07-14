@@ -2202,12 +2202,6 @@ void DbcsTests::TestDbcsOneByOne()
 
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleOutputCP(936), L"Ensure output codepage is set to Simplified Chinese 936.");
 
-    CONSOLE_FONT_INFOEX cfiex = { 0 };
-    cfiex.cbSize = sizeof(cfiex);
-    wcscpy_s(cfiex.FaceName, L"NSimSun");
-    cfiex.dwFontSize.Y = 16;
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(hOut, FALSE, &cfiex));
-
     // This is Unicode characters U+6D4B U+8BD5 U+4E2D U+6587 in Simplified Chinese Codepage 936.
     // The English translation is "Test Chinese".
     // We write the bytes in hex to prevent storage/interpretation issues by the source control and compiler.
