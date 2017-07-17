@@ -226,6 +226,7 @@ struct PipeHandles {
 static PipeHandles createPipe() {
     PipeHandles ret {};
     const BOOL success = CreatePipe(&ret.rh, &ret.wh, nullptr, 0);
+    UNREFERENCED_PARAMETER(success); // to make release builds happy.
     assert(success && "CreatePipe failed");
     return ret;
 }
@@ -243,6 +244,7 @@ static HANDLE makeJob() {
         JobObjectExtendedLimitInformation,
         &info,
         sizeof(info));
+    UNREFERENCED_PARAMETER(success); // to make release builds happy.
     assert(success && "SetInformationJobObject failed");
     return job;
 }
@@ -250,6 +252,7 @@ static HANDLE makeJob() {
 static std::wstring exeName() {
     std::array<wchar_t, 4096> self {};
     DWORD len = GetModuleFileNameW(nullptr, self.data(), (DWORD)self.size());
+    UNREFERENCED_PARAMETER(len); // to make release builds happy.
     assert(len >= 1 && len < self.size() && "GetModuleFileNameW failed");
     return self.data();
 }
@@ -563,6 +566,7 @@ static int doChild(std::deque<std::wstring> argv) {
 
     // Signal the parent once all the subprocesses are spawned.
     BOOL success = SetEvent(readyEvent);
+    UNREFERENCED_PARAMETER(success); // to make release builds happy.
     assert(success && "SetEvent failed");
     CloseHandle(readyEvent);
     readyEvent = nullptr;
