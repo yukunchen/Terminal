@@ -66,6 +66,7 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("IsolationLevel", "Method")]
         public void CheckClose()
         {
             string closeTestCmdLine = $"{closeTestBinaryLocation} -n {processCount} --log {testPipeName} --delay 1000 --no-realloc";
