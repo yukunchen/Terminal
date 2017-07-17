@@ -84,7 +84,7 @@ namespace Conhost.UIA.Tests
                 Log.Comment("Click the close button on the window then wait a few seconds for it to cleanup.");
                 app.GetCloseButton().Click();
 
-                Thread.Sleep(10000);
+                Thread.Sleep(5000);
                 tokenSource.Cancel();
 
                 Log.Comment("Compare the output we received on our pipes to what we expected to get in terms of ordering and process count.");
