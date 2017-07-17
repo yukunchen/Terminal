@@ -79,12 +79,12 @@ namespace Conhost.UIA.Tests
 
                 Log.Comment("Connect a test console window to the close test binary and wait for a few seconds.");
                 CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext, closeTestCmdLine);
-                Thread.Sleep(2000);
+                Thread.Sleep(TimeSpan.FromSeconds(2));
                 NativeMethods.Win32BoolHelper(WinCon.FreeConsole(), "Free console bindings so we aren't shut down when we kill the window.");
                 Log.Comment("Click the close button on the window then wait a few seconds for it to cleanup.");
                 app.GetCloseButton().Click();
 
-                Thread.Sleep(5000);
+                Thread.Sleep(TimeSpan.FromSeconds(5));
                 tokenSource.Cancel();
 
                 Log.Comment("Compare the output we received on our pipes to what we expected to get in terms of ordering and process count.");
