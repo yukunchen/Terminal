@@ -206,7 +206,11 @@ EXAMPLE 3: race condition between process cleanup and close signaling
 #include <initializer_list>
 #include <string>
 #include <vector>
+#include <chrono>
+#include <thread>
 
+static std::wstring g_pipestr;
+static HANDLE g_hLogging = INVALID_HANDLE_VALUE;
 static int g_childNum;
 
 static const wchar_t *const kChildDivider = L"--";
@@ -260,11 +264,22 @@ static std::wstring exeName() {
 static void trace(const char *fmt, ...) PL_PRINTF_FORMAT(1, 2);
 static void trace(const char *fmt, ...) {
     std::array<char, 4096> buf;
+    int written = 0;
     va_list ap;
     va_start(ap, fmt);
-    vsnprintf(buf.data(), buf.size(), fmt, ap);
+    written = vsnprintf(buf.data(), buf.size(), fmt, ap);
     va_end(ap);
-    buf[buf.size() - 1] = '\0';
+
+    assert(written < 4094);
+
+    // terminate string with \r\n so remote side can see it.
+    buf[written] = '\r';
+    buf[written + 1] = '\n';
+    if (g_hLogging != INVALID_HANDLE_VALUE)
+    {
+        WriteFile(g_hLogging, buf.data(), (DWORD)written + 2, nullptr, nullptr);
+    }
+
     OutputDebugStringA(buf.data());
 }
 
@@ -319,6 +334,12 @@ static void spawnChildTree(DWORD masterPid, const std::vector<std::wstring> &ext
     argv.push_back(std::to_wstring(masterPid));
     argv.push_back(std::to_wstring(GetCurrentProcessId()));
     argv.push_back(std::to_wstring((uintptr_t)readyEvent));
+
+    if (g_hLogging != INVALID_HANDLE_VALUE)
+    {
+        argv.push_back(g_pipestr);
+    }
+
     argv.insert(argv.end(), extraArgs.begin(), extraArgs.end());
     auto cmdline = argvToCommandLine(argv);
 
@@ -466,7 +487,7 @@ static HANDLE shiftHandle(std::deque<std::wstring> &container) {
 }
 
 static int doChild(std::deque<std::wstring> argv) {
-    // closetest.exe --child <masterPid> <parentPid> <readyEvent> -- <num> <desc> <alloc> [cmd arg] [...]
+    // closetest.exe --child <masterPid> <parentPid> <readyEvent> <opt:pipeName> -- <num> <desc> <alloc> [cmd arg] [...]
     shift(argv);
     assert(shift(argv) == L"--child");
     const DWORD masterPid = shiftInt(argv);
@@ -474,8 +495,21 @@ static int doChild(std::deque<std::wstring> argv) {
     HANDLE masterProc = openProcess(masterPid);
     HANDLE parentProc = openProcess(parentPid);
     HANDLE readyEvent = duplicateHandle(parentProc, shiftHandle(argv));
-    const auto childKeyword = shift(argv);
-    assert(childKeyword == kChildDivider);
+
+    auto optPipeName = shift(argv);
+    if (optPipeName != kChildDivider)
+    {
+        std::wstring fullPipeName(L"\\\\.\\pipe\\");
+        fullPipeName.append(optPipeName);
+        /*TRACE("child %d: log pipe %ls", fullPipeName.c_str());*/
+        g_hLogging = CreateFileW(fullPipeName.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
+        assert(g_hLogging != INVALID_HANDLE_VALUE);
+        g_pipestr = optPipeName;
+
+        const auto childKeyword = shift(argv);
+        assert(childKeyword == kChildDivider);
+    }
+    
     g_childNum = shiftInt(argv);
     const auto desc = shift(argv);
     const size_t allocChunk = shiftInt(argv) * 1024;
@@ -560,9 +594,12 @@ static void usage() {
     printf("  -m METHOD         Method used to kill processes\n");
     printf("                       pipe [default]\n");
     printf("                       job\n");
+    printf("  --log PIPENAME    Log output to a named pipe\n");
     printf("  --graph GRAPH     Process graph:\n");
     printf("                       tree: degenerate tree of processes [default]\n");
     printf("                       list: all processes are siblings\n");
+    printf("  --delay TIME      Time in milliseconds to delay starting the test\n");
+    printf("  --no-realloc      Skip free/alloc console to break out of the initial session\n");
 }
 
 static int doParent(std::deque<std::wstring> argv) {
@@ -573,6 +610,7 @@ static int doParent(std::deque<std::wstring> argv) {
     bool useGapProcess = false;
     int allocChunk = 0;
     bool useSiblings = false;
+    bool noRealloc = false;
 
     // Parse arguments
     shift(argv); // discard the program name.
@@ -610,15 +648,44 @@ static int doParent(std::deque<std::wstring> argv) {
                 fprintf(stderr, "error: unrecognized -m argument: %ls\n", next.c_str());
                 exit(1);
             }
-        } else if (arg == L"--graph" && hasNext) {
+        }
+        else if (arg == L"--graph" && hasNext) {
             const auto next = shift(argv);
-            if      (next == L"tree")    { useSiblings = false; }
-            else if (next == L"list")    { useSiblings = true; }
+            if (next == L"tree") { useSiblings = false; }
+            else if (next == L"list") { useSiblings = true; }
             else {
                 fprintf(stderr, "error: unrecognized --graph argument: %ls\n", next.c_str());
                 exit(1);
             }
-        } else {
+        }
+        else if (arg == L"--log" && hasNext)
+        {
+            const auto next = shift(argv);
+            std::wstring pipename(L"\\\\.\\pipe\\");
+            pipename.append(next);
+
+            g_hLogging = CreateFileW(pipename.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
+            if (g_hLogging != INVALID_HANDLE_VALUE)
+            {
+                g_pipestr = next;
+            }
+            else
+            {
+                fprintf(stderr, "error: pipe cannot be opened: %ls\n", next.c_str());
+                exit(1);
+            }
+        }
+        else if (arg == L"--delay" && hasNext)
+        {
+            const auto next = shift(argv);
+            const long ms = std::stol(next);
+            std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+        }
+        else if (arg == L"--no-realloc")
+        {
+            noRealloc = true;
+        }
+        else {
             usage();
             fprintf(stderr, "\nerror: unrecognized argument: %ls\n", arg.c_str());
             exit(1);
@@ -641,8 +708,12 @@ static int doParent(std::deque<std::wstring> argv) {
     }
 
     // Spawn the children.
-    FreeConsole();
-    AllocConsole();
+    if (!noRealloc)
+    {
+        FreeConsole();
+        AllocConsole();
+    }
+
     if (useSiblings) {
         spawnSiblings(GetCurrentProcessId(), spawnList);
     } else {

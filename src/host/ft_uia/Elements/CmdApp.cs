@@ -78,6 +78,11 @@ namespace Conhost.UIA.Tests.Elements
             return this.UIRoot.FindElementByAccessibilityId("TitleBar");
         }
 
+        public AppiumWebElement GetCloseButton()
+        {
+            return this.UIRoot.FindElementByName("Close");
+        }
+
         public IntPtr GetStdOutHandle()
         {
             return hStdOut;
