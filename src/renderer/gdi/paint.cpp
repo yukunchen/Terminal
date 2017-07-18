@@ -26,6 +26,9 @@ HRESULT GdiEngine::StartPaint()
     // If we're already painting, we don't need to paint. Return quickly.
     RETURN_HR_IF(S_FALSE, _fPaintStarted);
 
+    // If the window we're painting on is invisible, we don't need to paint. Return quickly.
+    RETURN_HR_IF(S_FALSE, !IsWindowVisible(_hwndTargetWindow));
+
     // Signal that we're starting to paint.
     _fPaintStarted = true;
 
