@@ -18,6 +18,8 @@ Author(s):
 
 #pragma once
 
+#include <map>
+
 namespace Microsoft
 {
     namespace Console
@@ -77,7 +79,7 @@ namespace Microsoft
                     static IConsoleWindow* const _getIConsoleWindow();
 
 
-                    // these bools iare used to prevent the object from
+                    // this is used to prevent the object from
                     // signaling an event while it is already in the
                     // process of signalling another event.
                     // This fixes a problem with JAWS where it would
@@ -88,8 +90,7 @@ namespace Microsoft
                     // eventually overflowing the stack.
                     // We aren't using this as a cheap locking
                     // mechanism for multi-threaded code.
-                    bool _signalEventFiring;
-                    bool _navigateEventFiring;
+                    std::map<EVENTID, bool> _signalEventFiring;
 
                     ScreenInfoUiaProvider* _pScreenInfoProvider;
 
