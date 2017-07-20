@@ -1,4 +1,10 @@
-﻿
+﻿//----------------------------------------------------------------------------------------------------------------------
+// <copyright file="CloseTests.cs" company="Microsoft">
+//     Copyright (c) Microsoft Corporation.  All rights reserved.
+// </copyright>
+// <summary>UI Automation tests for verifying the mechanism of closing processes attached to the console host window.</summary>
+//----------------------------------------------------------------------------------------------------------------------
+
 namespace Conhost.UIA.Tests
 {
     using System;
@@ -46,10 +52,10 @@ namespace Conhost.UIA.Tests
             StreamReader reader = new StreamReader(stream);
             while (!reader.EndOfStream && !token.IsCancellationRequested)
             {
-                string foo = reader.ReadLine();
-                if (!string.IsNullOrWhiteSpace(foo))
+                string line = reader.ReadLine();
+                if (!string.IsNullOrWhiteSpace(line))
                 {
-                    messages.Enqueue(foo);
+                    messages.Enqueue(line);
                 }
             }
         }
