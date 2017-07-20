@@ -97,6 +97,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="CloseTests.cs" />
     <Compile Include="Common\AutoHelpers.cs" />
     <Compile Include="Common\CheckBoxMeta.cs" />
     <Compile Include="Common\Globals.cs" />

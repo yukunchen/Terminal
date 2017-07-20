@@ -75,6 +75,7 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Host.Tests.UIA", "src\host\ft_uia\Host.Tests.UIA.csproj", "{C17E1BF3-9D34-4779-9458-A8EF98CC5662}"
 	ProjectSection(ProjectDependencies) = postProject
 		{099193A0-1E43-4BBC-BA7F-7B351E1342DF} = {099193A0-1E43-4BBC-BA7F-7B351E1342DF}
+		{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB} = {C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB}
 		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B} = {9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}
 	EndProjectSection
 EndProject
@@ -104,6 +105,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InteractivityBase", "src\interactivity\base\lib\InteractivityBase.vcxproj", "{06EC74CB-9A12-429C-B551-8562EC964846}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Interactivity.Win32.Tests.Unit", "src\interactivity\win32\ut_interactivity_win32\Interactivity.Win32.UnitTests.vcxproj", "{D3B92829-26CB-411A-BDA2-7F5DA3D25DD4}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CloseTest", "src\tools\closetest\CloseTest.vcxproj", "{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -315,6 +318,14 @@ Global
 		{D3B92829-26CB-411A-BDA2-7F5DA3D25DD4}.Release|x64.Build.0 = Release|x64
 		{D3B92829-26CB-411A-BDA2-7F5DA3D25DD4}.Release|x86.ActiveCfg = Release|Win32
 		{D3B92829-26CB-411A-BDA2-7F5DA3D25DD4}.Release|x86.Build.0 = Release|Win32
+		{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB}.Debug|x64.ActiveCfg = Debug|x64
+		{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB}.Debug|x64.Build.0 = Debug|x64
+		{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB}.Debug|x86.ActiveCfg = Debug|Win32
+		{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB}.Debug|x86.Build.0 = Debug|Win32
+		{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB}.Release|x64.ActiveCfg = Release|x64
+		{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB}.Release|x64.Build.0 = Release|x64
+		{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB}.Release|x86.ActiveCfg = Release|Win32
+		{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -329,5 +340,6 @@ Global
 		{919544AC-D39B-463F-8414-3C3C67CF727C} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 		{8157729B-BA88-4EB4-B99F-DC6A73E5BB7D} = {4C8E6BB0-4713-4ADB-BD04-81628ECEAF20}
 		{ED82003F-FC5D-4E94-8B36-F480018ED064} = {A10C4720-DCA4-4640-9749-67F4314F527C}
+		{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB} = {A10C4720-DCA4-4640-9749-67F4314F527C}
 	EndGlobalSection
 EndGlobal
