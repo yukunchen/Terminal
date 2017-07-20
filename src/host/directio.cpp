@@ -785,7 +785,7 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
     ConsoleHandleData* HandleData = m->GetObjectHandle();
     if (HandleData == nullptr)
     {
-        Status = ERROR_INVALID_HANDLE;
+        Status = NTSTATUS_FROM_WIN32(ERROR_INVALID_HANDLE);
     }
 
     SCREEN_INFORMATION* pScreenInfo = nullptr;
@@ -866,7 +866,7 @@ NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
     ConsoleHandleData* HandleData = m->GetObjectHandle();
     if (HandleData == nullptr)
     {
-        Status = ERROR_INVALID_HANDLE;
+        Status = NTSTATUS_FROM_WIN32(ERROR_INVALID_HANDLE);
     }
 
     SCREEN_INFORMATION* pScreenInfo = nullptr;
@@ -931,7 +931,7 @@ NTSTATUS SrvFillConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
     ConsoleHandleData* HandleData = m->GetObjectHandle();
     if (HandleData == nullptr)
     {
-        Status = ERROR_INVALID_HANDLE;
+        Status = NTSTATUS_FROM_WIN32(ERROR_INVALID_HANDLE);
     }
 
     SCREEN_INFORMATION* pScreenInfo = nullptr;
