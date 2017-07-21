@@ -84,7 +84,13 @@ HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
     {
         return hr;
     }
-    _signalEventFiring[id] = true;
+
+    try
+    {
+        _signalEventFiring[id] = true;
+    }
+    CATCH_RETURN();
+
     IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
     hr = UiaRaiseAutomationEvent(pProvider, id);
     _signalEventFiring[id] = false;

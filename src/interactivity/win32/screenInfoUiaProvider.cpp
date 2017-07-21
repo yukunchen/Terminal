@@ -59,7 +59,12 @@ HRESULT ScreenInfoUiaProvider::Signal(_In_ EVENTID id)
         return hr;
     }
 
-    _signalFiringMapping[id] = true;
+    try
+    {
+        _signalFiringMapping[id] = true;
+    }
+    CATCH_RETURN();
+
     IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
     hr = UiaRaiseAutomationEvent(pProvider, id);
     _signalFiringMapping[id] = false;

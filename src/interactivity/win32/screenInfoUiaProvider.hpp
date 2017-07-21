@@ -18,7 +18,7 @@ Author(s):
 
 #pragma once
 
-#include <map>
+#include "precomp.h"
 
 // Forward declare, prevent circular ref.
 class SCREEN_INFORMATION;

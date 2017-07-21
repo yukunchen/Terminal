@@ -18,7 +18,7 @@ Author(s):
 
 #pragma once
 
-#include <map>
+#include "precomp.h"
 
 namespace Microsoft
 {
