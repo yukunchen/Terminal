@@ -163,13 +163,21 @@ INT_PTR WINAPI ColorDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lParam)
     HWND hWnd;
     HWND hWndOld;
     BOOL bOK;
+    static bool fHaveInitialized = false;
 
     switch (wMsg) {
         case WM_INITDIALOG:
+        {
+            fHaveInitialized = true;
             return InitColorsDialog(hDlg);
+        }
 
         case WM_COMMAND:
         {
+            if (!fHaveInitialized) {
+                return FALSE;
+            }
+            
             Item = LOWORD(wParam);
             switch (Item) {
                 case IDD_COLOR_SCREEN_TEXT:
