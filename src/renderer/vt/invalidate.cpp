@@ -20,7 +20,8 @@ using namespace Microsoft::Console::Render;
 // - HRESULT S_OK, GDI-based error code, or safemath error
 HRESULT VtEngine::InvalidateSystem(_In_ const RECT* const prcDirtyClient)
 {
-    RETURN_HR(_InvalidCombine(prcDirtyClient));
+    prcDirtyClient;
+    return S_OK;
 }
 
 // Routine Description:
@@ -31,21 +32,7 @@ HRESULT VtEngine::InvalidateSystem(_In_ const RECT* const prcDirtyClient)
 // - HRESULT S_OK, GDI-based error code, or safemath error
 HRESULT VtEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 {
-    if (pcoordDelta->X != 0 || pcoordDelta->Y != 0)
-    {
-        POINT ptDelta = { 0 };
-        RETURN_IF_FAILED(_ScaleByFont(pcoordDelta, &ptDelta));
-
-        RETURN_IF_FAILED(_InvalidOffset(&ptDelta));
-
-        SIZE szInvalidScrollNew;
-        RETURN_IF_FAILED(LongAdd(_szInvalidScroll.cx, ptDelta.x, &szInvalidScrollNew.cx));
-        RETURN_IF_FAILED(LongAdd(_szInvalidScroll.cy, ptDelta.y, &szInvalidScrollNew.cy));
-
-        // Store if safemath succeeded
-        _szInvalidScroll = szInvalidScrollNew;
-    }
-
+    pcoordDelta;
     return S_OK;
 }
 
@@ -58,25 +45,8 @@ HRESULT VtEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 // - HRESULT S_OK or GDI-based error code
 HRESULT VtEngine::InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
 {
-    // Get the currently selected area as a GDI region
-    wil::unique_hrgn hrgnSelection(CreateRectRgn(0, 0, 0, 0));
-    RETURN_LAST_ERROR_IF_NULL(hrgnSelection.get());
-
-    RETURN_IF_FAILED(_PaintSelectionCalculateRegion(rgsrSelection, cRectangles, hrgnSelection.get()));
-
-    // XOR against the region we saved from the last time we rendered to find out what to invalidate
-    // This is the space that needs to be inverted to either select or deselect the existing region into the new one.
-    wil::unique_hrgn hrgnInvalid(CreateRectRgn(0, 0, 0, 0));
-    RETURN_LAST_ERROR_IF_NULL(hrgnInvalid.get());
-
-    int const iCombineResult = CombineRgn(hrgnInvalid.get(), _hrgnGdiPaintedSelection, hrgnSelection.get(), RGN_XOR);
-
-    if (NULLREGION != iCombineResult && ERROR != iCombineResult)
-    {
-        // Invalidate that.
-        RETURN_IF_FAILED(_InvalidateRgn(hrgnInvalid.get()));
-    }
-
+    rgsrSelection;
+    cRectangles;
     return S_OK;
 }
 
@@ -89,9 +59,8 @@ HRESULT VtEngine::InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const 
 // - S_OK, GDI related failure, or safemath failure.
 HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 {
-    RECT rcRegion = { 0 };
-    RETURN_IF_FAILED(_ScaleByFont(psrRegion, &rcRegion));
-    RETURN_HR(_InvalidateRect(&rcRegion));
+    psrRegion;
+    return S_OK;
 }
 
 // Routine Description:
@@ -103,105 +72,5 @@ HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 // - S_OK, GDI related failure, or safemath failure.
 HRESULT VtEngine::InvalidateAll()
 {
-    RECT rc;
-    RETURN_LAST_ERROR_IF_FALSE(GetClientRect(_hwndTargetWindow, &rc));
-    RETURN_HR(InvalidateSystem(&rc));
-}
-
-// Routine Description:
-// - Helper to combine the given rectangle into the invalid region to be updated on the next paint
-// Arguments:
-// - prc - Pixel region (RECT) that should be repainted on the next frame
-// Return Value:
-// - S_OK, GDI related failure, or safemath failure.
-HRESULT VtEngine::_InvalidCombine(_In_ const RECT* const prc)
-{
-    if (!_fInvalidRectUsed)
-    {
-        _rcInvalid = *prc;
-        _fInvalidRectUsed = true;
-    }
-    else
-    {
-        _OrRect(&_rcInvalid, prc);
-    }
-
-    // Ensure invalid areas remain within bounds of window.
-    RETURN_IF_FAILED(_InvalidRestrict());
-
     return S_OK;
-}
-
-// Routine Description:
-// - Helper to adjust the invalid region by the given offset such as when a scroll operation occurs.
-// Arguments:
-// - ppt - Distances by which we should move the invalid region in response to a scroll
-// Return Value:
-// - S_OK, GDI related failure, or safemath failure.
-HRESULT VtEngine::_InvalidOffset(_In_ const POINT* const ppt)
-{
-    if (_fInvalidRectUsed)
-    {
-        RECT rcInvalidNew;
-
-        RETURN_IF_FAILED(LongAdd(_rcInvalid.left, ppt->x, &rcInvalidNew.left));
-        RETURN_IF_FAILED(LongAdd(_rcInvalid.right, ppt->x, &rcInvalidNew.right));
-        RETURN_IF_FAILED(LongAdd(_rcInvalid.top, ppt->y, &rcInvalidNew.top));
-        RETURN_IF_FAILED(LongAdd(_rcInvalid.bottom, ppt->y, &rcInvalidNew.bottom));
-
-        // Add the scrolled invalid rectangle to what was left behind to get the new invalid area.
-        // This is the equivalent of adding in the "update rectangle" that we would get out of ScrollWindowEx/ScrollDC.
-        UnionRect(&_rcInvalid, &_rcInvalid, &rcInvalidNew);
-
-        // Ensure invalid areas remain within bounds of window.
-        RETURN_IF_FAILED(_InvalidRestrict());
-    }
-
-    return S_OK;
-}
-
-// Routine Description:
-// - Helper to ensure the invalid region remains within the bounds of the window.
-// Arguments:
-// - <none>
-// Return Value:
-// - S_OK, GDI related failure, or safemath failure.
-HRESULT VtEngine::_InvalidRestrict()
-{
-    // Ensure that the invalid area remains within the bounds of the client area
-    RECT rcClient;
-
-    // Do restriction only if retrieving the client rect was successful.
-    RETURN_LAST_ERROR_IF_FALSE(GetClientRect(_hwndTargetWindow, &rcClient));
-
-    _rcInvalid.left = clamp(_rcInvalid.left, rcClient.left, rcClient.right);
-    _rcInvalid.right = clamp(_rcInvalid.right, rcClient.left, rcClient.right);
-    _rcInvalid.top = clamp(_rcInvalid.top, rcClient.top, rcClient.bottom);
-    _rcInvalid.bottom = clamp(_rcInvalid.bottom, rcClient.top, rcClient.bottom);
-
-    return S_OK;
-}
-
-// Routine Description:
-// - Helper to add a pixel rectangle to the invalid area
-// Arguments:
-// - prc - Pointer to pixel rectangle representing invalid area to add to next paint frame
-// Return Value:
-// - S_OK, GDI related failure, or safemath failure.
-HRESULT VtEngine::_InvalidateRect(_In_ const RECT* const prc)
-{
-    RETURN_HR(_InvalidCombine(prc));
-}
-
-// Routine Description:
-// - Helper to add a pixel region to the invalid area
-// Arguments:
-// - hrgn - Handle to pixel region representing invalid area to add to next paint frame
-// Return Value:
-// - S_OK, GDI related failure, or safemath failure.
-HRESULT VtEngine::_InvalidateRgn(_In_ HRGN hrgn)
-{
-    RECT rcInvalid;
-    RETURN_LAST_ERROR_IF_FALSE(GetRgnBox(hrgn, &rcInvalid));
-    RETURN_HR(_InvalidateRect(&rcInvalid));
 }
