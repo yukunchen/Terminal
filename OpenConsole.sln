@@ -108,6 +108,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Interactivity.Win32.Tests.U
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CloseTest", "src\tools\closetest\CloseTest.vcxproj", "{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RendererVt", "src\renderer\vt\lib\vt.vcxproj", "{990F2657-8580-4828-943F-5DD657D11842}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -329,6 +331,14 @@ Global
 		{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB}.Release|x64.Build.0 = Release|x64
 		{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB}.Release|x86.ActiveCfg = Release|Win32
 		{C7A6A5D9-60BE-4AEB-A5F6-AFE352F86CBB}.Release|x86.Build.0 = Release|Win32
+		{990F2657-8580-4828-943F-5DD657D11842}.Debug|x64.ActiveCfg = Debug|x64
+		{990F2657-8580-4828-943F-5DD657D11842}.Debug|x64.Build.0 = Debug|x64
+		{990F2657-8580-4828-943F-5DD657D11842}.Debug|x86.ActiveCfg = Debug|Win32
+		{990F2657-8580-4828-943F-5DD657D11842}.Debug|x86.Build.0 = Debug|Win32
+		{990F2657-8580-4828-943F-5DD657D11842}.Release|x64.ActiveCfg = Release|x64
+		{990F2657-8580-4828-943F-5DD657D11842}.Release|x64.Build.0 = Release|x64
+		{990F2657-8580-4828-943F-5DD657D11842}.Release|x86.ActiveCfg = Release|Win32
+		{990F2657-8580-4828-943F-5DD657D11842}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
