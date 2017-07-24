@@ -126,7 +126,7 @@ void TestGetConsoleTitleAVerifyHelper(_Inout_updates_(cchReadBuffer) char* const
     else
     {
         VERIFY_ARE_EQUAL(chReadExpected, chReadBuffer);
-        VERIFY_ARE_EQUAL(0, cchTryToRead);
+        VERIFY_ARE_EQUAL(0u, cchTryToRead);
     }
 }
 
@@ -162,7 +162,7 @@ void TestGetConsoleTitleWVerifyHelper(_Inout_updates_(cchReadBuffer) wchar_t* co
     else
     {
         VERIFY_ARE_EQUAL(wchReadExpected, wchReadBuffer);
-        VERIFY_ARE_EQUAL(0, cchTryToRead);
+        VERIFY_ARE_EQUAL(0u, cchTryToRead);
     }
 }
 

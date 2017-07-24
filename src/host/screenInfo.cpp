@@ -528,6 +528,20 @@ void SCREEN_INFORMATION::UpdateFont(_In_ const FontInfo* const pfiNewFont)
     TextInfo->SetDesiredFont(&fiDesiredFont);
 
     RefreshFontWithRenderer();
+
+    // If we're the active screen buffer...
+    if (IsActiveScreenBuffer())
+    {
+        // If there is a window attached, let it know that it should try to update so the rows/columns are now accounting for the new font.
+        IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+        if (nullptr != pWindow)
+        {
+            COORD coordViewport;
+            coordViewport.X = GetScreenWindowSizeX();
+            coordViewport.Y = GetScreenWindowSizeY();
+            pWindow->UpdateWindowSize(coordViewport);
+        }
+    }
 }
 
 // NOTE: This method was historically used to notify accessibility apps AND
