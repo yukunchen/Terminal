@@ -104,5 +104,5 @@ HRESULT VtEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesi
 // - X by Y size of the font.
 COORD VtEngine::GetFontSize()
 {
-    return{ 0 };
+    return{ 1, 1 };
 }
