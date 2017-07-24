@@ -28,6 +28,16 @@ typedef SCREEN_INFORMATION *PSCREEN_INFORMATION;
 class Cursor sealed
 {
 public:
+
+    enum CursorType
+    {
+        Legacy = 0x0,
+        VerticalBar = 0x1,
+        Underscore = 0x2,
+        EmptyBox = 0x3,
+        FullBox = 0x4
+    };
+
     Cursor(_In_ Microsoft::Console::Interactivity::IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize);
     static NTSTATUS CreateInstance(_In_ ULONG const ulSize, _Outptr_ Cursor ** const ppCursor);
     ~Cursor();
@@ -48,6 +58,10 @@ public:
     const BOOLEAN GetDelay() const;
     const ULONG GetSize() const;
     const COORD GetPosition() const;
+
+    const CursorType GetCursorType() const;
+    const bool IsUsingColor() const;
+    const COLORREF GetColor() const;
 
     void StartDeferDrawing();
     void EndDeferDrawing();
@@ -116,4 +130,9 @@ private:
     void _RedrawCursorAlways();
 
     UINT _uCaretBlinkTime;
+
+    CursorType _cursorType;
+    bool _fUseColor;
+    COLORREF _color;
+    void _colorShift();
 };

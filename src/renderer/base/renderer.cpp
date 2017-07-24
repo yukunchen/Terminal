@@ -742,8 +742,23 @@ void Renderer::_PaintCursor()
             view.ConvertToOrigin(&coordCursor);
 
             // Draw it within the viewport
-            LOG_IF_FAILED(_pEngine->PaintCursor(coordCursor, ulHeight, fIsDoubleWidth));
+            if (pCursor->GetCursorType() == Cursor::CursorType::Legacy)
+            {
+                LOG_IF_FAILED(_pEngine->PaintCursor(coordCursor, ulHeight, fIsDoubleWidth));
+            }
+            else
+            {
+                LOG_IF_FAILED(_pEngine->PaintCursorEx(coordCursor,
+                    ulHeight,
+                    fIsDoubleWidth,
+                    pCursor->GetCursorType(),
+                    pCursor->IsUsingColor(),
+                    pCursor->GetColor()
+                ));
+
+            }
         }
+
     }
 }
 

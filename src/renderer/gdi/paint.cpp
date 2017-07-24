@@ -5,7 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
-
+#include <vector>
 #include "gdirenderer.hpp"
 
 #pragma hdrstop
@@ -458,6 +458,110 @@ HRESULT GdiEngine::PaintCursor(_In_ COORD const coord, _In_ ULONG const ulHeight
     _rcCursorInvert = rcInvert;
 
     return S_OK;
+}
+
+HRESULT GdiEngine::PaintCursorEx(_In_ COORD const coordCursor, 
+                    _In_ ULONG const ulCursorHeightPercent,
+                    _In_ bool const fIsDoubleWidth,
+                    _In_ Cursor::CursorType const cursorType, 
+                    _In_ bool const fUseColor, 
+                    _In_ COLORREF const cursorColor)
+{
+    LOG_IF_FAILED(_FlushBufferLines());
+
+    COORD const coordFontSize = _GetFontSize();
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
+
+    // First set up a block cursor the size of the font.
+    RECT rcBoundaries;
+    RETURN_IF_FAILED(LongMult(coordCursor.X, coordFontSize.X, &rcBoundaries.left));
+    RETURN_IF_FAILED(LongMult(coordCursor.Y, coordFontSize.Y, &rcBoundaries.top));
+    RETURN_IF_FAILED(LongAdd(rcBoundaries.left, coordFontSize.X, &rcBoundaries.right));
+    RETURN_IF_FAILED(LongAdd(rcBoundaries.top, coordFontSize.Y, &rcBoundaries.bottom));
+
+    // If we're double-width cursor, make it an extra font wider.
+    if (fIsDoubleWidth)
+    {
+        RETURN_IF_FAILED(LongAdd(rcBoundaries.right, coordFontSize.X, &rcBoundaries.right));
+    }
+
+    // Make a set of RECTs to paint.
+    std::vector<RECT> rects;
+
+    
+    RECT rcInvert = rcBoundaries;
+    // depending on the cursorType, add rects to that set
+    switch(cursorType)
+    {
+    case Cursor::CursorType::Legacy:
+        {
+            // Now adjust the cursor height
+            // enforce min/max cursor height
+            ULONG ulHeight = ulCursorHeightPercent;
+            ulHeight = max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
+            ulHeight = min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
+
+            ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
+
+            // Reduce the height of the top to be relative to the bottom by the height we want.
+            RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
+
+            rects.push_back(rcInvert);
+        }
+        break;
+    case Cursor::CursorType::VerticalBar:
+        RETURN_IF_FAILED(LongAdd(rcInvert.left, 1, &rcInvert.right));
+
+        rects.push_back(rcInvert);
+        break;
+    case Cursor::CursorType::Underscore:
+        RETURN_IF_FAILED(LongAdd(rcInvert.bottom, -1, &rcInvert.top));
+
+        rects.push_back(rcInvert);
+        break;
+    case Cursor::CursorType::EmptyBox:
+        {
+            RECT top, left, right, bottom;
+            top = left = right = bottom = rcBoundaries;
+            RETURN_IF_FAILED(LongAdd(top.top, 1, &top.bottom));
+            RETURN_IF_FAILED(LongAdd(bottom.bottom, -1, &bottom.top));
+            RETURN_IF_FAILED(LongAdd(left.left, 1, &left.right));
+            RETURN_IF_FAILED(LongAdd(right.right, -1, &right.left));
+
+            rects.push_back(top);
+            rects.push_back(left);
+            rects.push_back(right);
+            rects.push_back(bottom);
+        }
+        break;
+    case Cursor::CursorType::FullBox:
+        rects.push_back(rcInvert);
+        break;
+    default:
+        return E_NOTIMPL;
+
+    }
+    // Either invert all the RECTs, or paint them.
+    if (fUseColor)
+    {
+        HBRUSH hCursorBrush = CreateSolidBrush(cursorColor);
+        for (RECT r : rects)
+        {
+            RETURN_HR_IF_FALSE(E_FAIL, FillRect(_hdcMemoryContext, &r, hCursorBrush));
+        }
+        DeleteObject(hCursorBrush);
+    }
+    else
+    {
+        for (RECT r : rects)
+        {
+            RETURN_HR_IF_FALSE(E_FAIL, InvertRect(_hdcMemoryContext, &r));
+        }
+    }
+    // Save inverted cursor position so we can clear it.
+    _rcCursorInvert = rcBoundaries;
+    return S_OK;
+
 }
 
 // Routine Description:

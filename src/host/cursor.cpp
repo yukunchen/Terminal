@@ -40,6 +40,13 @@ Cursor::Cursor(IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize) :
     _coordDelayedAt = {0};
 
     _hCaretBlinkTimerQueue = CreateTimerQueue();
+
+    // _cursorType = CursorType::VerticalBar;
+    // _cursorType = CursorType::Underscore;
+    // _cursorType = CursorType::EmptyBox;
+    _cursorType = CursorType::FullBox;
+    _fUseColor = true;
+    _color = RGB(255, 0, 255);
 }
 
 Cursor::~Cursor()
@@ -579,4 +586,17 @@ void Cursor::KillCaretTimer()
             _hCaretBlinkTimer = INVALID_HANDLE_VALUE;
         }
     }
+}
+
+const Cursor::CursorType Cursor::GetCursorType() const
+{
+    return _cursorType;
+}
+const bool Cursor::IsUsingColor() const
+{
+    return _fUseColor;
+}
+const COLORREF Cursor::GetColor() const
+{
+    return _color;
 }

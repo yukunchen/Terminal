@@ -15,6 +15,7 @@ Author(s):
 
 #include "IRenderer.hpp"
 #include "FontInfo.hpp"
+#include "..\..\host\Cursor.h"
 
 namespace Microsoft
 {
@@ -52,6 +53,13 @@ namespace Microsoft
                 virtual HRESULT PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles) = 0;
 
                 virtual HRESULT PaintCursor(_In_ COORD const coordCursor, _In_ ULONG const ulCursorHeightPercent, _In_ bool const fIsDoubleWidth) = 0;
+                virtual HRESULT PaintCursorEx(_In_ COORD const coordCursor, 
+                    _In_ ULONG const ulCursorHeightPercent,
+                    _In_ bool const fIsDoubleWidth,
+                    _In_ Cursor::CursorType const cursorType, 
+                    _In_ bool const fUseColor, 
+                    _In_ COLORREF const cursorColor) = 0;
+
                 virtual HRESULT ClearCursor() = 0;
                 
 
