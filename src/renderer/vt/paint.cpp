@@ -10,6 +10,7 @@
 
 #include <sstream>
 
+
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
@@ -61,6 +62,8 @@ HRESULT VtEngine::PaintBackground()
     return S_OK;
 }
 
+#define _CRT_SECURE_NO_WARNINGS 1
+
 // Routine Description:
 // - Draws one line of the buffer to the screen.
 // - This will now be cached in a PolyText buffer and flushed periodically instead of drawing every individual segment. Note this means that the PolyText buffer must be flushed before some operations (changing the brush color, drawing lines on top of the characters, inverting for cursor/selection, etc.)
@@ -89,21 +92,26 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
 {
     try
     {
-        std::stringstream ss;
+        PCSTR pszCursorFormat = "\x1b[%d;%dH";
+        COORD coordVt = coord;
+        coordVt.X++;
+        coordVt.Y++;
+
+        int cchNeeded = _scprintf(pszCursorFormat, coordVt.Y, coordVt.X);
+        wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+        RETURN_IF_NULL_ALLOC(psz);
+
+        int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszCursorFormat, coordVt.Y, coordVt.X);
+        _Write(psz.get(), cchWritten);
 
         // Move cursor to position.
-        ss << "\x1b[" << coord.Y+1 << ";" << coord.X+1 << "H";
-
         DWORD dwNeeded = WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)cchLine, nullptr, 0, nullptr, nullptr);
-        char* rgchNeeded = new char[dwNeeded + 1];
-        RETURN_LAST_ERROR_IF_FALSE(WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)cchLine, rgchNeeded, dwNeeded, nullptr, nullptr));
+        wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(dwNeeded + 1);
+        RETURN_IF_NULL_ALLOC(rgchNeeded);
+        RETURN_LAST_ERROR_IF_FALSE(WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)cchLine, rgchNeeded.get(), dwNeeded, nullptr, nullptr));
         rgchNeeded[dwNeeded] = '\0';
 
-        ss << std::string(rgchNeeded);
-
-        std::string s = ss.str();
-
-        _Write(s);
+        _Write(rgchNeeded.get(), dwNeeded);
 
         pwsLine;
         rgWidths;

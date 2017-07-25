@@ -63,6 +63,7 @@ namespace Microsoft
 
             private:
                 wil::unique_hfile _hFile;
+                HRESULT _Write(_In_reads_(cch) PCSTR psz, _In_ size_t const cch);
                 HRESULT _Write(_In_ std::string& str);
             };
         };

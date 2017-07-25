@@ -13,6 +13,7 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     DWORD dwMode = 0;
     THROW_LAST_ERROR_IF_FALSE(GetConsoleMode(hOut, &dwMode));
     dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    dwMode |= DISABLE_NEWLINE_AUTO_RETURN;
     THROW_LAST_ERROR_IF_FALSE(SetConsoleMode(hOut, dwMode));
 
     wil::unique_handle pipe;

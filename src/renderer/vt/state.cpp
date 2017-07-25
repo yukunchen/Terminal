@@ -37,6 +37,12 @@ VtEngine::~VtEngine()
 {
 }
 
+HRESULT VtEngine::_Write(_In_reads_(cch) PCSTR psz, _In_ size_t const cch)
+{
+    RETURN_LAST_ERROR_IF_FALSE(WriteFile(_hFile.get(), psz, (DWORD)cch, nullptr, nullptr));
+    return S_OK;
+}
+
 HRESULT VtEngine::_Write(_In_ std::string& str)
 {
     RETURN_LAST_ERROR_IF_FALSE(WriteFile(_hFile.get(), str.c_str(), (DWORD)str.length(), nullptr, nullptr));
@@ -53,14 +59,29 @@ HRESULT VtEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_
 {
     try
     {
-        std::stringstream ss;
+        PCSTR pszFgFormat = "\x1b[38;2;%d;%d;%dm";
+        DWORD const fgRed = (colorForeground & 0xff);
+        DWORD const fgGreen = (colorForeground >> 8) & 0xff;
+        DWORD const fgBlue = (colorForeground >> 16) & 0xff;
+        
+        int cchNeeded = _scprintf(pszFgFormat, fgRed, fgGreen, fgBlue);
+        wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+        RETURN_IF_NULL_ALLOC(psz);
 
-        ss << "\x1b[38;2;" << (colorForeground & 0xff) << ";" << ((colorForeground >> 8) & 0xff) << ";" << ((colorForeground >> 16) & 0xff) << "m";
-        ss << "\x1b[48;2;" << (colorBackground & 0xff) << ";" << ((colorBackground >> 8) & 0xff) << ";" << ((colorBackground >> 16) & 0xff) << "m";
+        int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszFgFormat, fgRed, fgGreen, fgBlue);
+        _Write(psz.get(), cchWritten);
 
-        std::string s = ss.str();
+        PCSTR pszBgFormat = "\x1b[48;2;%d;%d;%dm";
+        DWORD const bgRed = (colorBackground & 0xff);
+        DWORD const bgGreen = (colorBackground >> 8) & 0xff;
+        DWORD const bgBlue = (colorBackground >> 16) & 0xff;
 
-        _Write(s);
+        cchNeeded = _scprintf(pszBgFormat, bgRed, bgGreen, bgBlue);
+        psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+        RETURN_IF_NULL_ALLOC(psz);
+
+        cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszBgFormat, bgRed, bgGreen, bgBlue);
+        _Write(psz.get(), cchWritten);
     }
     CATCH_RETURN();
 
