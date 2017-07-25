@@ -20,7 +20,12 @@ using namespace Microsoft::Console::Render;
 // - The character dimensions of the current dirty area of the frame.
 SMALL_RECT VtEngine::GetDirtyRectInChars()
 {
-    return{ 0 };
+    SMALL_RECT rc;
+    rc.Left = 0;
+    rc.Top = 0;
+    rc.Right = 89;
+    rc.Bottom = 25;
+    return rc;
 }
 
 // Routine Description:

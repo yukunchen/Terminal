@@ -8,6 +8,8 @@
 
 #include "vtrenderer.hpp"
 
+#include <sstream>
+
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
@@ -20,8 +22,9 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we started to paint. S_FALSE if we didn't need to paint. HRESULT error code if painting didn't start successfully.
 HRESULT VtEngine::StartPaint()
 {
-    std::string foo("A");
-    return _Write(foo);
+ /*   std::string foo("A");
+    return _Write(foo);*/
+    return S_OK;
 }
 
 // Routine Description:
@@ -79,16 +82,37 @@ HRESULT VtEngine::PaintBackground()
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
 HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
-                                   _In_reads_(cchLine) const unsigned char* const rgWidths,
-                                   _In_ size_t const cchLine,
-                                   _In_ COORD const coord,
-                                   _In_ bool const fTrimLeft)
+                                  _In_reads_(cchLine) const unsigned char* const rgWidths,
+                                  _In_ size_t const cchLine,
+                                  _In_ COORD const coord,
+                                  _In_ bool const fTrimLeft)
 {
-    pwsLine;
-    rgWidths;
-    cchLine;
-    coord;
-    fTrimLeft;
+    try
+    {
+        std::stringstream ss;
+
+        // Move cursor to position.
+        ss << "\x1b[" << coord.Y+1 << ";" << coord.X+1 << "H";
+
+        DWORD dwNeeded = WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)cchLine, nullptr, 0, nullptr, nullptr);
+        char* rgchNeeded = new char[dwNeeded + 1];
+        RETURN_LAST_ERROR_IF_FALSE(WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)cchLine, rgchNeeded, dwNeeded, nullptr, nullptr));
+        rgchNeeded[dwNeeded] = '\0';
+
+        ss << std::string(rgchNeeded);
+
+        std::string s = ss.str();
+
+        _Write(s);
+
+        pwsLine;
+        rgWidths;
+        cchLine;
+        coord;
+        fTrimLeft;
+    }
+    CATCH_RETURN();
+
     return S_OK;
 }
 
