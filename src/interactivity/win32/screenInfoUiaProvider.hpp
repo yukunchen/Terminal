@@ -18,6 +18,8 @@ Author(s):
 
 #pragma once
 
+#include "precomp.h"
+
 // Forward declare, prevent circular ref.
 class SCREEN_INFORMATION;
 
@@ -84,7 +86,7 @@ namespace Microsoft
                     // weak reference to uia parent
                     WindowUiaProvider* const _pUiaParent;
 
-                    // this bool is used to prevent the object from
+                    // this is used to prevent the object from
                     // signaling an event while it is already in the
                     // process of signalling another event.
                     // This fixes a problem with JAWS where it would
@@ -95,7 +97,7 @@ namespace Microsoft
                     // eventually overflowing the stack.
                     // We aren't using this as a cheap locking
                     // mechanism for multi-threaded code.
-                    bool _signalEventFiring;
+                    std::map<EVENTID, bool> _signalFiringMapping;
 
                     const COORD _getScreenBufferCoords() const;
                     static SCREEN_INFORMATION* const _getScreenInfo();

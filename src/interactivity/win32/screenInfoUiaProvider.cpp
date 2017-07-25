@@ -40,7 +40,7 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int 
 
 ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent) :
     _pUiaParent(THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
-    _signalEventFiring{ false },
+    _signalFiringMapping{},
     _cRefs(1)
 {
 }
@@ -52,13 +52,22 @@ ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
 HRESULT ScreenInfoUiaProvider::Signal(_In_ EVENTID id)
 {
     HRESULT hr = S_OK;
-    if (!_signalEventFiring)
+    // check to see if we're already firing this particular event
+    if (_signalFiringMapping.find(id) != _signalFiringMapping.end() &&
+        _signalFiringMapping[id] == true)
     {
-        _signalEventFiring = true;
-        IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
-        hr = UiaRaiseAutomationEvent(pProvider, id);
-        _signalEventFiring = false;
+        return hr;
     }
+
+    try
+    {
+        _signalFiringMapping[id] = true;
+    }
+    CATCH_RETURN();
+
+    IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
+    hr = UiaRaiseAutomationEvent(pProvider, id);
+    _signalFiringMapping[id] = false;
     return hr;
 }
 

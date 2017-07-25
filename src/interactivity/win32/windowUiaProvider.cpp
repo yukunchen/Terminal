@@ -16,8 +16,7 @@
 using namespace Microsoft::Console::Interactivity::Win32;
 
 WindowUiaProvider::WindowUiaProvider() :
-    _signalEventFiring{ false },
-    _navigateEventFiring{ false },
+    _signalEventFiring{},
     _pScreenInfoProvider{ nullptr },
     _cRefs(1)
 {
@@ -64,6 +63,7 @@ WindowUiaProvider* WindowUiaProvider::Create()
 HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
 {
     HRESULT hr = S_OK;
+
     // ScreenInfoUiaProvider is responsible for signaling selection
     // changed events
     if (id == UIA_Text_TextSelectionChangedEventId)
@@ -76,14 +76,24 @@ HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
         {
             hr = E_POINTER;
         }
+        return hr;
     }
-    else if (!_signalEventFiring)
+
+    if (_signalEventFiring.find(id) != _signalEventFiring.end() &&
+        _signalEventFiring[id] == true)
     {
-        _signalEventFiring = true;
-        IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
-        hr = UiaRaiseAutomationEvent(pProvider, id);
-        _signalEventFiring = false;
+        return hr;
     }
+
+    try
+    {
+        _signalEventFiring[id] = true;
+    }
+    CATCH_RETURN();
+
+    IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
+    hr = UiaRaiseAutomationEvent(pProvider, id);
+    _signalEventFiring[id] = false;
     return hr;
 }
 
@@ -244,13 +254,7 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
         (*ppProvider)->AddRef();
 
         // signal that the focus changed
-        IRawElementProviderSimple* pSimpleProvider = static_cast<IRawElementProviderSimple*>(_pScreenInfoProvider);
-        if (!_navigateEventFiring)
-        {
-            _navigateEventFiring = true;
-            hr = UiaRaiseAutomationEvent(pSimpleProvider, UIA_AutomationFocusChangedEventId);
-            _navigateEventFiring = false;
-        }
+        _pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId);
     }
 
     // For the other directions (parent, next, previous) the default of nullptr is correct
