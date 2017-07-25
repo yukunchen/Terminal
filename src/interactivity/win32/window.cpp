@@ -32,6 +32,7 @@
 
 #include "..\..\renderer\base\renderer.hpp"
 #include "..\..\renderer\gdi\gdirenderer.hpp"
+#include "..\..\renderer\vt\vtrenderer.hpp"
 
 #include "..\inc\ServiceLocator.hpp"
 
@@ -214,11 +215,18 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
     if (NT_SUCCESS(status))
     {
         GdiEngine* pGdiEngine = nullptr;
+        VtEngine* pVtEngine = nullptr;
 
         try
         {
             pGdiEngine = new GdiEngine();
             status = NT_TESTNULL(pGdiEngine);
+
+            if (NT_SUCCESS(status))
+            {
+                pVtEngine = new VtEngine();
+                status = NT_TESTNULL(pVtEngine);
+            }
         }
         catch (...)
         {
@@ -229,9 +237,15 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
         {
             ServiceLocator::LocateGlobals()->pRenderEngine = pGdiEngine;
 
+            IRenderEngine* rgpEngines[2];
+            rgpEngines[0] = pGdiEngine;
+            rgpEngines[1] = pVtEngine;
+            // TODO: pVtEngine isn't freed. Probably std::move some std::unique_ptr of these into Renderer and just hold that.
+
             Renderer* pNewRenderer = nullptr;
             if (SUCCEEDED(Renderer::s_CreateInstance(ServiceLocator::LocateGlobals()->pRenderData,
-                                                     ServiceLocator::LocateGlobals()->pRenderEngine,
+                                                     rgpEngines,
+                                                     ARRAYSIZE(rgpEngines),
                                                      &pNewRenderer)))
             {
                 ServiceLocator::LocateGlobals()->pRender = pNewRenderer;

@@ -8,8 +8,6 @@
 
 #include "vtrenderer.hpp"
 
-#include <winuserp.h> // for GWL_CONSOLE_BKCOLOR
-
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
@@ -23,6 +21,8 @@ using namespace Microsoft::Console::Render;
 // - An instance of a Renderer.
 VtEngine::VtEngine() 
 {
+    _hFile.reset(CreateFileW(L"\\\\.\\pipe\\convtpipe", GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
+    THROW_IF_HANDLE_INVALID(_hFile.get());
 }
 
 // Routine Description:
@@ -33,6 +33,12 @@ VtEngine::VtEngine()
 // - <none>
 VtEngine::~VtEngine()
 {
+}
+
+HRESULT VtEngine::_Write(_In_ std::string& str)
+{
+    RETURN_LAST_ERROR_IF_FALSE(WriteFile(_hFile.get(), str.c_str(), (DWORD)str.length(), nullptr, nullptr));
+    return S_OK;
 }
 
 // Routine Description:

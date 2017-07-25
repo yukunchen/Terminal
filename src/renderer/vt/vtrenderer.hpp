@@ -14,6 +14,7 @@ Author(s):
 #pragma once
 
 #include "..\inc\IRenderEngine.hpp"
+#include <string>
 
 namespace Microsoft
 {
@@ -61,7 +62,8 @@ namespace Microsoft
                 bool IsCharFullWidthByFont(_In_ WCHAR const wch);
 
             private:
-               
+                wil::unique_hfile _hFile;
+                HRESULT _Write(_In_ std::string& str);
             };
         };
     };

@@ -20,7 +20,8 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we started to paint. S_FALSE if we didn't need to paint. HRESULT error code if painting didn't start successfully.
 HRESULT VtEngine::StartPaint()
 {
-    return S_OK;
+    std::string foo("A");
+    return _Write(foo);
 }
 
 // Routine Description:
