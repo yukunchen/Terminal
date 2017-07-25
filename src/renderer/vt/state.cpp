@@ -8,6 +8,8 @@
 
 #include "vtrenderer.hpp"
 
+#include <sstream>
+
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
@@ -49,10 +51,24 @@ HRESULT VtEngine::_Write(_In_ std::string& str)
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 HRESULT VtEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds)
 {
+    try
+    {
+        std::stringstream ss;
+
+        ss << "\x1b[38;2;" << (colorForeground & 0xff) << ";" << ((colorForeground >> 8) & 0xff) << ";" << ((colorForeground >> 16) & 0xff) << "m";
+        ss << "\x1b[48;2;" << (colorBackground & 0xff) << ";" << ((colorBackground >> 8) & 0xff) << ";" << ((colorBackground >> 16) & 0xff) << "m";
+
+        std::string s = ss.str();
+
+        _Write(s);
+    }
+    CATCH_RETURN();
+
     colorForeground;
     colorBackground;
     legacyColorAttribute;
     fIncludeBackgrounds;
+    
     return S_OK;
 }
 
