@@ -496,7 +496,12 @@ HRESULT DoSrvSetConsoleCursorInfo(_In_ SCREEN_INFORMATION* pScreenInfo,
     // If more than 100% or less than 0% cursor height, reject it.
     RETURN_HR_IF(E_INVALIDARG, (CursorSize > 100 || CursorSize == 0));
 
-    RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetCursorInformation(CursorSize, IsVisible));
+    RETURN_IF_NTSTATUS_FAILED(pScreenInfo->SetCursorInformation(
+        CursorSize,
+        IsVisible,
+        pScreenInfo->TextInfo->GetCursor()->GetColor(),
+        pScreenInfo->TextInfo->GetCursor()->GetCursorType()
+    ));
 
     return S_OK;
 }

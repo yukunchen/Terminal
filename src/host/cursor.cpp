@@ -41,12 +41,9 @@ Cursor::Cursor(IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize) :
 
     _hCaretBlinkTimerQueue = CreateTimerQueue();
 
-    // _cursorType = CursorType::VerticalBar;
-    // _cursorType = CursorType::Underscore;
-    // _cursorType = CursorType::EmptyBox;
-    _cursorType = CursorType::FullBox;
-    _fUseColor = true;
-    _color = RGB(255, 0, 255);
+    _fUseColor = false;
+    _color = s_InvertCursorColor;
+    _cursorType = CursorType::Legacy;
 }
 
 Cursor::~Cursor()
@@ -599,4 +596,28 @@ const bool Cursor::IsUsingColor() const
 const COLORREF Cursor::GetColor() const
 {
     return _color;
+}
+
+void Cursor::SetColor(_In_ unsigned int color)
+{
+    _fUseColor = (color != Cursor::s_InvertCursorColor);
+    _color = color;
+
+    auto gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->SetCursorColor(_color);
+}
+
+void Cursor::SetType(_In_ unsigned int type)
+{
+    if (type <= CursorType::FullBox)
+    {
+        _cursorType = (Cursor::CursorType)type;
+    }
+    else
+    {
+        _cursorType = CursorType::Legacy;
+    }
+
+    auto gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->SetCursorType(_cursorType);
 }

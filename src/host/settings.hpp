@@ -157,6 +157,13 @@ public:
     void SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, _In_ size_t const cSize);
     void SetColorTableEntry(_In_ size_t const index, _In_ COLORREF const ColorValue);
     COLORREF GetColorTableEntry(_In_ size_t const index) const;
+    
+
+    unsigned int GetCursorColor() const;
+    unsigned int GetCursorType() const;
+    
+    void SetCursorColor(_In_ unsigned int CursorColor);
+    void SetCursorType(_In_ unsigned int CursorType);
 
 
 private:
@@ -208,6 +215,10 @@ private:
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;
     COORD _dwWindowSizePixels;
+    
+    // Technically a COLORREF, but using 0xffffffff as "Invert Colors"
+    unsigned int _CursorColor;
+    unsigned int _CursorType;
 
     friend class RegistrySerialization;
 

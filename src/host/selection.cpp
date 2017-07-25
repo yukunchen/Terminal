@@ -579,7 +579,7 @@ void Selection::InitializeMarkSelection()
     // save old cursor position and make console cursor into selection cursor.
     SCREEN_INFORMATION* pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
     _SaveCursorData(pScreenInfo->TextInfo);
-    pScreenInfo->SetCursorInformation(100, TRUE);
+    pScreenInfo->SetCursorInformation(100, TRUE, pScreenInfo->TextInfo->GetCursor()->GetColor(), pScreenInfo->TextInfo->GetCursor()->GetCursorType());
 
     const COORD coordPosition = pScreenInfo->TextInfo->GetCursor()->GetPosition();
     pScreenInfo->SetCursorPosition(coordPosition, TRUE);

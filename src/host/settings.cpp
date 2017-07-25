@@ -72,6 +72,9 @@ Settings::Settings() :
 
     ZeroMemory((void*)&_LaunchFaceName, sizeof(_LaunchFaceName));
 
+    _CursorColor = Cursor::s_InvertCursorColor;
+    _CursorType = Cursor::CursorType::Legacy;
+
     // Default hardcoded colors for use in console. These are used when there are no overriding colors to load from the
     // registry or shortcut files.
     _ColorTable[0] =  RGB( 12,  12,  12); // Black
@@ -963,4 +966,24 @@ WORD Settings::FindNearestTableIndex(_In_ COLORREF const Color) const
         }
     }
     return closest;
+}
+
+unsigned int Settings::GetCursorColor() const
+{
+    return _CursorColor;
+}
+
+unsigned int Settings::GetCursorType() const
+{
+    return _CursorType;
+}
+
+void Settings::SetCursorColor(_In_ unsigned int CursorColor)
+{
+    _CursorColor = CursorColor;
+}
+
+void Settings::SetCursorType(_In_ unsigned int CursorType)
+{
+    _CursorType = CursorType;
 }

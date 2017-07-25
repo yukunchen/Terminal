@@ -1786,13 +1786,20 @@ void SCREEN_INFORMATION::MakeCurrentCursorVisible()
 // - Visible - cursor visibility
 // Return Value:
 // - Status
-NTSTATUS SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size, _In_ BOOLEAN const Visible)
+NTSTATUS SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size,
+    _In_ BOOLEAN const Visible,
+    _In_ unsigned int const Color,
+    _In_ unsigned int const Type)
 {
     PTEXT_BUFFER_INFO const pTextInfo = this->TextInfo;
     Cursor* const pCursor = pTextInfo->GetCursor();
 
     pCursor->SetSize(Size);
     pCursor->SetIsVisible(Visible);
+
+    pCursor->SetColor(Color);
+    pCursor->SetType(Type);
+    
     return STATUS_SUCCESS;
 }
 

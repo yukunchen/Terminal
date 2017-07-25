@@ -528,6 +528,11 @@ HRESULT GdiEngine::PaintCursorEx(_In_ COORD const coordCursor,
             RETURN_IF_FAILED(LongAdd(left.left, 1, &left.right));
             RETURN_IF_FAILED(LongAdd(right.right, -1, &right.left));
 
+            RETURN_IF_FAILED(LongAdd(top.left, 1, &top.left));
+            RETURN_IF_FAILED(LongAdd(bottom.left, 1, &bottom.left));
+            RETURN_IF_FAILED(LongAdd(top.right, -1, &top.right));
+            RETURN_IF_FAILED(LongAdd(bottom.right, -1, &bottom.right));
+
             rects.push_back(top);
             rects.push_back(left);
             rects.push_back(right);

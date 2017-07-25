@@ -85,6 +85,9 @@ GetConsoleKeyboardLayoutNameW(
 #define CONSOLE_REGISTRY_CTRLKEYSHORTCUTS_DISABLED      L"CtrlKeyShortcutsDisabled"
 #define CONSOLE_REGISTRY_ALLOW_ALTF4_CLOSE              L"AllowAltF4Close"
 #define CONSOLE_REGISTRY_VIRTTERM_LEVEL                 L"VirtualTerminalLevel"
+
+#define CONSOLE_REGISTRY_CURSORTYPE                     L"CursorType"
+#define CONSOLE_REGISTRY_CURSORCOLOR                    L"CursorColor"
 // end V2 console settings
 
     /*
@@ -618,6 +621,9 @@ typedef struct _CONSOLE_STATE_INFO {
     BOOL fLineSelection;
     BYTE bWindowTransparency;
     BOOL fWindowMaximized;
+
+    unsigned int CursorType;
+    COLORREF CursorColor;
     /* END V2 CONSOLE_STATE_INFO */
 
 } CONSOLE_STATE_INFO, *PCONSOLE_STATE_INFO;

@@ -942,6 +942,10 @@ NTSTATUS TEXT_BUFFER_INFO::CreateInstance(_In_ const FontInfo* const pFontInfo,
         status = Cursor::CreateInstance((ULONG)uiCursorSize, &pTextBufferInfo->_pCursor);
         if (NT_SUCCESS(status))
         {
+            auto gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+            pTextBufferInfo->_pCursor->SetColor(gci->GetCursorColor());
+            pTextBufferInfo->_pCursor->SetType(gci->GetCursorType());
+
             // This has to come after the font is set because this function is dependent on the font info.
             // TODO: make this less prone to error by perhaps putting the storage of the first buffer font info as a part of TEXT_BUFFER_INFO's constructor
 

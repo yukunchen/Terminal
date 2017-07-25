@@ -24,19 +24,21 @@ Revision History:
 class SCREEN_INFORMATION;
 typedef SCREEN_INFORMATION *PSCREEN_INFORMATION;
 
-
 class Cursor sealed
 {
 public:
 
-    enum CursorType
+    enum CursorType : unsigned int
     {
         Legacy = 0x0,
         VerticalBar = 0x1,
         Underscore = 0x2,
         EmptyBox = 0x3,
         FullBox = 0x4
+        // Make sure to update Cursor::SetType if you add values
     };
+    
+    static const unsigned int s_InvertCursorColor = 0xffffffff;
 
     Cursor(_In_ Microsoft::Console::Interactivity::IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize);
     static NTSTATUS CreateInstance(_In_ ULONG const ulSize, _Outptr_ Cursor ** const ppCursor);
@@ -91,6 +93,9 @@ public:
     void ResetDelayEOLWrap();
     COORD GetDelayedAtPosition() const;
     BOOL IsDelayedEOLWrap() const;
+
+    void SetColor(_In_ unsigned int color);
+    void SetType(_In_ unsigned int type);
 
 private:
     Microsoft::Console::Interactivity::IAccessibilityNotifier *_pAccessibilityNotifier;
