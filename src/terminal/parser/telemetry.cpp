@@ -242,6 +242,7 @@ void TermTelemetry::WriteFinalTraceLog() const
                 TraceLoggingUInt32(_uiTimesUsed[HVP], "HVP"),
                 TraceLoggingUInt32(_uiTimesUsed[DECSTR], "DECSTR"),
                 TraceLoggingUInt32(_uiTimesUsed[RIS], "RIS"),
+                TraceLoggingUInt32(_uiTimesUsed[DECSCUSR], "DECSCUSR"),
                 TraceLoggingUInt32Array(_uiTimesFailed, ARRAYSIZE(_uiTimesFailed), "Failed"),
                 TraceLoggingUInt32(_uiTimesFailedOutsideRange, "FailedOutsideRange"),
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES));

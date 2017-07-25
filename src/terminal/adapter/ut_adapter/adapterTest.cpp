@@ -590,6 +590,14 @@ public:
         return TRUE;
     }
 
+    virtual BOOL SetCursorStyle(_In_ unsigned int const cursorType)
+    {
+        Log::Comment(L"SetCursorStyle MOCK called...");
+        cursorType;
+        // TODO
+        return TRUE;
+    }
+
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {
         pcoord->X++;

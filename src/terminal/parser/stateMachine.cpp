@@ -581,6 +581,9 @@ void StateMachine::_ActionCsiDispatch(_In_ wchar_t const wch)
         case L'!':
             fSuccess = _IntermediateExclamationDispatch(wch);
             break;
+        case L' ':
+            fSuccess = _IntermediateSpaceDispatch(wch);
+            break;
         }
     }
 
@@ -668,6 +671,50 @@ bool StateMachine::_IntermediateExclamationDispatch(_In_ wchar_t const wchAction
     }
     return fSuccess;
 }
+
+// Routine Description:
+// - Handles actions that have an intermediate ' ', such as DECSCUSR
+// Arguments:
+// - wch - Character to dispatch.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool StateMachine::_IntermediateSpaceDispatch(_In_ wchar_t const wchAction)
+{
+    _trace.TraceOnAction(L"_IntermediateSpaceDispatch");
+    bool fSuccess = false;
+    TermDispatch::CursorStyle cursorStyle = s_defaultCursorStyle;
+
+    // Parse params
+    switch(wchAction)
+    {
+    case VTActionCodes::DECSCUSR_SetCursorStyle:
+        fSuccess = _GetCursorStyle(&cursorStyle);
+        break;
+    default:
+        // If no functions to call, overall dispatch was a failure.
+        fSuccess = false;
+        break;
+    }
+
+    // if param filling successful, try to dispatch
+    if (fSuccess)
+    {
+        switch(wchAction)
+        {
+        case VTActionCodes::DECSCUSR_SetCursorStyle:
+            fSuccess = _pDispatch->SetCursorStyle(cursorStyle);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSCUSR);
+            break;
+        default:
+            // If no functions to call, overall dispatch was a failure.
+            fSuccess = false;
+            break;
+        }
+    }
+
+    return fSuccess;
+}
+
 // Routine Description:
 // - Triggers the Collect action to indicate that the state machine should store this character as part of an escape/control sequence.
 // Arguments:
@@ -1694,6 +1741,34 @@ bool StateMachine::_GetPrivateModeParams(_Out_writes_(*pcParams) TermDispatch::P
     }
     return fSuccess; 
 }
+
+// Routine Description:
+// - Retrieves a distance for a scroll operation from the parameter pool stored during Param actions.
+// Arguments:
+// - puiDistance - Memory location to receive the distance
+// Return Value:
+// - True if we successfully pulled the scroll distance from the parameters we've stored. False otherwise.
+_Success_(return)
+bool StateMachine::_GetCursorStyle(_Out_ TermDispatch::CursorStyle* const pCursorStyle) const
+{
+    bool fSuccess = false;
+    *pCursorStyle = s_defaultCursorStyle;
+
+    if (_cParams == 0)
+    {
+        // Empty parameter sequences should use the default
+        fSuccess = true;
+    }
+    else if (_cParams == 1)
+    {
+        // If there's one parameter, use it.
+        *pCursorStyle = (TermDispatch::CursorStyle)_rgusParams[0];
+        fSuccess = true;
+    }
+
+    return fSuccess;
+}
+
 
 // - Verifies that no parameters were parsed for the current CSI sequence
 // Arguments: 

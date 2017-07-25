@@ -176,6 +176,19 @@ namespace Microsoft
 
                 virtual bool SoftReset(){ return false; } // DECSTR
                 virtual bool HardReset(){ return false; } // RIS
+
+                enum class CursorStyle : unsigned int
+                {
+                    BlinkingBlock = 0,
+                    BlinkingBlockDefault = 1,
+                    SteadyBlock = 2,
+                    BlinkingUnderline = 3,
+                    SteadyUnderline = 4,
+                    BlinkingBar = 5,
+                    SteadyBar = 6
+                };
+
+                virtual bool SetCursorStyle(_In_ CursorStyle /*cursorStyle*/){ return false; } // DECSCUSR
             };
         };
     };

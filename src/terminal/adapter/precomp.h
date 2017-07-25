@@ -31,3 +31,4 @@ Abstract:
 
 
 #include "..\..\inc\conattrs.hpp"
+#include "..\..\host\cursor.h"

@@ -104,7 +104,9 @@ namespace Microsoft
                     ECH_EraseCharacters = L'X',
                     HVP_HorizontalVerticalPosition = L'f',
                     DECSTR_SoftReset = L'p',
-                    RIS_ResetToInitialState = L'c' // DA is prefaced by CSI, RIS by ESC
+                    RIS_ResetToInitialState = L'c', // DA is prefaced by CSI, RIS by ESC
+                    // 'q' is overloaded - no postfix is DECLL, ' ' postfix is DECSCUSR, and '"' is DECSCA
+                    DECSCUSR_SetCursorStyle = L'q' // I believe we'll only ever implement DECSCUSR
                 };
 
                 enum OscActionCodes : unsigned int
@@ -133,6 +135,7 @@ namespace Microsoft
                 void _ActionOscDispatch(_In_ wchar_t const wch);
                 bool _IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction);
                 bool _IntermediateExclamationDispatch(_In_ wchar_t const wchAction);
+                bool _IntermediateSpaceDispatch(_In_ wchar_t const wchAction);
 
                 void _ActionClear();
                 void _ActionIgnore();
@@ -213,6 +216,10 @@ namespace Microsoft
                 static const DesignateCharsetTypes s_DefaultDesignateCharsetType = DesignateCharsetTypes::G0;
                 _Success_(return)
                 bool _GetDesignateType(_Out_ DesignateCharsetTypes* const pDesignateType) const;
+
+                static const TermDispatch::CursorStyle s_defaultCursorStyle = TermDispatch::CursorStyle::BlinkingBlockDefault;
+                _Success_(return)
+                bool _GetCursorStyle(_Out_ TermDispatch::CursorStyle* const pCursorStyle) const;
 
                 enum class VTStates
                 {
