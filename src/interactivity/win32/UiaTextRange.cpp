@@ -17,9 +17,9 @@ using namespace Microsoft::Console::Interactivity::Win32;
 //#define UIATEXTRANGE_DEBUG_MSGS 1
 #undef UIATEXTRANGE_DEBUG_MSGS
 
-#if _DEBUG
-unsigned long long UiaTextRange::id = 0;
+IdType UiaTextRange::id = 0;
 
+#if _DEBUG
 #include <sstream>
 // This is a debugging function that prints out the current
 // relationship between screen info rows, text buffer rows, and
@@ -70,10 +70,8 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider) :
     _end{ 0 },
     _degenerate{ true }
 {
-#if _DEBUG
    _id = id;
    ++id;
-#endif
 }
 
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
@@ -159,10 +157,8 @@ UiaTextRange::UiaTextRange(_In_ const UiaTextRange& a) :
     _degenerate{ a._degenerate }
 {
     (static_cast<IUnknown*>(_pProvider))->AddRef();
-#if _DEBUG
    _id = id;
    ++id;
-#endif
 
 #if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
     OutputDebugString(L"Copy Constructor\n");
@@ -173,6 +169,11 @@ UiaTextRange::UiaTextRange(_In_ const UiaTextRange& a) :
 UiaTextRange::~UiaTextRange()
 {
     (static_cast<IUnknown*>(_pProvider))->Release();
+}
+
+const IdType UiaTextRange::GetId() const
+{
+    return _id;
 }
 
 const Endpoint UiaTextRange::GetStart() const

@@ -52,6 +52,7 @@ typedef unsigned int ScreenInfoRow;
 typedef unsigned int TextBufferRow;
 
 typedef SMALL_RECT Viewport;
+typedef unsigned long long IdType;
 
 // A Column is a row agnostic value that refers to the column an
 // endpoint is equivalent to. It is 0-indexed.
@@ -69,8 +70,12 @@ namespace Microsoft
         {
             namespace Win32
             {
+
                 class UiaTextRange final : public ITextRangeProvider
                 {
+                private:
+                    static IdType id;
+
                 public:
 
                     // degenerate range
@@ -95,6 +100,7 @@ namespace Microsoft
                     ~UiaTextRange();
 
 
+                    const IdType GetId() const;
                     const Endpoint GetStart() const;
                     const Endpoint GetEnd() const;
                     const bool IsDegenerate() const;
@@ -144,19 +150,18 @@ namespace Microsoft
                     IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
 
                 protected:
-                    #if _DEBUG
-                    // used to debug objects passed back and forth
-                    // between the provider and the client
-                    static unsigned long long id;
-                    unsigned long long _id;
-
+#if _DEBUG
                     void _outputRowConversions();
                     void _outputObjectState();
-                    #endif
+#endif
 
                     IRawElementProviderSimple* const _pProvider;
 
                 private:
+                    // used to debug objects passed back and forth
+                    // between the provider and the client
+                    IdType _id;
+
                     // Ref counter for COM object
                     ULONG _cRefs;
 
