@@ -29,6 +29,8 @@
 
 #include "..\inc\ServiceLocator.hpp"
 
+#include "../interactivity/win32/windowUiaProvider.hpp"
+
 #include <iomanip>
 #include <sstream>
 
@@ -283,6 +285,12 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         // ActivateTextServices does nothing if already active so this is OK to be called every focus.
         ActivateTextServices(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), GetImeSuggestionWindowPos);
+
+        // set the text area to have focus for accessibility consumers
+        if (_pUiaProvider)
+        {
+            _pUiaProvider->SetTextAreaFocus();
+        }
 
         break;
     }

@@ -41,6 +41,7 @@ namespace Microsoft
                     virtual ~WindowUiaProvider();
 
                     HRESULT Signal(_In_ EVENTID id);
+                    HRESULT SetTextAreaFocus();
 
                     // IUnknown methods
                     IFACEMETHODIMP_(ULONG) AddRef();

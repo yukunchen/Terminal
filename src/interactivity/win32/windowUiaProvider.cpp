@@ -65,8 +65,9 @@ HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
     HRESULT hr = S_OK;
 
     // ScreenInfoUiaProvider is responsible for signaling selection
-    // changed events
-    if (id == UIA_Text_TextSelectionChangedEventId)
+    // changed events and text changed events
+    if (id == UIA_Text_TextSelectionChangedEventId || 
+        id == UIA_Text_TextChangedEventId)
     {
         if (_pScreenInfoProvider)
         {
@@ -95,6 +96,16 @@ HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
     hr = UiaRaiseAutomationEvent(pProvider, id);
     _signalEventFiring[id] = false;
     return hr;
+}
+
+HRESULT WindowUiaProvider::SetTextAreaFocus()
+{
+    try
+    {
+        _pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId);
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 #pragma region IUnknown
