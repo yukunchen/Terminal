@@ -1321,3 +1321,63 @@ const unsigned int UiaTextRange::_getLastScreenInfoRowIndex() const
 {
     return _getTotalRows() - 1;
 }
+
+
+// Routine Description:
+// - returns the index of the first column of the screen info rows
+// Arguments:
+// - <none>
+// Return Value:
+// - the index of the first column (0-indexed) of the screen info rows
+const Column UiaTextRange::_getFirstColumnIndex() const
+{
+    return 0;
+}
+
+// Routine Description:
+// - returns the index of the last column of the screen info rows
+// Arguments:
+// - <none>
+// Return Value:
+// - the index of the last column (0-indexed) of the screen info rows
+const Column UiaTextRange::_getLastColumnIndex() const
+{
+    return _getRowWidth() - 1;
+}
+
+// Routine Description:
+// - Compares two sets of screen info coordinates
+// Arguments:
+// - rowA - the row index of the first position
+// - colA - the column index of the first position
+// - rowB - the row index of the second position
+// - colB - the column index of the second position
+// Return Value:
+//   -1 if A < B
+//    1 if A > B
+//    0 if A == B
+int UiaTextRange::_compareScreenCoords(_In_ const ScreenInfoRow rowA,
+                                       _In_ const Column colA,
+                                       _In_ const ScreenInfoRow rowB,
+                                       _In_ const Column colB)
+{
+    if (rowA < rowB)
+    {
+        return -1;
+    }
+    else if (rowA > rowB)
+    {
+        return 1;
+    }
+    // rowA == rowB
+    else if (colA < colB)
+    {
+        return -1;
+    }
+    else if (colA > colB)
+    {
+        return 1;
+    }
+    // colA == colB
+    return 0;
+}

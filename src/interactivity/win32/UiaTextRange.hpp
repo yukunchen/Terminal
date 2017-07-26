@@ -198,6 +198,8 @@ namespace Microsoft
                     static TEXT_BUFFER_INFO* const _getTextBuffer();
                     const unsigned int _getFirstScreenInfoRowIndex() const;
                     const unsigned int _getLastScreenInfoRowIndex() const;
+                    const Column _getFirstColumnIndex() const;
+                    const Column _getLastColumnIndex() const;
 
                     const unsigned int _rowCountInRange() const;
 
@@ -227,9 +229,15 @@ namespace Microsoft
 
                     void _addScreenInfoRowBoundaries(_In_ const ScreenInfoRow screenInfoRow,
                                                      _Inout_ std::vector<double>& coords);
-                    #ifdef UNIT_TESTING
+
+                    int _compareScreenCoords(_In_ const ScreenInfoRow rowA,
+                                             _In_ const Column colA,
+                                             _In_ const ScreenInfoRow rowB,
+                                             _In_ const Column colB);
+
+#ifdef UNIT_TESTING
                     friend class ::UiaTextRangeTests;
-                    #endif
+#endif
                 };
             }
         }
