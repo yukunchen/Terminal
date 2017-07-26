@@ -103,6 +103,54 @@ namespace Microsoft
                     static SCREEN_INFORMATION* const _getScreenInfo();
                     static IConsoleWindow* const _getIConsoleWindow();
                 };
+
+                namespace ScreenInfoUiaProviderTracing
+                {
+                    enum class ApiCall
+                    {
+                        Constructor,
+                        Signal,
+                        AddRef,
+                        Release,
+                        QueryInterface,
+                        GetProviderOptions,
+                        GetPatternProvider,
+                        GetPropertyValue,
+                        GetHostRawElementProvider,
+                        Navigate,
+                        GetRuntimeId,
+                        GetBoundingRectangle,
+                        GetEmbeddedFragmentRoots,
+                        SetFocus,
+                        GetFragmentRoot,
+                        GetSelection,
+                        GetVisibleRanges,
+                        RangeFromChild,
+                        RangeFromPoint,
+                        GetDocumentRange,
+                        GetSupportedTextSelection
+                    };
+
+                    struct IApiMsg
+                    {
+                    };
+
+                    struct ApiMsgSignal : public IApiMsg
+                    {
+                        EVENTID Signal;
+                    };
+
+                    struct ApiMsgNavigate : public IApiMsg
+                    {
+                        NavigateDirection Direction;
+                    };
+
+                    struct ApiMsgGetSelection : public IApiMsg
+                    {
+                        bool AreaSelected;
+                        unsigned int SelectionRowCount;
+                    };
+                }
             }
         }
     }

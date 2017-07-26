@@ -98,6 +98,45 @@ namespace Microsoft
                     // Ref counter for COM object
                     ULONG _cRefs;
                 };
+
+                namespace WindowUiaProviderTracing
+                {
+                    enum class ApiCall
+                    {
+                        Create,
+                        Signal,
+                        AddRef,
+                        Release,
+                        QueryInterface,
+                        GetProviderOptions,
+                        GetPatternProvider,
+                        GetPropertyValue,
+                        GetHostRawElementProvider,
+                        Navigate,
+                        GetRuntimeId,
+                        GetBoundingRectangle,
+                        GetEmbeddedFragmentRoots,
+                        SetFocus,
+                        GetFragmentRoot,
+                        ElementProviderFromPoint,
+                        GetFocus
+                    };
+
+                    struct IApiMsg
+                    {
+                    };
+
+                    struct ApiMessageSignal : public IApiMsg
+                    {
+                        EVENTID Signal;
+                    };
+
+                    struct ApiMsgNavigate : public IApiMsg
+                    {
+                        NavigateDirection Direction;
+                    };
+
+                }
             }
         }
     }

@@ -239,6 +239,108 @@ namespace Microsoft
                     friend class ::UiaTextRangeTests;
 #endif
                 };
+
+                namespace UiaTextRangeTracing
+                {
+
+                    enum class ApiCall
+                    {
+                        Constructor,
+                        AddRef,
+                        Release,
+                        QueryInterface,
+                        Clone,
+                        Compare,
+                        CompareEndpoints,
+                        ExpandToEnclosingUnit,
+                        FindAttribute,
+                        FindText,
+                        GetAttributeValue,
+                        GetBoundingRectangles,
+                        GetEnclosingElement,
+                        GetText,
+                        Move,
+                        MoveEndpointByUnit,
+                        MoveEndpointByRange,
+                        Select,
+                        AddToSelection,
+                        RemoveFromSelection,
+                        ScrollIntoView,
+                        GetChildren
+                    };
+
+                    struct IApiMsg
+                    {
+                    };
+
+                    struct ApiMsgConstructor : public IApiMsg
+                    {
+                        IdType Id;
+                    };
+
+                    struct ApiMsgClone : public IApiMsg
+                    {
+                        IdType CloneId;
+                    };
+
+                    struct ApiMsgCompare : public IApiMsg
+                    {
+                        IdType OtherId;
+                        bool Equal;
+                    };
+
+                    struct ApiMsgCompareEndpoints : public IApiMsg
+                    {
+                        IdType OtherId;
+                        TextPatternRangeEndpoint Endpoint;
+                        TextPatternRangeEndpoint TargetEndpoint;
+                        int Result;
+                    };
+
+                    struct ApiMsgExpandToEnclosingUnit : public IApiMsg
+                    {
+                        TextUnit Unit;
+                        Endpoint OriginalStart;
+                        Endpoint OriginalEnd;
+                    };
+
+                    struct ApiMsgGetText : IApiMsg
+                    {
+                        const wchar_t* Text;
+                    };
+
+                    struct ApiMsgMove : IApiMsg
+                    {
+                        Endpoint OriginalStart;
+                        Endpoint OriginalEnd;
+                        int RequestedCount;
+                        int MovedCount;
+                    };
+
+                    struct ApiMsgMoveEndpointByUnit : IApiMsg
+                    {
+                        Endpoint OriginalStart;
+                        Endpoint OriginalEnd;
+                        TextPatternRangeEndpoint Endpoint;
+                        int RequestedCount;
+                        int MovedCount;
+                    };
+
+                    struct ApiMsgMoveEndpointByRange : IApiMsg
+                    {
+                        Endpoint OriginalStart;
+                        Endpoint OriginalEnd;
+                        TextPatternRangeEndpoint Endpoint;
+                        TextPatternRangeEndpoint TargetEndpoint;
+                        IdType OtherId;
+                    };
+
+                    struct ApiMsgScrollIntoView : IApiMsg
+                    {
+                        bool AlignToTop;
+                    };
+                }
+
             }
         }
     }
