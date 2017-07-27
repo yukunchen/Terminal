@@ -60,6 +60,7 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
                     COORD currentCursorPosition = pCursor->GetPosition();
                     if (currentCursorPosition != previousCursorLocation)
                     {
+                        pIConsoleWindow->UiaSetTextAreaFocus();
                         pIConsoleWindow->SignalUia(UIA_Text_TextSelectionChangedEventId);
                     }
                     previousCursorLocation = currentCursorPosition;

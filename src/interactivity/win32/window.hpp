@@ -103,6 +103,7 @@ namespace Microsoft
                                   _In_ UINT cPoints);
                     BOOL ConvertScreenToClient(_Inout_ LPPOINT lpPoint);
 
+                    HRESULT UiaSetTextAreaFocus();
 
                 protected:
                     // prevent accidental generation of copies

@@ -69,7 +69,7 @@ HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
 
     // ScreenInfoUiaProvider is responsible for signaling selection
     // changed events and text changed events
-    if (id == UIA_Text_TextSelectionChangedEventId || 
+    if (id == UIA_Text_TextSelectionChangedEventId ||
         id == UIA_Text_TextChangedEventId)
     {
         if (_pScreenInfoProvider)
@@ -367,9 +367,7 @@ IFACEMETHODIMP WindowUiaProvider::GetFocus(_COM_Outptr_result_maybenull_ IRawEle
 {
     Tracing::s_TraceUia(this, ApiCall::GetFocus, nullptr);
     RETURN_IF_FAILED(_EnsureValidHwnd());
-
-    *ppProvider = nullptr;
-    return S_OK;
+    return _pScreenInfoProvider->QueryInterface(IID_PPV_ARGS(ppProvider));
 }
 
 #pragma endregion

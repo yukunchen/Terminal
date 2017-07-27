@@ -172,6 +172,16 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         break;
     }
 
+    case WM_DESTROY:
+    {
+        // signal to uia that they can disconnect our uia provider
+        if (_pUiaProvider)
+        {
+            UiaReturnRawElementProvider(hWnd, 0, 0, NULL);
+        }
+        break;
+    }
+
     case WM_SIZING:
     {
         // Signal that the user changed the window size, so we can return the value later for telemetry. By only
