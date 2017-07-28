@@ -233,7 +233,7 @@ namespace Microsoft
                     int _compareScreenCoords(_In_ const ScreenInfoRow rowA,
                                              _In_ const Column colA,
                                              _In_ const ScreenInfoRow rowB,
-                                             _In_ const Column colB);
+                                             _In_ const Column colB) const;
 
 #ifdef UNIT_TESTING
                     friend class ::UiaTextRangeTests;

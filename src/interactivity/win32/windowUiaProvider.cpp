@@ -111,8 +111,7 @@ HRESULT WindowUiaProvider::SetTextAreaFocus()
 {
     try
     {
-        _pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId);
-        return S_OK;
+        return _pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId);
     }
     CATCH_RETURN();
 }

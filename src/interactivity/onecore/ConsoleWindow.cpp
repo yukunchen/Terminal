@@ -162,7 +162,7 @@ HRESULT ConsoleWindow::SignalUia(_In_ EVENTID id)
     return E_NOTIMPL;
 }
 
-HRESULT Consolewindow::UiaSetTextAreaFocus()
+HRESULT ConsoleWindow::UiaSetTextAreaFocus()
 {
     return E_NOTIMPL;
 }

@@ -1465,7 +1465,7 @@ const Column UiaTextRange::_getLastColumnIndex() const
 int UiaTextRange::_compareScreenCoords(_In_ const ScreenInfoRow rowA,
                                        _In_ const Column colA,
                                        _In_ const ScreenInfoRow rowB,
-                                       _In_ const Column colB)
+                                       _In_ const Column colB) const
 {
     if (rowA < rowB)
     {
