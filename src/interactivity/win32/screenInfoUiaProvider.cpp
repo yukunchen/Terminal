@@ -419,7 +419,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         }
 
         // fill the safe array
-        for (LONG i = 0; i < ranges.size(); ++i)
+        for (LONG i = 0; i < static_cast<LONG>(ranges.size()); ++i)
         {
             hr = SafeArrayPutElement(*ppRetVal, &i, reinterpret_cast<void*>(ranges[i]));
             if (FAILED(hr))
