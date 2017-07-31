@@ -401,61 +401,37 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
     else
     {
         // get the selection rects
-        SMALL_RECT* pSelectionRects;
-        UINT rectCount;
-        NTSTATUS status = Selection::Instance().GetSelectionRects(&pSelectionRects, &rectCount);
-        RETURN_IF_NTSTATUS_FAILED(status);
-        auto selectionRectCleanup = wil::ScopeExit([&] { delete[] pSelectionRects; });
+        std::deque<UiaTextRange*> ranges;
+        try
+        {
+            ranges = UiaTextRange::GetSelectionRanges(static_cast<IRawElementProviderSimple*>(this));
+        }
+        CATCH_RETURN();
+
         apiMsg.AreaSelected = true;
-        apiMsg.SelectionRowCount = rectCount;
+        apiMsg.SelectionRowCount = static_cast<unsigned int>(ranges.size());
 
         // make a safe array
-        *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, static_cast<ULONG>(rectCount));
+        *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, static_cast<ULONG>(ranges.size()));
         if (*ppRetVal == nullptr)
         {
             return E_OUTOFMEMORY;
         }
 
-        // stuff the selected lines into the safe array
-        const COORD screenBufferCoords = _getScreenBufferCoords();
-        const int totalLines = screenBufferCoords.Y;
-
-        for (size_t i = 0; i < rectCount; ++i)
+        // fill the safe array
+        for (LONG i = 0; i < ranges.size(); ++i)
         {
-            IRawElementProviderSimple* pProvider;
-            hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
+            hr = SafeArrayPutElement(*ppRetVal, &i, reinterpret_cast<void*>(ranges[i]));
             if (FAILED(hr))
             {
                 SafeArrayDestroy(*ppRetVal);
                 *ppRetVal = nullptr;
-                return hr;
-            }
-            const int lineNumber = pSelectionRects[i].Top;
-            const int start = lineNumber * screenBufferCoords.X;
-            // - 1 to get the last column in the row
-            const int end = start + screenBufferCoords.X - 1;
-
-            UiaTextRange* range;
-            try
-            {
-                range = new UiaTextRange(pProvider,
-                                         start,
-                                         end,
-                                         false);
-            }
-            catch (...)
-            {
-                (static_cast<IUnknown*>(pProvider))->Release();
-                SafeArrayDestroy(*ppRetVal);
-                *ppRetVal = nullptr;
-                return wil::ResultFromCaughtException();
-            }
-            LONG currentIndex = static_cast<LONG>(i);
-            hr = SafeArrayPutElement(*ppRetVal, &currentIndex, reinterpret_cast<void*>(range));
-            if (FAILED(hr))
-            {
-                SafeArrayDestroy(*ppRetVal);
-                *ppRetVal = nullptr;
+                while (!ranges.empty())
+                {
+                    UiaTextRange* pRange = ranges[0];
+                    ranges.pop_front();
+                    pRange->Release();
+                }
                 return hr;
             }
         }

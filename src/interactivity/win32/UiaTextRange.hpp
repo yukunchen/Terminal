@@ -15,8 +15,12 @@ Author(s):
 
 #pragma once
 
+#include "precomp.h"
+
 #include "../inc/IConsoleWindow.hpp"
 #include "../../host/cursor.h"
+
+#include <deque>
 
 #ifdef UNIT_TESTING
 class UiaTextRangeTests;
@@ -77,6 +81,8 @@ namespace Microsoft
                     static IdType id;
 
                 public:
+
+                    static std::deque<UiaTextRange*> GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider);
 
                     // degenerate range
                     UiaTextRange(_In_ IRawElementProviderSimple* const pProvider);
@@ -188,52 +194,55 @@ namespace Microsoft
                     // then both endpoints will contain the same value.
                     bool _degenerate;
 
-                    const Viewport _getViewport() const;
+                    static const Viewport _getViewport();
                     static HWND _getWindowHandle();
                     static IConsoleWindow* const _getIConsoleWindow();
-                    const unsigned int _getTotalRows() const;
-                    static const unsigned int _getRowWidth();
-                    static const COORD _getScreenBufferCoords();
                     static SCREEN_INFORMATION* const _getScreenInfo();
                     static TEXT_BUFFER_INFO* const _getTextBuffer();
-                    const unsigned int _getFirstScreenInfoRowIndex() const;
-                    const unsigned int _getLastScreenInfoRowIndex() const;
-                    const Column _getFirstColumnIndex() const;
-                    const Column _getLastColumnIndex() const;
+                    static const COORD _getScreenBufferCoords();
+
+                    static const unsigned int _getTotalRows();
+                    static const unsigned int _getRowWidth();
+
+                    static const unsigned int _getFirstScreenInfoRowIndex();
+                    static const unsigned int _getLastScreenInfoRowIndex();
+
+                    static const Column _getFirstColumnIndex();
+                    static const Column _getLastColumnIndex();
 
                     const unsigned int _rowCountInRange() const;
 
-                    const TextBufferRow _endpointToTextBufferRow(_In_ const Endpoint endpoint) const;
-                    const ScreenInfoRow _textBufferRowToScreenInfoRow(_In_ const TextBufferRow row) const;
+                    static const TextBufferRow _endpointToTextBufferRow(_In_ const Endpoint endpoint);
+                    static const ScreenInfoRow _textBufferRowToScreenInfoRow(_In_ const TextBufferRow row);
 
-                    const TextBufferRow _screenInfoRowToTextBufferRow(_In_ const ScreenInfoRow row) const;
-                    const Endpoint _textBufferRowToEndpoint(_In_ const TextBufferRow row) const;
+                    static const TextBufferRow _screenInfoRowToTextBufferRow(_In_ const ScreenInfoRow row);
+                    static const Endpoint _textBufferRowToEndpoint(_In_ const TextBufferRow row);
 
-                    const ScreenInfoRow _endpointToScreenInfoRow(_In_ const Endpoint endpoint) const;
-                    const Endpoint _screenInfoRowToEndpoint(_In_ const ScreenInfoRow row) const;
+                    static const ScreenInfoRow _endpointToScreenInfoRow(_In_ const Endpoint endpoint);
+                    static const Endpoint _screenInfoRowToEndpoint(_In_ const ScreenInfoRow row);
 
                     static const Column _endpointToColumn(_In_ const Endpoint endpoint);
 
-                    const Row _normalizeRow(_In_ const Row row) const;
+                    static const Row _normalizeRow(_In_ const Row row);
 
-                    const ViewportRow _screenInfoRowToViewportRow(_In_ const ScreenInfoRow row) const;
-                    const ViewportRow _screenInfoRowToViewportRow(_In_ const ScreenInfoRow row,
-                                                                  _In_ const Viewport viewport) const;
+                    static const ViewportRow _screenInfoRowToViewportRow(_In_ const ScreenInfoRow row);
+                    static const ViewportRow _screenInfoRowToViewportRow(_In_ const ScreenInfoRow row,
+                                                                         _In_ const Viewport viewport);
 
-                    const bool _isScreenInfoRowInViewport(_In_ const ScreenInfoRow row) const;
-                    const bool _isScreenInfoRowInViewport(_In_ const ScreenInfoRow row,
-                                                          _In_ const Viewport viewport) const;
+                    static const bool _isScreenInfoRowInViewport(_In_ const ScreenInfoRow row);
+                    static const bool _isScreenInfoRowInViewport(_In_ const ScreenInfoRow row,
+                                                                 _In_ const Viewport viewport);
 
                     static const unsigned int _getViewportHeight(_In_ const Viewport viewport);
                     static const unsigned int _getViewportWidth(_In_ const Viewport viewport);
 
                     void _addScreenInfoRowBoundaries(_In_ const ScreenInfoRow screenInfoRow,
-                                                     _Inout_ std::vector<double>& coords);
+                                                     _Inout_ std::vector<double>& coords) const;
 
-                    int _compareScreenCoords(_In_ const ScreenInfoRow rowA,
-                                             _In_ const Column colA,
-                                             _In_ const ScreenInfoRow rowB,
-                                             _In_ const Column colB) const;
+                    static const int _compareScreenCoords(_In_ const ScreenInfoRow rowA,
+                                                          _In_ const Column colA,
+                                                          _In_ const ScreenInfoRow rowB,
+                                                          _In_ const Column colB);
 
 #ifdef UNIT_TESTING
                     friend class ::UiaTextRangeTests;
