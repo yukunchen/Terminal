@@ -52,6 +52,7 @@ typedef unsigned int ScreenInfoRow;
 typedef unsigned int TextBufferRow;
 
 typedef SMALL_RECT Viewport;
+typedef unsigned long long IdType;
 
 // A Column is a row agnostic value that refers to the column an
 // endpoint is equivalent to. It is 0-indexed.
@@ -69,8 +70,12 @@ namespace Microsoft
         {
             namespace Win32
             {
+
                 class UiaTextRange final : public ITextRangeProvider
                 {
+                private:
+                    static IdType id;
+
                 public:
 
                     // degenerate range
@@ -95,6 +100,7 @@ namespace Microsoft
                     ~UiaTextRange();
 
 
+                    const IdType GetId() const;
                     const Endpoint GetStart() const;
                     const Endpoint GetEnd() const;
                     const bool IsDegenerate() const;
@@ -144,19 +150,18 @@ namespace Microsoft
                     IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
 
                 protected:
-                    #if _DEBUG
-                    // used to debug objects passed back and forth
-                    // between the provider and the client
-                    static unsigned long long id;
-                    unsigned long long _id;
-
+#if _DEBUG
                     void _outputRowConversions();
                     void _outputObjectState();
-                    #endif
+#endif
 
                     IRawElementProviderSimple* const _pProvider;
 
                 private:
+                    // used to debug objects passed back and forth
+                    // between the provider and the client
+                    IdType _id;
+
                     // Ref counter for COM object
                     ULONG _cRefs;
 
@@ -193,6 +198,8 @@ namespace Microsoft
                     static TEXT_BUFFER_INFO* const _getTextBuffer();
                     const unsigned int _getFirstScreenInfoRowIndex() const;
                     const unsigned int _getLastScreenInfoRowIndex() const;
+                    const Column _getFirstColumnIndex() const;
+                    const Column _getLastColumnIndex() const;
 
                     const unsigned int _rowCountInRange() const;
 
@@ -222,10 +229,118 @@ namespace Microsoft
 
                     void _addScreenInfoRowBoundaries(_In_ const ScreenInfoRow screenInfoRow,
                                                      _Inout_ std::vector<double>& coords);
-                    #ifdef UNIT_TESTING
+
+                    int _compareScreenCoords(_In_ const ScreenInfoRow rowA,
+                                             _In_ const Column colA,
+                                             _In_ const ScreenInfoRow rowB,
+                                             _In_ const Column colB) const;
+
+#ifdef UNIT_TESTING
                     friend class ::UiaTextRangeTests;
-                    #endif
+#endif
                 };
+
+                namespace UiaTextRangeTracing
+                {
+
+                    enum class ApiCall
+                    {
+                        Constructor,
+                        AddRef,
+                        Release,
+                        QueryInterface,
+                        Clone,
+                        Compare,
+                        CompareEndpoints,
+                        ExpandToEnclosingUnit,
+                        FindAttribute,
+                        FindText,
+                        GetAttributeValue,
+                        GetBoundingRectangles,
+                        GetEnclosingElement,
+                        GetText,
+                        Move,
+                        MoveEndpointByUnit,
+                        MoveEndpointByRange,
+                        Select,
+                        AddToSelection,
+                        RemoveFromSelection,
+                        ScrollIntoView,
+                        GetChildren
+                    };
+
+                    struct IApiMsg
+                    {
+                    };
+
+                    struct ApiMsgConstructor : public IApiMsg
+                    {
+                        IdType Id;
+                    };
+
+                    struct ApiMsgClone : public IApiMsg
+                    {
+                        IdType CloneId;
+                    };
+
+                    struct ApiMsgCompare : public IApiMsg
+                    {
+                        IdType OtherId;
+                        bool Equal;
+                    };
+
+                    struct ApiMsgCompareEndpoints : public IApiMsg
+                    {
+                        IdType OtherId;
+                        TextPatternRangeEndpoint Endpoint;
+                        TextPatternRangeEndpoint TargetEndpoint;
+                        int Result;
+                    };
+
+                    struct ApiMsgExpandToEnclosingUnit : public IApiMsg
+                    {
+                        TextUnit Unit;
+                        Endpoint OriginalStart;
+                        Endpoint OriginalEnd;
+                    };
+
+                    struct ApiMsgGetText : IApiMsg
+                    {
+                        const wchar_t* Text;
+                    };
+
+                    struct ApiMsgMove : IApiMsg
+                    {
+                        Endpoint OriginalStart;
+                        Endpoint OriginalEnd;
+                        int RequestedCount;
+                        int MovedCount;
+                    };
+
+                    struct ApiMsgMoveEndpointByUnit : IApiMsg
+                    {
+                        Endpoint OriginalStart;
+                        Endpoint OriginalEnd;
+                        TextPatternRangeEndpoint Endpoint;
+                        int RequestedCount;
+                        int MovedCount;
+                    };
+
+                    struct ApiMsgMoveEndpointByRange : IApiMsg
+                    {
+                        Endpoint OriginalStart;
+                        Endpoint OriginalEnd;
+                        TextPatternRangeEndpoint Endpoint;
+                        TextPatternRangeEndpoint TargetEndpoint;
+                        IdType OtherId;
+                    };
+
+                    struct ApiMsgScrollIntoView : IApiMsg
+                    {
+                        bool AlignToTop;
+                    };
+                }
+
             }
         }
     }

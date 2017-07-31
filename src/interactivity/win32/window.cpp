@@ -1339,6 +1339,16 @@ HRESULT Window::SignalUia(_In_ EVENTID id)
     return E_POINTER;
 }
 
+HRESULT Window::UiaSetTextAreaFocus()
+{
+    if (_pUiaProvider != nullptr)
+    {
+        _pUiaProvider->SetTextAreaFocus();
+        return S_OK;
+    }
+    return E_POINTER;
+}
+
 void Window::SetOwner()
 {
     SetConsoleWindowOwner(_hWnd, nullptr);
