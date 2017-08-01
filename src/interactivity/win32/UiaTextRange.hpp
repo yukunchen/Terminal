@@ -85,23 +85,21 @@ namespace Microsoft
                     static std::deque<UiaTextRange*> GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider);
 
                     // degenerate range
-                    UiaTextRange(_In_ IRawElementProviderSimple* const pProvider);
+                    static UiaTextRange* Create(_In_ IRawElementProviderSimple* const pProvider);
 
                     // degenerate range at cursor position
-                    UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                 _In_ const Cursor* const pCursor);
+                    static UiaTextRange* Create(_In_ IRawElementProviderSimple* const pProvider,
+                                                _In_ const Cursor* const pCursor);
 
                     // specific endpoint range
-                    UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                 _In_ const Endpoint start,
-                                 _In_ const Endpoint end,
-                                 _In_ const bool degenerate);
+                    static UiaTextRange* Create(_In_ IRawElementProviderSimple* const pProvider,
+                                                _In_ const Endpoint start,
+                                                _In_ const Endpoint end,
+                                                _In_ const bool degenerate);
 
                     // range from a UiaPoint
-                    UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
-                                 _In_ const UiaPoint point);
-
-                    UiaTextRange(_In_ const UiaTextRange& a);
+                    static UiaTextRange* Create(_In_ IRawElementProviderSimple* const pProvider,
+                                                _In_ const UiaPoint point);
 
                     ~UiaTextRange();
 
@@ -164,6 +162,25 @@ namespace Microsoft
                     IRawElementProviderSimple* const _pProvider;
 
                 private:
+                    // degenerate range
+                    UiaTextRange(_In_ IRawElementProviderSimple* const pProvider);
+
+                    // degenerate range at cursor position
+                    UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                 _In_ const Cursor* const pCursor);
+
+                    // specific endpoint range
+                    UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                 _In_ const Endpoint start,
+                                 _In_ const Endpoint end,
+                                 _In_ const bool degenerate);
+
+                    // range from a UiaPoint
+                    UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                 _In_ const UiaPoint point);
+
+                    UiaTextRange(_In_ const UiaTextRange& a);
+
                     // used to debug objects passed back and forth
                     // between the provider and the client
                     IdType _id;

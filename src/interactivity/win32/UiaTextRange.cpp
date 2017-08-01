@@ -81,15 +81,113 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IRawElementProvi
         ScreenInfoRow currentRow = pSelectionRects[i].Top;
         Endpoint start = _screenInfoRowToEndpoint(currentRow) + pSelectionRects[i].Left;
         Endpoint end = _screenInfoRowToEndpoint(currentRow) + pSelectionRects[i].Right;
-        UiaTextRange* range = new UiaTextRange(pProvider,
-                                               start,
-                                               end,
-                                               false);
-        ranges.push_back(range);
+        UiaTextRange* range = UiaTextRange::Create(pProvider,
+                                                   start,
+                                                   end,
+                                                   false);
+        if (range == nullptr)
+        {
+            // something when wrong, clean up and throw
+            while (!ranges.empty())
+            {
+                UiaTextRange* temp = ranges[0];
+                ranges.pop_front();
+                temp->Release();
+            }
+            throw E_INVALIDARG;
+        }
+        else
+        {
+            ranges.push_back(range);
+        }
     }
     return ranges;
 }
 
+
+UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvider)
+{
+    UiaTextRange* range = nullptr;;
+    try
+    {
+        range = new UiaTextRange(pProvider);
+    }
+    catch (...)
+    {
+        range = nullptr;
+    }
+
+    if (range)
+    {
+        pProvider->AddRef();
+    }
+    return range;
+}
+
+UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvider,
+                                   _In_ const Cursor* const pCursor)
+{
+    UiaTextRange* range = nullptr;
+    try
+    {
+        range = new UiaTextRange(pProvider, pCursor);
+    }
+    catch (...)
+    {
+        range = nullptr;
+    }
+
+    if (range)
+    {
+        pProvider->AddRef();
+    }
+    return range;
+}
+
+UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvider,
+                                   _In_ const Endpoint start,
+                                   _In_ const Endpoint end,
+                                   _In_ const bool degenerate)
+{
+    UiaTextRange* range = nullptr;
+    try
+    {
+        range = new UiaTextRange(pProvider,
+                                 start,
+                                 end,
+                                 degenerate);
+    }
+    catch (...)
+    {
+        range = nullptr;
+    }
+
+    if (range)
+    {
+        pProvider->AddRef();
+    }
+    return range;
+}
+
+UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvider,
+                                   _In_ const UiaPoint point)
+{
+    UiaTextRange* range = nullptr;
+    try
+    {
+        range = new UiaTextRange(pProvider, point);
+    }
+    catch (...)
+    {
+        range = nullptr;
+    }
+
+    if (range)
+    {
+        pProvider->AddRef();
+    }
+    return range;
+}
 
 
 // degenerate range constructor.
