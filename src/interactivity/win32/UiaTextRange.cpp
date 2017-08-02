@@ -12,6 +12,8 @@
 #include "windowdpiapi.hpp"
 #include "../host/tracing.hpp"
 
+#include "../host/selection.hpp"
+
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing;
 
@@ -62,6 +64,130 @@ void UiaTextRange::_outputObjectState()
 }
 #endif
 
+std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider)
+{
+    std::deque<UiaTextRange*> ranges;
+
+    // get the selection rects
+    SMALL_RECT* pSelectionRects;
+    UINT rectCount;
+    NTSTATUS status = Selection::Instance().GetSelectionRects(&pSelectionRects, &rectCount);
+    THROW_IF_FAILED(status);
+    auto selectionRectCleanup = wil::ScopeExit([&] { delete[] pSelectionRects; });
+
+    // create a range for each row
+    for (size_t i = 0; i < rectCount; ++i)
+    {
+        ScreenInfoRow currentRow = pSelectionRects[i].Top;
+        Endpoint start = _screenInfoRowToEndpoint(currentRow) + pSelectionRects[i].Left;
+        Endpoint end = _screenInfoRowToEndpoint(currentRow) + pSelectionRects[i].Right;
+        UiaTextRange* range = UiaTextRange::Create(pProvider,
+                                                   start,
+                                                   end,
+                                                   false);
+        if (range == nullptr)
+        {
+            // something when wrong, clean up and throw
+            while (!ranges.empty())
+            {
+                UiaTextRange* temp = ranges[0];
+                ranges.pop_front();
+                temp->Release();
+            }
+            throw E_INVALIDARG;
+        }
+        else
+        {
+            ranges.push_back(range);
+        }
+    }
+    return ranges;
+}
+
+
+UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvider)
+{
+    UiaTextRange* range = nullptr;;
+    try
+    {
+        range = new UiaTextRange(pProvider);
+    }
+    catch (...)
+    {
+        range = nullptr;
+    }
+
+    if (range)
+    {
+        pProvider->AddRef();
+    }
+    return range;
+}
+
+UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvider,
+                                   _In_ const Cursor* const pCursor)
+{
+    UiaTextRange* range = nullptr;
+    try
+    {
+        range = new UiaTextRange(pProvider, pCursor);
+    }
+    catch (...)
+    {
+        range = nullptr;
+    }
+
+    if (range)
+    {
+        pProvider->AddRef();
+    }
+    return range;
+}
+
+UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvider,
+                                   _In_ const Endpoint start,
+                                   _In_ const Endpoint end,
+                                   _In_ const bool degenerate)
+{
+    UiaTextRange* range = nullptr;
+    try
+    {
+        range = new UiaTextRange(pProvider,
+                                 start,
+                                 end,
+                                 degenerate);
+    }
+    catch (...)
+    {
+        range = nullptr;
+    }
+
+    if (range)
+    {
+        pProvider->AddRef();
+    }
+    return range;
+}
+
+UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvider,
+                                   _In_ const UiaPoint point)
+{
+    UiaTextRange* range = nullptr;
+    try
+    {
+        range = new UiaTextRange(pProvider, point);
+    }
+    catch (...)
+    {
+        range = nullptr;
+    }
+
+    if (range)
+    {
+        pProvider->AddRef();
+    }
+    return range;
+}
 
 
 // degenerate range constructor.
@@ -1045,7 +1171,7 @@ IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** p
 // - <none>
 // Return Value:
 // - The screen info's current viewport
-const Viewport UiaTextRange::_getViewport() const
+const Viewport UiaTextRange::_getViewport()
 {
     return _getScreenInfo()->GetBufferViewport();
 }
@@ -1108,7 +1234,7 @@ TEXT_BUFFER_INFO* const UiaTextRange::_getTextBuffer()
 // - <none>
 // Return Value:
 // - The number of rows
-const unsigned int UiaTextRange::_getTotalRows() const
+const unsigned int UiaTextRange::_getTotalRows()
 {
     const TEXT_BUFFER_INFO* const pTextBuffer = _getTextBuffer();
     THROW_HR_IF_NULL(E_POINTER, pTextBuffer);
@@ -1156,7 +1282,7 @@ const Column UiaTextRange::_endpointToColumn(_In_ const Endpoint endpoint)
 // - endpoint - the endpoint to convert
 // Return Value:
 // - the text buffer row value
-const TextBufferRow UiaTextRange::_endpointToTextBufferRow(_In_ const Endpoint endpoint) const
+const TextBufferRow UiaTextRange::_endpointToTextBufferRow(_In_ const Endpoint endpoint)
 {
     return endpoint / _getRowWidth();
 }
@@ -1207,7 +1333,7 @@ const unsigned int UiaTextRange::_rowCountInRange() const
 // - row - the TextBufferRow to convert
 // Return Value:
 // - the equivalent ScreenInfoRow.
-const ScreenInfoRow UiaTextRange::_textBufferRowToScreenInfoRow(_In_ const TextBufferRow row) const
+const ScreenInfoRow UiaTextRange::_textBufferRowToScreenInfoRow(_In_ const TextBufferRow row)
 {
     const int firstRowIndex = _getTextBuffer()->GetFirstRowIndex();
     return _normalizeRow(row - firstRowIndex);
@@ -1220,7 +1346,7 @@ const ScreenInfoRow UiaTextRange::_textBufferRowToScreenInfoRow(_In_ const TextB
 // - row - the ScreenInfoRow to convert
 // Return Value:
 // - the equivalent ViewportRow.
-const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(_In_ const ScreenInfoRow row) const
+const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(_In_ const ScreenInfoRow row)
 {
     const Viewport viewport = _getViewport();
     return _screenInfoRowToViewportRow(row, viewport);
@@ -1234,7 +1360,7 @@ const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(_In_ const ScreenInf
 // Return Value:
 // - the equivalent ViewportRow.
 const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(_In_ const ScreenInfoRow row,
-                                                            _In_ const Viewport viewport) const
+                                                            _In_ const Viewport viewport)
 {
     return row - viewport.Top;
 }
@@ -1247,7 +1373,7 @@ const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(_In_ const ScreenInf
 // - the non-normalized row index
 // Return Value:
 // - the normalized row index
-const Row UiaTextRange::_normalizeRow(_In_ const Row row) const
+const Row UiaTextRange::_normalizeRow(_In_ const Row row)
 {
     const unsigned int totalRows = _getTotalRows();
     return ((row + totalRows) % totalRows);
@@ -1289,7 +1415,7 @@ const unsigned int UiaTextRange::_getViewportWidth(_In_ const Viewport viewport)
 // - row - the screen info row to check
 // Return Value:
 // - true if the row is within the bounds of the viewport
-const bool UiaTextRange::_isScreenInfoRowInViewport(_In_ const ScreenInfoRow row) const
+const bool UiaTextRange::_isScreenInfoRowInViewport(_In_ const ScreenInfoRow row)
 {
     return _isScreenInfoRowInViewport(row, _getViewport());
 }
@@ -1302,7 +1428,7 @@ const bool UiaTextRange::_isScreenInfoRowInViewport(_In_ const ScreenInfoRow row
 // Return Value:
 // - true if the row is within the bounds of the viewport
 const bool UiaTextRange::_isScreenInfoRowInViewport(_In_ const ScreenInfoRow row,
-                                                    _In_ const Viewport viewport) const
+                                                    _In_ const Viewport viewport)
 {
     ViewportRow viewportRow = _screenInfoRowToViewportRow(row, viewport);
     return viewportRow >= 0 &&
@@ -1315,7 +1441,7 @@ const bool UiaTextRange::_isScreenInfoRowInViewport(_In_ const ScreenInfoRow row
 // - row - the ScreenInfoRow to convert
 // Return Value:
 // - the equivalent TextBufferRow.
-const TextBufferRow UiaTextRange::_screenInfoRowToTextBufferRow(_In_ const ScreenInfoRow row) const
+const TextBufferRow UiaTextRange::_screenInfoRowToTextBufferRow(_In_ const ScreenInfoRow row)
 {
     const TEXT_BUFFER_INFO* const pTextBuffer = _getTextBuffer();
     const TextBufferRow firstRowIndex = pTextBuffer->GetFirstRowIndex();
@@ -1328,7 +1454,7 @@ const TextBufferRow UiaTextRange::_screenInfoRowToTextBufferRow(_In_ const Scree
 // - row - the TextBufferRow to convert
 // Return Value:
 // - the equivalent Endpoint, starting at the beginning of the TextBufferRow.
-const Endpoint UiaTextRange::_textBufferRowToEndpoint(_In_ const TextBufferRow row) const
+const Endpoint UiaTextRange::_textBufferRowToEndpoint(_In_ const TextBufferRow row)
 {
     return _getRowWidth() * row;
 }
@@ -1339,7 +1465,7 @@ const Endpoint UiaTextRange::_textBufferRowToEndpoint(_In_ const TextBufferRow r
 // - row - the ScreenInfoRow to convert
 // Return Value:
 // - the equivalent Endpoint.
-const Endpoint UiaTextRange::_screenInfoRowToEndpoint(_In_ const ScreenInfoRow row) const
+const Endpoint UiaTextRange::_screenInfoRowToEndpoint(_In_ const ScreenInfoRow row)
 {
     return _textBufferRowToEndpoint(_screenInfoRowToTextBufferRow(row));
 }
@@ -1350,7 +1476,7 @@ const Endpoint UiaTextRange::_screenInfoRowToEndpoint(_In_ const ScreenInfoRow r
 // - endpoint - the endpoint to convert
 // Return Value:
 // - the equivalent ScreenInfoRow.
-const ScreenInfoRow UiaTextRange::_endpointToScreenInfoRow(_In_ const Endpoint endpoint) const
+const ScreenInfoRow UiaTextRange::_endpointToScreenInfoRow(_In_ const Endpoint endpoint)
 {
     return _textBufferRowToScreenInfoRow(_endpointToTextBufferRow(endpoint));
 }
@@ -1365,7 +1491,7 @@ const ScreenInfoRow UiaTextRange::_endpointToScreenInfoRow(_In_ const Endpoint e
 // Notes:
 // - alters coords. may throw an exception.
 void UiaTextRange::_addScreenInfoRowBoundaries(_In_ const ScreenInfoRow screenInfoRow,
-                                               _Inout_ std::vector<double>& coords)
+                                               _Inout_ std::vector<double>& coords) const
 {
     const SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
     const COORD currentFontSize = pScreenInfo->GetScreenFontSize();
@@ -1412,7 +1538,7 @@ void UiaTextRange::_addScreenInfoRowBoundaries(_In_ const ScreenInfoRow screenIn
 // - <none>
 // Return Value:
 // - the index of the first row (0-indexed) of the screen info
-const unsigned int UiaTextRange::_getFirstScreenInfoRowIndex() const
+const unsigned int UiaTextRange::_getFirstScreenInfoRowIndex()
 {
     return 0;
 }
@@ -1423,7 +1549,7 @@ const unsigned int UiaTextRange::_getFirstScreenInfoRowIndex() const
 // - <none>
 // Return Value:
 // - the index of the last row (0-indexed) of the screen info
-const unsigned int UiaTextRange::_getLastScreenInfoRowIndex() const
+const unsigned int UiaTextRange::_getLastScreenInfoRowIndex()
 {
     return _getTotalRows() - 1;
 }
@@ -1435,7 +1561,7 @@ const unsigned int UiaTextRange::_getLastScreenInfoRowIndex() const
 // - <none>
 // Return Value:
 // - the index of the first column (0-indexed) of the screen info rows
-const Column UiaTextRange::_getFirstColumnIndex() const
+const Column UiaTextRange::_getFirstColumnIndex()
 {
     return 0;
 }
@@ -1446,7 +1572,7 @@ const Column UiaTextRange::_getFirstColumnIndex() const
 // - <none>
 // Return Value:
 // - the index of the last column (0-indexed) of the screen info rows
-const Column UiaTextRange::_getLastColumnIndex() const
+const Column UiaTextRange::_getLastColumnIndex()
 {
     return _getRowWidth() - 1;
 }
@@ -1462,10 +1588,10 @@ const Column UiaTextRange::_getLastColumnIndex() const
 //   -1 if A < B
 //    1 if A > B
 //    0 if A == B
-int UiaTextRange::_compareScreenCoords(_In_ const ScreenInfoRow rowA,
-                                       _In_ const Column colA,
-                                       _In_ const ScreenInfoRow rowB,
-                                       _In_ const Column colB) const
+const int UiaTextRange::_compareScreenCoords(_In_ const ScreenInfoRow rowA,
+                                             _In_ const Column colA,
+                                             _In_ const ScreenInfoRow rowB,
+                                             _In_ const Column colB)
 {
     if (rowA < rowB)
     {
