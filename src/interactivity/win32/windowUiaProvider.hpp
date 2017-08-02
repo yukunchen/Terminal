@@ -18,6 +18,8 @@ Author(s):
 
 #pragma once
 
+#include "precomp.h"
+
 namespace Microsoft
 {
     namespace Console
@@ -39,6 +41,7 @@ namespace Microsoft
                     virtual ~WindowUiaProvider();
 
                     HRESULT Signal(_In_ EVENTID id);
+                    HRESULT SetTextAreaFocus();
 
                     // IUnknown methods
                     IFACEMETHODIMP_(ULONG) AddRef();
@@ -77,7 +80,7 @@ namespace Microsoft
                     static IConsoleWindow* const _getIConsoleWindow();
 
 
-                    // these bools iare used to prevent the object from
+                    // this is used to prevent the object from
                     // signaling an event while it is already in the
                     // process of signalling another event.
                     // This fixes a problem with JAWS where it would
@@ -88,14 +91,52 @@ namespace Microsoft
                     // eventually overflowing the stack.
                     // We aren't using this as a cheap locking
                     // mechanism for multi-threaded code.
-                    bool _signalEventFiring;
-                    bool _navigateEventFiring;
+                    std::map<EVENTID, bool> _signalEventFiring;
 
                     ScreenInfoUiaProvider* _pScreenInfoProvider;
 
                     // Ref counter for COM object
                     ULONG _cRefs;
                 };
+
+                namespace WindowUiaProviderTracing
+                {
+                    enum class ApiCall
+                    {
+                        Create,
+                        Signal,
+                        AddRef,
+                        Release,
+                        QueryInterface,
+                        GetProviderOptions,
+                        GetPatternProvider,
+                        GetPropertyValue,
+                        GetHostRawElementProvider,
+                        Navigate,
+                        GetRuntimeId,
+                        GetBoundingRectangle,
+                        GetEmbeddedFragmentRoots,
+                        SetFocus,
+                        GetFragmentRoot,
+                        ElementProviderFromPoint,
+                        GetFocus
+                    };
+
+                    struct IApiMsg
+                    {
+                    };
+
+                    struct ApiMessageSignal : public IApiMsg
+                    {
+                        EVENTID Signal;
+                    };
+
+                    struct ApiMsgNavigate : public IApiMsg
+                    {
+                        NavigateDirection Direction;
+                    };
+
+                }
             }
         }
     }

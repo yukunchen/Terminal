@@ -17,6 +17,7 @@
 #include "UiaTextRange.hpp"
 
 using namespace Microsoft::Console::Interactivity::Win32;
+using namespace Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing;
 
 // A helper function to create a SafeArray Version of an int array of a specified length
 SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int const length)
@@ -40,9 +41,10 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, _In_ int 
 
 ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent) :
     _pUiaParent(THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
-    _signalEventFiring{ false },
+    _signalFiringMapping{},
     _cRefs(1)
 {
+    Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
 }
 
 ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
@@ -52,13 +54,27 @@ ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
 HRESULT ScreenInfoUiaProvider::Signal(_In_ EVENTID id)
 {
     HRESULT hr = S_OK;
-    if (!_signalEventFiring)
+    // check to see if we're already firing this particular event
+    if (_signalFiringMapping.find(id) != _signalFiringMapping.end() &&
+        _signalFiringMapping[id] == true)
     {
-        _signalEventFiring = true;
-        IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
-        hr = UiaRaiseAutomationEvent(pProvider, id);
-        _signalEventFiring = false;
+        return hr;
     }
+
+    try
+    {
+        _signalFiringMapping[id] = true;
+    }
+    CATCH_RETURN();
+
+    IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
+    hr = UiaRaiseAutomationEvent(pProvider, id);
+    _signalFiringMapping[id] = false;
+
+    // tracing
+    ApiMsgSignal apiMsg;
+    apiMsg.Signal = id;
+    Tracing::s_TraceUia(this, ApiCall::Signal, &apiMsg);
     return hr;
 }
 
@@ -66,11 +82,13 @@ HRESULT ScreenInfoUiaProvider::Signal(_In_ EVENTID id)
 
 IFACEMETHODIMP_(ULONG) ScreenInfoUiaProvider::AddRef()
 {
+    Tracing::s_TraceUia(this, ApiCall::AddRef, nullptr);
     return InterlockedIncrement(&_cRefs);
 }
 
 IFACEMETHODIMP_(ULONG) ScreenInfoUiaProvider::Release()
 {
+    Tracing::s_TraceUia(this, ApiCall::Release, nullptr);
     long val = InterlockedDecrement(&_cRefs);
     if (val == 0)
     {
@@ -82,6 +100,7 @@ IFACEMETHODIMP_(ULONG) ScreenInfoUiaProvider::Release()
 IFACEMETHODIMP ScreenInfoUiaProvider::QueryInterface(_In_ REFIID riid,
                                                      _COM_Outptr_result_maybenull_ void** ppInterface)
 {
+    Tracing::s_TraceUia(this, ApiCall::QueryInterface, nullptr);
     if (riid == __uuidof(IUnknown))
     {
         *ppInterface = static_cast<IRawElementProviderSimple*>(this);
@@ -117,6 +136,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::QueryInterface(_In_ REFIID riid,
 // Gets UI Automation provider options.
 IFACEMETHODIMP ScreenInfoUiaProvider::get_ProviderOptions(_Out_ ProviderOptions* pOptions)
 {
+    Tracing::s_TraceUia(this, ApiCall::GetProviderOptions, nullptr);
     *pOptions = ProviderOptions_ServerSideProvider;
     return S_OK;
 }
@@ -126,6 +146,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_ProviderOptions(_Out_ ProviderOptions*
 IFACEMETHODIMP ScreenInfoUiaProvider::GetPatternProvider(_In_ PATTERNID patternId,
                                                          _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
+    Tracing::s_TraceUia(this, ApiCall::GetPatternProvider, nullptr);
+
     *ppInterface = nullptr;
     HRESULT hr = S_OK;
 
@@ -145,6 +167,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPatternProvider(_In_ PATTERNID patternI
 IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId,
                                                        _Out_ VARIANT* pVariant)
 {
+    Tracing::s_TraceUia(this, ApiCall::GetPropertyValue, nullptr);
+
     pVariant->vt = VT_EMPTY;
 
     // Returning the default will leave the property as the default
@@ -212,6 +236,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyI
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
 {
+    Tracing::s_TraceUia(this, ApiCall::GetHostRawElementProvider, nullptr);
     *ppProvider = nullptr;
 
     return S_OK;
@@ -223,6 +248,9 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_HostRawElementProvider(_COM_Outptr_res
 IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
                                                _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
+    ApiMsgNavigate apiMsg;
+    apiMsg.Direction = direction;
+    Tracing::s_TraceUia(this, ApiCall::Navigate, &apiMsg);
     *ppProvider = nullptr;
 
     if (direction == NavigateDirection_Parent)
@@ -245,6 +273,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId)
 {
+    Tracing::s_TraceUia(this, ApiCall::GetRuntimeId, nullptr);
     // Root defers this to host, others must implement it...
     *ppRuntimeId = nullptr;
 
@@ -259,6 +288,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAF
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect)
 {
+    Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangle, nullptr);
     const IConsoleWindow* const pIConsoleWindow = _getIConsoleWindow();
     RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, pIConsoleWindow);
 
@@ -274,17 +304,20 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots)
 {
+    Tracing::s_TraceUia(this, ApiCall::GetEmbeddedFragmentRoots, nullptr);
     *ppRoots = nullptr;
     return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 {
+    Tracing::s_TraceUia(this, ApiCall::SetFocus, nullptr);
     return Signal(UIA_AutomationFocusChangedEventId);
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
 {
+    Tracing::s_TraceUia(this, ApiCall::GetFragmentRoot, nullptr);
     try
     {
         _pUiaParent->QueryInterface(IID_PPV_ARGS(ppProvider));
@@ -304,6 +337,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_mayben
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
+    ApiMsgGetSelection apiMsg;
     ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
@@ -311,10 +345,12 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
     });
 
     *ppRetVal = nullptr;
-    HRESULT hr;
+    HRESULT hr = S_OK;
 
     if (!Selection::Instance().IsAreaSelected())
     {
+        apiMsg.AreaSelected = false;
+        apiMsg.SelectionRowCount = 1;
         // return a degenerate range at the cursor position
         SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
         RETURN_HR_IF_NULL(E_POINTER, pScreenInfo);
@@ -342,15 +378,20 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         UiaTextRange* range;
         try
         {
-            range = new UiaTextRange(pProvider,
-                                     pCursor);
+            range = UiaTextRange::Create(pProvider,
+                                         pCursor);
         }
         catch (...)
         {
-            (static_cast<IUnknown*>(pProvider))->Release();
+            range = nullptr;
+            hr = wil::ResultFromCaughtException();
+        }
+        (static_cast<IUnknown*>(pProvider))->Release();
+        if (range == nullptr)
+        {
             SafeArrayDestroy(*ppRetVal);
             *ppRetVal = nullptr;
-            return wil::ResultFromCaughtException();
+            return hr;
         }
 
         LONG currentIndex = 0;
@@ -361,71 +402,61 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
             *ppRetVal = nullptr;
             return hr;
         }
-        return S_OK;
     }
-
-    // get the selection rects
-    SMALL_RECT* pSelectionRects;
-    UINT rectCount;
-    NTSTATUS status = Selection::Instance().GetSelectionRects(&pSelectionRects, &rectCount);
-    RETURN_IF_NTSTATUS_FAILED(status);
-    auto selectionRectCleanup = wil::ScopeExit([&] { delete[] pSelectionRects; });
-
-    // make a safe array
-    *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, static_cast<ULONG>(rectCount));
-    if (*ppRetVal == nullptr)
+    else
     {
-        return E_OUTOFMEMORY;
-    }
-
-    // stuff the selected lines into the safe array
-    const COORD screenBufferCoords = _getScreenBufferCoords();
-    const int totalLines = screenBufferCoords.Y;
-
-    for (size_t i = 0; i < rectCount; ++i)
-    {
+        // get the selection ranges
+        std::deque<UiaTextRange*> ranges;
         IRawElementProviderSimple* pProvider;
-        hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
-        if (FAILED(hr))
-        {
-            SafeArrayDestroy(*ppRetVal);
-            *ppRetVal = nullptr;
-            return hr;
-        }
-        const int lineNumber = pSelectionRects[i].Top;
-        const int start = lineNumber * screenBufferCoords.X;
-        // - 1 to get the last column in the row
-        const int end = start + screenBufferCoords.X - 1;
-
-        UiaTextRange* range;
+        RETURN_IF_FAILED(QueryInterface(IID_PPV_ARGS(&pProvider)));
         try
         {
-            range = new UiaTextRange(pProvider,
-                                     start,
-                                     end,
-                                     false);
+            ranges = UiaTextRange::GetSelectionRanges(pProvider);
         }
         catch (...)
         {
-            (static_cast<IUnknown*>(pProvider))->Release();
-            SafeArrayDestroy(*ppRetVal);
-            *ppRetVal = nullptr;
-            return wil::ResultFromCaughtException();
+            hr = wil::ResultFromCaughtException();
         }
-        LONG currentIndex = static_cast<LONG>(i);
-        hr = SafeArrayPutElement(*ppRetVal, &currentIndex, reinterpret_cast<void*>(range));
-        if (FAILED(hr))
+        pProvider->Release();
+        RETURN_IF_FAILED(hr);
+
+        apiMsg.AreaSelected = true;
+        apiMsg.SelectionRowCount = static_cast<unsigned int>(ranges.size());
+
+        // make a safe array
+        *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, static_cast<ULONG>(ranges.size()));
+        if (*ppRetVal == nullptr)
         {
-            SafeArrayDestroy(*ppRetVal);
-            *ppRetVal = nullptr;
-            return hr;
+            return E_OUTOFMEMORY;
+        }
+
+        // fill the safe array
+        for (LONG i = 0; i < static_cast<LONG>(ranges.size()); ++i)
+        {
+            hr = SafeArrayPutElement(*ppRetVal, &i, reinterpret_cast<void*>(ranges[i]));
+            if (FAILED(hr))
+            {
+                SafeArrayDestroy(*ppRetVal);
+                *ppRetVal = nullptr;
+                while (!ranges.empty())
+                {
+                    UiaTextRange* pRange = ranges[0];
+                    ranges.pop_front();
+                    pRange->Release();
+                }
+                return hr;
+            }
         }
     }
+
+    Tracing::s_TraceUia(this, ApiCall::GetSelection, &apiMsg);
     return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
+    Tracing::s_TraceUia(this, ApiCall::GetVisibleRanges, nullptr);
+
     ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
@@ -466,18 +497,25 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
         UiaTextRange* range;
         try
         {
-            range = new UiaTextRange(pProvider,
-                                     start,
-                                     end,
-                                     false);
+            range = UiaTextRange::Create(pProvider,
+                                         start,
+                                         end,
+                                         false);
         }
         catch (...)
         {
-            (static_cast<IUnknown*>(pProvider))->Release();
+            range = nullptr;
+            hr = wil::ResultFromCaughtException();
+        }
+        (static_cast<IUnknown*>(pProvider))->Release();
+
+        if (range == nullptr)
+        {
             SafeArrayDestroy(*ppRetVal);
             *ppRetVal = nullptr;
-            return wil::ResultFromCaughtException();
+            return hr;
         }
+
         LONG currentIndex = static_cast<LONG>(i);
         hr = SafeArrayPutElement(*ppRetVal, &currentIndex, reinterpret_cast<void*>(range));
         if (FAILED(hr))
@@ -493,64 +531,78 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
 IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSimple* /*childElement*/,
                                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
+    Tracing::s_TraceUia(this, ApiCall::RangeFromChild, nullptr);
+
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 
+    HRESULT hr = S_OK;;
     try
     {
-        *ppRetVal = new UiaTextRange(pProvider);
+        *ppRetVal = UiaTextRange::Create(pProvider);
     }
     catch (...)
     {
         *ppRetVal = nullptr;
-        (static_cast<IUnknown*>(pProvider))->Release();
-        return wil::ResultFromCaughtException();
+        hr = wil::ResultFromCaughtException();
     }
-    return S_OK;
+    (static_cast<IUnknown*>(pProvider))->Release();
+
+    return hr;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
                                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
+    Tracing::s_TraceUia(this, ApiCall::RangeFromPoint, nullptr);
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 
+    HRESULT hr = S_OK;
     try
     {
-        *ppRetVal = new UiaTextRange(pProvider,
-                                     point);
+        *ppRetVal = UiaTextRange::Create(pProvider,
+                                         point);
     }
     catch(...)
     {
         *ppRetVal = nullptr;
-        (static_cast<IUnknown*>(pProvider))->Release();
-        return wil::ResultFromCaughtException();
+        hr = wil::ResultFromCaughtException();
     }
-    return S_OK;
+    (static_cast<IUnknown*>(pProvider))->Release();
+
+    return hr;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
+    Tracing::s_TraceUia(this, ApiCall::GetDocumentRange, nullptr);
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 
+    HRESULT hr = S_OK;
     try
     {
-        *ppRetVal = new UiaTextRange(pProvider);
-        RETURN_HR_IF_NULL(E_OUTOFMEMORY, *ppRetVal);
-        (*ppRetVal)->ExpandToEnclosingUnit(TextUnit::TextUnit_Document);
+        *ppRetVal = UiaTextRange::Create(pProvider);
     }
     catch (...)
     {
         *ppRetVal = nullptr;
-        (static_cast<IUnknown*>(pProvider))->Release();
-        return wil::ResultFromCaughtException();
+        hr = wil::ResultFromCaughtException();
     }
-    return S_OK;
+    (static_cast<IUnknown*>(pProvider))->Release();
+
+    if (*ppRetVal)
+    {
+        (*ppRetVal)->ExpandToEnclosingUnit(TextUnit::TextUnit_Document);
+    }
+
+    return hr;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal)
 {
+    Tracing::s_TraceUia(this, ApiCall::GetSupportedTextSelection, nullptr);
     *pRetVal = SupportedTextSelection::SupportedTextSelection_Single;
     return S_OK;
 }

@@ -162,6 +162,11 @@ HRESULT ConsoleWindow::SignalUia(_In_ EVENTID id)
     return E_NOTIMPL;
 }
 
+HRESULT ConsoleWindow::UiaSetTextAreaFocus()
+{
+    return E_NOTIMPL;
+}
+
 RECT ConsoleWindow::GetWindowRect() const
 {
     RECT rc = {0};

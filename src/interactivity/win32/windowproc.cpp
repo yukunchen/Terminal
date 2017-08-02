@@ -29,6 +29,8 @@
 
 #include "..\inc\ServiceLocator.hpp"
 
+#include "../interactivity/win32/windowUiaProvider.hpp"
+
 #include <iomanip>
 #include <sstream>
 
@@ -170,6 +172,16 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         break;
     }
 
+    case WM_DESTROY:
+    {
+        // signal to uia that they can disconnect our uia provider
+        if (_pUiaProvider)
+        {
+            UiaReturnRawElementProvider(hWnd, 0, 0, NULL);
+        }
+        break;
+    }
+
     case WM_SIZING:
     {
         // Signal that the user changed the window size, so we can return the value later for telemetry. By only
@@ -283,6 +295,12 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         // ActivateTextServices does nothing if already active so this is OK to be called every focus.
         ActivateTextServices(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), GetImeSuggestionWindowPos);
+
+        // set the text area to have focus for accessibility consumers
+        if (_pUiaProvider)
+        {
+            _pUiaProvider->SetTextAreaFocus();
+        }
 
         break;
     }

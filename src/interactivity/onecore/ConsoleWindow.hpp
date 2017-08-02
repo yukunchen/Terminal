@@ -63,6 +63,7 @@ namespace Microsoft
                     void VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const;
 
                     HRESULT SignalUia(_In_ EVENTID id);
+                    HRESULT UiaSetTextAreaFocus();
                     RECT GetWindowRect() const;
                 };
             };
