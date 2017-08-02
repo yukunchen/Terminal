@@ -590,6 +590,21 @@ public:
         return TRUE;
     }
 
+    virtual BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes) 
+    {
+        Log::Comment(L"PrivateGetConsoleScreenBufferAttributes MOCK returning data...");
+
+        if (pwAttributes != nullptr)
+        {
+            *pwAttributes = _wAttribute;
+            return TRUE;
+        }
+        else
+        {
+            return FALSE;
+        }
+    }
+
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {
         pcoord->X++;

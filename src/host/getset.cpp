@@ -1312,3 +1312,30 @@ NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo)
 {
     return NTSTATUS_FROM_HRESULT(pScreenInfo->GetActiveBuffer()->VtEraseAll());
 }
+
+// Routine Description:
+// - A private API call to get only the default color attributes of the screen buffer.
+// - This is used as a performance optimization by the VT adapter in SGR (Set Graphics Rendition) instead
+//   of calling for this information through the public API GetConsoleScreenBufferInfoEx which returns a lot
+//   of extra unnecessary data and takes a lot of extra processing time.
+// Parameters
+// - pScreenInfo - The screen buffer to retrieve default color attributes information from
+// - pwAttributes - Pointer to space that will receive color attributes data
+// Return Value:
+// - STATUS_SUCCESS if we succeeded or STATUS_INVALID_PARAMETER for bad params (nullptr).
+NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ SCREEN_INFORMATION* const pScreenInfo, _Out_ WORD* const pwAttributes)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    if (pScreenInfo == nullptr || pwAttributes == nullptr)
+    {
+        Status = STATUS_INVALID_PARAMETER;
+    }
+
+    if (NT_SUCCESS(Status))
+    {
+        *pwAttributes = pScreenInfo->GetActiveBuffer()->GetAttributes().GetLegacyAttributes();
+    }
+
+    return Status;
+}
