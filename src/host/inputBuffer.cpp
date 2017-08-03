@@ -421,7 +421,12 @@ DWORD InputBuffer::WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD 
         std::deque<INPUT_RECORD> inRecords;
         for (size_t i = 0; i < cInputRecords; ++i)
         {
-            inRecords.push_back(pInputRecord[i]);
+            // Try to convert to VT Sequence
+            auto inRec = pInputRecord[i];
+            if (!HandleTerminalKeyEvent(&inRec))
+            {
+                inRecords.push_back(inRec);
+            }
         }
         size_t EventsWritten = WriteInputBuffer(inRecords);
         DWORD result;
@@ -526,7 +531,8 @@ HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
         // add all input records to the storage queue
         while (!inRecords.empty())
         {
-            _storage.push_back(inRecords.front());
+            auto inRec = inRecords.front();
+            _storage.push_back(inRec);
             inRecords.pop_front();
             ++eventsWritten;
         }

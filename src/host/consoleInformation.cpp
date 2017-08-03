@@ -21,7 +21,16 @@
 // - <none>
 void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->WriteInputBuffer(rgInput, cInput);
+    // auto _cIn = cInput;
+    // ServiceLocator::LocateGlobals()->getConsoleInformation()->
+    //     pInputBuffer->PrependInputBuffer(rgInput, &_cIn);
+
+    // FIXME
+    // The prototype fix moves the VT translation to WriteInputBuffer. 
+    //   This currently causes WriteInputBuffer to get called twice for every 
+    //   key - not ideal. There needs to be a WriteInputBuffer that sidesteps this problem.
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->
+        pInputBuffer->WriteInputBuffer(rgInput, cInput);
 }
 
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :

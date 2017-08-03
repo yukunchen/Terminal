@@ -113,10 +113,10 @@ void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak)
     BOOLEAN ContinueProcessing = TRUE;
     ULONG EventsWritten;
     
-    if (HandleTerminalKeyEvent(&InputEvent))
-    {
-        return;
-    }
+    // if (HandleTerminalKeyEvent(&InputEvent))
+    // {
+    //     return;
+    // }
 
     if (CTRL_BUT_NOT_ALT(InputEvent.Event.KeyEvent.dwControlKeyState) && InputEvent.Event.KeyEvent.bKeyDown)
     {
