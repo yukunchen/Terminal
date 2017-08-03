@@ -229,6 +229,8 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
                            _In_ const bool degenerate) :
     UiaTextRange(pProvider)
 {
+    THROW_HR_IF(E_INVALIDARG, !degenerate && start > end);
+
     _degenerate = degenerate;
     _start = start;
     _end = degenerate ? start : end;
