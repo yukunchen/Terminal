@@ -594,15 +594,12 @@ public:
     {
         Log::Comment(L"PrivateGetConsoleScreenBufferAttributes MOCK returning data...");
 
-        if (pwAttributes != nullptr)
+        if (pwAttributes != nullptr && _fPrivateGetConsoleScreenBufferAttributesResult)
         {
             *pwAttributes = _wAttribute;
-            return TRUE;
         }
-        else
-        {
-            return FALSE;
-        }
+
+        return _fPrivateGetConsoleScreenBufferAttributesResult;
     }
 
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
@@ -665,6 +662,7 @@ public:
         _fWriteConsoleInputWResult = TRUE;
         _fScrollConsoleScreenBufferWResult = TRUE;
         _fSetConsoleWindowInfoResult = TRUE;
+        _fPrivateGetConsoleScreenBufferAttributesResult = TRUE;
 
         _PrepCharsBuffer(wch, wAttr);
         
@@ -1190,6 +1188,7 @@ public:
     BOOL _fSetConsoleXtermTextAttributeResult;
     BOOL _fSetConsoleRGBTextAttributeResult;    
     BOOL _fPrivateSetLegacyAttributesResult;
+    BOOL _fPrivateGetConsoleScreenBufferAttributesResult;
 
 private:
     HANDLE _hCon;
@@ -2264,7 +2263,7 @@ public:
         Log::Comment(L"Test 2: Gracefully fail when getting buffer information fails.");
 
         _pTest->PrepData();
-        _pTest->_fGetConsoleScreenBufferInfoExResult = FALSE;
+        _pTest->_fPrivateGetConsoleScreenBufferAttributesResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
