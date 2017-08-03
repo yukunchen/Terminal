@@ -34,7 +34,11 @@ Renderer::Renderer(_In_ IRenderData* const pData, _In_reads_(cEngines) IRenderEn
 
     for (size_t i = 0; i < cEngines; i++)
     {
-        _rgpEngines.push_back(rgpEngines[i]);
+        IRenderEngine* engine = rgpEngines[i];
+        if (engine != nullptr)
+        {
+            _rgpEngines.push_back(engine);
+        }
     }
 }
 

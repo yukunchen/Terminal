@@ -221,16 +221,24 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
         {
             pGdiEngine = new GdiEngine();
             status = NT_TESTNULL(pGdiEngine);
-
-            if (NT_SUCCESS(status))
-            {
-                pVtEngine = new VtEngine();
-                status = NT_TESTNULL(pVtEngine);
-            }
         }
         catch (...)
         {
             status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        }
+
+        // For the sake of testing:
+        //   Don't fail if the VT renderer fails to init. Just go about life normally.
+        try
+        {
+            pVtEngine = new VtEngine();
+            // status = NT_TESTNULL(pVtEngine);
+        }
+        catch (...)
+        {
+            if (pVtEngine != nullptr) delete pVtEngine;
+            pVtEngine = nullptr;
+            // status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
         if (NT_SUCCESS(status))
