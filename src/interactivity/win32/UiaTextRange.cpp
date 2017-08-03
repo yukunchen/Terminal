@@ -671,7 +671,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit /*unit*/,
+IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit,
                                   _In_ int count,
                                   _Out_ int* pRetVal)
 {
@@ -686,6 +686,7 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit /*unit*/,
     ApiMsgMove apiMsg;
     apiMsg.OriginalStart = _start;
     apiMsg.OriginalEnd = _end;
+    apiMsg.Unit = unit;
     apiMsg.RequestedCount = count;
 #if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
     OutputDebugString(L"Move\n");
@@ -757,7 +758,7 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit /*unit*/,
 }
 
 IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
-                                                _In_ TextUnit /* unit */,
+                                                _In_ TextUnit unit,
                                                 _In_ int count,
                                                 _Out_ int* pRetVal)
 {
@@ -773,6 +774,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
     apiMsg.OriginalStart = _start;
     apiMsg.OriginalEnd = _end;
     apiMsg.Endpoint = endpoint;
+    apiMsg.Unit = unit;
     apiMsg.RequestedCount = count;
 #if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
     OutputDebugString(L"MoveEndpointByUnit\n");

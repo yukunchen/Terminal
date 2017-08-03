@@ -339,6 +339,7 @@ namespace Microsoft
                     {
                         Endpoint OriginalStart;
                         Endpoint OriginalEnd;
+                        TextUnit Unit;
                         int RequestedCount;
                         int MovedCount;
                     };
@@ -348,6 +349,7 @@ namespace Microsoft
                         Endpoint OriginalStart;
                         Endpoint OriginalEnd;
                         TextPatternRangeEndpoint Endpoint;
+                        TextUnit Unit;
                         int RequestedCount;
                         int MovedCount;
                     };
