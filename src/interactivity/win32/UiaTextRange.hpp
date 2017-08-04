@@ -261,6 +261,33 @@ namespace Microsoft
                                                           _In_ const ScreenInfoRow rowB,
                                                           _In_ const Column colB);
 
+                    static std::pair<Endpoint, Endpoint> _moveByCharacter(_In_ const int count,
+                                                                          _In_ const int incrementAmount,
+                                                                          _In_ const ScreenInfoRow limitingRow,
+                                                                          _In_ const Column firstColumnInRow,
+                                                                          _In_ const Column lastColumnInRow,
+                                                                          _In_ const ScreenInfoRow startScreenInfoRow,
+                                                                          _In_ const Column startColumn,
+                                                                          _Out_ int* const pAmountMoved);
+
+                    static std::pair<Endpoint, Endpoint> _moveByLine(_In_ const int moveCount,
+                                                                     _In_ const int incrementAmount,
+                                                                     _In_ const ScreenInfoRow limitingRow,
+                                                                     _In_ const Column firstColumnInRow,
+                                                                     _In_ const Column lastColumnInRow,
+                                                                     _In_ const ScreenInfoRow startScreenInfoRow,
+                                                                     _In_ const Column startColumn,
+                                                                     _Out_ int* const pAmountMoved);
+
+                    static std::pair<Endpoint, Endpoint> _moveByDocument(_In_ const int moveCount,
+                                                                         _In_ const int incrementAmount,
+                                                                         _In_ const ScreenInfoRow limitingRow,
+                                                                         _In_ const Column firstColumnInRow,
+                                                                         _In_ const Column lastColumnInRow,
+                                                                         _In_ const ScreenInfoRow startScreenInfoRow,
+                                                                         _In_ const Column startColumn,
+                                                                         _Out_ int* const pAmountMoved);
+
 #ifdef UNIT_TESTING
                     friend class ::UiaTextRangeTests;
 #endif

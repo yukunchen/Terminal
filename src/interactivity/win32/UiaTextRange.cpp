@@ -641,6 +641,11 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
     });
 
     std::wstring wstr = L"";
+
+    if (maxLength < -1)
+    {
+        return E_INVALIDARG;
+    }
     // the caller must pass in a value for the max length of the text
     // to retrieve. a value of -1 means they don't want the text
     // truncated.
@@ -757,10 +762,10 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit,
     // get incrementing values and limits
     int incrementAmount;
     ScreenInfoRow limitingRow;
-    ScreenInfoRow currentScreenInfoRow;
-    Column currentColumn;
-    Column lastColumnInRow;
+    ScreenInfoRow startScreenInfoRow;
+    Column startColumn;
     Column firstColumnInRow;
+    Column lastColumnInRow;
     try
     {
         if (count > 0)
@@ -768,104 +773,58 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit,
             // moving forward
             incrementAmount = 1;
             limitingRow = _getLastScreenInfoRowIndex();
-            lastColumnInRow = _getLastColumnIndex();
             firstColumnInRow = _getFirstColumnIndex();
+            lastColumnInRow = _getLastColumnIndex();
         }
         else
         {
             // moving backward
             incrementAmount = -1;
             limitingRow = _getFirstScreenInfoRowIndex();
-            lastColumnInRow = _getFirstColumnIndex();
             firstColumnInRow = _getLastColumnIndex();
+            lastColumnInRow = _getFirstColumnIndex();
         }
-        currentScreenInfoRow = _endpointToScreenInfoRow(_start);
-        currentColumn = _endpointToColumn(_start);
+        startScreenInfoRow = _endpointToScreenInfoRow(_start);
+        startColumn = _endpointToColumn(_start);
     }
     CATCH_RETURN();
 
-    Endpoint newStart;
-    Endpoint newEnd;
+    std::pair<Endpoint, Endpoint> newEndpoints;
+
+    auto moveFunc = &_moveByDocument;
     if (unit == TextUnit::TextUnit_Character)
     {
-        for (int i = 0; i < abs(count); ++i)
-        {
-            // check if we're at the edge of the screen info buffer
-            if (currentScreenInfoRow == limitingRow &&
-                currentColumn == lastColumnInRow)
-            {
-                break;
-            }
-            if (currentColumn == lastColumnInRow)
-            {
-                // we're at the edge of a row and need to go to the
-                // next one
-                currentColumn = firstColumnInRow;
-                currentScreenInfoRow += incrementAmount;
-            }
-            else
-            {
-                // moving somewhere away from the edges of a row
-                currentColumn += incrementAmount;
-            }
-            *pRetVal += incrementAmount;
-        }
-
-        // update endpoint values on temp variables, so if an exception is
-        // thrown partway through we don't end up with only one endpoint
-        // changed.
-        try
-        {
-            newStart = _screenInfoRowToEndpoint(currentScreenInfoRow) + currentColumn;
-            newEnd = newStart;
-        }
-        CATCH_RETURN();
+        moveFunc = &_moveByCharacter;
     }
     else if (unit <= TextUnit::TextUnit_Line)
     {
-        // special cases to move to a line boundary first if the range
-        // isn't already at one
-        if (count < 0 && currentColumn != _getFirstColumnIndex())
-        {
-            currentColumn = 0;
-            count -= incrementAmount;
-            *pRetVal += incrementAmount;
-        }
+        moveFunc = &_moveByLine;
+    }
 
-        // move the range
-        for (int i = 0; i < abs(count); ++i)
-        {
-            if (currentScreenInfoRow == limitingRow)
-            {
-                break;
-            }
-            currentScreenInfoRow += incrementAmount;
-            *pRetVal += incrementAmount;
-        }
+    try
+    {
+        newEndpoints = moveFunc(count,
+                                incrementAmount,
+                                limitingRow,
+                                firstColumnInRow,
+                                lastColumnInRow,
+                                startScreenInfoRow,
+                                startColumn,
+                                pRetVal);
+    }
+    CATCH_RETURN();
 
-        // update endpoint values on temp variables, so if an exception is
-        // thrown partway through we don't end up with only one endpoint
-        // changed.
-        try
-        {
-            newStart = _screenInfoRowToEndpoint(currentScreenInfoRow);
-            newEnd = newStart + _getLastColumnIndex();
-        }
-        CATCH_RETURN();
+    // check that a move actually occurred.
+    if (_start == newEndpoints.first &&
+        _end == newEndpoints.second)
+    {
+        *pRetVal = 0;
     }
     else
     {
-        // document movement (really just expand to document)
-        try
-        {
-            newStart = _screenInfoRowToEndpoint(_getFirstScreenInfoRowIndex()) + _getFirstColumnIndex();
-            newEnd = _screenInfoRowToEndpoint(_getLastScreenInfoRowIndex()) + _getLastColumnIndex();
-        }
-        CATCH_RETURN();
+        _start = newEndpoints.first;
+        _end = newEndpoints.second;
     }
-
-    _start = newStart;
-    _end = newEnd;
 
     // a range can't be degenerate after both endpoints have been
     // moved.
@@ -1817,4 +1776,139 @@ const int UiaTextRange::_compareScreenCoords(_In_ const ScreenInfoRow rowA,
     }
     // colA == colB
     return 0;
+}
+
+// Routine Description:
+// - calculates new Endpoints if they were to be moved moveCount times
+// by character.
+// Arguments:
+// - moveCount - the number of times to move
+// - incrementAmount - the amount to adjust for each move
+// - limitingRow - the last row in the direction being moved
+// - firstColumnInRow - the first column in the direction being moved
+// - lastColumnInRow - the last column in the direction being moved
+// - startScreenInfoRow - the ScreenInfoRow that _start corresponds to
+// - startColumn - the Column that _start corresponds to
+// - pAmountMoved - the number of times that the return values are "moved"
+// Return Value:
+// - a pair of endpoints of the form <start, end>
+std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacter(_In_ const int moveCount,
+                                                             _In_ const int incrementAmount,
+                                                             _In_ const ScreenInfoRow limitingRow,
+                                                             _In_ const Column firstColumnInRow,
+                                                             _In_ const Column lastColumnInRow,
+                                                             _In_ const ScreenInfoRow startScreenInfoRow,
+                                                             _In_ const Column startColumn,
+                                                             _Out_ int* const pAmountMoved)
+{
+    int count = moveCount;
+    ScreenInfoRow currentScreenInfoRow = startScreenInfoRow;
+    Column currentColumn = startColumn;
+    for (int i = 0; i < abs(count); ++i)
+    {
+        // check if we're at the edge of the screen info buffer
+        if (currentScreenInfoRow == limitingRow &&
+            currentColumn == lastColumnInRow)
+        {
+            break;
+        }
+        if (currentColumn == lastColumnInRow)
+        {
+            // we're at the edge of a row and need to go to the
+            // next one
+            currentColumn = firstColumnInRow;
+            currentScreenInfoRow += incrementAmount;
+        }
+        else
+        {
+            // moving somewhere away from the edges of a row
+            currentColumn += incrementAmount;
+        }
+        *pAmountMoved += incrementAmount;
+    }
+
+    Endpoint newStart = _screenInfoRowToEndpoint(currentScreenInfoRow) + currentColumn;
+    Endpoint newEnd = newStart;
+    return std::make_pair<Endpoint, Endpoint>(std::move(newStart), std::move(newEnd));
+}
+
+// Routine Description:
+// - calculates new Endpoints if they were to be moved moveCount times
+// by line.
+// Arguments:
+// - moveCount - the number of times to move
+// - incrementAmount - the amount to adjust for each move
+// - limitingRow - the last row in the direction being moved
+// - firstColumnInRow - the first column in the direction being moved
+// - lastColumnInRow - the last column in the direction being moved
+// - startScreenInfoRow - the ScreenInfoRow that _start corresponds to
+// - startColumn - the Column that _start corresponds to
+// - pAmountMoved - the number of times that the return values are "moved"
+// Return Value:
+// - a pair of endpoints of the form <start, end>
+std::pair<Endpoint, Endpoint> UiaTextRange::_moveByLine(_In_ const int moveCount,
+                                                        _In_ const int incrementAmount,
+                                                        _In_ const ScreenInfoRow limitingRow,
+                                                        _In_ const Column /* firstColumnInRow */,
+                                                        _In_ const Column /* lastColumnInRow */,
+                                                        _In_ const ScreenInfoRow startScreenInfoRow,
+                                                        _In_ const Column startColumn,
+                                                        _Out_ int* const pAmountMoved)
+{
+    int count = moveCount;
+    ScreenInfoRow currentScreenInfoRow = startScreenInfoRow;
+    Column currentColumn = startColumn;
+    // special cases to move to a line boundary first if the range
+    // isn't already at one
+    if (count < 0 && currentColumn != _getFirstColumnIndex())
+    {
+        currentColumn = 0;
+        count -= incrementAmount;
+        *pAmountMoved += incrementAmount;
+    }
+
+    // move the range
+    for (int i = 0; i < abs(count); ++i)
+    {
+        if (currentScreenInfoRow == limitingRow)
+        {
+            break;
+        }
+        currentScreenInfoRow += incrementAmount;
+        *pAmountMoved += incrementAmount;
+    }
+
+    Endpoint newStart = _screenInfoRowToEndpoint(currentScreenInfoRow);
+    Endpoint newEnd = newStart + _getLastColumnIndex();
+    return std::make_pair<Endpoint, Endpoint>(std::move(newStart), std::move(newEnd));
+}
+
+// Routine Description:
+// - calculates new Endpoints if they were to be moved moveCount times
+// by document.
+// Arguments:
+// - moveCount - the number of times to move
+// - incrementAmount - the amount to adjust for each move
+// - limitingRow - the last row in the direction being moved
+// - firstColumnInRow - the first column in the direction being moved
+// - lastColumnInRow - the last column in the direction being moved
+// - startScreenInfoRow - the ScreenInfoRow that _start corresponds to
+// - startColumn - the Column that _start corresponds to
+// - pAmountMoved - the number of times that the return values are "moved"
+// Return Value:
+// - a pair of endpoints of the form <start, end>
+std::pair<Endpoint, Endpoint> UiaTextRange::_moveByDocument(_In_ const int /* moveCount */,
+                                                            _In_ const int incrementAmount,
+                                                            _In_ const ScreenInfoRow /* limitingRow */,
+                                                            _In_ const Column /* firstColumnInRow */,
+                                                            _In_ const Column /* lastColumnInRow */,
+                                                            _In_ const ScreenInfoRow /* startScreenInfoRow */,
+                                                            _In_ const Column /* startColumn */,
+                                                            _Out_ int* const pAmountMoved)
+{
+    // really just expand to document
+    *pAmountMoved = incrementAmount;
+    Endpoint newStart = _screenInfoRowToEndpoint(_getFirstScreenInfoRowIndex()) + _getFirstColumnIndex();
+    Endpoint newEnd = _screenInfoRowToEndpoint(_getLastScreenInfoRowIndex()) + _getLastColumnIndex();
+    return std::make_pair<Endpoint, Endpoint>(std::move(newStart), std::move(newEnd));
 }
