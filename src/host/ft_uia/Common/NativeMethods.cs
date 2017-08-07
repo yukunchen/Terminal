@@ -318,6 +318,14 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
             COORD dwBufferCoord,
             ref SMALL_RECT lpReadRegion);
 
+        [DllImport("kernel32.dll", EntryPoint = "WriteConsoleOutputCharacterW", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern bool WriteConsoleOutputCharacter(
+            IntPtr hConsoleOutput,
+            string lpCharacter,
+            UInt32 nLength,
+            COORD dwWriteCoord,
+            ref UInt32 lpNumberOfCharsWritten);
+
     }
 
     /// <summary>
