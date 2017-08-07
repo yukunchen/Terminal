@@ -66,6 +66,51 @@ namespace Conhost.UIA.Tests
             return screenBufferInfo.dwSize.Y;
         }
 
+        private void _ClearScreenBuffer(CmdApp app)
+        {
+            //System.Diagnostics.Debugger.Break();
+            IntPtr outHandle = app.GetStdOutHandle();
+            WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX screenInfo = new WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX();
+            screenInfo.cbSize = (uint)Marshal.SizeOf(screenInfo);
+            WinCon.GetConsoleScreenBufferInfoEx(outHandle, ref screenInfo);
+            int charCount = screenInfo.dwSize.X * screenInfo.dwSize.Y;
+            string writeString = new string(' ', charCount);
+            WinCon.COORD coord = new WinCon.COORD();
+            coord.X = 0;
+            coord.Y = 0;
+            UInt32 charsWritten = 0;
+            WinCon.WriteConsoleOutputCharacter(outHandle,
+                                               writeString,
+                                               (uint)charCount,
+                                               coord,
+                                               ref charsWritten);
+            Verify.AreEqual((UInt32)charCount, charsWritten);
+        }
+
+        private void _WriteCharTestText(CmdApp app)
+        {
+            IntPtr outHandle = app.GetStdOutHandle();
+            WinCon.COORD coord = new WinCon.COORD();
+            coord.X = 0;
+            coord.Y = 0;
+            string row1 = "1234567890";
+            string row2 = "   abcdefghijk";
+            UInt32 charsWritten = 0;
+            WinCon.WriteConsoleOutputCharacter(outHandle,
+                                               row1,
+                                               (uint)row1.Length,
+                                               coord,
+                                               ref charsWritten);
+
+            coord.Y = 1;
+            WinCon.WriteConsoleOutputCharacter(outHandle,
+                                               row2,
+                                               (uint)row2.Length,
+                                               coord,
+                                               ref charsWritten);
+
+        }
+
         private void _FillOutputBufferWithData(CmdApp app)
         {
             for (int i = 0; i < _GetTotalRows(app) * 2 / 3; ++i)
@@ -133,6 +178,52 @@ namespace Conhost.UIA.Tests
                     Verify.IsTrue(consoleText.Equals(allText));
                 }
             }
+        }
+
+        [TestMethod]
+        public void CanGetTextAtCharacterLevel()
+        {
+            using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
+            {
+                const int noMaxLength = -1;
+                const string row1 = "1234567890";
+                const string row2 = "   abcdefghijk";
+                _ClearScreenBuffer(app);
+                _WriteCharTestText(app);
+                AutomationElement textAreaUiaElement = GetTextAreaUiaElement(app);
+                TextPattern textPattern = textAreaUiaElement.GetCurrentPattern(TextPattern.Pattern) as TextPattern;
+                TextPatternRange[] ranges = textPattern.GetVisibleRanges();
+                TextPatternRange range = ranges[0].Clone();
+
+                // should be able to get each char in row1
+                range.ExpandToEnclosingUnit(TextUnit.Character);
+                foreach (char ch in row1)
+                {
+                    string text = range.GetText(noMaxLength);
+                    Verify.AreEqual(ch.ToString(), text);
+                    range.Move(TextUnit.Character, 1);
+                }
+
+                // should be able to get each char in row2, including starting spaces
+                range = ranges[1].Clone();
+                range.ExpandToEnclosingUnit(TextUnit.Character);
+                foreach (char ch in row2)
+                {
+                    string text = range.GetText(noMaxLength);
+                    Verify.AreEqual(ch.ToString(), text);
+                    range.Move(TextUnit.Character, 1);
+                }
+
+                // taking half of each row should return correct text with 
+                // spaces if they appear before the last non-whitespace char
+                range = ranges[0].Clone();
+                range.MoveEndpointByUnit(TextPatternRangeEndpoint.Start, TextUnit.Character, 8);
+                range.MoveEndpointByUnit(TextPatternRangeEndpoint.End, TextUnit.Character, 8);
+                Verify.AreEqual("90\r\n   abcde", range.GetText(noMaxLength));
+
+
+            }
+
         }
 
         [TestMethod]
