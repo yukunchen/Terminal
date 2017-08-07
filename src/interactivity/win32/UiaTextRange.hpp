@@ -21,6 +21,7 @@ Author(s):
 #include "../../host/cursor.h"
 
 #include <deque>
+#include <tuple>
 
 #ifdef UNIT_TESTING
 class UiaTextRangeTests;
@@ -75,10 +76,43 @@ namespace Microsoft
             namespace Win32
             {
 
+
                 class UiaTextRange final : public ITextRangeProvider
                 {
                 private:
                     static IdType id;
+
+                    // indicates which direction a movement operation
+                    // is going
+                    enum class MovementDirection
+                    {
+                        Forward,
+                        Backward
+                    };
+
+                    // common information used by the variety of
+                    // movement operations
+                    struct MoveState
+                    {
+                        // screen/column position of _start
+                        ScreenInfoRow StartScreenInfoRow;
+                        Column StartColumn;
+                        // screen/column position of _end
+                        ScreenInfoRow EndScreenInfoRow;
+                        Column EndColumn;
+                        // last row in the direction being moved
+                        ScreenInfoRow LimitingRow;
+                        // first column in the direction being moved
+                        Column FirstColumnInRow;
+                        // last column in the direction being moved
+                        Column LastColumnInRow;
+                        // increment amount
+                        int Increment;
+
+                        MoveState(const UiaTextRange& range,
+                                  MovementDirection direction);
+                    };
+                    friend MoveState;
 
                 public:
 
@@ -261,32 +295,35 @@ namespace Microsoft
                                                           _In_ const ScreenInfoRow rowB,
                                                           _In_ const Column colB);
 
-                    static std::pair<Endpoint, Endpoint> _moveByCharacter(_In_ const int count,
-                                                                          _In_ const int incrementAmount,
-                                                                          _In_ const ScreenInfoRow limitingRow,
-                                                                          _In_ const Column firstColumnInRow,
-                                                                          _In_ const Column lastColumnInRow,
-                                                                          _In_ const ScreenInfoRow startScreenInfoRow,
-                                                                          _In_ const Column startColumn,
+                    static std::pair<Endpoint, Endpoint> _moveByCharacter(_In_ const int moveCount,
+                                                                          _In_ const MoveState moveState,
                                                                           _Out_ int* const pAmountMoved);
 
                     static std::pair<Endpoint, Endpoint> _moveByLine(_In_ const int moveCount,
-                                                                     _In_ const int incrementAmount,
-                                                                     _In_ const ScreenInfoRow limitingRow,
-                                                                     _In_ const Column firstColumnInRow,
-                                                                     _In_ const Column lastColumnInRow,
-                                                                     _In_ const ScreenInfoRow startScreenInfoRow,
-                                                                     _In_ const Column startColumn,
+                                                                     _In_ const MoveState moveState,
                                                                      _Out_ int* const pAmountMoved);
 
                     static std::pair<Endpoint, Endpoint> _moveByDocument(_In_ const int moveCount,
-                                                                         _In_ const int incrementAmount,
-                                                                         _In_ const ScreenInfoRow limitingRow,
-                                                                         _In_ const Column firstColumnInRow,
-                                                                         _In_ const Column lastColumnInRow,
-                                                                         _In_ const ScreenInfoRow startScreenInfoRow,
-                                                                         _In_ const Column startColumn,
+                                                                         _In_ const MoveState moveState,
                                                                          _Out_ int* const pAmountMoved);
+
+                    static std::tuple<Endpoint, Endpoint, bool>
+                    _moveEndpointByUnitCharacter(_In_ const int moveCount,
+                                                 _In_ const TextPatternRangeEndpoint endpoint,
+                                                 _In_ const MoveState moveState,
+                                                 _Out_ int* const pAmountMoved);
+
+                    static std::tuple<Endpoint, Endpoint, bool>
+                    _moveEndpointByUnitLine(_In_ const int moveCount,
+                                            _In_ const TextPatternRangeEndpoint endpoint,
+                                            _In_ const MoveState moveState,
+                                            _Out_ int* const pAmountMoved);
+
+                    static std::tuple<Endpoint, Endpoint, bool>
+                    _moveEndpointByUnitDocument(_In_ const int moveCount,
+                                                _In_ const TextPatternRangeEndpoint endpoint,
+                                                _In_ const MoveState moveState,
+                                                _Out_ int* const pAmountMoved);
 
 #ifdef UNIT_TESTING
                     friend class ::UiaTextRangeTests;
