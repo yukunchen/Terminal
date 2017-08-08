@@ -68,7 +68,6 @@ namespace Conhost.UIA.Tests
 
         private void _ClearScreenBuffer(CmdApp app)
         {
-            //System.Diagnostics.Debugger.Break();
             IntPtr outHandle = app.GetStdOutHandle();
             WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX screenInfo = new WinCon.CONSOLE_SCREEN_BUFFER_INFO_EX();
             screenInfo.cbSize = (uint)Marshal.SizeOf(screenInfo);
@@ -214,16 +213,13 @@ namespace Conhost.UIA.Tests
                     range.Move(TextUnit.Character, 1);
                 }
 
-                // taking half of each row should return correct text with 
+                // taking half of each row should return correct text with
                 // spaces if they appear before the last non-whitespace char
                 range = ranges[0].Clone();
                 range.MoveEndpointByUnit(TextPatternRangeEndpoint.Start, TextUnit.Character, 8);
                 range.MoveEndpointByUnit(TextPatternRangeEndpoint.End, TextUnit.Character, 8);
                 Verify.AreEqual("90\r\n   abcde", range.GetText(noMaxLength));
-
-
             }
-
         }
 
         [TestMethod]
