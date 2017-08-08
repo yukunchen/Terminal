@@ -26,8 +26,8 @@ HRESULT GdiEngine::StartPaint()
     // If we're already painting, we don't need to paint. Return quickly.
     RETURN_HR_IF(S_FALSE, _fPaintStarted);
 
-    // Signal that we're starting to paint.
-    _fPaintStarted = true;
+    // If the window we're painting on is invisible, we don't need to paint. Return quickly.
+    RETURN_HR_IF(S_FALSE, !IsWindowVisible(_hwndTargetWindow));
 
     // At the beginning of a new frame, we have 0 lines ready for painting in PolyTextOut
     _cPolyText = 0;
@@ -39,6 +39,9 @@ HRESULT GdiEngine::StartPaint()
     // We'll still use the PAINTSTRUCT for information because it's convenient.
     _psInvalidData.hdc = GetDC(_hwndTargetWindow);
     RETURN_LAST_ERROR_IF_NULL(_psInvalidData.hdc);
+
+    // Signal that we're starting to paint.
+    _fPaintStarted = true;
 
     _psInvalidData.fErase = TRUE;
     _psInvalidData.rcPaint = _rcInvalid;
