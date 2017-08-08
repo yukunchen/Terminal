@@ -138,16 +138,6 @@ class UiaTextRangeTests
         };
         VERIFY_IS_FALSE(notDegenerate1.IsDegenerate());
         VERIFY_ARE_EQUAL(1u, notDegenerate1._rowCountInRange());
-
-        UiaTextRange notDegenerate2
-        {
-            &_dummyProvider,
-            35,
-            20,
-            false
-        };
-        VERIFY_IS_FALSE(notDegenerate2.IsDegenerate());
-        VERIFY_ARE_EQUAL(notDegenerate2._getTotalRows(), notDegenerate2._rowCountInRange());
     }
 
     TEST_METHOD(CanCheckIfScreenInfoRowIsInViewport)
@@ -177,7 +167,6 @@ class UiaTextRangeTests
         Viewport viewport;
         viewport.Top = 0;
         viewport.Bottom = 10;
-
 
         std::vector<std::pair<int, int>> viewportSizes =
         {
@@ -213,7 +202,6 @@ class UiaTextRangeTests
             VERIFY_ARE_EQUAL(i / rowWidth, _range->_endpointToTextBufferRow(i));
         }
     }
-
 
     TEST_METHOD(CanTranslateTextBufferRowToEndpoint)
     {
