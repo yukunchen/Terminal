@@ -36,14 +36,14 @@ UiaTextRange::MoveState::MoveState(const UiaTextRange& range,
         LimitingRow = UiaTextRange::_getLastScreenInfoRowIndex();
         FirstColumnInRow = UiaTextRange::_getFirstColumnIndex();
         LastColumnInRow = UiaTextRange::_getLastColumnIndex();
-        Increment = 1;
+        Increment = MovementIncrement::Forward;
     }
     else
     {
         LimitingRow = UiaTextRange::_getFirstScreenInfoRowIndex();
         FirstColumnInRow = UiaTextRange::_getLastColumnIndex();
         LastColumnInRow = UiaTextRange::_getFirstColumnIndex();
-        Increment = -1;
+        Increment = MovementIncrement::Backward;
     }
 }
 
@@ -1589,14 +1589,14 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacter(_In_ const int move
             // we're at the edge of a row and need to go to the
             // next one
             currentColumn = moveState.FirstColumnInRow;
-            currentScreenInfoRow += moveState.Increment;
+            currentScreenInfoRow += static_cast<int>(moveState.Increment);
         }
         else
         {
             // moving somewhere away from the edges of a row
-            currentColumn += moveState.Increment;
+            currentColumn += static_cast<int>(moveState.Increment);
         }
-        *pAmountMoved += moveState.Increment;
+        *pAmountMoved += static_cast<int>(moveState.Increment);
     }
 
     Endpoint newStart = _screenInfoRowToEndpoint(currentScreenInfoRow) + currentColumn;
@@ -1627,8 +1627,8 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByLine(_In_ const int moveCount
     if (count < 0 && currentColumn != _getFirstColumnIndex())
     {
         currentColumn = _getFirstColumnIndex();
-        count -= moveState.Increment;
-        *pAmountMoved += moveState.Increment;
+        count -= static_cast<int>(moveState.Increment);
+        *pAmountMoved += static_cast<int>(moveState.Increment);
     }
 
     // move the range
@@ -1638,8 +1638,8 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByLine(_In_ const int moveCount
         {
             break;
         }
-        currentScreenInfoRow += moveState.Increment;
-        *pAmountMoved += moveState.Increment;
+        currentScreenInfoRow += static_cast<int>(moveState.Increment);
+        *pAmountMoved += static_cast<int>(moveState.Increment);
     }
 
     Endpoint newStart = _screenInfoRowToEndpoint(currentScreenInfoRow);
@@ -1676,7 +1676,7 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByDocument(_In_ const int /* mo
     else
     {
         // really just expand to document
-        *pAmountMoved = moveState.Increment;
+        *pAmountMoved = static_cast<int>(moveState.Increment);
         newStart = _screenInfoRowToEndpoint(_getFirstScreenInfoRowIndex()) + _getFirstColumnIndex();
         newEnd = _screenInfoRowToEndpoint(_getLastScreenInfoRowIndex()) + _getLastColumnIndex();
     }
@@ -1728,14 +1728,14 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitCharacter(
             // we're at the edge of a row and need to go to the
             // next one
             currentColumn = moveState.FirstColumnInRow;
-            currentScreenInfoRow += moveState.Increment;
+            currentScreenInfoRow += static_cast<int>(moveState.Increment);
         }
         else
         {
             // moving somewhere away from the edges of a row
-            currentColumn += moveState.Increment;
+            currentColumn += static_cast<int>(moveState.Increment);
         }
-        *pAmountMoved += moveState.Increment;
+        *pAmountMoved += static_cast<int>(moveState.Increment);
     }
 
     // translate the row back to an endpoint and handle any crossed endpoints
@@ -1802,9 +1802,9 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitLine(_In_ 
             if (moveState.StartScreenInfoRow != moveState.LimitingRow && moveState.StartColumn != _getFirstColumnIndex())
             {
                 // partial movement to the beginning of the next row
-                count -= moveState.Increment;
-                *pAmountMoved += moveState.Increment;
-                currentScreenInfoRow += moveState.Increment;
+                count -= static_cast<int>(moveState.Increment);
+                *pAmountMoved += static_cast<int>(moveState.Increment);
+                currentScreenInfoRow += static_cast<int>(moveState.Increment);
                 currentColumn = _getFirstColumnIndex();
             }
             else if (moveState.StartScreenInfoRow == moveState.LimitingRow && moveState.StartColumn == _getLastColumnIndex())
@@ -1816,8 +1816,8 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitLine(_In_ 
             else if (moveState.StartScreenInfoRow == moveState.LimitingRow)
             {
                 // move to the end of the last row
-                count -= moveState.Increment;
-                *pAmountMoved += moveState.Increment;
+                count -= static_cast<int>(moveState.Increment);
+                *pAmountMoved += static_cast<int>(moveState.Increment);
                 currentColumn = _getLastColumnIndex();
                 forceDegenerate = true;
             }
@@ -1828,8 +1828,8 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitLine(_In_ 
             // the row so move there first to align with the text unit boundary
             if (moveState.StartColumn != _getFirstColumnIndex())
             {
-                count -= moveState.Increment;
-                *pAmountMoved += moveState.Increment;
+                count -= static_cast<int>(moveState.Increment);
+                *pAmountMoved += static_cast<int>(moveState.Increment);
                 currentColumn = _getFirstColumnIndex();
             }
         }
@@ -1854,18 +1854,18 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitLine(_In_ 
                 // _end is somewhere on the first line while we're moving
                 // backwards so we move it to the beginning of the first line,
                 // later to be made a degenerate range.
-                count -= moveState.Increment;
-                *pAmountMoved += moveState.Increment;
+                count -= static_cast<int>(moveState.Increment);
+                *pAmountMoved += static_cast<int>(moveState.Increment);
                 currentColumn = _getFirstColumnIndex();
                 forceDegenerate = true;
             }
             else if (moveState.EndColumn != _getLastColumnIndex())
             {
                 // _end is not at the last column in a row, so we move it backwards to it
-                count -= moveState.Increment;
-                *pAmountMoved += moveState.Increment;
+                count -= static_cast<int>(moveState.Increment);
+                *pAmountMoved += static_cast<int>(moveState.Increment);
                 currentColumn = _getLastColumnIndex();
-                currentScreenInfoRow += moveState.Increment;
+                currentScreenInfoRow += static_cast<int>(moveState.Increment);
             }
         }
         else
@@ -1874,8 +1874,8 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitLine(_In_ 
             if (moveState.EndColumn != _getLastColumnIndex())
             {
                 // _end is not at the last column in a row, so we move forward to it
-                count -= moveState.Increment;
-                *pAmountMoved += moveState.Increment;
+                count -= static_cast<int>(moveState.Increment);
+                *pAmountMoved += static_cast<int>(moveState.Increment);
                 currentColumn = _getLastColumnIndex();
             }
         }
@@ -1884,9 +1884,9 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitLine(_In_ 
     // move the row that the endpoint corresponds to
     while (count != 0 && currentScreenInfoRow != moveState.LimitingRow)
     {
-        count -= moveState.Increment;
-        currentScreenInfoRow += moveState.Increment;
-        *pAmountMoved += moveState.Increment;
+        count -= static_cast<int>(moveState.Increment);
+        currentScreenInfoRow += static_cast<int>(moveState.Increment);
+        *pAmountMoved += static_cast<int>(moveState.Increment);
     }
 
     // translate the row back to an endpoint and handle any crossed endpoints
@@ -1947,7 +1947,7 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitDocument(_
             if (!(moveState.StartScreenInfoRow == _getFirstScreenInfoRowIndex() &&
                   moveState.StartColumn == _getFirstColumnIndex()))
             {
-                *pAmountMoved += moveState.Increment;
+                *pAmountMoved += static_cast<int>(moveState.Increment);
             }
         }
         else
@@ -1959,7 +1959,7 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitDocument(_
             if (!(moveState.StartScreenInfoRow == _getLastScreenInfoRowIndex() &&
                   moveState.StartColumn == _getLastColumnIndex()))
             {
-                *pAmountMoved += moveState.Increment;
+                *pAmountMoved += static_cast<int>(moveState.Increment);
             }
         }
     }
@@ -1974,7 +1974,7 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitDocument(_
             if (!(moveState.EndScreenInfoRow == _getFirstScreenInfoRowIndex() &&
                   moveState.EndColumn == _getFirstColumnIndex()))
             {
-                *pAmountMoved += moveState.Increment;
+                *pAmountMoved += static_cast<int>(moveState.Increment);
             }
         }
         else
@@ -1985,7 +1985,7 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitDocument(_
             if (!(moveState.EndScreenInfoRow == _getLastScreenInfoRowIndex() &&
                   moveState.EndColumn == _getLastColumnIndex()))
             {
-                *pAmountMoved += moveState.Increment;
+                *pAmountMoved += static_cast<int>(moveState.Increment);
             }
         }
     }

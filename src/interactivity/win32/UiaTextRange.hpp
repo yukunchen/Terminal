@@ -90,6 +90,14 @@ namespace Microsoft
                         Backward
                     };
 
+                    // valid increment amounts for forward and
+                    // backward movement
+                    enum class MovementIncrement
+                    {
+                        Forward = 1,
+                        Backward = -1
+                    };
+
                     // common information used by the variety of
                     // movement operations
                     struct MoveState
@@ -107,7 +115,7 @@ namespace Microsoft
                         // last column in the direction being moved
                         Column LastColumnInRow;
                         // increment amount
-                        int Increment;
+                        MovementIncrement Increment;
 
                         MoveState(const UiaTextRange& range,
                                   MovementDirection direction);
