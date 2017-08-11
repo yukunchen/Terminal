@@ -14,6 +14,7 @@
 
 #include "../host/selection.hpp"
 
+
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing;
 
@@ -22,6 +23,29 @@ using namespace Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing;
 #undef UIATEXTRANGE_DEBUG_MSGS
 
 IdType UiaTextRange::id = 0;
+
+UiaTextRange::MoveState::MoveState(const UiaTextRange& range,
+                                   MovementDirection direction) :
+    StartScreenInfoRow{ UiaTextRange::_endpointToScreenInfoRow(range.GetStart()) },
+    StartColumn{ UiaTextRange::_endpointToColumn(range.GetStart()) },
+    EndScreenInfoRow{ UiaTextRange::_endpointToScreenInfoRow(range.GetEnd()) },
+    EndColumn{ UiaTextRange::_endpointToColumn(range.GetEnd()) }
+{
+    if (direction == MovementDirection::Forward)
+    {
+        LimitingRow = UiaTextRange::_getLastScreenInfoRowIndex();
+        FirstColumnInRow = UiaTextRange::_getFirstColumnIndex();
+        LastColumnInRow = UiaTextRange::_getLastColumnIndex();
+        Increment = 1;
+    }
+    else
+    {
+        LimitingRow = UiaTextRange::_getFirstScreenInfoRowIndex();
+        FirstColumnInRow = UiaTextRange::_getLastColumnIndex();
+        LastColumnInRow = UiaTextRange::_getFirstColumnIndex();
+        Increment = -1;
+    }
+}
 
 #if _DEBUG
 #include <sstream>
@@ -229,6 +253,8 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
                            _In_ const bool degenerate) :
     UiaTextRange(pProvider)
 {
+    THROW_HR_IF(E_INVALIDARG, !degenerate && start > end);
+
     _degenerate = degenerate;
     _start = start;
     _end = degenerate ? start : end;
@@ -410,10 +436,11 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
 
 IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal)
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+        gci->UnlockConsole();
     });
 
     *pRetVal = FALSE;
@@ -484,6 +511,12 @@ IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endp
 
 IFACEMETHODIMP UiaTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
 {
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    auto Unlock = wil::ScopeExit([&]
+    {
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+    });
+
     ApiMsgExpandToEnclosingUnit apiMsg;
     apiMsg.Unit = unit;
     apiMsg.OriginalStart = _start;
@@ -494,7 +527,11 @@ IFACEMETHODIMP UiaTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
         const ScreenInfoRow topRow = _getFirstScreenInfoRowIndex();
         const ScreenInfoRow bottomRow = _getLastScreenInfoRowIndex();
 
-        if (unit <= TextUnit::TextUnit_Line)
+        if (unit == TextUnit::TextUnit_Character)
+        {
+            _end = _start;
+        }
+        else if (unit <= TextUnit::TextUnit_Line)
         {
             // expand to line
             _start = _textBufferRowToEndpoint(_endpointToTextBufferRow(_start));
@@ -552,10 +589,11 @@ IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttribut
 
 IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+        gci->UnlockConsole();
     });
 
     *ppRetVal = nullptr;
@@ -620,37 +658,79 @@ IFACEMETHODIMP UiaTextRange::GetEnclosingElement(_Outptr_result_maybenull_ IRawE
 
 IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+        gci->UnlockConsole();
     });
 
     std::wstring wstr = L"";
+
+    if (maxLength < -1)
+    {
+        return E_INVALIDARG;
+    }
+    // the caller must pass in a value for the max length of the text
+    // to retrieve. a value of -1 means they don't want the text
+    // truncated.
     const bool getPartialText = maxLength != -1;
 
     if (!_degenerate)
     {
         try
         {
-            const TextBufferRow startTextBufferRow = _endpointToTextBufferRow(_start);
+            const ScreenInfoRow startScreenInfoRow = _endpointToScreenInfoRow(_start);
+            const Column startColumn = _endpointToColumn(_start);
+            const ScreenInfoRow endScreenInfoRow = _endpointToScreenInfoRow(_end);
+            const Column endColumn = _endpointToColumn(_end);
             const unsigned int totalRowsInRange = _rowCountInRange();
             const TEXT_BUFFER_INFO* const pTextBuffer = _getTextBuffer();
+
+            ScreenInfoRow currentScreenInfoRow;
             for (unsigned int i = 0; i < totalRowsInRange; ++i)
             {
-                const int rowIndex = _normalizeRow(startTextBufferRow + i);
+                currentScreenInfoRow = startScreenInfoRow + i;
+                const int rowIndex = _screenInfoRowToTextBufferRow(currentScreenInfoRow);
                 if (rowIndex >= static_cast<int>(_getTotalRows()) || rowIndex < 0)
                 {
-                    return static_cast<HRESULT>(UIA_E_INVALIDOPERATION);
+                    throw UIA_E_INVALIDOPERATION;
                 }
-                const ROW row = pTextBuffer->Rows[rowIndex];
-                if (row.CharRow.ContainsText())
+
+                const ROW* const pRow = &pTextBuffer->Rows[rowIndex];
+
+                if (pRow->CharRow.ContainsText())
                 {
-                    std::wstring tempString = std::wstring(row.CharRow.Chars + row.CharRow.Left,
-                                                        row.CharRow.Chars + row.CharRow.Right);
-                    wstr += tempString;
+                    int startIndex = 0;
+                    int endIndex = pRow->CharRow.Right;
+                    if (currentScreenInfoRow == startScreenInfoRow)
+                    {
+                        startIndex = startColumn;
+                    }
+                    if (currentScreenInfoRow == endScreenInfoRow)
+                    {
+                        // prevent the end from going past the last non-whitespace char in the row
+                        endIndex = min(static_cast<int>(endColumn + 1), pRow->CharRow.Right);
+                    }
+
+                    // if startIndex >= endIndex then _start is
+                    // further to the right than the last
+                    // non-whitespace char in the row so there
+                    // wouldn't be any text to grab.
+                    if (startIndex < endIndex)
+                    {
+                        std::wstring tempString = std::wstring(pRow->CharRow.Chars + startIndex,
+                                                               pRow->CharRow.Chars + endIndex);
+                        // add to result string
+                        wstr += tempString;
+                    }
                 }
-                wstr += L"\r\n";
+
+                if (currentScreenInfoRow != endScreenInfoRow)
+                {
+                    wstr += L"\r\n";
+                }
+
                 if (getPartialText && wstr.size() > static_cast<size_t>(maxLength))
                 {
                     wstr.resize(maxLength);
@@ -671,11 +751,15 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit /*unit*/,
+IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit,
                                   _In_ int count,
                                   _Out_ int* pRetVal)
 {
-    // N.B. we only support line movement currently
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    auto Unlock = wil::ScopeExit([&]
+    {
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+    });
 
     *pRetVal = 0;
     if (count == 0)
@@ -686,6 +770,7 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit /*unit*/,
     ApiMsgMove apiMsg;
     apiMsg.OriginalStart = _start;
     apiMsg.OriginalEnd = _end;
+    apiMsg.Unit = unit;
     apiMsg.RequestedCount = count;
 #if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
     OutputDebugString(L"Move\n");
@@ -699,51 +784,30 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit /*unit*/,
     _outputRowConversions();
 #endif
 
-    int incrementAmount;
-    ScreenInfoRow limitingRow;
-    ScreenInfoRow currentScreenInfoRow;
+    auto moveFunc = &_moveByDocument;
+    if (unit == TextUnit::TextUnit_Character)
+    {
+        moveFunc = &_moveByCharacter;
+    }
+    else if (unit <= TextUnit::TextUnit_Line)
+    {
+        moveFunc = &_moveByLine;
+    }
+
+    MovementDirection moveDirection = (count > 0) ? MovementDirection::Forward : MovementDirection::Backward;
+    std::pair<Endpoint, Endpoint> newEndpoints;
+
     try
     {
-        if (count > 0)
-        {
-            // moving forward
-            incrementAmount = 1;
-            limitingRow = _getLastScreenInfoRowIndex();
-        }
-        else
-        {
-            // moving backward
-            incrementAmount = -1;
-            limitingRow = _getFirstScreenInfoRowIndex();
-        }
-        currentScreenInfoRow = _endpointToScreenInfoRow(_start);
+        MoveState moveState{ *this, moveDirection };
+        newEndpoints = moveFunc(count,
+                                moveState,
+                                pRetVal);
     }
     CATCH_RETURN();
 
-    for (int i = 0; i < abs(count); ++i)
-    {
-        if (currentScreenInfoRow == limitingRow)
-        {
-            break;
-        }
-        currentScreenInfoRow += incrementAmount;
-        *pRetVal += incrementAmount;
-    }
-
-    // update endpoint values on temp variables, so if an exception is
-    // thrown partway through we don't end up with only one endpoint
-    // changed.
-    Endpoint newStart;
-    Endpoint newEnd;
-    try
-    {
-        newStart = _screenInfoRowToEndpoint(currentScreenInfoRow);
-        newEnd = newStart + _getLastColumnIndex();
-    }
-    CATCH_RETURN();
-
-    _start = newStart;
-    _end = newEnd;
+    _start = newEndpoints.first;
+    _end = newEndpoints.second;
 
     // a range can't be degenerate after both endpoints have been
     // moved.
@@ -757,11 +821,15 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit /*unit*/,
 }
 
 IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
-                                                _In_ TextUnit /* unit */,
+                                                _In_ TextUnit unit,
                                                 _In_ int count,
                                                 _Out_ int* pRetVal)
 {
-    // N.B. we only support line movement currently
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    auto Unlock = wil::ScopeExit([&]
+    {
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+    });
 
     *pRetVal = 0;
     if (count == 0)
@@ -773,6 +841,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
     apiMsg.OriginalStart = _start;
     apiMsg.OriginalEnd = _end;
     apiMsg.Endpoint = endpoint;
+    apiMsg.Unit = unit;
     apiMsg.RequestedCount = count;
 #if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
     OutputDebugString(L"MoveEndpointByUnit\n");
@@ -787,151 +856,28 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
     _outputRowConversions();
 #endif
 
-    ScreenInfoRow startScreenInfoRow;
-    Column startColumn;
-    ScreenInfoRow endScreenInfoRow;
-    Column endColumn;
-    ScreenInfoRow limitingRow;
-    int increment;
+    auto moveFunc = &_moveEndpointByUnitDocument;
+    if (unit == TextUnit::TextUnit_Character)
+    {
+        moveFunc = &_moveEndpointByUnitCharacter;
+    }
+    else if (unit <= TextUnit::TextUnit_Line)
+    {
+        moveFunc = &_moveEndpointByUnitLine;
+    }
+
+    MovementDirection moveDirection = (count > 0) ? MovementDirection::Forward : MovementDirection::Backward;
+    std::tuple<Endpoint, Endpoint, bool> moveResults;
     try
     {
-        startScreenInfoRow = _endpointToScreenInfoRow(_start);
-        startColumn = _endpointToColumn(_start);
-        endScreenInfoRow = _endpointToScreenInfoRow(_end);
-        endColumn = _endpointToColumn(_end);
-        if (count > 0)
-        {
-            limitingRow = _getLastScreenInfoRowIndex();
-            increment = 1;
-        }
-        else
-        {
-            limitingRow = _getFirstScreenInfoRowIndex();
-            increment = -1;
-        }
+        MoveState moveState{ *this, moveDirection };
+        moveResults = moveFunc(count, endpoint, moveState, pRetVal);
     }
     CATCH_RETURN();
 
-    bool forceDegenerate = false;
-    ScreenInfoRow currentScreenInfoRow;
-    Column currentColumn;
-    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
-    {
-        currentScreenInfoRow = startScreenInfoRow;
-        currentColumn = startColumn;
-        // special cases to move the endpoint to a line boundary if it is not already
-        if (count > 0)
-        {
-            if (startScreenInfoRow != limitingRow && startColumn != _getFirstColumnIndex())
-            {
-                // partial movement to the beginning of the next row
-                count -= increment;
-                *pRetVal += increment;
-                currentScreenInfoRow += increment;
-                currentColumn = _getFirstColumnIndex();
-            }
-            if (startScreenInfoRow == limitingRow && startColumn != _getLastColumnIndex())
-            {
-                // move to the end of the last row
-                count -= increment;
-                *pRetVal += increment;
-                currentColumn = _getLastColumnIndex();
-                forceDegenerate = true;
-            }
-        }
-        else
-        {
-            // moving backwards when we weren't already at the beginning of
-            // the row so move there first to align with the text unit boundary
-            if (startColumn != _getFirstColumnIndex())
-            {
-                count -= increment;
-                *pRetVal += increment;
-                currentColumn = _getFirstColumnIndex();
-            }
-        }
-    }
-    else
-    {
-        currentScreenInfoRow = endScreenInfoRow;
-        currentColumn = endColumn;
-        // special cases to move the endpoint to a line boundary if it is not already
-        if (count < 0)
-        {
-            // cases for moving backwards
-            if (endScreenInfoRow == limitingRow && endColumn != _getFirstColumnIndex())
-            {
-                // _end is somewhere on the first line while we're moving
-                // backwards so we move it to the beginning of the first line,
-                // later to be made a degenerate range.
-                count -= increment;
-                *pRetVal += increment;
-                currentColumn = _getFirstColumnIndex();
-                forceDegenerate = true;
-            }
-            else if (endColumn != _getLastColumnIndex())
-            {
-                // _end is not at the last column in a row, so we move it backwards to it
-                count -= increment;
-                *pRetVal += increment;
-                currentColumn = _getLastColumnIndex();
-                currentScreenInfoRow += increment;
-            }
-        }
-        else
-        {
-            // cases for moving forwards
-            if (endColumn != _getLastColumnIndex())
-            {
-                // _end is not at the last column in a row, so we move forward to it
-                count -= increment;
-                *pRetVal += increment;
-                currentColumn = _getLastColumnIndex();
-            }
-        }
-    }
-
-    // move the row that the endpoint corresponds to
-    while (count != 0 && currentScreenInfoRow != limitingRow)
-    {
-        count -= increment;
-        currentScreenInfoRow += increment;
-        *pRetVal += increment;
-    }
-
-    // translate the row back to an endpoint and handle any crossed endpoints
-    Endpoint convertedEndpoint;
-    try
-    {
-        convertedEndpoint = _screenInfoRowToEndpoint(currentScreenInfoRow);
-    }
-    CATCH_RETURN();
-    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
-    {
-        _start = convertedEndpoint + currentColumn;
-        if (currentScreenInfoRow > endScreenInfoRow || forceDegenerate)
-        {
-            _degenerate = true;
-            _end = _start;
-        }
-        else
-        {
-            _degenerate = false;
-        }
-    }
-    else
-    {
-        _end = convertedEndpoint + currentColumn;
-        if (currentScreenInfoRow < startScreenInfoRow || forceDegenerate)
-        {
-            _degenerate = true;
-            _start = _end;
-        }
-        else
-        {
-            _degenerate = false;
-        }
-    }
+    _start = std::get<0>(moveResults);
+    _end = std::get<1>(moveResults);
+    _degenerate = std::get<2>(moveResults);
 
     // tracing
     apiMsg.MovedCount = *pRetVal;
@@ -944,6 +890,12 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
                                                  _In_ ITextRangeProvider* pTargetRange,
                                                  _In_ TextPatternRangeEndpoint targetEndpoint)
 {
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    auto Unlock = wil::ScopeExit([&]
+    {
+        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+    });
+
     UiaTextRange* range = static_cast<UiaTextRange*>(pTargetRange);
     if (range == nullptr)
     {
@@ -1026,10 +978,11 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
 
 IFACEMETHODIMP UiaTextRange::Select()
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+        gci->UnlockConsole();
     });
 
     COORD coordStart;
@@ -1063,10 +1016,11 @@ IFACEMETHODIMP UiaTextRange::RemoveFromSelection()
 
 IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+        gci->UnlockConsole();
     });
 
     Viewport oldViewport;
@@ -1209,7 +1163,8 @@ HWND UiaTextRange::_getWindowHandle()
 // - the current screen info. May return nullptr.
 SCREEN_INFORMATION* const UiaTextRange::_getScreenInfo()
 {
-    SCREEN_INFORMATION* const pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    SCREEN_INFORMATION* const pScreenInfo = gci->CurrentScreenBuffer;
     THROW_HR_IF_NULL(E_POINTER, pScreenInfo);
     return pScreenInfo;
 }
@@ -1249,7 +1204,8 @@ const unsigned int UiaTextRange::_getTotalRows()
 // - The screen buffer size
 const COORD UiaTextRange::_getScreenBufferCoords()
 {
-    return ServiceLocator::LocateGlobals()->getConsoleInformation()->GetScreenBufferSize();
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return gci->GetScreenBufferSize();
 }
 
 
@@ -1300,31 +1256,16 @@ const unsigned int UiaTextRange::_rowCountInRange() const
     {
         return 0;
     }
-    const TextBufferRow textBufferStartRow = _endpointToTextBufferRow(_start);
-    const TextBufferRow textBufferEndRow = _endpointToTextBufferRow(_end);
 
-    if (_start <= _end)
-    {
-        // + 1 to balance subtracting TextBufferRows from each other
-        const unsigned int linesBetweenRows = textBufferEndRow - textBufferStartRow + 1;
-        return linesBetweenRows;
-    }
-    else
-    {
-        if (textBufferStartRow == textBufferEndRow)
-        {
-            // we're in a bit of a weird case where everything is
-            // selected except for a part of a single line. We just
-            // return the total row count instead of double counting
-            // the partial line.
-            return _getTotalRows();
-        }
-        else
-        {
-            // + 1 to account for 0th row
-            return _getTotalRows() - textBufferStartRow + textBufferEndRow + 1;
-        }
-    }
+    const ScreenInfoRow startScreenInfoRow = _endpointToScreenInfoRow(_start);
+    const Column startColumn = _endpointToColumn(_start);
+    const ScreenInfoRow endScreenInfoRow = _endpointToScreenInfoRow(_end);
+    const Column endColumn = _endpointToColumn(_end);
+
+    assert(_compareScreenCoords(startScreenInfoRow, startColumn, endScreenInfoRow, endColumn) <= 0);
+
+    // + 1 to balance subtracting ScreenInfoRows from each other
+    return endScreenInfoRow - startScreenInfoRow + 1;
 }
 
 // Routine Description:
@@ -1499,20 +1440,30 @@ void UiaTextRange::_addScreenInfoRowBoundaries(_In_ const ScreenInfoRow screenIn
     POINT topLeft;
     POINT bottomRight;
 
-    topLeft.x = 0;
-    topLeft.y = _screenInfoRowToViewportRow(screenInfoRow) * currentFontSize.Y;
-
-    if (_degenerate)
+    if (_endpointToScreenInfoRow(_start) == screenInfoRow)
     {
-        // degenerate ranges are one char wide at the position of the degenerate range
+        // start is somewhere in this row so we start from its position
         topLeft.x = _endpointToColumn(_start) * currentFontSize.X;
-        bottomRight.x = topLeft.x + currentFontSize.X;
     }
     else
     {
-        // normal ranges are the full width of the row
+        // otherwise we start from the beginning of the row
+        topLeft.x = 0;
+    }
+
+    topLeft.y = _screenInfoRowToViewportRow(screenInfoRow) * currentFontSize.Y;
+
+    if (_endpointToScreenInfoRow(_end) == screenInfoRow)
+    {
+        // the endpoints are on the same row
+        bottomRight.x = (_endpointToColumn(_end) + 1) * currentFontSize.X;
+    }
+    else
+    {
+        // _end is not on this row so span to the end of the row
         bottomRight.x = _getViewportWidth(_getViewport()) * currentFontSize.X;
     }
+
     // we add the font height only once here because we are adding each line individually
     bottomRight.y = topLeft.y + currentFontSize.Y;
 
@@ -1612,4 +1563,439 @@ const int UiaTextRange::_compareScreenCoords(_In_ const ScreenInfoRow rowA,
     }
     // colA == colB
     return 0;
+}
+
+// Routine Description:
+// - calculates new Endpoints if they were to be moved moveCount times
+// by character.
+// Arguments:
+// - moveCount - the number of times to move
+// - moveState - values indicating the state of the console for the
+// move operation
+// - pAmountMoved - the number of times that the return values are "moved"
+// Return Value:
+// - a pair of endpoints of the form <start, end>
+std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacter(_In_ const int moveCount,
+                                                             _In_ const MoveState moveState,
+                                                             _Out_ int* const pAmountMoved)
+{
+    *pAmountMoved = 0;
+    int count = moveCount;
+    ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
+    Column currentColumn = moveState.StartColumn;
+    for (int i = 0; i < abs(count); ++i)
+    {
+        // check if we're at the edge of the screen info buffer
+        if (currentScreenInfoRow == moveState.LimitingRow &&
+            currentColumn == moveState.LastColumnInRow)
+        {
+            break;
+        }
+        if (currentColumn == moveState.LastColumnInRow)
+        {
+            // we're at the edge of a row and need to go to the
+            // next one
+            currentColumn = moveState.FirstColumnInRow;
+            currentScreenInfoRow += moveState.Increment;
+        }
+        else
+        {
+            // moving somewhere away from the edges of a row
+            currentColumn += moveState.Increment;
+        }
+        *pAmountMoved += moveState.Increment;
+    }
+
+    Endpoint newStart = _screenInfoRowToEndpoint(currentScreenInfoRow) + currentColumn;
+    Endpoint newEnd = newStart;
+    return std::make_pair<Endpoint, Endpoint>(std::move(newStart), std::move(newEnd));
+}
+
+// Routine Description:
+// - calculates new Endpoints if they were to be moved moveCount times
+// by line.
+// Arguments:
+// - moveCount - the number of times to move
+// - moveState - values indicating the state of the console for the
+// move operation
+// - pAmountMoved - the number of times that the return values are "moved"
+// Return Value:
+// - a pair of endpoints of the form <start, end>
+std::pair<Endpoint, Endpoint> UiaTextRange::_moveByLine(_In_ const int moveCount,
+                                                        _In_ const MoveState moveState,
+                                                        _Out_ int* const pAmountMoved)
+{
+    *pAmountMoved = 0;
+    int count = moveCount;
+    ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
+    Column currentColumn = moveState.StartColumn;
+    // special cases to move to a line boundary first if the range
+    // isn't already at one
+    if (count < 0 && currentColumn != _getFirstColumnIndex())
+    {
+        currentColumn = _getFirstColumnIndex();
+        count -= moveState.Increment;
+        *pAmountMoved += moveState.Increment;
+    }
+
+    // move the range
+    for (int i = 0; i < abs(count); ++i)
+    {
+        if (currentScreenInfoRow == moveState.LimitingRow)
+        {
+            break;
+        }
+        currentScreenInfoRow += moveState.Increment;
+        *pAmountMoved += moveState.Increment;
+    }
+
+    Endpoint newStart = _screenInfoRowToEndpoint(currentScreenInfoRow);
+    Endpoint newEnd = newStart + _getLastColumnIndex();
+    return std::make_pair<Endpoint, Endpoint>(std::move(newStart), std::move(newEnd));
+}
+
+// Routine Description:
+// - calculates new Endpoints if they were to be moved moveCount times
+// by document.
+// Arguments:
+// - moveCount - the number of times to move. not used here
+// - moveState - values indicating the state of the console for the
+// move operation
+// - pAmountMoved - the number of times that the return values are "moved"
+// Return Value:
+// - a pair of endpoints of the form <start, end>
+std::pair<Endpoint, Endpoint> UiaTextRange::_moveByDocument(_In_ const int /* moveCount */,
+                                                            _In_ const MoveState moveState,
+                                                            _Out_ int* const pAmountMoved)
+{
+    *pAmountMoved = 0;
+    Endpoint newStart;
+    Endpoint newEnd;
+    if (moveState.StartScreenInfoRow == _getFirstScreenInfoRowIndex() &&
+        moveState.StartColumn == _getFirstColumnIndex() &&
+        moveState.EndScreenInfoRow == _getLastScreenInfoRowIndex() &&
+        moveState.EndColumn == _getLastColumnIndex())
+    {
+        // we already span the document range
+        newStart = _screenInfoRowToEndpoint(moveState.StartScreenInfoRow) + moveState.StartColumn;
+        newEnd = _screenInfoRowToEndpoint(moveState.EndScreenInfoRow) + moveState.EndColumn;
+    }
+    else
+    {
+        // really just expand to document
+        *pAmountMoved = moveState.Increment;
+        newStart = _screenInfoRowToEndpoint(_getFirstScreenInfoRowIndex()) + _getFirstColumnIndex();
+        newEnd = _screenInfoRowToEndpoint(_getLastScreenInfoRowIndex()) + _getLastColumnIndex();
+    }
+    return std::make_pair<Endpoint, Endpoint>(std::move(newStart), std::move(newEnd));
+}
+
+// Routine Description:
+// - calculates new Endpoints/degenerate state if the indicate
+// endpoint was moved moveCount times by character.
+// Arguments:
+// - moveCount - the number of times to move
+// - endpoint - the endpoint to move
+// - moveState - values indicating the state of the console for the
+// move operation
+// - pAmountMoved - the number of times that the return values are "moved"
+// Return Value:
+// - A tuple of elements of the form <start, end, degenerate>
+std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitCharacter(_In_ const int moveCount,
+                                                                                _In_ const TextPatternRangeEndpoint endpoint,
+                                                                                _In_ const MoveState moveState,
+                                                                                _Out_ int* const pAmountMoved)
+{
+    *pAmountMoved = 0;
+    int count = moveCount;
+    ScreenInfoRow currentScreenInfoRow;
+    Column currentColumn;
+
+    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        currentScreenInfoRow = moveState.StartScreenInfoRow;
+        currentColumn = moveState.StartColumn;
+    }
+    else
+    {
+        currentScreenInfoRow = moveState.EndScreenInfoRow;
+        currentColumn = moveState.EndColumn;
+    }
+
+    for (int i = 0; i < abs(count); ++i)
+    {
+        // check if we're at the edge of the screen info buffer
+        if (currentScreenInfoRow == moveState.LimitingRow &&
+            currentColumn == moveState.LastColumnInRow)
+        {
+            break;
+        }
+        if (currentColumn == moveState.LastColumnInRow)
+        {
+            // we're at the edge of a row and need to go to the
+            // next one
+            currentColumn = moveState.FirstColumnInRow;
+            currentScreenInfoRow += moveState.Increment;
+        }
+        else
+        {
+            // moving somewhere away from the edges of a row
+            currentColumn += moveState.Increment;
+        }
+        *pAmountMoved += moveState.Increment;
+    }
+
+    // translate the row back to an endpoint and handle any crossed endpoints
+    Endpoint convertedEndpoint = _screenInfoRowToEndpoint(currentScreenInfoRow) + currentColumn;
+    Endpoint start = _screenInfoRowToEndpoint(moveState.StartScreenInfoRow) + moveState.StartColumn;
+    Endpoint end = _screenInfoRowToEndpoint(moveState.EndScreenInfoRow) + moveState.EndColumn;
+    bool degenerate;
+    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        start = convertedEndpoint;
+        if (_compareScreenCoords(currentScreenInfoRow,
+                                 currentColumn,
+                                 moveState.EndScreenInfoRow,
+                                 moveState.EndColumn) == 1)
+        {
+            end = start;
+            degenerate = true;
+        }
+    }
+    else
+    {
+        end = convertedEndpoint;
+        if (_compareScreenCoords(currentScreenInfoRow,
+                                 currentColumn,
+                                 moveState.StartScreenInfoRow,
+                                 moveState.StartColumn) == -1)
+        {
+            start = end;
+            degenerate = true;
+        }
+    }
+    return std::make_tuple(start, end, degenerate);
+}
+
+// Routine Description:
+// - calculates new Endpoints/degenerate state if the indicate
+// endpoint was moved moveCount times by line.
+// Arguments:
+// - moveCount - the number of times to move
+// - endpoint - the endpoint to move
+// - moveState - values indicating the state of the console for the
+// move operation
+// - pAmountMoved - the number of times that the return values are "moved"
+// Return Value:
+// - A tuple of elements of the form <start, end, degenerate>
+std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitLine(_In_ const int moveCount,
+                                                                           _In_ const TextPatternRangeEndpoint endpoint,
+                                                                           _In_ const MoveState moveState,
+                                                                           _Out_ int* const pAmountMoved)
+{
+    *pAmountMoved = 0;
+    int count = moveCount;
+    ScreenInfoRow currentScreenInfoRow;
+    Column currentColumn;
+
+    bool forceDegenerate = false;
+    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        currentScreenInfoRow = moveState.StartScreenInfoRow;
+        currentColumn = moveState.StartColumn;
+        // special cases to move the endpoint to a line boundary if it is not already
+        if (count > 0)
+        {
+            if (moveState.StartScreenInfoRow != moveState.LimitingRow && moveState.StartColumn != _getFirstColumnIndex())
+            {
+                // partial movement to the beginning of the next row
+                count -= moveState.Increment;
+                *pAmountMoved += moveState.Increment;
+                currentScreenInfoRow += moveState.Increment;
+                currentColumn = _getFirstColumnIndex();
+            }
+            else if (moveState.StartScreenInfoRow == moveState.LimitingRow && moveState.StartColumn == _getLastColumnIndex())
+            {
+                // already at the very end
+                count = 0;
+                forceDegenerate = true;
+            }
+            else if (moveState.StartScreenInfoRow == moveState.LimitingRow)
+            {
+                // move to the end of the last row
+                count -= moveState.Increment;
+                *pAmountMoved += moveState.Increment;
+                currentColumn = _getLastColumnIndex();
+                forceDegenerate = true;
+            }
+        }
+        else
+        {
+            // moving backwards when we weren't already at the beginning of
+            // the row so move there first to align with the text unit boundary
+            if (moveState.StartColumn != _getFirstColumnIndex())
+            {
+                count -= moveState.Increment;
+                *pAmountMoved += moveState.Increment;
+                currentColumn = _getFirstColumnIndex();
+            }
+        }
+    }
+    else
+    {
+        currentScreenInfoRow = moveState.EndScreenInfoRow;
+        currentColumn = moveState.EndColumn;
+        // special cases to move the endpoint to a line boundary if it is not already
+        if (count < 0)
+        {
+            // cases for moving backwards
+            if (moveState.EndScreenInfoRow == moveState.LimitingRow && moveState.EndColumn == _getFirstColumnIndex())
+            {
+                // _end is at the very beginning and can't be moved
+                // any more
+                count = 0;
+                forceDegenerate = true;
+            }
+            else if (moveState.EndScreenInfoRow == moveState.LimitingRow)
+            {
+                // _end is somewhere on the first line while we're moving
+                // backwards so we move it to the beginning of the first line,
+                // later to be made a degenerate range.
+                count -= moveState.Increment;
+                *pAmountMoved += moveState.Increment;
+                currentColumn = _getFirstColumnIndex();
+                forceDegenerate = true;
+            }
+            else if (moveState.EndColumn != _getLastColumnIndex())
+            {
+                // _end is not at the last column in a row, so we move it backwards to it
+                count -= moveState.Increment;
+                *pAmountMoved += moveState.Increment;
+                currentColumn = _getLastColumnIndex();
+                currentScreenInfoRow += moveState.Increment;
+            }
+        }
+        else
+        {
+            // cases for moving forwards
+            if (moveState.EndColumn != _getLastColumnIndex())
+            {
+                // _end is not at the last column in a row, so we move forward to it
+                count -= moveState.Increment;
+                *pAmountMoved += moveState.Increment;
+                currentColumn = _getLastColumnIndex();
+            }
+        }
+    }
+
+    // move the row that the endpoint corresponds to
+    while (count != 0 && currentScreenInfoRow != moveState.LimitingRow)
+    {
+        count -= moveState.Increment;
+        currentScreenInfoRow += moveState.Increment;
+        *pAmountMoved += moveState.Increment;
+    }
+
+    // translate the row back to an endpoint and handle any crossed endpoints
+    Endpoint convertedEndpoint = _screenInfoRowToEndpoint(currentScreenInfoRow) + currentColumn;
+    Endpoint start = _screenInfoRowToEndpoint(moveState.StartScreenInfoRow) + moveState.StartColumn;
+    Endpoint end = _screenInfoRowToEndpoint(moveState.EndScreenInfoRow) + moveState.EndColumn;
+    bool degenerate = false;
+    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        start = convertedEndpoint;
+        if (currentScreenInfoRow > moveState.EndScreenInfoRow || forceDegenerate)
+        {
+            degenerate = true;
+            end = start;
+        }
+    }
+    else
+    {
+        end = convertedEndpoint;
+        if (currentScreenInfoRow < moveState.StartScreenInfoRow || forceDegenerate)
+        {
+            degenerate = true;
+            start = end;
+        }
+    }
+
+    return std::make_tuple(start, end, degenerate);
+}
+
+// Routine Description:
+// - calculates new Endpoints/degenerate state if the indicate
+// endpoint was moved moveCount times by document.
+// Arguments:
+// - moveCount - the number of times to move
+// - endpoint - the endpoint to move
+// - moveState - values indicating the state of the console for the
+// move operation
+// - pAmountMoved - the number of times that the return values are "moved"
+// Return Value:
+// - A tuple of elements of the form <start, end, degenerate>
+std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitDocument(_In_ const int moveCount,
+                                                                               _In_ const TextPatternRangeEndpoint endpoint,
+                                                                               _In_ const MoveState moveState,
+                                                                               _Out_ int* const pAmountMoved)
+{
+    *pAmountMoved = 0;
+
+    Endpoint start;
+    Endpoint end;
+    bool degenerate = false;
+    if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
+    {
+        if (moveCount < 0)
+        {
+            // moving _start backwards
+            start = _screenInfoRowToEndpoint(_getFirstScreenInfoRowIndex()) + _getFirstColumnIndex();
+            end = _screenInfoRowToEndpoint(moveState.EndScreenInfoRow) + moveState.EndColumn;
+            if (!(moveState.StartScreenInfoRow == _getFirstScreenInfoRowIndex() &&
+                  moveState.StartColumn == _getFirstColumnIndex()))
+            {
+                *pAmountMoved += moveState.Increment;
+            }
+        }
+        else
+        {
+            // moving _start forwards
+            start = _screenInfoRowToEndpoint(_getLastScreenInfoRowIndex()) + _getLastColumnIndex();
+            end = start;
+            degenerate = true;
+            if (!(moveState.StartScreenInfoRow == _getLastScreenInfoRowIndex() &&
+                  moveState.StartColumn == _getLastColumnIndex()))
+            {
+                *pAmountMoved += moveState.Increment;
+            }
+        }
+    }
+    else
+    {
+        if (moveCount < 0)
+        {
+            // moving _end backwards
+            end = _screenInfoRowToEndpoint(_getFirstScreenInfoRowIndex()) + _getFirstColumnIndex();
+            start = end;
+            degenerate = true;
+            if (!(moveState.EndScreenInfoRow == _getFirstScreenInfoRowIndex() &&
+                  moveState.EndColumn == _getFirstColumnIndex()))
+            {
+                *pAmountMoved += moveState.Increment;
+            }
+        }
+        else
+        {
+            // moving _end forwards
+            end = _screenInfoRowToEndpoint(_getLastScreenInfoRowIndex()) + _getLastColumnIndex();
+            start = _screenInfoRowToEndpoint(moveState.StartScreenInfoRow) + moveState.StartColumn;
+            if (!(moveState.EndScreenInfoRow == _getLastScreenInfoRowIndex() &&
+                  moveState.EndColumn == _getLastColumnIndex()))
+            {
+                *pAmountMoved += moveState.Increment;
+            }
+        }
+    }
+
+    return std::make_tuple(start, end, degenerate);
 }

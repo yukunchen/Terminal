@@ -62,7 +62,7 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
                            _Out_ DWORD* const pNumBytes,
                            _Out_ DWORD* const pControlKeyState)
 {
-    ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
+    assert(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
 
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;
@@ -114,7 +114,7 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
         // This routine should be called by a thread owning the same lock on
         // the same console as we're reading from.
 
-        ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
+        ASSERT(gci->IsConsoleLocked());
 
         lpBuffer = _BufPtr;
 

@@ -20,6 +20,7 @@
 
 INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     // This bool is used to track which option - up or down - was used to perform the last search. That way, the next time the
     //   find dialog is opened, it will default to the last used option.
     static bool fFindSearchUp = true;
@@ -45,7 +46,7 @@ INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
                     BOOLEAN const IgnoreCase = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDCASE) == 0;
                     BOOLEAN const Reverse = IsDlgButtonChecked(hWnd, ID_CONSOLE_FINDDOWN) == 0;
                     fFindSearchUp = !!Reverse;
-                    PSCREEN_INFORMATION const ScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+                    PSCREEN_INFORMATION const ScreenInfo = gci->CurrentScreenBuffer;
                     COORD Position;
                     USHORT const ColumnWidth = SearchForString(ScreenInfo, szBuf, StringLength, IgnoreCase, Reverse, FALSE, 0, &Position);
                     if (ColumnWidth != 0)

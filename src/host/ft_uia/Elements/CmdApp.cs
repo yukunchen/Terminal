@@ -238,7 +238,7 @@ namespace Conhost.UIA.Tests.Elements
 
         private void CreateCmdProcess(string path, string link = "")
         {
-            string AdminPrefix = "Administrator: ";
+            //string AdminPrefix = "Administrator: ";
             string WindowTitleToFind = "Host.Tests.UIA window under test";
 
             job = WinBase.CreateJobObject(IntPtr.Zero, IntPtr.Zero);
@@ -351,10 +351,10 @@ namespace Conhost.UIA.Tests.Elements
             Globals.WaitForTimeout();
 
             // If we are running as admin, the child window title will have a prefix appended as it will also run as admin.
-            if (IsRunningAsAdmin())
-            {
-                WindowTitleToFind = $"{AdminPrefix}{WindowTitleToFind}";
-            }
+            //if (IsRunningAsAdmin())
+            //{
+            //    WindowTitleToFind = $"{AdminPrefix}{WindowTitleToFind}";
+            //}
 
             Log.Comment($"Searching for window title '{WindowTitleToFind}'");
             this.UIRoot = Session.FindElementByName(WindowTitleToFind);

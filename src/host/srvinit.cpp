@@ -62,7 +62,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 
     // 4. Initializing Settings will establish hardcoded defaults.
     // Set to reference of global console information since that's the only place we need to hold the settings.
-    auto settings = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION* const settings = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     // 3. Read the default registry values.
     Registry reg(settings);
@@ -135,6 +135,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 
 NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     CONSOLE_INFORMATION *Console;
     NTSTATUS Status = RevalidateConsole(&Console);
     ASSERT(NT_SUCCESS(Status));
@@ -142,7 +143,7 @@ NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
     FreeCommandHistory((HANDLE)ProcessData);
 
     bool const fRecomputeOwner = ProcessData->fRootProcess;
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.FreeProcessData(ProcessData);
+    gci->ProcessHandleList.FreeProcessData(ProcessData);
 
     if (fRecomputeOwner)
     {
@@ -358,10 +359,11 @@ NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLang
 
 HRESULT ApiRoutines::GetConsoleLangIdImpl(_Out_ LANGID* const pLangId)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    RETURN_NTSTATUS(GetConsoleLangId(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP, pLangId));
+    RETURN_NTSTATUS(GetConsoleLangId(gci->OutputCP, pLangId));
 }
 
 // Routine Description:
@@ -425,6 +427,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 {
     // AllocConsole is outside our codebase, but we should be able to mostly track the call here.
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AllocConsole);
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     NTSTATUS Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
     if (!NT_SUCCESS(Status))
@@ -483,7 +486,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     }
     else
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_NO_WINDOW;
+        gci->Flags |= CONSOLE_NO_WINDOW;
     }
 
     return Status;

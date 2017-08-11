@@ -73,6 +73,7 @@ class UiaTextRangeTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
         // set up common state
         _state = new CommonState();
         _state->PrepareGlobalFont();
@@ -80,7 +81,7 @@ class UiaTextRangeTests
         _state->PrepareNewTextBufferInfo();
 
         // set up pointers
-        _pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        _pScreenInfo = gci->CurrentScreenBuffer;
         _pTextBuffer = _pScreenInfo->TextInfo;
 
         // set up default range
@@ -138,16 +139,6 @@ class UiaTextRangeTests
         };
         VERIFY_IS_FALSE(notDegenerate1.IsDegenerate());
         VERIFY_ARE_EQUAL(1u, notDegenerate1._rowCountInRange());
-
-        UiaTextRange notDegenerate2
-        {
-            &_dummyProvider,
-            35,
-            20,
-            false
-        };
-        VERIFY_IS_FALSE(notDegenerate2.IsDegenerate());
-        VERIFY_ARE_EQUAL(notDegenerate2._getTotalRows(), notDegenerate2._rowCountInRange());
     }
 
     TEST_METHOD(CanCheckIfScreenInfoRowIsInViewport)
@@ -177,7 +168,6 @@ class UiaTextRangeTests
         Viewport viewport;
         viewport.Top = 0;
         viewport.Bottom = 10;
-
 
         std::vector<std::pair<int, int>> viewportSizes =
         {
@@ -213,7 +203,6 @@ class UiaTextRangeTests
             VERIFY_ARE_EQUAL(i / rowWidth, _range->_endpointToTextBufferRow(i));
         }
     }
-
 
     TEST_METHOD(CanTranslateTextBufferRowToEndpoint)
     {

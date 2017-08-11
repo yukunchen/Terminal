@@ -549,6 +549,7 @@ void Tracing::s_TraceUia(_In_ const UiaTextRange* const range,
     case UiaTextRangeTracing::ApiCall::Move:
     {
         const UiaTextRangeTracing::ApiMsgMove* const msg = static_cast<const UiaTextRangeTracing::ApiMsgMove* const>(apiMsg);
+        const wchar_t* const unitStr = _textUnitToString(msg->Unit);
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "UiaTextRange::Move",
@@ -558,6 +559,7 @@ void Tracing::s_TraceUia(_In_ const UiaTextRange* const range,
             TraceLoggingValue(degenerate, "_degenerate"),
             TraceLoggingValue(msg->OriginalStart, "Original Start"),
             TraceLoggingValue(msg->OriginalEnd, "Original End"),
+            TraceLoggingValue(unitStr, "unit"),
             TraceLoggingValue(msg->RequestedCount, "Requested Count"),
             TraceLoggingValue(msg->MovedCount, "Moved Count"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
@@ -569,6 +571,7 @@ void Tracing::s_TraceUia(_In_ const UiaTextRange* const range,
     {
         const UiaTextRangeTracing::ApiMsgMoveEndpointByUnit* const msg = static_cast<const UiaTextRangeTracing::ApiMsgMoveEndpointByUnit* const>(apiMsg);
         const wchar_t* const pEndpoint = _textPatternRangeEndpointToString(msg->Endpoint);
+        const wchar_t* const unitStr = _textUnitToString(msg->Unit);
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "UiaTextRange::MoveEndpointByUnit",
@@ -579,6 +582,7 @@ void Tracing::s_TraceUia(_In_ const UiaTextRange* const range,
             TraceLoggingValue(msg->OriginalStart, "Original Start"),
             TraceLoggingValue(msg->OriginalEnd, "Original End"),
             TraceLoggingValue(pEndpoint, "endpoint"),
+            TraceLoggingValue(unitStr, "unit"),
             TraceLoggingValue(msg->RequestedCount, "Requested Count"),
             TraceLoggingValue(msg->MovedCount, "Moved Count"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),

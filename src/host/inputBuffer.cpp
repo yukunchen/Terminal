@@ -635,6 +635,7 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>&
 // - The console lock must be held when calling this routine.
 HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD>& records)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     try
     {
         std::deque<INPUT_RECORD> outRecords;
@@ -643,7 +644,7 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD
             INPUT_RECORD currEvent = records[i];
             if (currEvent.EventType == KEY_EVENT && currEvent.Event.KeyEvent.bKeyDown)
             {
-                if (IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_SUSPENDED) &&
+                if (IsFlagSet(gci->Flags, CONSOLE_SUSPENDED) &&
                     !IsSystemKey(currEvent.Event.KeyEvent.wVirtualKeyCode))
                 {
                     UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
@@ -652,7 +653,7 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD
                 else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
                          (currEvent.Event.KeyEvent.wVirtualKeyCode == VK_PAUSE || IsPauseKey(&currEvent.Event.KeyEvent)))
                 {
-                    SetFlag(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_SUSPENDED);
+                    SetFlag(gci->Flags, CONSOLE_SUSPENDED);
                     continue;
                 }
             }

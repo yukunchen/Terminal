@@ -113,6 +113,8 @@ public:
     virtual BOOL PrivateEnableAlternateScroll(_In_ bool const fEnabled);
     virtual BOOL PrivateEraseAll();
 
+    virtual BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes);
+
 private:
     SCREEN_INFORMATION* _pScreenInfo; // not const because switching to the alternate buffer will change this pointer.
     InputBuffer* const _pInputBuffer;

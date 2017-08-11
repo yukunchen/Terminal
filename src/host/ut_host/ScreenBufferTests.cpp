@@ -51,8 +51,9 @@ class ScreenBufferTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
         m_state->PrepareNewTextBufferInfo();
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->SetViewportOrigin(true, {0,0});
+        gci->CurrentScreenBuffer->SetViewportOrigin(true, {0,0});
 
         return true;
     }
@@ -66,8 +67,9 @@ class ScreenBufferTests
 
     TEST_METHOD(SingleAlternateBufferCreationTest)
     {
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
         Log::Comment(L"Testing creating one alternate buffer, then returning to the main buffer.");
-        SCREEN_INFORMATION* const psiOriginal = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        SCREEN_INFORMATION* const psiOriginal = gci->CurrentScreenBuffer;
         VERIFY_IS_NULL(psiOriginal->_psiAlternateBuffer);
         VERIFY_IS_NULL(psiOriginal->_psiMainBuffer);
 
@@ -75,7 +77,7 @@ class ScreenBufferTests
         if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
         {
             Log::Comment(L"First alternate buffer successfully created");
-            SCREEN_INFORMATION* psiFirstAlternate = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+            SCREEN_INFORMATION* psiFirstAlternate = gci->CurrentScreenBuffer;
             VERIFY_ARE_NOT_EQUAL(psiOriginal, psiFirstAlternate);
             VERIFY_ARE_EQUAL(psiFirstAlternate, psiOriginal->_psiAlternateBuffer);
             VERIFY_ARE_EQUAL(psiOriginal, psiFirstAlternate->_psiMainBuffer);
@@ -86,7 +88,7 @@ class ScreenBufferTests
             if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
             {
                 Log::Comment(L"successfully swapped to the main buffer");
-                SCREEN_INFORMATION* psiFinal = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+                SCREEN_INFORMATION* psiFinal = gci->CurrentScreenBuffer;
                 VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
                 VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
                 VERIFY_IS_NULL(psiFinal->_psiMainBuffer);
@@ -97,13 +99,14 @@ class ScreenBufferTests
 
     TEST_METHOD(MultipleAlternateBufferCreationTest)
     {
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
         Log::Comment(L"Testing creating one alternate buffer, then creating another alternate from that first alternate, before returning to the main buffer.");
-        SCREEN_INFORMATION* const psiOriginal = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        SCREEN_INFORMATION* const psiOriginal = gci->CurrentScreenBuffer;
         NTSTATUS Status = psiOriginal->UseAlternateScreenBuffer();
         if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
         {
             Log::Comment(L"First alternate buffer successfully created");
-            SCREEN_INFORMATION* psiFirstAlternate = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+            SCREEN_INFORMATION* psiFirstAlternate = gci->CurrentScreenBuffer;
             VERIFY_ARE_NOT_EQUAL(psiOriginal, psiFirstAlternate);
             VERIFY_ARE_EQUAL(psiFirstAlternate, psiOriginal->_psiAlternateBuffer);
             VERIFY_ARE_EQUAL(psiOriginal, psiFirstAlternate->_psiMainBuffer);
@@ -114,7 +117,7 @@ class ScreenBufferTests
             if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
             {
                 Log::Comment(L"Second alternate buffer successfully created");
-                SCREEN_INFORMATION* psiSecondAlternate = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+                SCREEN_INFORMATION* psiSecondAlternate = gci->CurrentScreenBuffer;
                 VERIFY_ARE_NOT_EQUAL(psiOriginal, psiSecondAlternate);
                 VERIFY_ARE_NOT_EQUAL(psiSecondAlternate, psiFirstAlternate);
                 VERIFY_ARE_EQUAL(psiSecondAlternate, psiOriginal->_psiAlternateBuffer);
@@ -126,7 +129,7 @@ class ScreenBufferTests
                 if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
                 {
                     Log::Comment(L"successfully swapped to the main buffer");
-                    SCREEN_INFORMATION* psiFinal = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+                    SCREEN_INFORMATION* psiFinal = gci->CurrentScreenBuffer;
                     VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
                     VERIFY_ARE_NOT_EQUAL(psiFinal, psiSecondAlternate);
                     VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
@@ -139,13 +142,14 @@ class ScreenBufferTests
 
     TEST_METHOD(MultipleAlternateBuffersFromMainCreationTest)
     {
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
         Log::Comment(L"Testing creating one alternate buffer, then creating another alternate from the main, before returning to the main buffer.");
-        SCREEN_INFORMATION* const psiOriginal = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        SCREEN_INFORMATION* const psiOriginal = gci->CurrentScreenBuffer;
         NTSTATUS Status = psiOriginal->UseAlternateScreenBuffer();
         if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
         {
             Log::Comment(L"First alternate buffer successfully created");
-            SCREEN_INFORMATION* psiFirstAlternate = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+            SCREEN_INFORMATION* psiFirstAlternate = gci->CurrentScreenBuffer;
             VERIFY_ARE_NOT_EQUAL(psiOriginal, psiFirstAlternate);
             VERIFY_ARE_EQUAL(psiFirstAlternate, psiOriginal->_psiAlternateBuffer);
             VERIFY_ARE_EQUAL(psiOriginal, psiFirstAlternate->_psiMainBuffer);
@@ -156,7 +160,7 @@ class ScreenBufferTests
             if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
             {
                 Log::Comment(L"Second alternate buffer successfully created");
-                SCREEN_INFORMATION* psiSecondAlternate = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+                SCREEN_INFORMATION* psiSecondAlternate = gci->CurrentScreenBuffer;
                 VERIFY_ARE_NOT_EQUAL(psiOriginal, psiSecondAlternate);
                 VERIFY_ARE_NOT_EQUAL(psiSecondAlternate, psiFirstAlternate);
                 VERIFY_ARE_EQUAL(psiSecondAlternate, psiOriginal->_psiAlternateBuffer);
@@ -168,7 +172,7 @@ class ScreenBufferTests
                 if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
                 {
                     Log::Comment(L"successfully swapped to the main buffer");
-                    SCREEN_INFORMATION* psiFinal = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+                    SCREEN_INFORMATION* psiFinal = gci->CurrentScreenBuffer;
                     VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
                     VERIFY_ARE_NOT_EQUAL(psiFinal, psiSecondAlternate);
                     VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
@@ -181,7 +185,8 @@ class ScreenBufferTests
 
     TEST_METHOD(TestReverseLineFeed)
     {
-        SCREEN_INFORMATION* const psi = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();    
+        SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
         auto bufferWriter = psi->GetBufferWriter();
         auto cursor = psi->TextInfo->GetCursor();
         auto viewport = psi->GetBufferViewport();
@@ -292,7 +297,8 @@ class ScreenBufferTests
 
     TEST_METHOD(TestAddTabStop)
     {
-        SCREEN_INFORMATION* const psi = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
         psi->_ptsTabs = nullptr;
 
         Log::Comment(L"Add tab to empty list.");
@@ -333,7 +339,8 @@ class ScreenBufferTests
 
     TEST_METHOD(TestClearTabStops)
     {
-        SCREEN_INFORMATION* const psi = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
         psi->_ptsTabs = nullptr;
 
         Log::Comment(L"Clear non-existant tab stops.");
@@ -364,7 +371,8 @@ class ScreenBufferTests
 
     TEST_METHOD(TestClearTabStop)
     {
-        SCREEN_INFORMATION* const psi = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
         psi->_ptsTabs = nullptr;
 
         Log::Comment(L"Try to clear nonexistant list.");
@@ -536,7 +544,8 @@ class ScreenBufferTests
 
     TEST_METHOD(TestGetForwardTab)
     {
-        SCREEN_INFORMATION* const psi = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
         psi->_ptsTabs = nullptr;
 
         SCREEN_INFORMATION::TabStop** rgpTabs = CreateSampleList();
@@ -590,7 +599,8 @@ class ScreenBufferTests
 
     TEST_METHOD(TestGetReverseTab)
     {
-        SCREEN_INFORMATION* const psi = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
         psi->_ptsTabs = nullptr;
 
         SCREEN_INFORMATION::TabStop** rgpTabs = CreateSampleList();
@@ -643,7 +653,8 @@ class ScreenBufferTests
 
     TEST_METHOD(TestAreTabsSet)
     {
-        SCREEN_INFORMATION* const psi = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
         psi->_ptsTabs = nullptr;
 
         VERIFY_IS_FALSE(psi->AreTabsSet());
@@ -658,7 +669,8 @@ class ScreenBufferTests
 
     TEST_METHOD(EraseAllTests)
     {
-        SCREEN_INFORMATION* const psi = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
         auto bufferWriter = psi->GetBufferWriter();
         auto cursor = psi->TextInfo->GetCursor();
         VERIFY_IS_NOT_NULL(bufferWriter);

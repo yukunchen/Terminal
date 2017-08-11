@@ -374,14 +374,15 @@ bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptio
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, _In_ size_t const cOptions)
 {
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-    bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+    // We use the private function here to get just the default color attributes as a performance optimization.
+    // Calling the public GetConsoleScreenBufferInfoEx costs a lot of performance time/power in a tight loop
+    // because it has to fill the Largest Window Size by asking the OS and wastes time memcpying colors and other data
+    // we do not need to resolve this Set Graphics Rendition request.
+    WORD attr;
+    bool fSuccess = !!_pConApi->PrivateGetConsoleScreenBufferAttributes(&attr);
 
     if (fSuccess)
     {
-        WORD attr = csbiex.wAttributes; // existing color attributes
-
         // Run through the graphics options and apply them
         for (size_t i = 0; i < cOptions; i++)
         {

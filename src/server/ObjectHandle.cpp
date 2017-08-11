@@ -146,6 +146,7 @@ HRESULT ConsoleHandleData::GetScreenBuffer(_In_ const ACCESS_MASK amRequested,
 // - HRESULT S_OK or E_UNEXPECTED if the handle data structure is in an invalid state.
 HRESULT ConsoleHandleData::GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWaitQueue) const
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     if (_IsInput())
     {
         InputBuffer* const pObj = static_cast<InputBuffer*>(_pvClientPointer);
@@ -155,7 +156,7 @@ HRESULT ConsoleHandleData::GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWait
     else if (_IsOutput())
     {
         // TODO MSFT 9405322: shouldn't the output queue be per output object target, not global? https://osgvsowi/9405322
-        *ppWaitQueue = &ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputQueue;
+        *ppWaitQueue = &gci->OutputQueue;
         return S_OK;
     }
     else
