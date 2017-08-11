@@ -70,22 +70,22 @@ void FontTests::TestCurrentFontAPIsInvalid()
 
         if (bUseValidOutputHandle)
         {
-            VERIFY_WIN32_BOOL_SUCCEEDED(GetCurrentConsoleFont(hConsoleOutput, (BOOL)bMaximumWindow, &cfi));
+            VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFont(hConsoleOutput, (BOOL)bMaximumWindow, &cfi));
         }
         else
         {
-            VERIFY_WIN32_BOOL_FAILED(GetCurrentConsoleFont(hConsoleOutput, (BOOL)bMaximumWindow, &cfi));
+            VERIFY_WIN32_BOOL_FAILED(OneCoreDelay::GetCurrentConsoleFont(hConsoleOutput, (BOOL)bMaximumWindow, &cfi));
         }
     }
     else if (strOperation == L"GetEx")
     {
         CONSOLE_FONT_INFOEX cfie = {0};
-        VERIFY_WIN32_BOOL_FAILED(GetCurrentConsoleFontEx(hConsoleOutput, (BOOL)bMaximumWindow, &cfie));
+        VERIFY_WIN32_BOOL_FAILED(OneCoreDelay::GetCurrentConsoleFontEx(hConsoleOutput, (BOOL)bMaximumWindow, &cfie));
     }
     else if (strOperation == L"SetEx")
     {
         CONSOLE_FONT_INFOEX cfie = {0};
-        VERIFY_WIN32_BOOL_FAILED(SetCurrentConsoleFontEx(hConsoleOutput, (BOOL)bMaximumWindow, &cfie));
+        VERIFY_WIN32_BOOL_FAILED(OneCoreDelay::SetCurrentConsoleFontEx(hConsoleOutput, (BOOL)bMaximumWindow, &cfie));
     }
     else
     {
@@ -101,7 +101,7 @@ void FontTests::TestGetFontSizeInvalid()
     // Need to make sure that last error is cleared so that we can verify that lasterror was set by GetConsoleFontSize
     SetLastError(0);
 
-    COORD coordFontSize = GetConsoleFontSize((HANDLE)dwConsoleOutput, 0);
+    COORD coordFontSize = OneCoreDelay::GetConsoleFontSize((HANDLE)dwConsoleOutput, 0);
     VERIFY_ARE_EQUAL(coordFontSize, c_coordZero, L"Ensure (0,0) coord returned to indicate failure");
     VERIFY_ARE_EQUAL(GetLastError(), (DWORD)ERROR_INVALID_HANDLE, L"Ensure last error was set appropriately");
 }
@@ -109,7 +109,7 @@ void FontTests::TestGetFontSizeInvalid()
 void FontTests::TestGetFontSizeLargeIndexInvalid()
 {
     SetLastError(0);
-    COORD coordFontSize = GetConsoleFontSize(GetStdOutputHandle(), 0xFFFFFFFF);
+    COORD coordFontSize = OneCoreDelay::GetConsoleFontSize(GetStdOutputHandle(), 0xFFFFFFFF);
     VERIFY_ARE_EQUAL(coordFontSize, c_coordZero, L"Ensure (0,0) coord returned to indicate failure");
     VERIFY_ARE_EQUAL(GetLastError(), (DWORD)ERROR_INVALID_PARAMETER, L"Ensure last error was set appropriately");
 }
@@ -119,7 +119,7 @@ void FontTests::TestSetConsoleFontNegativeSize()
     const HANDLE hConsoleOutput = GetStdOutputHandle();
     CONSOLE_FONT_INFOEX cfie = {0};
     cfie.cbSize = sizeof(cfie);
-    VERIFY_WIN32_BOOL_SUCCEEDED(GetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfie));
+    VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfie));
     cfie.dwFontSize.X = -4;
     cfie.dwFontSize.Y = -12;
 
@@ -127,7 +127,7 @@ void FontTests::TestSetConsoleFontNegativeSize()
     // FindCreateFont, which runs through our list of loaded fonts, fails to find, takes the absolute value of Y, and
     // then performs a GDI font enumeration for fonts that match. we should hold on to this behavior until we can
     // establish that it's no longer necessary.
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfie));
+    VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfie));
 }
 
 void FontTests::TestFontScenario()
@@ -137,16 +137,16 @@ void FontTests::TestFontScenario()
     Log::Comment(L"1. Ensure that the various GET APIs for font information align with each other.");
     CONSOLE_FONT_INFOEX cfie = {0};
     cfie.cbSize = sizeof(cfie);
-    VERIFY_WIN32_BOOL_SUCCEEDED(GetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfie));
+    VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfie));
 
     CONSOLE_FONT_INFO cfi = {0};
-    VERIFY_WIN32_BOOL_SUCCEEDED(GetCurrentConsoleFont(hConsoleOutput, FALSE, &cfi));
+    VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFont(hConsoleOutput, FALSE, &cfi));
 
     VERIFY_ARE_EQUAL(cfi.nFont, cfie.nFont, L"Ensure regular and Ex APIs return same nFont");
     VERIFY_ARE_NOT_EQUAL(cfi.dwFontSize, c_coordZero, L"Ensure non-zero font size");
     VERIFY_ARE_EQUAL(cfi.dwFontSize, cfie.dwFontSize, L"Ensure regular and Ex APIs return same dwFontSize");
 
-    const COORD coordCurrentFontSize = GetConsoleFontSize(hConsoleOutput, cfi.nFont);
+    const COORD coordCurrentFontSize = OneCoreDelay::GetConsoleFontSize(hConsoleOutput, cfi.nFont);
     VERIFY_ARE_EQUAL(coordCurrentFontSize, cfi.dwFontSize, L"Ensure GetConsoleFontSize output matches GetCurrentConsoleFont");
 
     // ---------------------
@@ -157,11 +157,11 @@ void FontTests::TestFontScenario()
     cfieSet.dwFontSize.Y = 12;
     VERIFY_SUCCEEDED(StringCchCopy(cfieSet.FaceName, ARRAYSIZE(cfieSet.FaceName), L"Lucida Console"));
 
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfieSet));
+    VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfieSet));
 
     CONSOLE_FONT_INFOEX cfiePost = {0};
     cfiePost.cbSize = sizeof(cfiePost);
-    VERIFY_WIN32_BOOL_SUCCEEDED(GetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiePost));
+    VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiePost));
 
     // Ensure that the two values we attempted to set did accurately round-trip through the API.
     // The other unspecified values may have been adjusted/updated by GDI.
@@ -194,7 +194,7 @@ void FontTests::TestSetFontAdjustsWindow()
     wcscpy_s(cfiex.FaceName, L"Consolas");
     cfiex.dwFontSize.Y = 16;
 
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiex));
+    VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiex));
     Sleep(250);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetClientRect(hwnd, &rc), L"Retrieve client rectangle size for Consolas 16.");
     SIZE szConsolas;
@@ -206,7 +206,7 @@ void FontTests::TestSetFontAdjustsWindow()
     wcscpy_s(cfiex.FaceName, L"Lucida Console");
     cfiex.dwFontSize.Y = 12;
 
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiex));
+    VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiex));
     Sleep(250);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetClientRect(hwnd, &rc), L"Retrieve client rectangle size for Lucida Console 12.");
     SIZE szLucida;
@@ -222,7 +222,7 @@ void FontTests::TestSetFontAdjustsWindow()
     wcscpy_s(cfiex.FaceName, L"Consolas");
     cfiex.dwFontSize.Y = 16;
 
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiex));
+    VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiex));
     Sleep(250);
     VERIFY_WIN32_BOOL_SUCCEEDED(GetClientRect(hwnd, &rc), L"Retrieve client rectangle size for Consolas 16.");
     szConsolas.cx = rc.right - rc.left;

@@ -75,7 +75,7 @@ bool InputTests::TestCleanup()
 void InputTests::TestGetMouseButtonsValid()
 {
     DWORD nMouseButtons = (DWORD)-1;
-    VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleMouseButtons(&nMouseButtons));
+    VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetNumberOfConsoleMouseButtons(&nMouseButtons));
     VERIFY_ARE_EQUAL(nMouseButtons, (DWORD)GetSystemMetrics(SM_CMOUSEBUTTONS));
 }
 
