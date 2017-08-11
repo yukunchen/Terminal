@@ -47,7 +47,46 @@ namespace Conhost.UIA.Tests
                         app.UIRoot.SendKeys("cat");
                         app.UIRoot.SendKeys(Keys.Enter);
                         Globals.WaitForTimeout();
-                        app.UIRoot.SendKeys(Keys.Control + "azhc" + Keys.Control);
+                        app.UIRoot.SendKeys(Keys.Control + "ahz" + Keys.Control);
+                        Globals.WaitForTimeout();
+                        // make sure "^A^H^Z" showed up in the output
+                        Rectangle rect = new Rectangle(0, 0, 10, 10);
+                        IEnumerable<string> text = area.GetLinesInRectangle(hConsole, rect);
+                        bool foundCtrlChars = false;
+                        foreach (string line in text)
+                        {
+                            if (line.Contains("^A^H^Z"))
+                            {
+                                foundCtrlChars = true;
+                                break;
+                            }
+                        }
+                        Verify.IsTrue(foundCtrlChars);
+                    }
+                }
+            }
+        }
+
+        [TestMethod]
+        public void VerifyCtrlCBash()
+        {
+            using (RegistryHelper reg = new RegistryHelper())
+            {
+                reg.BackupRegistry();
+                using (CmdApp app = new CmdApp(CreateType.ProcessOnly, TestContext))
+                {
+                    using (ViewportArea area = new ViewportArea(app))
+                    {
+                        IntPtr hConsole = app.GetStdOutHandle();
+                        Verify.IsNotNull(hConsole, "Ensure the STDOUT handle is valid.");
+                        // start up bash, run cat, type ctrl+c 
+                        app.UIRoot.SendKeys("bash");
+                        app.UIRoot.SendKeys(Keys.Enter);
+                        Globals.WaitForTimeout();
+                        app.UIRoot.SendKeys("cat");
+                        app.UIRoot.SendKeys(Keys.Enter);
+                        Globals.WaitForTimeout();
+                        app.UIRoot.SendKeys(Keys.Control + "c" + Keys.Control);
                         Globals.WaitForTimeout();
                         // make sure "^C" showed up in the output
                         Rectangle rect = new Rectangle(0, 0, 10, 10);
@@ -55,7 +94,7 @@ namespace Conhost.UIA.Tests
                         bool foundCtrlC = false;
                         foreach (string line in text)
                         {
-                            if (line.Contains("^A^Z^H^C"))
+                            if (line.Contains("^C"))
                             {
                                 foundCtrlC = true;
                                 break;

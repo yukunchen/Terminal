@@ -158,7 +158,7 @@ private:
     // TODO: consider putting word delims in here
 
     // -- State/Flags --
-    // This replaces/deprecates CONSOLE_SELECTION_INVERTED on ServiceLocator::LocateGlobals()->getConsoleInformation()->SelectionFlags
+    // This replaces/deprecates CONSOLE_SELECTION_INVERTED on gci->SelectionFlags
     bool _fSelectionVisible;
 
     bool _fLineSelection; // whether to use line selection or block selection

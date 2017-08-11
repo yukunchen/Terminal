@@ -24,16 +24,18 @@ class InputRecordConversionTests
 
     TEST_CLASS_SETUP(ClassSetup)
     {
-        savedCodepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->CP;
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->CP = CP_JAPANESE;
-        VERIFY_IS_TRUE(!!GetCPInfo(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, &ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo));
+        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        savedCodepage = gci->CP;
+        gci->CP = CP_JAPANESE;
+        VERIFY_IS_TRUE(!!GetCPInfo(gci->CP, &gci->CPInfo));
         return true;
     }
 
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->CP = savedCodepage;
-        VERIFY_IS_TRUE(!!GetCPInfo(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, &ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo));
+        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        gci->CP = savedCodepage;
+        VERIFY_IS_TRUE(!!GetCPInfo(gci->CP, &gci->CPInfo));
         return true;
     }
 
@@ -82,6 +84,7 @@ class InputRecordConversionTests
 
     TEST_METHOD(TranslateInputToOemSplitsDbcsChars)
     {
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
         Log::Comment(L"dbcs chars should be split");
         INPUT_RECORD inRecords[INPUT_RECORD_COUNT * 2];
         // U+3042 hiragana letter A
@@ -98,7 +101,7 @@ class InputRecordConversionTests
         VERIFY_ARE_EQUAL(outNum, INPUT_RECORD_COUNT * 2);
         // create the data to compare the output to
         char dbcsChars[INPUT_RECORD_COUNT * 2] = { 0 };
-        int writtenBytes = WideCharToMultiByte(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
+        int writtenBytes = WideCharToMultiByte(gci->CP,
                                                0,
                                                inChars,
                                                INPUT_RECORD_COUNT,
@@ -115,6 +118,7 @@ class InputRecordConversionTests
 
     TEST_METHOD(TranslateInputToOemSavesPartiaDbcsByteLeftover)
     {
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
         Log::Comment(L"if the optional 4th param is not null and there isn't enough space to store all converted dbcs chars in the buffer, it should store the leftover byte in the optional param");
         INPUT_RECORD inRecords[INPUT_RECORD_COUNT * 2];
         // U+3042 hiragana letter A
@@ -132,7 +136,7 @@ class InputRecordConversionTests
         VERIFY_ARE_EQUAL(outNum, (INPUT_RECORD_COUNT * 2) - 1);
         // create the data to compare the output to
         char dbcsChars[INPUT_RECORD_COUNT * 2] = { 0 };
-        int writtenBytes = WideCharToMultiByte(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
+        int writtenBytes = WideCharToMultiByte(gci->CP,
                                                0,
                                                inChars,
                                                INPUT_RECORD_COUNT,

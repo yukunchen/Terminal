@@ -21,7 +21,8 @@
 // - <none>
 void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->WriteInputBuffer(rgInput, cInput);
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->pInputBuffer->WriteInputBuffer(rgInput, cInput);
 }
 
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :

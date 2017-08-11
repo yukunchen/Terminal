@@ -516,6 +516,7 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
                             _In_ const ULONG cbAnsi,
                             _Out_opt_ PINPUT_RECORD pDbcsInputRecord)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     PWCHAR const TmpUni = new WCHAR[cchUnicode];
     if (TmpUni == nullptr)
     {
@@ -533,8 +534,8 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
         if (IsCharFullWidth(TmpUni[i]))
         {
             ULONG const NumBytes = sizeof(AsciiDbcs);
-            ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, &TmpUni[i], 1, (LPSTR) & AsciiDbcs[0], NumBytes);
-            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo))
+            ConvertToOem(gci->CP, &TmpUni[i], 1, (LPSTR) & AsciiDbcs[0], NumBytes);
+            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &gci->CPInfo))
             {
                 if (j < cbAnsi - 1)
                 {   // -1 is safe DBCS in buffer
@@ -557,7 +558,7 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
         }
         else
         {
-            ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, &TmpUni[i], 1, &pchAnsi[j], 1);
+            ConvertToOem(gci->CP, &TmpUni[i], 1, &pchAnsi[j], 1);
         }
     }
 

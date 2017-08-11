@@ -252,33 +252,24 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 
         // The above part of the code seems ridiculous in terms of complexity. especially the dbcs stuff.
         // So we'll copy the attributes here in a not terrible way.
-
         if (fWriteAttributes)
         {
             TextAttribute* pSrcAttr = &(pTextAttributes[(psrSrc->Top * coordSrcDimensions.X) + psrSrc->Left]);
             int rowWidth = coordScreenBufferSize.X;
-            int srcWidth = psrSrc->Right - psrSrc->Left;
+            int const srcWidth = psrSrc->Right - psrSrc->Left + 1;
             for (int y = coordDest.Y; y < coordSrcDimensions.Y + coordDest.Y; y++)
             {
                 ROW* pRow = pScreenInfo->TextInfo->GetRowByOffset(y);
-                TextAttribute* rTargetAttributes = new TextAttribute[rowWidth];
-                NTSTATUS Status2 = NT_TESTNULL(rTargetAttributes);
-                if (NT_SUCCESS(Status2))
-                {
-                    Status2 = pRow->AttrRow.UnpackAttrs(rTargetAttributes, rowWidth);
-                    if (NT_SUCCESS(Status2))
-                    {
-                        for (int x = coordDest.X; x < srcWidth + coordDest.X; x++)
-                        {
-                            rTargetAttributes[x].SetFrom(*pSrcAttr);
-                            pSrcAttr++; // advance to next attr
-                        }
-                        pRow->AttrRow.PackAttrs(rTargetAttributes, rowWidth);
-                    }
 
-                    delete[] rTargetAttributes;
-                    pSrcAttr++; // advance to next row.
-                }
+                // Create new run representing setting this color for the specified columns of the rectangle.
+                TextAttributeRun insert;
+                insert.SetAttributes(*pSrcAttr);
+                insert.SetLength(srcWidth);
+
+                // Insert into existing run length encoding at destination position for distance.
+                pRow->AttrRow.InsertAttrRuns(&insert, 1, coordDest.X, (coordDest.X + srcWidth) - 1, rowWidth);
+
+                pSrcAttr += srcWidth; // advance to next row.
             }
         }
 
@@ -315,9 +306,10 @@ void WriteRegionToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PSMALL_RECT 
 void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT srRegion)
 {
     DBGOUTPUT(("WriteToScreen\n"));
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     // update to screen, if we're not iconic.
     if (!pScreenInfo->IsActiveScreenBuffer() ||
-        (ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags & (CONSOLE_IS_ICONIC | CONSOLE_NO_WINDOW)))
+        (gci->Flags & (CONSOLE_IS_ICONIC | CONSOLE_NO_WINDOW)))
     {
         return;
     }
@@ -363,6 +355,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                            _Out_opt_ PULONG pcColumns)
 {
     DBGOUTPUT(("WriteOutputString\n"));
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     if (*pcRecords == 0)
     {
@@ -389,7 +382,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
     BOOL fLocalHeap = FALSE;
     if (ulStringType == CONSOLE_ASCII)
     {
-        UINT const Codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
+        UINT const Codepage = gci->OutputCP;
 
         if (*pcRecords >= ARRAYSIZE(rgwchBuffer) ||
             *pcRecords >= ARRAYSIZE(rgbBufferA))
@@ -427,7 +420,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 break;
             }
 
-            if (IsDBCSLeadByteConsole(*TmpBuf, &ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCPInfo))
+            if (IsDBCSLeadByteConsole(*TmpBuf, &gci->OutputCPInfo))
             {
                 if (i + 1 >= *pcRecords)
                 {
@@ -774,6 +767,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     _Inout_ PULONG pcElements)  // this value is valid even for error cases
 {
     DBGOUTPUT(("FillOutput\n"));
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     if (*pcElements == 0)
     {
         return STATUS_SUCCESS;
@@ -791,10 +785,10 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
 
     if (ulElementType == CONSOLE_ASCII)
     {
-        UINT const Codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
+        UINT const Codepage = gci->OutputCP;
         if (pScreenInfo->FillOutDbcsLeadChar == 0)
         {
-            if (IsDBCSLeadByteConsole((CHAR) wElement, &ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCPInfo))
+            if (IsDBCSLeadByteConsole((CHAR) wElement, &gci->OutputCPInfo))
             {
                 pScreenInfo->FillOutDbcsLeadChar = (CHAR) wElement;
                 *pcElements = 0;
@@ -1035,14 +1029,14 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
         if (Y != coordWrite.Y)
         {
             WriteRegion.Left = 0;
-            WriteRegion.Right = (SHORT)(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetScreenBufferSize().X - 1);
+            WriteRegion.Right = (SHORT)(gci->CurrentScreenBuffer->GetScreenBufferSize().X - 1);
         }
         else
         {
             WriteRegion.Left = coordWrite.X + pScreenInfo->GetBufferViewport().Top + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.X;
             WriteRegion.Right = X + pScreenInfo->GetBufferViewport().Top + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.X;
         }
-        WriteConvRegionToScreen(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer, WriteRegion);
+        WriteConvRegionToScreen(gci->CurrentScreenBuffer, WriteRegion);
         *pcElements = NumWritten;
         return STATUS_SUCCESS;
     }

@@ -27,9 +27,6 @@
     <ClCompile Include="precomp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Init.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="API_BufferTests.cpp">
       <Filter>Source Files\API</Filter>
     </ClCompile>
@@ -70,6 +67,9 @@
       <Filter>Source Files\API</Filter>
     </ClCompile>
     <ClCompile Include="OneCoreDelay.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InitTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

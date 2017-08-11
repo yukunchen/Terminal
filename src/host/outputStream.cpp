@@ -584,3 +584,15 @@ BOOL ConhostInternalGetSet::PrivateEraseAll()
 {
     return NT_SUCCESS(DoSrvPrivateEraseAll(_pScreenInfo));
 }
+
+// Routine Description:
+// - Retrieves the default color attributes information for the active screen buffer.
+// - This function is used to optimize SGR calls in lieu of calling GetConsoleScreenBufferInfoEx.
+// Arguments:
+// - pwAttributes - Pointer to space to receive color attributes data
+// Return Value:
+// - TRUE if successful. FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes)
+{
+    return NT_SUCCESS(DoSrvPrivateGetConsoleScreenBufferAttributes(_pScreenInfo, pwAttributes));
+}

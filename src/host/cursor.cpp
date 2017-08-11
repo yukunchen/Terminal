@@ -354,9 +354,10 @@ void Cursor::CopyProperties(_In_ const Cursor* const pOtherCursor)
 // - <none>
 void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     ServiceLocator::LocateConsoleWindow()->SetWindowHasMoved(false);
 
-    if ((ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags & CONSOLE_HAS_FOCUS) == 0)
+    if ((gci->Flags & CONSOLE_HAS_FOCUS) == 0)
     {
         goto DoScroll;
     }
@@ -379,7 +380,7 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
             IAccessibilityNotifier::ConsoleCaretEventFlags flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretInvisible;
 
             // Flags is expected to be 2, 1, or 0. 2 in selecting (whether or not visible), 1 if just visible, 0 if invisible/noselect.
-            if (IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_SELECTING))
+            if (IsFlagSet(gci->Flags, CONSOLE_SELECTING))
             {
                 flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection;
             }
@@ -518,11 +519,12 @@ void CALLBACK CursorTimerRoutineWrapper(_In_ PVOID /* lpParam */, _In_ BOOL /* T
     // object unless there readily is contention on it. As a result, if we
     // wanted to wait until the lock became available under the condition of
     // not being destroyed, things get too complicated.
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->TryLockConsole() != FALSE)
+    if (gci->TryLockConsole() != FALSE)
     {
-        Cursor *cursor = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor();
-        cursor->TimerRoutine(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer);
+        Cursor *cursor = gci->CurrentScreenBuffer->TextInfo->GetCursor();
+        cursor->TimerRoutine(gci->CurrentScreenBuffer);
 
         UnlockConsole();
     }
