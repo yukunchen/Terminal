@@ -114,7 +114,7 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
         // This routine should be called by a thread owning the same lock on
         // the same console as we're reading from.
 
-        ASSERT(gci->IsConsoleLocked());
+        ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
 
         lpBuffer = _BufPtr;
 
