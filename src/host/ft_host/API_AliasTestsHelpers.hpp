@@ -40,18 +40,18 @@
 #define TestGetConsoleAliasHelper TestGetConsoleAliasHelperW
 #define TCH wchar_t
 #define TLEN wcslen
-#define AddConsoleAliasT AddConsoleAliasW
+#define AddConsoleAliasT OneCoreDelay::AddConsoleAliasW
 #define StringCbCopyT StringCbCopyW
-#define GetConsoleAliasT GetConsoleAliasW
+#define GetConsoleAliasT OneCoreDelay::GetConsoleAliasW
 #define TSTRFORMAT L"%s"
 #define TCHFORMAT L"%c"
 #else
 #define TestGetConsoleAliasHelper TestGetConsoleAliasHelperA
 #define TCH char
 #define TLEN strlen
-#define AddConsoleAliasT AddConsoleAliasA
+#define AddConsoleAliasT OneCoreDelay::AddConsoleAliasA
 #define StringCbCopyT StringCbCopyA
-#define GetConsoleAliasT GetConsoleAliasA
+#define GetConsoleAliasT OneCoreDelay::GetConsoleAliasA
 #define TSTRFORMAT L"%S"
 #define TCHFORMAT L"%C"
 #endif

@@ -6,6 +6,8 @@ MANAGED_CODE                       =   1
 TEST_CODE                          =   1
 URT_VER                            =   4.5
 
+USER_CS_FLAGS                      =   $(USER_CS_FLAGS) /define:__INSIDE_WINDOWS
+
 SOURCES                            =   \
                                        Properties\AssemblyInfo.cs \
                                        Common\AutoHelpers.cs \
@@ -42,9 +44,9 @@ REFERENCES                         =   $(CLR_REF_PATH)\System.metadata_dll; \
                                        $(SDKTOOLS_REF_PATH)\wextest\cue\wex.common.managed.metadata_dll; \
                                        $(SDKTOOLS_REF_PATH)\wextest\cue\wex.logger.interop.metadata_dll; \
                                        $(SDKTOOLS_REF_PATH)\wextest\cue\te.managed.metadata_dll; \
-                                       $(SDKTOOLS_REF_PATH)\Mita.Foundation.2.0.metadata_dll; \
-                                       $(SDKTOOLS_REF_PATH)\Mita.FingerPrinting.2.0.metadata_dll; \
-                                       $(SDKTOOLS_REF_PATH)\Mita.Localization.2.0.metadata_dll; \
-                                       $(SDKTOOLS_REF_PATH)\Mita.LocalizationProvider.2.0.metadata_dll; \
-                                       $(SDKTOOLS_REF_PATH)\Mita.Modeling.2.0.metadata_dll; \
-                                       $(SDKTOOLS_REF_PATH)\Microsoft.UIAutomationAdapter.metadata_dll;
+                                       $(SDKTOOLS_REF_PATH)\WinAppDriver\appium-dotnet-driver.metadata_dll; \
+                                       $(SDKTOOLS_REF_PATH)\WinAppDriver\castle.core.metadata_dll; \
+                                       $(SDKTOOLS_REF_PATH)\WinAppDriver\newtonsoft.json.metadata_dll; \
+                                       $(SDKTOOLS_REF_PATH)\WinAppDriver\webdriver.metadata_dll; \
+                                       $(SDKTOOLS_REF_PATH)\WinAppDriver\webdriver.support.metadata_dll;
+

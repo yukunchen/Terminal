@@ -18,7 +18,7 @@ TARGETLIBS=\
 SOURCES=main.cpp  \
         res.rc \
 
-TARGET_DESTINATION=retail
+TARGET_DESTINATION=unittests
 
 INCLUDES= \
     $(INCLUDES);$(OBJ_PATH)\$(O);$(MINWIN_PRIV_SDK_INC_PATH)
