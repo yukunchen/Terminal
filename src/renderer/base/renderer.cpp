@@ -263,6 +263,7 @@ bool Renderer::_CheckViewportAndScroll()
     coordDelta.Y = srOldViewport.Top - srNewViewport.Top;
 
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+        LOG_IF_FAILED(pEngine->UpdateViewport(srNewViewport));
         LOG_IF_FAILED(pEngine->InvalidateScroll(&coordDelta));
     });
     _srViewportPrevious = srNewViewport;

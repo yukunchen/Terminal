@@ -33,7 +33,26 @@ HRESULT VtEngine::InvalidateSystem(_In_ const RECT* const prcDirtyClient)
 HRESULT VtEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 {
     pcoordDelta;
-    return S_OK;
+    return this->InvalidateAll();
+    
+    // if (pcoordDelta->X != 0 || pcoordDelta->Y != 0)
+    // {
+    //     // POINT ptDelta = { 0 };
+    //     // RETURN_IF_FAILED(_ScaleByFont(pcoordDelta, &ptDelta));
+
+    //     RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
+
+    //     // SIZE szInvalidScrollNew;
+    //     // RETURN_IF_FAILED(LongAdd(_szInvalidScroll.cx, ptDelta.x, &szInvalidScrollNew.cx));
+    //     // RETURN_IF_FAILED(LongAdd(_szInvalidScroll.cy, ptDelta.y, &szInvalidScrollNew.cy));
+
+    //     // // Store if safemath succeeded
+    //     // _szInvalidScroll = szInvalidScrollNew;
+    // }
+
+    // return S_OK;
+    
+    // return S_OK;
 }
 
 // Routine Description:
@@ -47,6 +66,10 @@ HRESULT VtEngine::InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const 
 {
     rgsrSelection;
     cRectangles;
+    for(unsigned int i = 0; i < cRectangles; i++)
+    {
+        this->_InvalidCombine(&rgsrSelection[i]);
+    }
     return S_OK;
 }
 
@@ -60,6 +83,7 @@ HRESULT VtEngine::InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const 
 HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 {
     psrRegion;
+    this->_InvalidCombine(psrRegion);
     return S_OK;
 }
 
@@ -72,5 +96,62 @@ HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 // - S_OK, GDI related failure, or safemath failure.
 HRESULT VtEngine::InvalidateAll()
 {
+
+    this->_InvalidCombine(&_srLastViewport);
+    return S_OK;
+}
+
+
+
+
+// Routine Description:
+// - Helper to combine the given rectangle into the invalid region to be updated on the next paint
+// Arguments:
+// - prc - Pixel region (RECT) that should be repainted on the next frame
+// Return Value:
+// - S_OK, GDI related failure, or safemath failure.
+HRESULT VtEngine::_InvalidCombine(_In_ const SMALL_RECT* const prc)
+{
+    if (!_fInvalidRectUsed)
+    {
+        _srcInvalid = *prc;
+        _fInvalidRectUsed = true;
+    }
+    else
+    {
+        _OrRect(&_srcInvalid, prc);
+    }
+
+    // Ensure invalid areas remain within bounds of window.
+    // RETURN_IF_FAILED(_InvalidRestrict());
+
+    return S_OK;
+}
+
+// Routine Description:
+// - Helper to adjust the invalid region by the given offset such as when a scroll operation occurs.
+// Arguments:
+// - ppt - Distances by which we should move the invalid region in response to a scroll
+// Return Value:
+// - S_OK, GDI related failure, or safemath failure.
+HRESULT VtEngine::_InvalidOffset(_In_ const COORD* const pCoord)
+{
+    if (_fInvalidRectUsed)
+    {
+        SMALL_RECT rcInvalidNew;
+
+        RETURN_IF_FAILED(ShortAdd(_srcInvalid.Left, pCoord->X, &rcInvalidNew.Left));
+        RETURN_IF_FAILED(ShortAdd(_srcInvalid.Right, pCoord->X, &rcInvalidNew.Right));
+        RETURN_IF_FAILED(ShortAdd(_srcInvalid.Top, pCoord->Y, &rcInvalidNew.Top));
+        RETURN_IF_FAILED(ShortAdd(_srcInvalid.Bottom, pCoord->Y, &rcInvalidNew.Bottom));
+
+        // Add the scrolled invalid rectangle to what was left behind to get the new invalid area.
+        // This is the equivalent of adding in the "update rectangle" that we would get out of ScrollWindowEx/ScrollDC.
+        _OrRect(&_srcInvalid, &rcInvalidNew);
+
+        // Ensure invalid areas remain within bounds of window.
+        // RETURN_IF_FAILED(_InvalidRestrict());
+    }
+
     return S_OK;
 }

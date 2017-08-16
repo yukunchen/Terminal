@@ -54,6 +54,7 @@ namespace Microsoft
                 HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds);
                 HRESULT UpdateFont(_In_ FontInfoDesired const * const pfiFontInfoDesired, _Out_ FontInfo* const pfiFontInfo);
                 HRESULT UpdateDpi(_In_ int const iDpi);
+                HRESULT UpdateViewport(_In_ SMALL_RECT const srNewViewport);
 
                 HRESULT GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont, _In_ int const iDpi);
 
@@ -65,6 +66,22 @@ namespace Microsoft
                 wil::unique_hfile _hFile;
                 HRESULT _Write(_In_reads_(cch) PCSTR psz, _In_ size_t const cch);
                 HRESULT _Write(_In_ std::string& str);
+                
+                void _OrRect(_In_ SMALL_RECT* const pRectExisting, _In_ const SMALL_RECT* const pRectToOr) const;
+                HRESULT _InvalidCombine(_In_ const SMALL_RECT* const psrc);
+                HRESULT _InvalidOffset(_In_ const COORD* const ppt);
+                HRESULT _MoveCursor(_In_ const COORD coord);
+                // HRESULT _InvalidRestrict();
+
+                COLORREF _LastFG;
+                COLORREF _LastBG;
+
+                SMALL_RECT _srLastViewport;
+
+                SMALL_RECT _srcInvalid;
+                bool _fInvalidRectUsed;
+                COORD _lastRealCursor;
+                COORD _lastText;
             };
         };
     };

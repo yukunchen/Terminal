@@ -58,6 +58,7 @@ namespace Microsoft
                 virtual HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds) = 0;
                 virtual HRESULT UpdateFont(_In_ FontInfoDesired const * const pfiFontInfoDesired, _Out_ FontInfo* const pfiFontInfo) = 0;
                 virtual HRESULT UpdateDpi(_In_ int const iDpi) = 0;
+                virtual HRESULT UpdateViewport(_In_ SMALL_RECT const srNewViewport) = 0;
 
                 virtual HRESULT GetProposedFont(_In_ FontInfoDesired const * const pfiFontInfoDesired, _Out_ FontInfo* const pfiFontInfo, _In_ int const iDpi) = 0;
 

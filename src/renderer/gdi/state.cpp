@@ -239,6 +239,12 @@ HRESULT GdiEngine::UpdateDpi(_In_ int const iDpi)
     return S_OK;
 }
 
+HRESULT GdiEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
+{
+    UNREFERENCED_PARAMETER(srNewViewport);
+    return S_OK;
+}
+
 // Routine Description:
 // - This method will figure out what the new font should be given the starting font information and a DPI.
 // - When the final font is determined, the FontInfo structure given will be updated with the actual resulting font chosen as the nearest match.

@@ -25,6 +25,11 @@ HRESULT VtEngine::StartPaint()
 {
  /*   std::string foo("A");
     return _Write(foo);*/
+
+    // Turn off cursor
+    std::string seq = "\x1b[?25l";
+    _Write(seq);
+
     return S_OK;
 }
 
@@ -48,6 +53,17 @@ HRESULT VtEngine::ScrollFrame()
 // - S_OK or suitable GDI HRESULT error.
 HRESULT VtEngine::EndPaint()
 {
+    _srcInvalid = { 0 };
+    _fInvalidRectUsed = false;
+
+    if (_lastText.X != _lastRealCursor.X || _lastText.Y != _lastRealCursor.Y )
+    {
+        _MoveCursor(_lastRealCursor);
+    }
+
+    // Turn on cursor
+    std::string seq = "\x1b[?25h";
+    _Write(seq);
     return S_OK;
 }
 
@@ -90,21 +106,22 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                   _In_ COORD const coord,
                                   _In_ bool const fTrimLeft)
 {
+    RETURN_IF_FAILED(_MoveCursor(coord));
     try
     {
-        PCSTR pszCursorFormat = "\x1b[%d;%dH";
-        COORD coordVt = coord;
-        coordVt.X++;
-        coordVt.Y++;
-
-        int cchNeeded = _scprintf(pszCursorFormat, coordVt.Y, coordVt.X);
-        wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-        RETURN_IF_NULL_ALLOC(psz);
-
-        int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszCursorFormat, coordVt.Y, coordVt.X);
-        _Write(psz.get(), cchWritten);
-
         // Move cursor to position.
+        // PCSTR pszCursorFormat = "\x1b[%d;%dH";
+        // COORD coordVt = coord;
+        // coordVt.X++;
+        // coordVt.Y++;
+
+        // int cchNeeded = _scprintf(pszCursorFormat, coordVt.Y, coordVt.X);
+        // wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+        // RETURN_IF_NULL_ALLOC(psz);
+
+        // int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszCursorFormat, coordVt.Y, coordVt.X);
+        // _Write(psz.get(), cchWritten);
+
         DWORD dwNeeded = WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)cchLine, nullptr, 0, nullptr, nullptr);
         wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(dwNeeded + 1);
         RETURN_IF_NULL_ALLOC(rgchNeeded);
@@ -112,6 +129,14 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
         rgchNeeded[dwNeeded] = '\0';
 
         _Write(rgchNeeded.get(), dwNeeded);
+        
+        // Update our internal tracker of the cursor's position
+        short totalWidth = 0;
+        for (int i=0; i < cchLine; i++)
+        {
+            totalWidth+=(short)rgWidths[i];
+        }
+        _lastText.X += totalWidth;
 
         pwsLine;
         rgWidths;
@@ -155,6 +180,30 @@ HRESULT VtEngine::PaintCursor(_In_ COORD const coord, _In_ ULONG const ulHeightP
     coord;
     ulHeightPercent;
     fIsDoubleWidth;
+
+    _MoveCursor(coord);
+    // if (coord.X != _lastCursor.X || coord.Y != _lastCursor.Y)
+    // {
+    //     try
+    //     {
+    //         PCSTR pszCursorFormat = "\x1b[%d;%dH";
+    //         COORD coordVt = coord;
+    //         coordVt.X++;
+    //         coordVt.Y++;
+
+    //         int cchNeeded = _scprintf(pszCursorFormat, coordVt.Y, coordVt.X);
+    //         wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+    //         RETURN_IF_NULL_ALLOC(psz);
+
+    //         int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszCursorFormat, coordVt.Y, coordVt.X);
+    //         _Write(psz.get(), cchWritten);
+
+    //         _lastCursor = coord;
+    //     }
+    //     CATCH_RETURN();
+        
+    // }
+
     return S_OK;
 }
 
@@ -182,5 +231,33 @@ HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrS
 {
     rgsrSelection;
     cRectangles;
+    return S_OK;
+}
+
+
+HRESULT VtEngine::_MoveCursor(COORD const coord)
+{
+    // DebugBreak();
+    if (coord.X != _lastText.X || coord.Y != _lastText.Y)
+    {
+        try
+        {
+            PCSTR pszCursorFormat = "\x1b[%d;%dH";
+            COORD coordVt = coord;
+            coordVt.X++;
+            coordVt.Y++;
+
+            int cchNeeded = _scprintf(pszCursorFormat, coordVt.Y, coordVt.X);
+            wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+            RETURN_IF_NULL_ALLOC(psz);
+
+            int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszCursorFormat, coordVt.Y, coordVt.X);
+            _Write(psz.get(), cchWritten);
+
+            _lastText = coord;
+            _lastRealCursor = coord;
+        }
+        CATCH_RETURN();
+    }
     return S_OK;
 }

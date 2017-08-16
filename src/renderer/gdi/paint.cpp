@@ -43,6 +43,18 @@ HRESULT GdiEngine::StartPaint()
     _psInvalidData.fErase = TRUE;
     _psInvalidData.rcPaint = _rcInvalid;
 
+
+    // Debugging hack:
+    // Draw the invalid rect
+    // HBRUSH hbr = CreateSolidBrush(RGB(255, 0, 255));
+    // RECT _dbg = _rcInvalid;
+    // if (_dbg.top) _dbg.top--;
+    // if (_dbg.left) _dbg.left--;
+    // if (_dbg.right) _dbg.right++;
+    // if (_dbg.bottom) _dbg.bottom++;
+    // RETURN_HR_IF_FALSE(E_FAIL, FillRect(_hdcMemoryContext, &_dbg, hbr));
+    // DeleteObject(hbr);
+
     return S_OK;
 }
 
@@ -166,6 +178,7 @@ HRESULT GdiEngine::_PrepareMemoryBitmap(_In_ HWND const hwnd)
 // - S_OK or suitable GDI HRESULT error.
 HRESULT GdiEngine::EndPaint()
 {
+
     // If we try to end a paint that wasn't started, it's invalid. Return.
     RETURN_HR_IF_FALSE(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _fPaintStarted);
 

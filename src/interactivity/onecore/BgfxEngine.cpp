@@ -216,6 +216,12 @@ HRESULT BgfxEngine::UpdateDpi(int const iDpi)
     UNREFERENCED_PARAMETER(iDpi);
 
     return S_OK;
+}    
+
+HRESULT BgfxEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
+{
+    UNREFERENCED_PARAMETER(srNewViewport);
+    return S_OK;
 }
 
 HRESULT BgfxEngine::GetProposedFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo, int const iDpi)

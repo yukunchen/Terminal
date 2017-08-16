@@ -20,12 +20,25 @@ using namespace Microsoft::Console::Render;
 // - The character dimensions of the current dirty area of the frame.
 SMALL_RECT VtEngine::GetDirtyRectInChars()
 {
-    SMALL_RECT rc;
-    rc.Left = 0;
-    rc.Top = 0;
-    rc.Right = 89;
-    rc.Bottom = 25;
+    // Not allowed to do that. Do better.
+    // IRenderData* data = ServiceLocator::LocateGlobals()->pRenderData;
+    // SMALL_RECT viewport = data->GetViewport();
+    
+    // SMALL_RECT rc;
+    // rc.Left = 0;
+    // rc.Top = 0;
+    // rc.Right = viewport.Right - viewport.Left;
+    // rc.Bottom = viewport.Bottom - viewport.Top;
+    // rc.Bottom = 25;
+    // return rc;
+    // return data->GetViewport();
+    SMALL_RECT rc = _srcInvalid;
+    // if (rc.Top - rc.Bottom > 1)
+    // {
+    //     rc.Bottom--;
+    // }
     return rc;
+
 }
 
 // Routine Description:
@@ -39,4 +52,20 @@ bool VtEngine::IsCharFullWidthByFont(_In_ WCHAR const wch)
 {
     wch;
     return false;
+}
+
+// Routine Description:
+// - Performs a "CombineRect" with the "OR" operation.
+// - Basically extends the existing rect outward to also encompass the passed-in region.
+// Arguments:
+// - pRectExisting - Expand this rectangle to encompass the add rect.
+// - pRectToOr - Add this rectangle to the existing one.
+// Return Value:
+// - <none>
+void VtEngine::_OrRect(_In_ SMALL_RECT* const pRectExisting, _In_ const SMALL_RECT* const pRectToOr) const
+{
+    pRectExisting->Left = min(pRectExisting->Left, pRectToOr->Left);
+    pRectExisting->Top = min(pRectExisting->Top, pRectToOr->Top);
+    pRectExisting->Right = max(pRectExisting->Right, pRectToOr->Right);
+    pRectExisting->Bottom = max(pRectExisting->Bottom, pRectToOr->Bottom);
 }
