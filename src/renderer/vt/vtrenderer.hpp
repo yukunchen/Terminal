@@ -82,6 +82,7 @@ namespace Microsoft
                 bool _fInvalidRectUsed;
                 COORD _lastRealCursor;
                 COORD _lastText;
+                COORD _scrollDelta;
             };
         };
     };

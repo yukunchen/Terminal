@@ -42,6 +42,17 @@ HRESULT VtEngine::StartPaint()
 // - S_OK, suitable GDI HRESULT error, error from Win32 windowing, or safemath error.
 HRESULT VtEngine::ScrollFrame()
 {
+    // if (_scrollDelta.X != 0)
+    // {
+    //     // No easy way to shift left-right
+    //     return InvalidateAll();
+    // }
+
+
+    // if (_scrollDelta.Y > 0)
+    // {
+    //     SHORT 
+    // }
 
     return S_OK;
 }
@@ -110,19 +121,6 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
     RETURN_IF_FAILED(_MoveCursor(coord));
     try
     {
-        // Move cursor to position.
-        // PCSTR pszCursorFormat = "\x1b[%d;%dH";
-        // COORD coordVt = coord;
-        // coordVt.X++;
-        // coordVt.Y++;
-
-        // int cchNeeded = _scprintf(pszCursorFormat, coordVt.Y, coordVt.X);
-        // wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-        // RETURN_IF_NULL_ALLOC(psz);
-
-        // int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszCursorFormat, coordVt.Y, coordVt.X);
-        // _Write(psz.get(), cchWritten);
-
         DWORD dwNeeded = WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)cchLine, nullptr, 0, nullptr, nullptr);
         wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(dwNeeded + 1);
         RETURN_IF_NULL_ALLOC(rgchNeeded);
@@ -183,27 +181,6 @@ HRESULT VtEngine::PaintCursor(_In_ COORD const coord, _In_ ULONG const ulHeightP
     fIsDoubleWidth;
 
     _MoveCursor(coord);
-    // if (coord.X != _lastCursor.X || coord.Y != _lastCursor.Y)
-    // {
-    //     try
-    //     {
-    //         PCSTR pszCursorFormat = "\x1b[%d;%dH";
-    //         COORD coordVt = coord;
-    //         coordVt.X++;
-    //         coordVt.Y++;
-
-    //         int cchNeeded = _scprintf(pszCursorFormat, coordVt.Y, coordVt.X);
-    //         wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-    //         RETURN_IF_NULL_ALLOC(psz);
-
-    //         int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszCursorFormat, coordVt.Y, coordVt.X);
-    //         _Write(psz.get(), cchWritten);
-
-    //         _lastCursor = coord;
-    //     }
-    //     CATCH_RETURN();
-        
-    // }
 
     return S_OK;
 }

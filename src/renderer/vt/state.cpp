@@ -30,6 +30,7 @@ VtEngine::VtEngine()
     _srcInvalid = {0};
     _lastRealCursor = {0};
     _lastText = {0};
+    _scrollDelta = {0};
     _LastFG = 0xff000000;
     _LastBG = 0xff000000;
 }
