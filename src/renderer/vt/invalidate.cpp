@@ -7,7 +7,7 @@
 #include "precomp.h"
 
 #include "vtrenderer.hpp"
-
+#include "..\..\inc\Viewport.hpp"
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
@@ -96,8 +96,11 @@ HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 // - S_OK, GDI related failure, or safemath failure.
 HRESULT VtEngine::InvalidateAll()
 {
-
-    this->_InvalidCombine(&_srLastViewport);
+    Viewport view(_srLastViewport);
+    SMALL_RECT rc = _srLastViewport;
+    view.ConvertToOrigin(&rc);
+    // this->_InvalidCombine(&_srLastViewport);
+    this->_InvalidCombine(&rc);
     return S_OK;
 }
 

@@ -42,6 +42,7 @@ HRESULT VtEngine::StartPaint()
 // - S_OK, suitable GDI HRESULT error, error from Win32 windowing, or safemath error.
 HRESULT VtEngine::ScrollFrame()
 {
+
     return S_OK;
 }
 
