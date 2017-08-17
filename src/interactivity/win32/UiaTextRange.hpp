@@ -82,6 +82,7 @@ namespace Microsoft
                 private:
                     static IdType id;
 
+                protected:
                     // indicates which direction a movement operation
                     // is going
                     enum class MovementDirection
@@ -118,9 +119,19 @@ namespace Microsoft
                         MovementIncrement Increment;
 
                         MoveState(const UiaTextRange& range,
-                                  MovementDirection direction);
+                                  const MovementDirection direction);
+
+#ifdef _DEBUG
+                        MoveState(const ScreenInfoRow startScreenInfoRow,
+                                  const Column startColumn,
+                                  const ScreenInfoRow endScreenInfoRow,
+                                  const Column endColumn,
+                                  const ScreenInfoRow limitingRow,
+                                  const Column firstColumnInRow,
+                                  const Column lastColumnInRow,
+                                  const MovementIncrement increment);
+#endif
                     };
-                    friend MoveState;
 
                 public:
 
@@ -310,10 +321,6 @@ namespace Microsoft
                     static std::pair<Endpoint, Endpoint> _moveByLine(_In_ const int moveCount,
                                                                      _In_ const MoveState moveState,
                                                                      _Out_ int* const pAmountMoved);
-
-                    static std::pair<Endpoint, Endpoint> _moveByDocument(_In_ const int moveCount,
-                                                                         _In_ const MoveState moveState,
-                                                                         _Out_ int* const pAmountMoved);
 
                     static std::tuple<Endpoint, Endpoint, bool>
                     _moveEndpointByUnitCharacter(_In_ const int moveCount,
