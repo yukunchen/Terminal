@@ -7,6 +7,36 @@
 #include <wil\wistd_functional.h>
 #include <wil\wistd_memory.h>
 
+#include <string>
+
+bool openConsole()
+{
+    wchar_t commandline[] = L"OpenConsole.exe";
+    PROCESS_INFORMATION pi = {0};
+    STARTUPINFO si = {0};
+    si.cb = sizeof(STARTUPINFOW);
+    bool fSuccess = !!CreateProcess(
+        nullptr,
+        commandline,
+        nullptr,    // lpProcessAttributes
+        nullptr,    // lpThreadAttributes
+        false,      // bInheritHandles
+        0,          // dwCreationFlags
+        nullptr,    // lpEnvironment
+        nullptr,    // lpCurrentDirectory
+        &si,        //lpStartupInfo
+        &pi         //lpProcessInformation
+    );
+
+
+    if (!fSuccess)
+    {
+        wprintf(L"Failed to launch console\n");
+    }
+    return fSuccess;
+}
+
+
 int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 {
     HANDLE const hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -19,6 +49,9 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     wil::unique_handle pipe;
     pipe.reset(CreateNamedPipeW(L"\\\\.\\pipe\\convtpipe", PIPE_ACCESS_INBOUND, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr));
     THROW_IF_HANDLE_INVALID(pipe.get());
+
+    // Open our backing console
+    openConsole();
 
     THROW_LAST_ERROR_IF_FALSE(ConnectNamedPipe(pipe.get(), nullptr));
 
