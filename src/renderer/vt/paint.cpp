@@ -7,6 +7,7 @@
 #include "precomp.h"
 
 #include "vtrenderer.hpp"
+#include "..\..\inc\Viewport.hpp"
 
 #include <sstream>
 
@@ -42,12 +43,47 @@ HRESULT VtEngine::StartPaint()
 // - S_OK, suitable GDI HRESULT error, error from Win32 windowing, or safemath error.
 HRESULT VtEngine::ScrollFrame()
 {
-    // if (_scrollDelta.X != 0)
-    // {
-    //     // No easy way to shift left-right
-    //     return InvalidateAll();
-    // }
+    if (_scrollDelta.X != 0)
+    {
+        // No easy way to shift left-right
+        return InvalidateAll();
+    }
 
+    short dy = _scrollDelta.Y;
+    short absDy = (dy>0)? dy : -dy;
+
+    Viewport view(_srLastViewport);
+    SMALL_RECT v = _srLastViewport;
+    view.ConvertToOrigin(&v);
+
+    if (dy < 0)
+    {
+        _MoveCursor({0,0});
+        // DL - Delete Line
+        std::string seq = "\x1b[M";
+        for (int i = 0; i < absDy; ++i)
+        {
+            _Write(seq);
+        }
+
+        SMALL_RECT b = v;
+        b.Top = v.Bottom - absDy;
+        RETURN_IF_FAILED(_InvalidCombine(&b));
+    }
+    else
+    {
+        _MoveCursor({0,0});
+        // IL - Insert Line
+        std::string seq = "\x1b[L";
+        for (int i = 0; i < absDy; ++i)
+        {
+            _Write(seq);
+        }
+
+        SMALL_RECT a = v;
+        a.Bottom = absDy;
+        RETURN_IF_FAILED(_InvalidCombine(&a));
+    }
 
     // if (_scrollDelta.Y > 0)
     // {
@@ -73,6 +109,8 @@ HRESULT VtEngine::EndPaint()
         _MoveCursor(_lastRealCursor);
     }
 
+    _scrollDelta = {0};
+    
     // Turn on cursor
     std::string seq = "\x1b[?25h";
     _Write(seq);
@@ -220,17 +258,31 @@ HRESULT VtEngine::_MoveCursor(COORD const coord)
     {
         try
         {
-            PCSTR pszCursorFormat = "\x1b[%d;%dH";
-            COORD coordVt = coord;
-            coordVt.X++;
-            coordVt.Y++;
+            if (coord.X == 0 && coord.Y == 0)
+            {
+                std::string seq = "\x1b[H";
+                _Write(seq);
+            }
+            else if (coord.X == 0 && coord.Y == (_lastText.Y+1))
+            {
+                std::string seq = "\r\n";
+                _Write(seq);
+            }
+            else
+            {
+                PCSTR pszCursorFormat = "\x1b[%d;%dH";
+                COORD coordVt = coord;
+                coordVt.X++;
+                coordVt.Y++;
 
-            int cchNeeded = _scprintf(pszCursorFormat, coordVt.Y, coordVt.X);
-            wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-            RETURN_IF_NULL_ALLOC(psz);
+                int cchNeeded = _scprintf(pszCursorFormat, coordVt.Y, coordVt.X);
+                wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+                RETURN_IF_NULL_ALLOC(psz);
 
-            int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszCursorFormat, coordVt.Y, coordVt.X);
-            _Write(psz.get(), cchWritten);
+                int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszCursorFormat, coordVt.Y, coordVt.X);
+                _Write(psz.get(), cchWritten);
+                
+            }
 
             _lastText = coord;
             _lastRealCursor = coord;

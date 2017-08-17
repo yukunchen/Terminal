@@ -51,29 +51,25 @@ HRESULT VtEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
         // Store if safemath succeeded
         _scrollDelta = invalidScrollNew;
         
-
-        Viewport view(_srLastViewport);
-        SMALL_RECT v = _srLastViewport;
-        view.ConvertToOrigin(&v);
-
-        SMALL_RECT b = v;
-        SMALL_RECT c = v;
-        short dy2 = (dy>0)? dy : -dy;
-        // if (dy > 0)
+        // Invalidate top and bottom of viewport.
+        // I now think this isn't right.
         // {
-            b.Top = v.Bottom - dy2;
-            // I think v.Left is already 0 here
+        //     Viewport view(_srLastViewport);
+        //     SMALL_RECT v = _srLastViewport;
+        //     view.ConvertToOrigin(&v);
+
+        //     SMALL_RECT b = v;
+        //     SMALL_RECT c = v;
+        //     short dy2 = (dy>0)? dy : -dy;
+        //     b.Top = v.Bottom - dy2;
+        //     // I think v.Left is already 0 here
             
-            c.Top = c.Left = 0;
-            c.Bottom = dy2;
-            RETURN_IF_FAILED(_InvalidCombine(&b));
-            RETURN_IF_FAILED(_InvalidCombine(&c));
+        //     c.Top = c.Left = 0;
+        //     c.Bottom = dy2;
+        //     RETURN_IF_FAILED(_InvalidCombine(&b));
+        //     RETURN_IF_FAILED(_InvalidCombine(&c));
         // }
-        // else
-        // {
-        //     b.Top = v.Bottom + dy;
-        //     c.Bottom = dy;
-        // }
+
     }
 
     return S_OK;
