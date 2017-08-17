@@ -62,7 +62,7 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
                            _Out_ DWORD* const pNumBytes,
                            _Out_ DWORD* const pControlKeyState)
 {
-    ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
+    assert(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
 
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;

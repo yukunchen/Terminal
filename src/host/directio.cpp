@@ -30,6 +30,7 @@ ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG Num
     ULONG i, j;
 
     DBGCHARS(("TranslateInputToUnicode\n"));
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     INPUT_RECORD AsciiDbcs[2];
     CHAR Strings[2];
@@ -53,7 +54,7 @@ ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG Num
 
                 WCHAR UnicodeDbcs[2];
                 ULONG NumBytes = sizeof(Strings);
-                NumBytes = ConvertInputToUnicode(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
+                NumBytes = ConvertInputToUnicode(gci->CP,
                                                  &Strings[0],
                                                  NumBytes,
                                                  &UnicodeDbcs[0],
@@ -70,7 +71,7 @@ ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG Num
                 if (DBCSLeadByte->Event.KeyEvent.uChar.AsciiChar)
                     ZeroMemory(DBCSLeadByte, sizeof(INPUT_RECORD));
             }
-            else if (IsDBCSLeadByteConsole(InputRecords[i].Event.KeyEvent.uChar.AsciiChar, &ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo))
+            else if (IsDBCSLeadByteConsole(InputRecords[i].Event.KeyEvent.uChar.AsciiChar, &gci->CPInfo))
             {
                 if (i < NumRecords - 1)
                 {
@@ -87,7 +88,7 @@ ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG Num
             {
                 InputRecords[j] = InputRecords[i];
                 CHAR const c = InputRecords[i].Event.KeyEvent.uChar.AsciiChar;
-                ConvertInputToUnicode(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP,
+                ConvertInputToUnicode(gci->CP,
                                       &c,
                                       1,
                                       &InputRecords[j].Event.KeyEvent.uChar.UnicodeChar,
@@ -402,6 +403,7 @@ NTSTATUS DoSrvWriteConsoleInput(_In_ InputBuffer* pInputBuffer, _Inout_ CONSOLE_
 //   real OEM characters. We have real Unicode or UnicodeOem.
 NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     ULONG NumBytes;
     ULONG uX, uY;
     if (FAILED(ShortToULong(Size.X, &uX)) ||
@@ -418,12 +420,12 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
         return STATUS_NO_MEMORY;
     }
 
-    UINT const Codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
+    UINT const Codepage = gci->OutputCP;
 
     memmove(TmpBuffer, OutputBuffer, Size.X * Size.Y * sizeof(CHAR_INFO));
 
-#pragma prefast(push)
-#pragma prefast(disable:26019, "The buffer is the correct size for any given DBCS characters. No additional validation needed.")
+    #pragma prefast(push)
+    #pragma prefast(disable:26019, "The buffer is the correct size for any given DBCS characters. No additional validation needed.")
     for (int i = 0; i < Size.Y; i++)
     {
         for (int j = 0; j < Size.X; j++)
@@ -474,14 +476,15 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
 //   UnicodeOem or Unicode in the buffer, depending on font
 NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
 {
-    UINT const Codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    UINT const Codepage = gci->OutputCP;
 
     for (int i = 0; i < Size.Y; i++)
     {
         for (int j = 0; j < Size.X; j++)
         {
             ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
-            if (IsDBCSLeadByteConsole(OutputBuffer->Char.AsciiChar, &ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCPInfo))
+            if (IsDBCSLeadByteConsole(OutputBuffer->Char.AsciiChar, &gci->OutputCPInfo))
             {
                 if (j < Size.X - 1)
                 {   // -1 is safe DBCS in buffer
@@ -974,6 +977,7 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
                                    _In_ PCONSOLE_CREATESCREENBUFFER_MSG a)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::CreateConsoleScreenBuffer);
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     // If any buffer type except the one we support is set, it's invalid.
     if (IsAnyFlagSet(a->Flags, ~CONSOLE_TEXTMODE_BUFFER))
@@ -984,7 +988,7 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
 
     ConsoleHandleData::HandleType const HandleType = ConsoleHandleData::HandleType::Output;
 
-    const SCREEN_INFORMATION* const psiExisting = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+    const SCREEN_INFORMATION* const psiExisting = gci->CurrentScreenBuffer;
 
     // Create new screen buffer.
     CHAR_INFO Fill;

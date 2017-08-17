@@ -16,12 +16,12 @@
 #ifndef _UNICODE
 #define _UNICODE
 #endif
-#include "AliasTestsHelpers.hpp"
+#include "API_AliasTestsHelpers.hpp"
 
 // 2. Undefine Unicode and include the header again to get the other version of the functions
 #undef UNICODE
 #undef _UNICODE
-#include "AliasTestsHelpers.hpp"
+#include "API_AliasTestsHelpers.hpp"
 
 // 3. Finish up by putting Unicode back on for the rest of the code (like it should have been in the first place)
 #define UNICODE

@@ -1,3 +1,5 @@
 DIRS=dll \
      lib \
      ut_host{noncrit} \
+     ft_host{noncrit} \
+     ft_uia{noncrit} \

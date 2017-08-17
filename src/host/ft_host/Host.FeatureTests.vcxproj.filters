@@ -27,47 +27,50 @@
     <ClCompile Include="precomp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Init.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="api\BufferTests.cpp">
+    <ClCompile Include="API_BufferTests.cpp">
       <Filter>Source Files\API</Filter>
     </ClCompile>
     <ClCompile Include="Common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="api\CursorTests.cpp">
+    <ClCompile Include="API_CursorTests.cpp">
       <Filter>Source Files\API</Filter>
     </ClCompile>
-    <ClCompile Include="api\DimensionsTests.cpp">
+    <ClCompile Include="API_DimensionsTests.cpp">
       <Filter>Source Files\API</Filter>
     </ClCompile>
-    <ClCompile Include="api\FontTests.cpp">
+    <ClCompile Include="API_FontTests.cpp">
       <Filter>Source Files\API</Filter>
     </ClCompile>
-    <ClCompile Include="api\ModeTests.cpp">
+    <ClCompile Include="API_ModeTests.cpp">
       <Filter>Source Files\API</Filter>
     </ClCompile>
-    <ClCompile Include="api\InputTests.cpp">
+    <ClCompile Include="API_InputTests.cpp">
       <Filter>Source Files\API</Filter>
     </ClCompile>
-    <ClCompile Include="api\RgbColorTests.cpp">
+    <ClCompile Include="API_RgbColorTests.cpp">
       <Filter>Source Files\API</Filter>
     </ClCompile>
-    <ClCompile Include="message\KeyPressTests.cpp">
+    <ClCompile Include="Message_KeyPressTests.cpp">
       <Filter>Source Files\Message</Filter>
     </ClCompile>
-    <ClCompile Include="cjk\DbcsTests.cpp">
+    <ClCompile Include="CJK_DbcsTests.cpp">
       <Filter>Source Files\CJK</Filter>
     </ClCompile>
-    <ClCompile Include="api\TitleTests.cpp">
+    <ClCompile Include="API_TitleTests.cpp">
       <Filter>Source Files\API</Filter>
     </ClCompile>
-    <ClCompile Include="api\AliasTests.cpp">
+    <ClCompile Include="API_AliasTests.cpp">
       <Filter>Source Files\API</Filter>
     </ClCompile>
-    <ClCompile Include="api\FileTests.cpp">
+    <ClCompile Include="API_FileTests.cpp">
       <Filter>Source Files\API</Filter>
+    </ClCompile>
+    <ClCompile Include="OneCoreDelay.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InitTests.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -77,7 +80,10 @@
     <ClInclude Include="precomp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="api\AliasTestsHelpers.hpp">
+    <ClInclude Include="API_AliasTestsHelpers.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OneCoreDelay.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

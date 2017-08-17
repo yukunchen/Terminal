@@ -63,7 +63,8 @@ BOOL DIRECT_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
                               _Out_ DWORD* const pNumBytes,
                               _Out_ DWORD* const pControlKeyState)
 {
-    ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    ASSERT(gci->IsConsoleLocked());
 
     BOOLEAN RetVal = TRUE;
     *pReplyStatus = STATUS_SUCCESS;
@@ -128,34 +129,34 @@ BOOL DIRECT_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         // this routine should be called by a thread owning the same
         // lock on the same console as we're reading from.
 
-        ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
+        ASSERT(gci->IsConsoleLocked());
 
         Buffer = _pUserBuffer;
 
         PDWORD nLength = nullptr;
 
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->ReadConInpNumBytesUnicode = NumRecords;
+        gci->ReadConInpNumBytesUnicode = NumRecords;
         if (!fIsUnicode)
         {
             // ASCII : a->NumRecords is ASCII byte count
             if (_pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
             {
                 // Saved DBCS Traling byte
-                if (ServiceLocator::LocateGlobals()->getConsoleInformation()->ReadConInpNumBytesUnicode != 1)
+                if (gci->ReadConInpNumBytesUnicode != 1)
                 {
-                    ServiceLocator::LocateGlobals()->getConsoleInformation()->ReadConInpNumBytesUnicode--;
+                    gci->ReadConInpNumBytesUnicode--;
                     Buffer++;
                     fAddDbcsLead = TRUE;
-                    nLength = &ServiceLocator::LocateGlobals()->getConsoleInformation()->ReadConInpNumBytesUnicode;
+                    nLength = &gci->ReadConInpNumBytesUnicode;
                 }
                 else
                 {
-                    ASSERT(ServiceLocator::LocateGlobals()->getConsoleInformation()->ReadConInpNumBytesUnicode == 1);
+                    ASSERT(gci->ReadConInpNumBytesUnicode == 1);
                 }
             }
             else
             {
-                nLength = &ServiceLocator::LocateGlobals()->getConsoleInformation()->ReadConInpNumBytesUnicode;
+                nLength = &gci->ReadConInpNumBytesUnicode;
             }
         }
         else
@@ -186,7 +187,7 @@ BOOL DIRECT_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
 
             NumRecords = TranslateInputToOem(Buffer,
                                              NumRecords,
-                                             ServiceLocator::LocateGlobals()->getConsoleInformation()->ReadConInpNumBytesUnicode,
+                                             gci->ReadConInpNumBytesUnicode,
                                              _fIsPeek ? nullptr : &_pInputBuffer->ReadConInpDbcsLeadByte);
             if (fAddDbcsLead && _pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
             {

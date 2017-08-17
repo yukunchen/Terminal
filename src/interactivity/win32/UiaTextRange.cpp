@@ -455,10 +455,11 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
 
 IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal)
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+        gci->UnlockConsole();
     });
 
     *pRetVal = FALSE;
@@ -607,10 +608,11 @@ IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttribut
 
 IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+        gci->UnlockConsole();
     });
 
     *ppRetVal = nullptr;
@@ -675,10 +677,11 @@ IFACEMETHODIMP UiaTextRange::GetEnclosingElement(_Outptr_result_maybenull_ IRawE
 
 IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+        gci->UnlockConsole();
     });
 
     std::wstring wstr = L"";
@@ -713,12 +716,12 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     throw UIA_E_INVALIDOPERATION;
                 }
 
-                const ROW row = pTextBuffer->Rows[rowIndex];
+                const ROW* const pRow = &pTextBuffer->Rows[rowIndex];
 
-                if (row.CharRow.ContainsText())
+                if (pRow->CharRow.ContainsText())
                 {
                     int startIndex = 0;
-                    int endIndex = row.CharRow.Right;
+                    int endIndex = pRow->CharRow.Right;
                     if (currentScreenInfoRow == startScreenInfoRow)
                     {
                         startIndex = startColumn;
@@ -726,7 +729,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     if (currentScreenInfoRow == endScreenInfoRow)
                     {
                         // prevent the end from going past the last non-whitespace char in the row
-                        endIndex = min(static_cast<int>(endColumn + 1), row.CharRow.Right);
+                        endIndex = min(static_cast<int>(endColumn + 1), pRow->CharRow.Right);
                     }
 
                     // if startIndex >= endIndex then _start is
@@ -735,8 +738,8 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     // wouldn't be any text to grab.
                     if (startIndex < endIndex)
                     {
-                        std::wstring tempString = std::wstring(row.CharRow.Chars + startIndex,
-                                                               row.CharRow.Chars + endIndex);
+                        std::wstring tempString = std::wstring(pRow->CharRow.Chars + startIndex,
+                                                               pRow->CharRow.Chars + endIndex);
                         // add to result string
                         wstr += tempString;
                     }
@@ -990,10 +993,11 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
 
 IFACEMETHODIMP UiaTextRange::Select()
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+        gci->UnlockConsole();
     });
 
     COORD coordStart;
@@ -1027,10 +1031,11 @@ IFACEMETHODIMP UiaTextRange::RemoveFromSelection()
 
 IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+        gci->UnlockConsole();
     });
 
     Viewport oldViewport;
@@ -1173,7 +1178,8 @@ HWND UiaTextRange::_getWindowHandle()
 // - the current screen info. May return nullptr.
 SCREEN_INFORMATION* const UiaTextRange::_getScreenInfo()
 {
-    SCREEN_INFORMATION* const pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    SCREEN_INFORMATION* const pScreenInfo = gci->CurrentScreenBuffer;
     THROW_HR_IF_NULL(E_POINTER, pScreenInfo);
     return pScreenInfo;
 }
@@ -1213,7 +1219,8 @@ const unsigned int UiaTextRange::_getTotalRows()
 // - The screen buffer size
 const COORD UiaTextRange::_getScreenBufferCoords()
 {
-    return ServiceLocator::LocateGlobals()->getConsoleInformation()->GetScreenBufferSize();
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return gci->GetScreenBufferSize();
 }
 
 

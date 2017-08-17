@@ -318,10 +318,11 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
                        _In_ BOOL fUnicode,
                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    SCREEN_INFORMATION* const pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+    SCREEN_INFORMATION* const pScreenInfo = gci->CurrentScreenBuffer;
     if (nullptr == pScreenInfo)
     {
         return STATUS_UNSUCCESSFUL;
@@ -541,7 +542,7 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
                                         dwCtrlWakeupMask,
                                         pCommandHistory,
                                         Echo,
-                                        !!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetInsertMode(),
+                                        !!gci->GetInsertMode(),
                                         IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT),
                                         IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT),
                                         pTempHandleData);
@@ -575,7 +576,7 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
             memcpy_s(CookedReadData.ExeName, CookedReadData.ExeNameLength, pwsExeName, cbExeName);
         }
 
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData = &CookedReadData;
+        gci->lpCookedReadData = &CookedReadData;
 
         Status = CookedRead(&CookedReadData, !!fUnicode, pdwNumBytes, pControlKeyState);
         if (CONSOLE_STATUS_WAIT == Status)
@@ -587,14 +588,14 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
             }
             else
             {
-                ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData = pCookedReadWaiter;
+                gci->lpCookedReadData = pCookedReadWaiter;
                 *ppWaiter = pCookedReadWaiter;
             }
         }
 
         if (CONSOLE_STATUS_WAIT != Status)
         {
-            ServiceLocator::LocateGlobals()->getConsoleInformation()->lpCookedReadData = nullptr;
+            gci->lpCookedReadData = nullptr;
         }
 
         return Status;
@@ -840,11 +841,12 @@ HRESULT ApiRoutines::ReadConsoleWImpl(_In_ IConsoleInputObject* const pInContext
 
 VOID UnblockWriteConsole(_In_ const DWORD dwReason)
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags &= ~dwReason;
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->Flags &= ~dwReason;
 
-    if (AreAllFlagsClear(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
+    if (AreAllFlagsClear(gci->Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         // There is no longer any reason to suspend output, so unblock it.
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputQueue.NotifyWaiters(true);
+        gci->OutputQueue.NotifyWaiters(true);
     }
 }

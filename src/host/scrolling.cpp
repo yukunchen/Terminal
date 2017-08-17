@@ -23,24 +23,27 @@ void Scrolling::s_UpdateSystemMetrics()
 
 bool Scrolling::s_IsInScrollMode()
 {
-    return IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_SCROLLING);
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return IsFlagSet(gci->Flags, CONSOLE_SCROLLING);
 }
 
 void Scrolling::s_DoScroll()
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     if (!s_IsInScrollMode())
     {
         // clear any selection we may have -- can't scroll and select at the same time
         Selection::Instance().ClearSelection();
 
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_SCROLLING;
+        gci->Flags |= CONSOLE_SCROLLING;
         ServiceLocator::LocateConsoleWindow()->UpdateWindowText();
     }
 }
 
 void Scrolling::s_ClearScroll()
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags &= ~CONSOLE_SCROLLING;
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->Flags &= ~CONSOLE_SCROLLING;
     ServiceLocator::LocateConsoleWindow()->UpdateWindowText();
 }
 
@@ -187,6 +190,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel, _In_ bool isMouseHWhe
 
 bool Scrolling::s_HandleKeyScrollingEvent(_In_ const INPUT_KEY_INFO* const pKeyInfo)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
     ASSERT(pWindow);
 
@@ -246,7 +250,7 @@ bool Scrolling::s_HandleKeyScrollingEvent(_In_ const INPUT_KEY_INFO* const pKeyI
                 if (fIsEditLineEmpty)
                 {
                     // Ctrl-End when edit line is empty will scroll to last line in the buffer.
-                    ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->MakeCurrentCursorVisible();
+                    gci->CurrentScreenBuffer->MakeCurrentCursorVisible();
                     return true;
                 }
                 else

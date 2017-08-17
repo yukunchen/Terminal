@@ -337,11 +337,12 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_mayben
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     ApiMsgGetSelection apiMsg;
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    gci->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+        gci->UnlockConsole();
     });
 
     *ppRetVal = nullptr;
@@ -456,11 +457,12 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
 IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
     Tracing::s_TraceUia(this, ApiCall::GetVisibleRanges, nullptr);
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    gci->LockConsole();
     auto Unlock = wil::ScopeExit([&]
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+        gci->UnlockConsole();
     });
 
     const SCREEN_INFORMATION* const pScreenInfo = _getScreenInfo();
@@ -611,12 +613,14 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_SupportedTextSelection(_Out_ Supported
 
 const COORD ScreenInfoUiaProvider::_getScreenBufferCoords() const
 {
-    return ServiceLocator::LocateGlobals()->getConsoleInformation()->GetScreenBufferSize();
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return gci->GetScreenBufferSize();
 }
 
 SCREEN_INFORMATION* const ScreenInfoUiaProvider::_getScreenInfo()
 {
-    return ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return gci->CurrentScreenBuffer;
 }
 
 IConsoleWindow* const ScreenInfoUiaProvider::_getIConsoleWindow()

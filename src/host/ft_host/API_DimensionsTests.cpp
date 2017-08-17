@@ -78,11 +78,11 @@ void DimensionsTests::TestGetLargestConsoleWindowSize()
     // Get the styles for the window from the handle
     DWORD const dwStyle = GetWindowStyle(hWindow);
     DWORD const dwStyleEx = GetWindowExStyle(hWindow);
-    BOOL const bHasMenu = GetMenu(hWindow) != nullptr;
+    BOOL const bHasMenu = OneCoreDelay::GetMenu(hWindow) != nullptr;
 
     // Get the current font size
     CONSOLE_FONT_INFO cfi;
-    VERIFY_WIN32_BOOL_SUCCEEDED(GetCurrentConsoleFont(Common::_hConsole, FALSE, &cfi), L"Get the current console font structure.");
+    VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFont(Common::_hConsole, FALSE, &cfi), L"Get the current console font structure.");
 
     // Now use what we've learned to attempt to calculate the expected size
     COORD coordExpected = { 0 };
@@ -449,7 +449,7 @@ void DimensionsTests::TestSetConsoleScreenBufferInfoEx()
 
         // Get the current font size
         CONSOLE_FONT_INFO cfi;
-        VERIFY_WIN32_BOOL_SUCCEEDED(GetCurrentConsoleFont(Common::_hConsole, FALSE, &cfi), L"Get the current console font structure.");
+        VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFont(Common::_hConsole, FALSE, &cfi), L"Get the current console font structure.");
 
         if (VERIFY_ARE_NOT_EQUAL(0, cfi.dwFontSize.X, L"Verify that the font width is not zero or we'll have a division error."))
         {
