@@ -117,15 +117,16 @@ HRESULT InputBuffer::FlushAllButKeys()
 {
     try
     {
-        std::deque<INPUT_RECORD> keyRecords;
-        for (auto it = _storage.cbegin(); it != _storage.cend(); ++it)
+        std::deque<std::unique_ptr<IInputEvent>> keyEvents;
+        for (auto it = _storage.begin(); it != _storage.end(); ++it)
         {
-            if (it->EventType == KEY_EVENT)
+            if ((*it)->EventType() == InputEventType::KeyEvent)
             {
-                keyRecords.push_back(*it);
+                std::unique_ptr<IInputEvent> tempPtr((*it).release());
+                keyEvents.push_back(std::move(tempPtr));
             }
         }
-        _storage.swap(keyRecords);
+        _storage.swap(keyEvents);
         return S_OK;
     }
     CATCH_RETURN();
@@ -275,14 +276,17 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
         size_t virtualReadCount = 0;
         while (!_storage.empty() && virtualReadCount < readCount)
         {
-            outRecords.push_back(_storage.front());
+            outRecords.push_back(_storage.front()->ToInputRecord());
             ++virtualReadCount;
             if (!unicode)
             {
-                if (_storage.front().EventType == KEY_EVENT &&
-                    IsCharFullWidth(_storage.front().Event.KeyEvent.uChar.UnicodeChar))
+                if (_storage.front()->EventType() == InputEventType::KeyEvent)
                 {
-                    ++virtualReadCount;
+                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(_storage.front().get());
+                    if (IsCharFullWidth(pKeyEvent->_charData))
+                    {
+                        ++virtualReadCount;
+                    }
                 }
             }
             _storage.pop_front();
@@ -296,7 +300,7 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
         {
             for (auto it = outRecords.crbegin(); it != outRecords.crend(); ++it)
             {
-                _storage.push_front(*it);
+                _storage.push_front(IInputEvent::Create(*it));
             }
         }
 
@@ -367,7 +371,7 @@ HRESULT InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords
         // this way to handle any coalescing that might occur.
 
         // get all of the existing records, "emptying" the buffer
-        std::deque<INPUT_RECORD> existingStorage;
+        std::deque<std::unique_ptr<IInputEvent>> existingStorage;
         existingStorage.swap(_storage);
 
         // We will need this variable to pass to _WriteBuffer so it can attempt to determine wait status.
@@ -490,16 +494,36 @@ HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
                                   _Out_ size_t& eventsWritten,
                                   _Out_ bool& setWaitEvent)
 {
+    // convert to IInputEvents
+    std::deque<std::unique_ptr<IInputEvent>> inEvents;
     try
     {
-        eventsWritten = 0;
-        setWaitEvent = false;
-        bool initiallyEmptyQueue = _storage.empty();
+        while (!inRecords.empty())
+        {
+            inEvents.push_back(std::move(IInputEvent::Create(inRecords.front())));
+            inRecords.pop_front();
+        }
+    }
+    CATCH_RETURN();
+
+    return _WriteBuffer(inEvents, eventsWritten, setWaitEvent);
+}
+
+HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
+                                  _Out_ size_t& eventsWritten,
+                                  _Out_ bool& setWaitEvent)
+{
+    eventsWritten = 0;
+    setWaitEvent = false;
+    const bool initiallyEmptyQueue = _storage.empty();
+
+    try
+    {
         // we only check for possible coalescing when storing one
         // record at a time because this is the original behavior of
         // the input buffer. Changing this behavior may break stuff
         // that was depending on it.
-        if (inRecords.size() == 1 && !_storage.empty())
+        if (inEvents.size() == 1 && !_storage.empty())
         {
             bool coalesced = false;
             // this looks kinda weird but we don't want to coalesce a
@@ -509,11 +533,11 @@ HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
             // even though they only want one event because it should
             // be their responsibility to maintain the correct state
             // of the deque if they process any records in it.
-            if (_CoalesceMouseMovedEvents(inRecords))
+            if (_CoalesceMouseMovedEvents(inEvents))
             {
                 coalesced = true;
             }
-            else if (_CoalesceRepeatedKeyPressEvents(inRecords))
+            else if (_CoalesceRepeatedKeyPressEvents(inEvents))
             {
                 coalesced = true;
             }
@@ -523,11 +547,11 @@ HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
                 return S_OK;
             }
         }
-        // add all input records to the storage queue
-        while (!inRecords.empty())
+        // add all input events to the storage queue
+        while (!inEvents.empty())
         {
-            _storage.push_back(inRecords.front());
-            inRecords.pop_front();
+            _storage.push_back(std::move(inEvents.front()));
+            inEvents.pop_front();
             ++eventsWritten;
         }
         if (initiallyEmptyQueue && !_storage.empty())
@@ -554,20 +578,32 @@ HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
 // the buffer with updated values from an incoming event, instead of
 // storing the incoming event (which would make the original one
 // redundant/out of date with the most current state).
-bool InputBuffer::_CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRecords)
+bool InputBuffer::_CoalesceMouseMovedEvents(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    _ASSERT(inRecords.size() == 1);
-    const INPUT_RECORD& firstInRecord = inRecords.front();
-    INPUT_RECORD& lastStoredRecord = _storage.back();
-    if (firstInRecord.EventType == MOUSE_EVENT &&
-        firstInRecord.Event.MouseEvent.dwEventFlags == MOUSE_MOVED &&
-        lastStoredRecord.EventType == MOUSE_EVENT &&
-        lastStoredRecord.Event.MouseEvent.dwEventFlags == MOUSE_MOVED)
+    assert(inEvents.size() == 1);
+    assert(!_storage.empty());
+    const IInputEvent* const pFirstInEvent = inEvents.front().get();
+    const IInputEvent* const pLastStoredEvent = _storage.back().get();
+    if (pFirstInEvent->EventType() == InputEventType::MouseEvent &&
+        pLastStoredEvent->EventType() == InputEventType::MouseEvent)
     {
-        lastStoredRecord.Event.MouseEvent.dwMousePosition.X = firstInRecord.Event.MouseEvent.dwMousePosition.X;
-        lastStoredRecord.Event.MouseEvent.dwMousePosition.Y = firstInRecord.Event.MouseEvent.dwMousePosition.Y;
-        inRecords.pop_front();
-        return true;
+        const MouseEvent* const pInMouseEvent = static_cast<const MouseEvent* const>(pFirstInEvent);
+        const MouseEvent* const pLastMouseEvent = static_cast<const MouseEvent* const>(pLastStoredEvent);
+
+        if (pInMouseEvent->_eventFlags == MOUSE_MOVED &&
+            pLastMouseEvent->_eventFlags == MOUSE_MOVED)
+        {
+            // update mouse moved position
+            IInputEvent* const pEvent = _storage.back().release();
+            MouseEvent* const pMouseEvent = static_cast<MouseEvent* const>(pEvent);
+            pMouseEvent->_mousePosition.X = pInMouseEvent->_mousePosition.X;
+            pMouseEvent->_mousePosition.Y = pInMouseEvent->_mousePosition.Y;
+            std::unique_ptr<IInputEvent> tempPtr(pMouseEvent);
+            tempPtr.swap(_storage.back());
+
+            inEvents.pop_front();
+            return true;
+        }
     }
     return false;
 }
@@ -586,40 +622,48 @@ bool InputBuffer::_CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRec
 // the buffer with updated values from an incoming event, instead of
 // storing the incoming event (which would make the original one
 // redundant/out of date with the most current state).
-bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>& inRecords)
+bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    _ASSERT(inRecords.size() == 1);
-    const INPUT_RECORD& firstInRecord = inRecords.front();
-    INPUT_RECORD& lastStoredRecord = _storage.back();
-    // both records need to be key down events
-    if (firstInRecord.EventType == KEY_EVENT &&
-        firstInRecord.Event.KeyEvent.bKeyDown &&
-        lastStoredRecord.EventType == KEY_EVENT &&
-        lastStoredRecord.Event.KeyEvent.bKeyDown &&
-        !IsCharFullWidth(firstInRecord.Event.KeyEvent.uChar.UnicodeChar))
+    assert(inEvents.size() == 1);
+    assert(!_storage.empty());
+    const IInputEvent* const pFirstInEvent = inEvents.front().get();
+    const IInputEvent* const pLastStoredEvent = _storage.back().get();
+    if (pFirstInEvent->EventType() == InputEventType::KeyEvent &&
+        pLastStoredEvent->EventType() == InputEventType::KeyEvent)
     {
-        const KEY_EVENT_RECORD inKeyEventRecord = firstInRecord.Event.KeyEvent;
-        const KEY_EVENT_RECORD lastKeyEventRecord = lastStoredRecord.Event.KeyEvent;
-        bool sameKey = false;
-        // ime key check
-        if (IsFlagSet(inKeyEventRecord.dwControlKeyState, NLS_IME_CONVERSION) &&
-            inKeyEventRecord.uChar.UnicodeChar == lastKeyEventRecord.uChar.UnicodeChar &&
-            inKeyEventRecord.dwControlKeyState == lastKeyEventRecord.dwControlKeyState)
+        const KeyEvent* const pInKeyEvent = static_cast<const KeyEvent* const>(pFirstInEvent);
+        const KeyEvent* const pLastKeyEvent = static_cast<const KeyEvent* const>(pLastStoredEvent);
+
+        if (pInKeyEvent->_keyDown &&
+            pLastKeyEvent->_keyDown &&
+            !IsCharFullWidth(pInKeyEvent->_charData))
         {
-            sameKey = true;
-        }
-        // other key events check
-        else if (inKeyEventRecord.wVirtualScanCode == lastKeyEventRecord.wVirtualScanCode &&
-                 inKeyEventRecord.uChar.UnicodeChar == lastKeyEventRecord.uChar.UnicodeChar &&
-                 inKeyEventRecord.dwControlKeyState == lastKeyEventRecord.dwControlKeyState)
-        {
-            sameKey = true;
-        }
-        if (sameKey)
-        {
-            lastStoredRecord.Event.KeyEvent.wRepeatCount += firstInRecord.Event.KeyEvent.wRepeatCount;
-            inRecords.pop_front();
-            return true;
+            bool sameKey = false;
+            if (IsFlagSet(pInKeyEvent->_activeModifierKeys, NLS_IME_CONVERSION) &&
+                pInKeyEvent->_charData == pLastKeyEvent->_charData &&
+                pInKeyEvent->_activeModifierKeys == pLastKeyEvent->_activeModifierKeys)
+            {
+                sameKey = true;
+            }
+            // other key events check
+            else if (pInKeyEvent->_virtualScanCode == pLastKeyEvent->_virtualScanCode &&
+                    pInKeyEvent->_charData == pLastKeyEvent->_charData &&
+                    pInKeyEvent->_activeModifierKeys == pLastKeyEvent->_activeModifierKeys)
+            {
+                sameKey = true;
+            }
+            if (sameKey)
+            {
+                // increment repeat count
+                IInputEvent* const pEvent = _storage.back().release();
+                KeyEvent* const pKeyEvent = static_cast<KeyEvent* const>(pEvent);
+                pKeyEvent->_repeatCount++;
+                std::unique_ptr<IInputEvent> tempPtr(pKeyEvent);
+                tempPtr.swap(_storage.back());
+
+                inEvents.pop_front();
+                return true;
+            }
         }
     }
     return false;

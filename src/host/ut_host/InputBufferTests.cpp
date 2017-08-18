@@ -9,6 +9,7 @@
 #include "..\..\inc\consoletaeftemplates.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
+#include "IInputEvent.hpp"
 
 #define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(SUCCEEDED_NTSTATUS(x))
 
@@ -59,7 +60,7 @@ class InputBufferTests
             INPUT_RECORD record;
             record.EventType = MENU_EVENT;
             VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
-            VERIFY_ARE_EQUAL(record, inputBuffer._storage.back());
+            VERIFY_ARE_EQUAL(record, inputBuffer._storage.back()->ToInputRecord());
         }
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
     }
@@ -77,7 +78,7 @@ class InputBufferTests
         // verify that the events are the same in storage
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            VERIFY_ARE_EQUAL(inputBuffer._storage[i], records[i]);
+            VERIFY_ARE_EQUAL(inputBuffer._storage[i]->ToInputRecord(), records[i]);
         }
     }
 
@@ -100,9 +101,10 @@ class InputBufferTests
         // check that they coalesced
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1u);
         // check that the mouse position is being updated correctly
-        INPUT_RECORD outRecord = inputBuffer._storage.front();
-        VERIFY_ARE_EQUAL(outRecord.Event.MouseEvent.dwMousePosition.X, (SHORT)RECORD_INSERT_COUNT);
-        VERIFY_ARE_EQUAL(outRecord.Event.MouseEvent.dwMousePosition.Y, (SHORT)(RECORD_INSERT_COUNT * 2));
+        const IInputEvent* const pOutEvent = inputBuffer._storage.front().get();
+        const MouseEvent* const pMouseEvent = static_cast<const MouseEvent* const>(pOutEvent);
+        VERIFY_ARE_EQUAL(pMouseEvent->_mousePosition.X, static_cast<SHORT>(RECORD_INSERT_COUNT));
+        VERIFY_ARE_EQUAL(pMouseEvent->_mousePosition.Y, static_cast<SHORT>(RECORD_INSERT_COUNT * 2));
 
         // add a key event and another mouse event to make sure that
         // an event between two mouse events stopped the coalescing.
@@ -135,10 +137,10 @@ class InputBufferTests
         // no events should have been coalesced
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT + 1);
         // check that the events stored match those inserted
-        VERIFY_ARE_EQUAL(inputBuffer._storage.front(), mouseRecords[0]);
+        VERIFY_ARE_EQUAL(inputBuffer._storage.front()->ToInputRecord(), mouseRecords[0]);
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            VERIFY_ARE_EQUAL(inputBuffer._storage[i + 1], mouseRecords[i]);
+            VERIFY_ARE_EQUAL(inputBuffer._storage[i + 1]->ToInputRecord(), mouseRecords[i]);
         }
     }
 
@@ -190,10 +192,10 @@ class InputBufferTests
         // no events should have been coalesced
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT + 1);
         // check that the events stored match those inserted
-        VERIFY_ARE_EQUAL(inputBuffer._storage.front(), keyRecords[0]);
+        VERIFY_ARE_EQUAL(inputBuffer._storage.front()->ToInputRecord(), keyRecords[0]);
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            VERIFY_ARE_EQUAL(inputBuffer._storage[i + 1], keyRecords[i]);
+            VERIFY_ARE_EQUAL(inputBuffer._storage[i + 1]->ToInputRecord(), keyRecords[i]);
         }
     }
 
@@ -208,7 +210,7 @@ class InputBufferTests
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
-            VERIFY_ARE_EQUAL(inputBuffer._storage.back(), record);
+            VERIFY_ARE_EQUAL(inputBuffer._storage.back()->ToInputRecord(), record);
         }
 
         // The events shouldn't be coalesced
@@ -543,5 +545,4 @@ class InputBufferTests
 
         VERIFY_IS_FALSE(waitEvent);
     }
-
 };
