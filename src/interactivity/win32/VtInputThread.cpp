@@ -36,6 +36,9 @@ VT_TO_VK vtMap[] = {
     {"\x1bOR", VK_F3, VK_F3},
     {"\x1bOS", VK_F4, VK_F4},
     {"\x1b[3~", VK_DELETE, VK_DELETE},
+    {"\x1b[1;5A", 'A', 'A'}, // C-Up
+    {"\x1b\x31", '1', '1'}, // ESC+1, alt+1
+    {"\x1b[", 'x', 'x'}, // ESC+1, alt+1
 };
 // /hack
 
@@ -131,6 +134,31 @@ void handleInputFromPipe(char ch)
         // sendChar(ch, true);
 }
 
+void handleRunInput(char* charBuffer, int cch)
+{
+    std::string inputSequernce = std::string(charBuffer, cch);
+    bool found = false;
+    
+    for (int i = 0; i < ARRAYSIZE(vtMap); i++)
+    {
+        VT_TO_VK mapping = vtMap[i];
+        if (0==mapping.vtSeq.compare(inputSequernce))
+        {
+            sendKey(0, mapping.vkey, false);
+            found = true;
+            break;
+        }
+    }
+
+    if (!found)
+    {
+        for (int i = 0; i < inputSequernce.length(); i++)
+        {
+            sendChar(inputSequernce[i], true);
+        }
+    }
+}
+
 DWORD VtInputThreadProc(LPVOID /*lpParameter*/)
 {
     // DebugBreak();
@@ -152,10 +180,14 @@ DWORD VtInputThreadProc(LPVOID /*lpParameter*/)
         // THROW_LAST_ERROR_IF_FALSE(ReadFile(pipe.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
         THROW_LAST_ERROR_IF_FALSE(ReadFile(hVT, buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
 
-        for (DWORD i = 0; i < dwRead; i++)
-        {
-            handleInputFromPipe(buffer[i]);
-        }
+        handleRunInput((char*)buffer, dwRead);
+
+        // For debugging, zero mem
+        ZeroMemory(buffer, ARRAYSIZE(buffer)*sizeof(*buffer));
+        // for (DWORD i = 0; i < dwRead; i++)
+        // {
+        //     handleInputFromPipe(buffer[i]);
+        // }
     }
 
 }
