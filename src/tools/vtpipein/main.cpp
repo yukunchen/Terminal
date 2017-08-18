@@ -58,18 +58,61 @@ void handleKeyEvent(KEY_EVENT_RECORD keyEvent)
     if (keyEvent.bKeyDown)
     {
         char buffer[2];
-        // std::stringstream ss;
-        // std::string vtseq;
+        char printBuffer[3];
+        int cch = 0;
+        int printCch = 0;
 
-        // ss << (char)keyEvent.uChar.AsciiChar;
-        // ss >> vtseq;
-
-        buffer[0] = (char)keyEvent.uChar.AsciiChar;
+        const char c = keyEvent.uChar.AsciiChar;
+        
+        buffer[0] = (char)c;
         buffer[1] = '\0';
-        std::string vtseq = std::string(buffer, 1);
+        cch = 1;
+
+        if (c == '\x1b')
+        {
+            printBuffer[0] = '^';
+            printBuffer[1] = '[';
+            printBuffer[2] = '\0';
+            printCch = 2;
+        }
+        else if (c == '\x03') {
+            printBuffer[0] = '^';
+            printBuffer[1] = 'C';
+            printBuffer[2] = '\0';
+            printCch = 2;
+        }
+        else if (c == '\x0')
+        {
+            printBuffer[0] = '\\';
+            printBuffer[1] = '0';
+            printBuffer[2] = '\0';
+            printCch = 2;
+        }
+        else if (c == '\r')
+        {
+            printBuffer[0] = '\\';
+            printBuffer[1] = 'r';
+            printBuffer[2] = '\0';
+            printCch = 2;
+        }
+        else if (c == '\n')
+        {
+            printBuffer[0] = '\\';
+            printBuffer[1] = 'n';
+            printBuffer[2] = '\0';
+            printCch = 2;
+        }
+        else
+        {
+            printBuffer[0] = (char)c;
+            printBuffer[1] = '\0';
+            printCch = 1;
+        }
+        std::string vtseq = std::string(buffer, cch);
+        std::string printSeq = std::string(printBuffer, printCch);
 
         csi("38;5;242m");
-        wprintf(L"\tWriting \"%hs\" length=[%d]\n", vtseq.c_str(), (int)vtseq.length());
+        wprintf(L"\tWriting \"%hs\" length=[%d]\n", printSeq.c_str(), (int)vtseq.length());
         csi("0m");
 
         WriteFile(hVT, vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
@@ -102,8 +145,19 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     SetConsoleMode(hIn, dwInMode);
 
 
-    hVT = CreateFileW(L"\\\\.\\pipe\\convtinpipe", GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    // hVT = CreateFileW(L"\\\\.\\pipe\\convtinpipe", GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     
+    wil::unique_handle pipe;
+    pipe.reset(CreateNamedPipeW(L"\\\\.\\pipe\\convtinpipe", PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr));
+    hVT = pipe.get();
+    THROW_IF_HANDLE_INVALID(hVT);
+    THROW_LAST_ERROR_IF_FALSE(ConnectNamedPipe(hVT, nullptr));
+
+    
+
+
+
+    wprintf(L"Connected to VT Pipe, Handle is Valid=%s\n", (hVT==INVALID_HANDLE_VALUE?L"false":L"true"));
     for (;;)
     {
         INPUT_RECORD rc;

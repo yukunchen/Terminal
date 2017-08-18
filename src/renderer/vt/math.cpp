@@ -37,6 +37,11 @@ SMALL_RECT VtEngine::GetDirtyRectInChars()
     // {
     //     rc.Bottom--;
     // }
+    // if (rc.Right - rc.Left > 1)
+    // {
+    //     rc.Right--;
+    // }
+
     return rc;
 
 }

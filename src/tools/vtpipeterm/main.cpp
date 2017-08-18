@@ -36,6 +36,33 @@ bool openConsole()
     return fSuccess;
 }
 
+bool openVtPipeIn()
+{
+    wchar_t commandline[] = L"/c start .\\VtPipeIn.exe";
+    PROCESS_INFORMATION pi = {0};
+    STARTUPINFO si = {0};
+    si.cb = sizeof(STARTUPINFOW);
+    bool fSuccess = !!CreateProcess(
+        L"cmd.exe",
+        commandline,
+        nullptr,    // lpProcessAttributes
+        nullptr,    // lpThreadAttributes
+        false,      // bInheritHandles
+        0,          // dwCreationFlags
+        nullptr,    // lpEnvironment
+        nullptr,    // lpCurrentDirectory
+        &si,        //lpStartupInfo
+        &pi         //lpProcessInformation
+    );
+
+
+    if (!fSuccess)
+    {
+        wprintf(L"Failed to launch VtPipeIn\n");
+    }
+    return fSuccess;
+}
+
 
 int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 {
@@ -51,6 +78,8 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     THROW_IF_HANDLE_INVALID(pipe.get());
 
     // Open our backing console
+    // openVtPipeIn();
+    // Sleep(100);
     openConsole();
 
     THROW_LAST_ERROR_IF_FALSE(ConnectNamedPipe(pipe.get(), nullptr));

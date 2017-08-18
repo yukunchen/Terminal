@@ -83,6 +83,8 @@ namespace Microsoft
                 COORD _lastRealCursor;
                 COORD _lastText;
                 COORD _scrollDelta;
+
+                bool _quickReturn;
             };
         };
     };

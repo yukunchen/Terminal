@@ -19,5 +19,10 @@ rem set copy_name=OpenConsole\%_r%\OpenConsole.exe
 
 (echo f | xcopy /Y %_last_build%\OpenConsole.exe %TEMP%\%copy_dir%\OpenConsole.exe) > nul
 (echo f | xcopy /Y %_last_build%\VtPipeTerm.exe %TEMP%\%copy_dir%\VtPipeTerm.exe) > nul
+(echo f | xcopy /Y %_last_build%\VtPipeIn.exe %TEMP%\%copy_dir%\VtPipeIn.exe) > nul
 
+start %TEMP%\%copy_dir%\VtPipeIn.exe %*
+rem pause
+timeout 1
 start %TEMP%\%copy_dir%\VtPipeTerm.exe %*
+rem start %_last_build%\VtPipeIn.exe

@@ -24,12 +24,17 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we started to paint. S_FALSE if we didn't need to paint. HRESULT error code if painting didn't start successfully.
 HRESULT VtEngine::StartPaint()
 {
- /*   std::string foo("A");
-    return _Write(foo);*/
-
-    // Turn off cursor
-    std::string seq = "\x1b[?25l";
-    _Write(seq);
+    // If there's nothing to do, quick return
+    _quickReturn = false;
+    _quickReturn |= (_fInvalidRectUsed);
+    _quickReturn |= (_scrollDelta.X != 0 || _scrollDelta.Y != 0);
+    
+    // if (!_quickReturn)
+    // {
+        // Turn off cursor
+        std::string seq = "\x1b[?25l";
+        _Write(seq);
+    // }
 
     return S_OK;
 }
@@ -68,9 +73,9 @@ HRESULT VtEngine::ScrollFrame()
 
         SMALL_RECT b = v;
         b.Top = v.Bottom - absDy;
-        RETURN_IF_FAILED(_InvalidCombine(&b));
+        // RETURN_IF_FAILED(_InvalidCombine(&b));
     }
-    else
+    else if (dy > 0)
     {
         _MoveCursor({0,0});
         // IL - Insert Line
@@ -82,7 +87,7 @@ HRESULT VtEngine::ScrollFrame()
 
         SMALL_RECT a = v;
         a.Bottom = absDy;
-        RETURN_IF_FAILED(_InvalidCombine(&a));
+        // RETURN_IF_FAILED(_InvalidCombine(&a));
     }
 
     // if (_scrollDelta.Y > 0)
@@ -111,9 +116,13 @@ HRESULT VtEngine::EndPaint()
 
     _scrollDelta = {0};
     
-    // Turn on cursor
-    std::string seq = "\x1b[?25h";
-    _Write(seq);
+    // if (!_quickReturn)
+    // {
+        // Turn on cursor
+        std::string seq = "\x1b[?25h";
+        _Write(seq);
+    // }
+
     return S_OK;
 }
 
@@ -197,10 +206,10 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
 HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget)
 {
-    lines;
-    color;
-    cchLine;
-    coordTarget;
+    UNREFERENCED_PARAMETER(lines);
+    UNREFERENCED_PARAMETER(color);
+    UNREFERENCED_PARAMETER(cchLine);
+    UNREFERENCED_PARAMETER(coordTarget);
     return S_OK;
 }
 
@@ -218,7 +227,12 @@ HRESULT VtEngine::PaintCursor(_In_ COORD const coord, _In_ ULONG const ulHeightP
     ulHeightPercent;
     fIsDoubleWidth;
 
-    _MoveCursor(coord);
+    // if (_lastRealCursor.X != coord.X || _lastRealCursor.Y != coord.Y)
+    // {
+    //     _MoveCursor(coord);
+    // }
+
+    _lastRealCursor = coord;
 
     return S_OK;
 }
@@ -285,7 +299,7 @@ HRESULT VtEngine::_MoveCursor(COORD const coord)
             }
 
             _lastText = coord;
-            _lastRealCursor = coord;
+            // _lastRealCursor = coord;
         }
         CATCH_RETURN();
     }

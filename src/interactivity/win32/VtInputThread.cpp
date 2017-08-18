@@ -15,6 +15,7 @@
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
+// hack
 typedef struct _VT_TO_VK {
     std::string vtSeq;
     short vkey;
@@ -36,6 +37,8 @@ VT_TO_VK vtMap[] = {
     {"\x1bOS", VK_F4, VK_F4},
     {"\x1b[3~", VK_DELETE, VK_DELETE},
 };
+// /hack
+
 
 // std::stringstream vtStream;
 // std::string vtBuffer;
@@ -125,22 +128,29 @@ void handleInputFromPipe(char ch)
     {
         sendChar(ch, true);
     }
+        // sendChar(ch, true);
 }
 
 DWORD VtInputThreadProc(LPVOID /*lpParameter*/)
 {
-    wil::unique_handle pipe;
-    pipe.reset(CreateNamedPipeW(L"\\\\.\\pipe\\convtinpipe", PIPE_ACCESS_INBOUND, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr));
-    THROW_IF_HANDLE_INVALID(pipe.get());
+    // DebugBreak();
+    // wil::unique_handle pipe;
+    // pipe.reset(CreateNamedPipeW(L"\\\\.\\pipe\\convtinpipe", PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr));
+    // pipe.reset(CreateNamedPipeW(L"\\\\.\\pipe\\convtinpipe", PIPE_ACCESS_INBOUND, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr));
+    // THROW_IF_HANDLE_INVALID(pipe.get());
+    HANDLE hVT = CreateFileW(L"\\\\.\\pipe\\convtinpipe", GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
-    THROW_LAST_ERROR_IF_FALSE(ConnectNamedPipe(pipe.get(), nullptr));
+
+
+    // THROW_LAST_ERROR_IF_FALSE(ConnectNamedPipe(pipe.get(), nullptr));
 
     byte buffer[256];
     DWORD dwRead;
     while (true)
     {
         dwRead = 0;
-        THROW_LAST_ERROR_IF_FALSE(ReadFile(pipe.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
+        // THROW_LAST_ERROR_IF_FALSE(ReadFile(pipe.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
+        THROW_LAST_ERROR_IF_FALSE(ReadFile(hVT, buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
 
         for (DWORD i = 0; i < dwRead; i++)
         {

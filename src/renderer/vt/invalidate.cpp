@@ -36,13 +36,30 @@ HRESULT VtEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
     // return this->InvalidateAll();
     short dx = pcoordDelta->X;
     short dy = pcoordDelta->Y;
+    // short absDy = (dy>0)? dy : -dy;
 
     if (dx != 0 || dy != 0)
     {
         // POINT ptDelta = { 0 };
         // RETURN_IF_FAILED(_ScaleByFont(pcoordDelta, &ptDelta));
 
+        // Scroll the current offset
         RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
+
+        // Add the top/bottom of the window to the invalid area
+        Viewport view(_srLastViewport);
+        SMALL_RECT v = _srLastViewport;
+        view.ConvertToOrigin(&v);
+        SMALL_RECT invalid = v;
+        if (dy > 0)
+        {
+            invalid.Bottom = dy;
+        }
+        else if (dy < 0)
+        {
+            invalid.Top = v.Bottom + dy;
+        }
+        _InvalidCombine(&invalid);
 
         COORD invalidScrollNew;
         RETURN_IF_FAILED(ShortAdd(_scrollDelta.X, dx, &invalidScrollNew.X));
@@ -50,25 +67,6 @@ HRESULT VtEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 
         // Store if safemath succeeded
         _scrollDelta = invalidScrollNew;
-        
-        // Invalidate top and bottom of viewport.
-        // I now think this isn't right.
-        // {
-        //     Viewport view(_srLastViewport);
-        //     SMALL_RECT v = _srLastViewport;
-        //     view.ConvertToOrigin(&v);
-
-        //     SMALL_RECT b = v;
-        //     SMALL_RECT c = v;
-        //     short dy2 = (dy>0)? dy : -dy;
-        //     b.Top = v.Bottom - dy2;
-        //     // I think v.Left is already 0 here
-            
-        //     c.Top = c.Left = 0;
-        //     c.Bottom = dy2;
-        //     RETURN_IF_FAILED(_InvalidCombine(&b));
-        //     RETURN_IF_FAILED(_InvalidCombine(&c));
-        // }
 
     }
 
@@ -86,15 +84,12 @@ HRESULT VtEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 // - HRESULT S_OK or GDI-based error code
 HRESULT VtEngine::InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
 {
-    rgsrSelection;
-    cRectangles;
+    UNREFERENCED_PARAMETER(rgsrSelection);
+    UNREFERENCED_PARAMETER(cRectangles);
+
     // Selection shouldn't be handled bt the VT Renderer Host, it should be 
     //      handled by the client.
 
-    // for(unsigned int i = 0; i < cRectangles; i++)
-    // {
-    //     this->_InvalidCombine(&rgsrSelection[i]);
-    // }
     return S_OK;
 }
 
@@ -124,6 +119,7 @@ HRESULT VtEngine::InvalidateAll()
     Viewport view(_srLastViewport);
     SMALL_RECT rc = _srLastViewport;
     view.ConvertToOrigin(&rc);
+
     // this->_InvalidCombine(&_srLastViewport);
     this->_InvalidCombine(&rc);
     return S_OK;
