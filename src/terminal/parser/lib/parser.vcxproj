@@ -2,6 +2,7 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props"/>
   <ItemGroup>
+    <ClCompile Include="..\OutputStateMachineEngine.cpp" />
     <ClCompile Include="..\stateMachine.cpp" />
     <ClCompile Include="..\telemetry.cpp" />
     <ClCompile Include="..\tracing.cpp" />
@@ -13,6 +14,8 @@
     <ClInclude Include="..\ascii.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\stateMachine.hpp" />
+    <ClInclude Include="..\IStateMachineEngine.hpp" />
+    <ClInclude Include="..\OutputStateMachineEngine.hpp" />
     <ClInclude Include="..\telemetry.hpp" />
     <ClInclude Include="..\termDispatch.hpp" />
     <ClInclude Include="..\tracing.hpp" />
