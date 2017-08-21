@@ -63,8 +63,8 @@ UiaTextRange::MoveState::MoveState(const ScreenInfoRow startScreenInfoRow,
     FirstColumnInRow{ firstColumnInRow },
     LastColumnInRow{ lastColumnInRow },
     Increment{ increment }
-    {
-    }
+{
+}
 
 #if _DEBUG
 #include <sstream>
@@ -105,7 +105,7 @@ void UiaTextRange::_outputObjectState()
     OutputDebugString(str.c_str());
     OutputDebugString(L"\n");
 }
-#endif
+#endif // _DEBUG
 
 std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider)
 {
