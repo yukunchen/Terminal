@@ -529,18 +529,21 @@ class InputBufferTests
     {
         InputBuffer inputBuffer;
         INPUT_RECORD record = MakeKeyEvent(true, 1, VK_PAUSE, 0, 0, 0);
+        std::unique_ptr<IInputEvent> inputEvent = IInputEvent::Create(record);
         size_t eventsWritten;
         bool waitEvent = false;
         inputBuffer.Flush();
         // write one event to an empty buffer
-        std::deque<INPUT_RECORD> storage = { record };
+        std::deque<std::unique_ptr<IInputEvent>> storage;
+        storage.push_back(std::move(inputEvent));
         VERIFY_SUCCEEDED(inputBuffer._WriteBuffer(storage, eventsWritten, waitEvent));
         VERIFY_IS_TRUE(waitEvent);
         // write another, it shouldn't signal this time
         INPUT_RECORD record2 = MakeKeyEvent(true, 1, L'b', 0, L'b', 0);
+        std::unique_ptr<IInputEvent> inputEvent2 = IInputEvent::Create(record2);
         // write another event to a non-empty buffer
         waitEvent = false;
-        storage.push_back(record2);
+        storage.push_back(std::move(inputEvent2));
         VERIFY_SUCCEEDED(inputBuffer._WriteBuffer(storage, eventsWritten, waitEvent));
 
         VERIFY_IS_FALSE(waitEvent);

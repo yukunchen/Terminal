@@ -54,10 +54,10 @@ public:
                             _In_ BOOLEAN const fUnicode);
 
     NTSTATUS PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength);
-    HRESULT PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords, _Out_ size_t& eventsWritten);
+    HRESULT PrependInputBuffer(_Inout_ std::deque<INPUT_RECORD>& inRecords, _Out_ size_t& eventsWritten);
 
     DWORD WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD cInputRecords);
-    size_t WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords);
+    size_t WriteInputBuffer(_Inout_ std::deque<INPUT_RECORD>& inRecords);
 
 private:
     std::deque<std::unique_ptr<IInputEvent>> _storage;
@@ -76,17 +76,15 @@ private:
                         _Out_ bool& resetWaitEvent,
                         _In_ const bool unicode);
 
-    HRESULT _WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
+    HRESULT _WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inRecords,
                          _Out_ size_t& eventsWritten,
                          _Out_ bool& setWaitEvent);
 
-    HRESULT _WriteBuffer(_In_ std::deque<std::unique_ptr<IInputEvent>>& inRecords,
-                         _Out_ size_t& eventsWritten,
-                         _Out_ bool& setWaitEvent);
+    bool _CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+    bool _CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+    HRESULT _HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
-    bool _CoalesceMouseMovedEvents(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-    bool _CoalesceRepeatedKeyPressEvents(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-    HRESULT _HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD>& records);
+    std::deque<std::unique_ptr<IInputEvent>> _inputRecordsToInputEvents(_In_ const std::deque<INPUT_RECORD>& inRecords);
 
 #ifdef UNIT_TESTING
     friend class InputBufferTests;
