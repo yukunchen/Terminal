@@ -47,7 +47,6 @@ UiaTextRange::MoveState::MoveState(const UiaTextRange& range,
     }
 }
 
-#if _DEBUG
 UiaTextRange::MoveState::MoveState(const ScreenInfoRow startScreenInfoRow,
                                    const Column startColumn,
                                    const ScreenInfoRow endScreenInfoRow,
@@ -67,6 +66,7 @@ UiaTextRange::MoveState::MoveState(const ScreenInfoRow startScreenInfoRow,
     {
     }
 
+#if _DEBUG
 #include <sstream>
 // This is a debugging function that prints out the current
 // relationship between screen info rows, text buffer rows, and

@@ -121,7 +121,7 @@ namespace Microsoft
                         MoveState(const UiaTextRange& range,
                                   const MovementDirection direction);
 
-#ifdef _DEBUG
+                    private:
                         MoveState(const ScreenInfoRow startScreenInfoRow,
                                   const Column startColumn,
                                   const ScreenInfoRow endScreenInfoRow,
@@ -130,6 +130,8 @@ namespace Microsoft
                                   const Column firstColumnInRow,
                                   const Column lastColumnInRow,
                                   const MovementIncrement increment);
+#ifdef UNIT_TESTING
+                    friend class ::UiaTextRangeTests;
 #endif
                     };
 
