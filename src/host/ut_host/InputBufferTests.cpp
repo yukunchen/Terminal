@@ -445,8 +445,7 @@ class InputBufferTests
             prependRecords[i] = MakeKeyEvent(TRUE, 1, static_cast<WCHAR>(L'a' + i), 0, static_cast<WCHAR>(L'a' + i), 0);
             inEvents.push_back(IInputEvent::Create(prependRecords[i]));
         }
-        size_t eventsWritten;
-        VERIFY_SUCCEEDED(inputBuffer.PrependInputBuffer(inEvents, eventsWritten));
+        size_t eventsWritten = inputBuffer.PrependInputBuffer(inEvents);
         VERIFY_ARE_EQUAL(eventsWritten, RECORD_INSERT_COUNT);
 
         // grab the first set of events and ensure they match prependRecords

@@ -324,11 +324,8 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
 // S_OK if successful.
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT InputBuffer::PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
-                                        _Out_ size_t& eventsWritten)
+size_t InputBuffer::PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    eventsWritten = 0;
-
     try
     {
         THROW_IF_FAILED(_HandleConsoleSuspensionEvents(inEvents));
@@ -360,19 +357,26 @@ HRESULT InputBuffer::PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInpu
         _WriteBuffer(existingStorage, existingEventsWritten, unusedWaitStatus);
         assert(!unusedWaitStatus);
 
-        // We need to set the wait event if there were 0 events in the input queue when we started.
-        // Because we did interesting manipulation of the wait queue in order to prepend, we can't trust what _WriteBuffer said
-        // and instead need to set the event if the original backing buffer (the one we swapped out at the top) was empty
+        // We need to set the wait event if there were 0 events in the
+        // input queue when we started.
+        // Because we did interesting manipulation of the wait queue
+        // in order to prepend, we can't trust what _WriteBuffer said
+        // and instead need to set the event if the original backing
+        // buffer (the one we swapped out at the top) was empty
         // when this whole thing started.
         if (existingStorage.empty())
         {
             SetEvent(InputWaitEvent);
         }
         WakeUpReadersWaitingForData();
-        eventsWritten = prependEventsWritten;
-        return S_OK;
+
+        return prependEventsWritten;
     }
-    CATCH_RETURN();
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+        return 0;
+    }
 }
 
 // Routine Description:

@@ -400,10 +400,7 @@ NTSTATUS DoSrvWriteConsoleInput(_In_ InputBuffer* pInputBuffer, _Inout_ CONSOLE_
         }
         else
         {
-            size_t eventsWritten = 0;
-            HRESULT hr = pInputBuffer->PrependInputBuffer(inEvents, eventsWritten);
-            pMsg->NumRecords = static_cast<ULONG>(eventsWritten);
-            Status = NTSTATUS_FROM_HRESULT(hr);
+            pMsg->NumRecords = static_cast<ULONG>(pInputBuffer->PrependInputBuffer(inEvents));
         }
     }
     catch (...)
