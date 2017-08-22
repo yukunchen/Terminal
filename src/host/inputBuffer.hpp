@@ -53,7 +53,6 @@ public:
                             _In_ BOOL const fWaitForData,
                             _In_ BOOLEAN const fUnicode);
 
-    HRESULT PrependInputBuffer(_Inout_ std::deque<INPUT_RECORD>& inRecords, _Out_ size_t& eventsWritten);
     HRESULT PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                _Out_ size_t& eventsWritten);
 

@@ -316,28 +316,14 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
 }
 
 // Routine Description:
-// -  Writes records to the beginning of the input buffer.
+// -  Writes events to the beginning of the input buffer.
 // Arguments:
-// - inRecords - Records to write to buffer.
+// - inEvents - envents to write to buffer.
 // - eventsWritten - The number of events written to the buffer on exit.
 // Return Value:
 // S_OK if successful.
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT InputBuffer::PrependInputBuffer(_Inout_ std::deque<INPUT_RECORD>& inRecords, _Out_ size_t& eventsWritten)
-{
-    std::deque<std::unique_ptr<IInputEvent>> inEvents;
-    try
-    {
-        inEvents = _inputRecordsToInputEvents(inRecords);
-    }
-    CATCH_RETURN();
-
-    inRecords.clear();
-
-    return PrependInputBuffer(inEvents, eventsWritten);
-}
-
 HRESULT InputBuffer::PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                         _Out_ size_t& eventsWritten)
 {
