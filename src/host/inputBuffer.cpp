@@ -423,31 +423,6 @@ HRESULT InputBuffer::PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInpu
 }
 
 // Routine Description:
-// - Writes records to the input buffer. Wakes up any readers that are
-// waiting for additional input events.
-// Arguments:
-// - inRecords - records to store in the buffer.
-// Return Value:
-// - The number of events that were written to input buffer.
-// Note:
-// - The console lock must be held when calling this routine.
-size_t InputBuffer::WriteInputBuffer(_Inout_ std::deque<INPUT_RECORD>& inRecords)
-{
-    try
-    {
-        std::deque<std::unique_ptr<IInputEvent>> inEvents;
-        inEvents = _inputRecordsToInputEvents(inRecords);
-        inRecords.clear();
-        return WriteInputBuffer(inEvents);
-    }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-        return 0;
-    }
-}
-
-// Routine Description:
 // - Writes event to the input buffer. Wakes up any readers that are
 // waiting for additional input events.
 // Arguments:

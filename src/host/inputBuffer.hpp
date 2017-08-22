@@ -58,7 +58,6 @@ public:
     HRESULT PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                _Out_ size_t& eventsWritten);
 
-    size_t WriteInputBuffer(_Inout_ std::deque<INPUT_RECORD>& inRecords);
     size_t WriteInputBuffer(_Inout_ std::unique_ptr<IInputEvent> pInputEvent);
     size_t WriteInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
