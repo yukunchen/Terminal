@@ -26,11 +26,15 @@ namespace Microsoft
 
                 virtual void ActionExecute(_In_ wchar_t const wch) = 0;
                 virtual void ActionPrint(_In_ wchar_t const wch) = 0;
-                virtual void ActionEscDispatch(_In_ wchar_t const wch) = 0;
-                virtual void ActionCsiDispatch(_In_ wchar_t const wch) = 0;
+                virtual void ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate) = 0;
+                virtual void ActionCsiDispatch(_In_ wchar_t const wch, 
+                                               _In_ const unsigned short cIntermediate,
+                                               _In_ const wchar_t wchIntermediate,
+                                               _In_ const unsigned short* const rgusParams,
+                                               _In_ const unsigned short cParams) = 0;
                 virtual void ActionClear() = 0;
                 virtual void ActionIgnore() = 0;
-                virtual void ActionOscDispatch(_In_ wchar_t const wch) = 0;
+                virtual void ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString) = 0;
                 // virtual void ActionSs3Dispatch(_In_ wchar_t const wch) = 0;
 
             };

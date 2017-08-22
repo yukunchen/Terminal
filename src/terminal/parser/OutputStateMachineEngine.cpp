@@ -58,14 +58,14 @@ void OutputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch)
+void OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate)
 {
     _trace.TraceOnAction(L"EscDispatch");
 
     bool fSuccess = false;
 
     // no intermediates.
-    if (_pStateMachine->_cIntermediate == 0)
+    if (cIntermediate == 0)
     {
         switch (wch)
         {
@@ -115,10 +115,10 @@ void OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch)
             break;
         }
     }
-    else if (_pStateMachine->_cIntermediate == 1)
+    else if (cIntermediate == 1)
     {
         DesignateCharsetTypes designateType = s_DefaultDesignateCharsetType;
-        fSuccess = _GetDesignateType(&designateType);
+        fSuccess = _GetDesignateType(wchIntermediate, &designateType);
         switch (designateType)
         {
         case DesignateCharsetTypes::G0:
@@ -157,10 +157,13 @@ void OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch)
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch)
+void OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch, 
+                                                 _In_ const unsigned short cIntermediate,
+                                                 _In_ const wchar_t wchIntermediate,
+                                                 _In_ const unsigned short* const rgusParams,
+                                                 _In_ const unsigned short cParams)
 {
     _trace.TraceOnAction(L"CsiDispatch");
-
 
     bool fSuccess = false;
     unsigned int uiDistance = 0;
@@ -171,12 +174,12 @@ void OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch)
     SHORT sNumTabs = 0;
     SHORT sClearType = 0;
     TermDispatch::EraseType eraseType = TermDispatch::EraseType::ToEnd;
-    TermDispatch::GraphicsOptions rgGraphicsOptions[_pStateMachine->s_cParamsMax];
+    TermDispatch::GraphicsOptions rgGraphicsOptions[StateMachine::s_cParamsMax];
     size_t cOptions = ARRAYSIZE(rgGraphicsOptions);
     TermDispatch::AnsiStatusType deviceStatusType = (TermDispatch::AnsiStatusType)-1; // there is no default status type.
     
 
-    if (_pStateMachine->_cIntermediate == 0)
+    if (cIntermediate == 0)
     {
         // fill params
         switch (wch)
@@ -192,46 +195,46 @@ void OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch)
         case VTActionCodes::ICH_InsertCharacter:
         case VTActionCodes::DCH_DeleteCharacter:
         case VTActionCodes::ECH_EraseCharacters:
-            fSuccess = _GetCursorDistance(&uiDistance);
+            fSuccess = _GetCursorDistance(rgusParams, cParams, &uiDistance);
             break;
         case VTActionCodes::HVP_HorizontalVerticalPosition:
         case VTActionCodes::CUP_CursorPosition:
-            fSuccess = _GetXYPosition(&uiLine, &uiColumn);
+            fSuccess = _GetXYPosition(rgusParams, cParams, &uiLine, &uiColumn);
             break;
         case VTActionCodes::DECSTBM_SetScrollingRegion:
-            fSuccess = _GetTopBottomMargins(&sTopMargin, &sBottomMargin);
+            fSuccess = _GetTopBottomMargins(rgusParams, cParams, &sTopMargin, &sBottomMargin);
             break;
         case VTActionCodes::ED_EraseDisplay:
         case VTActionCodes::EL_EraseLine:
-            fSuccess = _GetEraseOperation(&eraseType);
+            fSuccess = _GetEraseOperation(rgusParams, cParams, &eraseType);
             break;
         case VTActionCodes::SGR_SetGraphicsRendition:
-            fSuccess = _GetGraphicsOptions(rgGraphicsOptions, &cOptions);
+            fSuccess = _GetGraphicsOptions(rgusParams, cParams, rgGraphicsOptions, &cOptions);
             break;
         case VTActionCodes::DSR_DeviceStatusReport:
-            fSuccess = _GetDeviceStatusOperation(&deviceStatusType);
+            fSuccess = _GetDeviceStatusOperation(rgusParams, cParams, &deviceStatusType);
             break;
         case VTActionCodes::DA_DeviceAttributes:
-            fSuccess = _VerifyDeviceAttributesParams();
+            fSuccess = _VerifyDeviceAttributesParams(rgusParams, cParams);
             break;
         case VTActionCodes::SU_ScrollUp:
         case VTActionCodes::SD_ScrollDown:
-            fSuccess = _GetScrollDistance(&uiDistance);
+            fSuccess = _GetScrollDistance(rgusParams, cParams, &uiDistance);
             break;
         case VTActionCodes::ANSISYSSC_CursorSave:
         case VTActionCodes::ANSISYSRC_CursorRestore:
-            fSuccess = _VerifyHasNoParameters();
+            fSuccess = _VerifyHasNoParameters(cParams);
             break;
         case VTActionCodes::IL_InsertLine:
         case VTActionCodes::DL_DeleteLine:
-            fSuccess = _GetScrollDistance(&uiDistance);
+            fSuccess = _GetScrollDistance(rgusParams, cParams, &uiDistance);
             break;
         case VTActionCodes::CHT_CursorForwardTab:
         case VTActionCodes::CBT_CursorBackTab:
-            fSuccess = _GetTabDistance(&sNumTabs);
+            fSuccess = _GetTabDistance(rgusParams, cParams, &sNumTabs);
             break;
         case VTActionCodes::TBC_TabClear:
-            fSuccess = _GetTabClearType(&sClearType);
+            fSuccess = _GetTabClearType(rgusParams, cParams, &sClearType);
             break;
         default:
             // If no params to fill, param filling was successful.
@@ -360,12 +363,12 @@ void OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch)
             }
         }
     }
-    else if (_pStateMachine->_cIntermediate == 1)
+    else if (cIntermediate == 1)
     {
-        switch (_pStateMachine->_wchIntermediate)
+        switch (wchIntermediate)
         {
         case L'?':
-            fSuccess = _IntermediateQuestionMarkDispatch(wch);
+            fSuccess = _IntermediateQuestionMarkDispatch(wch, rgusParams, cParams);
             break;
         case L'!':
             fSuccess = _IntermediateExclamationDispatch(wch);
@@ -390,19 +393,19 @@ void OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch)
 // - wch - Character to dispatch.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction)
+bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction, _In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams)
 {
     _trace.TraceOnAction(L"_IntermediateQuestionMarkDispatch");
     bool fSuccess = false;
 
-    TermDispatch::PrivateModeParams rgPrivateModeParams[_pStateMachine->s_cParamsMax];
+    TermDispatch::PrivateModeParams rgPrivateModeParams[StateMachine::s_cParamsMax];
     size_t cOptions = ARRAYSIZE(rgPrivateModeParams);
     // Ensure that there was the right number of params
     switch (wchAction)
     {
         case VTActionCodes::DECSET_PrivateModeSet:
         case VTActionCodes::DECRST_PrivateModeReset:
-            fSuccess = _GetPrivateModeParams(rgPrivateModeParams, &cOptions);
+            fSuccess = _GetPrivateModeParams(rgusParams, cParams, rgPrivateModeParams, &cOptions);
             break;
             
         default:
@@ -490,27 +493,25 @@ void OutputStateMachineEngine::ActionIgnore()
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch)
+void OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString)
 {
     _trace.TraceOnAction(L"OscDispatch");
-
-    auto _sOscParam = _pStateMachine->_sOscParam;
 
     bool fSuccess = false;
     wchar_t* pwchTitle = nullptr;  
     unsigned short sCchTitleLength = 0;
 
-    switch (_sOscParam)
+    switch (sOscParam)
     {
     case OscActionCodes::SetIconAndWindowTitle:
     case OscActionCodes::SetWindowIcon:
     case OscActionCodes::SetWindowTitle:
-        fSuccess = _GetOscTitle(&pwchTitle, &sCchTitleLength);
+        fSuccess = _GetOscTitle(pwchOscStringBuffer, cchOscString, &pwchTitle, &sCchTitleLength);
         break;
     }  
     if (fSuccess)
     {
-        switch (_sOscParam)
+        switch (sOscParam)
         {
         case OscActionCodes::SetIconAndWindowTitle:
         case OscActionCodes::SetWindowIcon:
@@ -543,11 +544,11 @@ void OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch)
 // Return Value:
 // - True if we successfully retrieved an array of valid graphics options from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetGraphicsOptions(_Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* rgGraphicsOptions, _Inout_ size_t* pcOptions) const
+bool OutputStateMachineEngine::_GetGraphicsOptions(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* rgGraphicsOptions, _Inout_ size_t* pcOptions) const
 {
     bool fSuccess = true;
 
-    if (_pStateMachine->_cParams == 0)
+    if (cParams == 0)
     {
         if (*pcOptions >= 1)
         {
@@ -561,15 +562,15 @@ bool OutputStateMachineEngine::_GetGraphicsOptions(_Out_writes_(*pcOptions) Term
     }
     else
     {
-        if (*pcOptions >= _pStateMachine->_cParams)
+        if (*pcOptions >= cParams)
         {
-            for (size_t i = 0; i < _pStateMachine->_cParams; i++)
+            for (size_t i = 0; i < cParams; i++)
             {
                 // No memcpy. The parameters are shorts. The graphics options are unsigned ints.
-                rgGraphicsOptions[i] = (TermDispatch::GraphicsOptions)_pStateMachine->_rgusParams[i];
+                rgGraphicsOptions[i] = (TermDispatch::GraphicsOptions)rgusParams[i];
             }
 
-            *pcOptions = _pStateMachine->_cParams;
+            *pcOptions = cParams;
         }
         else
         {
@@ -587,21 +588,21 @@ bool OutputStateMachineEngine::_GetGraphicsOptions(_Out_writes_(*pcOptions) Term
 // Return Value:
 // - True if we successfully pulled an erase type from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetEraseOperation(_Out_ TermDispatch::EraseType* const pEraseType) const
+bool OutputStateMachineEngine::_GetEraseOperation(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ TermDispatch::EraseType* const pEraseType) const
 {
     bool fSuccess = false; // If we have too many parameters or don't know what to do with the given value, return false.
     *pEraseType = s_defaultEraseType; // if we fail, just put the default type in.
 
-    if (_pStateMachine->_cParams == 0)
+    if (cParams == 0)
     {
         // Empty parameter sequences should use the default
         *pEraseType = s_defaultEraseType;
         fSuccess = true;
     }
-    else if (_pStateMachine->_cParams == 1)
+    else if (cParams == 1)
     {
         // If there's one parameter, attempt to match it to the values we accept.
-        unsigned short const usParam = _pStateMachine->_rgusParams[0];
+        unsigned short const usParam = rgusParams[0];
 
         switch (usParam)
         {
@@ -625,20 +626,20 @@ bool OutputStateMachineEngine::_GetEraseOperation(_Out_ TermDispatch::EraseType*
 // Return Value:
 // - True if we successfully pulled the cursor distance from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetCursorDistance(_Out_ unsigned int* const puiDistance) const
+bool OutputStateMachineEngine::_GetCursorDistance(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ unsigned int* const puiDistance) const
 {
     bool fSuccess = false;
     *puiDistance = s_uiDefaultCursorDistance;
 
-    if (_pStateMachine->_cParams == 0)
+    if (cParams == 0)
     {
         // Empty parameter sequences should use the default
         fSuccess = true;
     }
-    else if (_pStateMachine->_cParams == 1)
+    else if (cParams == 1)
     {
         // If there's one parameter, use it.
-        *puiDistance = _pStateMachine->_rgusParams[0];
+        *puiDistance = rgusParams[0];
         fSuccess = true;
     }
 
@@ -658,20 +659,20 @@ bool OutputStateMachineEngine::_GetCursorDistance(_Out_ unsigned int* const puiD
 // Return Value:
 // - True if we successfully pulled the scroll distance from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetScrollDistance(_Out_ unsigned int* const puiDistance) const
+bool OutputStateMachineEngine::_GetScrollDistance(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ unsigned int* const puiDistance) const
 {
     bool fSuccess = false;
     *puiDistance = s_uiDefaultScrollDistance;
 
-    if (_pStateMachine->_cParams == 0)
+    if (cParams == 0)
     {
         // Empty parameter sequences should use the default
         fSuccess = true;
     }
-    else if (_pStateMachine->_cParams == 1)
+    else if (cParams == 1)
     {
         // If there's one parameter, use it.
-        *puiDistance = _pStateMachine->_rgusParams[0];
+        *puiDistance = rgusParams[0];
         fSuccess = true;
     }
 
@@ -691,20 +692,20 @@ bool OutputStateMachineEngine::_GetScrollDistance(_Out_ unsigned int* const puiD
 // Return Value:
 // - True if we successfully pulled the width from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetConsoleWidth(_Out_ unsigned int* const puiConsoleWidth) const
+bool OutputStateMachineEngine::_GetConsoleWidth(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ unsigned int* const puiConsoleWidth) const
 {
     bool fSuccess = false;
     *puiConsoleWidth = s_uiDefaultConsoleWidth;
 
-    if (_pStateMachine->_cParams == 0)
+    if (cParams == 0)
     {
         // Empty parameter sequences should use the default
         fSuccess = true;
     }
-    else if (_pStateMachine->_cParams == 1)
+    else if (cParams == 1)
     {
         // If there's one parameter, use it.
-        *puiConsoleWidth = _pStateMachine->_rgusParams[0];
+        *puiConsoleWidth = rgusParams[0];
         fSuccess = true;
     }
 
@@ -725,28 +726,28 @@ bool OutputStateMachineEngine::_GetConsoleWidth(_Out_ unsigned int* const puiCon
 // Return Value:
 // - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetXYPosition(_Out_ unsigned int* const puiLine, _Out_ unsigned int* const puiColumn) const
+bool OutputStateMachineEngine::_GetXYPosition(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ unsigned int* const puiLine, _Out_ unsigned int* const puiColumn) const
 {
     bool fSuccess = false;
     *puiLine = s_uiDefaultLine;
     *puiColumn = s_uiDefaultColumn;
 
-    if (_pStateMachine->_cParams == 0)
+    if (cParams == 0)
     {
         // Empty parameter sequences should use the default
         fSuccess = true;
     }
-    else if (_pStateMachine->_cParams == 1)
+    else if (cParams == 1)
     {
         // If there's only one param, leave the default for the column, and retrieve the specified row.
-        *puiLine = _pStateMachine->_rgusParams[0];
+        *puiLine = rgusParams[0];
         fSuccess = true;
     }
-    else if (_pStateMachine->_cParams == 2)
+    else if (cParams == 2)
     {
         // If there are exactly two parameters, use them.
-        *puiLine = _pStateMachine->_rgusParams[0];
-        *puiColumn = _pStateMachine->_rgusParams[1];
+        *puiLine = rgusParams[0];
+        *puiColumn = rgusParams[1];
         fSuccess = true;
     }
 
@@ -772,7 +773,7 @@ bool OutputStateMachineEngine::_GetXYPosition(_Out_ unsigned int* const puiLine,
 // Return Value:
 // - True if we successfully pulled the margin settings from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetTopBottomMargins(_Out_ SHORT* const psTopMargin, _Out_ SHORT* const psBottomMargin) const
+bool OutputStateMachineEngine::_GetTopBottomMargins(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ SHORT* const psTopMargin, _Out_ SHORT* const psBottomMargin) const
 {
     // Notes:                           (input -> state machine out -> adapter out -> conhost internal)
     // having only a top param is legal         ([3;r   -> 3,0   -> 3,h  -> 3,h,true)
@@ -784,21 +785,21 @@ bool OutputStateMachineEngine::_GetTopBottomMargins(_Out_ SHORT* const psTopMarg
     *psTopMargin = s_sDefaultTopMargin;
     *psBottomMargin = s_sDefaultBottomMargin;
 
-    if (_pStateMachine->_cParams == 0)
+    if (cParams == 0)
     {
         // Empty parameter sequences should use the default
         fSuccess = true;
     }
-    else if (_pStateMachine->_cParams == 1)
+    else if (cParams == 1)
     {
-        *psTopMargin = _pStateMachine->_rgusParams[0];
+        *psTopMargin = rgusParams[0];
         fSuccess = true;
     }
-    else if (_pStateMachine->_cParams == 2)
+    else if (cParams == 2)
     {
         // If there are exactly two parameters, use them.
-        *psTopMargin = _pStateMachine->_rgusParams[0];
-        *psBottomMargin = _pStateMachine->_rgusParams[1];
+        *psTopMargin = rgusParams[0];
+        *psBottomMargin = rgusParams[1];
         fSuccess = true;
     }
 
@@ -815,15 +816,15 @@ bool OutputStateMachineEngine::_GetTopBottomMargins(_Out_ SHORT* const psTopMarg
 // Return Value:
 // - True if we successfully found a device operation in the parameters stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetDeviceStatusOperation(_Out_ TermDispatch::AnsiStatusType* const pStatusType) const
+bool OutputStateMachineEngine::_GetDeviceStatusOperation(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ TermDispatch::AnsiStatusType* const pStatusType) const
 {
     bool fSuccess = false;
     *pStatusType = (TermDispatch::AnsiStatusType)0;
 
-    if (_pStateMachine->_cParams == 1)
+    if (cParams == 1)
     {
         // If there's one parameter, attempt to match it to the values we accept.
-        unsigned short const usParam = _pStateMachine->_rgusParams[0];
+        unsigned short const usParam = rgusParams[0];
 
         switch (usParam)
         {
@@ -846,24 +847,24 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(_Out_ TermDispatch::Ans
 // Return Value:
 // - True if we successfully retrieved an array of private mode params from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetPrivateModeParams(_Out_writes_(*pcParams) TermDispatch::PrivateModeParams* rgPrivateModeParams, _Inout_ size_t* pcParams) const
+bool OutputStateMachineEngine::_GetPrivateModeParams(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_writes_(*pcParams) TermDispatch::PrivateModeParams* rgPrivateModeParams, _Inout_ size_t* pcParams) const
 {
     bool fSuccess = true;
 
-    if (_pStateMachine->_cParams == 0)
+    if (cParams == 0)
     {
         fSuccess = false; // Can't just set nothing at all
     }
     else
     {
-        if (*pcParams >= _pStateMachine->_cParams)
+        if (*pcParams >= cParams)
         {
-            for (size_t i = 0; i < _pStateMachine->_cParams; i++)
+            for (size_t i = 0; i < cParams; i++)
             {
                 // No memcpy. The parameters are shorts. The graphics options are unsigned ints.
-                rgPrivateModeParams[i] = (TermDispatch::PrivateModeParams)_pStateMachine->_rgusParams[i];
+                rgPrivateModeParams[i] = (TermDispatch::PrivateModeParams)rgusParams[i];
             }
-            *pcParams = _pStateMachine->_cParams;
+            *pcParams = cParams;
         }
         else
         {
@@ -879,9 +880,9 @@ bool OutputStateMachineEngine::_GetPrivateModeParams(_Out_writes_(*pcParams) Ter
 // Return Value:
 // - True if there were no parameters. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_VerifyHasNoParameters() const
+bool OutputStateMachineEngine::_VerifyHasNoParameters(_In_ const unsigned short cParams) const
 {
-    return _pStateMachine->_cParams == 0;
+    return cParams == 0;
 }
 
 // Routine Description:
@@ -892,17 +893,17 @@ bool OutputStateMachineEngine::_VerifyHasNoParameters() const
 // Return Value:
 // - True if the DA params were valid. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_VerifyDeviceAttributesParams() const
+bool OutputStateMachineEngine::_VerifyDeviceAttributesParams(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams) const
 {
     bool fSuccess = false;
 
-    if (_pStateMachine->_cParams == 0)
+    if (cParams == 0)
     {
         fSuccess = true;
     }
-    else if (_pStateMachine->_cParams == 1)
+    else if (cParams == 1)
     {
-        if (_pStateMachine->_rgusParams[0] == 0)
+        if (rgusParams[0] == 0)
         {
             fSuccess = true;
         }
@@ -919,16 +920,16 @@ bool OutputStateMachineEngine::_VerifyDeviceAttributesParams() const
 // Return Value:
 // - True if there was a title to output. (a title with length=0 is still valid)
 _Success_(return)
-bool OutputStateMachineEngine::_GetOscTitle(_Outptr_result_buffer_(*pcchTitle) wchar_t** const ppwchTitle, _Out_ unsigned short * pcchTitle)
+bool OutputStateMachineEngine::_GetOscTitle(_In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString, _Outptr_result_buffer_(*pcchTitle) wchar_t** const ppwchTitle, _Out_ unsigned short * pcchTitle)
 {
-    *ppwchTitle = _pStateMachine->_pwchOscStringBuffer;
-    *pcchTitle = _pStateMachine->_sOscNextChar;
-    if (_pStateMachine->_pwchOscStringBuffer != nullptr)
+    *ppwchTitle = pwchOscStringBuffer;
+    *pcchTitle = cchOscString;
+    if (pwchOscStringBuffer != nullptr)
     {
         // null terminate the string on the current char
-        _pStateMachine->_pwchOscStringBuffer[_pStateMachine->_sOscNextChar] = L'\x0';
+        pwchOscStringBuffer[cchOscString] = L'\x0';
     }
-    return _pStateMachine->_pwchOscStringBuffer != nullptr;
+    return pwchOscStringBuffer != nullptr;
 }
 
 // Routine Description:
@@ -938,20 +939,20 @@ bool OutputStateMachineEngine::_GetOscTitle(_Outptr_result_buffer_(*pcchTitle) w
 // Return Value:
 // - True if we successfully pulled the tab distance from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetTabDistance(_Out_ SHORT* const psDistance) const
+bool OutputStateMachineEngine::_GetTabDistance(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ SHORT* const psDistance) const
 {
     bool fSuccess = false;
     *psDistance = s_sDefaultTabDistance;
 
-    if (_pStateMachine->_cParams == 0)
+    if (cParams == 0)
     {
         // Empty parameter sequences should use the default
         fSuccess = true;
     }
-    else if (_pStateMachine->_cParams == 1)
+    else if (cParams == 1)
     {
         // If there's one parameter, use it.
-        *psDistance = _pStateMachine->_rgusParams[0];
+        *psDistance = rgusParams[0];
         fSuccess = true;
     }
 
@@ -971,20 +972,20 @@ bool OutputStateMachineEngine::_GetTabDistance(_Out_ SHORT* const psDistance) co
 // Return Value:
 // - True if we successfully pulled the tab clear type from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetTabClearType(_Out_ SHORT* const psClearType) const
+bool OutputStateMachineEngine::_GetTabClearType(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ SHORT* const psClearType) const
 {
     bool fSuccess = false;
     *psClearType = s_sDefaultTabClearType;
 
-    if (_pStateMachine->_cParams == 0)
+    if (cParams == 0)
     {
         // Empty parameter sequences should use the default
         fSuccess = true;
     }
-    else if (_pStateMachine->_cParams == 1)
+    else if (cParams == 1)
     {
         // If there's one parameter, use it.
-        *psClearType = _pStateMachine->_rgusParams[0];
+        *psClearType = rgusParams[0];
         fSuccess = true;
     }
     return fSuccess;
@@ -997,12 +998,12 @@ bool OutputStateMachineEngine::_GetTabClearType(_Out_ SHORT* const psClearType) 
 // Return Value:
 // - True if we successfully pulled the designate type from the intermediate we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetDesignateType(_Out_ DesignateCharsetTypes* const pDesignateType) const
+bool OutputStateMachineEngine::_GetDesignateType(_In_ const wchar_t wchIntermediate, _Out_ DesignateCharsetTypes* const pDesignateType) const
 {
     bool fSuccess = false;
     *pDesignateType = s_DefaultDesignateCharsetType;
 
-    switch(_pStateMachine->_wchIntermediate)
+    switch(wchIntermediate)
     {
     case '(':
         *pDesignateType = DesignateCharsetTypes::G0;
