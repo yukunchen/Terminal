@@ -32,6 +32,17 @@ std::unique_ptr<IInputEvent> IInputEvent::Create(_In_ const INPUT_RECORD& record
     }
 }
 
+std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(_In_reads_(cRecords) const INPUT_RECORD* const pRecords,
+                                                             _In_ const size_t cRecords)
+{
+    std::deque<std::unique_ptr<IInputEvent>> outEvents;
+    for (size_t i = 0; i < cRecords; ++i)
+    {
+        outEvents.push_back(Create(pRecords[i]));
+    }
+    return outEvents;
+}
+
 // Routine Description:
 // - checks if flag is present in flags
 // Arguments:

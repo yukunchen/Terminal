@@ -388,12 +388,7 @@ NTSTATUS DoSrvWriteConsoleInput(_In_ InputBuffer* pInputBuffer, _Inout_ CONSOLE_
 
     try
     {
-        std::deque<std::unique_ptr<IInputEvent>> inEvents;
-        for (size_t i = 0; i < pMsg->NumRecords; ++i)
-        {
-            inEvents.push_back(IInputEvent::Create(rgInputRecords[i]));
-        }
-
+        std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(rgInputRecords, pMsg->NumRecords);
         if (pMsg->Append)
         {
             pMsg->NumRecords = static_cast<ULONG>(pInputBuffer->WriteInputBuffer(inEvents));

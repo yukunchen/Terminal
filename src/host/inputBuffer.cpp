@@ -541,8 +541,7 @@ bool InputBuffer::_CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<I
             pLastMouseEvent->_eventFlags == MOUSE_MOVED)
         {
             // update mouse moved position
-            IInputEvent* const pEvent = _storage.back().release();
-            MouseEvent* const pMouseEvent = static_cast<MouseEvent* const>(pEvent);
+            MouseEvent* const pMouseEvent = static_cast<MouseEvent* const>(_storage.back().release());
             pMouseEvent->_mousePosition.X = pInMouseEvent->_mousePosition.X;
             pMouseEvent->_mousePosition.Y = pInMouseEvent->_mousePosition.Y;
             std::unique_ptr<IInputEvent> tempPtr(pMouseEvent);
@@ -602,9 +601,8 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
             if (sameKey)
             {
                 // increment repeat count
-                IInputEvent* const pEvent = _storage.back().release();
-                KeyEvent* const pKeyEvent = static_cast<KeyEvent* const>(pEvent);
-                pKeyEvent->_repeatCount++;
+                KeyEvent* const pKeyEvent = static_cast<KeyEvent* const>(_storage.back().release());
+                pKeyEvent->_repeatCount += pInKeyEvent->_repeatCount;
                 std::unique_ptr<IInputEvent> tempPtr(pKeyEvent);
                 tempPtr.swap(_storage.back());
 

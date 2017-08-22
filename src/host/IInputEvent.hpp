@@ -15,6 +15,7 @@ Author:
 
 #include <unordered_set>
 #include <memory>
+#include <deque>
 
 enum class InputEventType
 {
@@ -29,6 +30,8 @@ class IInputEvent
 {
 public:
     static std::unique_ptr<IInputEvent> Create(_In_ const INPUT_RECORD& record);
+    static std::deque<std::unique_ptr<IInputEvent>> Create(_In_reads_(cRecords) const INPUT_RECORD* const pRecords,
+                                                           _In_ const size_t cRecords);
 
     virtual ~IInputEvent() = 0;
     virtual INPUT_RECORD ToInputRecord() const = 0;

@@ -24,11 +24,7 @@ void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _I
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     try
     {
-        std::deque<std::unique_ptr<IInputEvent>> inEvents;
-        for (size_t i = 0; i < cInput; ++i)
-        {
-            inEvents.push_back(IInputEvent::Create(rgInput[i]));
-        }
+        std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(rgInput, cInput);
         gci->pInputBuffer->WriteInputBuffer(inEvents);
     }
     catch (...)
