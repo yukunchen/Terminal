@@ -386,13 +386,30 @@ NTSTATUS DoSrvWriteConsoleInput(_In_ InputBuffer* pInputBuffer, _Inout_ CONSOLE_
         pMsg->NumRecords = TranslateInputToUnicode(rgInputRecords, pMsg->NumRecords, &pInputBuffer->WriteConInpDbcsLeadByte[0]);
     }
 
-    if (pMsg->Append)
+    try
     {
-        pMsg->NumRecords = pInputBuffer->WriteInputBuffer(rgInputRecords, pMsg->NumRecords);
+        std::deque<std::unique_ptr<IInputEvent>> inEvents;
+        for (size_t i = 0; i < pMsg->NumRecords; ++i)
+        {
+            inEvents.push_back(IInputEvent::Create(rgInputRecords[i]));
+        }
+
+        if (pMsg->Append)
+        {
+            pMsg->NumRecords = static_cast<ULONG>(pInputBuffer->WriteInputBuffer(inEvents));
+        }
+        else
+        {
+            size_t eventsWritten = 0;
+            HRESULT hr = pInputBuffer->PrependInputBuffer(inEvents, eventsWritten);
+            pMsg->NumRecords = static_cast<ULONG>(eventsWritten);
+            Status = NTSTATUS_FROM_HRESULT(hr);
+        }
     }
-    else
+    catch (...)
     {
-        Status = pInputBuffer->PrependInputBuffer(rgInputRecords, &pMsg->NumRecords);
+        pMsg->NumRecords = 0;
+        Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
     return Status;

@@ -368,6 +368,14 @@ HRESULT InputBuffer::PrependInputBuffer(_Inout_ std::deque<INPUT_RECORD>& inReco
 
     inRecords.clear();
 
+    return PrependInputBuffer(inEvents, eventsWritten);
+}
+
+HRESULT InputBuffer::PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
+                                        _Out_ size_t& eventsWritten)
+{
+    eventsWritten = 0;
+
     try
     {
         THROW_IF_FAILED(_HandleConsoleSuspensionEvents(inEvents));
@@ -418,28 +426,19 @@ HRESULT InputBuffer::PrependInputBuffer(_Inout_ std::deque<INPUT_RECORD>& inReco
 // - Writes records to the input buffer. Wakes up any readers that are
 // waiting for additional input events.
 // Arguments:
-// - pInputRecord - Buffer to write from.
-// - cInputRecords - On input, number of events to write.
+// - inRecords - records to store in the buffer.
 // Return Value:
 // - The number of events that were written to input buffer.
 // Note:
 // - The console lock must be held when calling this routine.
-// - This method is mainly a wrapper to allow an array to be used to
-// read into.
-DWORD InputBuffer::WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD cInputRecords)
+size_t InputBuffer::WriteInputBuffer(_Inout_ std::deque<INPUT_RECORD>& inRecords)
 {
     try
     {
-        // change to a deque
-        std::deque<INPUT_RECORD> inRecords;
-        for (size_t i = 0; i < cInputRecords; ++i)
-        {
-            inRecords.push_back(pInputRecord[i]);
-        }
-        size_t EventsWritten = WriteInputBuffer(inRecords);
-        DWORD result;
-        THROW_IF_FAILED(SIZETToDWord(EventsWritten, &result));
-        return result;
+        std::deque<std::unique_ptr<IInputEvent>> inEvents;
+        inEvents = _inputRecordsToInputEvents(inRecords);
+        inRecords.clear();
+        return WriteInputBuffer(inEvents);
     }
     catch (...)
     {
@@ -449,25 +448,42 @@ DWORD InputBuffer::WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD 
 }
 
 // Routine Description:
-// - Writes records to the input buffer. Wakes up any readers that are
+// - Writes event to the input buffer. Wakes up any readers that are
 // waiting for additional input events.
 // Arguments:
-// - inRecords - records to store in the buffer.
+// - inEvent - input event to store in the buffer.
 // Return Value:
 // - The number of events that were written to input buffer.
 // Note:
 // - The console lock must be held when calling this routine.
-size_t InputBuffer::WriteInputBuffer(_Inout_ std::deque<INPUT_RECORD>& inRecords)
+// - any outside references to inEvent will ben invalidated after
+// calling this method.
+size_t InputBuffer::WriteInputBuffer(_Inout_ std::unique_ptr<IInputEvent> inEvent)
 {
-    std::deque<std::unique_ptr<IInputEvent>> inEvents;
     try
     {
-        inEvents = _inputRecordsToInputEvents(inRecords);
+        std::deque<std::unique_ptr<IInputEvent>> inEvents;
+        inEvents.push_back(std::move(inEvent));
+        return WriteInputBuffer(inEvents);
     }
-    CATCH_RETURN();
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+        return 0;
+    }
+}
 
-    inRecords.clear();
-
+// Routine Description:
+// - Writes events to the input buffer. Wakes up any readers that are
+// waiting for additional input events.
+// Arguments:
+// - inEvents - input events to store in the buffer.
+// Return Value:
+// - The number of events that were written to input buffer.
+// Note:
+// - The console lock must be held when calling this routine.
+size_t InputBuffer::WriteInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+{
     try
     {
         THROW_IF_FAILED(_HandleConsoleSuspensionEvents(inEvents));

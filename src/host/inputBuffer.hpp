@@ -55,9 +55,12 @@ public:
 
     NTSTATUS PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength);
     HRESULT PrependInputBuffer(_Inout_ std::deque<INPUT_RECORD>& inRecords, _Out_ size_t& eventsWritten);
+    HRESULT PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
+                               _Out_ size_t& eventsWritten);
 
-    DWORD WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD cInputRecords);
     size_t WriteInputBuffer(_Inout_ std::deque<INPUT_RECORD>& inRecords);
+    size_t WriteInputBuffer(_Inout_ std::unique_ptr<IInputEvent> pInputEvent);
+    size_t WriteInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
 private:
     std::deque<std::unique_ptr<IInputEvent>> _storage;

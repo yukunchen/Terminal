@@ -43,12 +43,12 @@ class InputBufferTests
     {
         InputBuffer inputBuffer;
         INPUT_RECORD record = MakeKeyEvent(true, 1, L'a', 0, L'a', 0);
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(IInputEvent::Create(record)), 0u);
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1u);
         // add another event, check again
         INPUT_RECORD record2;
         record2.EventType = MENU_EVENT;
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record2, 1), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(IInputEvent::Create(record2)), 0u);
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 2u);
     }
 
@@ -59,7 +59,7 @@ class InputBufferTests
         {
             INPUT_RECORD record;
             record.EventType = MENU_EVENT;
-            VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
+            VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(IInputEvent::Create(record)), 0u);
             VERIFY_ARE_EQUAL(record, inputBuffer._storage.back()->ToInputRecord());
         }
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
@@ -68,17 +68,19 @@ class InputBufferTests
     TEST_METHOD(CanBulkInsertIntoInputBuffer)
     {
         InputBuffer inputBuffer;
-        INPUT_RECORD records[RECORD_INSERT_COUNT] = { 0 };
+        std::deque<std::unique_ptr<IInputEvent>> events;
+        INPUT_RECORD record;
+        record.EventType = MENU_EVENT;
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            records[i].EventType = MENU_EVENT;
+            events.push_back(IInputEvent::Create(record));
         }
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(events), 0u);
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
         // verify that the events are the same in storage
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            VERIFY_ARE_EQUAL(inputBuffer._storage[i]->ToInputRecord(), records[i]);
+            VERIFY_ARE_EQUAL(inputBuffer._storage[i]->ToInputRecord(), record);
         }
     }
 
@@ -95,7 +97,7 @@ class InputBufferTests
         {
             mouseRecord.Event.MouseEvent.dwMousePosition.X = static_cast<SHORT>(i + 1);
             mouseRecord.Event.MouseEvent.dwMousePosition.Y = static_cast<SHORT>(i + 1) * 2;
-            VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&mouseRecord, 1), 0u);
+            VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(IInputEvent::Create(mouseRecord)), 0u);
         }
 
         // check that they coalesced
@@ -110,8 +112,8 @@ class InputBufferTests
         // an event between two mouse events stopped the coalescing.
         INPUT_RECORD keyRecord;
         keyRecord.EventType = KEY_EVENT;
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&keyRecord, 1), 0u);
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&mouseRecord, 1), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(IInputEvent::Create(keyRecord)), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(IInputEvent::Create(mouseRecord)), 0u);
 
         // verify
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 3u);
@@ -123,17 +125,22 @@ class InputBufferTests
 
         InputBuffer inputBuffer;
         INPUT_RECORD mouseRecords[RECORD_INSERT_COUNT];
+        std::deque<std::unique_ptr<IInputEvent>> events;
 
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             mouseRecords[i].EventType = MOUSE_EVENT;
             mouseRecords[i].Event.MouseEvent.dwEventFlags = MOUSE_MOVED;
+            events.push_back(IInputEvent::Create(mouseRecords[i]));
         }
+        // add an extra event
+        events.push_front(IInputEvent::Create(mouseRecords[0]));
         inputBuffer.Flush();
         // send one mouse event to possibly coalesce into later
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(mouseRecords, 1), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(std::move(events.front())), 0u);
+        events.pop_front();
         // write the others in bulk
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(mouseRecords, RECORD_INSERT_COUNT), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(events), 0u);
         // no events should have been coalesced
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT + 1);
         // check that the events stored match those inserted
@@ -155,7 +162,7 @@ class InputBufferTests
         inputBuffer.Flush();
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
+            VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(IInputEvent::Create(record)), 0u);
         }
 
         // all events should have been coalesced into one
@@ -179,16 +186,18 @@ class InputBufferTests
 
         InputBuffer inputBuffer;
         INPUT_RECORD keyRecords[RECORD_INSERT_COUNT];
+        std::deque<std::unique_ptr<IInputEvent>> events;
 
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             keyRecords[i] = MakeKeyEvent(true, 1, L'a', 0, L'a', 0);
+            events.push_back(IInputEvent::Create(keyRecords[i]));
         }
         inputBuffer.Flush();
         // send one key event to possibly coalesce into later
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(keyRecords, 1), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(IInputEvent::Create(keyRecords[0])), 0u);
         // write the others in bulk
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(keyRecords, RECORD_INSERT_COUNT), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(events), 0u);
         // no events should have been coalesced
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT + 1);
         // check that the events stored match those inserted
@@ -209,7 +218,7 @@ class InputBufferTests
         inputBuffer.Flush();
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
+            VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(IInputEvent::Create(record)), 0u);
             VERIFY_ARE_EQUAL(inputBuffer._storage.back()->ToInputRecord(), record);
         }
 
@@ -220,14 +229,16 @@ class InputBufferTests
     TEST_METHOD(CanFlushAllOutput)
     {
         InputBuffer inputBuffer;
-        INPUT_RECORD records[RECORD_INSERT_COUNT];
+        std::deque<std::unique_ptr<IInputEvent>> events;
 
         // put some events in the buffer so we can remove them
+        INPUT_RECORD record;
+        record.EventType = MENU_EVENT;
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            records[i].EventType = MENU_EVENT;
+            events.push_back(IInputEvent::Create(record));
         }
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(events), 0u);
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
 
         // remove them
@@ -239,13 +250,15 @@ class InputBufferTests
     {
         InputBuffer inputBuffer;
         INPUT_RECORD records[RECORD_INSERT_COUNT];
+        std::deque<std::unique_ptr<IInputEvent>> inEvents;
 
         // create alternating mouse and key events
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             records[i].EventType = (i % 2 == 0) ? MENU_EVENT : KEY_EVENT;
+            inEvents.push_back(IInputEvent::Create(records[i]));
         }
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(inEvents), 0u);
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
 
         // remove them
@@ -270,13 +283,15 @@ class InputBufferTests
     {
         InputBuffer inputBuffer;
         INPUT_RECORD records[RECORD_INSERT_COUNT];
+        std::deque<std::unique_ptr<IInputEvent>> inEvents;
 
         // write some input records
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             records[i] = MakeKeyEvent(TRUE, 1, static_cast<WCHAR>(L'A' + i), 0, static_cast<WCHAR>(L'A' + i), 0);
+            inEvents.push_back(IInputEvent::Create(records[i]));
         }
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(inEvents), 0u);
 
         // read them back out
         INPUT_RECORD outRecords[RECORD_INSERT_COUNT];
@@ -299,11 +314,13 @@ class InputBufferTests
 
         // add some events so that we have something to peek at
         INPUT_RECORD records[RECORD_INSERT_COUNT];
+        std::deque<std::unique_ptr<IInputEvent>> inEvents;
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             records[i] = MakeKeyEvent(TRUE, 1, static_cast<WCHAR>(L'A' + i), 0, static_cast<WCHAR>(L'A' + i), 0);
+            inEvents.push_back(IInputEvent::Create(records[i]));
         }
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(inEvents), 0u);
 
         // peek at events
         INPUT_RECORD outRecords[RECORD_INSERT_COUNT];
@@ -329,11 +346,13 @@ class InputBufferTests
 
         // add some events so that we have something to stick in front of
         INPUT_RECORD records[RECORD_INSERT_COUNT];
+        std::deque<std::unique_ptr<IInputEvent>> inEvents;
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             records[i] = MakeKeyEvent(TRUE, 1, static_cast<WCHAR>(L'A' + i), 0, static_cast<WCHAR>(L'A' + i), 0);
+            inEvents.push_back(IInputEvent::Create(records[i]));
         }
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(inEvents), 0u);
 
         // read one record, make sure ResetWaitEvent isn't set
         INPUT_RECORD outRecord;
@@ -373,8 +392,14 @@ class InputBufferTests
         inRecords[2] = MakeKeyEvent(TRUE, 1, 0x3042, 0, 0x3042, 0); // U+3042 hiragana A
         inRecords[3].EventType = MOUSE_EVENT;
 
+        std::deque<std::unique_ptr<IInputEvent>> inEvents;
+        for (size_t i = 0; i < recordInsertCount; ++i)
+        {
+            inEvents.push_back(IInputEvent::Create(inRecords[i]));
+        }
+
         inputBuffer.Flush();
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(inRecords, recordInsertCount), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(inEvents), 0u);
 
         // read them out non-unicode style and compare
         INPUT_RECORD outRecords[recordInsertCount] = { 0 };
@@ -404,11 +429,13 @@ class InputBufferTests
 
         // add some events so that we have something to stick in front of
         INPUT_RECORD records[RECORD_INSERT_COUNT];
+        std::deque<std::unique_ptr<IInputEvent>> inEvents;
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             records[i] = MakeKeyEvent(TRUE, 1, static_cast<WCHAR>(L'A' + i), 0, static_cast<WCHAR>(L'A' + i), 0);
+            inEvents.push_back(IInputEvent::Create(records[i]));
         }
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(records, RECORD_INSERT_COUNT), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(inEvents), 0u);
 
         // prepend some other events
         INPUT_RECORD prependRecords[RECORD_INSERT_COUNT];
@@ -457,7 +484,7 @@ class InputBufferTests
         // change the buffer's state a bit
         INPUT_RECORD record;
         record.EventType = MENU_EVENT;
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&record, 1), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(IInputEvent::Create(record)), 0u);
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1u);
         inputBuffer.InputMode = 0x0;
         inputBuffer.ReinitializeInputBuffer();
@@ -477,7 +504,7 @@ class InputBufferTests
         VERIFY_IS_FALSE(IsFlagSet(gci->Flags, CONSOLE_OUTPUT_SUSPENDED));
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
 
-        VERIFY_ARE_EQUAL(inputBuffer.WriteInputBuffer(&pauseRecord, 1), 0u);
+        VERIFY_ARE_EQUAL(inputBuffer.WriteInputBuffer(IInputEvent::Create(pauseRecord)), 0u);
 
         // we should now be paused and the input record should be discarded
         VERIFY_IS_TRUE(IsFlagSet(gci->Flags, CONSOLE_OUTPUT_SUSPENDED));
@@ -485,7 +512,7 @@ class InputBufferTests
 
         // the next key press should unpause us but be discarded
         INPUT_RECORD unpauseRecord = MakeKeyEvent(true, 1, L'a', 0, L'a', 0);
-        VERIFY_ARE_EQUAL(inputBuffer.WriteInputBuffer(&unpauseRecord, 1), 0u);
+        VERIFY_ARE_EQUAL(inputBuffer.WriteInputBuffer(IInputEvent::Create(unpauseRecord)), 0u);
 
         VERIFY_IS_FALSE(IsFlagSet(gci->Flags, CONSOLE_OUTPUT_SUSPENDED));
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
@@ -502,7 +529,7 @@ class InputBufferTests
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
 
         // pause the screen
-        VERIFY_ARE_EQUAL(inputBuffer.WriteInputBuffer(&pauseRecord, 1), 0u);
+        VERIFY_ARE_EQUAL(inputBuffer.WriteInputBuffer(IInputEvent::Create(pauseRecord)), 0u);
 
         // we should now be paused and the input record should be discarded
         VERIFY_IS_TRUE(IsFlagSet(gci->Flags, CONSOLE_OUTPUT_SUSPENDED));
@@ -511,7 +538,7 @@ class InputBufferTests
         // sending a system key event should not stop the pause and
         // the record should be stored in the input buffer
         INPUT_RECORD systemRecord = MakeKeyEvent(true, 1, VK_CONTROL, 0, 0, 0);
-        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(&systemRecord, 1), 0u);
+        VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(IInputEvent::Create(systemRecord)), 0u);
 
         VERIFY_IS_TRUE(IsFlagSet(gci->Flags, CONSOLE_OUTPUT_SUSPENDED));
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1u);
