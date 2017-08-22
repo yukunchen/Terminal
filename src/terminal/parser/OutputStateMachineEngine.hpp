@@ -32,6 +32,7 @@ namespace Microsoft
 
                 void ActionExecute(_In_ wchar_t const wch);
                 void ActionPrint(_In_ wchar_t const wch);
+                void ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
                 void ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate);
                 void ActionCsiDispatch(_In_ wchar_t const wch, 
                                        _In_ const unsigned short cIntermediate,
@@ -44,7 +45,7 @@ namespace Microsoft
                 // void ActionSs3Dispatch(_In_ wchar_t const wch);
 
             private:
-
+                Microsoft::Console::VirtualTerminal::ParserTracing _trace;
                 TermDispatch* _pDispatch;
 
                 bool _IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction, _In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams);

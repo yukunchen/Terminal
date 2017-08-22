@@ -12,18 +12,21 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-Tracing _trace;
-
-StateMachine::StateMachine(_In_ TermDispatch* const pDispatch) :
-    _pDispatch(pDispatch),
+//Takes ownership of the pEngine.
+StateMachine::StateMachine(_In_ IStateMachineEngine* const pEngine) :
+    _pEngine(pEngine),
     _state(VTStates::Ground)
 {
+    _trace = Microsoft::Console::VirtualTerminal::ParserTracing();
     _ActionClear();
 }
 
 StateMachine::~StateMachine()
 {
-
+    if (_pEngine != nullptr)
+    {
+        delete _pEngine;
+    }
 }
 
 // Routine Description:
@@ -1029,7 +1032,7 @@ void StateMachine::ProcessString(_In_reads_(cch) wchar_t * const rgwch, _In_ siz
         {
             if (s_IsActionableFromGround(*pwchCurr))  // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
-                _pDispatch->PrintString(pwchStart, currRunLength); // ... print all the chars leading up to it as part of the run...
+                _pEngine->ActionPrintString(pwchStart, currRunLength); // ... print all the chars leading up to it as part of the run...
                 _trace.DispatchPrintRunTrace(pwchStart, currRunLength);
                 s_fProcessIndividually = true; // begin processing future characters individually... 
                 currRunLength = 0;
@@ -1052,7 +1055,7 @@ void StateMachine::ProcessString(_In_reads_(cch) wchar_t * const rgwch, _In_ siz
     if (!s_fProcessIndividually && currRunLength > 0) // If we're at the end of the string and have remaining un-printed characters, 
     {
         // print the rest of the characters in the string
-        _pDispatch->PrintString(pwchStart, currRunLength);
+        _pEngine->ActionPrintString(pwchStart, currRunLength);
         _trace.DispatchPrintRunTrace(pwchStart, currRunLength);
 
     }

@@ -26,6 +26,7 @@ namespace Microsoft
 
                 virtual void ActionExecute(_In_ wchar_t const wch) = 0;
                 virtual void ActionPrint(_In_ wchar_t const wch) = 0;
+                virtual void ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch) = 0;
                 virtual void ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate) = 0;
                 virtual void ActionCsiDispatch(_In_ wchar_t const wch, 
                                                _In_ const unsigned short cIntermediate,

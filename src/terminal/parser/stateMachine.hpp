@@ -17,8 +17,8 @@ Author(s):
 
 #include "termDispatch.hpp"
 #include "IStateMachineEngine.hpp"
-#include "OutputStateMachineEngine.hpp"
 #include "telemetry.hpp"
+#include "tracing.hpp"
 
 namespace Microsoft
 {
@@ -34,14 +34,14 @@ namespace Microsoft
 #endif
 
             public:
-                StateMachine(_In_ TermDispatch* const pDispatch);
+                StateMachine(_In_ IStateMachineEngine* const pEngine);
                 ~StateMachine();
 
                 
-                TermDispatch* GetDispatch()
-                {
-                    return _pDispatch;
-                }
+                // TermDispatch* GetDispatch()
+                // {
+                //     return _pDispatch;
+                // }
 
                 void ProcessCharacter(_In_ wchar_t const wch);
                 void ProcessString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
@@ -177,10 +177,10 @@ namespace Microsoft
                     OscParam,
                     OscString
                 };
-                
+
+                Microsoft::Console::VirtualTerminal::ParserTracing _trace;
                 IStateMachineEngine* _pEngine = nullptr;
 
-                TermDispatch* _pDispatch;
                 VTStates _state;
 
                 wchar_t _wchIntermediate;

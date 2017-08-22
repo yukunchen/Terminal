@@ -12,13 +12,13 @@
 #include "ascii.hpp"
 using namespace Microsoft::Console::VirtualTerminal;
 
-Tracing _trace;
-
 
 OutputStateMachineEngine::OutputStateMachineEngine(_In_ TermDispatch* const pDispatch) :
     _pDispatch(pDispatch)
 {
     // _ActionClear();
+
+    _trace = Microsoft::Console::VirtualTerminal::ParserTracing();
 }
 
 OutputStateMachineEngine::~OutputStateMachineEngine()
@@ -50,6 +50,17 @@ void OutputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
     _pDispatch->Print(wch); // call print
 }
 
+// Routine Description:
+// - Triggers the Print action to indicate that the listener should render the character given.
+// Arguments:
+// - wch - Character to dispatch.
+// Return Value:
+// - <none>
+void OutputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+{
+    _trace.TraceOnAction(L"PrintString");
+    _pDispatch->PrintString(rgwch, cch); // call print
+}
 
 // Routine Description:
 // - Triggers the EscDispatch action to indicate that the listener should handle a simple escape sequence.

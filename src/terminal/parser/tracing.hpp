@@ -22,12 +22,12 @@ namespace Microsoft
     {
         namespace VirtualTerminal
         {
-            class Tracing sealed
+            class ParserTracing sealed
             {
             public:
 
-                Tracing();
-                ~Tracing();
+                ParserTracing();
+                ~ParserTracing();
 
                 void TraceStateChange(_In_ PCWSTR const pwszName) const;
                 void TraceOnAction(_In_ PCWSTR const pwszName) const;
