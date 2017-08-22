@@ -318,39 +318,6 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
 // Routine Description:
 // -  Writes records to the beginning of the input buffer.
 // Arguments:
-// - pInputRecord - Buffer to write from.
-// - pcLength - On input, number of events to write.  On output, number of events written.
-// Return Value:
-// - STATUS_SUCCESS on success.
-// Note:
-// - The console lock must be held when calling this routine.
-// - This method is mainly a wrapper to allow an array to be used to
-// read into.
-NTSTATUS InputBuffer::PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength)
-{
-    try
-    {
-        // change to a deque
-        std::deque<INPUT_RECORD> inRecords;
-        for (size_t i = 0; i < *pcLength; ++i)
-        {
-            inRecords.push_back(pInputRecord[i]);
-        }
-        size_t eventsWritten;
-        THROW_IF_FAILED(PrependInputBuffer(inRecords, eventsWritten));
-
-        THROW_IF_FAILED(SizeTToDWord(eventsWritten, pcLength));
-        return STATUS_SUCCESS;
-    }
-    catch (...)
-    {
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-    }
-}
-
-// Routine Description:
-// -  Writes records to the beginning of the input buffer.
-// Arguments:
 // - inRecords - Records to write to buffer.
 // - eventsWritten - The number of events written to the buffer on exit.
 // Return Value:

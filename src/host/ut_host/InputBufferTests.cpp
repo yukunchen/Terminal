@@ -438,14 +438,16 @@ class InputBufferTests
         VERIFY_IS_GREATER_THAN(inputBuffer.WriteInputBuffer(inEvents), 0u);
 
         // prepend some other events
+        inEvents.clear();
         INPUT_RECORD prependRecords[RECORD_INSERT_COUNT];
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
             prependRecords[i] = MakeKeyEvent(TRUE, 1, static_cast<WCHAR>(L'a' + i), 0, static_cast<WCHAR>(L'a' + i), 0);
+            inEvents.push_back(IInputEvent::Create(prependRecords[i]));
         }
-        DWORD prependCount = RECORD_INSERT_COUNT;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.PrependInputBuffer(prependRecords, &prependCount));
-        VERIFY_ARE_EQUAL(prependCount, RECORD_INSERT_COUNT);
+        size_t eventsWritten;
+        VERIFY_SUCCEEDED(inputBuffer.PrependInputBuffer(inEvents, eventsWritten));
+        VERIFY_ARE_EQUAL(eventsWritten, RECORD_INSERT_COUNT);
 
         // grab the first set of events and ensure they match prependRecords
         INPUT_RECORD outRecords[RECORD_INSERT_COUNT];
