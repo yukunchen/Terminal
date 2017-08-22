@@ -265,6 +265,43 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
                                  _Out_ bool& resetWaitEvent,
                                  _In_ const bool unicode)
 {
+    std::deque<std::unique_ptr<IInputEvent>> outEvents;
+    RETURN_IF_FAILED(_ReadBuffer(outEvents,
+                                 readCount,
+                                 eventsRead,
+                                 peek,
+                                 resetWaitEvent,
+                                 unicode));
+
+    try
+    {
+        for (auto it = outEvents.cbegin(); it != outEvents.cend(); ++it)
+        {
+            outRecords.push_back((*it)->ToInputRecord());
+        }
+    }
+    catch (...)
+    {
+        outRecords.clear();
+        eventsRead = 0;
+        return wil::ResultFromCaughtException();
+    }
+
+    return S_OK;
+}
+
+HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                 _In_ const size_t readCount,
+                                 _Out_ size_t& eventsRead,
+                                 _In_ const bool peek,
+                                 _Out_ bool& resetWaitEvent,
+                                 _In_ const bool unicode)
+{
+    if (peek)
+    {
+        assert(outEvents.empty());
+    }
+
     try
     {
         resetWaitEvent = false;
@@ -276,31 +313,31 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
         size_t virtualReadCount = 0;
         while (!_storage.empty() && virtualReadCount < readCount)
         {
-            outRecords.push_back(_storage.front()->ToInputRecord());
+            outEvents.push_back(std::move(_storage.front()));
+            _storage.pop_front();
             ++virtualReadCount;
             if (!unicode)
             {
-                if (_storage.front()->EventType() == InputEventType::KeyEvent)
+                if (outEvents.back()->EventType() == InputEventType::KeyEvent)
                 {
-                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(_storage.front().get());
+                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(outEvents.front().get());
                     if (IsCharFullWidth(pKeyEvent->_charData))
                     {
                         ++virtualReadCount;
                     }
                 }
             }
-            _storage.pop_front();
         }
 
         // the amount of events that were actually read
-        eventsRead = outRecords.size();
+        eventsRead = outEvents.size();
 
         // copy the events back if we were supposed to peek
         if (peek)
         {
-            for (auto it = outRecords.crbegin(); it != outRecords.crend(); ++it)
+            for (auto it = outEvents.crbegin(); it != outEvents.crend(); ++it)
             {
-                _storage.push_front(IInputEvent::Create(*it));
+                _storage.push_front(IInputEvent::Create((*it)->ToInputRecord()));
             }
         }
 
