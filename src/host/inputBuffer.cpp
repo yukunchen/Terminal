@@ -318,13 +318,13 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
 // Routine Description:
 // -  Writes events to the beginning of the input buffer.
 // Arguments:
-// - inEvents - envents to write to buffer.
+// - inEvents - events to write to buffer.
 // - eventsWritten - The number of events written to the buffer on exit.
 // Return Value:
 // S_OK if successful.
 // Note:
 // - The console lock must be held when calling this routine.
-size_t InputBuffer::PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+size_t InputBuffer::Prepend(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
     try
     {
@@ -390,13 +390,13 @@ size_t InputBuffer::PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInput
 // - The console lock must be held when calling this routine.
 // - any outside references to inEvent will ben invalidated after
 // calling this method.
-size_t InputBuffer::WriteInputBuffer(_Inout_ std::unique_ptr<IInputEvent> inEvent)
+size_t InputBuffer::Write(_Inout_ std::unique_ptr<IInputEvent> inEvent)
 {
     try
     {
         std::deque<std::unique_ptr<IInputEvent>> inEvents;
         inEvents.push_back(std::move(inEvent));
-        return WriteInputBuffer(inEvents);
+        return Write(inEvents);
     }
     catch (...)
     {
@@ -414,7 +414,7 @@ size_t InputBuffer::WriteInputBuffer(_Inout_ std::unique_ptr<IInputEvent> inEven
 // - The number of events that were written to input buffer.
 // Note:
 // - The console lock must be held when calling this routine.
-size_t InputBuffer::WriteInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+size_t InputBuffer::Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
     try
     {

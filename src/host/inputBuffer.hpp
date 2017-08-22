@@ -53,10 +53,10 @@ public:
                             _In_ BOOL const fWaitForData,
                             _In_ BOOLEAN const fUnicode);
 
-    size_t PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+    size_t Prepend(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
-    size_t WriteInputBuffer(_Inout_ std::unique_ptr<IInputEvent> pInputEvent);
-    size_t WriteInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+    size_t Write(_Inout_ std::unique_ptr<IInputEvent> pInputEvent);
+    size_t Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
 private:
     std::deque<std::unique_ptr<IInputEvent>> _storage;

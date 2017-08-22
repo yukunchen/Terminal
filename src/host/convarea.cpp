@@ -687,7 +687,7 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
             ++lpStr;
         }
 
-        gci->pInputBuffer->WriteInputBuffer(inEvents);
+        gci->pInputBuffer->Write(inEvents);
 
         fResult = true;
     }
