@@ -22,7 +22,15 @@
 void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->pInputBuffer->WriteInputBuffer(rgInput, cInput);
+    try
+    {
+        std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(rgInput, cInput);
+        gci->pInputBuffer->WriteInputBuffer(inEvents);
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+    }
 }
 
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :

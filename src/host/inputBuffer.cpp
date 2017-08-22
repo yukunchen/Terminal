@@ -117,15 +117,16 @@ HRESULT InputBuffer::FlushAllButKeys()
 {
     try
     {
-        std::deque<INPUT_RECORD> keyRecords;
-        for (auto it = _storage.cbegin(); it != _storage.cend(); ++it)
+        std::deque<std::unique_ptr<IInputEvent>> keyEvents;
+        for (auto it = _storage.begin(); it != _storage.end(); ++it)
         {
-            if (it->EventType == KEY_EVENT)
+            if ((*it)->EventType() == InputEventType::KeyEvent)
             {
-                keyRecords.push_back(*it);
+                std::unique_ptr<IInputEvent> tempPtr((*it).release());
+                keyEvents.push_back(std::move(tempPtr));
             }
         }
-        _storage.swap(keyRecords);
+        _storage.swap(keyEvents);
         return S_OK;
     }
     CATCH_RETURN();
@@ -275,14 +276,17 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
         size_t virtualReadCount = 0;
         while (!_storage.empty() && virtualReadCount < readCount)
         {
-            outRecords.push_back(_storage.front());
+            outRecords.push_back(_storage.front()->ToInputRecord());
             ++virtualReadCount;
             if (!unicode)
             {
-                if (_storage.front().EventType == KEY_EVENT &&
-                    IsCharFullWidth(_storage.front().Event.KeyEvent.uChar.UnicodeChar))
+                if (_storage.front()->EventType() == InputEventType::KeyEvent)
                 {
-                    ++virtualReadCount;
+                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(_storage.front().get());
+                    if (IsCharFullWidth(pKeyEvent->_charData))
+                    {
+                        ++virtualReadCount;
+                    }
                 }
             }
             _storage.pop_front();
@@ -296,7 +300,7 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
         {
             for (auto it = outRecords.crbegin(); it != outRecords.crend(); ++it)
             {
-                _storage.push_front(*it);
+                _storage.push_front(IInputEvent::Create(*it));
             }
         }
 
@@ -312,53 +316,20 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
 }
 
 // Routine Description:
-// -  Writes records to the beginning of the input buffer.
+// -  Writes events to the beginning of the input buffer.
 // Arguments:
-// - pInputRecord - Buffer to write from.
-// - pcLength - On input, number of events to write.  On output, number of events written.
-// Return Value:
-// - STATUS_SUCCESS on success.
-// Note:
-// - The console lock must be held when calling this routine.
-// - This method is mainly a wrapper to allow an array to be used to
-// read into.
-NTSTATUS InputBuffer::PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength)
-{
-    try
-    {
-        // change to a deque
-        std::deque<INPUT_RECORD> inRecords;
-        for (size_t i = 0; i < *pcLength; ++i)
-        {
-            inRecords.push_back(pInputRecord[i]);
-        }
-        size_t eventsWritten;
-        THROW_IF_FAILED(PrependInputBuffer(inRecords, eventsWritten));
-
-        THROW_IF_FAILED(SizeTToDWord(eventsWritten, pcLength));
-        return STATUS_SUCCESS;
-    }
-    catch (...)
-    {
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-    }
-}
-
-// Routine Description:
-// -  Writes records to the beginning of the input buffer.
-// Arguments:
-// - inRecords - Records to write to buffer.
+// - inEvents - envents to write to buffer.
 // - eventsWritten - The number of events written to the buffer on exit.
 // Return Value:
 // S_OK if successful.
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords, _Out_ size_t& eventsWritten)
+size_t InputBuffer::PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
     try
     {
-        THROW_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
-        if (inRecords.empty())
+        THROW_IF_FAILED(_HandleConsoleSuspensionEvents(inEvents));
+        if (inEvents.empty())
         {
             return STATUS_SUCCESS;
         }
@@ -367,7 +338,7 @@ HRESULT InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords
         // this way to handle any coalescing that might occur.
 
         // get all of the existing records, "emptying" the buffer
-        std::deque<INPUT_RECORD> existingStorage;
+        std::deque<std::unique_ptr<IInputEvent>> existingStorage;
         existingStorage.swap(_storage);
 
         // We will need this variable to pass to _WriteBuffer so it can attempt to determine wait status.
@@ -378,7 +349,7 @@ HRESULT InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords
 
         // write the prepend records
         size_t prependEventsWritten;
-        _WriteBuffer(inRecords, prependEventsWritten, unusedWaitStatus);
+        _WriteBuffer(inEvents, prependEventsWritten, unusedWaitStatus);
         assert(unusedWaitStatus);
 
         // write all previously existing records
@@ -386,47 +357,20 @@ HRESULT InputBuffer::PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords
         _WriteBuffer(existingStorage, existingEventsWritten, unusedWaitStatus);
         assert(!unusedWaitStatus);
 
-        // We need to set the wait event if there were 0 events in the input queue when we started.
-        // Because we did interesting manipulation of the wait queue in order to prepend, we can't trust what _WriteBuffer said
-        // and instead need to set the event if the original backing buffer (the one we swapped out at the top) was empty
+        // We need to set the wait event if there were 0 events in the
+        // input queue when we started.
+        // Because we did interesting manipulation of the wait queue
+        // in order to prepend, we can't trust what _WriteBuffer said
+        // and instead need to set the event if the original backing
+        // buffer (the one we swapped out at the top) was empty
         // when this whole thing started.
         if (existingStorage.empty())
         {
             SetEvent(InputWaitEvent);
         }
         WakeUpReadersWaitingForData();
-        eventsWritten = prependEventsWritten;
-        return S_OK;
-    }
-    CATCH_RETURN();
-}
 
-// Routine Description:
-// - Writes records to the input buffer. Wakes up any readers that are
-// waiting for additional input events.
-// Arguments:
-// - pInputRecord - Buffer to write from.
-// - cInputRecords - On input, number of events to write.
-// Return Value:
-// - The number of events that were written to input buffer.
-// Note:
-// - The console lock must be held when calling this routine.
-// - This method is mainly a wrapper to allow an array to be used to
-// read into.
-DWORD InputBuffer::WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD cInputRecords)
-{
-    try
-    {
-        // change to a deque
-        std::deque<INPUT_RECORD> inRecords;
-        for (size_t i = 0; i < cInputRecords; ++i)
-        {
-            inRecords.push_back(pInputRecord[i]);
-        }
-        size_t EventsWritten = WriteInputBuffer(inRecords);
-        DWORD result;
-        THROW_IF_FAILED(SIZETToDWord(EventsWritten, &result));
-        return result;
+        return prependEventsWritten;
     }
     catch (...)
     {
@@ -436,20 +380,46 @@ DWORD InputBuffer::WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD 
 }
 
 // Routine Description:
-// - Writes records to the input buffer. Wakes up any readers that are
+// - Writes event to the input buffer. Wakes up any readers that are
 // waiting for additional input events.
 // Arguments:
-// - inRecords - records to store in the buffer.
+// - inEvent - input event to store in the buffer.
 // Return Value:
 // - The number of events that were written to input buffer.
 // Note:
 // - The console lock must be held when calling this routine.
-size_t InputBuffer::WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
+// - any outside references to inEvent will ben invalidated after
+// calling this method.
+size_t InputBuffer::WriteInputBuffer(_Inout_ std::unique_ptr<IInputEvent> inEvent)
 {
     try
     {
-        THROW_IF_FAILED(_HandleConsoleSuspensionEvents(inRecords));
-        if (inRecords.empty())
+        std::deque<std::unique_ptr<IInputEvent>> inEvents;
+        inEvents.push_back(std::move(inEvent));
+        return WriteInputBuffer(inEvents);
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+        return 0;
+    }
+}
+
+// Routine Description:
+// - Writes events to the input buffer. Wakes up any readers that are
+// waiting for additional input events.
+// Arguments:
+// - inEvents - input events to store in the buffer.
+// Return Value:
+// - The number of events that were written to input buffer.
+// Note:
+// - The console lock must be held when calling this routine.
+size_t InputBuffer::WriteInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+{
+    try
+    {
+        THROW_IF_FAILED(_HandleConsoleSuspensionEvents(inEvents));
+        if (inEvents.empty())
         {
             return 0;
         }
@@ -457,7 +427,7 @@ size_t InputBuffer::WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
         // Write to buffer.
         size_t EventsWritten;
         bool SetWaitEvent;
-        THROW_IF_FAILED(_WriteBuffer(inRecords, EventsWritten, SetWaitEvent));
+        THROW_IF_FAILED(_WriteBuffer(inEvents, EventsWritten, SetWaitEvent));
 
         if (SetWaitEvent)
         {
@@ -486,20 +456,21 @@ size_t InputBuffer::WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords)
 // - S_OK on success.
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
+HRESULT InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                                   _Out_ size_t& eventsWritten,
                                   _Out_ bool& setWaitEvent)
 {
+    eventsWritten = 0;
+    setWaitEvent = false;
+    const bool initiallyEmptyQueue = _storage.empty();
+
     try
     {
-        eventsWritten = 0;
-        setWaitEvent = false;
-        bool initiallyEmptyQueue = _storage.empty();
         // we only check for possible coalescing when storing one
         // record at a time because this is the original behavior of
         // the input buffer. Changing this behavior may break stuff
         // that was depending on it.
-        if (inRecords.size() == 1 && !_storage.empty())
+        if (inEvents.size() == 1 && !_storage.empty())
         {
             bool coalesced = false;
             // this looks kinda weird but we don't want to coalesce a
@@ -509,11 +480,11 @@ HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
             // even though they only want one event because it should
             // be their responsibility to maintain the correct state
             // of the deque if they process any records in it.
-            if (_CoalesceMouseMovedEvents(inRecords))
+            if (_CoalesceMouseMovedEvents(inEvents))
             {
                 coalesced = true;
             }
-            else if (_CoalesceRepeatedKeyPressEvents(inRecords))
+            else if (_CoalesceRepeatedKeyPressEvents(inEvents))
             {
                 coalesced = true;
             }
@@ -523,11 +494,11 @@ HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
                 return S_OK;
             }
         }
-        // add all input records to the storage queue
-        while (!inRecords.empty())
+        // add all input events to the storage queue
+        while (!inEvents.empty())
         {
-            _storage.push_back(inRecords.front());
-            inRecords.pop_front();
+            _storage.push_back(std::move(inEvents.front()));
+            inEvents.pop_front();
             ++eventsWritten;
         }
         if (initiallyEmptyQueue && !_storage.empty())
@@ -554,20 +525,31 @@ HRESULT InputBuffer::_WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
 // the buffer with updated values from an incoming event, instead of
 // storing the incoming event (which would make the original one
 // redundant/out of date with the most current state).
-bool InputBuffer::_CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRecords)
+bool InputBuffer::_CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    _ASSERT(inRecords.size() == 1);
-    const INPUT_RECORD& firstInRecord = inRecords.front();
-    INPUT_RECORD& lastStoredRecord = _storage.back();
-    if (firstInRecord.EventType == MOUSE_EVENT &&
-        firstInRecord.Event.MouseEvent.dwEventFlags == MOUSE_MOVED &&
-        lastStoredRecord.EventType == MOUSE_EVENT &&
-        lastStoredRecord.Event.MouseEvent.dwEventFlags == MOUSE_MOVED)
+    assert(inEvents.size() == 1);
+    assert(!_storage.empty());
+    const IInputEvent* const pFirstInEvent = inEvents.front().get();
+    const IInputEvent* const pLastStoredEvent = _storage.back().get();
+    if (pFirstInEvent->EventType() == InputEventType::MouseEvent &&
+        pLastStoredEvent->EventType() == InputEventType::MouseEvent)
     {
-        lastStoredRecord.Event.MouseEvent.dwMousePosition.X = firstInRecord.Event.MouseEvent.dwMousePosition.X;
-        lastStoredRecord.Event.MouseEvent.dwMousePosition.Y = firstInRecord.Event.MouseEvent.dwMousePosition.Y;
-        inRecords.pop_front();
-        return true;
+        const MouseEvent* const pInMouseEvent = static_cast<const MouseEvent* const>(pFirstInEvent);
+        const MouseEvent* const pLastMouseEvent = static_cast<const MouseEvent* const>(pLastStoredEvent);
+
+        if (pInMouseEvent->_eventFlags == MOUSE_MOVED &&
+            pLastMouseEvent->_eventFlags == MOUSE_MOVED)
+        {
+            // update mouse moved position
+            MouseEvent* const pMouseEvent = static_cast<MouseEvent* const>(_storage.back().release());
+            pMouseEvent->_mousePosition.X = pInMouseEvent->_mousePosition.X;
+            pMouseEvent->_mousePosition.Y = pInMouseEvent->_mousePosition.Y;
+            std::unique_ptr<IInputEvent> tempPtr(pMouseEvent);
+            tempPtr.swap(_storage.back());
+
+            inEvents.pop_front();
+            return true;
+        }
     }
     return false;
 }
@@ -586,40 +568,47 @@ bool InputBuffer::_CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRec
 // the buffer with updated values from an incoming event, instead of
 // storing the incoming event (which would make the original one
 // redundant/out of date with the most current state).
-bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>& inRecords)
+bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    _ASSERT(inRecords.size() == 1);
-    const INPUT_RECORD& firstInRecord = inRecords.front();
-    INPUT_RECORD& lastStoredRecord = _storage.back();
-    // both records need to be key down events
-    if (firstInRecord.EventType == KEY_EVENT &&
-        firstInRecord.Event.KeyEvent.bKeyDown &&
-        lastStoredRecord.EventType == KEY_EVENT &&
-        lastStoredRecord.Event.KeyEvent.bKeyDown &&
-        !IsCharFullWidth(firstInRecord.Event.KeyEvent.uChar.UnicodeChar))
+    assert(inEvents.size() == 1);
+    assert(!_storage.empty());
+    const IInputEvent* const pFirstInEvent = inEvents.front().get();
+    const IInputEvent* const pLastStoredEvent = _storage.back().get();
+    if (pFirstInEvent->EventType() == InputEventType::KeyEvent &&
+        pLastStoredEvent->EventType() == InputEventType::KeyEvent)
     {
-        const KEY_EVENT_RECORD inKeyEventRecord = firstInRecord.Event.KeyEvent;
-        const KEY_EVENT_RECORD lastKeyEventRecord = lastStoredRecord.Event.KeyEvent;
-        bool sameKey = false;
-        // ime key check
-        if (IsFlagSet(inKeyEventRecord.dwControlKeyState, NLS_IME_CONVERSION) &&
-            inKeyEventRecord.uChar.UnicodeChar == lastKeyEventRecord.uChar.UnicodeChar &&
-            inKeyEventRecord.dwControlKeyState == lastKeyEventRecord.dwControlKeyState)
+        const KeyEvent* const pInKeyEvent = static_cast<const KeyEvent* const>(pFirstInEvent);
+        const KeyEvent* const pLastKeyEvent = static_cast<const KeyEvent* const>(pLastStoredEvent);
+
+        if (pInKeyEvent->_keyDown &&
+            pLastKeyEvent->_keyDown &&
+            !IsCharFullWidth(pInKeyEvent->_charData))
         {
-            sameKey = true;
-        }
-        // other key events check
-        else if (inKeyEventRecord.wVirtualScanCode == lastKeyEventRecord.wVirtualScanCode &&
-                 inKeyEventRecord.uChar.UnicodeChar == lastKeyEventRecord.uChar.UnicodeChar &&
-                 inKeyEventRecord.dwControlKeyState == lastKeyEventRecord.dwControlKeyState)
-        {
-            sameKey = true;
-        }
-        if (sameKey)
-        {
-            lastStoredRecord.Event.KeyEvent.wRepeatCount += firstInRecord.Event.KeyEvent.wRepeatCount;
-            inRecords.pop_front();
-            return true;
+            bool sameKey = false;
+            if (IsFlagSet(pInKeyEvent->_activeModifierKeys, NLS_IME_CONVERSION) &&
+                pInKeyEvent->_charData == pLastKeyEvent->_charData &&
+                pInKeyEvent->_activeModifierKeys == pLastKeyEvent->_activeModifierKeys)
+            {
+                sameKey = true;
+            }
+            // other key events check
+            else if (pInKeyEvent->_virtualScanCode == pLastKeyEvent->_virtualScanCode &&
+                    pInKeyEvent->_charData == pLastKeyEvent->_charData &&
+                    pInKeyEvent->_activeModifierKeys == pLastKeyEvent->_activeModifierKeys)
+            {
+                sameKey = true;
+            }
+            if (sameKey)
+            {
+                // increment repeat count
+                KeyEvent* const pKeyEvent = static_cast<KeyEvent* const>(_storage.back().release());
+                pKeyEvent->_repeatCount += pInKeyEvent->_repeatCount;
+                std::unique_ptr<IInputEvent> tempPtr(pKeyEvent);
+                tempPtr.swap(_storage.back());
+
+                inEvents.pop_front();
+                return true;
+            }
         }
     }
     return false;
@@ -633,34 +622,56 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>&
 // - S_OK on success.
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD>& records)
+HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     try
     {
-        std::deque<INPUT_RECORD> outRecords;
-        for (size_t i = 0; i < records.size(); ++i)
+        std::deque<std::unique_ptr<IInputEvent>> outEvents;
+        while (!inEvents.empty())
         {
-            INPUT_RECORD currEvent = records[i];
-            if (currEvent.EventType == KEY_EVENT && currEvent.Event.KeyEvent.bKeyDown)
+            std::unique_ptr<IInputEvent> currEvent = std::move(inEvents.front());
+            inEvents.pop_front();
+            if (currEvent->EventType() == InputEventType::KeyEvent)
             {
-                if (IsFlagSet(gci->Flags, CONSOLE_SUSPENDED) &&
-                    !IsSystemKey(currEvent.Event.KeyEvent.wVirtualKeyCode))
+                const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currEvent.get());
+                if (pKeyEvent->_keyDown)
                 {
-                    UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
-                    continue;
-                }
-                else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
-                         (currEvent.Event.KeyEvent.wVirtualKeyCode == VK_PAUSE || IsPauseKey(&currEvent.Event.KeyEvent)))
-                {
-                    SetFlag(gci->Flags, CONSOLE_SUSPENDED);
-                    continue;
+                    if (IsFlagSet(gci->Flags, CONSOLE_SUSPENDED) &&
+                        !IsSystemKey(pKeyEvent->_virtualKeyCode))
+                    {
+                        UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
+                        continue;
+                    }
+                    else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
+                             (pKeyEvent->_virtualKeyCode == VK_PAUSE || IsPauseKey(pKeyEvent)))
+                    {
+                        SetFlag(gci->Flags, CONSOLE_SUSPENDED);
+                        continue;
+                    }
                 }
             }
-            outRecords.push_back(currEvent);
+            outEvents.push_back(std::move(currEvent));
         }
-        records.swap(outRecords);
+        inEvents.swap(outEvents);
         return S_OK;
     }
     CATCH_RETURN();
+}
+
+// Routine Description:
+// - Converts std::deque<INPUT_RECORD> to std::deque<std::unique_ptr<IInputEvent>>
+// Arguments:
+// - inRecords - records to convert
+// Return Value:
+// - std::deque of IINputEvents on success. Will throw exception on failure.
+std::deque<std::unique_ptr<IInputEvent>> InputBuffer::_inputRecordsToInputEvents(_In_ const std::deque<INPUT_RECORD>& inRecords)
+{
+    std::deque<std::unique_ptr<IInputEvent>> outEvents;
+    for (size_t i = 0; i < inRecords.size(); ++i)
+    {
+        std::unique_ptr<IInputEvent> event = IInputEvent::Create(inRecords[i]);
+        outEvents.push_back(std::move(event));
+    }
+    return outEvents;
 }

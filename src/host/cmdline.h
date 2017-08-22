@@ -186,6 +186,7 @@ void InitExtendedEditKeys(_In_opt_ ExtKeyDefBuf const * const pKeyDefBuf);
 // returns TRUE if pKeyEvent is pause.
 // The default key is Ctrl-S if extended edit keys are not specified.
 bool IsPauseKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
+bool IsPauseKey(_In_ const KeyEvent* const pKeyEvent);
 
 // Word delimiters
 #define IS_WORD_DELIM(wch)  ((wch) == L' ' || (ServiceLocator::LocateGlobals()->aWordDelimChars[0] && IsWordDelim(wch)))
