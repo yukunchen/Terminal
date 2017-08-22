@@ -43,7 +43,7 @@ std::unique_ptr<IInputEvent> IInputEvent::Create(_In_ const INPUT_RECORD& record
 // - The wil version of IsFlagSet is only to operate on values that
 // are compile time constants. This will work with runtime calculated
 // values.
-static bool RuntimeIsFlagSet(DWORD flags, DWORD flag)
+static bool RuntimeIsFlagSet(_In_ const DWORD flags, _In_ const DWORD flag)
 {
     return !!(flags & flag);
 }
