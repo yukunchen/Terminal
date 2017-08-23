@@ -10,6 +10,7 @@
 
 #include "..\inc\ServiceLocator.hpp"
 #include "..\..\host\input.h"
+#include "..\..\terminal\parser\InputStateMachineEngine.hpp"
 #include <string>
 #include <sstream>
 
@@ -42,12 +43,29 @@ VT_TO_VK vtMap[] = {
 };
 // /hack
 
+// This is copied from ConsolInformation.cpp
+// I've never thought that was a particularily good place for it...
+void _HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
+{
+    // auto _cIn = cInput;
+    // ServiceLocator::LocateGlobals()->getConsoleInformation()->
+    //     pInputBuffer->PrependInputBuffer(rgInput, &_cIn);
+
+    // FIXME
+    // The prototype fix moves the VT translation to WriteInputBuffer. 
+    //   This currently causes WriteInputBuffer to get called twice for every 
+    //   key - not ideal. There needs to be a WriteInputBuffer that sidesteps this problem.
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->
+        pInputBuffer->WriteInputBuffer(rgInput, cInput);
+}
 
 // std::stringstream vtStream;
 // std::string vtBuffer;
 
 char vtCharBuffer[16];
 int nextBufferIndex=0;
+
+StateMachine* inputStateMachine;
 
 void sendKey(char ch, short vkey, bool keyup)
 {
@@ -168,7 +186,7 @@ DWORD VtInputThreadProc(LPVOID /*lpParameter*/)
     // THROW_IF_HANDLE_INVALID(pipe.get());
     HANDLE hVT = CreateFileW(L"\\\\.\\pipe\\convtinpipe", GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
-
+    inputStateMachine = new StateMachine(new InputStateMachineEngine(_HandleTerminalKeyEventCallback));
 
     // THROW_LAST_ERROR_IF_FALSE(ConnectNamedPipe(pipe.get(), nullptr));
 
@@ -180,10 +198,19 @@ DWORD VtInputThreadProc(LPVOID /*lpParameter*/)
         // THROW_LAST_ERROR_IF_FALSE(ReadFile(pipe.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
         THROW_LAST_ERROR_IF_FALSE(ReadFile(hVT, buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
 
-        handleRunInput((char*)buffer, dwRead);
-
+        // handleRunInput((char*)buffer, dwRead);
         // For debugging, zero mem
-        ZeroMemory(buffer, ARRAYSIZE(buffer)*sizeof(*buffer));
+        // ZeroMemory(buffer, ARRAYSIZE(buffer)*sizeof(*buffer));
+
+
+        std::string inputSequernce = std::string((char*)buffer, dwRead);
+        auto cch = inputSequernce.length() + 1;
+        wchar_t* wc = new wchar_t[cch];
+        // mbstowcs(wc, inputSequernce.c_str(), cch);
+        size_t numConverted = 0;
+        mbstowcs_s(&numConverted, wc, cch, inputSequernce.c_str(), cch);
+        inputStateMachine->ProcessString(wc, cch);
+        
         // for (DWORD i = 0; i < dwRead; i++)
         // {
         //     handleInputFromPipe(buffer[i]);

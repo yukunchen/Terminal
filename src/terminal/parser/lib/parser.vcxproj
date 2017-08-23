@@ -3,6 +3,7 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props"/>
   <ItemGroup>
     <ClCompile Include="..\OutputStateMachineEngine.cpp" />
+    <ClCompile Include="..\InputStateMachineEngine.cpp" />
     <ClCompile Include="..\stateMachine.cpp" />
     <ClCompile Include="..\telemetry.cpp" />
     <ClCompile Include="..\tracing.cpp" />
@@ -16,6 +17,7 @@
     <ClInclude Include="..\stateMachine.hpp" />
     <ClInclude Include="..\IStateMachineEngine.hpp" />
     <ClInclude Include="..\OutputStateMachineEngine.hpp" />
+    <ClInclude Include="..\InputStateMachineEngine.hpp" />
     <ClInclude Include="..\telemetry.hpp" />
     <ClInclude Include="..\termDispatch.hpp" />
     <ClInclude Include="..\tracing.hpp" />
