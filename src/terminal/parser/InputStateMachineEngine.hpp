@@ -125,11 +125,6 @@ namespace Microsoft
                 void _WriteSingleKey(wchar_t wch, short vkey, DWORD dwModifierState);
                 void _WriteSingleKey(wchar_t wch, DWORD dwModifierState);
                 void _WriteSingleKey(short vkey, DWORD dwModifierState);
-                // If cParams == 2:
-                // if (f5-f12):
-                //      modifier = param[1]
-                // else:
-                //      modifier = param[0]
 
             };
         }
