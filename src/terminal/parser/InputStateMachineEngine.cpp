@@ -126,7 +126,7 @@ void InputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const r
 {
     rgwch;
     cch;
-    for(int i = 0; i < cch; i++)
+    for(size_t i = 0; i < cch; i++)
     {
         // if (rgwch[i] == '\x1b') DebugBreak();
         ActionPrint(rgwch[i]);

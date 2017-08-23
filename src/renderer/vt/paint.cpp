@@ -178,7 +178,7 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
         
         // Update our internal tracker of the cursor's position
         short totalWidth = 0;
-        for (int i=0; i < cchLine; i++)
+        for (size_t i=0; i < cchLine; i++)
         {
             totalWidth+=(short)rgWidths[i];
         }
