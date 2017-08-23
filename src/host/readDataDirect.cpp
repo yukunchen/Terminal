@@ -164,11 +164,18 @@ BOOL DIRECT_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
             nLength = &NumRecords;
         }
 
-        *pReplyStatus = _pInputBuffer->ReadInputBuffer(Buffer,
-                                                       nLength,
+        std::deque<std::unique_ptr<IInputEvent>> outEvents;
+        // TODO why is _fIsPeek used twice? is this correct?
+        *pReplyStatus = _pInputBuffer->ReadInputBuffer(outEvents,
+                                                       *nLength,
                                                        _fIsPeek,
                                                        _fIsPeek,
-                                                       fIsUnicode);
+                                                       !!fIsUnicode);
+        *nLength = static_cast<DWORD>(outEvents.size());
+
+        IInputEvent::ToInputRecords(outEvents, Buffer, *nLength);
+
+
         if (*pReplyStatus == CONSOLE_STATUS_WAIT)
         {
             RetVal = FALSE;

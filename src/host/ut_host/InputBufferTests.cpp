@@ -170,14 +170,14 @@ class InputBufferTests
 
         // the single event should have a repeat count for each
         // coalesced event
-        INPUT_RECORD outRecord;
-        DWORD length = 1;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(&outRecord,
-                                                            &length,
+        std::unique_ptr<IInputEvent> outEvent;
+        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outEvent,
                                                             true,
                                                             false,
                                                             false));
-        VERIFY_ARE_EQUAL(outRecord.Event.KeyEvent.wRepeatCount, RECORD_INSERT_COUNT);
+
+        const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(outEvent.get());
+        VERIFY_ARE_EQUAL(pKeyEvent->_repeatCount, RECORD_INSERT_COUNT);
     }
 
     TEST_METHOD(InputBufferDoesNotCoalesceBulkKeyEvents)
@@ -249,7 +249,7 @@ class InputBufferTests
     TEST_METHOD(CanFlushAllButKeys)
     {
         InputBuffer inputBuffer;
-        INPUT_RECORD records[RECORD_INSERT_COUNT];
+        INPUT_RECORD records[RECORD_INSERT_COUNT] = { 0 };
         std::deque<std::unique_ptr<IInputEvent>> inEvents;
 
         // create alternating mouse and key events
@@ -266,16 +266,18 @@ class InputBufferTests
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT / 2);
 
         // make sure that the non key events were the ones removed
-        INPUT_RECORD outRecords[RECORD_INSERT_COUNT / 2];
-        DWORD length = RECORD_INSERT_COUNT / 2;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
-                                                            &length,
+        std::deque<std::unique_ptr<IInputEvent>> outEvents;
+        size_t amountToRead = RECORD_INSERT_COUNT / 2;
+        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outEvents,
+                                                            amountToRead,
                                                             false,
                                                             false,
                                                             false));
-        for (size_t i = 0; i < length; ++i)
+        VERIFY_ARE_EQUAL(amountToRead, outEvents.size());
+
+        for (size_t i = 0; i < outEvents.size(); ++i)
         {
-            VERIFY_ARE_EQUAL(outRecords[i].EventType, KEY_EVENT);
+            VERIFY_ARE_EQUAL(outEvents[i]->EventType(), InputEventType::KeyEvent);
         }
     }
 
@@ -294,17 +296,18 @@ class InputBufferTests
         VERIFY_IS_GREATER_THAN(inputBuffer.Write(inEvents), 0u);
 
         // read them back out
-        INPUT_RECORD outRecords[RECORD_INSERT_COUNT];
-        DWORD length = RECORD_INSERT_COUNT;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
-                                                            &length,
+        std::deque<std::unique_ptr<IInputEvent>> outEvents;
+        size_t amountToRead = RECORD_INSERT_COUNT;
+        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outEvents,
+                                                            amountToRead,
                                                             false,
                                                             false,
                                                             false));
+        VERIFY_ARE_EQUAL(amountToRead, outEvents.size());
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
         for (size_t i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            VERIFY_ARE_EQUAL(records[i], outRecords[i]);
+            VERIFY_ARE_EQUAL(records[i], outEvents[i]->ToInputRecord());
         }
     }
 
@@ -323,18 +326,19 @@ class InputBufferTests
         VERIFY_IS_GREATER_THAN(inputBuffer.Write(inEvents), 0u);
 
         // peek at events
-        INPUT_RECORD outRecords[RECORD_INSERT_COUNT];
-        DWORD length = RECORD_INSERT_COUNT;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
-                                                            &length,
+        std::deque<std::unique_ptr<IInputEvent>> outEvents;
+        size_t amountToRead = RECORD_INSERT_COUNT;
+        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outEvents,
+                                                            amountToRead,
                                                             true,
                                                             false,
                                                             false));
-        VERIFY_ARE_EQUAL(length, RECORD_INSERT_COUNT);
+
+        VERIFY_ARE_EQUAL(amountToRead, outEvents.size());
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            VERIFY_ARE_EQUAL(records[i], outRecords[i]);
+            VERIFY_ARE_EQUAL(records[i], outEvents[i]->ToInputRecord());
         }
     }
 
@@ -449,31 +453,32 @@ class InputBufferTests
         VERIFY_ARE_EQUAL(eventsWritten, RECORD_INSERT_COUNT);
 
         // grab the first set of events and ensure they match prependRecords
-        INPUT_RECORD outRecords[RECORD_INSERT_COUNT];
-        DWORD length = RECORD_INSERT_COUNT;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
-                                                            &length,
+        std::deque<std::unique_ptr<IInputEvent>> outEvents;
+        size_t amountToRead = RECORD_INSERT_COUNT;
+        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outEvents,
+                                                            amountToRead,
                                                             false,
                                                             false,
                                                             false));
-        VERIFY_ARE_EQUAL(length, RECORD_INSERT_COUNT);
+        VERIFY_ARE_EQUAL(amountToRead, outEvents.size());
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), RECORD_INSERT_COUNT);
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            VERIFY_ARE_EQUAL(prependRecords[i], outRecords[i]);
+            VERIFY_ARE_EQUAL(prependRecords[i], outEvents[i]->ToInputRecord());
         }
 
+        outEvents.clear();
         // verify the rest of the records
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
-                                                            &length,
+        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outEvents,
+                                                            amountToRead,
                                                             false,
                                                             false,
                                                             false));
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 0u);
-        VERIFY_ARE_EQUAL(length, RECORD_INSERT_COUNT);
+        VERIFY_ARE_EQUAL(amountToRead, outEvents.size());
         for (unsigned int i = 0; i < RECORD_INSERT_COUNT; ++i)
         {
-            VERIFY_ARE_EQUAL(records[i], outRecords[i]);
+            VERIFY_ARE_EQUAL(records[i], outEvents[i]->ToInputRecord());
         }
     }
 
@@ -544,10 +549,10 @@ class InputBufferTests
         VERIFY_IS_TRUE(IsFlagSet(gci->Flags, CONSOLE_OUTPUT_SUSPENDED));
         VERIFY_ARE_EQUAL(inputBuffer.GetNumberOfReadyEvents(), 1u);
 
-        INPUT_RECORD outRecords[2];
-        DWORD length = 2;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outRecords,
-                                                            &length,
+        std::deque<std::unique_ptr<IInputEvent>> outEvents;
+        size_t amountToRead = 2;
+        VERIFY_SUCCESS_NTSTATUS(inputBuffer.ReadInputBuffer(outEvents,
+                                                            amountToRead,
                                                             true,
                                                             false,
                                                             false));
