@@ -96,10 +96,10 @@ NTSTATUS GetChar(_In_ InputBuffer* pInputBuffer,
         ULONG NumRead = 0;
 
         std::unique_ptr<IInputEvent> inputEvent;
-        Status = pInputBuffer->ReadInputBuffer(inputEvent,
-                                               false, // peek
-                                               !!fWait,
-                                               true); // unicode
+        Status = pInputBuffer->Read(inputEvent,
+                                    false, // peek
+                                    !!fWait,
+                                    true); // unicode
         if (NT_SUCCESS(Status))
         {
             NumRead = 1u;

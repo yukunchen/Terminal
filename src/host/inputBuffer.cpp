@@ -148,11 +148,11 @@ HRESULT InputBuffer::FlushAllButKeys()
 // - STATUS_SUCCESS if records were read into the client buffer and everything is OK.
 // - CONSOLE_STATUS_WAIT if there weren't enough records to satisfy the request (and waits are allowed)
 // - otherwise a suitable memory/math/string error in NTSTATUS form.
-NTSTATUS InputBuffer::ReadInputBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEvents,
-                                      _In_ const size_t AmountToRead,
-                                      _In_ const bool Peek,
-                                      _In_ const bool WaitForData,
-                                      _In_ const bool Unicode)
+NTSTATUS InputBuffer::Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEvents,
+                           _In_ const size_t AmountToRead,
+                           _In_ const bool Peek,
+                           _In_ const bool WaitForData,
+                           _In_ const bool Unicode)
 {
     NTSTATUS Status;
     try
@@ -211,20 +211,20 @@ NTSTATUS InputBuffer::ReadInputBuffer(_Out_ std::deque<std::unique_ptr<IInputEve
 // - STATUS_SUCCESS if records were read into the client buffer and everything is OK.
 // - CONSOLE_STATUS_WAIT if there weren't enough records to satisfy the request (and waits are allowed)
 // - otherwise a suitable memory/math/string error in NTSTATUS form.
-NTSTATUS InputBuffer::ReadInputBuffer(_Out_ std::unique_ptr<IInputEvent>& outEvent,
-                                      _In_ const bool Peek,
-                                      _In_ const bool WaitForData,
-                                      _In_ const bool Unicode)
+NTSTATUS InputBuffer::Read(_Out_ std::unique_ptr<IInputEvent>& outEvent,
+                           _In_ const bool Peek,
+                           _In_ const bool WaitForData,
+                           _In_ const bool Unicode)
 {
     NTSTATUS Status;
     try
     {
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
-        Status = ReadInputBuffer(outEvents,
-                                 1,
-                                 Peek,
-                                 WaitForData,
-                                 Unicode);
+        Status = Read(outEvents,
+                      1,
+                      Peek,
+                      WaitForData,
+                      Unicode);
         if (!outEvents.empty())
         {
             outEvent.swap(outEvents.front());

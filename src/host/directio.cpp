@@ -173,11 +173,11 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
     }
 
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
-    NTSTATUS Status = pInputBuffer->ReadInputBuffer(outEvents,
-                                                    nBytesUnicode,
-                                                    fIsPeek,
-                                                    true,
-                                                    fIsUnicode);
+    NTSTATUS Status = pInputBuffer->Read(outEvents,
+                                         nBytesUnicode,
+                                         fIsPeek,
+                                         true,
+                                         fIsUnicode);
     nBytesUnicode = static_cast<DWORD>(outEvents.size());
 
     if (CONSOLE_STATUS_WAIT == Status)

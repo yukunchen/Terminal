@@ -47,16 +47,16 @@ public:
     void Flush();
     HRESULT FlushAllButKeys();
 
-    NTSTATUS ReadInputBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEvents,
-                             _In_ const size_t AmountToRead,
-                             _In_ const bool Peek,
-                             _In_ const bool WaitForData,
-                             _In_ const bool Unicode);
+    NTSTATUS Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEvents,
+                  _In_ const size_t AmountToRead,
+                  _In_ const bool Peek,
+                  _In_ const bool WaitForData,
+                  _In_ const bool Unicode);
 
-    NTSTATUS ReadInputBuffer(_Out_ std::unique_ptr<IInputEvent>& inEvent,
-                             _In_ const bool Peek,
-                             _In_ const bool WaitForData,
-                             _In_ const bool Unicode);
+    NTSTATUS Read(_Out_ std::unique_ptr<IInputEvent>& inEvent,
+                  _In_ const bool Peek,
+                  _In_ const bool WaitForData,
+                  _In_ const bool Unicode);
 
 
     size_t Prepend(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
