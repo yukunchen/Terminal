@@ -37,6 +37,7 @@ namespace Microsoft
                 virtual void ActionIgnore() = 0;
                 virtual void ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString) = 0;
                 // virtual void ActionSs3Dispatch(_In_ wchar_t const wch) = 0;
+                virtual bool FlushAtEndOfString() = 0;
 
             };
         }

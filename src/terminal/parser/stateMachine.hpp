@@ -37,14 +37,11 @@ namespace Microsoft
                 StateMachine(_In_ IStateMachineEngine* const pEngine);
                 ~StateMachine();
 
-                
-                // TermDispatch* GetDispatch()
-                // {
-                //     return _pDispatch;
-                // }
-
                 void ProcessCharacter(_In_ wchar_t const wch);
                 void ProcessString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
+                // Note: There is intentionally not a ProcessString that operates 
+                //      on a wstring. This is because the in buffer needs to be mutable
+                //      and c_str() only gives you const data.
 
                 void ResetState();
 

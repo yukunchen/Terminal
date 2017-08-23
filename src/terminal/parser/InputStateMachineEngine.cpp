@@ -57,6 +57,7 @@ InputStateMachineEngine::~InputStateMachineEngine()
 void InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
 {
     if (wch == '\x7f') _WriteSingleKey('\x8', VK_BACK, 0);
+    else if (wch == '\x1a') _WriteSingleKey('\x13', VK_PAUSE, 0);
     else ActionPrint(wch);
 }
 
@@ -81,7 +82,11 @@ void InputStateMachineEngine::_WriteSingleKey(wchar_t wch, short vkey, DWORD dwM
 
 void InputStateMachineEngine::_WriteSingleKey(wchar_t wch, DWORD dwModifierState)
 {
-    short vkey = VkKeyScan(wch);
+    // short vkey = VkKeyScan(wch);
+    // Low order byte is key, high order is modifiers
+    short keyscan = VkKeyScan(wch);
+    short vkey =  keyscan & 0xff;
+    // short dwModifiers = (keyscan >> 8) & 0xff;
     _WriteSingleKey(wch, vkey, dwModifierState);
 }
 
@@ -94,7 +99,16 @@ void InputStateMachineEngine::_WriteSingleKey(short vkey, DWORD dwModifierState)
 void InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 {
     wch;
-    short vkey = VkKeyScan(wch);
+    // Low order byte is key, high order is modifiers
+    short keyscan = VkKeyScan(wch);
+    short vkey =  keyscan & 0xff;
+    short keyscanModifiers = (keyscan >> 8) & 0xff;
+
+    // Because of course, these are not the same flags.
+    short dwModifiers = 0 |
+        IsFlagSet(keyscanModifiers, 1) ? SHIFT_PRESSED : 0 |
+        IsFlagSet(keyscanModifiers, 2) ? LEFT_CTRL_PRESSED : 0 |
+        IsFlagSet(keyscanModifiers, 4) ? LEFT_ALT_PRESSED : 0 ;
     
     // Something's fishy... Filter these out for now
     if (vkey == 0x332) return;
@@ -104,7 +118,8 @@ void InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
         _WriteSingleKey('\x8', VK_BACK, 0);
         return;
     }
-    _WriteSingleKey(wch, 0);
+    // _WriteSingleKey(wch, 0);
+    _WriteSingleKey(wch, dwModifiers);
 }
 
 void InputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
@@ -113,6 +128,7 @@ void InputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const r
     cch;
     for(int i = 0; i < cch; i++)
     {
+        // if (rgwch[i] == '\x1b') DebugBreak();
         ActionPrint(rgwch[i]);
     }
 }

@@ -42,7 +42,9 @@ namespace Microsoft
                 void ActionIgnore();
                 void ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString);
                 // void ActionSs3Dispatch(_In_ wchar_t const wch);
-
+                bool FlushAtEndOfString(){
+                    return true;
+                };
             private:
 
                 Microsoft::Console::VirtualTerminal::ParserTracing _trace;

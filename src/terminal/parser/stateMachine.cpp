@@ -1009,6 +1009,7 @@ void StateMachine::ProcessString(_In_reads_(cch) wchar_t * const rgwch, _In_ siz
 {
     wchar_t* pwchCurr = rgwch;
     wchar_t* pwchStart = rgwch;
+    wchar_t* pwchSequenceStart = rgwch;
     size_t currRunLength = 0;
 
     // This should be static, because if one string starts a sequence, and the next finishes it,
@@ -1025,6 +1026,7 @@ void StateMachine::ProcessString(_In_reads_(cch) wchar_t * const rgwch, _In_ siz
             {                                //   is the start of the next run of characters that might be printable.
                 s_fProcessIndividually = false;
                 pwchStart = pwchCurr;
+                pwchSequenceStart = pwchCurr;
                 currRunLength = 0;
             }
         }
@@ -1036,11 +1038,13 @@ void StateMachine::ProcessString(_In_reads_(cch) wchar_t * const rgwch, _In_ siz
                 _trace.DispatchPrintRunTrace(pwchStart, currRunLength);
                 s_fProcessIndividually = true; // begin processing future characters individually... 
                 currRunLength = 0;
+                pwchSequenceStart = pwchCurr;
                 ProcessCharacter(*pwchCurr); // ... Then process the character individually.
                 if (_state == VTStates::Ground)  // If the character took us right back to ground, start another run after it.
                 {                                
                     s_fProcessIndividually = false;
                     pwchStart = pwchCurr + 1; // pwchCurr still points at the current that went to the state machine. The run starts after it. 
+                    pwchSequenceStart = pwchCurr+1;
                     currRunLength = 0;
                 }
             }
@@ -1052,12 +1056,49 @@ void StateMachine::ProcessString(_In_reads_(cch) wchar_t * const rgwch, _In_ siz
         }  
     }
 
-    if (!s_fProcessIndividually && currRunLength > 0) // If we're at the end of the string and have remaining un-printed characters, 
+    // If we're at the end of the string and have remaining un-printed characters, 
+    if (!s_fProcessIndividually && currRunLength > 0) 
     {
         // print the rest of the characters in the string
         _pEngine->ActionPrintString(pwchStart, currRunLength);
         _trace.DispatchPrintRunTrace(pwchStart, currRunLength);
 
+    }
+    else if (s_fProcessIndividually)
+    {
+        // DebugBreak();
+        if (_pEngine->FlushAtEndOfString())
+        {
+            // Reset our state, and put all but the last char in again. 
+            ResetState();
+            // Chars to flush are [pwchSequenceStart, pwchCurr)
+            wchar_t* pwch = pwchSequenceStart;
+            for (pwch = pwchSequenceStart; pwch < pwchCurr-1; pwch++)
+            {
+                ProcessCharacter(*pwch);
+            }
+            // Manually execute the last char [pwchCurr]
+            switch (_state)
+            {
+            case VTStates::Ground:
+                return _ActionExecute(*pwch);
+            case VTStates::Escape:
+            case VTStates::EscapeIntermediate:
+                return _ActionEscDispatch(*pwch);
+            case VTStates::CsiEntry:
+            case VTStates::CsiIntermediate:
+            case VTStates::CsiIgnore:
+            case VTStates::CsiParam:
+                return _ActionCsiDispatch(*pwch);
+            case VTStates::OscParam:
+            case VTStates::OscString:
+                return _ActionOscDispatch(*pwch);
+            default:
+                //assert(false);
+                return;
+            }
+
+        }
     }
 }
 
