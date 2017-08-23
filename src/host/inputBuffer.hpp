@@ -67,20 +67,6 @@ public:
 private:
     std::deque<std::unique_ptr<IInputEvent>> _storage;
 
-    NTSTATUS _ReadBuffer(_Out_writes_to_(Length, *EventsRead) INPUT_RECORD* Buffer,
-                         _In_ ULONG Length,
-                         _Out_ PULONG EventsRead,
-                         _In_ BOOL Peek,
-                         _Out_ PBOOL ResetWaitEvent,
-                         _In_ BOOLEAN Unicode);
-
-    HRESULT _ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
-                        _In_ const size_t readCount,
-                        _Out_ size_t& eventsRead,
-                        _In_ const bool peek,
-                        _Out_ bool& resetWaitEvent,
-                        _In_ const bool unicode);
-
     HRESULT _ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                         _In_ const size_t readCount,
                         _Out_ size_t& eventsRead,

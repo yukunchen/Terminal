@@ -359,25 +359,25 @@ class InputBufferTests
         VERIFY_IS_GREATER_THAN(inputBuffer.Write(inEvents), 0u);
 
         // read one record, make sure ResetWaitEvent isn't set
-        INPUT_RECORD outRecord;
-        ULONG eventsRead = 0;
-        BOOL resetWaitEvent = false;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(&outRecord,
+        std::deque<std::unique_ptr<IInputEvent>> outEvents;
+        size_t eventsRead = 0;
+        bool resetWaitEvent = false;
+        VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outEvents,
                                                         1,
-                                                        &eventsRead,
+                                                        eventsRead,
                                                         false,
-                                                        &resetWaitEvent,
+                                                        resetWaitEvent,
                                                         true));
         VERIFY_ARE_EQUAL(eventsRead, 1u);
         VERIFY_IS_FALSE(!!resetWaitEvent);
 
         // read the rest, resetWaitEvent should be set to true
-        INPUT_RECORD outBuffer[RECORD_INSERT_COUNT - 1];
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outBuffer,
+        outEvents.clear();
+        VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outEvents,
                                                         RECORD_INSERT_COUNT - 1,
-                                                        &eventsRead,
+                                                        eventsRead,
                                                         false,
-                                                        &resetWaitEvent,
+                                                        resetWaitEvent,
                                                         true));
         VERIFY_ARE_EQUAL(eventsRead, RECORD_INSERT_COUNT - 1);
         VERIFY_IS_TRUE(!!resetWaitEvent);
@@ -406,25 +406,24 @@ class InputBufferTests
         VERIFY_IS_GREATER_THAN(inputBuffer.Write(inEvents), 0u);
 
         // read them out non-unicode style and compare
-        INPUT_RECORD outRecords[recordInsertCount] = { 0 };
-        INPUT_RECORD emptyRecord = outRecords[0];
-        ULONG eventsRead = 0;
-        BOOL resetWaitEvent = false;
-        VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outRecords,
+        std::deque<std::unique_ptr<IInputEvent>> outEvents;
+        size_t eventsRead = 0;
+        bool resetWaitEvent = false;
+        VERIFY_SUCCESS_NTSTATUS(inputBuffer._ReadBuffer(outEvents,
                                                         recordInsertCount,
-                                                        &eventsRead,
+                                                        eventsRead,
                                                         false,
-                                                        &resetWaitEvent,
+                                                        resetWaitEvent,
                                                         false));
         // the dbcs record should have counted for two elements int
         // the array, making it so that we get less events read than
         // the size of the array
         VERIFY_ARE_EQUAL(eventsRead, recordInsertCount - 1);
+        VERIFY_ARE_EQUAL(eventsRead, outEvents.size());
         for (size_t i = 0; i < eventsRead; ++i)
         {
-            VERIFY_ARE_EQUAL(outRecords[i], inRecords[i]);
+            VERIFY_ARE_EQUAL(outEvents[i]->ToInputRecord(), inRecords[i]);
         }
-        VERIFY_ARE_NOT_EQUAL(outRecords[3], inRecords[3]);
     }
 
     TEST_METHOD(CanPrependEvents)
