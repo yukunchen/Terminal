@@ -10,6 +10,7 @@
 #include "InputStateMachineEngine.hpp"
 
 #include "ascii.hpp"
+#include <assert.h>
 using namespace Microsoft::Console::VirtualTerminal;
 
 const InputStateMachineEngine::CSI_TO_VKEY InputStateMachineEngine::s_rgCsiMap[]
@@ -62,29 +63,48 @@ void InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
         // This should be translated as Ctrl+(wch+x40)
         wchar_t actualChar = wch;
         actualChar = wch+0x40;
-        // switch(wch)
-        // {
-        //     case '\0': //0x0 NUL
-        //     case '\x03': //0x03 ETX
-        //     case '\b': // x08 BS
-        //     case '\t': // x09 HT
-        //     case '\n': // x0a LF
-        //     case '\r': // x0d CR
-        //     case '\x1b': // x1b ESC
-        //         break;
-        //     default:
-        //         actualChar = wch+0x40;
-        //         break;
-        // }
+        bool writeCtrl = true;
+
+        ////////////////////////////////////////////////////////////////////////
+        // This is a hack to help debug why powershell on windows doesn't work.
+        // This segment will fix it, but break emacs on wsl again.
+        bool tryPowershellFix = false;
+        if (tryPowershellFix)
+        {
+            actualChar = wch;
+            switch(wch)
+            {
+                case '\0': //0x0 NUL
+                case '\x03': //0x03 ETX
+                case '\b': // x08 BS
+                case '\t': // x09 HT
+                case '\n': // x0a LF
+                case '\r': // x0d CR
+                case '\x1b': // x1b ESC
+                    writeCtrl = false;
+                    break;
+                default:
+                    actualChar = wch+0x40;
+                    break;
+            }
+        }
+        ////////////////////////////////////////////////////////////////////////
 
         short vkey = 0;
         DWORD dwModifierState = 0;
         _GenerateKeyFromChar(actualChar, &vkey, &dwModifierState);
-        dwModifierState = dwModifierState | LEFT_CTRL_PRESSED;
-        // if(dwModifierState != LEFT_CTRL_PRESSED) DebugBreak();
-        // _WriteSingleKey(actualChar, vkey, dwModifierState);
-        // _WriteControlAndKey(actualChar, vkey, dwModifierState);
-        _WriteControlAndKey(wch, vkey, dwModifierState);
+        
+        if (writeCtrl)
+        {
+            dwModifierState = dwModifierState | LEFT_CTRL_PRESSED;
+            // _WriteSingleKey(actualChar, vkey, dwModifierState);
+            // _WriteControlAndKey(actualChar, vkey, dwModifierState);
+            _WriteControlAndKey(wch, vkey, dwModifierState);
+        }
+        else
+        {
+            _WriteSingleKey(actualChar, vkey, dwModifierState);
+        }
     }
     else if (wch == '\x7f')
     {
@@ -95,7 +115,7 @@ void InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
 
 void InputStateMachineEngine::_WriteControlAndKey(wchar_t wch, short vkey, DWORD dwModifierState)
 {
-    INPUT_RECORD rgInput[2];
+    INPUT_RECORD rgInput[4];
     rgInput[0].EventType = KEY_EVENT;
     rgInput[0].Event.KeyEvent.bKeyDown = TRUE;
     rgInput[0].Event.KeyEvent.dwControlKeyState = dwModifierState;
@@ -104,19 +124,41 @@ void InputStateMachineEngine::_WriteControlAndKey(wchar_t wch, short vkey, DWORD
     rgInput[0].Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
     rgInput[0].Event.KeyEvent.uChar.UnicodeChar = 0x0;
 
-    rgInput[1] = rgInput[0];
-    rgInput[1].Event.KeyEvent.bKeyDown = FALSE;
-    rgInput[1].Event.KeyEvent.dwControlKeyState = dwModifierState ^ LEFT_CTRL_PRESSED;
+    _GetSingleKeypress(wch, vkey, dwModifierState, &rgInput[1], 2);
+
+    rgInput[3] = rgInput[0];
+    rgInput[3].Event.KeyEvent.bKeyDown = FALSE;
+    rgInput[3].Event.KeyEvent.dwControlKeyState = dwModifierState ^ LEFT_CTRL_PRESSED;
 
 
-    _pfnWriteEvents(&rgInput[0], 1);
-    _WriteSingleKey(wch, vkey, dwModifierState);
-    _pfnWriteEvents(&rgInput[1], 1);
+    // _pfnWriteEvents(&rgInput[0], 1);
+    // _WriteSingleKey(wch, vkey, dwModifierState);
+    // _pfnWriteEvents(&rgInput[1], 1);
+    _pfnWriteEvents(rgInput, 4);
 }
 
 void InputStateMachineEngine::_WriteSingleKey(wchar_t wch, short vkey, DWORD dwModifierState)
 {
     INPUT_RECORD rgInput[2];
+    _GetSingleKeypress(wch, vkey, dwModifierState, rgInput, 2);
+
+    // rgInput[0].EventType = KEY_EVENT;
+    // rgInput[0].Event.KeyEvent.bKeyDown = TRUE;
+    // rgInput[0].Event.KeyEvent.dwControlKeyState = dwModifierState;
+    // rgInput[0].Event.KeyEvent.wRepeatCount = 1;
+    // rgInput[0].Event.KeyEvent.wVirtualKeyCode = vkey;
+    // rgInput[0].Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
+    // rgInput[0].Event.KeyEvent.uChar.UnicodeChar = wch;
+
+    // rgInput[1] = rgInput[0];
+    // rgInput[1].Event.KeyEvent.bKeyDown = FALSE;
+
+    _pfnWriteEvents(rgInput, 2);
+}
+
+void InputStateMachineEngine::_GetSingleKeypress(wchar_t wch, short vkey, DWORD dwModifierState, _Inout_ INPUT_RECORD* const rgInput, _In_ size_t cRecords)
+{
+    assert(cRecords >= 2);
     rgInput[0].EventType = KEY_EVENT;
     rgInput[0].Event.KeyEvent.bKeyDown = TRUE;
     rgInput[0].Event.KeyEvent.dwControlKeyState = dwModifierState;
@@ -127,8 +169,6 @@ void InputStateMachineEngine::_WriteSingleKey(wchar_t wch, short vkey, DWORD dwM
 
     rgInput[1] = rgInput[0];
     rgInput[1].Event.KeyEvent.bKeyDown = FALSE;
-
-    _pfnWriteEvents(rgInput, 2);
 
 }
 

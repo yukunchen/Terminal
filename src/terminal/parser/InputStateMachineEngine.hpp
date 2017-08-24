@@ -128,6 +128,7 @@ namespace Microsoft
                 void _WriteSingleKey(short vkey, DWORD dwModifierState);
                 void _WriteSingleKey(wchar_t wch, short vkey, DWORD dwModifierState);
                 void _WriteControlAndKey(wchar_t wch, short vkey, DWORD dwModifierState);
+                void _GetSingleKeypress(wchar_t wch, short vkey, DWORD dwModifierState, _Inout_ INPUT_RECORD* const rgInput, _In_ size_t cRecords);
 
             };
         }

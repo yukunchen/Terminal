@@ -90,7 +90,7 @@ static std::vector<INPUT_RECORD> vExpectedInput;
 
 void InputEngineTest::s_TestInputCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
 {
-    VERIFY_IS_TRUE(cInput == vExpectedInput.size());
+    VERIFY_ARE_EQUAL(cInput, vExpectedInput.size());
     size_t numElems = min(cInput, vExpectedInput.size());
     size_t index = 0;
 
@@ -303,7 +303,7 @@ void InputEngineTest::C0Test()
         short keyscan = VkKeyScan(expectedWch);
         short vkey =  keyscan & 0xff;
         short keyscanModifiers = (keyscan >> 8) & 0xff;
-        WORD scanCode = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
+        WORD scanCode = (WORD)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
 
         // Because of course, these are not the same flags.
         // The expected key may also have shift pressed. 
@@ -315,20 +315,35 @@ void InputEngineTest::C0Test()
         Log::Comment(NoThrowString().Format(L"Testing char 0x%x", wch));
         Log::Comment(NoThrowString().Format(L"Input Sequence=\"%s\"", inputSeq.c_str()));
 
-        INPUT_RECORD rgInput[2];
+        INPUT_RECORD rgInput[4];
         rgInput[0].EventType = KEY_EVENT;
         rgInput[0].Event.KeyEvent.bKeyDown = TRUE;
         rgInput[0].Event.KeyEvent.dwControlKeyState = dwModifierState;
         rgInput[0].Event.KeyEvent.wRepeatCount = 1;
-        rgInput[0].Event.KeyEvent.wVirtualKeyCode = vkey;
-        rgInput[0].Event.KeyEvent.wVirtualScanCode = scanCode;
-        rgInput[0].Event.KeyEvent.uChar.UnicodeChar = expectedWch;
+        rgInput[0].Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
+        rgInput[0].Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
+        rgInput[0].Event.KeyEvent.uChar.UnicodeChar = 0;
 
-        rgInput[1] = rgInput[0];
-        rgInput[1].Event.KeyEvent.bKeyDown = FALSE;
+
+        rgInput[1].EventType = KEY_EVENT;
+        rgInput[1].Event.KeyEvent.bKeyDown = TRUE;
+        rgInput[1].Event.KeyEvent.dwControlKeyState = dwModifierState;
+        rgInput[1].Event.KeyEvent.wRepeatCount = 1;
+        rgInput[1].Event.KeyEvent.wVirtualKeyCode = vkey;
+        rgInput[1].Event.KeyEvent.wVirtualScanCode = scanCode;
+        rgInput[1].Event.KeyEvent.uChar.UnicodeChar = wch;
+
+        rgInput[2] = rgInput[1];
+        rgInput[2].Event.KeyEvent.bKeyDown = FALSE;
+
+        rgInput[3] = rgInput[0];
+        rgInput[3].Event.KeyEvent.bKeyDown = FALSE;
+        rgInput[3].Event.KeyEvent.dwControlKeyState = dwModifierState ^ LEFT_CTRL_PRESSED;
 
         vExpectedInput.push_back(rgInput[0]);
         vExpectedInput.push_back(rgInput[1]);
+        vExpectedInput.push_back(rgInput[2]);
+        vExpectedInput.push_back(rgInput[3]);
 
         _pStateMachine->ProcessString(&inputSeq[0], inputSeq.length());
 
