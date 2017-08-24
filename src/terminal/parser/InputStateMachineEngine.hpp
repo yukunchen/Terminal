@@ -114,6 +114,8 @@ namespace Microsoft
 
                 DWORD _GetCursorKeysModifierState(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams);
                 DWORD _GetGenericKeysModifierState(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams);
+                void _GenerateKeyFromChar(_In_ const wchar_t wch, _Out_ short* const pVkey, _Out_ DWORD* const pdwModifierState);
+
                 bool _IsModified(_In_ const unsigned short cParams);
                 DWORD _GetModifier(_In_ const unsigned short modifierParam);
 
@@ -123,10 +125,9 @@ namespace Microsoft
                 bool _SendCursorKey(wchar_t wch, DWORD dwModifier);
                 bool _SendGenericKey(unsigned short identifier, DWORD dwModifier);
 
-
-                void _WriteSingleKey(wchar_t wch, short vkey, DWORD dwModifierState);
-                void _WriteSingleKey(wchar_t wch, DWORD dwModifierState);
                 void _WriteSingleKey(short vkey, DWORD dwModifierState);
+                void _WriteSingleKey(wchar_t wch, short vkey, DWORD dwModifierState);
+                void _WriteControlAndKey(wchar_t wch, short vkey, DWORD dwModifierState);
 
             };
         }
