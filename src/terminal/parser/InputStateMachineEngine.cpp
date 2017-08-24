@@ -98,7 +98,6 @@ void InputStateMachineEngine::_WriteSingleKey(short vkey, DWORD dwModifierState)
 
 void InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 {
-    wch;
     // Low order byte is key, high order is modifiers
     short keyscan = VkKeyScan(wch);
     short vkey =  keyscan & 0xff;
@@ -124,21 +123,32 @@ void InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 
 void InputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
 {
-    rgwch;
-    cch;
     for(size_t i = 0; i < cch; i++)
     {
-        // if (rgwch[i] == '\x1b') DebugBreak();
         ActionPrint(rgwch[i]);
     }
 }
 
 void InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate)
 {
+    UNREFERENCED_PARAMETER(cIntermediate);
+    UNREFERENCED_PARAMETER(wchIntermediate);
+    // Low order byte is key, high order is modifiers
+    short keyscan = VkKeyScan(wch);
+    // short vkey =  keyscan & 0xff;
+    short keyscanModifiers = (keyscan >> 8) & 0xff;
+    // Because of course, these are not the same flags.
+    short dwModifiers = 0 |
+        IsFlagSet(keyscanModifiers, 1) ? SHIFT_PRESSED : 0 |
+        IsFlagSet(keyscanModifiers, 2) ? LEFT_CTRL_PRESSED : 0 |
+        IsFlagSet(keyscanModifiers, 4) ? LEFT_ALT_PRESSED : 0 ;
 
-    wch;
-    cIntermediate;
-    wchIntermediate;
+    // Alt is definitely pressed in the esc+key case.
+
+    dwModifiers = dwModifiers | LEFT_ALT_PRESSED;
+    
+    _WriteSingleKey(wch, dwModifiers);
+
 }
 
 void InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch, 
@@ -212,7 +222,7 @@ DWORD InputStateMachineEngine::_GetCursorKeysModifierState(_In_ const unsigned s
     DWORD dwModifiers = 0;
     if (_IsModified(cParams))
     {
-        dwModifiers = _GetModifier(rgusParams[0]);
+        dwModifiers = _GetModifier(rgusParams[1]);
     }
     return dwModifiers;
 }
@@ -222,7 +232,7 @@ DWORD InputStateMachineEngine::_GetGenericKeysModifierState(_In_ const unsigned 
     DWORD dwModifiers = 0;
     if (_IsModified(cParams))
     {
-        dwModifiers = _GetModifier(rgusParams[1]);
+        dwModifiers = _GetModifier(rgusParams[0]);
     }
     return dwModifiers;
 }
@@ -235,7 +245,7 @@ bool InputStateMachineEngine::_IsModified(_In_ const unsigned short cParams)
 DWORD InputStateMachineEngine::_GetModifier(_In_ const unsigned short modifierParam)
 {
     // Something something off by one
-    unsigned short vtParam = modifierParam;
+    unsigned short vtParam = modifierParam-1;
     DWORD modifierState = modifierParam > 0 ? ENHANCED_KEY : 0;
 
     bool fShift = IsFlagSet(vtParam, 0x1);
