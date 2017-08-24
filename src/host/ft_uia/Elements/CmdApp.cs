@@ -238,7 +238,7 @@ namespace Conhost.UIA.Tests.Elements
 
         private void CreateCmdProcess(string path, string link = "")
         {
-            string AdminPrefix = "Administrator: ";
+            //string AdminPrefix = "Administrator: ";
             string WindowTitleToFind = "Host.Tests.UIA window under test";
 
             job = WinBase.CreateJobObject(IntPtr.Zero, IntPtr.Zero);
@@ -246,10 +246,15 @@ namespace Conhost.UIA.Tests.Elements
 
             Log.Comment("Attempting to launch command-line application at '{0}'", path);
 
-            string openConsolePath = Path.Combine(this.context.TestDeploymentDir, "OpenConsole.exe");
             string binaryToRunPath = path;
 
+#if __INSIDE_WINDOWS
+            string launchArgs = binaryToRunPath;
+#else
+            string openConsolePath = Path.Combine(this.context.TestDeploymentDir, "OpenConsole.exe");
+
             string launchArgs = $"{openConsolePath}  {binaryToRunPath}";
+#endif
 
             WinBase.STARTUPINFO si = new WinBase.STARTUPINFO();
             si.cb = Marshal.SizeOf(si);
@@ -316,9 +321,13 @@ namespace Conhost.UIA.Tests.Elements
 
             Verify.AreEqual(list.NumberOfAssignedProcesses, list.NumberOfProcessIdsInList);
 
+#if __INSIDE_WINDOWS
+            pid = pi.dwProcessId;
+#else
             // Take whichever PID isn't the host window's PID as the child.
             pid = pi.dwProcessId == (int)list.ProcessId ? (int)list.ProcessId2 : (int)list.ProcessId;
             Log.Comment($"Child command app PID: {pid}");
+#endif
 
             // Free any attached consoles and attach to the console we just created.
             // The driver will bind our calls to the Console APIs into the child process.
@@ -342,10 +351,10 @@ namespace Conhost.UIA.Tests.Elements
             Globals.WaitForTimeout();
 
             // If we are running as admin, the child window title will have a prefix appended as it will also run as admin.
-            if (IsRunningAsAdmin())
-            {
-                WindowTitleToFind = $"{AdminPrefix}{WindowTitleToFind}";
-            }
+            //if (IsRunningAsAdmin())
+            //{
+            //    WindowTitleToFind = $"{AdminPrefix}{WindowTitleToFind}";
+            //}
 
             Log.Comment($"Searching for window title '{WindowTitleToFind}'");
             this.UIRoot = Session.FindElementByName(WindowTitleToFind);
@@ -355,7 +364,7 @@ namespace Conhost.UIA.Tests.Elements
             Verify.IsNotNull(this.hStdErr, "Ensure error handle is valid.");
 
             // Set the timeout to 15 seconds after we found the initial window.
-            Session.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(15));
+            Session.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(15);
         }
 
         private bool IsRunningAsAdmin()

@@ -28,7 +28,12 @@ MODULE_SETUP(ModuleSetup)
     // We're going to look for OpenConsole.exe in the same directory.
     String value;
     VERIFY_SUCCEEDED_RETURN(RuntimeParameters::TryGetValue(L"TestDeploymentDir", value));
+    
+    #ifdef __INSIDE_WINDOWS
+    value = value.Append(L"Nihilist.exe");
+    #else
     value = value.Append(L"OpenConsole.exe Nihilist.exe");
+    #endif
 
     // Must make mutable string of appropriate length to feed into args.
     size_t const cchNeeded = value.GetLength() + 1;
@@ -127,7 +132,11 @@ MODULE_SETUP(ModuleSetup)
             break;
         }
     }
-
+    
+    #ifdef __INSIDE_WINDOWS
+    dwFindPid = pi.dwProcessId;
+    #endif
+    
     // Verify we found a valid pid.
     VERIFY_ARE_NOT_EQUAL(0u, dwFindPid);
 

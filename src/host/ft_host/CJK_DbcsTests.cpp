@@ -298,12 +298,12 @@ void DbcsWriteRead::Setup(_In_ unsigned int uiCodePage,
         cfiex.dwFontSize.Y = 16;
     }
 
-    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(SetCurrentConsoleFontEx(hOut, FALSE, &cfiex));
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(OneCoreDelay::SetCurrentConsoleFontEx(hOut, FALSE, &cfiex));
 
     // Ensure that we set the font we expected to set
     CONSOLE_FONT_INFOEX cfiexGet = { 0 };
     cfiexGet.cbSize = sizeof(cfiexGet);
-    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(GetCurrentConsoleFontEx(hOut, FALSE, &cfiexGet));
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(OneCoreDelay::GetCurrentConsoleFontEx(hOut, FALSE, &cfiexGet));
 
     VERIFY_ARE_EQUAL(NoThrowString(cfiex.FaceName), NoThrowString(cfiexGet.FaceName));
 

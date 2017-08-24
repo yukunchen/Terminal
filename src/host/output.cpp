@@ -20,41 +20,42 @@
 // registry defaults, and then calls CreateScreenBuffer.
 NTSTATUS DoCreateScreenBuffer()
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     CHAR_INFO Fill;
-    Fill.Attributes = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetFillAttribute();
+    Fill.Attributes = gci->GetFillAttribute();
     Fill.Char.UnicodeChar = UNICODE_SPACE;
 
     CHAR_INFO PopupFill;
-    PopupFill.Attributes = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetPopupFillAttribute();
+    PopupFill.Attributes = gci->GetPopupFillAttribute();
     PopupFill.Char.UnicodeChar = UNICODE_SPACE;
 
-    FontInfo fiFont(ServiceLocator::LocateGlobals()->getConsoleInformation()->GetFaceName(),
-                    static_cast<BYTE>(ServiceLocator::LocateGlobals()->getConsoleInformation()->GetFontFamily()),
-                    ServiceLocator::LocateGlobals()->getConsoleInformation()->GetFontWeight(),
-                    ServiceLocator::LocateGlobals()->getConsoleInformation()->GetFontSize(),
-                    ServiceLocator::LocateGlobals()->getConsoleInformation()->GetCodePage());
+    FontInfo fiFont(gci->GetFaceName(),
+                    static_cast<BYTE>(gci->GetFontFamily()),
+                    gci->GetFontWeight(),
+                    gci->GetFontSize(),
+                    gci->GetCodePage());
 
     // For East Asian version, we want to get the code page from the registry or shell32, so we can specify console
     // codepage by console.cpl or shell32. The default codepage is OEMCP.
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->CP = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetCodePage();
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP = ServiceLocator::LocateGlobals()->getConsoleInformation()->GetCodePage();
+    gci->CP = gci->GetCodePage();
+    gci->OutputCP = gci->GetCodePage();
 
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_USE_PRIVATE_FLAGS;
+    gci->Flags |= CONSOLE_USE_PRIVATE_FLAGS;
 
-    NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(ServiceLocator::LocateGlobals()->getConsoleInformation()->GetWindowSize(),
+    NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(gci->GetWindowSize(),
                                                          &fiFont,
-                                                         ServiceLocator::LocateGlobals()->getConsoleInformation()->GetScreenBufferSize(),
+                                                         gci->GetScreenBufferSize(),
                                                          Fill,
                                                          PopupFill,
-                                                         ServiceLocator::LocateGlobals()->getConsoleInformation()->GetCursorSize(),
-                                                         &ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers);
+                                                         gci->GetCursorSize(),
+                                                         &gci->ScreenBuffers);
 
     // TODO: MSFT 9355013: This needs to be resolved. We increment it once with no handle to ensure it's never cleaned up
     // and one always exists for the renderer (and potentially other functions.)
     // It's currently a load-bearing piece of code. http://osgvsowi/9355013
     if (NT_SUCCESS(Status))
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers[0].Header.IncrementOriginalScreenBuffer();
+        gci->ScreenBuffers[0].Header.IncrementOriginalScreenBuffer();
     }
 
     return Status;
@@ -78,6 +79,7 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
                                   _Inout_opt_ TextAttribute* const pTextAttributes)
 {
     DBGOUTPUT(("ReadRectFromScreenBuffer\n"));
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     const bool fOutputTextAttributes = pTextAttributes != nullptr;
     short const sXSize = (short)(psrTargetRect->Right - psrTargetRect->Left + 1);
@@ -140,7 +142,7 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
                 pciTargetPtr->Attributes = (bAttrR & CHAR_ROW::ATTR_DBCSSBCS_BYTE) << 8;
 
                 // Always copy the legacy attributes to the CHAR_INFO.
-                pciTargetPtr->Attributes |= ServiceLocator::LocateGlobals()->getConsoleInformation()->GenerateLegacyAttributes(textAttr);
+                pciTargetPtr->Attributes |= gci->GenerateLegacyAttributes(textAttr);
 
                 if (fOutputTextAttributes)
                 {
@@ -369,6 +371,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                           _Inout_ PULONG pcRecords)
 {
     DBGOUTPUT(("ReadOutputString\n"));
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     if (*pcRecords == 0)
     {
@@ -605,7 +608,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
     if (ulStringType == CONSOLE_ASCII)
     {
-        UINT const Codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
+        UINT const Codepage = gci->OutputCP;
 
         NumRead = ConvertToOem(Codepage, TransBuffer, NumRead, (LPSTR) pvBuffer, *pcRecords);
 
@@ -620,11 +623,19 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
 void ScreenBufferSizeChange(_In_ COORD const coordNewSize)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     INPUT_RECORD InputEvent;
     InputEvent.EventType = WINDOW_BUFFER_SIZE_EVENT;
     InputEvent.Event.WindowBufferSizeEvent.dwSize = coordNewSize;
 
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->WriteInputBuffer(&InputEvent, 1);
+    try
+    {
+        gci->pInputBuffer->WriteInputBuffer(IInputEvent::Create(InputEvent));
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+    }
 }
 
 void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
@@ -1037,7 +1048,8 @@ NTSTATUS ScrollRegion(_Inout_ PSCREEN_INFORMATION pScreenInfo,
 
 NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer = pScreenInfo;
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->CurrentScreenBuffer = pScreenInfo;
 
     // initialize cursor
     pScreenInfo->TextInfo->GetCursor()->SetIsOn(FALSE);
@@ -1046,13 +1058,13 @@ NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
     pScreenInfo->RefreshFontWithRenderer();
 
     // Empty input buffer.
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->FlushAllButKeys();
+    gci->pInputBuffer->FlushAllButKeys();
     SetScreenColors(pScreenInfo, pScreenInfo->GetAttributes().GetLegacyAttributes(), pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE);
 
     // Set window size.
     pScreenInfo->PostUpdateWindowSize();
 
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme.RefreshAreaAttributes();
+    gci->ConsoleIme.RefreshAreaAttributes();
 
     // Write data to screen.
     WriteToScreen(pScreenInfo, pScreenInfo->GetBufferViewport());
@@ -1063,12 +1075,13 @@ NTSTATUS SetActiveScreenBuffer(_Inout_ PSCREEN_INFORMATION pScreenInfo)
 // TODO: MSFT 9450717 This should join the ProcessList class when CtrlEvents become moved into the server. https://osgvsowi/9450717
 void CloseConsoleProcessState()
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     // If there are no connected processes, sending control events is pointless as there's no one do send them to. In
     // this case we'll just exit conhost.
 
     // N.B. We can get into this state when a process has a reference to the console but hasn't connected. For example,
     //      when it's created suspended and never resumed.
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.IsEmpty())
+    if (gci->ProcessHandleList.IsEmpty())
     {
         ExitProcess(STATUS_SUCCESS);
     }

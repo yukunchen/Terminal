@@ -169,20 +169,16 @@ NTSTATUS Window::s_RegisterWindowClass()
 // - <none>
 void Window::_UpdateSystemMetrics() const
 {
+    WindowDpiApi* const dpiApi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>();
+    Globals* const g = ServiceLocator::LocateGlobals();
+    const CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
+
     Scrolling::s_UpdateSystemMetrics();
 
-    ServiceLocator::LocateGlobals()->sVerticalScrollSize =
-        (SHORT)ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->
-        GetSystemMetricsForDpi(SM_CXVSCROLL,
-                               ServiceLocator::LocateGlobals()->dpi);
+    g->sVerticalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CXVSCROLL, g->dpi);
+    g->sHorizontalScrollSize = (SHORT)dpiApi->GetSystemMetricsForDpi(SM_CYHSCROLL, g->dpi);
 
-    ServiceLocator::LocateGlobals()->sHorizontalScrollSize =
-        (SHORT)ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->
-        GetSystemMetricsForDpi(SM_CYHSCROLL,
-                               ServiceLocator::LocateGlobals()->dpi);
-
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->
-        CurrentScreenBuffer->TextInfo->GetCursor()->UpdateSystemMetrics();
+    gci->CurrentScreenBuffer->TextInfo->GetCursor()->UpdateSystemMetrics();
 }
 
 // Routine Description:
@@ -196,6 +192,8 @@ void Window::_UpdateSystemMetrics() const
 NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
                              _In_ SCREEN_INFORMATION* const pScreen)
 {
+    Globals* const g = ServiceLocator::LocateGlobals();
+    CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;
 
     if (pSettings == nullptr)
@@ -210,8 +208,8 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
     // Ensure we have appropriate system metrics before we start constructing the window.
     _UpdateSystemMetrics();
 
-    ServiceLocator::LocateGlobals()->pRenderData = new RenderData();
-    status = NT_TESTNULL(ServiceLocator::LocateGlobals()->pRenderData);
+    g->pRenderData = new RenderData();
+    status = NT_TESTNULL(g->pRenderData);
     if (NT_SUCCESS(status))
     {
         GdiEngine* pGdiEngine = nullptr;
@@ -243,7 +241,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
 
         if (NT_SUCCESS(status))
         {
-            ServiceLocator::LocateGlobals()->pRenderEngine = pGdiEngine;
+            g->pRenderEngine = pGdiEngine;
 
             IRenderEngine* rgpEngines[2];
             rgpEngines[0] = pGdiEngine;
@@ -251,15 +249,15 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
             // TODO: pVtEngine isn't freed. Probably std::move some std::unique_ptr of these into Renderer and just hold that.
 
             Renderer* pNewRenderer = nullptr;
-            if (SUCCEEDED(Renderer::s_CreateInstance(ServiceLocator::LocateGlobals()->pRenderData,
+            if (SUCCEEDED(Renderer::s_CreateInstance(g->pRenderData,
                                                      rgpEngines,
                                                      ARRAYSIZE(rgpEngines),
                                                      &pNewRenderer)))
             {
-                ServiceLocator::LocateGlobals()->pRender = pNewRenderer;
+                g->pRender = pNewRenderer;
             }
 
-            status = NT_TESTNULL(ServiceLocator::LocateGlobals()->pRender);
+            status = NT_TESTNULL(g->pRender);
 
             // Allow the renderer to paint.
             pNewRenderer->EnablePainting();
@@ -279,7 +277,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
             RECT rectProposed = { pSettings->GetWindowOrigin().X, pSettings->GetWindowOrigin().Y, 0, 0 };
             _CalculateWindowRect(pSettings->GetWindowSize(), &rectProposed); //returns with rectangle filled out
 
-            if (!IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_AUTO_POSITION))
+            if (!IsFlagSet(gci->Flags, CONSOLE_AUTO_POSITION))
             {
                 //if launched from a shortcut, ensure window is visible on screen
                 if (pSettings->IsStartupTitleIsLinkNameSet())
@@ -319,9 +317,9 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
             HWND hWnd = CreateWindowExW(
                 CONSOLE_WINDOW_EX_FLAGS,
                 CONSOLE_WINDOW_CLASS,
-                ServiceLocator::LocateGlobals()->getConsoleInformation()->Title,
+                gci->Title,
                 CONSOLE_WINDOW_FLAGS,
-                IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags,
+                IsFlagSet(gci->Flags,
                           CONSOLE_AUTO_POSITION) ? CW_USEDEFAULT : rectProposed.left,
                 rectProposed.top, // field is ignored if CW_USEDEFAULT was chosen above
                 RECT_WIDTH(&rectProposed),
@@ -354,15 +352,15 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
 
                     if (NT_SUCCESS(status))
                     {
-                        ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme.RefreshAreaAttributes();
+                        gci->ConsoleIme.RefreshAreaAttributes();
 
                         // Do WM_GETICON workaround. Must call WM_SETICON once or apps calling WM_GETICON will get null.
                         Icon::Instance().ApplyWindowMessageWorkaround(hWnd);
 
                         // Set up the hot key for this window.
-                        if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetHotKey() != 0)
+                        if (gci->GetHotKey() != 0)
                         {
-                            SendMessageW(hWnd, WM_SETHOTKEY, ServiceLocator::LocateGlobals()->getConsoleInformation()->GetHotKey(), 0);
+                            SendMessageW(hWnd, WM_SETHOTKEY, gci->GetHotKey(), 0);
                         }
 
                         ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->EnableChildWindowDpiMessage(_hWnd, TRUE /*fEnable*/);
@@ -402,6 +400,7 @@ void Window::_CloseWindow() const
 // - STATUS_SUCCESS or system errors from activating the window and setting its show states
 NTSTATUS Window::ActivateAndShow(_In_ WORD const wShowWindow)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;
     HWND const hWnd = GetWindowHandle();
 
@@ -416,7 +415,7 @@ NTSTATUS Window::ActivateAndShow(_In_ WORD const wShowWindow)
     else if (wShowWindow == SW_SHOWMINNOACTIVE)
     {
         // If we're minimized and not the active window, set iconic to stop rendering
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_IS_ICONIC;
+        gci->Flags |= CONSOLE_IS_ICONIC;
     }
 
     if (NT_SUCCESS(status))
@@ -439,11 +438,12 @@ NTSTATUS Window::ActivateAndShow(_In_ WORD const wShowWindow)
 // Return Value:
 NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
 
     COORD const FontSize = ScreenInfo->GetScreenFontSize();
 
-    if (AreAllFlagsClear(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, (CONSOLE_IS_ICONIC | CONSOLE_NO_WINDOW)))
+    if (AreAllFlagsClear(gci->Flags, (CONSOLE_IS_ICONIC | CONSOLE_NO_WINDOW)))
     {
         Selection* pSelection = &Selection::Instance();
         pSelection->HideSelection();
@@ -505,6 +505,7 @@ void Window::UpdateWindowPosition(_In_ POINT const ptNewPos) const
 // This routine adds or removes the name to or from the beginning of the window title. The possible names are "Scroll", "Mark", and "Select"
 void Window::UpdateWindowText()
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     const bool fInScrollMode = Scrolling::s_IsInScrollMode();
 
     Selection *pSelection = &Selection::Instance();
@@ -551,7 +552,7 @@ void Window::UpdateWindowText()
                         MAX_PATH,
                         szFmt,
                         szMsg,
-                        ServiceLocator::LocateGlobals()->getConsoleInformation()->Title)))
+                        gci->Title)))
                     {
                         ServiceLocator::LocateConsoleWindow<Window>()->PostUpdateTitle(pwszTitle);
                     }
@@ -567,7 +568,7 @@ void Window::UpdateWindowText()
     {
         // no mode-based message. set title back to original state.
         //Copy the title into a new buffer, because consuming the update_title HeapFree's the pwsz.
-        ServiceLocator::LocateConsoleWindow()->PostUpdateTitleWithCopy(ServiceLocator::LocateGlobals()->getConsoleInformation()->Title);
+        ServiceLocator::LocateConsoleWindow()->PostUpdateTitleWithCopy(gci->Title);
     }
 }
 
@@ -589,9 +590,10 @@ BOOL Window::ReleaseMouse()
 // - <none>
 void Window::_UpdateWindowSize(_In_ SIZE const sizeNew) const
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
 
-    if (IsFlagClear(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_IS_ICONIC))
+    if (IsFlagClear(gci->Flags, CONSOLE_IS_ICONIC))
     {
         ScreenInfo->InternalUpdateScrollBars();
 
@@ -615,9 +617,10 @@ void Window::_UpdateWindowSize(_In_ SIZE const sizeNew) const
 // - STATUS_SUCCESS or suitable error code
 NTSTATUS Window::_InternalSetWindowSize() const
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     SCREEN_INFORMATION* const psiAttached = GetScreenInfo();
 
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags &= ~CONSOLE_SETTING_WINDOW_SIZE;
+    gci->Flags &= ~CONSOLE_SETTING_WINDOW_SIZE;
     if (!IsInFullscreen())
     {
         // Figure out how big to make the window, given the desired client area size.
@@ -734,6 +737,7 @@ NTSTATUS Window::_InternalSetWindowSize() const
 // - <none>
 void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbsoluteChange) const
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     COORD NewOrigin;
     SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
 
@@ -773,7 +777,7 @@ void Window::VerticalScroll(_In_ const WORD wScrollCommand, _In_ const WORD wAbs
 
     case SB_THUMBTRACK:
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_SCROLLBAR_TRACKING;
+        gci->Flags |= CONSOLE_SCROLLBAR_TRACKING;
         NewOrigin.Y = wAbsoluteChange;
         break;
     }
@@ -1012,7 +1016,8 @@ HWND Window::GetWindowHandle() const
 
 SCREEN_INFORMATION* Window::GetScreenInfo() const
 {
-    return ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return gci->CurrentScreenBuffer;
 }
 
 // Routine Description:
@@ -1185,7 +1190,8 @@ void Window::ToggleFullscreen()
 
 void Window::s_ReinitializeFontsForDPIChange()
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->RefreshFontWithRenderer();
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->CurrentScreenBuffer->RefreshFontWithRenderer();
 }
 
 LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
@@ -1193,6 +1199,7 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
                                       _In_ const Window* const pWindow)
 {
 
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     HKEY hCurrentUserKey, hConsoleKey, hTitleKey;
     // Open the current user registry key.
     NTSTATUS Status = RegistrySerialization::s_OpenCurrentUserConsoleTitleKey(pwszTitle, &hCurrentUserKey, &hConsoleKey, &hTitleKey);
@@ -1200,8 +1207,8 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
     {
         // Save window size
         auto windowRect = pWindow->GetWindowRect();
-        auto windowWidth = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetScreenWindowSizeX();
-        auto windowHeight = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetScreenWindowSizeY();
+        auto windowWidth = gci->CurrentScreenBuffer->GetScreenWindowSizeX();
+        auto windowHeight = gci->CurrentScreenBuffer->GetScreenWindowSizeY();
         DWORD dwValue = MAKELONG(windowWidth, windowHeight);
         Status = RegistrySerialization::s_UpdateValue(hConsoleKey,
                                                       hTitleKey,
@@ -1211,7 +1218,7 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
                                                       static_cast<DWORD>(sizeof(dwValue)));
         if (NT_SUCCESS(Status))
         {
-            const COORD coordScreenBufferSize = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetScreenBufferSize();
+            const COORD coordScreenBufferSize = gci->CurrentScreenBuffer->GetScreenBufferSize();
             auto screenBufferWidth = coordScreenBufferSize.X;
             auto screenBufferHeight = coordScreenBufferSize.Y;
             dwValue =  MAKELONG(screenBufferWidth, screenBufferHeight);
@@ -1357,6 +1364,16 @@ HRESULT Window::SignalUia(_In_ EVENTID id)
     if (_pUiaProvider != nullptr)
     {
         return _pUiaProvider->Signal(id);
+    }
+    return E_POINTER;
+}
+
+HRESULT Window::UiaSetTextAreaFocus()
+{
+    if (_pUiaProvider != nullptr)
+    {
+        _pUiaProvider->SetTextAreaFocus();
+        return S_OK;
     }
     return E_POINTER;
 }

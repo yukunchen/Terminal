@@ -6,4 +6,5 @@ DIRS=\
      renderer \
      server \
      terminal \
+     tools \
      tsf \

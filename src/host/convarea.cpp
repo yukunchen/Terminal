@@ -36,12 +36,13 @@ bool IsValidSmallRect(_In_ PSMALL_RECT const Rect)
 void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                              _In_ const SMALL_RECT srConvRegion)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     if (!pScreenInfo->IsActiveScreenBuffer())
     {
         return;
     }
 
-    ConsoleImeInfo* const pIme = &ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme;
+    ConsoleImeInfo* const pIme = &gci->ConsoleIme;
 
     for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
     {
@@ -93,8 +94,9 @@ void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 #define LOCAL_BUFFER_SIZE 100
 NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE lpAtr, _In_reads_(CONIME_ATTRCOLOR_SIZE) PWORD lpAtrIdx, _In_ DWORD NumChars)
 {
-    ConsoleImeInfo* const ConsoleIme = &ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme;
-    PSCREEN_INFORMATION const ScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    ConsoleImeInfo* const ConsoleIme = &gci->ConsoleIme;
+    PSCREEN_INFORMATION const ScreenInfo = gci->CurrentScreenBuffer;
 
     COORD Position = ScreenInfo->TextInfo->GetCursor()->GetPosition();
     COORD WindowOrigin;
@@ -117,7 +119,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
 
     SHORT PosY = Position.Y;
 
-#pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    #pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
     ULONG NumStr = WideCharToMultiByte(CP_ACP,
                                        0,
                                        lpString,
@@ -158,7 +160,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
         {
             NTSTATUS Status;
 
-            Status = ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme.AddConversionArea();
+            Status = gci->ConsoleIme.AddConversionArea();
             if (!NT_SUCCESS(Status))
             {
                 return Status;
@@ -196,7 +198,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
             while (NumChars < BufferSize && i < LOCAL_BUFFER_SIZE && Position.X < ScreenInfo->GetScreenWindowSizeX())
             {
                 Char = *lpString;
-#pragma prefast(suppress:__WARNING_INCORRECT_ANNOTATION, "Precarious but this is internal-only code so we can live with it")
+    #pragma prefast(suppress:__WARNING_INCORRECT_ANNOTATION, "Precarious but this is internal-only code so we can live with it")
                 Attr = *lpAtr;
                 if (Char >= (WCHAR)' ')
                 {
@@ -307,6 +309,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
 
 NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* ConvAreaInfo)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     ConvAreaInfo->SetHidden(true);
 
     COORD Coord = { 0 };
@@ -317,7 +320,7 @@ NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* ConvAreaInfo)
 
     CharsToWrite = ConvAreaInfo->ScreenBuffer->GetScreenBufferSize().X;
     FillOutput(ConvAreaInfo->ScreenBuffer,
-               ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetAttributes().GetLegacyAttributes(),
+               gci->CurrentScreenBuffer->GetAttributes().GetLegacyAttributes(),
                Coord,
                CONSOLE_ATTRIBUTE,
                &CharsToWrite);
@@ -328,7 +331,8 @@ NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* ConvAreaInfo)
 
 NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
 {
-    ConsoleImeInfo* const pIme = &ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme;
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    ConsoleImeInfo* const pIme = &gci->ConsoleIme;
 
     if (CompStr->dwCompStrLen == 0 || CompStr->dwResultStrLen != 0)
     {
@@ -336,8 +340,8 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         if (pIme->SavedCursorVisible)
         {
             pIme->SavedCursorVisible = FALSE;
-            ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer
-                ->SetCursorInformation(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor()->GetSize(),
+            gci->CurrentScreenBuffer
+                ->SetCursorInformation(gci->CurrentScreenBuffer->TextInfo->GetCursor()->GetSize(),
                                        TRUE);
         }
 
@@ -373,11 +377,11 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         PWORD lpAtrIdx;
 
         // Cursor turn OFF.
-        if (ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor()->IsVisible())
+        if (gci->CurrentScreenBuffer->TextInfo->GetCursor()->IsVisible())
         {
             pIme->SavedCursorVisible = TRUE;
-            ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer
-                ->SetCursorInformation(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor()->GetSize(),
+            gci->CurrentScreenBuffer
+                ->SetCursorInformation(gci->CurrentScreenBuffer->TextInfo->GetCursor()->GetSize(),
                                        FALSE);
         }
 
@@ -403,7 +407,8 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
 
 NTSTATUS ConsoleImeResizeCompStrView()
 {
-    ConsoleImeInfo* const pIme = &ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme;
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    ConsoleImeInfo* const pIme = &gci->ConsoleIme;
 
     // Compositon string
     LPCONIME_UICOMPMESSAGE const CompStr = pIme->CompStrData;
@@ -430,7 +435,8 @@ NTSTATUS ConsoleImeResizeCompStrView()
 
 NTSTATUS ConsoleImeResizeCompStrScreenBuffer(_In_ COORD const coordNewScreenSize)
 {
-    ConsoleImeInfo* const pIme = &ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme;
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    ConsoleImeInfo* const pIme = &gci->ConsoleIme;
 
     // Composition string
     for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
@@ -481,12 +487,13 @@ SHORT CalcWideCharToColumn(_In_reads_(NumberOfChars) PCHAR_INFO Buffer, _In_ siz
 
 void ConsoleImePaint(_In_ ConversionAreaInfo* pConvAreaInfo)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     if (pConvAreaInfo == nullptr)
     {
         return;
     }
 
-    PSCREEN_INFORMATION const ScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+    PSCREEN_INFORMATION const ScreenInfo = gci->CurrentScreenBuffer;
     if (ScreenInfo == nullptr)
     {
         return;
@@ -510,6 +517,7 @@ void ConsoleImePaint(_In_ ConversionAreaInfo* pConvAreaInfo)
 
 void ConsoleImeViewInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ COORD coordConView)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     if (ConvAreaInfo->IsHidden())
     {
@@ -531,14 +539,14 @@ void ConsoleImeViewInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ COORD coordC
         OldRegion.Bottom += ConvAreaInfo->CaInfo.coordConView.Y;
         ConvAreaInfo->CaInfo.coordConView = coordConView;
 
-        WriteToScreen(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer, OldRegion);
+        WriteToScreen(gci->CurrentScreenBuffer, OldRegion);
 
         NewRegion = ConvAreaInfo->CaInfo.rcViewCaWindow;
         NewRegion.Left += ConvAreaInfo->CaInfo.coordConView.X;
         NewRegion.Right += ConvAreaInfo->CaInfo.coordConView.X;
         NewRegion.Top += ConvAreaInfo->CaInfo.coordConView.Y;
         NewRegion.Bottom += ConvAreaInfo->CaInfo.coordConView.Y;
-        WriteToScreen(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer, NewRegion);
+        WriteToScreen(gci->CurrentScreenBuffer, NewRegion);
     }
 }
 
@@ -604,6 +612,7 @@ NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ 
 // Return Value:
 NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     if (pCopyDataStruct == nullptr)
     {
         // fail safe.
@@ -620,27 +629,27 @@ NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct)
                 CompStr = (LPCONIME_UICOMPMESSAGE) pCopyDataStruct->lpData;
                 if (CompStr && CompStr->dwSize == pCopyDataStruct->cbData)
                 {
-                    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme.CompStrData)
+                    if (gci->ConsoleIme.CompStrData)
                     {
-                        delete[] ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme.CompStrData;
+                        delete[] gci->ConsoleIme.CompStrData;
                     }
 
-                    ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme.CompStrData = (LPCONIME_UICOMPMESSAGE) new BYTE[CompStr->dwSize];
-                    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme.CompStrData == nullptr)
+                    gci->ConsoleIme.CompStrData = (LPCONIME_UICOMPMESSAGE) new BYTE[CompStr->dwSize];
+                    if (gci->ConsoleIme.CompStrData == nullptr)
                     {
                         break;
                     }
 
-                    memmove(ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme.CompStrData, CompStr, CompStr->dwSize);
-                    ConsoleImeCompStr(ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme.CompStrData);
+                    memmove(gci->ConsoleIme.CompStrData, CompStr, CompStr->dwSize);
+                    ConsoleImeCompStr(gci->ConsoleIme.CompStrData);
                 }
             }
             break;
         case CI_ONSTARTCOMPOSITION:
-            ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->fInComposition = true;
+            gci->pInputBuffer->fInComposition = true;
             break;
         case CI_ONENDCOMPOSITION:
-            ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->fInComposition = false;
+            gci->pInputBuffer->fInComposition = false;
             break;
     }
 
@@ -649,41 +658,44 @@ NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct)
 
 bool InsertConvertedString(_In_ LPCWSTR lpStr)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     bool fResult = false;
 
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor()->IsOn())
+    if (gci->CurrentScreenBuffer->TextInfo->GetCursor()->IsOn())
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor()
-            ->TimerRoutine(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer);
+        gci->CurrentScreenBuffer->TextInfo->GetCursor()
+            ->TimerRoutine(gci->CurrentScreenBuffer);
     }
 
-    size_t cchLen = wcslen(lpStr) + 1;
-    PINPUT_RECORD const InputEvent = new INPUT_RECORD[cchLen];
-    if (InputEvent == nullptr)
+    const DWORD dwControlKeyState = GetControlKeyState(0);
+    try
     {
-        return false;
+        std::deque<std::unique_ptr<IInputEvent>> inEvents;
+        INPUT_RECORD record;
+        record.EventType = KEY_EVENT;
+        record.Event.KeyEvent.bKeyDown = TRUE;
+        record.Event.KeyEvent.wVirtualKeyCode = 0;
+        record.Event.KeyEvent.wVirtualScanCode = 0;
+        record.Event.KeyEvent.dwControlKeyState = dwControlKeyState;
+        record.Event.KeyEvent.wRepeatCount = 1;
+
+        while (*lpStr)
+        {
+            record.Event.KeyEvent.uChar.UnicodeChar = *lpStr;
+            inEvents.push_back(IInputEvent::Create(record));
+
+            ++lpStr;
+        }
+
+        gci->pInputBuffer->WriteInputBuffer(inEvents);
+
+        fResult = true;
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
     }
 
-    PINPUT_RECORD TmpInputEvent = InputEvent;
-    DWORD dwControlKeyState = GetControlKeyState(0);
-
-    while (*lpStr)
-    {
-        TmpInputEvent->EventType = KEY_EVENT;
-        TmpInputEvent->Event.KeyEvent.bKeyDown = TRUE;
-        TmpInputEvent->Event.KeyEvent.wVirtualKeyCode = 0;
-        TmpInputEvent->Event.KeyEvent.wVirtualScanCode = 0;
-        TmpInputEvent->Event.KeyEvent.dwControlKeyState = dwControlKeyState;
-        TmpInputEvent->Event.KeyEvent.uChar.UnicodeChar = *lpStr++;
-        TmpInputEvent->Event.KeyEvent.wRepeatCount = 1;
-        TmpInputEvent++;
-    }
-
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->WriteInputBuffer(InputEvent, (DWORD) (cchLen - 1));
-
-    fResult = true;
-
-    delete[] InputEvent;
     return fResult;
 }
 
@@ -754,7 +766,10 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     }
 
     // see if attr string is different.  if so, allocate a new attr buffer and merge the two strings.
-    if (Row->AttrRow.Length != 1 || !(Row->AttrRow.GetHead()->GetAttributes().IsEqual(ScreenInfo->GetAttributes())))
+    TextAttributeRun* pExistingHead;
+    Row->AttrRow.FindAttrIndex(0, &pExistingHead, nullptr);
+
+    if (Row->AttrRow._cList != 1 || !(pExistingHead->GetAttributes().IsEqual(ScreenInfo->GetAttributes())))
     {
         TextAttributeRun InsertedRun;
 

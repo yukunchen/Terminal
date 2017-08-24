@@ -92,6 +92,7 @@ None
 void Clipboard::StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
                             _In_ const size_t cchData)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     if (pwchData == nullptr)
     {
         return;
@@ -113,6 +114,7 @@ void Clipboard::StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
     {
         return;
     }
+    auto releaseStringData = wil::ScopeExit([&] { delete[] StringData; });
 
     // transfer data to the input buffer in chunks
     PCWCHAR CurChar = pwchData;    // LATER remove this
@@ -169,7 +171,7 @@ void Clipboard::StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
                     UCHAR OemChar;
                     PCHAR pCharString;
 
-                    ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP, &Char, 1, (LPSTR)& OemChar, 1);
+                    ConvertToOem(gci->OutputCP, &Char, 1, (LPSTR)& OemChar, 1);
 
                     (void)_itoa_s(OemChar, CharString, 4, 10);
 
@@ -261,10 +263,16 @@ void Clipboard::StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
             CurChar++;
         }
 
-        EventsWritten = ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->WriteInputBuffer(StringData, EventsWritten);
+        try
+        {
+            std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(StringData, EventsWritten);
+            EventsWritten = static_cast<ULONG>(gci->pInputBuffer->WriteInputBuffer(inEvents));
+        }
+        catch (...)
+        {
+            return;
+        }
     }
-
-    delete[] StringData;
 }
 
 #pragma endregion
@@ -279,6 +287,7 @@ void Clipboard::StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
 //  <none>
 void Clipboard::StoreSelectionToClipboard()
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     Selection* pSelection = &Selection::Instance();
 
     // See if there is a selection to get
@@ -288,7 +297,7 @@ void Clipboard::StoreSelectionToClipboard()
     }
 
     // read selection area.
-    SCREEN_INFORMATION* const pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+    SCREEN_INFORMATION* const pScreenInfo = gci->CurrentScreenBuffer;
 
     SMALL_RECT* rgsrSelection;
     UINT cRectsSelected;
@@ -679,9 +688,10 @@ NTSTATUS Clipboard::CopyTextToSystemClipboard(_In_ const UINT cTotalRows,
 // Returns false if the character should not be emitted (e.g. <TAB>)
 bool Clipboard::FilterCharacterOnPaste(_Inout_ WCHAR * const pwch)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     bool fAllowChar = true;
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetFilterOnPaste() &&
-        (IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT)))
+    if (gci->GetFilterOnPaste() &&
+        (IsFlagSet(gci->pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT)))
     {
         switch (*pwch)
         {

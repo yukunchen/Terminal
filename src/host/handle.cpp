@@ -18,18 +18,20 @@
 
 void LockConsole()
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->LockConsole();
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->LockConsole();
 }
 
 void UnlockConsole()
 {
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetCSRecursionCount() == 1)
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    if (gci->GetCSRecursionCount() == 1)
     {
         ProcessCtrlEvents();
     }
     else
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+        gci->UnlockConsole();
     }
 }
 
@@ -37,7 +39,8 @@ NTSTATUS RevalidateConsole(_Out_ CONSOLE_INFORMATION ** const ppConsole)
 {
     LockConsole();
 
-    *ppConsole = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    *ppConsole = gci;
 
     return STATUS_SUCCESS;
 }
@@ -50,16 +53,17 @@ NTSTATUS RevalidateConsole(_Out_ CONSOLE_INFORMATION ** const ppConsole)
 // - Title - Window Title to display
 // - TitleLength - Length of Window Title string
 // Return Value:
-// - <none> - Updates global ServiceLocator::LocateGlobals()->getConsoleInformation()->
+// - <none> - Updates global gci->
 NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle, _In_ const DWORD cbTitle)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     // Synchronize flags
-    SetFlagIf(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_AUTO_POSITION, !!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetAutoPosition());
-    SetFlagIf(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_QUICK_EDIT_MODE, !!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetQuickEdit());
-    SetFlagIf(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_HISTORY_NODUP, !!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetHistoryNoDup());
+    SetFlagIf(gci->Flags, CONSOLE_AUTO_POSITION, !!gci->GetAutoPosition());
+    SetFlagIf(gci->Flags, CONSOLE_QUICK_EDIT_MODE, !!gci->GetQuickEdit());
+    SetFlagIf(gci->Flags, CONSOLE_HISTORY_NODUP, !!gci->GetHistoryNoDup());
 
     Selection* const pSelection = &Selection::Instance();
-    pSelection->SetLineSelection(!!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetLineSelection());
+    pSelection->SetLineSelection(!!gci->GetLineSelection());
 
     SetConsoleCPInfo(TRUE);
     SetConsoleCPInfo(FALSE);
@@ -67,8 +71,8 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
     // Initialize input buffer.
     try
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer = new InputBuffer();
-        if (ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer == nullptr)
+        gci->pInputBuffer = new InputBuffer();
+        if (gci->pInputBuffer == nullptr)
         {
             return STATUS_NO_MEMORY;
         }
@@ -80,19 +84,19 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
 
     NTSTATUS Status;
     // Byte count + 1 so dividing by 2 always rounds up. +1 more for trailing null guard.
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->Title = new WCHAR[((cbTitle + 1) / sizeof(WCHAR)) + 1];
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->Title == nullptr)
+    gci->Title = new WCHAR[((cbTitle + 1) / sizeof(WCHAR)) + 1];
+    if (gci->Title == nullptr)
     {
         Status = STATUS_NO_MEMORY;
         goto ErrorExit2;
     }
 
     #pragma prefast(suppress:26035, "If this fails, we just display an empty title, which is ok.")
-    StringCbCopyW(ServiceLocator::LocateGlobals()->getConsoleInformation()->Title, cbTitle + sizeof(WCHAR), pwchTitle);
+    StringCbCopyW(gci->Title, cbTitle + sizeof(WCHAR), pwchTitle);
 
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->OriginalTitle =
-        TranslateConsoleTitle(ServiceLocator::LocateGlobals()->getConsoleInformation()->Title, TRUE, FALSE);
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->OriginalTitle == nullptr)
+    gci->OriginalTitle =
+        TranslateConsoleTitle(gci->Title, TRUE, FALSE);
+    if (gci->OriginalTitle == nullptr)
     {
         Status = STATUS_NO_MEMORY;
         goto ErrorExit1;
@@ -104,13 +108,13 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
         goto ErrorExit1b;
     }
 
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer =
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers;
+    gci->CurrentScreenBuffer =
+        gci->ScreenBuffers;
 
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->ScrollScale =
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->GetScrollScale();
+    gci->CurrentScreenBuffer->ScrollScale =
+        gci->GetScrollScale();
 
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleIme.RefreshAreaAttributes();
+    gci->ConsoleIme.RefreshAreaAttributes();
 
     if (NT_SUCCESS(Status))
     {
@@ -119,19 +123,19 @@ NTSTATUS AllocateConsole(_In_reads_bytes_(cbTitle) const WCHAR * const pwchTitle
 
     RIPMSG1(RIP_WARNING, "Console init failed with status 0x%x", Status);
 
-    delete ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers;
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->ScreenBuffers = nullptr;
+    delete gci->ScreenBuffers;
+    gci->ScreenBuffers = nullptr;
 
 ErrorExit1b:
-    delete[] ServiceLocator::LocateGlobals()->getConsoleInformation()->Title;
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->Title = nullptr;
+    delete[] gci->Title;
+    gci->Title = nullptr;
 
 ErrorExit1:
-    delete[] ServiceLocator::LocateGlobals()->getConsoleInformation()->OriginalTitle;
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->OriginalTitle = nullptr;
+    delete[] gci->OriginalTitle;
+    gci->OriginalTitle = nullptr;
 
 ErrorExit2:
-    delete ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer;
+    delete gci->pInputBuffer;
 
     ASSERT(!NT_SUCCESS(Status));
     return Status;

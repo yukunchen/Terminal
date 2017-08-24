@@ -60,11 +60,12 @@ class ClipboardTests
 
     void SetupRetrieveFromBuffers(bool fLineSelection, SMALL_RECT** prgsrSelection, PWCHAR** prgTempRows, size_t** prgTempRowLengths)
     {
+        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
 
         // set up and try to retrieve the first 4 rows from the buffer
-        SCREEN_INFORMATION* pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+        SCREEN_INFORMATION* pScreenInfo = gci->CurrentScreenBuffer;
 
         SMALL_RECT* rgsrSelection = new SMALL_RECT[cRectsSelected];
 

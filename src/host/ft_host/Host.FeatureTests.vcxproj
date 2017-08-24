@@ -2,27 +2,29 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
-    <ClCompile Include="api\AliasTests.cpp" />
-    <ClCompile Include="api\BufferTests.cpp" />
-    <ClCompile Include="api\CursorTests.cpp" />
-    <ClCompile Include="api\DimensionsTests.cpp" />
-    <ClCompile Include="api\FileTests.cpp" />
-    <ClCompile Include="api\FontTests.cpp" />
-    <ClCompile Include="api\InputTests.cpp" />
-    <ClCompile Include="api\ModeTests.cpp" />
-    <ClCompile Include="api\RgbColorTests.cpp" />
-    <ClCompile Include="api\TitleTests.cpp" />
-    <ClCompile Include="cjk\DbcsTests.cpp" />
+    <ClCompile Include="API_AliasTests.cpp" />
+    <ClCompile Include="API_BufferTests.cpp" />
+    <ClCompile Include="API_CursorTests.cpp" />
+    <ClCompile Include="API_DimensionsTests.cpp" />
+    <ClCompile Include="API_FileTests.cpp" />
+    <ClCompile Include="API_FontTests.cpp" />
+    <ClCompile Include="API_InputTests.cpp" />
+    <ClCompile Include="API_ModeTests.cpp" />
+    <ClCompile Include="API_RgbColorTests.cpp" />
+    <ClCompile Include="API_TitleTests.cpp" />
+    <ClCompile Include="CJK_DbcsTests.cpp" />
     <ClCompile Include="Common.cpp" />
-    <ClCompile Include="Init.cpp" />
-    <ClCompile Include="message\KeyPressTests.cpp" />
+    <ClCompile Include="InitTests.cpp" />
+    <ClCompile Include="Message_KeyPressTests.cpp" />
+    <ClCompile Include="OneCoreDelay.cpp" />
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="api\AliasTestsHelpers.hpp" />
+    <ClInclude Include="API_AliasTestsHelpers.hpp" />
     <ClInclude Include="Common.hpp" />
+    <ClInclude Include="OneCoreDelay.hpp" />
     <ClInclude Include="precomp.h" />
   </ItemGroup>
   <PropertyGroup>

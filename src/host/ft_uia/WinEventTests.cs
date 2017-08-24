@@ -301,17 +301,19 @@ namespace Conhost.UIA.Tests
         {
             // A. We're going to type "cmd" into the prompt to start a command prompt.
             {
+                Log.Comment("Type 'cmd' to get ready to start nested prompt.");
                 NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Update console data.");
                 TestTypeStringHelper("cmd", app, sbiex);
             }
 
             // B. Now we're going to press enter to launch the CMD application
             {
+                Log.Comment("Press enter to launch and observe launch events.");
                 NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Update console data.");
                 expected.Enqueue(new EventData(EventType.StartApplication));
                 expected.Enqueue(new EventData(EventType.UpdateRegion, 0, 0, sbiex.dwSize.X - 1, sbiex.dwSize.Y - 1));
                 sbiex.dwCursorPosition.Y++;
-                expected.Enqueue(new EventData(EventType.UpdateRegion, 0, sbiex.dwCursorPosition.Y, "Microsoft Windows [Version 10.0.14974]".Length - 1, sbiex.dwCursorPosition.Y));
+                expected.Enqueue(new EventData(EventType.UpdateRegion, 0, sbiex.dwCursorPosition.Y, "Microsoft Windows [Version 10.0.14974.1001]".Length - 1, sbiex.dwCursorPosition.Y));
                 sbiex.dwCursorPosition.Y++;
                 expected.Enqueue(new EventData(EventType.UpdateRegion, 0, sbiex.dwCursorPosition.Y, "(c) 2016 Microsoft Corporation. All rights reserved.".Length - 1, sbiex.dwCursorPosition.Y));
                 sbiex.dwCursorPosition.Y++;
@@ -321,17 +323,20 @@ namespace Conhost.UIA.Tests
 
                 app.UIRoot.SendKeys(Keys.Enter);
                 Globals.WaitForTimeout();
+                Globals.WaitForTimeout();
                 VerifyQueue(expected);
             }
 
             // C. Now we're going to type exit to leave the nested CMD application
             {
+                Log.Comment("Type 'exit' to get ready to exit nested prompt.");
                 NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Update console data.");
                 TestTypeStringHelper("exit", app, sbiex);
             }
 
             // D. Now we're going to press enter to exit the CMD application
             {
+                Log.Comment("Press enter to launch and observe exit events.");
                 NativeMethods.Win32BoolHelper(WinCon.GetConsoleScreenBufferInfoEx(hConsole, ref sbiex), "Update console data.");
                 expected.Enqueue(new EventData(EventType.EndApplication));
                 sbiex.dwCursorPosition.Y++;
@@ -340,6 +345,7 @@ namespace Conhost.UIA.Tests
                 expected.Enqueue(new EventData(EventType.CaretVisible, sbiexOriginal.dwCursorPosition.X, sbiex.dwCursorPosition.Y));
 
                 app.UIRoot.SendKeys(Keys.Enter);
+                Globals.WaitForTimeout();
                 Globals.WaitForTimeout();
                 VerifyQueue(expected);
             }
@@ -406,10 +412,9 @@ namespace Conhost.UIA.Tests
             int echoLine = sbiexOriginal.dwCursorPosition.Y + 1;
             expected.Enqueue(new EventData(EventType.UpdateRegion, 0, echoLine, echoText.Length - 1, echoLine));
             expected.Enqueue(new EventData(EventType.UpdateScroll, 0, -1));
-            expected.Enqueue(new EventData(EventType.Layout));
-
             int newPromptLine = echoLine + 2;
             expected.Enqueue(new EventData(EventType.UpdateRegion, 0, newPromptLine, promptLineEnd, newPromptLine));
+            expected.Enqueue(new EventData(EventType.Layout));
             expected.Enqueue(new EventData(EventType.CaretVisible, promptLineEnd + 1, newPromptLine));
 
             // type command to echo foo and press enter
