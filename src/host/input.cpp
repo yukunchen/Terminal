@@ -115,8 +115,6 @@ void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     BOOLEAN ContinueProcessing = TRUE;
-
-    ULONG EventsWritten;
     
     // Todo:
     // Moving the handling from here to the other side of WriteInputBuffer seemed to fix GH#111  

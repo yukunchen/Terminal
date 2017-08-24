@@ -21,15 +21,26 @@ using namespace Microsoft::Console::Interactivity::Win32;
 void _HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
 {
     // auto _cIn = cInput;
-    // ServiceLocator::LocateGlobals()->getConsoleInformation()->
-    //     pInputBuffer->PrependInputBuffer(rgInput, &_cIn);
+    // // ServiceLocator::LocateGlobals()->getConsoleInformation()->
+    // //     pInputBuffer->PrependInputBuffer(rgInput, &_cIn);
 
-    // FIXME
-    // The prototype fix moves the VT translation to WriteInputBuffer. 
-    //   This currently causes WriteInputBuffer to get called twice for every 
-    //   key - not ideal. There needs to be a WriteInputBuffer that sidesteps this problem.
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->
-        pInputBuffer->WriteInputBuffer(rgInput, cInput);
+    // // FIXME
+    // // The prototype fix moves the VT translation to WriteInputBuffer. 
+    // //   This currently causes WriteInputBuffer to get called twice for every 
+    // //   key - not ideal. There needs to be a WriteInputBuffer that sidesteps this problem.
+    // ServiceLocator::LocateGlobals()->getConsoleInformation()->
+    //     pInputBuffer->WriteInputBuffer(rgInput, cInput);
+
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    try
+    {
+        std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(rgInput, cInput);
+        gci->pInputBuffer->WriteInputBuffer(inEvents);
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+    }
 }
 
 VtInputThread::VtInputThread()
