@@ -12,6 +12,7 @@
 
 #define IN_PIPE_NAME L"\\\\.\\pipe\\convtinpipe"
 #define OUT_PIPE_NAME L"\\\\.\\pipe\\convtoutpipe"
+#define PIPE_NAME L"\\\\.\\pipe\\convtpipe"
 using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 // State
@@ -19,6 +20,7 @@ using namespace std;
 // wil::unique_handle inPipe;
 HANDLE outPipe;
 HANDLE inPipe;
+HANDLE Pipe;
 HANDLE hOut;
 HANDLE hIn;
 
@@ -185,14 +187,15 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
         // csi("0m");
 
         // WriteFile(inPipe.get(), vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
-        WriteFile(inPipe, vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
+        // WriteFile(inPipe, vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
+        WriteFile(Pipe, vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
     }
 }
 
 
 DWORD OutputThread(LPVOID lpParameter)
 {
-    THROW_LAST_ERROR_IF_FALSE(ConnectNamedPipe(outPipe, nullptr));
+    // THROW_LAST_ERROR_IF_FALSE(ConnectNamedPipe(outPipe, nullptr));
     // DebugBreak();
     UNREFERENCED_PARAMETER(lpParameter);
     DWORD dwMode = 0;
@@ -208,14 +211,16 @@ DWORD OutputThread(LPVOID lpParameter)
     {
         dwRead = 0;
         // THROW_LAST_ERROR_IF_FALSE(ReadFile(outPipe.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
-        THROW_LAST_ERROR_IF_FALSE(ReadFile(outPipe, buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
+        // THROW_LAST_ERROR_IF_FALSE(ReadFile(outPipe, buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
+        THROW_LAST_ERROR_IF_FALSE(ReadFile(Pipe, buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
         THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
     }
+    // return 0;
 }
 
 DWORD InputThread(LPVOID lpParameter)
 {
-    THROW_LAST_ERROR_IF_FALSE(ConnectNamedPipe(inPipe, nullptr));
+    // THROW_LAST_ERROR_IF_FALSE(ConnectNamedPipe(inPipe, nullptr));
     // DebugBreak();
     UNREFERENCED_PARAMETER(lpParameter);
     
@@ -232,15 +237,42 @@ DWORD InputThread(LPVOID lpParameter)
         ReadConsoleInputA(hIn, rc, 256, &dwRead);
         handleManyEvents(rc, dwRead);
     }
+    // return 0;
 }
 
-
-bool openConsole(std::wstring inPipeName, std::wstring outPipeName)
+DWORD IOThread(LPVOID lpParameter)
 {
-    std::wstring cmdline = L"OpenConsole.exe --inpipe ";
-    cmdline += inPipeName;
-    cmdline += L" --outpipe ";
-    cmdline += outPipeName;
+    UNREFERENCED_PARAMETER(lpParameter);
+    
+    THROW_LAST_ERROR_IF_FALSE(ConnectNamedPipe(Pipe, nullptr));
+
+
+    // OutputThread(nullptr);
+    DWORD dwOutputThreadId = (DWORD) -1;
+    HANDLE hOutputThread = CreateThread(nullptr,
+                                        0,
+                                        (LPTHREAD_START_ROUTINE)OutputThread,
+                                        nullptr,
+                                        0,
+                                        &dwOutputThreadId);
+    hOutputThread;
+
+
+    // InputThread(nullptr);
+    DWORD dwInputThreadId = (DWORD) -1;
+    HANDLE hInputThread = CreateThread(nullptr,
+                                        0,
+                                        (LPTHREAD_START_ROUTINE)InputThread,
+                                        nullptr,
+                                        0,
+                                        &dwInputThreadId);
+    hInputThread;
+
+    return 0;
+}
+
+bool _openCon(std::wstring cmdline)
+{
     // wchar_t commandline[] = L"OpenConsole.exe --pipe " PIPE_NAME;
     PROCESS_INFORMATION pi = {0};
     STARTUPINFO si = {0};
@@ -267,6 +299,23 @@ bool openConsole(std::wstring inPipeName, std::wstring outPipeName)
     return fSuccess;
 }
 
+bool openConsole(std::wstring PipeName)
+{
+    std::wstring cmdline = L"OpenConsole.exe --pipe ";
+    cmdline += PipeName;
+    return _openCon(cmdline);
+}
+
+bool openConsole(std::wstring inPipeName, std::wstring outPipeName)
+{
+    std::wstring cmdline = L"OpenConsole.exe --inpipe ";
+    cmdline += inPipeName;
+    cmdline += L" --outpipe ";
+    cmdline += outPipeName;
+    return _openCon(cmdline);
+}
+
+
 // this function has unreachable code due to its unusual lifetime. We
 // disable the warning about it here.
 #pragma warning(push)
@@ -279,22 +328,30 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 // PIPE_ACCESS_INBOUND
 // PIPE_ACCESS_OUTBOUND
 // PIPE_ACCESS_DUPLEX
-    // inPipe.reset(
-    inPipe = (
-        // CreateNamedPipeW(IN_PIPE_NAME, PIPE_ACCESS_OUTBOUND, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr)
-        CreateNamedPipeW(IN_PIPE_NAME, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr)
-    );
+
+    // // inPipe.reset(
+    // inPipe = (
+    //     // CreateNamedPipeW(IN_PIPE_NAME, PIPE_ACCESS_OUTBOUND, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr)
+    //     CreateNamedPipeW(IN_PIPE_NAME, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr)
+    // );
     
+    // // outPipe.reset(
+    // outPipe = (
+    //     // CreateNamedPipeW(OUT_PIPE_NAME, PIPE_ACCESS_INBOUND, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr)
+    //     CreateNamedPipeW(OUT_PIPE_NAME, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr)
+    // );
+
     // outPipe.reset(
-    outPipe = (
+    Pipe = (
         // CreateNamedPipeW(OUT_PIPE_NAME, PIPE_ACCESS_INBOUND, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr)
-        CreateNamedPipeW(OUT_PIPE_NAME, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr)
+        CreateNamedPipeW(PIPE_NAME, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr)
     );
 
     // THROW_IF_HANDLE_INVALID(inPipe.get());
     // THROW_IF_HANDLE_INVALID(outPipe.get());
-    THROW_IF_HANDLE_INVALID(inPipe);
-    THROW_IF_HANDLE_INVALID(outPipe);
+    // THROW_IF_HANDLE_INVALID(inPipe);
+    // THROW_IF_HANDLE_INVALID(outPipe);
+    THROW_IF_HANDLE_INVALID(Pipe);
 
     // Open our backing console
     // openVtPipeIn();
@@ -305,28 +362,38 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 
     // OutputThread(nullptr);
 
-    DWORD dwOutputThreadId = (DWORD) -1;
-    HANDLE hOutputThread = CreateThread(nullptr,
-                                        0,
-                                        (LPTHREAD_START_ROUTINE)OutputThread,
-                                        nullptr,
-                                        0,
-                                        &dwOutputThreadId);
-    hOutputThread;
+    // DWORD dwOutputThreadId = (DWORD) -1;
+    // HANDLE hOutputThread = CreateThread(nullptr,
+    //                                     0,
+    //                                     (LPTHREAD_START_ROUTINE)OutputThread,
+    //                                     nullptr,
+    //                                     0,
+    //                                     &dwOutputThreadId);
+    // hOutputThread;
 
 
+
+    // DWORD dwInputThreadId = (DWORD) -1;
+    // HANDLE hInputThread = CreateThread(nullptr,
+    //                                     0,
+    //                                     (LPTHREAD_START_ROUTINE)InputThread,
+    //                                     nullptr,
+    //                                     0,
+    //                                     &dwInputThreadId);
+    // hInputThread;
 
     DWORD dwInputThreadId = (DWORD) -1;
     HANDLE hInputThread = CreateThread(nullptr,
                                         0,
-                                        (LPTHREAD_START_ROUTINE)InputThread,
+                                        (LPTHREAD_START_ROUTINE)IOThread,
                                         nullptr,
                                         0,
                                         &dwInputThreadId);
     hInputThread;
 
-    openConsole(IN_PIPE_NAME, OUT_PIPE_NAME);
-    
+    // openConsole(IN_PIPE_NAME, OUT_PIPE_NAME);
+    openConsole(PIPE_NAME);
+
     // Exit the thread so the CRT won't clean us up and kill. The IO thread owns the lifetime now.
     ExitThread(S_OK);
     // We won't hit this. The ExitThread above will kill the caller at this point.
