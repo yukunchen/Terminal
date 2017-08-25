@@ -385,7 +385,7 @@ class InputBufferTests
 
     TEST_METHOD(ReadingDbcsCharsPadsOutputArray)
     {
-        Log::Comment(L"During a non-unicode read, the output array should have a blank entry at the end of the array for each dbcs key event");
+        Log::Comment(L"During a non-unicode read, the input buffer should count twice for each dbcs key event");
 
         // write a mouse event, key event, dbcs key event, mouse event
         InputBuffer inputBuffer;
@@ -415,9 +415,8 @@ class InputBufferTests
                                                         false,
                                                         resetWaitEvent,
                                                         false));
-        // the dbcs record should have counted for two elements int
-        // the array, making it so that we get less events read than
-        // the size of the array
+        // the dbcs record should have counted for two elements in
+        // the array, making it so that we get less events read
         VERIFY_ARE_EQUAL(eventsRead, recordInsertCount - 1);
         VERIFY_ARE_EQUAL(eventsRead, outEvents.size());
         for (size_t i = 0; i < eventsRead; ++i)

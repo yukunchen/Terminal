@@ -268,7 +268,7 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>&
             {
                 if (outEvents.back()->EventType() == InputEventType::KeyEvent)
                 {
-                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(outEvents.front().get());
+                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(outEvents.back().get());
                     if (IsCharFullWidth(pKeyEvent->_charData))
                     {
                         ++virtualReadCount;
