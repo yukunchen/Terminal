@@ -229,7 +229,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
         //   Don't fail if the VT renderer fails to init. Just go about life normally.
         try
         {
-            pVtEngine = new VtEngine();
+            pVtEngine = new VtEngine(g->hVtPipe);
             // status = NT_TESTNULL(pVtEngine);
         }
         catch (...)

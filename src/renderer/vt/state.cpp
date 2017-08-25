@@ -21,9 +21,10 @@ using namespace Microsoft::Console::Render;
 // - <none>
 // Return Value:
 // - An instance of a Renderer.
-VtEngine::VtEngine() 
+VtEngine::VtEngine(HANDLE pipe) 
 {
-    _hFile.reset(CreateFileW(L"\\\\.\\pipe\\convtpipe", GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
+    // _hFile.reset(CreateFileW(L"\\\\.\\pipe\\convtpipe", GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
+    _hFile.reset(pipe);
     THROW_IF_HANDLE_INVALID(_hFile.get());
 
     _srLastViewport = {0};

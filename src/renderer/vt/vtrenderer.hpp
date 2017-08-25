@@ -25,7 +25,7 @@ namespace Microsoft
             class VtEngine sealed : public IRenderEngine
             {
             public:
-                VtEngine();
+                VtEngine(HANDLE hPipe);
                 ~VtEngine();
 
                 HRESULT InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);

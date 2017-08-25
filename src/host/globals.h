@@ -64,6 +64,11 @@ public:
      IRenderEngine* pRenderEngine;
      IFontDefaultList* pFontDefaultList;
 
+     // File for rendering VT to and recieving VT input from.
+     // wil::unique_hfile hVtPipe;
+     HANDLE hVtPipe;
+
+
 private:
      CONSOLE_INFORMATION* ciConsoleInformation;
 };

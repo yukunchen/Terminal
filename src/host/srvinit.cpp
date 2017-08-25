@@ -25,6 +25,26 @@
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
+void UseVtPipe(const wchar_t* const pwchVtPipeName)
+{
+    // DebugBreak();
+    auto g = ServiceLocator::LocateGlobals();
+    // g->hVtPipe.reset(
+    g->hVtPipe = (
+        // CreateFileW(L"\\\\.\\pipe\\convtinpipe",
+        CreateFileW(pwchVtPipeName,
+                    GENERIC_READ | GENERIC_WRITE, 
+                    0, 
+                    nullptr, 
+                    OPEN_EXISTING, 
+                    FILE_ATTRIBUTE_NORMAL, 
+                    nullptr)
+    );
+    DWORD le = GetLastError();
+    le;
+    THROW_IF_HANDLE_INVALID(g->hVtPipe);
+}
+
 HRESULT ConsoleServerInitialization(_In_ HANDLE Server)
 {
     try

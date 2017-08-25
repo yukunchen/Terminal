@@ -9,9 +9,11 @@
 
 #include <string>
 
+#define PIPE_NAME L"\\\\.\\pipe\\convtpipe"
+
 bool openConsole()
 {
-    wchar_t commandline[] = L"OpenConsole.exe";
+    wchar_t commandline[] = L"OpenConsole.exe --pipe " PIPE_NAME;
     PROCESS_INFORMATION pi = {0};
     STARTUPINFO si = {0};
     si.cb = sizeof(STARTUPINFOW);
@@ -74,7 +76,7 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     THROW_LAST_ERROR_IF_FALSE(SetConsoleMode(hOut, dwMode));
 
     wil::unique_handle pipe;
-    pipe.reset(CreateNamedPipeW(L"\\\\.\\pipe\\convtpipe", PIPE_ACCESS_INBOUND, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr));
+    pipe.reset(CreateNamedPipeW(PIPE_NAME, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr));
     THROW_IF_HANDLE_INVALID(pipe.get());
 
     // Open our backing console
