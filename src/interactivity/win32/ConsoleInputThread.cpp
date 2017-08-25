@@ -18,8 +18,8 @@ using namespace Microsoft::Console::Interactivity::Win32;
 HANDLE ConsoleInputThread::Start()
 {
     
-    // VtInputThread* vtInput = new VtInputThread();
-    // vtInput->Start();
+    VtInputThread* vtInput = new VtInputThread();
+    vtInput->Start();
 
     HANDLE hThread = nullptr;
     DWORD dwThreadId = (DWORD) -1;

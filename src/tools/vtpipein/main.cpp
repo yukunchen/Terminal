@@ -215,7 +215,8 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     // hVT = CreateFileW(L"\\\\.\\pipe\\convtinpipe", GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     
     wil::unique_handle pipe;
-    pipe.reset(CreateNamedPipeW(L"\\\\.\\pipe\\convtinpipe", PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr));
+    pipe.reset(CreateNamedPipeW(L"\\\\.\\pipe\\convtinpipe", PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, 
+        PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr));
     hVT = pipe.get();
     THROW_IF_HANDLE_INVALID(hVT);
     THROW_LAST_ERROR_IF_FALSE(ConnectNamedPipe(hVT, nullptr));

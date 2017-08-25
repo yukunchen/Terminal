@@ -25,24 +25,49 @@
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
-void UseVtPipe(const wchar_t* const pwchVtPipeName)
+void UseVtPipe(const wchar_t* const pwchInVtPipeName, const wchar_t* const pwchOutVtPipeName)
 {
+    pwchInVtPipeName;
+    pwchOutVtPipeName;
     // DebugBreak();
+    DWORD le;
     auto g = ServiceLocator::LocateGlobals();
-    // g->hVtPipe.reset(
-    g->hVtPipe = (
+
+
+
+    g->hVtOutPipe = (
         // CreateFileW(L"\\\\.\\pipe\\convtinpipe",
-        CreateFileW(pwchVtPipeName,
-                    GENERIC_READ | GENERIC_WRITE, 
+        CreateFileW(pwchOutVtPipeName,
+                    // GENERIC_READ | GENERIC_WRITE, 
+                    GENERIC_WRITE, 
                     0, 
                     nullptr, 
                     OPEN_EXISTING, 
                     FILE_ATTRIBUTE_NORMAL, 
                     nullptr)
     );
-    DWORD le = GetLastError();
+    le = GetLastError();
     le;
-    THROW_IF_HANDLE_INVALID(g->hVtPipe);
+    THROW_IF_HANDLE_INVALID(g->hVtOutPipe);
+
+    
+    // g->hVtPipe.reset(
+    g->hVtInPipe = (
+        // CreateFileW(L"\\\\.\\pipe\\convtinpipe",
+        CreateFileW(pwchInVtPipeName,
+                    // GENERIC_READ | GENERIC_WRITE, 
+                    GENERIC_READ, 
+                    0, 
+                    nullptr, 
+                    OPEN_EXISTING, 
+                    FILE_ATTRIBUTE_NORMAL, 
+                    nullptr)
+    );
+    le = GetLastError();
+    le;
+    THROW_IF_HANDLE_INVALID(g->hVtInPipe);
+
+
 }
 
 HRESULT ConsoleServerInitialization(_In_ HANDLE Server)
