@@ -27,14 +27,12 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
     std::wstring clientCommandline = L"";
     std::wstring vtInPipe = L"";
     std::wstring vtOutPipe = L"";
-    std::wstring vtPipe = L"";
     bool createServerHandle = true;
     DWORD serverHandle;
 
     clientCommandline;
     vtInPipe;
     vtOutPipe;
-    vtPipe;
     createServerHandle;
     serverHandle;
     {
@@ -61,24 +59,21 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
             std::wstring arg = args[i];
             bool hasNext = (i+1) < args.size();
 
-            // if (arg == L"--inpipe" && hasNext)
-            // {
-            //     args.erase(args.begin()+i);
-            //     vtInPipe = args[i];
-            //     args.erase(args.begin()+i);
-            //     i--;
-            // }
-            // else if (arg == L"--outpipe" && hasNext)
-            // {
-            //     args.erase(args.begin()+i);
-            //     vtOutPipe = args[i];
-            //     args.erase(args.begin()+i);
-            //     i--;
-            // }
-            if (arg == L"--pipe" && hasNext)
+            if (arg == L"--inpipe" && hasNext)
             {
                 args.erase(args.begin()+i);
-                vtPipe = args[i];
+                // std::wstring pipeName = args[i];
+                vtInPipe = args[i];
+                args.erase(args.begin()+i);
+                i--;
+            }
+            // else if (arg == L"--outpipe")
+            else if (arg == L"--outpipe" && hasNext)
+            {
+                // DebugBreak();
+                args.erase(args.begin()+i);
+                // std::wstring pipeName = args[i];
+                vtOutPipe = args[i];
                 args.erase(args.begin()+i);
                 i--;
             }
@@ -106,18 +101,15 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
     // eg: "openconsole.exe cmd.exe" won't launch cmd, only "openconsole.exe -- cmd.exe"
     // DebugBreak();
     const wchar_t* const cmdLine = clientCommandline.length() > 0? clientCommandline.c_str() : L"%WINDIR%\\system32\\cmd.exe";
-    // bool fUseVtPipe = vtInPipe.length() > 0 && vtOutPipe.length() > 0;
-    bool fUseVtPipe = vtPipe.length() > 0;
+    bool fUseVtPipe = vtInPipe.length() > 0 && vtOutPipe.length() > 0;
     // const wchar_t* pwchVtInPipe = fUseVtPipe? vtInPipe.c_str() : nullptr;
     // const wchar_t* pwchVtOutPipe = fUseVtPipe? vtOutPipe.c_str() : nullptr;
     const wchar_t* pwchVtInPipe = vtInPipe.c_str();
     const wchar_t* pwchVtOutPipe = vtOutPipe.c_str();
-    const wchar_t* pwchVtPipe = vtPipe.c_str();
     cmdLine;
     fUseVtPipe;
     pwchVtInPipe;
     pwchVtOutPipe;
-    pwchVtPipe;
     // DebugBreak();
 
     // Create a scope because we're going to exit thread if everything goes well.
@@ -241,8 +233,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
         pwszCmdLine = cmdLine;
         if (fUseVtPipe)
         {
-            // UseVtPipe(pwchVtInPipe, pwchVtOutPipe);
-            UseVtPipe(pwchVtPipe);
+            UseVtPipe(pwchVtInPipe, pwchVtOutPipe);
         }
 
         // We have to copy the command line string we're given because CreateProcessW has to be called with mutable data.
