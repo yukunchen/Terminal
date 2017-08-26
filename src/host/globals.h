@@ -66,6 +66,7 @@ public:
 
      // File for rendering VT to and recieving VT input from.
      // wil::unique_hfile hVtPipe;
+     // This is almost certainly not the right place for these to live.
      HANDLE hVtInPipe;
      HANDLE hVtOutPipe;
 

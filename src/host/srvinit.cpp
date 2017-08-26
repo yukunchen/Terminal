@@ -27,47 +27,42 @@ const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
 void UseVtPipe(const wchar_t* const pwchInVtPipeName, const wchar_t* const pwchOutVtPipeName)
 {
-    pwchInVtPipeName;
-    pwchOutVtPipeName;
-    // DebugBreak();
     DWORD le;
     auto g = ServiceLocator::LocateGlobals();
 
+    if (pwchInVtPipeName != nullptr)
+    {
+        // g->hVtPipe.reset(
+        g->hVtInPipe = (
+            CreateFileW(pwchInVtPipeName,
+                        GENERIC_READ, 
+                        0, 
+                        nullptr, 
+                        OPEN_EXISTING, 
+                        FILE_ATTRIBUTE_NORMAL, 
+                        nullptr)
+        );
+        le = GetLastError();
+        THROW_IF_HANDLE_INVALID(g->hVtInPipe);
+    }
 
-
-    g->hVtOutPipe = (
-        // CreateFileW(L"\\\\.\\pipe\\convtinpipe",
-        CreateFileW(pwchOutVtPipeName,
-                    // GENERIC_READ | GENERIC_WRITE, 
-                    GENERIC_WRITE, 
-                    0, 
-                    nullptr, 
-                    OPEN_EXISTING, 
-                    FILE_ATTRIBUTE_NORMAL, 
-                    nullptr)
-    );
-    le = GetLastError();
-    le;
-    THROW_IF_HANDLE_INVALID(g->hVtOutPipe);
-
+    if (pwchOutVtPipeName != nullptr)
+    {
+        // g->hVtPipe.reset(
+        g->hVtOutPipe = (
+            CreateFileW(pwchOutVtPipeName,
+                        GENERIC_WRITE, 
+                        0, 
+                        nullptr, 
+                        OPEN_EXISTING, 
+                        FILE_ATTRIBUTE_NORMAL, 
+                        nullptr)
+        );
+        le = GetLastError();
+        THROW_IF_HANDLE_INVALID(g->hVtOutPipe);
+    }
     
-    // g->hVtPipe.reset(
-    g->hVtInPipe = (
-        // CreateFileW(L"\\\\.\\pipe\\convtinpipe",
-        CreateFileW(pwchInVtPipeName,
-                    // GENERIC_READ | GENERIC_WRITE, 
-                    GENERIC_READ, 
-                    0, 
-                    nullptr, 
-                    OPEN_EXISTING, 
-                    FILE_ATTRIBUTE_NORMAL, 
-                    nullptr)
-    );
-    le = GetLastError();
     le;
-    THROW_IF_HANDLE_INVALID(g->hVtInPipe);
-
-
 }
 
 HRESULT ConsoleServerInitialization(_In_ HANDLE Server)

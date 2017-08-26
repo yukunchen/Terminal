@@ -99,18 +99,14 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
     // If we've parsed all the args and there's no explicit commandline, 
     // do what? There may be args left that weren't parsed.
     // eg: "openconsole.exe cmd.exe" won't launch cmd, only "openconsole.exe -- cmd.exe"
-    // DebugBreak();
     const wchar_t* const cmdLine = clientCommandline.length() > 0? clientCommandline.c_str() : L"%WINDIR%\\system32\\cmd.exe";
-    bool fUseVtPipe = vtInPipe.length() > 0 && vtOutPipe.length() > 0;
-    // const wchar_t* pwchVtInPipe = fUseVtPipe? vtInPipe.c_str() : nullptr;
-    // const wchar_t* pwchVtOutPipe = fUseVtPipe? vtOutPipe.c_str() : nullptr;
-    const wchar_t* pwchVtInPipe = vtInPipe.c_str();
-    const wchar_t* pwchVtOutPipe = vtOutPipe.c_str();
-    cmdLine;
-    fUseVtPipe;
-    pwchVtInPipe;
-    pwchVtOutPipe;
-    // DebugBreak();
+    const bool useVtIn = vtInPipe.length() > 0;
+    const bool useVtOut = vtOutPipe.length() > 0;
+    const bool fUseVtPipe = useVtIn || useVtOut;
+
+    const wchar_t* pwchVtInPipe = useVtIn? vtInPipe.c_str() : nullptr;
+    const wchar_t* pwchVtOutPipe = useVtOut? vtOutPipe.c_str() : nullptr;
+
 
     // Create a scope because we're going to exit thread if everything goes well.
     // This scope will ensure all C++ objects and smart pointers get a chance to destruct before ExitThread is called.
