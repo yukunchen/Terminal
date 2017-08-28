@@ -46,6 +46,9 @@ void UseVtPipe(const wchar_t* const pwchInVtPipeName, const wchar_t* const pwchO
         THROW_IF_HANDLE_INVALID(g->hVtInPipe);
     }
 
+    // DWORD outputFlags = FILE_ATTRIBUTE_NORMAL;
+    DWORD outputFlags = FILE_FLAG_OVERLAPPED | FILE_ATTRIBUTE_NORMAL;
+
     if (pwchOutVtPipeName != nullptr)
     {
         // g->hVtPipe.reset(
@@ -55,7 +58,7 @@ void UseVtPipe(const wchar_t* const pwchInVtPipeName, const wchar_t* const pwchO
                         0, 
                         nullptr, 
                         OPEN_EXISTING, 
-                        FILE_ATTRIBUTE_NORMAL, 
+                        outputFlags, 
                         nullptr)
         );
         le = GetLastError();

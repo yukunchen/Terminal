@@ -15,6 +15,8 @@
 #include <sstream>
 #include <assert.h>
 
+#include "VtConsole.hpp"
+
 #define IN_PIPE_NAME L"\\\\.\\pipe\\convtinpipe"
 #define OUT_PIPE_NAME L"\\\\.\\pipe\\convtoutpipe"
 using namespace std;
@@ -28,41 +30,34 @@ using namespace std;
 HANDLE hOut;
 HANDLE hIn;
 
+std::deque<VtConsole*> consoles;
+
+bool prefixPressed = false;
 ////////////////////////////////////////////////////////////////////////////////
 
-class VtConsole
-{
-public:
-    VtConsole();
-    void spawn();
-    void _openConsole();
-    HANDLE _outPipe;
-    HANDLE _inPipe;
-    PROCESS_INFORMATION pi;
-    std::wstring _inPipeName;
-    std::wstring _outPipeName;
-    bool _connected = false;
-};
 
-std::deque<VtConsole*> consoles;
 VtConsole* getConsole()
 {
     return consoles[0];
 } 
+
 void nextConsole()
 {
     auto con = consoles[0];
     consoles.pop_front();
     consoles.push_back(con);
 }
+
 HANDLE inPipe()
 {
     return getConsole()->_inPipe;
 }
+
 HANDLE outPipe()
 {
     return getConsole()->_outPipe;
 }
+
 void newConsole()
 {
     auto con = new VtConsole();
@@ -179,11 +174,37 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                 // This is a special keyboard key that was pressed, not actually NUL
                 continue;
             }
-
-            *nextBuffer = c;
-            nextBuffer++;
-            bufferCch++;
-
+            if (!prefixPressed)
+            {
+                if (c == '\x2')
+                // if (c == '\x2' && keyEvent.wVirtualKeyCode == 'B')
+                {
+                    prefixPressed = true;
+                }
+                else
+                {
+                    *nextBuffer = c;
+                    nextBuffer++;
+                    bufferCch++;
+                }
+            }
+            else
+            {
+                switch(c)
+                {
+                    case 'n':
+                        nextConsole();
+                        break;
+                    case 'c':
+                        newConsole();
+                        break;
+                    default:
+                        *nextBuffer = c;
+                        nextBuffer++;
+                        bufferCch++;
+                }
+                prefixPressed = false;
+            }
             // int numPrintable = 0;
             // toPrintableBuffer(c, nextPrintable, &numPrintable);
             // nextPrintable += numPrintable;
@@ -204,6 +225,15 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
         // WriteFile(inPipe.get(), vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
         WriteFile(inPipe(), vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
     }
+}
+
+VOID CALLBACK FileIOCompletionRoutine(
+  _In_    DWORD        dwErrorCode,
+  _In_    DWORD        dwNumberOfBytesTransfered,
+  _Inout_ LPOVERLAPPED lpOverlapped
+)
+{
+    
 }
 
 
@@ -250,80 +280,6 @@ DWORD InputThread(LPVOID lpParameter)
         ReadConsoleInputA(hIn, rc, 256, &dwRead);
         handleManyEvents(rc, dwRead);
     }
-}
-
-VtConsole::VtConsole()
-{
-    int r = rand();
-    std::wstringstream ss;
-    ss << r;
-    std::wstring randString;
-    ss >> randString;
-
-    _inPipeName = L"\\\\.\\pipe\\convt\\in\\" + randString;
-    _outPipeName = L"\\\\.\\pipe\\convt\\out\\" + randString;
-}
-
-void VtConsole::spawn()
-{
-
-    _inPipe = (
-        CreateNamedPipeW(_inPipeName.c_str(), PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr)
-    );
-    
-    _outPipe = (
-        CreateNamedPipeW(_outPipeName.c_str(), PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr)
-    );
-
-    THROW_IF_HANDLE_INVALID(_inPipe);
-    THROW_IF_HANDLE_INVALID(_outPipe);
-
-    _openConsole();
-    bool fSuccess = !!ConnectNamedPipe(_inPipe, nullptr);
-    if (!fSuccess)
-    {
-        DWORD lastError = GetLastError();
-        if (lastError != ERROR_PIPE_CONNECTED) THROW_LAST_ERROR_IF_FALSE(fSuccess); 
-    }
-
-    fSuccess = !!ConnectNamedPipe(_outPipe, nullptr);
-    if (!fSuccess)
-    {
-        DWORD lastError = GetLastError();
-        if (lastError != ERROR_PIPE_CONNECTED) THROW_LAST_ERROR_IF_FALSE(fSuccess); 
-    }
-
-    _connected = true;
-}
-
-void VtConsole::_openConsole()
-{
-    std::wstring cmdline = L"OpenConsole.exe";
-    if (_inPipeName.length() > 0)
-    {
-        cmdline += L" --inpipe ";
-        cmdline += _inPipeName;
-    }
-    if (_outPipeName.length() > 0)
-    {
-        cmdline += L" --outpipe ";
-        cmdline += _outPipeName;
-    }
-    STARTUPINFO si = {0};
-    si.cb = sizeof(STARTUPINFOW);
-    bool fSuccess = !!CreateProcess(
-        nullptr,
-        &cmdline[0],
-        nullptr,    // lpProcessAttributes
-        nullptr,    // lpThreadAttributes
-        false,      // bInheritHandles
-        0,          // dwCreationFlags
-        nullptr,    // lpEnvironment
-        nullptr,    // lpCurrentDirectory
-        &si,        //lpStartupInfo
-        &pi         //lpProcessInformation
-    );
-    fSuccess;
 }
 
 bool openConsole(std::wstring inPipeName, std::wstring outPipeName)
@@ -399,59 +355,19 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     hIn = GetStdHandle(STD_INPUT_HANDLE);
-
-    /*
-    int r = rand();
-    std::wstringstream ss;
-    ss << r;
-    std::wstring randString;
-    ss >> randString;
-
-    // std::wstring inPipeName = IN_PIPE_NAME;
-    // std::wstring outPipeName = OUT_PIPE_NAME;
-    std::wstring inPipeName = L"\\\\.\\pipe\\convt\\in\\" + randString;
-    std::wstring outPipeName = L"\\\\.\\pipe\\convt\\out\\" + randString;
-    std::wstring dbgPipeName = L"\\\\.\\pipe\\convt\\dbg\\" + randString;
-
-
-    // PIPE_ACCESS_DUPLEX = PIPE_ACCESS_INBOUND | PIPE_ACCESS_OUTBOUND; 
-    
-    // inPipe.reset(
-    inPipe = (
-        CreateNamedPipeW(inPipeName.c_str(), PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr)
-    );
-    
-    // outPipe.reset(
-    outPipe = (
-        CreateNamedPipeW(outPipeName.c_str(), PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr)
-    );
-
-    dbgPipe = (
-        CreateNamedPipeW(dbgPipeName.c_str(), PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT, 1, 0, 0, 0, nullptr)
-    );
-
-    THROW_IF_HANDLE_INVALID(inPipe);
-    THROW_IF_HANDLE_INVALID(outPipe);
-    THROW_IF_HANDLE_INVALID(dbgPipe);
-
-    CreateIOThreads();
-
-    // Sleep(500);
-    // Open our backing console
-    openConsole(inPipeName.c_str(), outPipeName.c_str());
-    // This has to be done after the threads are started, otherwise, openconsole
-    //   will immediately connect to the pipe, and ConnectPipe will fail with ERROR_PIPE_CONNECTED
-    
-    // Open a second, debug console.
-    // openConsole(L"", dbgPipeName.c_str());
-*/
   
     newConsole();  
     CreateIOThreads();
 
-    Sleep(3000);
-    newConsole();  
-    
+    // Sleep(2000);
+    // newConsole(); 
+
+    // while(true)
+    // {
+    //     nextConsole();
+    //     Sleep(3000);
+    // } 
+
     // Exit the thread so the CRT won't clean us up and kill. The IO thread owns the lifetime now.
     ExitThread(S_OK);
     // We won't hit this. The ExitThread above will kill the caller at this point.

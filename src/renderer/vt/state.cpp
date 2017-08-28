@@ -46,16 +46,46 @@ VtEngine::~VtEngine()
 {
 }
 
+VOID CALLBACK IOCompletionRoutine(
+  _In_    DWORD        dwErrorCode,
+  _In_    DWORD        dwNumberOfBytesTransfered,
+  _Inout_ LPOVERLAPPED lpOverlapped
+)
+{
+    dwErrorCode;
+    dwNumberOfBytesTransfered;
+    if (lpOverlapped != nullptr)
+        delete lpOverlapped;
+}
+
+HRESULT _write(HANDLE h, _In_reads_(cch) PCSTR psz, _In_ DWORD const cch)
+{
+    h;psz;cch;
+
+    OVERLAPPED* pO = new OVERLAPPED();
+    pO->Offset = 0xFFFFFFFF;
+    pO->OffsetHigh  = 0xFFFFFFFF;
+
+    // bool fSuccess = WriteFile(h, psz, cch, nullptr, nullptr);
+    bool fSuccess = !!WriteFileEx(h, psz, cch, pO, IOCompletionRoutine);
+    RETURN_LAST_ERROR_IF_FALSE(fSuccess);
+    
+    return S_OK;
+
+}
+
 HRESULT VtEngine::_Write(_In_reads_(cch) PCSTR psz, _In_ size_t const cch)
 {
-    RETURN_LAST_ERROR_IF_FALSE(WriteFile(_hFile.get(), psz, (DWORD)cch, nullptr, nullptr));
-    return S_OK;
+    return _write(_hFile.get(), psz, (DWORD)cch);
+    // RETURN_LAST_ERROR_IF_FALSE(WriteFile(_hFile.get(), psz, (DWORD)cch, nullptr, nullptr));
+    // return S_OK;
 }
 
 HRESULT VtEngine::_Write(_In_ std::string& str)
 {
-    RETURN_LAST_ERROR_IF_FALSE(WriteFile(_hFile.get(), str.c_str(), (DWORD)str.length(), nullptr, nullptr));
-    return S_OK;
+    return _write(_hFile.get(), str.c_str(), (DWORD)str.length());
+    // RETURN_LAST_ERROR_IF_FALSE(WriteFile(_hFile.get(), str.c_str(), (DWORD)str.length(), nullptr, nullptr));
+    // return S_OK;
 }
 
 // Routine Description:
