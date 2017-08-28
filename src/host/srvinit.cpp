@@ -25,6 +25,30 @@
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
+void UseVtPipe(const wchar_t* const pwchVtPipeName)
+{
+    DWORD le;
+    auto g = ServiceLocator::LocateGlobals();
+    DWORD outputFlags = FILE_FLAG_OVERLAPPED | FILE_ATTRIBUTE_NORMAL;
+
+    if (pwchVtPipeName != nullptr)
+    {
+        // g->hVtPipe.reset(
+        g->hVtPipe = (
+            CreateFileW(pwchVtPipeName,
+                        GENERIC_READ | GENERIC_WRITE, 
+                        0, 
+                        nullptr, 
+                        OPEN_EXISTING, 
+                        outputFlags, 
+                        nullptr)
+        );
+        le = GetLastError();
+        THROW_IF_HANDLE_INVALID(g->hVtInPipe);
+    }
+
+}
+
 void UseVtPipe(const wchar_t* const pwchInVtPipeName, const wchar_t* const pwchOutVtPipeName)
 {
     DWORD le;

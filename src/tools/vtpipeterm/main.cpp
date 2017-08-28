@@ -33,8 +33,19 @@ HANDLE hIn;
 std::deque<VtConsole*> consoles;
 
 bool prefixPressed = false;
+
+// CRITICAL_SECTION whyNot;
 ////////////////////////////////////////////////////////////////////////////////
 
+// void lock()
+// {
+//     EnterCriticalSection(&whyNot);
+// }
+
+// void unlock()
+// {
+//     LeaveCriticalSection(&whyNot);
+// }
 
 VtConsole* getConsole()
 {
@@ -43,19 +54,24 @@ VtConsole* getConsole()
 
 void nextConsole()
 {
+    // lock();
     auto con = consoles[0];
+    con->deactivate();
     consoles.pop_front();
     consoles.push_back(con);
+    con = consoles[0];
+    con->activate();
+    // unlock();
 }
 
 HANDLE inPipe()
 {
-    return getConsole()->_inPipe;
+    return getConsole()->inPipe();
 }
 
 HANDLE outPipe()
 {
-    return getConsole()->_outPipe;
+    return getConsole()->outPipe();
 }
 
 void newConsole()
@@ -227,14 +243,6 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
     }
 }
 
-VOID CALLBACK FileIOCompletionRoutine(
-  _In_    DWORD        dwErrorCode,
-  _In_    DWORD        dwNumberOfBytesTransfered,
-  _Inout_ LPOVERLAPPED lpOverlapped
-)
-{
-    
-}
 
 
 DWORD OutputThread(LPVOID lpParameter)
@@ -254,8 +262,19 @@ DWORD OutputThread(LPVOID lpParameter)
     while (true)
     {
         dwRead = 0;
+        bool fSuccess = false;
+        OVERLAPPED o = {0};
+        o.Offset = getConsole()->getReadOffset();
+
+        fSuccess = !!ReadFile(outPipe(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
+        // fSuccess = !!ReadFile(outPipe(), buffer, ARRAYSIZE(buffer), &dwRead, &o);
+
+        // if (!fSuccess && GetLastError()==ERROR_IO_PENDING) continue;
+        // else if (!fSuccess) THROW_LAST_ERROR_IF_FALSE(fSuccess);
+        THROW_LAST_ERROR_IF_FALSE(fSuccess);
+
         // THROW_LAST_ERROR_IF_FALSE(ReadFile(outPipe.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
-        THROW_LAST_ERROR_IF_FALSE(ReadFile(outPipe(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
+        // getConsole()->incrementReadOffset(dwRead);
         THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
     }
 }
@@ -356,6 +375,8 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     hIn = GetStdHandle(STD_INPUT_HANDLE);
   
+    // InitializeCriticalSection(&whyNot);
+
     newConsole();  
     CreateIOThreads();
 
@@ -367,6 +388,7 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     //     nextConsole();
     //     Sleep(3000);
     // } 
+
 
     // Exit the thread so the CRT won't clean us up and kill. The IO thread owns the lifetime now.
     ExitThread(S_OK);

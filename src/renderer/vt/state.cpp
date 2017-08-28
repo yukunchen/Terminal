@@ -66,10 +66,10 @@ HRESULT _write(HANDLE h, _In_reads_(cch) PCSTR psz, _In_ DWORD const cch)
     pO->Offset = 0xFFFFFFFF;
     pO->OffsetHigh  = 0xFFFFFFFF;
 
-    // bool fSuccess = WriteFile(h, psz, cch, nullptr, nullptr);
+    // bool fSuccess = !!WriteFile(h, psz, cch, nullptr, nullptr);
     bool fSuccess = !!WriteFileEx(h, psz, cch, pO, IOCompletionRoutine);
     RETURN_LAST_ERROR_IF_FALSE(fSuccess);
-    
+
     return S_OK;
 
 }
