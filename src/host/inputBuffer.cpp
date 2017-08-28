@@ -139,7 +139,7 @@ HRESULT InputBuffer::FlushAllButKeys()
 // Note:
 // - The console lock must be held when calling this routine.
 // Arguments:
-// - outEvents - deque to store the read events
+// - OutEvents - deque to store the read events
 // - AmountToRead - the amount of events to try to read
 // - Peek - If true, copy events to pInputRecord but don't remove them from the input buffer.
 // - WaitForData - if true, wait until an event is input (if there aren't enough to fill client buffer). if false, return immediately
@@ -154,9 +154,9 @@ NTSTATUS InputBuffer::Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEv
                            _In_ const bool WaitForData,
                            _In_ const bool Unicode)
 {
-    NTSTATUS Status;
     try
     {
+        NTSTATUS Status;
         if (_storage.empty())
         {
             if (!WaitForData)
