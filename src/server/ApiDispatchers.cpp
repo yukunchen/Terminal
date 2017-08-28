@@ -192,7 +192,7 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
     {
         // In some circumstances, the read may have told us to wait because it didn't have data,
         // but the client explicitly asked us to return immediate. In that case, we'll convert the
-        // wait request into a "0 bytes found, OK". 
+        // wait request into a "0 bytes found, OK".
 
         if (fIsWaitAllowed)
         {
@@ -210,7 +210,9 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
         }
         else
         {
-            // If wait isn't allowed and the routine generated a waiter, delete it and say there was nothing to be retrieved right now.
+            // If wait isn't allowed and the routine generated a
+            // waiter, delete it and say there was nothing to be
+            // retrieved right now.
             delete pWaiter;
             pWaiter = nullptr;
 

@@ -165,11 +165,10 @@ BOOL DIRECT_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         }
 
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
-        // TODO why is _fIsPeek used twice? is this correct?
         *pReplyStatus = _pInputBuffer->Read(outEvents,
                                             *nLength,
-                                            _fIsPeek,
-                                            _fIsPeek,
+                                            false,
+                                            false,
                                             !!fIsUnicode);
         *nLength = static_cast<DWORD>(outEvents.size());
 
