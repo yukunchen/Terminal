@@ -70,8 +70,8 @@ void UseVtPipe(const wchar_t* const pwchInVtPipeName, const wchar_t* const pwchO
         THROW_IF_HANDLE_INVALID(g->hVtInPipe);
     }
 
-    // DWORD outputFlags = FILE_ATTRIBUTE_NORMAL;
-    DWORD outputFlags = FILE_FLAG_OVERLAPPED | FILE_ATTRIBUTE_NORMAL;
+    DWORD outputFlags = FILE_ATTRIBUTE_NORMAL;
+    // DWORD outputFlags = FILE_FLAG_OVERLAPPED | FILE_ATTRIBUTE_NORMAL;
 
     if (pwchOutVtPipeName != nullptr)
     {

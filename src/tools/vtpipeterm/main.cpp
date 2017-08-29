@@ -47,6 +47,11 @@ bool prefixPressed = false;
 //     LeaveCriticalSection(&whyNot);
 // }
 
+void ReadCallback(byte* buffer, DWORD dwRead)
+{
+    THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
+}
+
 VtConsole* getConsole()
 {
     return consoles[0];
@@ -76,7 +81,7 @@ HANDLE outPipe()
 
 void newConsole()
 {
-    auto con = new VtConsole();
+    auto con = new VtConsole(ReadCallback);
     con->spawn();
     consoles.push_back(con);
 }
@@ -244,7 +249,6 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
 }
 
 
-
 DWORD OutputThread(LPVOID lpParameter)
 {
     // THROW_LAST_ERROR_IF_FALSE(ConnectNamedPipe(outPipe, nullptr));
@@ -257,26 +261,27 @@ DWORD OutputThread(LPVOID lpParameter)
     dwMode |= DISABLE_NEWLINE_AUTO_RETURN;
     THROW_LAST_ERROR_IF_FALSE(SetConsoleMode(hOut, dwMode));
 
-    byte buffer[256];
-    DWORD dwRead;
-    while (true)
-    {
-        dwRead = 0;
-        bool fSuccess = false;
-        OVERLAPPED o = {0};
-        o.Offset = getConsole()->getReadOffset();
+    return 0;
+    // byte buffer[256];
+    // DWORD dwRead;
+    // while (true)
+    // {
+    //     dwRead = 0;
+    //     bool fSuccess = false;
+    //     OVERLAPPED o = {0};
+    //     o.Offset = getConsole()->getReadOffset();
 
-        fSuccess = !!ReadFile(outPipe(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
-        // fSuccess = !!ReadFile(outPipe(), buffer, ARRAYSIZE(buffer), &dwRead, &o);
+    //     fSuccess = !!ReadFile(outPipe(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
+    //     // fSuccess = !!ReadFile(outPipe(), buffer, ARRAYSIZE(buffer), &dwRead, &o);
 
-        // if (!fSuccess && GetLastError()==ERROR_IO_PENDING) continue;
-        // else if (!fSuccess) THROW_LAST_ERROR_IF_FALSE(fSuccess);
-        THROW_LAST_ERROR_IF_FALSE(fSuccess);
-
-        // THROW_LAST_ERROR_IF_FALSE(ReadFile(outPipe.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
-        // getConsole()->incrementReadOffset(dwRead);
-        THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
-    }
+    //     // if (!fSuccess && GetLastError()==ERROR_IO_PENDING) continue;
+    //     // else if (!fSuccess) THROW_LAST_ERROR_IF_FALSE(fSuccess);
+    //     THROW_LAST_ERROR_IF_FALSE(fSuccess);
+    //     ReadCallback(buffer, dwRead);
+    //     // THROW_LAST_ERROR_IF_FALSE(ReadFile(outPipe.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
+    //     // getConsole()->incrementReadOffset(dwRead);
+    //     THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
+    // }
 }
 
 DWORD InputThread(LPVOID lpParameter)
@@ -341,15 +346,15 @@ bool openConsole(std::wstring inPipeName, std::wstring outPipeName)
 
 void CreateIOThreads()
 {
-
-    DWORD dwOutputThreadId = (DWORD) -1;
-    HANDLE hOutputThread = CreateThread(nullptr,
-                                        0,
-                                        (LPTHREAD_START_ROUTINE)OutputThread,
-                                        nullptr,
-                                        0,
-                                        &dwOutputThreadId);
-    hOutputThread;
+    OutputThread(nullptr);
+    // DWORD dwOutputThreadId = (DWORD) -1;
+    // HANDLE hOutputThread = CreateThread(nullptr,
+    //                                     0,
+    //                                     (LPTHREAD_START_ROUTINE)OutputThread,
+    //                                     nullptr,
+    //                                     0,
+    //                                     &dwOutputThreadId);
+    // hOutputThread;
 
 
 
@@ -378,6 +383,7 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     // InitializeCriticalSection(&whyNot);
 
     newConsole();  
+    getConsole()->activate();
     CreateIOThreads();
 
     // Sleep(2000);

@@ -77,8 +77,8 @@ DWORD VtInputThread::StaticVtInputThreadProc(LPVOID lpParameter)
 DWORD VtInputThread::_InputThread()
 {
     auto g = ServiceLocator::LocateGlobals();
-    // HANDLE hPipe = g->hVtInPipe;
-    HANDLE hPipe = g->hVtPipe;
+    HANDLE hPipe = g->hVtInPipe;
+    // HANDLE hPipe = g->hVtPipe;
     if (hPipe == INVALID_HANDLE_VALUE || hPipe == nullptr)
     {
         return 0;

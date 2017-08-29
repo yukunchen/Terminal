@@ -9,8 +9,11 @@
 #include <sstream>
 #include <assert.h>
 
-VtConsole::VtConsole()
+VtConsole::VtConsole(PipeReadCallback const pfnReadCallback)
 {
+
+    _pfnReadCallback = pfnReadCallback;
+
     int r = rand();
     std::wstringstream ss;
     ss << r;
@@ -33,7 +36,7 @@ HANDLE VtConsole::outPipe()
 
 void VtConsole::spawn()
 {
-    _spawn1();
+    _spawn2();
 }
 
 void VtConsole::_spawn1()
@@ -89,6 +92,17 @@ void VtConsole::_spawn2()
     }
 
     _connected = true;
+
+
+    // Create our own output handling thread
+    // Each console needs to make sure to drain the output from it's backing host.
+    _dwOutputThreadId = (DWORD) -1;
+    _hOutputThread = CreateThread(nullptr,
+                                  0,
+                                  (LPTHREAD_START_ROUTINE)StaticOutputThreadProc,
+                                  this,
+                                  0,
+                                  &_dwOutputThreadId);
 }
 
 void VtConsole::_openConsole1()
@@ -131,6 +145,12 @@ void VtConsole::_openConsole2()
     }
     STARTUPINFO si = {0};
     si.cb = sizeof(STARTUPINFOW);
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    // si.wShowWindow = SW_SHOWNA;
+    // si.wShowWindow = SW_HIDE;
+    // si.wShowWindow = SW_FORCEMINIMIZE;
+    si.wShowWindow = SW_MINIMIZE;
+
     bool fSuccess = !!CreateProcess(
         nullptr,
         &cmdline[0],
@@ -164,4 +184,38 @@ void VtConsole::activate()
 void VtConsole::deactivate()
 {
     _active = false;
+}
+
+
+DWORD VtConsole::StaticOutputThreadProc(LPVOID lpParameter)
+{
+    VtConsole* const pInstance = (VtConsole*)lpParameter;
+    return pInstance->_OutputThread();
+}
+
+DWORD VtConsole::_OutputThread()
+{
+    byte buffer[256];
+    DWORD dwRead;
+    while (true)
+    {
+        dwRead = 0;
+        bool fSuccess = false;
+        OVERLAPPED o = {0};
+        o.Offset = this->getReadOffset();
+
+        fSuccess = !!ReadFile(this->outPipe(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
+        // fSuccess = !!ReadFile(outPipe(), buffer, ARRAYSIZE(buffer), &dwRead, &o);
+
+        // if (!fSuccess && GetLastError()==ERROR_IO_PENDING) continue;
+        // else if (!fSuccess) THROW_LAST_ERROR_IF_FALSE(fSuccess);
+        THROW_LAST_ERROR_IF_FALSE(fSuccess);
+        if (this->_active)
+        {
+            _pfnReadCallback(buffer, dwRead);
+        }
+        // THROW_LAST_ERROR_IF_FALSE(ReadFile(outPipe.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
+        // getConsole()->incrementReadOffset(dwRead);
+        // THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
+    }
 }

@@ -108,8 +108,8 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
     const bool useVtIn = vtInPipe.length() > 0;
     const bool useVtOut = vtOutPipe.length() > 0;
     const bool useVtPipe = vtPipe.length() > 0;
-    // const bool fUseVtPipe = useVtIn || useVtOut;
-    const bool fUseVtPipe = useVtPipe;
+    const bool fUseVtPipe = useVtIn || useVtOut;
+    // const bool fUseVtPipe = useVtPipe;
 
     const wchar_t* pwchVtInPipe = useVtIn? vtInPipe.c_str() : nullptr;
     const wchar_t* pwchVtOutPipe = useVtOut? vtOutPipe.c_str() : nullptr;
@@ -237,9 +237,10 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
         pwszCmdLine = cmdLine;
         if (fUseVtPipe)
         {
-            UseVtPipe(pwchVtPipe);
+            pwchVtPipe;
+            // UseVtPipe(pwchVtPipe);
             pwchVtInPipe; pwchVtOutPipe;
-            // UseVtPipe(pwchVtInPipe, pwchVtOutPipe);
+            UseVtPipe(pwchVtInPipe, pwchVtOutPipe);
         }
 
         // We have to copy the command line string we're given because CreateProcessW has to be called with mutable data.
