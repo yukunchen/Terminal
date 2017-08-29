@@ -17,16 +17,9 @@
 
 #include "VtConsole.hpp"
 
-#define IN_PIPE_NAME L"\\\\.\\pipe\\convtinpipe"
-#define OUT_PIPE_NAME L"\\\\.\\pipe\\convtoutpipe"
 using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 // State
-// wil::unique_handle outPipe;
-// wil::unique_handle inPipe;
-// HANDLE outPipe;
-// HANDLE inPipe;
-// HANDLE dbgPipe;
 HANDLE hOut;
 HANDLE hIn;
 
@@ -34,18 +27,7 @@ std::deque<VtConsole*> consoles;
 
 bool prefixPressed = false;
 
-// CRITICAL_SECTION whyNot;
 ////////////////////////////////////////////////////////////////////////////////
-
-// void lock()
-// {
-//     EnterCriticalSection(&whyNot);
-// }
-
-// void unlock()
-// {
-//     LeaveCriticalSection(&whyNot);
-// }
 
 void ReadCallback(byte* buffer, DWORD dwRead)
 {
@@ -59,14 +41,12 @@ VtConsole* getConsole()
 
 void nextConsole()
 {
-    // lock();
     auto con = consoles[0];
     con->deactivate();
     consoles.pop_front();
     consoles.push_back(con);
     con = consoles[0];
     con->activate();
-    // unlock();
 }
 
 HANDLE inPipe()
@@ -125,40 +105,34 @@ void toPrintableBuffer(char c, char* printBuffer, int* printCch)
     {
         printBuffer[0] = '^';
         printBuffer[1] = '[';
-        // printBuffer[2] = '\0';
         *printCch = 2;
     }
     else if (c == '\x03') {
         printBuffer[0] = '^';
         printBuffer[1] = 'C';
-        // printBuffer[2] = '\0';
         *printCch = 2;
     }
     else if (c == '\x0')
     {
         printBuffer[0] = '\\';
         printBuffer[1] = '0';
-        // printBuffer[2] = '\0';
         *printCch = 2;
     }
     else if (c == '\r')
     {
         printBuffer[0] = '\\';
         printBuffer[1] = 'r';
-        // printBuffer[2] = '\0';
         *printCch = 2;
     }
     else if (c == '\n')
     {
         printBuffer[0] = '\\';
         printBuffer[1] = 'n';
-        // printBuffer[2] = '\0';
         *printCch = 2;
     }
     else
     {
         printBuffer[0] = (char)c;
-        // printBuffer[1] = '\0';
         *printCch = 1;
     }
 
@@ -249,53 +223,25 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
 }
 
 
-DWORD OutputThread(LPVOID lpParameter)
+void SetupOutput()
 {
-    // THROW_LAST_ERROR_IF_FALSE(ConnectNamedPipe(outPipe, nullptr));
-    // DebugBreak();
-    UNREFERENCED_PARAMETER(lpParameter);
     DWORD dwMode = 0;
-    
     THROW_LAST_ERROR_IF_FALSE(GetConsoleMode(hOut, &dwMode));
     dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     dwMode |= DISABLE_NEWLINE_AUTO_RETURN;
     THROW_LAST_ERROR_IF_FALSE(SetConsoleMode(hOut, dwMode));
-
-    return 0;
-    // byte buffer[256];
-    // DWORD dwRead;
-    // while (true)
-    // {
-    //     dwRead = 0;
-    //     bool fSuccess = false;
-    //     OVERLAPPED o = {0};
-    //     o.Offset = getConsole()->getReadOffset();
-
-    //     fSuccess = !!ReadFile(outPipe(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
-    //     // fSuccess = !!ReadFile(outPipe(), buffer, ARRAYSIZE(buffer), &dwRead, &o);
-
-    //     // if (!fSuccess && GetLastError()==ERROR_IO_PENDING) continue;
-    //     // else if (!fSuccess) THROW_LAST_ERROR_IF_FALSE(fSuccess);
-    //     THROW_LAST_ERROR_IF_FALSE(fSuccess);
-    //     ReadCallback(buffer, dwRead);
-    //     // THROW_LAST_ERROR_IF_FALSE(ReadFile(outPipe.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
-    //     // getConsole()->incrementReadOffset(dwRead);
-    //     THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
-    // }
+}
+void SetupInput()
+{
+    DWORD dwInMode = 0;
+    GetConsoleMode(hIn, &dwInMode);
+    dwInMode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+    SetConsoleMode(hIn, dwInMode);
 }
 
 DWORD InputThread(LPVOID lpParameter)
 {
-    // THROW_LAST_ERROR_IF_FALSE(ConnectNamedPipe(inPipe, nullptr));
-    // writeDebug("Connected to both\n");
-    // DebugBreak();
     UNREFERENCED_PARAMETER(lpParameter);
-    
-    DWORD dwInMode = 0;
-    // DebugBreak();
-    GetConsoleMode(hIn, &dwInMode);
-    dwInMode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
-    SetConsoleMode(hIn, dwInMode);
     
     for (;;)
     {
@@ -306,57 +252,10 @@ DWORD InputThread(LPVOID lpParameter)
     }
 }
 
-bool openConsole(std::wstring inPipeName, std::wstring outPipeName)
-{
-    std::wstring cmdline = L"OpenConsole.exe";
-    if (inPipeName.length() > 0)
-    {
-        cmdline += L" --inpipe ";
-        cmdline += inPipeName;
-    }
-    if (outPipeName.length() > 0)
-    {
-        cmdline += L" --outpipe ";
-        cmdline += outPipeName;
-    }
-
-    PROCESS_INFORMATION pi = {0};
-    STARTUPINFO si = {0};
-    si.cb = sizeof(STARTUPINFOW);
-    bool fSuccess = !!CreateProcess(
-        nullptr,
-        &cmdline[0],
-        nullptr,    // lpProcessAttributes
-        nullptr,    // lpThreadAttributes
-        false,      // bInheritHandles
-        0,          // dwCreationFlags
-        nullptr,    // lpEnvironment
-        nullptr,    // lpCurrentDirectory
-        &si,        //lpStartupInfo
-        &pi         //lpProcessInformation
-    );
-
-
-    if (!fSuccess)
-    {
-        wprintf(L"Failed to launch console\n");
-    }
-    return fSuccess;
-}
 
 void CreateIOThreads()
 {
-    OutputThread(nullptr);
-    // DWORD dwOutputThreadId = (DWORD) -1;
-    // HANDLE hOutputThread = CreateThread(nullptr,
-    //                                     0,
-    //                                     (LPTHREAD_START_ROUTINE)OutputThread,
-    //                                     nullptr,
-    //                                     0,
-    //                                     &dwOutputThreadId);
-    // hOutputThread;
-
-
+    // The VtConsoles themselves handle their output threads.
 
     DWORD dwInputThreadId = (DWORD) -1;
     HANDLE hInputThread = CreateThread(nullptr,
@@ -379,22 +278,13 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     hIn = GetStdHandle(STD_INPUT_HANDLE);
-  
-    // InitializeCriticalSection(&whyNot);
+
+    SetupOutput();
+    SetupInput();
 
     newConsole();  
     getConsole()->activate();
     CreateIOThreads();
-
-    // Sleep(2000);
-    // newConsole(); 
-
-    // while(true)
-    // {
-    //     nextConsole();
-    //     Sleep(3000);
-    // } 
-
 
     // Exit the thread so the CRT won't clean us up and kill. The IO thread owns the lifetime now.
     ExitThread(S_OK);

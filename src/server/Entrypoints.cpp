@@ -27,14 +27,12 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
     std::wstring clientCommandline = L"";
     std::wstring vtInPipe = L"";
     std::wstring vtOutPipe = L"";
-    std::wstring vtPipe = L"";
     bool createServerHandle = true;
     DWORD serverHandle;
 
     clientCommandline;
     vtInPipe;
     vtOutPipe;
-    vtPipe;
     createServerHandle;
     serverHandle;
     {
@@ -75,13 +73,6 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
                 args.erase(args.begin()+i);
                 i--;
             }
-            else if (arg == L"--pipe" && hasNext)
-            {
-                args.erase(args.begin()+i);
-                vtPipe = args[i];
-                args.erase(args.begin()+i);
-                i--;
-            }
             else if (arg == L"--")
             {
                 // Everything after this is the commandline
@@ -107,13 +98,10 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
     const wchar_t* const cmdLine = clientCommandline.length() > 0? clientCommandline.c_str() : L"%WINDIR%\\system32\\cmd.exe";
     const bool useVtIn = vtInPipe.length() > 0;
     const bool useVtOut = vtOutPipe.length() > 0;
-    const bool useVtPipe = vtPipe.length() > 0;
     const bool fUseVtPipe = useVtIn || useVtOut;
-    // const bool fUseVtPipe = useVtPipe;
 
     const wchar_t* pwchVtInPipe = useVtIn? vtInPipe.c_str() : nullptr;
     const wchar_t* pwchVtOutPipe = useVtOut? vtOutPipe.c_str() : nullptr;
-    const wchar_t* pwchVtPipe= useVtPipe? vtPipe.c_str() : nullptr;
 
 
     // Create a scope because we're going to exit thread if everything goes well.
@@ -233,15 +221,14 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
                                                                 NULL,
                                                                 NULL));
 
+        ////////////////////////////////////////////////////////////////////////
         // TEMP: Use results of arg parsing
         pwszCmdLine = cmdLine;
         if (fUseVtPipe)
         {
-            pwchVtPipe;
-            // UseVtPipe(pwchVtPipe);
-            pwchVtInPipe; pwchVtOutPipe;
             UseVtPipe(pwchVtInPipe, pwchVtOutPipe);
         }
+        ////////////////////////////////////////////////////////////////////////
 
         // We have to copy the command line string we're given because CreateProcessW has to be called with mutable data.
         if (wcslen(pwszCmdLine) == 0)

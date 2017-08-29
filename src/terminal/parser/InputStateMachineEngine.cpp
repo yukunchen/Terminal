@@ -130,10 +130,8 @@ void InputStateMachineEngine::_WriteControlAndKey(wchar_t wch, short vkey, DWORD
     rgInput[3].Event.KeyEvent.bKeyDown = FALSE;
     rgInput[3].Event.KeyEvent.dwControlKeyState = dwModifierState ^ LEFT_CTRL_PRESSED;
 
-
-    // _pfnWriteEvents(&rgInput[0], 1);
-    // _WriteSingleKey(wch, vkey, dwModifierState);
-    // _pfnWriteEvents(&rgInput[1], 1);
+    // Load bearing - the tests will fail if you write one control, then two 
+    //  keys, then the last control all as seperate WriteEvents calls.
     _pfnWriteEvents(rgInput, 4);
 }
 
@@ -141,23 +139,12 @@ void InputStateMachineEngine::_WriteSingleKey(wchar_t wch, short vkey, DWORD dwM
 {
     INPUT_RECORD rgInput[2];
     _GetSingleKeypress(wch, vkey, dwModifierState, rgInput, 2);
-
-    // rgInput[0].EventType = KEY_EVENT;
-    // rgInput[0].Event.KeyEvent.bKeyDown = TRUE;
-    // rgInput[0].Event.KeyEvent.dwControlKeyState = dwModifierState;
-    // rgInput[0].Event.KeyEvent.wRepeatCount = 1;
-    // rgInput[0].Event.KeyEvent.wVirtualKeyCode = vkey;
-    // rgInput[0].Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
-    // rgInput[0].Event.KeyEvent.uChar.UnicodeChar = wch;
-
-    // rgInput[1] = rgInput[0];
-    // rgInput[1].Event.KeyEvent.bKeyDown = FALSE;
-
     _pfnWriteEvents(rgInput, 2);
 }
 
 void InputStateMachineEngine::_GetSingleKeypress(wchar_t wch, short vkey, DWORD dwModifierState, _Inout_ INPUT_RECORD* const rgInput, _In_ size_t cRecords)
 {
+    UNREFERENCED_PARAMETER(cRecords); // It's used by the assert, which is a no-op in release builds
     assert(cRecords >= 2);
     rgInput[0].EventType = KEY_EVENT;
     rgInput[0].Event.KeyEvent.bKeyDown = TRUE;

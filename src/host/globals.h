@@ -69,7 +69,6 @@ public:
      // This is almost certainly not the right place for these to live.
      HANDLE hVtInPipe;
      HANDLE hVtOutPipe;
-     HANDLE hVtPipe;
 
 
 private:

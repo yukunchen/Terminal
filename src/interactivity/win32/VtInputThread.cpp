@@ -78,13 +78,12 @@ DWORD VtInputThread::_InputThread()
 {
     auto g = ServiceLocator::LocateGlobals();
     HANDLE hPipe = g->hVtInPipe;
-    // HANDLE hPipe = g->hVtPipe;
+
     if (hPipe == INVALID_HANDLE_VALUE || hPipe == nullptr)
     {
         return 0;
     }
 
-    // _hFile.reset(CreateFileW(L"\\\\.\\pipe\\convtinpipe", GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
     _hFile = hPipe;
 
     InputStateMachineEngine* pEngine = new InputStateMachineEngine(_HandleTerminalKeyEventCallback);
@@ -97,10 +96,9 @@ DWORD VtInputThread::_InputThread()
     while (true)
     {
         dwRead = 0;
-        // THROW_LAST_ERROR_IF_FALSE(ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
         THROW_LAST_ERROR_IF_FALSE(
             ReadFile(_hFile, buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
-        // DebugBreak();
+
         _HandleRunInput((char*)buffer, dwRead);
         
         // For debugging, zero mem
