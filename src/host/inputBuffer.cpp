@@ -238,6 +238,19 @@ NTSTATUS InputBuffer::Read(_Out_ std::unique_ptr<IInputEvent>& outEvent,
     return Status;
 }
 
+// Routine Description:
+// - This routine reads from a buffer. It does the buffer manipulation.
+// Arguments:
+// - outEvents - where read events are placed
+// - readCount - amount of events to read
+// - eventsRead - where to store number of events read
+// - peek - if true , don't remove data from buffer, just copy it.
+// - resetWaitEvent - on exit, true if buffer became empty.
+// - unicode - true if read should be done in unicode mode
+// Return Value:
+// - S_OK on success.
+// Note:
+// - The console lock must be held when calling this routine.
 HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                  _In_ const size_t readCount,
                                  _Out_ size_t& eventsRead,
@@ -245,15 +258,11 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>&
                                  _Out_ bool& resetWaitEvent,
                                  _In_ const bool unicode)
 {
-    if (peek)
-    {
-        assert(outEvents.empty());
-    }
-
     try
     {
         resetWaitEvent = false;
 
+        std::deque<std::unique_ptr<IInputEvent>> readEvents;
         // we need another var to keep track of how many we've read
         // because dbcs records count for two when we aren't doing a
         // unicode read but the eventsRead count should return the number
@@ -261,14 +270,14 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>&
         size_t virtualReadCount = 0;
         while (!_storage.empty() && virtualReadCount < readCount)
         {
-            outEvents.push_back(std::move(_storage.front()));
+            readEvents.push_back(std::move(_storage.front()));
             _storage.pop_front();
             ++virtualReadCount;
             if (!unicode)
             {
-                if (outEvents.back()->EventType() == InputEventType::KeyEvent)
+                if (readEvents.back()->EventType() == InputEventType::KeyEvent)
                 {
-                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(outEvents.back().get());
+                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(readEvents.back().get());
                     if (IsCharFullWidth(pKeyEvent->_charData))
                     {
                         ++virtualReadCount;
@@ -278,15 +287,22 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>&
         }
 
         // the amount of events that were actually read
-        eventsRead = outEvents.size();
+        eventsRead = readEvents.size();
 
         // copy the events back if we were supposed to peek
         if (peek)
         {
-            for (auto it = outEvents.crbegin(); it != outEvents.crend(); ++it)
+            for (auto it = readEvents.crbegin(); it != readEvents.crend(); ++it)
             {
                 _storage.push_front(IInputEvent::Create((*it)->ToInputRecord()));
             }
+        }
+
+        // move events read to proper deque
+        while (!readEvents.empty())
+        {
+            outEvents.push_back(std::move(readEvents.front()));
+            readEvents.pop_front();
         }
 
         // signal if we emptied the buffer
