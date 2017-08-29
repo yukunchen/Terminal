@@ -7,7 +7,6 @@
 #include "precomp.h"
 
 #include "ConsoleInputThread.hpp"
-#include "VtInputThread.hpp"
 
 #include "WindowIo.hpp"
 
@@ -17,10 +16,6 @@ using namespace Microsoft::Console::Interactivity::Win32;
 // - Starts the Win32-specific console input thread.
 HANDLE ConsoleInputThread::Start()
 {
-    
-    VtInputThread* vtInput = new VtInputThread();
-    vtInput->Start();
-
     HANDLE hThread = nullptr;
     DWORD dwThreadId = (DWORD) -1;
 

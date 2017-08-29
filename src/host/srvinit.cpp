@@ -25,47 +25,10 @@
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
-void UseVtPipe(const wchar_t* const pwchInVtPipeName, const wchar_t* const pwchOutVtPipeName)
+void UseVtPipe(const std::wstring& InPipeName, const std::wstring& OutPipeName)
 {
-    DWORD le;
-    auto g = ServiceLocator::LocateGlobals();
-
-    if (pwchInVtPipeName != nullptr)
-    {
-        // g->hVtPipe.reset(
-        g->hVtInPipe = (
-            CreateFileW(pwchInVtPipeName,
-                        GENERIC_READ, 
-                        0, 
-                        nullptr, 
-                        OPEN_EXISTING, 
-                        FILE_ATTRIBUTE_NORMAL, 
-                        nullptr)
-        );
-        le = GetLastError();
-        THROW_IF_HANDLE_INVALID(g->hVtInPipe);
-    }
-
-    DWORD outputFlags = FILE_ATTRIBUTE_NORMAL;
-    // DWORD outputFlags = FILE_FLAG_OVERLAPPED | FILE_ATTRIBUTE_NORMAL;
-
-    if (pwchOutVtPipeName != nullptr)
-    {
-        // g->hVtPipe.reset(
-        g->hVtOutPipe = (
-            CreateFileW(pwchOutVtPipeName,
-                        GENERIC_WRITE, 
-                        0, 
-                        nullptr, 
-                        OPEN_EXISTING, 
-                        outputFlags, 
-                        nullptr)
-        );
-        le = GetLastError();
-        THROW_IF_HANDLE_INVALID(g->hVtOutPipe);
-    }
-    
-    le;
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    gci->vtIo->Initialize(InPipeName, OutPipeName);
 }
 
 HRESULT ConsoleServerInitialization(_In_ HANDLE Server)
@@ -526,10 +489,16 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 
             LOG_IF_FAILED(ServiceLocator::LocateGlobals()->pDeviceComm->AllowUIAccess());
         }
+
     }
     else
     {
         gci->Flags |= CONSOLE_NO_WINDOW;
+    }
+
+    if (NT_SUCCESS(Status) && gci->vtIo->IsUsingVt())
+    {
+        gci->vtIo->Start();
     }
 
     return Status;

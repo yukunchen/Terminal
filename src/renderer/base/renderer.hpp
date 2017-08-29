@@ -60,6 +60,8 @@ namespace Microsoft
                 void EnablePainting();
                 void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs);
 
+                void AddRenderEngine(_In_ IRenderEngine* const pEngine);
+
             private:
                 Renderer(_In_ IRenderData* const pData, _In_reads_(cEngines) IRenderEngine** const pEngine, _In_ size_t const cEngines);
                 std::deque<IRenderEngine*> _rgpEngines;

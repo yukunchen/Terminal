@@ -10,7 +10,6 @@
     <ClCompile Include="..\AccessibilityNotifier.cpp" />
     <ClCompile Include="..\Clipboard.cpp" />
     <ClCompile Include="..\ConsoleControl.cpp" />
-    <ClCompile Include="..\VtInputThread.cpp" />
     <ClCompile Include="..\ConsoleInputThread.cpp" />
     <ClCompile Include="..\ConsoleKeyInfo.cpp" />
     <ClCompile Include="..\Find.cpp" />
@@ -36,7 +35,6 @@
     <ClInclude Include="..\Clipboard.hpp" />
     <ClInclude Include="..\ConsoleControl.hpp" />
     <ClInclude Include="..\ConsoleInputThread.hpp" />
-    <ClInclude Include="..\VtInputThread.hpp" />
     <ClInclude Include="..\ConsoleKeyInfo.hpp" />
     <ClInclude Include="..\Find.h" />
     <ClInclude Include="..\Icon.hpp" />

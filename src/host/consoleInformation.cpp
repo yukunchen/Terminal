@@ -67,11 +67,13 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
     ZeroMemory((void*)&ConsoleIme, sizeof(ConsoleIme));
     InitializeCriticalSection(&_csConsoleLock);
+    vtIo = new Microsoft::Console::VirtualTerminal::VtIo();
 }
 
 CONSOLE_INFORMATION::~CONSOLE_INFORMATION()
 {
     DeleteCriticalSection(&_csConsoleLock);
+    delete vtIo;
 }
 
 bool CONSOLE_INFORMATION::IsConsoleLocked() const

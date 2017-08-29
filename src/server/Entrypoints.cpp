@@ -82,7 +82,6 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
                 auto j = 0;
                 for (j = i; j < args.size(); j++)
                 {
-
                     clientCommandline += args[j];
                     if (j+1 < args.size())
                         clientCommandline += L" ";
@@ -100,8 +99,8 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
     const bool useVtOut = vtOutPipe.length() > 0;
     const bool fUseVtPipe = useVtIn || useVtOut;
 
-    const wchar_t* pwchVtInPipe = useVtIn? vtInPipe.c_str() : nullptr;
-    const wchar_t* pwchVtOutPipe = useVtOut? vtOutPipe.c_str() : nullptr;
+    // const wchar_t* pwchVtInPipe = useVtIn? vtInPipe.c_str() : nullptr;
+    // const wchar_t* pwchVtOutPipe = useVtOut? vtOutPipe.c_str() : nullptr;
 
 
     // Create a scope because we're going to exit thread if everything goes well.
@@ -226,7 +225,8 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
         pwszCmdLine = cmdLine;
         if (fUseVtPipe)
         {
-            UseVtPipe(pwchVtInPipe, pwchVtOutPipe);
+            UseVtPipe(vtInPipe, vtOutPipe);
+            // UseVtPipe(pwchVtInPipe, pwchVtOutPipe);
         }
         ////////////////////////////////////////////////////////////////////////
 

@@ -30,32 +30,8 @@ namespace Microsoft
 };
 using namespace Microsoft::Console::VirtualTerminal;
 
-// typedef struct _IN_KEY
-// {
-//     bool bKeyDown;    
-//     WORD wRepeatCount;
-//     WORD wVirtualKeyCode;
-//     WORD wVirtualScanCode;
-//     wchar_t UnicodeChar;
-//     DWORD dwControlKeyState;
 
-//     bool equals(const INPUT_RECORD& record) const
-//     {
-//         if (record.EventType != KEY_EVENT) return false;
-//         KEY_EVENT_RECORD keyEvent = record.Event.KeyEvent;
-
-//         return (!!keyEvent.bKeyDown == this->bKeyDown) && // bool and BOOL
-//                (keyEvent.wRepeatCount == this->wRepeatCount) &&
-//                (keyEvent.wVirtualKeyCode == this->wVirtualKeyCode) &&
-//                (keyEvent.wVirtualScanCode == this->wVirtualScanCode) &&
-//                (keyEvent.uChar.UnicodeChar == this->UnicodeChar) &&
-//                (keyEvent.dwControlKeyState == this->dwControlKeyState);
-//     }
-
-// } IN_KEY;
-
-
-class  Microsoft::Console::VirtualTerminal::InputEngineTest
+class Microsoft::Console::VirtualTerminal::InputEngineTest
 {
     TEST_CLASS(InputEngineTest);
 

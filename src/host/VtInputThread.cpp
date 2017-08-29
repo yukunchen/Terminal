@@ -8,13 +8,13 @@
 
 #include "VtInputThread.hpp"
 
-#include "..\inc\ServiceLocator.hpp"
-#include "..\..\host\input.h"
-#include "..\..\terminal\parser\InputStateMachineEngine.hpp"
+#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "input.h"
+#include "..\terminal\parser\InputStateMachineEngine.hpp"
 #include <string>
 #include <sstream>
 
-using namespace Microsoft::Console::Interactivity::Win32;
+using namespace Microsoft::Console;
 
 // This is copied from ConsolInformation.cpp
 // I've never thought that was a particularily good place for it...
@@ -41,11 +41,6 @@ void _HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _
     {
         LOG_HR(wil::ResultFromCaughtException());
     }
-}
-
-VtInputThread::VtInputThread()
-{
-
 }
 
 VtInputThread::~VtInputThread()
@@ -76,20 +71,10 @@ DWORD VtInputThread::StaticVtInputThreadProc(LPVOID lpParameter)
 
 DWORD VtInputThread::_InputThread()
 {
-    auto g = ServiceLocator::LocateGlobals();
-    HANDLE hPipe = g->hVtInPipe;
-
-    if (hPipe == INVALID_HANDLE_VALUE || hPipe == nullptr)
+    if (_hFile == INVALID_HANDLE_VALUE || _hFile == nullptr)
     {
         return 0;
     }
-
-    _hFile = hPipe;
-
-    InputStateMachineEngine* pEngine = new InputStateMachineEngine(_HandleTerminalKeyEventCallback);
-    RETURN_IF_NULL_ALLOC(pEngine);
-
-    _pInputStateMachine = new StateMachine(pEngine);
 
     byte buffer[256];
     DWORD dwRead;
@@ -128,4 +113,20 @@ HANDLE VtInputThread::Start()
     }
 
     return hThread;
+}
+
+VtInputThread::VtInputThread(HANDLE hPipe)
+{
+    _hFile = hPipe;
+    if (hPipe == INVALID_HANDLE_VALUE || hPipe == nullptr)
+    {
+        return;       
+    }
+
+    InputStateMachineEngine* pEngine = new InputStateMachineEngine(_HandleTerminalKeyEventCallback);
+    THROW_IF_NULL_ALLOC(pEngine);
+
+    _pInputStateMachine = new StateMachine(pEngine);
+    THROW_IF_NULL_ALLOC(_pInputStateMachine);
+
 }

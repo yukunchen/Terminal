@@ -35,10 +35,7 @@ Renderer::Renderer(_In_ IRenderData* const pData, _In_reads_(cEngines) IRenderEn
     for (size_t i = 0; i < cEngines; i++)
     {
         IRenderEngine* engine = rgpEngines[i];
-        if (engine != nullptr)
-        {
-            _rgpEngines.push_back(engine);
-        }
+        AddRenderEngine(engine);
     }
 }
 
@@ -988,4 +985,14 @@ NTSTATUS Renderer::_GetSelectionRects(
     }
 
     return status;
+}
+
+
+void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
+{
+    if (pEngine != nullptr)
+    {
+        _rgpEngines.push_back(pEngine);
+    }
+
 }

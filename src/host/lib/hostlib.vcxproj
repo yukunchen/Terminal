@@ -51,6 +51,8 @@
     <ClCompile Include="..\tracing.cpp" />
     <ClCompile Include="..\utils.cpp" />
     <ClCompile Include="..\utf8ToWideCharParser.cpp" />
+    <ClCompile Include="..\VtInputThread.cpp" />
+    <ClCompile Include="..\VtIo.cpp" />
     <ClCompile Include="..\WindowBufferSizeEvent.cpp" />
     <ClCompile Include="..\writeData.cpp" />
     <ClCompile Include="..\_output.cpp" />
@@ -102,6 +104,8 @@
     <ClInclude Include="..\tracing.hpp" />
     <ClInclude Include="..\utils.hpp" />
     <ClInclude Include="..\utf8ToWideCharParser.hpp" />
+    <ClInclude Include="..\VtInputThread.hpp" />
+    <ClInclude Include="..\VtIo.hpp" />
     <ClInclude Include="..\writeData.hpp" />
     <ClInclude Include="..\_output.h" />
     <ClInclude Include="..\_stream.h" />
