@@ -62,7 +62,7 @@ bool InputBuffer::IsReadPartialByteSequenceAvailable()
 // - the partial char data. may be nullptr if no data is available
 std::unique_ptr<IInputEvent> InputBuffer::FetchReadPartialByteSequence(_In_ bool peek)
 {
-    if (_readPartialByteSequence.get() == nullptr)
+    if (!IsReadPartialByteSequenceAvailable())
     {
         return std::unique_ptr<IInputEvent>();
     }

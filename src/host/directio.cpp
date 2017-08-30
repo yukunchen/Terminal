@@ -180,7 +180,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
         // split key events to oem chars if necessary
         if (!IsUnicode)
         {
-            SplitToOem(readEvents);
+            LOG_IF_FAILED(SplitToOem(readEvents));
         }
 
         // combine partial and readEvents
@@ -207,13 +207,12 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
         {
             pInputBuffer->StoreReadPartialByteSequence(std::move(readEvents.front()));
             readEvents.pop_front();
+            assert(readEvents.empty());
         }
         *pcRecords = static_cast<ULONG>(recordCount);
     }
     return Status;
 }
-
-
 
 // Routine Description:
 // - Retrieves input records from the given input object and returns them to the client.

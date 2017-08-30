@@ -32,10 +32,10 @@ class DirectReadData final : public ReadData
 {
 public:
     DirectReadData(_In_ InputBuffer* const pInputBuffer,
-                     _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                     _In_ INPUT_RECORD* pOutRecords,
-                     _In_ const size_t cOutRecords,
-                     _In_ std::deque<std::unique_ptr<IInputEvent>> partialEvents);
+                   _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
+                   _In_ INPUT_RECORD* pOutRecords,
+                   _In_ const size_t cOutRecords,
+                   _In_ std::deque<std::unique_ptr<IInputEvent>> partialEvents);
 
     ~DirectReadData() override;
 

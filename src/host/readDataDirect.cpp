@@ -139,7 +139,7 @@ BOOL DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
         // split key events to oem chars if necessary
         if (*pReplyStatus == STATUS_SUCCESS && !fIsUnicode)
         {
-            SplitToOem(_outEvents);
+            LOG_IF_FAILED(SplitToOem(_outEvents));
         }
 
         // combine partial and whole events
@@ -166,6 +166,7 @@ BOOL DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
         {
             _pInputBuffer->StoreReadPartialByteSequence(std::move(_outEvents.front()));
             _outEvents.pop_front();
+            assert(_outEvents.empty());
         }
         *pNumBytes = static_cast<DWORD>(recordCount * sizeof(INPUT_RECORD));
     }
