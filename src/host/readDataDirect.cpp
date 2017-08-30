@@ -164,11 +164,17 @@ BOOL DIRECT_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
             nLength = &NumRecords;
         }
 
-        *pReplyStatus = _pInputBuffer->ReadInputBuffer(Buffer,
-                                                       nLength,
-                                                       _fIsPeek,
-                                                       _fIsPeek,
-                                                       fIsUnicode);
+        std::deque<std::unique_ptr<IInputEvent>> outEvents;
+        *pReplyStatus = _pInputBuffer->Read(outEvents,
+                                            *nLength,
+                                            false,
+                                            false,
+                                            !!fIsUnicode);
+        *nLength = static_cast<DWORD>(outEvents.size());
+
+        IInputEvent::ToInputRecords(outEvents, Buffer, *nLength);
+
+
         if (*pReplyStatus == CONSOLE_STATUS_WAIT)
         {
             RetVal = FALSE;

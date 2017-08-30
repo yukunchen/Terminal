@@ -139,28 +139,27 @@ HRESULT InputBuffer::FlushAllButKeys()
 // Note:
 // - The console lock must be held when calling this routine.
 // Arguments:
-// - pInputRecord - Client provided buffer to read input events into.
-// - pcLength - On input, number of events to read.  On output, number of events read.
-// - fPeek - If TRUE, copy events to pInputRecord but don't remove them from the input buffer.
-// - fWaitForData - if TRUE, wait until an event is input (if there aren't enough to fill client buffer).  if FALSE, return immediately
-// - fUnicode - TRUE if the data in key events should be treated as unicode. FALSE if they should be converted by the current input CP.
+// - OutEvents - deque to store the read events
+// - AmountToRead - the amount of events to try to read
+// - Peek - If true, copy events to pInputRecord but don't remove them from the input buffer.
+// - WaitForData - if true, wait until an event is input (if there aren't enough to fill client buffer). if false, return immediately
+// - Unicode - true if the data in key events should be treated as unicode. false if they should be converted by the current input CP.
 // Return Value:
 // - STATUS_SUCCESS if records were read into the client buffer and everything is OK.
 // - CONSOLE_STATUS_WAIT if there weren't enough records to satisfy the request (and waits are allowed)
 // - otherwise a suitable memory/math/string error in NTSTATUS form.
-NTSTATUS InputBuffer::ReadInputBuffer(_Out_writes_(*pcLength) INPUT_RECORD* pInputRecord,
-                                      _Inout_ PDWORD pcLength,
-                                      _In_ BOOL const fPeek,
-                                      _In_ BOOL const fWaitForData,
-                                      _In_ BOOLEAN const fUnicode)
+NTSTATUS InputBuffer::Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEvents,
+                           _In_ const size_t AmountToRead,
+                           _In_ const bool Peek,
+                           _In_ const bool WaitForData,
+                           _In_ const bool Unicode)
 {
     try
     {
         NTSTATUS Status;
         if (_storage.empty())
         {
-            *pcLength = 0;
-            if (!fWaitForData)
+            if (!WaitForData)
             {
                 return STATUS_SUCCESS;
             }
@@ -168,15 +167,27 @@ NTSTATUS InputBuffer::ReadInputBuffer(_Out_writes_(*pcLength) INPUT_RECORD* pInp
         }
 
         // read from buffer
-        ULONG EventsRead;
-        BOOL ResetWaitEvent;
-        Status = _ReadBuffer(pInputRecord, *pcLength, &EventsRead, fPeek, &ResetWaitEvent, fUnicode);
-        if (ResetWaitEvent)
+        std::deque<std::unique_ptr<IInputEvent>> events;
+        size_t eventsRead;
+        bool resetWaitEvent;
+        Status = _ReadBuffer(events,
+                             AmountToRead,
+                             eventsRead,
+                             Peek,
+                             resetWaitEvent,
+                             Unicode);
+
+        // copy events to outEvents
+        while (!events.empty())
+        {
+            OutEvents.push_back(std::move(events.front()));
+            events.pop_front();
+        }
+
+        if (resetWaitEvent)
         {
             ResetEvent(InputWaitEvent);
         }
-
-        *pcLength = EventsRead;
         return Status;
     }
     catch (...)
@@ -186,79 +197,61 @@ NTSTATUS InputBuffer::ReadInputBuffer(_Out_writes_(*pcLength) INPUT_RECORD* pInp
 }
 
 // Routine Description:
-// - This routine reads from a buffer. It does the buffer manipulation.
-// Arguments:
-// - Buffer - buffer to read into
-// - Length - length of buffer in events
-// - EventsRead - where to store number of events read
-// - Peek - if TRUE, don't remove data from buffer, just copy it.
-// - ResetWaitEvent - on exit, TRUE if buffer became empty.
-// Return Value:
-// - STATUS_SUCCESS on success.
+// - This routine reads a single event from the input buffer.
+// - It can convert returned data to through the currently set Input CP, it can optionally return a wait condition
+//   if there isn't enough data in the buffer, and it can be set to not remove records as it reads them out.
 // Note:
 // - The console lock must be held when calling this routine.
-// - This method is mainly a wrapper to allow an array to be used to
-// read into.
-NTSTATUS InputBuffer::_ReadBuffer(_Out_writes_to_(Length, *EventsRead) INPUT_RECORD* Buffer,
-                                  _In_ ULONG Length,
-                                  _Out_ PULONG EventsRead,
-                                  _In_ BOOL Peek,
-                                  _Out_ PBOOL ResetWaitEvent,
-                                  _In_ BOOLEAN Unicode)
+// Arguments:
+// - outEvent - where the read event is stored
+// - Peek - If true, copy events to pInputRecord but don't remove them from the input buffer.
+// - WaitForData - if true, wait until an event is input (if there aren't enough to fill client buffer). if false, return immediately
+// - Unicode - true if the data in key events should be treated as unicode. false if they should be converted by the current input CP.
+// Return Value:
+// - STATUS_SUCCESS if records were read into the client buffer and everything is OK.
+// - CONSOLE_STATUS_WAIT if there weren't enough records to satisfy the request (and waits are allowed)
+// - otherwise a suitable memory/math/string error in NTSTATUS form.
+NTSTATUS InputBuffer::Read(_Out_ std::unique_ptr<IInputEvent>& outEvent,
+                           _In_ const bool Peek,
+                           _In_ const bool WaitForData,
+                           _In_ const bool Unicode)
 {
+    NTSTATUS Status;
     try
     {
-        std::deque<INPUT_RECORD> outRecords;
-        size_t eventsRead;
-        bool resetWaitEvent;
-
-        // call inner func
-        THROW_IF_FAILED(_ReadBuffer(outRecords,
-                                    Length,
-                                    eventsRead,
-                                    !!Peek,
-                                    resetWaitEvent,
-                                    !!Unicode));
-
-        // move data back to original vars
-        *ResetWaitEvent = !!resetWaitEvent;
-        THROW_IF_FAILED(SizeTToULong(eventsRead, EventsRead));
-
-        if (outRecords.size() > Length)
+        std::deque<std::unique_ptr<IInputEvent>> outEvents;
+        Status = Read(outEvents,
+                      1,
+                      Peek,
+                      WaitForData,
+                      Unicode);
+        if (!outEvents.empty())
         {
-            throw std::out_of_range("_ReadBuffer read more records than can fit in the output buffer");
-        };
-        size_t currentIndex = 0;
-        // we check both to satisfy static analysis
-        while (!outRecords.empty() && currentIndex < Length)
-        {
-            Buffer[currentIndex] = outRecords.front();
-            outRecords.pop_front();
-            ++currentIndex;
+            outEvent.swap(outEvents.front());
         }
-
-        return STATUS_SUCCESS;
     }
     catch (...)
     {
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
+    return Status;
 }
 
 // Routine Description:
 // - This routine reads from a buffer. It does the buffer manipulation.
 // Arguments:
-// - outRecords - where read records are placed
-// - readCount - amount of records to read
+// - outEvents - where read events are placed
+// - readCount - amount of events to read
 // - eventsRead - where to store number of events read
-// - peek - if TRUE, don't remove data from buffer, just copy it.
-// - resetWaitEvent - on exit, TRUE if buffer became empty.
+// - peek - if true , don't remove data from buffer, just copy it.
+// - resetWaitEvent - on exit, true if buffer became empty.
+// - unicode - true if read should be done in unicode mode
 // Return Value:
 // - S_OK on success.
 // Note:
 // - The console lock must be held when calling this routine.
-HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
+HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                                  _In_ const size_t readCount,
                                  _Out_ size_t& eventsRead,
                                  _In_ const bool peek,
@@ -269,6 +262,7 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
     {
         resetWaitEvent = false;
 
+        std::deque<std::unique_ptr<IInputEvent>> readEvents;
         // we need another var to keep track of how many we've read
         // because dbcs records count for two when we aren't doing a
         // unicode read but the eventsRead count should return the number
@@ -276,32 +270,39 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
         size_t virtualReadCount = 0;
         while (!_storage.empty() && virtualReadCount < readCount)
         {
-            outRecords.push_back(_storage.front()->ToInputRecord());
+            readEvents.push_back(std::move(_storage.front()));
+            _storage.pop_front();
             ++virtualReadCount;
             if (!unicode)
             {
-                if (_storage.front()->EventType() == InputEventType::KeyEvent)
+                if (readEvents.back()->EventType() == InputEventType::KeyEvent)
                 {
-                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(_storage.front().get());
+                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(readEvents.back().get());
                     if (IsCharFullWidth(pKeyEvent->_charData))
                     {
                         ++virtualReadCount;
                     }
                 }
             }
-            _storage.pop_front();
         }
 
         // the amount of events that were actually read
-        eventsRead = outRecords.size();
+        eventsRead = readEvents.size();
 
         // copy the events back if we were supposed to peek
         if (peek)
         {
-            for (auto it = outRecords.crbegin(); it != outRecords.crend(); ++it)
+            for (auto it = readEvents.crbegin(); it != readEvents.crend(); ++it)
             {
-                _storage.push_front(IInputEvent::Create(*it));
+                _storage.push_front(IInputEvent::Create((*it)->ToInputRecord()));
             }
+        }
+
+        // move events read to proper deque
+        while (!readEvents.empty())
+        {
+            outEvents.push_back(std::move(readEvents.front()));
+            readEvents.pop_front();
         }
 
         // signal if we emptied the buffer
@@ -318,13 +319,13 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<INPUT_RECORD>& outRecords,
 // Routine Description:
 // -  Writes events to the beginning of the input buffer.
 // Arguments:
-// - inEvents - envents to write to buffer.
+// - inEvents - events to write to buffer.
 // - eventsWritten - The number of events written to the buffer on exit.
 // Return Value:
 // S_OK if successful.
 // Note:
 // - The console lock must be held when calling this routine.
-size_t InputBuffer::PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+size_t InputBuffer::Prepend(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
     try
     {
@@ -390,13 +391,13 @@ size_t InputBuffer::PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInput
 // - The console lock must be held when calling this routine.
 // - any outside references to inEvent will ben invalidated after
 // calling this method.
-size_t InputBuffer::WriteInputBuffer(_Inout_ std::unique_ptr<IInputEvent> inEvent)
+size_t InputBuffer::Write(_Inout_ std::unique_ptr<IInputEvent> inEvent)
 {
     try
     {
         std::deque<std::unique_ptr<IInputEvent>> inEvents;
         inEvents.push_back(std::move(inEvent));
-        return WriteInputBuffer(inEvents);
+        return Write(inEvents);
     }
     catch (...)
     {
@@ -414,7 +415,7 @@ size_t InputBuffer::WriteInputBuffer(_Inout_ std::unique_ptr<IInputEvent> inEven
 // - The number of events that were written to input buffer.
 // Note:
 // - The console lock must be held when calling this routine.
-size_t InputBuffer::WriteInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+size_t InputBuffer::Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
     try
     {

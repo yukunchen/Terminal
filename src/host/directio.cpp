@@ -172,11 +172,13 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
         }
     }
 
-    NTSTATUS Status = pInputBuffer->ReadInputBuffer(Buffer,
-                                                    &nBytesUnicode,
-                                                    fIsPeek,
-                                                    true,
-                                                    fIsUnicode);
+    std::deque<std::unique_ptr<IInputEvent>> outEvents;
+    NTSTATUS Status = pInputBuffer->Read(outEvents,
+                                         nBytesUnicode,
+                                         fIsPeek,
+                                         true,
+                                         fIsUnicode);
+    nBytesUnicode = static_cast<DWORD>(outEvents.size());
 
     if (CONSOLE_STATUS_WAIT == Status)
     {
@@ -191,6 +193,8 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
     }
     else if (NT_SUCCESS(Status))
     {
+        IInputEvent::ToInputRecords(outEvents, Buffer, nBytesUnicode);
+
         if (!fIsUnicode)
         {
             *pcRecords = TranslateInputToOem(Buffer,
@@ -391,11 +395,11 @@ NTSTATUS DoSrvWriteConsoleInput(_In_ InputBuffer* pInputBuffer, _Inout_ CONSOLE_
         std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(rgInputRecords, pMsg->NumRecords);
         if (pMsg->Append)
         {
-            pMsg->NumRecords = static_cast<ULONG>(pInputBuffer->WriteInputBuffer(inEvents));
+            pMsg->NumRecords = static_cast<ULONG>(pInputBuffer->Write(inEvents));
         }
         else
         {
-            pMsg->NumRecords = static_cast<ULONG>(pInputBuffer->PrependInputBuffer(inEvents));
+            pMsg->NumRecords = static_cast<ULONG>(pInputBuffer->Prepend(inEvents));
         }
     }
     catch (...)

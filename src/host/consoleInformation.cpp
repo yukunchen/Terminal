@@ -25,7 +25,7 @@ void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _I
     try
     {
         std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(rgInput, cInput);
-        gci->pInputBuffer->WriteInputBuffer(inEvents);
+        gci->pInputBuffer->Write(inEvents);
     }
     catch (...)
     {
