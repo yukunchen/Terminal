@@ -33,6 +33,7 @@ public:
     DWORD InputMode;
     ConsoleWaitQueue WaitQueue; // formerly ReadWaitQueue
     HANDLE InputWaitEvent;
+
     INPUT_RECORD ReadConInpDbcsLeadByte;
     INPUT_RECORD WriteConInpDbcsLeadByte[2];
 
@@ -40,6 +41,11 @@ public:
 
     InputBuffer();
     ~InputBuffer();
+
+    bool IsReadPartialByteSequenceAvailable();
+    std::unique_ptr<IInputEvent> FetchReadPartialByteSequence(_In_ bool peek);
+    void StoreReadPartialByteSequence(std::unique_ptr<IInputEvent> event);
+
     void ReinitializeInputBuffer();
     void WakeUpReadersWaitingForData();
     void TerminateRead(_In_ WaitTerminationReason Flag);
@@ -66,6 +72,7 @@ public:
 
 private:
     std::deque<std::unique_ptr<IInputEvent>> _storage;
+    std::unique_ptr<IInputEvent> _readPartialByteSequence;
 
     HRESULT _ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                         _In_ const size_t readCount,

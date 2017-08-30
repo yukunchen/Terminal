@@ -16,6 +16,9 @@ Revision History:
 #pragma once
 
 #include "screenInfo.hpp"
+#include "IInputEvent.hpp"
+#include <deque>
+#include <memory>
 
 HRESULT ConvertToW(_In_ const UINT uiCodePage,
                    _In_reads_or_z_(cchSource) const char* const rgchSource,
@@ -46,6 +49,9 @@ int ConvertToOem(_In_ const UINT uiCodePage,
                  _Out_writes_(cchTarget) CHAR * const pchTarget,
                  _In_ const UINT cchTarget);
 
+std::deque<char> ConvertToOem(_In_ const UINT codepage,
+                              _In_ const std::wstring& source);
+
 int ConvertInputToUnicode(_In_ const UINT uiCodePage,
                           _In_reads_(cchSource) const CHAR * const pchSource,
                           _In_ const UINT cchSource,
@@ -72,7 +78,4 @@ BOOL CheckBisectProcessW(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                          _In_ SHORT sOriginalXPosition,
                          _In_ BOOL fEcho);
 
-ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
-                          _In_ const ULONG NumRecords,    // in : ASCII byte count
-                          _In_ const ULONG UnicodeLength, // in : Number of events (char count)
-                          _Inout_opt_ PINPUT_RECORD DbcsLeadInputRecord);
+HRESULT SplitToOem(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
