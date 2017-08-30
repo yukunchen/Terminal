@@ -14,8 +14,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 VtIo::VtIo()
 {
-    _hInputFile.reset(INVALID_HANDLE_VALUE);
-    _hOutputFile.reset(INVALID_HANDLE_VALUE);
+    _usingVt = false;
 }
 
 VtIo::~VtIo()
@@ -25,6 +24,8 @@ VtIo::~VtIo()
 
 HRESULT VtIo::Initialize(const std::wstring& InPipeName, const std::wstring& OutPipeName)
 {
+    wil::unique_hfile _hInputFile;
+    wil::unique_hfile _hOutputFile;
 
     _hInputFile.reset(
         CreateFileW(InPipeName.c_str(),
@@ -48,18 +49,16 @@ HRESULT VtIo::Initialize(const std::wstring& InPipeName, const std::wstring& Out
     );
     THROW_IF_HANDLE_INVALID(_hOutputFile.get());
 
-    // TODO: make the i/o HANDLEs into unique_handle's and release() here
-    // The VtIo doesn't need to know the handles for itself.
-    // maybe keep the strings around though.
-    _pVtInputThread = new VtInputThread(_hInputFile.get());
-    _pVtRenderEngine = new VtEngine(_hOutputFile.get());
+    _pVtInputThread = new VtInputThread(_hInputFile.release());
+    _pVtRenderEngine = new VtEngine(_hOutputFile.release());
 
-    return E_NOTIMPL;
+    _usingVt = true;
+    return S_OK;
 }
 
 bool VtIo::IsUsingVt()
 {
-    return (_hInputFile.get() != INVALID_HANDLE_VALUE) && (_hOutputFile.get() != INVALID_HANDLE_VALUE);
+    return _usingVt;
 }
 
 HRESULT VtIo::Start()

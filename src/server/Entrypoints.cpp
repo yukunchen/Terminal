@@ -54,7 +54,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
         }
 
         // Parse args out of the commandline.
-        for (auto i = 0; i < args.size(); i++)
+        for (size_t i = 0; i < args.size(); i++)
         {
             std::wstring arg = args[i];
             bool hasNext = (i+1) < args.size();
@@ -79,7 +79,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
                 auto start = args.begin()+i;
                 args.erase(start);
                 clientCommandline = L"";
-                auto j = 0;
+                size_t j = 0;
                 for (j = i; j < args.size(); j++)
                 {
                     clientCommandline += args[j];

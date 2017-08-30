@@ -20,16 +20,10 @@ using namespace Microsoft::Console;
 // I've never thought that was a particularily good place for it...
 void _HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
 {
-    // auto _cIn = cInput;
-    // // ServiceLocator::LocateGlobals()->getConsoleInformation()->
-    // //     pInputBuffer->PrependInputBuffer(rgInput, &_cIn);
-
-    // // FIXME
-    // // The prototype fix moves the VT translation to WriteInputBuffer. 
-    // //   This currently causes WriteInputBuffer to get called twice for every 
-    // //   key - not ideal. There needs to be a WriteInputBuffer that sidesteps this problem.
-    // ServiceLocator::LocateGlobals()->getConsoleInformation()->
-    //     pInputBuffer->WriteInputBuffer(rgInput, cInput);
+    // FIXME
+    // The prototype fix moves the VT translation to WriteInputBuffer. 
+    //   This currently causes WriteInputBuffer to get called twice for every 
+    //   key - not ideal. There needs to be a WriteInputBuffer that sidesteps this problem.
 
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     try
@@ -71,18 +65,13 @@ DWORD VtInputThread::StaticVtInputThreadProc(LPVOID lpParameter)
 
 DWORD VtInputThread::_InputThread()
 {
-    if (_hFile == INVALID_HANDLE_VALUE || _hFile == nullptr)
-    {
-        return 0;
-    }
 
     byte buffer[256];
     DWORD dwRead;
     while (true)
     {
         dwRead = 0;
-        THROW_LAST_ERROR_IF_FALSE(
-            ReadFile(_hFile, buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
+        THROW_LAST_ERROR_IF_FALSE(ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
 
         _HandleRunInput((char*)buffer, dwRead);
         
@@ -93,9 +82,12 @@ DWORD VtInputThread::_InputThread()
 }
 
 // Routine Description:
-// - Starts the Win32-specific console input thread.
+// - Starts the VT input thread.
 HANDLE VtInputThread::Start()
 {
+    // Shouldn't even need to worry about this. If the ctor throws, we shouldn't even call this.
+    THROW_IF_HANDLE_INVALID(_hFile.get());
+
     HANDLE hThread = nullptr;
     DWORD dwThreadId = (DWORD) -1;
 
@@ -117,11 +109,8 @@ HANDLE VtInputThread::Start()
 
 VtInputThread::VtInputThread(HANDLE hPipe)
 {
-    _hFile = hPipe;
-    if (hPipe == INVALID_HANDLE_VALUE || hPipe == nullptr)
-    {
-        return;       
-    }
+    _hFile.reset(hPipe);
+    THROW_IF_HANDLE_INVALID(_hFile.get());
 
     InputStateMachineEngine* pEngine = new InputStateMachineEngine(_HandleTerminalKeyEventCallback);
     THROW_IF_NULL_ALLOC(pEngine);

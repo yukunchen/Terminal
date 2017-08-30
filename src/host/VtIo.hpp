@@ -31,9 +31,10 @@ public:
     HRESULT Start();
 
 private:
+    bool _usingVt;
 
-    wil::unique_hfile _hInputFile;
-    wil::unique_hfile _hOutputFile;
+    // wil::unique_hfile _hInputFile;
+    // wil::unique_hfile _hOutputFile;
     
     Microsoft::Console::VtInputThread* _pVtInputThread;
     Microsoft::Console::Render::VtEngine* _pVtRenderEngine;

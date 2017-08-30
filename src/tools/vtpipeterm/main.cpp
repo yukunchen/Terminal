@@ -188,10 +188,15 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                 switch(c)
                 {
                     case 'n':
+                    case '\t':
                         nextConsole();
                         break;
                     case 'c':
                         newConsole();
+                        break;
+                    case 't':
+                        newConsole();
+                        nextConsole();
                         break;
                     default:
                         *nextBuffer = c;

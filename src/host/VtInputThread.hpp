@@ -27,8 +27,7 @@ namespace Microsoft
             void _HandleRunInput(char* charBuffer, int cch);
             DWORD _InputThread();
 
-            // wil::unique_hfile _hFile;
-            HANDLE _hFile;
+            wil::unique_hfile _hFile;
             StateMachine* _pInputStateMachine;
 
         };
