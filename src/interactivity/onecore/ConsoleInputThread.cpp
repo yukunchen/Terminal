@@ -132,6 +132,10 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
                         {
                             Globals->pRender = pNewRenderer;
                             
+                            // Notify IO thread of our status and let it go.
+                            ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus = Status;
+                            ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.SetEvent();
+
                             // Start listening for input (returns on failure only).
                             Status = Server->ServiceInputPipe();
                         }
