@@ -368,10 +368,32 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
     }
 }
 
-VOID ConIoSrvComm::SignalInputEventIfNecessary()
+VOID ConIoSrvComm::CleanupForHeadless(_In_ NTSTATUS const status)
 {
     if (!_fIsInputInitialized)
     {
+        // Free any handles we might have open.
+        if (INVALID_HANDLE_VALUE != _pipeReadHandle)
+        {
+            CloseHandle(_pipeReadHandle);
+            _pipeReadHandle = INVALID_HANDLE_VALUE;
+        }
+
+        if (INVALID_HANDLE_VALUE != _pipeWriteHandle)
+        {
+            CloseHandle(_pipeWriteHandle);
+            _pipeWriteHandle = INVALID_HANDLE_VALUE;
+        }
+
+        if (INVALID_HANDLE_VALUE != _alpcClientCommunicationPort)
+        {
+            CloseHandle(_alpcClientCommunicationPort);
+            _alpcClientCommunicationPort = INVALID_HANDLE_VALUE;
+        }
+
+        // Set the status for the IO thread to find.
+        ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus = status;
+
         // Signal that input is ready to go.
         ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.SetEvent();
 

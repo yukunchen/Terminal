@@ -147,7 +147,7 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
         {
             // Nothing to do input-wise, but we must let the rest of the console
             // continue.
-            Server->SignalInputEventIfNecessary();
+            Server->CleanupForHeadless(Status);
         }
     }
     else
@@ -163,8 +163,7 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
         }
         
         // Notify IO thread of our status.
-        ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus = Status;
-        ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.SetEvent();
+        Server->CleanupForHeadless(Status);
     }
 
     return Status;
