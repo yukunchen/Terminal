@@ -24,56 +24,81 @@ HRESULT VtEngine::InvalidateSystem(_In_ const RECT* const prcDirtyClient)
     return S_OK;
 }
 
-// Routine Description:
-// - Notifies us that the console is attempting to scroll the existing screen area
-// Arguments:
-// - pcoordDelta - Pointer to character dimension (COORD) of the distance the console would like us to move while scrolling.
-// Return Value:
-// - HRESULT S_OK, GDI-based error code, or safemath error
-HRESULT VtEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
-{
-    pcoordDelta;
-    // return this->InvalidateAll();
-    short dx = pcoordDelta->X;
-    short dy = pcoordDelta->Y;
-    // short absDy = (dy>0)? dy : -dy;
+// // Routine Description:
+// // - Notifies us that the console is attempting to scroll the existing screen area
+// // Arguments:
+// // - pcoordDelta - Pointer to character dimension (COORD) of the distance the console would like us to move while scrolling.
+// // Return Value:
+// // - HRESULT S_OK, GDI-based error code, or safemath error
+// HRESULT VtEngine::_WIN_TELNET_InvalidateScroll(_In_ const COORD* const pcoordDelta)
+// {
+//     UNREFERENCED_PARAMETER(pcoordDelta);
+//     // win-telnet doesn't know anything about scrolling. 
+//     //  Every invalidate action should just repaint everything.
+//     return InvalidateAll();
+// }
 
-    if (dx != 0 || dy != 0)
-    {
-        // POINT ptDelta = { 0 };
-        // RETURN_IF_FAILED(_ScaleByFont(pcoordDelta, &ptDelta));
+// // Routine Description:
+// // - Notifies us that the console is attempting to scroll the existing screen area
+// // Arguments:
+// // - pcoordDelta - Pointer to character dimension (COORD) of the distance the console would like us to move while scrolling.
+// // Return Value:
+// // - HRESULT S_OK, GDI-based error code, or safemath error
+// HRESULT VtEngine::_XTERM_256_InvalidateScroll(_In_ const COORD* const pcoordDelta)
+// {
+//     pcoordDelta;
+//     // return this->InvalidateAll();
+//     short dx = pcoordDelta->X;
+//     short dy = pcoordDelta->Y;
+//     // short absDy = (dy>0)? dy : -dy;
 
-        // Scroll the current offset
-        RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
+//     if (dx != 0 || dy != 0)
+//     {
+//         // POINT ptDelta = { 0 };
+//         // RETURN_IF_FAILED(_ScaleByFont(pcoordDelta, &ptDelta));
 
-        // Add the top/bottom of the window to the invalid area
-        Viewport view(_srLastViewport);
-        SMALL_RECT v = _srLastViewport;
-        view.ConvertToOrigin(&v);
-        SMALL_RECT invalid = v;
-        if (dy > 0)
-        {
-            invalid.Bottom = dy;
-        }
-        else if (dy < 0)
-        {
-            invalid.Top = v.Bottom + dy;
-        }
-        _InvalidCombine(&invalid);
+//         // Scroll the current offset
+//         RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
 
-        COORD invalidScrollNew;
-        RETURN_IF_FAILED(ShortAdd(_scrollDelta.X, dx, &invalidScrollNew.X));
-        RETURN_IF_FAILED(ShortAdd(_scrollDelta.Y, dy, &invalidScrollNew.Y));
+//         // Add the top/bottom of the window to the invalid area
+//         Viewport view(_srLastViewport);
+//         SMALL_RECT v = _srLastViewport;
+//         view.ConvertToOrigin(&v);
+//         SMALL_RECT invalid = v;
+//         if (dy > 0)
+//         {
+//             invalid.Bottom = dy;
+//         }
+//         else if (dy < 0)
+//         {
+//             invalid.Top = v.Bottom + dy;
+//         }
+//         _InvalidCombine(&invalid);
 
-        // Store if safemath succeeded
-        _scrollDelta = invalidScrollNew;
+//         COORD invalidScrollNew;
+//         RETURN_IF_FAILED(ShortAdd(_scrollDelta.X, dx, &invalidScrollNew.X));
+//         RETURN_IF_FAILED(ShortAdd(_scrollDelta.Y, dy, &invalidScrollNew.Y));
 
-    }
+//         // Store if safemath succeeded
+//         _scrollDelta = invalidScrollNew;
 
-    return S_OK;
-    
-    // return S_OK;
-}
+//     }
+
+//     return S_OK;
+// }
+
+// HRESULT VtEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
+// {
+//     if (_IoMode == VtIoMode::XTERM_256)
+//     {
+//         return _XTERM_256_InvalidateScroll(pcoordDelta);
+//     }
+//     else if (_IoMode == VtIoMode::WIN_TELNET)
+//     {
+//         return _WIN_TELNET_InvalidateScroll(pcoordDelta);
+//     }
+//     return E_FAIL;
+// }
 
 // Routine Description:
 // - Notifies us that the console has changed the selection region and would like it updated

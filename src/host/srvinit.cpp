@@ -25,10 +25,11 @@
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
-void UseVtPipe(const std::wstring& InPipeName, const std::wstring& OutPipeName)
+HRESULT UseVtPipe(const std::wstring& InPipeName, const std::wstring& OutPipeName, const std::wstring& VtMode)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->vtIo->Initialize(InPipeName, OutPipeName);
+    HRESULT hr = gci->vtIo->Initialize(InPipeName, OutPipeName, VtMode);
+    return hr;
 }
 
 HRESULT ConsoleServerInitialization(_In_ HANDLE Server)

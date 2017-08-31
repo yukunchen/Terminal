@@ -27,6 +27,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
     std::wstring clientCommandline = L"";
     std::wstring vtInPipe = L"";
     std::wstring vtOutPipe = L"";
+    std::wstring vtMode = L"";
     bool createServerHandle = true;
     DWORD serverHandle;
 
@@ -73,6 +74,13 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
                 args.erase(args.begin()+i);
                 i--;
             }
+            else if (arg == L"--vtmode" && hasNext)
+            {
+                args.erase(args.begin()+i);
+                vtMode = args[i];
+                args.erase(args.begin()+i);
+                i--;
+            }
             else if (arg == L"--")
             {
                 // Everything after this is the commandline
@@ -97,7 +105,8 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
     const wchar_t* const cmdLine = clientCommandline.length() > 0? clientCommandline.c_str() : L"%WINDIR%\\system32\\cmd.exe";
     const bool useVtIn = vtInPipe.length() > 0;
     const bool useVtOut = vtOutPipe.length() > 0;
-    const bool fUseVtPipe = useVtIn || useVtOut;
+    // (useVtIn && useVtOut) makes sense here, but would || be useful?
+    const bool fUseVtPipe = useVtIn && useVtOut;
 
     // const wchar_t* pwchVtInPipe = useVtIn? vtInPipe.c_str() : nullptr;
     // const wchar_t* pwchVtOutPipe = useVtOut? vtOutPipe.c_str() : nullptr;
@@ -225,8 +234,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
         pwszCmdLine = cmdLine;
         if (fUseVtPipe)
         {
-            UseVtPipe(vtInPipe, vtOutPipe);
-            // UseVtPipe(pwchVtInPipe, pwchVtOutPipe);
+            RETURN_IF_FAILED(UseVtPipe(vtInPipe, vtOutPipe, vtMode));
         }
         ////////////////////////////////////////////////////////////////////////
 

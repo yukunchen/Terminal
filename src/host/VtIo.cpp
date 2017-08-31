@@ -7,7 +7,9 @@
 #include "precomp.h"
 #include "VtIo.hpp"
 #include "..\interactivity\inc\ServiceLocator.hpp"
-#include "..\renderer\vt\vtrenderer.hpp"
+// #include "..\renderer\vt\vtrenderer.hpp"
+#include "..\renderer\vt\Xterm256Engine.hpp"
+#include "..\renderer\vt\WinTelnetEngine.hpp"
 #include "..\renderer\base\renderer.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
@@ -22,8 +24,33 @@ VtIo::~VtIo()
     
 }
 
-HRESULT VtIo::Initialize(const std::wstring& InPipeName, const std::wstring& OutPipeName)
+HRESULT VtIo::ParseIoMode(const std::wstring& VtMode, VtIoMode* const IoMode)
 {
+    if (IoMode == nullptr) return E_INVALIDARG;
+    if (VtMode == XTERM_256_STRING)
+    {
+        *IoMode = VtIoMode::XTERM_256;
+    }
+    else if (VtMode == WIN_TELNET_STRING)
+    {
+        *IoMode = VtIoMode::WIN_TELNET;
+    }
+    else if (VtMode == DEFAULT_STRING)
+    {
+        *IoMode = VtIoMode::XTERM_256;
+    }
+    else
+    {
+        return E_INVALIDARG;
+    }
+    return S_OK;
+}
+
+HRESULT VtIo::Initialize(const std::wstring& InPipeName, const std::wstring& OutPipeName, const std::wstring& VtMode)
+{
+    HRESULT hr = ParseIoMode(VtMode, &_IoMode);
+    if (!SUCCEEDED(hr)) return hr;
+
     wil::unique_hfile _hInputFile;
     wil::unique_hfile _hOutputFile;
 
@@ -50,7 +77,18 @@ HRESULT VtIo::Initialize(const std::wstring& InPipeName, const std::wstring& Out
     THROW_IF_HANDLE_INVALID(_hOutputFile.get());
 
     _pVtInputThread = new VtInputThread(_hInputFile.release());
-    _pVtRenderEngine = new VtEngine(_hOutputFile.release());
+
+    if (_IoMode == VtIoMode::XTERM_256)
+    {
+        _pVtRenderEngine = new Xterm256Engine(_hOutputFile.release(), _IoMode);
+    }
+    else if (_IoMode == VtIoMode::WIN_TELNET)
+    {
+        _pVtRenderEngine = new WinTelnetEngine(_hOutputFile.release(), _IoMode);
+    }
+    // auto xterm256 = new Xterm256Engine(_hOutputFile.release(), _IoMode);
+    // xterm256;
+    // _pVtRenderEngine = new VtEngine(_hOutputFile.release(), _IoMode);
 
     _usingVt = true;
     return S_OK;

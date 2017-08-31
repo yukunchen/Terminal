@@ -35,7 +35,12 @@ HANDLE VtConsole::outPipe()
 
 void VtConsole::spawn()
 {
-    _spawn2();
+    _spawn2(L"");
+}
+
+void VtConsole::spawn(const std::wstring& command)
+{
+    _spawn2(command);
 }
 
 void VtConsole::_spawn1()
@@ -61,7 +66,7 @@ void VtConsole::_spawn1()
     _connected = true;
 }
 
-void VtConsole::_spawn2()
+void VtConsole::_spawn2(const std::wstring& command)
 {
 
     _inPipe = (
@@ -75,7 +80,7 @@ void VtConsole::_spawn2()
     THROW_IF_HANDLE_INVALID(_inPipe);
     THROW_IF_HANDLE_INVALID(_outPipe);
 
-    _openConsole2();
+    _openConsole2(command);
     bool fSuccess = !!ConnectNamedPipe(_inPipe, nullptr);
     if (!fSuccess)
     {
@@ -129,7 +134,7 @@ void VtConsole::_openConsole1()
     fSuccess;
 }
 
-void VtConsole::_openConsole2()
+void VtConsole::_openConsole2(const std::wstring& command)
 {
     std::wstring cmdline = L"OpenConsole.exe";
     if (_inPipeName.length() > 0)
@@ -142,10 +147,20 @@ void VtConsole::_openConsole2()
         cmdline += L" --outpipe ";
         cmdline += _outPipeName;
     }
+    
     STARTUPINFO si = {0};
     si.cb = sizeof(STARTUPINFOW);
-    si.dwFlags = STARTF_USESHOWWINDOW;
-    si.wShowWindow = SW_MINIMIZE;
+    
+    if (command.length() > 0)
+    {
+        cmdline += L" -- ";
+        cmdline += command;
+    }
+    else 
+    {
+        si.dwFlags = STARTF_USESHOWWINDOW;
+        si.wShowWindow = SW_MINIMIZE;
+    }
 
     bool fSuccess = !!CreateProcess(
         nullptr,

@@ -21,7 +21,7 @@ using namespace Microsoft::Console::Render;
 // - <none>
 // Return Value:
 // - An instance of a Renderer.
-VtEngine::VtEngine(HANDLE pipe) 
+VtEngine::VtEngine(HANDLE pipe, VtIoMode IoMode) 
 {
     _hFile.reset(pipe);
     THROW_IF_HANDLE_INVALID(_hFile.get());
@@ -33,6 +33,9 @@ VtEngine::VtEngine(HANDLE pipe)
     _scrollDelta = {0};
     _LastFG = 0xff000000;
     _LastBG = 0xff000000;
+
+    // TODO remove this, the implementation doesn't need to know it's own level
+    _IoMode = IoMode;
 }
 
 // Routine Description:
@@ -58,57 +61,6 @@ HRESULT VtEngine::_Write(_In_ std::string& str)
     return _Write(str.c_str(), str.length());
 }
 
-// Routine Description:
-// - This method will set the GDI brushes in the drawing context (and update the hung-window background color)
-// Arguments:
-// - wTextAttributes - A console attributes bit field specifying the brush colors we should use.
-// Return Value:
-// - S_OK if set successfully or relevant GDI error via HRESULT.
-HRESULT VtEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds)
-{
-    try
-    {
-        if (colorForeground != _LastFG)
-        {
-            PCSTR pszFgFormat = "\x1b[38;2;%d;%d;%dm";
-            DWORD const fgRed = (colorForeground & 0xff);
-            DWORD const fgGreen = (colorForeground >> 8) & 0xff;
-            DWORD const fgBlue = (colorForeground >> 16) & 0xff;
-            
-            int cchNeeded = _scprintf(pszFgFormat, fgRed, fgGreen, fgBlue);
-            wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-            RETURN_IF_NULL_ALLOC(psz);
-
-            int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszFgFormat, fgRed, fgGreen, fgBlue);
-            _Write(psz.get(), cchWritten);
-            _LastFG = colorForeground;
-            
-        }
-        if (colorBackground != _LastBG) 
-        {
-            PCSTR pszBgFormat = "\x1b[48;2;%d;%d;%dm";
-            DWORD const bgRed = (colorBackground & 0xff);
-            DWORD const bgGreen = (colorBackground >> 8) & 0xff;
-            DWORD const bgBlue = (colorBackground >> 16) & 0xff;
-
-            int cchNeeded = _scprintf(pszBgFormat, bgRed, bgGreen, bgBlue);
-            wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-            RETURN_IF_NULL_ALLOC(psz);
-
-            int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszBgFormat, bgRed, bgGreen, bgBlue);
-            _Write(psz.get(), cchWritten);
-            _LastBG = colorBackground;
-        }
-    }
-    CATCH_RETURN();
-
-    colorForeground;
-    colorBackground;
-    legacyColorAttribute;
-    fIncludeBackgrounds;
-    
-    return S_OK;
-}
 
 // Routine Description:
 // - This method will update the active font on the current device context

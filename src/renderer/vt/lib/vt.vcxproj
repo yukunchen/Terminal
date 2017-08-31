@@ -2,6 +2,8 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props"/>
   <ItemGroup>
+    <ClCompile Include="..\xterm256engine.cpp" />
+    <ClCompile Include="..\WinTelnetEngine.cpp" />
     <ClCompile Include="..\invalidate.cpp" />
     <ClCompile Include="..\math.cpp" />
     <ClCompile Include="..\paint.cpp" />
@@ -11,6 +13,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\xterm256engine.hpp" />
+    <ClInclude Include="..\WinTelnetEngine.hpp" />
     <ClInclude Include="..\vtrenderer.hpp" />
     <ClInclude Include="..\precomp.h" />
   </ItemGroup>

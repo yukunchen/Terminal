@@ -4,8 +4,8 @@
 *                                                       *
 ********************************************************/
 #pragma once
-// #include "precomp.h"
 
+#include "..\inc\VtIoModes.hpp"
 #include "..\renderer\vt\vtrenderer.hpp"
 #include "VtInputThread.hpp"
 
@@ -25,17 +25,16 @@ class Microsoft::Console::VirtualTerminal::VtIo
 public:
     VtIo();
     ~VtIo();
-    HRESULT Initialize(const std::wstring& InPipeName, const std::wstring& OutPipeName);
+    HRESULT Initialize(const std::wstring& InPipeName, const std::wstring& OutPipeName, const std::wstring& VtMode);
     bool IsUsingVt();
 
     HRESULT Start();
 
+    static HRESULT ParseIoMode(const std::wstring& VtMode, VtIoMode* const IoMode);
+    
 private:
     bool _usingVt;
-
-    // wil::unique_hfile _hInputFile;
-    // wil::unique_hfile _hOutputFile;
-    
+    VtIoMode _IoMode;
     Microsoft::Console::VtInputThread* _pVtInputThread;
     Microsoft::Console::Render::VtEngine* _pVtRenderEngine;
 };

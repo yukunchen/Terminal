@@ -24,6 +24,7 @@ HANDLE hOut;
 HANDLE hIn;
 
 std::deque<VtConsole*> consoles;
+// VtConsole* debug;
 
 bool prefixPressed = false;
 
@@ -141,11 +142,11 @@ void toPrintableBuffer(char c, char* printBuffer, int* printCch)
 void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
 {
     char* const buffer = new char[cEvents];
-    // char* const printableBuffer = new char[cEvents * 3];
+    char* const printableBuffer = new char[cEvents * 3];
     char* nextBuffer = buffer;
-    // char* nextPrintable = printableBuffer;
+    char* nextPrintable = printableBuffer;
     int bufferCch = 0;
-    // int printableCch = 0;
+    int printableCch = 0;
 
 
     for (int i = 0; i < cEvents; ++i)
@@ -172,7 +173,6 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
             if (!prefixPressed)
             {
                 if (c == '\x2')
-                // if (c == '\x2' && keyEvent.wVirtualKeyCode == 'B')
                 {
                     prefixPressed = true;
                 }
@@ -205,10 +205,10 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                 }
                 prefixPressed = false;
             }
-            // int numPrintable = 0;
-            // toPrintableBuffer(c, nextPrintable, &numPrintable);
-            // nextPrintable += numPrintable;
-            // printableCch += numPrintable;
+            int numPrintable = 0;
+            toPrintableBuffer(c, nextPrintable, &numPrintable);
+            nextPrintable += numPrintable;
+            printableCch += numPrintable;
             
         }
     }
@@ -216,7 +216,7 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
     if (bufferCch > 0)
     {
         std::string vtseq = std::string(buffer, bufferCch);
-        // std::string printSeq = std::string(printableBuffer, printableCch);
+        std::string printSeq = std::string(printableBuffer, printableCch);
 
         // csi("38;5;242m");
         // wprintf(L"\tWriting \"%hs\" length=[%d]\n", printSeq.c_str(), (int)vtseq.length());
@@ -224,6 +224,7 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
 
         // WriteFile(inPipe.get(), vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
         WriteFile(inPipe(), vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
+        // WriteFile(debug->inPipe(), printSeq.c_str(), (DWORD)printSeq.length(), nullptr, nullptr);
     }
 }
 
@@ -290,6 +291,11 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     newConsole();  
     getConsole()->activate();
     CreateIOThreads();
+
+    // This doesn't work quite how I'd like.
+    // debug = new VtConsole(ReadCallback);
+    // debug->spawn(L"Nihilist.exe");
+    // debug->activate();
 
     // Exit the thread so the CRT won't clean us up and kill. The IO thread owns the lifetime now.
     ExitThread(S_OK);

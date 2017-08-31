@@ -14,12 +14,12 @@ class VtConsole
 public:
     VtConsole(PipeReadCallback const pfnReadCallback);
     void spawn();
-
+    void spawn(const std::wstring& command);
+    
     HANDLE inPipe();
     HANDLE outPipe();
 
     static const DWORD sInPipeOpenMode = PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED;
-    // static const DWORD sOutPipeOpenMode = PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED;
     static const DWORD sOutPipeOpenMode = PIPE_ACCESS_INBOUND;
 
     static const DWORD sInPipeMode = PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT;
@@ -51,10 +51,10 @@ private:
     HANDLE _hOutputThread = INVALID_HANDLE_VALUE;
 
     void _openConsole1();
-    void _openConsole2();
+    void _openConsole2(const std::wstring& command);
 
     void _spawn1();
-    void _spawn2();
+    void _spawn2(const std::wstring& command);
 
     DWORD _OutputThread();
 

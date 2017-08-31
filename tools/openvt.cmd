@@ -15,14 +15,11 @@ if not exist %_last_build%\VtPipeTerm.exe (
 set _r=%random%
 set copy_dir=OpenConsole\%_r%
 rem Generate a unique name, so that we can debug multiple revisions of the binary at the same time if needed.
-rem set copy_name=OpenConsole\%_r%\OpenConsole.exe
 
 (echo f | xcopy /Y %_last_build%\OpenConsole.exe %TEMP%\%copy_dir%\OpenConsole.exe) > nul
 (echo f | xcopy /Y %_last_build%\VtPipeTerm.exe %TEMP%\%copy_dir%\VtPipeTerm.exe) > nul
 (echo f | xcopy /Y %_last_build%\VtPipeIn.exe %TEMP%\%copy_dir%\VtPipeIn.exe) > nul
+(echo f | xcopy /Y %_last_build%\Nihilist.exe %TEMP%\%copy_dir%\Nihilist.exe) > nul
 
-rem start %TEMP%\%copy_dir%\VtPipeIn.exe %*
-rem pause
-rem timeout 1
 start %TEMP%\%copy_dir%\VtPipeTerm.exe %*
-rem start %_last_build%\VtPipeIn.exe
+
