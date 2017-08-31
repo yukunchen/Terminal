@@ -295,8 +295,6 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
 
                     // Force a complete redraw.
                     Renderer->TriggerRedrawAll();
-
-                    SignalInputEventIfNecessary();
                 }
             break;
 
@@ -330,8 +328,6 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
 
                             // Force a complete redraw.
                             Renderer->TriggerRedrawAll();
-
-                            SignalInputEventIfNecessary();
                         }
                     }
                 }
