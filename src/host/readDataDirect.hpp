@@ -23,20 +23,23 @@ Revision History:
 #pragma once
 
 #include "readData.hpp"
+#include "IInputEvent.hpp"
+#include <deque>
+#include <memory>
 
 
-class DIRECT_READ_DATA final : public ReadData
+class DirectReadData final : public ReadData
 {
 public:
-    DIRECT_READ_DATA(_In_ InputBuffer* const pInputBuffer,
-                     _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                     _In_ INPUT_RECORD* pUserBuffer,
-                     _In_ ULONG const cUserBufferNumRecords,
-                     _In_ bool const fIsPeek);
+    DirectReadData(_In_ InputBuffer* const pInputBuffer,
+                   _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
+                   _In_ INPUT_RECORD* pOutRecords,
+                   _In_ const size_t cOutRecords,
+                   _In_ std::deque<std::unique_ptr<IInputEvent>> partialEvents);
 
-    ~DIRECT_READ_DATA() override;
+    ~DirectReadData() override;
 
-    DIRECT_READ_DATA(DIRECT_READ_DATA&&) = default;
+    DirectReadData(DirectReadData&&) = default;
 
     BOOL Notify(_In_ WaitTerminationReason const TerminationReason,
                 _In_ BOOLEAN const fIsUnicode,
@@ -45,7 +48,8 @@ public:
                 _Out_ DWORD* const pControlKeyState) override;
 
 private:
-    INPUT_RECORD* _pUserBuffer;
-    const ULONG _cUserBufferNumRecords;
-    const bool _fIsPeek;
+    INPUT_RECORD* _pOutRecords;
+    const size_t _cOutRecords;
+    std::deque<std::unique_ptr<IInputEvent>> _partialEvents;
+    std::deque<std::unique_ptr<IInputEvent>> _outEvents;
 };

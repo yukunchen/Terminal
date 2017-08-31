@@ -113,19 +113,24 @@ ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG Num
 // - pRecords - The user buffer given to us to fill with records
 // - pcRecords - On in, the size of the buffer (count of INPUT_RECORD).
 //             - On out, the number of INPUT_RECORDs used.
-// - fIsUnicode - Whether to operate on Unicode characters or convert on the current Input Codepage.
-// - fIsPeek - If this is a peek operation (a.k.a. do not remove characters from the input buffer while copying to client buffer.)
-// - ppWaiter - If we have to wait (not enough data to fill client buffer), this contains context that will allow the server to restore this call later.
+// - IsUnicode - Whether to operate on Unicode characters or convert
+// on the current Input Codepage.
+// - IsPeek - If this is a peek operation (a.k.a. do not remove
+// characters from the input buffer while copying to client buffer.)
+// - ppWaiter - If we have to wait (not enough data to fill client
+// buffer), this contains context that will allow the server to
+// restore this call later.
 // Return Value:
 // - STATUS_SUCCESS - If data was found and ready for return to the client.
-// - CONSOLE_STATUS_WAIT - If we didn't have enough data or needed to block, this will be returned along with context in *ppWaiter.
+// - CONSOLE_STATUS_WAIT - If we didn't have enough data or needed to
+// block, this will be returned along with context in *ppWaiter.
 // - Or an out of memory/math/string error message in NTSTATUS format.
 NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
                            _Out_writes_(*pcRecords) INPUT_RECORD* const pRecords,
                            _Inout_ ULONG* const pcRecords,
                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                           _In_ bool const fIsUnicode,
-                           _In_ bool const fIsPeek,
+                           _In_ bool const IsUnicode,
+                           _In_ bool const IsPeek,
                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
     *ppWaiter = nullptr;
@@ -133,59 +138,38 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    bool fAddDbcsLead = false;
-    DWORD const cRecords = *pcRecords;
+    // size of pRecords in INPUT_RECORDs
+    const size_t outBufferSize = *pcRecords;
+
     *pcRecords = 0;
 
-    DIRECT_READ_DATA DirectReadData(pInputBuffer,
-                                    pInputReadHandleData,
-                                    pRecords,
-                                    cRecords,
-                                    fIsPeek);
-
-
-    DWORD nBytesUnicode = cRecords;
-
-    INPUT_RECORD* Buffer = pRecords;
-
-    if (!fIsUnicode)
+    std::deque<std::unique_ptr<IInputEvent>> partialEvents;
+    if (!IsUnicode)
     {
-        // MSFT: 6429490 removed the usage of the ReadConInpNumBytesUnicode variable and the early return when the value was 1.
-        // This resolved an issue with returning DBCS codepages to getc() and ReadConsoleInput.
-        // There is another copy of the same pattern above in the Wait routine, but that usage scenario isn't 100% clear and
-        // doesn't affect the issue, so it's left alone for now.
-
-        // if there is a saved partial byte for a dbcs char,
-        // move it to the buffer.
-        if (pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+        if (pInputBuffer->IsReadPartialByteSequenceAvailable())
         {
-            // Saved DBCS Trailing byte
-            *Buffer = pInputBuffer->ReadConInpDbcsLeadByte;
-            if (!fIsPeek)
-            {
-                ZeroMemory(&pInputBuffer->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
-            }
-
-            nBytesUnicode--;
-            Buffer++;
-            fAddDbcsLead = true;
+            partialEvents.push_back(pInputBuffer->FetchReadPartialByteSequence(IsPeek));
         }
     }
 
-    std::deque<std::unique_ptr<IInputEvent>> outEvents;
-    NTSTATUS Status = pInputBuffer->Read(outEvents,
-                                         nBytesUnicode,
-                                         fIsPeek,
+    const size_t amountToRead = outBufferSize - partialEvents.size();
+    std::deque<std::unique_ptr<IInputEvent>> readEvents;
+    NTSTATUS Status = pInputBuffer->Read(readEvents,
+                                         amountToRead,
+                                         IsPeek,
                                          true,
-                                         fIsUnicode);
-    nBytesUnicode = static_cast<DWORD>(outEvents.size());
+                                         IsUnicode);
 
     if (CONSOLE_STATUS_WAIT == Status)
     {
+        assert(readEvents.empty());
         // If we're told to wait until later, move all of our context
-        // from stack into a heap context and send it back up to the
-        // server.
-        *ppWaiter = new DIRECT_READ_DATA(std::move(DirectReadData));
+        // to the read data object and send it back up to the server.
+        *ppWaiter = new DirectReadData(pInputBuffer,
+                                       pInputReadHandleData,
+                                       pRecords,
+                                       outBufferSize,
+                                       std::move(partialEvents));
         if (*ppWaiter == nullptr)
         {
             Status = STATUS_NO_MEMORY;
@@ -193,26 +177,40 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
     }
     else if (NT_SUCCESS(Status))
     {
-        IInputEvent::ToInputRecords(outEvents, Buffer, nBytesUnicode);
-
-        if (!fIsUnicode)
+        // split key events to oem chars if necessary
+        if (!IsUnicode)
         {
-            *pcRecords = TranslateInputToOem(Buffer,
-                                            fAddDbcsLead ? cRecords - 1 : cRecords,
-                                            nBytesUnicode,
-                                            fIsPeek ? nullptr : &pInputBuffer->ReadConInpDbcsLeadByte);
-            if (fAddDbcsLead)
+            LOG_IF_FAILED(SplitToOem(readEvents));
+        }
+
+        // combine partial and readEvents
+        while (!partialEvents.empty())
+        {
+            readEvents.push_front(std::move(partialEvents.back()));
+            partialEvents.pop_back();
+        }
+
+        // convert events to input records and add to buffer
+        size_t recordCount = 0;
+        for (size_t i = 0; i < outBufferSize; ++i)
+        {
+            if (readEvents.empty())
             {
-                (*pcRecords)++;
-                Buffer--;
+                break;
             }
+            pRecords[i] = readEvents.front()->ToInputRecord();
+            readEvents.pop_front();
+            ++recordCount;
         }
-        else
+        // store partial event if necessary
+        if (!readEvents.empty())
         {
-            *pcRecords = nBytesUnicode;
+            pInputBuffer->StoreReadPartialByteSequence(std::move(readEvents.front()));
+            readEvents.pop_front();
+            assert(readEvents.empty());
         }
+        *pcRecords = static_cast<ULONG>(recordCount);
     }
-
     return Status;
 }
 

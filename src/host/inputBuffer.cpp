@@ -44,6 +44,54 @@ InputBuffer::~InputBuffer()
 }
 
 // Routine Description:
+// - checks if any partial char data is available
+// Arguments:
+// - None
+// Return Value:
+// - true if partial char data is available, false otherwise
+bool InputBuffer::IsReadPartialByteSequenceAvailable()
+{
+    return _readPartialByteSequence.get() != nullptr;
+}
+
+// Routine Description:
+// - reads any partial char data available
+// Arguments:
+// - peek - if true, data will not be removed after being fetched
+// Return Value:
+// - the partial char data. may be nullptr if no data is available
+std::unique_ptr<IInputEvent> InputBuffer::FetchReadPartialByteSequence(_In_ bool peek)
+{
+    if (!IsReadPartialByteSequenceAvailable())
+    {
+        return std::unique_ptr<IInputEvent>();
+    }
+
+    if (peek)
+    {
+        return IInputEvent::Create(_readPartialByteSequence->ToInputRecord());
+    }
+    else
+    {
+        std::unique_ptr<IInputEvent> outEvent;
+        outEvent.swap(_readPartialByteSequence);
+        return outEvent;
+    }
+}
+
+// Routine Description:
+// - stores partial read char data. will overwrite any previously
+// stored data.
+// Arguments:
+// - event - The event to store
+// Return Value:
+// - None
+void InputBuffer::StoreReadPartialByteSequence(std::unique_ptr<IInputEvent> event)
+{
+    _readPartialByteSequence.swap(event);
+}
+
+// Routine Description:
 // - This routine resets the input buffer information fields to their initial values.
 // Arguments:
 // Return Value:

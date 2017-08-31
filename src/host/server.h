@@ -96,8 +96,6 @@ public:
     CPINFO CPInfo;
     CPINFO OutputCPInfo;
 
-    DWORD ReadConInpNumBytesUnicode;
-
     COOKED_READ_DATA* lpCookedReadData;
 
     ConsoleImeInfo ConsoleIme;

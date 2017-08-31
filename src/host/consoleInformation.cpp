@@ -54,7 +54,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // ColorTable initialized below
     // CPInfo initialized below
     // OutputCPInfo initialized below
-    ReadConInpNumBytesUnicode(0),
     lpCookedReadData(nullptr),
     // ConsoleIme initialized below
     termInput(HandleTerminalKeyEventCallback),
