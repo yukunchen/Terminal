@@ -20,6 +20,9 @@
 // ConIoSrv.h, included above. For security-related considerations, see Trust.h
 // in the ConIoSrv directory.
 
+extern void LockConsole();
+extern void UnlockConsole();
+
 using namespace Microsoft::Console::Interactivity::OneCore;
 
 ConIoSrvComm::ConIoSrvComm()
@@ -218,6 +221,7 @@ NTSTATUS ConIoSrvComm::ServiceInputPipe()
 
         if (Ret != FALSE)
         {
+            LockConsole();
             switch (Event.Type)
             {
             case CIS_EVENT_TYPE_INPUT:
@@ -228,6 +232,7 @@ NTSTATUS ConIoSrvComm::ServiceInputPipe()
                 HandleFocusEvent(&Event);
             break;
             }
+            UnlockConsole();
         }
         else
         {
