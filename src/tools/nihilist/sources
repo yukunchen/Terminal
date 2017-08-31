@@ -18,6 +18,8 @@ TARGETLIBS=\
 SOURCES=main.cpp  \
         res.rc \
 
+SPKG_SOURCES=sources.pkg.xml
+
 TARGET_DESTINATION=unittests
 
 INCLUDES= \

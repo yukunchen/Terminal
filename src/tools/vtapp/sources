@@ -13,6 +13,7 @@ SOURCES                            =   \
                                        Program.cs \
                                        Program2.cs \
 
+SPKG_SOURCES                       =   sources.pkg.xml
 
 REFERENCES                         =   $(CLR_REF_PATH)\System.metadata_dll; \
                                        $(CLR_REF_PATH)\System.Core.metadata_dll; \

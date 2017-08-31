@@ -4,7 +4,7 @@
 # Program Information
 # -------------------------------------
 
-TARGETNAME                      =   Conhost.Feature.Tests
+TARGETNAME                      =   Microsoft.Console.Host.FeatureTests
 TARGETTYPE                      =   DYNLINK
 DLLDEF                          =
 
