@@ -20,6 +20,9 @@
 // ConIoSrv.h, included above. For security-related considerations, see Trust.h
 // in the ConIoSrv directory.
 
+extern void LockConsole();
+extern void UnlockConsole();
+
 using namespace Microsoft::Console::Interactivity::OneCore;
 
 ConIoSrvComm::ConIoSrvComm()
@@ -218,6 +221,7 @@ NTSTATUS ConIoSrvComm::ServiceInputPipe()
 
         if (Ret != FALSE)
         {
+            LockConsole();
             switch (Event.Type)
             {
             case CIS_EVENT_TYPE_INPUT:
@@ -228,6 +232,7 @@ NTSTATUS ConIoSrvComm::ServiceInputPipe()
                 HandleFocusEvent(&Event);
             break;
             }
+            UnlockConsole();
         }
         else
         {
@@ -295,8 +300,6 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
 
                     // Force a complete redraw.
                     Renderer->TriggerRedrawAll();
-
-                    SignalInputEventIfNecessary();
                 }
             break;
 
@@ -305,6 +308,8 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
 
                 if (Event->FocusEvent.IsActive)
                 {
+                    HRESULT hr = S_OK;
+
                     // Lazy-initialize the WddmCon engine.
                     //
                     // This is necessary because the engine cannot be allowed to
@@ -312,39 +317,47 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                     // of conhost was using it before has relinquished it.
                     if (!WddmEngine->IsInitialized())
                     {
-                        WddmEngine->Initialize();
+                        hr = WddmEngine->Initialize();
+                        LOG_IF_FAILED(hr);
                     }
+                    
+                    if (SUCCEEDED(hr))
+                    {
+                        // Allow acquiring device resources before drawing.
+                        hr = WddmEngine->Enable();
+                        LOG_IF_FAILED(hr);
+                        if (SUCCEEDED(hr))
+                        {
+                            // Allow the renderer to paint.
+                            Renderer->EnablePainting();
 
-                    // Allow acquiring device resources before drawing.
-                    WddmEngine->Enable();
-
-                    // Allow the renderer to paint.
-                    Renderer->EnablePainting();
-
-                    // Force a complete redraw.
-                    Renderer->TriggerRedrawAll();
-
-                    SignalInputEventIfNecessary();
+                            // Force a complete redraw.
+                            Renderer->TriggerRedrawAll();
+                        }
+                    }
                 }
                 else
                 {
-                    // Wait for the currently running paint operation, if any,
-                    // and prevent further attempts to render.
-                    Renderer->WaitForPaintCompletionAndDisable(1000);
+                    if (WddmEngine->IsInitialized())
+                    {
+                        // Wait for the currently running paint operation, if any,
+                        // and prevent further attempts to render.
+                        Renderer->WaitForPaintCompletionAndDisable(1000);
 
-                    // Relinquish control of the graphics device (only one
-                    // DirectX application may control the device at any one
-                    // time).
-                    WddmEngine->Disable();
+                        // Relinquish control of the graphics device (only one
+                        // DirectX application may control the device at any one
+                        // time).
+                        LOG_IF_FAILED(WddmEngine->Disable());
 
-                    // Let the Console IO Server that we have relinquished
-                    // control of the display.
-                    ReplyEvent.Type = CIS_EVENT_TYPE_FOCUS_ACK;
-                    Ret = WriteFile(_pipeWriteHandle,
-                                    &ReplyEvent,
-                                    sizeof(CIS_EVENT),
-                                    NULL,
-                                    NULL);
+                        // Let the Console IO Server that we have relinquished
+                        // control of the display.
+                        ReplyEvent.Type = CIS_EVENT_TYPE_FOCUS_ACK;
+                        Ret = WriteFile(_pipeWriteHandle,
+                                        &ReplyEvent,
+                                        sizeof(CIS_EVENT),
+                                        NULL,
+                                        NULL);
+                    }
                 }
             break;
 
@@ -355,10 +368,32 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
     }
 }
 
-VOID ConIoSrvComm::SignalInputEventIfNecessary()
+VOID ConIoSrvComm::CleanupForHeadless(_In_ NTSTATUS const status)
 {
     if (!_fIsInputInitialized)
     {
+        // Free any handles we might have open.
+        if (INVALID_HANDLE_VALUE != _pipeReadHandle)
+        {
+            CloseHandle(_pipeReadHandle);
+            _pipeReadHandle = INVALID_HANDLE_VALUE;
+        }
+
+        if (INVALID_HANDLE_VALUE != _pipeWriteHandle)
+        {
+            CloseHandle(_pipeWriteHandle);
+            _pipeWriteHandle = INVALID_HANDLE_VALUE;
+        }
+
+        if (INVALID_HANDLE_VALUE != _alpcClientCommunicationPort)
+        {
+            CloseHandle(_alpcClientCommunicationPort);
+            _alpcClientCommunicationPort = INVALID_HANDLE_VALUE;
+        }
+
+        // Set the status for the IO thread to find.
+        ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus = status;
+
         // Signal that input is ready to go.
         ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.SetEvent();
 

@@ -80,11 +80,10 @@ NTSTATUS InitializeWddmCon()
 DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
 {
     UNREFERENCED_PARAMETER(lpParam);
-
+    
     NTSTATUS Status;
 
     Globals * const Globals = ServiceLocator::LocateGlobals();
-
     ConIoSrvComm * const Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
     Status = Server->Connect();
 
@@ -132,6 +131,10 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
                         if (NT_SUCCESS(Status))
                         {
                             Globals->pRender = pNewRenderer;
+                            
+                            // Notify IO thread of our status and let it go.
+                            ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus = Status;
+                            ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.SetEvent();
 
                             // Start listening for input (returns on failure only).
                             Status = Server->ServiceInputPipe();
@@ -144,18 +147,26 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
         {
             // Nothing to do input-wise, but we must let the rest of the console
             // continue.
-            Server->SignalInputEventIfNecessary();
+            Server->CleanupForHeadless(Status);
         }
     }
-
-    // General error case.
-    if (!NT_SUCCESS(Status))
+    else
     {
-        // If anything went wrong, there is no point in continuing.
-        TerminateProcess(GetCurrentProcess(), Status);
+        // If we get an access denied and couldn't connect to the coniosrv in CSRSS.exe.
+        // that's OK. We're likely inside an AppContainer in a TAEF /runas:uap test.
+        // We don't want AppContainered things to have access to the hardware devices directly
+        // like coniosrv in CSRSS offers, so we "succeeded" and will let the IO thread know it
+        // can continue.
+        if (STATUS_ACCESS_DENIED == Status)
+        {
+            Status = STATUS_SUCCESS;
+        }
+        
+        // Notify IO thread of our status.
+        Server->CleanupForHeadless(Status);
     }
 
-    return 0;
+    return Status;
 }
 
 // Routine Description:
