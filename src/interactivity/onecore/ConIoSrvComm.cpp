@@ -305,6 +305,8 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
 
                 if (Event->FocusEvent.IsActive)
                 {
+                    HRESULT hr = S_OK;
+
                     // Lazy-initialize the WddmCon engine.
                     //
                     // This is necessary because the engine cannot be allowed to
@@ -312,39 +314,49 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                     // of conhost was using it before has relinquished it.
                     if (!WddmEngine->IsInitialized())
                     {
-                        WddmEngine->Initialize();
+                        hr = WddmEngine->Initialize();
+                        LOG_IF_FAILED(hr);
                     }
+                    
+                    if (SUCCEEDED(hr))
+                    {
+                        // Allow acquiring device resources before drawing.
+                        hr = WddmEngine->Enable();
+                        LOG_IF_FAILED(hr);
+                        if (SUCCEEDED(hr))
+                        {
+                            // Allow the renderer to paint.
+                            Renderer->EnablePainting();
 
-                    // Allow acquiring device resources before drawing.
-                    WddmEngine->Enable();
+                            // Force a complete redraw.
+                            Renderer->TriggerRedrawAll();
 
-                    // Allow the renderer to paint.
-                    Renderer->EnablePainting();
-
-                    // Force a complete redraw.
-                    Renderer->TriggerRedrawAll();
-
-                    SignalInputEventIfNecessary();
+                            SignalInputEventIfNecessary();
+                        }
+                    }
                 }
                 else
                 {
-                    // Wait for the currently running paint operation, if any,
-                    // and prevent further attempts to render.
-                    Renderer->WaitForPaintCompletionAndDisable(1000);
+                    if (WddmEngine->IsInitialized())
+                    {
+                        // Wait for the currently running paint operation, if any,
+                        // and prevent further attempts to render.
+                        Renderer->WaitForPaintCompletionAndDisable(1000);
 
-                    // Relinquish control of the graphics device (only one
-                    // DirectX application may control the device at any one
-                    // time).
-                    WddmEngine->Disable();
+                        // Relinquish control of the graphics device (only one
+                        // DirectX application may control the device at any one
+                        // time).
+                        LOG_IF_FAILED(WddmEngine->Disable());
 
-                    // Let the Console IO Server that we have relinquished
-                    // control of the display.
-                    ReplyEvent.Type = CIS_EVENT_TYPE_FOCUS_ACK;
-                    Ret = WriteFile(_pipeWriteHandle,
-                                    &ReplyEvent,
-                                    sizeof(CIS_EVENT),
-                                    NULL,
-                                    NULL);
+                        // Let the Console IO Server that we have relinquished
+                        // control of the display.
+                        ReplyEvent.Type = CIS_EVENT_TYPE_FOCUS_ACK;
+                        Ret = WriteFile(_pipeWriteHandle,
+                                        &ReplyEvent,
+                                        sizeof(CIS_EVENT),
+                                        NULL,
+                                        NULL);
+                    }
                 }
             break;
 
