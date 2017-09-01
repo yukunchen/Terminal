@@ -7,12 +7,16 @@
 #include "precomp.h"
 #include "WinTelnetEngine.hpp"
 #include "..\..\inc\Viewport.hpp"
+#include "..\..\inc\conattrs.hpp"
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
 
-WinTelnetEngine::WinTelnetEngine(HANDLE hPipe)
-    : VtEngine(hPipe)
+WinTelnetEngine::WinTelnetEngine(HANDLE hPipe, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable)
+    : VtEngine(hPipe),
+    _ColorTable(ColorTable),
+    _cColorTable(cColorTable)
 {
+
 }
 
 
@@ -33,11 +37,15 @@ HRESULT WinTelnetEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForegroun
     {
         if (colorForeground != _LastFG)
         {
-            char* fmt = IsFlagSet(legacyColorAttribute, FOREGROUND_INTENSITY)? "\x1b[1;%dm" : "\x1b[%dm";
+            WORD wNearestFg = ::FindNearestTableIndex(colorForeground, _ColorTable, _cColorTable);
+
+            char* fmt = IsFlagSet(wNearestFg, FOREGROUND_INTENSITY)? 
+                "\x1b[1m\x1b[%dm" : "\x1b[22m\x1b[%dm";
+
             int fg = 30
-                     + IsFlagSet(legacyColorAttribute,FOREGROUND_RED)? 1 : 0
-                     + IsFlagSet(legacyColorAttribute,FOREGROUND_GREEN)? 2 : 0
-                     + IsFlagSet(legacyColorAttribute,FOREGROUND_BLUE)? 4 : 0
+                     + (IsFlagSet(wNearestFg,FOREGROUND_RED)? 1 : 0)
+                     + (IsFlagSet(wNearestFg,FOREGROUND_GREEN)? 2 : 0)
+                     + (IsFlagSet(wNearestFg,FOREGROUND_BLUE)? 4 : 0)
                      ;
             int cchNeeded = _scprintf(fmt, fg);
             wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
@@ -51,12 +59,15 @@ HRESULT WinTelnetEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForegroun
         }
         if (colorBackground != _LastBG) 
         {
-            char* fmt = IsFlagSet(legacyColorAttribute, BACKGROUND_INTENSITY)? "\x1b[1;%dm" : "\x1b[%dm";
+            WORD wNearestBg = ::FindNearestTableIndex(colorBackground, _ColorTable, _cColorTable);
+
+            // char* fmt = IsFlagSet(wNearestBg, BACKGROUND_INTENSITY)? "\x1b[1;%dm" : "\x1b[%dm";
+            char* fmt = "\x1b[%dm";
 
             int bg = 40
-                     + IsFlagSet(legacyColorAttribute,BACKGROUND_RED)? 1 : 0
-                     + IsFlagSet(legacyColorAttribute,BACKGROUND_GREEN)? 2 : 0
-                     + IsFlagSet(legacyColorAttribute,BACKGROUND_BLUE)? 4 : 0
+                     + (IsFlagSet(wNearestBg,BACKGROUND_RED)? 1 : 0)
+                     + (IsFlagSet(wNearestBg,BACKGROUND_GREEN)? 2 : 0)
+                     + (IsFlagSet(wNearestBg,BACKGROUND_BLUE)? 4 : 0)
                      ;
 
             int cchNeeded = _scprintf(fmt, bg);
@@ -115,7 +126,14 @@ HRESULT WinTelnetEngine::ScrollFrame()
 HRESULT WinTelnetEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 {
     UNREFERENCED_PARAMETER(pcoordDelta);
+    short dx = pcoordDelta->X;
+    short dy = pcoordDelta->Y;
+    if (dx != 0 || dy != 0)
+    {
+        return InvalidateAll();
+    }
     // win-telnet doesn't know anything about scrolling. 
     //  Every invalidate action should just repaint everything.
-    return InvalidateAll();
+        // RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
+    return S_OK;
 }

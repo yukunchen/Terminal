@@ -48,6 +48,8 @@ HRESULT VtIo::ParseIoMode(const std::wstring& VtMode, VtIoMode* const IoMode)
 
 HRESULT VtIo::Initialize(const std::wstring& InPipeName, const std::wstring& OutPipeName, const std::wstring& VtMode)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+
     HRESULT hr = ParseIoMode(VtMode, &_IoMode);
     if (!SUCCEEDED(hr)) return hr;
 
@@ -84,7 +86,7 @@ HRESULT VtIo::Initialize(const std::wstring& InPipeName, const std::wstring& Out
     }
     else if (_IoMode == VtIoMode::WIN_TELNET)
     {
-        _pVtRenderEngine = new WinTelnetEngine(_hOutputFile.release());
+        _pVtRenderEngine = new WinTelnetEngine(_hOutputFile.release(), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
     }
     
     _usingVt = true;

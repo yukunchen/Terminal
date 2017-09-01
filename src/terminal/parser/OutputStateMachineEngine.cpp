@@ -18,7 +18,7 @@ OutputStateMachineEngine::OutputStateMachineEngine(_In_ TermDispatch* const pDis
 {
     // _ActionClear();
 
-    _trace = Microsoft::Console::VirtualTerminal::ParserTracing();
+    // _trace = Microsoft::Console::VirtualTerminal::ParserTracing();
 }
 
 OutputStateMachineEngine::~OutputStateMachineEngine()
@@ -32,10 +32,10 @@ OutputStateMachineEngine::~OutputStateMachineEngine()
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void OutputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
+bool OutputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
 {
-    _trace.TraceOnExecute(wch);
     _pDispatch->Execute(wch);
+    return true;
 }
 
 // Routine Description:
@@ -44,10 +44,10 @@ void OutputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void OutputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
+bool OutputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 {
-    _trace.TraceOnAction(L"Print");
     _pDispatch->Print(wch); // call print
+    return true;
 }
 
 // Routine Description:
@@ -56,10 +56,11 @@ void OutputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void OutputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+bool OutputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
 {
-    _trace.TraceOnAction(L"PrintString");
+    // _trace.TraceOnAction(L"PrintString");
     _pDispatch->PrintString(rgwch, cch); // call print
+    return true;
 }
 
 // Routine Description:
@@ -69,10 +70,8 @@ void OutputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const 
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate)
+bool OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate)
 {
-    _trace.TraceOnAction(L"EscDispatch");
-
     bool fSuccess = false;
 
     // no intermediates.
@@ -150,15 +149,7 @@ void OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ co
             break;
         }
     }
-
-    // Trace the result.
-    _trace.DispatchSequenceTrace(fSuccess);
-
-    if (!fSuccess)
-    {
-        // Suppress it and log telemetry on failed cases
-        TermTelemetry::Instance().LogFailed(wch);
-    }
+    return fSuccess;
 }
 
 // Routine Description:
@@ -168,14 +159,12 @@ void OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ co
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch, 
+bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch, 
                                                  _In_ const unsigned short cIntermediate,
                                                  _In_ const wchar_t wchIntermediate,
                                                  _In_ const unsigned short* const rgusParams,
                                                  _In_ const unsigned short cParams)
 {
-    _trace.TraceOnAction(L"CsiDispatch");
-
     bool fSuccess = false;
     unsigned int uiDistance = 0;
     unsigned int uiLine = 0;
@@ -386,15 +375,7 @@ void OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             break;
         }
     }
-
-    // Trace the result.
-    _trace.DispatchSequenceTrace(fSuccess);
-
-    if (!fSuccess)
-    {
-        // Suppress it and log telemetry on failed cases
-        TermTelemetry::Instance().LogFailed(wch);
-    }
+    return fSuccess;
 }
 
 
@@ -406,7 +387,7 @@ void OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
 // - True if handled successfully. False otherwise.
 bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction, _In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams)
 {
-    _trace.TraceOnAction(L"_IntermediateQuestionMarkDispatch");
+    // _trace.TraceOnAction(L"_IntermediateQuestionMarkDispatch");
     bool fSuccess = false;
 
     TermDispatch::PrivateModeParams rgPrivateModeParams[StateMachine::s_cParamsMax];
@@ -455,7 +436,7 @@ bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(_In_ wchar_t co
 // - True if handled successfully. False otherwise.
 bool OutputStateMachineEngine::_IntermediateExclamationDispatch(_In_ wchar_t const wchAction)
 {
-    _trace.TraceOnAction(L"_IntermediateExclamationDispatch");
+    // _trace.TraceOnAction(L"_IntermediateExclamationDispatch");
     bool fSuccess = false;
 
     switch(wchAction)
@@ -479,10 +460,10 @@ bool OutputStateMachineEngine::_IntermediateExclamationDispatch(_In_ wchar_t con
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void OutputStateMachineEngine::ActionClear()
+bool OutputStateMachineEngine::ActionClear()
 {
     // do nothing.
-    _trace.TraceOnAction(L"Clear");
+    return true;
 }
 
 // Routine Description:
@@ -491,10 +472,10 @@ void OutputStateMachineEngine::ActionClear()
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void OutputStateMachineEngine::ActionIgnore()
+bool OutputStateMachineEngine::ActionIgnore()
 {
     // do nothing.
-    _trace.TraceOnAction(L"Ignore");
+    return true;
 }
 
 // Routine Description:
@@ -504,10 +485,10 @@ void OutputStateMachineEngine::ActionIgnore()
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString)
+bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString)
 {
-    _trace.TraceOnAction(L"OscDispatch");
-
+    // The wch here is just the string terminator for the OSC string
+    UNREFERENCED_PARAMETER(wch);
     bool fSuccess = false;
     wchar_t* pwchTitle = nullptr;  
     unsigned short sCchTitleLength = 0;
@@ -529,23 +510,16 @@ void OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
         case OscActionCodes::SetWindowTitle:
             fSuccess = _pDispatch->SetWindowTitle(pwchTitle, sCchTitleLength);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCWT);
+            break;
         default:
             // If no functions to call, overall dispatch was a failure.
             fSuccess = false;
             break;
         }        
     }  
-    // Trace the result.
-    _trace.DispatchSequenceTrace(fSuccess);
 
-    if (!fSuccess)
-    {
-        // Suppress it and log telemetry on failed cases
-        TermTelemetry::Instance().LogFailed(wch);
-    }
+    return fSuccess;
 }
-
-
 
 // Routine Description:
 // - Retrieves the listed graphics options to be applied in order to the "font style" of the next characters inserted into the buffer.

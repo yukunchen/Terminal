@@ -47,7 +47,7 @@ const InputStateMachineEngine::GENERIC_TO_VKEY InputStateMachineEngine::s_rgGene
 InputStateMachineEngine::InputStateMachineEngine(_In_ WriteInputEvents const pfnWriteEvents)
     : _pfnWriteEvents(pfnWriteEvents)
 {
-    _trace = Microsoft::Console::VirtualTerminal::ParserTracing();
+    // _trace = Microsoft::Console::VirtualTerminal::ParserTracing();
 }
 
 InputStateMachineEngine::~InputStateMachineEngine()
@@ -55,7 +55,7 @@ InputStateMachineEngine::~InputStateMachineEngine()
 
 }
 
-void InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
+bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
 {
     if (wch >= '\x0' && wch < '\x20')
     {
@@ -110,7 +110,92 @@ void InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
     {
         _WriteSingleKey('\x8', VK_BACK, 0);
     } 
-    else ActionPrint(wch);
+    else return ActionPrint(wch);
+    return true;
+}
+
+bool InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
+{
+    short vkey = 0;
+    DWORD dwModifierState = 0;
+    _GenerateKeyFromChar(wch, &vkey, &dwModifierState);
+
+    _WriteSingleKey(wch, vkey, dwModifierState);
+    return true;
+}
+
+bool InputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+{
+    for(size_t i = 0; i < cch; i++)
+    {
+        ActionPrint(rgwch[i]);
+    }
+    return true;
+}
+
+bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate)
+{
+    UNREFERENCED_PARAMETER(cIntermediate);
+    UNREFERENCED_PARAMETER(wchIntermediate);
+
+    DWORD dwModifierState = 0;
+    _GenerateKeyFromChar(wch, nullptr, &dwModifierState);
+
+    // Alt is definitely pressed in the esc+key case.
+    dwModifierState = dwModifierState | LEFT_ALT_PRESSED;
+    
+    _WriteSingleKey(wch, dwModifierState);
+
+    return true;
+}
+
+bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch, 
+                       _In_ const unsigned short cIntermediate,
+                       _In_ const wchar_t wchIntermediate,
+                       _In_ const unsigned short* const rgusParams,
+                       _In_ const unsigned short cParams)
+{
+    UNREFERENCED_PARAMETER(cIntermediate);
+    UNREFERENCED_PARAMETER(wchIntermediate);
+
+    DWORD dwModifierState = 0;
+    short vkey = 0;
+
+    if (wch == CsiActionCodes::Generic)
+    {
+        dwModifierState = _GetGenericKeysModifierState(rgusParams, cParams);
+        vkey = _GetGenericVkey(rgusParams, cParams);
+    }
+    else
+    {
+        dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
+        vkey = _GetCursorKeysVkey(wch);
+    }
+
+    _WriteSingleKey(vkey, dwModifierState);
+
+    return true;
+}
+
+bool InputStateMachineEngine::ActionClear()
+{
+
+    return true;
+}
+
+bool InputStateMachineEngine::ActionIgnore()
+{
+
+    return true;
+}
+
+bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString)
+{
+    UNREFERENCED_PARAMETER(wch);
+    UNREFERENCED_PARAMETER(sOscParam);
+    UNREFERENCED_PARAMETER(pwchOscStringBuffer);
+    UNREFERENCED_PARAMETER(cchOscString);
+    return true;
 }
 
 void InputStateMachineEngine::_WriteControlAndKey(wchar_t wch, short vkey, DWORD dwModifierState)
@@ -164,85 +249,6 @@ void InputStateMachineEngine::_WriteSingleKey(short vkey, DWORD dwModifierState)
     wchar_t wch = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
     _WriteSingleKey(wch, vkey, dwModifierState);
 }
-
-void InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
-{
-    short vkey = 0;
-    DWORD dwModifierState = 0;
-    _GenerateKeyFromChar(wch, &vkey, &dwModifierState);
-
-    _WriteSingleKey(wch, vkey, dwModifierState);
-}
-
-void InputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
-{
-    for(size_t i = 0; i < cch; i++)
-    {
-        ActionPrint(rgwch[i]);
-    }
-}
-
-void InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate)
-{
-    UNREFERENCED_PARAMETER(cIntermediate);
-    UNREFERENCED_PARAMETER(wchIntermediate);
-
-    DWORD dwModifierState = 0;
-    _GenerateKeyFromChar(wch, nullptr, &dwModifierState);
-
-    // Alt is definitely pressed in the esc+key case.
-    dwModifierState = dwModifierState | LEFT_ALT_PRESSED;
-    
-    _WriteSingleKey(wch, dwModifierState);
-
-}
-
-void InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch, 
-                       _In_ const unsigned short cIntermediate,
-                       _In_ const wchar_t wchIntermediate,
-                       _In_ const unsigned short* const rgusParams,
-                       _In_ const unsigned short cParams)
-{
-    UNREFERENCED_PARAMETER(cIntermediate);
-    UNREFERENCED_PARAMETER(wchIntermediate);
-    _trace.TraceOnAction(L"Input.CsiDispatch");
-
-    DWORD dwModifierState = 0;
-    short vkey = 0;
-
-    if (wch == CsiActionCodes::Generic)
-    {
-        dwModifierState = _GetGenericKeysModifierState(rgusParams, cParams);
-        vkey = _GetGenericVkey(rgusParams, cParams);
-    }
-    else
-    {
-        dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
-        vkey = _GetCursorKeysVkey(wch);
-    }
-
-    _WriteSingleKey(vkey, dwModifierState);
-
-}
-
-void InputStateMachineEngine::ActionClear()
-{
-
-}
-
-void InputStateMachineEngine::ActionIgnore()
-{
-
-}
-
-void InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString)
-{
-    UNREFERENCED_PARAMETER(wch);
-    UNREFERENCED_PARAMETER(sOscParam);
-    UNREFERENCED_PARAMETER(pwchOscStringBuffer);
-    UNREFERENCED_PARAMETER(cchOscString);
-}
-
 
 DWORD InputStateMachineEngine::_GetCursorKeysModifierState(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams)
 {

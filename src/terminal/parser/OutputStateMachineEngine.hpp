@@ -30,25 +30,25 @@ namespace Microsoft
                 OutputStateMachineEngine(_In_ TermDispatch* const pDispatch);
                 ~OutputStateMachineEngine();
 
-                void ActionExecute(_In_ wchar_t const wch);
-                void ActionPrint(_In_ wchar_t const wch);
-                void ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
-                void ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate);
-                void ActionCsiDispatch(_In_ wchar_t const wch, 
+                bool ActionExecute(_In_ wchar_t const wch);
+                bool ActionPrint(_In_ wchar_t const wch);
+                bool ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
+                bool ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate);
+                bool ActionCsiDispatch(_In_ wchar_t const wch, 
                                        _In_ const unsigned short cIntermediate,
                                        _In_ const wchar_t wchIntermediate,
                                        _In_ const unsigned short* const rgusParams,
                                        _In_ const unsigned short cParams);
-                void ActionClear();
-                void ActionIgnore();
-                void ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString);
+                bool ActionClear();
+                bool ActionIgnore();
+                bool ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString);
                 // void ActionSs3Dispatch(_In_ wchar_t const wch);
                 bool FlushAtEndOfString(){
                     return false;
                 };
 
             private:
-                Microsoft::Console::VirtualTerminal::ParserTracing _trace;
+                // Microsoft::Console::VirtualTerminal::ParserTracing _trace;
                 TermDispatch* _pDispatch;
 
                 bool _IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction, _In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams);

@@ -248,8 +248,7 @@ bool StateMachine::s_IsOscTerminator(_In_ wchar_t const wch)
 // - <none>
 void StateMachine::_ActionExecute(_In_ wchar_t const wch)
 {
-    // _trace.TraceOnExecute(wch);
-    // _pDispatch->Execute(wch);
+    _trace.TraceOnExecute(wch);
     _pEngine->ActionExecute(wch);
 
 }
@@ -262,6 +261,7 @@ void StateMachine::_ActionExecute(_In_ wchar_t const wch)
 // - <none>
 void StateMachine::_ActionPrint(_In_ wchar_t const wch)
 {    
+    _trace.TraceOnAction(L"Print");
     _pEngine->ActionPrint(wch);
 }
 
@@ -275,7 +275,18 @@ void StateMachine::_ActionPrint(_In_ wchar_t const wch)
 // - <none>
 void StateMachine::_ActionEscDispatch(_In_ wchar_t const wch)
 {
-    _pEngine->ActionEscDispatch(wch, _cIntermediate, _wchIntermediate);
+    _trace.TraceOnAction(L"EscDispatch");
+    
+    bool fSuccess = _pEngine->ActionEscDispatch(wch, _cIntermediate, _wchIntermediate);
+    
+    // Trace the result.
+    _trace.DispatchSequenceTrace(fSuccess);
+
+    if (!fSuccess)
+    {
+        // Suppress it and log telemetry on failed cases
+        TermTelemetry::Instance().LogFailed(wch);
+    }
 }
 
 // Routine Description:
@@ -287,7 +298,18 @@ void StateMachine::_ActionEscDispatch(_In_ wchar_t const wch)
 // - <none>
 void StateMachine::_ActionCsiDispatch(_In_ wchar_t const wch)
 {
-    _pEngine->ActionCsiDispatch(wch, _cIntermediate, _wchIntermediate, _rgusParams, _cParams);
+    _trace.TraceOnAction(L"CsiDispatch");
+    
+    bool fSuccess = _pEngine->ActionCsiDispatch(wch, _cIntermediate, _wchIntermediate, _rgusParams, _cParams);
+
+    // Trace the result.
+    _trace.DispatchSequenceTrace(fSuccess);
+
+    if (!fSuccess)
+    {
+        // Suppress it and log telemetry on failed cases
+        TermTelemetry::Instance().LogFailed(wch);
+    }
 }
 
 // Routine Description:
@@ -476,7 +498,19 @@ void StateMachine::_ActionOscPut(_In_ wchar_t const wch)
 // - <none>
 void StateMachine::_ActionOscDispatch(_In_ wchar_t const wch)
 {
-    _pEngine->ActionOscDispatch(wch, _sOscParam, _pwchOscStringBuffer, _sOscNextChar);
+    _trace.TraceOnAction(L"OscDispatch");
+    
+    bool fSuccess = _pEngine->ActionOscDispatch(wch, _sOscParam, _pwchOscStringBuffer, _sOscNextChar);
+
+    // Trace the result.
+    _trace.DispatchSequenceTrace(fSuccess);
+
+    if (!fSuccess)
+    {
+        // Suppress it and log telemetry on failed cases
+        TermTelemetry::Instance().LogFailed(wch);
+    }
+    
 }
 
 // Routine Description:
