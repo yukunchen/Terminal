@@ -10,11 +10,55 @@
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
 
-Xterm256Engine::Xterm256Engine(HANDLE hPipe, VtIoMode IoMode)
-    : VtEngine(hPipe, IoMode)
+Xterm256Engine::Xterm256Engine(HANDLE hPipe)
+    : VtEngine(hPipe)
 {
 }
 
+// Routine Description:
+// - Prepares internal structures for a painting operation.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we started to paint. S_FALSE if we didn't need to paint. HRESULT error code if painting didn't start successfully.
+HRESULT Xterm256Engine::StartPaint()
+{    
+    HRESULT hr = VtEngine::StartPaint();
+    if (SUCCEEDED(hr))
+    {
+        // if (!_quickReturn)
+        // {
+            // Turn off cursor
+            std::string seq = "\x1b[?25l";
+            _Write(seq);
+        // }
+    }
+
+    return hr;
+}
+
+// Routine Description:
+// - EndPaint helper to perform the final BitBlt copy from the memory bitmap onto the final window bitmap (double-buffering.) Also cleans up structures used while painting.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK or suitable GDI HRESULT error.
+HRESULT Xterm256Engine::EndPaint()
+{
+    HRESULT hr = VtEngine::EndPaint();
+    if (SUCCEEDED(hr))
+    {
+        // if (!_quickReturn)
+        // {
+            // Turn on cursor
+            std::string seq = "\x1b[?25h";
+            _Write(seq);
+        // }        
+    }
+
+
+    return hr;
+}
 
 // Routine Description:
 // - This method will set the GDI brushes in the drawing context (and update the hung-window background color)

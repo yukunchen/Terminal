@@ -10,8 +10,8 @@
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
 
-WinTelnetEngine::WinTelnetEngine(HANDLE hPipe, VtIoMode IoMode)
-    : VtEngine(hPipe, IoMode)
+WinTelnetEngine::WinTelnetEngine(HANDLE hPipe)
+    : VtEngine(hPipe)
 {
 }
 

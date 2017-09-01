@@ -14,7 +14,6 @@ Author(s):
 #pragma once
 
 #include "..\inc\IRenderEngine.hpp"
-#include "..\..\inc\VtIoModes.hpp"
 #include <string>
 
 namespace Microsoft
@@ -26,7 +25,7 @@ namespace Microsoft
             class VtEngine : public IRenderEngine
             {
             public:
-                VtEngine(HANDLE hPipe, VtIoMode IoMode);
+                VtEngine(HANDLE hPipe);
                 ~VtEngine();
 
                 HRESULT InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);
@@ -35,8 +34,8 @@ namespace Microsoft
                 HRESULT Invalidate(_In_ const SMALL_RECT* const psrRegion);
                 HRESULT InvalidateAll();
 
-                HRESULT StartPaint();
-                HRESULT EndPaint();
+                virtual HRESULT StartPaint();
+                virtual HRESULT EndPaint();
 
                 virtual HRESULT ScrollFrame() = 0;
 
@@ -65,7 +64,6 @@ namespace Microsoft
 
             protected:
                 wil::unique_hfile _hFile;
-                VtIoMode _IoMode;
 
                 COLORREF _LastFG;
                 COLORREF _LastBG;

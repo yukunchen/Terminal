@@ -21,7 +21,7 @@ using namespace Microsoft::Console::Render;
 // - <none>
 // Return Value:
 // - An instance of a Renderer.
-VtEngine::VtEngine(HANDLE pipe, VtIoMode IoMode) 
+VtEngine::VtEngine(HANDLE pipe) 
 {
     _hFile.reset(pipe);
     THROW_IF_HANDLE_INVALID(_hFile.get());
@@ -34,8 +34,6 @@ VtEngine::VtEngine(HANDLE pipe, VtIoMode IoMode)
     _LastFG = 0xff000000;
     _LastBG = 0xff000000;
 
-    // TODO remove this, the implementation doesn't need to know it's own level
-    _IoMode = IoMode;
 }
 
 // Routine Description:

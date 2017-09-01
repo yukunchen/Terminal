@@ -28,93 +28,10 @@ HRESULT VtEngine::StartPaint()
     _quickReturn = false;
     _quickReturn |= (_fInvalidRectUsed);
     _quickReturn |= (_scrollDelta.X != 0 || _scrollDelta.Y != 0);
-    
-    if (_IoMode == VtIoMode::XTERM_256)
-    {
-        // if (!_quickReturn)
-        // {
-            // Turn off cursor
-            std::string seq = "\x1b[?25l";
-            _Write(seq);
-        // }
-    }
+
 
     return S_OK;
 }
-
-// HRESULT VtEngine::_WIN_TELNET_ScrollFrame()
-// {
-//     // win-telnet doesn't know anything about scroll vt sequences
-//     // every frame, we're repainitng everything, always.
-//     return S_OK;
-// }
-
-// HRESULT VtEngine::_XTERM_256_ScrollFrame()
-// {
-//     if (_scrollDelta.X != 0)
-//     {
-//         // No easy way to shift left-right
-//         return InvalidateAll();
-//     }
-
-//     short dy = _scrollDelta.Y;
-//     short absDy = (dy>0)? dy : -dy;
-
-//     Viewport view(_srLastViewport);
-//     SMALL_RECT v = _srLastViewport;
-//     view.ConvertToOrigin(&v);
-
-//     if (dy < 0)
-//     {
-//         _MoveCursor({0,0});
-//         // DL - Delete Line
-//         std::string seq = "\x1b[M";
-//         for (int i = 0; i < absDy; ++i)
-//         {
-//             _Write(seq);
-//         }
-
-//         SMALL_RECT b = v;
-//         b.Top = v.Bottom - absDy;
-//         // RETURN_IF_FAILED(_InvalidCombine(&b));
-//     }
-//     else if (dy > 0)
-//     {
-//         _MoveCursor({0,0});
-//         // IL - Insert Line
-//         std::string seq = "\x1b[L";
-//         for (int i = 0; i < absDy; ++i)
-//         {
-//             _Write(seq);
-//         }
-
-//         SMALL_RECT a = v;
-//         a.Bottom = absDy;
-//         // RETURN_IF_FAILED(_InvalidCombine(&a));
-//     }
-
-//     return S_OK;
-// }
-
-// // Routine Description:
-// // - Scrolls the existing data on the in-memory frame by the scroll region deltas we have collectively received
-// //   through the Invalidate methods since the last time this was called.
-// // Arguments:
-// // - <none>
-// // Return Value:
-// // - S_OK, suitable GDI HRESULT error, error from Win32 windowing, or safemath error.
-// HRESULT VtEngine::ScrollFrame()
-// {
-//     if (_IoMode == VtIoMode::XTERM_256)
-//     {
-//         return _XTERM_256_ScrollFrame();
-//     }
-//     else if (_IoMode == VtIoMode::WIN_TELNET)
-//     {
-//         return _WIN_TELNET_ScrollFrame();
-//     }
-//     return E_FAIL;
-// }
 
 // Routine Description:
 // - EndPaint helper to perform the final BitBlt copy from the memory bitmap onto the final window bitmap (double-buffering.) Also cleans up structures used while painting.
@@ -134,17 +51,6 @@ HRESULT VtEngine::EndPaint()
 
     _scrollDelta = {0};
     
-    if (_IoMode == VtIoMode::XTERM_256)
-    {
-        // if (!_quickReturn)
-        // {
-            // Turn on cursor
-            std::string seq = "\x1b[?25h";
-            _Write(seq);
-        // }
-    }
-
-
     return S_OK;
 }
 
@@ -287,85 +193,3 @@ HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrS
 }
 
 
-
-// HRESULT VtEngine::_WIN_TELNET_MoveCursor(COORD const coord)
-// {
-//     // don't try and be clever about moving the cursor.
-//     // Always just use the full sequence
-//     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
-//     {
-//         try
-//         { 
-//             PCSTR pszCursorFormat = "\x1b[%d;%dH";
-//             COORD coordVt = coord;
-//             coordVt.X++;
-//             coordVt.Y++;
-
-//             int cchNeeded = _scprintf(pszCursorFormat, coordVt.Y, coordVt.X);
-//             wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-//             RETURN_IF_NULL_ALLOC(psz);
-
-//             int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszCursorFormat, coordVt.Y, coordVt.X);
-//             _Write(psz.get(), cchWritten);
-
-//             _lastText = coord;
-//         }
-//         CATCH_RETURN();
-//     }
-//     return S_OK;
-// }
-
-// HRESULT VtEngine::_XTERM_256_MoveCursor(COORD const coord)
-// {
-//     // DebugBreak();
-//     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
-//     {
-//         try
-//         {
-//             if (coord.X == 0 && coord.Y == 0)
-//             {
-//                 std::string seq = "\x1b[H";
-//                 _Write(seq);
-//             }
-//             else if (coord.X == 0 && coord.Y == (_lastText.Y+1))
-//             {
-//                 std::string seq = "\r\n";
-//                 _Write(seq);
-//             }
-//             else
-//             {
-//                 PCSTR pszCursorFormat = "\x1b[%d;%dH";
-//                 COORD coordVt = coord;
-//                 coordVt.X++;
-//                 coordVt.Y++;
-
-//                 int cchNeeded = _scprintf(pszCursorFormat, coordVt.Y, coordVt.X);
-//                 wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-//                 RETURN_IF_NULL_ALLOC(psz);
-
-//                 int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszCursorFormat, coordVt.Y, coordVt.X);
-//                 _Write(psz.get(), cchWritten);
-                
-//             }
-
-//             _lastText = coord;
-//             // _lastRealCursor = coord;
-//         }
-//         CATCH_RETURN();
-//     }
-//     return S_OK;
-
-// }
-
-// HRESULT VtEngine::_MoveCursor(COORD const coord)
-// {
-//     if (_IoMode == VtIoMode::XTERM_256)
-//     {
-//         return _XTERM_256_MoveCursor(coord);
-//     }
-//     else if (_IoMode == VtIoMode::WIN_TELNET)
-//     {
-//         return _WIN_TELNET_MoveCursor(coord);
-//     }
-//     return E_FAIL;
-// }

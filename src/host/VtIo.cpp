@@ -80,16 +80,13 @@ HRESULT VtIo::Initialize(const std::wstring& InPipeName, const std::wstring& Out
 
     if (_IoMode == VtIoMode::XTERM_256)
     {
-        _pVtRenderEngine = new Xterm256Engine(_hOutputFile.release(), _IoMode);
+        _pVtRenderEngine = new Xterm256Engine(_hOutputFile.release());
     }
     else if (_IoMode == VtIoMode::WIN_TELNET)
     {
-        _pVtRenderEngine = new WinTelnetEngine(_hOutputFile.release(), _IoMode);
+        _pVtRenderEngine = new WinTelnetEngine(_hOutputFile.release());
     }
-    // auto xterm256 = new Xterm256Engine(_hOutputFile.release(), _IoMode);
-    // xterm256;
-    // _pVtRenderEngine = new VtEngine(_hOutputFile.release(), _IoMode);
-
+    
     _usingVt = true;
     return S_OK;
 }
