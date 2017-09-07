@@ -8,6 +8,7 @@
 #include "VtIo.hpp"
 #include "..\interactivity\inc\ServiceLocator.hpp"
 // #include "..\renderer\vt\vtrenderer.hpp"
+#include "..\renderer\vt\XtermEngine.hpp"
 #include "..\renderer\vt\Xterm256Engine.hpp"
 #include "..\renderer\vt\WinTelnetEngine.hpp"
 #include "..\renderer\base\renderer.hpp"
@@ -30,6 +31,10 @@ HRESULT VtIo::ParseIoMode(const std::wstring& VtMode, VtIoMode* const IoMode)
     if (VtMode == XTERM_256_STRING)
     {
         *IoMode = VtIoMode::XTERM_256;
+    }
+    else if (VtMode == XTERM_STRING)
+    {
+        *IoMode = VtIoMode::XTERM;
     }
     else if (VtMode == WIN_TELNET_STRING)
     {
@@ -80,15 +85,21 @@ HRESULT VtIo::Initialize(const std::wstring& InPipeName, const std::wstring& Out
 
     _pVtInputThread = new VtInputThread(_hInputFile.release());
 
-    if (_IoMode == VtIoMode::XTERM_256)
+    switch(_IoMode)
     {
-        _pVtRenderEngine = new Xterm256Engine(_hOutputFile.release());
+        case VtIoMode::XTERM_256:
+            _pVtRenderEngine = new Xterm256Engine(_hOutputFile.release());
+            break;
+        case VtIoMode::XTERM:
+            _pVtRenderEngine = new XtermEngine(_hOutputFile.release(), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
+            break;
+        case VtIoMode::WIN_TELNET:
+            _pVtRenderEngine = new WinTelnetEngine(_hOutputFile.release(), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
+            break;
+        default:
+            return E_FAIL;
     }
-    else if (_IoMode == VtIoMode::WIN_TELNET)
-    {
-        _pVtRenderEngine = new WinTelnetEngine(_hOutputFile.release(), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
-    }
-    
+
     _usingVt = true;
     return S_OK;
 }

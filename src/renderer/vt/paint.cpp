@@ -8,13 +8,46 @@
 
 #include "vtrenderer.hpp"
 #include "..\..\inc\Viewport.hpp"
+#include "..\..\inc\conattrs.hpp"
 
 #include <sstream>
-
-
 #pragma hdrstop
-
 using namespace Microsoft::Console::Render;
+
+
+HRESULT VtEngine::_EraseLine()
+{
+    std::string seq = "\x1b[0K";
+    return _Write(seq);
+}
+
+HRESULT VtEngine::_DeleteLine(const short sLines)
+{
+    if (sLines <= 0) return S_OK;
+
+    PCSTR pszFormat = "\x1b[%dM";
+
+    int cchNeeded = _scprintf(pszFormat, sLines);
+    wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+    RETURN_IF_NULL_ALLOC(psz);
+
+    int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszFormat, sLines);
+    return _Write(psz.get(), cchWritten);
+
+}
+
+HRESULT VtEngine::_InsertLine(const short sLines)
+{
+    if (sLines <= 0) return S_OK;
+    PCSTR pszFormat = "\x1b[%dL";
+
+    int cchNeeded = _scprintf(pszFormat, sLines);
+    wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+    RETURN_IF_NULL_ALLOC(psz);
+
+    int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszFormat, sLines);
+    return _Write(psz.get(), cchWritten);
+}
 
 // Routine Description:
 // - Prepares internal structures for a painting operation.
@@ -96,17 +129,38 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
     RETURN_IF_FAILED(_MoveCursor(coord));
     try
     {
-        DWORD dwNeeded = WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)cchLine, nullptr, 0, nullptr, nullptr);
+        // size_t spacesAtEnd = 0;
+        // for (size_t i = cchLine-1; i>=0; i--)
+        // {
+        //     if (pwsLine[i] == 0x20)
+        //     {
+        //         spacesAtEnd++;
+        //     }
+        //     else
+        //     {
+        //         break;
+        //     }
+        // }
+        // size_t actualCch = cchLine - spacesAtEnd;
+        size_t actualCch = cchLine;
+
+        // Don't do this - we may be repainting single characters earlier in the line,
+        //      This will cause the whole line to be erased, when we want only a char
+        // _EraseLine();
+
+        // DWORD dwNeeded = WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)cchLine, nullptr, 0, nullptr, nullptr);
+        DWORD dwNeeded = WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)actualCch, nullptr, 0, nullptr, nullptr);
         wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(dwNeeded + 1);
         RETURN_IF_NULL_ALLOC(rgchNeeded);
-        RETURN_LAST_ERROR_IF_FALSE(WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)cchLine, rgchNeeded.get(), dwNeeded, nullptr, nullptr));
+        // RETURN_LAST_ERROR_IF_FALSE(WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)cchLine, rgchNeeded.get(), dwNeeded, nullptr, nullptr));
+        RETURN_LAST_ERROR_IF_FALSE(WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)actualCch, rgchNeeded.get(), dwNeeded, nullptr, nullptr));
         rgchNeeded[dwNeeded] = '\0';
 
         _Write(rgchNeeded.get(), dwNeeded);
         
         // Update our internal tracker of the cursor's position
         short totalWidth = 0;
-        for (size_t i=0; i < cchLine; i++)
+        for (size_t i=0; i < actualCch; i++)
         {
             totalWidth+=(short)rgWidths[i];
         }
@@ -192,4 +246,98 @@ HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrS
     return S_OK;
 }
 
+
+HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground)
+{
+    try
+    {
+        if (colorForeground != _LastFG)
+        {
+            PCSTR pszFgFormat = "\x1b[38;2;%d;%d;%dm";
+            DWORD const fgRed = (colorForeground & 0xff);
+            DWORD const fgGreen = (colorForeground >> 8) & 0xff;
+            DWORD const fgBlue = (colorForeground >> 16) & 0xff;
+            
+            int cchNeeded = _scprintf(pszFgFormat, fgRed, fgGreen, fgBlue);
+            wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+            RETURN_IF_NULL_ALLOC(psz);
+
+            int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszFgFormat, fgRed, fgGreen, fgBlue);
+            _Write(psz.get(), cchWritten);
+            _LastFG = colorForeground;
+            
+        }
+        if (colorBackground != _LastBG) 
+        {
+            PCSTR pszBgFormat = "\x1b[48;2;%d;%d;%dm";
+            DWORD const bgRed = (colorBackground & 0xff);
+            DWORD const bgGreen = (colorBackground >> 8) & 0xff;
+            DWORD const bgBlue = (colorBackground >> 16) & 0xff;
+
+            int cchNeeded = _scprintf(pszBgFormat, bgRed, bgGreen, bgBlue);
+            wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+            RETURN_IF_NULL_ALLOC(psz);
+
+            int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszBgFormat, bgRed, bgGreen, bgBlue);
+            _Write(psz.get(), cchWritten);
+            _LastBG = colorBackground;
+        }
+    }
+    CATCH_RETURN();
+    
+    return S_OK;
+}
+
+HRESULT VtEngine::_16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable)
+{
+    try
+    {
+        if (colorForeground != _LastFG)
+        {
+            WORD wNearestFg = ::FindNearestTableIndex(colorForeground, ColorTable, cColorTable);
+
+            char* fmt = IsFlagSet(wNearestFg, FOREGROUND_INTENSITY)? 
+                "\x1b[1m\x1b[%dm" : "\x1b[22m\x1b[%dm";
+
+            int fg = 30
+                     + (IsFlagSet(wNearestFg,FOREGROUND_RED)? 1 : 0)
+                     + (IsFlagSet(wNearestFg,FOREGROUND_GREEN)? 2 : 0)
+                     + (IsFlagSet(wNearestFg,FOREGROUND_BLUE)? 4 : 0)
+                     ;
+            int cchNeeded = _scprintf(fmt, fg);
+            wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+            RETURN_IF_NULL_ALLOC(psz);
+
+            int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, fmt, fg);
+            _Write(psz.get(), cchWritten);
+
+            _LastFG = colorForeground;
+            
+        }
+        if (colorBackground != _LastBG) 
+        {
+            WORD wNearestBg = ::FindNearestTableIndex(colorBackground, ColorTable, cColorTable);
+
+            // char* fmt = IsFlagSet(wNearestBg, BACKGROUND_INTENSITY)? "\x1b[1;%dm" : "\x1b[%dm";
+            char* fmt = "\x1b[%dm";
+
+            // Check using the foreground flags, because the bg flags are a higher byte
+            int bg = 40
+                     + (IsFlagSet(wNearestBg,FOREGROUND_RED)? 1 : 0)
+                     + (IsFlagSet(wNearestBg,FOREGROUND_GREEN)? 2 : 0)
+                     + (IsFlagSet(wNearestBg,FOREGROUND_BLUE)? 4 : 0)
+                     ;
+
+            int cchNeeded = _scprintf(fmt, bg);
+            wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+            RETURN_IF_NULL_ALLOC(psz);
+
+            int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, fmt, bg);
+            _Write(psz.get(), cchWritten);
+            _LastBG = colorBackground;
+        }
+    }
+    CATCH_RETURN();
+    return S_OK;
+}
 

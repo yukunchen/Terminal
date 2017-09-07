@@ -19,7 +19,6 @@ WinTelnetEngine::WinTelnetEngine(HANDLE hPipe, _In_reads_(cColorTable) const COL
 
 }
 
-
 // Routine Description:
 // - This method will set the GDI brushes in the drawing context (and update the hung-window background color)
 // Arguments:
@@ -32,55 +31,7 @@ HRESULT WinTelnetEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForegroun
     UNREFERENCED_PARAMETER(colorBackground);
     UNREFERENCED_PARAMETER(legacyColorAttribute);
     UNREFERENCED_PARAMETER(fIncludeBackgrounds);
-
-    try
-    {
-        if (colorForeground != _LastFG)
-        {
-            WORD wNearestFg = ::FindNearestTableIndex(colorForeground, _ColorTable, _cColorTable);
-
-            char* fmt = IsFlagSet(wNearestFg, FOREGROUND_INTENSITY)? 
-                "\x1b[1m\x1b[%dm" : "\x1b[22m\x1b[%dm";
-
-            int fg = 30
-                     + (IsFlagSet(wNearestFg,FOREGROUND_RED)? 1 : 0)
-                     + (IsFlagSet(wNearestFg,FOREGROUND_GREEN)? 2 : 0)
-                     + (IsFlagSet(wNearestFg,FOREGROUND_BLUE)? 4 : 0)
-                     ;
-            int cchNeeded = _scprintf(fmt, fg);
-            wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-            RETURN_IF_NULL_ALLOC(psz);
-
-            int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, fmt, fg);
-            _Write(psz.get(), cchWritten);
-
-            _LastFG = colorForeground;
-            
-        }
-        if (colorBackground != _LastBG) 
-        {
-            WORD wNearestBg = ::FindNearestTableIndex(colorBackground, _ColorTable, _cColorTable);
-
-            // char* fmt = IsFlagSet(wNearestBg, BACKGROUND_INTENSITY)? "\x1b[1;%dm" : "\x1b[%dm";
-            char* fmt = "\x1b[%dm";
-
-            int bg = 40
-                     + (IsFlagSet(wNearestBg,BACKGROUND_RED)? 1 : 0)
-                     + (IsFlagSet(wNearestBg,BACKGROUND_GREEN)? 2 : 0)
-                     + (IsFlagSet(wNearestBg,BACKGROUND_BLUE)? 4 : 0)
-                     ;
-
-            int cchNeeded = _scprintf(fmt, bg);
-            wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-            RETURN_IF_NULL_ALLOC(psz);
-
-            int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, fmt, bg);
-            _Write(psz.get(), cchWritten);
-            _LastBG = colorBackground;
-        }
-    }
-    CATCH_RETURN();
-    return S_OK;
+    return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, _ColorTable, _cColorTable);
 }
 
 HRESULT WinTelnetEngine::_MoveCursor(COORD const coord)
@@ -126,14 +77,19 @@ HRESULT WinTelnetEngine::ScrollFrame()
 HRESULT WinTelnetEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 {
     UNREFERENCED_PARAMETER(pcoordDelta);
-    short dx = pcoordDelta->X;
-    short dy = pcoordDelta->Y;
-    if (dx != 0 || dy != 0)
-    {
-        return InvalidateAll();
-    }
     // win-telnet doesn't know anything about scrolling. 
-    //  Every invalidate action should just repaint everything.
-        // RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
-    return S_OK;
+
+    // Doing this doesn't seem to paint all of the screen. It seems as though
+    //  a section doesn't paint. But it's not really consistent what section doesn't paint...
+    // short dx = pcoordDelta->X;
+    // short dy = pcoordDelta->Y;
+    // if (dx != 0 || dy != 0)
+    // {
+    //     return InvalidateAll();
+    // }
+    // return S_OK;
+
+
+    // This seems to send WAY too much info
+    return InvalidateAll();
 }

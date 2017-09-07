@@ -234,6 +234,7 @@ void Cursor::_RedrawCursor()
 // - <none>
 void Cursor::_RedrawCursorAlways()
 {
+    // return;
     if (ServiceLocator::LocateGlobals()->pRender != nullptr)
     {
         // Always trigger update of the cursor as one character width

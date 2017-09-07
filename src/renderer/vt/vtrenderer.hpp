@@ -84,21 +84,15 @@ namespace Microsoft
                 void _OrRect(_In_ SMALL_RECT* const pRectExisting, _In_ const SMALL_RECT* const pRectToOr) const;
                 HRESULT _InvalidCombine(_In_ const SMALL_RECT* const psrc);
                 HRESULT _InvalidOffset(_In_ const COORD* const ppt);
-                virtual HRESULT _MoveCursor(_In_ const COORD coord) = 0;
-                // HRESULT _InvalidRestrict();
-
-                HRESULT _WIN_TELNET_UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds);
-                HRESULT _XTERM_256_UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds);
                 
-                //x
-                HRESULT _WIN_TELNET_MoveCursor(_In_ const COORD coord);
-                HRESULT _XTERM_256_MoveCursor(_In_ const COORD coord);
-                //x
-                HRESULT _WIN_TELNET_ScrollFrame();
-                HRESULT _XTERM_256_ScrollFrame();
-                //x
-                HRESULT _WIN_TELNET_InvalidateScroll(_In_ const COORD* const pcoordDelta);
-                HRESULT _XTERM_256_InvalidateScroll(_In_ const COORD* const pcoordDelta);
+                HRESULT _EraseLine();
+                HRESULT _DeleteLine(const short sLines);
+                HRESULT _InsertLine(const short sLines);
+                
+                virtual HRESULT _MoveCursor(_In_ const COORD coord) = 0;
+                HRESULT _RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground);
+                HRESULT _16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable);
+                // HRESULT _InvalidRestrict();
 
 
             };
