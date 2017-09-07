@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 #include "Entrypoints.h"
+#include "ConsoleArguments.hpp"
 
 #include "DeviceHandle.h"
 #include "IoThread.h"
@@ -24,97 +25,15 @@ HRESULT Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle)
 
 HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
 {
-    std::wstring clientCommandline = L"";
-    std::wstring vtInPipe = L"";
-    std::wstring vtOutPipe = L"";
-    std::wstring vtMode = L"";
-    bool createServerHandle = true;
-    DWORD serverHandle;
-
-    clientCommandline;
-    vtInPipe;
-    vtOutPipe;
-    createServerHandle;
-    serverHandle;
-    {
-        std::vector<std::wstring> args;
-
-        // Split the commandline into args for parsing.
-
-        // From launcher/main.cpp
-        wchar_t szCommandLine[MAX_PATH];
-        if (SUCCEEDED(StringCchCopy(szCommandLine, ARRAYSIZE(szCommandLine), GetCommandLineW())))
-        {
-            wchar_t* pszNextToken;
-            wchar_t* pszToken = wcstok_s(szCommandLine, L" ", &pszNextToken);
-            while (pszToken != nullptr && *pszToken != L'\0')
-            {
-                args.push_back(pszToken);
-                pszToken = wcstok_s(nullptr, L" ", &pszNextToken);
-            }
-        }
-
-        // Parse args out of the commandline.
-        for (size_t i = 0; i < args.size(); i++)
-        {
-            std::wstring arg = args[i];
-            bool hasNext = (i+1) < args.size();
-
-            if (arg == L"--inpipe" && hasNext)
-            {
-                args.erase(args.begin()+i);
-                vtInPipe = args[i];
-                args.erase(args.begin()+i);
-                i--;
-            }
-            else if (arg == L"--outpipe" && hasNext)
-            {
-                args.erase(args.begin()+i);
-                vtOutPipe = args[i];
-                args.erase(args.begin()+i);
-                i--;
-            }
-            else if (arg == L"--vtmode" && hasNext)
-            {
-                args.erase(args.begin()+i);
-                vtMode = args[i];
-                args.erase(args.begin()+i);
-                i--;
-            }
-            else if (arg == L"--")
-            {
-                // Everything after this is the commandline
-                auto start = args.begin()+i;
-                args.erase(start);
-                clientCommandline = L"";
-                size_t j = 0;
-                for (j = i; j < args.size(); j++)
-                {
-                    clientCommandline += args[j];
-                    if (j+1 < args.size())
-                        clientCommandline += L" ";
-                }
-                args.erase(args.begin()+i, args.begin()+j);
-                break;
-            }
-        }
-    }
-    // If we've parsed all the args and there's no explicit commandline, 
-    // do what? There may be args left that weren't parsed.
-    // eg: "openconsole.exe cmd.exe" won't launch cmd, only "openconsole.exe -- cmd.exe"
-    const wchar_t* const cmdLine = clientCommandline.length() > 0? clientCommandline.c_str() : L"%WINDIR%\\system32\\cmd.exe";
-    const bool useVtIn = vtInPipe.length() > 0;
-    const bool useVtOut = vtOutPipe.length() > 0;
-    // (useVtIn && useVtOut) makes sense here, but would || be useful?
-    const bool fUseVtPipe = useVtIn && useVtOut;
-
-    // const wchar_t* pwchVtInPipe = useVtIn? vtInPipe.c_str() : nullptr;
-    // const wchar_t* pwchVtOutPipe = useVtOut? vtOutPipe.c_str() : nullptr;
-
+    ConsoleArguments arguments = ConsoleArguments(pwszCmdLine);
+    RETURN_IF_FAILED(arguments.ParseCommandline());
 
     // Create a scope because we're going to exit thread if everything goes well.
     // This scope will ensure all C++ objects and smart pointers get a chance to destruct before ExitThread is called.
     {
+        // TODO:MSFT:13271366 use the arguments from the commandline to determine if we need 
+        //  to create the server handle or not.
+
         // Create the server and reference handles and create the console object.
         wil::unique_handle ServerHandle;
         RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateServerHandle(ServerHandle.addressof(), FALSE));
@@ -231,10 +150,10 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
 
         ////////////////////////////////////////////////////////////////////////
         // TEMP: Use results of arg parsing
-        pwszCmdLine = cmdLine;
-        if (fUseVtPipe)
+        pwszCmdLine = arguments.GetClientCommandline().c_str();
+        if (arguments.UseVtPipe())
         {
-            RETURN_IF_FAILED(UseVtPipe(vtInPipe, vtOutPipe, vtMode));
+            RETURN_IF_FAILED(UseVtPipe(arguments.GetVtInPipe(), arguments.GetVtOutPipe(), arguments.GetVtMode()));
         }
         ////////////////////////////////////////////////////////////////////////
 

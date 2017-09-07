@@ -9,6 +9,7 @@ Abstract:
 
 Author(s):
 - Michael Niksa (MiNiksa) 24-Jul-2017
+- Mike Griese (migrie) 01-Sept-2017
 --*/
 
 #pragma once
