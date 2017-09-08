@@ -8,6 +8,7 @@
 #include "inputBuffer.hpp"
 #include "dbcs.h"
 #include "stream.h"
+#include <functional>
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -29,6 +30,10 @@ InputBuffer::InputBuffer() :
 
     ZeroMemory(&ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
     ZeroMemory(&WriteConInpDbcsLeadByte, sizeof(INPUT_RECORD) * ARRAYSIZE(WriteConInpDbcsLeadByte));
+
+    auto fnptr = std::bind(&InputBuffer::_HandleTerminalKeyEventCallback, this, std::placeholders::_1, std::placeholders::_2);
+    // _termInput = TerminalInput(_HandleTerminalKeyEventCallback);
+    _pTermInput = new TerminalInput(fnptr);
 }
 
 // Routine Description:
@@ -498,8 +503,24 @@ HRESULT InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent
         // add all input events to the storage queue
         while (!inEvents.empty())
         {
-            _storage.push_back(std::move(inEvents.front()));
+            std::unique_ptr<IInputEvent> inEvent = std::move(inEvents.front());
             inEvents.pop_front();
+
+            if (IsInVirtualTerminalInputMode())
+            {
+
+                const INPUT_RECORD record = inEvent->ToInputRecord();
+                const bool handled = _pTermInput->HandleKey(&record);
+                if (!handled)
+                {
+                    _storage.push_back(std::move(inEvent));
+                }
+            }
+            else
+            {
+                _storage.push_back(std::move(inEvent));
+            }
+
             ++eventsWritten;
         }
         if (initiallyEmptyQueue && !_storage.empty())
@@ -675,4 +696,51 @@ std::deque<std::unique_ptr<IInputEvent>> InputBuffer::_inputRecordsToInputEvents
         outEvents.push_back(std::move(event));
     }
     return outEvents;
+}
+
+// Routine Description:
+// - Returns true if this input buffer is in VT Input mode.
+// Arguments:
+// <none>
+// Return Value:
+// - Returns true if this input buffer is in VT Input mode.
+bool InputBuffer::IsInVirtualTerminalInputMode()
+{
+    return IsFlagSet(InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
+}
+
+
+// Routine Description:
+// - Handler for inserting key sequences into the buffer when the terminal emulation layer
+//   has determined a key can be converted appropriately into a sequence of inputs
+// Arguments:
+// - rgInput - Series of input records to insert into the buffer
+// - cInput - Length of input records array
+// Return Value:
+// - <none>
+void InputBuffer::_HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
+{
+    try
+    {
+        std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(rgInput, cInput);
+
+        // add all input events to the storage queue
+        while (!inEvents.empty())
+        {
+
+            std::unique_ptr<IInputEvent> inEvent = std::move(inEvents.front());
+            inEvents.pop_front();
+            _storage.push_back(std::move(inEvent));
+        }
+
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+    }
+}
+
+TerminalInput* InputBuffer::GetTerminalInput()
+{
+    return _pTermInput;
 }

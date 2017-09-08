@@ -11,6 +11,7 @@ Abstract:
 Author(s):
 - Michael Niksa (MiNiksa) 30-Oct-2015
 --*/
+#include <functional>
 #pragma once
 
 namespace Microsoft
@@ -19,13 +20,13 @@ namespace Microsoft
     {
         namespace VirtualTerminal
         {
-            typedef void(*WriteInputEvents)(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput);
-
+            // typedef void(*WriteInputEvents)(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput);
 
             class TerminalInput sealed
             {
             public:
-                TerminalInput(_In_ WriteInputEvents const pfnWriteEvents);
+                // TerminalInput(_In_ WriteInputEvents const pfnWriteEvents);
+                TerminalInput(_In_ std::function<void(INPUT_RECORD*,DWORD)> pfn);
                 ~TerminalInput();
 
                 bool HandleKey(_In_ const INPUT_RECORD* const pInput) const;
@@ -33,7 +34,8 @@ namespace Microsoft
                 void ChangeCursorKeysMode(_In_ bool const fApplicationMode);
 
             private:
-                WriteInputEvents _pfnWriteEvents;
+                // WriteInputEvents _pfnWriteEvents;
+                std::function<void(INPUT_RECORD*,DWORD)> _pfnWriteEvents;
                 bool _fKeypadApplicationMode = false;
                 bool _fCursorApplicationMode = false;
 

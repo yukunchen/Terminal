@@ -57,7 +57,7 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     ReadConInpNumBytesUnicode(0),
     lpCookedReadData(nullptr),
     // ConsoleIme initialized below
-    termInput(HandleTerminalKeyEventCallback),
+    // termInput(HandleTerminalKeyEventCallback),
     terminalMouseInput(HandleTerminalKeyEventCallback)
 {
     InitializeListHead(&CommandHistoryList);

@@ -21,10 +21,14 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 DWORD const dwAltGrFlags = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
 
-TerminalInput::TerminalInput(_In_ WriteInputEvents const pfnWriteEvents) :
-    _pfnWriteEvents(pfnWriteEvents)
-{
+// TerminalInput::TerminalInput(_In_ WriteInputEvents const pfnWriteEvents) :
+//     _pfnWriteEvents(pfnWriteEvents)
+// {
 
+// }
+TerminalInput::TerminalInput(_In_ std::function<void(INPUT_RECORD*,DWORD)> pfn)
+{
+    _pfnWriteEvents = pfn;
 }
 
 TerminalInput::~TerminalInput()
