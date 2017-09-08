@@ -23,6 +23,7 @@ Revision History:
 #include "conimeinfo.h"
 #include "..\terminal\adapter\terminalInput.hpp"
 #include "..\terminal\adapter\MouseInput.hpp"
+#include "VtIo.hpp"
 
 #include "..\server\ProcessList.h"
 #include "..\server\WaitQueue.h"
@@ -110,6 +111,8 @@ public:
     void UnlockConsole();
     bool IsConsoleLocked() const;
     ULONG GetCSRecursionCount();
+
+    Microsoft::Console::VirtualTerminal::VtIo* vtIo;
 
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
