@@ -31,8 +31,8 @@ InputBuffer::InputBuffer() :
     ZeroMemory(&ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
     ZeroMemory(&WriteConInpDbcsLeadByte, sizeof(INPUT_RECORD) * ARRAYSIZE(WriteConInpDbcsLeadByte));
 
-    auto fnptr = std::bind(&InputBuffer::_HandleTerminalKeyEventCallback, this, std::placeholders::_1, std::placeholders::_2);
-    // _termInput = TerminalInput(_HandleTerminalKeyEventCallback);
+    // Create a reference to this buffer's terminal key event 
+    auto fnptr = std::bind(&InputBuffer::_HandleTerminalInputCallback, this, std::placeholders::_1, std::placeholders::_2);
     _pTermInput = new TerminalInput(fnptr);
 }
 
@@ -508,7 +508,6 @@ HRESULT InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent
 
             if (IsInVirtualTerminalInputMode())
             {
-
                 const INPUT_RECORD record = inEvent->ToInputRecord();
                 const bool handled = _pTermInput->HandleKey(&record);
                 if (!handled)
@@ -718,7 +717,7 @@ bool InputBuffer::IsInVirtualTerminalInputMode()
 // - cInput - Length of input records array
 // Return Value:
 // - <none>
-void InputBuffer::_HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
+void InputBuffer::_HandleTerminalInputCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
 {
     try
     {
@@ -732,7 +731,6 @@ void InputBuffer::_HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECOR
             inEvents.pop_front();
             _storage.push_back(std::move(inEvent));
         }
-
     }
     catch (...)
     {
