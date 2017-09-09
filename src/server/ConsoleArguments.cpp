@@ -14,7 +14,7 @@ const std::wstring ConsoleArguments::HEADLESS_ARG = L"--headless";
 const std::wstring ConsoleArguments::SERVER_HANDLE_ARG = L"--handle";
 const std::wstring ConsoleArguments::CLIENT_COMMANDLINE_ARG = L"--";
 
-ConsoleArguments::ConsoleArguments(const std::wstring commandline)
+ConsoleArguments::ConsoleArguments(_In_ const std::wstring commandline)
     : _commandline(commandline)
 {
     _clientCommandline = L"";
@@ -26,8 +26,48 @@ ConsoleArguments::ConsoleArguments(const std::wstring commandline)
     _serverHandle = 0;
 }
 
-ConsoleArguments::~ConsoleArguments()
+HRESULT _GetArgumentValue(_In_ std::vector<std::wstring>& args, _In_ size_t index, _Out_ std::wstring* pSetting)
 {
+    HRESULT hr = S_OK;
+    bool hasNext = (index+1) < args.size();
+    if (hasNext)
+    {
+        args.erase(args.begin()+index);
+        *pSetting = args[index];
+        args.erase(args.begin()+index);
+        index--;
+    }
+    else
+    {
+        hr = E_INVALIDARG;
+    }
+    return hr;
+}
+
+HRESULT ConsoleArguments::_GetClientCommandline(_In_ std::vector<std::wstring>& args, _In_ size_t index, _In_ bool skipFirst)
+{
+    auto start = args.begin()+index;
+
+    // Erase the first token.
+    //  Used to get rid of the explicit commandline token "--"
+    if (skipFirst)
+    {
+        args.erase(start);
+    }
+
+    _clientCommandline = L"";
+    size_t j = 0;
+    for (j = index; j < args.size(); j++)
+    {
+        _clientCommandline += args[j];
+        if (j+1 < args.size())
+        {
+            _clientCommandline += L" ";
+        }
+    }
+    args.erase(args.begin()+index, args.begin()+j);
+
+    return S_OK;
 }
 
 HRESULT ConsoleArguments::ParseCommandline()
@@ -53,67 +93,23 @@ HRESULT ConsoleArguments::ParseCommandline()
     for (size_t i = 0; i < args.size(); i++)
     {
         std::wstring arg = args[i];
-        bool hasNext = (i+1) < args.size();
 
         if (arg == VT_IN_PIPE_ARG)
         {
-            if (hasNext)
-            {
-                args.erase(args.begin()+i);
-                _vtInPipe = args[i];
-                args.erase(args.begin()+i);
-                i--;
-            }
-            else
-            {
-                hr = E_INVALIDARG;
-                break;
-            }
+            hr = _GetArgumentValue(args, i, &_vtInPipe);
         }
         else if (arg == VT_OUT_PIPE_ARG)
         {
-            if (hasNext)
-            {
-                args.erase(args.begin()+i);
-                _vtOutPipe = args[i];
-                args.erase(args.begin()+i);
-                i--;
-            }
-            else
-            {
-                hr = E_INVALIDARG;
-                break;
-            }
+            hr = _GetArgumentValue(args, i, &_vtOutPipe);
         }
         else if (arg == VT_MODE_ARG)
         {
-            if (hasNext)
-            {
-                args.erase(args.begin()+i);
-                _vtMode = args[i];
-                args.erase(args.begin()+i);
-                i--;
-            }
-            else
-            {
-                hr = E_INVALIDARG;
-                break;
-            }
+            hr = _GetArgumentValue(args, i, &_vtMode);
         }
         else if (arg == CLIENT_COMMANDLINE_ARG)
         {
             // Everything after this is the explicit commandline
-            auto start = args.begin()+i;
-            args.erase(start);
-            _clientCommandline = L"";
-            size_t j = 0;
-            for (j = i; j < args.size(); j++)
-            {
-                _clientCommandline += args[j];
-                if (j+1 < args.size())
-                    _clientCommandline += L" ";
-            }
-            args.erase(args.begin()+i, args.begin()+j);
+            hr = _GetClientCommandline(args, i, true);
             break;
         }
         // TODO: handle the rest of the possible params (MSFT:13271366, MSFT:13631640)
@@ -123,34 +119,26 @@ HRESULT ConsoleArguments::ParseCommandline()
         {
             // If we encounter something that doesn't match one of our other 
             //      args, then it's the start of the commandline
-            auto start = args.begin()+i;
-            _clientCommandline = L"";
-            size_t j = 0;
-            for (j = i; j < args.size(); j++)
-            {
-                _clientCommandline += args[j];
-                if (j+1 < args.size())
-                    _clientCommandline += L" ";
-            }
-            args.erase(args.begin()+i, args.begin()+j);
+            hr = _GetClientCommandline(args, i, false);
+            break;
+        }
+        if (!SUCCEEDED(hr))
+        {
             break;
         }
     }
 
-    if (args.size() > 0)
-    {
-        // This is some sort of parsing error. 
-        // We should have consumed every token at this point.
-    }
+    // We should have consumed every token at this point.    
+    // if not, it is some sort of parsing error. 
+    assert(args.size() == 0);
 
     return hr;
 }
 
-bool ConsoleArguments::UseVtPipe() const
+bool ConsoleArguments::IsUsingVtPipe() const
 {    
     const bool useVtIn = _vtInPipe.length() > 0;
     const bool useVtOut = _vtOutPipe.length() > 0;
-    // (useVtIn && useVtOut) makes sense here, but would || be useful?
     return useVtIn && useVtOut;
 }
 

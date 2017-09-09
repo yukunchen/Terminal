@@ -16,12 +16,11 @@ Author(s):
 class ConsoleArguments
 {
 public:
-    ConsoleArguments(const std::wstring commandline);
-    ~ConsoleArguments();
+    ConsoleArguments(_In_ const std::wstring commandline);
 
     HRESULT ParseCommandline();
 
-    bool UseVtPipe() const;
+    bool IsUsingVtPipe() const;
     bool IsHeadless() const;
     bool ShouldCreateServerHandle() const;
     
@@ -52,4 +51,6 @@ private:
 
     bool _createServerHandle;
     DWORD _serverHandle;
+
+    HRESULT _GetClientCommandline(_In_ std::vector<std::wstring>& args, _In_ size_t index, _In_ bool skipFirst);
 };

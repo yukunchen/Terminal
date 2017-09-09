@@ -112,10 +112,12 @@ public:
     bool IsConsoleLocked() const;
     ULONG GetCSRecursionCount();
 
-    Microsoft::Console::VirtualTerminal::VtIo* vtIo;
-
+    Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
+    
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
+    
+    Microsoft::Console::VirtualTerminal::VtIo _vtIo;
 };
 
 #define ConsoleLocked() (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)

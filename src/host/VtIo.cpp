@@ -12,34 +12,30 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-VtIo::VtIo()
+VtIo::VtIo() :
+    _usingVt(false)
 {
-    _usingVt = false;
 }
 
-VtIo::~VtIo()
+HRESULT VtIo::ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode* const pIoMode)
 {
-    
-}
+    RETURN_HR_IF_NULL(E_INVALIDARG, pIoMode);
 
-HRESULT VtIo::ParseIoMode(const std::wstring& VtMode, VtIoMode* const IoMode)
-{
-    if (IoMode == nullptr) return E_INVALIDARG;
     if (VtMode == XTERM_256_STRING)
     {
-        *IoMode = VtIoMode::XTERM_256;
+        *pIoMode = VtIoMode::XTERM_256;
     }
     else if (VtMode == XTERM_STRING)
     {
-        *IoMode = VtIoMode::XTERM;
+        *pIoMode = VtIoMode::XTERM;
     }
     else if (VtMode == WIN_TELNET_STRING)
     {
-        *IoMode = VtIoMode::WIN_TELNET;
+        *pIoMode = VtIoMode::WIN_TELNET;
     }
     else if (VtMode == DEFAULT_STRING)
     {
-        *IoMode = VtIoMode::XTERM_256;
+        *pIoMode = VtIoMode::XTERM_256;
     }
     else
     {
@@ -48,12 +44,27 @@ HRESULT VtIo::ParseIoMode(const std::wstring& VtMode, VtIoMode* const IoMode)
     return S_OK;
 }
 
-HRESULT VtIo::Initialize(const std::wstring& InPipeName, const std::wstring& OutPipeName, const std::wstring& VtMode)
+// Routine Description:
+//  Tries to initialize this VtIo instance from the given pipe names and 
+//      VtIoMode. The pipes should have been created already (by the caller of 
+//      conhost), in non-overlapped mode.
+//  The VtIoMode string can be the empty string as a default value.
+// Arguments:
+//  InPipeName: a wstring containing the vt input pipe's name. The console will 
+//      read VT sequences from this pipe to generate INPUT_RECORDs and other 
+//      input events.
+//  OutPipeName: a wstring containing the vt output pipe's name. The console 
+//      will be "rendered" to this pipe using VT sequences
+//  VtIoMode: A string containing the console's requested VT mode. This can be 
+//      any of the strings in VtIoModes.hpp
+// Return Value:
+//  S_OK if we initialized successfully, otherwise an appropriate HRESULT
+//      indicating failure.
+HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
-    HRESULT hr = ParseIoMode(VtMode, &_IoMode);
-    if (!SUCCEEDED(hr)) return hr;
+    RETURN_IF_FAILED(ParseIoMode(VtMode, &_IoMode));
 
     wil::unique_hfile _hInputFile;
     wil::unique_hfile _hOutputFile;
@@ -67,7 +78,7 @@ HRESULT VtIo::Initialize(const std::wstring& InPipeName, const std::wstring& Out
                     FILE_ATTRIBUTE_NORMAL, 
                     nullptr)
     );
-    THROW_IF_HANDLE_INVALID(_hInputFile.get());
+    RETURN_IF_HANDLE_INVALID(_hInputFile.get());
     
     _hOutputFile.reset(
         CreateFileW(OutPipeName.c_str(),
@@ -78,39 +89,37 @@ HRESULT VtIo::Initialize(const std::wstring& InPipeName, const std::wstring& Out
                     FILE_ATTRIBUTE_NORMAL, 
                     nullptr)
     );
-    THROW_IF_HANDLE_INVALID(_hOutputFile.get());
+    RETURN_IF_HANDLE_INVALID(_hOutputFile.get());
 
     // placeholder until the rest of the code is in.
     gci;
-
-    // _pVtInputThread = new VtInputThread(_hInputFile.release());
-
-    // switch(_IoMode)
-    // {
-    //     case VtIoMode::XTERM_256:
-    //         _pVtRenderEngine = new Xterm256Engine(_hOutputFile.release());
-    //         break;
-    //     case VtIoMode::XTERM:
-    //         _pVtRenderEngine = new XtermEngine(_hOutputFile.release(), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
-    //         break;
-    //     case VtIoMode::WIN_TELNET:
-    //         _pVtRenderEngine = new WinTelnetEngine(_hOutputFile.release(), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
-    //         break;
-    //     default:
-    //         return E_FAIL;
-    // }
 
     _usingVt = true;
     return S_OK;
 }
 
-bool VtIo::IsUsingVt()
+bool VtIo::IsUsingVt() const
 {
     return _usingVt;
 }
 
-HRESULT VtIo::Start()
+// Routine Description:
+//  Potentially starts this VtIo's input thread and render engine.
+//      If the VtIo hasn't yet been given pipes, then this function will 
+//      silently do nothing. It's the responsibility of the caller to make sure 
+//      that the pipes are initialized first with VtIo::Initialize
+// Arguments:
+//  <none>
+// Return Value:
+//  S_OK if we started successfully or had nothing to start, otherwise an 
+//      appropriate HRESULT indicating failure.
+HRESULT VtIo::StartIfNeeded()
 {
+    // If we haven't been set up, do nothing (because there's nothing to start)
+    if (!IsUsingVt())
+    {
+        return S_OK;
+    }
     // Hmm. We only have one Renderer implementation, 
     //  but its stored as a IRenderer. 
     //  IRenderer doesn't know about IRenderEngine, so it cant have AddRenderEngine

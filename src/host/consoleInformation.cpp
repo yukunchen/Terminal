@@ -58,7 +58,8 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     lpCookedReadData(nullptr),
     // ConsoleIme initialized below
     termInput(HandleTerminalKeyEventCallback),
-    terminalMouseInput(HandleTerminalKeyEventCallback)
+    terminalMouseInput(HandleTerminalKeyEventCallback),
+    _vtIo()
 {
     InitializeListHead(&CommandHistoryList);
     InitializeListHead(&ExeAliasList);
@@ -67,13 +68,11 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
     ZeroMemory((void*)&ConsoleIme, sizeof(ConsoleIme));
     InitializeCriticalSection(&_csConsoleLock);
-    vtIo = new Microsoft::Console::VirtualTerminal::VtIo();
 }
 
 CONSOLE_INFORMATION::~CONSOLE_INFORMATION()
 {
     DeleteCriticalSection(&_csConsoleLock);
-    delete vtIo;
 }
 
 bool CONSOLE_INFORMATION::IsConsoleLocked() const
@@ -104,4 +103,9 @@ void CONSOLE_INFORMATION::UnlockConsole()
 ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
 {
     return _csConsoleLock.RecursionCount;
+}
+
+VtIo* CONSOLE_INFORMATION::GetVtIo()
+{
+    return &_vtIo;
 }

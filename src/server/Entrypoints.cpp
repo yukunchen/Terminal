@@ -153,7 +153,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
         //    otherwise .c_str() will not return the right value.
         std::wstring clientCmd = arguments.GetClientCommandline();
         const wchar_t* pwszClientCmdLine = clientCmd.c_str();
-        if (arguments.UseVtPipe())
+        if (arguments.IsUsingVtPipe())
         {
             RETURN_IF_FAILED(UseVtPipe(arguments.GetVtInPipe(), arguments.GetVtOutPipe(), arguments.GetVtMode()));
         }
