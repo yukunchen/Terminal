@@ -23,7 +23,7 @@ Revision History:
 
 #include "../server/ObjectHandle.h"
 #include "../server/ObjectHeader.h"
-#include "..\terminal\adapter\terminalInput.hpp"
+#include "../terminal/adapter/terminalInput.hpp"
 
 #include <deque>
 
@@ -65,12 +65,12 @@ public:
     size_t Write(_Inout_ std::unique_ptr<IInputEvent> inEvent);
     size_t Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
-    bool IsInVirtualTerminalInputMode();
+    bool IsInVirtualTerminalInputMode() const;
     Microsoft::Console::VirtualTerminal::TerminalInput* GetTerminalInput();
 
 private:
     std::deque<std::unique_ptr<IInputEvent>> _storage;
-    Microsoft::Console::VirtualTerminal::TerminalInput* _pTermInput;
+    Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
 
     HRESULT _ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                         _In_ const size_t readCount,
