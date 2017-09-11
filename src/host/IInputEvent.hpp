@@ -17,6 +17,10 @@ Author:
 #include <memory>
 #include <deque>
 
+#ifndef byte
+typedef unsigned char byte;
+#endif
+
 enum class InputEventType
 {
     KeyEvent,
@@ -50,6 +54,13 @@ public:
     ~KeyEvent();
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;
+
+    bool IsPauseKey() const;
+    bool IsCommandLineEditingKey() const;
+    bool IsCommandLinePopupKey() const;
+
+    const ExtKeySubst* const ParseEditKeyInfo();
+    const ExtKeySubst* const GetKeySubst() const;
 
     int _keyDown;
     WORD _repeatCount;

@@ -693,7 +693,7 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::uniq
                         continue;
                     }
                     else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
-                             (pKeyEvent->_virtualKeyCode == VK_PAUSE || IsPauseKey(pKeyEvent)))
+                             (pKeyEvent->_virtualKeyCode == VK_PAUSE || pKeyEvent->IsPauseKey()))
                     {
                         SetFlag(gci->Flags, CONSOLE_SUSPENDED);
                         continue;

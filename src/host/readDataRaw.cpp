@@ -139,8 +139,7 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
             {
                 *pReplyStatus = GetChar(_pInputBuffer,
                                         lpBuffer,
-                                        TRUE,
-                                        nullptr,
+                                        true,
                                         nullptr,
                                         nullptr,
                                         nullptr);
@@ -150,8 +149,7 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
         {
             *pReplyStatus = GetChar(_pInputBuffer,
                                     lpBuffer,
-                                    TRUE,
-                                    nullptr,
+                                    true,
                                     nullptr,
                                     nullptr,
                                     nullptr);
@@ -172,7 +170,12 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
             while (*pNumBytes < _BufferSize)
             {
                 // This call to GetChar won't block.
-                *pReplyStatus = GetChar(_pInputBuffer, lpBuffer, FALSE, nullptr, nullptr, nullptr, nullptr);
+                *pReplyStatus = GetChar(_pInputBuffer,
+                                        lpBuffer,
+                                        false,
+                                        nullptr,
+                                        nullptr,
+                                        nullptr);
                 if (!NT_SUCCESS(*pReplyStatus))
                 {
                     *pReplyStatus = STATUS_SUCCESS;

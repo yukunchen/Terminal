@@ -233,7 +233,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
     *ulControlKeyState = 0;
 
     WCHAR Char;
-    BOOLEAN CommandLineEditingKeys, EnableScrollMode;
+    bool commandLineEditingKeys = false;
     DWORD KeyState;
     DWORD NumBytes = 0;
     ULONG NumToWrite;
@@ -247,10 +247,9 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
         // This call to GetChar may block.
         Status = GetChar(pInputBuffer,
                          &Char,
-                         TRUE,
-                         &CommandLineEditingKeys,
+                         true,
+                         &commandLineEditingKeys,
                          nullptr,
-                         &EnableScrollMode,
                          &KeyState);
         if (!NT_SUCCESS(Status))
         {
@@ -270,7 +269,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
             pCookedReadData->_OriginalCursorPosition = pCookedReadData->_pScreenInfo->TextInfo->GetCursor()->GetPosition();
         }
 
-        if (CommandLineEditingKeys)
+        if (commandLineEditingKeys)
         {
             // TODO: this is super weird for command line popups only
             pCookedReadData->_fIsUnicode = fIsUnicode;
