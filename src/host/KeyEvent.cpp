@@ -43,7 +43,12 @@ InputEventType KeyEvent::EventType() const
 }
 
 // Routine Description:
-// - Returns TRUE if pKeyEvent is pause.
+// - checks if the key event's data is a pause key press.
+// Arguments:
+// - None
+// Return Value:
+// - true if the key press data is a pause.
+// Note:
 // - The default key is Ctrl-S if extended edit keys are not specified.
 bool KeyEvent::IsPauseKey() const
 {
@@ -60,6 +65,12 @@ bool KeyEvent::IsPauseKey() const
     return isPauseKey;
 }
 
+// Routine Description:
+// - checks if this key event is a special key for line editing
+// Arguments:
+// - None
+// Return Value:
+// - true if this key has special relevance to line editing, false otherwise
 bool KeyEvent::IsCommandLineEditingKey() const
 {
     if (!IsAnyFlagSet(_activeModifierKeys, ALT_PRESSED | CTRL_PRESSED))
@@ -129,6 +140,12 @@ bool KeyEvent::IsCommandLineEditingKey() const
     return false;
 }
 
+// Routine Description:
+// - checks if this key event is a special key for popups
+// Arguments:
+// - None
+// Return Value:
+// - true if this key has special relevance to popups, false otherwise
 bool KeyEvent::IsCommandLinePopupKey() const
 {
     if (!IsAnyFlagSet(_activeModifierKeys, ALT_PRESSED | CTRL_PRESSED))
@@ -163,6 +180,15 @@ bool KeyEvent::IsCommandLinePopupKey() const
     return false;
 }
 
+// Routine Description:
+// - updates key event information based on the extended key
+// substitution table.
+// Arguments:
+// - None
+// Return Value:
+// - The extended key substitution object used to update the KeyEvent
+// Note:
+// - Modifies key event data.
 const ExtKeySubst* const KeyEvent::ParseEditKeyInfo()
 {
     const ExtKeySubst* const pKeySubst = GetKeySubst();
@@ -178,6 +204,14 @@ const ExtKeySubst* const KeyEvent::ParseEditKeyInfo()
     return pKeySubst;
 }
 
+// Routine Description:
+// - Gets the extended key substitution object associated with the
+// data in this KeyEvent, if applicable.
+// Arguments:
+// - None
+// Return Value:
+// - The associated extended key substitution object or nullptr if one
+// doesn't exist.
 const ExtKeySubst* const KeyEvent::GetKeySubst() const
 {
     // If not extended mode, or Control key or Alt key is not pressed, or virtual keycode is out of range, just bail.

@@ -161,9 +161,9 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                 }
                 else
                 {
-                    short zeroVkeyData = ServiceLocator::LocateInputServices()->VkKeyScanW(0);
-                    byte zeroVKey = LOBYTE(zeroVkeyData);
-                    byte zeroControlKeyState = HIBYTE(zeroVkeyData);
+                    const short zeroVkeyData = ServiceLocator::LocateInputServices()->VkKeyScanW(0);
+                    const byte zeroVKey = LOBYTE(zeroVkeyData);
+                    const byte zeroControlKeyState = HIBYTE(zeroVkeyData);
                     // Convert real Windows NT modifier bit into bizarre Console bits
                     const DWORD consoleModifierTranslator[] =
                     {
@@ -176,15 +176,17 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                         CTRL_PRESSED | ALT_PRESSED,
                         MOD_PRESSED
                     };
-    #pragma prefast(suppress:26019, "Legacy. PREfast has a theoretical VK which jumps the table. Leaving.")
-                    const DWORD winmod = consoleModifierTranslator[zeroControlKeyState];
-
-                    if (zeroVKey == keyEvent->_virtualKeyCode &&
-                        AreAllFlagsSet(keyEvent->_activeModifierKeys, winmod) &&
-                        AreAllFlagsClear(keyEvent->_activeModifierKeys, ~winmod))
+                    if (static_cast<unsigned int>(zeroControlKeyState) < ARRAYSIZE(consoleModifierTranslator))
                     {
-                        // This really is the character 0x0000
-                        *pwchOut = keyEvent->_charData;
+                        const DWORD winmod = consoleModifierTranslator[zeroControlKeyState];
+
+                        if (zeroVKey == keyEvent->_virtualKeyCode &&
+                            AreAllFlagsSet(keyEvent->_activeModifierKeys, winmod) &&
+                            AreAllFlagsClear(keyEvent->_activeModifierKeys, ~winmod))
+                        {
+                            // This really is the character 0x0000
+                            *pwchOut = keyEvent->_charData;
+                        }
                     }
                 }
                 return STATUS_SUCCESS;

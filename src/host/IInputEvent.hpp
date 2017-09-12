@@ -17,9 +17,7 @@ Author:
 #include <memory>
 #include <deque>
 
-#ifndef byte
-typedef unsigned char byte;
-#endif
+#include <wtypes.h>
 
 enum class InputEventType
 {
