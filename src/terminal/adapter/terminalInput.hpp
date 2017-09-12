@@ -12,6 +12,7 @@ Author(s):
 - Michael Niksa (MiNiksa) 30-Oct-2015
 --*/
 #include <functional>
+#include "../../types/inc/IInputEvent.hpp"
 #pragma once
 
 namespace Microsoft
@@ -26,7 +27,7 @@ namespace Microsoft
                 TerminalInput(_In_ std::function<void(INPUT_RECORD*,DWORD)> pfn);
                 ~TerminalInput();
 
-                bool HandleKey(_In_ const INPUT_RECORD* const pInput) const;
+                bool HandleKey(_In_ const IInputEvent* const pInEvent) const;
                 void ChangeKeypadMode(_In_ bool const fApplicationMode);
                 void ChangeCursorKeysMode(_In_ bool const fApplicationMode);
 

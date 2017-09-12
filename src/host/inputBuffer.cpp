@@ -481,8 +481,7 @@ HRESULT InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent
                 std::unique_ptr<IInputEvent> inEvent = std::move(inEvents.front());
                 inEvents.pop_front();
 
-                const INPUT_RECORD record = inEvent->ToInputRecord();
-                const bool handled = _termInput.HandleKey(&record);
+                const bool handled = _termInput.HandleKey(inEvent.get());
                 if (!handled)
                 {
                     _storage.push_back(std::move(inEvent));

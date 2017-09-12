@@ -19,7 +19,7 @@ Revision History:
 
 #include "inputReadHandleData.h"
 #include "readData.hpp"
-#include "IInputEvent.hpp"
+#include "../types/inc/IInputEvent.hpp"
 
 #include "../server/ObjectHandle.h"
 #include "../server/ObjectHeader.h"

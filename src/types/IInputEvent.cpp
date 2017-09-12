@@ -5,7 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
-#include "IInputEvent.hpp"
+#include "inc/IInputEvent.hpp"
 
 #include <unordered_map>
 

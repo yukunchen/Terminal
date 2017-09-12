@@ -331,15 +331,20 @@ bool TerminalInput::_TranslateDefaultMapping(_In_ const KEY_EVENT_RECORD* const 
     return fSuccess;
 }
 
-bool TerminalInput::HandleKey(_In_ const INPUT_RECORD* const pInput) const
+bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
 {
+    // Sept 2017: convert KeyEvent back to INPUT_RECORD for processing.
+    // This function was originally written operating on INPUT_RECORD's alone.
+    // MSFT:13701152 will replace the entire class to work only on InputEvents.
+    INPUT_RECORD inRecord = pInEvent->ToInputRecord();
+
     // By default, we fail to handle the key
     bool fKeyHandled = false;
 
     // On key presses, prepare to translate to VT compatible sequences
-    if (pInput->EventType == KEY_EVENT)
+    if (inRecord.EventType == KEY_EVENT)
     {
-        KEY_EVENT_RECORD key = pInput->Event.KeyEvent;
+        KEY_EVENT_RECORD key = inRecord.Event.KeyEvent;
 
         // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
         if (key.bKeyDown == TRUE)
