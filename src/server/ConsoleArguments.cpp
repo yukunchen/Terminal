@@ -26,25 +26,60 @@ ConsoleArguments::ConsoleArguments(_In_ const std::wstring commandline)
     _serverHandle = 0;
 }
 
-HRESULT _GetArgumentValue(_In_ std::vector<std::wstring>& args, _In_ size_t index, _Out_ std::wstring* pSetting)
+// Routine Description:
+//  Given the commandline of tokens `args`, tries to find the argument at 
+//      index+1, and places it's value into pSetting.
+//  If there aren't enough args, then returns E_INVALIDARG.
+//  If we found a value, then we take the elements at both index and index+1 out
+//      of args. We'll also decrement index, so that a caller who is using index
+//      as a loop index will autoincrement it to have it point at the correct 
+//      next index.
+//   
+// EX: for args=[--foo bar --baz]
+//      index 0 would place "bar" in pSetting, 
+//          args is now [--baz], index is now -1, caller increments to 0
+//      index 2 would return E_INVALIDARG,
+//          args is still [--foo bar --baz], index is still 2, caller increments to 3.
+// Arguments:
+//  args: A collection of wstrings representing command-line arguments
+//  index: the index of the argument of which to get the value for. The value 
+//      should be at (index+1). index will be decremented by one on success.
+//  pSetting: recieves the string at index+1
+// Return Value:
+//  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
+//      failure.
+HRESULT _GetArgumentValue(_In_ std::vector<std::wstring>& args, _Inout_ size_t& index, _Out_opt_ std::wstring* const pSetting)
 {
-    HRESULT hr = S_OK;
     bool hasNext = (index+1) < args.size();
     if (hasNext)
     {
         args.erase(args.begin()+index);
-        *pSetting = args[index];
+        if (pSetting != nullptr)
+        {
+            *pSetting = args[index];
+        }
         args.erase(args.begin()+index);
         index--;
     }
-    else
-    {
-        hr = E_INVALIDARG;
-    }
-    return hr;
+    return (hasNext) ? S_OK : E_INVALIDARG;
 }
 
-HRESULT ConsoleArguments::_GetClientCommandline(_In_ std::vector<std::wstring>& args, _In_ size_t index, _In_ bool skipFirst)
+// Routine Description:
+//  Given the commandline of tokens `args`, creates a wstring containing all of 
+//      the remaining args after index joined with spaces.  If skipFirst==true, 
+//      then we omit the argument at index from this finished string. skipFirst 
+//      should only be true if the first arg is 
+//      ConsoleArguments::CLIENT_COMMANDLINE_ARG. Removes all the args starting 
+//      at index from the collection.
+//  The finished commandline is placed in _clientCommandline
+// Arguments:
+//  args: A collection of wstrings representing command-line arguments
+//  index: the index of the argument of which to start the commandline from.
+//  skipFirst: if true, omit the arg at index (which should be "--")
+// Return Value:
+//  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
+//       failure.
+HRESULT ConsoleArguments::_GetClientCommandline(_In_ std::vector<std::wstring>& args, _In_ const size_t index, _In_ const bool skipFirst)
 {
     auto start = args.begin()+index;
 
@@ -52,6 +87,8 @@ HRESULT ConsoleArguments::_GetClientCommandline(_In_ std::vector<std::wstring>& 
     //  Used to get rid of the explicit commandline token "--"
     if (skipFirst)
     {
+        // Make sure that the arg we're deleting is "--"
+        assert(CLIENT_COMMANDLINE_ARG == start->c_str());
         args.erase(start);
     }
 
@@ -70,6 +107,15 @@ HRESULT ConsoleArguments::_GetClientCommandline(_In_ std::vector<std::wstring>& 
     return S_OK;
 }
 
+// Routine Description:
+//  Attempts to parse the commandline that this ConsoleArguments was initialized 
+//      with. Fills all of our members with values that were specified on the 
+//      commandline.
+// Arguments:
+//  <none>
+// Return Value:
+//  S_OK if we parsed our _commandline successfully, otherwise E_INVALIDARG 
+//      indicating failure.
 HRESULT ConsoleArguments::ParseCommandline()
 {
     std::vector<std::wstring> args;
@@ -135,6 +181,15 @@ HRESULT ConsoleArguments::ParseCommandline()
     return hr;
 }
 
+// Routine Description:
+//  Returns true if according to the arguments parsed from _commandline we 
+//      should start with the VT pipe enabled. This is when we have both a VT
+//      input and output pipe name given. Guarentees nothing about the pipe 
+//      itself or even the strings, just whether or not they were specified.
+// Arguments:
+//  <none>
+// Return Value:
+//  true iff we have parsed both a VT input and output pipe name.
 bool ConsoleArguments::IsUsingVtPipe() const
 {    
     const bool useVtIn = _vtInPipe.length() > 0;

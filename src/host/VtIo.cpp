@@ -17,6 +17,16 @@ VtIo::VtIo() :
 {
 }
 
+// Routine Description:
+//  Tries to get the VtIoMode from the given string. If it's not one of the 
+//      *_STRING constants in VtIoMode.hpp, then it returns E_INVALIDARG.
+// Arguments:
+//  VtIoMode: A string containing the console's requested VT mode. This can be 
+//      any of the strings in VtIoModes.hpp
+//  pIoMode: recieves the VtIoMode that the string prepresents if it's a valid 
+//      IO mode string
+// Return Value:
+//  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating failure.
 HRESULT VtIo::ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode* const pIoMode)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pIoMode);
@@ -62,7 +72,6 @@ HRESULT VtIo::ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode* const
 //      indicating failure.
 HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     RETURN_IF_FAILED(ParseIoMode(VtMode, &_IoMode));
 
@@ -78,7 +87,10 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
                     FILE_ATTRIBUTE_NORMAL, 
                     nullptr)
     );
-    RETURN_IF_HANDLE_INVALID(_hInputFile.get());
+    if (_hInputFile.get() == INVALID_HANDLE_VALUE)
+    {
+        return GetLastError();
+    }
     
     _hOutputFile.reset(
         CreateFileW(OutPipeName.c_str(),
@@ -89,10 +101,10 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
                     FILE_ATTRIBUTE_NORMAL, 
                     nullptr)
     );
-    RETURN_IF_HANDLE_INVALID(_hOutputFile.get());
-
-    // placeholder until the rest of the code is in.
-    gci;
+    if (_hOutputFile.get() == INVALID_HANDLE_VALUE)
+    {
+        return GetLastError();
+    }
 
     _usingVt = true;
     return S_OK;

@@ -52,5 +52,5 @@ private:
     bool _createServerHandle;
     DWORD _serverHandle;
 
-    HRESULT _GetClientCommandline(_In_ std::vector<std::wstring>& args, _In_ size_t index, _In_ bool skipFirst);
+    HRESULT _GetClientCommandline(_In_ std::vector<std::wstring>& args, _In_ const size_t index, _In_ const bool skipFirst);
 };
