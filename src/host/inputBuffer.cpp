@@ -470,34 +470,38 @@ HRESULT InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent
     eventsWritten = 0;
     setWaitEvent = false;
     const bool initiallyEmptyQueue = _storage.empty();
-    const bool inVtInputMode = IsInVirtualTerminalInputMode();
+    const size_t initialInEventsSize = inEvents.size();
+    const bool vtInputMode = IsInVirtualTerminalInputMode();
     try
     {
-        if (inVtInputMode)
+        while(!inEvents.empty())
         {
-            // add all input events to the storage queue
-            while (!inEvents.empty())
+            // Pop the next event. 
+            // If we're in vt mode, try and handle it with the vt input module.
+            // if it was handled, do nothing else for it.
+            // if there was one event passed in, try coalescing it with the previous event currently in the buffer.
+            // If it's not coalesced, append it to the buffer.
+            std::unique_ptr<IInputEvent> inEvent = std::move(inEvents.front());
+            inEvents.pop_front();
+            if (vtInputMode)
             {
-                std::unique_ptr<IInputEvent> inEvent = std::move(inEvents.front());
-                inEvents.pop_front();
-
                 const bool handled = _termInput.HandleKey(inEvent.get());
-                if (!handled)
+                if (handled) 
                 {
-                    _storage.push_back(std::move(inEvent));
+                    eventsWritten++;
+                    continue;
                 }
-                ++eventsWritten;
             }
-            return S_OK;
-        }
-        else
-        {
+
             // we only check for possible coalescing when storing one
             // record at a time because this is the original behavior of
             // the input buffer. Changing this behavior may break stuff
             // that was depending on it.
-            if (inEvents.size() == 1 && !_storage.empty())
+            if (initialInEventsSize == 1 && !_storage.empty())
             {
+                // coalescing requires a deque of events, so push it back onto the front.
+                inEvents.push_front(std::move(inEvent));
+
                 bool coalesced = false;
                 // this looks kinda weird but we don't want to coalesce a
                 // mouse event and then try to coalesce a key event right after.
@@ -519,25 +523,23 @@ HRESULT InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent
                     eventsWritten = 1;
                     return S_OK;
                 }
+                else
+                {
+                    // We didn't coalesce the event. pull it from the queue again,
+                    //  to keep the state consistent with the start of this block.
+                    inEvent = std::move(inEvents.front());
+                    inEvents.pop_front();
+                }
             }
-            // add all input events to the storage queue
-            while (!inEvents.empty())
-            {
-                std::unique_ptr<IInputEvent> inEvent = std::move(inEvents.front());
-                inEvents.pop_front();
-                 _storage.push_back(std::move(inEvent));
-
-                ++eventsWritten;
-            }
-            if (initiallyEmptyQueue && !_storage.empty())
-            {
-                setWaitEvent = true;
-            }
-            return S_OK;
-            
+            // At this point, the event was neither coalesced, or processed by VT.
+            _storage.push_back(std::move(inEvent));
+            ++eventsWritten;
         }
-
-
+        if (initiallyEmptyQueue && !_storage.empty())
+        {
+            setWaitEvent = true;
+        }
+        return S_OK;
     }
     CATCH_RETURN();
 }
@@ -748,7 +750,7 @@ void InputBuffer::_HandleTerminalInputCallback(_In_reads_(cInput) INPUT_RECORD* 
     }
 }
 
-TerminalInput* InputBuffer::GetTerminalInput()
+TerminalInput& InputBuffer::GetTerminalInput()
 {
-    return &_termInput;
+    return _termInput;
 }

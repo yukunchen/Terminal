@@ -66,7 +66,7 @@ public:
     size_t Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
     bool IsInVirtualTerminalInputMode() const;
-    Microsoft::Console::VirtualTerminal::TerminalInput* GetTerminalInput();
+    Microsoft::Console::VirtualTerminal::TerminalInput& GetTerminalInput();
 
 private:
     std::deque<std::unique_ptr<IInputEvent>> _storage;

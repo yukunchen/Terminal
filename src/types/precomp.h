@@ -79,19 +79,6 @@ __inline NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(
 #include <condrv.h>
 #include <ntcon.h>
 
-// in ProcessHandle class only
-//extern "C"
-//{
-//#include <DDK\wdm.h>
-//}
-
-// in Win32Control.cpp only
-//extern "C"
-//{
-//#include <Win32K\winuserk.h>
-//}
-
-
 // wil - Windows Internal Library - Header based library to make working with Win32/WinNT easier.
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil\common.h>
