@@ -21,7 +21,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 DWORD const dwAltGrFlags = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
 
-TerminalInput::TerminalInput(_In_ std::function<void(INPUT_RECORD*,DWORD)> pfn)
+TerminalInput::TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn)
 {
     _pfnWriteEvents = pfn;
 }
@@ -454,7 +454,8 @@ void TerminalInput::_SendEscapedInputSequence(_In_ const wchar_t wch) const
     rgInput[1].Event.KeyEvent.wVirtualScanCode = 0;
     rgInput[1].Event.KeyEvent.uChar.UnicodeChar = wch;
     
-    _pfnWriteEvents(rgInput, 2);
+    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(rgInput, 2);
+    _pfnWriteEvents(inputEvents);
 }
 
 void TerminalInput::_SendNullInputSequence(_In_ DWORD const dwControlKeyState) const
@@ -468,7 +469,8 @@ void TerminalInput::_SendNullInputSequence(_In_ DWORD const dwControlKeyState) c
     irInput.Event.KeyEvent.wVirtualScanCode = 0;
     irInput.Event.KeyEvent.uChar.UnicodeChar = L'\x0';
     
-    _pfnWriteEvents(&irInput, 1);
+    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(&irInput, 1);
+    _pfnWriteEvents(inputEvents);
 }
 
 void TerminalInput::_SendInputSequence(_In_ PCWSTR const pwszSequence) const
@@ -490,7 +492,8 @@ void TerminalInput::_SendInputSequence(_In_ PCWSTR const pwszSequence) const
 
             rgInput[i].Event.KeyEvent.uChar.UnicodeChar = pwszSequence[i];
         }
-        //This cast is safe because we know that _TermKeyMap::s_cchMaxSequenceLength + 1 < MAX_DWORD
-        _pfnWriteEvents(rgInput, (DWORD)cch);
+
+        std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(rgInput, cch);
+        _pfnWriteEvents(inputEvents);
     }
 }   

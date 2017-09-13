@@ -23,7 +23,7 @@
 InputBuffer::InputBuffer() :
     InputMode{ INPUT_BUFFER_DEFAULT_INPUT_MODE },
     WaitQueue{},
-    _termInput(std::bind(&InputBuffer::_HandleTerminalInputCallback, this, std::placeholders::_1, std::placeholders::_2))
+    _termInput(std::bind(&InputBuffer::_HandleTerminalInputCallback, this, std::placeholders::_1))
 {
     // The _termInput's constructor takes a reference to this object's _HandleTerminalInputCallback.
     // We need to use std::bind to create a reference to that function without a reference to this InputBuffer
@@ -478,8 +478,8 @@ HRESULT InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent
         {
             // Pop the next event. 
             // If we're in vt mode, try and handle it with the vt input module.
-            // if it was handled, do nothing else for it.
-            // if there was one event passed in, try coalescing it with the previous event currently in the buffer.
+            // If it was handled, do nothing else for it.
+            // If there was one event passed in, try coalescing it with the previous event currently in the buffer.
             // If it's not coalesced, append it to the buffer.
             std::unique_ptr<IInputEvent> inEvent = std::move(inEvents.front());
             inEvents.pop_front();
@@ -531,7 +531,7 @@ HRESULT InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent
                     inEvents.pop_front();
                 }
             }
-            // At this point, the event was neither coalesced, or processed by VT.
+            // At this point, the event was neither coalesced, nor processed by VT.
             _storage.push_back(std::move(inEvent));
             ++eventsWritten;
         }
@@ -721,7 +721,6 @@ bool InputBuffer::IsInVirtualTerminalInputMode() const
     return IsFlagSet(InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
 }
 
-
 // Routine Description:
 // - Handler for inserting key sequences into the buffer when the terminal emulation layer
 //   has determined a key can be converted appropriately into a sequence of inputs
@@ -730,12 +729,10 @@ bool InputBuffer::IsInVirtualTerminalInputMode() const
 // - cInput - Length of input records array
 // Return Value:
 // - <none>
-void InputBuffer::_HandleTerminalInputCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
+void InputBuffer::_HandleTerminalInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
     try
     {
-        std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(rgInput, cInput);
-
         // add all input events to the storage queue
         while (!inEvents.empty())
         {

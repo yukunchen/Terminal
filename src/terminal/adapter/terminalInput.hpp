@@ -24,7 +24,7 @@ namespace Microsoft
             class TerminalInput sealed
             {
             public:
-                TerminalInput(_In_ std::function<void(INPUT_RECORD*,DWORD)> pfn);
+                TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
                 ~TerminalInput();
 
                 bool HandleKey(_In_ const IInputEvent* const pInEvent) const;
@@ -33,7 +33,7 @@ namespace Microsoft
 
             private:
 
-                std::function<void(INPUT_RECORD*,DWORD)> _pfnWriteEvents;
+                std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteEvents;
                 bool _fKeypadApplicationMode = false;
                 bool _fCursorApplicationMode = false;
 

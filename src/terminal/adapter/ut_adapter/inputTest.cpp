@@ -38,8 +38,14 @@ public:
 
     TEST_CLASS(InputTest);
 
-    static void s_TerminalInputTestCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
+    static void s_TerminalInputTestCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
     {
+        size_t cInput = inEvents.size();
+        INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
+        VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
+        VERIFY_IS_NOT_NULL(rgInput);
+        auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
+
         size_t cInputExpected = 0;
         VERIFY_SUCCEEDED(StringCchLengthW(s_pwszInputExpected, STRSAFE_MAX_CCH, &cInputExpected));
 
@@ -61,8 +67,14 @@ public:
         }
     }
 
-    static void s_TerminalInputTestNullCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
+    static void s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
     {
+        size_t cInput = inEvents.size();
+        INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
+        VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
+        VERIFY_IS_NOT_NULL(rgInput);
+        auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
+        
         if (cInput == 1)
         {
             Log::Comment(L"We are expecting a null input event.");
