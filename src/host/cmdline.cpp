@@ -30,13 +30,6 @@
 #define COMMAND_NUMBER_LENGTH 5
 #define MINIMUM_COMMAND_PROMPT_SIZE COMMAND_NUMBER_LENGTH
 
-#define ALT_PRESSED     (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)
-#define CTRL_PRESSED    (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED)
-
-#define CTRL_BUT_NOT_ALT(n) \
-        (((n) & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) && \
-        !((n) & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)))
-
 #define COMMAND_NUM_TO_INDEX(NUM, CMDHIST) (SHORT)(((NUM+(CMDHIST)->FirstCommand)%((CMDHIST)->MaximumNumberOfCommands)))
 #define COMMAND_INDEX_TO_NUM(INDEX, CMDHIST) (SHORT)(((INDEX+((CMDHIST)->MaximumNumberOfCommands)-(CMDHIST)->FirstCommand)%((CMDHIST)->MaximumNumberOfCommands)))
 
@@ -316,6 +309,16 @@ void InitExtendedEditKeys(_In_opt_ ExtKeyDefBuf const * const pKeyDefBuf)
     memmove(gaKeyDef, pKeyDefBuf->table, sizeof gaKeyDef);
 }
 
+const ExtKeyDef* const GetKeyDef(WORD virtualKeyCode)
+{
+    size_t index = virtualKeyCode - 'A';
+    if (index >= ARRAYSIZE(gaKeyDef))
+    {
+        return nullptr;
+    }
+    return &gaKeyDef[index];
+}
+
 const ExtKeySubst *ParseEditKeyInfo(_Inout_ PKEY_EVENT_RECORD const pKeyEvent)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
@@ -362,34 +365,6 @@ const ExtKeySubst *ParseEditKeyInfo(_Inout_ PKEY_EVENT_RECORD const pKeyEvent)
     pKeyEvent->uChar.UnicodeChar = pKeySubst->wUnicodeChar;
 
     return pKeySubst;
-}
-
-bool IsPauseKey(_In_ const KeyEvent* const pKeyEvent)
-{
-    INPUT_RECORD record = pKeyEvent->ToInputRecord();
-    return IsPauseKey(&record.Event.KeyEvent);
-}
-
-// Routine Description:
-// - Returns TRUE if pKeyEvent is pause.
-// - The default key is Ctrl-S if extended edit keys are not specified.
-bool IsPauseKey(_In_ PKEY_EVENT_RECORD const pKeyEvent)
-{
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    bool fIsPauseKey = false;
-    if (gci->GetExtendedEditKey())
-    {
-        KEY_EVENT_RECORD KeyEvent = *pKeyEvent;
-        CONST ExtKeySubst *pKeySubst = ParseEditKeyInfo(&KeyEvent);
-
-        fIsPauseKey = (pKeySubst != nullptr && pKeySubst->wVirKey == VK_PAUSE);
-    }
-    else
-    {
-        fIsPauseKey = pKeyEvent->wVirtualKeyCode == L'S' && CTRL_BUT_NOT_ALT(pKeyEvent->dwControlKeyState);
-    }
-
-    return fIsPauseKey;
 }
 
 // Routine Description:
@@ -2736,14 +2711,13 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
     for (;;)
     {
         WCHAR Char;
-        BOOLEAN CommandLinePopupKeys = FALSE;
+        bool commandLinePopupKeys = false;
 
         Status = GetChar(pInputBuffer,
                          &Char,
-                         TRUE,
+                         true,
                          nullptr,
-                         &CommandLinePopupKeys,
-                         nullptr,
+                         &commandLinePopupKeys,
                          nullptr);
         if (!NT_SUCCESS(Status))
         {
@@ -2755,7 +2729,7 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
         }
 
         SHORT Index;
-        if (CommandLinePopupKeys)
+        if (commandLinePopupKeys)
         {
             switch (Char)
             {
@@ -2936,13 +2910,12 @@ NTSTATUS ProcessCopyFromCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
     for (;;)
     {
         WCHAR Char;
-        BOOLEAN CommandLinePopupKeys = FALSE;
+        bool commandLinePopupKeys = false;
         Status = GetChar(pInputBuffer,
                          &Char,
                          TRUE,
                          nullptr,
-                         &CommandLinePopupKeys,
-                         nullptr,
+                         &commandLinePopupKeys,
                          nullptr);
         if (!NT_SUCCESS(Status))
         {
@@ -2954,7 +2927,7 @@ NTSTATUS ProcessCopyFromCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             return Status;
         }
 
-        if (CommandLinePopupKeys)
+        if (commandLinePopupKeys)
         {
             switch (Char)
             {
@@ -3028,13 +3001,12 @@ NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
     for (;;)
     {
         WCHAR Char;
-        BOOLEAN CommandLinePopupKeys = FALSE;
+        bool commandLinePopupKeys = false;
         Status = GetChar(pInputBuffer,
                          &Char,
-                         TRUE,
+                         true,
                          nullptr,
-                         &CommandLinePopupKeys,
-                         nullptr,
+                         &commandLinePopupKeys,
                          nullptr);
         if (!NT_SUCCESS(Status))
         {
@@ -3045,7 +3017,7 @@ NTSTATUS ProcessCopyToCharInput(_In_ COOKED_READ_DATA* const pCookedReadData)
             return Status;
         }
 
-        if (CommandLinePopupKeys)
+        if (commandLinePopupKeys)
         {
             switch (Char)
             {
@@ -3126,14 +3098,13 @@ NTSTATUS ProcessCommandNumberInput(_In_ COOKED_READ_DATA* const pCookedReadData)
     for (;;)
     {
         WCHAR Char;
-        BOOLEAN CommandLinePopupKeys;
+        bool commandLinePopupKeys = false;
 
         Status = GetChar(pInputBuffer,
                          &Char,
                          TRUE,
                          nullptr,
-                         &CommandLinePopupKeys,
-                         nullptr,
+                         &commandLinePopupKeys,
                          nullptr);
         if (!NT_SUCCESS(Status))
         {

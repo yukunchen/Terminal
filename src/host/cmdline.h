@@ -54,6 +54,15 @@ Notes:
 #include "screenInfo.hpp"
 #include "server.h"
 
+#define ALT_PRESSED     (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)
+#define CTRL_PRESSED    (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED)
+#define MOD_PRESSED     (SHIFT_PRESSED | ALT_PRESSED | CTRL_PRESSED)
+
+#define CTRL_BUT_NOT_ALT(n) \
+        (((n) & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) && \
+        !((n) & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)))
+
+
 // Disable warning about 0 length MSFT compiler struct extension.
 #pragma warning(disable:4200)
 typedef struct _COMMAND
@@ -182,12 +191,6 @@ void CleanUpPopups(_In_ COOKED_READ_DATA* const CookedReadData);
 // If lpwstr is nullptr, the default value will be used.
 void InitExtendedEditKeys(_In_opt_ ExtKeyDefBuf const * const pKeyDefBuf);
 
-// IsPauseKey
-// returns TRUE if pKeyEvent is pause.
-// The default key is Ctrl-S if extended edit keys are not specified.
-bool IsPauseKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
-bool IsPauseKey(_In_ const KeyEvent* const pKeyEvent);
-
 // Word delimiters
 #define IS_WORD_DELIM(wch)  ((wch) == L' ' || (ServiceLocator::LocateGlobals()->aWordDelimChars[0] && IsWordDelim(wch)))
 bool IsWordDelim(_In_ WCHAR const wch);
@@ -212,3 +215,5 @@ void FreeAliasBuffers();
 void FreeCommandHistory(_In_ HANDLE const hProcess);
 void FreeCommandHistoryBuffers();
 void ResizeCommandHistoryBuffers(_In_ UINT const cCommands);
+
+const ExtKeyDef* const GetKeyDef(WORD virtualKeyCode);

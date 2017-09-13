@@ -24,64 +24,35 @@
 
 #define IS_JPN_1BYTE_KATAKANA(c)   ((c) >= 0xa1 && (c) <= 0xdf)
 
-// Convert real Windows NT modifier bit into bizarre Console bits
-#define EITHER_CTRL_PRESSED (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)
-#define EITHER_ALT_PRESSED (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)
-#define MOD_PRESSED (SHIFT_PRESSED | EITHER_CTRL_PRESSED | EITHER_ALT_PRESSED)
-
-DWORD ConsKbdState[] = {
-    0,
-    SHIFT_PRESSED,
-    EITHER_CTRL_PRESSED,
-    SHIFT_PRESSED | EITHER_CTRL_PRESSED,
-    EITHER_ALT_PRESSED,
-    SHIFT_PRESSED | EITHER_ALT_PRESSED,
-    EITHER_CTRL_PRESSED | EITHER_ALT_PRESSED,
-    SHIFT_PRESSED | EITHER_CTRL_PRESSED | EITHER_ALT_PRESSED
-};
-
-#define KEYEVENTSTATE_EQUAL_WINMODS(Event, WinMods)\
-    ((Event.Event.KeyEvent.dwControlKeyState & ConsKbdState[WinMods]) && \
-    !(Event.Event.KeyEvent.dwControlKeyState & MOD_PRESSED & ~ConsKbdState[WinMods]))
-
-// TODO MSFT:8805366 update docs
 // Routine Description:
 // - This routine is used in stream input.  It gets input and filters it for unicode characters.
 // Arguments:
-// - pInputBuffer - Pointer to input buffer.
-// - Char - Unicode char input.
-// - Wait - TRUE if the routine shouldn't wait for input.
-// - Console - Pointer to console buffer information.
-// - HandleData - Pointer to handle data structure.
-// - Message - csr api message.
-// - WaitRoutine - Routine to call when wait is woken up.
-// - WaitParameter - Parameter to pass to wait routine.
-// - WaitParameterLength - Length of wait parameter.
-// - WaitBlockExists - TRUE if wait block has already been created.
-// - CommandLineEditingKeys - if present, arrow keys will be returned. on output, if TRUE, Char contains virtual key code for arrow key.
-// - CommandLinePopupKeys - if present, arrow keys will be returned. on output, if TRUE, Char contains virtual key code for arrow key.
+// - pInputBuffer - The InputBuffer to read from
+// - pwchOut - On a successful read, the char data read
+// - Wait - true if a waited read should be performed
+// - pCommandLineEditingKeys - if present, arrow keys will be
+// returned. on output, if true, pwchOut contains virtual key code for
+// arrow key.
+// - pCommandLinePopupKeys - if present, arrow keys will be
+// returned. on output, if true, pwchOut contains virtual key code for
+// arrow key.
 // Return Value:
-NTSTATUS GetChar(_In_ InputBuffer* pInputBuffer,
-                 _Out_ PWCHAR pwchOut,
-                 _In_ const BOOL fWait,
-                 _Out_opt_ PBOOLEAN pfCommandLineEditingKeys,
-                 _Out_opt_ PBOOLEAN pfCommandLinePopupKeys,
-                 _Out_opt_ PBOOLEAN pfEnableScrollMode,
-                 _Out_opt_ PDWORD pdwKeyState)
+// - STATUS_SUCCESS on success or a relevant error code on failure.
+NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
+                 _Out_ wchar_t* const pwchOut,
+                 _In_ const bool Wait,
+                 _Out_opt_ bool* const pCommandLineEditingKeys,
+                 _Out_opt_ bool* const pCommandLinePopupKeys,
+                 _Out_opt_ DWORD* const pdwKeyState)
 {
-    if (nullptr != pfCommandLineEditingKeys)
+    if (nullptr != pCommandLineEditingKeys)
     {
-        *pfCommandLineEditingKeys = FALSE;
+        *pCommandLineEditingKeys = false;
     }
 
-    if (nullptr != pfCommandLinePopupKeys)
+    if (nullptr != pCommandLinePopupKeys)
     {
-        *pfCommandLinePopupKeys = FALSE;
-    }
-
-    if (nullptr != pfEnableScrollMode)
-    {
-        *pfEnableScrollMode = FALSE;
+        *pCommandLinePopupKeys = false;
     }
 
     if (nullptr != pdwKeyState)
@@ -92,122 +63,133 @@ NTSTATUS GetChar(_In_ InputBuffer* pInputBuffer,
     NTSTATUS Status;
     for (;;)
     {
-        INPUT_RECORD Event = { 0 };
-        ULONG NumRead = 0;
-
         std::unique_ptr<IInputEvent> inputEvent;
         Status = pInputBuffer->Read(inputEvent,
                                     false, // peek
-                                    !!fWait,
+                                    Wait,
                                     true); // unicode
-        if (NT_SUCCESS(Status))
-        {
-            NumRead = 1u;
-            Event = inputEvent->ToInputRecord();
-        }
 
         if (!NT_SUCCESS(Status))
         {
             return Status;
         }
 
-        if (NumRead == 0)
+        if (inputEvent.get() == nullptr)
         {
-            ASSERT(!fWait);
-
+            assert(!Wait);
             return STATUS_UNSUCCESSFUL;
         }
 
-        if (Event.EventType == KEY_EVENT)
+        if (inputEvent->EventType() == InputEventType::KeyEvent)
         {
-            BOOL fCommandLineEditKey;
+            std::unique_ptr<KeyEvent> keyEvent = std::unique_ptr<KeyEvent>(static_cast<KeyEvent*>(inputEvent.release()));
 
-            if (nullptr != pfCommandLineEditingKeys)
+            bool commandLineEditKey = false;
+            if (pCommandLineEditingKeys)
             {
-                fCommandLineEditKey = IsCommandLineEditingKey(&Event.Event.KeyEvent);
+                commandLineEditKey = keyEvent->IsCommandLineEditingKey();
             }
-            else if (nullptr != pfCommandLinePopupKeys)
+            else if (pCommandLinePopupKeys)
             {
-                fCommandLineEditKey = IsCommandLinePopupKey(&Event.Event.KeyEvent);
-            }
-            else
-            {
-                fCommandLineEditKey = FALSE;
+                commandLineEditKey = keyEvent->IsCommandLinePopupKey();
             }
 
-            // Always return keystate if caller asked for it.
-            if (nullptr != pdwKeyState)
+            if ((pCommandLineEditingKeys || pCommandLinePopupKeys) &&
+                ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey() &&
+                keyEvent->GetKeySubst())
             {
-                *pdwKeyState = Event.Event.KeyEvent.dwControlKeyState;
+                keyEvent->ParseEditKeyInfo();
             }
 
-            if (Event.Event.KeyEvent.uChar.UnicodeChar != 0 && !fCommandLineEditKey)
+            if (pdwKeyState)
+            {
+                *pdwKeyState = keyEvent->_activeModifierKeys;
+            }
+
+            if (keyEvent->_charData != 0 && !commandLineEditKey)
             {
                 // chars that are generated using alt + numpad
-                if (!Event.Event.KeyEvent.bKeyDown && Event.Event.KeyEvent.wVirtualKeyCode == VK_MENU)
+                if (!keyEvent->_keyDown && keyEvent->_virtualKeyCode == VK_MENU)
                 {
-                    if (Event.Event.KeyEvent.dwControlKeyState & ALTNUMPAD_BIT)
+                    if (IsFlagSet(keyEvent->_activeModifierKeys, ALTNUMPAD_BIT))
                     {
-                        if (HIBYTE(Event.Event.KeyEvent.uChar.UnicodeChar))
+                        if (HIBYTE(keyEvent->_charData))
                         {
                             char chT[2] = {
-                                static_cast<char>(HIBYTE(Event.Event.KeyEvent.uChar.UnicodeChar)),
-                                static_cast<char>(LOBYTE(Event.Event.KeyEvent.uChar.UnicodeChar)),
+                                static_cast<char>(HIBYTE(keyEvent->_charData)),
+                                static_cast<char>(LOBYTE(keyEvent->_charData)),
                             };
                             *pwchOut = CharToWchar(chT, 2);
                         }
                         else
                         {
-                            // Because USER doesn't know our codepage, it gives us the raw OEM char and we convert it to a Unicode character.
-                            char chT = LOBYTE(Event.Event.KeyEvent.uChar.UnicodeChar);
+                            // Because USER doesn't know our codepage,
+                            // it gives us the raw OEM char and we
+                            // convert it to a Unicode character.
+                            char chT = LOBYTE(keyEvent->_charData);
                             *pwchOut = CharToWchar(&chT, 1);
                         }
                     }
                     else
                     {
-                        *pwchOut = Event.Event.KeyEvent.uChar.UnicodeChar;
+                        *pwchOut = keyEvent->_charData;
                     }
                     return STATUS_SUCCESS;
                 }
                 // Ignore Escape and Newline chars
-                else if (Event.Event.KeyEvent.bKeyDown &&
-                         //if we're in VT Input, we want everything. Else, ignore Escape and newlines
-                    (IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
-                         (Event.Event.KeyEvent.wVirtualKeyCode != VK_ESCAPE && Event.Event.KeyEvent.uChar.UnicodeChar != 0x0A)))
-
+                else if (keyEvent->_keyDown &&
+                         (IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
+                          (keyEvent->_virtualKeyCode != VK_ESCAPE &&
+                           keyEvent->_charData != UNICODE_LINEFEED)))
                 {
-                    *pwchOut = Event.Event.KeyEvent.uChar.UnicodeChar;
+                    *pwchOut = keyEvent->_charData;
                     return STATUS_SUCCESS;
                 }
-
             }
 
-            if (Event.Event.KeyEvent.bKeyDown)
+            if (keyEvent->_keyDown)
             {
-                SHORT sTmp;
-
-                if ((nullptr != pfCommandLineEditingKeys) && fCommandLineEditKey)
+                if (pCommandLineEditingKeys && commandLineEditKey)
                 {
-                    *pfCommandLineEditingKeys = TRUE;
-                    *pwchOut = (WCHAR)Event.Event.KeyEvent.wVirtualKeyCode;
-                    return STATUS_SUCCESS;
+                    *pCommandLineEditingKeys = true;
+                    *pwchOut = static_cast<wchar_t>(keyEvent->_virtualKeyCode);
                 }
-                else if ((nullptr != pfCommandLinePopupKeys) && fCommandLineEditKey)
+                else if (pCommandLinePopupKeys && commandLineEditKey)
                 {
-                    *pfCommandLinePopupKeys = TRUE;
-                    *pwchOut = (CHAR)Event.Event.KeyEvent.wVirtualKeyCode;
-                    return STATUS_SUCCESS;
+                    *pCommandLinePopupKeys = true;
+                    *pwchOut = static_cast<char>(keyEvent->_virtualKeyCode);
                 }
-
-                sTmp = ServiceLocator::LocateInputServices()->VkKeyScanW(0);
-
-#pragma prefast(suppress:26019, "Legacy. PREfast has a theoretical VK which jumps the table. Leaving.")
-                if ((LOBYTE(sTmp) == Event.Event.KeyEvent.wVirtualKeyCode) && KEYEVENTSTATE_EQUAL_WINMODS(Event, HIBYTE(sTmp)))
+                else
                 {
-                    // This really is the character 0x0000
-                    *pwchOut = Event.Event.KeyEvent.uChar.UnicodeChar;
-                    return STATUS_SUCCESS;
+                    const short zeroVkeyData = ServiceLocator::LocateInputServices()->VkKeyScanW(0);
+                    const byte zeroVKey = LOBYTE(zeroVkeyData);
+                    const byte zeroControlKeyState = HIBYTE(zeroVkeyData);
+                    // Convert real Windows NT modifier bit into bizarre Console bits
+                    const DWORD consoleModifierTranslator[] =
+                    {
+                        0,
+                        SHIFT_PRESSED,
+                        CTRL_PRESSED,
+                        SHIFT_PRESSED | CTRL_PRESSED,
+                        ALT_PRESSED,
+                        SHIFT_PRESSED | ALT_PRESSED,
+                        CTRL_PRESSED | ALT_PRESSED,
+                        MOD_PRESSED
+                    };
+                    if (static_cast<unsigned int>(zeroControlKeyState) < ARRAYSIZE(consoleModifierTranslator))
+                    {
+                        const DWORD winmod = consoleModifierTranslator[zeroControlKeyState];
+
+                        if (zeroVKey == keyEvent->_virtualKeyCode &&
+                            AreAllFlagsSet(keyEvent->_activeModifierKeys, winmod) &&
+                            AreAllFlagsClear(keyEvent->_activeModifierKeys, ~winmod))
+                        {
+                            // This really is the character 0x0000
+                            *pwchOut = keyEvent->_charData;
+                        }
+                    }
                 }
+                return STATUS_SUCCESS;
             }
         }
     }
@@ -647,8 +629,7 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
                 {
                     Status = GetChar(pInputBuffer,
                                      pwchBuffer,
-                                     TRUE,
-                                     nullptr,
+                                     true,
                                      nullptr,
                                      nullptr,
                                      nullptr);
@@ -658,8 +639,7 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
             {
                 Status = GetChar(pInputBuffer,
                                  pwchBuffer,
-                                 TRUE,
-                                 nullptr,
+                                 true,
                                  nullptr,
                                  nullptr,
                                  nullptr);
@@ -687,8 +667,7 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
             {
                 Status = GetChar(pInputBuffer,
                                  pwchBuffer,
-                                 FALSE,
-                                 nullptr,
+                                 false,
                                  nullptr,
                                  nullptr,
                                  nullptr);
