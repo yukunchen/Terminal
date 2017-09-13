@@ -161,24 +161,22 @@ void ConsoleArgumentsTests::VtPipesTest()
     }
 
     {
-        Log::Comment(L"#5 Mixed (1)");
+        Log::Comment(L"#5 Mixed - args with -- args the start can't be used as values(1)");
         wstring commandline = L"--inpipe --outpipe foo";
         Log::Comment(commandline.c_str());
-        auto args = CreateAndParse(commandline);
+        auto args = CreateAndParseUnsuccessfully(commandline);
         VERIFY_IS_FALSE(args.IsUsingVtPipe());
-        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"--outpipe");
-        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"");
-        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"foo");
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"");
     }
 
     {
-        Log::Comment(L"#6 Mixed (2)");
+        Log::Comment(L"#6 Mixed - args with -- args the start can't be used as values(2)");
         wstring commandline = L"--inpipe --outpipe --outpipe foo";
         Log::Comment(commandline.c_str());
-        auto args = CreateAndParse(commandline);
-        VERIFY_IS_TRUE(args.IsUsingVtPipe());
-        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"--outpipe");
-        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"foo");
+        auto args = CreateAndParseUnsuccessfully(commandline);
+        VERIFY_IS_FALSE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"");
         VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"");
     }
 
@@ -286,14 +284,14 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
         VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"--outpipe foo bar");
     }
     {
-        Log::Comment(L"#8 Let -- be used as a value of a parameter");
+        Log::Comment(L"#8 -- can NOT be used as a value of a parameter");
         wstring commandline = L"--inpipe -- --outpipe foo bar";
         Log::Comment(commandline.c_str());
-        auto args = CreateAndParse(commandline);
-        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"--");
-        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"foo");
-        VERIFY_IS_TRUE(args.IsUsingVtPipe());
-        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"bar");
+        auto args = CreateAndParseUnsuccessfully(commandline);
+        VERIFY_IS_FALSE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"");
     }
     {
         Log::Comment(L"#9 -- by itself does nothing successfully");

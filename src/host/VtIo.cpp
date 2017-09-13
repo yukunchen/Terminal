@@ -87,10 +87,7 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
                     FILE_ATTRIBUTE_NORMAL, 
                     nullptr)
     );
-    if (_hInputFile.get() == INVALID_HANDLE_VALUE)
-    {
-        return GetLastError();
-    }
+    RETURN_LAST_ERROR_IF(_hInputFile.get() == INVALID_HANDLE_VALUE);
     
     _hOutputFile.reset(
         CreateFileW(OutPipeName.c_str(),
@@ -101,10 +98,7 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
                     FILE_ATTRIBUTE_NORMAL, 
                     nullptr)
     );
-    if (_hOutputFile.get() == INVALID_HANDLE_VALUE)
-    {
-        return GetLastError();
-    }
+    RETURN_LAST_ERROR_IF(_hOutputFile.get() == INVALID_HANDLE_VALUE);
 
     _usingVt = true;
     return S_OK;

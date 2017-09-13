@@ -50,18 +50,31 @@ ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline)
 //      failure.
 HRESULT _GetArgumentValue(_In_ std::vector<std::wstring>& args, _Inout_ size_t& index, _Out_opt_ std::wstring* const pSetting)
 {
+    HRESULT hr = E_INVALIDARG;
     bool hasNext = (index+1) < args.size();
     if (hasNext)
     {
         args.erase(args.begin()+index);
-        if (pSetting != nullptr)
+
+        std::wstring next = args[index];
+        if (next.compare(0, 2, L"--") == 0)
         {
-            *pSetting = args[index];
+            // the next token starts with --, so it's an argument.
+            // eg: [--foo, --bar, baz]
+            // We should reject this. Parameters to args shouldn't start with --
         }
-        args.erase(args.begin()+index);
+        else
+        {
+            if (pSetting != nullptr)
+            {
+                *pSetting = args[index];
+            }
+            args.erase(args.begin()+index);
+            hr = S_OK;
+        }
         index--;
     }
-    return (hasNext) ? S_OK : E_INVALIDARG;
+    return hr;
 }
 
 // Routine Description:
