@@ -282,12 +282,12 @@ ULONG RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 }
 
 
-NTSTATUS ReadPendingInput(_In_ InputBuffer* pInputBuffer,
-                          _Out_writes_bytes_(*pdwNumBytes) WCHAR* pwchBuffer,
-                          _Inout_ ULONG* pdwNumBytes,
-                          _In_ INPUT_READ_HANDLE_DATA* pHandleData,
-                          _In_ BOOL fUnicode,
-                          _In_ DWORD BufferSize)
+NTSTATUS ReadPendingInput(_In_ InputBuffer* const pInputBuffer,
+                          _Out_writes_bytes_(*pdwNumBytes) WCHAR* const pwchBuffer,
+                          _Inout_ ULONG* const pdwNumBytes,
+                          _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
+                          _In_ const BOOL fUnicode,
+                          _In_ const DWORD BufferSize)
 {
     // if we have leftover input, copy as much fits into the user's
     // buffer and return.  we may have multi line input, if a macro
@@ -296,6 +296,8 @@ NTSTATUS ReadPendingInput(_In_ InputBuffer* pInputBuffer,
     BOOL fAddDbcsLead = FALSE;
     ULONG NumToWrite = 0;
     ULONG NumToBytes = 0;
+    WCHAR* pBuffer = pwchBuffer;
+    DWORD bufferRemaining = BufferSize;
 
     if (IsFlagSet(pHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput))
     {
@@ -306,13 +308,13 @@ NTSTATUS ReadPendingInput(_In_ InputBuffer* pInputBuffer,
             if (pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
             {
                 fAddDbcsLead = TRUE;
-                *pwchBuffer++ = pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
-                BufferSize -= sizeof(WCHAR);
+                *pBuffer++ = pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                bufferRemaining -= sizeof(WCHAR);
                 pHandleData->BytesAvailable -= sizeof(WCHAR);
                 ZeroMemory(&pInputBuffer->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
             }
 
-            if (pHandleData->BytesAvailable == 0 || BufferSize == 0)
+            if (pHandleData->BytesAvailable == 0 || bufferRemaining == 0)
             {
                 ClearAllFlags(pHandleData->InputHandleFlags,
                                 (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending |
@@ -325,7 +327,7 @@ NTSTATUS ReadPendingInput(_In_ InputBuffer* pInputBuffer,
             {
                 for (NumToWrite = 0, Tmp = pHandleData->CurrentBufPtr, NumToBytes = 0;
                         NumToBytes < pHandleData->BytesAvailable &&
-                        NumToBytes < BufferSize / sizeof(WCHAR) &&
+                        NumToBytes < bufferRemaining / sizeof(WCHAR) &&
                         *Tmp != UNICODE_LINEFEED;
                         (IsCharFullWidth(*Tmp) ? NumToBytes += 2 : NumToBytes++), Tmp++, NumToWrite += sizeof(WCHAR));
             }
@@ -334,9 +336,9 @@ NTSTATUS ReadPendingInput(_In_ InputBuffer* pInputBuffer,
         for (NumToWrite = 0, Tmp = pHandleData->CurrentBufPtr;
                 NumToWrite < pHandleData->BytesAvailable && *Tmp != UNICODE_LINEFEED; Tmp++, NumToWrite += sizeof(WCHAR));
         NumToWrite += sizeof(WCHAR);
-        if (NumToWrite > BufferSize)
+        if (NumToWrite > bufferRemaining)
         {
-            NumToWrite = BufferSize;
+            NumToWrite = bufferRemaining;
         }
     }
     else
@@ -348,8 +350,8 @@ NTSTATUS ReadPendingInput(_In_ InputBuffer* pInputBuffer,
             if (pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
             {
                 fAddDbcsLead = TRUE;
-                *pwchBuffer++ = pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
-                BufferSize -= sizeof(WCHAR);
+                *pBuffer++ = pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                bufferRemaining -= sizeof(WCHAR);
                 pHandleData->BytesAvailable -= sizeof(WCHAR);
                 ZeroMemory(&pInputBuffer->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
             }
@@ -365,15 +367,15 @@ NTSTATUS ReadPendingInput(_In_ InputBuffer* pInputBuffer,
             else
             {
                 for (NumToWrite = 0, Tmp = pHandleData->CurrentBufPtr, NumToBytes = 0;
-                        NumToBytes < pHandleData->BytesAvailable && NumToBytes < BufferSize / sizeof(WCHAR);
+                        NumToBytes < pHandleData->BytesAvailable && NumToBytes < bufferRemaining / sizeof(WCHAR);
                         (IsCharFullWidth(*Tmp) ? NumToBytes += 2 : NumToBytes++), Tmp++, NumToWrite += sizeof(WCHAR));
             }
         }
 
-        NumToWrite = (BufferSize < pHandleData->BytesAvailable) ? BufferSize : pHandleData->BytesAvailable;
+        NumToWrite = (bufferRemaining < pHandleData->BytesAvailable) ? bufferRemaining : pHandleData->BytesAvailable;
     }
 
-    memmove(pwchBuffer, pHandleData->CurrentBufPtr, NumToWrite);
+    memmove(pBuffer, pHandleData->CurrentBufPtr, NumToWrite);
     pHandleData->BytesAvailable -= NumToWrite;
     if (pHandleData->BytesAvailable == 0)
     {
@@ -397,10 +399,10 @@ NTSTATUS ReadPendingInput(_In_ InputBuffer* pInputBuffer,
             return STATUS_NO_MEMORY;
         }
 
-        NumToWrite = TranslateUnicodeToOem(pwchBuffer, NumToWrite / sizeof(WCHAR), TransBuffer, NumToBytes, &pInputBuffer->ReadConInpDbcsLeadByte);
+        NumToWrite = TranslateUnicodeToOem(pBuffer, NumToWrite / sizeof(WCHAR), TransBuffer, NumToBytes, &pInputBuffer->ReadConInpDbcsLeadByte);
 
 #pragma prefast(suppress:__WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine but prefast can't follow it, evidently")
-        memmove(pwchBuffer, TransBuffer, NumToWrite);
+        memmove(pBuffer, TransBuffer, NumToWrite);
 
         if (fAddDbcsLead)
         {
@@ -414,20 +416,20 @@ NTSTATUS ReadPendingInput(_In_ InputBuffer* pInputBuffer,
     return STATUS_SUCCESS;
 }
 
-NTSTATUS ReadLineInput(_In_ InputBuffer* pInputBuffer,
+NTSTATUS ReadLineInput(_In_ InputBuffer* const pInputBuffer,
                        _In_ HANDLE ProcessData,
-                       _Out_writes_bytes_(*pdwNumBytes) WCHAR* pwchBuffer,
-                       _Inout_ ULONG* pdwNumBytes,
-                       _Inout_ ULONG* pControlKeyState,
-                       _In_reads_bytes_opt_(cbInitialData) PWCHAR pwsInitialData,
-                       _In_ ULONG cbInitialData,
-                       _In_ DWORD dwCtrlWakeupMask,
-                       _In_ INPUT_READ_HANDLE_DATA* pHandleData,
-                       _In_reads_bytes_opt_(cbExeName) PWCHAR pwsExeName,
-                       _In_ ULONG cbExeName,
-                       _In_ BOOL fUnicode,
+                       _Out_writes_bytes_(*pdwNumBytes) WCHAR* const pwchBuffer,
+                       _Inout_ ULONG* const pdwNumBytes,
+                       _Inout_ ULONG* const pControlKeyState,
+                       _In_reads_bytes_opt_(cbInitialData) WCHAR* const pwsInitialData,
+                       _In_ const ULONG cbInitialData,
+                       _In_ const DWORD dwCtrlWakeupMask,
+                       _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
+                       _In_reads_bytes_opt_(cbExeName) WCHAR* const pwsExeName,
+                       _In_ const ULONG cbExeName,
+                       _In_ const BOOL fUnicode,
                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
-                       _In_ DWORD BufferSize)
+                       _In_ const DWORD BufferSize)
 {
     // read in characters until the buffer is full or return is read.
     // since we may wait inside this loop, store all important variables
@@ -570,13 +572,13 @@ NTSTATUS ReadLineInput(_In_ InputBuffer* pInputBuffer,
     return Status;
 }
 
-NTSTATUS ReadRawInput(_In_ InputBuffer* pInputBuffer,
-                      _Out_writes_bytes_(*pdwNumBytes) WCHAR* pwchBuffer,
-                      _Inout_ ULONG* pdwNumBytes,
-                      _In_ INPUT_READ_HANDLE_DATA* pHandleData,
-                      _In_ BOOL fUnicode,
+NTSTATUS ReadRawInput(_In_ InputBuffer* const pInputBuffer,
+                      _Out_writes_bytes_(*pdwNumBytes) WCHAR* const pwchBuffer,
+                      _Inout_ ULONG* const pdwNumBytes,
+                      _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
+                      _In_ const BOOL fUnicode,
                       _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
-                      _In_ DWORD BufferSize)
+                      _In_ const DWORD BufferSize)
 {
     // Character (raw) mode.
 
@@ -590,15 +592,17 @@ NTSTATUS ReadRawInput(_In_ InputBuffer* pInputBuffer,
     ULONG NumToWrite = 0;
     BOOL fAddDbcsLead = FALSE;
     NTSTATUS Status;
+    WCHAR* pBuffer = pwchBuffer;
+    DWORD bufferRemaining = BufferSize;
 
     RAW_READ_DATA RawReadData(pInputBuffer,
                                 pHandleData,
-                                BufferSize,
-                                pwchBuffer);
+                                bufferRemaining,
+                                pBuffer);
 
-    if (*pdwNumBytes < BufferSize)
+    if (*pdwNumBytes < bufferRemaining)
     {
-        PWCHAR pwchBufferTmp = pwchBuffer;
+        PWCHAR pwchBufferTmp = pBuffer;
 
         NumToWrite = 0;
         if (!fUnicode)
@@ -606,11 +610,11 @@ NTSTATUS ReadRawInput(_In_ InputBuffer* pInputBuffer,
             if (pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
             {
                 fAddDbcsLead = TRUE;
-                *pwchBuffer++ = pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
-                BufferSize -= sizeof(WCHAR);
+                *pBuffer++ = pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                bufferRemaining -= sizeof(WCHAR);
                 ZeroMemory(&pInputBuffer->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
                 Status = STATUS_SUCCESS;
-                if (BufferSize == 0)
+                if (bufferRemaining == 0)
                 {
                     *pdwNumBytes = 1;
                     return STATUS_SUCCESS;
@@ -619,7 +623,7 @@ NTSTATUS ReadRawInput(_In_ InputBuffer* pInputBuffer,
             else
             {
                 Status = GetChar(pInputBuffer,
-                                    pwchBuffer,
+                                    pBuffer,
                                     true,
                                     nullptr,
                                     nullptr,
@@ -629,7 +633,7 @@ NTSTATUS ReadRawInput(_In_ InputBuffer* pInputBuffer,
         else
         {
             Status = GetChar(pInputBuffer,
-                                pwchBuffer,
+                                pBuffer,
                                 true,
                                 nullptr,
                                 nullptr,
@@ -649,15 +653,15 @@ NTSTATUS ReadRawInput(_In_ InputBuffer* pInputBuffer,
 
         if (!fAddDbcsLead)
         {
-            IsCharFullWidth(*pwchBuffer) ? *pdwNumBytes += 2 : ++*pdwNumBytes;
+            IsCharFullWidth(*pBuffer) ? *pdwNumBytes += 2 : ++*pdwNumBytes;
             NumToWrite += sizeof(WCHAR);
-            pwchBuffer++;
+            pBuffer++;
         }
 
-        while (NumToWrite < BufferSize)
+        while (NumToWrite < bufferRemaining)
         {
             Status = GetChar(pInputBuffer,
-                                pwchBuffer,
+                                pBuffer,
                                 false,
                                 nullptr,
                                 nullptr,
@@ -666,8 +670,8 @@ NTSTATUS ReadRawInput(_In_ InputBuffer* pInputBuffer,
             {
                 break;
             }
-            IsCharFullWidth(*pwchBuffer) ? *pdwNumBytes += 2 : ++*pdwNumBytes;
-            pwchBuffer++;
+            IsCharFullWidth(*pBuffer) ? *pdwNumBytes += 2 : ++*pdwNumBytes;
+            pBuffer++;
             NumToWrite += sizeof(WCHAR);
         }
 
@@ -682,16 +686,16 @@ NTSTATUS ReadRawInput(_In_ InputBuffer* pInputBuffer,
                 return STATUS_NO_MEMORY;
             }
 
-            pwchBuffer = pwchBufferTmp;
+            pBuffer = pwchBufferTmp;
 
-            *pdwNumBytes = TranslateUnicodeToOem(pwchBuffer,
+            *pdwNumBytes = TranslateUnicodeToOem(pBuffer,
                                                     NumToWrite / sizeof(WCHAR),
                                                     TransBuffer,
                                                     *pdwNumBytes,
                                                     &pInputBuffer->ReadConInpDbcsLeadByte);
 
 #pragma prefast(suppress:26053 26015, "PREfast claims read overflow. *pdwNumBytes is the exact size of TransBuffer as allocated above.")
-            memmove(pwchBuffer, TransBuffer, *pdwNumBytes);
+            memmove(pBuffer, TransBuffer, *pdwNumBytes);
 
             if (fAddDbcsLead)
             {
@@ -721,18 +725,18 @@ NTSTATUS ReadRawInput(_In_ InputBuffer* pInputBuffer,
 // - NumBytes - On input, size of buffer.  On output, number of bytes read.
 // - HandleData - Pointer to handle data structure.
 // Return Value:
-NTSTATUS DoReadConsole(_In_ InputBuffer* pInputBuffer,
+NTSTATUS DoReadConsole(_In_ InputBuffer* const pInputBuffer,
                        _In_ HANDLE ProcessData,
-                       _Out_writes_bytes_(*pdwNumBytes) WCHAR* pwchBuffer,
-                       _Inout_ ULONG* pdwNumBytes,
-                       _Inout_ ULONG* pControlKeyState,
-                       _In_reads_bytes_opt_(cbInitialData) PWCHAR pwsInitialData,
-                       _In_ ULONG cbInitialData,
-                       _In_ DWORD dwCtrlWakeupMask,
-                       _In_ INPUT_READ_HANDLE_DATA* pHandleData,
-                       _In_reads_bytes_opt_(cbExeName) PWCHAR pwsExeName,
-                       _In_ ULONG cbExeName,
-                       _In_ BOOL fUnicode,
+                       _Out_writes_bytes_(*pdwNumBytes) WCHAR* const pwchBuffer,
+                       _Inout_ ULONG* const pdwNumBytes,
+                       _Inout_ ULONG* const pControlKeyState,
+                       _In_reads_bytes_opt_(cbInitialData) WCHAR* const pwsInitialData,
+                       _In_ const ULONG cbInitialData,
+                       _In_ const DWORD dwCtrlWakeupMask,
+                       _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
+                       _In_reads_bytes_opt_(cbExeName) WCHAR* const pwsExeName,
+                       _In_ const ULONG cbExeName,
+                       _In_ const BOOL fUnicode,
                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
     LockConsole();
