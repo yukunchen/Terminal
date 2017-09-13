@@ -572,13 +572,13 @@ NTSTATUS ReadLineInput(_In_ InputBuffer* const pInputBuffer,
     return Status;
 }
 
-NTSTATUS ReadRawInput(_In_ InputBuffer* const pInputBuffer,
-                      _Out_writes_bytes_(*pdwNumBytes) WCHAR* const pwchBuffer,
-                      _Inout_ ULONG* const pdwNumBytes,
-                      _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
-                      _In_ const BOOL fUnicode,
-                      _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
-                      _In_ const DWORD BufferSize)
+NTSTATUS ReadCharacterInput(_In_ InputBuffer* const pInputBuffer,
+                            _Out_writes_bytes_(*pdwNumBytes) WCHAR* const pwchBuffer,
+                            _Inout_ ULONG* const pdwNumBytes,
+                            _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
+                            _In_ const BOOL fUnicode,
+                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
+                            _In_ const DWORD BufferSize)
 {
     // Character (raw) mode.
 
@@ -714,17 +714,30 @@ NTSTATUS ReadRawInput(_In_ InputBuffer* const pInputBuffer,
     return STATUS_SUCCESS;
 }
 
+// TODO documentation
 // Routine Description:
-// - This routine reads in characters for stream input and does the required processing based on the input mode (line, char, echo).
+// - This routine reads in characters for stream input and does the
+// required processing based on the input mode (line, char, echo).
 // - This routine returns UNICODE characters.
 // Arguments:
-// - pInputBuffer - Pointer to input buffer.
-// - Console - Pointer to console buffer information.
-// - ScreenInfo - Pointer to screen buffer information.
-// - lpBuffer - Pointer to buffer to read into.
-// - NumBytes - On input, size of buffer.  On output, number of bytes read.
-// - HandleData - Pointer to handle data structure.
+// - pInputBuffer - Pointer to input buffer to read from.
+// - ProcessData -
+// - pwchBuffer -
+// - pdwNumBytes -
+// - pControlKeyState -
+// - pwsInitialData -
+// - cbInitialData -
+// - dwCtrlWakeupMask -
+// - pHandleData -
+// - pwsExeName -
+// - cbExeName -
+// - fUnicode -
+// - ppWaiter - If a wait is necessary this will contain the wait
+// object on output
 // Return Value:
+// - STATUS_BUFFER_TOO_SMALL if pdwNumBytes is too small to store char
+// data.
+// - TODO
 NTSTATUS DoReadConsole(_In_ InputBuffer* const pInputBuffer,
                        _In_ HANDLE ProcessData,
                        _Out_writes_bytes_(*pdwNumBytes) WCHAR* const pwchBuffer,
@@ -744,12 +757,9 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* const pInputBuffer,
 
     *ppWaiter = nullptr;
 
-    NTSTATUS Status;
-
     if (*pdwNumBytes < sizeof(WCHAR))
     {
-        Status = STATUS_BUFFER_TOO_SMALL;
-        return Status;
+        return STATUS_BUFFER_TOO_SMALL;
     }
 
     DWORD BufferSize = *pdwNumBytes;
@@ -783,13 +793,13 @@ NTSTATUS DoReadConsole(_In_ InputBuffer* const pInputBuffer,
     }
     else
     {
-        return ReadRawInput(pInputBuffer,
-                            pwchBuffer,
-                            pdwNumBytes,
-                            pHandleData,
-                            fUnicode,
-                            ppWaiter,
-                            BufferSize);
+        return ReadCharacterInput(pInputBuffer,
+                                  pwchBuffer,
+                                  pdwNumBytes,
+                                  pHandleData,
+                                  fUnicode,
+                                  ppWaiter,
+                                  BufferSize);
     }
 }
 
