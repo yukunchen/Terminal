@@ -18,6 +18,7 @@ SOURCES = \
     UtilsTests.cpp \
     AttrRowTests.cpp \
     CharRowTests.cpp \
+    ConsoleArgumentsTests.cpp \
     DbcsTests.cpp \
     ScreenBufferTests.cpp \
     TextBufferTests.cpp \

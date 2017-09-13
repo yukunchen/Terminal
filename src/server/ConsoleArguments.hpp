@@ -16,7 +16,7 @@ Author(s):
 class ConsoleArguments
 {
 public:
-    ConsoleArguments(_In_ const std::wstring commandline);
+    ConsoleArguments(_In_ const std::wstring& commandline);
 
     HRESULT ParseCommandline();
 
@@ -53,4 +53,8 @@ private:
     DWORD _serverHandle;
 
     HRESULT _GetClientCommandline(_In_ std::vector<std::wstring>& args, _In_ const size_t index, _In_ const bool skipFirst);
+
+#ifdef UNIT_TESTING
+    friend class ConsoleArgumentsTests;
+#endif
 };

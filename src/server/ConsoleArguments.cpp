@@ -14,7 +14,7 @@ const std::wstring ConsoleArguments::HEADLESS_ARG = L"--headless";
 const std::wstring ConsoleArguments::SERVER_HANDLE_ARG = L"--handle";
 const std::wstring ConsoleArguments::CLIENT_COMMANDLINE_ARG = L"--";
 
-ConsoleArguments::ConsoleArguments(_In_ const std::wstring commandline)
+ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline)
     : _commandline(commandline)
 {
     _clientCommandline = L"";
@@ -176,7 +176,11 @@ HRESULT ConsoleArguments::ParseCommandline()
 
     // We should have consumed every token at this point.    
     // if not, it is some sort of parsing error. 
-    assert(args.size() == 0);
+    // If we failed to parse an arg, then no need to assert.
+    if (SUCCEEDED(hr))
+    {
+        assert(args.size() == 0);
+    }
 
     return hr;
 }
