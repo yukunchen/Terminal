@@ -189,7 +189,6 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                         }
                     }
                 }
-                return STATUS_SUCCESS;
             }
         }
     }
