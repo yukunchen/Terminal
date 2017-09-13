@@ -126,11 +126,11 @@ HRESULT ConsoleArguments::ParseCommandline()
     
     // Tokenize the commandline
     wchar_t* pszNextToken;
-    wchar_t* pszToken = wcstok_s(&copy[0], L" ", &pszNextToken);
+    wchar_t* pszToken = wcstok_s(&copy[0], L" \t", &pszNextToken);
     while (pszToken != nullptr && *pszToken != L'\0')
     {
         args.push_back(pszToken);
-        pszToken = wcstok_s(nullptr, L" ", &pszNextToken);
+        pszToken = wcstok_s(nullptr, L" \t", &pszNextToken);
     }
 
     // Parse args out of the commandline.

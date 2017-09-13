@@ -18,6 +18,7 @@ class ConsoleArgumentsTests
 {
     TEST_CLASS(ConsoleArgumentsTests);
 
+    TEST_METHOD(ArgSplittingTests);
     TEST_METHOD(VtPipesTest);
     TEST_METHOD(ClientCommandlineTests);
 };
@@ -37,12 +38,86 @@ ConsoleArguments CreateAndParseUnsuccessfully(wstring& commandline)
     return args;
 }
 
-void ConsoleArgumentsTests::VtPipesTest()
+void ConsoleArgumentsTests::ArgSplittingTests()
 {
     // We're using extra scopes here to automatically cleanup the old args
-    // and commandline without needing to manually declare a desturctor.
+    // and commandline without needing to manually declare a destructor.
     {
-        Log::Comment(L"First look for a valid commandline");
+        Log::Comment(L"#1 look for a valid commandline");
+        wstring commandline = L"--inpipe foo --outpipe bar this is the commandline";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_IS_TRUE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"foo");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"bar");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"this is the commandline");
+    }
+    {
+        Log::Comment(L"#2 a commandline with quotes");
+        wstring commandline = L"--inpipe foo --outpipe bar \"this is the commandline\"";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_IS_TRUE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"foo");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"bar");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"\"this is the commandline\"");
+    }
+    {
+        Log::Comment(L"#3 quotes on an arg");
+        wstring commandline = L"--inpipe foo \"--outpipe bar this is the commandline\"";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_IS_FALSE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"foo");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"\"--outpipe bar this is the commandline\"");
+    }
+    {
+        Log::Comment(L"#4 Many spaces");
+        wstring commandline = L"--inpipe  foo   --outpipe    bar       this      is the    commandline";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_IS_TRUE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"foo");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"bar");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"this is the commandline");
+    }
+    {
+        Log::Comment(L"#5 tab-delimit");
+        wstring commandline = L"--inpipe\tfoo\t--outpipe\tbar\tthis\tis\tthe\tcommandline";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_IS_TRUE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"foo");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"bar");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"this is the commandline");
+    }
+    {
+        Log::Comment(L"#5 back-slashes won't escape spaces");
+        wstring commandline = L"--inpipe\\ foo\\ --outpipe\\ bar\\ this\\ is\\ the\\ commandline";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_IS_FALSE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"--inpipe\\ foo\\ --outpipe\\ bar\\ this\\ is\\ the\\ commandline");
+    }
+    {
+        Log::Comment(L"#6 back-slashes won't escape tabs (but the tabs are still converted to spaces)");
+        wstring commandline = L"--inpipe\\\tfoo\\\t--outpipe\\\tbar\\\tthis\\\tis\\\tthe\\\tcommandline";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_IS_FALSE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"--inpipe\\ foo\\ --outpipe\\ bar\\ this\\ is\\ the\\ commandline");
+    }
+}
+
+void ConsoleArgumentsTests::VtPipesTest()
+{
+    {
+        Log::Comment(L"#1 look for a valid commandline");
         wstring commandline = L"--inpipe foo --outpipe bar";
         Log::Comment(commandline.c_str());
         auto args = CreateAndParse(commandline);
@@ -153,5 +228,78 @@ void ConsoleArgumentsTests::VtPipesTest()
 }
 void ConsoleArgumentsTests::ClientCommandlineTests()
 {
-    VERIFY_SUCCEEDED(E_FAIL);
+    {
+        Log::Comment(L"#1 Check that a simple explicit commandline is found");
+        wstring commandline = L"-- foo";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"foo");
+    }
+    {
+        Log::Comment(L"#2 Check that a simple implicit commandline is found");
+        wstring commandline = L"foo";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"foo");
+    }
+    {
+        Log::Comment(L"#3 Check that a implicit commandline with other expected args is treated as a whole client commandline (1)");
+        wstring commandline = L"foo -- bar";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"foo -- bar");
+    }
+    {
+        Log::Comment(L"#4 Check that a implicit commandline with other expected args is treated as a whole client commandline (2)");
+        wstring commandline = L"--inpipe foo foo -- bar";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"foo");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"foo -- bar");
+    }
+    {
+        Log::Comment(L"#5 Check that a implicit commandline with other expected args is treated as a whole client commandline (3)");
+        wstring commandline = L"console --inpipe foo foo -- bar";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"console --inpipe foo foo -- bar");
+    }
+    {
+        Log::Comment(L"#6 Check that a implicit commandline with other expected args is treated as a whole client commandline (4)");
+        wstring commandline = L"console --inpipe foo --outpipe foo -- bar";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"");
+        VERIFY_IS_FALSE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"console --inpipe foo --outpipe foo -- bar");
+    }
+    {
+        Log::Comment(L"#7 Check splitting vt pipes across the explicit commandline does not cause IsUsingVtPipe to be true");
+        wstring commandline = L"--inpipe foo -- --outpipe foo bar";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"foo");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"");
+        VERIFY_IS_FALSE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"--outpipe foo bar");
+    }
+    {
+        Log::Comment(L"#8 Let -- be used as a value of a parameter");
+        wstring commandline = L"--inpipe -- --outpipe foo bar";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"--");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"foo");
+        VERIFY_IS_TRUE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"bar");
+    }
+    {
+        Log::Comment(L"#9 -- by itself does nothing successfully");
+        wstring commandline = L"--";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"");
+    }
 }
