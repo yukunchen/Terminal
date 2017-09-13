@@ -689,7 +689,7 @@ NTSTATUS ReadCharacterInput(_In_ InputBuffer* const pInputBuffer,
         }
 
         // if ansi, translate string.  we allocated the capture buffer large enough to handle the translated string.
-        if (unicode)
+        if (!unicode)
         {
             std::unique_ptr<char[]> tempBuffer = std::make_unique<char[]>(*pdwNumBytes);
             if (!tempBuffer.get())
