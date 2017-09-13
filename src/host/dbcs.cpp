@@ -151,7 +151,7 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
 // Apr-30-2015 MiNiksa  Corrected unknown character code assumption. Max Width in Text Metric
 //                      is not reliable for calculating half/full width. Must use current
 //                      display font data (cached) instead.
-// May-23-2017 migrie   Forced Box-Drawing Characters (x2500-x257F) to narrow. 
+// May-23-2017 migrie   Forced Box-Drawing Characters (x2500-x257F) to narrow.
 BOOL IsCharFullWidth(_In_ WCHAR wch)
 {
     // See http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
@@ -178,7 +178,7 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
         // From Unicode 9.0, this range is narrow (assorted languages)
         return FALSE;
     }
-    // 0x2500 - 0x257F is the box drawing character range - 
+    // 0x2500 - 0x257F is the box drawing character range -
     // Technically, these are ambiguous width characters, but applications that
     // use them generally assume that they're narrow to ensure proper alignment.
     else if (0x2500 <= wch && wch <= 0x257F)
@@ -572,6 +572,73 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
         else
         {
             ZeroMemory(pDbcsInputRecord, sizeof(INPUT_RECORD));
+        }
+    }
+
+    delete[] TmpUni;
+    return j;
+}
+
+_Ret_range_(0, cbAnsi)
+ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
+                            _In_ const ULONG cchUnicode,
+                            _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
+                            _In_ const ULONG cbAnsi,
+                            _Out_ std::unique_ptr<IInputEvent>& partialEvent)
+{
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    PWCHAR const TmpUni = new WCHAR[cchUnicode];
+    if (TmpUni == nullptr)
+    {
+        return 0;
+    }
+
+    memcpy(TmpUni, pwchUnicode, cchUnicode* sizeof(WCHAR));
+
+    BYTE AsciiDbcs[2];
+    AsciiDbcs[1] = 0;
+
+    ULONG i, j;
+    for (i = 0, j = 0; i < cchUnicode && j < cbAnsi; i++, j++)
+    {
+        if (IsCharFullWidth(TmpUni[i]))
+        {
+            ULONG const NumBytes = sizeof(AsciiDbcs);
+            ConvertToOem(gci->CP, &TmpUni[i], 1, (LPSTR) & AsciiDbcs[0], NumBytes);
+            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &gci->CPInfo))
+            {
+                if (j < cbAnsi - 1)
+                {   // -1 is safe DBCS in buffer
+                    pchAnsi[j] = AsciiDbcs[0];
+                    j++;
+                    pchAnsi[j] = AsciiDbcs[1];
+                    AsciiDbcs[1] = 0;
+                }
+                else
+                {
+                    pchAnsi[j] = AsciiDbcs[0];
+                    break;
+                }
+            }
+            else
+            {
+                pchAnsi[j] = AsciiDbcs[0];
+                AsciiDbcs[1] = 0;
+            }
+        }
+        else
+        {
+            ConvertToOem(gci->CP, &TmpUni[i], 1, &pchAnsi[j], 1);
+        }
+    }
+
+    if (AsciiDbcs[1])
+    {
+        KeyEvent* pKeyEvent = new KeyEvent();
+        if (pKeyEvent)
+        {
+            pKeyEvent->_charData = AsciiDbcs[1];
+            partialEvent.reset(pKeyEvent);
         }
     }
 

@@ -49,6 +49,7 @@ class KeyEvent : public IInputEvent
 {
 public:
     KeyEvent(_In_ const KEY_EVENT_RECORD& record);
+    KeyEvent();
     ~KeyEvent();
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;

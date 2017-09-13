@@ -55,3 +55,10 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
                             _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
                             _In_ const ULONG cbAnsi,
                             _Out_opt_ PINPUT_RECORD pDbcsInputRecord);
+
+_Ret_range_(0, cbAnsi)
+ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
+                            _In_ const ULONG cchUnicode,
+                            _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
+                            _In_ const ULONG cbAnsi,
+                            _Out_ std::unique_ptr<IInputEvent>& partialEvent);
