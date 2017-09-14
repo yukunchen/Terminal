@@ -99,7 +99,7 @@ public:
 };
 
 NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
-                    _In_ BOOLEAN const fIsUnicode,
+                    _In_ bool const fIsUnicode,
                     _Inout_ ULONG* const cbNumBytes,
                     _Out_ ULONG* const ulControlKeyState);
 

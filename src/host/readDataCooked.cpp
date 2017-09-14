@@ -200,7 +200,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
         }
     }
 
-    *pReplyStatus = CookedRead(this, fIsUnicode, pNumBytes, pControlKeyState);
+    *pReplyStatus = CookedRead(this, !!fIsUnicode, pNumBytes, pControlKeyState);
     if (*pReplyStatus != CONSOLE_STATUS_WAIT)
     {
         gci->lpCookedReadData = nullptr;
@@ -225,7 +225,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
 // buffer. On out, the number of bytes consumed in the client buffer.
 // - ulControlKeyState - For some types of reads, this is the modifier key state with the last button press.
 NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
-                    _In_ BOOLEAN const fIsUnicode,
+                    _In_ bool const fIsUnicode,
                     _Inout_ ULONG* const cbNumBytes,
                     _Out_ ULONG* const ulControlKeyState)
 {
@@ -273,7 +273,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
         if (commandLineEditingKeys)
         {
             // TODO: this is super weird for command line popups only
-            pCookedReadData->_fIsUnicode = fIsUnicode;
+            pCookedReadData->_fIsUnicode = !!fIsUnicode;
             pCookedReadData->pdwNumBytes = cbNumBytes;
 
             Status = ProcessCommandLine(pCookedReadData, Char, KeyState);
@@ -519,7 +519,10 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
 // - pStatus - The return code to pass to the client
 // Return Value:
 // - TRUE if read is completed. FALSE if we need to keep waiting and be called again with the user's next keystroke.
-BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData, _In_ WCHAR wch, _In_ const DWORD dwKeyState, _Out_ NTSTATUS* pStatus)
+BOOL ProcessCookedReadInput(_In_ COOKED_READ_DATA* pCookedReadData,
+                            _In_ WCHAR wch,
+                            _In_ const DWORD dwKeyState,
+                            _Out_ NTSTATUS* pStatus)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     DWORD NumSpaces = 0;
