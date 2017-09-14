@@ -5,7 +5,7 @@
 ********************************************************/
 #pragma once
 
-enum VtIoMode
+enum class VtIoMode
 {
     XTERM,
     XTERM_256,

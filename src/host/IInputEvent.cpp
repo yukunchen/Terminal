@@ -43,6 +43,24 @@ std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(_In_reads_(cRecords
     return outEvents;
 }
 
+HRESULT IInputEvent::ToInputRecords(_In_ const std::deque<std::unique_ptr<IInputEvent>>& events,
+                                    _Out_writes_(cRecords) INPUT_RECORD* const Buffer,
+                                    _In_ const size_t cRecords)
+{
+    assert(events.size() <= cRecords);
+
+    if (events.size() > cRecords)
+    {
+        return E_INVALIDARG;
+    }
+
+    for (size_t i = 0; i < cRecords; ++i)
+    {
+        Buffer[i] = events[i]->ToInputRecord();
+    }
+    return S_OK;
+}
+
 // Routine Description:
 // - checks if flag is present in flags
 // Arguments:

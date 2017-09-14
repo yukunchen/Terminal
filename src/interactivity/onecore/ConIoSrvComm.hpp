@@ -51,7 +51,7 @@ namespace Microsoft
 
                     PVOID GetSharedViewBase() const;
                     
-                    VOID SignalInputEventIfNecessary();
+                    VOID CleanupForHeadless(_In_ NTSTATUS const status);
 
                     // IInputServices Members
                     UINT MapVirtualKeyW(UINT uCode, UINT uMapType);

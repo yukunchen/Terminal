@@ -6,6 +6,7 @@
 
 TARGET_DESTINATION      = UnitTests
 
+UNIVERSAL_TEST          = 1
 TEST_CODE               = 1
 
 # -------------------------------------

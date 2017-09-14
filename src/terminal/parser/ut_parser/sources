@@ -4,11 +4,12 @@
 # Program Information
 # -------------------------------------
 
-TARGETNAME              = ConTerm.Parser.Tests
+TARGETNAME              = Microsoft.Console.VirtualTerminal.Parser.UnitTests
 TARGETTYPE              = DYNLINK
 TARGET_DESTINATION      = UnitTests
 DLLDEF                  =
 
+UNIVERSAL_TEST          = 1
 TEST_CODE               = 1
 
 # -------------------------------------

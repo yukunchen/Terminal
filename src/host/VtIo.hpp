@@ -24,17 +24,23 @@ class Microsoft::Console::VirtualTerminal::VtIo
 {
 public:
     VtIo();
-    ~VtIo();
-    HRESULT Initialize(const std::wstring& InPipeName, const std::wstring& OutPipeName, const std::wstring& VtMode);
-    bool IsUsingVt();
 
-    HRESULT Start();
+    HRESULT Initialize(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode);
+    bool IsUsingVt() const;
 
-    static HRESULT ParseIoMode(const std::wstring& VtMode, VtIoMode* const IoMode);
+    HRESULT StartIfNeeded();
+
+    static HRESULT ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode* const pIoMode);
     
 private:
     bool _usingVt;
     VtIoMode _IoMode;
+
     Microsoft::Console::VtInputThread* _pVtInputThread;
     Microsoft::Console::Render::VtEngine* _pVtRenderEngine;
+
+
+#ifdef UNIT_TESTING
+    friend class VtIoTests;
+#endif
 };
