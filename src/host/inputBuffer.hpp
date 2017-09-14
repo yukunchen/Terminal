@@ -34,7 +34,6 @@ public:
     ConsoleWaitQueue WaitQueue; // formerly ReadWaitQueue
     HANDLE InputWaitEvent;
 
-    INPUT_RECORD ReadConInpDbcsLeadByte;
     INPUT_RECORD WriteConInpDbcsLeadByte[2];
 
     bool fInComposition;  // specifies if there's an ongoing text composition
