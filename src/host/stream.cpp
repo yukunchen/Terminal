@@ -419,6 +419,31 @@ NTSTATUS ReadPendingInput(_In_ InputBuffer* const pInputBuffer,
     return STATUS_SUCCESS;
 }
 
+// TODO documentation
+// Routine Description:
+// - read in characters until the buffer is full or return is read.
+// since we may wait inside this loop, store all important variables
+// in the read data structure.  if we do wait, a read data structure
+// will be allocated from the heap and its pointer will be stored
+// in the wait block.  the CookedReadData will be copied into the
+// structure.  the data is freed when the read is completed.
+// Arguments:
+// - pInputBuffer -
+// - ProcessData -
+// - pwchBuffer -
+// - pdwNumBytes -
+// - pControlKeyState -
+// - pwsInitialData -
+// - cbInitialData -
+// - dwCtrlWakeupMask -
+// - pHandleData -
+// - pwsExeName -
+// - cbExeName -
+// - fUnicode -
+// - ppWaiter -
+// - OutputBufferSize -
+// Return Value:
+// - TODO
 NTSTATUS ReadLineInput(_In_ InputBuffer* const pInputBuffer,
                        _In_ HANDLE ProcessData,
                        _Out_writes_bytes_(*pdwNumBytes) WCHAR* const pwchBuffer,
@@ -434,18 +459,6 @@ NTSTATUS ReadLineInput(_In_ InputBuffer* const pInputBuffer,
                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
                        _In_ const size_t OutputBufferSize)
 {
-    // read in characters until the buffer is full or return is read.
-    // since we may wait inside this loop, store all important variables
-    // in the read data structure.  if we do wait, a read data structure
-    // will be allocated from the heap and its pointer will be stored
-    // in the wait block.  the CookedReadData will be copied into the
-    // structure.  the data is freed when the read is completed.
-
-    NTSTATUS Status;
-    ULONG i;
-    BOOLEAN Echo;
-    ConsoleHandleData* pTempHandleData;
-
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     SCREEN_INFORMATION* const pScreenInfo = gci->CurrentScreenBuffer;
     if (nullptr == pScreenInfo)
@@ -456,17 +469,18 @@ NTSTATUS ReadLineInput(_In_ InputBuffer* const pInputBuffer,
     PCOMMAND_HISTORY const pCommandHistory = FindCommandHistory(ProcessData);
 
     // We need to create a temporary handle to the current screen buffer.
-    Status = NTSTATUS_FROM_HRESULT(pScreenInfo->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
-                                                                        GENERIC_WRITE,
-                                                                        FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                                        &pTempHandleData));
+    ConsoleHandleData* pTempHandleData;
+    NTSTATUS Status = NTSTATUS_FROM_HRESULT(pScreenInfo->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
+                                                                                 GENERIC_WRITE,
+                                                                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                                                 &pTempHandleData));
 
     if (!NT_SUCCESS(Status))
     {
         return Status;
     }
 
-    Echo = !!IsFlagSet(pInputBuffer->InputMode, ENABLE_ECHO_INPUT);
+    bool Echo = IsFlagSet(pInputBuffer->InputMode, ENABLE_ECHO_INPUT);
 
 
     // to emulate OS/2 KbdStringIn, we read into our own big buffer
@@ -487,16 +501,10 @@ NTSTATUS ReadLineInput(_In_ InputBuffer* const pInputBuffer,
 
     // Initialize the user's buffer to spaces. This is done so that
     // moving in the buffer via cursor doesn't do strange things.
-    for (i = 0; i < TempBufferSize / sizeof(WCHAR); i++)
+    for (ULONG i = 0; i < TempBufferSize / sizeof(WCHAR); i++)
     {
         TempBuffer[i] = (WCHAR)' ';
     }
-
-    /*
-        * Since the console is locked, ScreenInfo is safe. We need to up the
-        * ref count to prevent the ScreenInfo from going away while we're
-        * waiting for the read to complete.
-        */
 
     COORD invalidCoord;
     invalidCoord.X = -1;
@@ -515,7 +523,7 @@ NTSTATUS ReadLineInput(_In_ InputBuffer* const pInputBuffer,
                                     0,
                                     dwCtrlWakeupMask,
                                     pCommandHistory,
-                                    Echo,
+                                    !!Echo,
                                     !!gci->GetInsertMode(),
                                     IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT),
                                     IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT),

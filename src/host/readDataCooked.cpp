@@ -221,7 +221,8 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
 // Arguments:
 // - pCookedReadData - Pointer to cooked read data information (edit line, client buffer, etc.)
 // - fIsUnicode - Treat as UCS-2 unicode or use Input CP to convert when done.
-// - cbNumBytes - On in, the number of bytes available in the client buffer. On out, the number of bytes consumed in the client buffer.
+// - cbNumBytes - On in, the number of bytes available in the client
+// buffer. On out, the number of bytes consumed in the client buffer.
 // - ulControlKeyState - For some types of reads, this is the modifier key state with the last button press.
 NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
                     _In_ BOOLEAN const fIsUnicode,
@@ -366,12 +367,14 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
                 SetFlag(pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput);
                 if (!fIsUnicode)
                 {
-                    if (pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                    if (pInputBuffer->IsReadPartialByteSequenceAvailable())
                     {
                         fAddDbcsLead = TRUE;
-                        *pCookedReadData->_UserBuffer++ = pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
-                        pCookedReadData->_UserBufferSize -= sizeof(WCHAR);
-                        ZeroMemory(&pInputBuffer->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                        std::unique_ptr<IInputEvent> event = pCookedReadData->GetInputBuffer()->FetchReadPartialByteSequence(false);
+                        const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
+                        *pCookedReadData->_UserBuffer = static_cast<char>(pKeyEvent->_charData);
+                        pCookedReadData->_UserBuffer++;
+                        pCookedReadData->_UserBufferSize -= sizeof(wchar_t);
                     }
 
                     NumBytes = 0;
@@ -394,12 +397,14 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
                 {
                     PWSTR Tmp;
 
-                    if (pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                    if (pInputBuffer->IsReadPartialByteSequenceAvailable())
                     {
                         fAddDbcsLead = TRUE;
-                        *pCookedReadData->_UserBuffer++ = pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
-                        pCookedReadData->_UserBufferSize -= sizeof(WCHAR);
-                        ZeroMemory(&pInputBuffer->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                        std::unique_ptr<IInputEvent> event = pCookedReadData->GetInputBuffer()->FetchReadPartialByteSequence(false);
+                        const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
+                        *pCookedReadData->_UserBuffer = static_cast<char>(pKeyEvent->_charData);
+                        pCookedReadData->_UserBuffer++;
+                        pCookedReadData->_UserBufferSize -= sizeof(wchar_t);
                     }
                     NumBytes = 0;
                     NumToWrite = pCookedReadData->_BytesRead;
@@ -424,13 +429,14 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
             {
                 PWSTR Tmp;
 
-                if (pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+                if (pInputBuffer->IsReadPartialByteSequenceAvailable())
                 {
                     fAddDbcsLead = TRUE;
-#pragma prefast(suppress:__WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is legit")
-                    *pCookedReadData->_UserBuffer++ = pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
-                    pCookedReadData->_UserBufferSize -= sizeof(WCHAR);
-                    ZeroMemory(&pInputBuffer->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                    std::unique_ptr<IInputEvent> event = pCookedReadData->GetInputBuffer()->FetchReadPartialByteSequence(false);
+                    const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
+                    *pCookedReadData->_UserBuffer = static_cast<char>(pKeyEvent->_charData);
+                    pCookedReadData->_UserBuffer++;
+                    pCookedReadData->_UserBufferSize -= sizeof(wchar_t);
 
                     if (pCookedReadData->_UserBufferSize == 0)
                     {
@@ -464,32 +470,37 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
         if (!fIsUnicode)
         {
             // if ansi, translate string.
-            PCHAR TransBuffer;
-
-            TransBuffer = (PCHAR) new BYTE[NumBytes];
-
-            if (TransBuffer == nullptr)
+            std::unique_ptr<char[]> tempBuffer = std::make_unique<char[]>(NumBytes);
+            if (!tempBuffer.get())
             {
                 return STATUS_NO_MEMORY;
             }
 
-            *cbNumBytes = TranslateUnicodeToOem(pCookedReadData->_UserBuffer, *cbNumBytes / sizeof(WCHAR), TransBuffer, NumBytes, &pInputBuffer->ReadConInpDbcsLeadByte);
+            std::unique_ptr<IInputEvent> partialEvent;
+            *cbNumBytes = TranslateUnicodeToOem(pCookedReadData->_UserBuffer,
+                                                *cbNumBytes / sizeof(wchar_t),
+                                                tempBuffer.get(),
+                                                NumBytes,
+                                                partialEvent);
+
+            if (partialEvent.get())
+            {
+                pCookedReadData->GetInputBuffer()->StoreReadPartialByteSequence(std::move(partialEvent));
+            }
+
 
             if (*cbNumBytes > pCookedReadData->_UserBufferSize)
             {
                 Status = STATUS_BUFFER_OVERFLOW;
                 ASSERT(false);
-                delete[] TransBuffer;
                 return Status;
             }
 
-            memmove(pCookedReadData->_UserBuffer, TransBuffer, *cbNumBytes);
+            memmove(pCookedReadData->_UserBuffer, tempBuffer.get(), *cbNumBytes);
             if (fAddDbcsLead)
             {
                 (*cbNumBytes)++;
             }
-
-            delete[] TransBuffer;
         }
 
         delete[] pCookedReadData->ExeName;
