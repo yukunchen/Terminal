@@ -285,6 +285,21 @@ ULONG RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
 }
 
 
+// TODO documentation
+// Routine Description:
+// - if we have leftover input, copy as much fits into the user's
+// buffer and return.  we may have multi line input, if a macro
+// has been defined that contains the $T character.
+// Arguments:
+// - pInputBuffer -
+// - pwchBuffer -
+// - pdwNumBytes -
+// - pHandleData -
+// - fUnicode -
+// - ppWaiter -
+// - OutputBufferSize -
+// Return Value:
+// - TODO
 NTSTATUS ReadPendingInput(_In_ InputBuffer* const pInputBuffer,
                           _Out_writes_bytes_(*pdwNumBytes) WCHAR* const pwchBuffer,
                           _Inout_ ULONG* const pdwNumBytes,
@@ -292,9 +307,6 @@ NTSTATUS ReadPendingInput(_In_ InputBuffer* const pInputBuffer,
                           _In_ const BOOL fUnicode,
                           _In_ const size_t OutputBufferSize)
 {
-    // if we have leftover input, copy as much fits into the user's
-    // buffer and return.  we may have multi line input, if a macro
-    // has been defined that contains the $T character.
 
     BOOL fAddDbcsLead = FALSE;
     ULONG NumToWrite = 0;
@@ -308,13 +320,15 @@ NTSTATUS ReadPendingInput(_In_ InputBuffer* const pInputBuffer,
 
         if (!fUnicode)
         {
-            if (pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+            if (pInputBuffer->IsReadPartialByteSequenceAvailable())
             {
-                fAddDbcsLead = TRUE;
-                *pBuffer++ = pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                std::unique_ptr<IInputEvent> event = pInputBuffer->FetchReadPartialByteSequence(false);
+                const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
+                *pBuffer = static_cast<char>(pKeyEvent->_charData);
+                ++pBuffer;
                 bufferRemaining -= sizeof(WCHAR);
                 pHandleData->BytesAvailable -= sizeof(WCHAR);
-                ZeroMemory(&pInputBuffer->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                fAddDbcsLead = TRUE;
             }
 
             if (pHandleData->BytesAvailable == 0 || bufferRemaining == 0)
@@ -350,19 +364,22 @@ NTSTATUS ReadPendingInput(_In_ InputBuffer* const pInputBuffer,
         {
             PWSTR Tmp;
 
-            if (pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+            if (pInputBuffer->IsReadPartialByteSequenceAvailable())
             {
-                fAddDbcsLead = TRUE;
-                *pBuffer++ = pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar;
+                std::unique_ptr<IInputEvent> event = pInputBuffer->FetchReadPartialByteSequence(false);
+                const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
+                *pBuffer = static_cast<char>(pKeyEvent->_charData);
+                ++pBuffer;
                 bufferRemaining -= sizeof(WCHAR);
                 pHandleData->BytesAvailable -= sizeof(WCHAR);
-                ZeroMemory(&pInputBuffer->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
+                fAddDbcsLead = TRUE;
             }
+
             if (pHandleData->BytesAvailable == 0)
             {
                 ClearAllFlags(pHandleData->InputHandleFlags,
-                                (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending |
-                                INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
+                              (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending |
+                               INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
                 delete[] pHandleData->BufPtr;
                 *pdwNumBytes = 1;
                 return STATUS_SUCCESS;
@@ -382,7 +399,9 @@ NTSTATUS ReadPendingInput(_In_ InputBuffer* const pInputBuffer,
     pHandleData->BytesAvailable -= NumToWrite;
     if (pHandleData->BytesAvailable == 0)
     {
-        ClearAllFlags(pHandleData->InputHandleFlags, (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending | INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
+        ClearAllFlags(pHandleData->InputHandleFlags,
+                      (INPUT_READ_HANDLE_DATA::HandleFlags::InputPending |
+                       INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput));
         delete[] pHandleData->BufPtr;
     }
     else
@@ -392,27 +411,34 @@ NTSTATUS ReadPendingInput(_In_ InputBuffer* const pInputBuffer,
 
     if (!fUnicode)
     {
-        // if ansi, translate string.  we allocated the capture buffer large enough to handle the translated string.
-        PCHAR TransBuffer;
+        // if ansi, translate string.  we allocated the capture buffer
+        // large enough to handle the translated string.
 
-        TransBuffer = (PCHAR) new BYTE[NumToBytes];
-
-        if (TransBuffer == nullptr)
+        std::unique_ptr<char[]> tempBuffer = std::make_unique<char[]>(NumToBytes);
+        if (!tempBuffer.get())
         {
             return STATUS_NO_MEMORY;
         }
 
-        NumToWrite = TranslateUnicodeToOem(pBuffer, NumToWrite / sizeof(WCHAR), TransBuffer, NumToBytes, &pInputBuffer->ReadConInpDbcsLeadByte);
+        std::unique_ptr<IInputEvent> partialEvent;
+
+        NumToWrite = TranslateUnicodeToOem(pBuffer,
+                                           NumToWrite / sizeof(WCHAR),
+                                           tempBuffer.get(),
+                                           NumToBytes,
+                                           partialEvent);
+        if (partialEvent.get())
+        {
+            pInputBuffer->StoreReadPartialByteSequence(std::move(partialEvent));
+        }
 
 #pragma prefast(suppress:__WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine but prefast can't follow it, evidently")
-        memmove(pBuffer, TransBuffer, NumToWrite);
+        memmove(pBuffer, tempBuffer.get(), NumToWrite);
 
         if (fAddDbcsLead)
         {
             NumToWrite++;
         }
-
-        delete[] TransBuffer;
     }
 
     *pdwNumBytes = NumToWrite;
@@ -715,10 +741,10 @@ NTSTATUS ReadCharacterInput(_In_ InputBuffer* const pInputBuffer,
             std::unique_ptr<IInputEvent> partialEvent;
 
             *pReadByteCount = TranslateUnicodeToOem(pBuffer,
-                                                 NumToWrite / sizeof(WCHAR),
-                                                 tempBuffer.get(),
-                                                 *pReadByteCount,
-                                                 partialEvent);
+                                                    NumToWrite / sizeof(WCHAR),
+                                                    tempBuffer.get(),
+                                                    *pReadByteCount,
+                                                    partialEvent);
 
             if (partialEvent.get())
             {
