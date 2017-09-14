@@ -17,6 +17,7 @@
     <ClCompile Include="Utf8ToWideCharParserTests.cpp" />
     <ClCompile Include="InputBufferTests.cpp" />
     <ClCompile Include="ReadWaitTests.cpp" />
+    <ClCompile Include="VtIoTests.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

@@ -32,4 +32,14 @@ public:
 private:
     bool _usingVt;
     VtIoMode _IoMode;
+
+    // Temporary - For the sake of testing this module before the other parts 
+    //  are added in, we need to hang onto these handles ourselves.
+    // In the future, they will be given to the renderer and the input thread.
+    wil::unique_hfile _hInputFile;
+    wil::unique_hfile _hOutputFile;
+
+#ifdef UNIT_TESTING
+    friend class VtIoTests;
+#endif
 };
