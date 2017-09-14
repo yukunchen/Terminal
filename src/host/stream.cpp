@@ -153,11 +153,13 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                 {
                     *pCommandLineEditingKeys = true;
                     *pwchOut = static_cast<wchar_t>(keyEvent->_virtualKeyCode);
+                    return STATUS_SUCCESS;
                 }
                 else if (pCommandLinePopupKeys && commandLineEditKey)
                 {
                     *pCommandLinePopupKeys = true;
                     *pwchOut = static_cast<char>(keyEvent->_virtualKeyCode);
+                    return STATUS_SUCCESS;
                 }
                 else
                 {
@@ -186,6 +188,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                         {
                             // This really is the character 0x0000
                             *pwchOut = keyEvent->_charData;
+                            return STATUS_SUCCESS;
                         }
                     }
                 }
