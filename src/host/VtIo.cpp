@@ -6,9 +6,9 @@
 
 #include "precomp.h"
 #include "VtIo.hpp"
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
-#include "..\renderer\base\renderer.hpp"
+#include "../renderer/base/renderer.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 

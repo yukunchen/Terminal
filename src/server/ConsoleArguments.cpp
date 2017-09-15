@@ -35,11 +35,11 @@ ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline)
 //      as a loop index will autoincrement it to have it point at the correct 
 //      next index.
 //   
-// EX: for args=[--foo bar --baz]
-//      index 0 would place "bar" in pSetting, 
+// EX: for args=[--foo, bar, --baz]
+//      index=0 would place "bar" in pSetting, 
 //          args is now [--baz], index is now -1, caller increments to 0
-//      index 2 would return E_INVALIDARG,
-//          args is still [--foo bar --baz], index is still 2, caller increments to 3.
+//      index=2 would return E_INVALIDARG,
+//          args is still [--foo, bar, --baz], index is still 2, caller increments to 3.
 // Arguments:
 //  args: A collection of wstrings representing command-line arguments
 //  index: the index of the argument of which to get the value for. The value 
@@ -50,31 +50,18 @@ ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline)
 //      failure.
 HRESULT _GetArgumentValue(_In_ std::vector<std::wstring>& args, _Inout_ size_t& index, _Out_opt_ std::wstring* const pSetting)
 {
-    HRESULT hr = E_INVALIDARG;
     bool hasNext = (index+1) < args.size();
     if (hasNext)
     {
         args.erase(args.begin()+index);
-
-        std::wstring next = args[index];
-        if (next.compare(0, 2, L"--") == 0)
+        if (pSetting != nullptr)
         {
-            // the next token starts with --, so it's an argument.
-            // eg: [--foo, --bar, baz]
-            // We should reject this. Parameters to args shouldn't start with --
+            *pSetting = args[index];
         }
-        else
-        {
-            if (pSetting != nullptr)
-            {
-                *pSetting = args[index];
-            }
-            args.erase(args.begin()+index);
-            hr = S_OK;
-        }
+        args.erase(args.begin()+index);
         index--;
     }
-    return hr;
+    return (hasNext) ? S_OK : E_INVALIDARG;
 }
 
 // Routine Description:
