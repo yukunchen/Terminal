@@ -44,6 +44,8 @@ class InputTests
     TEST_METHOD(TestMouseHorizWheelReadConsoleNoMouseInput);
     TEST_METHOD(TestMouseWheelReadConsoleInputQuickEdit);
     TEST_METHOD(TestMouseHorizWheelReadConsoleInputQuickEdit);
+    
+    TEST_METHOD(TestVtInputGeneration);
 };
 
 void VerifyNumberOfInputRecords(_In_ const HANDLE hConsoleInput, _In_ DWORD nInputs)
@@ -552,4 +554,75 @@ void InputTests::TestReadWaitOnHandle()
     VERIFY_ARE_EQUAL(cchDeviceAttributeRequest, dwWritten, L"Verify string was written");
 
     VERIFY_IS_TRUE(doneWaiting.wait(5000), L"The input handle should have been signaled on our background thread within our 5 second timeout.");
+}
+
+void InputTests::TestVtInputGeneration()
+{
+    Log::Comment(L"Get input handle");
+    HANDLE hIn = GetStdInputHandle();
+
+    DWORD dwMode;
+    GetConsoleMode(hIn, &dwMode);
+
+    DWORD dwWritten = (DWORD)-1;
+    DWORD dwRead = (DWORD)-1;
+    INPUT_RECORD rgInputRecords[64] = {0};
+
+    Log::Comment(L"First make sure that an arrow keydown is not translated in not-VT mode");
+
+    dwMode = ClearFlag(dwMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
+    SetConsoleMode(hIn, dwMode);
+    GetConsoleMode(hIn, &dwMode);
+    VERIFY_IS_FALSE(IsFlagSet(dwMode, ENABLE_VIRTUAL_TERMINAL_INPUT));
+
+    rgInputRecords[0].EventType = KEY_EVENT;
+    rgInputRecords[0].Event.KeyEvent.bKeyDown = TRUE;
+    rgInputRecords[0].Event.KeyEvent.wRepeatCount = 1;
+    rgInputRecords[0].Event.KeyEvent.wVirtualKeyCode = VK_UP;
+
+    Log::Comment(L"Writing events");
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInput(hIn, rgInputRecords, 1, &dwWritten));
+    VERIFY_ARE_EQUAL(dwWritten, (DWORD)1);
+    
+    Log::Comment(L"Reading events");
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInput(hIn, rgInputRecords, ARRAYSIZE(rgInputRecords), &dwRead));
+    VERIFY_ARE_EQUAL(dwRead, (DWORD)1);
+    VERIFY_ARE_EQUAL(rgInputRecords[0].EventType, KEY_EVENT);
+    VERIFY_ARE_EQUAL(rgInputRecords[0].Event.KeyEvent.bKeyDown, TRUE);
+    VERIFY_ARE_EQUAL(rgInputRecords[0].Event.KeyEvent.wVirtualKeyCode, VK_UP);
+
+
+    Log::Comment(L"Now, enable VT Input and make sure that a vt sequence comes out the other side.");
+
+    dwMode = SetFlag(dwMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
+    SetConsoleMode(hIn, dwMode);
+    GetConsoleMode(hIn, &dwMode);
+    VERIFY_IS_TRUE(IsFlagSet(dwMode, ENABLE_VIRTUAL_TERMINAL_INPUT));
+
+    rgInputRecords[0].EventType = KEY_EVENT;
+    rgInputRecords[0].Event.KeyEvent.bKeyDown = TRUE;
+    rgInputRecords[0].Event.KeyEvent.wRepeatCount = 1;
+    rgInputRecords[0].Event.KeyEvent.wVirtualKeyCode = VK_UP;
+
+    Log::Comment(L"Writing events");
+    VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInput(hIn, rgInputRecords, 1, &dwWritten));
+    VERIFY_ARE_EQUAL(dwWritten, (DWORD)1);
+
+    Log::Comment(L"Reading events");
+    VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInput(hIn, rgInputRecords, ARRAYSIZE(rgInputRecords), &dwRead));
+    VERIFY_ARE_EQUAL(dwRead, (DWORD)3);
+    VERIFY_ARE_EQUAL(rgInputRecords[0].EventType, KEY_EVENT);
+    VERIFY_ARE_EQUAL(rgInputRecords[0].Event.KeyEvent.bKeyDown, TRUE);
+    VERIFY_ARE_EQUAL(rgInputRecords[0].Event.KeyEvent.wVirtualKeyCode, 0);
+    VERIFY_ARE_EQUAL(rgInputRecords[0].Event.KeyEvent.uChar.UnicodeChar, L'\x1b');
+    
+    VERIFY_ARE_EQUAL(rgInputRecords[1].EventType, KEY_EVENT);
+    VERIFY_ARE_EQUAL(rgInputRecords[1].Event.KeyEvent.bKeyDown, TRUE);
+    VERIFY_ARE_EQUAL(rgInputRecords[1].Event.KeyEvent.wVirtualKeyCode, 0);
+    VERIFY_ARE_EQUAL(rgInputRecords[1].Event.KeyEvent.uChar.UnicodeChar, L'[');
+    
+    VERIFY_ARE_EQUAL(rgInputRecords[2].EventType, KEY_EVENT);
+    VERIFY_ARE_EQUAL(rgInputRecords[2].Event.KeyEvent.bKeyDown, TRUE);
+    VERIFY_ARE_EQUAL(rgInputRecords[2].Event.KeyEvent.wVirtualKeyCode, 0);
+    VERIFY_ARE_EQUAL(rgInputRecords[2].Event.KeyEvent.uChar.UnicodeChar, L'A');
 }

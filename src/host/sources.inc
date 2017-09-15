@@ -65,6 +65,7 @@ INCLUDES = \
     ..\..\propslib; \
     ..\..\terminal\parser; \
     ..\..\terminal\adapter; \
+    ..\..\types; \
     ..\..\renderer\inc; \
     ..\..\renderer\gdi; \
     ..\..\renderer\base; \
@@ -131,6 +132,7 @@ TARGETLIBS = \
     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\base\lib\$(O)\ConInteractivityBaseLib.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\win32\lib\$(O)\ConInteractivityWin32Lib.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\onecore\lib\$(O)\ConInteractivityOneCoreLib.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\types\lib\$(O)\ConTypes.lib \
 
 DELAYLOAD = \
     PROPSYS.dll; \
