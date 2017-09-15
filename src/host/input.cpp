@@ -165,11 +165,11 @@ void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak)
         size_t EventsWritten = 0;
         try
         {
-            EventsWritten = gci->pInputBuffer->WriteInputBuffer(IInputEvent::Create(InputEvent));
+            EventsWritten = gci->pInputBuffer->Write(IInputEvent::Create(InputEvent));
             if (EventsWritten && bGenerateBreak)
             {
                 InputEvent.Event.KeyEvent.bKeyDown = FALSE;
-                EventsWritten = gci->pInputBuffer->WriteInputBuffer(IInputEvent::Create(InputEvent));
+                EventsWritten = gci->pInputBuffer->Write(IInputEvent::Create(InputEvent));
             }
         }
         catch(...)
@@ -190,7 +190,7 @@ void HandleFocusEvent(_In_ const BOOL fSetFocus)
     size_t EventsWritten = 0;
     try
     {
-        EventsWritten = gci->pInputBuffer->WriteInputBuffer(IInputEvent::Create(InputEvent));
+        EventsWritten = gci->pInputBuffer->Write(IInputEvent::Create(InputEvent));
     }
     catch (...)
     {
@@ -211,7 +211,7 @@ void HandleMenuEvent(_In_ const DWORD wParam)
     size_t EventsWritten = 0;
     try
     {
-        EventsWritten = gci->pInputBuffer->WriteInputBuffer(IInputEvent::Create(InputEvent));
+        EventsWritten = gci->pInputBuffer->Write(IInputEvent::Create(InputEvent));
     }
     catch (...)
     {

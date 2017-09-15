@@ -32,11 +32,15 @@ public:
     static std::unique_ptr<IInputEvent> Create(_In_ const INPUT_RECORD& record);
     static std::deque<std::unique_ptr<IInputEvent>> Create(_In_reads_(cRecords) const INPUT_RECORD* const pRecords,
                                                            _In_ const size_t cRecords);
+    static HRESULT ToInputRecords(_Inout_ const std::deque<std::unique_ptr<IInputEvent>>& events,
+                                  _Out_writes_(cRecords) INPUT_RECORD* const Buffer,
+                                  _In_ const size_t cRecords);
 
     virtual ~IInputEvent() = 0;
     virtual INPUT_RECORD ToInputRecord() const = 0;
 
     virtual InputEventType EventType() const = 0;
+
 };
 
 class KeyEvent : public IInputEvent

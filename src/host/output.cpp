@@ -630,7 +630,7 @@ void ScreenBufferSizeChange(_In_ COORD const coordNewSize)
 
     try
     {
-        gci->pInputBuffer->WriteInputBuffer(IInputEvent::Create(InputEvent));
+        gci->pInputBuffer->Write(IInputEvent::Create(InputEvent));
     }
     catch (...)
     {

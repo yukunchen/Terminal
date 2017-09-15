@@ -886,7 +886,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
     ULONG EventsWritten = 0;
     try
     {
-        EventsWritten = static_cast<ULONG>(gci->pInputBuffer->WriteInputBuffer(IInputEvent::Create(InputEvent)));
+        EventsWritten = static_cast<ULONG>(gci->pInputBuffer->Write(IInputEvent::Create(InputEvent)));
     }
     catch(...)
     {

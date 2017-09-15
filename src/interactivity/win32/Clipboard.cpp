@@ -266,7 +266,7 @@ void Clipboard::StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
         try
         {
             std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(StringData, EventsWritten);
-            EventsWritten = static_cast<ULONG>(gci->pInputBuffer->WriteInputBuffer(inEvents));
+            EventsWritten = static_cast<ULONG>(gci->pInputBuffer->Write(inEvents));
         }
         catch (...)
         {
