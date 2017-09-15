@@ -1,5 +1,7 @@
 TARGETTYPE=TESTLIST
 
+TEST_CODE=1
+
 TESTLIST_SOURCES=\
     Microsoft.Console.Tests.testlist
 
