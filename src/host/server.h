@@ -21,7 +21,6 @@ Revision History:
 #include "inputBuffer.hpp"
 
 #include "conimeinfo.h"
-#include "..\terminal\adapter\terminalInput.hpp"
 #include "..\terminal\adapter\MouseInput.hpp"
 #include "VtIo.hpp"
 
@@ -103,7 +102,6 @@ public:
 
     ConsoleImeInfo ConsoleIme;
 
-    Microsoft::Console::VirtualTerminal::TerminalInput termInput;
     Microsoft::Console::VirtualTerminal::MouseInput terminalMouseInput;
 
     void LockConsole();

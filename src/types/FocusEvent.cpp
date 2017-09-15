@@ -5,7 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
-#include "IInputEvent.hpp"
+#include "inc/IInputEvent.hpp"
 
 FocusEvent::FocusEvent(_In_ const FOCUS_EVENT_RECORD& record) :
     _setFocus{ record.bSetFocus }

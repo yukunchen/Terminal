@@ -32,6 +32,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalParser", "src\terminal\parser\lib\parser.vcxproj", "{3AE13314-1939-4DFA-9C14-38CA0834050C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalAdapter", "src\terminal\adapter\lib\adapter.vcxproj", "{DCF55140-EF6A-4736-A403-957E4F7430BB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{18D09A24-8240-42D6-8CB6-236EEE820263} = {18D09A24-8240-42D6-8CB6-236EEE820263}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RendererBase", "src\renderer\base\lib\base.vcxproj", "{AF0A096A-8B3A-4949-81EF-7DF8F0FEE91F}"
 EndProject
@@ -40,6 +43,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.DLL", "src\host\dll\host.vcxproj", "{E437B604-3E98-4F40-A927-E173E818EA4B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host", "src\host\lib\hostlib.vcxproj", "{06EC74CB-9A12-429C-B551-8562EC954746}"
+	ProjectSection(ProjectDependencies) = postProject
+		{18D09A24-8240-42D6-8CB6-236EEE820263} = {18D09A24-8240-42D6-8CB6-236EEE820263}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.Tests.Unit", "src\host\ut_host\Host.UnitTests.vcxproj", "{531C23E7-4B76-4C08-8AAD-04164CB628C9}"
 EndProject
@@ -123,6 +129,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VtPipeIn", "src\tools\vtpipein\VtPipeIn.vcxproj", "{814CBDDE-894E-4327-A6E1-740504850098}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConEchoKey", "src\tools\echokey\ConEchoKey.vcxproj", "{814CBEEE-894E-4327-A6E1-740504850098}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Types", "src\types\lib\types.vcxproj", "{18D09A24-8240-42D6-8CB6-236EEE820263}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -376,6 +384,14 @@ Global
 		{814CBEEE-894E-4327-A6E1-740504850098}.Release|x64.Build.0 = Release|x64
 		{814CBEEE-894E-4327-A6E1-740504850098}.Release|x86.ActiveCfg = Release|Win32
 		{814CBEEE-894E-4327-A6E1-740504850098}.Release|x86.Build.0 = Release|Win32
+		{18D09A24-8240-42D6-8CB6-236EEE820263}.Debug|x64.ActiveCfg = Debug|x64
+		{18D09A24-8240-42D6-8CB6-236EEE820263}.Debug|x64.Build.0 = Debug|x64
+		{18D09A24-8240-42D6-8CB6-236EEE820263}.Debug|x86.ActiveCfg = Debug|Win32
+		{18D09A24-8240-42D6-8CB6-236EEE820263}.Debug|x86.Build.0 = Debug|Win32
+		{18D09A24-8240-42D6-8CB6-236EEE820263}.Release|x64.ActiveCfg = Release|x64
+		{18D09A24-8240-42D6-8CB6-236EEE820263}.Release|x64.Build.0 = Release|x64
+		{18D09A24-8240-42D6-8CB6-236EEE820263}.Release|x86.ActiveCfg = Release|Win32
+		{18D09A24-8240-42D6-8CB6-236EEE820263}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

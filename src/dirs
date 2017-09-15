@@ -8,3 +8,4 @@ DIRS=\
      terminal \
      tools \
      tsf \
+     types \

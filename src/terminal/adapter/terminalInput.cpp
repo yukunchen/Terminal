@@ -21,10 +21,9 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 DWORD const dwAltGrFlags = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
 
-TerminalInput::TerminalInput(_In_ WriteInputEvents const pfnWriteEvents) :
-    _pfnWriteEvents(pfnWriteEvents)
+TerminalInput::TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn)
 {
-
+    _pfnWriteEvents = pfn;
 }
 
 TerminalInput::~TerminalInput()
@@ -332,15 +331,20 @@ bool TerminalInput::_TranslateDefaultMapping(_In_ const KEY_EVENT_RECORD* const 
     return fSuccess;
 }
 
-bool TerminalInput::HandleKey(_In_ const INPUT_RECORD* const pInput) const
+bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
 {
+    // Sept 2017: convert KeyEvent back to INPUT_RECORD for processing.
+    // This function was originally written operating on INPUT_RECORD's alone.
+    // MSFT:13701152 will replace the entire class to work only on InputEvents.
+    INPUT_RECORD inRecord = pInEvent->ToInputRecord();
+
     // By default, we fail to handle the key
     bool fKeyHandled = false;
 
     // On key presses, prepare to translate to VT compatible sequences
-    if (pInput->EventType == KEY_EVENT)
+    if (inRecord.EventType == KEY_EVENT)
     {
-        KEY_EVENT_RECORD key = pInput->Event.KeyEvent;
+        KEY_EVENT_RECORD key = inRecord.Event.KeyEvent;
 
         // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
         if (key.bKeyDown == TRUE)
@@ -450,7 +454,8 @@ void TerminalInput::_SendEscapedInputSequence(_In_ const wchar_t wch) const
     rgInput[1].Event.KeyEvent.wVirtualScanCode = 0;
     rgInput[1].Event.KeyEvent.uChar.UnicodeChar = wch;
     
-    _pfnWriteEvents(rgInput, 2);
+    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(rgInput, 2);
+    _pfnWriteEvents(inputEvents);
 }
 
 void TerminalInput::_SendNullInputSequence(_In_ DWORD const dwControlKeyState) const
@@ -464,7 +469,8 @@ void TerminalInput::_SendNullInputSequence(_In_ DWORD const dwControlKeyState) c
     irInput.Event.KeyEvent.wVirtualScanCode = 0;
     irInput.Event.KeyEvent.uChar.UnicodeChar = L'\x0';
     
-    _pfnWriteEvents(&irInput, 1);
+    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(&irInput, 1);
+    _pfnWriteEvents(inputEvents);
 }
 
 void TerminalInput::_SendInputSequence(_In_ PCWSTR const pwszSequence) const
@@ -486,7 +492,8 @@ void TerminalInput::_SendInputSequence(_In_ PCWSTR const pwszSequence) const
 
             rgInput[i].Event.KeyEvent.uChar.UnicodeChar = pwszSequence[i];
         }
-        //This cast is safe because we know that _TermKeyMap::s_cchMaxSequenceLength + 1 < MAX_DWORD
-        _pfnWriteEvents(rgInput, (DWORD)cch);
+
+        std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(rgInput, cch);
+        _pfnWriteEvents(inputEvents);
     }
 }   
