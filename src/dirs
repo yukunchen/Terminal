@@ -9,3 +9,4 @@ DIRS=\
      testlist{noncrit} \
      tools \
      tsf \
+     types \

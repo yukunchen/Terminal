@@ -5,7 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
-#include "IInputEvent.hpp"
+#include "inc/IInputEvent.hpp"
 
 MouseEvent::MouseEvent(_In_ const MOUSE_EVENT_RECORD& record) :
     _mousePosition{ record.dwMousePosition },

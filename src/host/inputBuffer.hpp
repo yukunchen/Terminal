@@ -19,10 +19,11 @@ Revision History:
 
 #include "inputReadHandleData.h"
 #include "readData.hpp"
-#include "IInputEvent.hpp"
+#include "../types/inc/IInputEvent.hpp"
 
 #include "../server/ObjectHandle.h"
 #include "../server/ObjectHeader.h"
+#include "../terminal/adapter/terminalInput.hpp"
 
 #include <deque>
 
@@ -58,8 +59,12 @@ public:
     size_t WriteInputBuffer(_Inout_ std::unique_ptr<IInputEvent> pInputEvent);
     size_t WriteInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
+    bool IsInVirtualTerminalInputMode() const;
+    Microsoft::Console::VirtualTerminal::TerminalInput& GetTerminalInput();
+
 private:
     std::deque<std::unique_ptr<IInputEvent>> _storage;
+    Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
 
     NTSTATUS _ReadBuffer(_Out_writes_to_(Length, *EventsRead) INPUT_RECORD* Buffer,
                          _In_ ULONG Length,
@@ -84,6 +89,8 @@ private:
     HRESULT _HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
     std::deque<std::unique_ptr<IInputEvent>> _inputRecordsToInputEvents(_In_ const std::deque<INPUT_RECORD>& inRecords);
+
+    void _HandleTerminalInputCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
 #ifdef UNIT_TESTING
     friend class InputBufferTests;

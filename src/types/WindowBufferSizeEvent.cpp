@@ -5,7 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
-#include "IInputEvent.hpp"
+#include "inc/IInputEvent.hpp"
 
 WindowBufferSizeEvent::WindowBufferSizeEvent(_In_ const WINDOW_BUFFER_SIZE_RECORD& record) :
     _size{ record.dwSize }

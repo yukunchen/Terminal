@@ -107,19 +107,12 @@ bool ShouldTakeOverKeyboardShortcuts()
     return !gci->GetCtrlKeyShortcutsDisabled() && IsInProcessedInputMode();
 }
 
-
-
 // Routine Description:
 // - handles key events without reference to Win32 elements.
 void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     BOOLEAN ContinueProcessing = TRUE;
-
-    if (HandleTerminalKeyEvent(&InputEvent))
-    {
-        return;
-    }
 
     if (CTRL_BUT_NOT_ALT(InputEvent.Event.KeyEvent.dwControlKeyState) && InputEvent.Event.KeyEvent.bKeyDown)
     {
@@ -184,28 +177,6 @@ void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak)
             LOG_HR(wil::ResultFromCaughtException());
         }
     }
-}
-
-// Routine Description:
-// - Handler for detecting whether a key-press event can be appropriately converted into a terminal sequence.
-//   Will only trigger when virtual terminal input mode is set via STDIN handle
-// Arguments:
-// - pInputRecord - Input record event from the general input event handler
-// Return Value:
-// - True if the modes were appropriate for converting to a terminal sequence AND there was a matching terminal sequence for this key. False otherwise.
-bool HandleTerminalKeyEvent(_In_ const INPUT_RECORD* const pInputRecord)
-{
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    // If the modes don't align, this is unhandled by default.
-    bool fWasHandled = false;
-
-    // Virtual terminal input mode
-    if (IsInVirtualTerminalInputMode())
-    {
-        fWasHandled = gci->termInput.HandleKey(pInputRecord);
-    }
-
-    return fWasHandled;
 }
 
 void HandleFocusEvent(_In_ const BOOL fSetFocus)
