@@ -628,7 +628,14 @@ void ScreenBufferSizeChange(_In_ COORD const coordNewSize)
     InputEvent.EventType = WINDOW_BUFFER_SIZE_EVENT;
     InputEvent.Event.WindowBufferSizeEvent.dwSize = coordNewSize;
 
-    gci->pInputBuffer->WriteInputBuffer(&InputEvent, 1);
+    try
+    {
+        gci->pInputBuffer->WriteInputBuffer(IInputEvent::Create(InputEvent));
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+    }
 }
 
 void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,

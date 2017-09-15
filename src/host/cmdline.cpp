@@ -364,6 +364,12 @@ const ExtKeySubst *ParseEditKeyInfo(_Inout_ PKEY_EVENT_RECORD const pKeyEvent)
     return pKeySubst;
 }
 
+bool IsPauseKey(_In_ const KeyEvent* const pKeyEvent)
+{
+    INPUT_RECORD record = pKeyEvent->ToInputRecord();
+    return IsPauseKey(&record.Event.KeyEvent);
+}
+
 // Routine Description:
 // - Returns TRUE if pKeyEvent is pause.
 // - The default key is Ctrl-S if extended edit keys are not specified.
@@ -382,7 +388,7 @@ bool IsPauseKey(_In_ PKEY_EVENT_RECORD const pKeyEvent)
     {
         fIsPauseKey = pKeyEvent->wVirtualKeyCode == L'S' && CTRL_BUT_NOT_ALT(pKeyEvent->dwControlKeyState);
     }
-    
+
     return fIsPauseKey;
 }
 

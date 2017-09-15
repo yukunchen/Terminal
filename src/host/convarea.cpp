@@ -667,33 +667,35 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
             ->TimerRoutine(gci->CurrentScreenBuffer);
     }
 
-    size_t cchLen = wcslen(lpStr) + 1;
-    PINPUT_RECORD const InputEvent = new INPUT_RECORD[cchLen];
-    if (InputEvent == nullptr)
+    const DWORD dwControlKeyState = GetControlKeyState(0);
+    try
     {
-        return false;
+        std::deque<std::unique_ptr<IInputEvent>> inEvents;
+        INPUT_RECORD record;
+        record.EventType = KEY_EVENT;
+        record.Event.KeyEvent.bKeyDown = TRUE;
+        record.Event.KeyEvent.wVirtualKeyCode = 0;
+        record.Event.KeyEvent.wVirtualScanCode = 0;
+        record.Event.KeyEvent.dwControlKeyState = dwControlKeyState;
+        record.Event.KeyEvent.wRepeatCount = 1;
+
+        while (*lpStr)
+        {
+            record.Event.KeyEvent.uChar.UnicodeChar = *lpStr;
+            inEvents.push_back(IInputEvent::Create(record));
+
+            ++lpStr;
+        }
+
+        gci->pInputBuffer->WriteInputBuffer(inEvents);
+
+        fResult = true;
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
     }
 
-    PINPUT_RECORD TmpInputEvent = InputEvent;
-    DWORD dwControlKeyState = GetControlKeyState(0);
-
-    while (*lpStr)
-    {
-        TmpInputEvent->EventType = KEY_EVENT;
-        TmpInputEvent->Event.KeyEvent.bKeyDown = TRUE;
-        TmpInputEvent->Event.KeyEvent.wVirtualKeyCode = 0;
-        TmpInputEvent->Event.KeyEvent.wVirtualScanCode = 0;
-        TmpInputEvent->Event.KeyEvent.dwControlKeyState = dwControlKeyState;
-        TmpInputEvent->Event.KeyEvent.uChar.UnicodeChar = *lpStr++;
-        TmpInputEvent->Event.KeyEvent.wRepeatCount = 1;
-        TmpInputEvent++;
-    }
-
-    gci->pInputBuffer->WriteInputBuffer(InputEvent, (DWORD) (cchLen - 1));
-
-    fResult = true;
-
-    delete[] InputEvent;
     return fResult;
 }
 

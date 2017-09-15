@@ -5,14 +5,7 @@ Module Name:
 - inputBuffer.hpp
 
 Abstract:
-- This file implements the circular buffer management for input events.
-- The circular buffer is described by a header, which resides in the beginning of the memory allocated when the
-  buffer is created.  The header contains all of the per-buffer information, such as reader, writer, and
-  reference counts, and also holds the pointers into the circular buffer proper.
-- When the in and out pointers are equal, the circular buffer is empty.  When the in pointer trails the out pointer
-  by 1, the buffer is full.  Thus, a 512 byte buffer can hold only 511 bytes; one byte is lost so that full and empty
-  conditions can be distinguished. So that the user can put 512 bytes in a buffer that they created with a size
-  of 512, we allow for this byte lost when allocating the memory.
+- storage area for incoming input events.
 
 Author:
 - Therese Stowell (Thereses) 12-Nov-1990. Adapted from OS/2 subsystem server\srvpipe.c
@@ -26,6 +19,7 @@ Revision History:
 
 #include "inputReadHandleData.h"
 #include "readData.hpp"
+#include "IInputEvent.hpp"
 
 #include "../server/ObjectHandle.h"
 #include "../server/ObjectHeader.h"
@@ -59,14 +53,13 @@ public:
                             _In_ BOOL const fWaitForData,
                             _In_ BOOLEAN const fUnicode);
 
-    NTSTATUS PrependInputBuffer(_In_ INPUT_RECORD* pInputRecord, _Inout_ DWORD* const pcLength);
-    HRESULT PrependInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords, _Out_ size_t& eventsWritten);
+    size_t PrependInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
-    DWORD WriteInputBuffer(_In_ INPUT_RECORD* pInputRecord, _In_ DWORD cInputRecords);
-    size_t WriteInputBuffer(_In_ std::deque<INPUT_RECORD>& inRecords);
+    size_t WriteInputBuffer(_Inout_ std::unique_ptr<IInputEvent> pInputEvent);
+    size_t WriteInputBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
 private:
-    std::deque<INPUT_RECORD> _storage;
+    std::deque<std::unique_ptr<IInputEvent>> _storage;
 
     NTSTATUS _ReadBuffer(_Out_writes_to_(Length, *EventsRead) INPUT_RECORD* Buffer,
                          _In_ ULONG Length,
@@ -82,13 +75,15 @@ private:
                         _Out_ bool& resetWaitEvent,
                         _In_ const bool unicode);
 
-    HRESULT _WriteBuffer(_In_ std::deque<INPUT_RECORD>& inRecords,
+    HRESULT _WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inRecords,
                          _Out_ size_t& eventsWritten,
                          _Out_ bool& setWaitEvent);
 
-    bool _CoalesceMouseMovedEvents(_In_ std::deque<INPUT_RECORD>& inRecords);
-    bool _CoalesceRepeatedKeyPressEvents(_In_ std::deque<INPUT_RECORD>& inRecords);
-    HRESULT _HandleConsoleSuspensionEvents(_In_ std::deque<INPUT_RECORD>& records);
+    bool _CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+    bool _CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+    HRESULT _HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+
+    std::deque<std::unique_ptr<IInputEvent>> _inputRecordsToInputEvents(_In_ const std::deque<INPUT_RECORD>& inRecords);
 
 #ifdef UNIT_TESTING
     friend class InputBufferTests;

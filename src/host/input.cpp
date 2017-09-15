@@ -115,8 +115,7 @@ void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     BOOLEAN ContinueProcessing = TRUE;
-    ULONG EventsWritten;
-    
+
     if (HandleTerminalKeyEvent(&InputEvent))
     {
         return;
@@ -170,11 +169,19 @@ void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak)
 
     if (ContinueProcessing)
     {
-        EventsWritten = gci->pInputBuffer->WriteInputBuffer(&InputEvent, 1);
-        if (EventsWritten && bGenerateBreak)
+        size_t EventsWritten = 0;
+        try
         {
-            InputEvent.Event.KeyEvent.bKeyDown = FALSE;
-            gci->pInputBuffer->WriteInputBuffer(&InputEvent, 1);
+            EventsWritten = gci->pInputBuffer->WriteInputBuffer(IInputEvent::Create(InputEvent));
+            if (EventsWritten && bGenerateBreak)
+            {
+                InputEvent.Event.KeyEvent.bKeyDown = FALSE;
+                EventsWritten = gci->pInputBuffer->WriteInputBuffer(IInputEvent::Create(InputEvent));
+            }
+        }
+        catch(...)
+        {
+            LOG_HR(wil::ResultFromCaughtException());
         }
     }
 }
@@ -209,7 +216,15 @@ void HandleFocusEvent(_In_ const BOOL fSetFocus)
     InputEvent.Event.FocusEvent.bSetFocus = fSetFocus;
 
 #pragma prefast(suppress:28931, "EventsWritten is not unused. Used by assertions.")
-    ULONG const EventsWritten = gci->pInputBuffer->WriteInputBuffer(&InputEvent, 1);
+    size_t EventsWritten = 0;
+    try
+    {
+        EventsWritten = gci->pInputBuffer->WriteInputBuffer(IInputEvent::Create(InputEvent));
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+    }
     EventsWritten; // shut the fre build up.
     ASSERT(EventsWritten == 1);
 }
@@ -222,7 +237,15 @@ void HandleMenuEvent(_In_ const DWORD wParam)
     InputEvent.Event.MenuEvent.dwCommandId = wParam;
 
 #pragma prefast(suppress:28931, "EventsWritten is not unused. Used by assertions.")
-    ULONG const EventsWritten = gci->pInputBuffer->WriteInputBuffer(&InputEvent, 1);
+    size_t EventsWritten = 0;
+    try
+    {
+        EventsWritten = gci->pInputBuffer->WriteInputBuffer(IInputEvent::Create(InputEvent));
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+    }
     EventsWritten; // shut the fre build up.
 #if DBG
     if (EventsWritten != 1)

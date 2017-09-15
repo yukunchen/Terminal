@@ -114,6 +114,7 @@ void Clipboard::StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
     {
         return;
     }
+    auto releaseStringData = wil::ScopeExit([&] { delete[] StringData; });
 
     // transfer data to the input buffer in chunks
     PCWCHAR CurChar = pwchData;    // LATER remove this
@@ -262,10 +263,16 @@ void Clipboard::StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
             CurChar++;
         }
 
-        EventsWritten = gci->pInputBuffer->WriteInputBuffer(StringData, EventsWritten);
+        try
+        {
+            std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(StringData, EventsWritten);
+            EventsWritten = static_cast<ULONG>(gci->pInputBuffer->WriteInputBuffer(inEvents));
+        }
+        catch (...)
+        {
+            return;
+        }
     }
-
-    delete[] StringData;
 }
 
 #pragma endregion
