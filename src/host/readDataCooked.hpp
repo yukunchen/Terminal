@@ -98,7 +98,7 @@ public:
 #endif
 };
 
-NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
+NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                     _In_ bool const fIsUnicode,
                     _Inout_ ULONG* const cbNumBytes,
                     _Out_ ULONG* const ulControlKeyState);

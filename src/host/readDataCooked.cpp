@@ -224,7 +224,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
 // - cbNumBytes - On in, the number of bytes available in the client
 // buffer. On out, the number of bytes consumed in the client buffer.
 // - ulControlKeyState - For some types of reads, this is the modifier key state with the last button press.
-NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
+NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                     _In_ bool const fIsUnicode,
                     _Inout_ ULONG* const cbNumBytes,
                     _Out_ ULONG* const ulControlKeyState)
@@ -470,8 +470,12 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* pCookedReadData,
         if (!fIsUnicode)
         {
             // if ansi, translate string.
-            std::unique_ptr<char[]> tempBuffer = std::make_unique<char[]>(NumBytes);
-            if (!tempBuffer.get())
+            std::unique_ptr<char[]> tempBuffer;
+            try
+            {
+                tempBuffer = std::make_unique<char[]>(NumBytes);
+            }
+            catch (...)
             {
                 return STATUS_NO_MEMORY;
             }

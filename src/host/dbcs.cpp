@@ -514,7 +514,7 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
                             _In_ const ULONG cchUnicode,
                             _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
                             _In_ const ULONG cbAnsi,
-                            _Out_ std::unique_ptr<IInputEvent>& partialEvent)
+                            _Outref_result_maybenull_ std::unique_ptr<IInputEvent>& partialEvent)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     PWCHAR const TmpUni = new WCHAR[cchUnicode];
@@ -564,11 +564,18 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
 
     if (AsciiDbcs[1])
     {
-        KeyEvent* pKeyEvent = new KeyEvent();
-        if (pKeyEvent)
+        try
         {
-            pKeyEvent->_charData = AsciiDbcs[1];
-            partialEvent.reset(pKeyEvent);
+            std::unique_ptr<KeyEvent> keyEvent = std::make_unique<KeyEvent>();
+            if (keyEvent.get())
+            {
+                keyEvent->_charData = AsciiDbcs[1];
+                partialEvent.reset(static_cast<IInputEvent* const>(keyEvent.release()));
+            }
+        }
+        catch (...)
+        {
+            LOG_HR(wil::ResultFromCaughtException());
         }
     }
 

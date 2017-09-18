@@ -192,32 +192,33 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
         !fIsUnicode)
     {
         // It's ansi, so translate the string.
-        std::unique_ptr<char[]> tempBuffer = std::make_unique<char[]>(NumBytes);
-        if (!tempBuffer.get())
+        std::unique_ptr<char[]> tempBuffer;
+        try
         {
-            RetVal = true;
+            tempBuffer = std::make_unique<char[]>(NumBytes);
         }
-        else
+        catch (...)
         {
-            lpBuffer = _BufPtr;
-            std::unique_ptr<IInputEvent> partialEvent;
+            return true;
+        }
 
-            *pNumBytes = TranslateUnicodeToOem(lpBuffer,
-                                               *pNumBytes / sizeof(wchar_t),
-                                               tempBuffer.get(),
-                                               NumBytes,
-                                               partialEvent);
-            if (partialEvent.get())
-            {
-                _pInputBuffer->StoreReadPartialByteSequence(std::move(partialEvent));
-            }
+        lpBuffer = _BufPtr;
+        std::unique_ptr<IInputEvent> partialEvent;
 
-            memmove(lpBuffer, tempBuffer.get(), *pNumBytes);
-            if (fAddDbcsLead)
-            {
-                (*pNumBytes)++;
-            }
+        *pNumBytes = TranslateUnicodeToOem(lpBuffer,
+                                            *pNumBytes / sizeof(wchar_t),
+                                            tempBuffer.get(),
+                                            NumBytes,
+                                            partialEvent);
+        if (partialEvent.get())
+        {
+            _pInputBuffer->StoreReadPartialByteSequence(std::move(partialEvent));
+        }
 
+        memmove(lpBuffer, tempBuffer.get(), *pNumBytes);
+        if (fAddDbcsLead)
+        {
+            (*pNumBytes)++;
         }
     }
     return RetVal;

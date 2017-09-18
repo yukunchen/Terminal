@@ -407,16 +407,19 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
     }
     else
     {
-        pHandleData->CurrentBufPtr = (wchar_t*)((PBYTE)pHandleData->CurrentBufPtr + NumToWrite);
+        pHandleData->CurrentBufPtr = reinterpret_cast<wchar_t*>(reinterpret_cast<byte*>(pHandleData->CurrentBufPtr) + NumToWrite);
     }
 
     if (!Unicode)
     {
         // if ansi, translate string.  we allocated the capture buffer
         // large enough to handle the translated string.
-
-        std::unique_ptr<char[]> tempBuffer = std::make_unique<char[]>(NumToBytes);
-        if (!tempBuffer.get())
+        std::unique_ptr<char[]> tempBuffer;
+        try
+        {
+            tempBuffer = std::make_unique<char[]>(NumToBytes);
+        }
+        catch (...)
         {
             return STATUS_NO_MEMORY;
         }
@@ -532,7 +535,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
     // moving in the buffer via cursor doesn't do strange things.
     for (ULONG i = 0; i < TempBufferSize / sizeof(wchar_t); i++)
     {
-        TempBuffer[i] = L' ';
+        TempBuffer[i] = UNICODE_SPACE;
     }
 
     COORD invalidCoord;
