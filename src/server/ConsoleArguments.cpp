@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 #include "ConsoleArguments.hpp"
+#include <shellapi.h>
 
 const std::wstring ConsoleArguments::VT_IN_PIPE_ARG = L"--inpipe";
 const std::wstring ConsoleArguments::VT_OUT_PIPE_ARG = L"--outpipe";
@@ -125,12 +126,16 @@ HRESULT ConsoleArguments::ParseCommandline()
     std::wstring copy = _commandline;
     
     // Tokenize the commandline
-    wchar_t* pszNextToken;
-    wchar_t* pszToken = wcstok_s(&copy[0], L" \t", &pszNextToken);
-    while (pszToken != nullptr && *pszToken != L'\0')
+    int argc = 0;
+    wchar_t** const argv = CommandLineToArgvW(copy.c_str(), &argc);
+    RETURN_LAST_ERROR_IF(argv == nullptr);
+    auto argvCleanup = wil::ScopeExit([&]{
+        LocalFree(argv);
+    });
+
+    for (int i = 0; i < argc; ++i)
     {
-        args.push_back(pszToken);
-        pszToken = wcstok_s(nullptr, L" \t", &pszNextToken);
+        args.push_back(argv[i]);
     }
 
     // Parse args out of the commandline.

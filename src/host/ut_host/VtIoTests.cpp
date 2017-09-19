@@ -66,6 +66,7 @@ void VtIoTests::ModeParsingTest()
     VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_256);
     
     VERIFY_FAILED(VtIo::ParseIoMode(L"garbage", &mode));
+    VERIFY_ARE_EQUAL(mode, VtIoMode::INVALID);
 
 }
 

@@ -60,7 +60,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
         VERIFY_IS_TRUE(args.IsUsingVtPipe());
         VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"foo");
         VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"bar");
-        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"\"this is the commandline\"");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"this is the commandline");
     }
     {
         Log::Comment(L"#3 quotes on an arg");
@@ -70,7 +70,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
         VERIFY_IS_FALSE(args.IsUsingVtPipe());
         VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"foo");
         VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"");
-        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"\"--outpipe bar this is the commandline\"");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"--outpipe bar this is the commandline");
     }
     {
         Log::Comment(L"#4 Many spaces");
@@ -112,6 +112,17 @@ void ConsoleArgumentsTests::ArgSplittingTests()
         VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"");
         VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"--inpipe\\ foo\\ --outpipe\\ bar\\ this\\ is\\ the\\ commandline");
     }
+    {
+        Log::Comment(L"#7 Combo of backslashes and quotes from msdn");
+        wstring commandline = L"--inpipe a\\\\\\\\\"b c\" d e";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_IS_FALSE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"a\\\\b c");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"d e");
+    }
+    
 }
 
 void ConsoleArgumentsTests::VtPipesTest()
