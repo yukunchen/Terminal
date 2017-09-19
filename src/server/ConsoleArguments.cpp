@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 #include "ConsoleArguments.hpp"
+#include <shellapi.h>
 
 const std::wstring ConsoleArguments::VT_IN_PIPE_ARG = L"--inpipe";
 const std::wstring ConsoleArguments::VT_OUT_PIPE_ARG = L"--outpipe";
@@ -35,11 +36,11 @@ ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline)
 //      as a loop index will autoincrement it to have it point at the correct 
 //      next index.
 //   
-// EX: for args=[--foo bar --baz]
-//      index 0 would place "bar" in pSetting, 
+// EX: for args=[--foo, bar, --baz]
+//      index=0 would place "bar" in pSetting, 
 //          args is now [--baz], index is now -1, caller increments to 0
-//      index 2 would return E_INVALIDARG,
-//          args is still [--foo bar --baz], index is still 2, caller increments to 3.
+//      index=2 would return E_INVALIDARG,
+//          args is still [--foo, bar, --baz], index is still 2, caller increments to 3.
 // Arguments:
 //  args: A collection of wstrings representing command-line arguments
 //  index: the index of the argument of which to get the value for. The value 
@@ -50,31 +51,18 @@ ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline)
 //      failure.
 HRESULT _GetArgumentValue(_In_ std::vector<std::wstring>& args, _Inout_ size_t& index, _Out_opt_ std::wstring* const pSetting)
 {
-    HRESULT hr = E_INVALIDARG;
     bool hasNext = (index+1) < args.size();
     if (hasNext)
     {
         args.erase(args.begin()+index);
-
-        std::wstring next = args[index];
-        if (next.compare(0, 2, L"--") == 0)
+        if (pSetting != nullptr)
         {
-            // the next token starts with --, so it's an argument.
-            // eg: [--foo, --bar, baz]
-            // We should reject this. Parameters to args shouldn't start with --
+            *pSetting = args[index];
         }
-        else
-        {
-            if (pSetting != nullptr)
-            {
-                *pSetting = args[index];
-            }
-            args.erase(args.begin()+index);
-            hr = S_OK;
-        }
+        args.erase(args.begin()+index);
         index--;
     }
-    return hr;
+    return (hasNext) ? S_OK : E_INVALIDARG;
 }
 
 // Routine Description:
@@ -138,12 +126,16 @@ HRESULT ConsoleArguments::ParseCommandline()
     std::wstring copy = _commandline;
     
     // Tokenize the commandline
-    wchar_t* pszNextToken;
-    wchar_t* pszToken = wcstok_s(&copy[0], L" \t", &pszNextToken);
-    while (pszToken != nullptr && *pszToken != L'\0')
+    int argc = 0;
+    wchar_t** const argv = CommandLineToArgvW(copy.c_str(), &argc);
+    RETURN_LAST_ERROR_IF(argv == nullptr);
+    auto argvCleanup = wil::ScopeExit([&]{
+        LocalFree(argv);
+    });
+
+    for (int i = 0; i < argc; ++i)
     {
-        args.push_back(pszToken);
-        pszToken = wcstok_s(nullptr, L" \t", &pszNextToken);
+        args.push_back(argv[i]);
     }
 
     // Parse args out of the commandline.

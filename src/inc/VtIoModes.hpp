@@ -7,6 +7,7 @@
 
 enum class VtIoMode
 {
+    INVALID,
     XTERM,
     XTERM_256,
     WIN_TELNET

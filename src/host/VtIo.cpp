@@ -6,13 +6,13 @@
 
 #include "precomp.h"
 #include "VtIo.hpp"
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
-#include "..\renderer\vt\XtermEngine.hpp"
-#include "..\renderer\vt\Xterm256Engine.hpp"
-#include "..\renderer\vt\WinTelnetEngine.hpp"
+#include "../renderer/vt/XtermEngine.hpp"
+#include "../renderer/vt/Xterm256Engine.hpp"
+#include "../renderer/vt/WinTelnetEngine.hpp"
 
-#include "..\renderer\base\renderer.hpp"
+#include "../renderer/base/renderer.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -33,6 +33,7 @@ VtIo::VtIo()
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating failure.
 HRESULT VtIo::ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode* const pIoMode)
 {
+    *pIoMode = VtIoMode::INVALID;
     RETURN_HR_IF_NULL(E_INVALIDARG, pIoMode);
 
     if (VtMode == XTERM_256_STRING)

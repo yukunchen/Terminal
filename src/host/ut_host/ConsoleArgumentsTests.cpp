@@ -7,7 +7,7 @@
 #include "WexTestClass.h"
 
 #include "globals.h"
-#include "..\..\server\ConsoleArguments.hpp"
+#include "../../server/ConsoleArguments.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -60,7 +60,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
         VERIFY_IS_TRUE(args.IsUsingVtPipe());
         VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"foo");
         VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"bar");
-        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"\"this is the commandline\"");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"this is the commandline");
     }
     {
         Log::Comment(L"#3 quotes on an arg");
@@ -70,7 +70,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
         VERIFY_IS_FALSE(args.IsUsingVtPipe());
         VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"foo");
         VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"");
-        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"\"--outpipe bar this is the commandline\"");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"--outpipe bar this is the commandline");
     }
     {
         Log::Comment(L"#4 Many spaces");
@@ -112,6 +112,17 @@ void ConsoleArgumentsTests::ArgSplittingTests()
         VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"");
         VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"--inpipe\\ foo\\ --outpipe\\ bar\\ this\\ is\\ the\\ commandline");
     }
+    {
+        Log::Comment(L"#7 Combo of backslashes and quotes from msdn");
+        wstring commandline = L"--inpipe a\\\\\\\\\"b c\" d e";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_IS_FALSE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"a\\\\b c");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"d e");
+    }
+    
 }
 
 void ConsoleArgumentsTests::VtPipesTest()
@@ -161,22 +172,24 @@ void ConsoleArgumentsTests::VtPipesTest()
     }
 
     {
-        Log::Comment(L"#5 Mixed - args with -- args the start can't be used as values(1)");
+        Log::Comment(L"#5 Mixed (1)");
         wstring commandline = L"--inpipe --outpipe foo";
         Log::Comment(commandline.c_str());
-        auto args = CreateAndParseUnsuccessfully(commandline);
+        auto args = CreateAndParse(commandline);
         VERIFY_IS_FALSE(args.IsUsingVtPipe());
-        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"");
-        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"");
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"--outpipe");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"");
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"foo");
     }
 
     {
-        Log::Comment(L"#6 Mixed - args with -- args the start can't be used as values(2)");
+        Log::Comment(L"#6 Mixed (2)");
         wstring commandline = L"--inpipe --outpipe --outpipe foo";
         Log::Comment(commandline.c_str());
-        auto args = CreateAndParseUnsuccessfully(commandline);
-        VERIFY_IS_FALSE(args.IsUsingVtPipe());
-        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"");
+        auto args = CreateAndParse(commandline);
+        VERIFY_IS_TRUE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"--outpipe");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"foo");
         VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"");
     }
 
@@ -284,14 +297,14 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
         VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"--outpipe foo bar");
     }
     {
-        Log::Comment(L"#8 -- can NOT be used as a value of a parameter");
+        Log::Comment(L"#8 Let -- be used as a value of a parameter");
         wstring commandline = L"--inpipe -- --outpipe foo bar";
         Log::Comment(commandline.c_str());
-        auto args = CreateAndParseUnsuccessfully(commandline);
-        VERIFY_IS_FALSE(args.IsUsingVtPipe());
-        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"");
-        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"");
-        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"");
+        auto args = CreateAndParse(commandline);
+        VERIFY_ARE_EQUAL(args.GetVtInPipe(), L"--");
+        VERIFY_ARE_EQUAL(args.GetVtOutPipe(), L"foo");
+        VERIFY_IS_TRUE(args.IsUsingVtPipe());
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"bar");
     }
     {
         Log::Comment(L"#9 -- by itself does nothing successfully");
