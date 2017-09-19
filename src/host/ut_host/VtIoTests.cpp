@@ -51,7 +51,6 @@ void VtIoTests::NoOpStartTest()
 
 void VtIoTests::ModeParsingTest()
 {
-
     VtIoMode mode;
     VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm", &mode));
     VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM);
@@ -71,10 +70,9 @@ void VtIoTests::ModeParsingTest()
 
 void VtIoTests::BasicPipeOpeningTest()
 {
-    
     Log::Comment(L"Just the basic case, two seperate pipes, expected modes");
-    // DUPLEX is definitely acceptable for the inpipe, but I think we ideally want non-overlapped...
-    // I don't do anything overlapped, so I thin k that flag doesn't need to be there.
+    // DUPLEX is definitely acceptable for the inpipe
+    // overlapped is acceptable, though it will not be used.
     DWORD inPipeOpenMode = PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED;
     DWORD outPipeOpenMode = PIPE_ACCESS_INBOUND;
 
@@ -132,8 +130,6 @@ void VtIoTests::BasicPipeOpeningTest()
 void VtIoTests::NoInPipeOpeningTest()
 {
     Log::Comment(L"Don't create an in pipe, see what happens");
-    // DUPLEX is definitely acceptable for the inpipe, but I think we ideally want non-overlapped...
-    // I don't do anything overlapped, so I thin k that flag doesn't need to be there.
     DWORD outPipeOpenMode = PIPE_ACCESS_INBOUND;
     DWORD outPipeMode = PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT;
 
@@ -165,9 +161,7 @@ void VtIoTests::NoInPipeOpeningTest()
 void VtIoTests::NoOutPipeOpeningTest()
 {
     Log::Comment(L"Don't create an out pipe, see what happens");
-    // DUPLEX is definitely acceptable for the inpipe, but I think we ideally want non-overlapped...
-    // I don't do anything overlapped, so I thin k that flag doesn't need to be there.
-    DWORD inPipeOpenMode = PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED;
+    DWORD inPipeOpenMode = PIPE_ACCESS_DUPLEX;
 
     DWORD inPipeMode = PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT;
 
@@ -197,8 +191,6 @@ void VtIoTests::NoOutPipeOpeningTest()
 void VtIoTests::NonOverlappedInModeTest()
 {
     Log::Comment(L"change the input mode to non-overlapped");
-    // DUPLEX is definitely acceptable for the inpipe, but I think we ideally want non-overlapped...
-    // I don't do anything overlapped, so I thin k that flag doesn't need to be there.
     DWORD inPipeOpenMode = PIPE_ACCESS_DUPLEX;
     DWORD outPipeOpenMode = PIPE_ACCESS_INBOUND;
 
@@ -255,12 +247,7 @@ void VtIoTests::NonOverlappedInModeTest()
 void VtIoTests::NonDuplexInModeTest()
 {
     Log::Comment(L"change the input mode to outbound only");
-    // I'm not sure about the final state of this yet. 
-    //  We may want to force the pipe to be bidirectional... 
 
-
-    // DUPLEX is definitely acceptable for the inpipe, but I think we ideally want non-overlapped...
-    // I don't do anything overlapped, so I thin k that flag doesn't need to be there.
     DWORD inPipeOpenMode = PIPE_ACCESS_OUTBOUND;
     DWORD outPipeOpenMode = PIPE_ACCESS_INBOUND;
 

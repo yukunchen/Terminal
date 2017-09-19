@@ -19,7 +19,7 @@ public:
     HANDLE inPipe();
     HANDLE outPipe();
 
-    static const DWORD sInPipeOpenMode = PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED;
+    static const DWORD sInPipeOpenMode = PIPE_ACCESS_DUPLEX;
     static const DWORD sOutPipeOpenMode = PIPE_ACCESS_INBOUND;
 
     static const DWORD sInPipeMode = PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT;
