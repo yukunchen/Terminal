@@ -164,20 +164,21 @@ void InputEngineTest::UnmodifiedTest()
             shouldSkip = false;
             break;
         case VK_F1:
+            // F1-F4 are SS3 sequences, adding support for those in MSFT:13420038
             inputSeq = L"\x1bOP";
-            shouldSkip = false;
+            shouldSkip = true;
             break;
         case VK_F2:
             inputSeq = L"\x1bOQ";
-            shouldSkip = false;
+            shouldSkip = true;
             break;
         case VK_F3:
             inputSeq = L"\x1bOR";
-            shouldSkip = false;
+            shouldSkip = true;
             break;
         case VK_F4:
             inputSeq = L"\x1bOS";
-            shouldSkip = false;
+            shouldSkip = true;
             break;
         case VK_F5:
             inputSeq = L"\x1b[15~";
