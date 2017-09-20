@@ -68,7 +68,7 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
         ////////////////////////////////////////////////////////////////////////
         // This is a hack to help debug why powershell on windows doesn't work.
         // This segment will fix it, but break emacs on wsl again.
-        bool tryPowershellFix = false;
+        bool tryPowershellFix = true;
         if (tryPowershellFix)
         {
             actualChar = wch;
@@ -196,6 +196,11 @@ bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ con
     UNREFERENCED_PARAMETER(pwchOscStringBuffer);
     UNREFERENCED_PARAMETER(cchOscString);
     return true;
+}
+
+void InputStateMachineEngine::_GenerateWrappedSequence(wchar_t wch, short vkey, DWORD dwModifierState, INPUT_RECORD* rgInput, size_t cInput)
+{
+
 }
 
 void InputStateMachineEngine::_WriteControlAndKey(wchar_t wch, short vkey, DWORD dwModifierState)

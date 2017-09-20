@@ -57,6 +57,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(UnmodifiedTest);
     TEST_METHOD(C0Test);
     TEST_METHOD(AlphanumericTest);
+    TEST_METHOD(RoundTripTest);
 
     StateMachine* _pStateMachine;
 
@@ -373,4 +374,13 @@ void InputEngineTest::AlphanumericTest()
 
     }
     
+}
+
+
+void InputEngineTest::RoundTripTest()
+{
+    // Send Every VKEY through the TerminalInput module, then take the uchar's 
+    //   from the generated INPUT_RECORDs and put them through the InputEngine.
+    // The VKEY sequence it writes out should be the same as the original.
+    VERIFY_SUCCEEDED(E_FAIL);
 }
