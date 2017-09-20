@@ -119,6 +119,12 @@ HRESULT ConsoleArguments::_GetClientCommandline(_In_ std::vector<std::wstring>& 
 //      indicating failure.
 HRESULT ConsoleArguments::ParseCommandline()
 {
+    // If the commandline was empty, quick return.
+    if (_commandline.length() == 0)
+    {
+        return S_OK;
+    }
+
     std::vector<std::wstring> args;
     HRESULT hr = S_OK;
 

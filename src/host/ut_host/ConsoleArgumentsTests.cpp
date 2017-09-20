@@ -313,4 +313,11 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
         auto args = CreateAndParse(commandline);
         VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"");
     }
+    {
+        Log::Comment(L"#10 An empty commandline should parse as an empty commandline");
+        wstring commandline = L"";
+        Log::Comment(commandline.c_str());
+        auto args = CreateAndParse(commandline);
+        VERIFY_ARE_EQUAL(args.GetClientCommandline(), L"");
+    }
 }
