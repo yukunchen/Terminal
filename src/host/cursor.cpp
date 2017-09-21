@@ -234,20 +234,21 @@ void Cursor::_RedrawCursor()
 // - <none>
 void Cursor::_RedrawCursorAlways()
 {
-    // return;
-    if (ServiceLocator::LocateGlobals()->pRender != nullptr)
-    {
-        // Always trigger update of the cursor as one character width
-        ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&_cPosition);
+    // For VT Testing, disable cursor blinking. It's causing way too many updates.
+    return;
+    // if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+    // {
+    //     // Always trigger update of the cursor as one character width
+    //     ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&_cPosition);
 
-        // In case of a double width character, we need to invalidate the spot one to the right of the cursor as well.
-        if (IsDoubleWidth())
-        {
-            COORD cExtra = _cPosition;
-            cExtra.X++;
-            ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&cExtra);
-        }
-    }
+    //     // In case of a double width character, we need to invalidate the spot one to the right of the cursor as well.
+    //     if (IsDoubleWidth())
+    //     {
+    //         COORD cExtra = _cPosition;
+    //         cExtra.X++;
+    //         ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&cExtra);
+    //     }
+    // }
 }
 
 void Cursor::SetPosition(_In_ COORD const cPosition)

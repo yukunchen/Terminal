@@ -913,19 +913,23 @@ HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, _In_ 
 
     // Only update if the foreground or background are different from the last time we attempted to set it.
 
-    // NOTE: Valid COLORREFs are of the pattern 0x00bbggrr. Set the initial one in the static to -1 as the highest byte of a valid color is always 0.
-    static COLORREF rgbLastForeground = 0xffffffff;
-    static COLORREF rgbLastBackground = 0xffffffff;
+    // // NOTE: Valid COLORREFs are of the pattern 0x00bbggrr. Set the initial one in the static to -1 as the highest byte of a valid color is always 0.
+    // static COLORREF rgbLastForeground = 0xffffffff;
+    // static COLORREF rgbLastBackground = 0xffffffff;
 
-    // If we have to update the background too (which is due to a complete window-type change), always update.
-    // Otherwise, only update if something has changed.
-    if (fIncludeBackground || rgbForeground != rgbLastForeground || rgbBackground != rgbLastBackground)
-    {
-        RETURN_IF_FAILED(pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, legacyAttributes, fIncludeBackground));
+    // // If we have to update the background too (which is due to a complete window-type change), always update.
+    // // Otherwise, only update if something has changed.
+    // if (fIncludeBackground || rgbForeground != rgbLastForeground || rgbBackground != rgbLastBackground)
+    // {
+    //     RETURN_IF_FAILED(pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, legacyAttributes, fIncludeBackground));
 
-        rgbLastForeground = rgbForeground;
-        rgbLastBackground = rgbBackground;
-    }
+    //     rgbLastForeground = rgbForeground;
+    //     rgbLastBackground = rgbBackground;
+    // }
+
+    // The last color need's to be each engine's responsibility. If it's local to this function,
+    //      then on the next engine we might not update the color.
+    RETURN_IF_FAILED(pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, legacyAttributes, fIncludeBackground));
 
     return S_OK;
 }
