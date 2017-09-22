@@ -21,5 +21,5 @@ rem Generate a unique name, so that we can debug multiple revisions of the binar
 (echo f | xcopy /Y %_last_build%\VtPipeIn.exe %TEMP%\%copy_dir%\VtPipeIn.exe) > nul
 (echo f | xcopy /Y %_last_build%\Nihilist.exe %TEMP%\%copy_dir%\Nihilist.exe) > nul
 
-start %TEMP%\%copy_dir%\VtPipeTerm.exe %*
+start %TEMP%\%copy_dir%\OpenConsole.exe %TEMP%\%copy_dir%\VtPipeTerm.exe %*
 
