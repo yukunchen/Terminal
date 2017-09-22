@@ -1180,8 +1180,8 @@ void TextBufferTests::CopyAttrs()
     cursor->SetYPosition(0);
     // Write '\E[32mX\E[33mX\n\E[34mX\E[35mX\E[H\E[M'
     // The first two X's should get deleted.
-    // The third X should be blue, legacy.
-    // The fourth X should be magenta, legacy.
+    // The third X should be blue
+    // The fourth X should be magenta
     std::wstring sequence = L"\x1b[32mX\x1b[33mX\n\x1b[34mX\x1b[35mX\x1b[H\x1b[M";
     stateMachine->ProcessString(&sequence[0], sequence.length());
 
@@ -1223,9 +1223,6 @@ void TextBufferTests::CopyAttrs()
         L"attrB={FG:0x%x,BG:0x%x}", attrB.GetRgbForeground(), attrB.GetRgbBackground()
     ));
 
-
-    VERIFY_ARE_EQUAL(attrA.IsLegacy(), true);
-    VERIFY_ARE_EQUAL(attrB.IsLegacy(), true);
 
     VERIFY_ARE_EQUAL(attrA.GetRgbForeground(), dark_blue);
     VERIFY_ARE_EQUAL(attrB.GetRgbForeground(), dark_magenta);
