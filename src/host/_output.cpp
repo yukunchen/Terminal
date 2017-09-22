@@ -254,22 +254,43 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
         // So we'll copy the attributes here in a not terrible way.
         if (fWriteAttributes)
         {
-            TextAttribute* pSrcAttr = &(pTextAttributes[(psrSrc->Top * coordSrcDimensions.X) + psrSrc->Left]);
-            int rowWidth = coordScreenBufferSize.X;
-            int const srcWidth = psrSrc->Right - psrSrc->Left + 1;
+            const TextAttribute* const pOriginAttr = &(pTextAttributes[(psrSrc->Top * coordSrcDimensions.X) + psrSrc->Left]);
+            const int rowWidth = coordScreenBufferSize.X;
+            const int srcWidth = psrSrc->Right - psrSrc->Left;
+            const TextAttribute* pSrcAttr = pOriginAttr;
+
+            // For each source row, iterate over the attrs in it.
+            //  We're going to create AttrRuns for each attr in the row, starting with the first one.
+            //  If the current attr is different then the last one, then insert the last one, and start a new run.
             for (int y = coordDest.Y; y < coordSrcDimensions.Y + coordDest.Y; y++)
             {
                 ROW* pRow = pScreenInfo->TextInfo->GetRowByOffset(y);
 
-                // Create new run representing setting this color for the specified columns of the rectangle.
                 TextAttributeRun insert;
-                insert.SetAttributes(*pSrcAttr);
-                insert.SetLength(srcWidth);
+                int currentLength = 1;  // This is the length of the current run.
+                unsigned int destX = coordDest.X;  // This is where the current run begins in the dest buffer.
+                TextAttribute lastAttr = *pSrcAttr;
 
-                // Insert into existing run length encoding at destination position for distance.
-                pRow->AttrRow.InsertAttrRuns(&insert, 1, coordDest.X, (coordDest.X + srcWidth) - 1, rowWidth);
+                // We've already gotten the value of the first attr, so start at index 1.
+                pSrcAttr++;
+                for (int x = 1; x < srcWidth; x++)
+                {
+                    if (!pSrcAttr->IsEqual(lastAttr))
+                    {
+                        insert.SetAttributes(lastAttr);
+                        insert.SetLength(currentLength);
+                        pRow->AttrRow.InsertAttrRuns(&insert, 1, destX, (destX + currentLength) - 1, rowWidth);
 
-                pSrcAttr += srcWidth; // advance to next row.
+                        destX = coordDest.X + x;
+                        lastAttr = *pSrcAttr;
+                        currentLength = 0;
+                    }
+
+                    currentLength++;
+                    pSrcAttr++;
+                }
+
+                pSrcAttr++; // advance to next row.
             }
         }
 
