@@ -27,7 +27,6 @@ InputBuffer::InputBuffer() :
     // initialize buffer header
     fInComposition = false;
 
-    ZeroMemory(&ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
     ZeroMemory(&WriteConInpDbcsLeadByte, sizeof(INPUT_RECORD) * ARRAYSIZE(WriteConInpDbcsLeadByte));
 }
 

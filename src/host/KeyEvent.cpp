@@ -20,6 +20,16 @@ KeyEvent::KeyEvent(_In_ const KEY_EVENT_RECORD& record) :
 {
 }
 
+KeyEvent::KeyEvent() :
+    _keyDown{ 0 },
+    _repeatCount{ 0 },
+    _virtualKeyCode{ 0 },
+    _virtualScanCode{ 0 },
+    _charData { 0 },
+    _activeModifierKeys{ 0 }
+{
+}
+
 KeyEvent::~KeyEvent()
 {
 }
