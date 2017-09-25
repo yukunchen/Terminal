@@ -587,7 +587,14 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
     {
         CookedReadData.ExeNameLength = (USHORT)cbExeName;
         CookedReadData.ExeName = (wchar_t*) new BYTE[CookedReadData.ExeNameLength];
-        memcpy_s(CookedReadData.ExeName, CookedReadData.ExeNameLength, pwsExeName, cbExeName);
+        if (CookedReadData.ExeName)
+        {
+            memcpy_s(CookedReadData.ExeName, CookedReadData.ExeNameLength, pwsExeName, cbExeName);
+        }
+        else
+        {
+            CookedReadData.ExeNameLength = 0;
+        }
     }
 
     gci->lpCookedReadData = &CookedReadData;
@@ -684,10 +691,21 @@ NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
 
         if (Status == CONSOLE_STATUS_WAIT)
         {
-            *ppWaiter = new RAW_READ_DATA(pInputBuffer,
-                                          pHandleData,
-                                          static_cast<ULONG>(OutputBufferSize),
-                                          pwchBuffer);
+            try
+            {
+                *ppWaiter = new RAW_READ_DATA(pInputBuffer,
+                                              pHandleData,
+                                              static_cast<ULONG>(OutputBufferSize),
+                                              pwchBuffer);
+            }
+            catch (...)
+            {
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
+            if (!*ppWaiter)
+            {
+                Status = STATUS_NO_MEMORY;
+            }
         }
 
         if (!NT_SUCCESS(Status))
@@ -737,8 +755,12 @@ NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
         // if ansi, translate string.  we allocated the capture buffer large enough to handle the translated string.
         if (!Unicode)
         {
-            std::unique_ptr<char[]> tempBuffer = std::make_unique<char[]>(*pReadByteCount);
-            if (!tempBuffer.get())
+            std::unique_ptr<char[]> tempBuffer;
+            try
+            {
+                tempBuffer = std::make_unique<char[]>(*pReadByteCount);
+            }
+            catch (...)
             {
                 return STATUS_NO_MEMORY;
             }
