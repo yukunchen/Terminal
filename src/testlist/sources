@@ -3,7 +3,8 @@ TARGETTYPE=TESTLIST
 TEST_CODE=1
 
 TESTLIST_SOURCES=\
-    Microsoft.Console.Tests.testlist
+    Microsoft.Console.Tests.testlist \
+    Microsoft.Console.Tests.DesktopOnly.testlist \
 
 TESTLIST_REFERENCE_DIRS=\
     $(OBJ_PATH)\..\interactivity\win32\ut_interactivity_win32\$O \

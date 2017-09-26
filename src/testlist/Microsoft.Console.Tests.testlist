@@ -3,8 +3,6 @@
   "TestMDs" :  [  
     { "FilePath": "Microsoft.Console.Host.UnitTests.testmd" },
     { "FilePath": "Microsoft.Console.Host.FeatureTests.testmd" },
-    { "FilePath": "Microsoft.Console.Host.UIAutomationTests.testmd" },
-//    { "FilePath": "Microsoft.Console.Interactivity.Win32.UnitTests.testmd" },
     { "FilePath": "Microsoft.Console.VirtualTerminal.Adapter.UnitTests.testmd" },
     { "FilePath": "Microsoft.Console.VirtualTerminal.Parser.UnitTests.testmd" },
   ]
