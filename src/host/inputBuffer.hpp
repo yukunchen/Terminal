@@ -33,17 +33,20 @@ public:
     DWORD InputMode;
     ConsoleWaitQueue WaitQueue; // formerly ReadWaitQueue
     HANDLE InputWaitEvent;
-
-    INPUT_RECORD WriteConInpDbcsLeadByte[2];
-
     bool fInComposition;  // specifies if there's an ongoing text composition
 
     InputBuffer();
     ~InputBuffer();
 
+    // storage API for partial dbcs bytes being read from the buffer
     bool IsReadPartialByteSequenceAvailable();
     std::unique_ptr<IInputEvent> FetchReadPartialByteSequence(_In_ bool peek);
     void StoreReadPartialByteSequence(std::unique_ptr<IInputEvent> event);
+
+    // storage API for partial dbcs bytes being written to the buffer
+    bool IsWritePartialByteSequenceAvailable();
+    std::unique_ptr<IInputEvent> FetchWritePartialByteSequence(_In_ bool peek);
+    void StoreWritePartialByteSequence(std::unique_ptr<IInputEvent> event);
 
     void ReinitializeInputBuffer();
     void WakeUpReadersWaitingForData();
@@ -72,6 +75,7 @@ public:
 private:
     std::deque<std::unique_ptr<IInputEvent>> _storage;
     std::unique_ptr<IInputEvent> _readPartialByteSequence;
+    std::unique_ptr<IInputEvent> _writePartialByteSequence;
 
     HRESULT _ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
                         _In_ const size_t readCount,

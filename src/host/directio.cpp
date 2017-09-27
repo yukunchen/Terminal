@@ -25,83 +25,98 @@ class CONSOLE_INFORMATION;
 
 #define UNICODE_DBCS_PADDING 0xffff
 
-ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG NumRecords, _Inout_ PINPUT_RECORD DBCSLeadByte)
+// Routine Description:
+// - converts non-unicode InputEvents to unicode InputEvents
+// Arguments:
+// inEvents - InputEvents to convert
+// partialEvent - on output, will contain a partial dbcs byte char
+// data if the last event in inEvents is a dbcs lead byte
+// Return Value:
+// - inEvents will be contain unicode InputEvents
+// - partialEvent may contain a partial dbcs KeyEvent
+void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
+                     _Outref_result_maybenull_ std::unique_ptr<IInputEvent>& partialEvent)
 {
-    ULONG i, j;
-
-    DBGCHARS(("TranslateInputToUnicode\n"));
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    std::deque<std::unique_ptr<IInputEvent>> outEvents;
 
-    INPUT_RECORD AsciiDbcs[2];
-    CHAR Strings[2];
-    if (DBCSLeadByte->Event.KeyEvent.uChar.AsciiChar)
+    while (!inEvents.empty())
     {
-        AsciiDbcs[0] = *DBCSLeadByte;
-        Strings[0] = DBCSLeadByte->Event.KeyEvent.uChar.AsciiChar;
-    }
-    else
-    {
-        ZeroMemory(AsciiDbcs, sizeof(AsciiDbcs));
-    }
-    for (i = j = 0; i < NumRecords; i++)
-    {
-        if (InputRecords[i].EventType == KEY_EVENT)
+        std::unique_ptr<IInputEvent> currentEvent = std::move(inEvents.front());
+        inEvents.pop_front();
+
+        if (currentEvent->EventType() != InputEventType::KeyEvent)
         {
-            if (AsciiDbcs[0].Event.KeyEvent.uChar.AsciiChar)
-            {
-                AsciiDbcs[1] = InputRecords[i];
-                Strings[1] = InputRecords[i].Event.KeyEvent.uChar.AsciiChar;
-
-                WCHAR UnicodeDbcs[2];
-                ULONG NumBytes = sizeof(Strings);
-                NumBytes = ConvertInputToUnicode(gci->CP,
-                                                 &Strings[0],
-                                                 NumBytes,
-                                                 &UnicodeDbcs[0],
-                                                 NumBytes);
-
-                PWCHAR Uni = &UnicodeDbcs[0];
-                while (NumBytes--)
-                {
-                    InputRecords[j] = AsciiDbcs[0];
-                    InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = *Uni++;
-                    j++;
-                }
-                ZeroMemory(AsciiDbcs, sizeof(AsciiDbcs));
-                if (DBCSLeadByte->Event.KeyEvent.uChar.AsciiChar)
-                    ZeroMemory(DBCSLeadByte, sizeof(INPUT_RECORD));
-            }
-            else if (IsDBCSLeadByteConsole(InputRecords[i].Event.KeyEvent.uChar.AsciiChar, &gci->CPInfo))
-            {
-                if (i < NumRecords - 1)
-                {
-                    AsciiDbcs[0] = InputRecords[i];
-                    Strings[0] = InputRecords[i].Event.KeyEvent.uChar.AsciiChar;
-                }
-                else
-                {
-                    *DBCSLeadByte = InputRecords[i];
-                    break;
-                }
-            }
-            else
-            {
-                InputRecords[j] = InputRecords[i];
-                CHAR const c = InputRecords[i].Event.KeyEvent.uChar.AsciiChar;
-                ConvertInputToUnicode(gci->CP,
-                                      &c,
-                                      1,
-                                      &InputRecords[j].Event.KeyEvent.uChar.UnicodeChar,
-                                      1);
-                j++;
-            }
+            outEvents.push_back(std::move(currentEvent));
         }
         else
         {
-            InputRecords[j++] = InputRecords[i];
+            const KeyEvent* const keyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
+
+            wistd::unique_ptr<wchar_t[]> outWChar;
+            size_t size;
+            HRESULT hr;
+
+            // convert char data to unicode
+            if (IsDBCSLeadByteConsole(static_cast<char>(keyEvent->_charData), &gci->CPInfo))
+            {
+                if (inEvents.empty())
+                {
+                    // we ran out of data and have a partial byte leftover
+                    partialEvent = std::move(currentEvent);
+                    break;
+                }
+
+                // get the 2nd byte and convert to unicode
+                const KeyEvent* const keyEventEndByte = static_cast<const KeyEvent* const>(inEvents.front().get());
+                inEvents.pop_front();
+
+                char inBytes[] =
+                {
+                    static_cast<char>(keyEvent->_charData),
+                    static_cast<char>(keyEventEndByte->_charData)
+                };
+                hr = ConvertToW(gci->CP,
+                                inBytes,
+                                ARRAYSIZE(inBytes),
+                                outWChar,
+                                size);
+            }
+            else
+            {
+                char inBytes[] =
+                {
+                    static_cast<char>(keyEvent->_charData)
+                };
+                hr = ConvertToW(gci->CP,
+                                inBytes,
+                                ARRAYSIZE(inBytes),
+                                outWChar,
+                                size);
+            }
+
+            // push unicode key events back out
+            if (SUCCEEDED(hr) && size > 0)
+            {
+                KeyEvent unicodeKeyEvent = *keyEvent;
+                for (size_t i = 0; i < size; ++i)
+                {
+                    unicodeKeyEvent._charData = outWChar[i];
+                    try
+                    {
+                        outEvents.push_back(std::make_unique<KeyEvent>(unicodeKeyEvent));
+                    }
+                    catch (...)
+                    {
+                        LOG_HR(wil::ResultFromCaughtException());
+                    }
+                }
+            }
         }
     }
-    return j;
+
+    inEvents.swap(outEvents);
+    return;
 }
 
 // Routine Description:
@@ -371,7 +386,7 @@ NTSTATUS SrvWriteConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         }
         else
         {
-            Status = DoSrvWriteConsoleInput(pInputBuffer, a, Buffer);
+            Status = NTSTATUS_FROM_HRESULT(DoSrvWriteConsoleInput(pInputBuffer, a, Buffer));
         }
     }
 
@@ -379,34 +394,50 @@ NTSTATUS SrvWriteConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
     return Status;
 }
 
-NTSTATUS DoSrvWriteConsoleInput(_In_ InputBuffer* pInputBuffer, _Inout_ CONSOLE_WRITECONSOLEINPUT_MSG* pMsg, _In_ INPUT_RECORD* const rgInputRecords)
+HRESULT DoSrvWriteConsoleInput(_In_ InputBuffer* const pInputBuffer,
+                               _Inout_ CONSOLE_WRITECONSOLEINPUT_MSG* const pMsg,
+                               _In_ INPUT_RECORD* const rgInputRecords)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
+    const ULONG cRecords = pMsg->NumRecords;
+    pMsg->NumRecords = 0;
 
-    if (!pMsg->Unicode)
-    {
-        pMsg->NumRecords = TranslateInputToUnicode(rgInputRecords, pMsg->NumRecords, &pInputBuffer->WriteConInpDbcsLeadByte[0]);
-    }
-
+    // convert INPUT_RECORD array to IInputEvent deque
+    std::deque<std::unique_ptr<IInputEvent>> inEvents;
     try
     {
-        std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(rgInputRecords, pMsg->NumRecords);
-        if (pMsg->Append)
-        {
-            pMsg->NumRecords = static_cast<ULONG>(pInputBuffer->Write(inEvents));
-        }
-        else
-        {
-            pMsg->NumRecords = static_cast<ULONG>(pInputBuffer->Prepend(inEvents));
-        }
+        inEvents = IInputEvent::Create(rgInputRecords, cRecords);
     }
-    catch (...)
+    CATCH_RETURN();
+
+    // add partial byte event if necessary
+    if (pInputBuffer->IsWritePartialByteSequenceAvailable())
     {
-        pMsg->NumRecords = 0;
-        Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        inEvents.push_front(pInputBuffer->FetchWritePartialByteSequence(false));
     }
 
-    return Status;
+    // convert to unicode if necessary
+    if (!pMsg->Unicode)
+    {
+        std::unique_ptr<IInputEvent> partialEvent;
+        EventsToUnicode(inEvents, partialEvent);
+
+        if (partialEvent.get())
+        {
+            pInputBuffer->StoreWritePartialByteSequence(std::move(partialEvent));
+        }
+    }
+
+    // add to InputBuffer
+    if (pMsg->Append)
+    {
+        pMsg->NumRecords = static_cast<ULONG>(pInputBuffer->Write(inEvents));
+    }
+    else
+    {
+        pMsg->NumRecords = static_cast<ULONG>(pInputBuffer->Prepend(inEvents));
+    }
+
+    return S_OK;
 }
 
 // Routine Description:
