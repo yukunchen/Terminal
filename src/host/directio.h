@@ -26,9 +26,9 @@ NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer,
                                          _Inout_ PCHAR_INFO OutputBufferR);
 
 NTSTATUS SrvWriteConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS DoSrvWriteConsoleInput(_In_ InputBuffer* pInputBuffer,
-                                _Inout_ CONSOLE_WRITECONSOLEINPUT_MSG* pMsg,
-                                _In_ INPUT_RECORD* const rgInputRecords);
+HRESULT DoSrvWriteConsoleInput(_In_ InputBuffer* const pInputBuffer,
+                               _Inout_ CONSOLE_WRITECONSOLEINPUT_MSG* const pMsg,
+                               _In_ INPUT_RECORD* const rgInputRecords);
 
 NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);

@@ -283,19 +283,21 @@ BOOL ConhostInternalGetSet::SetConsoleRGBTextAttribute(_In_ COLORREF const rgbCo
 // Routine Description:
 // - Connects the WriteConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
-// - rgInputRecords - An array of input records to be copied into the the head of the input buffer for the underlying attached process
+// - rgInputRecords - An array of input records to be copied into the
+// the head of the input buffer for the underlying attached process
 // - nLength - The number of records in the rgInputRecords array
 // - pNumberOfEventsWritten - Pointer to memory location to hold the total number of elements written into the buffer
 // Return Value:
 // - TRUE if successful (see DoSrvWriteConsoleInput). FALSE otherwise.
-BOOL ConhostInternalGetSet::WriteConsoleInputW(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords, _In_ DWORD const nLength, _Out_ DWORD* const pNumberOfEventsWritten)
+BOOL ConhostInternalGetSet::WriteConsoleInputW(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords,
+                                               _In_ DWORD const nLength, _Out_ DWORD* const pNumberOfEventsWritten)
 {
     CONSOLE_WRITECONSOLEINPUT_MSG msg;
     msg.Append = false;
     msg.NumRecords = nLength;
     msg.Unicode = true;
 
-    BOOL fSuccess = NT_SUCCESS(DoSrvWriteConsoleInput(_pInputBuffer, &msg, rgInputRecords));
+    BOOL fSuccess = !!SUCCEEDED(DoSrvWriteConsoleInput(_pInputBuffer, &msg, rgInputRecords));
 
     *pNumberOfEventsWritten = msg.NumRecords;
 
