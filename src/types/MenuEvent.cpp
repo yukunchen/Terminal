@@ -5,7 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
-#include "IInputEvent.hpp"
+#include "inc/IInputEvent.hpp"
 
 MenuEvent::MenuEvent(_In_ const MENU_EVENT_RECORD& record) :
     _commandId{ record.dwCommandId }

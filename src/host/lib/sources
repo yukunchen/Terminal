@@ -58,12 +58,6 @@ SOURCES = \
     ..\renderFontDefaults.cpp \
     ..\utf8ToWideCharParser.cpp \
     ..\conimeinfo.cpp \
-    ..\IInputEvent.cpp \
-    ..\FocusEvent.cpp \
-    ..\KeyEvent.cpp \
-    ..\MenuEvent.cpp \
-    ..\MouseEvent.cpp \
-    ..\WindowBufferSizeEvent.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

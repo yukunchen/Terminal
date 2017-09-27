@@ -5,10 +5,11 @@
 ********************************************************/
 
 #include "precomp.h"
-#include "IInputEvent.hpp"
-#include "cmdline.h"
+#include "inc/IInputEvent.hpp"
+#include "../host/cmdline.h"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+using namespace Microsoft::Console::Interactivity;
 
 KeyEvent::KeyEvent(_In_ const KEY_EVENT_RECORD& record) :
     _keyDown{ !!record.bKeyDown },

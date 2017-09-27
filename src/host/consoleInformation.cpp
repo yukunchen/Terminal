@@ -56,7 +56,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // OutputCPInfo initialized below
     lpCookedReadData(nullptr),
     // ConsoleIme initialized below
-    termInput(HandleTerminalKeyEventCallback),
     terminalMouseInput(HandleTerminalKeyEventCallback)
 {
     InitializeListHead(&CommandHistoryList);

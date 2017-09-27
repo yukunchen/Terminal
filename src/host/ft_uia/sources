@@ -1,6 +1,13 @@
-TARGETNAME                         =   Conhost.UIA.Tests
+TARGETNAME                         =   Microsoft.Console.Host.UIAutomationTests
 TARGETTYPE                         =   DYNLINK
 TARGET_DESTINATION                 =   UnitTests
+
+UNIVERSAL_TEST                     =   1
+
+# The following lines are required to force PASS2 to occur, which is when the universal test testmd/spkg is generated
+!IF 0
+SPKG_SOURCES=
+!ENDIF
 
 MANAGED_CODE                       =   1
 TEST_CODE                          =   1

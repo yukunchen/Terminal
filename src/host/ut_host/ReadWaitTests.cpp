@@ -6,13 +6,13 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "misc.h"
 #include "dbcs.h"
-#include "IInputEvent.hpp"
+#include "../../types/inc/IInputEvent.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #include <deque>
 #include <memory>

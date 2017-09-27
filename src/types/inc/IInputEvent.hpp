@@ -13,11 +13,13 @@ Author:
 
 #pragma once
 
+#include <winconp.h>
+#include <wtypes.h>
+
 #include <unordered_set>
 #include <memory>
 #include <deque>
 
-#include <wtypes.h>
 
 enum class InputEventType
 {

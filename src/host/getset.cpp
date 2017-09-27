@@ -1009,8 +1009,11 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pC
 NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->termInput.ChangeCursorKeysMode(fApplicationMode);
-
+    if (gci->pInputBuffer == nullptr)
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+    gci->pInputBuffer->GetTerminalInput().ChangeCursorKeysMode(fApplicationMode);
     return STATUS_SUCCESS;
 }
 
@@ -1024,8 +1027,11 @@ NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode)
 NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->termInput.ChangeKeypadMode(fApplicationMode);
-
+    if (gci->pInputBuffer == nullptr)
+    {
+        return STATUS_UNSUCCESSFUL;
+    }
+    gci->pInputBuffer->GetTerminalInput().ChangeKeypadMode(fApplicationMode);
     return STATUS_SUCCESS;
 }
 

@@ -23,7 +23,7 @@ Revision History:
 #pragma once
 
 #include "readData.hpp"
-#include "IInputEvent.hpp"
+#include "../types/inc/IInputEvent.hpp"
 #include <deque>
 #include <memory>
 

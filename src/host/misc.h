@@ -16,7 +16,7 @@ Revision History:
 #pragma once
 
 #include "screenInfo.hpp"
-#include "IInputEvent.hpp"
+#include "../types/inc/IInputEvent.hpp"
 #include <deque>
 #include <memory>
 
