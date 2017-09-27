@@ -32,7 +32,7 @@ class CONSOLE_INFORMATION;
 // partialEvent - on output, will contain a partial dbcs byte char
 // data if the last event in inEvents is a dbcs lead byte
 // Return Value:
-// - inEvents will be contain unicode InputEvents
+// - inEvents will contain unicode InputEvents
 // - partialEvent may contain a partial dbcs KeyEvent
 void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                      _Outref_result_maybenull_ std::unique_ptr<IInputEvent>& partialEvent)
