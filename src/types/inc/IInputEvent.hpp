@@ -89,6 +89,7 @@ class WindowBufferSizeEvent : public IInputEvent
 {
 public:
     WindowBufferSizeEvent(_In_ const WINDOW_BUFFER_SIZE_RECORD& record);
+    WindowBufferSizeEvent(_In_ const COORD);
     ~WindowBufferSizeEvent();
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;

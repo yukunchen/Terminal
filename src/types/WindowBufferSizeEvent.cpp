@@ -12,6 +12,11 @@ WindowBufferSizeEvent::WindowBufferSizeEvent(_In_ const WINDOW_BUFFER_SIZE_RECOR
 {
 }
 
+WindowBufferSizeEvent::WindowBufferSizeEvent(_In_ const COORD size) :
+    _size{ size }
+{
+}
+
 WindowBufferSizeEvent::~WindowBufferSizeEvent()
 {
 }
