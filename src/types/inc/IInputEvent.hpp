@@ -51,6 +51,12 @@ class KeyEvent : public IInputEvent
 {
 public:
     KeyEvent(_In_ const KEY_EVENT_RECORD& record);
+    KeyEvent(_In_ const int keyDown,
+             _In_ const WORD repeatCount,
+             _In_ const WORD virtualKeyCode,
+             _In_ const WORD virtualScanCode,
+             _In_ const wchar_t charData,
+             _In_ const DWORD activeModifierKeys);
     KeyEvent();
     ~KeyEvent();
     INPUT_RECORD ToInputRecord() const;

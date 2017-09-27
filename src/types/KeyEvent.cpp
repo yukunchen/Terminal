@@ -31,6 +31,21 @@ KeyEvent::KeyEvent() :
 {
 }
 
+KeyEvent::KeyEvent(_In_ const int keyDown,
+                   _In_ const WORD repeatCount,
+                   _In_ const WORD virtualKeyCode,
+                   _In_ const WORD virtualScanCode,
+                   _In_ const wchar_t charData,
+                   _In_ const DWORD activeModifierKeys) :
+    _keyDown{ keyDown },
+    _repeatCount{ repeatCount },
+    _virtualKeyCode{ virtualKeyCode },
+    _virtualScanCode{ virtualScanCode },
+    _charData{ charData },
+    _activeModifierKeys{ activeModifierKeys }
+{
+}
+
 KeyEvent::~KeyEvent()
 {
 }

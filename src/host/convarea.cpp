@@ -671,18 +671,12 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
     try
     {
         std::deque<std::unique_ptr<IInputEvent>> inEvents;
-        INPUT_RECORD record;
-        record.EventType = KEY_EVENT;
-        record.Event.KeyEvent.bKeyDown = TRUE;
-        record.Event.KeyEvent.wVirtualKeyCode = 0;
-        record.Event.KeyEvent.wVirtualScanCode = 0;
-        record.Event.KeyEvent.dwControlKeyState = dwControlKeyState;
-        record.Event.KeyEvent.wRepeatCount = 1;
+        KeyEvent keyEvent{ TRUE, 1, 0, 0, 0, dwControlKeyState };
 
         while (*lpStr)
         {
-            record.Event.KeyEvent.uChar.UnicodeChar = *lpStr;
-            inEvents.push_back(IInputEvent::Create(record));
+            keyEvent._charData = *lpStr;
+            inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
 
             ++lpStr;
         }
