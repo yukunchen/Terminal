@@ -5,6 +5,15 @@
 ********************************************************/
 #pragma once
 
-HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server);
+enum class VtIoMode
+{
+    INVALID,
+    XTERM,
+    XTERM_256,
+    WIN_TELNET
+};
 
-HRESULT UseVtPipe(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode);
+const wchar_t* const XTERM_STRING = L"xterm"; 
+const wchar_t* const XTERM_256_STRING = L"xterm-256color"; 
+const wchar_t* const WIN_TELNET_STRING = L"win-telnet"; 
+const wchar_t* const DEFAULT_STRING = L""; 

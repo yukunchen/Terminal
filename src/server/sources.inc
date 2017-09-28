@@ -54,6 +54,7 @@ SOURCES= \
     ..\ApiMessageState.cpp \
     ..\ApiRoutinesBase.cpp \
     ..\ApiSorter.cpp \
+    ..\ConsoleArguments.cpp \
     ..\DeviceComm.cpp \
     ..\DeviceHandle.cpp \
     ..\Entrypoints.cpp \

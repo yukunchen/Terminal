@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 #include "Entrypoints.h"
+#include "ConsoleArguments.hpp"
 
 #include "DeviceHandle.h"
 #include "IoThread.h"
@@ -24,9 +25,14 @@ HRESULT Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle)
 
 HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
 {
+    ConsoleArguments arguments = ConsoleArguments(pwszCmdLine);
+    RETURN_IF_FAILED(arguments.ParseCommandline());
     // Create a scope because we're going to exit thread if everything goes well.
     // This scope will ensure all C++ objects and smart pointers get a chance to destruct before ExitThread is called.
     {
+        // TODO:MSFT:13271366 use the arguments from the commandline to determine if we need 
+        //  to create the server handle or not.
+
         // Create the server and reference handles and create the console object.
         wil::unique_handle ServerHandle;
         RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateServerHandle(ServerHandle.addressof(), FALSE));
@@ -141,16 +147,28 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
                                                                 NULL,
                                                                 NULL));
 
+        ////////////////////////////////////////////////////////////////////////
+        // TEMP: Use results of arg parsing
+        // Make sure to store the wstring return value in a local 
+        //    otherwise .c_str() will not return the right value.
+        std::wstring clientCmd = arguments.GetClientCommandline();
+        const wchar_t* pwszClientCmdLine = clientCmd.c_str();
+        if (arguments.IsUsingVtPipe())
+        {
+            RETURN_IF_FAILED(UseVtPipe(arguments.GetVtInPipe(), arguments.GetVtOutPipe(), arguments.GetVtMode()));
+        }
+        ////////////////////////////////////////////////////////////////////////
+        
         // We have to copy the command line string we're given because CreateProcessW has to be called with mutable data.
-        if (wcslen(pwszCmdLine) == 0)
+        if (wcslen(pwszClientCmdLine) == 0)
         {
             // If they didn't give us one, just launch cmd.exe.
-            pwszCmdLine = L"%WINDIR%\\system32\\cmd.exe";
+            pwszClientCmdLine = L"%WINDIR%\\system32\\cmd.exe";
         }
 
         // Expand any environment variables present in the command line string.
         // - Get needed size
-        DWORD cchCmdLineExpanded = ExpandEnvironmentStringsW(pwszCmdLine, nullptr, 0);
+        DWORD cchCmdLineExpanded = ExpandEnvironmentStringsW(pwszClientCmdLine, nullptr, 0);
         RETURN_LAST_ERROR_IF(0 == cchCmdLineExpanded);
 
         // - Allocate space to hold result
@@ -158,7 +176,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
         RETURN_IF_NULL_ALLOC(CmdLineMutable);
 
         // - Expand string into allocated space
-        RETURN_LAST_ERROR_IF(0 == ExpandEnvironmentStringsW(pwszCmdLine, CmdLineMutable.get(), cchCmdLineExpanded));
+        RETURN_LAST_ERROR_IF(0 == ExpandEnvironmentStringsW(pwszClientCmdLine, CmdLineMutable.get(), cchCmdLineExpanded));
 
         // Call create process
         wil::unique_process_information ProcessInformation;

@@ -6,6 +6,7 @@
     <ClCompile Include="AttrRowTests.cpp" />
     <ClCompile Include="CharRowTests.cpp" />
     <ClCompile Include="ClipboardTests.cpp" />
+    <ClCompile Include="ConsoleArgumentsTests.cpp" />
     <ClCompile Include="DbcsTests.cpp" />
     <ClCompile Include="InitTests.cpp" />
     <ClCompile Include="ScreenBufferTests.cpp" />
@@ -16,6 +17,7 @@
     <ClCompile Include="Utf8ToWideCharParserTests.cpp" />
     <ClCompile Include="InputBufferTests.cpp" />
     <ClCompile Include="ReadWaitTests.cpp" />
+    <ClCompile Include="VtIoTests.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

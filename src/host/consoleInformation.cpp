@@ -58,7 +58,8 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     lpCookedReadData(nullptr),
     // ConsoleIme initialized below
     termInput(HandleTerminalKeyEventCallback),
-    terminalMouseInput(HandleTerminalKeyEventCallback)
+    terminalMouseInput(HandleTerminalKeyEventCallback),
+    _vtIo()
 {
     InitializeListHead(&CommandHistoryList);
     InitializeListHead(&ExeAliasList);
@@ -102,4 +103,9 @@ void CONSOLE_INFORMATION::UnlockConsole()
 ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
 {
     return _csConsoleLock.RecursionCount;
+}
+
+VtIo* CONSOLE_INFORMATION::GetVtIo()
+{
+    return &_vtIo;
 }
