@@ -39,7 +39,6 @@ private:
     Microsoft::Console::VtInputThread* _pVtInputThread;
     Microsoft::Console::Render::VtEngine* _pVtRenderEngine;
 
-
 #ifdef UNIT_TESTING
     friend class VtIoTests;
 #endif

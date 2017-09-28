@@ -3,7 +3,7 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="InputEngineTest.cpp" />
-    <ClCompile Include="stateMachineTest.cpp" />
+    <ClCompile Include="OutputEngineTest.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

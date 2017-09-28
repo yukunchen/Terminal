@@ -13,7 +13,7 @@
 #include <assert.h>
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
-#include "..\..\interactivity\inc\VtApiRedirection.hpp"
+#include "../../interactivity/inc/VtApiRedirection.hpp"
 #endif
 
 using namespace Microsoft::Console::VirtualTerminal;
@@ -71,10 +71,9 @@ const InputStateMachineEngine::GENERIC_TO_VKEY InputStateMachineEngine::s_rgGene
 };
 
 
-InputStateMachineEngine::InputStateMachineEngine(_In_ WriteInputEvents const pfnWriteEvents)
-    : _pfnWriteEvents(pfnWriteEvents)
+InputStateMachineEngine::InputStateMachineEngine(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn)
 {
-    // _trace = Microsoft::Console::VirtualTerminal::ParserTracing();
+    _pfnWriteEvents = pfn;
 }
 
 InputStateMachineEngine::~InputStateMachineEngine()
@@ -84,6 +83,7 @@ InputStateMachineEngine::~InputStateMachineEngine()
 
 bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
 {
+    bool fSuccess = false;
     if (wch >= '\x0' && wch < '\x20')
     {
         // This is a C0 Control Character.
@@ -91,31 +91,6 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
         wchar_t actualChar = wch;
         // actualChar = wch+0x40;
         bool writeCtrl = true;
-
-        ////////////////////////////////////////////////////////////////////////
-        // This is a hack to help debug why powershell on windows doesn't work.
-        // This segment will fix it, but break emacs on wsl again.
-        bool tryPowershellFix = false;
-        if (tryPowershellFix)
-        {
-            actualChar = wch;
-            switch(wch)
-            {
-                case '\0': //0x0 NUL
-                case '\x03': //0x03 ETX
-                // case '\b': // x08 BS // Leaving this out of the fix might fix emacs.
-                case '\t': // x09 HT
-                case '\n': // x0a LF
-                case '\r': // x0d CR
-                case '\x1b': // x1b ESC
-                    writeCtrl = false;
-                    break;
-                default:
-                    actualChar = wch+0x40;
-                    break;
-            }
-        }
-        ////////////////////////////////////////////////////////////////////////
 
         short vkey = 0;
         DWORD dwModifierState = 0;
@@ -138,31 +113,23 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
         {
             writeCtrl = false;
         }
-
-        if (tryPowershellFix)
-        {
-            ClearFlag(dwModifierState, SHIFT_PRESSED);
-        }
         
         if (writeCtrl)
         {
             SetFlag(dwModifierState, LEFT_CTRL_PRESSED);
-
-            // _WriteControlAndKey(wch, vkey, dwModifierState);
         }
-        // else
-        // {
-        //     _WriteSingleKey(actualChar, vkey, dwModifierState);
-        // }
 
-        _WriteSingleKey(actualChar, vkey, dwModifierState);
+        fSuccess = _WriteSingleKey(actualChar, vkey, dwModifierState);
     }
     else if (wch == '\x7f')
     {
-        _WriteSingleKey('\x8', VK_BACK, 0);
+        fSuccess = _WriteSingleKey('\x8', VK_BACK, 0);
     } 
-    else return ActionPrint(wch);
-    return true;
+    else 
+    {
+        fSuccess = ActionPrint(wch);
+    }
+    return fSuccess;
 }
 
 bool InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
@@ -171,17 +138,19 @@ bool InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
     DWORD dwModifierState = 0;
     _GenerateKeyFromChar(wch, &vkey, &dwModifierState);
 
-    _WriteSingleKey(wch, vkey, dwModifierState);
-    return true;
+    return _WriteSingleKey(wch, vkey, dwModifierState);
 }
 
 bool InputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
 {
+    bool fSuccess = true;
     for(size_t i = 0; i < cch; i++)
     {
-        ActionPrint(rgwch[i]);
+        // Split into two steps so compiler doesn't optimize out the fn call.
+        bool result = ActionPrint(rgwch[i]);
+        fSuccess &= result;
     }
-    return true;
+    return fSuccess;
 }
 
 bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate)
@@ -195,9 +164,7 @@ bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ con
     // Alt is definitely pressed in the esc+key case.
     dwModifierState = dwModifierState | LEFT_ALT_PRESSED;
     
-    _WriteSingleKey(wch, dwModifierState);
-
-    return true;
+    return _WriteSingleKey(wch, dwModifierState);
 }
 
 bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch, 
@@ -212,20 +179,25 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
     DWORD dwModifierState = 0;
     short vkey = 0;
 
+    bool fSuccess = false;
+
     if (wch == CsiActionCodes::Generic)
     {
         dwModifierState = _GetGenericKeysModifierState(rgusParams, cParams);
-        vkey = _GetGenericVkey(rgusParams, cParams);
+        fSuccess = _GetGenericVkey(rgusParams, cParams, &vkey);
     }
     else
     {
         dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
-        vkey = _GetCursorKeysVkey(wch);
+        fSuccess = _GetCursorKeysVkey(wch, &vkey);
     }
 
-    _WriteSingleKey(vkey, dwModifierState);
+    if (fSuccess)
+    {
+        fSuccess = _WriteSingleKey(vkey, dwModifierState);
+    }
 
-    return true;
+    return fSuccess;
 }
 
 bool InputStateMachineEngine::ActionClear()
@@ -244,16 +216,12 @@ bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ con
     UNREFERENCED_PARAMETER(sOscParam);
     UNREFERENCED_PARAMETER(pwchOscStringBuffer);
     UNREFERENCED_PARAMETER(cchOscString);
-    return true;
+    return false;
 }
 
 size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch, const short vkey, const DWORD dwModifierState, INPUT_RECORD* rgInput, size_t cInput)
 {
     if (cInput < 2) return 0;
-
-    // const bool fShift = IsFlagSet(keyscanModifiers, KEYSCAN_SHIFT)
-    // const bool fCtrl = IsFlagSet(keyscanModifiers, KEYSCAN_CTRL) 
-    // const bool fAlt = IsFlagSet(keyscanModifiers, KEYSCAN_ALT)
 
     const bool fShift = IsFlagSet(dwModifierState, SHIFT_PRESSED);
     const bool fCtrl = IsFlagSet(dwModifierState, LEFT_CTRL_PRESSED);
@@ -263,8 +231,6 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch, cons
     INPUT_RECORD* next = &rgInput[0];
 
     DWORD dwCurrentModifiers = 0;
-
-
 
     if (fShift)
     {
@@ -359,39 +325,14 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch, cons
 
 }
 
-void InputStateMachineEngine::_WriteControlAndKey(wchar_t wch, short vkey, DWORD dwModifierState)
+bool InputStateMachineEngine::_WriteSingleKey(wchar_t wch, short vkey, DWORD dwModifierState)
 {
-    INPUT_RECORD rgInput[4];
-    rgInput[0].EventType = KEY_EVENT;
-    rgInput[0].Event.KeyEvent.bKeyDown = TRUE;
-    rgInput[0].Event.KeyEvent.dwControlKeyState = dwModifierState;
-    rgInput[0].Event.KeyEvent.wRepeatCount = 1;
-    rgInput[0].Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
-    rgInput[0].Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
-    rgInput[0].Event.KeyEvent.uChar.UnicodeChar = 0x0;
-
-    _GetSingleKeypress(wch, vkey, dwModifierState, &rgInput[1], 2);
-
-    DWORD keyUpModifiers = ClearFlag(dwModifierState, LEFT_CTRL_PRESSED);
-    rgInput[3] = rgInput[0];
-    rgInput[3].Event.KeyEvent.bKeyDown = FALSE;
-    rgInput[3].Event.KeyEvent.dwControlKeyState = keyUpModifiers;
-
-    // Load bearing - the tests will fail if you write one control, then two 
-    //  keys, then the last control all as seperate WriteEvents calls.
-    _pfnWriteEvents(rgInput, 4);
-}
-
-void InputStateMachineEngine::_WriteSingleKey(wchar_t wch, short vkey, DWORD dwModifierState)
-{
-    // INPUT_RECORD rgInput[2];
-    // _GetSingleKeypress(wch, vkey, dwModifierState, rgInput, 2);
-    // _pfnWriteEvents(rgInput, 2);
-
-
     INPUT_RECORD rgInput[6];
     size_t cInput = _GenerateWrappedSequence(wch, vkey, dwModifierState, rgInput, 6);
-    _pfnWriteEvents(rgInput, (DWORD)cInput);
+
+    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(rgInput, cInput);
+    _pfnWriteEvents(inputEvents);
+    return true;
 }
 
 size_t InputStateMachineEngine::_GetSingleKeypress(wchar_t wch, short vkey, DWORD dwModifierState, _Inout_ INPUT_RECORD* const rgInput, _In_ size_t cRecords)
@@ -413,10 +354,10 @@ size_t InputStateMachineEngine::_GetSingleKeypress(wchar_t wch, short vkey, DWOR
     return 2;
 }
 
-void InputStateMachineEngine::_WriteSingleKey(short vkey, DWORD dwModifierState)
+bool InputStateMachineEngine::_WriteSingleKey(short vkey, DWORD dwModifierState)
 {
     wchar_t wch = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
-    _WriteSingleKey(wch, vkey, dwModifierState);
+    return _WriteSingleKey(wch, vkey, dwModifierState);
 }
 
 DWORD InputStateMachineEngine::_GetCursorKeysModifierState(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams)
@@ -456,36 +397,65 @@ DWORD InputStateMachineEngine::_GetModifier(_In_ const unsigned short modifierPa
     return modifierState | (fShift? SHIFT_PRESSED : 0) | (fAlt? LEFT_ALT_PRESSED : 0) | (fCtrl? LEFT_CTRL_PRESSED : 0);
 }
 
-
-short InputStateMachineEngine::_GetGenericVkey(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams)
+// Routine Description:
+// - Gets the Vkey form the generic keys table associated with a particular
+//   identifier code. The identifier code will be the first param in rgusParams.
+// Arguments:
+// - rgusParams: an array of shorts where the first is the identifier of the key 
+//      we're looking for.
+// - cParams: number of params in rgusParams
+// - pVkey: Recieves the vkey
+// Return Value:
+// true iff we found the key
+bool InputStateMachineEngine::_GetGenericVkey(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ short* const pVkey) const
 {
-    cParams;
+    *pVkey = 0;
+    if (cParams < 1) return false;
+
     unsigned short identifier = rgusParams[0];
     for(int i = 0; i < ARRAYSIZE(s_rgGenericMap); i++)
     {
         GENERIC_TO_VKEY mapping = s_rgGenericMap[i];
         if (mapping.Identifier == identifier)
         {
-            return mapping.vkey;
+            *pVkey = mapping.vkey;
+            return true;
         }
     }
-    return 0;
+    return false;
 }
 
-short InputStateMachineEngine::_GetCursorKeysVkey(_In_ const wchar_t wch)
+// Routine Description:
+// - Gets the Vkey from the CSI codes table associated with a particular character.
+// Arguments:
+// - wch: the wchar_t to get the mapped vkey of.
+// - pVkey: Recieves the vkey
+// Return Value:
+// true iff we found the key
+bool InputStateMachineEngine::_GetCursorKeysVkey(_In_ const wchar_t wch, _Out_ short* const pVkey) const
 {
+    *pVkey = 0;
     for(int i = 0; i < ARRAYSIZE(s_rgCsiMap); i++)
     {
         CSI_TO_VKEY mapping = s_rgCsiMap[i];
         if (mapping.Action == wch)
         {
-            return mapping.vkey;
+            *pVkey = mapping.vkey;
+            return true;
         }
     }
 
-    return 0;
+    return false;
 }
 
+// Routine Description:
+// - Gets the Vkey and modifier state that's associated with a particular char.
+// Arguments:
+// - wch: the wchar_t to get the vkey and modifier state of.
+// - pVkey: Recieves the vkey
+// - pdwModifierState: Recieves the modifier state
+// Return Value:
+// <none>
 void InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch, _Out_ short* const pVkey, _Out_ DWORD* const pdwModifierState)
 {
     // Low order byte is key, high order is modifiers
@@ -508,4 +478,16 @@ void InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch, _Out_
     {
         *pdwModifierState = dwModifierState;
     } 
+}
+
+// Routine Description:
+// - Returns true if the engine should dispatch on the last charater of a string 
+//      always, even if the sequence hasn't normally dispatched.
+//   If this is false, the engine will persist it's state across calls to 
+//      ProcessString, and dispatch only at the end of the sequence.
+// Return Value:
+// - True iff we should manually dispatch on the last character of a string.
+bool InputStateMachineEngine::FlushAtEndOfString() const
+{
+    return true;
 }

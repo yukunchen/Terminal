@@ -16,9 +16,6 @@ using namespace Microsoft::Console::VirtualTerminal;
 OutputStateMachineEngine::OutputStateMachineEngine(_In_ TermDispatch* const pDispatch) :
     _pDispatch(pDispatch)
 {
-    // _ActionClear();
-
-    // _trace = Microsoft::Console::VirtualTerminal::ParserTracing();
 }
 
 OutputStateMachineEngine::~OutputStateMachineEngine()
@@ -58,7 +55,6 @@ bool OutputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 // - <none>
 bool OutputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
 {
-    // _trace.TraceOnAction(L"PrintString");
     _pDispatch->PrintString(rgwch, cch); // call print
     return true;
 }
@@ -387,7 +383,6 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
 // - True if handled successfully. False otherwise.
 bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction, _In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams)
 {
-    // _trace.TraceOnAction(L"_IntermediateQuestionMarkDispatch");
     bool fSuccess = false;
 
     TermDispatch::PrivateModeParams rgPrivateModeParams[StateMachine::s_cParamsMax];
@@ -436,7 +431,6 @@ bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(_In_ wchar_t co
 // - True if handled successfully. False otherwise.
 bool OutputStateMachineEngine::_IntermediateExclamationDispatch(_In_ wchar_t const wchAction)
 {
-    // _trace.TraceOnAction(L"_IntermediateExclamationDispatch");
     bool fSuccess = false;
 
     switch(wchAction)
@@ -1008,4 +1002,16 @@ bool OutputStateMachineEngine::_GetDesignateType(_In_ const wchar_t wchIntermedi
     }
 
     return fSuccess;
+}
+
+// Routine Description:
+// - Returns true if the engine should dispatch on the last charater of a string 
+//      always, even if the sequence hasn't normally dispatched.
+//   If this is false, the engine will persist it's state across calls to 
+//      ProcessString, and dispatch only at the end of the sequence.
+// Return Value:
+// - True iff we should manually dispatch on the last character of a string.
+bool OutputStateMachineEngine::FlushAtEndOfString() const
+{
+    return true;
 }

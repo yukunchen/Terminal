@@ -108,7 +108,10 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
     );
     RETURN_LAST_ERROR_IF(_hOutputFile.get() == INVALID_HANDLE_VALUE);
 
-    _pVtInputThread = new VtInputThread(_hInputFile.release());
+    try
+    {
+        _pVtInputThread = new VtInputThread(_hInputFile.release());
+    }
 
     switch(_IoMode)
     {
@@ -124,6 +127,7 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
         default:
             return E_FAIL;
     }
+    CATCH_RETURN();
 
     _usingVt = true;
     return S_OK;
@@ -149,7 +153,7 @@ HRESULT VtIo::StartIfNeeded()
     // If we haven't been set up, do nothing (because there's nothing to start)
     if (!IsUsingVt())
     {
-        return S_OK;
+        return S_FALSE;
     }
     // Hmm. We only have one Renderer implementation, 
     //  but its stored as a IRenderer. 

@@ -24,7 +24,7 @@ namespace Microsoft
     {
         namespace VirtualTerminal
         {
-            class StateMachineTest;
+            class OutputEngineTest;
         }
     }
 }
@@ -35,9 +35,9 @@ namespace Microsoft
 // 32767-32768 is our boundary SHORT_MAX for the Windows console
 #define PARAM_VALUES L"{0, 1, 2, 1000, 9999, 10000, 16383, 16384, 32767, 32768, 50000, 999999999}"
 
-class Microsoft::Console::VirtualTerminal::StateMachineTest : TermDispatch
+class Microsoft::Console::VirtualTerminal::OutputEngineTest : TermDispatch
 {
-    TEST_CLASS(StateMachineTest);
+    TEST_CLASS(OutputEngineTest);
 
     virtual void Execute(_In_ wchar_t const wchControl)
     {
