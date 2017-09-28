@@ -9,12 +9,12 @@
 
 #include "stateMachine.hpp"
 #include "InputStateMachineEngine.hpp"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include <vector>
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
-#include "..\..\..\interactivity\inc\VtApiRedirection.hpp"
+#include "../../../interactivity/inc/VtApiRedirection.hpp"
 #endif
 
 using namespace WEX::Common;
@@ -39,7 +39,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
 {
     TEST_CLASS(InputEngineTest);
 
-    static void s_TestInputCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput);
+    static void s_TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     
     TEST_CLASS_SETUP(ClassSetup)
     {
@@ -69,15 +69,20 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
 
 static std::vector<INPUT_RECORD> vExpectedInput;
 
-void InputEngineTest::s_TestInputCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
+void InputEngineTest::s_TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
+    size_t cInput = inEvents.size();
+    INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
+    VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
+    VERIFY_IS_NOT_NULL(rgInput);
+    auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
+
     VERIFY_ARE_EQUAL(cInput, vExpectedInput.size());
     size_t numElems = min(cInput, vExpectedInput.size());
     size_t index = 0;
 
     for (auto expectedRecord = vExpectedInput.begin(); index < numElems; expectedRecord++)
     {
-        // VERIFY_IS_TRUE(k->equals(rgInput[index]));
         Log::Comment(
             NoThrowString().Format(L"\tExpected: ") +  
             VerifyOutputTraits<INPUT_RECORD>::ToString(*expectedRecord)
@@ -121,7 +126,6 @@ void InputEngineTest::UnmodifiedTest()
         case VK_ESCAPE:
             inputSeq = L"\x1b";
             shouldSkip = false;
-            // DebugBreak();
             break;
         case VK_PAUSE:
         // Why is this here? what is this key?
@@ -264,7 +268,6 @@ void InputEngineTest::UnmodifiedTest()
         vExpectedInput.push_back(rgInput[0]);
         vExpectedInput.push_back(rgInput[1]);
 
-        // if (wch == L'A') DebugBreak();
 
         _pStateMachine->ProcessString(&inputSeq[0], inputSeq.length());
 

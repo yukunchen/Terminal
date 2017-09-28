@@ -30,7 +30,7 @@ namespace Microsoft
             class StateMachine sealed
             {
 #ifdef UNIT_TESTING
-                friend class StateMachineTest;
+                friend class OutputEngineTest;
 #endif
 
             public:

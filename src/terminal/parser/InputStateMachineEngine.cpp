@@ -13,7 +13,7 @@
 #include <assert.h>
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
-#include "..\..\interactivity\inc\VtApiRedirection.hpp"
+#include "../../interactivity/inc/VtApiRedirection.hpp"
 #endif
 
 using namespace Microsoft::Console::VirtualTerminal;
@@ -71,9 +71,9 @@ const InputStateMachineEngine::GENERIC_TO_VKEY InputStateMachineEngine::s_rgGene
 };
 
 
-InputStateMachineEngine::InputStateMachineEngine(_In_ WriteInputEvents const pfnWriteEvents)
-    : _pfnWriteEvents(pfnWriteEvents)
+InputStateMachineEngine::InputStateMachineEngine(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn)
 {
+    _pfnWriteEvents = pfn;
 }
 
 InputStateMachineEngine::~InputStateMachineEngine()
@@ -329,7 +329,9 @@ bool InputStateMachineEngine::_WriteSingleKey(wchar_t wch, short vkey, DWORD dwM
 {
     INPUT_RECORD rgInput[6];
     size_t cInput = _GenerateWrappedSequence(wch, vkey, dwModifierState, rgInput, 6);
-    _pfnWriteEvents(rgInput, (DWORD)cInput);
+
+    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(rgInput, cInput);
+    _pfnWriteEvents(inputEvents);
     return true;
 }
 

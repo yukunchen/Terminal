@@ -22,14 +22,14 @@ namespace Microsoft
         class VtInputThread
         {
         public:
-            VtInputThread(HANDLE hPipe);
+            VtInputThread(_In_ HANDLE hPipe);
             ~VtInputThread();
 
             HRESULT Start();
-            static DWORD StaticVtInputThreadProc(LPVOID lpParameter);
+            static DWORD StaticVtInputThreadProc(_In_ LPVOID lpParameter);
 
         private:
-            void _HandleRunInput(char* charBuffer, int cch);
+            HRESULT _HandleRunInput(_In_reads_(cch) const char* const charBuffer, _In_ const int cch);
             DWORD _InputThread();
 
             wil::unique_hfile _hFile;

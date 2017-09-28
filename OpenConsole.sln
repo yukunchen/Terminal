@@ -30,6 +30,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TextServicesFramework", "src\tsf\tsf.vcxproj", "{2FD12FBB-1DDB-46D8-B818-1023C624CACA}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalParser", "src\terminal\parser\lib\parser.vcxproj", "{3AE13314-1939-4DFA-9C14-38CA0834050C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{18D09A24-8240-42D6-8CB6-236EEE820263} = {18D09A24-8240-42D6-8CB6-236EEE820263}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalAdapter", "src\terminal\adapter\lib\adapter.vcxproj", "{DCF55140-EF6A-4736-A403-957E4F7430BB}"
 	ProjectSection(ProjectDependencies) = postProject

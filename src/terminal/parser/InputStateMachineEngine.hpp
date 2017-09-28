@@ -16,6 +16,8 @@ Author(s):
 
 #include "telemetry.hpp"
 #include "IStateMachineEngine.hpp"
+#include <functional>
+#include "../../types/inc/IInputEvent.hpp"
 
 namespace Microsoft
 {
@@ -23,12 +25,10 @@ namespace Microsoft
     {
         namespace VirtualTerminal
         {
-            typedef void(*WriteInputEvents)(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput);
-
             class InputStateMachineEngine : public IStateMachineEngine
             {
             public:
-                InputStateMachineEngine(_In_ WriteInputEvents const pfnWriteEvents);
+                InputStateMachineEngine(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
                 ~InputStateMachineEngine();
 
                 bool ActionExecute(_In_ wchar_t const wch);
@@ -50,9 +50,8 @@ namespace Microsoft
                 bool FlushAtEndOfString() const;
 
             private:
-
-                // Microsoft::Console::VirtualTerminal::ParserTracing _trace;
-                WriteInputEvents _pfnWriteEvents;
+                
+                std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteEvents;
 
                 enum CsiActionCodes : wchar_t
                 {
