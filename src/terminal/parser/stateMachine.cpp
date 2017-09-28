@@ -17,6 +17,7 @@ StateMachine::StateMachine(_In_ IStateMachineEngine* const pEngine) :
     _pEngine(pEngine),
     _state(VTStates::Ground)
 {
+    THROW_IF_NULL_ALLOC(pEngine);
     _trace = Microsoft::Console::VirtualTerminal::ParserTracing();
     _ActionClear();
 }

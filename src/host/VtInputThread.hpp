@@ -3,24 +3,29 @@ Copyright (c) Microsoft Corporation
 
 Module Name:
 - VtInputThread.hpp
+
+Abstract:
+- Defines methods that wrap the thread that reads VT input from a pipe and
+  feeds it into the console's input buffer.
+
+Author(s):
+- Mike Griese (migrie) 15 Aug 2017
 --*/
 #pragma once
-// #include "precomp.h"
 
-#include "..\interactivity\inc\IConsoleInputThread.hpp"
 #include "..\terminal\parser\StateMachine.hpp"
 
 namespace Microsoft
 {
     namespace Console
     {
-        class VtInputThread sealed : public IConsoleInputThread
+        class VtInputThread
         {
         public:
             VtInputThread(HANDLE hPipe);
             ~VtInputThread();
 
-            HANDLE Start();
+            bool Start();
             static DWORD StaticVtInputThreadProc(LPVOID lpParameter);
 
         private:
@@ -28,8 +33,10 @@ namespace Microsoft
             DWORD _InputThread();
 
             wil::unique_hfile _hFile;
-            StateMachine* _pInputStateMachine;
+            wil::unique_handle _hThread;
+            DWORD _dwThreadId;
 
+            StateMachine* _pInputStateMachine;
         };
     }
 };

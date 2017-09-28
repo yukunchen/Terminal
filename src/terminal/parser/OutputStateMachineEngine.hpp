@@ -42,13 +42,11 @@ namespace Microsoft
                 bool ActionClear();
                 bool ActionIgnore();
                 bool ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString);
+                // TODO: MSFT:13420038
                 // void ActionSs3Dispatch(_In_ wchar_t const wch);
-                bool FlushAtEndOfString(){
-                    return false;
-                };
+                bool FlushAtEndOfString() const;
 
             private:
-                // Microsoft::Console::VirtualTerminal::ParserTracing _trace;
                 TermDispatch* _pDispatch;
 
                 bool _IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction, _In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams);

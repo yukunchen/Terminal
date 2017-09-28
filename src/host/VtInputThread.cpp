@@ -59,37 +59,31 @@ void VtInputThread::_HandleRunInput(char* charBuffer, int cch)
 
 DWORD VtInputThread::StaticVtInputThreadProc(LPVOID lpParameter)
 {
-    VtInputThread* const pInstance = (VtInputThread*)lpParameter;
+    VtInputThread* const pInstance = reinterpret_cast<VtInputThread*>(lpParameter);
     return pInstance->_InputThread();
 }
 
 DWORD VtInputThread::_InputThread()
 {
-
-    byte buffer[256];
+    char buffer[256];
     DWORD dwRead;
     while (true)
     {
         dwRead = 0;
         THROW_LAST_ERROR_IF_FALSE(ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
 
-        _HandleRunInput((char*)buffer, dwRead);
-        
-        // For debugging, zero mem
-        ZeroMemory(buffer, ARRAYSIZE(buffer)*sizeof(*buffer));
-
+        _HandleRunInput(buffer, dwRead);
     }
 }
 
 // Routine Description:
 // - Starts the VT input thread.
-HANDLE VtInputThread::Start()
+HRESULT VtInputThread::Start()
 {
-    // Shouldn't even need to worry about this. If the ctor throws, we shouldn't even call this.
-    THROW_IF_HANDLE_INVALID(_hFile.get());
+    RETURN_IF_HANDLE_INVALID(_hFile.get());
 
     HANDLE hThread = nullptr;
-    DWORD dwThreadId = (DWORD) -1;
+    DWORD dwThreadId = static_cast<DWORD>(-1);
 
     hThread = CreateThread(nullptr,
                            0,
@@ -98,13 +92,11 @@ HANDLE VtInputThread::Start()
                            0,
                            &dwThreadId);
 
-    if (hThread)
-    {
-        _hThread = hThread;
-        _dwThreadId = dwThreadId;
-    }
+    RETURN_IF_HANDLE_INVALID(hThread);
+    _hThread.reset(hThread);
+    _dwThreadId = dwThreadId;
 
-    return hThread;
+    return S_OK;
 }
 
 VtInputThread::VtInputThread(HANDLE hPipe)

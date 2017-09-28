@@ -11,6 +11,7 @@ Abstract:
 
 Author(s):
 - Michael Niksa (MiNiksa) 30-July-2015
+- Mike Griese (migrie) 18 Aug 2017 - Abstracted the engine away for input parsing.
 --*/
 
 #pragma once
@@ -26,7 +27,6 @@ namespace Microsoft
     {
         namespace VirtualTerminal
         {
-
             class StateMachine sealed
             {
 #ifdef UNIT_TESTING
@@ -69,63 +69,6 @@ namespace Microsoft
                 static bool s_IsDesignateCharsetIndicator(_In_ wchar_t const wch);
                 static bool s_IsCharsetCode(_In_ wchar_t const wch);
 
-                enum VTActionCodes : wchar_t
-                {
-                    CUU_CursorUp = L'A',
-                    CUD_CursorDown = L'B',
-                    CUF_CursorForward = L'C',
-                    CUB_CursorBackward = L'D',
-                    CNL_CursorNextLine = L'E',
-                    CPL_CursorPrevLine = L'F',
-                    CHA_CursorHorizontalAbsolute = L'G',
-                    CUP_CursorPosition = L'H',
-                    ED_EraseDisplay = L'J',
-                    EL_EraseLine = L'K',
-                    SU_ScrollUp = L'S',
-                    SD_ScrollDown = L'T',
-                    ICH_InsertCharacter = L'@',
-                    DCH_DeleteCharacter = L'P',
-                    SGR_SetGraphicsRendition = L'm',
-                    DECSC_CursorSave = L'7',
-                    DECRC_CursorRestore = L'8',
-                    DECSET_PrivateModeSet = L'h',
-                    DECRST_PrivateModeReset = L'l',
-                    ANSISYSSC_CursorSave = L's', // NOTE: Overlaps with DECLRMM/DECSLRM. Fix when/if implemented.
-                    ANSISYSRC_CursorRestore = L'u', // NOTE: Overlaps with DECSMBV. Fix when/if implemented.
-                    DECKPAM_KeypadApplicationMode = L'=',
-                    DECKPNM_KeypadNumericMode = L'>',
-                    DSR_DeviceStatusReport = L'n',
-                    DA_DeviceAttributes = L'c',
-                    DECSCPP_SetColumnsPerPage = L'|',
-                    IL_InsertLine = L'L',
-                    DL_DeleteLine = L'M', // Yes, this is the same as RI, however, RI is not preceeded by a CSI, and DL is.
-                    VPA_VerticalLinePositionAbsolute = L'd',
-                    DECSTBM_SetScrollingRegion = L'r',
-                    RI_ReverseLineFeed = L'M',
-                    HTS_HorizontalTabSet = L'H', // Not a CSI, so doesn't overlap with CUP
-                    CHT_CursorForwardTab = L'I',
-                    CBT_CursorBackTab = L'Z',
-                    TBC_TabClear = L'g',
-                    ECH_EraseCharacters = L'X',
-                    HVP_HorizontalVerticalPosition = L'f',
-                    DECSTR_SoftReset = L'p',
-                    RIS_ResetToInitialState = L'c' // DA is prefaced by CSI, RIS by ESC
-                };
-
-                enum OscActionCodes : unsigned int
-                {
-                    SetIconAndWindowTitle = 0,
-                    SetWindowIcon = 1,
-                    SetWindowTitle = 2
-                };
-
-                enum class DesignateCharsetTypes
-                {
-                    G0,
-                    G1,
-                    G2,
-                    G3
-                };
 
                 void _ActionExecute(_In_ wchar_t const wch);
                 void _ActionPrint(_In_ wchar_t const wch);
@@ -176,7 +119,7 @@ namespace Microsoft
                 };
 
                 Microsoft::Console::VirtualTerminal::ParserTracing _trace;
-                IStateMachineEngine* _pEngine = nullptr;
+                IStateMachineEngine* const _pEngine;
 
                 VTStates _state;
 

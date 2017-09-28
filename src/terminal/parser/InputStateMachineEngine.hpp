@@ -2,10 +2,12 @@
 Copyright (c) Microsoft Corporation
 
 Module Name:
-- OutputStateMachineEngine.hpp
+- InputStateMachineEngine.hpp
 
 Abstract:
-- This is the implementation of the client VT output state machine engine.
+- This is the implementation of the client VT input state machine engine.
+    This generates InpueEvents from a stream of VT sequences emmited by a 
+    client "terminal" application.
 
 Author(s): 
 - Mike Griese (migrie) 18 Aug 2017
@@ -41,10 +43,12 @@ namespace Microsoft
                 bool ActionClear();
                 bool ActionIgnore();
                 bool ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString);
+                
+                // TODO: MSFT:13420038
                 // bool ActionSs3Dispatch(_In_ wchar_t const wch);
-                bool FlushAtEndOfString(){
-                    return true;
-                };
+                
+                bool FlushAtEndOfString() const;
+
             private:
 
                 // Microsoft::Console::VirtualTerminal::ParserTracing _trace;
@@ -119,15 +123,14 @@ namespace Microsoft
                 bool _IsModified(_In_ const unsigned short cParams);
                 DWORD _GetModifier(_In_ const unsigned short modifierParam);
 
-                short _GetGenericVkey(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams);
-                short _GetCursorKeysVkey(_In_ const wchar_t wch);
+                bool _GetGenericVkey(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ short* const pVkey) const;
+                bool _GetCursorKeysVkey(_In_ const wchar_t wch, _Out_ short* const pVkey) const;
 
                 bool _SendCursorKey(wchar_t wch, DWORD dwModifier);
                 bool _SendGenericKey(unsigned short identifier, DWORD dwModifier);
 
-                void _WriteSingleKey(short vkey, DWORD dwModifierState);
-                void _WriteSingleKey(wchar_t wch, short vkey, DWORD dwModifierState);
-                void _WriteControlAndKey(wchar_t wch, short vkey, DWORD dwModifierState);
+                bool _WriteSingleKey(short vkey, DWORD dwModifierState);
+                bool _WriteSingleKey(wchar_t wch, short vkey, DWORD dwModifierState);
                 size_t _GenerateWrappedSequence(const wchar_t wch, const short vkey, const DWORD dwModifierState, INPUT_RECORD* rgInput, size_t cInput);
                 size_t _GetSingleKeypress(wchar_t wch, short vkey, DWORD dwModifierState, _Inout_ INPUT_RECORD* const rgInput, _In_ size_t cRecords);
 
