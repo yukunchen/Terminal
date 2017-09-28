@@ -112,6 +112,7 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
     {
         _pVtInputThread = new VtInputThread(_hInputFile.release());
     }
+    CATCH_RETURN();
 
     switch(_IoMode)
     {
@@ -127,7 +128,6 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
         default:
             return E_FAIL;
     }
-    CATCH_RETURN();
 
     _usingVt = true;
     return S_OK;
