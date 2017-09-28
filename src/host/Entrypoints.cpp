@@ -8,10 +8,10 @@
 #include "Entrypoints.h"
 #include "ConsoleArguments.hpp"
 
-#include "DeviceHandle.h"
+#include "..\server\DeviceHandle.h"
 #include "IoThread.h"
 
-#include "winbasep.h"
+#include "..\server\winbasep.h"
 
 HRESULT Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle)
 {
