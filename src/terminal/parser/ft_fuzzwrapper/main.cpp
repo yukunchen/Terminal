@@ -8,6 +8,7 @@
 
 #include "echoDispatch.hpp"
 #include "..\stateMachine.hpp"
+#include "..\OutputStateMachineEngine.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -64,7 +65,8 @@ int __cdecl wmain(int argc, wchar_t* argv[])
         bool fGotChar = GetChar(&wch);
         
         EchoDispatch echo;
-        StateMachine machine(&echo);
+        OutputStateMachineEngine* pEngine = new OutputStateMachineEngine(&echo);
+        StateMachine machine(pEngine);
 
         wprintf(L"Sending characters to state machine...\r\n");
         while (fGotChar)

@@ -16,7 +16,9 @@ Author(s):
 #pragma once
 
 #include "termDispatch.hpp"
+#include "IStateMachineEngine.hpp"
 #include "telemetry.hpp"
+#include "tracing.hpp"
 
 namespace Microsoft
 {
@@ -24,6 +26,7 @@ namespace Microsoft
     {
         namespace VirtualTerminal
         {
+
             class StateMachine sealed
             {
 #ifdef UNIT_TESTING
@@ -31,18 +34,20 @@ namespace Microsoft
 #endif
 
             public:
-                StateMachine(_In_ TermDispatch* const pDispatch);
+                StateMachine(_In_ IStateMachineEngine* const pEngine);
                 ~StateMachine();
-
-                TermDispatch* GetDispatch()
-                {
-                    return _pDispatch;
-                }
 
                 void ProcessCharacter(_In_ wchar_t const wch);
                 void ProcessString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
+                // Note: There is intentionally not a ProcessString that operates 
+                //      on a wstring. This is because the in buffer needs to be mutable
+                //      and c_str() only gives you const data.
 
                 void ResetState();
+
+                static const short s_cIntermediateMax = 1;
+                static const short s_cParamsMax = 16;
+                static const short s_cOscStringMaxLength = 256;
                 
             private:
                 static bool s_IsActionableFromGround(_In_ wchar_t const wch);
@@ -157,63 +162,6 @@ namespace Microsoft
                 void _EventOscParam(_In_ wchar_t const wch);
                 void _EventOscString(_In_ wchar_t const wch);
 
-                static const TermDispatch::GraphicsOptions s_defaultGraphicsOption = TermDispatch::GraphicsOptions::Off;
-                _Success_(return)
-                bool _GetGraphicsOptions(_Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* rgGraphicsOptions, _Inout_ size_t* pcOptions) const;
-
-                static const TermDispatch::EraseType s_defaultEraseType = TermDispatch::EraseType::ToEnd;
-                _Success_(return)
-                bool _GetEraseOperation(_Out_ TermDispatch::EraseType* const pEraseType) const;
-
-                static const unsigned int s_uiDefaultCursorDistance = 1;
-                _Success_(return)
-                bool _GetCursorDistance(_Out_ unsigned int* const puiDistance) const;
-
-                static const unsigned int s_uiDefaultScrollDistance = 1;
-                _Success_(return)
-                bool _GetScrollDistance(_Out_ unsigned int* const puiDistance) const;
-
-                static const unsigned int s_uiDefaultConsoleWidth = 80;
-                _Success_(return)
-                bool _GetConsoleWidth(_Out_ unsigned int* const puiConsoleWidth) const;
-
-                static const unsigned int s_uiDefaultLine = 1;
-                static const unsigned int s_uiDefaultColumn = 1;
-                _Success_(return)
-                bool _GetXYPosition(_Out_ unsigned int* const puiLine, _Out_ unsigned int* const puiColumn) const;
-
-                _Success_(return)
-                bool _GetDeviceStatusOperation(_Out_ TermDispatch::AnsiStatusType* const pStatusType) const;
-
-                _Success_(return)
-                bool _VerifyHasNoParameters() const;
-
-                _Success_(return)
-                bool _VerifyDeviceAttributesParams() const;
-
-                _Success_(return)
-                bool _GetPrivateModeParams(_Out_writes_(*pcParams) TermDispatch::PrivateModeParams* rgPrivateModeParams, _Inout_ size_t* pcParams) const;
-
-                static const SHORT s_sDefaultTopMargin = 0;
-                static const SHORT s_sDefaultBottomMargin = 0;
-                _Success_(return)
-                bool _GetTopBottomMargins(_Out_ SHORT* const psTopMargin, _Out_ SHORT* const psBottomMargin) const;
-
-                _Success_(return)
-                bool _GetOscTitle(_Outptr_result_buffer_(*pcchTitle) wchar_t** const ppwchTitle, _Out_ unsigned short * pcchTitle);
-
-                static const SHORT s_sDefaultTabDistance = 1;
-                _Success_(return)
-                bool _GetTabDistance(_Out_ SHORT* const psDistance) const;
-
-                static const SHORT s_sDefaultTabClearType = 0;
-                _Success_(return)
-                bool _GetTabClearType(_Out_ SHORT* const psClearType) const;
-
-                static const DesignateCharsetTypes s_DefaultDesignateCharsetType = DesignateCharsetTypes::G0;
-                _Success_(return)
-                bool _GetDesignateType(_Out_ DesignateCharsetTypes* const pDesignateType) const;
-
                 enum class VTStates
                 {
                     Ground,
@@ -227,20 +175,19 @@ namespace Microsoft
                     OscString
                 };
 
-                TermDispatch* _pDispatch;
+                Microsoft::Console::VirtualTerminal::ParserTracing _trace;
+                IStateMachineEngine* _pEngine = nullptr;
+
                 VTStates _state;
 
-                static const short s_cIntermediateMax = 1;
                 wchar_t _wchIntermediate;
                 unsigned short _cIntermediate;
 
-                static const short s_cParamsMax = 16;
                 unsigned short _rgusParams[s_cParamsMax];
                 unsigned short _cParams;
                 unsigned short* _pusActiveParam;
                 unsigned short _iParamAccumulatePos;
 
-                static const short s_cOscStringMaxLength = 256;
                 unsigned short _sOscParam;
                 unsigned short _sOscNextChar;
                 wchar_t _pwchOscStringBuffer[s_cOscStringMaxLength];
