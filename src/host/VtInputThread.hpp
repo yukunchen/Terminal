@@ -25,7 +25,7 @@ namespace Microsoft
             VtInputThread(HANDLE hPipe);
             ~VtInputThread();
 
-            bool Start();
+            HRESULT Start();
             static DWORD StaticVtInputThreadProc(LPVOID lpParameter);
 
         private:

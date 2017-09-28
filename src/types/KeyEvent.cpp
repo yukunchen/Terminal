@@ -5,7 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
-#include "IInputEvent.hpp"
+#include "inc/IInputEvent.hpp"
 
 KeyEvent::KeyEvent(_In_ const KEY_EVENT_RECORD& record) :
     _keyDown{ !!record.bKeyDown },

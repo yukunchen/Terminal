@@ -9,7 +9,7 @@
 #include "..\..\inc\consoletaeftemplates.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
-#include "IInputEvent.hpp"
+#include "..\types\inc\IInputEvent.hpp"
 
 #define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(SUCCEEDED_NTSTATUS(x))
 
