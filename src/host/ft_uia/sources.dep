@@ -7,4 +7,9 @@ PUBLIC_PASS1_CONSUMES= \
     onecore\sdktools\winappdriver\newtonsoft.json|PASS1 \
     onecore\sdktools\winappdriver\selenium.support|PASS1 \
     onecore\sdktools\winappdriver\selenium.webdriver|PASS1 \
+    sdktools\winappdriver\appium.webdriver|PASS1 \
+    sdktools\winappdriver\castle.core|PASS1 \
+    sdktools\winappdriver\newtonsoft.json|PASS1 \
+    sdktools\winappdriver\selenium.support|PASS1 \
+    sdktools\winappdriver\selenium.webdriver|PASS1 \
 

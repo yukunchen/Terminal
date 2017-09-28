@@ -13,6 +13,9 @@
     <ClInclude Include="..\precomp.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\types\lib\types.vcxproj">
+      <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\lib\adapter.vcxproj">
       <Project>{dcf55140-ef6a-4736-a403-957e4f7430bb}</Project>
     </ProjectReference>

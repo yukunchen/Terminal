@@ -9,6 +9,7 @@
 #include "ConIoSrvComm.hpp"
 #include "ConIoSrv.h"
 
+#include "..\..\host\dbcs.h"
 #include "..\..\host\input.h"
 #include "..\..\renderer\wddmcon\wddmconrenderer.hpp"
 
@@ -624,12 +625,31 @@ SHORT ConIoSrvComm::GetKeyState(int nVirtKey)
 
 BOOL ConIoSrvComm::TranslateCharsetInfo(DWORD * lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags)
 {
-    UNREFERENCED_PARAMETER(lpSrc);
-    UNREFERENCED_PARAMETER(lpCs);
-    UNREFERENCED_PARAMETER(dwFlags);
+    SetLastError(ERROR_SUCCESS);
 
-    SetLastError(ERROR_PROC_NOT_FOUND);
+    if (TCI_SRCCODEPAGE == dwFlags)
+    {
+        *lpCs = { 0 };
+        
+        DWORD dwSrc = (DWORD)lpSrc;
+        switch (dwSrc)
+        {
+        case CP_JAPANESE:
+            lpCs->ciCharset = SHIFTJIS_CHARSET;
+            return TRUE;
+        case CP_CHINESE_SIMPLIFIED:
+            lpCs->ciCharset = GB2312_CHARSET;
+            return TRUE;
+        case CP_KOREAN:
+            lpCs->ciCharset = HANGEUL_CHARSET;
+            return TRUE;
+        case CP_CHINESE_TRADITIONAL:
+            lpCs->ciCharset = CHINESEBIG5_CHARSET;
+            return TRUE;
+        }
+    }
 
+    SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
 }
 

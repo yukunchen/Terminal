@@ -139,14 +139,14 @@ TARGETLIBS = \
 DELAYLOAD = \
     PROPSYS.dll; \
     OLEAUT32.dll; \
-    api-ms-win-mm-playsound-l1-1-0.dll; \
-    api-ms-win-shcore-scaling-l1-1-0.dll; \
-    api-ms-win-shell-namespace-l1-1-0.dll; \
+    api-ms-win-mm-playsound-l1.dll; \
+    api-ms-win-shcore-scaling-l1.dll; \
+    api-ms-win-shell-namespace-l1.dll; \
     ext-ms-win-gdi-dc-l1.dll; \
     ext-ms-win-gdi-dc-create-l1.dll; \
     ext-ms-win-gdi-draw-l1.dll; \
     ext-ms-win-gdi-font-l1.dll; \
-    ext-ms-win-gdi-internal-desktop-l1-1-0.dll; \
+    ext-ms-win-gdi-internal-desktop-l1.dll; \
     ext-ms-win-ntuser-caret-l1.dll; \
     ext-ms-win-ntuser-dialogbox-l1.dll; \
     ext-ms-win-ntuser-draw-l1.dll; \
@@ -155,8 +155,8 @@ DELAYLOAD = \
     ext-ms-win-ntuser-menu-l1.dll; \
     ext-ms-win-ntuser-misc-l1.dll; \
     ext-ms-win-ntuser-mouse-l1.dll; \
-    ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll; \
-    ext-ms-win-ntuser-server-l1-1-0.dll; \
+    ext-ms-win-ntuser-rectangle-ext-l1.dll; \
+    ext-ms-win-ntuser-server-l1.dll; \
     ext-ms-win-ntuser-window-l1.dll; \
     ext-ms-win-rtcore-gdi-object-l1.dll; \
     ext-ms-win-rtcore-gdi-rgn-l1.dll; \
@@ -167,6 +167,6 @@ DELAYLOAD = \
     ext-ms-win-rtcore-ntuser-sysparams-l1.dll; \
     ext-ms-win-rtcore-ntuser-window-ext-l1.dll; \
     ext-ms-win-shell-shell32-l1.dll; \
-    ext-ms-win-uiacore-l1-1-0.dll; \
+    ext-ms-win-uiacore-l1.dll; \
 
 DLOAD_ERROR_HANDLER = kernelbase
