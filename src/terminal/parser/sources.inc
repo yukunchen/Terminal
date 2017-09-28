@@ -47,6 +47,8 @@ PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES = \
     ..\stateMachine.cpp \
+    ..\InputStateMachineEngine.cpp \
+    ..\OutputStateMachineEngine.cpp \
     ..\telemetry.cpp \
     ..\tracing.cpp \
 

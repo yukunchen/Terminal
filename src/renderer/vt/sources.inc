@@ -48,6 +48,9 @@ SOURCES = \
     ..\math.cpp \
     ..\paint.cpp \
     ..\state.cpp \
+    ..\WinTelnetEngine.cpp \
+    ..\XtermEngine.cpp \
+    ..\Xterm256Engine.cpp \
 
 INCLUDES = \
     ..; \

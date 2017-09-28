@@ -174,6 +174,13 @@ void VtConsole::_openConsole2(const std::wstring& command)
         &si,        //lpStartupInfo
         &pi         //lpProcessInformation
     );
+
+    if (!fSuccess)
+    {
+        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+        std::string msg = "Failed to launch Openconsole";
+        WriteFile(hOut, msg.c_str(), (DWORD)msg.length(), nullptr, nullptr);
+    }
     fSuccess;
 }
 

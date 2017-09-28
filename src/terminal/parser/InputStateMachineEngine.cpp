@@ -11,6 +11,11 @@
 
 #include "ascii.hpp"
 #include <assert.h>
+
+#ifdef BUILD_ONECORE_INTERACTIVITY
+#include "..\..\interactivity\inc\VtApiRedirection.hpp"
+#endif
+
 using namespace Microsoft::Console::VirtualTerminal;
 
 // The values used by VkKeyScan to encode modifiers in the high order byte

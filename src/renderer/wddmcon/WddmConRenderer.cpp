@@ -316,7 +316,7 @@ HRESULT WddmConEngine::UpdateDpi(int const iDpi)
     return S_OK;
 }
                 
-HRESULT GdiEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
+HRESULT WddmConEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 {
     UNREFERENCED_PARAMETER(srNewViewport);
     return S_OK;

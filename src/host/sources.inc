@@ -68,6 +68,7 @@ INCLUDES = \
     ..\..\types; \
     ..\..\renderer\inc; \
     ..\..\renderer\gdi; \
+    ..\..\renderer\vt; \
     ..\..\renderer\base; \
     $(ONECOREUAPWINDOWS_PRIVATE_INC_PATH)\core\w32inc; \
     $(SHELL_INC_PATH); \
@@ -127,6 +128,7 @@ TARGETLIBS = \
     $(WINCORE_OBJ_PATH)\console\open\src\terminal\parser\lib\$(O)\ConTermParser.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\base\lib\$(O)\ConRenderBase.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\gdi\lib\$(O)\ConRenderGdi.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\renderer\vt\lib\$(O)\ConRenderVt.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\wddmcon\lib\$(O)\ConRenderWddmCon.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\server\lib\$(O)\ConServer.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\base\lib\$(O)\ConInteractivityBaseLib.lib \

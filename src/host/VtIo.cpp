@@ -80,7 +80,6 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     RETURN_IF_FAILED(ParseIoMode(VtMode, &_IoMode));
-
     // Temporary - For the sake of testing this module before the other parts 
     //  are added in, we need to hang onto these handles ourselves.
     // In the future, they will be given to the renderer and the input thread.
