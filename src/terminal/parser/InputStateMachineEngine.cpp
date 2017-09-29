@@ -221,6 +221,10 @@ bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ con
 
 size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch, const short vkey, const DWORD dwModifierState, INPUT_RECORD* rgInput, size_t cInput)
 {
+    // TODO: Reuse the clipboard functions for generating input for characters 
+    //       that aren't on the current keyboard.
+    // MSFT:13994942
+    
     if (cInput < 2) return 0;
 
     const bool fShift = IsFlagSet(dwModifierState, SHIFT_PRESSED);

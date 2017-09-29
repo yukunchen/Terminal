@@ -11,8 +11,7 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "input.h"
 #include "..\terminal\parser\InputStateMachineEngine.hpp"
-#include <string>
-#include <sstream>
+#include "misc.h"
 
 using namespace Microsoft::Console;
 
@@ -32,18 +31,16 @@ VtInputThread::~VtInputThread()
 
 HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const char* const charBuffer, _In_ const int cch)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    unsigned int const uiCodePage = gci->CP;
     try
     {
-        std::string inputSequence = std::string(charBuffer, cch);
 
-        size_t cch1 = inputSequence.length() + 1;
-        wchar_t* wc = new wchar_t[cch1];
-        THROW_IF_NULL_ALLOC(wc);
+        wistd::unique_ptr<wchar_t[]> pwsSequence;
+        size_t cchSequence;
+        RETURN_IF_FAILED(ConvertToW(uiCodePage, charBuffer, cch, pwsSequence, cchSequence));
 
-        size_t numConverted = 0;
-        mbstowcs_s(&numConverted, wc, cch1, inputSequence.c_str(), cch1);
-
-        _pInputStateMachine->ProcessString(wc, cch);
+        _pInputStateMachine->ProcessString(pwsSequence.get(), cchSequence);
     }
     CATCH_RETURN();
 
