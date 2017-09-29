@@ -15,6 +15,12 @@
     <ProjectReference Include="..\lib\parser.vcxproj">
       <Project>{3ae13314-1939-4dfa-9c14-38ca0834050c}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\types\lib\types.vcxproj">
+      <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\adapter\lib\adapter.vcxproj">
+      <Project>{dcf55140-ef6a-4736-a403-957e4f7430bb}</Project>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <ProjectGuid>{12144E07-FE63-4D33-9231-748B8D8C3792}</ProjectGuid>

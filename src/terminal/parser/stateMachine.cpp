@@ -14,11 +14,10 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 //Takes ownership of the pEngine.
 StateMachine::StateMachine(_In_ IStateMachineEngine* const pEngine) :
-    _pEngine(pEngine),
-    _state(VTStates::Ground)
+    _pEngine(THROW_IF_NULL_ALLOC(pEngine)),
+    _state(VTStates::Ground),
+    _trace(Microsoft::Console::VirtualTerminal::ParserTracing())
 {
-    THROW_IF_NULL_ALLOC(pEngine);
-    _trace = Microsoft::Console::VirtualTerminal::ParserTracing();
     _ActionClear();
 }
 
@@ -703,6 +702,7 @@ void StateMachine::_EventEscape(_In_ wchar_t const wch)
     }
     else if (s_IsCsiIndicator(wch))
     {
+        // DebugBreak();
         _EnterCsiEntry();
     }
     else if (s_IsOscIndicator(wch))
