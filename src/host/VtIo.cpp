@@ -79,7 +79,7 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
     // Temporary - For the sake of testing this module before the other parts 
     //  are added in, we need to hang onto these handles ourselves.
     // In the future, they will be given to the renderer and the input thread.
-    // wil::unique_hfile _hInputFile;
+    wil::unique_hfile _hInputFile;
     // wil::unique_hfile _hOutputFile;
 
     _hInputFile.reset(
@@ -103,6 +103,12 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
                     nullptr)
     );
     RETURN_LAST_ERROR_IF(_hOutputFile.get() == INVALID_HANDLE_VALUE);
+
+    try
+    {
+        _pVtInputThread = new VtInputThread(_hInputFile.release());
+    }
+    CATCH_RETURN();
 
     _usingVt = true;
     return S_OK;
@@ -128,15 +134,10 @@ HRESULT VtIo::StartIfNeeded()
     // If we haven't been set up, do nothing (because there's nothing to start)
     if (!IsUsingVt())
     {
-        return S_OK;
+        return S_FALSE;
     }
-    // Hmm. We only have one Renderer implementation, 
-    //  but its stored as a IRenderer. 
-    //  IRenderer doesn't know about IRenderEngine, so it cant have AddRenderEngine
-    // auto g = ServiceLocator::LocateGlobals();
-    // static_cast<Renderer*>(g->pRender)->AddRenderEngine(_pVtRenderEngine);
 
-    // _pVtInputThread->Start();
+    _pVtInputThread->Start();
 
     return S_OK;
 }
