@@ -101,7 +101,7 @@ void InputEngineTest::RoundtripTerminalInputCallback(_In_ std::deque<std::unique
 
     std::wstring vtseq = L"";
     
-    for (auto i = 0; i < cInput; i++)
+    for (size_t i = 0; i < cInput; i++)
     {
         INPUT_RECORD inRec = rgInput[i];
         VERIFY_ARE_EQUAL(inRec.EventType, KEY_EVENT);
