@@ -125,7 +125,7 @@ void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>
     INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
     VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
     VERIFY_IS_NOT_NULL(rgInput);
-    VERIFY_ARE_EQUAL(vExpectedInput.size(), 1);
+    VERIFY_ARE_EQUAL(vExpectedInput.size(), (size_t)1);
     auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
 
     bool foundEqual = false;
