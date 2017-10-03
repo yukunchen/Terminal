@@ -787,23 +787,6 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::uniq
 }
 
 // Routine Description:
-// - Converts std::deque<INPUT_RECORD> to std::deque<std::unique_ptr<IInputEvent>>
-// Arguments:
-// - inRecords - records to convert
-// Return Value:
-// - std::deque of IINputEvents on success. Will throw exception on failure.
-std::deque<std::unique_ptr<IInputEvent>> InputBuffer::_inputRecordsToInputEvents(_In_ const std::deque<INPUT_RECORD>& inRecords)
-{
-    std::deque<std::unique_ptr<IInputEvent>> outEvents;
-    for (size_t i = 0; i < inRecords.size(); ++i)
-    {
-        std::unique_ptr<IInputEvent> event = IInputEvent::Create(inRecords[i]);
-        outEvents.push_back(std::move(event));
-    }
-    return outEvents;
-}
-
-// Routine Description:
 // - Returns true if this input buffer is in VT Input mode.
 // Arguments:
 // <none>
