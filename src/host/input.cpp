@@ -109,15 +109,17 @@ bool ShouldTakeOverKeyboardShortcuts()
 
 // Routine Description:
 // - handles key events without reference to Win32 elements.
-void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak)
+void HandleGenericKeyEvent(KeyEvent keyEvent, const bool generateBreak)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     BOOLEAN ContinueProcessing = TRUE;
 
-    if (CTRL_BUT_NOT_ALT(InputEvent.Event.KeyEvent.dwControlKeyState) && InputEvent.Event.KeyEvent.bKeyDown)
+    if (IsAnyFlagSet(keyEvent._activeModifierKeys, CTRL_PRESSED) &&
+        !IsAnyFlagSet(keyEvent._activeModifierKeys, ALT_PRESSED) &&
+        keyEvent._keyDown)
     {
         // check for ctrl-c, if in line input mode.
-        if (InputEvent.Event.KeyEvent.wVirtualKeyCode == 'C' && IsInProcessedInputMode())
+        if (keyEvent._virtualKeyCode == 'C' && IsInProcessedInputMode())
         {
             HandleCtrlEvent(CTRL_C_EVENT);
             if (gci->PopupCount == 0)
@@ -125,14 +127,15 @@ void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak)
                 gci->pInputBuffer->TerminateRead(WaitTerminationReason::CtrlC);
             }
 
-            if (!(gci->Flags & CONSOLE_SUSPENDED))
+            if (!(IsFlagSet(gci->Flags, CONSOLE_SUSPENDED)))
             {
                 ContinueProcessing = FALSE;
             }
         }
 
-        // check for ctrl-break.
-        else if (InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_CANCEL)
+
+        // Check for ctrl-break.
+        else if (keyEvent._virtualKeyCode == VK_CANCEL)
         {
             gci->pInputBuffer->Flush();
             HandleCtrlEvent(CTRL_BREAK_EVENT);
@@ -141,21 +144,21 @@ void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak)
                 gci->pInputBuffer->TerminateRead(WaitTerminationReason::CtrlBreak);
             }
 
-            if (!(gci->Flags & CONSOLE_SUSPENDED))
+            if (!(IsFlagSet(gci->Flags, CONSOLE_SUSPENDED)))
             {
                 ContinueProcessing = FALSE;
             }
         }
 
         // don't write ctrl-esc to the input buffer
-        else if (InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE)
+        else if (keyEvent._virtualKeyCode == VK_ESCAPE)
         {
             ContinueProcessing = FALSE;
         }
     }
-    else if ((InputEvent.Event.KeyEvent.dwControlKeyState & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)) &&
-             InputEvent.Event.KeyEvent.bKeyDown &&
-             InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE)
+    else if (IsAnyFlagSet(keyEvent._activeModifierKeys, ALT_PRESSED) &&
+             keyEvent._keyDown &&
+             keyEvent._virtualKeyCode == VK_ESCAPE)
     {
         ContinueProcessing = FALSE;
     }
@@ -165,11 +168,11 @@ void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak)
         size_t EventsWritten = 0;
         try
         {
-            EventsWritten = gci->pInputBuffer->Write(IInputEvent::Create(InputEvent));
-            if (EventsWritten && bGenerateBreak)
+            EventsWritten = gci->pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
+            if (EventsWritten && generateBreak)
             {
-                InputEvent.Event.KeyEvent.bKeyDown = FALSE;
-                EventsWritten = gci->pInputBuffer->Write(IInputEvent::Create(InputEvent));
+                keyEvent._keyDown = FALSE;
+                EventsWritten = gci->pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
             }
         }
         catch(...)

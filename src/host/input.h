@@ -104,7 +104,7 @@ void HandleMenuEvent(_In_ const DWORD wParam);
 void HandleFocusEvent(_In_ const BOOL fSetFocus);
 void HandleCtrlEvent(_In_ const DWORD EventType);
 bool HandleTerminalKeyEvent(_In_ const INPUT_RECORD* const pInputRecord);
-void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak);
+void HandleGenericKeyEvent(KeyEvent keyEvent, const bool generateBreak);
 
 void ProcessCtrlEvents();
 
