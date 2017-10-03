@@ -115,6 +115,7 @@ class MenuEvent : public IInputEvent
 {
 public:
     MenuEvent(_In_ const MENU_EVENT_RECORD& record);
+    MenuEvent(_In_ const UINT commandId);
     ~MenuEvent();
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;

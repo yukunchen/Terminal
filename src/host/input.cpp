@@ -203,15 +203,12 @@ void HandleFocusEvent(_In_ const BOOL fSetFocus)
 void HandleMenuEvent(_In_ const DWORD wParam)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    INPUT_RECORD InputEvent;
-    InputEvent.EventType = MENU_EVENT;
-    InputEvent.Event.MenuEvent.dwCommandId = wParam;
 
 #pragma prefast(suppress:28931, "EventsWritten is not unused. Used by assertions.")
     size_t EventsWritten = 0;
     try
     {
-        EventsWritten = gci->pInputBuffer->Write(IInputEvent::Create(InputEvent));
+        EventsWritten = gci->pInputBuffer->Write(std::make_unique<MenuEvent>(wParam));
     }
     catch (...)
     {
