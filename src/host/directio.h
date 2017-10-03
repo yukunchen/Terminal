@@ -25,10 +25,11 @@ NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer,
                                          _In_ COORD Size,
                                          _Inout_ PCHAR_INFO OutputBufferR);
 
-NTSTATUS SrvWriteConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-HRESULT DoSrvWriteConsoleInput(_In_ InputBuffer* const pInputBuffer,
-                               _Inout_ CONSOLE_WRITECONSOLEINPUT_MSG* const pMsg,
-                               _In_ INPUT_RECORD* const rgInputRecords);
+HRESULT DoSrvWriteConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
+                               _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                               _Out_ size_t& eventsWritten,
+                               _In_ const bool unicode,
+                               _In_ const bool append);
 
 NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);

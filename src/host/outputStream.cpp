@@ -290,16 +290,26 @@ BOOL ConhostInternalGetSet::SetConsoleRGBTextAttribute(_In_ COLORREF const rgbCo
 // Return Value:
 // - TRUE if successful (see DoSrvWriteConsoleInput). FALSE otherwise.
 BOOL ConhostInternalGetSet::WriteConsoleInputW(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords,
-                                               _In_ DWORD const nLength, _Out_ DWORD* const pNumberOfEventsWritten)
+                                               _In_ DWORD const nLength,
+                                               _Out_ DWORD* const pNumberOfEventsWritten)
 {
-    CONSOLE_WRITECONSOLEINPUT_MSG msg;
-    msg.Append = false;
-    msg.NumRecords = nLength;
-    msg.Unicode = true;
+    *pNumberOfEventsWritten = 0;
 
-    BOOL fSuccess = !!SUCCEEDED(DoSrvWriteConsoleInput(_pInputBuffer, &msg, rgInputRecords));
+    std::deque<std::unique_ptr<IInputEvent>> events;
+    try
+    {
+        events = IInputEvent::Create(rgInputRecords, nLength);
+    }
+    CATCH_RETURN();
 
-    *pNumberOfEventsWritten = msg.NumRecords;
+    size_t eventsWritten;
+    BOOL fSuccess = !!SUCCEEDED(DoSrvWriteConsoleInput(_pInputBuffer,
+                                                       events,
+                                                       eventsWritten,
+                                                       true, // unicode
+                                                       false)); // append
+
+    *pNumberOfEventsWritten = static_cast<DWORD>(eventsWritten);
 
     return fSuccess;
 }

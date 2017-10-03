@@ -345,96 +345,58 @@ HRESULT ApiRoutines::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInCo
     return hr;
 }
 
-
-NTSTATUS SrvWriteConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+// Routine Description:
+// - Writes events to the input buffer
+// Arguments:
+// - pInputBuffer - the input buffer to write to
+// - events - the events to written
+// - eventsWritten - on output, the number of events written
+// - unicode - true if events are unicode char data
+// - append - true if events should be written to the end of the input
+// buffer, false if they should be written to the front
+// Return Value:
+// - HRESULT indicating success or failure
+HRESULT DoSrvWriteConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
+                               _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                               _Out_ size_t& eventsWritten,
+                               _In_ const bool unicode,
+                               _In_ const bool append)
 {
-    PCONSOLE_WRITECONSOLEINPUT_MSG const a = &m->u.consoleMsgL2.WriteConsoleInput;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleInput, a->Unicode);
+    eventsWritten = 0;
 
-    PINPUT_RECORD Buffer;
-    ULONG Size;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer((PVOID*)&Buffer, &Size));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    a->NumRecords = Size / sizeof(INPUT_RECORD);
-
-    CONSOLE_INFORMATION *Console;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    ConsoleHandleData* const HandleData = m->GetObjectHandle();
-    if (HandleData == nullptr)
-    {
-        a->NumRecords = 0;
-        Status = STATUS_INVALID_HANDLE;
-    }
-
-    if (NT_SUCCESS(Status))
-    {
-        InputBuffer* pInputBuffer;
-        if (FAILED(HandleData->GetInputBuffer(GENERIC_WRITE, &pInputBuffer)))
-        {
-            a->NumRecords = 0;
-            Status = STATUS_INVALID_HANDLE;
-        }
-        else
-        {
-            Status = NTSTATUS_FROM_HRESULT(DoSrvWriteConsoleInput(pInputBuffer, a, Buffer));
-        }
-    }
-
-    UnlockConsole();
-    return Status;
-}
-
-HRESULT DoSrvWriteConsoleInput(_In_ InputBuffer* const pInputBuffer,
-                               _Inout_ CONSOLE_WRITECONSOLEINPUT_MSG* const pMsg,
-                               _In_ INPUT_RECORD* const rgInputRecords)
-{
-    const ULONG cRecords = pMsg->NumRecords;
-    pMsg->NumRecords = 0;
-
-    // convert INPUT_RECORD array to IInputEvent deque
-    std::deque<std::unique_ptr<IInputEvent>> inEvents;
     try
     {
-        inEvents = IInputEvent::Create(rgInputRecords, cRecords);
+        // add partial byte event if necessary
+        if (pInputBuffer->IsWritePartialByteSequenceAvailable())
+        {
+            events.push_front(pInputBuffer->FetchWritePartialByteSequence(false));
+        }
+
+        // convert to unicode if necessary
+        if (!unicode)
+        {
+            std::unique_ptr<IInputEvent> partialEvent;
+            EventsToUnicode(events, partialEvent);
+
+            if (partialEvent.get())
+            {
+                pInputBuffer->StoreWritePartialByteSequence(std::move(partialEvent));
+            }
+        }
     }
     CATCH_RETURN();
 
-    // add partial byte event if necessary
-    if (pInputBuffer->IsWritePartialByteSequenceAvailable())
-    {
-        inEvents.push_front(pInputBuffer->FetchWritePartialByteSequence(false));
-    }
-
-    // convert to unicode if necessary
-    if (!pMsg->Unicode)
-    {
-        std::unique_ptr<IInputEvent> partialEvent;
-        EventsToUnicode(inEvents, partialEvent);
-
-        if (partialEvent.get())
-        {
-            pInputBuffer->StoreWritePartialByteSequence(std::move(partialEvent));
-        }
-    }
-
     // add to InputBuffer
-    if (pMsg->Append)
+    if (append)
     {
-        pMsg->NumRecords = static_cast<ULONG>(pInputBuffer->Write(inEvents));
+        eventsWritten = static_cast<ULONG>(pInputBuffer->Write(events));
     }
     else
     {
-        pMsg->NumRecords = static_cast<ULONG>(pInputBuffer->Prepend(inEvents));
+        eventsWritten = static_cast<ULONG>(pInputBuffer->Prepend(events));
     }
 
     return S_OK;

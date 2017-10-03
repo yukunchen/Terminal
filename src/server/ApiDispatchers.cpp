@@ -719,9 +719,38 @@ HRESULT ApiDispatchers::ServerReadConsoleOutputString(_Inout_ CONSOLE_API_MSG * 
     RETURN_NTSTATUS(SrvReadConsoleOutputString(m, pbReplyPending));
 }
 
-HRESULT ApiDispatchers::ServerWriteConsoleInput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
+HRESULT ApiDispatchers::ServerWriteConsoleInput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    RETURN_NTSTATUS(SrvWriteConsoleInput(m, pbReplyPending));
+    PCONSOLE_WRITECONSOLEINPUT_MSG const a = &m->u.consoleMsgL2.WriteConsoleInput;
+
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleInput, a->Unicode);
+
+    a->NumRecords = 0;
+
+    INPUT_RECORD* Buffer;
+    ULONG Size;
+    RETURN_IF_FAILED(m->GetInputBuffer((PVOID*)&Buffer, &Size));
+
+    const size_t inputRecordCount = Size / sizeof(INPUT_RECORD);
+
+    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
+
+    InputBuffer* pInputBuffer;
+    RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pInputBuffer));
+
+    std::deque<std::unique_ptr<IInputEvent>> events;
+    try
+    {
+        events = IInputEvent::Create(Buffer, inputRecordCount);
+    }
+    CATCH_RETURN();
+
+    size_t eventsWritten;
+    RETURN_IF_FAILED(DoSrvWriteConsoleInput(pInputBuffer, events, eventsWritten, !!a->Unicode, !!a->Append));
+    a->NumRecords = static_cast<ULONG>(eventsWritten);
+
+    return S_OK;
 }
 
 HRESULT ApiDispatchers::ServerWriteConsoleOutput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
