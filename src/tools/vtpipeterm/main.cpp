@@ -170,6 +170,7 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                 // This is a special keyboard key that was pressed, not actually NUL
                 continue;
             }
+
             if (!prefixPressed)
             {
                 if (c == '\x2')
@@ -242,6 +243,7 @@ void SetupInput()
     DWORD dwInMode = 0;
     GetConsoleMode(hIn, &dwInMode);
     dwInMode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+    dwInMode = ENABLE_VIRTUAL_TERMINAL_INPUT;
     SetConsoleMode(hIn, dwInMode);
 }
 
@@ -273,6 +275,20 @@ void CreateIOThreads()
     hInputThread;
 }
 
+
+BOOL CtrlHandler( DWORD fdwCtrlType ) 
+{
+    switch( fdwCtrlType ) 
+    { 
+    // Handle the CTRL-C signal. 
+    case CTRL_C_EVENT: 
+    case CTRL_BREAK_EVENT: 
+        return true;
+    }
+
+    return false;
+}
+
 // this function has unreachable code due to its unusual lifetime. We
 // disable the warning about it here.
 #pragma warning(push)
@@ -281,6 +297,8 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 {
     // initialize random seed: 
     srand((unsigned int)time(NULL));
+
+    SetConsoleCtrlHandler( (PHANDLER_ROUTINE) CtrlHandler, TRUE );
 
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     hIn = GetStdHandle(STD_INPUT_HANDLE);
