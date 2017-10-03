@@ -14,11 +14,10 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 //Takes ownership of the pEngine.
 StateMachine::StateMachine(_In_ IStateMachineEngine* const pEngine) :
-    _pEngine(pEngine),
-    _state(VTStates::Ground)
+    _pEngine(THROW_IF_NULL_ALLOC(pEngine)),
+    _state(VTStates::Ground),
+    _trace(Microsoft::Console::VirtualTerminal::ParserTracing())
 {
-    THROW_IF_NULL_ALLOC(pEngine);
-    _trace = Microsoft::Console::VirtualTerminal::ParserTracing();
     _ActionClear();
 }
 
@@ -39,7 +38,7 @@ StateMachine::~StateMachine()
 // - True if it is. False if it isn't.
 bool StateMachine::s_IsActionableFromGround(_In_ wchar_t const wch)
 {
-    return (wch <= AsciiChars::US) || s_IsC1Csi(wch);
+    return (wch <= AsciiChars::US) || s_IsC1Csi(wch) || s_IsDelete(wch);
 }
 
 // Routine Description:
@@ -659,7 +658,7 @@ void StateMachine::_EnterOscString()
 void StateMachine::_EventGround(_In_ wchar_t const wch)
 {
     _trace.TraceOnEvent(L"Ground");
-    if (s_IsC0Code(wch))
+    if (s_IsC0Code(wch) || s_IsDelete(wch))
     {
         _ActionExecute(wch);
     }
@@ -1101,7 +1100,6 @@ void StateMachine::ProcessString(_In_reads_(cch) wchar_t * const rgwch, _In_ siz
     }
     else if (s_fProcessIndividually)
     {
-        // DebugBreak();
         if (_pEngine->FlushAtEndOfString())
         {
             // Reset our state, and put all but the last char in again. 

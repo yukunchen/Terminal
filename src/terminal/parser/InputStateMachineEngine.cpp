@@ -159,12 +159,14 @@ bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ con
     UNREFERENCED_PARAMETER(wchIntermediate);
 
     DWORD dwModifierState = 0;
-    _GenerateKeyFromChar(wch, nullptr, &dwModifierState);
+    short vk = 0;
+    _GenerateKeyFromChar(wch, &vk, &dwModifierState);
 
     // Alt is definitely pressed in the esc+key case.
     dwModifierState = dwModifierState | LEFT_ALT_PRESSED;
     
-    return _WriteSingleKey(wch, dwModifierState);
+    // return _WriteSingleKey(wch, dwModifierState);
+    return _WriteSingleKey(wch, vk, dwModifierState);
 }
 
 bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch, 
@@ -181,15 +183,30 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
 
     bool fSuccess = false;
 
-    if (wch == CsiActionCodes::Generic)
+    switch(wch)
     {
-        dwModifierState = _GetGenericKeysModifierState(rgusParams, cParams);
-        fSuccess = _GetGenericVkey(rgusParams, cParams, &vkey);
-    }
-    else
-    {
-        dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
-        fSuccess = _GetCursorKeysVkey(wch, &vkey);
+        case CsiActionCodes::Generic:
+            dwModifierState = _GetGenericKeysModifierState(rgusParams, cParams);
+            fSuccess = _GetGenericVkey(rgusParams, cParams, &vkey);
+            break;
+        case CsiActionCodes::ArrowUp:
+        case CsiActionCodes::ArrowDown:
+        case CsiActionCodes::ArrowRight:
+        case CsiActionCodes::ArrowLeft:
+        case CsiActionCodes::Home:
+        case CsiActionCodes::End:
+        case CsiActionCodes::F1:
+        case CsiActionCodes::F2:
+        case CsiActionCodes::F3:
+        case CsiActionCodes::F4:
+            // DebugBreak();
+            dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
+            fSuccess = _GetCursorKeysVkey(wch, &vkey);
+            break;
+        default:
+            fSuccess = false;
+            break;
+
     }
 
     if (fSuccess)
@@ -360,6 +377,7 @@ size_t InputStateMachineEngine::_GetSingleKeypress(wchar_t wch, short vkey, DWOR
 
 bool InputStateMachineEngine::_WriteSingleKey(short vkey, DWORD dwModifierState)
 {
+    // if (vkey == VK_HOME) DebugBreak();
     wchar_t wch = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
     return _WriteSingleKey(wch, vkey, dwModifierState);
 }
@@ -438,6 +456,7 @@ bool InputStateMachineEngine::_GetGenericVkey(_In_ const unsigned short* const r
 // true iff we found the key
 bool InputStateMachineEngine::_GetCursorKeysVkey(_In_ const wchar_t wch, _Out_ short* const pVkey) const
 {
+    // if(wch == L'H') DebugBreak();
     *pVkey = 0;
     for(int i = 0; i < ARRAYSIZE(s_rgCsiMap); i++)
     {

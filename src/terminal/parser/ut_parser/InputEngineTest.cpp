@@ -9,9 +9,11 @@
 
 #include "stateMachine.hpp"
 #include "InputStateMachineEngine.hpp"
+#include "../adapter/terminalInput.hpp"
 #include "../../inc/consoletaeftemplates.hpp"
 
 #include <vector>
+#include <functional>
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
 #include "../../../interactivity/inc/VtApiRedirection.hpp"
@@ -39,37 +41,57 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
 {
     TEST_CLASS(InputEngineTest);
 
-    static void s_TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+    void RoundtripTerminalInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+    void TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     
     TEST_CLASS_SETUP(ClassSetup)
     {
-        _pStateMachine = new StateMachine(new InputStateMachineEngine(s_TestInputCallback));
-        return _pStateMachine != nullptr;
+        return true;
     }
 
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
-        delete _pStateMachine;
         return true;
     }
     TEST_METHOD_SETUP(MethodSetup)
     {
-        _pStateMachine->ResetState();
+        vExpectedInput.clear();
         return true;
     }
 
-    TEST_METHOD(UnmodifiedTest);
     TEST_METHOD(C0Test);
     TEST_METHOD(AlphanumericTest);
     TEST_METHOD(RoundTripTest);
 
     StateMachine* _pStateMachine;
-
+    std::vector<INPUT_RECORD> vExpectedInput;
 };
 
-static std::vector<INPUT_RECORD> vExpectedInput;
 
-void InputEngineTest::s_TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+bool IsShiftPressed(const DWORD modifierState)
+{
+    return IsFlagSet(modifierState, SHIFT_PRESSED);
+}
+
+bool IsAltPressed(const DWORD modifierState)
+{
+    return IsAnyFlagSet(modifierState, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
+}
+
+bool IsCtrlPressed(const DWORD modifierState)
+{
+    return IsAnyFlagSet(modifierState, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED);
+}
+
+bool ModifiersEquivalent(DWORD a, DWORD b)
+{
+    bool fShift = IsShiftPressed(a) == IsShiftPressed(b);
+    bool fAlt = IsAltPressed(a) == IsAltPressed(b);
+    bool fCtrl = IsCtrlPressed(a) == IsCtrlPressed(b);
+    return fShift && fCtrl && fAlt;
+}
+
+void InputEngineTest::RoundtripTerminalInputCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
     size_t cInput = inEvents.size();
     INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
@@ -77,207 +99,77 @@ void InputEngineTest::s_TestInputCallback(std::deque<std::unique_ptr<IInputEvent
     VERIFY_IS_NOT_NULL(rgInput);
     auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
 
-    VERIFY_ARE_EQUAL(cInput, vExpectedInput.size());
-    size_t numElems = min(cInput, vExpectedInput.size());
-    size_t index = 0;
-
-    for (auto expectedRecord = vExpectedInput.begin(); index < numElems; expectedRecord++)
+    std::wstring vtseq = L"";
+    
+    for (size_t i = 0; i < cInput; i++)
     {
-        Log::Comment(
-            NoThrowString().Format(L"\tExpected: ") +  
-            VerifyOutputTraits<INPUT_RECORD>::ToString(*expectedRecord)
-        );
-
-        Log::Comment(
-            NoThrowString().Format(L"\tActual:   ") +
-            VerifyOutputTraits<INPUT_RECORD>::ToString(rgInput[index])
-        );
-
-        // Log::Comment(VerifyOutputTraits<INPUT_RECORD>::ToString(rgInput[index]));
-
-        VERIFY_ARE_EQUAL(*expectedRecord, rgInput[index]);
-        index++;
+        INPUT_RECORD inRec = rgInput[i];
+        VERIFY_ARE_EQUAL(inRec.EventType, KEY_EVENT);
+        if(inRec.Event.KeyEvent.bKeyDown)
+        {
+            vtseq += &inRec.Event.KeyEvent.uChar.UnicodeChar;
+        }
     }
+    Log::Comment(
+        NoThrowString().Format(L"\tvtseq: \"%s\"(%d)", vtseq.c_str(), vtseq.length())
+    );
+
+    _pStateMachine->ProcessString(&vtseq[0], vtseq.length());
+    Log::Comment(L"String processed");
+}
+
+void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+{
+    size_t cInput = inEvents.size();
+    INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
+    VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
+    VERIFY_IS_NOT_NULL(rgInput);
+    VERIFY_ARE_EQUAL(vExpectedInput.size(), 1);
+    auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
+
+    bool foundEqual = false;
+    INPUT_RECORD irExpected = vExpectedInput.back();
+
+    Log::Comment(
+        NoThrowString().Format(L"\texpected:\t") +
+        VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected)
+    );
+
+    // Look for an equivalent input record.
+    // Differences between left and right modifiers are ignored, as long as one is pressed.
+    // There may be other keypresses, eg. modifier keypresses, those are ignored.
+    for (auto i = 0; i < cInput; i++)
+    {
+        INPUT_RECORD inRec = rgInput[i];
+        Log::Comment(
+            NoThrowString().Format(L"\tActual  :\t") +
+            VerifyOutputTraits<INPUT_RECORD>::ToString(inRec)
+        );
+
+        bool areEqual = 
+            (irExpected.EventType == inRec.EventType) &&
+            (irExpected.Event.KeyEvent.bKeyDown == inRec.Event.KeyEvent.bKeyDown) &&
+            (irExpected.Event.KeyEvent.wRepeatCount == inRec.Event.KeyEvent.wRepeatCount) &&
+            (irExpected.Event.KeyEvent.uChar.UnicodeChar == inRec.Event.KeyEvent.uChar.UnicodeChar) &&
+            ModifiersEquivalent(irExpected.Event.KeyEvent.dwControlKeyState, inRec.Event.KeyEvent.dwControlKeyState);
+
+        foundEqual |= areEqual;
+        if (areEqual)
+        {
+            Log::Comment(L"\t\tFound Match");
+        }
+    }
+
+    VERIFY_IS_TRUE(foundEqual);
     vExpectedInput.clear();
 }
 
-void InputEngineTest::UnmodifiedTest()
-{
-    Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
-    
-    DisableVerifyExceptions disable;
-
-    for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
-    {
-        std::wstring inputSeq = L"";
-        wchar_t wch = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
-        WORD scanCode = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
-        
-        DWORD dwModifierState = 0;
-
-        bool shouldSkip = true;
-
-        switch (vkey)
-        {
-        case VK_BACK:
-            inputSeq = L"\x7f";
-            shouldSkip = false;
-            break;
-        case VK_ESCAPE:
-            inputSeq = L"\x1b";
-            shouldSkip = false;
-            break;
-        case VK_PAUSE:
-        // Why is this here? what is this key?
-            inputSeq = L"\x1a";
-            shouldSkip = false;
-            break;
-        case VK_UP:
-            inputSeq = L"\x1b[A";
-            shouldSkip = false;
-            break;
-        case VK_DOWN:
-            inputSeq = L"\x1b[B";
-            shouldSkip = false;
-            break;
-        case VK_RIGHT:
-            inputSeq = L"\x1b[C";
-            shouldSkip = false;
-            break;
-        case VK_LEFT:
-            inputSeq = L"\x1b[D";
-            shouldSkip = false;
-            break;
-        case VK_HOME:
-            inputSeq = L"\x1b[H";
-            shouldSkip = false;
-            break;
-        case VK_INSERT:
-            inputSeq = L"\x1b[2~";
-            shouldSkip = false;
-            break;
-        case VK_DELETE:
-            inputSeq = L"\x1b[3~";
-            shouldSkip = false;
-            break;
-        case VK_END:
-            inputSeq = L"\x1b[F";
-            shouldSkip = false;
-            break;
-        case VK_PRIOR:
-            inputSeq = L"\x1b[5~";
-            shouldSkip = false;
-            break;
-        case VK_NEXT:
-            inputSeq = L"\x1b[6~";
-            shouldSkip = false;
-            break;
-        case VK_F1:
-            // F1-F4 are SS3 sequences, adding support for those in MSFT:13420038
-            inputSeq = L"\x1bOP";
-            shouldSkip = true;
-            break;
-        case VK_F2:
-            inputSeq = L"\x1bOQ";
-            shouldSkip = true;
-            break;
-        case VK_F3:
-            inputSeq = L"\x1bOR";
-            shouldSkip = true;
-            break;
-        case VK_F4:
-            inputSeq = L"\x1bOS";
-            shouldSkip = true;
-            break;
-        case VK_F5:
-            inputSeq = L"\x1b[15~";
-            shouldSkip = false;
-            break;
-        case VK_F6:
-            inputSeq = L"\x1b[17~";
-            shouldSkip = false;
-            break;
-        case VK_F7:
-            inputSeq = L"\x1b[18~";
-            shouldSkip = false;
-            break;
-        case VK_F8:
-            inputSeq = L"\x1b[19~";
-            shouldSkip = false;
-            break;
-        case VK_F9:
-            inputSeq = L"\x1b[20~";
-            shouldSkip = false;
-            break;
-        case VK_F10:
-            inputSeq = L"\x1b[21~";
-            shouldSkip = false;
-            break;
-        case VK_F11:
-            inputSeq = L"\x1b[23~";
-            shouldSkip = false;
-            break;
-        case VK_F12:
-            inputSeq = L"\x1b[24~";
-            shouldSkip = false;
-            break;
-        case VK_CANCEL:
-            inputSeq = L"\x3";
-            shouldSkip = false;
-            break;
-        default:
-            break;
-        }
-
-        // Don't skip alphanumerics
-        if (shouldSkip && (vkey >= '0' && vkey <= '9'))
-        {
-            shouldSkip = false;
-            inputSeq = std::wstring(&wch, 1);
-        }
-
-        if (shouldSkip && (vkey >= 'A' && vkey <= 'Z'))
-        {
-            shouldSkip = false;
-            inputSeq = std::wstring(&wch, 1);
-            // 'A' - 'Z' need to have shift pressed, but numbers shouldn't
-            dwModifierState = SHIFT_PRESSED;
-        }
-
-        if (shouldSkip)
-        {
-            Log::Comment(NoThrowString().Format(L"Skipping Key 0x%x", vkey));
-            continue;
-        }
-
-        Log::Comment(NoThrowString().Format(L"Testing Key 0x%x", vkey));
-        Log::Comment(NoThrowString().Format(L"Input Sequence=\"%s\"", inputSeq.c_str()));
-
-        INPUT_RECORD rgInput[2];
-        rgInput[0].EventType = KEY_EVENT;
-        rgInput[0].Event.KeyEvent.bKeyDown = TRUE;
-        rgInput[0].Event.KeyEvent.dwControlKeyState = dwModifierState;
-        rgInput[0].Event.KeyEvent.wRepeatCount = 1;
-        rgInput[0].Event.KeyEvent.wVirtualKeyCode = vkey;
-        rgInput[0].Event.KeyEvent.wVirtualScanCode = scanCode;
-        rgInput[0].Event.KeyEvent.uChar.UnicodeChar = wch;
-
-        rgInput[1] = rgInput[0];
-        rgInput[1].Event.KeyEvent.bKeyDown = FALSE;
-
-        vExpectedInput.push_back(rgInput[0]);
-        vExpectedInput.push_back(rgInput[1]);
-
-
-        _pStateMachine->ProcessString(&inputSeq[0], inputSeq.length());
-
-    }
-}
-
-
-
 void InputEngineTest::C0Test()
 {
+    auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
+    _pStateMachine = new StateMachine(new InputStateMachineEngine(pfn));
+    VERIFY_IS_NOT_NULL(_pStateMachine);
+    
     Log::Comment(L"Sending 0x0-0x19 to parser to make sure they're translated correctly back to C-key");
     DisableVerifyExceptions disable;
     for (wchar_t wch = '\x0'; wch < '\x20'; wch++)
@@ -285,50 +177,49 @@ void InputEngineTest::C0Test()
         std::wstring inputSeq = std::wstring(&wch, 1);
         
         wchar_t expectedWch = wch + 0x40;
+        bool writeCtrl = true;
+        switch(wch)
+        {
+            case L'\r': // Enter
+                expectedWch = wch;
+                writeCtrl = false;
+                break;
+            case L'\t': // Tab
+                writeCtrl = false;
+                break;
+        }
+
         short keyscan = VkKeyScan(expectedWch);
         short vkey =  keyscan & 0xff;
         short keyscanModifiers = (keyscan >> 8) & 0xff;
         WORD scanCode = (WORD)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
-
-        // Because of course, these are not the same flags.
-        // The expected key may also have shift pressed. 
-        // Case in point: 0x3 = (Ctrl+C) = (Ctrl + Shift + vkey('c'))
-        DWORD dwModifierState = LEFT_CTRL_PRESSED |
-            (IsFlagSet(keyscanModifiers, 1) ? SHIFT_PRESSED : 0);
-        // It won't have Alt or anything else pressed.
+        
+        DWORD dwModifierState = 0;
+        if (writeCtrl)
+        {
+            dwModifierState = SetFlag(dwModifierState, LEFT_CTRL_PRESSED);
+        }
+        // If we need to press shift for this key, but not on alphabetical chars
+        //  Eg simulating C-z, not C-S-z.
+        if (IsFlagSet(keyscanModifiers, 1) && (expectedWch < L'A' || expectedWch > L'Z' ))
+        {
+            dwModifierState = SetFlag(dwModifierState, SHIFT_PRESSED);
+        }
 
         Log::Comment(NoThrowString().Format(L"Testing char 0x%x", wch));
         Log::Comment(NoThrowString().Format(L"Input Sequence=\"%s\"", inputSeq.c_str()));
 
-        INPUT_RECORD rgInput[4];
-        rgInput[0].EventType = KEY_EVENT;
-        rgInput[0].Event.KeyEvent.bKeyDown = TRUE;
-        rgInput[0].Event.KeyEvent.dwControlKeyState = dwModifierState;
-        rgInput[0].Event.KeyEvent.wRepeatCount = 1;
-        rgInput[0].Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
-        rgInput[0].Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
-        rgInput[0].Event.KeyEvent.uChar.UnicodeChar = 0;
+        INPUT_RECORD inputRec;
 
+        inputRec.EventType = KEY_EVENT;
+        inputRec.Event.KeyEvent.bKeyDown = TRUE;
+        inputRec.Event.KeyEvent.dwControlKeyState = dwModifierState;
+        inputRec.Event.KeyEvent.wRepeatCount = 1;
+        inputRec.Event.KeyEvent.wVirtualKeyCode = vkey;
+        inputRec.Event.KeyEvent.wVirtualScanCode = scanCode;
+        inputRec.Event.KeyEvent.uChar.UnicodeChar = wch;
 
-        rgInput[1].EventType = KEY_EVENT;
-        rgInput[1].Event.KeyEvent.bKeyDown = TRUE;
-        rgInput[1].Event.KeyEvent.dwControlKeyState = dwModifierState;
-        rgInput[1].Event.KeyEvent.wRepeatCount = 1;
-        rgInput[1].Event.KeyEvent.wVirtualKeyCode = vkey;
-        rgInput[1].Event.KeyEvent.wVirtualScanCode = scanCode;
-        rgInput[1].Event.KeyEvent.uChar.UnicodeChar = wch;
-
-        rgInput[2] = rgInput[1];
-        rgInput[2].Event.KeyEvent.bKeyDown = FALSE;
-
-        rgInput[3] = rgInput[0];
-        rgInput[3].Event.KeyEvent.bKeyDown = FALSE;
-        rgInput[3].Event.KeyEvent.dwControlKeyState = dwModifierState ^ LEFT_CTRL_PRESSED;
-
-        vExpectedInput.push_back(rgInput[0]);
-        vExpectedInput.push_back(rgInput[1]);
-        vExpectedInput.push_back(rgInput[2]);
-        vExpectedInput.push_back(rgInput[3]);
+        vExpectedInput.push_back(inputRec);
 
         _pStateMachine->ProcessString(&inputSeq[0], inputSeq.length());
 
@@ -337,6 +228,10 @@ void InputEngineTest::C0Test()
 
 void InputEngineTest::AlphanumericTest()
 {
+    auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
+    _pStateMachine = new StateMachine(new InputStateMachineEngine(pfn));
+    VERIFY_IS_NOT_NULL(_pStateMachine);
+    
     Log::Comment(L"Sending every printable ASCII character");
     DisableVerifyExceptions disable;
     for (wchar_t wch = '\x20'; wch < '\x7f'; wch++)
@@ -357,28 +252,18 @@ void InputEngineTest::AlphanumericTest()
         Log::Comment(NoThrowString().Format(L"Testing char 0x%x", wch));
         Log::Comment(NoThrowString().Format(L"Input Sequence=\"%s\"", inputSeq.c_str()));
 
-        INPUT_RECORD rgInput[2];
-        rgInput[0].EventType = KEY_EVENT;
-        rgInput[0].Event.KeyEvent.bKeyDown = TRUE;
-        rgInput[0].Event.KeyEvent.dwControlKeyState = dwModifierState;
-        rgInput[0].Event.KeyEvent.wRepeatCount = 1;
-        rgInput[0].Event.KeyEvent.wVirtualKeyCode = vkey;
-        rgInput[0].Event.KeyEvent.wVirtualScanCode = scanCode;
-        rgInput[0].Event.KeyEvent.uChar.UnicodeChar = wch;
+        INPUT_RECORD inputRec;
+        inputRec.EventType = KEY_EVENT;
+        inputRec.Event.KeyEvent.bKeyDown = TRUE;
+        inputRec.Event.KeyEvent.dwControlKeyState = dwModifierState;
+        inputRec.Event.KeyEvent.wRepeatCount = 1;
+        inputRec.Event.KeyEvent.wVirtualKeyCode = vkey;
+        inputRec.Event.KeyEvent.wVirtualScanCode = scanCode;
+        inputRec.Event.KeyEvent.uChar.UnicodeChar = wch;
 
-        rgInput[1] = rgInput[0];
-        rgInput[1].Event.KeyEvent.bKeyDown = FALSE;
-
-        vExpectedInput.push_back(rgInput[0]);
-        vExpectedInput.push_back(rgInput[1]);
-
-        if (wch >= 'A' && wch <= 'Z')
-        {
-            dwModifierState = SHIFT_PRESSED;
-        }
+        vExpectedInput.push_back(inputRec);
 
         _pStateMachine->ProcessString(&inputSeq[0], inputSeq.length());
-
     }
     
 }
@@ -386,8 +271,61 @@ void InputEngineTest::AlphanumericTest()
 
 void InputEngineTest::RoundTripTest()
 {
-    // Send Every VKEY through the TerminalInput module, then take the uchar's 
+    auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
+    _pStateMachine = new StateMachine(new InputStateMachineEngine(pfn));
+    VERIFY_IS_NOT_NULL(_pStateMachine);
+    
+    // Send Every VKEY through the TerminalInput module, then take the char's 
     //   from the generated INPUT_RECORDs and put them through the InputEngine.
     // The VKEY sequence it writes out should be the same as the original.
-    VERIFY_SUCCEEDED(E_FAIL);
+
+    auto pfn2 = std::bind(&InputEngineTest::RoundtripTerminalInputCallback, this, std::placeholders::_1);
+    const TerminalInput* const pInput = new TerminalInput(pfn2);
+    
+    for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
+    {
+        wchar_t wch = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
+        WORD scanCode = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
+
+        unsigned int uiActualKeystate = 0;
+        if (vkey >= 'A' && vkey <= 'Z')
+        {
+            uiActualKeystate = SetFlag(uiActualKeystate, SHIFT_PRESSED);
+        }
+        else if (vkey == VK_CANCEL  || vkey == VK_PAUSE)
+        {
+            uiActualKeystate = SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
+        }
+        else if (vkey == VK_ESCAPE)
+        {
+            uiActualKeystate |= LEFT_CTRL_PRESSED;
+        }
+        else if (vkey == VK_F1 || vkey == VK_F2 || vkey == VK_F3 || vkey == VK_F4)
+        {
+            // todo MSFT:13420038
+            // Skip for now
+            continue;
+        }
+
+        INPUT_RECORD irTest = { 0 };
+        irTest.EventType = KEY_EVENT;
+        irTest.Event.KeyEvent.dwControlKeyState = uiActualKeystate;
+        irTest.Event.KeyEvent.wRepeatCount = 1;
+        irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
+        irTest.Event.KeyEvent.bKeyDown = TRUE;
+        irTest.Event.KeyEvent.uChar.UnicodeChar = wch;
+        irTest.Event.KeyEvent.wVirtualScanCode = scanCode;
+        
+        Log::Comment(
+            NoThrowString().Format(L"Expecting::   ") +
+            VerifyOutputTraits<INPUT_RECORD>::ToString(irTest)
+        );
+
+        vExpectedInput.clear();
+        vExpectedInput.push_back(irTest);
+
+        auto inputKey = IInputEvent::Create(irTest);
+        pInput->HandleKey(inputKey.get());
+    }
+
 }
