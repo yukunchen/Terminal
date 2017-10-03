@@ -28,13 +28,13 @@ public:
 
     HRESULT StartIfNeeded();
 
-    static HRESULT ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode* const pIoMode);
+    static HRESULT ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
     
 private:
     bool _usingVt;
     VtIoMode _IoMode;
 
-    Microsoft::Console::VtInputThread* _pVtInputThread;
+    std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
 
     // Temporary - For the sake of testing this module before the other parts 
     //  are added in, we need to hang onto these handles ourselves.

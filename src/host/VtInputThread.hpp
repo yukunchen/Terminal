@@ -36,7 +36,7 @@ namespace Microsoft
             wil::unique_handle _hThread;
             DWORD _dwThreadId;
 
-            StateMachine* _pInputStateMachine;
+            std::unique_ptr<StateMachine> _pInputStateMachine;
         };
     }
 };

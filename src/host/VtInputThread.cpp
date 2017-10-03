@@ -23,10 +23,10 @@ void _HandleTerminalKeyEventCallback(_In_ std::deque<std::unique_ptr<IInputEvent
 
 VtInputThread::~VtInputThread()
 {
-    if(_pInputStateMachine != nullptr)
-    {
-        delete _pInputStateMachine;
-    }
+    // if(_pInputStateMachine != nullptr)
+    // {
+    //     delete _pInputStateMachine;
+    // }
 }
 
 HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const char* const charBuffer, _In_ const int cch)
@@ -93,10 +93,12 @@ VtInputThread::VtInputThread(_In_ HANDLE hPipe)
     _hFile.reset(hPipe);
     THROW_IF_HANDLE_INVALID(_hFile.get());
 
-    InputStateMachineEngine* pEngine = new InputStateMachineEngine(_HandleTerminalKeyEventCallback);
+    std::unique_ptr<InputStateMachineEngine> pEngine = 
+        std::unique_ptr<InputStateMachineEngine>(new InputStateMachineEngine(_HandleTerminalKeyEventCallback));
+
     THROW_IF_NULL_ALLOC(pEngine);
 
-    _pInputStateMachine = new StateMachine(pEngine);
+    _pInputStateMachine.reset(new StateMachine(std::move(pEngine)));
     THROW_IF_NULL_ALLOC(_pInputStateMachine);
 
 }

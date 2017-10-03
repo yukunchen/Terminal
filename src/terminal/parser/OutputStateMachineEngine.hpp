@@ -41,7 +41,7 @@ namespace Microsoft
                                        _In_ const unsigned short cParams);
                 bool ActionClear();
                 bool ActionIgnore();
-                bool ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString);
+                bool ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _Inout_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString);
                 // TODO: MSFT:13420038
                 // void ActionSs3Dispatch(_In_ wchar_t const wch);
                 bool FlushAtEndOfString() const;
@@ -153,7 +153,7 @@ namespace Microsoft
                 bool _GetTopBottomMargins(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ SHORT* const psTopMargin, _Out_ SHORT* const psBottomMargin) const;
 
                 _Success_(return)
-                bool _GetOscTitle(_In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString, _Outptr_result_buffer_(*pcchTitle) wchar_t** const ppwchTitle, _Out_ unsigned short * pcchTitle);
+                bool _GetOscTitle(_Inout_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString, _Outptr_result_buffer_(*pcchTitle) wchar_t** const ppwchTitle, _Out_ unsigned short * pcchTitle);
 
                 static const SHORT s_sDefaultTabDistance = 1;
                 _Success_(return)

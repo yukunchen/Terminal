@@ -35,7 +35,7 @@ namespace Microsoft
                                                _In_ const unsigned short cParams) = 0;
                 virtual bool ActionClear() = 0;
                 virtual bool ActionIgnore() = 0;
-                virtual bool ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString) = 0;
+                virtual bool ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _Inout_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString) = 0;
                 // TODO: MSFT:13420038
                 // virtual bool ActionSs3Dispatch(_In_ wchar_t const wch) = 0;
                 virtual bool FlushAtEndOfString() const = 0;

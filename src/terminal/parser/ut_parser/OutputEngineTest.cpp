@@ -17,6 +17,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using namespace std;
 
 namespace Microsoft
 {
@@ -64,7 +65,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : TermDispatch
         unsigned int uiTest;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiTest", uiTest));
 
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         switch (uiTest)
         {
@@ -131,7 +132,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : TermDispatch
 
     TEST_METHOD(TestEscapeImmediatePath)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -150,7 +151,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : TermDispatch
 
     TEST_METHOD(TestGroundPrint)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(L'a');
@@ -159,7 +160,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : TermDispatch
 
     TEST_METHOD(TestCsiEntry)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -172,7 +173,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : TermDispatch
 
     TEST_METHOD(TestC1CsiEntry)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(L'\x9b');
@@ -183,7 +184,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : TermDispatch
 
     TEST_METHOD(TestCsiImmediate)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -202,7 +203,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : TermDispatch
 
     TEST_METHOD(TestCsiParam)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -229,7 +230,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : TermDispatch
 
     TEST_METHOD(TestCsiIgnore)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -276,7 +277,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : TermDispatch
 
     TEST_METHOD(TestOscStringSimple)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -341,7 +342,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : TermDispatch
     }
     TEST_METHOD(TestLongOscString)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -363,7 +364,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : TermDispatch
 
     TEST_METHOD(NormalTestOscParam)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -385,7 +386,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest : TermDispatch
     }
     TEST_METHOD(TestLongOscParam)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -731,7 +732,7 @@ class StateMachineExternalTest : TermDispatch
 
     void TestEscCursorMovement(wchar_t const wchCommand, const bool* const pfFlag)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(wchCommand);
@@ -788,7 +789,7 @@ class StateMachineExternalTest : TermDispatch
 
     void TestCsiCursorMovement(wchar_t const wchCommand, unsigned int const uiDistance, const bool fUseDistance, const bool* const pfFlag)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
 
@@ -877,7 +878,7 @@ class StateMachineExternalTest : TermDispatch
         unsigned int uiCol;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiCol", uiCol));
 
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
         
@@ -904,7 +905,7 @@ class StateMachineExternalTest : TermDispatch
         unsigned int uiRow;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiRow", uiRow));
 
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
         
@@ -921,7 +922,7 @@ class StateMachineExternalTest : TermDispatch
 
     TEST_METHOD(TestCursorSaveLoad)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
         
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'7');
@@ -952,7 +953,7 @@ class StateMachineExternalTest : TermDispatch
 
     TEST_METHOD(TestCursorKeysMode)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
         
         mach.ProcessString(L"\x1b[?1h", 5);
         VERIFY_IS_TRUE(_fCursorKeysMode);
@@ -967,7 +968,7 @@ class StateMachineExternalTest : TermDispatch
 
     TEST_METHOD(TestSetNumberOfColumns)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
         
         mach.ProcessString(L"\x1b[?3h", 5);
         VERIFY_ARE_EQUAL(_uiWindowWidth, (unsigned int)s_sDECCOLMSetColumns);
@@ -982,7 +983,7 @@ class StateMachineExternalTest : TermDispatch
 
     TEST_METHOD(TestCursorBlinking)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
         
         mach.ProcessString(L"\x1b[?12h", 6);
         VERIFY_IS_TRUE(_fCursorBlinking);
@@ -997,7 +998,7 @@ class StateMachineExternalTest : TermDispatch
 
     TEST_METHOD(TestCursorVisibility)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
         
         mach.ProcessString(L"\x1b[?25h", 6);
         VERIFY_IS_TRUE(_fCursorVisible);
@@ -1012,7 +1013,7 @@ class StateMachineExternalTest : TermDispatch
 
     TEST_METHOD(TestAltBufferSwapping)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
         
         mach.ProcessString(L"\x1b[?1049h", 8);
         VERIFY_IS_TRUE(_fIsAltBuffer);
@@ -1078,7 +1079,7 @@ class StateMachineExternalTest : TermDispatch
         VERIFY_IS_NOT_NULL(wchOp);
         VERIFY_IS_NOT_NULL(pfOperationCallback);
 
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
 
@@ -1139,7 +1140,7 @@ class StateMachineExternalTest : TermDispatch
 
     TEST_METHOD(TestSetGraphicsRendition)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         GraphicsOptions rgExpected[16];
 
@@ -1258,7 +1259,7 @@ class StateMachineExternalTest : TermDispatch
 
     TEST_METHOD(TestDeviceStatusReport)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         Log::Comment(L"Test 1: Check empty case. Should fail.");
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -1293,7 +1294,7 @@ class StateMachineExternalTest : TermDispatch
 
     TEST_METHOD(TestDeviceAttributes)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         Log::Comment(L"Test 1: Check default case, no params.");
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -1327,7 +1328,7 @@ class StateMachineExternalTest : TermDispatch
 
     TEST_METHOD(TestStrings)
     {
-        StateMachine mach(new OutputStateMachineEngine(this));
+        StateMachine mach(move(unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(this))));
 
         GraphicsOptions rgExpected[16];
         EraseType expectedEraseType;
@@ -1378,7 +1379,6 @@ class StateMachineExternalTest : TermDispatch
         
         ///////////////////////////////////////////////////////////////////////
         Log::Comment(L"Test 4: An entire sequence broke into multiple strings");
-
         mach.ProcessString(L"\x1b[1;", 4);
         VERIFY_IS_FALSE(_fSetGraphics);
         VERIFY_IS_FALSE(_fEraseDisplay);

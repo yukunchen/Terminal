@@ -265,7 +265,7 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
         status = NT_TESTNULL(pEngine);
         if (NT_SUCCESS(status))
         {
-            _pStateMachine = new StateMachine(pEngine);
+            _pStateMachine = new StateMachine(std::move(std::unique_ptr<IStateMachineEngine>(pEngine)));
             status = NT_TESTNULL(_pStateMachine);
             if (!NT_SUCCESS(status))
             {
