@@ -31,26 +31,25 @@ VtIo::VtIo()
 //      IO mode string
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating failure.
-HRESULT VtIo::ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode* const pIoMode)
+HRESULT VtIo::ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode& ioMode)
 {
-    *pIoMode = VtIoMode::INVALID;
-    RETURN_HR_IF_NULL(E_INVALIDARG, pIoMode);
+    ioMode = VtIoMode::INVALID;
 
     if (VtMode == XTERM_256_STRING)
     {
-        *pIoMode = VtIoMode::XTERM_256;
+        ioMode = VtIoMode::XTERM_256;
     }
     else if (VtMode == XTERM_STRING)
     {
-        *pIoMode = VtIoMode::XTERM;
+        ioMode = VtIoMode::XTERM;
     }
     else if (VtMode == WIN_TELNET_STRING)
     {
-        *pIoMode = VtIoMode::WIN_TELNET;
+        ioMode = VtIoMode::WIN_TELNET;
     }
     else if (VtMode == DEFAULT_STRING)
     {
-        *pIoMode = VtIoMode::XTERM_256;
+        ioMode = VtIoMode::XTERM_256;
     }
     else
     {
@@ -78,8 +77,9 @@ HRESULT VtIo::ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode* const
 HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    
+    RETURN_IF_FAILED(ParseIoMode(VtMode, _IoMode));
 
-    RETURN_IF_FAILED(ParseIoMode(VtMode, &_IoMode));
     // Temporary - For the sake of testing this module before the other parts 
     //  are added in, we need to hang onto these handles ourselves.
     // In the future, they will be given to the renderer and the input thread.
@@ -110,7 +110,7 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
 
     try
     {
-        _pVtInputThread = new VtInputThread(_hInputFile.release());
+        _pVtInputThread.reset(new VtInputThread(_hInputFile.release()));
     }
     CATCH_RETURN();
 

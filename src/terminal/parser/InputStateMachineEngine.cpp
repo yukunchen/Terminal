@@ -227,7 +227,7 @@ bool InputStateMachineEngine::ActionIgnore()
     return true;
 }
 
-bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString)
+bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _Inout_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString)
 {
     UNREFERENCED_PARAMETER(wch);
     UNREFERENCED_PARAMETER(sOscParam);
@@ -236,13 +236,19 @@ bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ con
     return false;
 }
 
-size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch, const short vkey, const DWORD dwModifierState, INPUT_RECORD* rgInput, size_t cInput)
+size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
+                                                         _In_ const short vkey,
+                                                         _In_ const DWORD dwModifierState,
+                                                         _Inout_updates_(cInput) INPUT_RECORD* rgInput,
+                                                         _In_ const size_t cInput)
 {
     // TODO: Reuse the clipboard functions for generating input for characters 
     //       that aren't on the current keyboard.
     // MSFT:13994942
-    
-    if (cInput < 2) return 0;
+    if (cInput < 2) 
+    {
+        return 0;
+    }
 
     const bool fShift = IsFlagSet(dwModifierState, SHIFT_PRESSED);
     const bool fCtrl = IsFlagSet(dwModifierState, LEFT_CTRL_PRESSED);
@@ -261,10 +267,13 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch, cons
         next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
         next->Event.KeyEvent.wRepeatCount = 1;
         next->Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
-        next->Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC);
+        next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC));
         next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
         next++;
-        if (index+1 > cInput) return index;
+        if (index+1 > cInput)
+        {
+            return index;
+        }
         index++;
     }
     if (fAlt)
@@ -275,10 +284,13 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch, cons
         next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
         next->Event.KeyEvent.wRepeatCount = 1;
         next->Event.KeyEvent.wVirtualKeyCode = VK_MENU;
-        next->Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC);
+        next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC));
         next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
         next++;
-        if (index+1 > cInput) return index;
+        if (index+1 > cInput)
+        {
+            return index;
+        }
         index++;
     }
     if (fCtrl)
@@ -289,10 +301,13 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch, cons
         next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
         next->Event.KeyEvent.wRepeatCount = 1;
         next->Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
-        next->Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
+        next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC));
         next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
         next++;
-        if (index+1 > cInput) return index;
+        if (index+1 > cInput)
+        {
+            return index;
+        }
         index++;
     }
 
@@ -308,10 +323,13 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch, cons
         next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
         next->Event.KeyEvent.wRepeatCount = 1;
         next->Event.KeyEvent.wVirtualKeyCode = VK_CONTROL;
-        next->Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
+        next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC));
         next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
         next++;
-        if (index+1 > cInput) return index;
+        if (index+1 > cInput)
+        {
+            return index;
+        }
         index++;
     }
     if (fAlt)
@@ -322,10 +340,13 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch, cons
         next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
         next->Event.KeyEvent.wRepeatCount = 1;
         next->Event.KeyEvent.wVirtualKeyCode = VK_MENU;
-        next->Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC);
+        next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC));
         next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
         next++;
-        if (index+1 > cInput) return index;
+        if (index+1 > cInput)
+        {
+            return index;
+        }
         index++;
     }
     if (fShift)
@@ -336,18 +357,22 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch, cons
         next->Event.KeyEvent.dwControlKeyState = dwCurrentModifiers;
         next->Event.KeyEvent.wRepeatCount = 1;
         next->Event.KeyEvent.wVirtualKeyCode = VK_SHIFT;
-        next->Event.KeyEvent.wVirtualScanCode = (WORD)MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC);
+        next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC));
         next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
         next++;
-        if (index+1 > cInput) return index;
+        if (index+1 > cInput)
+        {
+            return index;
+        }
         index++;
     }
     return index;
 
 }
 
-bool InputStateMachineEngine::_WriteSingleKey(wchar_t wch, short vkey, DWORD dwModifierState)
+bool InputStateMachineEngine::_WriteSingleKey(_In_ const wchar_t wch, _In_ const short vkey, _In_ const DWORD dwModifierState)
 {
+    // At most 6 records - 2 for each of shift,ctrl,alt up and down, and 2 for the actual key up and down.
     INPUT_RECORD rgInput[6];
     size_t cInput = _GenerateWrappedSequence(wch, vkey, dwModifierState, rgInput, 6);
 
@@ -356,7 +381,7 @@ bool InputStateMachineEngine::_WriteSingleKey(wchar_t wch, short vkey, DWORD dwM
     return true;
 }
 
-size_t InputStateMachineEngine::_GetSingleKeypress(wchar_t wch, short vkey, DWORD dwModifierState, _Inout_ INPUT_RECORD* const rgInput, _In_ size_t cRecords)
+size_t InputStateMachineEngine::_GetSingleKeypress(_In_ const wchar_t wch, _In_ const short vkey, _In_ const DWORD dwModifierState, _Inout_updates_(cRecords) INPUT_RECORD* const rgInput, _In_ const size_t cRecords)
 {
     // It's used by the assert, which is a no-op in release builds
     UNREFERENCED_PARAMETER(cRecords);
@@ -375,7 +400,7 @@ size_t InputStateMachineEngine::_GetSingleKeypress(wchar_t wch, short vkey, DWOR
     return 2;
 }
 
-bool InputStateMachineEngine::_WriteSingleKey(short vkey, DWORD dwModifierState)
+bool InputStateMachineEngine::_WriteSingleKey(_In_ const short vkey, _In_ const DWORD dwModifierState)
 {
     // if (vkey == VK_HOME) DebugBreak();
     wchar_t wch = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
@@ -397,13 +422,16 @@ DWORD InputStateMachineEngine::_GetGenericKeysModifierState(_In_ const unsigned 
     DWORD dwModifiers = 0;
     if (_IsModified(cParams))
     {
-        dwModifiers = _GetModifier(rgusParams[0]);
+        dwModifiers = _GetModifier(rgusParams[1]);
     }
     return dwModifiers;
 }
 
 bool InputStateMachineEngine::_IsModified(_In_ const unsigned short cParams)
 {
+    // modified input either looks like
+    // \x1b[1;mA or \x1b[17;m~
+    // Both have two parameters
     return cParams == 2;
 }
 
@@ -432,9 +460,12 @@ DWORD InputStateMachineEngine::_GetModifier(_In_ const unsigned short modifierPa
 bool InputStateMachineEngine::_GetGenericVkey(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ short* const pVkey) const
 {
     *pVkey = 0;
-    if (cParams < 1) return false;
+    if (cParams < 1) 
+    {
+        return false;
+    }
 
-    unsigned short identifier = rgusParams[0];
+    const unsigned short identifier = rgusParams[0];
     for(int i = 0; i < ARRAYSIZE(s_rgGenericMap); i++)
     {
         GENERIC_TO_VKEY mapping = s_rgGenericMap[i];
@@ -484,9 +515,9 @@ void InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch, _Out_
     // Low order byte is key, high order is modifiers
     short keyscan = VkKeyScan(wch);
     
-    short vkey =  keyscan & 0xff;
+    short vkey = LOBYTE(keyscan);
 
-    short keyscanModifiers = (keyscan >> 8) & 0xff;
+    short keyscanModifiers = HIBYTE(keyscan);
     // Because of course, these are not the same flags.
     short dwModifierState = 0 |
         IsFlagSet(keyscanModifiers, KEYSCAN_SHIFT) ? SHIFT_PRESSED : 0 |

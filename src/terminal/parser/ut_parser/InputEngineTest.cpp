@@ -22,6 +22,7 @@
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using namespace std;
 
 
 namespace Microsoft
@@ -138,7 +139,7 @@ void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>
     // Look for an equivalent input record.
     // Differences between left and right modifiers are ignored, as long as one is pressed.
     // There may be other keypresses, eg. modifier keypresses, those are ignored.
-    for (auto i = 0; i < cInput; i++)
+    for (size_t i = 0; i < cInput; i++)
     {
         INPUT_RECORD inRec = rgInput[i];
         Log::Comment(
@@ -167,7 +168,7 @@ void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>
 void InputEngineTest::C0Test()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(new InputStateMachineEngine(pfn));
+    _pStateMachine = new StateMachine(move(unique_ptr<IStateMachineEngine>(new InputStateMachineEngine(pfn))));
     VERIFY_IS_NOT_NULL(_pStateMachine);
     
     Log::Comment(L"Sending 0x0-0x19 to parser to make sure they're translated correctly back to C-key");
@@ -229,7 +230,7 @@ void InputEngineTest::C0Test()
 void InputEngineTest::AlphanumericTest()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(new InputStateMachineEngine(pfn));
+    _pStateMachine = new StateMachine(move(unique_ptr<IStateMachineEngine>(new InputStateMachineEngine(pfn))));
     VERIFY_IS_NOT_NULL(_pStateMachine);
     
     Log::Comment(L"Sending every printable ASCII character");
@@ -272,7 +273,7 @@ void InputEngineTest::AlphanumericTest()
 void InputEngineTest::RoundTripTest()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(new InputStateMachineEngine(pfn));
+    _pStateMachine = new StateMachine(move(unique_ptr<IStateMachineEngine>(new InputStateMachineEngine(pfn))));
     VERIFY_IS_NOT_NULL(_pStateMachine);
     
     // Send Every VKEY through the TerminalInput module, then take the char's 

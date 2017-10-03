@@ -119,6 +119,10 @@ bool OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ co
             fSuccess = _pDispatch->HardReset();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::RIS);
             break;
+        default:
+            // If no functions to call, overall dispatch was a failure.
+            fSuccess = false;
+            break;
         }
     }
     else if (cIntermediate == 1)
@@ -142,6 +146,10 @@ bool OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ co
         case DesignateCharsetTypes::G3:
             fSuccess = false;
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DesignateG3);
+            break;
+        default:
+            // If no functions to call, overall dispatch was a failure.
+            fSuccess = false;
             break;
         }
     }
@@ -369,6 +377,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
         case L'!':
             fSuccess = _IntermediateExclamationDispatch(wch);
             break;
+        default:
+            // If no functions to call, overall dispatch was a failure.
+            fSuccess = false;
+            break;
         }
     }
     return fSuccess;
@@ -479,7 +491,7 @@ bool OutputStateMachineEngine::ActionIgnore()
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString)
+bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _Inout_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString)
 {
     // The wch here is just the string terminator for the OSC string
     UNREFERENCED_PARAMETER(wch);
@@ -493,6 +505,10 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
     case OscActionCodes::SetWindowIcon:
     case OscActionCodes::SetWindowTitle:
         fSuccess = _GetOscTitle(pwchOscStringBuffer, cchOscString, &pwchTitle, &sCchTitleLength);
+        break;
+    default:
+        // If no functions to call, overall dispatch was a failure.
+        fSuccess = false;
         break;
     }  
     if (fSuccess)
@@ -899,7 +915,7 @@ bool OutputStateMachineEngine::_VerifyDeviceAttributesParams(_In_ const unsigned
 // Return Value:
 // - True if there was a title to output. (a title with length=0 is still valid)
 _Success_(return)
-bool OutputStateMachineEngine::_GetOscTitle(_In_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString, _Outptr_result_buffer_(*pcchTitle) wchar_t** const ppwchTitle, _Out_ unsigned short * pcchTitle)
+bool OutputStateMachineEngine::_GetOscTitle(_Inout_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString, _Outptr_result_buffer_(*pcchTitle) wchar_t** const ppwchTitle, _Out_ unsigned short * pcchTitle)
 {
     *ppwchTitle = pwchOscStringBuffer;
     *pcchTitle = cchOscString;
@@ -1013,5 +1029,5 @@ bool OutputStateMachineEngine::_GetDesignateType(_In_ const wchar_t wchIntermedi
 // - True iff we should manually dispatch on the last character of a string.
 bool OutputStateMachineEngine::FlushAtEndOfString() const
 {
-    return true;
+    return false;
 }

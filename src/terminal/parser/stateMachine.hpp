@@ -20,6 +20,7 @@ Author(s):
 #include "IStateMachineEngine.hpp"
 #include "telemetry.hpp"
 #include "tracing.hpp"
+#include <memory>
 
 namespace Microsoft
 {
@@ -34,7 +35,7 @@ namespace Microsoft
 #endif
 
             public:
-                StateMachine(_In_ IStateMachineEngine* const pEngine);
+                StateMachine(_In_ std::unique_ptr<IStateMachineEngine> pEngine);
                 ~StateMachine();
 
                 void ProcessCharacter(_In_ wchar_t const wch);
@@ -119,7 +120,7 @@ namespace Microsoft
                 };
 
                 Microsoft::Console::VirtualTerminal::ParserTracing _trace;
-                IStateMachineEngine* const _pEngine;
+                std::unique_ptr<IStateMachineEngine> const _pEngine;
 
                 VTStates _state;
 

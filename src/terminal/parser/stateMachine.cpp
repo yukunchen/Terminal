@@ -13,8 +13,8 @@
 using namespace Microsoft::Console::VirtualTerminal;
 
 //Takes ownership of the pEngine.
-StateMachine::StateMachine(_In_ IStateMachineEngine* const pEngine) :
-    _pEngine(THROW_IF_NULL_ALLOC(pEngine)),
+StateMachine::StateMachine(_In_ std::unique_ptr<IStateMachineEngine> pEngine) :
+    _pEngine(std::move(pEngine)),
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing())
 {
@@ -23,10 +23,10 @@ StateMachine::StateMachine(_In_ IStateMachineEngine* const pEngine) :
 
 StateMachine::~StateMachine()
 {
-    if (_pEngine != nullptr)
-    {
-        delete _pEngine;
-    }
+    // if (_pEngine != nullptr)
+    // {
+    //     delete _pEngine;
+    // }
 }
 
 // Routine Description:
@@ -1127,7 +1127,6 @@ void StateMachine::ProcessString(_In_reads_(cch) wchar_t * const rgwch, _In_ siz
             case VTStates::OscString:
                 return _ActionOscDispatch(*pwch);
             default:
-                //assert(false);
                 return;
             }
 

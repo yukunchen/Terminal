@@ -30,14 +30,14 @@ public:
 
     HRESULT StartIfNeeded();
 
-    static HRESULT ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode* const pIoMode);
+    static HRESULT ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
     
 private:
     bool _usingVt;
     VtIoMode _IoMode;
 
-    Microsoft::Console::VtInputThread* _pVtInputThread;
     Microsoft::Console::Render::VtEngine* _pVtRenderEngine;
+    std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
 
 #ifdef UNIT_TESTING
     friend class VtIoTests;

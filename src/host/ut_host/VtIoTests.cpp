@@ -52,19 +52,19 @@ void VtIoTests::NoOpStartTest()
 void VtIoTests::ModeParsingTest()
 {
     VtIoMode mode;
-    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm", &mode));
+    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm", mode));
     VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM);
 
-    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm-256color", &mode));
+    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm-256color", mode));
     VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_256);
 
-    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"win-telnet", &mode));
+    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"win-telnet", mode));
     VERIFY_ARE_EQUAL(mode, VtIoMode::WIN_TELNET);
 
-    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"", &mode));
+    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"", mode));
     VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_256);
     
-    VERIFY_FAILED(VtIo::ParseIoMode(L"garbage", &mode));
+    VERIFY_FAILED(VtIo::ParseIoMode(L"garbage", mode));
     VERIFY_ARE_EQUAL(mode, VtIoMode::INVALID);
 
 }
