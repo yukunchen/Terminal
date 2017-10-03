@@ -85,6 +85,10 @@ class MouseEvent : public IInputEvent
 {
 public:
     MouseEvent(_In_ const MOUSE_EVENT_RECORD& record);
+    MouseEvent(_In_ const COORD mousePosition,
+               _In_ const DWORD buttonState,
+               _In_ const DWORD activeModifierKeys,
+               _In_ const DWORD eventFlags);
     ~MouseEvent();
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;

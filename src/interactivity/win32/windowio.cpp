@@ -519,7 +519,10 @@ BOOL HandleSysKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const
 
 // Routine Description:
 // - Returns TRUE if DefWindowProc should be called.
-BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam)
+BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
+                      _In_ const UINT Message,
+                      _In_ const WPARAM wParam,
+                      _In_ const LPARAM lParam)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     if (Message != WM_MOUSEMOVE)
@@ -822,9 +825,6 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
         return TRUE;
     }
 
-    INPUT_RECORD InputEvent;
-    InputEvent.Event.MouseEvent.dwControlKeyState = GetControlKeyState(0);
-
     ULONG ButtonFlags;
     ULONG EventFlags;
     switch (Message)
@@ -881,15 +881,15 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
         break;
     }
 
-    InputEvent.EventType = MOUSE_EVENT;
-    InputEvent.Event.MouseEvent.dwMousePosition = MousePosition;
-    InputEvent.Event.MouseEvent.dwEventFlags = EventFlags;
-    InputEvent.Event.MouseEvent.dwButtonState = ConvertMouseButtonState(ButtonFlags, (UINT)wParam);
-
     ULONG EventsWritten = 0;
     try
     {
-        EventsWritten = static_cast<ULONG>(gci->pInputBuffer->Write(IInputEvent::Create(InputEvent)));
+        std::unique_ptr<MouseEvent> mouseEvent = std::make_unique<MouseEvent>(
+            MousePosition,
+            ConvertMouseButtonState(ButtonFlags, static_cast<UINT>(wParam)),
+            GetControlKeyState(0),
+            EventFlags);
+        EventsWritten = static_cast<ULONG>(gci->pInputBuffer->Write(std::move(mouseEvent)));
     }
     catch(...)
     {
