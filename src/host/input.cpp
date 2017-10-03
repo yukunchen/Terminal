@@ -185,15 +185,12 @@ void HandleGenericKeyEvent(KeyEvent keyEvent, const bool generateBreak)
 void HandleFocusEvent(_In_ const BOOL fSetFocus)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    INPUT_RECORD InputEvent;
-    InputEvent.EventType = FOCUS_EVENT;
-    InputEvent.Event.FocusEvent.bSetFocus = fSetFocus;
 
 #pragma prefast(suppress:28931, "EventsWritten is not unused. Used by assertions.")
     size_t EventsWritten = 0;
     try
     {
-        EventsWritten = gci->pInputBuffer->Write(IInputEvent::Create(InputEvent));
+        EventsWritten = gci->pInputBuffer->Write(std::make_unique<FocusEvent>(fSetFocus));
     }
     catch (...)
     {

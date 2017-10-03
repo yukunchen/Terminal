@@ -126,6 +126,7 @@ class FocusEvent : public IInputEvent
 {
 public:
     FocusEvent(_In_ const FOCUS_EVENT_RECORD& record);
+    FocusEvent(_In_ const int setFocus);
     ~FocusEvent();
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;

@@ -12,6 +12,11 @@ FocusEvent::FocusEvent(_In_ const FOCUS_EVENT_RECORD& record) :
 {
 }
 
+FocusEvent::FocusEvent(_In_ const int setFocus) :
+    _setFocus{ setFocus }
+{
+}
+
 FocusEvent::~FocusEvent()
 {
 }
