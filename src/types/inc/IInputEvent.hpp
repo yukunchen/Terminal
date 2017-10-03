@@ -77,6 +77,8 @@ public:
     DWORD _activeModifierKeys;
 };
 
+bool operator==(const KeyEvent& a, const KeyEvent& b);
+
 class MouseEvent : public IInputEvent
 {
 public:

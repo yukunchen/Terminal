@@ -11,6 +11,16 @@
 
 using namespace Microsoft::Console::Interactivity;
 
+bool operator==(const KeyEvent& a, const KeyEvent& b)
+{
+    return (a._keyDown == b._keyDown &&
+            a._repeatCount == b._repeatCount &&
+            a._virtualKeyCode == b._virtualKeyCode &&
+            a._virtualScanCode == b._virtualScanCode &&
+            a._charData == b._charData &&
+            a._activeModifierKeys == b._activeModifierKeys);
+}
+
 KeyEvent::KeyEvent(_In_ const KEY_EVENT_RECORD& record) :
     _keyDown{ !!record.bKeyDown },
     _repeatCount{ record.wRepeatCount },
