@@ -15,22 +15,12 @@
 // - Handler for inserting key sequences into the buffer when the terminal emulation layer
 //   has determined a key can be converted appropriately into a sequence of inputs
 // Arguments:
-// - rgInput - Series of input records to insert into the buffer
-// - cInput - Length of input records array
+// - events - the input events to write to the input buffer
 // Return Value:
 // - <none>
-void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
+void HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    try
-    {
-        std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(rgInput, cInput);
-        gci->pInputBuffer->Write(inEvents);
-    }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-    }
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->Write(events);
 }
 
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
