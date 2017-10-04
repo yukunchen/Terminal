@@ -283,34 +283,20 @@ BOOL ConhostInternalGetSet::SetConsoleRGBTextAttribute(_In_ COLORREF const rgbCo
 // Routine Description:
 // - Connects the WriteConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
-// - rgInputRecords - An array of input records to be copied into the
-// the head of the input buffer for the underlying attached process
-// - nLength - The number of records in the rgInputRecords array
-// - pNumberOfEventsWritten - Pointer to memory location to hold the total number of elements written into the buffer
+// - events - the input events to be copied into the head of the input
+// buffer for the underlying attached process
+// - eventsWritten - on output, the number of events written
 // Return Value:
 // - TRUE if successful (see DoSrvWriteConsoleInput). FALSE otherwise.
-BOOL ConhostInternalGetSet::WriteConsoleInputW(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords,
-                                               _In_ DWORD const nLength,
-                                               _Out_ DWORD* const pNumberOfEventsWritten)
+BOOL ConhostInternalGetSet::WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                               _Out_ size_t& eventsWritten)
 {
-    *pNumberOfEventsWritten = 0;
-
-    std::deque<std::unique_ptr<IInputEvent>> events;
-    try
-    {
-        events = IInputEvent::Create(rgInputRecords, nLength);
-    }
-    CATCH_RETURN();
-
-    size_t eventsWritten;
+    eventsWritten = 0;
     BOOL fSuccess = !!SUCCEEDED(DoSrvWriteConsoleInput(_pInputBuffer,
                                                        events,
                                                        eventsWritten,
                                                        true, // unicode
                                                        false)); // append
-
-    *pNumberOfEventsWritten = static_cast<DWORD>(eventsWritten);
-
     return fSuccess;
 }
 

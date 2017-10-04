@@ -82,16 +82,6 @@ private:
 #define KEY_PRESSED 0x8000
 #define KEY_TOGGLED 0x01
 
-#define LoadKeyEvent(PEVENT, KEYDOWN, CHAR, KEYCODE, SCANCODE, KEYSTATE) { \
-        (PEVENT)->EventType = KEY_EVENT;                                   \
-        (PEVENT)->Event.KeyEvent.bKeyDown = KEYDOWN;                       \
-        (PEVENT)->Event.KeyEvent.wRepeatCount = 1;                         \
-        (PEVENT)->Event.KeyEvent.uChar.UnicodeChar = CHAR;                 \
-        (PEVENT)->Event.KeyEvent.wVirtualKeyCode = KEYCODE;                \
-        (PEVENT)->Event.KeyEvent.wVirtualScanCode = SCANCODE;              \
-        (PEVENT)->Event.KeyEvent.dwControlKeyState = KEYSTATE;             \
-        }
-
 void ClearKeyInfo(_In_ const HWND hWnd);
 
 ULONG GetControlKeyState(_In_ const LPARAM lParam);
