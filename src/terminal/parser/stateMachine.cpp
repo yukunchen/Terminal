@@ -21,14 +21,6 @@ StateMachine::StateMachine(_In_ std::unique_ptr<IStateMachineEngine> pEngine) :
     _ActionClear();
 }
 
-StateMachine::~StateMachine()
-{
-    // if (_pEngine != nullptr)
-    // {
-    //     delete _pEngine;
-    // }
-}
-
 // Routine Description:
 // - Determines if a character indicates an action that should be taken in the ground state - 
 //     These are C0 characters and the C1 [single-character] CSI.

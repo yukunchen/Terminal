@@ -36,7 +36,6 @@ class Microsoft::Console::VirtualTerminal::InputStateMachineEngine : public ISta
 {
 public:
     InputStateMachineEngine(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
-    ~InputStateMachineEngine();
 
     bool ActionExecute(_In_ wchar_t const wch);
     bool ActionPrint(_In_ wchar_t const wch);
@@ -123,9 +122,9 @@ private:
     static const GENERIC_TO_VKEY s_rgGenericMap[];
 
 
-    DWORD _GetCursorKeysModifierState(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams);
-    DWORD _GetGenericKeysModifierState(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams);
-    void _GenerateKeyFromChar(_In_ const wchar_t wch, _Out_ short* const pVkey, _Out_ DWORD* const pdwModifierState);
+    DWORD _GetCursorKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams);
+    DWORD _GetGenericKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams);
+    bool _GenerateKeyFromChar(_In_ const wchar_t wch, _Out_ short* const pVkey, _Out_ DWORD* const pdwModifierState);
 
     bool _IsModified(_In_ const unsigned short cParams);
     DWORD _GetModifier(_In_ const unsigned short modifierParam);

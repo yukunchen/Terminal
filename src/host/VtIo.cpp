@@ -74,11 +74,7 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
 {
     RETURN_IF_FAILED(ParseIoMode(VtMode, _IoMode));
 
-    // Temporary - For the sake of testing this module before the other parts 
-    //  are added in, we need to hang onto these handles ourselves.
-    // In the future, they will be given to the renderer and the input thread.
     wil::unique_hfile _hInputFile;
-    // wil::unique_hfile _hOutputFile;
 
     _hInputFile.reset(
         CreateFileW(InPipeName.c_str(),
@@ -104,7 +100,7 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
 
     try
     {
-        _pVtInputThread.reset(new VtInputThread(_hInputFile.release()));
+        _pVtInputThread = std::make_unique<VtInputThread>(std::move(_hInputFile));
     }
     CATCH_RETURN();
 

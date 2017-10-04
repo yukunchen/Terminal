@@ -39,7 +39,6 @@ const short VT_CTRL = 4;
 // CAPSLOCK_ON         0x0080
 // ENHANCED_KEY        0x0100
 
-
 const InputStateMachineEngine::CSI_TO_VKEY InputStateMachineEngine::s_rgCsiMap[]
 {
     { CsiActionCodes::ArrowUp, VK_UP },
@@ -70,17 +69,18 @@ const InputStateMachineEngine::GENERIC_TO_VKEY InputStateMachineEngine::s_rgGene
     { GenericKeyIdentifiers::F12, VK_F12 },
 };
 
-
 InputStateMachineEngine::InputStateMachineEngine(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn)
 {
     _pfnWriteEvents = pfn;
 }
 
-InputStateMachineEngine::~InputStateMachineEngine()
-{
-
-}
-
+// Method Description:
+// - Triggers the Execute action to indicate that the listener should 
+//      immediately respond to a C0 control character.
+// Arguments:
+// - wch - Character to dispatch.
+// Return Value:
+// - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
 {
     bool fSuccess = false;
@@ -89,37 +89,43 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
         // This is a C0 Control Character.
         // This should be translated as Ctrl+(wch+x40)
         wchar_t actualChar = wch;
-        // actualChar = wch+0x40;
         bool writeCtrl = true;
 
         short vkey = 0;
         DWORD dwModifierState = 0;
-        _GenerateKeyFromChar(actualChar, &vkey, &dwModifierState);
         
         if (wch == L'\b')
         {
-            _GenerateKeyFromChar(wch+0x40, &vkey, nullptr);
+            fSuccess = _GenerateKeyFromChar(wch+0x40, &vkey, nullptr);
         }
         else if (wch == L'\r')
         {
-            _GenerateKeyFromChar(wch, &vkey, nullptr);
+            fSuccess = _GenerateKeyFromChar(wch, &vkey, nullptr);
             writeCtrl = false;
         }
         else if (wch == L'\x1b')
         {
-            _GenerateKeyFromChar(wch+0x40, &vkey, nullptr);
+            fSuccess = _GenerateKeyFromChar(wch+0x40, &vkey, nullptr);
         }
         else if (wch == L'\t')
         {
-            writeCtrl = false;
+            fSuccess = writeCtrl = false;
+            fSuccess = _GenerateKeyFromChar(actualChar, &vkey, &dwModifierState);
         }
-        
-        if (writeCtrl)
+        else
         {
-            SetFlag(dwModifierState, LEFT_CTRL_PRESSED);
+            fSuccess = _GenerateKeyFromChar(actualChar, &vkey, &dwModifierState);
         }
 
-        fSuccess = _WriteSingleKey(actualChar, vkey, dwModifierState);
+        if (fSuccess)
+        {
+            if (writeCtrl)
+            {
+                SetFlag(dwModifierState, LEFT_CTRL_PRESSED);
+            }
+
+            fSuccess = _WriteSingleKey(actualChar, vkey, dwModifierState); 
+        }
     }
     else if (wch == '\x7f')
     {
@@ -132,15 +138,33 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
     return fSuccess;
 }
 
+// Method Description:
+// - Triggers the Print action to indicate that the listener should render the
+//      character given.
+// Arguments:
+// - wch - Character to dispatch.
+// Return Value:
+// - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 {
     short vkey = 0;
     DWORD dwModifierState = 0;
-    _GenerateKeyFromChar(wch, &vkey, &dwModifierState);
-
-    return _WriteSingleKey(wch, vkey, dwModifierState);
+    bool fSuccess =  _GenerateKeyFromChar(wch, &vkey, &dwModifierState);
+    if (fSuccess)
+    {
+        fSuccess = _WriteSingleKey(wch, vkey, dwModifierState);
+    }
+    return fSuccess;
 }
 
+// Method Description:
+// - Triggers the Print action to indicate that the listener should render the 
+//      string of characters given.
+// Arguments:
+// - rgwch - string to dispatch.
+// - cch - length of rgwch
+// Return Value:
+// - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
 {
     bool fSuccess = true;
@@ -153,22 +177,49 @@ bool InputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const r
     return fSuccess;
 }
 
-bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate)
+// Method Description:
+// - Triggers the EscDispatch action to indicate that the listener should handle
+//      a simple escape sequence. These sequences traditionally start with ESC 
+//      and a simple letter. No complicated parameters.
+// Arguments:
+// - wch - Character to dispatch.
+// - cIntermediate - Number of "Intermediate" characters found - such as '!', '?'
+// - wchIntermediate - Intermediate character in the sequence, if there was one.
+// Return Value:
+// - true iff we successfully dispatched the sequence.
+bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, 
+                                                _In_ const unsigned short cIntermediate,
+                                                _In_ const wchar_t wchIntermediate)
 {
     UNREFERENCED_PARAMETER(cIntermediate);
     UNREFERENCED_PARAMETER(wchIntermediate);
 
     DWORD dwModifierState = 0;
     short vk = 0;
-    _GenerateKeyFromChar(wch, &vk, &dwModifierState);
-
-    // Alt is definitely pressed in the esc+key case.
-    dwModifierState = dwModifierState | LEFT_ALT_PRESSED;
-    
-    // return _WriteSingleKey(wch, dwModifierState);
-    return _WriteSingleKey(wch, vk, dwModifierState);
+    bool fSuccess = _GenerateKeyFromChar(wch, &vk, &dwModifierState);
+    if (fSuccess)
+    {
+        // Alt is definitely pressed in the esc+key case.
+        dwModifierState = dwModifierState | LEFT_ALT_PRESSED;
+        
+        fSuccess = _WriteSingleKey(wch, vk, dwModifierState);
+        
+    }
+    return fSuccess;
 }
 
+// Method Description:
+// - Triggers the CsiDispatch action to indicate that the listener should handle
+//      a control sequence. These sequences perform various API-type commands 
+//      that can include many parameters.
+// Arguments:
+// - wch - Character to dispatch.
+// - cIntermediate - Number of "Intermediate" characters found - such as '!', '?'
+// - wchIntermediate - Intermediate character in the sequence, if there was one.
+// - rgusParams - set of numeric parameters collected while pasring the sequence.
+// - cParams - number of parameters found.
+// Return Value:
+// - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch, 
                        _In_ const unsigned short cIntermediate,
                        _In_ const wchar_t wchIntermediate,
@@ -199,7 +250,6 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
         case CsiActionCodes::F2:
         case CsiActionCodes::F3:
         case CsiActionCodes::F4:
-            // DebugBreak();
             dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
             fSuccess = _GetCursorKeysVkey(wch, &vkey);
             break;
@@ -217,17 +267,44 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
     return fSuccess;
 }
 
+// Method Description:
+// - Triggers the Clear action to indicate that the state machine should erase 
+//      all internal state.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 bool InputStateMachineEngine::ActionClear()
 {
     return true;
 }
 
+// Method Description:
+// - Triggers the Ignore action to indicate that the state machine should eat 
+//      this character and say nothing.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 bool InputStateMachineEngine::ActionIgnore()
 {
     return true;
 }
 
-bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _Inout_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString)
+// Method Description:
+// - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
+//   These sequences perform various API-type commands that can include many parameters.
+// Arguments:
+// - wch - Character to dispatch. This will be a BEL or ST char.
+// - sOscParam - identifier of the OSC action to perform
+// - pwchOscStringBuffer - OSC string we've collected. NOT null terminated.
+// - cchOscString - length of pwchOscStringBuffer
+// Return Value:
+// - true if we handled the dsipatch.
+bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch,
+                                                _In_ const unsigned short sOscParam,
+                                                _Inout_ wchar_t* const pwchOscStringBuffer,
+                                                _In_ const unsigned short cchOscString)
 {
     UNREFERENCED_PARAMETER(wch);
     UNREFERENCED_PARAMETER(sOscParam);
@@ -236,6 +313,12 @@ bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ con
     return false;
 }
 
+// Method Description:
+// - Converts a VT encoded modifier param into a INPUT_RECORD compatible one.
+// Arguments:
+// - modifierParam - the 
+// Return Value:
+// - <none>
 size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
                                                          _In_ const short vkey,
                                                          _In_ const DWORD dwModifierState,
@@ -370,22 +453,27 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
 
 }
 
-bool InputStateMachineEngine::_WriteSingleKey(_In_ const wchar_t wch, _In_ const short vkey, _In_ const DWORD dwModifierState)
-{
-    // At most 6 records - 2 for each of shift,ctrl,alt up and down, and 2 for the actual key up and down.
-    INPUT_RECORD rgInput[6];
-    size_t cInput = _GenerateWrappedSequence(wch, vkey, dwModifierState, rgInput, 6);
-
-    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(rgInput, cInput);
-    _pfnWriteEvents(inputEvents);
-    return true;
-}
-
-size_t InputStateMachineEngine::_GetSingleKeypress(_In_ const wchar_t wch, _In_ const short vkey, _In_ const DWORD dwModifierState, _Inout_updates_(cRecords) INPUT_RECORD* const rgInput, _In_ const size_t cRecords)
+// Method Description:
+// - Writes a single character keypress to the input buffer. This writes both 
+//      the keydown and keyup events.
+// Arguments:
+// - wch - the 
+// - vkey - the 
+// - dwModifierState - the 
+// - rgInput - the 
+// - cRecords - the 
+// Return Value:
+// - <none>
+size_t InputStateMachineEngine::_GetSingleKeypress(_In_ const wchar_t wch, 
+                                                   _In_ const short vkey,
+                                                   _In_ const DWORD dwModifierState,
+                                                   _Inout_updates_(cRecords) INPUT_RECORD* const rgInput,
+                                                   _In_ const size_t cRecords)
 {
     // It's used by the assert, which is a no-op in release builds
     UNREFERENCED_PARAMETER(cRecords);
     assert(cRecords >= 2);
+
     rgInput[0].EventType = KEY_EVENT;
     rgInput[0].Event.KeyEvent.bKeyDown = TRUE;
     rgInput[0].Event.KeyEvent.dwControlKeyState = dwModifierState;
@@ -400,14 +488,51 @@ size_t InputStateMachineEngine::_GetSingleKeypress(_In_ const wchar_t wch, _In_ 
     return 2;
 }
 
+// Method Description:
+// - Writes a sequence of keypresses to the input callback based on the wch, 
+//      vkey and modifiers passed in. Will create both the appropriate key downs
+//      and ups for that key for writing to the input. Will also generate 
+//      keypresses for pressing the modifier keys while typing that character.
+// Arguments:
+// - wch - the character to write to the input callback.
+// - vkey - the VKEY of the key to write to the input callback.
+// - dwModifierState - the modifier state to write with the key.
+// Return Value:
+// - true iff we successfully wrote the keypress to the input callback.
+bool InputStateMachineEngine::_WriteSingleKey(_In_ const wchar_t wch, _In_ const short vkey, _In_ const DWORD dwModifierState)
+{
+    // At most 8 records - 2 for each of shift,ctrl,alt up and down, and 2 for the actual key up and down.
+    INPUT_RECORD rgInput[8];
+    size_t cInput = _GenerateWrappedSequence(wch, vkey, dwModifierState, rgInput, 8);
+
+    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(rgInput, cInput);
+    _pfnWriteEvents(inputEvents);
+    return true;
+}
+
+// Method Description:
+// - Helper for writing a single key to the input when you only know the vkey.
+//      Will automatically get the wchar_t associated with that vkey.
+// Arguments:
+// - vkey - the VKEY of the key to write to the input callback.
+// - dwModifierState - the modifier state to write with the key.
+// Return Value:
+// - true iff we successfully wrote the keypress to the input callback.
 bool InputStateMachineEngine::_WriteSingleKey(_In_ const short vkey, _In_ const DWORD dwModifierState)
 {
-    // if (vkey == VK_HOME) DebugBreak();
     wchar_t wch = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
     return _WriteSingleKey(wch, vkey, dwModifierState);
 }
 
-DWORD InputStateMachineEngine::_GetCursorKeysModifierState(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams)
+// Method Description:
+// - Retrieves the modifier state from a set of parameters for a cursor keys 
+//      sequence. This is for Arrow keys, Home, End, etc.
+// Arguments:
+// - rgusParams - the set of parameters to get the modifier state from.
+// - cParams - the number of elements in rgusParams
+// Return Value:
+// - the INPUT_RECORD comaptible modifier state.
+DWORD InputStateMachineEngine::_GetCursorKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams)
 {
     DWORD dwModifiers = 0;
     if (_IsModified(cParams))
@@ -417,7 +542,15 @@ DWORD InputStateMachineEngine::_GetCursorKeysModifierState(_In_ const unsigned s
     return dwModifiers;
 }
 
-DWORD InputStateMachineEngine::_GetGenericKeysModifierState(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams)
+// Method Description:
+// - Retrieves the modifier state from a set of parameters for a "Generic" 
+//      keypress - one who's sequence is terminated with a '~'.
+// Arguments:
+// - rgusParams - the set of parameters to get the modifier state from.
+// - cParams - the number of elements in rgusParams
+// Return Value:
+// - the INPUT_RECORD comaptible modifier state.
+DWORD InputStateMachineEngine::_GetGenericKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams)
 {
     DWORD dwModifiers = 0;
     if (_IsModified(cParams))
@@ -427,6 +560,12 @@ DWORD InputStateMachineEngine::_GetGenericKeysModifierState(_In_ const unsigned 
     return dwModifiers;
 }
 
+// Method Description:
+// - Determines if a set of parameters indicates a modified keypress
+// Arguments:
+// - cParams - the nummber of parameters we've collected in this sequence 
+// Return Value:
+// - true iff the sequence is a modified sequence.
 bool InputStateMachineEngine::_IsModified(_In_ const unsigned short cParams)
 {
     // modified input either looks like
@@ -435,9 +574,15 @@ bool InputStateMachineEngine::_IsModified(_In_ const unsigned short cParams)
     return cParams == 2;
 }
 
+// Method Description:
+// - Converts a VT encoded modifier param into a INPUT_RECORD compatible one.
+// Arguments:
+// - modifierParam - the VT modifier value to convert
+// Return Value:
+// - The equivalent INPUT_RECORD modifier value.
 DWORD InputStateMachineEngine::_GetModifier(_In_ const unsigned short modifierParam)
 {
-    // VT Modifiers are 1+modifiers
+    // VT Modifiers are 1+(modifier flags)
     unsigned short vtParam = modifierParam-1;
     DWORD modifierState = modifierParam > 0 ? ENHANCED_KEY : 0;
 
@@ -447,7 +592,7 @@ DWORD InputStateMachineEngine::_GetModifier(_In_ const unsigned short modifierPa
     return modifierState | (fShift? SHIFT_PRESSED : 0) | (fAlt? LEFT_ALT_PRESSED : 0) | (fCtrl? LEFT_CTRL_PRESSED : 0);
 }
 
-// Routine Description:
+// Method Description:
 // - Gets the Vkey form the generic keys table associated with a particular
 //   identifier code. The identifier code will be the first param in rgusParams.
 // Arguments:
@@ -478,7 +623,7 @@ bool InputStateMachineEngine::_GetGenericVkey(_In_ const unsigned short* const r
     return false;
 }
 
-// Routine Description:
+// Method Description:
 // - Gets the Vkey from the CSI codes table associated with a particular character.
 // Arguments:
 // - wch: the wchar_t to get the mapped vkey of.
@@ -487,7 +632,6 @@ bool InputStateMachineEngine::_GetGenericVkey(_In_ const unsigned short* const r
 // true iff we found the key
 bool InputStateMachineEngine::_GetCursorKeysVkey(_In_ const wchar_t wch, _Out_ short* const pVkey) const
 {
-    // if(wch == L'H') DebugBreak();
     *pVkey = 0;
     for(int i = 0; i < ARRAYSIZE(s_rgCsiMap); i++)
     {
@@ -502,7 +646,7 @@ bool InputStateMachineEngine::_GetCursorKeysVkey(_In_ const wchar_t wch, _Out_ s
     return false;
 }
 
-// Routine Description:
+// Method Description:
 // - Gets the Vkey and modifier state that's associated with a particular char.
 // Arguments:
 // - wch: the wchar_t to get the vkey and modifier state of.
@@ -510,7 +654,7 @@ bool InputStateMachineEngine::_GetCursorKeysVkey(_In_ const wchar_t wch, _Out_ s
 // - pdwModifierState: Recieves the modifier state
 // Return Value:
 // <none>
-void InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch, _Out_ short* const pVkey, _Out_ DWORD* const pdwModifierState)
+bool InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch, _Out_ short* const pVkey, _Out_ DWORD* const pdwModifierState)
 {
     // Low order byte is key, high order is modifiers
     short keyscan = VkKeyScan(wch);
@@ -518,6 +662,12 @@ void InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch, _Out_
     short vkey = LOBYTE(keyscan);
 
     short keyscanModifiers = HIBYTE(keyscan);
+
+    if (vkey == -1 && keyscanModifiers == -1)
+    {
+        return false;
+    }
+
     // Because of course, these are not the same flags.
     short dwModifierState = 0 |
         IsFlagSet(keyscanModifiers, KEYSCAN_SHIFT) ? SHIFT_PRESSED : 0 |
@@ -532,9 +682,10 @@ void InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch, _Out_
     {
         *pdwModifierState = dwModifierState;
     } 
+    return true;
 }
 
-// Routine Description:
+// Method Description:
 // - Returns true if the engine should dispatch on the last charater of a string 
 //      always, even if the sequence hasn't normally dispatched.
 //   If this is false, the engine will persist it's state across calls to 

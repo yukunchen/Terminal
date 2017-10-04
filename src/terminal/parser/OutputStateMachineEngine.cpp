@@ -24,11 +24,12 @@ OutputStateMachineEngine::~OutputStateMachineEngine()
 }
 
 // Routine Description:
-// - Triggers the Execute action to indicate that the listener should immediately respond to a C0 control character.
+// - Triggers the Execute action to indicate that the listener should 
+//      immediately respond to a C0 control character.
 // Arguments:
 // - wch - Character to dispatch.
 // Return Value:
-// - <none>
+// - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
 {
     _pDispatch->Execute(wch);
@@ -36,11 +37,12 @@ bool OutputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
 }
 
 // Routine Description:
-// - Triggers the Print action to indicate that the listener should render the character given.
+// - Triggers the Print action to indicate that the listener should render the
+//      character given.
 // Arguments:
 // - wch - Character to dispatch.
 // Return Value:
-// - <none>
+// - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 {
     _pDispatch->Print(wch); // call print
@@ -48,11 +50,13 @@ bool OutputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 }
 
 // Routine Description:
-// - Triggers the Print action to indicate that the listener should render the character given.
+// - Triggers the Print action to indicate that the listener should render the 
+//      string of characters given.
 // Arguments:
-// - wch - Character to dispatch.
+// - rgwch - string to dispatch.
+// - cch - length of rgwch
 // Return Value:
-// - <none>
+// - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
 {
     _pDispatch->PrintString(rgwch, cch); // call print
@@ -60,13 +64,18 @@ bool OutputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const 
 }
 
 // Routine Description:
-// - Triggers the EscDispatch action to indicate that the listener should handle a simple escape sequence.
-//   These sequences traditionally start with ESC and a simple letter. No complicated parameters.
+// - Triggers the EscDispatch action to indicate that the listener should handle
+//      a simple escape sequence. These sequences traditionally start with ESC 
+//      and a simple letter. No complicated parameters.
 // Arguments:
 // - wch - Character to dispatch.
+// - cIntermediate - Number of "Intermediate" characters found - such as '!', '?'
+// - wchIntermediate - Intermediate character in the sequence, if there was one.
 // Return Value:
-// - <none>
-bool OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate)
+// - true iff we successfully dispatched the sequence.
+bool OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, 
+                                                 _In_ const unsigned short cIntermediate,
+                                                 _In_ const wchar_t wchIntermediate)
 {
     bool fSuccess = false;
 
@@ -157,12 +166,17 @@ bool OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, _In_ co
 }
 
 // Routine Description:
-// - Triggers the CsiDispatch action to indicate that the listener should handle a control sequence.
-//   These sequences perform various API-type commands that can include many parameters.
+// - Triggers the CsiDispatch action to indicate that the listener should handle
+//      a control sequence. These sequences perform various API-type commands 
+//      that can include many parameters.
 // Arguments:
 // - wch - Character to dispatch.
+// - cIntermediate - Number of "Intermediate" characters found - such as '!', '?'
+// - wchIntermediate - Intermediate character in the sequence, if there was one.
+// - rgusParams - set of numeric parameters collected while pasring the sequence.
+// - cParams - number of parameters found.
 // Return Value:
-// - <none>
+// - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch, 
                                                  _In_ const unsigned short cIntermediate,
                                                  _In_ const wchar_t wchIntermediate,
@@ -461,9 +475,10 @@ bool OutputStateMachineEngine::_IntermediateExclamationDispatch(_In_ wchar_t con
 
 
 // Routine Description:
-// - Triggers the Clear action to indicate that the state machine should erase all internal state.
+// - Triggers the Clear action to indicate that the state machine should erase 
+//      all internal state.
 // Arguments:
-// - wch - Character to dispatch.
+// - <none>
 // Return Value:
 // - <none>
 bool OutputStateMachineEngine::ActionClear()
@@ -473,9 +488,10 @@ bool OutputStateMachineEngine::ActionClear()
 }
 
 // Routine Description:
-// - Triggers the Ignore action to indicate that the state machine should eat this character and say nothing.
+// - Triggers the Ignore action to indicate that the state machine should eat 
+//      this character and say nothing.
 // Arguments:
-// - wch - Character to dispatch.
+// - <none>
 // Return Value:
 // - <none>
 bool OutputStateMachineEngine::ActionIgnore()
@@ -488,9 +504,12 @@ bool OutputStateMachineEngine::ActionIgnore()
 // - Triggers the OscDispatch action to indicate that the listener should handle a control sequence.
 //   These sequences perform various API-type commands that can include many parameters.
 // Arguments:
-// - wch - Character to dispatch.
+// - wch - Character to dispatch. This will be a BEL or ST char.
+// - sOscParam - identifier of the OSC action to perform
+// - pwchOscStringBuffer - OSC string we've collected. NOT null terminated.
+// - cchOscString - length of pwchOscStringBuffer
 // Return Value:
-// - <none>
+// - true if we handled the dsipatch.
 bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _Inout_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString)
 {
     // The wch here is just the string terminator for the OSC string

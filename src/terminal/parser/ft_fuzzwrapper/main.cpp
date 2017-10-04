@@ -65,7 +65,7 @@ int __cdecl wmain(int argc, wchar_t* argv[])
         bool fGotChar = GetChar(&wch);
         
         EchoDispatch echo;
-        std::unique_ptr<IStateMachineEngine> pEngine = std::unique_ptr<IStateMachineEngine>(new OutputStateMachineEngine(&echo));
+        std::unique_ptr<OutputStateMachineEngine> pEngine = std::make_unique<OutputStateMachineEngine>(&echo);
         THROW_IF_NULL_ALLOC(pEngine);
         StateMachine machine(std::move(pEngine));
 

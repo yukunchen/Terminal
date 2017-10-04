@@ -21,21 +21,40 @@ void _HandleTerminalKeyEventCallback(_In_ std::deque<std::unique_ptr<IInputEvent
     gci->pInputBuffer->Write(inEvents);
 }
 
-VtInputThread::~VtInputThread()
+// Constructor Description:
+// - Creates the VT Input Thread.
+// Arguments:
+// - hPipe - a handle to the file representing the read end of the VT pipe. 
+VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
+    : _hFile(std::move(hPipe))
 {
-    // if(_pInputStateMachine != nullptr)
-    // {
-    //     delete _pInputStateMachine;
-    // }
+    THROW_IF_HANDLE_INVALID(_hFile.get());
+
+    std::unique_ptr<InputStateMachineEngine> pEngine = 
+        std::make_unique<InputStateMachineEngine>(_HandleTerminalKeyEventCallback);
+
+    THROW_IF_NULL_ALLOC(pEngine);
+
+    _pInputStateMachine.reset(new StateMachine(std::move(pEngine)));
+    THROW_IF_NULL_ALLOC(_pInputStateMachine);
+
 }
 
+// Method Description:
+// - Processes a buffer of input characters. The characters should be utf-8 
+//      encoded, and will get converted to wchar_t's to be processed by the 
+//      input state machine. 
+// Arguments:
+// - charBuffer - the UTF-8 characters recieved.
+// - cch - number of UTF-8 characters in charBuffer
+// Return Value:
+// - S_OK on success, otherwise an appropriate failure.
 HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const char* const charBuffer, _In_ const int cch)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     unsigned int const uiCodePage = gci->CP;
     try
     {
-
         wistd::unique_ptr<wchar_t[]> pwsSequence;
         size_t cchSequence;
         RETURN_IF_FAILED(ConvertToW(uiCodePage, charBuffer, cch, pwsSequence, cchSequence));
@@ -47,12 +66,24 @@ HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const char* const charBuf
     return S_OK;
 }
 
+// Function Description:
+// - Static function used for initializing an instance's ThreadProc.
+// Arguments:
+// - lpParameter - A pointer to the VtInputThread instance that should be called.
+// Return Value:
+// - The return value of the underlying instance's _InputThread
 DWORD VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 {
     VtInputThread* const pInstance = reinterpret_cast<VtInputThread*>(lpParameter);
     return pInstance->_InputThread();
 }
 
+// Method Description:
+// - The ThreadProc for the VT Input Thread. Reads input from the pipe, and 
+//      passes it to _HandleRunInput to be processed by the 
+//      InputStateMachineEngine.
+// Return Value:
+// - <none>
 DWORD VtInputThread::_InputThread()
 {
     char buffer[256];
@@ -65,14 +96,14 @@ DWORD VtInputThread::_InputThread()
     }
 }
 
-// Routine Description:
+// Method Description:
 // - Starts the VT input thread.
 HRESULT VtInputThread::Start()
 {
     RETURN_IF_HANDLE_INVALID(_hFile.get());
 
     HANDLE hThread = nullptr;
-    DWORD dwThreadId = static_cast<DWORD>(-1);
+    DWORD dwThreadId = 0;
 
     hThread = CreateThread(nullptr,
                            0,
@@ -86,19 +117,4 @@ HRESULT VtInputThread::Start()
     _dwThreadId = dwThreadId;
 
     return S_OK;
-}
-
-VtInputThread::VtInputThread(_In_ HANDLE hPipe)
-{
-    _hFile.reset(hPipe);
-    THROW_IF_HANDLE_INVALID(_hFile.get());
-
-    std::unique_ptr<InputStateMachineEngine> pEngine = 
-        std::unique_ptr<InputStateMachineEngine>(new InputStateMachineEngine(_HandleTerminalKeyEventCallback));
-
-    THROW_IF_NULL_ALLOC(pEngine);
-
-    _pInputStateMachine.reset(new StateMachine(std::move(pEngine)));
-    THROW_IF_NULL_ALLOC(_pInputStateMachine);
-
 }
