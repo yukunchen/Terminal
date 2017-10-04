@@ -334,11 +334,6 @@ bool TerminalInput::_TranslateDefaultMapping(_In_ const KeyEvent& keyEvent,
 
 bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
 {
-    // Sept 2017: convert KeyEvent back to INPUT_RECORD for processing.
-    // This function was originally written operating on INPUT_RECORD's alone.
-    // MSFT:13701152 will replace the entire class to work only on InputEvents.
-    //INPUT_RECORD inRecord = pInEvent->ToInputRecord();
-
     // By default, we fail to handle the key
     bool fKeyHandled = false;
 
@@ -450,40 +445,36 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
 // - None
 void TerminalInput::_SendEscapedInputSequence(_In_ const wchar_t wch) const
 {
-    INPUT_RECORD rgInput[2];
-    rgInput[0].EventType = KEY_EVENT;
-    rgInput[0].Event.KeyEvent.bKeyDown = TRUE;
-    rgInput[0].Event.KeyEvent.dwControlKeyState = 0;
-    rgInput[0].Event.KeyEvent.wRepeatCount = 1;
-    rgInput[0].Event.KeyEvent.wVirtualKeyCode = 0;
-    rgInput[0].Event.KeyEvent.wVirtualScanCode = 0;
-    rgInput[0].Event.KeyEvent.uChar.UnicodeChar = L'\x1b';
-
-    rgInput[1].EventType = KEY_EVENT;
-    rgInput[1].Event.KeyEvent.bKeyDown = TRUE;
-    rgInput[1].Event.KeyEvent.dwControlKeyState = 0;
-    rgInput[1].Event.KeyEvent.wRepeatCount = 1;
-    rgInput[1].Event.KeyEvent.wVirtualKeyCode = 0;
-    rgInput[1].Event.KeyEvent.wVirtualScanCode = 0;
-    rgInput[1].Event.KeyEvent.uChar.UnicodeChar = wch;
-
-    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(rgInput, 2);
-    _pfnWriteEvents(inputEvents);
+    try
+    {
+        std::deque<std::unique_ptr<IInputEvent>> inputEvents;
+        inputEvents.push_back(std::make_unique<KeyEvent>(TRUE, 1ui16, 0ui16, 0ui16, L'\x1b', 0));
+        inputEvents.push_back(std::make_unique<KeyEvent>(TRUE, 1ui16, 0ui16, 0ui16, wch, 0));
+        _pfnWriteEvents(inputEvents);
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+    }
 }
 
 void TerminalInput::_SendNullInputSequence(_In_ DWORD const dwControlKeyState) const
 {
-    INPUT_RECORD irInput;
-    irInput.EventType = KEY_EVENT;
-    irInput.Event.KeyEvent.bKeyDown = TRUE;
-    irInput.Event.KeyEvent.dwControlKeyState = dwControlKeyState;
-    irInput.Event.KeyEvent.wRepeatCount = 1;
-    irInput.Event.KeyEvent.wVirtualKeyCode = LOBYTE(VkKeyScanW(0));
-    irInput.Event.KeyEvent.wVirtualScanCode = 0;
-    irInput.Event.KeyEvent.uChar.UnicodeChar = L'\x0';
-
-    std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(&irInput, 1);
-    _pfnWriteEvents(inputEvents);
+    try
+    {
+        std::deque<std::unique_ptr<IInputEvent>> inputEvents;
+        inputEvents.push_back(std::make_unique<KeyEvent>(TRUE,
+                                                         1ui16,
+                                                         LOBYTE(VkKeyScanW(0)),
+                                                         0ui16,
+                                                         L'\x0',
+                                                         dwControlKeyState));
+        _pfnWriteEvents(inputEvents);
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+    }
 }
 
 void TerminalInput::_SendInputSequence(_In_ PCWSTR const pwszSequence) const
@@ -492,21 +483,18 @@ void TerminalInput::_SendInputSequence(_In_ PCWSTR const pwszSequence) const
     // + 1 to max sequence length for null terminator count which is required by StringCchLengthW
     if (SUCCEEDED(StringCchLengthW(pwszSequence, _TermKeyMap::s_cchMaxSequenceLength + 1, &cch)) && cch > 0)
     {
-        INPUT_RECORD rgInput[_TermKeyMap::s_cchMaxSequenceLength];
-
-        for (size_t i = 0; i < cch; i++)
+        try
         {
-            rgInput[i].EventType = KEY_EVENT;
-            rgInput[i].Event.KeyEvent.bKeyDown = TRUE;
-            rgInput[i].Event.KeyEvent.dwControlKeyState = 0;
-            rgInput[i].Event.KeyEvent.wRepeatCount = 1;
-            rgInput[i].Event.KeyEvent.wVirtualKeyCode = 0;
-            rgInput[i].Event.KeyEvent.wVirtualScanCode = 0;
-
-            rgInput[i].Event.KeyEvent.uChar.UnicodeChar = pwszSequence[i];
+            std::deque<std::unique_ptr<IInputEvent>> inputEvents;
+            for (size_t i = 0; i < cch; i++)
+            {
+                inputEvents.push_back(std::make_unique<KeyEvent>(TRUE, 1ui16, 0ui16, 0ui16, pwszSequence[i], 0));
+            }
+            _pfnWriteEvents(inputEvents);
         }
-
-        std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(rgInput, cch);
-        _pfnWriteEvents(inputEvents);
+        catch (...)
+        {
+            LOG_HR(wil::ResultFromCaughtException());
+        }
     }
 }
