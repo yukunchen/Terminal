@@ -54,10 +54,6 @@ Notes:
 #include "screenInfo.hpp"
 #include "server.h"
 
-#define ALT_PRESSED     (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)
-#define CTRL_PRESSED    (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED)
-#define MOD_PRESSED     (SHIFT_PRESSED | ALT_PRESSED | CTRL_PRESSED)
-
 #define CTRL_BUT_NOT_ALT(n) \
         (((n) & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) && \
         !((n) & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)))
