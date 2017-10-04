@@ -254,6 +254,8 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
         // So we'll copy the attributes here in a not terrible way.
         if (fWriteAttributes)
         {
+            // This is trying to get the arrtibute at (Left,Top) from the source array.
+            // Because it's in a linear array, its at (y*rowLength)+x.
             const TextAttribute* const pOriginAttr = &(pTextAttributes[(psrSrc->Top * coordSrcDimensions.X) + psrSrc->Left]);
             const int rowWidth = coordScreenBufferSize.X;
             const int srcWidth = psrSrc->Right - psrSrc->Left;

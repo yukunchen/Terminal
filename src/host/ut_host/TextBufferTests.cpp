@@ -1200,9 +1200,9 @@ void TextBufferTests::CopyAttrs()
     const auto row = tbi->GetRowByOffset(0);
     const auto attrRow = &row->AttrRow;
     const auto len = tbi->_coordBufferSize.X;
-    const auto attrs = new TextAttribute[len];
+    const auto attrs = std::make_unique<TextAttribute[]>(len);
     VERIFY_IS_NOT_NULL(attrs);
-    attrRow->UnpackAttrs(attrs, len);
+    attrRow->UnpackAttrs(attrs.get(), len);
     const auto attrA = attrs[0];
     const auto attrB = attrs[1];
 
