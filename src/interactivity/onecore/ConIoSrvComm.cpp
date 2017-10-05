@@ -305,7 +305,10 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
             break;
 
             case CIS_DISPLAY_MODE_DIRECTX:
-                WddmEngine = (WddmConEngine *)ServiceLocator::LocateGlobals()->pRenderEngine;
+            {
+                Globals* const pGlobals = ServiceLocator::LocateGlobals();
+
+                WddmEngine = (WddmConEngine *)pGlobals->pRenderEngine;
 
                 if (Event->FocusEvent.IsActive)
                 {
@@ -320,8 +323,25 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                     {
                         hr = WddmEngine->Initialize();
                         LOG_IF_FAILED(hr);
+
+                        // Right after we initialize, synchronize the screen/viewport states with the WddmCon surface dimensions
+                        if (SUCCEEDED(hr))
+                        {
+                            const RECT rcOld = { 0 };
+
+                            // WddmEngine reports display size in characters, adjust to pixels for resize window calc.
+                            RECT rcDisplay = WddmEngine->GetDisplaySize();
+
+                            // Get font to adjust char to pixels.
+                            const COORD coordFont = WddmEngine->GetFontSize();
+                            rcDisplay.right *= coordFont.X;
+                            rcDisplay.bottom *= coordFont.Y;
+
+                            // Ask the screen buffer to resize itself (and all related components) based on the screen size.
+                            pGlobals->getConsoleInformation()->CurrentScreenBuffer->ProcessResizeWindow(&rcDisplay, &rcOld);
+                        }
                     }
-                    
+
                     if (SUCCEEDED(hr))
                     {
                         // Allow acquiring device resources before drawing.
@@ -360,6 +380,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                                         NULL);
                     }
                 }
+            }
             break;
 
             case CIS_DISPLAY_MODE_NONE:

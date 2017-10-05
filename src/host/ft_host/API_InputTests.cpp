@@ -7,6 +7,8 @@
 
 #include <thread>
 
+#include "..\..\interactivity\onecore\SystemConfigurationProvider.hpp"
+
 // some assumptions have been made on this value. only change it if you have a good reason to.
 #define NUMBER_OF_SCENARIO_INPUTS 10
 #define READ_BATCH 3
@@ -45,7 +47,9 @@ class InputTests
     TEST_METHOD(TestMouseWheelReadConsoleInputQuickEdit);
     TEST_METHOD(TestMouseHorizWheelReadConsoleInputQuickEdit);
     
-    TEST_METHOD(TestVtInputGeneration);
+    BEGIN_TEST_METHOD(TestVtInputGeneration)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD();
 };
 
 void VerifyNumberOfInputRecords(_In_ const HANDLE hConsoleInput, _In_ DWORD nInputs)
@@ -79,7 +83,17 @@ void InputTests::TestGetMouseButtonsValid()
     DWORD nMouseButtons = (DWORD)-1;
     VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetNumberOfConsoleMouseButtons(&nMouseButtons));
 
-    VERIFY_ARE_EQUAL(nMouseButtons, (DWORD)GetSystemMetrics(SM_CMOUSEBUTTONS));
+    DWORD dwButtonsExpected = (DWORD)-1;
+    if (IsGetSystemMetricsPresent())
+    {
+        dwButtonsExpected = (DWORD)GetSystemMetrics(SM_CMOUSEBUTTONS);
+    }
+    else
+    {
+        dwButtonsExpected = Microsoft::Console::Interactivity::OneCore::SystemConfigurationProvider::s_DefaultNumberOfMouseButtons;
+    }
+
+    VERIFY_ARE_EQUAL(dwButtonsExpected, nMouseButtons);
 }
 
 void GenerateAndWriteInputRecords(_In_ const HANDLE hConsoleInput,
@@ -615,6 +629,9 @@ void InputTests::TestVtInputGeneration()
     SetConsoleMode(hIn, dwMode);
     GetConsoleMode(hIn, &dwMode);
     VERIFY_IS_TRUE(IsFlagSet(dwMode, ENABLE_VIRTUAL_TERMINAL_INPUT));
+
+    Log::Comment(L"Flushing");
+    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn));
 
     rgInputRecords[0].EventType = KEY_EVENT;
     rgInputRecords[0].Event.KeyEvent.bKeyDown = TRUE;

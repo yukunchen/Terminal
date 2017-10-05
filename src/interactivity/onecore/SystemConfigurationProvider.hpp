@@ -17,6 +17,12 @@ Author(s):
 
 #pragma hdrstop
 
+#ifndef DEFAULT_TT_FONT_FACENAME
+#define DEFAULT_TT_FONT_FACENAME L"__DefaultTTFont__"
+#endif
+
+class InputTests;
+
 namespace Microsoft
 {
     namespace Console
@@ -40,6 +46,14 @@ namespace Microsoft
                                             _Inout_ PDWORD pdwTitleLength,
                                             _In_ PCWSTR pwszCurrDir,
                                             _In_ PCWSTR pwszAppName);
+                private:
+                    static const UINT s_DefaultCaretBlinkTime = 0x212;
+                    static const bool s_DefaultIsCaretBlinkingEnabled = true;
+                    static const int s_DefaultNumberOfMouseButtons = 3;
+                    static const ULONG s_DefaultNumberOfWheelScrollLines = 3;
+                    static const ULONG s_DefaultNumberOfWheelScrollCharacters = 3;
+
+                    friend class ::InputTests;
                 };
             };
         };
