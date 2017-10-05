@@ -10,29 +10,33 @@
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
 
-XtermEngine::XtermEngine(HANDLE hPipe, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable)
-    : VtEngine(hPipe),
+XtermEngine::XtermEngine(wil::unique_hfile hPipe, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable)
+    : VtEngine(std::move(hPipe)),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable)
 {
 }
 
 // Routine Description:
-// - Prepares internal structures for a painting operation.
+// - Prepares internal structures for a painting operation. Turns the cursor 
+//      off, so we don't see it flashing all over the client's screen as we 
+//      paint the new contents.
 // Arguments:
 // - <none>
 // Return Value:
-// - S_OK if we started to paint. S_FALSE if we didn't need to paint. HRESULT error code if painting didn't start successfully.
+// - S_OK if we started to paint. S_FALSE if we didn't need to paint. HRESULT
+//      error code if painting didn't start successfully, or we failed to write 
+//      the pipe.
 HRESULT XtermEngine::StartPaint()
 {    
     HRESULT hr = VtEngine::StartPaint();
     if (SUCCEEDED(hr))
     {
+        // todo come back to this before the PR is finished.
         // if (!_quickReturn)
         // {
             // Turn off cursor
-            std::string seq = "\x1b[?25l";
-            _Write(seq);
+            hr = _HideCursor();
         // }
     }
 
@@ -40,21 +44,22 @@ HRESULT XtermEngine::StartPaint()
 }
 
 // Routine Description:
-// - EndPaint helper to perform the final BitBlt copy from the memory bitmap onto the final window bitmap (double-buffering.) Also cleans up structures used while painting.
+// - EndPaint helper to perform the final rendering steps. Turn the cursor back 
+//      on.
 // Arguments:
 // - <none>
 // Return Value:
-// - S_OK or suitable GDI HRESULT error.
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT XtermEngine::EndPaint()
 {
     HRESULT hr = VtEngine::EndPaint();
     if (SUCCEEDED(hr))
     {
+        // todo come back to this before the PR is finished.
         // if (!_quickReturn)
         // {
             // Turn on cursor
-            std::string seq = "\x1b[?25h";
-            _Write(seq);
+            hr = _ShowCursor();
         // }        
     }
 
@@ -63,11 +68,17 @@ HRESULT XtermEngine::EndPaint()
 }
 
 // Routine Description:
-// - This method will set the GDI brushes in the drawing context (and update the hung-window background color)
+// - Write a VT sequence to change the current colors of text. Only writes 
+//      16-color attributes.
 // Arguments:
-// - wTextAttributes - A console attributes bit field specifying the brush colors we should use.
+// - colorForeground: The RGB Color to use to paint the foreground text.
+// - colorBackground: The RGB Color to use to paint the background of the text.
+// - legacyColorAttribute: A console attributes bit field specifying the brush
+//      colors we should use.
+// - fIncludeBackgrounds: indicates if we should change the background color of 
+//      the window. Unused for VT
 // Return Value:
-// - S_OK if set successfully or relevant GDI error via HRESULT.
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT XtermEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds)
 {
     UNREFERENCED_PARAMETER(legacyColorAttribute);
@@ -77,99 +88,122 @@ HRESULT XtermEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _
 
 }
 
+// Routine Description:
+// - Write a VT sequence to move the cursor to the specified coordinates. We 
+//      also store the last place we left the cursor for future optimizations.
+//  If the cursor only needs to go to the origin, only write the home sequence.
+//  If the new cursor is only down one line from the current, only write a newline
+//  If the new cursor is only down one line and at the start of the line, write 
+//      a carriage return.
+//  Otherwise just write the whole sequence for moving it.
+// Arguments:
+// - coord: location to move the cursor to.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT XtermEngine::_MoveCursor(COORD const coord)
 {
+    HRESULT hr = S_OK;
     if (coord.X != _lastText.X || coord.Y != _lastText.Y)
     {
-        try
+        if (coord.X == 0 && coord.Y == 0)
         {
-            if (coord.X == 0 && coord.Y == 0)
-            {
-                std::string seq = "\x1b[H";
-                _Write(seq);
-            }
-            else if (coord.X == 0 && coord.Y == (_lastText.Y+1))
-            {
-                std::string seq = "\r\n";
-                _Write(seq);
-            }
-            else
-            {
-                PCSTR pszCursorFormat = "\x1b[%d;%dH";
-                COORD coordVt = coord;
-                coordVt.X++;
-                coordVt.Y++;
+            hr = _CursorHome();
+        }
+        else if (coord.X == 0 && coord.Y == (_lastText.Y+1))
+        {
+            // Down one line, at the start of the line.
+            std::string seq = "\r\n";
+            hr = _Write(seq);
+        }
+        else if (coord.X == 0 && coord.Y == _lastText.Y)
+        {
+            // Start of this line
+            std::string seq = "\r";
+            hr = _Write(seq);
+        }
+        else if (coord.X == _lastText.X && coord.Y == _lastText.Y)
+        {
+            // Down one line, same X position
+            std::string seq = "\n";
+            hr = _Write(seq);
+        }
+        else
+        {
+            hr = _CursorPosition(coord);
+        }
 
-                int cchNeeded = _scprintf(pszCursorFormat, coordVt.Y, coordVt.X);
-                wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-                RETURN_IF_NULL_ALLOC(psz);
-
-                int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszCursorFormat, coordVt.Y, coordVt.X);
-                _Write(psz.get(), cchWritten);
-                
-            }
-
+        if (SUCCEEDED(hr))
+        {
             _lastText = coord;
         }
-        CATCH_RETURN();
     }
     return S_OK;
 }
 
+// Routine Description:
+// - Scrolls the existing data on the in-memory frame by the scroll region 
+//      deltas we have collectively received through the Invalidate methods 
+//      since the last time this was called.
+//  Move the cursor to the origin, and insert or delete rows as appropriate.
+//      The inserted rows will be blank, but marked invalid by InvalidateScroll,
+//      so they will later be written by PaintBufferLine.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT XtermEngine::ScrollFrame()
 {
     if (_scrollDelta.X != 0)
     {
-        // No easy way to shift left-right
+        // No easy way to shift left-right. Everything needs repainting.
         return InvalidateAll();
     }
+    if (_scrollDelta.Y == 0)
+    {
+        // There's nothing to do here. Do nothing.
+        return S_OK;
+    }
 
-    short dy = _scrollDelta.Y;
-    short absDy = (dy>0)? dy : -dy;
+    const short dy = _scrollDelta.Y;
+    const short absDy = (dy>0)? dy : -dy;
 
     Viewport view(_srLastViewport);
     SMALL_RECT v = _srLastViewport;
     view.ConvertToOrigin(&v);
 
-    if (dy < 0)
+    HRESULT hr = _MoveCursor({0,0});
+    if (SUCCEEDED(hr))
     {
-        _MoveCursor({0,0});
-        _DeleteLine(absDy);
-        SMALL_RECT b = v;
-        b.Top = v.Bottom - absDy;
-        // RETURN_IF_FAILED(_InvalidCombine(&b));
-    }
-    else if (dy > 0)
-    {
-        _MoveCursor({0,0});
-        _InsertLine(absDy);
-        SMALL_RECT a = v;
-        a.Bottom = absDy;
-        // RETURN_IF_FAILED(_InvalidCombine(&a));
+        if (dy < 0)
+        {
+            hr = _DeleteLine(absDy);
+        }
+        else if (dy > 0)
+        {
+            hr = _InsertLine(absDy);
+        }
     }
 
-    return S_OK;
+    return hr;
 }
 
 // Routine Description:
-// - Notifies us that the console is attempting to scroll the existing screen area
+// - Notifies us that the console is attempting to scroll the existing screen 
+//      area. Add the top or bottom rows to the invalid region, and update the
+//      total scroll delta accumulated this frame.
 // Arguments:
-// - pcoordDelta - Pointer to character dimension (COORD) of the distance the console would like us to move while scrolling.
+// - pcoordDelta - Pointer to character dimension (COORD) of the distance the 
+//      console would like us to move while scrolling.
 // Return Value:
-// - HRESULT S_OK, GDI-based error code, or safemath error
+// - S_OK if we succeeded, else an appropriate HRESULT for safemath failure
 HRESULT XtermEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 {
     pcoordDelta;
-    // return this->InvalidateAll();
     short dx = pcoordDelta->X;
     short dy = pcoordDelta->Y;
-    // short absDy = (dy>0)? dy : -dy;
 
     if (dx != 0 || dy != 0)
     {
-        // POINT ptDelta = { 0 };
-        // RETURN_IF_FAILED(_ScaleByFont(pcoordDelta, &ptDelta));
-
         // Scroll the current offset
         RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
 

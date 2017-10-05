@@ -10,44 +10,8 @@
 #include "..\..\inc\Viewport.hpp"
 #include "..\..\inc\conattrs.hpp"
 
-#include <sstream>
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
-
-
-HRESULT VtEngine::_EraseLine()
-{
-    std::string seq = "\x1b[0K";
-    return _Write(seq);
-}
-
-HRESULT VtEngine::_DeleteLine(const short sLines)
-{
-    if (sLines <= 0) return S_OK;
-
-    PCSTR pszFormat = "\x1b[%dM";
-
-    int cchNeeded = _scprintf(pszFormat, sLines);
-    wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-    RETURN_IF_NULL_ALLOC(psz);
-
-    int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszFormat, sLines);
-    return _Write(psz.get(), cchWritten);
-
-}
-
-HRESULT VtEngine::_InsertLine(const short sLines)
-{
-    if (sLines <= 0) return S_OK;
-    PCSTR pszFormat = "\x1b[%dL";
-
-    int cchNeeded = _scprintf(pszFormat, sLines);
-    wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-    RETURN_IF_NULL_ALLOC(psz);
-
-    int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszFormat, sLines);
-    return _Write(psz.get(), cchWritten);
-}
 
 // Routine Description:
 // - Prepares internal structures for a painting operation.
@@ -61,7 +25,6 @@ HRESULT VtEngine::StartPaint()
     _quickReturn = false;
     _quickReturn |= (_fInvalidRectUsed);
     _quickReturn |= (_scrollDelta.X != 0 || _scrollDelta.Y != 0);
-
 
     return S_OK;
 }
@@ -101,62 +64,43 @@ HRESULT VtEngine::PaintBackground()
 #define _CRT_SECURE_NO_WARNINGS 1
 
 // Routine Description:
-// - Draws one line of the buffer to the screen.
-// - This will now be cached in a PolyText buffer and flushed periodically instead of drawing every individual segment. Note this means that the PolyText buffer must be flushed before some operations (changing the brush color, drawing lines on top of the characters, inverting for cursor/selection, etc.)
+// - Draws one line of the buffer to the screen. Writes the characters to the 
+//      pipe, encoded in UTF-8.
 // Arguments:
 // - pwsLine - string of text to be written
-// - rgWidths - array specifying how many column widths that the console is expecting each character to take
+// - rgWidths - array specifying how many column widths that the console is 
+//      expecting each character to take
 // - cchLine - length of line to be read
 // - coord - character coordinate target to render within viewport
-// - fTrimLeft - This specifies whether to trim one character width off the left side of the output. Used for drawing the right-half only of a double-wide character.
+// - fTrimLeft - This specifies whether to trim one character width off the left
+//      side of the output. Used for drawing the right-half only of a 
+//      double-wide character.
 // Return Value:
-// - S_OK or suitable GDI HRESULT error.
-// - HISTORICAL NOTES:
-// ETO_OPAQUE will paint the background color before painting the text.
-// ETO_CLIPPED required for ClearType fonts. Cleartype rendering can escape bounding rectangle unless clipped.
-//   Unclipped rectangles results in ClearType cutting off the right edge of the previous character when adding chars
-//   and in leaving behind artifacts when backspace/removing chars.
-//   This mainly applies to ClearType fonts like Lucida Console at small font sizes (10pt) or bolded.
-// See: Win7: 390673, 447839 and then superseded by http://osgvsowi/638274 when FE/non-FE rendering condensed.
-//#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
-//#define MAX_POLY_LINES 80
+// - S_OK or suitable HRESULT error frow writing pipe.
 HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                   _In_reads_(cchLine) const unsigned char* const rgWidths,
                                   _In_ size_t const cchLine,
                                   _In_ COORD const coord,
                                   _In_ bool const fTrimLeft)
 {
+    UNREFERENCED_PARAMETER(fTrimLeft);
+
     RETURN_IF_FAILED(_MoveCursor(coord));
     try
     {
-        // size_t spacesAtEnd = 0;
-        // for (size_t i = cchLine-1; i>=0; i--)
-        // {
-        //     if (pwsLine[i] == 0x20)
-        //     {
-        //         spacesAtEnd++;
-        //     }
-        //     else
-        //     {
-        //         break;
-        //     }
-        // }
-        // size_t actualCch = cchLine - spacesAtEnd;
+        // TODO: MSFT:14099536 Try and optimize the spaces.
         size_t actualCch = cchLine;
 
-        // Don't do this - we may be repainting single characters earlier in the line,
-        //      This will cause the whole line to be erased, when we want only a char
-        // _EraseLine();
-
-        // DWORD dwNeeded = WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)cchLine, nullptr, 0, nullptr, nullptr);
+        // Question for reviewers:
+        // What's the right way to render the buffer text to utf-8 here?
+        // Will this work?
         DWORD dwNeeded = WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)actualCch, nullptr, 0, nullptr, nullptr);
         wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(dwNeeded + 1);
         RETURN_IF_NULL_ALLOC(rgchNeeded);
-        // RETURN_LAST_ERROR_IF_FALSE(WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)cchLine, rgchNeeded.get(), dwNeeded, nullptr, nullptr));
         RETURN_LAST_ERROR_IF_FALSE(WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)actualCch, rgchNeeded.get(), dwNeeded, nullptr, nullptr));
         rgchNeeded[dwNeeded] = '\0';
 
-        _Write(rgchNeeded.get(), dwNeeded);
+        RETURN_IF_FAILED(_Write(rgchNeeded.get(), dwNeeded));
         
         // Update our internal tracker of the cursor's position
         short totalWidth = 0;
@@ -166,11 +110,6 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
         }
         _lastText.X += totalWidth;
 
-        pwsLine;
-        rgWidths;
-        cchLine;
-        coord;
-        fTrimLeft;
     }
     CATCH_RETURN();
 

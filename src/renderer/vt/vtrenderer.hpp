@@ -86,15 +86,19 @@ namespace Microsoft
                 HRESULT _InvalidCombine(_In_ const SMALL_RECT* const psrc);
                 HRESULT _InvalidOffset(_In_ const COORD* const ppt);
                 
+                HRESULT _StopCursorBlinking();
+                HRESULT _StartCursorBlinking();
+                HRESULT _HideCursor();
+                HRESULT _ShowCursor();
                 HRESULT _EraseLine();
-                HRESULT _DeleteLine(const short sLines);
-                HRESULT _InsertLine(const short sLines);
+                HRESULT _DeleteLine(_In_ const short sLines);
+                HRESULT _InsertLine(_In_ const short sLines);
+                HRESULT _CursorPosition(_In_ const COORD coord);
+                HRESULT _CursorHome();
                 
                 virtual HRESULT _MoveCursor(_In_ const COORD coord) = 0;
                 HRESULT _RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground);
                 HRESULT _16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable);
-                // HRESULT _InvalidRestrict();
-
 
             };
         };

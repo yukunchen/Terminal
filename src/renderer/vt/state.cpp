@@ -59,7 +59,6 @@ HRESULT VtEngine::_Write(_In_ std::string& str)
     return _Write(str.c_str(), str.length());
 }
 
-
 // Routine Description:
 // - This method will update the active font on the current device context
 // - NOTE: It is left up to the underling rendering system to choose the nearest font. Please ask for the font dimensions if they are required using the interface. Do not use the size you requested with this structure.
@@ -91,9 +90,9 @@ HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 {
     _srLastViewport = srNewViewport;
 
-    // If the w,h has changed, then send a window update.
+    // If the viewport has changed, then send a window update.
+    // TODO: 13847317(adapter), 13271084(renderer)
 
-    // UNREFERENCED_PARAMETER(srNewViewport);
     return S_OK;
 }
 
@@ -125,5 +124,4 @@ HRESULT VtEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesi
 COORD VtEngine::GetFontSize()
 {
     return{ 1, 1 };
-    // return{ 0, 0 };
 }
