@@ -5,6 +5,5 @@
     { "FilePath": "Microsoft.Console.Host.FeatureTests.testmd" },
     { "FilePath": "Microsoft.Console.VirtualTerminal.Adapter.UnitTests.testmd" },
     { "FilePath": "Microsoft.Console.VirtualTerminal.Parser.UnitTests.testmd" },
-    { "FilePath": "Microsoft.Console.VirtualTerminal.Renderer.UnitTests.testmd" },
   ]
 }

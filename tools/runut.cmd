@@ -7,5 +7,4 @@ call %TAEF% ^
     %OPENCON%\bin\%ARCH%\Debug\Conhost.Interactivity.Win32.Unit.Tests.dll ^
     %OPENCON%\bin\%ARCH%\Debug\ConParser.Unit.Tests.dll ^
     %OPENCON%\bin\%ARCH%\Debug\ConAdapter.Unit.Tests.dll ^
-    %OPENCON%\bin\%ARCH%\Debug\VtRenderer.Unit.Tests.dll ^
     %*

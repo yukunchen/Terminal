@@ -76,7 +76,7 @@ HRESULT VtEngine::PaintBackground()
 //      side of the output. Used for drawing the right-half only of a 
 //      double-wide character.
 // Return Value:
-// - S_OK or suitable HRESULT error frow writing pipe.
+// - S_OK or suitable HRESULT error from writing pipe.
 HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                   _In_reads_(cchLine) const unsigned char* const rgWidths,
                                   _In_ size_t const cchLine,
@@ -124,7 +124,7 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
 // - cchLine - How many characters we should draw the grid lines along (left to right in a row)
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
-// - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
+// - S_OK
 HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget)
 {
     UNREFERENCED_PARAMETER(lines);
@@ -142,8 +142,7 @@ HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF
 //      current font height.
 // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
 // Return Value:
-// - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI
-//       error where a specific error isn't set.
+// - S_OK or suitable HRESULT error from writing pipe.
 HRESULT VtEngine::PaintCursor(_In_ COORD const coord, _In_ ULONG const ulHeightPercent, _In_ bool const fIsDoubleWidth)
 {
     coord;

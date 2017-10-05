@@ -15,29 +15,31 @@
 using namespace Microsoft::Console::Render;
 
 // Routine Description:
-// - Creates a new GDI-based rendering engine
+// - Creates a new VT-based rendering engine
 // - NOTE: Will throw if initialization failure. Caller must catch.
 // Arguments:
 // - <none>
 // Return Value:
 // - An instance of a Renderer.
-VtEngine::VtEngine(wil::unique_hfile pipe) 
+VtEngine::VtEngine(wil::unique_hfile pipe) :
+    _hFile(std::move(pipe)),
+    _srLastViewport({0}),
+    _srcInvalid({0}),
+    _lastRealCursor({0}),
+    _lastText({0}),
+    _scrollDelta({0}),
+    _LastFG(0xff000000),
+    _LastBG(0xff000000),
+    _usingTestCallback(false)
+
 {
-    _hFile = std::move(pipe);
-    THROW_IF_HANDLE_INVALID(_hFile.get());
-
-    _srLastViewport = {0};
-    _srcInvalid = {0};
-    _lastRealCursor = {0};
-    _lastText = {0};
-    _scrollDelta = {0};
-    _LastFG = 0xff000000;
-    _LastBG = 0xff000000;
-
+    // When unit testing, we can instantiate a VtEngine without a pipe.
+    // THROW_IF_HANDLE_INVALID(_hFile.get());
+    
 }
 
 // Routine Description:
-// - Destroys an instance of a GDI-based rendering engine
+// - Destroys an instance of a VT-based rendering engine
 // Arguments:
 // - <none>
 // Return Value:
@@ -46,14 +48,35 @@ VtEngine::~VtEngine()
 {
 }
 
+// Method Description:
+// - Writes the characters to our file handle. If we're building the unit tests, 
+//      we can instead write to the test callback, in order to avoid needing to 
+//      set up pipes and threads for unit tests.
+// Arguments:
+// - psz: The buffer the write to the pipe. Might have nulls in it. 
+// - cch: size of psz
+// Return Value:
+// - S_OK or suitable HRESULT error from writing pipe.
 HRESULT VtEngine::_Write(_In_reads_(cch) PCSTR psz, _In_ size_t const cch)
 {
+    if (_usingTestCallback)
+    {
+        RETURN_LAST_ERROR_IF_FALSE(_pfnTestCallback(psz, cch));
+        return S_OK;
+    }
+
     bool fSuccess = !!WriteFile(_hFile.get(), psz, (DWORD)cch, nullptr, nullptr);
     RETURN_LAST_ERROR_IF_FALSE(fSuccess);
 
     return S_OK;
 }
 
+// Method Description:
+// - Helper for calling _Write with a std::string
+// Arguments:
+// - str: the string of characters to write to the pipe.
+// Return Value:
+// - S_OK or suitable HRESULT error from writing pipe.
 HRESULT VtEngine::_Write(_In_ std::string& str)
 {
     return _Write(str.c_str(), str.length());
@@ -69,8 +92,8 @@ HRESULT VtEngine::_Write(_In_ std::string& str)
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 HRESULT VtEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont)
 {
-    pfiFontDesired;
-    pfiFont;
+    UNREFERENCED_PARAMETER(pfiFontDesired);
+    UNREFERENCED_PARAMETER(pfiFont);
     return S_OK;
 }
 
@@ -82,7 +105,7 @@ HRESULT VtEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired, 
 // - HRESULT S_OK, GDI-based error code, or safemath error
 HRESULT VtEngine::UpdateDpi(_In_ int const iDpi)
 {
-    iDpi;
+    UNREFERENCED_PARAMETER(iDpi);
     return S_OK;
 }
 
@@ -109,9 +132,9 @@ HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 HRESULT VtEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont, _In_ int const iDpi)
 {
-    pfiFontDesired;
-    pfiFont;
-    iDpi;
+    UNREFERENCED_PARAMETER(pfiFontDesired);
+    UNREFERENCED_PARAMETER(pfiFont);
+    UNREFERENCED_PARAMETER(iDpi);
     return S_OK;
 }
 
@@ -125,3 +148,18 @@ COORD VtEngine::GetFontSize()
 {
     return{ 1, 1 };
 }
+
+// Method Description:
+// - Sets the test callback for this instance. Instead of rendering to a pipe, 
+//      this instance will instead render to a callback for testing.
+// Arguments:
+// - pfn: a callback to call instead of writing to the pipe.
+// Return Value:
+// - <none>
+void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t const)> pfn)
+{
+    _pfnTestCallback = pfn;
+    _usingTestCallback = true;
+}
+
+
