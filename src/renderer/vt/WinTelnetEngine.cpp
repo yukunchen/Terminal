@@ -11,7 +11,7 @@
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
 
-WinTelnetEngine::WinTelnetEngine(HANDLE hPipe, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable)
+WinTelnetEngine::WinTelnetEngine(wil::unique_hfile hPipe, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable)
     : VtEngine(hPipe),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable)

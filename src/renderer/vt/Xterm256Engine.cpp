@@ -10,7 +10,7 @@
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
 
-Xterm256Engine::Xterm256Engine(HANDLE hPipe)
+Xterm256Engine::Xterm256Engine(wil::unique_hfile hPipe)
     : XtermEngine(hPipe, nullptr, 0)
 {
 }

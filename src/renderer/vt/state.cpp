@@ -21,9 +21,9 @@ using namespace Microsoft::Console::Render;
 // - <none>
 // Return Value:
 // - An instance of a Renderer.
-VtEngine::VtEngine(HANDLE pipe) 
+VtEngine::VtEngine(wil::unique_hfile pipe) 
 {
-    _hFile.reset(pipe);
+    _hFile = std::move(pipe);
     THROW_IF_HANDLE_INVALID(_hFile.get());
 
     _srLastViewport = {0};

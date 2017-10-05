@@ -15,7 +15,7 @@ namespace Microsoft
 class Microsoft::Console::Render::Xterm256Engine : public XtermEngine
 {
 public:
-    Xterm256Engine(HANDLE hPipe);
+    Xterm256Engine(wil::unique_hfile hPipe);
     HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds);
 
 };
