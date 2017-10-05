@@ -47,7 +47,7 @@ namespace Microsoft
                                             _In_ PCWSTR pwszCurrDir,
                                             _In_ PCWSTR pwszAppName);
                 private:
-                    static const UINT s_DefaultCaretBlinkTime = 0x212;
+                    static const UINT s_DefaultCaretBlinkTime = 530; // milliseconds
                     static const bool s_DefaultIsCaretBlinkingEnabled = true;
                     static const int s_DefaultNumberOfMouseButtons = 3;
                     static const ULONG s_DefaultNumberOfWheelScrollLines = 3;
