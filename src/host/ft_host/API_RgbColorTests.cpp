@@ -168,7 +168,6 @@ int WriteVTRGBTestChars(int fg, int bg)
 
 BOOL CreateColorGrid(int iColorMode)
 {
-    //DebugBreak();
     COORD coordCursor = { 0 };
     BOOL fSuccess = SetConsoleCursorPosition(g_hOut, coordCursor);
 
