@@ -5,7 +5,7 @@ Module Name:
 - readDataDirect.hpp
 
 Abstract:
-- This file defines the read data structure for INPUT_RECORD-reading console APIs.
+- This file defines the read data structure for IInputEvent-reading console APIs.
 - A direct read specifically means that we are returning multiplexed input data stored
   in the internal console buffers that could have originated from any type of input device.
   This is not strictly string/text information but could also be mouse moves, screen changes, etc.

@@ -158,10 +158,6 @@ void RedrawCommandLine(_Inout_ COOKED_READ_DATA* CookedReadData);
 
 PCOMMAND_HISTORY FindCommandHistory(_In_ const HANDLE hProcess);
 
-bool IsCommandLinePopupKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
-
-bool IsCommandLineEditingKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
-
 void CleanUpPopups(_In_ COOKED_READ_DATA* const CookedReadData);
 
 // Values for WriteChars(), WriteCharsLegacy() dwFlags
