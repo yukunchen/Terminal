@@ -54,11 +54,6 @@ Notes:
 #include "screenInfo.hpp"
 #include "server.h"
 
-#define CTRL_BUT_NOT_ALT(n) \
-        (((n) & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) && \
-        !((n) & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)))
-
-
 // Disable warning about 0 length MSFT compiler struct extension.
 #pragma warning(disable:4200)
 typedef struct _COMMAND

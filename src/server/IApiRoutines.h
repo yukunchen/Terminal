@@ -27,6 +27,9 @@ typedef InputBuffer IConsoleInputObject;
 class INPUT_READ_HANDLE_DATA;
 
 #include "IWaitRoutine.h"
+#include <deque>
+#include <memory>
+#include "../types/inc/IInputEvent.hpp"
 
 class IApiRoutines
 {
@@ -61,30 +64,26 @@ public:
                                                       _Out_ ULONG* const pEvents) = 0;
 
     virtual HRESULT PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                          _In_ size_t const cRecords,
-                                          _Out_ size_t* const pcRecordsWritten,
+                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                          _In_ size_t const eventsToRead,
                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
 
     virtual HRESULT PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                          _In_ size_t const cRecords,
-                                          _Out_ size_t* const pcRecordsWritten,
+                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                          _In_ size_t const eventsToRead,
                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
 
     virtual HRESULT ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                          _In_ size_t const cRecords,
-                                          _Out_ size_t* const pcRecordsWritten,
+                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                          _In_ size_t const eventsToRead,
                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
 
     virtual HRESULT ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                          _In_ size_t const cRecords,
-                                          _Out_ size_t* const pcRecordsWritten,
+                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                          _In_ size_t const eventsToRead,
                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
 

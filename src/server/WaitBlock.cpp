@@ -127,6 +127,8 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
     DWORD dwControlKeyState;
     BOOLEAN fIsUnicode = TRUE;
 
+    std::deque<std::unique_ptr<IInputEvent>> outEvents;
+    void* pOutputData = nullptr;
     // 1. Get unicode status of notify call based on message type.
     // We still need to know the Unicode status on reads as they will be converted after the wait operation.
     // Writes will have been converted before hitting the wait state.
@@ -136,6 +138,7 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
     {
         CONSOLE_GETCONSOLEINPUT_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.GetConsoleInput);
         fIsUnicode = a->Unicode;
+        pOutputData = &outEvents;
         break;
     }
     case API_NUMBER_READCONSOLE:
@@ -157,7 +160,7 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
     }
 
     // 2. If we have a waiter, dispatch to it.
-    if (_pWaiter->Notify(TerminationReason, fIsUnicode, &status, &dwNumBytes, &dwControlKeyState))
+    if (_pWaiter->Notify(TerminationReason, fIsUnicode, &status, &dwNumBytes, &dwControlKeyState, pOutputData))
     {
         // 3. If the wait was successful, set reply info and attach any additional return information that this request type might need.
         _WaitReplyMessage.SetReplyStatus(status);
@@ -165,9 +168,31 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
 
         if (API_NUMBER_GETCONSOLEINPUT == _WaitReplyMessage.msgHeader.ApiNumber)
         {
-            // ReadConsoleInput/PeekConsoleInput has this extra reply information with the number of records, not number of bytes.
+            // ReadConsoleInput/PeekConsoleInput has this extra reply
+            // information with the number of records, not number of
+            // bytes.
             CONSOLE_GETCONSOLEINPUT_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.GetConsoleInput);
-            a->NumRecords = dwNumBytes / sizeof(INPUT_RECORD);
+
+            void* buffer;
+            ULONG cbBuffer;
+            HRESULT hr = _WaitReplyMessage.GetOutputBuffer(&buffer, &cbBuffer);
+            if (FAILED(hr))
+            {
+                return false;
+            }
+
+            INPUT_RECORD* const pRecordBuffer = static_cast<INPUT_RECORD* const>(buffer);
+            a->NumRecords = static_cast<ULONG>(outEvents.size());
+            for (size_t i = 0; i < a->NumRecords; ++i)
+            {
+                if (outEvents.empty())
+                {
+                    break;
+                }
+                pRecordBuffer[i] = outEvents.front()->ToInputRecord();
+                outEvents.pop_front();
+            }
+
         }
         else if (API_NUMBER_READCONSOLE == _WaitReplyMessage.msgHeader.ApiNumber)
         {
@@ -186,9 +211,9 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
             {
                 // On changing this, we also need to notify the Reply Information because it was stowed above into the reply packet.
                 a->NumBytes = 0;
-                // Setting the reply length to 0 and returning successfully from a blocked wait 
+                // Setting the reply length to 0 and returning successfully from a blocked wait
                 // will imply that the user has reached "End of File" on a raw read file stream.
-                _WaitReplyMessage.SetReplyInformation(0); 
+                _WaitReplyMessage.SetReplyInformation(0);
             }
         }
         // There is nothing to tell WriteConsole on the way out, that's why it doesn't have an else if case here.

@@ -61,7 +61,8 @@ public:
                 _In_ BOOLEAN const fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
                 _Out_ DWORD* const pNumBytes,
-                _Out_ DWORD* const pControlKeyState) override;
+                _Out_ DWORD* const pControlKeyState,
+                _Out_ void* const pOutputData) override;
 
 // TODO MSFT:11285829 member variable should be made private where possible.
     PSCREEN_INFORMATION _pScreenInfo;

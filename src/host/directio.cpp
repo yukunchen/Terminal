@@ -125,9 +125,13 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 //   from the input buffer and in the peek case they are not.
 // Arguments:
 // - pInputBuffer - The input buffer to take records from to return to the client
-// - pRecords - The user buffer given to us to fill with records
-// - pcRecords - On in, the size of the buffer (count of INPUT_RECORD).
-//             - On out, the number of INPUT_RECORDs used.
+// - outEvents - The storage location to fill with input events
+// - eventReadCount - The number of events to read
+// - pInputReadHandleData - A structure that will help us maintain
+// some input context across various calls on the same input
+// handle. Primarily used to restore the "other piece" of partially
+// returned strings (because client buffer wasn't big enough) on the
+// next call.
 // - IsUnicode - Whether to operate on Unicode characters or convert
 // on the current Input Codepage.
 // - IsPeek - If this is a peek operation (a.k.a. do not remove
@@ -141,8 +145,8 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // block, this will be returned along with context in *ppWaiter.
 // - Or an out of memory/math/string error message in NTSTATUS format.
 NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
-                           _Out_writes_(*pcRecords) INPUT_RECORD* const pRecords,
-                           _Inout_ ULONG* const pcRecords,
+                           _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                           _In_ const size_t eventReadCount,
                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                            _In_ bool const IsUnicode,
                            _In_ bool const IsPeek,
@@ -153,11 +157,6 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    // size of pRecords in INPUT_RECORDs
-    const size_t outBufferSize = *pcRecords;
-
-    *pcRecords = 0;
-
     std::deque<std::unique_ptr<IInputEvent>> partialEvents;
     if (!IsUnicode)
     {
@@ -167,7 +166,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
         }
     }
 
-    const size_t amountToRead = outBufferSize - partialEvents.size();
+    const size_t amountToRead = eventReadCount - partialEvents.size();
     std::deque<std::unique_ptr<IInputEvent>> readEvents;
     NTSTATUS Status = pInputBuffer->Read(readEvents,
                                          amountToRead,
@@ -180,16 +179,20 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
         assert(readEvents.empty());
         // If we're told to wait until later, move all of our context
         // to the read data object and send it back up to the server.
-        *ppWaiter = new DirectReadData(pInputBuffer,
-                                       pInputReadHandleData,
-                                       pRecords,
-                                       outBufferSize,
-                                       std::move(partialEvents));
-        if (*ppWaiter == nullptr)
+        try
         {
-            Status = STATUS_NO_MEMORY;
+            *ppWaiter = new DirectReadData(pInputBuffer,
+                                           pInputReadHandleData,
+                                           eventReadCount,
+                                           std::move(partialEvents));
+        }
+        catch (...)
+        {
+            *ppWaiter = nullptr;
+            return STATUS_NO_MEMORY;
         }
     }
+
     else if (NT_SUCCESS(Status))
     {
         // split key events to oem chars if necessary
@@ -205,18 +208,17 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
             partialEvents.pop_back();
         }
 
-        // convert events to input records and add to buffer
-        size_t recordCount = 0;
-        for (size_t i = 0; i < outBufferSize; ++i)
+        // move events over
+        for (size_t i = 0; i < eventReadCount; ++i)
         {
             if (readEvents.empty())
             {
                 break;
             }
-            pRecords[i] = readEvents.front()->ToInputRecord();
+            outEvents.push_back(std::move(readEvents.front()));
             readEvents.pop_front();
-            ++recordCount;
         }
+
         // store partial event if necessary
         if (!readEvents.empty())
         {
@@ -224,7 +226,6 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
             readEvents.pop_front();
             assert(readEvents.empty());
         }
-        *pcRecords = static_cast<ULONG>(recordCount);
     }
     return Status;
 }
@@ -235,27 +236,29 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
 // - The A version will convert to W using the console's current Input codepage (see SetConsoleCP)
 // Arguments:
 // - pInputBuffer - The input buffer to take records from to return to the client
-// - pRecords - The user buffer given to us to fill with records
-// - cRecords - The size of the buffer (count of INPUT_RECORD).
-// - pcRecordsWritten - The number of INPUT_RECORDs used in the client's buffer.
-// - pInputReadHandleData - A structure that will help us maintain some input context across various calls on the same input handle
-//                        - Primarily used to restore the "other piece" of partially returned strings (because client buffer wasn't big enough) on the next call.
-// - ppWaiter - If we have to wait (not enough data to fill client buffer), this contains context that will allow the server to restore this call later.
+// - outEvents - storage location for read events
+// - eventsToRead - The number of input events to read
+// - pInputReadHandleData - A structure that will help us maintain
+// some input context across various calls on the same input
+// handle. Primarily used to restore the "other piece" of partially
+// returned strings (because client buffer wasn't big enough) on the
+// next call.
+// - ppWaiter - If we have to wait (not enough data to fill client
+// buffer), this contains context that will allow the server to
+// restore this call later.
 HRESULT ApiRoutines::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                           _In_ size_t const cRecords,
-                                           _Out_ size_t* const pcRecordsWritten,
+                                           _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                           _In_ size_t const eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
-    ULONG ulRecords;
-    RETURN_IF_FAILED(SizeTToULong(cRecords, &ulRecords));
-
-    HRESULT const hr = DoGetConsoleInput(pInContext, pRecords, &ulRecords, pInputReadHandleData, false, true, ppWaiter);
-
-    *pcRecordsWritten = ulRecords;
-
-    return hr;
+    RETURN_NTSTATUS(DoGetConsoleInput(pInContext,
+                                      outEvents,
+                                      eventsToRead,
+                                      pInputReadHandleData,
+                                      false,
+                                      true,
+                                      ppWaiter));
 }
 
 // Routine Description:
@@ -264,27 +267,29 @@ HRESULT ApiRoutines::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInCo
 // - The W version accepts UCS-2 formatted characters (wide characters)
 // Arguments:
 // - pInputBuffer - The input buffer to take records from to return to the client
-// - pRecords - The user buffer given to us to fill with records
-// - cRecords - The size of the buffer (count of INPUT_RECORD).
-// - pcRecordsWritten - The number of INPUT_RECORDs used in the client's buffer.
-// - pInputReadHandleData - A structure that will help us maintain some input context across various calls on the same input handle
-//                        - Primarily used to restore the "other piece" of partially returned strings (because client buffer wasn't big enough) on the next call.
-// - ppWaiter - If we have to wait (not enough data to fill client buffer), this contains context that will allow the server to restore this call later.
+// - outEvents - storage location for read events
+// - eventsToRead - The number of input events to read
+// - pInputReadHandleData - A structure that will help us maintain
+// some input context across various calls on the same input
+// handle. Primarily used to restore the "other piece" of partially
+// returned strings (because client buffer wasn't big enough) on the
+// next call.
+// - ppWaiter - If we have to wait (not enough data to fill client
+// buffer), this contains context that will allow the server to
+// restore this call later.
 HRESULT ApiRoutines::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                           _In_ size_t const cRecords,
-                                           _Out_ size_t* const pcRecordsWritten,
+                                           _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                           _In_ size_t const eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
-    ULONG ulRecords;
-    RETURN_IF_FAILED(SizeTToULong(cRecords, &ulRecords));
-
-    HRESULT const hr = DoGetConsoleInput(pInContext, pRecords, &ulRecords, pInputReadHandleData, true, true, ppWaiter);
-
-    *pcRecordsWritten = ulRecords;
-
-    return hr;
+    RETURN_NTSTATUS(DoGetConsoleInput(pInContext,
+                                      outEvents,
+                                      eventsToRead,
+                                      pInputReadHandleData,
+                                      true,
+                                      true,
+                                      ppWaiter));
 }
 
 // Routine Description:
@@ -293,27 +298,29 @@ HRESULT ApiRoutines::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInCo
 // - The A version will convert to W using the console's current Input codepage (see SetConsoleCP)
 // Arguments:
 // - pInputBuffer - The input buffer to take records from to return to the client
-// - pRecords - The user buffer given to us to fill with records
-// - cRecords - The size of the buffer (count of INPUT_RECORD).
-// - pcRecordsWritten - The number of INPUT_RECORDs used in the client's buffer.
-// - pInputReadHandleData - A structure that will help us maintain some input context across various calls on the same input handle
-//                        - Primarily used to restore the "other piece" of partially returned strings (because client buffer wasn't big enough) on the next call.
-// - ppWaiter - If we have to wait (not enough data to fill client buffer), this contains context that will allow the server to restore this call later.
+// - outEvents - storage location for read events
+// - eventsToRead - The number of input events to read
+// - pInputReadHandleData - A structure that will help us maintain
+// some input context across various calls on the same input
+// handle. Primarily used to restore the "other piece" of partially
+// returned strings (because client buffer wasn't big enough) on the
+// next call.
+// - ppWaiter - If we have to wait (not enough data to fill client
+// buffer), this contains context that will allow the server to
+// restore this call later.
 HRESULT ApiRoutines::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                           _In_ size_t const cRecords,
-                                           _Out_ size_t* const pcRecordsWritten,
+                                           _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                           _In_ size_t const eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
-    ULONG ulRecords;
-    RETURN_IF_FAILED(SizeTToULong(cRecords, &ulRecords));
-
-    HRESULT const hr = DoGetConsoleInput(pInContext, pRecords, &ulRecords, pInputReadHandleData, false, false, ppWaiter);
-
-    *pcRecordsWritten = ulRecords;
-
-    return hr;
+    RETURN_NTSTATUS(DoGetConsoleInput(pInContext,
+                                      outEvents,
+                                      eventsToRead,
+                                      pInputReadHandleData,
+                                      false,
+                                      false,
+                                      ppWaiter));
 }
 
 // Routine Description:
@@ -322,27 +329,29 @@ HRESULT ApiRoutines::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInCo
 // - The W version accepts UCS-2 formatted characters (wide characters)
 // Arguments:
 // - pInputBuffer - The input buffer to take records from to return to the client
-// - pRecords - The user buffer given to us to fill with records
-// - cRecords - The size of the buffer (count of INPUT_RECORD).
-// - pcRecordsWritten - The number of INPUT_RECORDs used in the client's buffer.
-// - pInputReadHandleData - A structure that will help us maintain some input context across various calls on the same input handle
-//                        - Primarily used to restore the "other piece" of partially returned strings (because client buffer wasn't big enough) on the next call.
-// - ppWaiter - If we have to wait (not enough data to fill client buffer), this contains context that will allow the server to restore this call later.
+// - outEvents - storage location for read events
+// - eventsToRead - The number of input events to read
+// - pInputReadHandleData - A structure that will help us maintain
+// some input context across various calls on the same input
+// handle. Primarily used to restore the "other piece" of partially
+// returned strings (because client buffer wasn't big enough) on the
+// next call.
+// - ppWaiter - If we have to wait (not enough data to fill client
+// buffer), this contains context that will allow the server to
+// restore this call later.
 HRESULT ApiRoutines::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                           _In_ size_t const cRecords,
-                                           _Out_ size_t* const pcRecordsWritten,
+                                           _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                           _In_ size_t const eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
-    ULONG ulRecords;
-    RETURN_IF_FAILED(SizeTToULong(cRecords, &ulRecords));
-
-    HRESULT const hr = DoGetConsoleInput(pInContext, pRecords, &ulRecords, pInputReadHandleData, true, false, ppWaiter);
-
-    *pcRecordsWritten = ulRecords;
-
-    return hr;
+    RETURN_NTSTATUS(DoGetConsoleInput(pInContext,
+                                      outEvents,
+                                      eventsToRead,
+                                      pInputReadHandleData,
+                                      true,
+                                      false,
+                                      ppWaiter));
 }
 
 // Routine Description:

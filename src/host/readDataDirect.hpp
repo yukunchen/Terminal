@@ -33,23 +33,22 @@ class DirectReadData final : public ReadData
 public:
     DirectReadData(_In_ InputBuffer* const pInputBuffer,
                    _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                   _In_ INPUT_RECORD* pOutRecords,
-                   _In_ const size_t cOutRecords,
+                   _In_ const size_t eventReadCount,
                    _In_ std::deque<std::unique_ptr<IInputEvent>> partialEvents);
 
-    ~DirectReadData() override;
-
     DirectReadData(DirectReadData&&) = default;
+
+    ~DirectReadData() override;
 
     BOOL Notify(_In_ WaitTerminationReason const TerminationReason,
                 _In_ BOOLEAN const fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
                 _Out_ DWORD* const pNumBytes,
-                _Out_ DWORD* const pControlKeyState) override;
+                _Out_ DWORD* const pControlKeyState,
+                _Out_ void* const pOutputData) override;
 
 private:
-    INPUT_RECORD* _pOutRecords;
-    const size_t _cOutRecords;
+    const size_t _eventReadCount;
     std::deque<std::unique_ptr<IInputEvent>> _partialEvents;
     std::deque<std::unique_ptr<IInputEvent>> _outEvents;
 };
