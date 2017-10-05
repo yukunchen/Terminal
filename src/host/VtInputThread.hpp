@@ -24,8 +24,7 @@ namespace Microsoft
         class VtInputThread
         {
         public:
-            VtInputThread(_In_ HANDLE hPipe);
-            ~VtInputThread();
+            VtInputThread(_In_ wil::unique_hfile hPipe);
 
             HRESULT Start();
             static DWORD StaticVtInputThreadProc(_In_ LPVOID lpParameter);

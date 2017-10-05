@@ -22,8 +22,6 @@
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
-using namespace std;
-
 
 namespace Microsoft
 {
@@ -36,7 +34,6 @@ namespace Microsoft
     };
 };
 using namespace Microsoft::Console::VirtualTerminal;
-
 
 class Microsoft::Console::VirtualTerminal::InputEngineTest
 {
@@ -68,7 +65,6 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     std::vector<INPUT_RECORD> vExpectedInput;
 };
 
-
 bool IsShiftPressed(const DWORD modifierState)
 {
     return IsFlagSet(modifierState, SHIFT_PRESSED);
@@ -94,6 +90,8 @@ bool ModifiersEquivalent(DWORD a, DWORD b)
 
 void InputEngineTest::RoundtripTerminalInputCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
+    // Take all the characters out of the input records here, and put them into 
+    //  the input state machine.
     size_t cInput = inEvents.size();
     INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
     VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
@@ -105,7 +103,7 @@ void InputEngineTest::RoundtripTerminalInputCallback(_In_ std::deque<std::unique
     for (size_t i = 0; i < cInput; i++)
     {
         INPUT_RECORD inRec = rgInput[i];
-        VERIFY_ARE_EQUAL(inRec.EventType, KEY_EVENT);
+        VERIFY_ARE_EQUAL(KEY_EVENT, inRec.EventType);
         if(inRec.Event.KeyEvent.bKeyDown)
         {
             vtseq += &inRec.Event.KeyEvent.uChar.UnicodeChar;
@@ -125,7 +123,7 @@ void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>
     INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
     VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
     VERIFY_IS_NOT_NULL(rgInput);
-    VERIFY_ARE_EQUAL(vExpectedInput.size(), 1);
+    VERIFY_ARE_EQUAL((size_t)1, vExpectedInput.size());
     auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
 
     bool foundEqual = false;
@@ -168,7 +166,7 @@ void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>
 void InputEngineTest::C0Test()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(move(unique_ptr<IStateMachineEngine>(new InputStateMachineEngine(pfn))));
+    _pStateMachine = new StateMachine(std::make_unique<InputStateMachineEngine>(pfn));
     VERIFY_IS_NOT_NULL(_pStateMachine);
     
     Log::Comment(L"Sending 0x0-0x19 to parser to make sure they're translated correctly back to C-key");
@@ -176,9 +174,11 @@ void InputEngineTest::C0Test()
     for (wchar_t wch = '\x0'; wch < '\x20'; wch++)
     {
         std::wstring inputSeq = std::wstring(&wch, 1);
-        
+        // In general, he actual key that we're going to generate for a C0 char 
+        //      is char+0x40 and with ctrl pressed.
         wchar_t expectedWch = wch + 0x40;
         bool writeCtrl = true;
+        // These two are weird exceptional cases.
         switch(wch)
         {
             case L'\r': // Enter
@@ -230,7 +230,7 @@ void InputEngineTest::C0Test()
 void InputEngineTest::AlphanumericTest()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(move(unique_ptr<IStateMachineEngine>(new InputStateMachineEngine(pfn))));
+    _pStateMachine = new StateMachine(std::make_unique<InputStateMachineEngine>(pfn));
     VERIFY_IS_NOT_NULL(_pStateMachine);
     
     Log::Comment(L"Sending every printable ASCII character");
@@ -273,7 +273,7 @@ void InputEngineTest::AlphanumericTest()
 void InputEngineTest::RoundTripTest()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(move(unique_ptr<IStateMachineEngine>(new InputStateMachineEngine(pfn))));
+    _pStateMachine = new StateMachine(std::make_unique<InputStateMachineEngine>(pfn));
     VERIFY_IS_NOT_NULL(_pStateMachine);
     
     // Send Every VKEY through the TerminalInput module, then take the char's 
@@ -289,8 +289,11 @@ void InputEngineTest::RoundTripTest()
         WORD scanCode = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
 
         unsigned int uiActualKeystate = 0;
+
+        // Couple of exceptional cases here:
         if (vkey >= 'A' && vkey <= 'Z')
         {
+            // A-Z need shift pressed in addition to the 'a'-'z' chars.
             uiActualKeystate = SetFlag(uiActualKeystate, SHIFT_PRESSED);
         }
         else if (vkey == VK_CANCEL  || vkey == VK_PAUSE)
@@ -299,7 +302,7 @@ void InputEngineTest::RoundTripTest()
         }
         else if (vkey == VK_ESCAPE)
         {
-            uiActualKeystate |= LEFT_CTRL_PRESSED;
+            uiActualKeystate = SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
         }
         else if (vkey == VK_F1 || vkey == VK_F2 || vkey == VK_F3 || vkey == VK_F4)
         {

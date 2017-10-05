@@ -36,7 +36,6 @@ namespace Microsoft
 
             public:
                 StateMachine(_In_ std::unique_ptr<IStateMachineEngine> pEngine);
-                ~StateMachine();
 
                 void ProcessCharacter(_In_ wchar_t const wch);
                 void ProcessString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
