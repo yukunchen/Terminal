@@ -26,7 +26,7 @@ namespace Microsoft
 
                 virtual bool ActionExecute(_In_ wchar_t const wch) = 0;
                 virtual bool ActionPrint(_In_ wchar_t const wch) = 0;
-                virtual bool ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch) = 0;
+                virtual bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch) = 0;
                 virtual bool ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate) = 0;
                 virtual bool ActionCsiDispatch(_In_ wchar_t const wch, 
                                                _In_ const unsigned short cIntermediate,

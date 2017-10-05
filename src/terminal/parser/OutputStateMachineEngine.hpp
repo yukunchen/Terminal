@@ -30,21 +30,28 @@ namespace Microsoft
                 OutputStateMachineEngine(_In_ TermDispatch* const pDispatch);
                 ~OutputStateMachineEngine();
 
-                bool ActionExecute(_In_ wchar_t const wch);
-                bool ActionPrint(_In_ wchar_t const wch);
-                bool ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
-                bool ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate);
+                bool ActionExecute(_In_ wchar_t const wch) override;
+                bool ActionPrint(_In_ wchar_t const wch) override;
+                bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch) override;
+                bool ActionEscDispatch(_In_ wchar_t const wch,
+                                       _In_ const unsigned short cIntermediate,
+                                       _In_ const wchar_t wchIntermediate) override;
                 bool ActionCsiDispatch(_In_ wchar_t const wch, 
                                        _In_ const unsigned short cIntermediate,
                                        _In_ const wchar_t wchIntermediate,
                                        _In_ const unsigned short* const rgusParams,
                                        _In_ const unsigned short cParams);
-                bool ActionClear();
-                bool ActionIgnore();
-                bool ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _Inout_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString);
+                bool ActionClear() override;
+                bool ActionIgnore() override;
+                bool ActionOscDispatch(_In_ wchar_t const wch,
+                                       _In_ const unsigned short sOscParam,
+                                       _Inout_ wchar_t* const pwchOscStringBuffer,
+                                       _In_ const unsigned short cchOscString) override;
+
                 // TODO: MSFT:13420038
-                // void ActionSs3Dispatch(_In_ wchar_t const wch);
-                bool FlushAtEndOfString() const;
+                // bool ActionSs3Dispatch(_In_ wchar_t const wch) override;
+
+                bool FlushAtEndOfString() const override;
 
             private:
                 TermDispatch* _pDispatch;

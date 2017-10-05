@@ -165,7 +165,7 @@ bool InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 // - cch - length of rgwch
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch)
 {
     bool fSuccess = true;
     for(size_t i = 0; i < cch; i++)
@@ -273,7 +273,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
 // Arguments:
 // - <none>
 // Return Value:
-// - <none>
+// - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionClear()
 {
     return true;
@@ -285,7 +285,7 @@ bool InputStateMachineEngine::ActionClear()
 // Arguments:
 // - <none>
 // Return Value:
-// - <none>
+// - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionIgnore()
 {
     return true;
@@ -314,11 +314,20 @@ bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch,
 }
 
 // Method Description:
-// - Converts a VT encoded modifier param into a INPUT_RECORD compatible one.
+// - Writes a sequence of keypresses to the buffer based on the wch, 
+//      vkey and modifiers passed in. Will create both the appropriate key downs
+//      and ups for that key for writing to the input. Will also generate 
+//      keypresses for pressing the modifier keys while typing that character.
+//  If rgInput isn't big enough, then it will stop writing when it's filled.
 // Arguments:
-// - modifierParam - the 
+// - wch - the character to write to the input callback.
+// - vkey - the VKEY of the key to write to the input callback.
+// - dwModifierState - the modifier state to write with the key.
+// - rgInput - the buffer of characters to write the keypresses to. Can write
+//      up to 8 records to this buffer.
+// - cRecords - the size of rgInput
 // Return Value:
-// - <none>
+// - true iff we successfully wrote the keypress to the input callback.
 size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
                                                          _In_ const short vkey,
                                                          _In_ const DWORD dwModifierState,
@@ -457,13 +466,14 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
 // - Writes a single character keypress to the input buffer. This writes both 
 //      the keydown and keyup events.
 // Arguments:
-// - wch - the 
-// - vkey - the 
-// - dwModifierState - the 
-// - rgInput - the 
-// - cRecords - the 
+// - wch - the character to write to the buffer.
+// - vkey - the VKEY of the key to write to the buffer.
+// - dwModifierState - the modifier state to write with the key.
+// - rgInput - the buffer of characters to write the keypress to. Will always 
+//      write to the first two positions in the buffer.
+// - cRecords - the size of rgInput
 // Return Value:
-// - <none>
+// - the number of input records written.
 size_t InputStateMachineEngine::_GetSingleKeypress(_In_ const wchar_t wch, 
                                                    _In_ const short vkey,
                                                    _In_ const DWORD dwModifierState,

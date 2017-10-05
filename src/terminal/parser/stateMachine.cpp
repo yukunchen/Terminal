@@ -1031,7 +1031,7 @@ void StateMachine::ProcessCharacter(_In_ wchar_t const wch)
 // - cch - Count of characters in array
 // Return Value:
 // - <none>
-void StateMachine::ProcessString(_In_reads_(cch) wchar_t * const rgwch, _In_ size_t const cch)
+void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, _In_ size_t const cch)
 {
     wchar_t* pwchCurr = rgwch;
     wchar_t* pwchStart = rgwch;

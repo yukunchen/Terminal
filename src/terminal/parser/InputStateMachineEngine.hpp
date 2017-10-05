@@ -37,23 +37,28 @@ class Microsoft::Console::VirtualTerminal::InputStateMachineEngine : public ISta
 public:
     InputStateMachineEngine(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
 
-    bool ActionExecute(_In_ wchar_t const wch);
-    bool ActionPrint(_In_ wchar_t const wch);
-    bool ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
-    bool ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate);
+    bool ActionExecute(_In_ wchar_t const wch) override;
+    bool ActionPrint(_In_ wchar_t const wch) override;
+    bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch) override;
+    bool ActionEscDispatch(_In_ wchar_t const wch,
+                           _In_ const unsigned short cIntermediate,
+                           _In_ const wchar_t wchIntermediate) override;
     bool ActionCsiDispatch(_In_ wchar_t const wch, 
                            _In_ const unsigned short cIntermediate,
                            _In_ const wchar_t wchIntermediate,
                            _In_ const unsigned short* const rgusParams,
                            _In_ const unsigned short cParams);
-    bool ActionClear();
-    bool ActionIgnore();
-    bool ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _Inout_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString);
+    bool ActionClear() override;
+    bool ActionIgnore() override;
+    bool ActionOscDispatch(_In_ wchar_t const wch,
+                           _In_ const unsigned short sOscParam,
+                           _Inout_ wchar_t* const pwchOscStringBuffer,
+                           _In_ const unsigned short cchOscString) override;
     
     // TODO: MSFT:13420038
-    // bool ActionSs3Dispatch(_In_ wchar_t const wch);
+    // bool ActionSs3Dispatch(_In_ wchar_t const wch) override;
     
-    bool FlushAtEndOfString() const;
+    bool FlushAtEndOfString() const override;
 
 private:
     

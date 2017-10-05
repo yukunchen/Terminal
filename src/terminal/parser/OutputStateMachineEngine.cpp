@@ -57,7 +57,7 @@ bool OutputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 // - cch - length of rgwch
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionPrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
+bool OutputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch)
 {
     _pDispatch->PrintString(rgwch, cch); // call print
     return true;

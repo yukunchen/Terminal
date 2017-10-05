@@ -35,7 +35,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
 
     THROW_IF_NULL_ALLOC(pEngine);
 
-    _pInputStateMachine.reset(new StateMachine(std::move(pEngine)));
+    _pInputStateMachine = std::make_unique<StateMachine>(std::move(pEngine));
     THROW_IF_NULL_ALLOC(_pInputStateMachine);
 
 }
