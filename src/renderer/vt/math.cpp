@@ -20,30 +20,7 @@ using namespace Microsoft::Console::Render;
 // - The character dimensions of the current dirty area of the frame.
 SMALL_RECT VtEngine::GetDirtyRectInChars()
 {
-    // Not allowed to do that. Do better.
-    // IRenderData* data = ServiceLocator::LocateGlobals()->pRenderData;
-    // SMALL_RECT viewport = data->GetViewport();
-    
-    // SMALL_RECT rc;
-    // rc.Left = 0;
-    // rc.Top = 0;
-    // rc.Right = viewport.Right - viewport.Left;
-    // rc.Bottom = viewport.Bottom - viewport.Top;
-    // rc.Bottom = 25;
-    // return rc;
-    // return data->GetViewport();
-    SMALL_RECT rc = _srcInvalid;
-    // if (rc.Top - rc.Bottom > 1)
-    // {
-    //     rc.Bottom--;
-    // }
-    // if (rc.Right - rc.Left > 1)
-    // {
-    //     rc.Right--;
-    // }
-
-    return rc;
-
+    return _srcInvalid;
 }
 
 // Routine Description:
@@ -55,7 +32,7 @@ SMALL_RECT VtEngine::GetDirtyRectInChars()
 // - True if it is full-width (2 wide). False if it is half-width (1 wide).
 bool VtEngine::IsCharFullWidthByFont(_In_ WCHAR const wch)
 {
-    wch;
+    UNREFERENCED_PARAMETER(wch);
     return false;
 }
 

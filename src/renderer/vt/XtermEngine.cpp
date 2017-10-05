@@ -17,7 +17,7 @@ XtermEngine::XtermEngine(wil::unique_hfile hPipe, _In_reads_(cColorTable) const 
 {
 }
 
-// Routine Description:
+// Method Description:
 // - Prepares internal structures for a painting operation. Turns the cursor 
 //      off, so we don't see it flashing all over the client's screen as we 
 //      paint the new contents.

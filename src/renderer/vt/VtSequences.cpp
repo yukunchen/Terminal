@@ -13,39 +13,86 @@
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
 
+// Method Description:
+// - Formats and writes a sequence to stop the cursor from blinking.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_StopCursorBlinking()
 {
     std::string seq = "\x1b[?12l";
     return _Write(seq);
 }
 
+// Method Description:
+// - Formats and writes a sequence to start the cursor blinking. If it's 
+//      hidden, this won't also show it.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_StartCursorBlinking()
 {
     std::string seq = "\x1b[?12h";
     return _Write(seq);
 }
 
+// Method Description:
+// - Formats and writes a sequence to hide the cursor.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_HideCursor()
 {
     std::string seq = "\x1b[?25l";
     return _Write(seq);
 }
 
+// Method Description:
+// - Formats and writes a sequence to show the cursor.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_ShowCursor()
 {
     std::string seq = "\x1b[?25h";
     return _Write(seq);
 }
 
+// Method Description:
+// - Formats and writes a sequence to erase the remainer of the line starting 
+//      from the cursor position.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_EraseLine()
 {
     std::string seq = "\x1b[0K";
     return _Write(seq);
 }
 
+// Method Description:
+// - Formats and writes a sequence to delete a number of lines into the buffer 
+//      at the current cursor location.
+// Arguments:
+// - sLines: a number of lines to insert
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_DeleteLine(_In_ const short sLines)
 {
-    if (sLines <= 0) return S_OK;
+    if (sLines <= 0)
+    {
+        return S_OK;
+    }
+    if (sLines == 1)
+    {
+        std::string seq = "\x1b[M";
+        return _Write(seq);
+    }
 
     PCSTR pszFormat = "\x1b[%dM";
 
@@ -58,9 +105,25 @@ HRESULT VtEngine::_DeleteLine(_In_ const short sLines)
 
 }
 
+// Method Description:
+// - Formats and writes a sequence to insert a number of lines into the buffer 
+//      at the current cursor location.
+// Arguments:
+// - sLines: a number of lines to insert
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_InsertLine(_In_ const short sLines)
 {
-    if (sLines <= 0) return S_OK;
+    if (sLines <= 0)
+    {
+        return S_OK;
+    }
+    if (sLines == 1)
+    {
+        std::string seq = "\x1b[L";
+        return _Write(seq);
+    }
+
     PCSTR pszFormat = "\x1b[%dL";
 
     int cchNeeded = _scprintf(pszFormat, sLines);
@@ -71,6 +134,14 @@ HRESULT VtEngine::_InsertLine(_In_ const short sLines)
     return _Write(psz.get(), cchWritten);
 }
 
+// Method Description:
+// - Formats and writes a sequence to move the cursor to the specified 
+//      coordinate position. The input coord should be in console coordinates, 
+//      where origin=(0,0).
+// Arguments:
+// - coord: Console coordinates to move the cursor to.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_CursorPosition(_In_ const COORD coord)
 {
     PCSTR pszCursorFormat = "\x1b[%d;%dH";
@@ -88,6 +159,12 @@ HRESULT VtEngine::_CursorPosition(_In_ const COORD coord)
     return _Write(psz.get(), cchWritten);
 }
 
+// Method Description:
+// - Formats and writes a sequence to move the cursor to the origin.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_CursorHome()
 {
     std::string seq = "\x1b[H";

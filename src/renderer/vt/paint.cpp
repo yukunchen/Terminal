@@ -116,7 +116,7 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
     return S_OK;
 }
 
-// Routine Description:
+// Method Description:
 // - Draws up to one line worth of grid lines on top of characters.
 // Arguments:
 // - lines - Enum defining which edges of the rectangle to draw
@@ -138,16 +138,22 @@ HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF
 // - Draws the cursor on the screen
 // Arguments:
 // - coord - Coordinate position where the cursor should be drawn
-// - ulHeightPercent - The cursor will be drawn at this percentage of the current font height.
+// - ulHeightPercent - The cursor will be drawn at this percentage of the 
+//      current font height.
 // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
 // Return Value:
-// - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI error where a specific error isn't set.
+// - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI
+//       error where a specific error isn't set.
 HRESULT VtEngine::PaintCursor(_In_ COORD const coord, _In_ ULONG const ulHeightPercent, _In_ bool const fIsDoubleWidth)
 {
     coord;
     ulHeightPercent;
     fIsDoubleWidth;
 
+    // TODO: MSFT 13310327
+    // The cursor needs some help. It invalidates itself, and really that should 
+    //      be the renderer's responsibility. We don't want to keep repainting 
+    //      the character under the cursor.
     // if (_lastRealCursor.X != coord.X || _lastRealCursor.Y != coord.Y)
     // {
     //     _MoveCursor(coord);
@@ -160,10 +166,11 @@ HRESULT VtEngine::PaintCursor(_In_ COORD const coord, _In_ ULONG const ulHeightP
 
 // Routine Description:
 // - Clears out the cursor that was set in the previous PaintCursor call.
+//      VT doesn't need to do anything to "unpaint" the old cursor location.
 // Arguments:
 // - <none>
 // Return Value:
-// - S_OK, suitable GDI HRESULT error, or E_FAIL in a GDI error where a specific error isn't set.
+// - S_OK
 HRESULT VtEngine::ClearCursor()
 {
     return S_OK;
@@ -173,19 +180,32 @@ HRESULT VtEngine::ClearCursor()
 //  - Inverts the selected region on the current screen buffer.
 //  - Reads the selected area, selection mode, and active screen buffer
 //    from the global properties and dispatches a GDI invert on the selected text area.
+//  Because the selection is the responsibility of the terminal, and not the 
+//      host, render nothing.
 // Arguments:
 //  - rgsrSelection - Array of rectangles, one per line, that should be inverted to make the selection area
 // - cRectangles - Count of rectangle array length
 // Return Value:
-// - S_OK or suitable GDI HRESULT error.
+// - S_OK
 HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
 {
-    rgsrSelection;
-    cRectangles;
+    UNREFERENCED_PARAMETER(rgsrSelection);
+    UNREFERENCED_PARAMETER(cRectangles);
     return S_OK;
 }
 
-
+// Routine Description:
+// - Write a VT sequence to change the current colors of text. Writes true RGB 
+//      color sequences.
+// Arguments:
+// - colorForeground: The RGB Color to use to paint the foreground text.
+// - colorBackground: The RGB Color to use to paint the background of the text.
+// - legacyColorAttribute: A console attributes bit field specifying the brush
+//      colors we should use.
+// - fIncludeBackgrounds: indicates if we should change the background color of 
+//      the window. Unused for VT
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground)
 {
     try
@@ -227,56 +247,66 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground, 
     return S_OK;
 }
 
+// Routine Description:
+// - Write a VT sequence to change the current colors of text. It will try to 
+//      find the colors in the color table that are nearest to the input colors,
+//       and write those inidicies to the pipe.
+// Arguments:
+// - colorForeground: The RGB Color to use to paint the foreground text.
+// - colorBackground: The RGB Color to use to paint the background of the text.
+// - legacyColorAttribute: A console attributes bit field specifying the brush
+//      colors we should use.
+// - fIncludeBackgrounds: indicates if we should change the background color of 
+//      the window. Unused for VT
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable)
 {
-    try
+    if (colorForeground != _LastFG)
     {
-        if (colorForeground != _LastFG)
-        {
-            WORD wNearestFg = ::FindNearestTableIndex(colorForeground, ColorTable, cColorTable);
+        WORD wNearestFg = ::FindNearestTableIndex(colorForeground, ColorTable, cColorTable);
 
-            char* fmt = IsFlagSet(wNearestFg, FOREGROUND_INTENSITY)? 
-                "\x1b[1m\x1b[%dm" : "\x1b[22m\x1b[%dm";
+        char* fmt = IsFlagSet(wNearestFg, FOREGROUND_INTENSITY)? 
+            "\x1b[1m\x1b[%dm" : "\x1b[22m\x1b[%dm";
 
-            int fg = 30
-                     + (IsFlagSet(wNearestFg,FOREGROUND_RED)? 1 : 0)
-                     + (IsFlagSet(wNearestFg,FOREGROUND_GREEN)? 2 : 0)
-                     + (IsFlagSet(wNearestFg,FOREGROUND_BLUE)? 4 : 0)
-                     ;
-            int cchNeeded = _scprintf(fmt, fg);
-            wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-            RETURN_IF_NULL_ALLOC(psz);
+        int fg = 30
+                 + (IsFlagSet(wNearestFg,FOREGROUND_RED)? 1 : 0)
+                 + (IsFlagSet(wNearestFg,FOREGROUND_GREEN)? 2 : 0)
+                 + (IsFlagSet(wNearestFg,FOREGROUND_BLUE)? 4 : 0)
+                 ;
+        int cchNeeded = _scprintf(fmt, fg);
+        wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+        RETURN_IF_NULL_ALLOC(psz);
 
-            int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, fmt, fg);
-            _Write(psz.get(), cchWritten);
+        int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, fmt, fg);
+        RETURN_IF_FAILED(_Write(psz.get(), cchWritten));
 
-            _LastFG = colorForeground;
-            
-        }
-        if (colorBackground != _LastBG) 
-        {
-            WORD wNearestBg = ::FindNearestTableIndex(colorBackground, ColorTable, cColorTable);
-
-            // char* fmt = IsFlagSet(wNearestBg, BACKGROUND_INTENSITY)? "\x1b[1;%dm" : "\x1b[%dm";
-            char* fmt = "\x1b[%dm";
-
-            // Check using the foreground flags, because the bg flags are a higher byte
-            int bg = 40
-                     + (IsFlagSet(wNearestBg,FOREGROUND_RED)? 1 : 0)
-                     + (IsFlagSet(wNearestBg,FOREGROUND_GREEN)? 2 : 0)
-                     + (IsFlagSet(wNearestBg,FOREGROUND_BLUE)? 4 : 0)
-                     ;
-
-            int cchNeeded = _scprintf(fmt, bg);
-            wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-            RETURN_IF_NULL_ALLOC(psz);
-
-            int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, fmt, bg);
-            _Write(psz.get(), cchWritten);
-            _LastBG = colorBackground;
-        }
+        _LastFG = colorForeground;
     }
-    CATCH_RETURN();
+
+    if (colorBackground != _LastBG) 
+    {
+        WORD wNearestBg = ::FindNearestTableIndex(colorBackground, ColorTable, cColorTable);
+
+        char* fmt = "\x1b[%dm";
+
+        // Check using the foreground flags, because the bg flags are a higher byte
+        int bg = 40
+                 + (IsFlagSet(wNearestBg,FOREGROUND_RED)? 1 : 0)
+                 + (IsFlagSet(wNearestBg,FOREGROUND_GREEN)? 2 : 0)
+                 + (IsFlagSet(wNearestBg,FOREGROUND_BLUE)? 4 : 0)
+                 ;
+
+        int cchNeeded = _scprintf(fmt, bg);
+        wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+        RETURN_IF_NULL_ALLOC(psz);
+
+        int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, fmt, bg);
+        RETURN_IF_FAILED(_Write(psz.get(), cchWritten));
+
+        _LastBG = colorBackground;
+    }
+
     return S_OK;
 }
 
