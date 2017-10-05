@@ -30,7 +30,14 @@ bool SystemConfigurationProvider::IsCaretBlinkingEnabled()
 
 int SystemConfigurationProvider::GetNumberOfMouseButtons()
 {
-    return DEFAULT_NUMBER_OF_MOUSE_BUTTONS;
+    if (IsGetSystemMetricsPresent())
+    {
+        return GetSystemMetrics(SM_CMOUSEBUTTONS);
+    }
+    else
+    {
+        return DEFAULT_NUMBER_OF_MOUSE_BUTTONS;
+    }
 }
 
 ULONG SystemConfigurationProvider::GetNumberOfWheelScrollLines()

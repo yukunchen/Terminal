@@ -78,6 +78,7 @@ void InputTests::TestGetMouseButtonsValid()
 {
     DWORD nMouseButtons = (DWORD)-1;
     VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetNumberOfConsoleMouseButtons(&nMouseButtons));
+
     VERIFY_ARE_EQUAL(nMouseButtons, (DWORD)GetSystemMetrics(SM_CMOUSEBUTTONS));
 }
 
@@ -293,6 +294,13 @@ void FillInputRecordHelper(_Inout_ INPUT_RECORD* const pir, _In_ wchar_t wch, _I
 
 void InputTests::TestReadConsolePasswordScenario()
 {
+    if (!IsPostMessageWPresent())
+    {
+        Log::Comment(L"Password scenario can't be checked on platform without window message queuing.");
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
+
     // Scenario inspired by net use's password capture code.
     HANDLE const hIn = GetStdHandle(STD_INPUT_HANDLE);
 
@@ -317,8 +325,10 @@ void InputTests::TestReadConsolePasswordScenario()
     FlushConsoleInputBuffer(hIn);
     WriteConsoleInputW(hIn, irBuffer.get(), cBuffer, &dwWritten);
 
+    
     // Press "enter" key on the window to signify the user pressing enter at the end of the password.
-    PostMessageW(GetConsoleWindow(), WM_KEYDOWN, VK_RETURN, 0);
+    
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(PostMessageW(GetConsoleWindow(), WM_KEYDOWN, VK_RETURN, 0));
 
     // 3. Set up our read loop (mimicing password capture methodology from "net use" command.)
     size_t const buflen = (cBuffer / 2) + 1; // key down and key up will be coalesced into one.
@@ -375,6 +385,13 @@ void InputTests::TestReadConsolePasswordScenario()
 
 void TestMouseWheelReadConsoleInputHelper(_In_ UINT const msg, _In_ DWORD const dwEventFlagsExpected, _In_ DWORD const dwConsoleMode)
 {
+    if (!IsIsWindowPresent())
+    {
+        Log::Comment(L"Mouse wheel with respect to a window can't be checked on platform without classic window message queuing.");
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
+
     HWND const hwnd = GetConsoleWindow();
     VERIFY_IS_TRUE(!!IsWindow(hwnd), L"Get console window handle to inject wheel messages.");
 
