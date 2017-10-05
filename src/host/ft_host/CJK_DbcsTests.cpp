@@ -37,7 +37,7 @@ namespace DbcsWriteRead
                     _In_ DbcsWriteRead::ReadMode const ReadMode,
                     _In_ bool const fReadWithUnicode);
 
-    void Setup(_In_ unsigned int uiCodePage,
+    bool Setup(_In_ unsigned int uiCodePage,
                _In_ bool fIsTrueType,
                _Out_ HANDLE* const phOut,
                _Out_ WORD* const pwAttributes);
@@ -260,7 +260,7 @@ bool DbcsTests::DbcsTestSetup()
     return true;
 }
 
-void DbcsWriteRead::Setup(_In_ unsigned int uiCodePage,
+bool DbcsWriteRead::Setup(_In_ unsigned int uiCodePage,
                           _In_ bool fIsTrueType,
                           _Out_ HANDLE* const phOut,
                           _Out_ WORD* const pwAttributes)
@@ -305,7 +305,12 @@ void DbcsWriteRead::Setup(_In_ unsigned int uiCodePage,
     cfiexGet.cbSize = sizeof(cfiexGet);
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(OneCoreDelay::GetCurrentConsoleFontEx(hOut, FALSE, &cfiexGet));
 
-    VERIFY_ARE_EQUAL(NoThrowString(cfiex.FaceName), NoThrowString(cfiexGet.FaceName));
+    if (0 != NoThrowString(cfiex.FaceName).CompareNoCase(cfiexGet.FaceName))
+    {
+        Log::Comment(L"Could not change font. This system doesn't have the fonts we need to perform this test. Skipping.");
+        Log::Result(WEX::Logging::TestResults::Result::Skipped);
+        return false;
+    }
 
     // Retrieve some of the information about the preferences/settings for the console buffer including
     // the size of the buffer and the default colors (attributes) to use.
@@ -328,6 +333,8 @@ void DbcsWriteRead::Setup(_In_ unsigned int uiCodePage,
     // Give back the output handle and the default attributes so tests can verify attributes didn't change on roundtrip
     *phOut = hOut;
     *pwAttributes = sbiex.wAttributes;
+
+    return true;
 }
 
 void DbcsWriteRead::SendOutput(_In_ HANDLE const hOut, _In_ unsigned int const uiCodePage,
@@ -1786,7 +1793,12 @@ void DbcsWriteRead::TestRunner(_In_ unsigned int const uiCodePage,
     // used by default in the buffer (set during clearing as well).
     HANDLE hOut;
     WORD wAttributes;
-    DbcsWriteRead::Setup(uiCodePage, fUseTrueType, &hOut, &wAttributes);
+    if (!DbcsWriteRead::Setup(uiCodePage, fUseTrueType, &hOut, &wAttributes))
+    {
+        // If we can't set up (setup will detect systems where this test cannot operate) then return early.
+        return;
+    }
+
     WORD const wAttrOriginal = wAttributes;
 
     // Some tests might want to override the colors applied to ensure both parts of the CHAR_INFO union 

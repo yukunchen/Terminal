@@ -7,6 +7,8 @@
 
 #include <thread>
 
+#include "..\..\interactivity\onecore\SystemConfigurationProvider.hpp"
+
 // some assumptions have been made on this value. only change it if you have a good reason to.
 #define NUMBER_OF_SCENARIO_INPUTS 10
 #define READ_BATCH 3
@@ -45,7 +47,9 @@ class InputTests
     TEST_METHOD(TestMouseWheelReadConsoleInputQuickEdit);
     TEST_METHOD(TestMouseHorizWheelReadConsoleInputQuickEdit);
     
-    TEST_METHOD(TestVtInputGeneration);
+    BEGIN_TEST_METHOD(TestVtInputGeneration)
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD();
 };
 
 void VerifyNumberOfInputRecords(_In_ const HANDLE hConsoleInput, _In_ DWORD nInputs)
@@ -78,7 +82,18 @@ void InputTests::TestGetMouseButtonsValid()
 {
     DWORD nMouseButtons = (DWORD)-1;
     VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetNumberOfConsoleMouseButtons(&nMouseButtons));
-    VERIFY_ARE_EQUAL(nMouseButtons, (DWORD)GetSystemMetrics(SM_CMOUSEBUTTONS));
+
+    DWORD dwButtonsExpected = (DWORD)-1;
+    if (IsGetSystemMetricsPresent())
+    {
+        dwButtonsExpected = (DWORD)GetSystemMetrics(SM_CMOUSEBUTTONS);
+    }
+    else
+    {
+        dwButtonsExpected = Microsoft::Console::Interactivity::OneCore::SystemConfigurationProvider::s_DefaultNumberOfMouseButtons;
+    }
+
+    VERIFY_ARE_EQUAL(dwButtonsExpected, nMouseButtons);
 }
 
 void GenerateAndWriteInputRecords(_In_ const HANDLE hConsoleInput,
@@ -293,6 +308,13 @@ void FillInputRecordHelper(_Inout_ INPUT_RECORD* const pir, _In_ wchar_t wch, _I
 
 void InputTests::TestReadConsolePasswordScenario()
 {
+    if (!IsPostMessageWPresent())
+    {
+        Log::Comment(L"Password scenario can't be checked on platform without window message queuing.");
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
+
     // Scenario inspired by net use's password capture code.
     HANDLE const hIn = GetStdHandle(STD_INPUT_HANDLE);
 
@@ -317,8 +339,10 @@ void InputTests::TestReadConsolePasswordScenario()
     FlushConsoleInputBuffer(hIn);
     WriteConsoleInputW(hIn, irBuffer.get(), cBuffer, &dwWritten);
 
+    
     // Press "enter" key on the window to signify the user pressing enter at the end of the password.
-    PostMessageW(GetConsoleWindow(), WM_KEYDOWN, VK_RETURN, 0);
+    
+    VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(PostMessageW(GetConsoleWindow(), WM_KEYDOWN, VK_RETURN, 0));
 
     // 3. Set up our read loop (mimicing password capture methodology from "net use" command.)
     size_t const buflen = (cBuffer / 2) + 1; // key down and key up will be coalesced into one.
@@ -375,6 +399,13 @@ void InputTests::TestReadConsolePasswordScenario()
 
 void TestMouseWheelReadConsoleInputHelper(_In_ UINT const msg, _In_ DWORD const dwEventFlagsExpected, _In_ DWORD const dwConsoleMode)
 {
+    if (!IsIsWindowPresent())
+    {
+        Log::Comment(L"Mouse wheel with respect to a window can't be checked on platform without classic window message queuing.");
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
+
     HWND const hwnd = GetConsoleWindow();
     VERIFY_IS_TRUE(!!IsWindow(hwnd), L"Get console window handle to inject wheel messages.");
 
@@ -598,6 +629,9 @@ void InputTests::TestVtInputGeneration()
     SetConsoleMode(hIn, dwMode);
     GetConsoleMode(hIn, &dwMode);
     VERIFY_IS_TRUE(IsFlagSet(dwMode, ENABLE_VIRTUAL_TERMINAL_INPUT));
+
+    Log::Comment(L"Flushing");
+    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn));
 
     rgInputRecords[0].EventType = KEY_EVENT;
     rgInputRecords[0].Event.KeyEvent.bKeyDown = TRUE;

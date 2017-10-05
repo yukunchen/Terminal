@@ -115,7 +115,7 @@ int WriteLegacyColorTestChars(int fg, int bg)
 {
     DWORD numWritten = 0;
     SetConsoleTextAttribute(g_hOut, MakeAttribute(fg, bg));
-    WriteConsole(g_hOut, L"[]", 2, &numWritten, nullptr);
+    WriteConsole(g_hOut, L"*", 1, &numWritten, nullptr);
     return numWritten;
 }
 
@@ -123,7 +123,7 @@ int WriteVTSimpleTestChars(int fg, int bg)
 {
     DWORD numWritten = 0;
     wprintf(L"\x1b[%d;%dm", WinToVTColor(fg, true), WinToVTColor(bg, false));
-    WriteConsole(g_hOut, L"[]", 2, &numWritten, nullptr);
+    WriteConsole(g_hOut, L"*", 1, &numWritten, nullptr);
     return numWritten;
 }
 
@@ -131,7 +131,7 @@ int WriteVT256TestChars(int fg, int bg)
 {
     DWORD numWritten = 0;
     wprintf(L"\x1b[38;5;%d;48;5;%dm", WinToXtermIndex(fg), WinToXtermIndex(bg));
-    WriteConsole(g_hOut, L"[]", 2, &numWritten, nullptr);
+    WriteConsole(g_hOut, L"*", 1, &numWritten, nullptr);
     return numWritten;
 }
 
@@ -140,7 +140,7 @@ int WriteVT256GridTestChars(int fg, int bg)
     DWORD numWritten = 0;
     WORD index = MakeAttribute(fg, bg);
     wprintf(L"\x1b[38;5;%d;48;5;%dm", index, index);
-    WriteConsole(g_hOut, L"[]", 2, &numWritten, nullptr);
+    WriteConsole(g_hOut, L"*", 1, &numWritten, nullptr);
     return numWritten;
 }
 
@@ -162,7 +162,7 @@ int WriteVTRGBTestChars(int fg, int bg)
 
     DWORD numWritten = 0;
     wprintf(L"\x1b[38;2;%d;%d;%d;48;2;%d;%d;%dm", fgRed, fgGreen, fgBlue, bgRed, bgGreen, bgBlue);
-    WriteConsole(g_hOut, L"[]", 2, &numWritten, nullptr);
+    WriteConsole(g_hOut, L"*", 1, &numWritten, nullptr);
     return numWritten;
 }
 
@@ -230,7 +230,7 @@ BOOL CreateColorGrid(int iColorMode)
 
                 }
             }
-            fSuccess = totalWritten == (2 * 16 * 16);
+            fSuccess = totalWritten == (1 * 16 * 16);
         }
     }
     
@@ -251,8 +251,8 @@ WORD GetGridAttrs(int x, int y, CHAR_INFO* pBuffer, COORD cGridSize)
 BOOL ValidateLegacyColorGrid(COORD cursorPosInitial)
 {
     COORD actualWriteSize;
-    actualWriteSize.X = 32;
-    actualWriteSize.Y = 32;
+    actualWriteSize.X = 16;
+    actualWriteSize.Y = 16;
     
     CHAR_INFO* rOutputBuffer = new CHAR_INFO[actualWriteSize.X * actualWriteSize.Y];
     
@@ -274,19 +274,20 @@ BOOL ValidateLegacyColorGrid(COORD cursorPosInitial)
                 WORD wExpected = MakeAttribute(fg, bg);
                 VERIFY_ARE_EQUAL(pInfo->Attributes, wExpected, NoThrowString().Format(L"fg, bg = (%d,%d)", fg, bg));
                 fSuccess &= pInfo->Attributes == wExpected;
-                pInfo+=2;// We wrote two characters each time
+                pInfo+=1;// We wrote one character each time
             }
         }
     }
     delete[] rOutputBuffer;
+
     return fSuccess;
 }
 
 BOOL Validate256GridToLegacy(COORD cursorPosInitial)
 {
     COORD actualWriteSize;
-    actualWriteSize.X = 32;
-    actualWriteSize.Y = 32;
+    actualWriteSize.X = 16;
+    actualWriteSize.Y = 16;
     
     CHAR_INFO* rOutputBuffer = new CHAR_INFO[actualWriteSize.X * actualWriteSize.Y];
     
@@ -320,36 +321,36 @@ BOOL Validate256GridToLegacy(COORD cursorPosInitial)
         VERIFY_ARE_EQUAL(GetGridAttrs(0, 15, rOutputBuffer, actualWriteSize), MakeAttribute(0xF, 0xF));
 
         // Verify some other locations in the table, that will be RGB->Legacy conversions.
-        VERIFY_ARE_EQUAL(GetGridAttrs(2, 1, rOutputBuffer, actualWriteSize), MakeAttribute(0x1, 0x1));
-        VERIFY_ARE_EQUAL(GetGridAttrs(4, 1, rOutputBuffer, actualWriteSize), MakeAttribute(0xB, 0xB));
-        VERIFY_ARE_EQUAL(GetGridAttrs(4, 2, rOutputBuffer, actualWriteSize), MakeAttribute(0x2, 0x2));
-        VERIFY_ARE_EQUAL(GetGridAttrs(4, 3, rOutputBuffer, actualWriteSize), MakeAttribute(0x3, 0x3));
-        VERIFY_ARE_EQUAL(GetGridAttrs(6, 4, rOutputBuffer, actualWriteSize), MakeAttribute(0x4, 0x4));
-        VERIFY_ARE_EQUAL(GetGridAttrs(6, 5, rOutputBuffer, actualWriteSize), MakeAttribute(0x5, 0x5));
-        VERIFY_ARE_EQUAL(GetGridAttrs(8, 5, rOutputBuffer, actualWriteSize), MakeAttribute(0x9, 0x9));
-        VERIFY_ARE_EQUAL(GetGridAttrs(8, 6, rOutputBuffer, actualWriteSize), MakeAttribute(0x6, 0x6));
-        VERIFY_ARE_EQUAL(GetGridAttrs(8, 7, rOutputBuffer, actualWriteSize), MakeAttribute(0x7, 0x7));
-        VERIFY_ARE_EQUAL(GetGridAttrs(6, 11, rOutputBuffer, actualWriteSize), MakeAttribute(0x8, 0x8));
-        VERIFY_ARE_EQUAL(GetGridAttrs(6, 12, rOutputBuffer, actualWriteSize), MakeAttribute(0x1, 0x1));
-        VERIFY_ARE_EQUAL(GetGridAttrs(8, 12, rOutputBuffer, actualWriteSize), MakeAttribute(0xA, 0xA));
-        VERIFY_ARE_EQUAL(GetGridAttrs(10, 12, rOutputBuffer, actualWriteSize), MakeAttribute(0xD, 0xD));
-        VERIFY_ARE_EQUAL(GetGridAttrs(20, 12, rOutputBuffer, actualWriteSize), MakeAttribute(0xE, 0xE));
-        VERIFY_ARE_EQUAL(GetGridAttrs(20, 13, rOutputBuffer, actualWriteSize), MakeAttribute(0xC, 0xC));
-        VERIFY_ARE_EQUAL(GetGridAttrs(22, 13, rOutputBuffer, actualWriteSize), MakeAttribute(0xF, 0xF));
+        VERIFY_ARE_EQUAL(GetGridAttrs(1, 1, rOutputBuffer, actualWriteSize), MakeAttribute(0x1, 0x1));
+        VERIFY_ARE_EQUAL(GetGridAttrs(2, 1, rOutputBuffer, actualWriteSize), MakeAttribute(0xB, 0xB));
+        VERIFY_ARE_EQUAL(GetGridAttrs(2, 2, rOutputBuffer, actualWriteSize), MakeAttribute(0x2, 0x2));
+        VERIFY_ARE_EQUAL(GetGridAttrs(2, 3, rOutputBuffer, actualWriteSize), MakeAttribute(0x3, 0x3));
+        VERIFY_ARE_EQUAL(GetGridAttrs(3, 4, rOutputBuffer, actualWriteSize), MakeAttribute(0x4, 0x4));
+        VERIFY_ARE_EQUAL(GetGridAttrs(3, 5, rOutputBuffer, actualWriteSize), MakeAttribute(0x5, 0x5));
+        VERIFY_ARE_EQUAL(GetGridAttrs(4, 5, rOutputBuffer, actualWriteSize), MakeAttribute(0x9, 0x9));
+        VERIFY_ARE_EQUAL(GetGridAttrs(4, 6, rOutputBuffer, actualWriteSize), MakeAttribute(0x6, 0x6));
+        VERIFY_ARE_EQUAL(GetGridAttrs(4, 7, rOutputBuffer, actualWriteSize), MakeAttribute(0x7, 0x7));
+        VERIFY_ARE_EQUAL(GetGridAttrs(3, 11, rOutputBuffer, actualWriteSize), MakeAttribute(0x8, 0x8));
+        VERIFY_ARE_EQUAL(GetGridAttrs(3, 12, rOutputBuffer, actualWriteSize), MakeAttribute(0x1, 0x1));
+        VERIFY_ARE_EQUAL(GetGridAttrs(4, 12, rOutputBuffer, actualWriteSize), MakeAttribute(0xA, 0xA));
+        VERIFY_ARE_EQUAL(GetGridAttrs(5, 12, rOutputBuffer, actualWriteSize), MakeAttribute(0xD, 0xD));
+        VERIFY_ARE_EQUAL(GetGridAttrs(10, 12, rOutputBuffer, actualWriteSize), MakeAttribute(0xE, 0xE));
+        VERIFY_ARE_EQUAL(GetGridAttrs(10, 13, rOutputBuffer, actualWriteSize), MakeAttribute(0xC, 0xC));
+        VERIFY_ARE_EQUAL(GetGridAttrs(11, 13, rOutputBuffer, actualWriteSize), MakeAttribute(0xF, 0xF));
 
         // Greyscale ramp        
-        VERIFY_ARE_EQUAL(GetGridAttrs(28, 8, rOutputBuffer, actualWriteSize), MakeAttribute(0x0, 0x0));
-        VERIFY_ARE_EQUAL(GetGridAttrs(28, 9, rOutputBuffer, actualWriteSize), MakeAttribute(0x0, 0x0));
+        VERIFY_ARE_EQUAL(GetGridAttrs(14, 8, rOutputBuffer, actualWriteSize), MakeAttribute(0x0, 0x0));
+        VERIFY_ARE_EQUAL(GetGridAttrs(14, 9, rOutputBuffer, actualWriteSize), MakeAttribute(0x0, 0x0));
         
-        VERIFY_ARE_EQUAL(GetGridAttrs(28, 14, rOutputBuffer, actualWriteSize), MakeAttribute(0x8, 0x8));
-        VERIFY_ARE_EQUAL(GetGridAttrs(28, 15, rOutputBuffer, actualWriteSize), MakeAttribute(0x8, 0x8));
-        VERIFY_ARE_EQUAL(GetGridAttrs(30, 0, rOutputBuffer, actualWriteSize), MakeAttribute(0x8, 0x8));
+        VERIFY_ARE_EQUAL(GetGridAttrs(14, 14, rOutputBuffer, actualWriteSize), MakeAttribute(0x8, 0x8));
+        VERIFY_ARE_EQUAL(GetGridAttrs(14, 15, rOutputBuffer, actualWriteSize), MakeAttribute(0x8, 0x8));
+        VERIFY_ARE_EQUAL(GetGridAttrs(15, 0, rOutputBuffer, actualWriteSize), MakeAttribute(0x8, 0x8));
         
-        VERIFY_ARE_EQUAL(GetGridAttrs(30, 8, rOutputBuffer, actualWriteSize), MakeAttribute(0x7, 0x7));
-        VERIFY_ARE_EQUAL(GetGridAttrs(30, 9, rOutputBuffer, actualWriteSize), MakeAttribute(0x7, 0x7));
+        VERIFY_ARE_EQUAL(GetGridAttrs(15, 8, rOutputBuffer, actualWriteSize), MakeAttribute(0x7, 0x7));
+        VERIFY_ARE_EQUAL(GetGridAttrs(15, 9, rOutputBuffer, actualWriteSize), MakeAttribute(0x7, 0x7));
         
-        VERIFY_ARE_EQUAL(GetGridAttrs(30, 14, rOutputBuffer, actualWriteSize), MakeAttribute(0xF, 0xF));
-        VERIFY_ARE_EQUAL(GetGridAttrs(30, 15, rOutputBuffer, actualWriteSize), MakeAttribute(0xF, 0xF));
+        VERIFY_ARE_EQUAL(GetGridAttrs(15, 14, rOutputBuffer, actualWriteSize), MakeAttribute(0xF, 0xF));
+        VERIFY_ARE_EQUAL(GetGridAttrs(15, 15, rOutputBuffer, actualWriteSize), MakeAttribute(0xF, 0xF));
 
 
     }

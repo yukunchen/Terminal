@@ -8,39 +8,38 @@
 
 #include "SystemConfigurationProvider.hpp"
 
-#define DEFAULT_TT_FONT_FACENAME L"__DefaultTTFont__"
-
-#define DEFAULT_CARET_BLINK_TIME                  0x212
-#define DEFAULT_IS_CARET_BLINKING_ENABLED         true
-#define DEFAULT_NUMBER_OF_MOUSE_BUTTONS           3
-#define DEFAULT_NUMBER_OF_WHEEL_SCROLL_LINES      3
-#define DEFAULT_NUMBER_OF_WHEEL_SCROLL_CHARACTERS 3
-
 using namespace Microsoft::Console::Interactivity::OneCore;
 
 UINT SystemConfigurationProvider::GetCaretBlinkTime()
 {
-    return DEFAULT_CARET_BLINK_TIME;
+    return s_DefaultCaretBlinkTime;
 }
 
 bool SystemConfigurationProvider::IsCaretBlinkingEnabled()
 {
-    return DEFAULT_IS_CARET_BLINKING_ENABLED;
+    return s_DefaultIsCaretBlinkingEnabled;
 }
 
 int SystemConfigurationProvider::GetNumberOfMouseButtons()
 {
-    return DEFAULT_NUMBER_OF_MOUSE_BUTTONS;
+    if (IsGetSystemMetricsPresent())
+    {
+        return GetSystemMetrics(SM_CMOUSEBUTTONS);
+    }
+    else
+    {
+        return s_DefaultNumberOfMouseButtons;
+    }
 }
 
 ULONG SystemConfigurationProvider::GetNumberOfWheelScrollLines()
 {
-    return DEFAULT_NUMBER_OF_WHEEL_SCROLL_LINES;
+    return s_DefaultNumberOfWheelScrollLines;
 }
 
 ULONG SystemConfigurationProvider::GetNumberOfWheelScrollCharacters()
 {
-    return DEFAULT_NUMBER_OF_WHEEL_SCROLL_CHARACTERS;
+    return s_DefaultNumberOfWheelScrollCharacters;
 }
 
 void SystemConfigurationProvider::GetSettingsFromLink(

@@ -2,7 +2,7 @@
   "$schema": "http://universaltest/schema/testmddefinition-2.json",
   "Package": {
     "ComponentName": "Console",
-    "SubComponentName": "Host.UIAutomationTests"
+    "SubComponentName": "Host-UIAutomationTests"
   },
   "Execution": {
     "Type": "TAEF",
