@@ -187,7 +187,7 @@ void FontTests::TestFontScenario()
 
 void FontTests::TestSetFontAdjustsWindow()
 {
-    if (!IsIsWindowPresent())
+    if (!OneCoreDelay::IsIsWindowPresent())
     {
         Log::Comment(L"Adjusting window size by changing font scenario can't be checked on platform without classic window operations.");
         Log::Result(WEX::Logging::TestResults::Skipped);

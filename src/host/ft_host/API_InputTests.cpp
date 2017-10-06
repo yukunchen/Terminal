@@ -84,7 +84,7 @@ void InputTests::TestGetMouseButtonsValid()
     VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetNumberOfConsoleMouseButtons(&nMouseButtons));
 
     DWORD dwButtonsExpected = (DWORD)-1;
-    if (IsGetSystemMetricsPresent())
+    if (OneCoreDelay::IsGetSystemMetricsPresent())
     {
         dwButtonsExpected = (DWORD)GetSystemMetrics(SM_CMOUSEBUTTONS);
     }
@@ -308,7 +308,7 @@ void FillInputRecordHelper(_Inout_ INPUT_RECORD* const pir, _In_ wchar_t wch, _I
 
 void InputTests::TestReadConsolePasswordScenario()
 {
-    if (!IsPostMessageWPresent())
+    if (!OneCoreDelay::IsPostMessageWPresent())
     {
         Log::Comment(L"Password scenario can't be checked on platform without window message queuing.");
         Log::Result(WEX::Logging::TestResults::Skipped);
@@ -399,7 +399,7 @@ void InputTests::TestReadConsolePasswordScenario()
 
 void TestMouseWheelReadConsoleInputHelper(_In_ UINT const msg, _In_ DWORD const dwEventFlagsExpected, _In_ DWORD const dwConsoleMode)
 {
-    if (!IsIsWindowPresent())
+    if (!OneCoreDelay::IsIsWindowPresent())
     {
         Log::Comment(L"Mouse wheel with respect to a window can't be checked on platform without classic window message queuing.");
         Log::Result(WEX::Logging::TestResults::Skipped);

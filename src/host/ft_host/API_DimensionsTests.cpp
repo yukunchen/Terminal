@@ -48,7 +48,7 @@ bool DimensionsTests::TestCleanup()
 
 void DimensionsTests::TestGetLargestConsoleWindowSize()
 {
-    if (!IsIsWindowPresent())
+    if (!OneCoreDelay::IsIsWindowPresent())
     {
         Log::Comment(L"Largest window size scenario can't be checked on platform without classic window operations.");
         Log::Result(WEX::Logging::TestResults::Skipped);
