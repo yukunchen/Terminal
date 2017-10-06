@@ -16,9 +16,9 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-VtIo::VtIo()
+VtIo::VtIo() :
+    _usingVt(false)
 {
-    _usingVt = false;
 }
 
 // Routine Description:
@@ -80,9 +80,6 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
     
     RETURN_IF_FAILED(ParseIoMode(VtMode, _IoMode));
 
-    // Temporary - For the sake of testing this module before the other parts 
-    //  are added in, we need to hang onto these handles ourselves.
-    // In the future, they will be given to the renderer and the input thread.
     wil::unique_hfile _hInputFile;
     wil::unique_hfile _hOutputFile;
 
@@ -160,7 +157,7 @@ HRESULT VtIo::StartIfNeeded()
     // Hmm. We only have one Renderer implementation, 
     //  but its stored as a IRenderer. 
     //  IRenderer doesn't know about IRenderEngine. 
-    //todo?
+    // todo: msft:13631640
     auto g = ServiceLocator::LocateGlobals();
     static_cast<Renderer*>(g->pRender)->AddRenderEngine(_pVtRenderEngine);
 

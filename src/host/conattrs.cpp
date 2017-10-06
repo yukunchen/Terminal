@@ -1,4 +1,16 @@
+/*++
+Copyright (c) Microsoft Corporation
 
+Module Name:
+- conattrs.cpp
+
+Abstract:
+- Defines common operations on console attributes, especially in regards to 
+    finding the nearest color from a color table.
+
+Author(s):
+- Mike Griese (migrie) 01-Sept-2017
+--*/
 
 #include "precomp.h"
 #include "..\inc\conattrs.hpp"

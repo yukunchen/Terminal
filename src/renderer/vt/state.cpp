@@ -82,14 +82,14 @@ HRESULT VtEngine::_Write(_In_ std::string& str)
     return _Write(str.c_str(), str.length());
 }
 
-// Routine Description:
+// Method Description:
 // - This method will update the active font on the current device context
-// - NOTE: It is left up to the underling rendering system to choose the nearest font. Please ask for the font dimensions if they are required using the interface. Do not use the size you requested with this structure.
+//      Does nothing for vt, the font is handed by the terminal. 
 // Arguments:
 // - pfiFontDesired - Pointer to font information we should use while instantiating a font.
 // - pfiFont - Pointer to font information where the chosen font information will be populated.
 // Return Value:
-// - S_OK if set successfully or relevant GDI error via HRESULT.
+// - HRESULT S_OK
 HRESULT VtEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont)
 {
     UNREFERENCED_PARAMETER(pfiFontDesired);
@@ -97,18 +97,28 @@ HRESULT VtEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired, 
     return S_OK;
 }
 
-// Routine Description:
+// Method Description:
 // - This method will modify the DPI we're using for scaling calculations.
+//      Does nothing for vt, the dpi is handed by the terminal. 
 // Arguments:
-// - iDpi - The Dots Per Inch to use for scaling. We will use this relative to the system default DPI defined in Windows headers as a constant.
+// - iDpi - The Dots Per Inch to use for scaling. We will use this relative to 
+//      the system default DPI defined in Windows headers as a constant.
 // Return Value:
-// - HRESULT S_OK, GDI-based error code, or safemath error
+// - HRESULT S_OK
 HRESULT VtEngine::UpdateDpi(_In_ int const iDpi)
 {
     UNREFERENCED_PARAMETER(iDpi);
     return S_OK;
 }
 
+// Method Description:
+// - This method will update our internal reference for how big the viewport is. 
+//      If the viewport has changed size, then we'll need to send an update to 
+//      the terminal.
+// Arguments:
+// - srNewViewport - The bounds of the new viewport.
+// Return Value:
+// - HRESULT S_OK
 HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 {
     _srLastViewport = srNewViewport;
@@ -119,17 +129,18 @@ HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
     return S_OK;
 }
 
-// Routine Description:
+// Method Description:
 // - This method will figure out what the new font should be given the starting font information and a DPI.
 // - When the final font is determined, the FontInfo structure given will be updated with the actual resulting font chosen as the nearest match.
 // - NOTE: It is left up to the underling rendering system to choose the nearest font. Please ask for the font dimensions if they are required using the interface. Do not use the size you requested with this structure.
 // - If the intent is to immediately turn around and use this font, pass the optional handle parameter and use it immediately.
+//      Does nothing for vt, the font is handed by the terminal. 
 // Arguments:
 // - pfiFontDesired - Pointer to font information we should use while instantiating a font.
 // - pfiFont - Pointer to font information where the chosen font information will be populated.
 // - iDpi - The DPI we will have when rendering
 // Return Value:
-// - S_OK if set successfully or relevant GDI error via HRESULT.
+// - S_OK
 HRESULT VtEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont, _In_ int const iDpi)
 {
     UNREFERENCED_PARAMETER(pfiFontDesired);
@@ -138,7 +149,7 @@ HRESULT VtEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesi
     return S_OK;
 }
 
-// Routine Description:
+// Method Description:
 // - Retrieves the current pixel size of the font we have selected for drawing.
 // Arguments:
 // - <none>

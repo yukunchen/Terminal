@@ -489,7 +489,6 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 
             LOG_IF_FAILED(ServiceLocator::LocateGlobals()->pDeviceComm->AllowUIAccess());
         }
-
     }
     else
     {

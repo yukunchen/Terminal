@@ -1,3 +1,17 @@
+/*++
+Copyright (c) Microsoft Corporation
+
+Module Name:
+- XtermEngine.hpp
+
+Abstract:
+- This is the definition of the VT specific implementation of the renderer.
+    This is the win-telnet implementation, which does NOT support advanced 
+    sequences such as inserting and deleting lines, and only supports 16 colors.
+
+Author(s):
+- Mike Griese (migrie) 01-Sept-2017
+--*/
 
 #include "vtrenderer.hpp"
 #pragma once

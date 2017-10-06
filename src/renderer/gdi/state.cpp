@@ -247,6 +247,13 @@ HRESULT GdiEngine::UpdateDpi(_In_ int const iDpi)
     return S_OK;
 }
 
+// Method Description:
+// - This method will update our internal reference for how big the viewport is.
+//      Does nothing for GDI.
+// Arguments:
+// - srNewViewport - The bounds of the new viewport.
+// Return Value:
+// - HRESULT S_OK
 HRESULT GdiEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 {
     UNREFERENCED_PARAMETER(srNewViewport);

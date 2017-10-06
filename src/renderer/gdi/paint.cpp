@@ -170,7 +170,6 @@ HRESULT GdiEngine::_PrepareMemoryBitmap(_In_ HWND const hwnd)
 // - S_OK or suitable GDI HRESULT error.
 HRESULT GdiEngine::EndPaint()
 {
-
     // If we try to end a paint that wasn't started, it's invalid. Return.
     RETURN_HR_IF_FALSE(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _fPaintStarted);
 

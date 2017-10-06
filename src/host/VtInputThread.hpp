@@ -4,7 +4,6 @@ Copyright (c) Microsoft Corporation
 Module Name:
 - VtInputThread.hpp
 
-
 Abstract:
 - Defines methods that wrap the thread that reads VT input from a pipe and
   feeds it into the console's input buffer.
@@ -13,7 +12,6 @@ Author(s):
 - Mike Griese (migrie) 15 Aug 2017
 --*/
 #pragma once
-
 
 #include "..\terminal\parser\StateMachine.hpp"
 

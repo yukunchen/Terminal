@@ -60,6 +60,7 @@ SOURCES = \
     ..\renderFontDefaults.cpp \
     ..\utf8ToWideCharParser.cpp \
     ..\conimeinfo.cpp \
+    ..\conattrs.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

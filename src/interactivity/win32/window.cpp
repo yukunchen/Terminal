@@ -212,7 +212,6 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
     if (NT_SUCCESS(status))
     {
         GdiEngine* pGdiEngine = nullptr;
-        // VtEngine* pVtEngine = nullptr;
 
         try
         {
@@ -224,28 +223,12 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
             status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
-        // For the sake of testing:
-        //   Don't fail if the VT renderer fails to init. Just go about life normally.
-        // try
-        // {
-        //     pVtEngine = new VtEngine(g->hVtOutPipe);
-        //     // status = NT_TESTNULL(pVtEngine);
-        // }
-        // catch (...)
-        // {
-        //     if (pVtEngine != nullptr) delete pVtEngine;
-        //     pVtEngine = nullptr;
-        //     // status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-        // }
-
         if (NT_SUCCESS(status))
         {
             g->pRenderEngine = pGdiEngine;
 
             IRenderEngine* rgpEngines[1];
             rgpEngines[0] = pGdiEngine;
-            // rgpEngines[1] = pVtEngine;
-            // TODO: pVtEngine isn't freed. Probably std::move some std::unique_ptr of these into Renderer and just hold that.
 
             Renderer* pNewRenderer = nullptr;
             if (SUCCEEDED(Renderer::s_CreateInstance(g->pRenderData,

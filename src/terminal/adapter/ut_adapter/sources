@@ -82,7 +82,6 @@ TARGETLIBS = \
     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\onecore\lib\$(O)\ConInteractivityOneCoreLib.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\types\lib\$(O)\ConTypes.lib \
     
-
 DELAYLOAD = \
     PROPSYS.dll; \
     OLEAUT32.dll; \

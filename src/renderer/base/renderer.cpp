@@ -311,8 +311,10 @@ void Renderer::TriggerScroll(_In_ const COORD* const pcoordDelta)
 // - <none>
 void Renderer::TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
 {
-    LOG_IF_FAILED(_rgpEngines[0]->UpdateDpi(iDpi));
-    LOG_IF_FAILED(_rgpEngines[0]->UpdateFont(pFontInfoDesired, pFontInfo));
+    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine){
+        LOG_IF_FAILED(pEngine->UpdateDpi(iDpi));
+        LOG_IF_FAILED(pEngine->UpdateFont(pFontInfoDesired, pFontInfo));
+    });
 
     _NotifyPaintFrame();
 }
@@ -328,6 +330,7 @@ void Renderer::TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
 {
+    // MSFT:13631640 Figure out what to do with this when there's no head.
     return _rgpEngines[0]->GetProposedFont(pFontInfoDesired, pFontInfo, iDpi);
 }
 
@@ -340,6 +343,7 @@ HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired cons
 // - COORD representing the current pixel size of the selected font
 COORD Renderer::GetFontSize()
 {
+    // MSFT:13631640 Figure out what to do with this when there's no head.
     return _rgpEngines[0]->GetFontSize();
 }
 
@@ -353,6 +357,7 @@ COORD Renderer::GetFontSize()
 // - True if the character is full-width (two wide), false if it is half-width (one wide).
 bool Renderer::IsCharFullWidthByFont(_In_ WCHAR const wch)
 {
+    // MSFT:13631640 Figure out what to do with this when there's no head.
     return _rgpEngines[0]->IsCharFullWidthByFont(wch);
 }
 
@@ -911,22 +916,6 @@ HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, _In_ 
     COLORREF rgbBackground = textAttributes.GetRgbBackground();
     WORD legacyAttributes = textAttributes.GetLegacyAttributes();
 
-    // Only update if the foreground or background are different from the last time we attempted to set it.
-
-    // // NOTE: Valid COLORREFs are of the pattern 0x00bbggrr. Set the initial one in the static to -1 as the highest byte of a valid color is always 0.
-    // static COLORREF rgbLastForeground = 0xffffffff;
-    // static COLORREF rgbLastBackground = 0xffffffff;
-
-    // // If we have to update the background too (which is due to a complete window-type change), always update.
-    // // Otherwise, only update if something has changed.
-    // if (fIncludeBackground || rgbForeground != rgbLastForeground || rgbBackground != rgbLastBackground)
-    // {
-    //     RETURN_IF_FAILED(pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, legacyAttributes, fIncludeBackground));
-
-    //     rgbLastForeground = rgbForeground;
-    //     rgbLastBackground = rgbBackground;
-    // }
-
     // The last color need's to be each engine's responsibility. If it's local to this function,
     //      then on the next engine we might not update the color.
     RETURN_IF_FAILED(pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, legacyAttributes, fIncludeBackground));
@@ -1000,3 +989,4 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
     }
 
 }
+

@@ -1,3 +1,17 @@
+/*++
+Copyright (c) Microsoft Corporation
+
+Module Name:
+- XtermEngine.hpp
+
+Abstract:
+- This is the definition of the VT specific implementation of the renderer.
+    This is the xterm implementation, which supports advanced sequences such as
+    inserting and deleting lines, but only 16 colors.
+
+Author(s):
+- Mike Griese (migrie) 01-Sept-2017
+--*/
 
 #include "vtrenderer.hpp"
 #pragma once

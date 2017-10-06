@@ -42,8 +42,6 @@ ConIoSrvComm::ConIoSrvComm()
 
 NTSTATUS ConIoSrvComm::Connect()
 {
-    // return STATUS_ACCESS_DENIED;
-
     BOOL Ret = TRUE;
     NTSTATUS Status = STATUS_SUCCESS;
 
