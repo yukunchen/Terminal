@@ -868,13 +868,9 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(_In_reads_(cParams) con
 _Success_(return)
 bool OutputStateMachineEngine::_GetPrivateModeParams(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_writes_(*pcParams) TermDispatch::PrivateModeParams* rgPrivateModeParams, _Inout_ size_t* pcParams) const
 {
-    bool fSuccess = true;
-
-    if (cParams == 0)
-    {
-        fSuccess = false; // Can't just set nothing at all
-    }
-    else
+    bool fSuccess = false;
+    // Can't just set nothing at all
+    if (cParams > 0)
     {
         if (*pcParams >= cParams)
         {
@@ -884,6 +880,7 @@ bool OutputStateMachineEngine::_GetPrivateModeParams(_In_reads_(cParams) const u
                 rgPrivateModeParams[i] = (TermDispatch::PrivateModeParams)rgusParams[i];
             }
             *pcParams = cParams;
+            fSuccess = true;
         }
         else
         {
