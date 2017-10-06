@@ -154,6 +154,11 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
 {
     *ppWaiter = nullptr;
 
+    if (eventReadCount == 0)
+    {
+        return STATUS_SUCCESS;
+    }
+
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
@@ -166,7 +171,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
         }
     }
 
-    const size_t amountToRead = eventReadCount - partialEvents.size();
+    const size_t amountToRead = (partialEvents.size() >= eventReadCount) ? 0 : eventReadCount - partialEvents.size();
     std::deque<std::unique_ptr<IInputEvent>> readEvents;
     NTSTATUS Status = pInputBuffer->Read(readEvents,
                                          amountToRead,
@@ -189,10 +194,9 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
         catch (...)
         {
             *ppWaiter = nullptr;
-            return STATUS_NO_MEMORY;
+            Status = STATUS_NO_MEMORY;
         }
     }
-
     else if (NT_SUCCESS(Status))
     {
         // split key events to oem chars if necessary
@@ -235,7 +239,7 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
 // - The peek version will NOT remove records when it copies them out.
 // - The A version will convert to W using the console's current Input codepage (see SetConsoleCP)
 // Arguments:
-// - pInputBuffer - The input buffer to take records from to return to the client
+// - pInContext - The input buffer to take records from to return to the client
 // - outEvents - storage location for read events
 // - eventsToRead - The number of input events to read
 // - pInputReadHandleData - A structure that will help us maintain
@@ -266,7 +270,7 @@ HRESULT ApiRoutines::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInCo
 // - The peek version will NOT remove records when it copies them out.
 // - The W version accepts UCS-2 formatted characters (wide characters)
 // Arguments:
-// - pInputBuffer - The input buffer to take records from to return to the client
+// - pInContext - The input buffer to take records from to return to the client
 // - outEvents - storage location for read events
 // - eventsToRead - The number of input events to read
 // - pInputReadHandleData - A structure that will help us maintain
@@ -297,7 +301,7 @@ HRESULT ApiRoutines::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInCo
 // - The read version WILL remove records when it copies them out.
 // - The A version will convert to W using the console's current Input codepage (see SetConsoleCP)
 // Arguments:
-// - pInputBuffer - The input buffer to take records from to return to the client
+// - pInContext - The input buffer to take records from to return to the client
 // - outEvents - storage location for read events
 // - eventsToRead - The number of input events to read
 // - pInputReadHandleData - A structure that will help us maintain
@@ -328,7 +332,7 @@ HRESULT ApiRoutines::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInCo
 // - The read version WILL remove records when it copies them out.
 // - The W version accepts UCS-2 formatted characters (wide characters)
 // Arguments:
-// - pInputBuffer - The input buffer to take records from to return to the client
+// - pInContext - The input buffer to take records from to return to the client
 // - outEvents - storage location for read events
 // - eventsToRead - The number of input events to read
 // - pInputReadHandleData - A structure that will help us maintain

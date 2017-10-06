@@ -11,17 +11,6 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 
-// Routine Description:
-// - Handler for inserting key sequences into the buffer when the terminal emulation layer
-//   has determined a key can be converted appropriately into a sequence of inputs
-// Arguments:
-// - events - the input events to write to the input buffer
-// Return Value:
-// - <none>
-void HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
-{
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->Write(events);
-}
 
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // ProcessHandleList initializes itself
@@ -90,4 +79,16 @@ void CONSOLE_INFORMATION::UnlockConsole()
 ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
 {
     return _csConsoleLock.RecursionCount;
+}
+
+// Routine Description:
+// - Handler for inserting key sequences into the buffer when the terminal emulation layer
+//   has determined a key can be converted appropriately into a sequence of inputs
+// Arguments:
+// - events - the input events to write to the input buffer
+// Return Value:
+// - <none>
+void CONSOLE_INFORMATION::HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
+{
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->Write(events);
 }

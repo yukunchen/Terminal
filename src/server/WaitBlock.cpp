@@ -128,6 +128,8 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
     BOOLEAN fIsUnicode = TRUE;
 
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
+    // TODO: MSFT 14104228 - get rid of this void* and get the data
+    // out of the read wait object properly.
     void* pOutputData = nullptr;
     // 1. Get unicode status of notify call based on message type.
     // We still need to know the Unicode status on reads as they will be converted after the wait operation.
@@ -175,8 +177,7 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
 
             void* buffer;
             ULONG cbBuffer;
-            HRESULT hr = _WaitReplyMessage.GetOutputBuffer(&buffer, &cbBuffer);
-            if (FAILED(hr))
+            if (FAILED(_WaitReplyMessage.GetOutputBuffer(&buffer, &cbBuffer)))
             {
                 return false;
             }

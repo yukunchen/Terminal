@@ -17,6 +17,8 @@
 #include "..\..\interactivity\inc\VtApiRedirection.hpp"
 #endif
 
+#include "..\..\inc\unicode.hpp"
+
 using namespace Microsoft::Console::VirtualTerminal;
 
 DWORD const dwAltGrFlags = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
@@ -343,7 +345,7 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
         KeyEvent keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
 
         // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
-        if (keyEvent._keyDown == TRUE)
+        if (keyEvent._keyDown)
         {
             // For AltGr enabled keyboards, the Windows system will
             // emit Left Ctrl + Right Alt as the modifier keys and
@@ -393,11 +395,11 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
             }
             else if (s_IsCtrlPressed(keyEvent))
             {
-                if ((keyEvent._charData == L' ' ) || // Ctrl+Space
+                if ((keyEvent._charData == UNICODE_SPACE ) || // Ctrl+Space
                      // when Ctrl+@ comes through, the unicodechar
-                     // will be '\x0', and the vkey will be
+                     // will be '\x0' (UNICODE_NULL), and the vkey will be
                      // VkKeyScanW(0), the vkey for null
-                     (keyEvent._charData == L'\x0' && keyEvent._virtualKeyCode == LOBYTE(VkKeyScanW(0))))
+                     (keyEvent._charData == UNICODE_NULL && keyEvent._virtualKeyCode == LOBYTE(VkKeyScanW(0))))
                 {
                     _SendNullInputSequence(keyEvent._activeModifierKeys);
                     fKeyHandled = true;
@@ -425,7 +427,7 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
                 {
                     WCHAR rgwchSequence[2];
                     rgwchSequence[0] = keyEvent._charData;
-                    rgwchSequence[1] = L'\0';
+                    rgwchSequence[1] = UNICODE_NULL;
                     _SendInputSequence(rgwchSequence);
                     fKeyHandled = true;
                 }

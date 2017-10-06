@@ -57,6 +57,24 @@ public:
         (((n) & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) && \
         !((n) & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)))
 
+// Note taken from VkKeyScan docs (https://msdn.microsoft.com/en-us/library/windows/desktop/ms646329(v=vs.85).aspx):
+// For keyboard layouts that use the right-hand ALT key as a shift key
+// (for example, the French keyboard layout), the shift state is
+// represented by the value 6, because the right-hand ALT key is
+// converted internally into CTRL+ALT.
+struct VkKeyScanModState
+{
+    static const byte None = 0;
+    static const byte ShiftPressed = 1;
+    static const byte CtrlPressed = 2;
+    static const byte ShiftAndCtrlPressed = ShiftPressed | CtrlPressed;
+    static const byte AltPressed = 4;
+    static const byte ShiftAndAltPressed = ShiftPressed | AltPressed;
+    static const byte CtrlAndAltPressed = CtrlPressed | AltPressed;
+    static const byte ModPressed = ShiftPressed | CtrlPressed | AltPressed;
+};
+
+
 class KeyEvent : public IInputEvent
 {
 public:

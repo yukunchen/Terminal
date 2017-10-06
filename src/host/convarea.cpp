@@ -671,7 +671,12 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
     try
     {
         std::deque<std::unique_ptr<IInputEvent>> inEvents;
-        KeyEvent keyEvent{ TRUE, 1, 0, 0, 0, dwControlKeyState };
+        KeyEvent keyEvent{ TRUE, // keydown
+                           1, // repeatCount
+                           0, // virtualKeyCode
+                           0, // virtualScanCode
+                           0, // charData
+                           dwControlKeyState }; // activeModifierKeys
 
         while (*lpStr)
         {

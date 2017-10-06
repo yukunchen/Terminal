@@ -109,7 +109,7 @@ bool ShouldTakeOverKeyboardShortcuts()
 
 // Routine Description:
 // - handles key events without reference to Win32 elements.
-void HandleGenericKeyEvent(KeyEvent keyEvent, const bool generateBreak)
+void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     BOOLEAN ContinueProcessing = TRUE;

@@ -292,12 +292,11 @@ BOOL ConhostInternalGetSet::WriteConsoleInputW(_Inout_ std::deque<std::unique_pt
                                                _Out_ size_t& eventsWritten)
 {
     eventsWritten = 0;
-    BOOL fSuccess = !!SUCCEEDED(DoSrvWriteConsoleInput(_pInputBuffer,
-                                                       events,
-                                                       eventsWritten,
-                                                       true, // unicode
-                                                       false)); // append
-    return fSuccess;
+    return SUCCEEDED(DoSrvWriteConsoleInput(_pInputBuffer,
+                                            events,
+                                            eventsWritten,
+                                            true, // unicode
+                                            false)); // append
 }
 
 // Routine Description:

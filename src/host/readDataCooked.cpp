@@ -111,9 +111,8 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
                               _Out_ NTSTATUS* const pReplyStatus,
                               _Out_ DWORD* const pNumBytes,
                               _Out_ DWORD* const pControlKeyState,
-                              _Out_ void* const pOutputData)
+                              _Out_ void* const /*pOutputData*/)
 {
-    UNREFERENCED_PARAMETER(pOutputData);
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     ASSERT(gci->IsConsoleLocked());
 
