@@ -323,6 +323,12 @@ HRESULT WddmConEngine::UpdateDpi(int const iDpi)
 
     return S_OK;
 }
+                
+HRESULT WddmConEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
+{
+    UNREFERENCED_PARAMETER(srNewViewport);
+    return S_OK;
+}
 
 HRESULT WddmConEngine::GetProposedFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo, int const iDpi)
 {

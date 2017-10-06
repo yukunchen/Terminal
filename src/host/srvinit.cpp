@@ -15,7 +15,7 @@
 
 #include "ApiRoutines.h"
 
-#include "..\server\Entrypoints.h"
+#include "Entrypoints.h"
 #include "..\server\IoSorter.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
@@ -217,6 +217,11 @@ HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server)
 HRESULT ConsoleCreateIoThread(_In_ HANDLE Server)
 {
     return Entrypoints::StartConsoleForServerHandle(Server);
+}
+
+HRESULT ConsoleCreateIoThreadForCmdLine(_In_ PCWSTR pwszCmdLine)
+{
+    return Entrypoints::StartConsoleForCmdLine(pwszCmdLine);
 }
 
 #define SYSTEM_ROOT         (L"%SystemRoot%")
@@ -489,6 +494,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 
             LOG_IF_FAILED(ServiceLocator::LocateGlobals()->pDeviceComm->AllowUIAccess());
         }
+
     }
     else
     {

@@ -8,10 +8,8 @@
     <ClCompile Include="..\ApiMessageState.cpp" />
     <ClCompile Include="..\ApiRoutinesBase.cpp" />
     <ClCompile Include="..\ApiSorter.cpp" />
-    <ClCompile Include="..\ConsoleArguments.cpp" />
     <ClCompile Include="..\DeviceComm.cpp" />
     <ClCompile Include="..\DeviceHandle.cpp" />
-    <ClCompile Include="..\Entrypoints.cpp" />
     <ClCompile Include="..\IoDispatchers.cpp" />
     <ClCompile Include="..\IoSorter.cpp" />
     <ClCompile Include="..\ObjectHandle.cpp" />
@@ -30,10 +28,8 @@
     <ClInclude Include="..\ApiMessage.h" />
     <ClInclude Include="..\ApiMessageState.h" />
     <ClInclude Include="..\ApiSorter.h" />
-    <ClInclude Include="..\ConsoleArguments.hpp" />
     <ClInclude Include="..\DeviceComm.h" />
     <ClInclude Include="..\DeviceHandle.h" />
-    <ClInclude Include="..\Entrypoints.h" />
     <ClInclude Include="..\IApiRoutines.h" />
     <ClInclude Include="..\IoDispatchers.h" />
     <ClInclude Include="..\IoSorter.h" />

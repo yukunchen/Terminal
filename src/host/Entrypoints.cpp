@@ -8,10 +8,10 @@
 #include "Entrypoints.h"
 #include "ConsoleArguments.hpp"
 
-#include "DeviceHandle.h"
+#include "..\server\DeviceHandle.h"
 #include "IoThread.h"
 
-#include "winbasep.h"
+#include "..\server\winbasep.h"
 
 HRESULT Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle)
 {
@@ -27,6 +27,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
 {
     ConsoleArguments arguments = ConsoleArguments(pwszCmdLine);
     RETURN_IF_FAILED(arguments.ParseCommandline());
+
     // Create a scope because we're going to exit thread if everything goes well.
     // This scope will ensure all C++ objects and smart pointers get a chance to destruct before ExitThread is called.
     {
@@ -158,7 +159,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
             RETURN_IF_FAILED(UseVtPipe(arguments.GetVtInPipe(), arguments.GetVtOutPipe(), arguments.GetVtMode()));
         }
         ////////////////////////////////////////////////////////////////////////
-        
+
         // We have to copy the command line string we're given because CreateProcessW has to be called with mutable data.
         if (wcslen(pwszClientCmdLine) == 0)
         {

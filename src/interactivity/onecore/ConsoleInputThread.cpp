@@ -124,7 +124,8 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
                         // Create and set the renderer.
                         Renderer* pNewRenderer = nullptr;
                         Renderer::s_CreateInstance(Globals->pRenderData,
-                                                   Globals->pRenderEngine,
+                                                   &Globals->pRenderEngine,
+                                                   1,
                                                    &pNewRenderer);
                         Status = NT_TESTNULL(pNewRenderer);
 

@@ -60,8 +60,11 @@ public:
      WCHAR aWordDelimChars[WORD_DELIM_MAX];
 
      IRenderer* pRender;
+     
+     // Both of these should belong to the renderer.
      IRenderData* pRenderData;
      IRenderEngine* pRenderEngine;
+     
      IFontDefaultList* pFontDefaultList;
 
 private:

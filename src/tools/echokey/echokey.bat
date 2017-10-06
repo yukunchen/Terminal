@@ -1,1 +1,0 @@
-%_NTTREE%\conechokey.exe %*

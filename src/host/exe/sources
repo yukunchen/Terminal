@@ -1,0 +1,140 @@
+!include ..\sources.inc
+
+# -------------------------------------
+# Windows Console 
+# - Console Host Launcher
+# -------------------------------------
+
+# This program provides the default launcher entry-point
+# for when the Windows OS loader attempts to start a Win32 Console-type
+# application that does not already have console handles attached.
+# It will attempt to resolve the correct module for the OS platform and configuration
+# and then pass control to that module for runtime services.
+
+# -------------------------------------
+# Program Information
+# -------------------------------------
+
+TARGETNAME              = opencon
+TARGETTYPE              = PROGRAM
+UMTYPE                  = windows
+UMENTRY                 = wmain
+TARGET_DESTINATION      = retail
+
+# # We must define DLLDEF_OBJECTS because the methods defined in our exports file (.def file)
+# # are generated during creation of a different library module. This directive tells the linker
+# # to pick up the potential exports from there.
+# DLLDEF_OBJECTS          = $(WINCORE_OBJ_PATH)\console\open\src\host\lib\$(O)\conhostv2.lib \
+
+# -------------------------------------
+# CRT Configuration
+# -------------------------------------
+
+USE_UNICRT              = 1
+USE_MSVCRT              = 1
+
+USE_STL                 = 1
+STL_VER                 = STL_VER_CURRENT
+USE_NATIVE_EH           = 1
+
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
+
+UNICODE                 = 1
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
+
+# -------------------------------------
+# Compiler Settings
+# -------------------------------------
+
+MSC_WARNING_LEVEL       = /W4 /WX 
+
+# -------------------------------------
+# Build System Settings
+# -------------------------------------
+
+# Code in the OneCore depot automatically excludes default Win32 libraries.
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+PRECOMPILED_CXX         = 1
+PRECOMPILED_INCLUDE     = precomp.h
+PRECOMPILED_PCH         = precomp.pch
+PRECOMPILED_OBJ         = precomp.obj
+
+SOURCES = \
+    exemain.cpp \
+    res.rc \
+
+INCLUDES = \
+    ..; \
+    ..\..\inc; \
+    ..\..\propsheet; \
+    ..\..\propslib; \
+    ..\..\terminal\parser; \
+    ..\..\terminal\adapter; \
+    ..\..\types; \
+    ..\..\renderer\inc; \
+    ..\..\renderer\gdi; \
+    ..\..\renderer\vt; \
+    ..\..\renderer\base; \
+    $(ONECORE_SDK_INC_PATH); \
+    $(ONECORE_PRIV_SDK_INC_PATH); \
+    $(MINWIN_PRIV_SDK_INC_PATH); \
+
+TARGETLIBS = \
+    $(TARGETLIBS) \
+    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+    $(ONECORE_PRIV_SDK_LIB_VPATH)\onecore_internal.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\tsf\$(O)\contsf.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\propslib\$(O)\conprops.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\terminal\adapter\lib\$(O)\ConTermAdapter.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\terminal\parser\lib\$(O)\ConTermParser.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\renderer\base\lib\$(O)\ConRenderBase.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\renderer\gdi\lib\$(O)\ConRenderGdi.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\renderer\vt\lib\$(O)\ConRenderVt.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\renderer\wddmcon\lib\$(O)\ConRenderWddmCon.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\server\lib\$(O)\ConServer.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\interactivity\base\lib\$(O)\ConInteractivityBaseLib.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\interactivity\win32\lib\$(O)\ConInteractivityWin32Lib.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\interactivity\onecore\lib\$(O)\ConInteractivityOneCoreLib.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\types\lib\$(O)\ConTypes.lib \
+
+
+# -------------------------------------
+# Localization
+# -------------------------------------
+
+# This binary does not require localization (no strings)
+MUI_VERIFY_NO_LOC_RESOURCE = 1 
+
+# -------------------------------------
+# Side-by-side Manifesting
+# -------------------------------------
+
+SYSTEM_COMPATIBLE_ASSEMBLY_VERSION_00 = $(SYSTEM_COMPATIBLE_ASSEMBLY_VERSION).0.0
+SXS_MANIFEST_DEFINES = \
+    $(SXS_MANIFEST_DEFINES) \
+    -DSYSTEM_COMPATIBLE_ASSEMBLY_VERSION_00_A="\"$(SYSTEM_COMPATIBLE_ASSEMBLY_VERSION_00)\"" \
+
+SXS_ASSEMBLY_NAME       = Microsoft.OneCore.ConsoleHost.Launcher
+SXS_ASSEMBLY_LANGUAGE_INDEPENDENT = 1
+SXS_MANIFEST            = opencon.exe.Manifest
+SXS_MANIFEST_IN_RESOURCES = 1
+SXS_NO_BINPLACE         = 1
+
+CMI_USE_VERSION_XML     = 1
+
+O_MANIFESTS= \
+    $(OBJ_PATH)\$(O)\SystemDefault.man \
+    opencon.man
+
+INCLUDES= \
+    $(INCLUDES); \
+    $(OBJ_PATH)\$(O); \
+
+NTTARGETFILE0=\
+    $(O_MANIFESTS)

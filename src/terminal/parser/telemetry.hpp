@@ -18,6 +18,8 @@ Abstract:
 #include "limits.h"
 
 TRACELOGGING_DECLARE_PROVIDER(g_hConsoleVirtTermParserEventTraceProvider);
+TRACELOGGING_DECLARE_PROVIDER(g_hConsoleVirtTermParserOutputEngineEventTraceProvider);
+TRACELOGGING_DECLARE_PROVIDER(g_hConsoleVirtTermParserInputEngineEventTraceProvider);
 
 namespace Microsoft
 {

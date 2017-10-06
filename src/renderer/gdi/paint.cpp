@@ -50,8 +50,9 @@ HRESULT GdiEngine::StartPaint()
 }
 
 // Routine Description:
-// - Scrolls the existing data on the in-memory frame by the scroll region deltas we have collectively received
-//   through the Invalidate methods since the last time this was called.
+// - Scrolls the existing data on the in-memory frame by the scroll region 
+//      deltas we have collectively received through the Invalidate methods 
+//      since the last time this was called.
 // Arguments:
 // - <none>
 // Return Value:
@@ -169,6 +170,7 @@ HRESULT GdiEngine::_PrepareMemoryBitmap(_In_ HWND const hwnd)
 // - S_OK or suitable GDI HRESULT error.
 HRESULT GdiEngine::EndPaint()
 {
+
     // If we try to end a paint that wasn't started, it's invalid. Return.
     RETURN_HR_IF_FALSE(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _fPaintStarted);
 

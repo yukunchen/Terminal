@@ -6,7 +6,11 @@
 
 #include "precomp.h"
 
-#include "..\server\Entrypoints.h"
+#include "..\Entrypoints.h"
+#include <string>
+
+
+// This first main is the VS entrypoint, the second is the razzle entrypoint.
 
 // Routine Description:
 // - Main entry point for EXE version of console launching.
@@ -26,4 +30,18 @@ int CALLBACK wWinMain(
     _In_ int /*nCmdShow*/)
 {
     Entrypoints::StartConsoleForCmdLine(pwszCmdLine);
+}
+
+
+int WINAPI wmain(int argc, wchar_t* argv[], wchar_t* envp[])
+{
+    UNREFERENCED_PARAMETER(envp);
+    std::wstring args = L"";
+    for (auto i = 1; i < argc; i++)
+    {
+        args += argv[i];
+        if (i+1 < argc) args += L" "; 
+    }
+
+    Entrypoints::StartConsoleForCmdLine(args.c_str());
 }

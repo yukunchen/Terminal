@@ -175,8 +175,16 @@ HRESULT GdiEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In
     RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _hdcMemoryContext);
 
     // Set the colors for painting text
-    RETURN_LAST_ERROR_IF(CLR_INVALID == SetTextColor(_hdcMemoryContext, colorForeground));
-    RETURN_LAST_ERROR_IF(CLR_INVALID == SetBkColor(_hdcMemoryContext, colorBackground));
+    if (colorForeground != _lastFg)
+    {
+        RETURN_LAST_ERROR_IF(CLR_INVALID == SetTextColor(_hdcMemoryContext, colorForeground));
+        _lastFg = colorForeground;
+    }
+    if (colorBackground != _lastBg)
+    {
+        RETURN_LAST_ERROR_IF(CLR_INVALID == SetBkColor(_hdcMemoryContext, colorBackground));
+        _lastBg = colorBackground;
+    }
 
     if (fIncludeBackgrounds)
     {
@@ -236,6 +244,12 @@ HRESULT GdiEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired,
 HRESULT GdiEngine::UpdateDpi(_In_ int const iDpi)
 {
     _iCurrentDpi = iDpi;
+    return S_OK;
+}
+
+HRESULT GdiEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
+{
+    UNREFERENCED_PARAMETER(srNewViewport);
     return S_OK;
 }
 

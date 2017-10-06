@@ -15,6 +15,7 @@
 
 using namespace Microsoft::Console;
 
+
 void _HandleTerminalKeyEventCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
@@ -92,12 +93,14 @@ DWORD VtInputThread::_InputThread()
     {
         dwRead = 0;
         THROW_LAST_ERROR_IF_FALSE(ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
+
         THROW_IF_FAILED(_HandleRunInput(buffer, dwRead));
     }
 }
 
 // Method Description:
 // - Starts the VT input thread.
+
 HRESULT VtInputThread::Start()
 {
     RETURN_IF_HANDLE_INVALID(_hFile.get());
@@ -113,6 +116,7 @@ HRESULT VtInputThread::Start()
                            this,
                            0,
                            &dwThreadId);
+
 
     RETURN_IF_HANDLE_INVALID(hThread);
     _hThread.reset(hThread);

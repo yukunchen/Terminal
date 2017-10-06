@@ -8,13 +8,17 @@
 #include "VtIo.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
+#include "../renderer/vt/XtermEngine.hpp"
+#include "../renderer/vt/Xterm256Engine.hpp"
+#include "../renderer/vt/WinTelnetEngine.hpp"
+
 #include "../renderer/base/renderer.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-VtIo::VtIo() :
-    _usingVt(false)
+VtIo::VtIo()
 {
+    _usingVt = false;
 }
 
 // Routine Description:
@@ -72,9 +76,15 @@ HRESULT VtIo::ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode& ioMod
 //      indicating failure.
 HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    
     RETURN_IF_FAILED(ParseIoMode(VtMode, _IoMode));
 
+    // Temporary - For the sake of testing this module before the other parts 
+    //  are added in, we need to hang onto these handles ourselves.
+    // In the future, they will be given to the renderer and the input thread.
     wil::unique_hfile _hInputFile;
+    wil::unique_hfile _hOutputFile;
 
     _hInputFile.reset(
         CreateFileW(InPipeName.c_str(),
@@ -104,6 +114,23 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
     }
     CATCH_RETURN();
 
+    // The RenderEngine is not uniquely owned by us - the Renderer also needs a reference.
+    // That's why it's not a unique_ptr.
+    switch(_IoMode)
+    {
+        case VtIoMode::XTERM_256:
+            _pVtRenderEngine = new Xterm256Engine(std::move(_hOutputFile));
+            break;
+        case VtIoMode::XTERM:
+            _pVtRenderEngine = new XtermEngine(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
+            break;
+        case VtIoMode::WIN_TELNET:
+            _pVtRenderEngine = new WinTelnetEngine(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
+            break;
+        default:
+            return E_FAIL;
+    }
+
     _usingVt = true;
     return S_OK;
 }
@@ -130,6 +157,12 @@ HRESULT VtIo::StartIfNeeded()
     {
         return S_FALSE;
     }
+    // Hmm. We only have one Renderer implementation, 
+    //  but its stored as a IRenderer. 
+    //  IRenderer doesn't know about IRenderEngine. 
+    //todo?
+    auto g = ServiceLocator::LocateGlobals();
+    static_cast<Renderer*>(g->pRender)->AddRenderEngine(_pVtRenderEngine);
 
     _pVtInputThread->Start();
 

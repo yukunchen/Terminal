@@ -10,3 +10,4 @@ LIBRARY      "ConhostV2.DLL"
 
 EXPORTS
         ConsoleCreateIoThread
+        ConsoleCreateIoThreadForCmdLine
