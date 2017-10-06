@@ -7,7 +7,7 @@
 #include "WexTestClass.h"
 
 #include "globals.h"
-#include "../ConsoleArguments.hpp"
+#include "../../server/ConsoleArguments.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
