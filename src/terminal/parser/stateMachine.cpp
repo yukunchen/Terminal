@@ -501,8 +501,7 @@ void StateMachine::_ActionOscDispatch(_In_ wchar_t const wch)
     {
         // Suppress it and log telemetry on failed cases
         TermTelemetry::Instance().LogFailed(wch);
-    }
-    
+    }    
 }
 
 // Routine Description:
@@ -1070,7 +1069,7 @@ void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, _In
                 {                                
                     s_fProcessIndividually = false;
                     pwchStart = pwchCurr + 1; // pwchCurr still points at the current that went to the state machine. The run starts after it. 
-                    pwchSequenceStart = pwchCurr+1;
+                    pwchSequenceStart = pwchCurr + 1;
                     currRunLength = 0;
                 }
             }

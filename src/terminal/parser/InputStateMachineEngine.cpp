@@ -28,6 +28,8 @@ const short VT_SHIFT = 1;
 const short VT_ALT = 2;
 const short VT_CTRL = 4;
 
+const size_t WRAPPED_SEQUENCE_MAX_LENGTH = 8;
+
 // For reference, the equivalent INPUT_RECORD values are:
 // RIGHT_ALT_PRESSED   0x0001
 // LEFT_ALT_PRESSED    0x0002
@@ -94,27 +96,25 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
         short vkey = 0;
         DWORD dwModifierState = 0;
         
-        if (wch == L'\b')
+        switch(wch)
         {
+        case L'\b':
             fSuccess = _GenerateKeyFromChar(wch+0x40, &vkey, nullptr);
-        }
-        else if (wch == L'\r')
-        {
-            fSuccess = _GenerateKeyFromChar(wch, &vkey, nullptr);
+            break;
+        case L'\r':
             writeCtrl = false;
-        }
-        else if (wch == L'\x1b')
-        {
+            fSuccess = _GenerateKeyFromChar(wch, &vkey, nullptr);
+            break;
+        case L'\x1b':
             fSuccess = _GenerateKeyFromChar(wch+0x40, &vkey, nullptr);
-        }
-        else if (wch == L'\t')
-        {
-            fSuccess = writeCtrl = false;
+            break;
+        case L'\t':
+            writeCtrl = false;
             fSuccess = _GenerateKeyFromChar(actualChar, &vkey, &dwModifierState);
-        }
-        else
-        {
+            break;
+        default:
             fSuccess = _GenerateKeyFromChar(actualChar, &vkey, &dwModifierState);
+            break;
         }
 
         if (fSuccess)
@@ -173,6 +173,10 @@ bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* co
         // Split into two steps so compiler doesn't optimize out the fn call.
         bool result = ActionPrint(rgwch[i]);
         fSuccess &= result;
+        if (!fSuccess)
+        {
+            break;
+        }
     }
     return fSuccess;
 }
@@ -200,7 +204,7 @@ bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
     if (fSuccess)
     {
         // Alt is definitely pressed in the esc+key case.
-        dwModifierState = dwModifierState | LEFT_ALT_PRESSED;
+        dwModifierState = SetFlag(dwModifierState, LEFT_ALT_PRESSED);
         
         fSuccess = _WriteSingleKey(wch, vk, dwModifierState);
         
@@ -324,10 +328,10 @@ bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch,
 // - vkey - the VKEY of the key to write to the input callback.
 // - dwModifierState - the modifier state to write with the key.
 // - rgInput - the buffer of characters to write the keypresses to. Can write
-//      up to 8 records to this buffer.
-// - cRecords - the size of rgInput
+//      up to 8 records to this buffer. 
+// - cRecords - the size of rgInput. This should be at least WRAPPED_SEQUENCE_MAX_LENGTH
 // Return Value:
-// - true iff we successfully wrote the keypress to the input callback.
+// - the number of records written, or 0 if the buffer wasn't big enough.
 size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
                                                          _In_ const short vkey,
                                                          _In_ const DWORD dwModifierState,
@@ -337,7 +341,7 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
     // TODO: Reuse the clipboard functions for generating input for characters 
     //       that aren't on the current keyboard.
     // MSFT:13994942
-    if (cInput < 2) 
+    if (cInput < WRAPPED_SEQUENCE_MAX_LENGTH) 
     {
         return 0;
     }
@@ -362,10 +366,6 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
         next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC));
         next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
         next++;
-        if (index+1 > cInput)
-        {
-            return index;
-        }
         index++;
     }
     if (fAlt)
@@ -379,10 +379,6 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
         next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC));
         next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
         next++;
-        if (index+1 > cInput)
-        {
-            return index;
-        }
         index++;
     }
     if (fCtrl)
@@ -396,10 +392,6 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
         next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC));
         next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
         next++;
-        if (index+1 > cInput)
-        {
-            return index;
-        }
         index++;
     }
 
@@ -418,10 +410,6 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
         next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC));
         next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
         next++;
-        if (index+1 > cInput)
-        {
-            return index;
-        }
         index++;
     }
     if (fAlt)
@@ -435,10 +423,6 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
         next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC));
         next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
         next++;
-        if (index+1 > cInput)
-        {
-            return index;
-        }
         index++;
     }
     if (fShift)
@@ -452,12 +436,9 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
         next->Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC));
         next->Event.KeyEvent.uChar.UnicodeChar = 0x0;
         next++;
-        if (index+1 > cInput)
-        {
-            return index;
-        }
         index++;
     }
+
     return index;
 
 }
@@ -512,8 +493,8 @@ size_t InputStateMachineEngine::_GetSingleKeypress(_In_ const wchar_t wch,
 bool InputStateMachineEngine::_WriteSingleKey(_In_ const wchar_t wch, _In_ const short vkey, _In_ const DWORD dwModifierState)
 {
     // At most 8 records - 2 for each of shift,ctrl,alt up and down, and 2 for the actual key up and down.
-    INPUT_RECORD rgInput[8];
-    size_t cInput = _GenerateWrappedSequence(wch, vkey, dwModifierState, rgInput, 8);
+    INPUT_RECORD rgInput[WRAPPED_SEQUENCE_MAX_LENGTH];
+    size_t cInput = _GenerateWrappedSequence(wch, vkey, dwModifierState, rgInput, WRAPPED_SEQUENCE_MAX_LENGTH);
 
     std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(rgInput, cInput);
     _pfnWriteEvents(inputEvents);
@@ -544,12 +525,8 @@ bool InputStateMachineEngine::_WriteSingleKey(_In_ const short vkey, _In_ const 
 // - the INPUT_RECORD comaptible modifier state.
 DWORD InputStateMachineEngine::_GetCursorKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams)
 {
-    DWORD dwModifiers = 0;
-    if (_IsModified(cParams))
-    {
-        dwModifiers = _GetModifier(rgusParams[1]);
-    }
-    return dwModifiers;
+    // Both Cursor keys and generic keys keep their modifiers in the same index.
+    return _GetGenericKeysModifierState(rgusParams, cParams);
 }
 
 // Method Description:
@@ -559,11 +536,11 @@ DWORD InputStateMachineEngine::_GetCursorKeysModifierState(_In_reads_(cParams) c
 // - rgusParams - the set of parameters to get the modifier state from.
 // - cParams - the number of elements in rgusParams
 // Return Value:
-// - the INPUT_RECORD comaptible modifier state.
+// - the INPUT_RECORD compatible modifier state.
 DWORD InputStateMachineEngine::_GetGenericKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams)
 {
     DWORD dwModifiers = 0;
-    if (_IsModified(cParams))
+    if (_IsModified(cParams) && cParams >=2)
     {
         dwModifiers = _GetModifier(rgusParams[1]);
     }
@@ -612,7 +589,7 @@ DWORD InputStateMachineEngine::_GetModifier(_In_ const unsigned short modifierPa
 // - pVkey: Recieves the vkey
 // Return Value:
 // true iff we found the key
-bool InputStateMachineEngine::_GetGenericVkey(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ short* const pVkey) const
+bool InputStateMachineEngine::_GetGenericVkey(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ short* const pVkey) const
 {
     *pVkey = 0;
     if (cParams < 1) 

@@ -134,7 +134,7 @@ private:
     bool _IsModified(_In_ const unsigned short cParams);
     DWORD _GetModifier(_In_ const unsigned short modifierParam);
 
-    bool _GetGenericVkey(_In_ const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ short* const pVkey) const;
+    bool _GetGenericVkey(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ short* const pVkey) const;
     bool _GetCursorKeysVkey(_In_ const wchar_t wch, _Out_ short* const pVkey) const;
 
     bool _WriteSingleKey(_In_ const short vkey, _In_ const DWORD dwModifierState);
