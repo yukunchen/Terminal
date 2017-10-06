@@ -50,7 +50,7 @@ class KeyPressTests
 
     TEST_METHOD(TestContextMenuKey)
     {
-        if (!IsPostMessageWPresent())
+        if (!OneCoreDelay::IsPostMessageWPresent())
         {
             Log::Comment(L"Injecting keys to the window message queue cannot be done on systems without a classic window message queue. Skipping.");
             Log::Result(WEX::Logging::TestResults::Skipped);
@@ -101,7 +101,7 @@ class KeyPressTests
 
     TEST_METHOD(TestCoalesceSameKeyPress)
     {
-        if (!IsSendMessageWPresent())
+        if (!OneCoreDelay::IsSendMessageWPresent())
         {
             Log::Comment(L"Injecting keys to the window message queue cannot be done on systems without a classic window message queue. Skipping.");
             Log::Result(WEX::Logging::TestResults::Skipped);
@@ -158,7 +158,7 @@ class KeyPressTests
             "}")
         END_TEST_METHOD_PROPERTIES();
 
-        if (!IsSendMessageWPresent())
+        if (!OneCoreDelay::IsSendMessageWPresent())
         {
             Log::Comment(L"Ctrl key eventing scenario can't be checked on platform without window message queuing.");
             Log::Result(WEX::Logging::TestResults::Skipped);
@@ -259,7 +259,7 @@ class KeyPressTests
 
     TEST_METHOD(TestMaximize)
     {
-        if (!IsSendMessageWPresent())
+        if (!OneCoreDelay::IsSendMessageWPresent())
         {
             Log::Comment(L"Injecting keys to the window message queue cannot be done on systems without a classic window message queue. Skipping.");
             Log::Result(WEX::Logging::TestResults::Skipped);
