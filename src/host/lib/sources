@@ -20,6 +20,7 @@ SOURCES = \
     ..\scrolling.cpp \
     ..\cmdline.cpp   \
     ..\VtIo.cpp   \
+    ..\VtInputThread.cpp   \
     ..\consoleInformation.cpp \
     ..\cursor.cpp    \
     ..\search.cpp    \

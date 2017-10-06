@@ -20,3 +20,16 @@ Abstract:
 
 #include "telemetry.hpp"
 #include "tracing.hpp"
+
+// WIL
+#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
+#include <wil\Common.h>
+#include <wil\Result.h>
+
+#include <string>
+#include <list>
+#include <memory>
+#include <utility>
+#include <vector>
+#include <memory>
+#include <deque>

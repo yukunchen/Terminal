@@ -6,6 +6,7 @@
 #pragma once
 
 #include "..\inc\VtIoModes.hpp"
+#include "VtInputThread.hpp"
 
 namespace Microsoft
 {
@@ -27,16 +28,17 @@ public:
 
     HRESULT StartIfNeeded();
 
-    static HRESULT ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode* const pIoMode);
+    static HRESULT ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
     
 private:
     bool _usingVt;
     VtIoMode _IoMode;
 
+    std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
+
     // Temporary - For the sake of testing this module before the other parts 
     //  are added in, we need to hang onto these handles ourselves.
     // In the future, they will be given to the renderer and the input thread.
-    wil::unique_hfile _hInputFile;
     wil::unique_hfile _hOutputFile;
 
 #ifdef UNIT_TESTING
