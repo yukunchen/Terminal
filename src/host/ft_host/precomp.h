@@ -23,6 +23,11 @@ using namespace WEX::TestExecution;
 
 #include <conio.h>
 
+// Extension API set presence checks.
+#include <messageext.h>
+#include <windowext.h>
+#include <sysparamsext.h>
+
 #define CM_SET_KEY_STATE (WM_USER+18)
 #define CM_SET_KEYBOARD_LAYOUT (WM_USER+19)
 

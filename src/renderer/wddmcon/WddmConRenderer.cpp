@@ -304,7 +304,15 @@ HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const colorForeground, COLO
 HRESULT WddmConEngine::UpdateFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo)
 {
     UNREFERENCED_PARAMETER(pfiFontInfoDesired);
-    UNREFERENCED_PARAMETER(pfiFontInfo);
+
+    const COORD coordSize = GetFontSize();
+
+    pfiFontInfo->SetFromEngine(pfiFontInfo->GetFaceName(),
+                               pfiFontInfo->GetFamily(),
+                               pfiFontInfo->GetWeight(),
+                               pfiFontInfo->IsTrueTypeFont(),
+                               coordSize,
+                               coordSize);
 
     return S_OK;
 }

@@ -106,10 +106,12 @@ TARGETLIBS = \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-keyboard-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-gui-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-menu-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-message-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-misc-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-mouse-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-rectangle-ext-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-server-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-sysparams-ext-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-window-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-gdi-object-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-gdi-rgn-l1.lib \
@@ -151,10 +153,12 @@ DELAYLOAD = \
     ext-ms-win-ntuser-keyboard-l1.dll; \
     ext-ms-win-ntuser-gui-l1.dll; \
     ext-ms-win-ntuser-menu-l1.dll; \
+    ext-ms-win-ntuser-message-l1.dll; \
     ext-ms-win-ntuser-misc-l1.dll; \
     ext-ms-win-ntuser-mouse-l1.dll; \
     ext-ms-win-ntuser-rectangle-ext-l1.dll; \
     ext-ms-win-ntuser-server-l1.dll; \
+    ext-ms-win-ntuser-sysparams-ext-l1.dll; \
     ext-ms-win-ntuser-window-l1.dll; \
     ext-ms-win-rtcore-gdi-object-l1.dll; \
     ext-ms-win-rtcore-gdi-rgn-l1.dll; \
