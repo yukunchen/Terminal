@@ -100,22 +100,20 @@ NTSTATUS GetChar(_In_ InputBuffer* pInputBuffer,
                                     false, // peek
                                     !!fWait,
                                     true); // unicode
-        if (NT_SUCCESS(Status))
-        {
-            NumRead = 1u;
-            Event = inputEvent->ToInputRecord();
-        }
-
         if (!NT_SUCCESS(Status))
         {
             return Status;
         }
-
-        if (NumRead == 0)
+        else if (inputEvent.get() == nullptr)
         {
             ASSERT(!fWait);
 
             return STATUS_UNSUCCESSFUL;
+        }
+        else
+        {
+            NumRead = 1u;
+            Event = inputEvent->ToInputRecord();
         }
 
         if (Event.EventType == KEY_EVENT)
