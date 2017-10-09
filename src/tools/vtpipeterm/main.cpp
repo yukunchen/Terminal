@@ -24,7 +24,8 @@ HANDLE hOut;
 HANDLE hIn;
 
 std::deque<VtConsole*> consoles;
-// VtConsole* debug;
+// A console for printing debug output to
+VtConsole* debug;
 
 bool prefixPressed = false;
 
@@ -33,6 +34,12 @@ bool prefixPressed = false;
 void ReadCallback(byte* buffer, DWORD dwRead)
 {
     THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
+}
+void DebugReadCallback(byte* buffer, DWORD dwRead)
+{
+    UNREFERENCED_PARAMETER(buffer);
+    UNREFERENCED_PARAMETER(dwRead);
+    // do nothing.
 }
 
 VtConsole* getConsole()
@@ -158,9 +165,7 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
         }
 
         KEY_EVENT_RECORD keyEvent = event.Event.KeyEvent;
-        
-        // printKeyEvent(keyEvent);
-        
+                
         if (keyEvent.bKeyDown)
         {
             const char c = keyEvent.uChar.AsciiChar;
@@ -225,7 +230,7 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
 
         // WriteFile(inPipe.get(), vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
         WriteFile(inPipe(), vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
-        // WriteFile(debug->inPipe(), printSeq.c_str(), (DWORD)printSeq.length(), nullptr, nullptr);
+        WriteFile(debug->inPipe(), printSeq.c_str(), (DWORD)printSeq.length(), nullptr, nullptr);
     }
 }
 
@@ -310,10 +315,10 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     getConsole()->activate();
     CreateIOThreads();
 
-    // This doesn't work quite how I'd like.
-    // debug = new VtConsole(ReadCallback);
-    // debug->spawn(L"Nihilist.exe");
-    // debug->activate();
+    // Create a debug console for writting debugging output to.
+    debug = new VtConsole(DebugReadCallback);
+    debug->spawn(L"ubuntu run cat");
+    debug->activate();
 
     // Exit the thread so the CRT won't clean us up and kill. The IO thread owns the lifetime now.
     ExitThread(S_OK);

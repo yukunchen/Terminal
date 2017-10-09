@@ -30,9 +30,8 @@ SMALL_RECT VtEngine::GetDirtyRectInChars()
 // - wch - Character to check
 // Return Value:
 // - True if it is full-width (2 wide). False if it is half-width (1 wide).
-bool VtEngine::IsCharFullWidthByFont(_In_ WCHAR const wch)
+bool VtEngine::IsCharFullWidthByFont(_In_ WCHAR const /*wch*/)
 {
-    UNREFERENCED_PARAMETER(wch);
     return false;
 }
 

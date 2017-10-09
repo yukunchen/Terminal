@@ -10,8 +10,10 @@
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
 
-XtermEngine::XtermEngine(wil::unique_hfile hPipe, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable)
-    : VtEngine(std::move(hPipe)),
+XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
+                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                         _In_ const WORD cColorTable) :
+    VtEngine(std::move(hPipe)),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable)
 {
@@ -79,13 +81,13 @@ HRESULT XtermEngine::EndPaint()
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-HRESULT XtermEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds)
+HRESULT XtermEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
+                                          _In_ COLORREF const colorBackground,
+                                          _In_ WORD const /*legacyColorAttribute*/,
+                                          _In_ bool const /*fIncludeBackgrounds*/)
 {
-    UNREFERENCED_PARAMETER(legacyColorAttribute);
-    UNREFERENCED_PARAMETER(fIncludeBackgrounds);
     // The base xterm mode only knows about 16 colors
     return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, _ColorTable, _cColorTable);
-
 }
 
 // Routine Description:
@@ -137,7 +139,7 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord)
             _lastText = coord;
         }
     }
-    return S_OK;
+    return hr;
 }
 
 // Routine Description:
@@ -165,7 +167,7 @@ HRESULT XtermEngine::ScrollFrame()
     }
 
     const short dy = _scrollDelta.Y;
-    const short absDy = (dy>0)? dy : -dy;
+    const short absDy = static_cast<short>(abs(dy));
 
     Viewport view(_srLastViewport);
     SMALL_RECT v = _srLastViewport;
@@ -198,9 +200,8 @@ HRESULT XtermEngine::ScrollFrame()
 // - S_OK if we succeeded, else an appropriate HRESULT for safemath failure
 HRESULT XtermEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 {
-    pcoordDelta;
-    short dx = pcoordDelta->X;
-    short dy = pcoordDelta->Y;
+    const short dx = pcoordDelta->X;
+    const short dy = pcoordDelta->Y;
 
     if (dx != 0 || dy != 0)
     {

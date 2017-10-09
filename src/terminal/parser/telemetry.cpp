@@ -14,18 +14,6 @@ TRACELOGGING_DEFINE_PROVIDER(g_hConsoleVirtTermParserEventTraceProvider,
     (0xc9ba2a84, 0xd3ca, 0x5e19, 0x2b, 0xd6, 0x77, 0x6a, 0x09, 0x10, 0xcb, 0x9d),
     TraceLoggingOptionMicrosoftTelemetry());
 
-// TRACELOGGING_DEFINE_PROVIDER(g_hConsoleVirtTermParserOutputEngineEventTraceProvider,
-//     "Microsoft.Windows.Console.VirtualTerminal.Parser.OutputEngine",
-//     // {ca5d4a89-9cb4-4ed4-997b-c9611ff15586}
-//     (0xca5d4a89, 0x9cb4, 0x4ed4, 0x99, 0x7b, 0xc9, 0x61, 0x1f, 0xf1, 0x55, 0x86),
-//     TraceLoggingOptionMicrosoftTelemetry());
-
-// TRACELOGGING_DEFINE_PROVIDER(g_hConsoleVirtTermParserInputEngineEventTraceProvider,
-//     "Microsoft.Windows.Console.VirtualTerminal.Parser.InputEngine",
-//     // {6feda3e8-e38e-4045-b963-255f0c1ba009}
-//     (0x6feda3e8, 0xe38e, 0x4045, 0xb9, 0x63, 0x25, 0x5f, 0x0c, 0x1b, 0xa0, 0x09),
-//     TraceLoggingOptionMicrosoftTelemetry());
-
 using namespace Microsoft::Console::VirtualTerminal;
 
 #pragma warning(push)
@@ -42,8 +30,6 @@ TermTelemetry::TermTelemetry()
     _fShouldWriteFinalLog(false)
 {
     TraceLoggingRegister(g_hConsoleVirtTermParserEventTraceProvider);
-    // TraceLoggingRegister(g_hConsoleVirtTermParserOutputEngineEventTraceProvider);
-    // TraceLoggingRegister(g_hConsoleVirtTermParserInputEngineEventTraceProvider);
 
     // Create a random activityId just in case it doesn't get set later in SetActivityId(). 
     EventActivityIdControl(EVENT_ACTIVITY_CTRL_CREATE_ID, &_activityId);
@@ -54,8 +40,6 @@ TermTelemetry::~TermTelemetry()
 {
     WriteFinalTraceLog();
     TraceLoggingUnregister(g_hConsoleVirtTermParserEventTraceProvider);
-    // TraceLoggingUnregister(g_hConsoleVirtTermParserOutputEngineEventTraceProvider);
-    // TraceLoggingUnregister(g_hConsoleVirtTermParserInputEngineEventTraceProvider);
 }
 
 // Routine Description:

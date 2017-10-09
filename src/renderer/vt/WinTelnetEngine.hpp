@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation
 
 Module Name:
-- XtermEngine.hpp
+- WinTelnetEngine.hpp
 
 Abstract:
 - This is the definition of the VT specific implementation of the renderer.
@@ -29,10 +29,15 @@ namespace Microsoft
 class Microsoft::Console::Render::WinTelnetEngine : public VtEngine
 {
 public:
-    WinTelnetEngine(wil::unique_hfile hPipe, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable);
-    HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds);
-    HRESULT ScrollFrame();
-    HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta);
+    WinTelnetEngine(_In_ wil::unique_hfile hPipe,
+                    _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                    _In_ const WORD cColorTable);
+    HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
+                                 _In_ COLORREF const colorBackground,
+                                 _In_ WORD const legacyColorAttribute,
+                                 _In_ bool const fIncludeBackgrounds) override;
+    HRESULT ScrollFrame() override;
+    HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta) override;
 protected:
     HRESULT _MoveCursor(_In_ const COORD coord);
 private:

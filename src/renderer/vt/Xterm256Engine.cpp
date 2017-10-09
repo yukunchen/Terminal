@@ -10,8 +10,8 @@
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
 
-Xterm256Engine::Xterm256Engine(wil::unique_hfile hPipe)
-    : XtermEngine(std::move(hPipe), nullptr, 0)
+Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe) :
+    XtermEngine(std::move(hPipe), nullptr, 0)
 {
 }
 
@@ -27,9 +27,10 @@ Xterm256Engine::Xterm256Engine(wil::unique_hfile hPipe)
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-HRESULT Xterm256Engine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds)
+HRESULT Xterm256Engine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
+                                             _In_ COLORREF const colorBackground,
+                                             _In_ WORD const /*legacyColorAttribute*/,
+                                             _In_ bool const /*fIncludeBackgrounds*/)
 {
-    UNREFERENCED_PARAMETER(legacyColorAttribute);
-    UNREFERENCED_PARAMETER(fIncludeBackgrounds);
     return VtEngine::_RgbUpdateDrawingBrushes(colorForeground, colorBackground);
 }

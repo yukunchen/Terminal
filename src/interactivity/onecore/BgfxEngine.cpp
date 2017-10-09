@@ -48,7 +48,7 @@ HRESULT BgfxEngine::InvalidateSystem(const RECT* const prcDirtyClient)
     return S_OK;
 }
 
-HRESULT BgfxEngine::InvalidateSelection(SMALL_RECT* const rgsrSelection, UINT const cRectangles)
+HRESULT BgfxEngine::InvalidateSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles)
 {
     UNREFERENCED_PARAMETER(rgsrSelection);
     UNREFERENCED_PARAMETER(cRectangles);
@@ -153,7 +153,7 @@ HRESULT BgfxEngine::PaintBufferGridLines(GridLines const lines, COLORREF const c
     return S_OK;
 }
 
-HRESULT BgfxEngine::PaintSelection(SMALL_RECT* const rgsrSelection, UINT const cRectangles)
+HRESULT BgfxEngine::PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles)
 {
     UNREFERENCED_PARAMETER(rgsrSelection);
     UNREFERENCED_PARAMETER(cRectangles);

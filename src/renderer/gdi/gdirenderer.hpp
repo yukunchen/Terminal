@@ -29,7 +29,7 @@ namespace Microsoft
 
                 HRESULT SetHwnd(_In_ HWND const hwnd);
 
-                HRESULT InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);
+                HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);
                 HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta);
                 HRESULT InvalidateSystem(_In_ const RECT* const prcDirtyClient);
                 HRESULT Invalidate(_In_ const SMALL_RECT* const psrRegion);
@@ -47,7 +47,7 @@ namespace Microsoft
                                         _In_ COORD const coordTarget,
                                         _In_ bool const fTrimLeft);
                 HRESULT PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget);
-                HRESULT PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);
+                HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);
 
                 HRESULT PaintCursor(_In_ COORD const coordCursor, _In_ ULONG const ulCursorHeightPercent, _In_ bool const fIsDoubleWidth);
                 HRESULT ClearCursor();
@@ -110,7 +110,7 @@ namespace Microsoft
                 HRESULT _PaintBackgroundColor(_In_ const RECT* const prc);
 
                 HRGN _hrgnGdiPaintedSelection;
-                HRESULT _PaintSelectionCalculateRegion(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection,
+                HRESULT _PaintSelectionCalculateRegion(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                                                        _In_ UINT const cRectangles,
                                                        _Inout_ HRGN const hrgnSelection) const;
 

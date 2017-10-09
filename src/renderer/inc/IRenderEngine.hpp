@@ -42,14 +42,14 @@ namespace Microsoft
 
                 virtual HRESULT Invalidate(const SMALL_RECT* const psrRegion) = 0;
                 virtual HRESULT InvalidateSystem(const RECT* const prcDirtyClient) = 0;
-                virtual HRESULT InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles) = 0;
+                virtual HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles) = 0;
                 virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) = 0;
                 virtual HRESULT InvalidateAll() = 0;
                 
                 virtual HRESULT PaintBackground() = 0;
                 virtual HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine, _In_reads_(cchLine) const unsigned char* const rgWidths, _In_ size_t const cchLine, _In_ COORD const coord, _In_ bool const fTrimLeft) = 0;
                 virtual HRESULT PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget) = 0;
-                virtual HRESULT PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles) = 0;
+                virtual HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles) = 0;
 
                 virtual HRESULT PaintCursor(_In_ COORD const coordCursor, _In_ ULONG const ulCursorHeightPercent, _In_ bool const fIsDoubleWidth) = 0;
                 virtual HRESULT ClearCursor() = 0;

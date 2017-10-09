@@ -170,7 +170,7 @@ HRESULT WddmConEngine::InvalidateSystem(const RECT* const prcDirtyClient)
     return S_OK;
 }
 
-HRESULT WddmConEngine::InvalidateSelection(SMALL_RECT* const rgsrSelection, UINT const cRectangles)
+HRESULT WddmConEngine::InvalidateSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles)
 {
     UNREFERENCED_PARAMETER(rgsrSelection);
     UNREFERENCED_PARAMETER(cRectangles);
@@ -268,7 +268,7 @@ HRESULT WddmConEngine::PaintBufferGridLines(GridLines const lines, COLORREF cons
     return S_OK;
 }
 
-HRESULT WddmConEngine::PaintSelection(SMALL_RECT* const rgsrSelection, UINT const cRectangles)
+HRESULT WddmConEngine::PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles)
 {
     UNREFERENCED_PARAMETER(rgsrSelection);
     UNREFERENCED_PARAMETER(cRectangles);

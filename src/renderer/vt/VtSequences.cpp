@@ -21,8 +21,7 @@ using namespace Microsoft::Console::Render;
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_StopCursorBlinking()
 {
-    std::string seq = "\x1b[?12l";
-    return _Write(seq);
+    return _Write("\x1b[?12l");
 }
 
 // Method Description:
@@ -34,8 +33,7 @@ HRESULT VtEngine::_StopCursorBlinking()
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_StartCursorBlinking()
 {
-    std::string seq = "\x1b[?12h";
-    return _Write(seq);
+    return _Write("\x1b[?12h");
 }
 
 // Method Description:
@@ -46,8 +44,7 @@ HRESULT VtEngine::_StartCursorBlinking()
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_HideCursor()
 {
-    std::string seq = "\x1b[?25l";
-    return _Write(seq);
+    return _Write("\x1b[?25l");
 }
 
 // Method Description:
@@ -58,8 +55,7 @@ HRESULT VtEngine::_HideCursor()
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_ShowCursor()
 {
-    std::string seq = "\x1b[?25h";
-    return _Write(seq);
+    return _Write("\x1b[?25h");
 }
 
 // Method Description:
@@ -71,8 +67,30 @@ HRESULT VtEngine::_ShowCursor()
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_EraseLine()
 {
-    std::string seq = "\x1b[0K";
-    return _Write(seq);
+    return _Write("\x1b[0K");
+}
+
+// Method Description:
+// - Formats and writes a sequence to either insert or delete a number of lines 
+//      into the buffer at the current cursor location.
+// Arguments:
+// - sLines: a number of lines to insert or delete
+// - fInsertLine: true iff we should insert the lines, false to delete them.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::_InsertDeleteLine(_In_ const short sLines, _In_ const bool fInsertLine)
+{
+    if (sLines <= 0)
+    {
+        return S_OK;
+    }
+    if (sLines == 1)
+    {
+        return _Write(fInsertLine ? "\x1b[L" : "\x1b[M");
+    }
+    const PCSTR pszFormat = fInsertLine ? "\x1b[%dL" : "\x1b[%dM";
+
+    return _WriteFormattedString(pszFormat, sLines);
 }
 
 // Method Description:
@@ -84,25 +102,7 @@ HRESULT VtEngine::_EraseLine()
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_DeleteLine(_In_ const short sLines)
 {
-    if (sLines <= 0)
-    {
-        return S_OK;
-    }
-    if (sLines == 1)
-    {
-        std::string seq = "\x1b[M";
-        return _Write(seq);
-    }
-
-    PCSTR pszFormat = "\x1b[%dM";
-
-    int cchNeeded = _scprintf(pszFormat, sLines);
-    wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-    RETURN_IF_NULL_ALLOC(psz);
-
-    int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszFormat, sLines);
-    return _Write(psz.get(), cchWritten);
-
+    return _InsertDeleteLine(sLines, false);
 }
 
 // Method Description:
@@ -114,24 +114,7 @@ HRESULT VtEngine::_DeleteLine(_In_ const short sLines)
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_InsertLine(_In_ const short sLines)
 {
-    if (sLines <= 0)
-    {
-        return S_OK;
-    }
-    if (sLines == 1)
-    {
-        std::string seq = "\x1b[L";
-        return _Write(seq);
-    }
-
-    PCSTR pszFormat = "\x1b[%dL";
-
-    int cchNeeded = _scprintf(pszFormat, sLines);
-    wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-    RETURN_IF_NULL_ALLOC(psz);
-
-    int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszFormat, sLines);
-    return _Write(psz.get(), cchWritten);
+    return _InsertDeleteLine(sLines, true);
 }
 
 // Method Description:
@@ -144,19 +127,14 @@ HRESULT VtEngine::_InsertLine(_In_ const short sLines)
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_CursorPosition(_In_ const COORD coord)
 {
-    PCSTR pszCursorFormat = "\x1b[%d;%dH";
+    static const PCSTR pszCursorFormat = "\x1b[%d;%dH";
 
     // VT coords start at 1,1
     COORD coordVt = coord;
     coordVt.X++;
     coordVt.Y++;
 
-    int cchNeeded = _scprintf(pszCursorFormat, coordVt.Y, coordVt.X);
-    wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-    RETURN_IF_NULL_ALLOC(psz);
-
-    int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszCursorFormat, coordVt.Y, coordVt.X);
-    return _Write(psz.get(), cchWritten);
+    return _WriteFormattedString(pszCursorFormat, coordVt.Y, coordVt.X);
 }
 
 // Method Description:
@@ -167,6 +145,57 @@ HRESULT VtEngine::_CursorPosition(_In_ const COORD coord)
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_CursorHome()
 {
-    std::string seq = "\x1b[H";
-    return _Write(seq);
+    return _Write("\x1b[H");
+}
+
+
+// Method Description:
+// - Formats and writes a sequence to change the current text attributes.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::_SetGraphicsRendition16Color(_In_ const WORD wAttr,
+                                               _In_ const bool fIsForeground)
+{
+    // Different formats for:
+    //      Foreground, Bright = "\x1b[1m\x1b[%dm"
+    //      Foreground, Dark = "\x1b[22m\x1b[%dm"
+    //      Any Background = "\x1b[%dm"
+    const char* const pszFmt = fIsForeground ? 
+        (IsFlagSet(wAttr, FOREGROUND_INTENSITY) ? "\x1b[1m\x1b[%dm" : "\x1b[22m\x1b[%dm" ) :
+        ("\x1b[%dm");
+
+    // Always check using the foreground flags, because the bg flags constants 
+    //  are a higher byte
+    // Foreground sequences are in [30,37]
+    // Background sequences are in [40,47]
+    const int vtIndex = 30 
+                        + (fIsForeground? 10 : 0)
+                        + (IsFlagSet(wAttr, FOREGROUND_RED) ? 1 : 0)
+                        + (IsFlagSet(wAttr, FOREGROUND_GREEN) ? 2 : 0)
+                        + (IsFlagSet(wAttr, FOREGROUND_BLUE) ? 4 : 0);
+
+    return _WriteFormattedString(pszFmt, vtIndex);
+}
+
+// Method Description:
+// - Formats and writes a sequence to change the current text attributes to an 
+//      RGB color.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::_SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
+                                                _In_ const bool fIsForeground)
+{
+    const char* const pszFmt = fIsForeground ? 
+        "\x1b[38;2;%d;%d;%dm" :
+        "\x1b[48;2;%d;%d;%dm";
+
+    DWORD const r = (color & 0xff);
+    DWORD const g = (color >> 8) & 0xff;
+    DWORD const b = (color >> 16) & 0xff;    
+
+    return _WriteFormattedString(pszFmt, r, g, b);
 }

@@ -492,7 +492,7 @@ HRESULT GdiEngine::ClearCursor()
 // - cRectangles - Count of rectangle array length
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
-HRESULT GdiEngine::PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
+HRESULT GdiEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
@@ -525,7 +525,7 @@ HRESULT GdiEngine::PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsr
 //  - hrgnSelection - Handle to empty GDI region. Will be filled with selection region information.
 // Return Value:
 //  - HRESULT S_OK or Expect GDI-based errors or memory errors.
-HRESULT GdiEngine::_PaintSelectionCalculateRegion(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection,
+HRESULT GdiEngine::_PaintSelectionCalculateRegion(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                                                   _In_ UINT const cRectangles,
                                                   _Inout_ HRGN const hrgnSelection) const
 {

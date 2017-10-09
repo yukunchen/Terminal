@@ -11,8 +11,10 @@
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
 
-WinTelnetEngine::WinTelnetEngine(wil::unique_hfile hPipe, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable)
-    : VtEngine(std::move(hPipe)),
+WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
+                                 _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                                 _In_ const WORD cColorTable) :
+    VtEngine(std::move(hPipe)),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable)
 {
@@ -33,11 +35,9 @@ WinTelnetEngine::WinTelnetEngine(wil::unique_hfile hPipe, _In_reads_(cColorTable
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT WinTelnetEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                               _In_ COLORREF const colorBackground,
-                                              _In_ WORD const legacyColorAttribute,
-                                              _In_ bool const fIncludeBackgrounds)
+                                              _In_ WORD const /*legacyColorAttribute*/,
+                                              _In_ bool const /*fIncludeBackgrounds*/)
 {
-    UNREFERENCED_PARAMETER(legacyColorAttribute);
-    UNREFERENCED_PARAMETER(fIncludeBackgrounds);
     return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, _ColorTable, _cColorTable);
 }
 
@@ -61,7 +61,7 @@ HRESULT WinTelnetEngine::_MoveCursor(COORD const coord)
             _lastText = coord;
         }
     }
-    return S_OK;
+    return hr;
 }
 
 // Routine Description:
@@ -89,9 +89,8 @@ HRESULT WinTelnetEngine::ScrollFrame()
 //      console would like us to move while scrolling.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-HRESULT WinTelnetEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
+HRESULT WinTelnetEngine::InvalidateScroll(_In_ const COORD* const /*pcoordDelta*/)
 {
-    UNREFERENCED_PARAMETER(pcoordDelta);
     // win-telnet assumes the client doesn't know anything about inserting or
     //  deleting lines.
     // So instead, just invalidate the entire viewport. Every line is going to 

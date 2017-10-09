@@ -226,14 +226,11 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
         if (NT_SUCCESS(status))
         {
             g->pRenderEngine = pGdiEngine;
-
-            IRenderEngine* rgpEngines[1];
-            rgpEngines[0] = pGdiEngine;
-
             Renderer* pNewRenderer = nullptr;
+
             if (SUCCEEDED(Renderer::s_CreateInstance(g->pRenderData,
-                                                     rgpEngines,
-                                                     ARRAYSIZE(rgpEngines),
+                                                     &g->pRenderEngine,
+                                                     1,
                                                      &pNewRenderer)))
             {
                 g->pRender = pNewRenderer;

@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation
 
 Module Name:
-- XtermEngine.hpp
+- Xterm256Engine.hpp
 
 Abstract:
 - This is the definition of the VT specific implementation of the renderer.
@@ -29,7 +29,10 @@ namespace Microsoft
 class Microsoft::Console::Render::Xterm256Engine : public XtermEngine
 {
 public:
-    Xterm256Engine(wil::unique_hfile hPipe);
-    HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds);
+    Xterm256Engine(_In_ wil::unique_hfile hPipe);
+    HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
+                                 _In_ COLORREF const colorBackground,
+                                 _In_ WORD const legacyColorAttribute,
+                                 _In_ bool const fIncludeBackgrounds) override;
 
 };

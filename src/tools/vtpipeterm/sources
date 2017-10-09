@@ -16,6 +16,7 @@ TARGETLIBS=\
         $(MINCORE_SDK_LIB_PATH)\mincore.lib \
 
 SOURCES=main.cpp  \
+        VtConsole.cpp \
         res.rc \
 
 TARGET_DESTINATION=retail

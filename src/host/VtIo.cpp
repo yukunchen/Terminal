@@ -111,22 +111,27 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
     }
     CATCH_RETURN();
 
-    // The RenderEngine is not uniquely owned by us - the Renderer also needs a reference.
-    // That's why it's not a unique_ptr.
-    switch(_IoMode)
+
+    try
     {
-        case VtIoMode::XTERM_256:
-            _pVtRenderEngine = new Xterm256Engine(std::move(_hOutputFile));
-            break;
-        case VtIoMode::XTERM:
-            _pVtRenderEngine = new XtermEngine(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
-            break;
-        case VtIoMode::WIN_TELNET:
-            _pVtRenderEngine = new WinTelnetEngine(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
-            break;
-        default:
-            return E_FAIL;
+        // The RenderEngine is not uniquely owned by us - the Renderer also needs a reference.
+        // That's why it's not a unique_ptr.
+        switch(_IoMode)
+        {
+            case VtIoMode::XTERM_256:
+                _pVtRenderEngine = new Xterm256Engine(std::move(_hOutputFile));
+                break;
+            case VtIoMode::XTERM:
+                _pVtRenderEngine = new XtermEngine(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
+                break;
+            case VtIoMode::WIN_TELNET:
+                _pVtRenderEngine = new WinTelnetEngine(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
+                break;
+            default:
+                return E_FAIL;
+        }
     }
+    CATCH_RETURN();
 
     _usingVt = true;
     return S_OK;
@@ -158,8 +163,12 @@ HRESULT VtIo::StartIfNeeded()
     //  but its stored as a IRenderer. 
     //  IRenderer doesn't know about IRenderEngine. 
     // todo: msft:13631640
-    auto g = ServiceLocator::LocateGlobals();
-    static_cast<Renderer*>(g->pRender)->AddRenderEngine(_pVtRenderEngine);
+    const Globals* const g = ServiceLocator::LocateGlobals();
+    try
+    {
+        static_cast<Renderer*>(g->pRender)->AddRenderEngine(_pVtRenderEngine);
+    }
+    CATCH_RETURN();
 
     _pVtInputThread->Start();
 

@@ -21,9 +21,8 @@ using namespace Microsoft::Console::Render;
 //      believes is dirty
 // Return Value:
 // - S_OK
-HRESULT VtEngine::InvalidateSystem(_In_ const RECT* const prcDirtyClient)
+HRESULT VtEngine::InvalidateSystem(_In_ const RECT* const /*prcDirtyClient*/)
 {
-    UNREFERENCED_PARAMETER(prcDirtyClient);
     return S_OK;
 }
 
@@ -36,11 +35,9 @@ HRESULT VtEngine::InvalidateSystem(_In_ const RECT* const prcDirtyClient)
 // - cRectangles - Length of the array above.
 // Return Value:
 // - S_OK
-HRESULT VtEngine::InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
+HRESULT VtEngine::InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const /*rgsrSelection*/,
+                                      _In_ UINT const /*cRectangles*/)
 {
-    UNREFERENCED_PARAMETER(rgsrSelection);
-    UNREFERENCED_PARAMETER(cRectangles);
-
     // Selection shouldn't be handled bt the VT Renderer Host, it should be 
     //      handled by the client.
 

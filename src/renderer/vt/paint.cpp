@@ -18,7 +18,8 @@ using namespace Microsoft::Console::Render;
 // Arguments:
 // - <none>
 // Return Value:
-// - S_OK if we started to paint. S_FALSE if we didn't need to paint. HRESULT error code if painting didn't start successfully.
+// - S_OK if we started to paint. S_FALSE if we didn't need to paint. 
+//      HRESULT error code if painting didn't start successfully.
 HRESULT VtEngine::StartPaint()
 {
     // If there's nothing to do, quick return
@@ -34,7 +35,7 @@ HRESULT VtEngine::StartPaint()
 // Arguments:
 // - <none>
 // Return Value:
-// - S_OK or suitable GDI HRESULT error.
+// - S_OK, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::EndPaint()
 {
     _srcInvalid = { 0 };
@@ -55,13 +56,11 @@ HRESULT VtEngine::EndPaint()
 // Arguments:
 // - <none>
 // Return Value:
-// - S_OK or suitable GDI HRESULT error.
+// - S_OK
 HRESULT VtEngine::PaintBackground()
 {
     return S_OK;
 }
-
-#define _CRT_SECURE_NO_WARNINGS 1
 
 // Routine Description:
 // - Draws one line of the buffer to the screen. Writes the characters to the 
@@ -81,37 +80,32 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                   _In_reads_(cchLine) const unsigned char* const rgWidths,
                                   _In_ size_t const cchLine,
                                   _In_ COORD const coord,
-                                  _In_ bool const fTrimLeft)
+                                  _In_ bool const /*fTrimLeft*/)
 {
-    UNREFERENCED_PARAMETER(fTrimLeft);
-
     RETURN_IF_FAILED(_MoveCursor(coord));
-    try
+
+    // TODO: MSFT:14099536 Try and optimize the spaces.
+    const size_t actualCch = cchLine;
+
+    // Question for reviewers:
+    // What's the right way to render the buffer text to utf-8 here?
+    // Will this work?
+    const DWORD dwNeeded = WideCharToMultiByte(CP_UTF8, 0, pwsLine, static_cast<int>(actualCch), nullptr, 0, nullptr, nullptr);
+    wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(dwNeeded + 1);
+    RETURN_IF_NULL_ALLOC(rgchNeeded);
+    RETURN_LAST_ERROR_IF_FALSE(WideCharToMultiByte(CP_UTF8, 0, pwsLine, static_cast<int>(actualCch), rgchNeeded.get(), dwNeeded, nullptr, nullptr));
+    rgchNeeded[dwNeeded] = '\0';
+
+    RETURN_IF_FAILED(_Write(rgchNeeded.get(), dwNeeded));
+    
+    // Update our internal tracker of the cursor's position
+    short totalWidth = 0;
+    for (size_t i=0; i < actualCch; i++)
     {
-        // TODO: MSFT:14099536 Try and optimize the spaces.
-        size_t actualCch = cchLine;
-
-        // Question for reviewers:
-        // What's the right way to render the buffer text to utf-8 here?
-        // Will this work?
-        DWORD dwNeeded = WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)actualCch, nullptr, 0, nullptr, nullptr);
-        wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(dwNeeded + 1);
-        RETURN_IF_NULL_ALLOC(rgchNeeded);
-        RETURN_LAST_ERROR_IF_FALSE(WideCharToMultiByte(CP_ACP, 0, pwsLine, (int)actualCch, rgchNeeded.get(), dwNeeded, nullptr, nullptr));
-        rgchNeeded[dwNeeded] = '\0';
-
-        RETURN_IF_FAILED(_Write(rgchNeeded.get(), dwNeeded));
-        
-        // Update our internal tracker of the cursor's position
-        short totalWidth = 0;
-        for (size_t i=0; i < actualCch; i++)
-        {
-            totalWidth+=(short)rgWidths[i];
-        }
-        _lastText.X += totalWidth;
-
+        totalWidth+=(short)rgWidths[i];
     }
-    CATCH_RETURN();
+    _lastText.X += totalWidth;
+
 
     return S_OK;
 }
@@ -125,12 +119,11 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK
-HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget)
+HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const /*lines*/,
+                                       _In_ COLORREF const /*color*/,
+                                       _In_ size_t const /*cchLine*/,
+                                       _In_ COORD const /*coordTarget*/)
 {
-    UNREFERENCED_PARAMETER(lines);
-    UNREFERENCED_PARAMETER(color);
-    UNREFERENCED_PARAMETER(cchLine);
-    UNREFERENCED_PARAMETER(coordTarget);
     return S_OK;
 }
 
@@ -143,20 +136,14 @@ HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF
 // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-HRESULT VtEngine::PaintCursor(_In_ COORD const coord, _In_ ULONG const ulHeightPercent, _In_ bool const fIsDoubleWidth)
+HRESULT VtEngine::PaintCursor(_In_ COORD const coord,
+                              _In_ ULONG const /*ulHeightPercent*/,
+                              _In_ bool const /*fIsDoubleWidth*/)
 {
-    coord;
-    ulHeightPercent;
-    fIsDoubleWidth;
-
     // TODO: MSFT 13310327
     // The cursor needs some help. It invalidates itself, and really that should 
     //      be the renderer's responsibility. We don't want to keep repainting 
     //      the character under the cursor.
-    // if (_lastRealCursor.X != coord.X || _lastRealCursor.Y != coord.Y)
-    // {
-    //     _MoveCursor(coord);
-    // }
 
     _lastRealCursor = coord;
 
@@ -186,10 +173,9 @@ HRESULT VtEngine::ClearCursor()
 // - cRectangles - Count of rectangle array length
 // Return Value:
 // - S_OK
-HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
+HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const /*rgsrSelection*/,
+                                 _In_ UINT const /*cRectangles*/)
 {
-    UNREFERENCED_PARAMETER(rgsrSelection);
-    UNREFERENCED_PARAMETER(cRectangles);
     return S_OK;
 }
 
@@ -205,43 +191,21 @@ HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrS
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground)
+HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
+                                           _In_ COLORREF const colorBackground)
 {
-    try
+    if (colorForeground != _LastFG)
     {
-        if (colorForeground != _LastFG)
-        {
-            PCSTR pszFgFormat = "\x1b[38;2;%d;%d;%dm";
-            DWORD const fgRed = (colorForeground & 0xff);
-            DWORD const fgGreen = (colorForeground >> 8) & 0xff;
-            DWORD const fgBlue = (colorForeground >> 16) & 0xff;
-            
-            int cchNeeded = _scprintf(pszFgFormat, fgRed, fgGreen, fgBlue);
-            wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-            RETURN_IF_NULL_ALLOC(psz);
-
-            int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszFgFormat, fgRed, fgGreen, fgBlue);
-            _Write(psz.get(), cchWritten);
-            _LastFG = colorForeground;
-            
-        }
-        if (colorBackground != _LastBG) 
-        {
-            PCSTR pszBgFormat = "\x1b[48;2;%d;%d;%dm";
-            DWORD const bgRed = (colorBackground & 0xff);
-            DWORD const bgGreen = (colorBackground >> 8) & 0xff;
-            DWORD const bgBlue = (colorBackground >> 16) & 0xff;
-
-            int cchNeeded = _scprintf(pszBgFormat, bgRed, bgGreen, bgBlue);
-            wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-            RETURN_IF_NULL_ALLOC(psz);
-
-            int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszBgFormat, bgRed, bgGreen, bgBlue);
-            _Write(psz.get(), cchWritten);
-            _LastBG = colorBackground;
-        }
+        RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(colorForeground, true));
+        _LastFG = colorForeground;
+        
     }
-    CATCH_RETURN();
+
+    if (colorBackground != _LastBG) 
+    {
+        RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(colorBackground, false));
+        _LastBG = colorBackground;
+    }
     
     return S_OK;
 }
@@ -259,50 +223,22 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground, 
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-HRESULT VtEngine::_16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable)
+HRESULT VtEngine::_16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
+                                               _In_ COLORREF const colorBackground,
+                                               _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                                               _In_ const WORD cColorTable)
 {
     if (colorForeground != _LastFG)
     {
-        WORD wNearestFg = ::FindNearestTableIndex(colorForeground, ColorTable, cColorTable);
-
-        char* fmt = IsFlagSet(wNearestFg, FOREGROUND_INTENSITY)? 
-            "\x1b[1m\x1b[%dm" : "\x1b[22m\x1b[%dm";
-
-        int fg = 30
-                 + (IsFlagSet(wNearestFg,FOREGROUND_RED)? 1 : 0)
-                 + (IsFlagSet(wNearestFg,FOREGROUND_GREEN)? 2 : 0)
-                 + (IsFlagSet(wNearestFg,FOREGROUND_BLUE)? 4 : 0)
-                 ;
-        int cchNeeded = _scprintf(fmt, fg);
-        wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-        RETURN_IF_NULL_ALLOC(psz);
-
-        int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, fmt, fg);
-        RETURN_IF_FAILED(_Write(psz.get(), cchWritten));
-
+        const WORD wNearestFg = ::FindNearestTableIndex(colorForeground, ColorTable, cColorTable);
+        RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestFg, true));
         _LastFG = colorForeground;
     }
 
     if (colorBackground != _LastBG) 
     {
-        WORD wNearestBg = ::FindNearestTableIndex(colorBackground, ColorTable, cColorTable);
-
-        char* fmt = "\x1b[%dm";
-
-        // Check using the foreground flags, because the bg flags are a higher byte
-        int bg = 40
-                 + (IsFlagSet(wNearestBg,FOREGROUND_RED)? 1 : 0)
-                 + (IsFlagSet(wNearestBg,FOREGROUND_GREEN)? 2 : 0)
-                 + (IsFlagSet(wNearestBg,FOREGROUND_BLUE)? 4 : 0)
-                 ;
-
-        int cchNeeded = _scprintf(fmt, bg);
-        wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
-        RETURN_IF_NULL_ALLOC(psz);
-
-        int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, fmt, bg);
-        RETURN_IF_FAILED(_Write(psz.get(), cchWritten));
-
+        const WORD wNearestBg = ::FindNearestTableIndex(colorBackground, ColorTable, cColorTable);
+        RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestBg, false));
         _LastBG = colorBackground;
     }
 

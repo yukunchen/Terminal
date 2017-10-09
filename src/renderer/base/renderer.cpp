@@ -35,6 +35,7 @@ Renderer::Renderer(_In_ IRenderData* const pData, _In_reads_(cEngines) IRenderEn
     for (size_t i = 0; i < cEngines; i++)
     {
         IRenderEngine* engine = rgpEngines[i];
+        // NOTE: THIS CAN THROW IF MEMORY ALLOCATION FAILS.
         AddRenderEngine(engine);
     }
 }
@@ -116,17 +117,22 @@ HRESULT Renderer::PaintFrame()
         THROW_IF_FAILED(hr); // Return errors
         THROW_HR_IF(S_OK, S_FALSE == hr); // Return early if there's nothing to paint.
 
+        auto endPaint = wil::ScopeExit([&]()
+        {
+            LOG_IF_FAILED(pEngine->EndPaint());
+        });
+
         // A. Prep Colors
-        LOG_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData->GetDefaultBrushColors(), true));
+        RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData->GetDefaultBrushColors(), true));
 
         // B. Clear Overlays
-        LOG_IF_FAILED(_ClearOverlays(pEngine));
+        RETURN_IF_FAILED(_ClearOverlays(pEngine));
 
         // C. Perform Scroll Operations
-        LOG_IF_FAILED(_PerformScrolling(pEngine));
+        RETURN_IF_FAILED(_PerformScrolling(pEngine));
 
         // 1. Paint Background
-        LOG_IF_FAILED(_PaintBackground(pEngine));
+        RETURN_IF_FAILED(_PaintBackground(pEngine));
 
         // 2. Paint Rows of Text
         _PaintBufferOutput(pEngine);
@@ -143,7 +149,8 @@ HRESULT Renderer::PaintFrame()
         // 6. Paint Cursor
         _PaintCursor(pEngine);
 
-        LOG_IF_FAILED(pEngine->EndPaint());
+        // As we leave the scope, EndPaint will be called (declared above)
+        return S_OK;
     });
 
     return S_OK;
@@ -980,13 +987,17 @@ NTSTATUS Renderer::_GetSelectionRects(
     return status;
 }
 
-
+// Method Description:
+// - Adds another Render engine to this renderer. Future rendering calls will
+//      also be sent to the new renderer.
+// Arguments:
+// - pEngine: The new render engine to be added
+// Return Value:
+// - <none>
+// Throws if we ran out of memory or there was some other error appending the 
+//      engine to our collection.
 void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
-    if (pEngine != nullptr)
-    {
-        _rgpEngines.push_back(pEngine);
-    }
-
+    _rgpEngines.push_back(pEngine);
 }
 

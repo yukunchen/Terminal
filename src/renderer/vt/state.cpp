@@ -21,20 +21,21 @@ using namespace Microsoft::Console::Render;
 // - <none>
 // Return Value:
 // - An instance of a Renderer.
-VtEngine::VtEngine(wil::unique_hfile pipe) :
+VtEngine::VtEngine(_In_ wil::unique_hfile pipe) :
     _hFile(std::move(pipe)),
     _srLastViewport({0}),
     _srcInvalid({0}),
     _lastRealCursor({0}),
     _lastText({0}),
     _scrollDelta({0}),
-    _LastFG(0xff000000),
-    _LastBG(0xff000000),
+    _LastFG(0xffffffff),
+    _LastBG(0xffffffff),
     _usingTestCallback(false)
 
 {
+
     // When unit testing, we can instantiate a VtEngine without a pipe.
-    // THROW_IF_HANDLE_INVALID(_hFile.get());
+    THROW_IF_HANDLE_INVALID(_hFile.get());
     
 }
 
@@ -57,7 +58,7 @@ VtEngine::~VtEngine()
 // - cch: size of psz
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-HRESULT VtEngine::_Write(_In_reads_(cch) PCSTR psz, _In_ size_t const cch)
+HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch)
 {
     if (_usingTestCallback)
     {
@@ -83,6 +84,58 @@ HRESULT VtEngine::_Write(_In_ std::string& str)
 }
 
 // Method Description:
+// - Helper for calling _Write with just a PCSTR.
+// Arguments:
+// - str: the string of characters to write to the pipe.
+// Return Value:
+// - S_OK or suitable HRESULT error from writing pipe.
+HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz)
+{
+    try
+    {
+        std::string seq = std::string(psz);
+        _Write(seq.c_str(), seq.length());
+    }
+    CATCH_RETURN();
+
+    return S_OK;
+}
+
+// Method Description:
+// - Helper for calling _Write with a PCSTR for formatting a sequence. Used 
+//      extensively by VtSequences.cpp
+// Arguments:
+// - pszFormat: the string of characters to write to the pipe.
+// - ...: a va_list of args to format the string with.
+// Return Value:
+// - S_OK, E_INVALIDARG for a invalid format string, or suitable HRESULT error 
+//      from writing pipe.
+HRESULT VtEngine::_WriteFormattedString(_In_ const char* const pszFormat, ...)
+{
+    HRESULT hr = E_FAIL;
+    va_list argList;
+    va_start(argList, pszFormat);
+
+    int cchNeeded = _scprintf(pszFormat, argList);
+    // -1 is the _scprintf error case https://msdn.microsoft.com/en-us/library/t32cf9tb.aspx
+    if (cchNeeded > -1)
+    {
+        wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
+        RETURN_IF_NULL_ALLOC(psz);
+
+        int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszFormat, argList);
+        hr = _Write(psz.get(), cchWritten);
+    }
+    else
+    {
+        hr = E_INVALIDARG;
+    }
+
+    va_end(argList);
+    return hr;
+}
+
+// Method Description:
 // - This method will update the active font on the current device context
 //      Does nothing for vt, the font is handed by the terminal. 
 // Arguments:
@@ -90,10 +143,9 @@ HRESULT VtEngine::_Write(_In_ std::string& str)
 // - pfiFont - Pointer to font information where the chosen font information will be populated.
 // Return Value:
 // - HRESULT S_OK
-HRESULT VtEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont)
+HRESULT VtEngine::UpdateFont(_In_ FontInfoDesired const * const /*pfiFontDesired*/,
+                             _Out_ FontInfo* const /*pfiFont*/)
 {
-    UNREFERENCED_PARAMETER(pfiFontDesired);
-    UNREFERENCED_PARAMETER(pfiFont);
     return S_OK;
 }
 
@@ -105,9 +157,8 @@ HRESULT VtEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired, 
 //      the system default DPI defined in Windows headers as a constant.
 // Return Value:
 // - HRESULT S_OK
-HRESULT VtEngine::UpdateDpi(_In_ int const iDpi)
+HRESULT VtEngine::UpdateDpi(_In_ int const /*iDpi*/)
 {
-    UNREFERENCED_PARAMETER(iDpi);
     return S_OK;
 }
 
@@ -141,11 +192,10 @@ HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 // - iDpi - The DPI we will have when rendering
 // Return Value:
 // - S_OK
-HRESULT VtEngine::GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont, _In_ int const iDpi)
+HRESULT VtEngine::GetProposedFont(_In_ FontInfoDesired const * const /*pfiFontDesired*/,
+                                  _Out_ FontInfo* const /*pfiFont*/,
+                                  _In_ int const /*iDpi*/)
 {
-    UNREFERENCED_PARAMETER(pfiFontDesired);
-    UNREFERENCED_PARAMETER(pfiFont);
-    UNREFERENCED_PARAMETER(iDpi);
     return S_OK;
 }
 
@@ -169,8 +219,16 @@ COORD VtEngine::GetFontSize()
 // - <none>
 void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t const)> pfn)
 {
+
+// #ifdef UNIT_TESTING
+
     _pfnTestCallback = pfn;
     _usingTestCallback = true;
+
+// #else
+//     THROW_HR(E_FAIL);
+// #endif
+
 }
 
 
