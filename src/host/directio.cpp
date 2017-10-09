@@ -171,7 +171,11 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
         }
     }
 
-    const size_t amountToRead = (partialEvents.size() >= eventReadCount) ? 0 : eventReadCount - partialEvents.size();
+    size_t amountToRead;
+    if (FAILED(SizeTSub(eventReadCount, partialEvents.size(), &amountToRead)))
+    {
+        return STATUS_INTEGER_OVERFLOW;
+    }
     std::deque<std::unique_ptr<IInputEvent>> readEvents;
     NTSTATUS Status = pInputBuffer->Read(readEvents,
                                          amountToRead,

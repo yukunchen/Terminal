@@ -378,7 +378,7 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
                 //      EXCEPT for Alt+Ctrl+Space. Then the UnicodeChar is space, not NUL.
                 wchar_t wchPressedChar = static_cast<wchar_t>(MapVirtualKeyW(keyEvent._virtualKeyCode, MAPVK_VK_TO_CHAR));
                 // This is a trick - C-Spc is supposed to send NUL. So quick change space -> @ (0x40)
-                wchPressedChar = (wchPressedChar == 0x20) ? 0x40 : wchPressedChar;
+                wchPressedChar = (wchPressedChar == UNICODE_SPACE) ? 0x40 : wchPressedChar;
                 if (wchPressedChar >= 0x40 && wchPressedChar < 0x7F)
                 {
                     //shift the char to the ctrl range

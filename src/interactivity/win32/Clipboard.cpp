@@ -17,6 +17,8 @@
 
 #pragma hdrstop
 
+// TODO: MSFT 14150722 - can these const values be generated at
+// runtime without breaking compatibility?
 static const WORD altScanCode = 0x38;
 static const WORD leftShiftScanCode = 0x2A;
 
