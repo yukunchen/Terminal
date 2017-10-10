@@ -4,7 +4,7 @@
 # Program Information
 # -------------------------------------
 
-TARGETNAME              = ConRenderVt-Unittesting
+TARGETNAME              = ConRenderVt.Unittest
 TARGETTYPE              = LIBRARY
 
 UNIVERSAL_TEST          = 1
