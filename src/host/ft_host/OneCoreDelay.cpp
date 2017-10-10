@@ -8,6 +8,50 @@
 
 #include "OneCoreDelay.hpp"
 
+BOOLEAN
+__stdcall
+OneCoreDelay::IsIsWindowPresent()
+{
+#ifdef __INSIDE_WINDOWS
+    return ::IsIsWindowPresent();
+#else
+    return true;
+#endif
+}
+
+BOOLEAN
+__stdcall
+OneCoreDelay::IsGetSystemMetricsPresent()
+{
+#ifdef __INSIDE_WINDOWS
+    return ::IsGetSystemMetricsPresent()
+#else
+    return true;
+#endif
+}
+
+BOOLEAN
+__stdcall
+OneCoreDelay::IsPostMessageWPresent()
+{
+#ifdef __INSIDE_WINDOWS
+    return ::IsPostMessageWPresent()
+#else
+    return true;
+#endif
+}
+
+BOOLEAN
+__stdcall
+OneCoreDelay::IsSendMessageWPresent()
+{
+#ifdef __INSIDE_WINDOWS
+    return ::IsSendMessageWPresent()
+#else
+    return true;
+#endif
+}
+
 HMODULE GetUser32()
 {
     static HMODULE _hUser32 = nullptr;
