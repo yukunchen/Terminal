@@ -171,7 +171,7 @@ HRESULT VtEngine::_SetGraphicsRendition16Color(_In_ const WORD wAttr,
     // Foreground sequences are in [30,37]
     // Background sequences are in [40,47]
     const int vtIndex = 30 
-                        + (fIsForeground? 10 : 0)
+                        + (fIsForeground? 0 : 10)
                         + (IsFlagSet(wAttr, FOREGROUND_RED) ? 1 : 0)
                         + (IsFlagSet(wAttr, FOREGROUND_GREEN) ? 2 : 0)
                         + (IsFlagSet(wAttr, FOREGROUND_BLUE) ? 4 : 0);

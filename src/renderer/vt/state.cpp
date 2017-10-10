@@ -62,12 +62,14 @@ VtEngine::~VtEngine()
 // - S_OK or suitable HRESULT error from writing pipe.
 HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch)
 {
+#ifdef UNIT_TESTING
     if (_usingTestCallback)
     {
         RETURN_LAST_ERROR_IF_FALSE(_pfnTestCallback(psz, cch));
         return S_OK;
     }
-
+#endif
+    
     bool fSuccess = !!WriteFile(_hFile.get(), psz, (DWORD)cch, nullptr, nullptr);
     RETURN_LAST_ERROR_IF_FALSE(fSuccess);
 

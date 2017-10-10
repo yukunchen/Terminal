@@ -43,4 +43,8 @@ protected:
 private:
     const COLORREF* const _ColorTable;
     const WORD _cColorTable;
+    
+#ifdef UNIT_TESTING
+    friend class VtRendererTest;
+#endif
 };

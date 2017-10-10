@@ -108,12 +108,7 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
     try
     {
         _pVtInputThread = std::make_unique<VtInputThread>(std::move(_hInputFile));
-    }
-    CATCH_RETURN();
 
-
-    try
-    {
         // The RenderEngine is not uniquely owned by us - the Renderer also needs a reference.
         // That's why it's not a unique_ptr.
         switch(_IoMode)

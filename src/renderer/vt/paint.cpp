@@ -87,9 +87,6 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
     // TODO: MSFT:14099536 Try and optimize the spaces.
     const size_t actualCch = cchLine;
 
-    // Question for reviewers:
-    // What's the right way to render the buffer text to utf-8 here?
-    // Will this work?
     const DWORD dwNeeded = WideCharToMultiByte(CP_UTF8, 0, pwsLine, static_cast<int>(actualCch), nullptr, 0, nullptr, nullptr);
     wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(dwNeeded + 1);
     RETURN_IF_NULL_ALLOC(rgchNeeded);
@@ -102,7 +99,7 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
     short totalWidth = 0;
     for (size_t i=0; i < actualCch; i++)
     {
-        totalWidth+=(short)rgWidths[i];
+        totalWidth += static_cast<short>(rgWidths[i]);
     }
     _lastText.X += totalWidth;
 
@@ -170,7 +167,7 @@ HRESULT VtEngine::ClearCursor()
 //      host, render nothing.
 // Arguments:
 //  - rgsrSelection - Array of rectangles, one per line, that should be inverted to make the selection area
-// - cRectangles - Count of rectangle array length
+//  - cRectangles - Count of rectangle array length
 // Return Value:
 // - S_OK
 HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const /*rgsrSelection*/,
@@ -185,10 +182,6 @@ HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const
 // Arguments:
 // - colorForeground: The RGB Color to use to paint the foreground text.
 // - colorBackground: The RGB Color to use to paint the background of the text.
-// - legacyColorAttribute: A console attributes bit field specifying the brush
-//      colors we should use.
-// - fIncludeBackgrounds: indicates if we should change the background color of 
-//      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
@@ -213,14 +206,12 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
 // Routine Description:
 // - Write a VT sequence to change the current colors of text. It will try to 
 //      find the colors in the color table that are nearest to the input colors,
-//       and write those inidicies to the pipe.
+//       and write those indicies to the pipe.
 // Arguments:
 // - colorForeground: The RGB Color to use to paint the foreground text.
 // - colorBackground: The RGB Color to use to paint the background of the text.
-// - legacyColorAttribute: A console attributes bit field specifying the brush
-//      colors we should use.
-// - fIncludeBackgrounds: indicates if we should change the background color of 
-//      the window. Unused for VT
+// - ColorTable: An array of colors to find the closest match to.
+// - cColorTable: size of the color table.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
