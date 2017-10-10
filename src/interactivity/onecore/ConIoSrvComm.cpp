@@ -9,6 +9,7 @@
 #include "ConIoSrvComm.hpp"
 #include "ConIoSrv.h"
 
+#include "..\..\host\dbcs.h"
 #include "..\..\host\input.h"
 #include "..\..\renderer\wddmcon\wddmconrenderer.hpp"
 
@@ -304,7 +305,10 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
             break;
 
             case CIS_DISPLAY_MODE_DIRECTX:
-                WddmEngine = (WddmConEngine *)ServiceLocator::LocateGlobals()->pRenderEngine;
+            {
+                Globals* const pGlobals = ServiceLocator::LocateGlobals();
+
+                WddmEngine = (WddmConEngine *)pGlobals->pRenderEngine;
 
                 if (Event->FocusEvent.IsActive)
                 {
@@ -319,8 +323,25 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                     {
                         hr = WddmEngine->Initialize();
                         LOG_IF_FAILED(hr);
+
+                        // Right after we initialize, synchronize the screen/viewport states with the WddmCon surface dimensions
+                        if (SUCCEEDED(hr))
+                        {
+                            const RECT rcOld = { 0 };
+
+                            // WddmEngine reports display size in characters, adjust to pixels for resize window calc.
+                            RECT rcDisplay = WddmEngine->GetDisplaySize();
+
+                            // Get font to adjust char to pixels.
+                            const COORD coordFont = WddmEngine->GetFontSize();
+                            rcDisplay.right *= coordFont.X;
+                            rcDisplay.bottom *= coordFont.Y;
+
+                            // Ask the screen buffer to resize itself (and all related components) based on the screen size.
+                            pGlobals->getConsoleInformation()->CurrentScreenBuffer->ProcessResizeWindow(&rcDisplay, &rcOld);
+                        }
                     }
-                    
+
                     if (SUCCEEDED(hr))
                     {
                         // Allow acquiring device resources before drawing.
@@ -359,6 +380,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                                         NULL);
                     }
                 }
+            }
             break;
 
             case CIS_DISPLAY_MODE_NONE:
@@ -622,12 +644,31 @@ SHORT ConIoSrvComm::GetKeyState(int nVirtKey)
 
 BOOL ConIoSrvComm::TranslateCharsetInfo(DWORD * lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags)
 {
-    UNREFERENCED_PARAMETER(lpSrc);
-    UNREFERENCED_PARAMETER(lpCs);
-    UNREFERENCED_PARAMETER(dwFlags);
+    SetLastError(ERROR_SUCCESS);
 
-    SetLastError(ERROR_PROC_NOT_FOUND);
+    if (TCI_SRCCODEPAGE == dwFlags)
+    {
+        *lpCs = { 0 };
+        
+        DWORD dwSrc = (DWORD)lpSrc;
+        switch (dwSrc)
+        {
+        case CP_JAPANESE:
+            lpCs->ciCharset = SHIFTJIS_CHARSET;
+            return TRUE;
+        case CP_CHINESE_SIMPLIFIED:
+            lpCs->ciCharset = GB2312_CHARSET;
+            return TRUE;
+        case CP_KOREAN:
+            lpCs->ciCharset = HANGEUL_CHARSET;
+            return TRUE;
+        case CP_CHINESE_TRADITIONAL:
+            lpCs->ciCharset = CHINESEBIG5_CHARSET;
+            return TRUE;
+        }
+    }
 
+    SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
 }
 

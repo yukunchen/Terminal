@@ -48,6 +48,13 @@ bool DimensionsTests::TestCleanup()
 
 void DimensionsTests::TestGetLargestConsoleWindowSize()
 {
+    if (!OneCoreDelay::IsIsWindowPresent())
+    {
+        Log::Comment(L"Largest window size scenario can't be checked on platform without classic window operations.");
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
+
     // Note that this API is named "window size" but actually refers to the maximum viewport.
     // Viewport is defined as the character count that can fit within one client area of the window.
     // It has nothing to do with the outer pixel dimensions of the window.

@@ -29,7 +29,10 @@ AdaptDispatch::AdaptDispatch(_In_ ConGetSet* const pConApi, _In_ AdaptDefaults* 
       _pDefaults(pDefaults),
       _wDefaultTextAttributes(wDefaultTextAttributes),
       _wBrightnessState(0),
-      _pTermOutput(nullptr)
+      _pTermOutput(nullptr),
+      _fChangedBackground(false),
+      _fChangedForeground(false),
+      _fChangedMetaAttrs(false)
 {
     // The top-left corner in VT-speak is 1,1. Our internal array uses 0 indexes, but VT uses 1,1 for top left corner.
     _coordSavedCursor.X = 1;

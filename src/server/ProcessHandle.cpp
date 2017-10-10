@@ -13,7 +13,7 @@
 
 // Routine Description:
 // - Constructs an instance of the ConsoleProcessHandle Class
-// - NOTE: Can throw if allocation fails.
+// - NOTE: Can throw if allocation fails or if there is a console policy we do not understand.
 // - NOTE: Not being able to open the process by ID isn't a failure. It will be logged and continued.
 ConsoleProcessHandle::ConsoleProcessHandle(_In_ DWORD const dwProcessId,
                                            _In_ DWORD const dwThreadId,
@@ -24,7 +24,8 @@ ConsoleProcessHandle::ConsoleProcessHandle(_In_ DWORD const dwProcessId,
     pWaitBlockQueue(std::make_unique<ConsoleWaitQueue>()),
     _hProcess(LOG_IF_HANDLE_NULL(OpenProcess(MAXIMUM_ALLOWED,
                                                  FALSE,
-                                                 dwProcessId)))
+                                                 dwProcessId))),
+    _policy(ConsoleProcessPolicy::s_CreateInstance(_hProcess.get()))
 {
     if (nullptr != _hProcess.get())
     {
@@ -47,4 +48,12 @@ ConsoleProcessHandle::~ConsoleProcessHandle()
     {
         pOutputHandle->CloseHandle();
     }
+}
+
+// Routine Description:
+// - Retrieves the policies set on this particular process handle
+// - This specifies restrictions that may apply to the calling console client application
+const ConsoleProcessPolicy ConsoleProcessHandle::GetPolicy() const
+{
+    return _policy;
 }
