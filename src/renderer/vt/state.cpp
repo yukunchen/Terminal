@@ -8,7 +8,9 @@
 
 #include "vtrenderer.hpp"
 
-#include <sstream>
+// For _vcprintf
+#include <conio.h>
+#include <stdarg.h>
 
 #pragma hdrstop
 
@@ -116,14 +118,14 @@ HRESULT VtEngine::_WriteFormattedString(_In_ const char* const pszFormat, ...)
     va_list argList;
     va_start(argList, pszFormat);
 
-    int cchNeeded = _scprintf(pszFormat, argList);
+    int cchNeeded = _vcprintf(pszFormat, argList);
     // -1 is the _scprintf error case https://msdn.microsoft.com/en-us/library/t32cf9tb.aspx
     if (cchNeeded > -1)
     {
         wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
         RETURN_IF_NULL_ALLOC(psz);
 
-        int cchWritten = _snprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszFormat, argList);
+        int cchWritten = _vsnprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszFormat, argList);
         hr = _Write(psz.get(), cchWritten);
     }
     else
