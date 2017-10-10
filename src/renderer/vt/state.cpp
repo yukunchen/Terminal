@@ -33,10 +33,10 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe) :
     _usingTestCallback(false)
 
 {
-
+#ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
     THROW_IF_HANDLE_INVALID(_hFile.get());
-    
+#endif
 }
 
 // Routine Description:
@@ -220,14 +220,14 @@ COORD VtEngine::GetFontSize()
 void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t const)> pfn)
 {
 
-// #ifdef UNIT_TESTING
+#ifdef UNIT_TESTING
 
     _pfnTestCallback = pfn;
     _usingTestCallback = true;
 
-// #else
-//     THROW_HR(E_FAIL);
-// #endif
+#else
+    THROW_HR(E_FAIL);
+#endif
 
 }
 

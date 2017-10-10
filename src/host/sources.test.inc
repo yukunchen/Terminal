@@ -29,3 +29,5 @@ TARGETLIBS = \
     $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Common.lib \
     $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Wex.Logger.lib \
     $(SDKTOOLS_LIB_PATH)\WexTest\Cue\Te.Common.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\renderer\vt\ut_lib\$(O)\ConRenderVt-Unittesting.lib \
+

@@ -1,26 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props"/>
-  <ItemGroup>
-    <ClCompile Include="..\XtermEngine.cpp" />
-    <ClCompile Include="..\Xterm256Engine.cpp" />
-    <ClCompile Include="..\WinTelnetEngine.cpp" />
-    <ClCompile Include="..\invalidate.cpp" />
-    <ClCompile Include="..\math.cpp" />
-    <ClCompile Include="..\paint.cpp" />
-    <ClCompile Include="..\state.cpp" />
-    <ClCompile Include="..\VtSequences.cpp" />
-    <ClCompile Include="..\precomp.cpp">
-      <PrecompiledHeader>Create</PrecompiledHeader>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\XtermEngine.hpp" />
-    <ClInclude Include="..\Xterm256Engine.hpp" />
-    <ClInclude Include="..\WinTelnetEngine.hpp" />
-    <ClInclude Include="..\vtrenderer.hpp" />
-    <ClInclude Include="..\precomp.h" />
-  </ItemGroup>
+  <!-- DONT ADD NEW FILES HERE, ADD THEM TO vt-renderer-common.vcxproj -->
+  <Import Project="$(SolutionDir)src\renderer\vt\vt-renderer-common.vcxproj" />
   <PropertyGroup>
     <ProjectGuid>{990F2657-8580-4828-943F-5DD657D11842}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
