@@ -9,7 +9,7 @@
 class PolicyTests
 {
     TEST_CLASS(PolicyTests);
-        
+
     BEGIN_TEST_METHOD(WrongWayVerbsUAP)
         TEST_METHOD_PROPERTY(L"RunAs", L"UAP")
     END_TEST_METHOD();
@@ -42,8 +42,9 @@ void DoWrongWayVerbTest(_In_ BOOL bResultExpected, _In_ DWORD dwStatusExpected)
             VERIFY_ARE_EQUAL(bResultExpected, bResultActual);
             VERIFY_ARE_EQUAL(dwStatusExpected, GetLastError());
 
+            WORD attrs[50];
             SetLastError(0);
-            bResultActual = ReadConsoleOutputAttribute(GetStdOutputHandle(), pwsz, ARRAYSIZE(pwsz), coord, &dwResult);
+            bResultActual = ReadConsoleOutputAttribute(GetStdOutputHandle(), static_cast<WORD*>(attrs), ARRAYSIZE(attrs), coord, &dwResult);
             VERIFY_ARE_EQUAL(bResultExpected, bResultActual);
             VERIFY_ARE_EQUAL(dwStatusExpected, GetLastError());
         }
@@ -86,8 +87,6 @@ void DoWrongWayVerbTest(_In_ BOOL bResultExpected, _In_ DWORD dwStatusExpected)
         ir[0].Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(ir[0].Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC));
         ir[1] = ir[0];
         ir[1].Event.KeyEvent.bKeyDown = FALSE;
-
-        DWORD dwResult;
 
         SetLastError(0);
         bResultActual = WriteConsoleInputW(GetStdInputHandle(), ir, ARRAYSIZE(ir), &dwResult);
