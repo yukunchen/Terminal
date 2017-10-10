@@ -105,6 +105,7 @@ protected:
     void _OrRect(_In_ SMALL_RECT* const pRectExisting, _In_ const SMALL_RECT* const pRectToOr) const;
     HRESULT _InvalidCombine(_In_ const SMALL_RECT* const psrc);
     HRESULT _InvalidOffset(_In_ const COORD* const ppt);
+    HRESULT _InvalidRestrict();
     
     HRESULT _StopCursorBlinking();
     HRESULT _StartCursorBlinking();

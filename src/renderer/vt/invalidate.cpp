@@ -93,7 +93,7 @@ HRESULT VtEngine::_InvalidCombine(_In_ const SMALL_RECT* const prc)
     }
 
     // Ensure invalid areas remain within bounds of window.
-    // RETURN_IF_FAILED(_InvalidRestrict());
+    RETURN_IF_FAILED(_InvalidRestrict());
 
     return S_OK;
 }
@@ -121,8 +121,28 @@ HRESULT VtEngine::_InvalidOffset(_In_ const COORD* const pCoord)
         _OrRect(&_srcInvalid, &rcInvalidNew);
 
         // Ensure invalid areas remain within bounds of window.
-        // RETURN_IF_FAILED(_InvalidRestrict());
+        RETURN_IF_FAILED(_InvalidRestrict());
     }
+
+    return S_OK;
+}
+
+// Routine Description:
+// - Helper to ensure the invalid region remains within the bounds of the viewport.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK, else an appropriate HRESULT for failing to allocate or safemath failure.
+HRESULT VtEngine::_InvalidRestrict()
+{
+    Viewport view(_srLastViewport);
+    SMALL_RECT rc = _srLastViewport;
+    view.ConvertToOrigin(&rc);
+
+    _srcInvalid.Left = clamp(_srcInvalid.Left, rc.Left, rc.Right);
+    _srcInvalid.Right = clamp(_srcInvalid.Right, rc.Left, rc.Right);
+    _srcInvalid.Top = clamp(_srcInvalid.Top, rc.Top, rc.Bottom);
+    _srcInvalid.Bottom = clamp(_srcInvalid.Bottom, rc.Top, rc.Bottom);
 
     return S_OK;
 }

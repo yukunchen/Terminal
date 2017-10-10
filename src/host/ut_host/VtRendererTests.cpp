@@ -78,9 +78,20 @@ class Microsoft::Console::Render::VtRendererTest
     }
 
     TEST_METHOD(VtSequenceHelperTests);
-    TEST_METHOD(Xterm256Test);
-    TEST_METHOD(XtermTest);
-    TEST_METHOD(WinTelnetTest);
+    
+    TEST_METHOD(Xterm256TestInvalidate);
+    TEST_METHOD(Xterm256TestColors);
+    TEST_METHOD(Xterm256TestCursor);
+    
+    TEST_METHOD(XtermTestInvalidate);
+    TEST_METHOD(XtermTestColors);
+    TEST_METHOD(XtermTestCursor);
+
+    TEST_METHOD(WinTelnetTestInvalidate);
+    TEST_METHOD(WinTelnetTestColors);
+    TEST_METHOD(WinTelnetTestCursor);
+
+    void Test16Colors(VtEngine* engine);
 
     std::deque<std::string> qExpectedInput;
     bool WriteCallback(const char* const pch, size_t const cch);
@@ -181,19 +192,341 @@ void VtRendererTest::VtSequenceHelperTests()
     engine->_CursorHome();
 }
 
-void VtRendererTest::Xterm256Test()
+void VtRendererTest::Xterm256TestInvalidate()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
     std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile));
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    // TODO: Finish test.
+    SMALL_RECT view = {};
+    view.Top = view.Left = 0;
+    view.Bottom = 32;
+    view.Right = 80;
 
-    VERIFY_SUCCEEDED(E_FAIL);
+    engine->UpdateViewport(view);
+
+    Log::Comment(NoThrowString().Format(
+        L"Make sure that invalidating all invalidates the whole viewport."
+    ));
+    engine->InvalidateAll();
+    TestPaintXterm(*engine, [&]()
+    {
+        VERIFY_ARE_EQUAL(view, engine->_srcInvalid);
+    });
+
+    Log::Comment(NoThrowString().Format(
+        L"Make sure that invalidating anything only invalidates that portion"
+    ));
+    SMALL_RECT invalid = {1, 1, 1, 1};
+    engine->Invalidate(&invalid);
+    TestPaintXterm(*engine, [&]()
+    {
+        VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
+    });
+
+    Log::Comment(NoThrowString().Format(
+        L"Make sure that scrolling only invalidates part of the viewport, and sends the right sequences"
+    ));
+    COORD scrollDelta = {0, 1};
+    engine->InvalidateScroll(&scrollDelta);
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"---- Scrolled one down, only top line is invalid. ----"
+        ));
+        invalid = view;
+        invalid.Bottom = 1;
+
+        VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
+        // We would expect a CUP here, but the cursor is already at the home position
+        // qExpectedInput.push_back("\x1b[H"); 
+        
+        qExpectedInput.push_back("\x1b[L"); // insert a line
+        VERIFY_SUCCEEDED(engine->ScrollFrame());
+    });
+
+    scrollDelta = {0, 3};
+    engine->InvalidateScroll(&scrollDelta);
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"---- Scrolled three down, only top 3 lines are invalid. ----"
+        ));
+        invalid = view;
+        invalid.Bottom = 3;
+
+        VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
+        // We would expect a CUP here, but the cursor is already at the home position
+        qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
+        VERIFY_SUCCEEDED(engine->ScrollFrame());
+    });
+
+    scrollDelta = {0, -1};
+    engine->InvalidateScroll(&scrollDelta);
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"---- Scrolled one up, only bottom line is invalid. ----"
+        ));
+        invalid = view;
+        invalid.Top = invalid.Bottom - 1;
+
+        VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
+        // We would expect a CUP here, but the cursor is already at the home position
+        // qExpectedInput.push_back("\x1b[H"); 
+        
+        qExpectedInput.push_back("\x1b[M"); // delete a line
+        VERIFY_SUCCEEDED(engine->ScrollFrame());
+    });
+
+    scrollDelta = {0, -3};
+    engine->InvalidateScroll(&scrollDelta);
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"---- Scrolled three up, only bottom 3 lines are invalid. ----"
+        ));
+        invalid = view;
+        invalid.Top = invalid.Bottom - 3;
+
+        VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
+        // We would expect a CUP here, but the cursor is already at the home position
+        qExpectedInput.push_back("\x1b[3M"); // delete 3 lines
+        VERIFY_SUCCEEDED(engine->ScrollFrame());
+    });
+
+    Log::Comment(NoThrowString().Format(
+        L"Multiple scrolls are coalesced"
+    ));
+
+    scrollDelta = {0, 1};
+    engine->InvalidateScroll(&scrollDelta);
+    scrollDelta = {0, 2};
+    engine->InvalidateScroll(&scrollDelta);
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"---- Scrolled three down, only top 3 lines are invalid. ----"
+        ));
+        invalid = view;
+        invalid.Bottom = 3;
+
+        VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
+        // We would expect a CUP here, but the cursor is already at the home position
+        qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
+        VERIFY_SUCCEEDED(engine->ScrollFrame());
+    });
+
+    scrollDelta = {0, 1};
+    engine->InvalidateScroll(&scrollDelta);
+    Log::Comment(NoThrowString().Format(
+        VerifyOutputTraits<SMALL_RECT>::ToString(engine->_srcInvalid)
+    ));
+    
+    scrollDelta = {0, -1};
+    engine->InvalidateScroll(&scrollDelta);
+    Log::Comment(NoThrowString().Format(
+        VerifyOutputTraits<SMALL_RECT>::ToString(engine->_srcInvalid)
+    ));
+    
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"---- Scrolled one down and one up, nothing should change ----"
+            L" But it still does for now MSFT:14169294"
+        ));
+        invalid = view;
+        VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
+
+        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+        VERIFY_SUCCEEDED(engine->ScrollFrame());
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+    });
 }
 
-void VtRendererTest::XtermTest()
+void VtRendererTest::Xterm256TestColors()
+{
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile));
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    SMALL_RECT view = {};
+    view.Top = view.Left = 0;
+    view.Bottom = 32;
+    view.Right = 80;
+
+    engine->UpdateViewport(view);
+
+    Log::Comment(NoThrowString().Format(
+        L"Test changing the text attributes"
+    ));
+
+    Log::Comment(NoThrowString().Format(
+        L"Begin by setting some test values - FG,BG = (1,2,3), (4,5,6) to start"
+        L"These values were picked for ease of formatting raw COLORREF values."
+    ));
+    qExpectedInput.push_back("\x1b[38;2;1;2;3m"); 
+    qExpectedInput.push_back("\x1b[48;2;5;6;7m"); 
+    engine->UpdateDrawingBrushes(0x00030201, 0x00070605, 0, false);
+
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the BG----"
+        ));
+        qExpectedInput.push_back("\x1b[48;2;7;8;9m"); 
+        engine->UpdateDrawingBrushes(0x00030201, 0x00090807, 0, false);
+
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the FG----"
+        ));
+        qExpectedInput.push_back("\x1b[38;2;10;11;12m"); 
+        engine->UpdateDrawingBrushes(0x000c0b0a, 0x00090807, 0, false);
+
+    });
+
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Make sure that color setting persists across EndPaint/StartPaint"
+        ));
+        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
+        engine->UpdateDrawingBrushes(0x000c0b0a, 0x00090807, 0, false);
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
+
+    });
+}
+
+void VtRendererTest::Xterm256TestCursor()
+{
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile));
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    SMALL_RECT view = {};
+    view.Top = view.Left = 0;
+    view.Bottom = 32;
+    view.Right = 80;
+
+    engine->UpdateViewport(view);
+    Log::Comment(NoThrowString().Format(
+        L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."
+    ));
+    TestPaintXterm(*engine, [&]()
+    {
+        qExpectedInput.push_back("\x1b[2;2H"); 
+        engine->_MoveCursor({1,1});
+
+        Log::Comment(NoThrowString().Format(
+            L"----Only move X coord----"
+        ));
+        qExpectedInput.push_back("\x1b[31;2H"); 
+        engine->_MoveCursor({1,30});
+
+        Log::Comment(NoThrowString().Format(
+            L"----Only move Y coord----"
+        ));
+        qExpectedInput.push_back("\x1b[31;31H"); 
+        engine->_MoveCursor({30,30});
+
+        Log::Comment(NoThrowString().Format(
+            L"----Sending the same move sends nothing----"
+        ));
+        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
+        engine->_MoveCursor({30,30});
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+
+        Log::Comment(NoThrowString().Format(
+            L"----moving home sends a simple sequence----"
+        ));
+        qExpectedInput.push_back("\x1b[H"); 
+        engine->_MoveCursor({0,0});
+
+        Log::Comment(NoThrowString().Format(
+            L"----move into the line to test some other sequnces----"
+        ));
+        qExpectedInput.push_back("\x1b[1;8H"); 
+        engine->_MoveCursor({7,0});
+
+        Log::Comment(NoThrowString().Format(
+            L"----move down one line (x stays the same)----"
+        ));
+        qExpectedInput.push_back("\n"); 
+        engine->_MoveCursor({7,1});
+
+        Log::Comment(NoThrowString().Format(
+            L"----move to the start of the next line----"
+        ));
+        qExpectedInput.push_back("\r\n"); 
+        engine->_MoveCursor({0,2});
+
+        Log::Comment(NoThrowString().Format(
+            L"----move into the line to test some other sequnces----"
+        ));
+        qExpectedInput.push_back("\x1b[2;8H"); 
+        engine->_MoveCursor({7,1});
+
+        Log::Comment(NoThrowString().Format(
+            L"----move to the start of this line (y stays the same)----"
+        ));
+        qExpectedInput.push_back("\r"); 
+        engine->_MoveCursor({0,1});
+
+        // The "real" location is the last place the cursor was moved to not 
+        //  during the course of VT operations - eg the last place text was written,
+        //  or the cursor was manually painted at (MSFT 13310327)
+        Log::Comment(NoThrowString().Format(
+            L"Make sure the cursor gets moved back to the last real location it was at"
+        ));
+        qExpectedInput.push_back("\x1b[H");
+        // EndPaint will send this sequence for us.
+    });
+
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Sending the same move across paint calls sends nothing."
+            L"The cursor's last \"real\" position was 0,0"
+        ));
+        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
+        engine->_MoveCursor({0,0});
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+
+        Log::Comment(NoThrowString().Format(
+            L"Paint some text at 0,0, then try moving the cursor to where it currently is."
+        ));
+        qExpectedInput.push_back("\x1b[2;2H"); 
+        qExpectedInput.push_back("asdfghjkl");
+
+        const wchar_t* const line = L"asdfghjkl";
+        const unsigned char rgWidths[] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
+        engine->PaintBufferLine(line, rgWidths, 9, {1,1}, false);
+
+        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
+        engine->_MoveCursor({10,1});
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+
+        // todo: MSFT 13310327 Testing painting the cursor might need to be fixed.
+        engine->PaintCursor({10,1}, 0, 0);
+    });
+
+    // Note that only PaintBufferLine updates the "Real" cursor position, which 
+    //  the cursor is moved back to at the end of each paint
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Sending the same move across paint calls sends nothing."
+        ));
+        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
+        engine->_MoveCursor({10,1});
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+    });
+}
+
+void VtRendererTest::XtermTestInvalidate()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
     std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE);
@@ -233,7 +566,9 @@ void VtRendererTest::XtermTest()
     engine->InvalidateScroll(&scrollDelta);
     TestPaintXterm(*engine, [&]()
     {
-        // Scrolled one down, only top line is invalid.
+        Log::Comment(NoThrowString().Format(
+            L"---- Scrolled one down, only top line is invalid. ----"
+        ));
         invalid = view;
         invalid.Bottom = 1;
 
@@ -249,22 +584,297 @@ void VtRendererTest::XtermTest()
     engine->InvalidateScroll(&scrollDelta);
     TestPaintXterm(*engine, [&]()
     {
-        // Scrolled one down, only top line is invalid.
+        Log::Comment(NoThrowString().Format(
+            L"---- Scrolled three down, only top 3 lines are invalid. ----"
+        ));
         invalid = view;
         invalid.Bottom = 3;
 
         VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
         // We would expect a CUP here, but the cursor is already at the home position
-        qExpectedInput.push_back("\x1b[3L"); // insert a line
+        qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
         VERIFY_SUCCEEDED(engine->ScrollFrame());
     });
 
-    // TODO: Finish test.
+    scrollDelta = {0, -1};
+    engine->InvalidateScroll(&scrollDelta);
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"---- Scrolled one up, only bottom line is invalid. ----"
+        ));
+        invalid = view;
+        invalid.Top = invalid.Bottom - 1;
 
-    VERIFY_SUCCEEDED(E_FAIL);
+        VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
+        // We would expect a CUP here, but the cursor is already at the home position
+        // qExpectedInput.push_back("\x1b[H"); 
+        
+        qExpectedInput.push_back("\x1b[M"); // delete a line
+        VERIFY_SUCCEEDED(engine->ScrollFrame());
+    });
+
+    scrollDelta = {0, -3};
+    engine->InvalidateScroll(&scrollDelta);
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"---- Scrolled three up, only bottom 3 lines are invalid. ----"
+        ));
+        invalid = view;
+        invalid.Top = invalid.Bottom - 3;
+
+        VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
+        // We would expect a CUP here, but the cursor is already at the home position
+        qExpectedInput.push_back("\x1b[3M"); // delete 3 lines
+        VERIFY_SUCCEEDED(engine->ScrollFrame());
+    });
+
+    Log::Comment(NoThrowString().Format(
+        L"Multiple scrolls are coalesced"
+    ));
+
+    scrollDelta = {0, 1};
+    engine->InvalidateScroll(&scrollDelta);
+    scrollDelta = {0, 2};
+    engine->InvalidateScroll(&scrollDelta);
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"---- Scrolled three down, only top 3 lines are invalid. ----"
+        ));
+        invalid = view;
+        invalid.Bottom = 3;
+
+        VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
+        // We would expect a CUP here, but the cursor is already at the home position
+        qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
+        VERIFY_SUCCEEDED(engine->ScrollFrame());
+    });
+
+    scrollDelta = {0, 1};
+    engine->InvalidateScroll(&scrollDelta);
+    Log::Comment(NoThrowString().Format(
+        VerifyOutputTraits<SMALL_RECT>::ToString(engine->_srcInvalid)
+    ));
+    
+    scrollDelta = {0, -1};
+    engine->InvalidateScroll(&scrollDelta);
+    Log::Comment(NoThrowString().Format(
+        VerifyOutputTraits<SMALL_RECT>::ToString(engine->_srcInvalid)
+    ));
+    
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"---- Scrolled one down and one up, nothing should change ----"
+            L" But it still does for now MSFT:14169294"
+        ));
+        invalid = view;
+        VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
+
+        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
+        VERIFY_SUCCEEDED(engine->ScrollFrame());
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+    });
 }
 
-void VtRendererTest::WinTelnetTest()
+void VtRendererTest::XtermTestColors()
+{
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE);
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    SMALL_RECT view = {};
+    view.Top = view.Left = 0;
+    view.Bottom = 32;
+    view.Right = 80;
+
+    engine->UpdateViewport(view);
+
+    Log::Comment(NoThrowString().Format(
+        L"Test changing the text attributes"
+    ));
+
+    Log::Comment(NoThrowString().Format(
+        L"Begin by setting the default colors - FG,BG = BRIGHT_WHITE,DARK_BLACK"
+    ));
+    qExpectedInput.push_back("\x1b[1m\x1b[37m"); // Foreground BRIGHT_WHITE
+    qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
+    engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false);
+
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the BG----"
+        ));
+        qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
+        engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[4], 0, false);
+
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the FG----"
+        ));
+        qExpectedInput.push_back("\x1b[22m\x1b[37m"); // Foreground DARK_WHITE
+        engine->UpdateDrawingBrushes(g_ColorTable[7], g_ColorTable[4], 0, false);
+
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the BG to something not in the table----"
+        ));
+        qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
+        engine->UpdateDrawingBrushes(g_ColorTable[7], 0x000000, 0, false);
+
+
+        Log::Comment(NoThrowString().Format(
+            L"----Back to defaults----"
+        ));
+        qExpectedInput.push_back("\x1b[1m\x1b[37m"); // Foreground BRIGHT_WHITE
+        qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
+        engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false);
+    });
+
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Make sure that color setting persists across EndPaint/StartPaint"
+        ));
+        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
+        engine->UpdateDrawingBrushes(g_ColorTable[15], g_ColorTable[0], 0, false);
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
+
+    });
+
+}
+
+void VtRendererTest::XtermTestCursor()
+{
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE);
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    SMALL_RECT view = {};
+    view.Top = view.Left = 0;
+    view.Bottom = 32;
+    view.Right = 80;
+
+    engine->UpdateViewport(view);
+    Log::Comment(NoThrowString().Format(
+        L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."
+    ));
+    TestPaintXterm(*engine, [&]()
+    {
+        qExpectedInput.push_back("\x1b[2;2H"); 
+        engine->_MoveCursor({1,1});
+
+        Log::Comment(NoThrowString().Format(
+            L"----Only move X coord----"
+        ));
+        qExpectedInput.push_back("\x1b[31;2H"); 
+        engine->_MoveCursor({1,30});
+
+        Log::Comment(NoThrowString().Format(
+            L"----Only move Y coord----"
+        ));
+        qExpectedInput.push_back("\x1b[31;31H"); 
+        engine->_MoveCursor({30,30});
+
+        Log::Comment(NoThrowString().Format(
+            L"----Sending the same move sends nothing----"
+        ));
+        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
+        engine->_MoveCursor({30,30});
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+
+        Log::Comment(NoThrowString().Format(
+            L"----moving home sends a simple sequence----"
+        ));
+        qExpectedInput.push_back("\x1b[H"); 
+        engine->_MoveCursor({0,0});
+
+        Log::Comment(NoThrowString().Format(
+            L"----move into the line to test some other sequnces----"
+        ));
+        qExpectedInput.push_back("\x1b[1;8H"); 
+        engine->_MoveCursor({7,0});
+
+        Log::Comment(NoThrowString().Format(
+            L"----move down one line (x stays the same)----"
+        ));
+        qExpectedInput.push_back("\n"); 
+        engine->_MoveCursor({7,1});
+
+        Log::Comment(NoThrowString().Format(
+            L"----move to the start of the next line----"
+        ));
+        qExpectedInput.push_back("\r\n"); 
+        engine->_MoveCursor({0,2});
+
+        Log::Comment(NoThrowString().Format(
+            L"----move into the line to test some other sequnces----"
+        ));
+        qExpectedInput.push_back("\x1b[2;8H"); 
+        engine->_MoveCursor({7,1});
+
+        Log::Comment(NoThrowString().Format(
+            L"----move to the start of this line (y stays the same)----"
+        ));
+        qExpectedInput.push_back("\r"); 
+        engine->_MoveCursor({0,1});
+
+        // The "real" location is the last place the cursor was moved to not 
+        //  during the course of VT operations - eg the last place text was written,
+        //  or the cursor was manually painted at (MSFT 13310327)
+        Log::Comment(NoThrowString().Format(
+            L"Make sure the cursor gets moved back to the last real location it was at"
+        ));
+        qExpectedInput.push_back("\x1b[H");
+        // EndPaint will send this sequence for us.
+    });
+
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Sending the same move across paint calls sends nothing."
+            L"The cursor's last \"real\" position was 0,0"
+        ));
+        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
+        engine->_MoveCursor({0,0});
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+
+        Log::Comment(NoThrowString().Format(
+            L"Paint some text at 0,0, then try moving the cursor to where it currently is."
+        ));
+        qExpectedInput.push_back("\x1b[2;2H"); 
+        qExpectedInput.push_back("asdfghjkl");
+
+        const wchar_t* const line = L"asdfghjkl";
+        const unsigned char rgWidths[] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
+        engine->PaintBufferLine(line, rgWidths, 9, {1,1}, false);
+
+        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
+        engine->_MoveCursor({10,1});
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+
+        // todo: MSFT 13310327 Testing painting the cursor might need to be fixed.
+        engine->PaintCursor({10,1}, 0, 0);
+    });
+
+    // Note that only PaintBufferLine updates the "Real" cursor position, which 
+    //  the cursor is moved back to at the end of each paint
+    TestPaintXterm(*engine, [&]()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Sending the same move across paint calls sends nothing."
+        ));
+        qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
+        engine->_MoveCursor({10,1});
+        WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
+    });
+
+}
+
+void VtRendererTest::WinTelnetTestInvalidate()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
     std::unique_ptr<WinTelnetEngine> engine = std::make_unique<WinTelnetEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE);
@@ -296,7 +906,7 @@ void VtRendererTest::WinTelnetTest()
     {
         VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
     });
-
+    
     Log::Comment(NoThrowString().Format(
         L"Make sure that scrolling invalidates the whole viewport, and sends no VT sequences"
     ));
@@ -349,6 +959,22 @@ void VtRendererTest::WinTelnetTest()
         VERIFY_SUCCEEDED(engine->ScrollFrame());
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
     });
+    
+}
+
+void VtRendererTest::WinTelnetTestColors()
+{
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    std::unique_ptr<WinTelnetEngine> engine = std::make_unique<WinTelnetEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE);
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    SMALL_RECT view = {};
+    view.Top = view.Left = 0;
+    view.Bottom = 32;
+    view.Right = 80;
+
+    engine->UpdateViewport(view);
 
     Log::Comment(NoThrowString().Format(
         L"Test changing the text attributes"
@@ -400,6 +1026,21 @@ void VtRendererTest::WinTelnetTest()
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
 
     });
+}
+
+void VtRendererTest::WinTelnetTestCursor()
+{
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    std::unique_ptr<WinTelnetEngine> engine = std::make_unique<WinTelnetEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE);
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    SMALL_RECT view = {};
+    view.Top = view.Left = 0;
+    view.Bottom = 32;
+    view.Right = 80;
+
+    engine->UpdateViewport(view);
 
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."

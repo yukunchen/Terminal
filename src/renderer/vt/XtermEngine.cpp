@@ -123,7 +123,7 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord)
             std::string seq = "\r";
             hr = _Write(seq);
         }
-        else if (coord.X == _lastText.X && coord.Y == _lastText.Y)
+        else if (coord.X == _lastText.X && coord.Y == (_lastText.Y+1))
         {
             // Down one line, same X position
             std::string seq = "\n";
