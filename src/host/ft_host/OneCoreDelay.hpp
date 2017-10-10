@@ -20,6 +20,21 @@ Revision History:
 
 namespace OneCoreDelay
 {
+    BOOLEAN
+        __stdcall
+        IsIsWindowPresent();
+
+    BOOLEAN
+        __stdcall
+        IsGetSystemMetricsPresent();
+
+    BOOLEAN
+        __stdcall
+        IsPostMessageWPresent();
+
+    BOOLEAN
+        __stdcall
+        IsSendMessageWPresent();
 
 BOOL
 APIENTRY

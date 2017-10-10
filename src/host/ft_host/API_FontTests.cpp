@@ -165,7 +165,12 @@ void FontTests::TestFontScenario()
 
     // Ensure that the two values we attempted to set did accurately round-trip through the API.
     // The other unspecified values may have been adjusted/updated by GDI.
-    VERIFY_ARE_EQUAL(NoThrowString(cfieSet.FaceName), NoThrowString(cfiePost.FaceName));
+    if (0 != NoThrowString(cfieSet.FaceName).CompareNoCase(cfiePost.FaceName))
+    {
+        Log::Comment(L"We cannot test changing fonts on systems that do not have alternatives available. Skipping test.");
+        Log::Result(WEX::Logging::TestResults::Result::Skipped);
+        return;
+    }
     VERIFY_ARE_EQUAL(cfieSet.dwFontSize.Y, cfiePost.dwFontSize.Y);
 
     // Ensure that the entire structure we received matches what we expect to usually get for this Lucida Console Size 12 ask.
@@ -182,6 +187,13 @@ void FontTests::TestFontScenario()
 
 void FontTests::TestSetFontAdjustsWindow()
 {
+    if (!OneCoreDelay::IsIsWindowPresent())
+    {
+        Log::Comment(L"Adjusting window size by changing font scenario can't be checked on platform without classic window operations.");
+        Log::Result(WEX::Logging::TestResults::Skipped);
+        return;
+    }
+
     const HANDLE hConsoleOutput = GetStdOutputHandle();
     const HWND hwnd = GetConsoleWindow();
     VERIFY_IS_TRUE(!!IsWindow(hwnd));

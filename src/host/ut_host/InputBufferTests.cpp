@@ -176,6 +176,7 @@ class InputBufferTests
                                                  false,
                                                  false));
 
+        VERIFY_ARE_NOT_EQUAL(nullptr, outEvent.get());
         const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(outEvent.get());
         VERIFY_ARE_EQUAL(pKeyEvent->_repeatCount, RECORD_INSERT_COUNT);
     }

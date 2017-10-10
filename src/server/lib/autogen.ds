@@ -1,0 +1,207 @@
+<!--
+ <copyright file="autogen.ds" company="Microsoft">
+     Copyright (c) Microsoft Corporation. All rights reserved.
+ </copyright>
+-->
+
+<DominoSpec xmlns:d="http://schemas.microsoft.com/domino/extension/0.5" xmlns="http://schemas.microsoft.com/domino/0.5">
+  <Namespace Name="MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Server">
+    <Path Name="DotDot" Visibility="Private">{SrcRoot}\onecore\windows\core\console\open\src\server</Path>
+    <Path Name="O" Visibility="Private">{ObjRoot}\onecore\windows\core\console\open\src\server\lib\{BuildAlt}</Path>
+
+    <!--DEF: MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Server.Lib_PrePass-->
+
+    <LegacyBuilder Output="Lib_PrePass" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+      <Classification>Product</Classification>
+      <TargetPass>PrePass</TargetPass>
+    </LegacyBuilder>
+
+    <!--DEF: MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Server.Lib_Pass1-->
+
+    <LegacyBuilder Output="Lib_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake">
+      <Classification>Product</Classification>
+      <TargetPass>Pass1</TargetPass>
+
+      <!--Consumes-->
+
+      <Consumes>
+        <Item>{DotDot}\apidispatchers.cpp</Item>
+        <Item>{DotDot}\apidispatchers.h</Item>
+        <Item>{DotDot}\apidispatchersinternal.cpp</Item>
+        <Item>{DotDot}\apimessage.cpp</Item>
+        <Item>{DotDot}\apimessage.h</Item>
+        <Item>{DotDot}\apimessagestate.cpp</Item>
+        <Item>{DotDot}\apimessagestate.h</Item>
+        <Item>{DotDot}\apiroutinesbase.cpp</Item>
+        <Item>{DotDot}\apisorter.cpp</Item>
+        <Item>{DotDot}\apisorter.h</Item>
+        <Item>{DotDot}\devicecomm.cpp</Item>
+        <Item>{DotDot}\devicecomm.h</Item>
+        <Item>{DotDot}\devicehandle.cpp</Item>
+        <Item>{DotDot}\devicehandle.h</Item>
+        <Item>{DotDot}\entrypoints.cpp</Item>
+        <Item>{DotDot}\entrypoints.h</Item>
+        <Item>{DotDot}\iapiroutines.h</Item>
+        <Item>{DotDot}\iodispatchers.cpp</Item>
+        <Item>{DotDot}\iodispatchers.h</Item>
+        <Item>{DotDot}\iosorter.cpp</Item>
+        <Item>{DotDot}\iosorter.h</Item>
+        <Item>{DotDot}\iothread.h</Item>
+        <Item>{DotDot}\iwaitroutine.h</Item>
+        <Item>{DotDot}\objecthandle.cpp</Item>
+        <Item>{DotDot}\objecthandle.h</Item>
+        <Item>{DotDot}\objectheader.cpp</Item>
+        <Item>{DotDot}\objectheader.h</Item>
+        <Item>{DotDot}\precomp.cpp</Item>
+        <Item>{DotDot}\precomp.h</Item>
+        <Item>{DotDot}\processhandle.cpp</Item>
+        <Item>{DotDot}\processhandle.h</Item>
+        <Item>{DotDot}\processlist.cpp</Item>
+        <Item>{DotDot}\processlist.h</Item>
+        <Item>{DotDot}\waitblock.cpp</Item>
+        <Item>{DotDot}\waitblock.h</Item>
+        <Item>{DotDot}\waitqueue.cpp</Item>
+        <Item>{DotDot}\waitqueue.h</Item>
+        <Item>{DotDot}\waitterminationreason.h</Item>
+        <Item>{DotDot}\winbasep.h</Item>
+        <Item>{DotDot}\winntcontrol.cpp</Item>
+        <Item>{DotDot}\winntcontrol.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\cmdline.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conapi.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conddkrefs.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conimeinfo.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\consrv.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conwinuserrefs.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\cursor.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\directio.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\getset.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\globals.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\handle.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\input.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\inputbuffer.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\inputreadhandledata.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\ntprivapi.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\outputstream.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\readdata.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\readdatacooked.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\screeninfo.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\selection.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\server.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\settings.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\srvinit.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\stream.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\telemetry.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\textbuffer.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\tracing.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\utils.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\conime.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iaccessibilitynotifier.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsolecontrol.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsoleinputthread.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsolewindow.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\ihighdpiapi.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iinputservices.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iinteractivityfactory.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\isystemconfigurationprovider.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iwindowmetrics.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\servicelocator.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfo.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfobase.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfodesired.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\ifontdefaultlist.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderdata.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\adaptdefaults.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\adaptdispatch.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\congetset.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\mouseinput.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminalinput.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminaloutput.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\statemachine.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\telemetry.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp</Item>
+
+        <!--References-->
+
+        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Job.Current_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Namespace_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Processtopology.Current_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Systemtopology.Current_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Inc_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Console.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Datetime.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Debug.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Enclave.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Errorhandling.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Fibers.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.File.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Handle.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Heap.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Interlocked.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Io.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Job_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Libloader.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Localregistry.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Memory.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Namedpipe.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Processenv.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Processthreads.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Profile.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Realtime.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Securityappcontainer_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Securitybase.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.String.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Synch.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Sysinfo.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Threadpool.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Threadpoollegacy.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Timezone.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Util.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Wow64.Daytona_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Console.Published_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Published_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Inc_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Published.Base_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Published.Internal_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Minkernel.Published.Sdk_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Onecore.Base.Published2_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Onecore.Base.Published_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Onecore.Drivers.Published.Sdk.Inc_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Onecore.Net.Published.Inc_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Onecore.Sdktools.Analysis.Prefast.Suppression.Inc_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Onecore.Shell.Published.Inc.Inc_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Server.Lib_PrePass}</Item>
+        <Item>{MsWin.OnecoreUap.Onecore.Windows.Published.Main_Pass0}</Item>
+        <Item>{MsWin.OnecoreUap.Onecore.Windows.Published.Movedfromdrivers_Pass0}</Item>
+      </Consumes>
+
+      <!--Produces-->
+
+      <Produces>
+        <Item>{O}\apidispatchers.obj</Item>
+        <Item>{O}\apidispatchersinternal.obj</Item>
+        <Item>{O}\apimessage.obj</Item>
+        <Item>{O}\apimessagestate.obj</Item>
+        <Item>{O}\apiroutinesbase.obj</Item>
+        <Item>{O}\apisorter.obj</Item>
+        <Item>{O}\conserver.lib</Item>
+        <Item>{O}\devicecomm.obj</Item>
+        <Item>{O}\devicehandle.obj</Item>
+        <Item>{O}\entrypoints.obj</Item>
+        <Item>{O}\iodispatchers.obj</Item>
+        <Item>{O}\iosorter.obj</Item>
+        <Item>{O}\objecthandle.obj</Item>
+        <Item>{O}\objectheader.obj</Item>
+        <Item>{O}\pch_hdr.src</Item>
+        <Item>{O}\precomp.obj</Item>
+        <Item>{O}\precomp.pch</Item>
+        <Item>{O}\processhandle.obj</Item>
+        <Item>{O}\processlist.obj</Item>
+        <Item>{O}\waitblock.obj</Item>
+        <Item>{O}\waitqueue.obj</Item>
+        <Item>{O}\winntcontrol.obj</Item>
+      </Produces>
+    </LegacyBuilder>
+  </Namespace>
+</DominoSpec>

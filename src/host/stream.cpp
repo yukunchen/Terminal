@@ -73,8 +73,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
         {
             return Status;
         }
-
-        if (inputEvent.get() == nullptr)
+        else if (inputEvent.get() == nullptr)
         {
             assert(!Wait);
             return STATUS_UNSUCCESSFUL;

@@ -9,5 +9,8 @@
 #include <windows.h>
 #include "wchar.h"
 
+// Extension presence detection 
+#include <sysparamsext.h>
+
 #define _DDK_INCLUDED
 #include "..\..\host\precomp.h"
