@@ -18,6 +18,7 @@ Revision History:
 
 #include "ObjectHandle.h"
 #include "WaitQueue.h"
+#include "ProcessPolicy.h"
 
 #include <memory>
 #include <wil\resource.h>
@@ -34,6 +35,8 @@ public:
     DWORD const dwProcessId;
     DWORD const dwThreadId;
 
+     const ConsoleProcessPolicy GetPolicy() const;
+
 private:
     ConsoleProcessHandle(_In_ DWORD const dwProcessId,
                          _In_ DWORD const dwThreadId,
@@ -43,6 +46,8 @@ private:
     ULONG _ulTerminateCount;
     ULONG const _ulProcessGroupId;
     wil::unique_handle const _hProcess;
+
+    const ConsoleProcessPolicy _policy;
 
     friend class ConsoleProcessList; // ensure List manages lifetimes and not other classes.
 };
