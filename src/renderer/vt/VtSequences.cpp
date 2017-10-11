@@ -193,9 +193,9 @@ HRESULT VtEngine::_SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
         "\x1b[38;2;%d;%d;%dm" :
         "\x1b[48;2;%d;%d;%dm";
 
-    DWORD const r = (color & 0xff);
-    DWORD const g = (color >> 8) & 0xff;
-    DWORD const b = (color >> 16) & 0xff;    
+    DWORD const r = GetRValue(color);
+    DWORD const g = GetGValue(color);
+    DWORD const b = GetBValue(color);    
 
     return _WriteFormattedString(pszFmt, r, g, b);
 }

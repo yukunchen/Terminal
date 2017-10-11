@@ -14,8 +14,15 @@
 #include <string>
 using namespace std;
 
+// WIL
+#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
+#include <wil\Common.h>
+#include <wil\Result.h>
+
 bool gVtInput = false;
 bool gVtOutput = true;
+
+const char CTRL_C = 0x3;
 
 void csi(string seq)
 {
@@ -111,7 +118,7 @@ void handleKeyEvent(KEY_EVENT_RECORD keyEvent)
     csi("0m");
 
     // Die on Ctrl+C
-    if (keyEvent.uChar.AsciiChar == 0x3)
+    if (keyEvent.uChar.AsciiChar == CTRL_C)
     {
         exit (EXIT_FAILURE);
     }
@@ -150,14 +157,13 @@ int __cdecl wmain(int argc, wchar_t* argv[])
 
     if (gVtOutput)
     {
-        dwOutMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
+        dwOutMode = SetAllFlags(dwOutMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN);
     }
 
     if (gVtInput)
     {
-        dwInMode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+        dwInMode = SetFlag(dwInMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
     }
-
 
     SetConsoleMode(hOut, dwOutMode);
     SetConsoleMode(hIn, dwInMode);

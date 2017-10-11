@@ -36,7 +36,7 @@ private:
     bool _usingVt;
     VtIoMode _IoMode;
 
-    Microsoft::Console::Render::VtEngine* _pVtRenderEngine;
+    std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
     std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
 
 #ifdef UNIT_TESTING

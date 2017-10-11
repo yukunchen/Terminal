@@ -30,8 +30,8 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe) :
     _lastRealCursor({0}),
     _lastText({0}),
     _scrollDelta({0}),
-    _LastFG(0xffffffff),
-    _LastBG(0xffffffff),
+    _LastFG(INVALID_COLOR),
+    _LastBG(INVALID_COLOR),
     _usingTestCallback(false)
 
 {
@@ -70,7 +70,7 @@ HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, _In_ size_t cons
     }
 #endif
     
-    bool fSuccess = !!WriteFile(_hFile.get(), psz, (DWORD)cch, nullptr, nullptr);
+    bool fSuccess = !!WriteFile(_hFile.get(), psz, static_cast<DWORD>(cch), nullptr, nullptr);
     RETURN_LAST_ERROR_IF_FALSE(fSuccess);
 
     return S_OK;
@@ -93,7 +93,7 @@ HRESULT VtEngine::_Write(_In_ std::string& str)
 // - str: the string of characters to write to the pipe.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz)
+HRESULT VtEngine::_Write(_In_ const char* const psz)
 {
     try
     {

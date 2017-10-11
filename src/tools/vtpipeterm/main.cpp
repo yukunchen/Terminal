@@ -224,11 +224,11 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
         std::string vtseq = std::string(buffer, bufferCch);
         std::string printSeq = std::string(printableBuffer, printableCch);
 
+        // Maybe come back to later - trying to print the debug output in different colors.
         // csi("38;5;242m");
         // wprintf(L"\tWriting \"%hs\" length=[%d]\n", printSeq.c_str(), (int)vtseq.length());
         // csi("0m");
 
-        // WriteFile(inPipe.get(), vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
         WriteFile(inPipe(), vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
         WriteFile(debug->inPipe(), printSeq.c_str(), (DWORD)printSeq.length(), nullptr, nullptr);
     }

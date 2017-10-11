@@ -31,7 +31,7 @@ HRESULT VtEngine::StartPaint()
 }
 
 // Routine Description:
-// - EndPaint helper to perform the final BitBlt copy from the memory bitmap onto the final window bitmap (double-buffering.) Also cleans up structures used while painting.
+// - EndPaint helper to perform the final cleanup after painting
 // Arguments:
 // - <none>
 // Return Value:

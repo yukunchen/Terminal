@@ -109,18 +109,16 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
     {
         _pVtInputThread = std::make_unique<VtInputThread>(std::move(_hInputFile));
 
-        // The RenderEngine is not uniquely owned by us - the Renderer also needs a reference.
-        // That's why it's not a unique_ptr.
         switch(_IoMode)
         {
             case VtIoMode::XTERM_256:
-                _pVtRenderEngine = new Xterm256Engine(std::move(_hOutputFile));
+                _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(_hOutputFile));
                 break;
             case VtIoMode::XTERM:
-                _pVtRenderEngine = new XtermEngine(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
+                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
                 break;
             case VtIoMode::WIN_TELNET:
-                _pVtRenderEngine = new WinTelnetEngine(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
+                _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
                 break;
             default:
                 return E_FAIL;
@@ -161,7 +159,7 @@ HRESULT VtIo::StartIfNeeded()
     const Globals* const g = ServiceLocator::LocateGlobals();
     try
     {
-        static_cast<Renderer*>(g->pRender)->AddRenderEngine(_pVtRenderEngine);
+        static_cast<Renderer*>(g->pRender)->AddRenderEngine(_pVtRenderEngine.get());
     }
     CATCH_RETURN();
 

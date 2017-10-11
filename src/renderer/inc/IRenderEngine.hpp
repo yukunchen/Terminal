@@ -16,6 +16,10 @@ Author(s):
 #include "IRenderer.hpp"
 #include "FontInfo.hpp"
 
+// Valid COLORREFs are of the pattern 0x00bbggrr. -1 works as an invalid color, 
+//      as the highest byte of a valid color is always 0.
+const COLORREF INVALID_COLOR = 0xffffffff;
+
 namespace Microsoft
 {
     namespace Console
@@ -52,8 +56,7 @@ namespace Microsoft
                 virtual HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles) = 0;
 
                 virtual HRESULT PaintCursor(_In_ COORD const coordCursor, _In_ ULONG const ulCursorHeightPercent, _In_ bool const fIsDoubleWidth) = 0;
-                virtual HRESULT ClearCursor() = 0;
-                
+                virtual HRESULT ClearCursor() = 0;                
 
                 virtual HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds) = 0;
                 virtual HRESULT UpdateFont(_In_ FontInfoDesired const * const pfiFontInfoDesired, _Out_ FontInfo* const pfiFontInfo) = 0;
