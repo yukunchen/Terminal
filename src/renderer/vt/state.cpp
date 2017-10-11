@@ -120,7 +120,7 @@ HRESULT VtEngine::_WriteFormattedString(_In_ const char* const pszFormat, ...)
     va_list argList;
     va_start(argList, pszFormat);
 
-    int cchNeeded = _vcprintf(pszFormat, argList);
+    int cchNeeded = _scprintf(pszFormat, argList);
     // -1 is the _scprintf error case https://msdn.microsoft.com/en-us/library/t32cf9tb.aspx
     if (cchNeeded > -1)
     {
