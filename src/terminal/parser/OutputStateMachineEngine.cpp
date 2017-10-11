@@ -194,12 +194,12 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
     SHORT sBottomMargin = 0;
     SHORT sNumTabs = 0;
     SHORT sClearType = 0;
+    unsigned int uiFunction = 0;
     TermDispatch::EraseType eraseType = TermDispatch::EraseType::ToEnd;
     TermDispatch::GraphicsOptions rgGraphicsOptions[StateMachine::s_cParamsMax];
     size_t cOptions = ARRAYSIZE(rgGraphicsOptions);
     TermDispatch::AnsiStatusType deviceStatusType = (TermDispatch::AnsiStatusType)-1; // there is no default status type.
     
-
     if (cIntermediate == 0)
     {
         // fill params
@@ -256,6 +256,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             break;
         case VTActionCodes::TBC_TabClear:
             fSuccess = _GetTabClearType(rgusParams, cParams, &sClearType);
+            break;
+        case VTActionCodes::DTTERM_WindowManipulation:
+            fSuccess = _GetWindowManipulationFunction(rgusParams, cParams, &uiFunction);
             break;
         default:
             // If no params to fill, param filling was successful.
@@ -376,6 +379,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             case VTActionCodes::ECH_EraseCharacters:
                 fSuccess = _pDispatch->EraseCharacters(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::ECH);
+                break;
+            case VTActionCodes::DTTERM_WindowManipulation:
+                fSuccess = _pDispatch->WindowManipulation(static_cast<TermDispatch::WindowManipulationFunction>(uiFunction), rgusParams+1, cParams-1);
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::DTTERM_WM);
                 break;
             default:
                 // If no functions to call, overall dispatch was a failure.
@@ -1055,4 +1062,34 @@ bool OutputStateMachineEngine::_GetDesignateType(_In_ const wchar_t wchIntermedi
 bool OutputStateMachineEngine::FlushAtEndOfString() const
 {
     return false;
+}
+
+// Method Description:
+// - Retrieves the type of window manipulation operation from the parameter pool
+//      stored during Param actions.
+// Arguments:
+// - rgusParams - Array of parameters collected
+// - cParams - Number of parameters we've collected
+// - puiFunction - Memory location to receive the function type
+// Return Value:
+// - True iff we successfully pulled the function type from the parameters
+bool OutputStateMachineEngine::_GetWindowManipulationFunction(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                              _In_ const unsigned short cParams,
+                                                              _Out_ unsigned int* const puiFunction) const
+{
+    bool fSuccess = false;
+    *puiFunction = s_DefaulWindowManipulationFunction;
+
+    if (cParams > 0)
+    {
+        switch(rgusParams[0])
+        {
+            case TermDispatch::WindowManipulationFunction::ResizeWindowInCharacters:
+                *puiFunction = TermDispatch::WindowManipulationFunction::ResizeWindowInCharacters;
+                fSuccess = true;
+                break;
+        }
+    }
+
+    return fSuccess;
 }

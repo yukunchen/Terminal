@@ -100,7 +100,8 @@ namespace Microsoft
                     ECH_EraseCharacters = L'X',
                     HVP_HorizontalVerticalPosition = L'f',
                     DECSTR_SoftReset = L'p',
-                    RIS_ResetToInitialState = L'c' // DA is prefaced by CSI, RIS by ESC
+                    RIS_ResetToInitialState = L'c', // DA is prefaced by CSI, RIS by ESC
+                    DTTERM_WindowManipulation = L't' 
                 };
 
                 enum OscActionCodes : unsigned int
@@ -117,63 +118,100 @@ namespace Microsoft
                     G2,
                     G3
                 };
+
                 static const TermDispatch::GraphicsOptions s_defaultGraphicsOption = TermDispatch::GraphicsOptions::Off;
                 _Success_(return)
-                bool _GetGraphicsOptions(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* rgGraphicsOptions, _Inout_ size_t* pcOptions) const;
+                bool _GetGraphicsOptions(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                         _In_ const unsigned short cParams,
+                                         _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* rgGraphicsOptions,
+                                         _Inout_ size_t* pcOptions) const;
 
                 static const TermDispatch::EraseType s_defaultEraseType = TermDispatch::EraseType::ToEnd;
                 _Success_(return)
-                bool _GetEraseOperation(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ TermDispatch::EraseType* const pEraseType) const;
+                bool _GetEraseOperation(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                        _In_ const unsigned short cParams,
+                                        _Out_ TermDispatch::EraseType* const pEraseType) const;
 
                 static const unsigned int s_uiDefaultCursorDistance = 1;
                 _Success_(return)
-                bool _GetCursorDistance(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ unsigned int* const puiDistance) const;
+                bool _GetCursorDistance(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                        _In_ const unsigned short cParams,
+                                        _Out_ unsigned int* const puiDistance) const;
 
                 static const unsigned int s_uiDefaultScrollDistance = 1;
                 _Success_(return)
-                bool _GetScrollDistance(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ unsigned int* const puiDistance) const;
+                bool _GetScrollDistance(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                        _In_ const unsigned short cParams,
+                                        _Out_ unsigned int* const puiDistance) const;
 
                 static const unsigned int s_uiDefaultConsoleWidth = 80;
                 _Success_(return)
-                bool _GetConsoleWidth(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ unsigned int* const puiConsoleWidth) const;
+                bool _GetConsoleWidth(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                      _In_ const unsigned short cParams,
+                                      _Out_ unsigned int* const puiConsoleWidth) const;
 
                 static const unsigned int s_uiDefaultLine = 1;
                 static const unsigned int s_uiDefaultColumn = 1;
                 _Success_(return)
-                bool _GetXYPosition(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ unsigned int* const puiLine, _Out_ unsigned int* const puiColumn) const;
+                bool _GetXYPosition(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                    _In_ const unsigned short cParams,
+                                    _Out_ unsigned int* const puiLine,
+                                    _Out_ unsigned int* const puiColumn) const;
 
                 _Success_(return)
-                bool _GetDeviceStatusOperation(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ TermDispatch::AnsiStatusType* const pStatusType) const;
+                bool _GetDeviceStatusOperation(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                               _In_ const unsigned short cParams,
+                                               _Out_ TermDispatch::AnsiStatusType* const pStatusType) const;
 
                 _Success_(return)
                 bool _VerifyHasNoParameters(_In_ const unsigned short cParams) const;
 
                 _Success_(return)
-                bool _VerifyDeviceAttributesParams(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams) const;
+                bool _VerifyDeviceAttributesParams(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                   _In_ const unsigned short cParams) const;
 
                 _Success_(return)
-                bool _GetPrivateModeParams(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_writes_(*pcParams) TermDispatch::PrivateModeParams* rgPrivateModeParams, _Inout_ size_t* pcParams) const;
+                bool _GetPrivateModeParams(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                           _In_ const unsigned short cParams,
+                                           _Out_writes_(*pcParams) TermDispatch::PrivateModeParams* rgPrivateModeParams,
+                                           _Inout_ size_t* pcParams) const;
 
                 static const SHORT s_sDefaultTopMargin = 0;
                 static const SHORT s_sDefaultBottomMargin = 0;
                 _Success_(return)
-                bool _GetTopBottomMargins(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ SHORT* const psTopMargin, _Out_ SHORT* const psBottomMargin) const;
+                bool _GetTopBottomMargins(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                          _In_ const unsigned short cParams,
+                                          _Out_ SHORT* const psTopMargin,
+                                          _Out_ SHORT* const psBottomMargin) const;
 
                 _Success_(return)
-                bool _GetOscTitle(_Inout_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString, _Outptr_result_buffer_(*pcchTitle) wchar_t** const ppwchTitle, _Out_ unsigned short * pcchTitle);
+                bool _GetOscTitle(_Inout_ wchar_t* const pwchOscStringBuffer,
+                                  _In_ const unsigned short cchOscString,
+                                  _Outptr_result_buffer_(*pcchTitle) wchar_t** const ppwchTitle,
+                                  _Out_ unsigned short * pcchTitle);
 
                 static const SHORT s_sDefaultTabDistance = 1;
                 _Success_(return)
-                bool _GetTabDistance(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ SHORT* const psDistance) const;
+                bool _GetTabDistance(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                     _In_ const unsigned short cParams,
+                                     _Out_ SHORT* const psDistance) const;
 
                 static const SHORT s_sDefaultTabClearType = 0;
                 _Success_(return)
-                bool _GetTabClearType(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ SHORT* const psClearType) const;
+                bool _GetTabClearType(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                      _In_ const unsigned short cParams,
+                                      _Out_ SHORT* const psClearType) const;
 
                 static const DesignateCharsetTypes s_DefaultDesignateCharsetType = DesignateCharsetTypes::G0;
                 _Success_(return)
-                bool _GetDesignateType(_In_ const wchar_t wchIntermediate, _Out_ DesignateCharsetTypes* const pDesignateType) const;
+                bool _GetDesignateType(_In_ const wchar_t wchIntermediate,
+                                       _Out_ DesignateCharsetTypes* const pDesignateType) const;
 
+                static const TermDispatch::WindowManipulationFunction s_DefaulWindowManipulationFunction = TermDispatch::WindowManipulationFunction::Invalid;
+                _Success_(return)
+                bool _GetWindowManipulationFunction(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                    _In_ const unsigned short cParams,
+                                                    _Out_ unsigned int* const puiFunction) const;
 
             };
         }
