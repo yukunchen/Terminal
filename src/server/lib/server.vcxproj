@@ -21,6 +21,7 @@
     </ClCompile>
     <ClCompile Include="..\ProcessHandle.cpp" />
     <ClCompile Include="..\ProcessList.cpp" />
+    <ClCompile Include="..\ProcessPolicy.cpp" />
     <ClCompile Include="..\WaitBlock.cpp" />
     <ClCompile Include="..\WaitQueue.cpp" />
     <ClCompile Include="..\WinNTControl.cpp" />
@@ -43,6 +44,7 @@
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\ProcessHandle.h" />
     <ClInclude Include="..\ProcessList.h" />
+    <ClInclude Include="..\ProcessPolicy.h" />
     <ClInclude Include="..\WaitBlock.h" />
     <ClInclude Include="..\WaitQueue.h" />
     <ClInclude Include="..\WaitTerminationReason.h" />
@@ -55,6 +57,11 @@
     <ProjectName>Server</ProjectName>
     <TargetName>ConServer</TargetName>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\Win32K;$(SolutionDir)\dep\AppModel;$(SolutionDir)\dep\MinCore</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.lib.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />
