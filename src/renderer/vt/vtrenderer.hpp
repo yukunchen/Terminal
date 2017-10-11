@@ -98,7 +98,7 @@ protected:
     bool _quickReturn;
     
     HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);
-    HRESULT _Write(_In_ std::string& str);
+    HRESULT _Write(_In_ const std::string& str);
     HRESULT _Write(_In_ const char* const psz);
     HRESULT _WriteFormattedString(_In_ const char* const pszFormat, ...);
     
