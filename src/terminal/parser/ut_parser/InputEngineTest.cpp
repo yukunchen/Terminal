@@ -30,6 +30,7 @@ namespace Microsoft
         namespace VirtualTerminal
         {
             class InputEngineTest;
+            class TestInteractDispatch;
         };
     };
 };
@@ -64,6 +65,32 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     StateMachine* _pStateMachine;
     std::vector<INPUT_RECORD> vExpectedInput;
 };
+
+
+class Microsoft::Console::VirtualTerminal::TestInteractDispatch : public IInteractDispatch
+{
+public:
+    TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
+    virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
+    virtual bool WindowManipulation(_In_ const WindowManipulationFunction uiFunction,
+                                _In_reads_(cParams) const unsigned short* const rgusParams,
+                                _In_ size_t const cParams) override; // DTTERM_WindowManipulation
+private:
+    std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteInputCallback;
+};
+
+bool TestInteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents)
+{
+    _pfnWriteInputCallback(inputEvents);
+    return true;
+}
+
+bool TestInteractDispatch::WindowManipulation(_In_ const WindowManipulationFunction /*uiFunction*/,
+                                              _In_reads_(cParams) const unsigned short* const /*rgusParams*/,
+                                              _In_ size_t const /*cParams*/)
+{
+    THROW_HR(E_NOTIMPL);
+}
 
 bool IsShiftPressed(const DWORD modifierState)
 {
@@ -166,7 +193,11 @@ void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>
 void InputEngineTest::C0Test()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(std::make_unique<InputStateMachineEngine>(pfn));
+    _pStateMachine = new StateMachine(
+            std::make_unique<InputStateMachineEngine>(
+                std::make_unique<TestInteractDispatch>(pfn)
+            )
+    );
     VERIFY_IS_NOT_NULL(_pStateMachine);
     
     Log::Comment(L"Sending 0x0-0x19 to parser to make sure they're translated correctly back to C-key");
@@ -230,7 +261,11 @@ void InputEngineTest::C0Test()
 void InputEngineTest::AlphanumericTest()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(std::make_unique<InputStateMachineEngine>(pfn));
+    _pStateMachine = new StateMachine(
+            std::make_unique<InputStateMachineEngine>(
+                std::make_unique<TestInteractDispatch>(pfn)
+            )
+    );
     VERIFY_IS_NOT_NULL(_pStateMachine);
     
     Log::Comment(L"Sending every printable ASCII character");
@@ -273,7 +308,11 @@ void InputEngineTest::AlphanumericTest()
 void InputEngineTest::RoundTripTest()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(std::make_unique<InputStateMachineEngine>(pfn));
+    _pStateMachine = new StateMachine(
+            std::make_unique<InputStateMachineEngine>(
+                std::make_unique<TestInteractDispatch>(pfn)
+            )
+    );
     VERIFY_IS_NOT_NULL(_pStateMachine);
     
     // Send Every VKEY through the TerminalInput module, then take the char's 

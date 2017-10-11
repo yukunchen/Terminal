@@ -5,7 +5,7 @@ Module Name:
 - termDispatch.hpp
 
 Abstract:
-- This is the base class for all state machine callbacks. When actions occur, they will be dispatched to the methods on this interface
+- This is the base class for all output state machine callbacks. When actions occur, they will be dispatched to the methods on this interface
   which must be implemented by a child class and passed into the state machine on creation.
 
 Author(s):

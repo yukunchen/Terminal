@@ -20,6 +20,7 @@
     <ClInclude Include="..\InputStateMachineEngine.hpp" />
     <ClInclude Include="..\telemetry.hpp" />
     <ClInclude Include="..\termDispatch.hpp" />
+    <ClInclude Include="..\IInteractDispatch.hpp" />
     <ClInclude Include="..\tracing.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

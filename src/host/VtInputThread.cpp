@@ -8,9 +8,11 @@
 
 #include "VtInputThread.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 #include "input.h"
-#include "..\terminal\parser\InputStateMachineEngine.hpp"
+#include "../terminal/parser/InputStateMachineEngine.hpp"
+#include "outputStream.hpp" // For ConhostInternalGetSet
+#include "../terminal/adapter/InteractDispatch.hpp"
 #include "misc.h"
 
 using namespace Microsoft::Console;
@@ -29,9 +31,21 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
     : _hFile(std::move(hPipe))
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    
+    std::unique_ptr<ConhostInternalGetSet> pGetSet = 
+        std::make_unique<ConhostInternalGetSet>(gci->CurrentScreenBuffer, gci->pInputBuffer);
+    THROW_IF_NULL_ALLOC(pGetSet);
+
+    InteractDispatch* _pDispatch;
+    THROW_HR_IF_FALSE(E_OUTOFMEMORY, InteractDispatch::CreateInstance(std::move(pGetSet), &_pDispatch));
+    std::unique_ptr<InteractDispatch> pDispatch = std::unique_ptr<InteractDispatch>(_pDispatch);
+    // std::unique_ptr<InteractDispatch> pDispatch;
+    // THROW_HR_IF_FALSE(E_OUTOFMEMORY, InteractDispatch::CreateInstance(std::move(pGetSet), &pDispatch.get()));
 
     std::unique_ptr<InputStateMachineEngine> pEngine = 
-        std::make_unique<InputStateMachineEngine>(_HandleTerminalKeyEventCallback);
+        // std::make_unique<InputStateMachineEngine>(_HandleTerminalKeyEventCallback);
+        std::make_unique<InputStateMachineEngine>(std::move(pDispatch));
 
     THROW_IF_NULL_ALLOC(pEngine);
 

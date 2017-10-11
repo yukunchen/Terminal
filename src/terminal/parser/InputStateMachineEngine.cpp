@@ -71,9 +71,10 @@ const InputStateMachineEngine::GENERIC_TO_VKEY InputStateMachineEngine::s_rgGene
     { GenericKeyIdentifiers::F12, VK_F12 },
 };
 
-InputStateMachineEngine::InputStateMachineEngine(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn)
+InputStateMachineEngine::InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch) :
+    _pDispatch(std::move(pDispatch))
+// InputStateMachineEngine::InputStateMachineEngine(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn)
 {
-    _pfnWriteEvents = pfn;
 }
 
 // Method Description:
@@ -235,9 +236,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
 
     DWORD dwModifierState = 0;
     short vkey = 0;
+    unsigned int uiFunction = 0;
 
     bool fSuccess = false;
-
     switch(wch)
     {
         case CsiActionCodes::Generic:
@@ -257,6 +258,12 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
             fSuccess = _GetCursorKeysVkey(wch, &vkey);
             break;
+        case CsiActionCodes::DTTERM_WindowManipulation:
+            fSuccess = _GetWindowManipulationFunction(rgusParams,
+                                                      cParams,
+                                                      &uiFunction);
+            break;
+
         default:
             fSuccess = false;
             break;
@@ -265,7 +272,32 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
 
     if (fSuccess)
     {
-        fSuccess = _WriteSingleKey(vkey, dwModifierState);
+        switch(wch)
+        {
+            case CsiActionCodes::Generic:
+            case CsiActionCodes::ArrowUp:
+            case CsiActionCodes::ArrowDown:
+            case CsiActionCodes::ArrowRight:
+            case CsiActionCodes::ArrowLeft:
+            case CsiActionCodes::Home:
+            case CsiActionCodes::End:
+            case CsiActionCodes::F1:
+            case CsiActionCodes::F2:
+            case CsiActionCodes::F3:
+            case CsiActionCodes::F4:
+                fSuccess = _WriteSingleKey(vkey, dwModifierState);
+                break;
+            case CsiActionCodes::DTTERM_WindowManipulation:
+                fSuccess = _pDispatch->WindowManipulation(static_cast<IInteractDispatch::WindowManipulationFunction>(uiFunction),
+                                                          rgusParams+1,
+                                                          cParams-1);
+                break;
+            default:
+                fSuccess = false;
+                break;
+
+        }
+
     }
 
     return fSuccess;
@@ -497,8 +529,8 @@ bool InputStateMachineEngine::_WriteSingleKey(_In_ const wchar_t wch, _In_ const
     size_t cInput = _GenerateWrappedSequence(wch, vkey, dwModifierState, rgInput, WRAPPED_SEQUENCE_MAX_LENGTH);
 
     std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(rgInput, cInput);
-    _pfnWriteEvents(inputEvents);
-    return true;
+
+    return _pDispatch->WriteInput(inputEvents);
 }
 
 // Method Description:
@@ -683,3 +715,35 @@ bool InputStateMachineEngine::FlushAtEndOfString() const
 {
     return true;
 }
+
+// Method Description:
+// - Retrieves the type of window manipulation operation from the parameter pool
+//      stored during Param actions.
+// Arguments:
+// - rgusParams - Array of parameters collected
+// - cParams - Number of parameters we've collected
+// - puiFunction - Memory location to receive the function type
+// Return Value:
+// - True iff we successfully pulled the function type from the parameters
+bool InputStateMachineEngine::_GetWindowManipulationFunction(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                              _In_ const unsigned short cParams,
+                                                              _Out_ unsigned int* const puiFunction) const
+{
+    bool fSuccess = false;
+    *puiFunction = IInteractDispatch::WindowManipulationFunction::Invalid;
+
+    if (cParams > 0)
+    {
+        switch(rgusParams[0])
+        {
+            case IInteractDispatch::WindowManipulationFunction::ResizeWindowInCharacters:
+                *puiFunction = IInteractDispatch::WindowManipulationFunction::ResizeWindowInCharacters;
+                fSuccess = true;
+                break;
+        }
+    }
+
+    return fSuccess;
+}
+
+
