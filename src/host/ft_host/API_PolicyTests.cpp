@@ -10,9 +10,12 @@ class PolicyTests
 {
     TEST_CLASS(PolicyTests);
 
+// UAP test type doesn't work quite right in VSO, skip. We'll get it in the RI-TP internally.
+#ifdef __INSIDE_WINDOWS
     BEGIN_TEST_METHOD(WrongWayVerbsUAP)
         TEST_METHOD_PROPERTY(L"RunAs", L"UAP")
     END_TEST_METHOD();
+#endif
 
     BEGIN_TEST_METHOD(WrongWayVerbsUser)
         TEST_METHOD_PROPERTY(L"RunAs", L"User")
@@ -100,11 +103,13 @@ void DoWrongWayVerbTest(_In_ BOOL bResultExpected, _In_ DWORD dwStatusExpected)
     }
 }
 
+#ifdef __INSIDE_WINDOWS
 void PolicyTests::WrongWayVerbsUAP()
 {
     Log::Comment(L"From the UAP environment, these functions should be access denied.");
     DoWrongWayVerbTest(FALSE, ERROR_ACCESS_DENIED);
 }
+#endif
 
 void PolicyTests::WrongWayVerbsUser()
 {
