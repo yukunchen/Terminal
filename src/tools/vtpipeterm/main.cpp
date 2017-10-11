@@ -2,6 +2,7 @@
 //    Copyright (C) Microsoft.  All rights reserved.
 //
 #include <windows.h>
+#include <wil\Common.h>
 #include <wil\result.h>
 #include <wil\resource.h>
 #include <wil\wistd_functional.h>
@@ -34,19 +35,7 @@ bool prefixPressed = false;
 
 void ReadCallback(byte* buffer, DWORD dwRead)
 {
-    // Come back to this another day - >ASCII characters don't play nice with 
-    //      VT pipe term because it's not properly handling the rendererd output as utf-8
-
-    // int const iTarget = MultiByteToWideChar(CP_UTF8, 0, (char*)buffer, dwRead, nullptr, 0);
-    // size_t cchNeeded = (size_t)iTarget;
-    // // RETURN_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
-    // // Allocate ourselves space in a smart pointer.
-    // std::unique_ptr<wchar_t[]> pwsOut = std::make_unique<wchar_t[]>(cchNeeded);
-    // THROW_IF_NULL_ALLOC(pwsOut);
-    // // Attempt conversion for real.
-    // THROW_LAST_ERROR_IF(0 == MultiByteToWideChar(CP_UTF8, 0, (char*)buffer, dwRead, pwsOut.get(), iTarget));
-    // THROW_LAST_ERROR_IF_FALSE(WriteFileW(hOut, pwsOut.get(), iTarget*sizeof(wchar_t), nullptr, nullptr));
-
+    // We already set the console to UTF-8 CP, so we can just write straight to it
     THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
 }
 void DebugReadCallback(byte* buffer, DWORD dwRead)
@@ -269,6 +258,17 @@ void SetupInput()
 DWORD InputThread(LPVOID lpParameter)
 {
     UNREFERENCED_PARAMETER(lpParameter);
+    
+    // Because the input thread ends up owning the lifetime of the application, 
+    // Set/restore the CP here.
+
+    unsigned int launchCP = GetConsoleOutputCP();
+    THROW_LAST_ERROR_IF_FALSE(SetConsoleOutputCP(CP_UTF8));
+    auto restore = wil::ScopeExit([&] 
+    {
+        SetConsoleOutputCP(launchCP);
+    });
+
     
     for (;;)
     {

@@ -35,11 +35,11 @@ HRESULT XtermEngine::StartPaint()
     if (SUCCEEDED(hr))
     {
         // todo come back to this before the PR is finished.
-        // if (!_quickReturn)
-        // {
+        if (!_quickReturn)
+        {
             // Turn off cursor
             hr = _HideCursor();
-        // }
+        }
     }
 
     return hr;
@@ -58,11 +58,11 @@ HRESULT XtermEngine::EndPaint()
     if (SUCCEEDED(hr))
     {
         // todo come back to this before the PR is finished.
-        // if (!_quickReturn)
-        // {
+        if (!_quickReturn)
+        {
             // Turn on cursor
             hr = _ShowCursor();
-        // }        
+        }        
     }
 
 

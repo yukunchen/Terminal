@@ -115,7 +115,7 @@ HRESULT Renderer::PaintFrame()
         // Try to start painting a frame
         HRESULT const hr = pEngine->StartPaint();
         THROW_IF_FAILED(hr); // Return errors
-        THROW_HR_IF(S_OK, S_FALSE == hr); // Return early if there's nothing to paint.
+        RETURN_HR_IF(S_OK, S_FALSE == hr); // Return early if there's nothing to paint.
 
         auto endPaint = wil::ScopeExit([&]()
         {

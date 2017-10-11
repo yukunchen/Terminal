@@ -141,9 +141,19 @@ void VtRendererTest::TestPaint(VtEngine& engine, std::function<void()> pfn)
 void VtRendererTest::TestPaintXterm(XtermEngine& engine, std::function<void()> pfn)
 {
     qExpectedInput.push_back("\x1b[?25l");
-    engine.StartPaint();
-    pfn();
-    qExpectedInput.push_back("\x1b[?25h");
+    HRESULT hr = engine.StartPaint();
+    if (hr == S_FALSE)
+    {
+        // Still do what the caller passed in, but without expecting the wrapping VT sequences.
+        qExpectedInput.pop_front();
+        pfn();
+    }
+    else
+    {
+        pfn();
+        qExpectedInput.push_back("\x1b[?25h");
+    }
+    
     engine.EndPaint();
 }
 

@@ -93,7 +93,7 @@ HRESULT VtEngine::_InvalidCombine(_In_ const SMALL_RECT* const prc)
     }
 
     // Ensure invalid areas remain within bounds of window.
-    // RETURN_IF_FAILED(_InvalidRestrict());
+    RETURN_IF_FAILED(_InvalidRestrict());
 
     return S_OK;
 }
@@ -121,7 +121,7 @@ HRESULT VtEngine::_InvalidOffset(_In_ const COORD* const pCoord)
         _OrRect(&_srcInvalid, &rcInvalidNew);
 
         // Ensure invalid areas remain within bounds of window.
-        // RETURN_IF_FAILED(_InvalidRestrict());
+        RETURN_IF_FAILED(_InvalidRestrict());
     }
 
     return S_OK;

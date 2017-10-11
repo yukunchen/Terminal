@@ -23,15 +23,18 @@ using namespace Microsoft::Console::Render;
 HRESULT VtEngine::StartPaint()
 {
     // If there's nothing to do, quick return
-    _quickReturn = false;
-    _quickReturn |= (_fInvalidRectUsed);
-    _quickReturn |= (_scrollDelta.X != 0 || _scrollDelta.Y != 0);
+    bool somethingToDo = _fInvalidRectUsed | (_scrollDelta.X != 0 || _scrollDelta.Y != 0);
 
-    return S_OK;
+    _quickReturn = !somethingToDo;
+
+    return _quickReturn ? S_FALSE : S_OK;
 }
 
 // Routine Description:
-// - EndPaint helper to perform the final cleanup after painting
+// - EndPaint helper to perform the final cleanup after painting. If we 
+//      returned S_FALSE from StartPaint, there's no guarantee this was called. 
+//      That's okay however, EndPaint only zeros structs that would be zero if
+//      StartPaint returns S_FALSE.
 // Arguments:
 // - <none>
 // Return Value:
