@@ -54,15 +54,6 @@ Notes:
 #include "screenInfo.hpp"
 #include "server.h"
 
-#define ALT_PRESSED     (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)
-#define CTRL_PRESSED    (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED)
-#define MOD_PRESSED     (SHIFT_PRESSED | ALT_PRESSED | CTRL_PRESSED)
-
-#define CTRL_BUT_NOT_ALT(n) \
-        (((n) & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) && \
-        !((n) & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)))
-
-
 // Disable warning about 0 length MSFT compiler struct extension.
 #pragma warning(disable:4200)
 typedef struct _COMMAND
@@ -166,10 +157,6 @@ void DeleteCommandLine(_Inout_ COOKED_READ_DATA* pCookedReadData, _In_ const BOO
 void RedrawCommandLine(_Inout_ COOKED_READ_DATA* CookedReadData);
 
 PCOMMAND_HISTORY FindCommandHistory(_In_ const HANDLE hProcess);
-
-bool IsCommandLinePopupKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
-
-bool IsCommandLineEditingKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
 
 void CleanUpPopups(_In_ COOKED_READ_DATA* const CookedReadData);
 

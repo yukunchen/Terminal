@@ -102,6 +102,7 @@ COOKED_READ_DATA::~COOKED_READ_DATA()
 // - pReplyStatus - The status code to return to the client application that originally called the API (before it was queued to wait)
 // - pNumBytes - The number of bytes of data that the server/driver will need to transmit back to the client process
 // - pControlKeyState - For certain types of reads, this specifies which modifier keys were held.
+// - pOutputData - not used
 // Return Value:
 // - TRUE if the wait is done and result buffer/status code can be sent back to the client.
 // - FALSE if we need to continue to wait until more data is available.
@@ -109,7 +110,8 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
                               _In_ BOOLEAN const fIsUnicode,
                               _Out_ NTSTATUS* const pReplyStatus,
                               _Out_ DWORD* const pNumBytes,
-                              _Out_ DWORD* const pControlKeyState)
+                              _Out_ DWORD* const pControlKeyState,
+                              _Out_ void* const /*pOutputData*/)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     ASSERT(gci->IsConsoleLocked());

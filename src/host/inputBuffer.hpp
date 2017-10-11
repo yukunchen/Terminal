@@ -97,8 +97,6 @@ private:
     bool _CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     HRESULT _HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
-    std::deque<std::unique_ptr<IInputEvent>> _inputRecordsToInputEvents(_In_ const std::deque<INPUT_RECORD>& inRecords);
-
     void _HandleTerminalInputCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
 
 #ifdef UNIT_TESTING

@@ -20,20 +20,17 @@
 // - pInputBuffer - Buffer that data will be read from.
 // - pInputReadHandleData - Context stored across calls from the same
 // input handle to return partial data appropriately.
-// - pOutRecords - The buffer the client has presented to be filled with INPUT_RECORDs
-// - cOutRecords - Max count of INPUT_RECORDs that we can stuff into
 // the user's buffer (pOutRecords)
-// - outEvents - storage for any IInputEvents read so far
+// - eventReadCount - the number of events to read
+// - partialEvents - any partial events already read
 // Return Value:
 // - THROW: Throws E_INVALIDARG for invalid pointers.
 DirectReadData::DirectReadData(_In_ InputBuffer* const pInputBuffer,
-                                   _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                                   _In_ INPUT_RECORD* pOutRecords,
-                                   _In_ const size_t cOutRecords,
-                                   _In_ std::deque<std::unique_ptr<IInputEvent>> partialEvents) :
+                               _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
+                               _In_ const size_t eventReadCount,
+                               _In_ std::deque<std::unique_ptr<IInputEvent>> partialEvents) :
     ReadData(pInputBuffer, pInputReadHandleData),
-    _pOutRecords{ THROW_HR_IF_NULL(E_INVALIDARG, pOutRecords) },
-    _cOutRecords{ cOutRecords },
+    _eventReadCount{ eventReadCount },
     _partialEvents{ std::move(partialEvents) },
     _outEvents{ }
 {
@@ -61,20 +58,25 @@ DirectReadData::~DirectReadData()
 // - pReplyStatus - The status code to return to the client
 // application that originally called the API (before it was queued to
 // wait)
-// - pNumBytes - The number of bytes of data that the server/driver
-// will need to transmit back to the client process
+// - pNumBytes - not used
 // - pControlKeyState - For certain types of reads, this specifies
 // which modifier keys were held.
+// - pOutputData - a pointer to a
+// std::deque<std::unique_ptr<IInputEvent>> that is used to the read
+// input events back to the server
 // Return Value:
 // - TRUE if the wait is done and result buffer/status code can be sent back to the client.
 // - FALSE if we need to continue to wait until more data is available.
 BOOL DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
-                              _In_ BOOLEAN const fIsUnicode,
-                              _Out_ NTSTATUS* const pReplyStatus,
-                              _Out_ DWORD* const pNumBytes,
-                              _Out_ DWORD* const pControlKeyState)
+                            _In_ BOOLEAN const fIsUnicode,
+                            _Out_ NTSTATUS* const pReplyStatus,
+                            _Out_ DWORD* const /*pNumBytes*/,
+                            _Out_ DWORD* const pControlKeyState,
+                            _Out_ void* const pOutputData)
 {
 #ifdef DBG
+    assert(pOutputData);
+
     _pInputReadHandleData->LockReadCount();
     ASSERT(_pInputReadHandleData->GetReadCount() > 0);
     _pInputReadHandleData->UnlockReadCount();
@@ -86,6 +88,7 @@ BOOL DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;
     bool retVal = true;
+    std::deque<std::unique_ptr<IInputEvent>> readEvents;
 
     // If ctrl-c or ctrl-break was seen, ignore it.
     if (IsAnyFlagSet(TerminationReason, (WaitTerminationReason::CtrlC | WaitTerminationReason::CtrlBreak)))
@@ -96,7 +99,7 @@ BOOL DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
     // check if a partial byte is already stored that we should read
     if (!fIsUnicode &&
         _pInputBuffer->IsReadPartialByteSequenceAvailable() &&
-        _cOutRecords == 1)
+        _eventReadCount == 1)
     {
         _partialEvents.push_back(_pInputBuffer->FetchReadPartialByteSequence(false));
     }
@@ -121,8 +124,21 @@ BOOL DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
         // thread or a write routine.  both of these callers grab the
         // current console lock.
 
-        size_t amountToRead = _cOutRecords - (_partialEvents.size() + _outEvents.size());
-        *pReplyStatus = _pInputBuffer->Read(_outEvents,
+        // calculate how many events we need to read
+        size_t amountAlreadyRead;
+        if (FAILED(SizeTAdd(_partialEvents.size(), _outEvents.size(), &amountAlreadyRead)))
+        {
+            *pReplyStatus = STATUS_INTEGER_OVERFLOW;
+            return retVal;
+        }
+        size_t amountToRead;
+        if (FAILED(SizeTSub(_eventReadCount, amountAlreadyRead, &amountToRead)))
+        {
+            *pReplyStatus = STATUS_INTEGER_OVERFLOW;
+            return retVal;
+        }
+
+        *pReplyStatus = _pInputBuffer->Read(readEvents,
                                             amountToRead,
                                             false,
                                             false,
@@ -139,36 +155,38 @@ BOOL DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
         // split key events to oem chars if necessary
         if (*pReplyStatus == STATUS_SUCCESS && !fIsUnicode)
         {
-            LOG_IF_FAILED(SplitToOem(_outEvents));
+            LOG_IF_FAILED(SplitToOem(readEvents));
         }
 
         // combine partial and whole events
         while (!_partialEvents.empty())
         {
-            _outEvents.push_front(std::move(_partialEvents.back()));
+            readEvents.push_front(std::move(_partialEvents.back()));
             _partialEvents.pop_back();
         }
 
-        // convert events to input records and add to buffer
-        size_t recordCount = 0;
-        for (size_t i = 0; i < _cOutRecords; ++i)
+        // move read events to out storage
+        for (size_t i = 0; i < _eventReadCount; ++i)
         {
-            if (_outEvents.empty())
+            if (readEvents.empty())
             {
                 break;
             }
-            _pOutRecords[i] = _outEvents.front()->ToInputRecord();
-            _outEvents.pop_front();
-            ++recordCount;
+            _outEvents.push_back(std::move(readEvents.front()));
+            readEvents.pop_front();
         }
+
         // store partial event if necessary
-        if (!_outEvents.empty())
+        if (!readEvents.empty())
         {
-            _pInputBuffer->StoreReadPartialByteSequence(std::move(_outEvents.front()));
-            _outEvents.pop_front();
-            assert(_outEvents.empty());
+            _pInputBuffer->StoreReadPartialByteSequence(std::move(readEvents.front()));
+            readEvents.pop_front();
+            assert(readEvents.empty());
         }
-        *pNumBytes = static_cast<DWORD>(recordCount * sizeof(INPUT_RECORD));
+
+        // move events to pOutputData
+        std::deque<std::unique_ptr<IInputEvent>>* const pOutputDeque = reinterpret_cast<std::deque<std::unique_ptr<IInputEvent>>* const>(pOutputData);
+        pOutputDeque->swap(_outEvents);
     }
     return retVal;
 }

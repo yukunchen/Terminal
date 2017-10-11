@@ -36,9 +36,15 @@ namespace Microsoft
 
                     void Copy();
                     void StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
-                        _In_ const size_t cchData);
+                                     _In_ const size_t cchData);
                     void Paste();
                 private:
+                    std::deque<std::unique_ptr<IInputEvent>> TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
+                                                                             _In_ const size_t cchData);
+
+                    std::deque<std::unique_ptr<KeyEvent>> CharToKeyboardEvents(_In_ const wchar_t wch,
+                                                                               _In_ const short keyState);
+                    std::deque<std::unique_ptr<KeyEvent>> CharToNumpad(_In_ const wchar_t wch);
                     void StoreSelectionToClipboard();
 
                     _Check_return_

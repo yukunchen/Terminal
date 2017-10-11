@@ -62,6 +62,7 @@ RAW_READ_DATA::~RAW_READ_DATA()
 // will need to transmit back to the client process
 // - pControlKeyState - For certain types of reads, this specifies
 // which modifier keys were held.
+// - pOutputData - not used
 // Return Value:
 // - TRUE if the wait is done and result buffer/status code can be
 // sent back to the client.
@@ -71,9 +72,9 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
                            _In_ BOOLEAN const fIsUnicode,
                            _Out_ NTSTATUS* const pReplyStatus,
                            _Out_ DWORD* const pNumBytes,
-                           _Out_ DWORD* const pControlKeyState)
+                           _Out_ DWORD* const pControlKeyState,
+                           _Out_ void* const /*pOutputData*/)
 {
-
 #ifdef DBG
     // This routine should be called by a thread owning the same lock
     // on the same console as we're reading from.
