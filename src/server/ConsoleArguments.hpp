@@ -16,6 +16,7 @@ Author(s):
 class ConsoleArguments
 {
 public:
+
     ConsoleArguments(_In_ const std::wstring& commandline);
 
     HRESULT ParseCommandline();

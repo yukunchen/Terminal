@@ -8,6 +8,10 @@
 #include "VtIo.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
+#include "../renderer/vt/XtermEngine.hpp"
+#include "../renderer/vt/Xterm256Engine.hpp"
+#include "../renderer/vt/WinTelnetEngine.hpp"
+
 #include "../renderer/base/renderer.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
@@ -72,9 +76,12 @@ HRESULT VtIo::ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode& ioMod
 //      indicating failure.
 HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    
     RETURN_IF_FAILED(ParseIoMode(VtMode, _IoMode));
 
     wil::unique_hfile _hInputFile;
+    wil::unique_hfile _hOutputFile;
 
     _hInputFile.reset(
         CreateFileW(InPipeName.c_str(),
@@ -101,6 +108,21 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
     try
     {
         _pVtInputThread = std::make_unique<VtInputThread>(std::move(_hInputFile));
+
+        switch(_IoMode)
+        {
+            case VtIoMode::XTERM_256:
+                _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(_hOutputFile));
+                break;
+            case VtIoMode::XTERM:
+                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
+                break;
+            case VtIoMode::WIN_TELNET:
+                _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
+                break;
+            default:
+                return E_FAIL;
+        }
     }
     CATCH_RETURN();
 
@@ -130,6 +152,16 @@ HRESULT VtIo::StartIfNeeded()
     {
         return S_FALSE;
     }
+    // Hmm. We only have one Renderer implementation, 
+    //  but its stored as a IRenderer. 
+    //  IRenderer doesn't know about IRenderEngine. 
+    // todo: msft:13631640
+    const Globals* const g = ServiceLocator::LocateGlobals();
+    try
+    {
+        static_cast<Renderer*>(g->pRender)->AddRenderEngine(_pVtRenderEngine.get());
+    }
+    CATCH_RETURN();
 
     _pVtInputThread->Start();
 

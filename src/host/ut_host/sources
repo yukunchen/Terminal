@@ -29,6 +29,7 @@ SOURCES = \
     TitleTests.cpp \
     InputBufferTests.cpp \
     VtIoTests.cpp \
+    VtRendererTests.cpp \
     DefaultResource.rc \
 
 # -------------------------------------

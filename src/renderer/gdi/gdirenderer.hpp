@@ -29,7 +29,7 @@ namespace Microsoft
 
                 HRESULT SetHwnd(_In_ HWND const hwnd);
 
-                HRESULT InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);
+                HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);
                 HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta);
                 HRESULT InvalidateSystem(_In_ const RECT* const prcDirtyClient);
                 HRESULT Invalidate(_In_ const SMALL_RECT* const psrRegion);
@@ -47,7 +47,7 @@ namespace Microsoft
                                         _In_ COORD const coordTarget,
                                         _In_ bool const fTrimLeft);
                 HRESULT PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget);
-                HRESULT PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);
+                HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles);
 
                 HRESULT PaintCursor(_In_ COORD const coordCursor, _In_ ULONG const ulCursorHeightPercent, _In_ bool const fIsDoubleWidth);
                 HRESULT ClearCursor();
@@ -55,6 +55,7 @@ namespace Microsoft
                 HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In_ COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, _In_ bool const fIncludeBackgrounds);
                 HRESULT UpdateFont(_In_ FontInfoDesired const * const pfiFontInfoDesired, _Out_ FontInfo* const pfiFontInfo);
                 HRESULT UpdateDpi(_In_ int const iDpi);
+                HRESULT UpdateViewport(_In_ SMALL_RECT const srNewViewport);
 
                 HRESULT GetProposedFont(_In_ FontInfoDesired const * const pfiFontDesired, _Out_ FontInfo* const pfiFont, _In_ int const iDpi);
 
@@ -93,6 +94,12 @@ namespace Microsoft
                 SIZE _szInvalidScroll;
                 RECT _rcInvalid;
                 bool _fInvalidRectUsed;
+
+                // NOTE: Valid COLORREFs are of the pattern 0x00bbggrr. 
+                //  Set the initial one in the static to -1 as the highest byte of a valid color is always 0.
+                COLORREF _lastFg = 0xffffffff;
+                COLORREF _lastBg = 0xffffffff;
+
                 HRESULT _InvalidCombine(_In_ const RECT* const prc);
                 HRESULT _InvalidOffset(_In_ const POINT* const ppt);
                 HRESULT _InvalidRestrict();
@@ -103,7 +110,7 @@ namespace Microsoft
                 HRESULT _PaintBackgroundColor(_In_ const RECT* const prc);
 
                 HRGN _hrgnGdiPaintedSelection;
-                HRESULT _PaintSelectionCalculateRegion(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection,
+                HRESULT _PaintSelectionCalculateRegion(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                                                        _In_ UINT const cRectangles,
                                                        _Inout_ HRGN const hrgnSelection) const;
 

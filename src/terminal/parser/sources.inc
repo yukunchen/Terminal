@@ -24,7 +24,7 @@ USE_NATIVE_EH           = 1
 # -------------------------------------
 
 UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DBUILD_ONECORE_INTERACTIVITY
 
 # -------------------------------------
 # Compiler Settings
@@ -59,3 +59,10 @@ INCLUDES = \
 
 TARGETLIBS = \
     $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-keyboard-l1.lib \
+
+DLOAD_ERROR_HANDLER     = kernelbase
+
+DELAYLOAD = \
+    ext-ms-win-ntuser-keyboard-l1.dll; \
+

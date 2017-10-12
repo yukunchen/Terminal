@@ -92,6 +92,7 @@ DWORD VtInputThread::_InputThread()
     {
         dwRead = 0;
         THROW_LAST_ERROR_IF_FALSE(ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
+
         THROW_IF_FAILED(_HandleRunInput(buffer, dwRead));
     }
 }

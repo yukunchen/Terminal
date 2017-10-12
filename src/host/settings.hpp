@@ -211,54 +211,11 @@ private:
 
     friend class RegistrySerialization;
 
-    struct _HSL
-    {
-        double h, s, l;
 
-        // constructs an HSL color from a RGB Color.
-        _HSL(_In_ const COLORREF rgb)
-        {
-            const double r = (double) GetRValue(rgb);
-            const double g = (double) GetGValue(rgb);
-            const double b = (double) GetBValue(rgb);
-            double min, max, diff, sum;
-
-            max = max(max(r, g), b);
-            min = min(min(r, g), b);
-
-            diff = max - min;
-            sum = max + min;
-            // Luminence
-            l = max / 255.0;
-
-            // Saturation
-            s = (max == 0) ? 0 : diff / max;
-
-            //Hue
-            double q = (diff == 0)? 0 : 60.0/diff;
-            if (max == r)
-            {
-                h = (g < b)? ((360.0 + q * (g - b))/360.0) : ((q * (g - b))/360.0);
-            }
-            else if (max == g)
-            {
-                h = (120.0 + q * (b - r))/360.0;
-            }
-            else if (max == b)
-            {
-                h = (240.0 + q * (r - g))/360.0;
-            }
-            else
-            {
-                h = 0;
-            }
-        }
-    };
 
 public:
 
     WORD GenerateLegacyAttributes(_In_ const TextAttribute attributes) const;
-    static double s_FindDifference(_In_ const _HSL* const phslColorA, _In_ const COLORREF rgbColorB);
     WORD FindNearestTableIndex(_In_ COLORREF const Color) const;
 
 };
