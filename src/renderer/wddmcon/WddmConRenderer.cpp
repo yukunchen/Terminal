@@ -331,9 +331,8 @@ HRESULT WddmConEngine::UpdateDpi(int const iDpi)
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK  
-HRESULT WddmConEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
+HRESULT WddmConEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
 {
-    UNREFERENCED_PARAMETER(srNewViewport);
     return S_OK;
 }
 

@@ -30,11 +30,11 @@ namespace Microsoft
             class AdaptDispatch : public TermDispatch
             {
             public:
-                
+
                 static bool CreateInstance(_In_ ConGetSet* pConApi,
-                                               _In_ AdaptDefaults* pDefaults, 
-                                               _In_ WORD wDefaultTextAttributes,
-                                               _Outptr_ AdaptDispatch ** const ppDispatch);
+                                           _In_ AdaptDefaults* pDefaults,
+                                           _In_ WORD wDefaultTextAttributes,
+                                           _Outptr_ AdaptDispatch ** const ppDispatch);
 
                 ~AdaptDispatch();
 
@@ -48,14 +48,14 @@ namespace Microsoft
                     _wDefaultTextAttributes = wAttributes;
                 }
 
-                virtual void Execute(_In_ wchar_t const wchControl) 
+                virtual void Execute(_In_ wchar_t const wchControl)
                 {
-                    _pDefaults->Execute(wchControl); 
+                    _pDefaults->Execute(wchControl);
                 }
 
                 virtual void PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
                 virtual void Print(_In_ wchar_t const wchPrintable);
-                
+
                 virtual bool CursorUp(_In_ unsigned int const uiDistance); // CUU
                 virtual bool CursorDown(_In_ unsigned int const uiDistance); // CUD
                 virtual bool CursorForward(_In_ unsigned int const uiDistance); // CUF
@@ -149,7 +149,7 @@ namespace Microsoft
 
                 bool _CursorPositionReport() const;
 
-                bool _WriteResponse(_In_reads_(cReply) PCWSTR pwszReply, _In_ size_t const cReply) const;
+                bool _WriteResponse(_In_reads_(cchReply) PCWSTR pwszReply, _In_ size_t const cchReply) const;
                 bool _SetResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rgParams, _In_ size_t const cParams, _In_ bool const fEnable);
                 bool _PrivateModeParamsHelper(_In_ PrivateModeParams const param, _In_ bool const fEnable);
                 bool _DoDECCOLMHelper(_In_ unsigned int uiColumns);
@@ -168,10 +168,10 @@ namespace Microsoft
                 bool _fChangedBackground;
                 bool _fChangedMetaAttrs;
 
-                bool _SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, 
-                                         _In_ size_t const cOptions, 
-                                         _Out_ COLORREF* const prgbColor, 
-                                         _Out_ bool* const pfIsForeground, 
+                bool _SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptions* const rgOptions,
+                                         _In_ size_t const cOptions,
+                                         _Out_ COLORREF* const prgbColor,
+                                         _Out_ bool* const pfIsForeground,
                                          _Out_ size_t* const pcOptionsConsumed);
                 static bool s_IsXtermColorOption(_In_ GraphicsOptions const opt);
                 static bool s_IsRgbColorOption(_In_ GraphicsOptions const opt);

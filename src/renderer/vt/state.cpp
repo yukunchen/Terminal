@@ -82,7 +82,7 @@ HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, _In_ size_t cons
 // - str: the string of characters to write to the pipe.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-HRESULT VtEngine::_Write(_In_ std::string& str)
+HRESULT VtEngine::_Write(_In_ const std::string& str)
 {
     return _Write(str.c_str(), str.length());
 }

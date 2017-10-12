@@ -5,7 +5,7 @@ Module Name:
 - readDataDirect.hpp
 
 Abstract:
-- This file defines the read data structure for INPUT_RECORD-reading console APIs.
+- This file defines the read data structure for IInputEvent-reading console APIs.
 - A direct read specifically means that we are returning multiplexed input data stored
   in the internal console buffers that could have originated from any type of input device.
   This is not strictly string/text information but could also be mouse moves, screen changes, etc.
@@ -23,29 +23,32 @@ Revision History:
 #pragma once
 
 #include "readData.hpp"
+#include "../types/inc/IInputEvent.hpp"
+#include <deque>
+#include <memory>
 
 
-class DIRECT_READ_DATA final : public ReadData
+class DirectReadData final : public ReadData
 {
 public:
-    DIRECT_READ_DATA(_In_ InputBuffer* const pInputBuffer,
-                     _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                     _In_ INPUT_RECORD* pUserBuffer,
-                     _In_ ULONG const cUserBufferNumRecords,
-                     _In_ bool const fIsPeek);
+    DirectReadData(_In_ InputBuffer* const pInputBuffer,
+                   _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
+                   _In_ const size_t eventReadCount,
+                   _In_ std::deque<std::unique_ptr<IInputEvent>> partialEvents);
 
-    ~DIRECT_READ_DATA() override;
+    DirectReadData(DirectReadData&&) = default;
 
-    DIRECT_READ_DATA(DIRECT_READ_DATA&&) = default;
+    ~DirectReadData() override;
 
     BOOL Notify(_In_ WaitTerminationReason const TerminationReason,
                 _In_ BOOLEAN const fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
                 _Out_ DWORD* const pNumBytes,
-                _Out_ DWORD* const pControlKeyState) override;
+                _Out_ DWORD* const pControlKeyState,
+                _Out_ void* const pOutputData) override;
 
 private:
-    INPUT_RECORD* _pUserBuffer;
-    const ULONG _cUserBufferNumRecords;
-    const bool _fIsPeek;
+    const size_t _eventReadCount;
+    std::deque<std::unique_ptr<IInputEvent>> _partialEvents;
+    std::deque<std::unique_ptr<IInputEvent>> _outEvents;
 };
