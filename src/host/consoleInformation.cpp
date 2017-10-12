@@ -11,27 +11,6 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 
-// Routine Description:
-// - Handler for inserting key sequences into the buffer when the terminal emulation layer
-//   has determined a key can be converted appropriately into a sequence of inputs
-// Arguments:
-// - rgInput - Series of input records to insert into the buffer
-// - cInput - Length of input records array
-// Return Value:
-// - <none>
-void HandleTerminalKeyEventCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
-{
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    try
-    {
-        std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(rgInput, cInput);
-        gci->pInputBuffer->Write(inEvents);
-    }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-    }
-}
 
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // ProcessHandleList initializes itself
@@ -54,7 +33,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // ColorTable initialized below
     // CPInfo initialized below
     // OutputCPInfo initialized below
-    ReadConInpNumBytesUnicode(0),
     lpCookedReadData(nullptr),
     // ConsoleIme initialized below
     terminalMouseInput(HandleTerminalKeyEventCallback),
@@ -107,4 +85,16 @@ ULONG CONSOLE_INFORMATION::GetCSRecursionCount()
 VtIo* CONSOLE_INFORMATION::GetVtIo()
 {
     return &_vtIo;
+}
+
+// Routine Description:
+// - Handler for inserting key sequences into the buffer when the terminal emulation layer
+//   has determined a key can be converted appropriately into a sequence of inputs
+// Arguments:
+// - events - the input events to write to the input buffer
+// Return Value:
+// - <none>
+void CONSOLE_INFORMATION::HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
+{
+    ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->Write(events);
 }

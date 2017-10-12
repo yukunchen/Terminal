@@ -12,6 +12,11 @@ MenuEvent::MenuEvent(_In_ const MENU_EVENT_RECORD& record) :
 {
 }
 
+MenuEvent::MenuEvent(_In_ const UINT commandId) :
+    _commandId{ commandId }
+{
+}
+
 MenuEvent::~MenuEvent()
 {
 }

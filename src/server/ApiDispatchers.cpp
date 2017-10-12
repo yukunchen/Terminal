@@ -137,24 +137,23 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
 
     IWaitRoutine* pWaiter = nullptr;
     HRESULT hr;
-    size_t cRecordsWritten;
+    std::deque<std::unique_ptr<IInputEvent>> outEvents;
+    size_t const eventsToRead = cRecords;
     if (a->Unicode)
     {
         if (fIsPeek)
         {
             hr = m->_pApiRoutines->PeekConsoleInputWImpl(pInputBuffer,
-                                                         rgRecords,
-                                                         cRecords,
-                                                         &cRecordsWritten,
+                                                         outEvents,
+                                                         eventsToRead,
                                                          pInputReadHandleData,
                                                          &pWaiter);
         }
         else
         {
             hr = m->_pApiRoutines->ReadConsoleInputWImpl(pInputBuffer,
-                                                         rgRecords,
-                                                         cRecords,
-                                                         &cRecordsWritten,
+                                                         outEvents,
+                                                         eventsToRead,
                                                          pInputReadHandleData,
                                                          &pWaiter);
         }
@@ -164,18 +163,16 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
         if (fIsPeek)
         {
             hr = m->_pApiRoutines->PeekConsoleInputAImpl(pInputBuffer,
-                                                         rgRecords,
-                                                         cRecords,
-                                                         &cRecordsWritten,
+                                                         outEvents,
+                                                         eventsToRead,
                                                          pInputReadHandleData,
                                                          &pWaiter);
         }
         else
         {
             hr = m->_pApiRoutines->ReadConsoleInputAImpl(pInputBuffer,
-                                                         rgRecords,
-                                                         cRecords,
-                                                         &cRecordsWritten,
+                                                         outEvents,
+                                                         eventsToRead,
                                                          pInputReadHandleData,
                                                          &pWaiter);
         }
@@ -183,10 +180,10 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
 
     // We must return the number of records in the message payload (to alert the client)
     // as well as in the message headers (below in SetReplyInfomration) to alert the driver.
-    LOG_IF_FAILED(SizeTToULong(cRecordsWritten, &a->NumRecords));
+    LOG_IF_FAILED(SizeTToULong(outEvents.size(), &a->NumRecords));
 
     size_t cbWritten;
-    LOG_IF_FAILED(SizeTMult(cRecordsWritten, sizeof(INPUT_RECORD), &cbWritten));
+    LOG_IF_FAILED(SizeTMult(outEvents.size(), sizeof(INPUT_RECORD), &cbWritten));
 
     if (nullptr != pWaiter)
     {
@@ -219,6 +216,22 @@ HRESULT ApiDispatchers::ServerGetConsoleInput(_Inout_ CONSOLE_API_MSG * const m,
             cbWritten = 0;
             hr = S_OK;
         }
+    }
+    else
+    {
+        try
+        {
+            for (size_t i = 0; i < cRecords; ++i)
+            {
+                if (outEvents.empty())
+                {
+                    break;
+                }
+                rgRecords[i] = outEvents.front()->ToInputRecord();
+                outEvents.pop_front();
+            }
+        }
+        CATCH_RETURN();
     }
 
     if (SUCCEEDED(hr))
@@ -716,12 +729,45 @@ HRESULT ApiDispatchers::ServerSetConsoleWindowInfo(_Inout_ CONSOLE_API_MSG * con
 
 HRESULT ApiDispatchers::ServerReadConsoleOutputString(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    RETURN_HR_IF(E_ACCESSDENIED, !m->GetProcessHandle()->GetPolicy().CanReadOutputBuffer());
+
     RETURN_NTSTATUS(SrvReadConsoleOutputString(m, pbReplyPending));
 }
 
-HRESULT ApiDispatchers::ServerWriteConsoleInput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
+HRESULT ApiDispatchers::ServerWriteConsoleInput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
-    RETURN_NTSTATUS(SrvWriteConsoleInput(m, pbReplyPending));
+    PCONSOLE_WRITECONSOLEINPUT_MSG const a = &m->u.consoleMsgL2.WriteConsoleInput;
+
+    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleInput, a->Unicode);
+
+    a->NumRecords = 0;
+
+    RETURN_HR_IF(E_ACCESSDENIED, !m->GetProcessHandle()->GetPolicy().CanWriteInputBuffer());
+
+    INPUT_RECORD* Buffer;
+    ULONG Size;
+    RETURN_IF_FAILED(m->GetInputBuffer((PVOID*)&Buffer, &Size));
+
+    const size_t inputRecordCount = Size / sizeof(INPUT_RECORD);
+
+    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
+    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
+
+    InputBuffer* pInputBuffer;
+    RETURN_IF_FAILED(pObjectHandle->GetInputBuffer(GENERIC_WRITE, &pInputBuffer));
+
+    std::deque<std::unique_ptr<IInputEvent>> events;
+    try
+    {
+        events = IInputEvent::Create(Buffer, inputRecordCount);
+    }
+    CATCH_RETURN();
+
+    size_t eventsWritten;
+    RETURN_IF_FAILED(DoSrvWriteConsoleInput(pInputBuffer, events, eventsWritten, !!a->Unicode, !!a->Append));
+    a->NumRecords = static_cast<ULONG>(eventsWritten);
+
+    return S_OK;
 }
 
 HRESULT ApiDispatchers::ServerWriteConsoleOutput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
@@ -736,6 +782,8 @@ HRESULT ApiDispatchers::ServerWriteConsoleOutputString(_Inout_ CONSOLE_API_MSG *
 
 HRESULT ApiDispatchers::ServerReadConsoleOutput(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const pbReplyPending)
 {
+    RETURN_HR_IF(E_ACCESSDENIED, !m->GetProcessHandle()->GetPolicy().CanReadOutputBuffer());
+
     RETURN_NTSTATUS(SrvReadConsoleOutput(m, pbReplyPending));
 }
 

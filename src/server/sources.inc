@@ -64,6 +64,7 @@ SOURCES= \
     ..\ObjectHeader.cpp \
     ..\ProcessHandle.cpp \
     ..\ProcessList.cpp \
+    ..\ProcessPolicy.cpp \
     ..\WaitBlock.cpp \
     ..\WaitQueue.cpp \
     ..\WinNTControl.cpp \
@@ -72,3 +73,4 @@ INCLUDES= \
     ..; \
     $(ONECORE_SDK_INC_PATH); \
     $(MINWIN_PRIV_SDK_INC_PATH); \
+    $(MINCORE_PRIV_SDK_INC_PATH); \

@@ -15,6 +15,17 @@ MouseEvent::MouseEvent(_In_ const MOUSE_EVENT_RECORD& record) :
 {
 }
 
+MouseEvent::MouseEvent(_In_ const COORD mousePosition,
+                       _In_ const DWORD buttonState,
+                       _In_ const DWORD activeModifierKeys,
+                       _In_ const DWORD eventFlags) :
+    _mousePosition{ mousePosition },
+    _buttonState{ buttonState },
+    _activeModifierKeys{ activeModifierKeys },
+    _eventFlags{ eventFlags }
+{
+}
+
 MouseEvent::~MouseEvent()
 {
 }

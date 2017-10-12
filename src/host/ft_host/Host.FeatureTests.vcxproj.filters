@@ -66,6 +66,9 @@
     <ClCompile Include="API_FileTests.cpp">
       <Filter>Source Files\API</Filter>
     </ClCompile>
+    <ClCompile Include="API_PolicyTests.cpp">
+      <Filter>Source Files\API</Filter>
+    </ClCompile>
     <ClCompile Include="OneCoreDelay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

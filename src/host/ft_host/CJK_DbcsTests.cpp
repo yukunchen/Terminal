@@ -97,10 +97,10 @@ namespace DbcsWriteRead
         // resulted in output that looks like this pattern on the v1 console.
         //
         // All patterns will be documented with their sample before and afters above the comment.
-        // We will use *KI* to represent a Japanese Hiragana character that is romanized and 
+        // We will use *KI* to represent a Japanese Hiragana character that is romanized and
         // no * to represent US ASCII text.
         //
-        // We don't store the Hiragana directly in this file because Visual Studio and Git fight over the 
+        // We don't store the Hiragana directly in this file because Visual Studio and Git fight over the
         // proper encoding of UTF-8.
 
         // 1
@@ -416,7 +416,7 @@ void DbcsWriteRead::SendOutput(_In_ HANDLE const hOut, _In_ unsigned int const u
     }
     case DbcsWriteRead::WriteMode::WriteConsoleOutputFunc:
     {
-        // If we're going to be using WriteConsoleOutput, we need to create up a nice 
+        // If we're going to be using WriteConsoleOutput, we need to create up a nice
         // CHAR_INFO buffer to pass into the method containing the string and possibly attributes
         CHAR_INFO* rgChars = new CHAR_INFO[cChars];
         VERIFY_IS_NOT_NULL(rgChars);
@@ -537,7 +537,7 @@ void DbcsWriteRead::SendOutput(_In_ HANDLE const hOut, _In_ unsigned int const u
 // With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
 // ...
 // Receive Output Table:
-// attr  | wchar  (char) | symbol      
+// attr  | wchar  (char) | symbol
 // ------------------------------------
 // 0x029 | 0x0051 (0x51) | Q
 // 0x029 | 0x3044 (0x44) | Hiragana I
@@ -595,7 +595,7 @@ void DbcsWriteRead::PrepPattern::NullPaddedDedupeW(_In_ unsigned int const uiCod
 // With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
 // ...
 // Receive Output Table:
-// attr  | wchar  (char) | symbol      
+// attr  | wchar  (char) | symbol
 // ------------------------------------
 // 0x029 | 0x0051 (0x51) | Q
 // 0x029 | 0x3044 (0x44) | Hiragana I
@@ -645,7 +645,7 @@ void DbcsWriteRead::PrepPattern::SpacePaddedDedupeW(_In_ unsigned int const uiCo
 // With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
 // ...
 // Receive Output Table:
-// attr  | wchar  (char) | symbol      
+// attr  | wchar  (char) | symbol
 // ------------------------------------
 // 0x029 | 0x0051 (0x51) | Q
 // 0x029 | 0x3044 (0x44) | Hiragana I
@@ -744,7 +744,7 @@ void DbcsWriteRead::PrepPattern::SpacePaddedDedupeTruncatedW(_In_ unsigned int c
 // With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
 // ...
 // Receive Output Table:
-// attr  | wchar  (char) | symbol      
+// attr  | wchar  (char) | symbol
 // ------------------------------------
 // 0x029 | 0x0051 (0x51) | Q
 // 0x129 | 0x0082 (0x82) | Hiragana I Shift-JIS Codepage 932 Lead Byte
@@ -832,7 +832,7 @@ void DbcsWriteRead::PrepPattern::SpacePaddedDedupeA(_In_ unsigned int const uiCo
 // With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
 // ...
 // Receive Output Table:
-// attr  | wchar  (char) | symbol      
+// attr  | wchar  (char) | symbol
 // ------------------------------------
 // 0x029 | 0x0051 (0x51) | Q
 // 0x129 | 0x3044 (0x44) | Hiragana I
@@ -915,7 +915,7 @@ void DbcsWriteRead::PrepPattern::DoubledW(_In_ unsigned int const uiCodePage,
 // With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
 // ...
 // Receive Output Table:
-// attr  | wchar  (char) | symbol      
+// attr  | wchar  (char) | symbol
 // ------------------------------------
 // 0x029 | 0x0051 (0x51) | Q
 // 0x129 | 0x3044 (0x44) | Hiragana I
@@ -963,7 +963,7 @@ void DbcsWriteRead::PrepPattern::DoubledWNegativeOneTrailing(_In_ unsigned int c
 // With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
 // ...
 // Receive Output Table:
-// attr  | wchar  (char) | symbol      
+// attr  | wchar  (char) | symbol
 // ------------------------------------
 // 0x029 | 0x0051 (0x51) | Q
 // 0x129 | 0x3082 (0x82) | Hiragana I Unicode 0x3044 with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
@@ -1038,7 +1038,7 @@ void DbcsWriteRead::PrepPattern::AStompsWNegativeOnePatternTruncateSpacePadded(_
 // With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
 // ...
 // Receive Output Table:
-// attr  | wchar  (char) | symbol      
+// attr  | wchar  (char) | symbol
 // ------------------------------------
 // 0x029 | 0x0051 (0x51) | Q
 // 0x129 | 0x0082 (0x82) | Hiragana I Shift-JIS Codepage 932 Lead Byte
@@ -1098,7 +1098,7 @@ void DbcsWriteRead::PrepPattern::A(_In_ unsigned int const uiCodePage,
 // With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
 // ...
 // Receive Output Table:
-// attr  | wchar  (char) | symbol      
+// attr  | wchar  (char) | symbol
 // ------------------------------------
 // 0x029 | 0x0051 (0x51) | Q
 // 0x129 | 0x3044 (0x44) | Hiragana I
@@ -1156,7 +1156,7 @@ void DbcsWriteRead::PrepPattern::WNullCoverAChar(_In_ unsigned int const uiCodeP
 // With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
 // ...
 // Receive Output Table:
-// attr  | wchar  (char) | symbol      
+// attr  | wchar  (char) | symbol
 // ------------------------------------
 // 0x029 | 0x0051 (0x51) | Q
 // 0x029 | 0x3044 (0x44) | Hiragana I
@@ -1214,7 +1214,7 @@ void DbcsWriteRead::PrepPattern::WSpaceFill(_In_ unsigned int const uiCodePage,
 // With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
 // ...
 // Receive Output Table:
-// attr  | wchar  (char) | symbol      
+// attr  | wchar  (char) | symbol
 // ------------------------------------
 // 0x029 | 0x0051 (0x51) | Q
 // 0x129 | 0x3082 (0x82) | Hiragana I Unicode 0x3044 with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
@@ -1264,7 +1264,7 @@ void DbcsWriteRead::PrepPattern::AOnDoubledWNegativeOneTrailing(_In_ unsigned in
 // With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
 // ...
 // Receive Output Table:
-// attr  | wchar  (char) | symbol      
+// attr  | wchar  (char) | symbol
 // ------------------------------------
 // 0x029 | 0x0051 (0x51) | Q
 // 0x129 | 0x3082 (0x82) | Hiragana I Unicode 0x3044 with the lower byte covered by Shift-JIS Codepage 932 Lead Byte 0x82.
@@ -1309,12 +1309,12 @@ void DbcsWriteRead::PrepPattern::AOnDoubledW(_In_ unsigned int const uiCodePage,
     }
 }
 
-// 12 
+// 12
 // From Input String: "Q(Hiragana I)(Hiragana KA)(Hiragana NA)ZYXWVUT(Hiragana NI)
 // With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
 // ...
 // Receive Output Table:
-// attr  | wchar  (char) | symbol      
+// attr  | wchar  (char) | symbol
 // ------------------------------------
 // 0x029 | 0x0051 (0x51) | Q
 // 0x129 | 0x3044 (0x44) | Hiragana I
@@ -1338,7 +1338,7 @@ void DbcsWriteRead::PrepPattern::AOnDoubledW(_In_ unsigned int const uiCodePage,
 //    will be returned as single copies.
 // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
 // "Truncated" means that this pattern trims off some of the end of the buffer with NULLs.
-// "A Cover Attr" means that after all the other operations, we will finally run through and cover up the attributes 
+// "A Cover Attr" means that after all the other operations, we will finally run through and cover up the attributes
 //     again with what they would have been for multi-byte data (leading and trailing flags)
 void DbcsWriteRead::PrepPattern::ACoverAttrSpacePaddedDedupeTruncatedW(_In_ unsigned int const uiCodePage,
                                                                        _In_ PCSTR pszTestData,
@@ -1389,7 +1389,7 @@ void DbcsWriteRead::PrepPattern::ACoverAttrSpacePaddedDedupeTruncatedW(_In_ unsi
 // With Default Attribute 0x7 (before writing) and Applied Attribute 0x29 (written with text)
 // ...
 // Receive Output Table:
-// attr  | wchar  (char) | symbol      
+// attr  | wchar  (char) | symbol
 // ------------------------------------
 // 0x029 | 0x0000 (0x00) | <null>
 // 0x029 | 0x0000 (0x00) | <null>
@@ -1413,7 +1413,7 @@ void DbcsWriteRead::PrepPattern::ACoverAttrSpacePaddedDedupeTruncatedW(_In_ unsi
 //    will be returned as single copies.
 // "W" means that we intend Unicode data to be browsed in the resulting struct (even though wchar and char are unioned.)
 // "Truncated" means that this pattern trims off some of the end of the buffer with NULLs.
-// "A Cover Attr" means that after all the other operations, we will finally run through and cover up the attributes 
+// "A Cover Attr" means that after all the other operations, we will finally run through and cover up the attributes
 //     again with what they would have been for multi-byte data (leading and trailing flags)
 void DbcsWriteRead::PrepPattern::TrueTypeCharANullWithAttrs(_In_ unsigned int const uiCodePage,
                                                             _In_ PCSTR pszTestData,
@@ -1487,7 +1487,7 @@ void DbcsWriteRead::PrepReadConsoleOutput(_In_ unsigned int const uiCodePage,
                 }
                 else
                 {
-                    // When written with WriteConsoleOutputW and read back with ReadConsoleOutputA under Raster font, we will get the 
+                    // When written with WriteConsoleOutputW and read back with ReadConsoleOutputA under Raster font, we will get the
                     // double-byte sequences stomped on top of a Unicode filled CHAR_INFO structure that used -1 for trailing bytes.
                     DbcsWriteRead::PrepPattern::AStompsWNegativeOnePatternTruncateSpacePadded(uiCodePage, pszTestData, wAttrOriginal, wAttrWritten, rgciExpected, cExpectedNeeded);
                 }
@@ -1768,7 +1768,7 @@ void DbcsWriteRead::RetrieveOutput(_In_ HANDLE const hOut,
 void DbcsWriteRead::Verify(_In_reads_(cExpected) CHAR_INFO* const rgExpected, _In_ size_t const cExpected,
                            _In_reads_(cExpected) CHAR_INFO* const rgActual)
 {
-    // We will walk through for the number of CHAR_INFOs expected. 
+    // We will walk through for the number of CHAR_INFOs expected.
     for (size_t i = 0; i < cExpected; i++)
     {
         // Uncomment these lines for help debugging the verification.
@@ -1801,7 +1801,7 @@ void DbcsWriteRead::TestRunner(_In_ unsigned int const uiCodePage,
 
     WORD const wAttrOriginal = wAttributes;
 
-    // Some tests might want to override the colors applied to ensure both parts of the CHAR_INFO union 
+    // Some tests might want to override the colors applied to ensure both parts of the CHAR_INFO union
     // work for methods that support sending that union. (i.e. not the CRT path)
     if (nullptr != pwAttrOverride)
     {
@@ -2083,7 +2083,7 @@ void WriteStringToInput(HANDLE hIn, PCWSTR pwszString)
         irString[i].Event.KeyEvent.uChar.UnicodeChar = pwszString[i / 2];
         irString[i].Event.KeyEvent.wRepeatCount = 1;
         irString[i].Event.KeyEvent.wVirtualKeyCode = 0;
-        irString[i].Event.KeyEvent.wVirtualKeyCode = 0;
+        irString[i].Event.KeyEvent.wVirtualScanCode = 0;
     }
 
     DWORD dwWritten;

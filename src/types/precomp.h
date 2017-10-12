@@ -16,9 +16,9 @@ Abstract:
 
 #pragma once
 
-#ifndef WIN32_LEAN_AND_MEAN             
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
-#endif 
+#endif
 
 // Windows Header Files:
 #include <windows.h>
@@ -72,6 +72,7 @@ __inline NTSTATUS_FROM_WIN32(long x) { return x <= 0 ? (NTSTATUS)x : (NTSTATUS)(
 
 // private dependencies
 #include "..\host\conddkrefs.h"
+#include <winconp.h>
 
 #include <conmsgl1.h>
 #include <conmsgl2.h>

@@ -25,83 +25,98 @@ class CONSOLE_INFORMATION;
 
 #define UNICODE_DBCS_PADDING 0xffff
 
-ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG NumRecords, _Inout_ PINPUT_RECORD DBCSLeadByte)
+// Routine Description:
+// - converts non-unicode InputEvents to unicode InputEvents
+// Arguments:
+// inEvents - InputEvents to convert
+// partialEvent - on output, will contain a partial dbcs byte char
+// data if the last event in inEvents is a dbcs lead byte
+// Return Value:
+// - inEvents will contain unicode InputEvents
+// - partialEvent may contain a partial dbcs KeyEvent
+void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
+                     _Outref_result_maybenull_ std::unique_ptr<IInputEvent>& partialEvent)
 {
-    ULONG i, j;
-
-    DBGCHARS(("TranslateInputToUnicode\n"));
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    std::deque<std::unique_ptr<IInputEvent>> outEvents;
 
-    INPUT_RECORD AsciiDbcs[2];
-    CHAR Strings[2];
-    if (DBCSLeadByte->Event.KeyEvent.uChar.AsciiChar)
+    while (!inEvents.empty())
     {
-        AsciiDbcs[0] = *DBCSLeadByte;
-        Strings[0] = DBCSLeadByte->Event.KeyEvent.uChar.AsciiChar;
-    }
-    else
-    {
-        ZeroMemory(AsciiDbcs, sizeof(AsciiDbcs));
-    }
-    for (i = j = 0; i < NumRecords; i++)
-    {
-        if (InputRecords[i].EventType == KEY_EVENT)
+        std::unique_ptr<IInputEvent> currentEvent = std::move(inEvents.front());
+        inEvents.pop_front();
+
+        if (currentEvent->EventType() != InputEventType::KeyEvent)
         {
-            if (AsciiDbcs[0].Event.KeyEvent.uChar.AsciiChar)
-            {
-                AsciiDbcs[1] = InputRecords[i];
-                Strings[1] = InputRecords[i].Event.KeyEvent.uChar.AsciiChar;
-
-                WCHAR UnicodeDbcs[2];
-                ULONG NumBytes = sizeof(Strings);
-                NumBytes = ConvertInputToUnicode(gci->CP,
-                                                 &Strings[0],
-                                                 NumBytes,
-                                                 &UnicodeDbcs[0],
-                                                 NumBytes);
-
-                PWCHAR Uni = &UnicodeDbcs[0];
-                while (NumBytes--)
-                {
-                    InputRecords[j] = AsciiDbcs[0];
-                    InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = *Uni++;
-                    j++;
-                }
-                ZeroMemory(AsciiDbcs, sizeof(AsciiDbcs));
-                if (DBCSLeadByte->Event.KeyEvent.uChar.AsciiChar)
-                    ZeroMemory(DBCSLeadByte, sizeof(INPUT_RECORD));
-            }
-            else if (IsDBCSLeadByteConsole(InputRecords[i].Event.KeyEvent.uChar.AsciiChar, &gci->CPInfo))
-            {
-                if (i < NumRecords - 1)
-                {
-                    AsciiDbcs[0] = InputRecords[i];
-                    Strings[0] = InputRecords[i].Event.KeyEvent.uChar.AsciiChar;
-                }
-                else
-                {
-                    *DBCSLeadByte = InputRecords[i];
-                    break;
-                }
-            }
-            else
-            {
-                InputRecords[j] = InputRecords[i];
-                CHAR const c = InputRecords[i].Event.KeyEvent.uChar.AsciiChar;
-                ConvertInputToUnicode(gci->CP,
-                                      &c,
-                                      1,
-                                      &InputRecords[j].Event.KeyEvent.uChar.UnicodeChar,
-                                      1);
-                j++;
-            }
+            outEvents.push_back(std::move(currentEvent));
         }
         else
         {
-            InputRecords[j++] = InputRecords[i];
+            const KeyEvent* const keyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
+
+            wistd::unique_ptr<wchar_t[]> outWChar;
+            size_t size;
+            HRESULT hr;
+
+            // convert char data to unicode
+            if (IsDBCSLeadByteConsole(static_cast<char>(keyEvent->_charData), &gci->CPInfo))
+            {
+                if (inEvents.empty())
+                {
+                    // we ran out of data and have a partial byte leftover
+                    partialEvent = std::move(currentEvent);
+                    break;
+                }
+
+                // get the 2nd byte and convert to unicode
+                const KeyEvent* const keyEventEndByte = static_cast<const KeyEvent* const>(inEvents.front().get());
+                inEvents.pop_front();
+
+                char inBytes[] =
+                {
+                    static_cast<char>(keyEvent->_charData),
+                    static_cast<char>(keyEventEndByte->_charData)
+                };
+                hr = ConvertToW(gci->CP,
+                                inBytes,
+                                ARRAYSIZE(inBytes),
+                                outWChar,
+                                size);
+            }
+            else
+            {
+                char inBytes[] =
+                {
+                    static_cast<char>(keyEvent->_charData)
+                };
+                hr = ConvertToW(gci->CP,
+                                inBytes,
+                                ARRAYSIZE(inBytes),
+                                outWChar,
+                                size);
+            }
+
+            // push unicode key events back out
+            if (SUCCEEDED(hr) && size > 0)
+            {
+                KeyEvent unicodeKeyEvent = *keyEvent;
+                for (size_t i = 0; i < size; ++i)
+                {
+                    unicodeKeyEvent._charData = outWChar[i];
+                    try
+                    {
+                        outEvents.push_back(std::make_unique<KeyEvent>(unicodeKeyEvent));
+                    }
+                    catch (...)
+                    {
+                        LOG_HR(wil::ResultFromCaughtException());
+                    }
+                }
+            }
         }
     }
-    return j;
+
+    inEvents.swap(outEvents);
+    return;
 }
 
 // Routine Description:
@@ -110,109 +125,116 @@ ULONG TranslateInputToUnicode(_Inout_ PINPUT_RECORD InputRecords, _In_ ULONG Num
 //   from the input buffer and in the peek case they are not.
 // Arguments:
 // - pInputBuffer - The input buffer to take records from to return to the client
-// - pRecords - The user buffer given to us to fill with records
-// - pcRecords - On in, the size of the buffer (count of INPUT_RECORD).
-//             - On out, the number of INPUT_RECORDs used.
-// - fIsUnicode - Whether to operate on Unicode characters or convert on the current Input Codepage.
-// - fIsPeek - If this is a peek operation (a.k.a. do not remove characters from the input buffer while copying to client buffer.)
-// - ppWaiter - If we have to wait (not enough data to fill client buffer), this contains context that will allow the server to restore this call later.
+// - outEvents - The storage location to fill with input events
+// - eventReadCount - The number of events to read
+// - pInputReadHandleData - A structure that will help us maintain
+// some input context across various calls on the same input
+// handle. Primarily used to restore the "other piece" of partially
+// returned strings (because client buffer wasn't big enough) on the
+// next call.
+// - IsUnicode - Whether to operate on Unicode characters or convert
+// on the current Input Codepage.
+// - IsPeek - If this is a peek operation (a.k.a. do not remove
+// characters from the input buffer while copying to client buffer.)
+// - ppWaiter - If we have to wait (not enough data to fill client
+// buffer), this contains context that will allow the server to
+// restore this call later.
 // Return Value:
 // - STATUS_SUCCESS - If data was found and ready for return to the client.
-// - CONSOLE_STATUS_WAIT - If we didn't have enough data or needed to block, this will be returned along with context in *ppWaiter.
+// - CONSOLE_STATUS_WAIT - If we didn't have enough data or needed to
+// block, this will be returned along with context in *ppWaiter.
 // - Or an out of memory/math/string error message in NTSTATUS format.
 NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
-                           _Out_writes_(*pcRecords) INPUT_RECORD* const pRecords,
-                           _Inout_ ULONG* const pcRecords,
+                           _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                           _In_ const size_t eventReadCount,
                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
-                           _In_ bool const fIsUnicode,
-                           _In_ bool const fIsPeek,
+                           _In_ bool const IsUnicode,
+                           _In_ bool const IsPeek,
                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
     *ppWaiter = nullptr;
 
+    if (eventReadCount == 0)
+    {
+        return STATUS_SUCCESS;
+    }
+
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    bool fAddDbcsLead = false;
-    DWORD const cRecords = *pcRecords;
-    *pcRecords = 0;
-
-    DIRECT_READ_DATA DirectReadData(pInputBuffer,
-                                    pInputReadHandleData,
-                                    pRecords,
-                                    cRecords,
-                                    fIsPeek);
-
-
-    DWORD nBytesUnicode = cRecords;
-
-    INPUT_RECORD* Buffer = pRecords;
-
-    if (!fIsUnicode)
+    std::deque<std::unique_ptr<IInputEvent>> partialEvents;
+    if (!IsUnicode)
     {
-        // MSFT: 6429490 removed the usage of the ReadConInpNumBytesUnicode variable and the early return when the value was 1.
-        // This resolved an issue with returning DBCS codepages to getc() and ReadConsoleInput.
-        // There is another copy of the same pattern above in the Wait routine, but that usage scenario isn't 100% clear and
-        // doesn't affect the issue, so it's left alone for now.
-
-        // if there is a saved partial byte for a dbcs char,
-        // move it to the buffer.
-        if (pInputBuffer->ReadConInpDbcsLeadByte.Event.KeyEvent.uChar.AsciiChar)
+        if (pInputBuffer->IsReadPartialByteSequenceAvailable())
         {
-            // Saved DBCS Trailing byte
-            *Buffer = pInputBuffer->ReadConInpDbcsLeadByte;
-            if (!fIsPeek)
-            {
-                ZeroMemory(&pInputBuffer->ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
-            }
-
-            nBytesUnicode--;
-            Buffer++;
-            fAddDbcsLead = true;
+            partialEvents.push_back(pInputBuffer->FetchReadPartialByteSequence(IsPeek));
         }
     }
 
-    std::deque<std::unique_ptr<IInputEvent>> outEvents;
-    NTSTATUS Status = pInputBuffer->Read(outEvents,
-                                         nBytesUnicode,
-                                         fIsPeek,
+    size_t amountToRead;
+    if (FAILED(SizeTSub(eventReadCount, partialEvents.size(), &amountToRead)))
+    {
+        return STATUS_INTEGER_OVERFLOW;
+    }
+    std::deque<std::unique_ptr<IInputEvent>> readEvents;
+    NTSTATUS Status = pInputBuffer->Read(readEvents,
+                                         amountToRead,
+                                         IsPeek,
                                          true,
-                                         fIsUnicode);
-    nBytesUnicode = static_cast<DWORD>(outEvents.size());
+                                         IsUnicode);
 
     if (CONSOLE_STATUS_WAIT == Status)
     {
+        assert(readEvents.empty());
         // If we're told to wait until later, move all of our context
-        // from stack into a heap context and send it back up to the
-        // server.
-        *ppWaiter = new DIRECT_READ_DATA(std::move(DirectReadData));
-        if (*ppWaiter == nullptr)
+        // to the read data object and send it back up to the server.
+        try
         {
+            *ppWaiter = new DirectReadData(pInputBuffer,
+                                           pInputReadHandleData,
+                                           eventReadCount,
+                                           std::move(partialEvents));
+        }
+        catch (...)
+        {
+            *ppWaiter = nullptr;
             Status = STATUS_NO_MEMORY;
         }
     }
     else if (NT_SUCCESS(Status))
     {
-        IInputEvent::ToInputRecords(outEvents, Buffer, nBytesUnicode);
-
-        if (!fIsUnicode)
+        // split key events to oem chars if necessary
+        if (!IsUnicode)
         {
-            *pcRecords = TranslateInputToOem(Buffer,
-                                            fAddDbcsLead ? cRecords - 1 : cRecords,
-                                            nBytesUnicode,
-                                            fIsPeek ? nullptr : &pInputBuffer->ReadConInpDbcsLeadByte);
-            if (fAddDbcsLead)
+            LOG_IF_FAILED(SplitToOem(readEvents));
+        }
+
+        // combine partial and readEvents
+        while (!partialEvents.empty())
+        {
+            readEvents.push_front(std::move(partialEvents.back()));
+            partialEvents.pop_back();
+        }
+
+        // move events over
+        for (size_t i = 0; i < eventReadCount; ++i)
+        {
+            if (readEvents.empty())
             {
-                (*pcRecords)++;
-                Buffer--;
+                break;
             }
+            outEvents.push_back(std::move(readEvents.front()));
+            readEvents.pop_front();
         }
-        else
+
+        // store partial event if necessary
+        if (!readEvents.empty())
         {
-            *pcRecords = nBytesUnicode;
+            pInputBuffer->StoreReadPartialByteSequence(std::move(readEvents.front()));
+            readEvents.pop_front();
+            assert(readEvents.empty());
         }
     }
-
     return Status;
 }
 
@@ -221,28 +243,30 @@ NTSTATUS DoGetConsoleInput(_In_ InputBuffer* const pInputBuffer,
 // - The peek version will NOT remove records when it copies them out.
 // - The A version will convert to W using the console's current Input codepage (see SetConsoleCP)
 // Arguments:
-// - pInputBuffer - The input buffer to take records from to return to the client
-// - pRecords - The user buffer given to us to fill with records
-// - cRecords - The size of the buffer (count of INPUT_RECORD).
-// - pcRecordsWritten - The number of INPUT_RECORDs used in the client's buffer.
-// - pInputReadHandleData - A structure that will help us maintain some input context across various calls on the same input handle
-//                        - Primarily used to restore the "other piece" of partially returned strings (because client buffer wasn't big enough) on the next call.
-// - ppWaiter - If we have to wait (not enough data to fill client buffer), this contains context that will allow the server to restore this call later.
+// - pInContext - The input buffer to take records from to return to the client
+// - outEvents - storage location for read events
+// - eventsToRead - The number of input events to read
+// - pInputReadHandleData - A structure that will help us maintain
+// some input context across various calls on the same input
+// handle. Primarily used to restore the "other piece" of partially
+// returned strings (because client buffer wasn't big enough) on the
+// next call.
+// - ppWaiter - If we have to wait (not enough data to fill client
+// buffer), this contains context that will allow the server to
+// restore this call later.
 HRESULT ApiRoutines::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                           _In_ size_t const cRecords,
-                                           _Out_ size_t* const pcRecordsWritten,
+                                           _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                           _In_ size_t const eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
-    ULONG ulRecords;
-    RETURN_IF_FAILED(SizeTToULong(cRecords, &ulRecords));
-
-    HRESULT const hr = DoGetConsoleInput(pInContext, pRecords, &ulRecords, pInputReadHandleData, false, true, ppWaiter);
-
-    *pcRecordsWritten = ulRecords;
-
-    return hr;
+    RETURN_NTSTATUS(DoGetConsoleInput(pInContext,
+                                      outEvents,
+                                      eventsToRead,
+                                      pInputReadHandleData,
+                                      false,
+                                      true,
+                                      ppWaiter));
 }
 
 // Routine Description:
@@ -250,28 +274,30 @@ HRESULT ApiRoutines::PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInCo
 // - The peek version will NOT remove records when it copies them out.
 // - The W version accepts UCS-2 formatted characters (wide characters)
 // Arguments:
-// - pInputBuffer - The input buffer to take records from to return to the client
-// - pRecords - The user buffer given to us to fill with records
-// - cRecords - The size of the buffer (count of INPUT_RECORD).
-// - pcRecordsWritten - The number of INPUT_RECORDs used in the client's buffer.
-// - pInputReadHandleData - A structure that will help us maintain some input context across various calls on the same input handle
-//                        - Primarily used to restore the "other piece" of partially returned strings (because client buffer wasn't big enough) on the next call.
-// - ppWaiter - If we have to wait (not enough data to fill client buffer), this contains context that will allow the server to restore this call later.
+// - pInContext - The input buffer to take records from to return to the client
+// - outEvents - storage location for read events
+// - eventsToRead - The number of input events to read
+// - pInputReadHandleData - A structure that will help us maintain
+// some input context across various calls on the same input
+// handle. Primarily used to restore the "other piece" of partially
+// returned strings (because client buffer wasn't big enough) on the
+// next call.
+// - ppWaiter - If we have to wait (not enough data to fill client
+// buffer), this contains context that will allow the server to
+// restore this call later.
 HRESULT ApiRoutines::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                           _In_ size_t const cRecords,
-                                           _Out_ size_t* const pcRecordsWritten,
+                                           _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                           _In_ size_t const eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
-    ULONG ulRecords;
-    RETURN_IF_FAILED(SizeTToULong(cRecords, &ulRecords));
-
-    HRESULT const hr = DoGetConsoleInput(pInContext, pRecords, &ulRecords, pInputReadHandleData, true, true, ppWaiter);
-
-    *pcRecordsWritten = ulRecords;
-
-    return hr;
+    RETURN_NTSTATUS(DoGetConsoleInput(pInContext,
+                                      outEvents,
+                                      eventsToRead,
+                                      pInputReadHandleData,
+                                      true,
+                                      true,
+                                      ppWaiter));
 }
 
 // Routine Description:
@@ -279,28 +305,30 @@ HRESULT ApiRoutines::PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInCo
 // - The read version WILL remove records when it copies them out.
 // - The A version will convert to W using the console's current Input codepage (see SetConsoleCP)
 // Arguments:
-// - pInputBuffer - The input buffer to take records from to return to the client
-// - pRecords - The user buffer given to us to fill with records
-// - cRecords - The size of the buffer (count of INPUT_RECORD).
-// - pcRecordsWritten - The number of INPUT_RECORDs used in the client's buffer.
-// - pInputReadHandleData - A structure that will help us maintain some input context across various calls on the same input handle
-//                        - Primarily used to restore the "other piece" of partially returned strings (because client buffer wasn't big enough) on the next call.
-// - ppWaiter - If we have to wait (not enough data to fill client buffer), this contains context that will allow the server to restore this call later.
+// - pInContext - The input buffer to take records from to return to the client
+// - outEvents - storage location for read events
+// - eventsToRead - The number of input events to read
+// - pInputReadHandleData - A structure that will help us maintain
+// some input context across various calls on the same input
+// handle. Primarily used to restore the "other piece" of partially
+// returned strings (because client buffer wasn't big enough) on the
+// next call.
+// - ppWaiter - If we have to wait (not enough data to fill client
+// buffer), this contains context that will allow the server to
+// restore this call later.
 HRESULT ApiRoutines::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                           _In_ size_t const cRecords,
-                                           _Out_ size_t* const pcRecordsWritten,
+                                           _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                           _In_ size_t const eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
-    ULONG ulRecords;
-    RETURN_IF_FAILED(SizeTToULong(cRecords, &ulRecords));
-
-    HRESULT const hr = DoGetConsoleInput(pInContext, pRecords, &ulRecords, pInputReadHandleData, false, false, ppWaiter);
-
-    *pcRecordsWritten = ulRecords;
-
-    return hr;
+    RETURN_NTSTATUS(DoGetConsoleInput(pInContext,
+                                      outEvents,
+                                      eventsToRead,
+                                      pInputReadHandleData,
+                                      false,
+                                      false,
+                                      ppWaiter));
 }
 
 // Routine Description:
@@ -308,107 +336,87 @@ HRESULT ApiRoutines::ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInCo
 // - The read version WILL remove records when it copies them out.
 // - The W version accepts UCS-2 formatted characters (wide characters)
 // Arguments:
-// - pInputBuffer - The input buffer to take records from to return to the client
-// - pRecords - The user buffer given to us to fill with records
-// - cRecords - The size of the buffer (count of INPUT_RECORD).
-// - pcRecordsWritten - The number of INPUT_RECORDs used in the client's buffer.
-// - pInputReadHandleData - A structure that will help us maintain some input context across various calls on the same input handle
-//                        - Primarily used to restore the "other piece" of partially returned strings (because client buffer wasn't big enough) on the next call.
-// - ppWaiter - If we have to wait (not enough data to fill client buffer), this contains context that will allow the server to restore this call later.
+// - pInContext - The input buffer to take records from to return to the client
+// - outEvents - storage location for read events
+// - eventsToRead - The number of input events to read
+// - pInputReadHandleData - A structure that will help us maintain
+// some input context across various calls on the same input
+// handle. Primarily used to restore the "other piece" of partially
+// returned strings (because client buffer wasn't big enough) on the
+// next call.
+// - ppWaiter - If we have to wait (not enough data to fill client
+// buffer), this contains context that will allow the server to
+// restore this call later.
 HRESULT ApiRoutines::ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                           _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                           _In_ size_t const cRecords,
-                                           _Out_ size_t* const pcRecordsWritten,
+                                           _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                           _In_ size_t const eventsToRead,
                                            _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                            _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
-    ULONG ulRecords;
-    RETURN_IF_FAILED(SizeTToULong(cRecords, &ulRecords));
-
-    HRESULT const hr = DoGetConsoleInput(pInContext, pRecords, &ulRecords, pInputReadHandleData, true, false, ppWaiter);
-
-    *pcRecordsWritten = ulRecords;
-
-    return hr;
+    RETURN_NTSTATUS(DoGetConsoleInput(pInContext,
+                                      outEvents,
+                                      eventsToRead,
+                                      pInputReadHandleData,
+                                      true,
+                                      false,
+                                      ppWaiter));
 }
 
-
-NTSTATUS SrvWriteConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyPending*/)
+// Routine Description:
+// - Writes events to the input buffer
+// Arguments:
+// - pInputBuffer - the input buffer to write to
+// - events - the events to written
+// - eventsWritten - on output, the number of events written
+// - unicode - true if events are unicode char data
+// - append - true if events should be written to the end of the input
+// buffer, false if they should be written to the front
+// Return Value:
+// - HRESULT indicating success or failure
+HRESULT DoSrvWriteConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
+                               _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                               _Out_ size_t& eventsWritten,
+                               _In_ const bool unicode,
+                               _In_ const bool append)
 {
-    PCONSOLE_WRITECONSOLEINPUT_MSG const a = &m->u.consoleMsgL2.WriteConsoleInput;
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    Telemetry::Instance().LogApiCall(Telemetry::ApiCall::WriteConsoleInput, a->Unicode);
-
-    PINPUT_RECORD Buffer;
-    ULONG Size;
-    NTSTATUS Status = NTSTATUS_FROM_HRESULT(m->GetInputBuffer((PVOID*)&Buffer, &Size));
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    a->NumRecords = Size / sizeof(INPUT_RECORD);
-
-    CONSOLE_INFORMATION *Console;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
-
-    ConsoleHandleData* const HandleData = m->GetObjectHandle();
-    if (HandleData == nullptr)
-    {
-        a->NumRecords = 0;
-        Status = STATUS_INVALID_HANDLE;
-    }
-
-    if (NT_SUCCESS(Status))
-    {
-        InputBuffer* pInputBuffer;
-        if (FAILED(HandleData->GetInputBuffer(GENERIC_WRITE, &pInputBuffer)))
-        {
-            a->NumRecords = 0;
-            Status = STATUS_INVALID_HANDLE;
-        }
-        else
-        {
-            Status = DoSrvWriteConsoleInput(pInputBuffer, a, Buffer);
-        }
-    }
-
-    UnlockConsole();
-    return Status;
-}
-
-NTSTATUS DoSrvWriteConsoleInput(_In_ InputBuffer* pInputBuffer, _Inout_ CONSOLE_WRITECONSOLEINPUT_MSG* pMsg, _In_ INPUT_RECORD* const rgInputRecords)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    if (!pMsg->Unicode)
-    {
-        pMsg->NumRecords = TranslateInputToUnicode(rgInputRecords, pMsg->NumRecords, &pInputBuffer->WriteConInpDbcsLeadByte[0]);
-    }
+    eventsWritten = 0;
 
     try
     {
-        std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(rgInputRecords, pMsg->NumRecords);
-        if (pMsg->Append)
+        // add partial byte event if necessary
+        if (pInputBuffer->IsWritePartialByteSequenceAvailable())
         {
-            pMsg->NumRecords = static_cast<ULONG>(pInputBuffer->Write(inEvents));
+            events.push_front(pInputBuffer->FetchWritePartialByteSequence(false));
         }
-        else
+
+        // convert to unicode if necessary
+        if (!unicode)
         {
-            pMsg->NumRecords = static_cast<ULONG>(pInputBuffer->Prepend(inEvents));
+            std::unique_ptr<IInputEvent> partialEvent;
+            EventsToUnicode(events, partialEvent);
+
+            if (partialEvent.get())
+            {
+                pInputBuffer->StoreWritePartialByteSequence(std::move(partialEvent));
+            }
         }
     }
-    catch (...)
+    CATCH_RETURN();
+
+    // add to InputBuffer
+    if (append)
     {
-        pMsg->NumRecords = 0;
-        Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        eventsWritten = static_cast<ULONG>(pInputBuffer->Write(events));
+    }
+    else
+    {
+        eventsWritten = static_cast<ULONG>(pInputBuffer->Prepend(events));
     }
 
-    return Status;
+    return S_OK;
 }
 
 // Routine Description:
