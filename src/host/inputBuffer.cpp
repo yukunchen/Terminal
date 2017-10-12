@@ -8,6 +8,7 @@
 #include "inputBuffer.hpp"
 #include "dbcs.h"
 #include "stream.h"
+#include "KeyEventHelpers.hpp"
 #include <functional>
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
@@ -771,7 +772,7 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::uniq
                         continue;
                     }
                     else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
-                             (pKeyEvent->_virtualKeyCode == VK_PAUSE || pKeyEvent->IsPauseKey()))
+                             (pKeyEvent->_virtualKeyCode == VK_PAUSE || ::IsPauseKey(*pKeyEvent)))
                     {
                         SetFlag(gci->Flags, CONSOLE_SUSPENDED);
                         continue;

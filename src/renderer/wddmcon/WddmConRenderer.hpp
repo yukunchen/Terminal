@@ -28,7 +28,7 @@ namespace Microsoft
                 // IRenderEngine Members
                 HRESULT Invalidate(const SMALL_RECT* const psrRegion);
                 HRESULT InvalidateSystem(const RECT* const prcDirtyClient);
-                HRESULT InvalidateSelection(SMALL_RECT* const rgsrSelection, UINT const cRectangles);
+                HRESULT InvalidateSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles);
                 HRESULT InvalidateScroll(const COORD* const pcoordDelta);
                 HRESULT InvalidateAll();
 
@@ -40,7 +40,7 @@ namespace Microsoft
                 HRESULT PaintBackground();
                 HRESULT PaintBufferLine(PCWCHAR const pwsLine, const unsigned char* const rgWidths, size_t const cchLine, COORD const coord, bool const fTrimLeft);
                 HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget);
-                HRESULT PaintSelection(SMALL_RECT* const rgsrSelection, UINT const cRectangles);
+                HRESULT PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles);
 
                 HRESULT PaintCursor(COORD const coordCursor, ULONG const ulCursorHeightPercent, bool const fIsDoubleWidth);
                 HRESULT ClearCursor();
@@ -48,6 +48,7 @@ namespace Microsoft
                 HRESULT UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, bool const fIncludeBackgrounds);
                 HRESULT UpdateFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo);
                 HRESULT UpdateDpi(int const iDpi);
+                HRESULT UpdateViewport(_In_ SMALL_RECT const srNewViewport);
 
                 HRESULT GetProposedFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo, int const iDpi);
 

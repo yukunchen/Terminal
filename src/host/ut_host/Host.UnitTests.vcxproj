@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
@@ -6,6 +6,7 @@
     <ClCompile Include="AttrRowTests.cpp" />
     <ClCompile Include="CharRowTests.cpp" />
     <ClCompile Include="ClipboardTests.cpp" />
+    <ClCompile Include="ConsoleArgumentsTests.cpp" />
     <ClCompile Include="DbcsTests.cpp" />
     <ClCompile Include="InitTests.cpp" />
     <ClCompile Include="ScreenBufferTests.cpp" />
@@ -16,11 +17,16 @@
     <ClCompile Include="Utf8ToWideCharParserTests.cpp" />
     <ClCompile Include="InputBufferTests.cpp" />
     <ClCompile Include="ReadWaitTests.cpp" />
+    <ClCompile Include="VtIoTests.cpp" />
+    <ClCompile Include="VtRendererTests.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\renderer\vt\ut_lib\vt.unittest.vcxproj">
+      <Project>{990F2657-8580-4828-943F-5DD657D11843}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\interactivity\base\lib\InteractivityBase.vcxproj">
       <Project>{06ec74cb-9a12-429c-b551-8562ec964846}</Project>
     </ProjectReference>

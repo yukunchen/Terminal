@@ -90,13 +90,6 @@ public:
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;
 
-    bool IsPauseKey() const;
-    bool IsCommandLineEditingKey() const;
-    bool IsCommandLinePopupKey() const;
-
-    const ExtKeySubst* const ParseEditKeyInfo();
-    const ExtKeySubst* const GetKeySubst() const;
-
     int _keyDown;
     WORD _repeatCount;
     WORD _virtualKeyCode;
