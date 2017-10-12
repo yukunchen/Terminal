@@ -200,6 +200,10 @@ void VtRendererTest::VtSequenceHelperTests()
 
     qExpectedInput.push_back("\x1b[H");
     engine->_CursorHome();
+
+    qExpectedInput.push_back("\x1b[8;32;80t");
+    engine->_ResizeWindow(80, 32);
+
 }
 
 void VtRendererTest::Xterm256TestInvalidate()

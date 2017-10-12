@@ -180,8 +180,9 @@ HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 
     // If the viewport has changed, then send a window update.
     // TODO: 13847317(adapter), 13271084(renderer)
-
-    return S_OK;
+    short sWidth = srNewViewport.Right - srNewViewport.Left + 1;
+    short sHeight = srNewViewport.Bottom - srNewViewport.Top + 1;
+    return _ResizeWindow(sWidth, sHeight);
 }
 
 // Method Description:

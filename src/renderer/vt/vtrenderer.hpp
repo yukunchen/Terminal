@@ -121,6 +121,7 @@ protected:
                                          _In_ const bool fIsForeground);
     HRESULT _SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
                                           _In_ const bool fIsForeground);
+    HRESULT _ResizeWindow(_In_ const short sWidth, _In_ const short sHeight);
     
     virtual HRESULT _MoveCursor(_In_ const COORD coord) = 0;
     HRESULT _RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
@@ -129,7 +130,6 @@ protected:
                                          _In_ COLORREF const colorBackground,
                                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                          _In_ const WORD cColorTable);
-
     std::function<bool(const char* const, size_t const)> _pfnTestCallback;
     bool _usingTestCallback;
 
