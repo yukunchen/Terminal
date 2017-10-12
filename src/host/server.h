@@ -22,6 +22,7 @@ Revision History:
 
 #include "conimeinfo.h"
 #include "..\terminal\adapter\MouseInput.hpp"
+#include "VtIo.hpp"
 
 #include "..\server\ProcessList.h"
 #include "..\server\WaitQueue.h"
@@ -107,9 +108,14 @@ public:
     bool IsConsoleLocked() const;
     ULONG GetCSRecursionCount();
 
+    Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
+    
     static void HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
+
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
+    
+    Microsoft::Console::VirtualTerminal::VtIo _vtIo;
 };
 
 #define ConsoleLocked() (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)

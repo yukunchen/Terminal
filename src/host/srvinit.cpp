@@ -25,6 +25,12 @@
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
+HRESULT UseVtPipe(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode)
+{
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return gci->GetVtIo()->Initialize(InPipeName, OutPipeName, VtMode);
+}
+
 HRESULT ConsoleServerInitialization(_In_ HANDLE Server)
 {
     try
@@ -487,6 +493,12 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     else
     {
         gci->Flags |= CONSOLE_NO_WINDOW;
+    }
+
+    // Potentially start the VT IO (if needed)
+    if (NT_SUCCESS(Status))
+    {
+        gci->GetVtIo()->StartIfNeeded();
     }
 
     return Status;

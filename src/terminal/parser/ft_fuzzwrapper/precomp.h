@@ -17,3 +17,7 @@ Abstract:
 
 #include <stdlib.h>
 #include <stdio.h>
+
+// WIL
+#include <wil\Common.h>
+#include <wil\Result.h>

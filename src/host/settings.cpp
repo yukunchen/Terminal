@@ -5,7 +5,7 @@
 ********************************************************/
 
 #include "precomp.h"
-
+#include "..\inc\conattrs.hpp"
 #include "settings.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
@@ -922,24 +922,6 @@ WORD Settings::GenerateLegacyAttributes(_In_ const TextAttribute attributes) con
     return wCompleteAttr;
 }
 
-
-//Routine Description:
-// Finds the "distance" between a given HSL color and an RGB color, using the HSL color space.
-//   This function is designed such that the caller would convert one RGB color to HSL ahead of time,
-//   then compare many RGB colors to that first color.
-//Arguments:
-// - phslColorA - a pointer to the first color, as a HSL color.
-// - rgbColorB - The second color to compare, in RGB color.
-// Return value:
-// The "distance" between the two.
-double Settings::s_FindDifference(_In_ const _HSL* const phslColorA, _In_ const COLORREF rgbColorB)
-{
-    const _HSL hslColorB = _HSL(rgbColorB);
-    return sqrt( pow((hslColorB.h - phslColorA->h), 2) +
-                 pow((hslColorB.s - phslColorA->s), 2) +
-                 pow((hslColorB.l - phslColorA->l), 2) );
-}
-
 //Routine Description:
 // For a given RGB color Color, finds the nearest color from the array ColorTable, and returns the index of that match.
 //Arguments:
@@ -950,17 +932,5 @@ double Settings::s_FindDifference(_In_ const _HSL* const phslColorA, _In_ const 
 // The index in ColorTable of the nearest match to Color.
 WORD Settings::FindNearestTableIndex(_In_ COLORREF const Color) const
 {
-    const _HSL hslColor = _HSL(Color);
-    WORD closest = 0;
-    double minDiff = s_FindDifference(&hslColor, _ColorTable[0]);
-    for (WORD i = 1; i < ARRAYSIZE(_ColorTable); i++)
-    {
-        double diff = s_FindDifference(&hslColor, _ColorTable[i]);
-        if (diff < minDiff)
-        {
-            minDiff = diff;
-            closest = i;
-        }
-    }
-    return closest;
+    return ::FindNearestTableIndex(Color, _ColorTable, ARRAYSIZE(_ColorTable));
 }

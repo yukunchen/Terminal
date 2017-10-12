@@ -1,0 +1,155 @@
+/*++
+Copyright (c) Microsoft Corporation
+
+Module Name:
+- InputStateMachineEngine.hpp
+
+Abstract:
+- This is the implementation of the client VT input state machine engine.
+    This generates InpueEvents from a stream of VT sequences emmited by a 
+    client "terminal" application.
+
+Author(s): 
+- Mike Griese (migrie) 18 Aug 2017
+--*/
+#pragma once
+
+#include "telemetry.hpp"
+#include "IStateMachineEngine.hpp"
+#include <functional>
+#include "../../types/inc/IInputEvent.hpp"
+
+namespace Microsoft
+{
+    namespace Console
+    {
+        namespace VirtualTerminal
+        {
+            class InputStateMachineEngine;
+            struct CSI_TO_VKEY;
+            struct GENERIC_TO_VKEY;
+        }
+    }
+}
+
+class Microsoft::Console::VirtualTerminal::InputStateMachineEngine : public IStateMachineEngine
+{
+public:
+    InputStateMachineEngine(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
+
+    bool ActionExecute(_In_ wchar_t const wch) override;
+    bool ActionPrint(_In_ wchar_t const wch) override;
+    bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch) override;
+    bool ActionEscDispatch(_In_ wchar_t const wch,
+                           _In_ const unsigned short cIntermediate,
+                           _In_ const wchar_t wchIntermediate) override;
+    bool ActionCsiDispatch(_In_ wchar_t const wch, 
+                           _In_ const unsigned short cIntermediate,
+                           _In_ const wchar_t wchIntermediate,
+                           _In_ const unsigned short* const rgusParams,
+                           _In_ const unsigned short cParams);
+    bool ActionClear() override;
+    bool ActionIgnore() override;
+    bool ActionOscDispatch(_In_ wchar_t const wch,
+                           _In_ const unsigned short sOscParam,
+                           _Inout_ wchar_t* const pwchOscStringBuffer,
+                           _In_ const unsigned short cchOscString) override;
+    
+    // TODO: MSFT:13420038
+    // bool ActionSs3Dispatch(_In_ wchar_t const wch) override;
+    
+    bool FlushAtEndOfString() const override;
+
+private:
+    
+    std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteEvents;
+
+    enum CsiActionCodes : wchar_t
+    {
+        ArrowUp = L'A',
+        ArrowDown = L'B',
+        ArrowRight = L'C',
+        ArrowLeft = L'D',
+        Home = L'H',
+        End = L'F',
+        Generic = L'~', // Used for a whole bunch of possible keys
+        F1 = L'P',
+        F2 = L'Q',
+        F3 = L'R',
+        F4 = L'S',
+    };
+
+    // todo MSFT:13420038
+    // enum class Ss3ActionCodes : wchar_t
+    // {
+    //     // The "Cursor Keys" are sometimes sent as a Ss3 in "application mode"
+    //     //  But for now we'll only accept them as Normal Mode sequences, as CSI's.
+    //     // ArrowUp = L'A',
+    //     // ArrowDown = L'B',
+    //     // ArrowRight = L'C',
+    //     // ArrowLeft = L'D',
+    //     // Home = L'H',
+    //     // End = L'F',
+    //     F1 = L'P',
+    //     F2 = L'Q',
+    //     F3 = L'R',
+    //     F4 = L'S',
+    // };
+
+    // Sequences ending in '~' use these numbers as identifiers.
+    enum GenericKeyIdentifiers : unsigned short
+    {
+        Insert = 2,
+        Delete = 3,
+        Prior = 5, //PgUp
+        Next = 6, //PgDn
+        F5 = 15,
+        F6 = 17,
+        F7 = 18,
+        F8 = 19,
+        F9 = 20,
+        F10 = 21,
+        F11 = 23,
+        F12 = 24,
+    };
+
+    struct CSI_TO_VKEY {
+        CsiActionCodes Action;
+        short vkey;
+    };
+
+    struct GENERIC_TO_VKEY {
+        GenericKeyIdentifiers Identifier;
+        short vkey;
+    };
+
+    static const CSI_TO_VKEY s_rgCsiMap[];
+    static const GENERIC_TO_VKEY s_rgGenericMap[];
+
+
+    DWORD _GetCursorKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams);
+    DWORD _GetGenericKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams);
+    bool _GenerateKeyFromChar(_In_ const wchar_t wch, _Out_ short* const pVkey, _Out_ DWORD* const pdwModifierState);
+
+    bool _IsModified(_In_ const unsigned short cParams);
+    DWORD _GetModifier(_In_ const unsigned short modifierParam);
+
+    bool _GetGenericVkey(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ short* const pVkey) const;
+    bool _GetCursorKeysVkey(_In_ const wchar_t wch, _Out_ short* const pVkey) const;
+
+    bool _WriteSingleKey(_In_ const short vkey, _In_ const DWORD dwModifierState);
+    bool _WriteSingleKey(_In_ const wchar_t wch, _In_ const short vkey, _In_ const DWORD dwModifierState);
+
+    size_t _GenerateWrappedSequence(_In_ const wchar_t wch,
+                                    _In_ const short vkey,
+                                    _In_ const DWORD dwModifierState,
+                                    _Inout_updates_(cInput) INPUT_RECORD* rgInput,
+                                    _In_ const size_t cInput);
+    
+    size_t _GetSingleKeypress(_In_ const wchar_t wch,
+                              _In_ const short vkey,
+                              _In_ const DWORD dwModifierState,
+                              _Inout_updates_(cRecords) INPUT_RECORD* const rgInput,
+                              _In_ const size_t cRecords);
+
+};

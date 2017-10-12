@@ -24,7 +24,7 @@ __stdcall
 OneCoreDelay::IsGetSystemMetricsPresent()
 {
 #ifdef __INSIDE_WINDOWS
-    return ::IsGetSystemMetricsPresent()
+    return ::IsGetSystemMetricsPresent();
 #else
     return true;
 #endif
@@ -35,7 +35,7 @@ __stdcall
 OneCoreDelay::IsPostMessageWPresent()
 {
 #ifdef __INSIDE_WINDOWS
-    return ::IsPostMessageWPresent()
+    return ::IsPostMessageWPresent();
 #else
     return true;
 #endif
@@ -46,7 +46,7 @@ __stdcall
 OneCoreDelay::IsSendMessageWPresent()
 {
 #ifdef __INSIDE_WINDOWS
-    return ::IsSendMessageWPresent()
+    return ::IsSendMessageWPresent();
 #else
     return true;
 #endif

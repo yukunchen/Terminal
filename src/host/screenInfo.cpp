@@ -11,6 +11,7 @@
 #include "output.h"
 #include <math.h>
 #include "..\interactivity\inc\ServiceLocator.hpp"
+#include "..\terminal\parser\OutputStateMachineEngine.hpp"
 
 #pragma hdrstop
 
@@ -260,8 +261,18 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
     if (NT_SUCCESS(status))
     {
         ASSERT(_pStateMachine == nullptr);
-        _pStateMachine = new StateMachine(_pAdapter);
-        status = NT_TESTNULL(_pStateMachine);
+        OutputStateMachineEngine* pEngine = new OutputStateMachineEngine(_pAdapter);
+        status = NT_TESTNULL(pEngine);
+        if (NT_SUCCESS(status))
+        {
+            _pStateMachine = new StateMachine(std::move(std::unique_ptr<IStateMachineEngine>(pEngine)));
+            status = NT_TESTNULL(_pStateMachine);
+            if (!NT_SUCCESS(status))
+            {
+                // If we failed to instantiate the StateMachine, but succeeded in creating an engine, delete the engine.
+                delete pEngine;
+            }
+        }
     }
 
     if (!NT_SUCCESS(status))

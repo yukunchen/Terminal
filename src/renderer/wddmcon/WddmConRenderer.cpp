@@ -170,7 +170,7 @@ HRESULT WddmConEngine::InvalidateSystem(const RECT* const prcDirtyClient)
     return S_OK;
 }
 
-HRESULT WddmConEngine::InvalidateSelection(SMALL_RECT* const rgsrSelection, UINT const cRectangles)
+HRESULT WddmConEngine::InvalidateSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles)
 {
     UNREFERENCED_PARAMETER(rgsrSelection);
     UNREFERENCED_PARAMETER(cRectangles);
@@ -268,7 +268,7 @@ HRESULT WddmConEngine::PaintBufferGridLines(GridLines const lines, COLORREF cons
     return S_OK;
 }
 
-HRESULT WddmConEngine::PaintSelection(SMALL_RECT* const rgsrSelection, UINT const cRectangles)
+HRESULT WddmConEngine::PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles)
 {
     UNREFERENCED_PARAMETER(rgsrSelection);
     UNREFERENCED_PARAMETER(cRectangles);
@@ -321,6 +321,18 @@ HRESULT WddmConEngine::UpdateDpi(int const iDpi)
 {
     UNREFERENCED_PARAMETER(iDpi);
 
+    return S_OK;
+}
+              
+// Method Description:
+// - This method will update our internal reference for how big the viewport is.
+//      Does nothing for WDDMCon.
+// Arguments:
+// - srNewViewport - The bounds of the new viewport.
+// Return Value:
+// - HRESULT S_OK  
+HRESULT WddmConEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
+{
     return S_OK;
 }
 
