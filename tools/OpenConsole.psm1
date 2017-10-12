@@ -91,15 +91,18 @@ function Invoke-OpenConsoleTests()
         [switch]$FTOnly,
 
         [parameter(Mandatory=$false)]
+        [ValidateSet('host', 'interactivityWin32', 'terminal', 'adapter', 'feature', 'uia')]
         [string]$Test,
 
         [parameter(Mandatory=$false)]
         [string]$TaefArgs,
 
         [parameter(Mandatory=$false)]
+        [ValidateSet('x64', 'x86')]
         [string]$Platform = "x64",
 
         [parameter(Mandatory=$false)]
+        [ValidateSet('Debug', 'Release')]
         [string]$Configuration = "Debug"
 
     )
