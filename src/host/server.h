@@ -95,8 +95,6 @@ public:
     CPINFO CPInfo;
     CPINFO OutputCPInfo;
 
-    DWORD ReadConInpNumBytesUnicode;
-
     COOKED_READ_DATA* lpCookedReadData;
 
     ConsoleImeInfo ConsoleIme;
@@ -109,6 +107,7 @@ public:
     bool IsConsoleLocked() const;
     ULONG GetCSRecursionCount();
 
+    static void HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
 };

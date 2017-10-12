@@ -823,7 +823,15 @@ NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
 {
     if (!IsFlagSet(pScreenInfo->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) || !IsFlagSet(pScreenInfo->OutputMode, ENABLE_PROCESSED_OUTPUT))
     {
-        return WriteCharsLegacy(pScreenInfo, pwchBufferBackupLimit, pwchBuffer, pwchRealUnicode, pcb, pcSpaces, sOriginalXPosition, dwFlags, psScrollY);
+        return WriteCharsLegacy(pScreenInfo,
+                                pwchBufferBackupLimit,
+                                pwchBuffer,
+                                pwchRealUnicode,
+                                pcb,
+                                pcSpaces,
+                                sOriginalXPosition,
+                                dwFlags,
+                                psScrollY);
     }
 
     NTSTATUS Status = STATUS_SUCCESS;
@@ -1133,7 +1141,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
 
         // Start by counting the number of A bytes we used in printing our W string to the screen.
         LOG_IF_FAILED(GetALengthFromW(uiCodePage, pwchBuffer, cchBufferRead, &cchTextBufferRead));
-        
+
         // If we captured a byte off the string this time around up above, it means we didn't feed
         // it into the WriteConsoleW above, and therefore its consumption isn't accounted for
         // in the count we just made. Add +1 to compensate.

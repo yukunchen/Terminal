@@ -43,6 +43,24 @@ std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(_In_reads_(cRecords
     return outEvents;
 }
 
+
+// Routine Description:
+// - Converts std::deque<INPUT_RECORD> to std::deque<std::unique_ptr<IInputEvent>>
+// Arguments:
+// - inRecords - records to convert
+// Return Value:
+// - std::deque of IInputEvents on success. Will throw exception on failure.
+std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(_In_ const std::deque<INPUT_RECORD>& records)
+{
+    std::deque<std::unique_ptr<IInputEvent>> outEvents;
+    for (size_t i = 0; i < records.size(); ++i)
+    {
+        std::unique_ptr<IInputEvent> event = IInputEvent::Create(records[i]);
+        outEvents.push_back(std::move(event));
+    }
+    return outEvents;
+}
+
 HRESULT IInputEvent::ToInputRecords(_In_ const std::deque<std::unique_ptr<IInputEvent>>& events,
                                     _Out_writes_(cRecords) INPUT_RECORD* const Buffer,
                                     _In_ const size_t cRecords)

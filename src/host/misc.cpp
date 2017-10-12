@@ -202,6 +202,57 @@ int ConvertToOem(_In_ const UINT uiCodePage,
     return LOG_IF_WIN32_BOOL_FALSE(WideCharToMultiByte(uiCodePage, 0, pwchSource, cchSource, pchTarget, cchTarget, nullptr, nullptr));
 }
 
+// Routine Description:
+// - Converts unicode characters to ANSI given a destination codepage
+// Arguments:
+// - codepage - codepage for use in conversion
+// - source - the string to convert
+// Return Value:
+// - returns a deque of converted chars
+// Note:
+// - will throw on error
+std::deque<char> ConvertToOem(_In_ const UINT codepage,
+                              _In_ const std::wstring& source)
+{
+    std::deque<char> outChars;
+    // no point in trying to convert an empty string
+    if (source == L"")
+    {
+        return outChars;
+    }
+
+    int bufferSize = WideCharToMultiByte(codepage,
+                                         0,
+                                         source.c_str(),
+                                         static_cast<int>(source.size()),
+                                         nullptr,
+                                         0,
+                                         nullptr,
+                                         nullptr);
+    THROW_LAST_ERROR_IF(bufferSize == 0);
+
+    std::unique_ptr<char[]> convertedChars = std::make_unique<char[]>(bufferSize);
+    THROW_IF_NULL_ALLOC(convertedChars);
+
+    bufferSize = WideCharToMultiByte(codepage,
+                                     0,
+                                     source.c_str(),
+                                     static_cast<int>(source.size()),
+                                     convertedChars.get(),
+                                     bufferSize,
+                                     nullptr,
+                                     nullptr);
+    THROW_LAST_ERROR_IF(bufferSize == 0);
+
+    for (int i = 0; i < bufferSize; ++i)
+    {
+        outChars.push_back(convertedChars[i]);
+    }
+
+    return outChars;
+}
+
+
 // Data in the output buffer is the true unicode value.
 int ConvertInputToUnicode(_In_ const UINT uiCodePage,
                           _In_reads_(cchSource) const CHAR * const pchSource,
@@ -423,131 +474,54 @@ BOOL CheckBisectProcessW(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     }
 }
 
-// Routine Descriptions:
-// - Converts key event records' unicode char to the current code
-// page.
+
+// Routine Description:
+// - Converts all key events in the deque to the oem char data and adds
+// them back to events.
 // Arguments:
-// - InputRecords - On input, the input records to convert. on output,
-// the converted input records.
-// - NumRecords - The max number of input records that oculd fit in InputRecords
-// - UnicodeLength - The number of stored INPUT_RECORDs in InputRecords
-// - DbcsLeadInputRecord - if peeking, this is nullptr. otherwise, it is
-// the memory location where we should store any partial dbcs byte
-// sequences if necessary.
-// Return Value:
-// - 0 if a problem occured. On success, the number of records stored
-// in InputRecords upon completion.
-ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
-                          _In_ const ULONG NumRecords,    // in : ASCII byte count
-                          _In_ const ULONG UnicodeLength, // in : Number of events (char count)
-                          _Inout_opt_ PINPUT_RECORD DbcsLeadInputRecord)
+// - events - on input the IInputEvents to convert. on output, the
+// converted input events
+// ReturnValue:
+// - HRESULT indicating success or error.
+HRESULT SplitToOem(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
 {
-    DBGCHARS(("TranslateInputToOem\n"));
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-
-    ASSERT(NumRecords >= UnicodeLength);
-    __analysis_assume(NumRecords >= UnicodeLength);
-
-    ULONG NumBytes;
-    if (FAILED(DWordMult(NumRecords, sizeof(INPUT_RECORD), &NumBytes)))
+    const UINT codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->CP;
+    try
     {
-        return 0;
-    }
-
-    PINPUT_RECORD const TmpInpRec = (PINPUT_RECORD) new BYTE[NumBytes];
-    if (TmpInpRec == nullptr)
-    {
-        return 0;
-    }
-
-    // copy input data to a temp storage buffer so we can begin to
-    // overwrite InputRecords with converted data
-    memmove(TmpInpRec, InputRecords, NumBytes);
-    BYTE AsciiDbcs[2] = { 0 };
-    ULONG i, j;
-    for (i = 0, j = 0; i < UnicodeLength; i++, j++)
-    {
-        if (TmpInpRec[i].EventType == KEY_EVENT)
+        // convert events to oem codepage
+        std::deque<std::unique_ptr<IInputEvent>> convertedEvents;
+        while (!events.empty())
         {
-            if (IsCharFullWidth(TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar))
+            std::unique_ptr<IInputEvent> currentEvent = std::move(events.front());
+            events.pop_front();
+            if (currentEvent->EventType() == InputEventType::KeyEvent)
             {
-                NumBytes = sizeof(AsciiDbcs);
-                ConvertToOem(gci->CP,
-                             &TmpInpRec[i].Event.KeyEvent.uChar.UnicodeChar,
-                             1,
-                             (LPSTR)& AsciiDbcs[0],
-                             NumBytes);
-                if (IsDBCSLeadByteConsole(AsciiDbcs[0], &gci->CPInfo))
+                const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
+                // convert from wchar to char
+                std::wstring wstr{ pKeyEvent->_charData };
+                std::deque<char> chars = ConvertToOem(codepage, wstr);
+
+                while (!chars.empty())
                 {
-                    if (j < NumRecords - 1)
-                    {   // -1 is safe DBCS in buffer
-                        InputRecords[j] = TmpInpRec[i];
-                        InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
-                        InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[0];
-                        j++;
-                        InputRecords[j] = TmpInpRec[i];
-                        InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
-                        InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[1];
-                        AsciiDbcs[1] = 0;
-                    }
-                    else if (j == NumRecords - 1)
-                    {
-                        InputRecords[j] = TmpInpRec[i];
-                        InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
-                        InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[0];
-                        j++;
-                        break;
-                    }
-                    else
-                    {
-                        AsciiDbcs[1] = 0;
-                        break;
-                    }
-                }
-                else
-                {
-                    InputRecords[j] = TmpInpRec[i];
-                    InputRecords[j].Event.KeyEvent.uChar.UnicodeChar = 0;
-                    InputRecords[j].Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[0];
-                    AsciiDbcs[1] = 0;
+                    std::unique_ptr<KeyEvent> tempEvent = std::make_unique<KeyEvent>(*pKeyEvent);
+                    tempEvent->_charData = chars.front();
+                    chars.pop_front();
+                    convertedEvents.push_back(std::move(tempEvent));
                 }
             }
             else
             {
-                InputRecords[j] = TmpInpRec[i];
-
-                // We have to use a temporary local for the converted value.
-                // We cannot give it the other part of the union as the destination as the conversion
-                // function will determine that both the source and destination are the same memory region and fail.
-                char chConverted;
-                ConvertToOem(gci->CP,
-                             &InputRecords[j].Event.KeyEvent.uChar.UnicodeChar,
-                             1,
-                             &chConverted,
-                             1);
-
-                InputRecords[j].Event.KeyEvent.uChar.AsciiChar = chConverted;
+                convertedEvents.push_back(std::move(currentEvent));
             }
         }
-    }
-    // if we were given a place to store any possible partial dbcs
-    // sequences, check if we need to store anything in it
-    if (DbcsLeadInputRecord)
-    {
-        // there is a partial that needs to be stored
-        if (AsciiDbcs[1])
+        // move all events back
+        while (!convertedEvents.empty())
         {
-            ASSERT(i < UnicodeLength);
-            __analysis_assume(i < UnicodeLength);
+            events.push_back(std::move(convertedEvents.front()));
+            convertedEvents.pop_front();
+        }
+    }
+    CATCH_RETURN();
 
-            *DbcsLeadInputRecord = TmpInpRec[i];
-            DbcsLeadInputRecord->Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[1];
-        }
-        else
-        {
-            ZeroMemory(DbcsLeadInputRecord, sizeof(INPUT_RECORD));
-        }
-    }
-    delete[] TmpInpRec;
-    return j;
+    return S_OK;
 }

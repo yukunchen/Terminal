@@ -117,10 +117,13 @@ bool HandleTerminalMouseEvent(_In_ const COORD cMousePosition, _In_ const unsign
     return fWasHandled;
 }
 
-void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam, _Inout_opt_ PBOOL pfUnlockConsole)
+void HandleKeyEvent(_In_ const HWND hWnd,
+                    _In_ const UINT Message,
+                    _In_ const WPARAM wParam,
+                    _In_ const LPARAM lParam,
+                    _Inout_opt_ PBOOL pfUnlockConsole)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    BOOL bGenerateBreak = FALSE;
 
     // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(lParam) is a character
     WORD VirtualKeyCode = LOWORD(wParam);
@@ -137,10 +140,11 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
         Telemetry::Instance().SetUserInteractive();
     }
 
-    // Make sure we retrieve the key info first, or we could chew up unneeded space in the key info table if we bail out early.
-    INPUT_RECORD InputEvent;
-    InputEvent.Event.KeyEvent.wVirtualKeyCode = VirtualKeyCode;
-    InputEvent.Event.KeyEvent.wVirtualScanCode = (BYTE)(HIWORD(lParam));
+    // Make sure we retrieve the key info first, or we could chew up
+    // unneeded space in the key info table if we bail out early.
+    KeyEvent keyEvent;
+    keyEvent._virtualKeyCode = VirtualKeyCode;
+    keyEvent._virtualScanCode = static_cast<BYTE>(HIWORD(lParam));
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
     {
         // --- START LOAD BEARING CODE ---
@@ -155,33 +159,32 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
         //       Most notably this affects Ctrl-C, Ctrl-Break, and Pause/Break among others.
         //
         RetrieveKeyInfo(hWnd,
-                        &InputEvent.Event.KeyEvent.wVirtualKeyCode,
-                        &InputEvent.Event.KeyEvent.wVirtualScanCode,
+                        &keyEvent._virtualKeyCode,
+                        &keyEvent._virtualScanCode,
                         !gci->pInputBuffer->fInComposition);
 
-        VirtualKeyCode = InputEvent.Event.KeyEvent.wVirtualKeyCode;
+        VirtualKeyCode = keyEvent._virtualKeyCode;
         // --- END LOAD BEARING CODE ---
     }
 
-    InputEvent.EventType = KEY_EVENT;
-    InputEvent.Event.KeyEvent.bKeyDown = bKeyDown;
-    InputEvent.Event.KeyEvent.wRepeatCount = LOWORD(lParam);
+    keyEvent._keyDown = bKeyDown;
+    keyEvent._repeatCount = LOWORD(lParam);
 
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
     {
         // If this is a fake character, zero the scancode.
         if (lParam & 0x02000000)
         {
-            InputEvent.Event.KeyEvent.wVirtualScanCode = 0;
+            keyEvent._virtualScanCode = 0;
         }
-        InputEvent.Event.KeyEvent.dwControlKeyState = GetControlKeyState(lParam);
+        keyEvent._activeModifierKeys = GetControlKeyState(lParam);
         if (Message == WM_CHAR || Message == WM_SYSCHAR)
         {
-            InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)wParam;
+            keyEvent._charData = static_cast<wchar_t>(wParam);
         }
         else
         {
-            InputEvent.Event.KeyEvent.uChar.UnicodeChar = (WCHAR)0;
+            keyEvent._charData = 0;
         }
     }
     else
@@ -191,8 +194,8 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
         {
             return;
         }
-        InputEvent.Event.KeyEvent.dwControlKeyState = ControlKeyState;
-        InputEvent.Event.KeyEvent.uChar.UnicodeChar = 0;
+        keyEvent._activeModifierKeys = ControlKeyState;
+        keyEvent._charData = 0;
     }
 
     const INPUT_KEY_INFO inputKeyInfo(VirtualKeyCode, ControlKeyState);
@@ -391,6 +394,7 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
         return;
     }
 
+    bool generateBreak = false;
     // ignore key strokes that will generate CHAR messages. this is only necessary while a dialog box is up.
     if (ServiceLocator::LocateGlobals()->uiDialogBoxCount != 0)
     {
@@ -416,13 +420,12 @@ void HandleKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const WP
             // remember to generate break
             if (Message == WM_CHAR)
             {
-                bGenerateBreak = TRUE;
+                generateBreak = true;
             }
         }
     }
 
-    // N.B.: This call passes InputEvent by value.
-    HandleGenericKeyEvent(InputEvent, bGenerateBreak);
+    HandleGenericKeyEvent(keyEvent, generateBreak);
 }
 
 // Routine Description:
@@ -516,7 +519,10 @@ BOOL HandleSysKeyEvent(_In_ const HWND hWnd, _In_ const UINT Message, _In_ const
 
 // Routine Description:
 // - Returns TRUE if DefWindowProc should be called.
-BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ const UINT Message, _In_ const WPARAM wParam, _In_ const LPARAM lParam)
+BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
+                      _In_ const UINT Message,
+                      _In_ const WPARAM wParam,
+                      _In_ const LPARAM lParam)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     if (Message != WM_MOUSEMOVE)
@@ -819,9 +825,6 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
         return TRUE;
     }
 
-    INPUT_RECORD InputEvent;
-    InputEvent.Event.MouseEvent.dwControlKeyState = GetControlKeyState(0);
-
     ULONG ButtonFlags;
     ULONG EventFlags;
     switch (Message)
@@ -878,15 +881,15 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION * const pScreenInfo, _In_ co
         break;
     }
 
-    InputEvent.EventType = MOUSE_EVENT;
-    InputEvent.Event.MouseEvent.dwMousePosition = MousePosition;
-    InputEvent.Event.MouseEvent.dwEventFlags = EventFlags;
-    InputEvent.Event.MouseEvent.dwButtonState = ConvertMouseButtonState(ButtonFlags, (UINT)wParam);
-
     ULONG EventsWritten = 0;
     try
     {
-        EventsWritten = static_cast<ULONG>(gci->pInputBuffer->Write(IInputEvent::Create(InputEvent)));
+        std::unique_ptr<MouseEvent> mouseEvent = std::make_unique<MouseEvent>(
+            MousePosition,
+            ConvertMouseButtonState(ButtonFlags, static_cast<UINT>(wParam)),
+            GetControlKeyState(0),
+            EventFlags);
+        EventsWritten = static_cast<ULONG>(gci->pInputBuffer->Write(std::move(mouseEvent)));
     }
     catch(...)
     {

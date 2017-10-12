@@ -32,7 +32,8 @@ public:
                 _In_ BOOLEAN const fIsUnicode,
                 _Out_ NTSTATUS* const pReplyStatus,
                 _Out_ DWORD* const pNumBytes,
-                _Out_ DWORD* const pControlKeyState);
+                _Out_ DWORD* const pControlKeyState,
+                _Out_ void* const pOutputData);
 
 private:
     SCREEN_INFORMATION* const _psiContext;

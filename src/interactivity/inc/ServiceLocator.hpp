@@ -14,8 +14,9 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\IInteractivityFactory.hpp"
-#include "..\inc\IConsoleWindow.hpp"
+#include "IInteractivityFactory.hpp"
+#include "IConsoleWindow.hpp"
+#include "../../host/globals.h"
 
 #pragma hdrstop
 
@@ -67,7 +68,7 @@ namespace Microsoft
                 {
                     return static_cast<T*>(LocateHighDpiApi());
                 }
-                
+
                 static IInputServices *LocateInputServices();
                 template <typename T> static T *LocateInputServices()
                 {

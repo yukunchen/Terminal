@@ -31,10 +31,6 @@ InputBuffer::InputBuffer() :
     InputWaitEvent = ServiceLocator::LocateGlobals()->hInputEvent.get();
     // initialize buffer header
     fInComposition = false;
-
-    ZeroMemory(&ReadConInpDbcsLeadByte, sizeof(INPUT_RECORD));
-    ZeroMemory(&WriteConInpDbcsLeadByte, sizeof(INPUT_RECORD) * ARRAYSIZE(WriteConInpDbcsLeadByte));
-
 }
 
 // Routine Description:
@@ -47,6 +43,103 @@ InputBuffer::~InputBuffer()
     // TODO: MSFT:8805366 check for null before trying to close this
     // and check that it needs to be closing it in the first place.
     CloseHandle(InputWaitEvent);
+}
+
+// Routine Description:
+// - checks if any partial char data is available for reading operation
+// Arguments:
+// - None
+// Return Value:
+// - true if partial char data is available, false otherwise
+bool InputBuffer::IsReadPartialByteSequenceAvailable()
+{
+    return _readPartialByteSequence.get() != nullptr;
+}
+
+// Routine Description:
+// - reads any read partial char data available
+// Arguments:
+// - peek - if true, data will not be removed after being fetched
+// Return Value:
+// - the partial char data. may be nullptr if no data is available
+std::unique_ptr<IInputEvent> InputBuffer::FetchReadPartialByteSequence(_In_ bool peek)
+{
+    if (!IsReadPartialByteSequenceAvailable())
+    {
+        return std::unique_ptr<IInputEvent>();
+    }
+
+    if (peek)
+    {
+        return IInputEvent::Create(_readPartialByteSequence->ToInputRecord());
+    }
+    else
+    {
+        std::unique_ptr<IInputEvent> outEvent;
+        outEvent.swap(_readPartialByteSequence);
+        return outEvent;
+    }
+}
+
+// Routine Description:
+// - stores partial read char data for a later read. will overwrite
+// any previously stored data.
+// Arguments:
+// - event - The event to store
+// Return Value:
+// - None
+void InputBuffer::StoreReadPartialByteSequence(std::unique_ptr<IInputEvent> event)
+{
+    _readPartialByteSequence.swap(event);
+}
+
+// Routine Description:
+// - checks if any partial char data is available for writing
+// operation.
+// Arguments:
+// - None
+// Return Value:
+// - true if partial char data is available, false otherwise
+bool InputBuffer::IsWritePartialByteSequenceAvailable()
+{
+    return _writePartialByteSequence.get() != nullptr;
+}
+
+// Routine Description:
+// - writes any write partial char data available
+// Arguments:
+// - peek - if true, data will not be removed after being fetched
+// Return Value:
+// - the partial char data. may be nullptr if no data is available
+std::unique_ptr<IInputEvent> InputBuffer::FetchWritePartialByteSequence(_In_ bool peek)
+{
+    if (!IsWritePartialByteSequenceAvailable())
+    {
+        return std::unique_ptr<IInputEvent>();
+    }
+
+    if (peek)
+    {
+        return IInputEvent::Create(_writePartialByteSequence->ToInputRecord());
+    }
+    else
+    {
+        std::unique_ptr<IInputEvent> outEvent;
+        outEvent.swap(_writePartialByteSequence);
+        return outEvent;
+    }
+}
+
+// Routine Description:
+// - stores partial write char data. will overwrite any previously
+// stored data.
+// Arguments:
+// - event - The event to store
+// Return Value:
+// - None
+void InputBuffer::StoreWritePartialByteSequence(std::unique_ptr<IInputEvent> event)
+{
+    _writePartialByteSequence.swap(event);
 }
 
 // Routine Description:
@@ -476,7 +569,7 @@ HRESULT InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent
     {
         while(!inEvents.empty())
         {
-            // Pop the next event. 
+            // Pop the next event.
             // If we're in vt mode, try and handle it with the vt input module.
             // If it was handled, do nothing else for it.
             // If there was one event passed in, try coalescing it with the previous event currently in the buffer.
@@ -486,7 +579,7 @@ HRESULT InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent
             if (vtInputMode)
             {
                 const bool handled = _termInput.HandleKey(inEvent.get());
-                if (handled) 
+                if (handled)
                 {
                     eventsWritten++;
                     continue;
@@ -678,7 +771,7 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::uniq
                         continue;
                     }
                     else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
-                             (pKeyEvent->_virtualKeyCode == VK_PAUSE || IsPauseKey(pKeyEvent)))
+                             (pKeyEvent->_virtualKeyCode == VK_PAUSE || pKeyEvent->IsPauseKey()))
                     {
                         SetFlag(gci->Flags, CONSOLE_SUSPENDED);
                         continue;
@@ -691,23 +784,6 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::uniq
         return S_OK;
     }
     CATCH_RETURN();
-}
-
-// Routine Description:
-// - Converts std::deque<INPUT_RECORD> to std::deque<std::unique_ptr<IInputEvent>>
-// Arguments:
-// - inRecords - records to convert
-// Return Value:
-// - std::deque of IINputEvents on success. Will throw exception on failure.
-std::deque<std::unique_ptr<IInputEvent>> InputBuffer::_inputRecordsToInputEvents(_In_ const std::deque<INPUT_RECORD>& inRecords)
-{
-    std::deque<std::unique_ptr<IInputEvent>> outEvents;
-    for (size_t i = 0; i < inRecords.size(); ++i)
-    {
-        std::unique_ptr<IInputEvent> event = IInputEvent::Create(inRecords[i]);
-        outEvents.push_back(std::move(event));
-    }
-    return outEvents;
 }
 
 // Routine Description:
