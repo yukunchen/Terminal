@@ -345,6 +345,26 @@ public:
 
         return _fWriteConsoleInputWResult;
     }
+    
+    virtual BOOL PrivatePrependConsoleInput(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords, _In_ DWORD const nLength, _Out_ DWORD* const pNumberOfEventsWritten)
+    {
+        Log::Comment(L"PrivatePrependConsoleInput MOCK called...");
+
+        if (_fPrivatePrependConsoleInputResult)
+        {
+            // make space and copy all the input records we were given into local storage so we can test against them
+            Log::Comment(NoThrowString().Format(L"Copying %d input records into local buffer...", nLength));
+            
+            // This will handle cleanup of the old one and creation of a new space.
+            _PrepInputBuffer(nLength);
+
+            memcpy(_rgInput, rgInputRecords, nLength * sizeof(INPUT_RECORD));
+
+            *pNumberOfEventsWritten = nLength;
+        }
+
+        return _fPrivatePrependConsoleInputResult;
+    }
 
     bool _IsInsideClip(_In_ const SMALL_RECT* const pClipRectangle, _In_ SHORT const iRow, _In_ SHORT const iCol)
     {
@@ -660,6 +680,7 @@ public:
         _fFillConsoleOutputAttributeResult = TRUE;
         _fSetConsoleTextAttributeResult = TRUE;
         _fWriteConsoleInputWResult = TRUE;
+        _fPrivatePrependConsoleInputResult = TRUE;
         _fScrollConsoleScreenBufferWResult = TRUE;
         _fSetConsoleWindowInfoResult = TRUE;
         _fPrivateGetConsoleScreenBufferAttributesResult = TRUE;
@@ -1150,6 +1171,7 @@ public:
     BOOL _fFillConsoleOutputAttributeResult;
     BOOL _fSetConsoleTextAttributeResult;
     BOOL _fWriteConsoleInputWResult;
+    BOOL _fPrivatePrependConsoleInputResult;
     BOOL _fScrollConsoleScreenBufferWResult;
 
     BOOL _fSetConsoleWindowInfoResult;
@@ -2703,7 +2725,7 @@ public:
 
         Log::Comment(L"Test 2: Verify failure when WriteConsoleInput doesn't work.");
         _pTest->PrepData();
-        _pTest->_fWriteConsoleInputWResult = FALSE;
+        _pTest->_fPrivatePrependConsoleInputResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch->DeviceAttributes());
     }

@@ -932,7 +932,7 @@ bool AdaptDispatch::_WriteResponse(_In_reads_(cReply) PCWSTR pwszReply, _In_ siz
     if (cInputBuffer > 0)
     {
         DWORD dwWritten = 0;
-        fSuccess = !!_pConApi->WriteConsoleInputW(rgInput, (DWORD)cInputBuffer, &dwWritten);
+        fSuccess = !!_pConApi->PrivatePrependConsoleInput(rgInput, (DWORD)cInputBuffer, &dwWritten);
     }
 
     if (rgInput != nullptr)

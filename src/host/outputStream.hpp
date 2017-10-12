@@ -115,6 +115,10 @@ public:
 
     virtual BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes);
 
+    virtual BOOL PrivatePrependConsoleInput(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords,
+                                            _In_ DWORD const nLength,
+                                            _Out_ DWORD* const pNumberOfEventsWritten);
+
 private:
     SCREEN_INFORMATION* _pScreenInfo; // not const because switching to the alternate buffer will change this pointer.
     InputBuffer* const _pInputBuffer;

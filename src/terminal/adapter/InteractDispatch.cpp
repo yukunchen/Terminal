@@ -37,7 +37,6 @@ bool InteractDispatch::CreateInstance(_In_ std::unique_ptr<ConGetSet> pConApi,
     return fSuccess;
 }
 
-
 bool InteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) 
 {
     size_t size = inputEvents.size();

@@ -38,3 +38,8 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
                                    _In_ PCONSOLE_API_MSG Message,
                                    _In_ PCD_CREATE_OBJECT_INFORMATION Information,
                                    _In_ PCONSOLE_CREATESCREENBUFFER_MSG a);
+
+NTSTATUS DoSrvPrivatePrependConsoleInput(_In_ InputBuffer* pInputBuffer,
+                                         _In_reads_(nLength) INPUT_RECORD* const rgInputRecords,
+                                         _In_ DWORD const nLength,
+                                         _Out_ DWORD* const pNumberOfEventsWritten);

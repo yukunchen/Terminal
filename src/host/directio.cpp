@@ -411,6 +411,39 @@ NTSTATUS DoSrvWriteConsoleInput(_In_ InputBuffer* pInputBuffer, _Inout_ CONSOLE_
     return Status;
 }
 
+// Function Description:
+// - Writes the input records to the beginning of the input buffer. This is used
+//      by VT sequences that need a response immediately written back to the 
+//      input.
+// Arguments:
+// - pInputBuffer - The input Buffer to write to
+// - rgInputRecords - An array of input records to be copied into the the head 
+//      of the input buffer for the underlying attached process
+// - nLength - The number of records in the rgInputRecords array
+// - pNumberOfEventsWritten - Pointer to memory location to hold the total 
+//      umber of elements written into the buffer
+// Return Value:
+// - STATUS_SUCCESS if we wrote all the events, else an appropriate NTSTATUS
+NTSTATUS DoSrvPrivatePrependConsoleInput(_In_ InputBuffer* pInputBuffer,
+                                         _In_reads_(nLength) INPUT_RECORD* const rgInputRecords,
+                                         _In_ DWORD const nLength,
+                                         _Out_ DWORD* const pNumberOfEventsWritten)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    try
+    {
+        std::deque<std::unique_ptr<IInputEvent>> inEvents = IInputEvent::Create(rgInputRecords, nLength);
+        *pNumberOfEventsWritten = static_cast<ULONG>(pInputBuffer->Prepend(inEvents));
+    }
+    catch (...)
+    {
+        *pNumberOfEventsWritten = 0;
+        Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
+
+    return Status;
+}
+
 // Routine Description:
 // - This is used when the app reads oem from the output buffer the app wants
 //   real OEM characters. We have real Unicode or UnicodeOem.

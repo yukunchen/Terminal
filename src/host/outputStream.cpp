@@ -291,7 +291,7 @@ BOOL ConhostInternalGetSet::SetConsoleRGBTextAttribute(_In_ COLORREF const rgbCo
 BOOL ConhostInternalGetSet::WriteConsoleInputW(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords, _In_ DWORD const nLength, _Out_ DWORD* const pNumberOfEventsWritten)
 {
     CONSOLE_WRITECONSOLEINPUT_MSG msg;
-    msg.Append = false;
+    msg.Append = true;
     msg.NumRecords = nLength;
     msg.Unicode = true;
 
@@ -595,4 +595,21 @@ BOOL ConhostInternalGetSet::PrivateEraseAll()
 BOOL ConhostInternalGetSet::PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes)
 {
     return NT_SUCCESS(DoSrvPrivateGetConsoleScreenBufferAttributes(_pScreenInfo, pwAttributes));
+}
+
+// Routine Description:
+// - Connects the PrivatePrependConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - rgInputRecords - An array of input records to be copied into the the head of the input buffer for the underlying attached process
+// - nLength - The number of records in the rgInputRecords array
+// - pNumberOfEventsWritten - Pointer to memory location to hold the total number of elements written into the buffer
+// Return Value:
+// - TRUE if successful (see DoSrvPrivatePrependConsoleInput). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivatePrependConsoleInput(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords, _In_ DWORD const nLength, _Out_ DWORD* const pNumberOfEventsWritten)
+{
+    BOOL fSuccess = NT_SUCCESS(DoSrvPrivatePrependConsoleInput(_pInputBuffer,
+                                                               rgInputRecords,
+                                                               nLength,
+                                                               pNumberOfEventsWritten));
+    return fSuccess;
 }
