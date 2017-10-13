@@ -13,13 +13,18 @@ Author(s):
 --*/
 #pragma once
 
+#include "../../types/inc/IInputEvent.hpp"
+
+#include <deque>
+#include <memory>
+
 namespace Microsoft
 {
     namespace Console
     {
         namespace VirtualTerminal
         {
-            typedef void(*WriteInputEvents)(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput);
+            typedef void(*WriteInputEvents)(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
 
             class MouseInput sealed
             {

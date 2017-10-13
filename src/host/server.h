@@ -96,8 +96,6 @@ public:
     CPINFO CPInfo;
     CPINFO OutputCPInfo;
 
-    DWORD ReadConInpNumBytesUnicode;
-
     COOKED_READ_DATA* lpCookedReadData;
 
     ConsoleImeInfo ConsoleIme;
@@ -112,6 +110,8 @@ public:
 
     Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
     
+    static void HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
+
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
     

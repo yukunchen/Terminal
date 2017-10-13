@@ -199,3 +199,21 @@ HRESULT VtEngine::_SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
 
     return _WriteFormattedString(pszFmt, r, g, b);
 }
+
+// Method Description:
+// - Formats and writes a sequence to change the terminal's window size.
+// Arguments:
+// - sWidth: number of columns the terminal should display
+// - sHeight: number of rows the terminal should display
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::_ResizeWindow(_In_ const short sWidth, _In_ const short sHeight)
+{
+    static const PCSTR pszResizeFormat = "\x1b[8;%d;%dt";
+    if (sWidth < 0 || sHeight < 0)
+    {
+        return E_INVALIDARG;
+    }
+
+    return _WriteFormattedString(pszResizeFormat, sHeight, sWidth);
+}

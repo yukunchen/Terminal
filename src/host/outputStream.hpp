@@ -14,6 +14,7 @@ Author:
 #pragma once
 
 #include "..\terminal\adapter\adaptDefaults.hpp"
+#include "..\types\inc\IInputEvent.hpp"
 
 class SCREEN_INFORMATION;
 
@@ -71,15 +72,20 @@ public:
                                             _Out_ DWORD* const pNumberOfAttrsWritten);
 
     virtual BOOL SetConsoleTextAttribute(_In_ WORD const wAttr);
-    virtual BOOL PrivateSetLegacyAttributes(_In_ WORD const wAttr, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta);
+    virtual BOOL PrivateSetLegacyAttributes(_In_ WORD const wAttr,
+                                            _In_ const bool fForeground,
+                                            _In_ const bool fBackground,
+                                            _In_ const bool fMeta);
     virtual BOOL SetConsoleXtermTextAttribute(_In_ int const iXtermTableEntry, _In_ const bool fIsForeground);
     virtual BOOL SetConsoleRGBTextAttribute(_In_ COLORREF const rgbColor, _In_ const bool fIsForeground);
 
-    virtual BOOL WriteConsoleInputW(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords,
-                                    _In_ DWORD const nLength,
-                                    _Out_ DWORD* const pNumberOfEventsWritten);
+    virtual BOOL WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                    _Out_ size_t& eventsWritten);
 
-    virtual BOOL ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pScrollRectangle, _In_opt_ const SMALL_RECT* pClipRectangle, _In_ COORD coordDestinationOrigin, _In_ const CHAR_INFO* pFill);
+    virtual BOOL ScrollConsoleScreenBufferW(_In_ const SMALL_RECT* pScrollRectangle,
+                                            _In_opt_ const SMALL_RECT* pClipRectangle,
+                                            _In_ COORD coordDestinationOrigin,
+                                            _In_ const CHAR_INFO* pFill);
 
     virtual BOOL SetConsoleWindowInfo(_In_ BOOL const bAbsolute, _In_ const SMALL_RECT* const lpConsoleWindow);
 
@@ -92,7 +98,8 @@ public:
 
     virtual BOOL PrivateReverseLineFeed();
 
-    virtual BOOL SetConsoleTitleW(_In_reads_(sCchTitleLength) const wchar_t* const pwchWindowTitle, _In_ unsigned short sCchTitleLength);
+    virtual BOOL SetConsoleTitleW(_In_reads_(sCchTitleLength) const wchar_t* const pwchWindowTitle,
+                                  _In_ unsigned short sCchTitleLength);
 
     virtual BOOL PrivateUseAlternateScreenBuffer();
 
@@ -115,9 +122,8 @@ public:
 
     virtual BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes);
 
-    virtual BOOL PrivatePrependConsoleInput(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords,
-                                            _In_ DWORD const nLength,
-                                            _Out_ DWORD* const pNumberOfEventsWritten);
+    virtual BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                            _Out_ size_t& eventsWritten);
 
 private:
     SCREEN_INFORMATION* _pScreenInfo; // not const because switching to the alternate buffer will change this pointer.

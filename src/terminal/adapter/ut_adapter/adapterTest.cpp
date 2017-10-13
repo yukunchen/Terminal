@@ -82,7 +82,7 @@ public:
 
         return _fGetConsoleScreenBufferInfoExResult;
     }
-    virtual BOOL SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex) const 
+    virtual BOOL SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const psbiex) const
     {
         Log::Comment(L"SetConsoleScreenBufferInfoEx MOCK returning data...");
 
@@ -253,7 +253,7 @@ public:
 
         return _fSetConsoleTextAttributeResult;
     }
-    
+
     virtual BOOL PrivateSetLegacyAttributes(_In_ WORD const wAttr, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta)
     {
         Log::Comment(L"PrivateSetLegacyAttributes MOCK called...");
@@ -276,7 +276,7 @@ public:
             }
 
             VERIFY_ARE_EQUAL(_wExpectedAttribute, wAttr);
-            
+
             _fExpectedForeground = _fExpectedBackground = _fExpectedMeta = false;
         }
 
@@ -326,41 +326,37 @@ public:
         return _fSetConsoleRGBTextAttributeResult;
     }
 
-    virtual BOOL WriteConsoleInputW(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords, _In_ DWORD const nLength, _Out_ DWORD* const pNumberOfEventsWritten)
+    virtual BOOL WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                    _Out_ size_t& eventsWritten)
     {
         Log::Comment(L"WriteConsoleInputW MOCK called...");
 
         if (_fWriteConsoleInputWResult)
         {
-            // make space and copy all the input records we were given into local storage so we can test against them
-            Log::Comment(NoThrowString().Format(L"Copying %d input records into local buffer...", nLength));
-            
-            // This will handle cleanup of the old one and creation of a new space.
-            _PrepInputBuffer(nLength);
+            // move all the input events we were given into local storage so we can test against them
+            Log::Comment(NoThrowString().Format(L"Moving %d input events into local storage...", events.size()));
 
-            memcpy(_rgInput, rgInputRecords, nLength * sizeof(INPUT_RECORD));
-
-            *pNumberOfEventsWritten = nLength;
+            _events.clear();
+            _events.swap(events);
+            eventsWritten = _events.size();
         }
 
         return _fWriteConsoleInputWResult;
     }
     
-    virtual BOOL PrivatePrependConsoleInput(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords, _In_ DWORD const nLength, _Out_ DWORD* const pNumberOfEventsWritten)
+    virtual BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                            _Out_ size_t& eventsWritten)
     {
         Log::Comment(L"PrivatePrependConsoleInput MOCK called...");
 
         if (_fPrivatePrependConsoleInputResult)
         {
-            // make space and copy all the input records we were given into local storage so we can test against them
-            Log::Comment(NoThrowString().Format(L"Copying %d input records into local buffer...", nLength));
-            
-            // This will handle cleanup of the old one and creation of a new space.
-            _PrepInputBuffer(nLength);
+            // move all the input events we were given into local storage so we can test against them
+            Log::Comment(NoThrowString().Format(L"Moving %d input events into local storage...", events.size()));
 
-            memcpy(_rgInput, rgInputRecords, nLength * sizeof(INPUT_RECORD));
-
-            *pNumberOfEventsWritten = nLength;
+            _events.clear();
+            _events.swap(events);
+            eventsWritten = _events.size();
         }
 
         return _fPrivatePrependConsoleInputResult;
@@ -428,13 +424,13 @@ public:
                     ciBuffer[cciFilled] = *pciStored;
                     cciFilled++;
 
-                    // fill with fill 
+                    // fill with fill
                     if (_IsInsideClip(pClipRectangle, coordTarget.Y, coordTarget.X))
                     {
                         *pciStored = *pFill;
                     }
                 }
-                
+
             }
             Log::Comment(NoThrowString().Format(L"\tCopied a total %d chars", cciFilled));
             Log::Comment(L"\tCopying chars back");
@@ -563,7 +559,7 @@ public:
         }
         return _fPrivateEnableUTF8ExtendedMouseModeResult;
     }
-    
+
     virtual BOOL PrivateEnableSGRExtendedMouseMode(_In_ bool const fEnabled)
     {
         Log::Comment(L"PrivateEnableSGRExtendedMouseMode MOCK called...");
@@ -583,7 +579,7 @@ public:
         }
         return _fPrivateEnableButtonEventMouseModeResult;
     }
-    
+
     virtual BOOL PrivateEnableAnyEventMouseMode(_In_ bool const fEnabled)
     {
         Log::Comment(L"PrivateEnableAnyEventMouseMode MOCK called...");
@@ -610,7 +606,7 @@ public:
         return TRUE;
     }
 
-    virtual BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes) 
+    virtual BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes)
     {
         Log::Comment(L"PrivateGetConsoleScreenBufferAttributes MOCK returning data...");
 
@@ -686,7 +682,7 @@ public:
         _fPrivateGetConsoleScreenBufferAttributesResult = TRUE;
 
         _PrepCharsBuffer(wch, wAttr);
-        
+
         // Viewport sitting in the "middle" of the buffer somewhere (so all sides have excess buffer around them)
         _srViewport.Top = 20;
         _srViewport.Bottom = 49;
@@ -787,24 +783,6 @@ public:
         }
     }
 
-    void _PrepInputBuffer(_In_ size_t const nLength)
-    {
-        _FreeInputBuffer();
-
-        _rgInput = new INPUT_RECORD[nLength];
-        _cInput = nLength;
-    }
-
-    void _FreeInputBuffer()
-    {
-        if (_rgInput != nullptr)
-        {
-            delete[] _rgInput;
-            _rgInput = nullptr;
-            _cInput = 0;
-        }
-    }
-
     void InsertString(COORD coordTarget, PWSTR pwszText, WORD wAttr)
     {
         Log::Comment(NoThrowString().Format(L"Writing string '%s' to target (X: %d, Y:%d) with color/attr 0x%x", pwszText, coordTarget.X, coordTarget.Y, wAttr));
@@ -854,26 +832,30 @@ public:
         Log::Comment(NoThrowString().Format(L"Filled %d characters.", cchModified));
     }
 
-    void ValidateInputRecord(_In_ PCWSTR pwszExpectedResponse)
+    void ValidateInputEvent(_In_ PCWSTR pwszExpectedResponse)
     {
         size_t const cchResponse = wcslen(pwszExpectedResponse);
+        size_t const eventCount = _events.size();
 
-        VERIFY_ARE_EQUAL(cchResponse * 2, (size_t)_cInput, L"We should receive TWO input records for every character in the expected string. Key down and key up."); 
+        VERIFY_ARE_EQUAL(cchResponse * 2, eventCount, L"We should receive TWO input records for every character in the expected string. Key down and key up.");
 
-        for (size_t iInput = 0; iInput < _cInput; iInput++)
+        for (size_t iInput = 0; iInput < eventCount; iInput++)
         {
             wchar_t const wch = pwszExpectedResponse[iInput / 2]; // the same portion of the string will be used twice. 0/2 = 0. 1/2 = 0. 2/2 = 1. 3/2 = 1. and so on.
 
-            INPUT_RECORD* const pRecord = &_rgInput[iInput];
 
-            VERIFY_ARE_EQUAL(KEY_EVENT, pRecord->EventType);
-            VERIFY_ARE_EQUAL((BOOL)!(iInput % 2), pRecord->Event.KeyEvent.bKeyDown); // every even key is down. every odd key is up. DOWN = 0, UP = 1. DOWN = 2, UP = 3. and so on.
-            VERIFY_ARE_EQUAL(0u, pRecord->Event.KeyEvent.dwControlKeyState);
-            Log::Comment(NoThrowString().Format(L"Comparing '%c' with '%c'...", wch, pRecord->Event.KeyEvent.uChar.UnicodeChar));
-            VERIFY_ARE_EQUAL(wch, pRecord->Event.KeyEvent.uChar.UnicodeChar);
-            VERIFY_ARE_EQUAL(1u, pRecord->Event.KeyEvent.wRepeatCount);
-            VERIFY_ARE_EQUAL(0u, pRecord->Event.KeyEvent.wVirtualKeyCode);
-            VERIFY_ARE_EQUAL(0u, pRecord->Event.KeyEvent.wVirtualScanCode);
+            VERIFY_ARE_EQUAL(InputEventType::KeyEvent, _events[iInput]->EventType());
+
+            const KeyEvent* const keyEvent = static_cast<const KeyEvent* const>(_events[iInput].get());
+
+            // every even key is down. every odd key is up. DOWN = 0, UP = 1. DOWN = 2, UP = 3. and so on.
+            VERIFY_ARE_EQUAL((BOOL)!(iInput % 2), keyEvent->_keyDown);
+            VERIFY_ARE_EQUAL(0u, keyEvent->_activeModifierKeys);
+            Log::Comment(NoThrowString().Format(L"Comparing '%c' with '%c'...", wch, keyEvent->_charData));
+            VERIFY_ARE_EQUAL(wch, keyEvent->_charData);
+            VERIFY_ARE_EQUAL(1u, keyEvent->_repeatCount);
+            VERIFY_ARE_EQUAL(0u, keyEvent->_virtualKeyCode);
+            VERIFY_ARE_EQUAL(0u, keyEvent->_virtualScanCode);
         }
     }
 
@@ -895,7 +877,7 @@ public:
                 for (size_t i = 0; i < cch; i++)
                 {
                     const CHAR_INFO* const pci = _GetCharAt(coordGetPos.Y, coordGetPos.X);
-                    
+
                     const wchar_t wchActual = pci->Char.UnicodeChar;
                     const wchar_t wchExpected = pwszText[i];
 
@@ -1081,7 +1063,7 @@ public:
             srRegion.Bottom >= sRow;
 
     }
-    
+
     CHAR_INFO* _GetCharAt(size_t const iRow, size_t const iCol)
     {
         CHAR_INFO* pchar = nullptr;
@@ -1125,17 +1107,15 @@ public:
     ~TestGetSet()
     {
         _FreeCharsBuffer();
-        _FreeInputBuffer();
     }
-   
+
     static const WCHAR s_wchErase = (WCHAR)0x20;
     static const WCHAR s_wchDefault = L'Z';
     static const WORD s_wAttrErase = FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY;
     static const WORD s_wDefaultAttribute = 0;
 
     CHAR_INFO* _rgchars = nullptr;
-    INPUT_RECORD* _rgInput = nullptr;
-    size_t _cInput = 0;
+    std::deque<std::unique_ptr<IInputEvent>> _events;
 
     COORD _coordBufferSize;
     SMALL_RECT _srViewport;
@@ -1208,7 +1188,7 @@ public:
     BOOL _fPrivateEnableAnyEventMouseModeResult;
     BOOL _fPrivateEnableAlternateScrollResult;
     BOOL _fSetConsoleXtermTextAttributeResult;
-    BOOL _fSetConsoleRGBTextAttributeResult;    
+    BOOL _fSetConsoleRGBTextAttributeResult;
     BOOL _fPrivateSetLegacyAttributesResult;
     BOOL _fPrivateGetConsoleScreenBufferAttributesResult;
 
@@ -1384,7 +1364,7 @@ public:
         // place cursor and move it up too far. It should get bounded by the viewport.
         Log::Comment(L"Test 3: Cursor moves and gets stuck at viewport when started away from edges and moved beyond edges.");
         _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
-        
+
         // Bottom and right viewports are -1 because those two sides are specified to be 1 outside the viewable area.
 
         switch (direction)
@@ -1502,7 +1482,7 @@ public:
 
         Log::Comment(L"Test 4: Values too large for short. Cursor shouldn't move. Return false.");
         _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
-        
+
         VERIFY_IS_FALSE(_pDispatch->CursorPosition(UINT_MAX, UINT_MAX));
 
         Log::Comment(L"Test 5: Overflow during addition. Cursor shouldn't move. Return false.");
@@ -1596,7 +1576,7 @@ public:
         sVal = 1;
 
         VERIFY_IS_TRUE((_pDispatch->*(moveFunc))(sVal));
-        
+
         Log::Comment(L"Test 3: Move beyond rectangle (down/right too far). Should be bounded back in.");
         _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
 
@@ -1626,7 +1606,7 @@ public:
         _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
 
         _pTest->_fGetConsoleScreenBufferInfoExResult = FALSE;
-        
+
         sVal = 1;
 
         VERIFY_IS_FALSE((_pDispatch->*(moveFunc))(sVal));
@@ -1656,7 +1636,7 @@ public:
         COORD coordExpected = { 0 };
 
         Log::Comment(L"Test 1: Restore with no saved data should move to top-left corner, the null/default position.");
-        
+
         // Move cursor to top left and save off expected position.
         _pTest->PrepData(CursorX::LEFT, CursorY::TOP);
         coordExpected = _pTest->_coordExpectedCursorPos;
@@ -1666,7 +1646,7 @@ public:
         _pTest->_coordExpectedCursorPos = coordExpected;
 
         VERIFY_IS_TRUE(_pDispatch->CursorRestorePosition(), L"By default, restore to top left corner (0,0 offset from viewport).");
-        
+
         Log::Comment(L"Test 2: Place cursor in center. Save. Move cursor to corner. Restore. Should come back to center.");
         _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
         VERIFY_IS_TRUE(_pDispatch->CursorSavePosition(), L"Succeed at saving position.");
@@ -1674,7 +1654,7 @@ public:
         Log::Comment(L"Backup expected cursor (in the middle). Move cursor to corner. Then re-set expected cursor to middle.");
         // save expected cursor position
         coordExpected = _pTest->_coordExpectedCursorPos;
-        
+
         // adjust cursor to corner
         _pTest->PrepData(CursorX::LEFT, CursorY::BOTTOM);
 
@@ -1747,7 +1727,7 @@ public:
 
         // fill some of the text right of the cursor so we can verify it moved it and didn't overwrite it.
         // change the color too so we can make sure that it's fine
-        
+
         WORD const wAttrTestText = FOREGROUND_GREEN;
         PWSTR const pwszTestText = L"ABCDE";
         size_t cchTestText = wcslen(pwszTestText);
@@ -1766,7 +1746,7 @@ public:
         srInsertExpected.Bottom = srInsertExpected.Top + 1;
         srInsertExpected.Left = _pTest->_coordCursorPos.X;
         srInsertExpected.Right = srInsertExpected.Left + (SHORT)cchInsertSize;
-        
+
         // the text we inserted is going to move right by the insert size, so adjust that rectangle right.
         srTestText.Left += cchInsertSize;
         srTestText.Right += cchInsertSize;
@@ -1783,7 +1763,7 @@ public:
 
         // verify cursor didn't move
         VERIFY_ARE_EQUAL(coordCursorExpected, _pTest->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
-        
+
         // e.g. we had this in the buffer: QQQRRRRRRABCDERRRRRRRQQQ with the cursor on the A.
         // now we should have this buffer: QQQRRRRRR     ABCDERRQQQ with the cursor on the first space.
 
@@ -1914,7 +1894,7 @@ public:
         srDeleteExpected.Right = _pTest->_srViewport.Right;
         srDeleteExpected.Left = srDeleteExpected.Right - cchDeleteSize;
 
-        // We want the ABCDE to shift left when we delete and onto the cursor. So move the cursor left 5 and adjust the srTestText rectangle left 5 to the new 
+        // We want the ABCDE to shift left when we delete and onto the cursor. So move the cursor left 5 and adjust the srTestText rectangle left 5 to the new
         // final destination of where they will be after the delete operation occurs.
         _pTest->_coordCursorPos.X -= cchDeleteSize;
         coordCursorExpected = _pTest->_coordCursorPos;
@@ -2027,7 +2007,7 @@ public:
         VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srModifiedSpace, wchDeleteExpected, wAttrDeleteExpected), L"A whole line of spaces was inserted from the right (the cursor position was deleted enough times.) Extra deletes just covered up some of the spaces that were shifted in.");
     }
 
-    // Ensures that EraseScrollback (^[[3J) deletes any content from the buffer 
+    // Ensures that EraseScrollback (^[[3J) deletes any content from the buffer
     //  above the viewport, and moves the contents of the buffer in the
     //  viewport to 0,0. This emulates the xterm behavior of clearing any
     //  scrollback content.
@@ -2043,19 +2023,19 @@ public:
         srRegion.Bottom = _pTest->_srViewport.Bottom - _pTest->_srViewport.Top - 1;
         srRegion.Right = _pTest->_srViewport.Right - _pTest->_srViewport.Left - 1;
         _pTest->_srExpectedConsoleWindow = srRegion;
-        
-        // The cursor will be moved to the same relative location in the new viewport with origin @ 0, 0        
+
+        // The cursor will be moved to the same relative location in the new viewport with origin @ 0, 0
         const COORD coordRelativeCursor = { _pTest->_coordCursorPos.X - _pTest->_srViewport.Left,
                                             _pTest->_coordCursorPos.Y - _pTest->_srViewport.Top };
         _pTest->_coordExpectedCursorPos = coordRelativeCursor;
-        
+
         VERIFY_IS_TRUE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
 
-        // There are two portions of the screen that are cleared - 
+        // There are two portions of the screen that are cleared -
         //  below the viewport and to the right of the viewport.
         size_t cRegionsToCheck = 2;
-        SMALL_RECT rgsrRegionsModified[2]; 
-        
+        SMALL_RECT rgsrRegionsModified[2];
+
         // Region 0 - Below the viewport
         srRegion.Top = _pTest->_srViewport.Bottom + 1;
         srRegion.Left = 0;
@@ -2087,7 +2067,7 @@ public:
         Log::Comment(L"Test 3: Gracefully fail when filling the rectangle fails.");
         _pTest->PrepData();
         _pTest->_fFillConsoleOutputCharacterWResult = false;
-        
+
         VERIFY_IS_FALSE(_pDispatch->EraseInDisplay(TermDispatch::EraseType::Scrollback));
     }
 
@@ -2159,7 +2139,7 @@ public:
         // Will be always the region of the cursor line (minimum 1)
         // and 2 more if it's the display (for the regions before and after the cursor line, total 3)
         SMALL_RECT rgsrRegionsModified[3]; // max of 3 regions.
-        
+
         // Determine selection rectangle for line containing the cursor.
         // All sides are inclusive of modified data. (unlike viewport normally)
         SMALL_RECT srRegion = { 0 };
@@ -2257,7 +2237,7 @@ public:
         Log::Comment(L"Test 3: Gracefully fail when filling the rectangle fails.");
         _pTest->PrepData();
         _pTest->_fFillConsoleOutputCharacterWResult = false;
-        
+
         if (!fEraseScreen)
         {
             VERIFY_IS_FALSE(_pDispatch->EraseInLine(eraseType));
@@ -2574,7 +2554,7 @@ public:
             VERIFY_FAIL(L"Test not implemented yet!");
             break;
         }
-        
+
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
     }
 
@@ -2680,7 +2660,7 @@ public:
     TEST_METHOD(DeviceStatusReportTests)
     {
         Log::Comment(L"Starting test...");
-        
+
         Log::Comment(L"Test 1: Verify failure when using bad status.");
         _pTest->PrepData();
         VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((TermDispatch::AnsiStatusType) -1));
@@ -2693,7 +2673,7 @@ public:
         Log::Comment(L"Test 1: Verify normal cursor response position.");
         _pTest->PrepData(CursorX::XCENTER, CursorY::YCENTER);
 
-        // start with the cursor position in the buffer. 
+        // start with the cursor position in the buffer.
         COORD coordCursorExpected = _pTest->_coordCursorPos;
 
         // to get to VT, we have to adjust it to its position relative to the viewport.
@@ -2709,7 +2689,7 @@ public:
         wchar_t pwszBuffer[50];
 
         swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%d;%dR", coordCursorExpected.Y, coordCursorExpected.X);
-        _pTest->ValidateInputRecord(pwszBuffer);
+        _pTest->ValidateInputEvent(pwszBuffer);
     }
 
     TEST_METHOD(DeviceAttributesTests)
@@ -2721,7 +2701,7 @@ public:
         VERIFY_IS_TRUE(_pDispatch->DeviceAttributes());
 
         PCWSTR pwszExpectedResponse = L"\x1b[?1;0c";
-        _pTest->ValidateInputRecord(pwszExpectedResponse);
+        _pTest->ValidateInputEvent(pwszExpectedResponse);
 
         Log::Comment(L"Test 2: Verify failure when WriteConsoleInput doesn't work.");
         _pTest->PrepData();
@@ -2794,7 +2774,7 @@ public:
 
         // Add some characters to see if they moved.
         // change the color too so we can make sure that it's fine
-        
+
         WORD const wAttrTestText = FOREGROUND_GREEN;
         PWSTR const pwszTestText = L"ABCDE"; // Text is written at y=34, moves to y=33
         size_t cchTestText = wcslen(pwszTestText);
@@ -2810,7 +2790,7 @@ public:
 
         // verify cursor didn't move
         VERIFY_ARE_EQUAL(coordCursorExpected, _pTest->_coordCursorPos, L"Verify cursor didn't move from insert operation.");
-        
+
         // Verify the field of Qs didn't change outside the viewport.
         VERIFY_IS_TRUE(_pTest->ValidateRectangleContains(srOuterBuffer, wchOuterBuffer, wAttrOuterBuffer, srViewport),
                        L"Field of Qs outside viewport should remain unchanged.");
@@ -2923,7 +2903,7 @@ public:
     TEST_METHOD(ScrollMarginsTest)
     {
         Log::Comment(L"Starting test...");
-        
+
         SMALL_RECT srTestMargins = {0};
         _pTest->_srViewport.Bottom = 8;
         _pTest->_fGetConsoleScreenBufferInfoExResult = TRUE;
@@ -2941,19 +2921,19 @@ public:
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 3: Verify having only bottom is valid.");
-        
+
         _pTest->_SetMarginsHelper(&srTestMargins, 0, 7);
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 4: Verify having no values is valid.");
-        
+
         _pTest->_SetMarginsHelper(&srTestMargins, 0, 0);
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
         Log::Comment(L"Test 5: Verify having both values, but bad bounds is invalid.");
-        
+
         _pTest->_SetMarginsHelper(&srTestMargins, 7, 3);
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
         VERIFY_IS_FALSE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
@@ -2988,7 +2968,7 @@ public:
     TEST_METHOD(TabSetClearTests)
     {
         Log::Comment(L"Starting test...");
-        
+
         _pTest->_fPrivateHorizontalTabSetResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->HorizontalTabSet());
 
@@ -2996,14 +2976,14 @@ public:
 
         _pTest->_fPrivateForwardTabResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->ForwardTab(16));
-        
+
         _pTest->_fPrivateBackwardsTabResult = TRUE;
         VERIFY_IS_TRUE(_pDispatch->BackwardsTab(16));
-        
+
         _pTest->_fPrivateTabClearResult = TRUE;
         _pTest->_fExpectedClearAll = true;
         VERIFY_IS_TRUE(_pDispatch->TabClear(TermDispatch::TabClearType::ClearAllColumns));
-        
+
         _pTest->_fExpectedClearAll = false;
         VERIFY_IS_TRUE(_pDispatch->TabClear(TermDispatch::TabClearType::ClearCurrentColumn));
 
@@ -3018,7 +2998,7 @@ public:
         _pTest->_fSetConsoleTitleWResult = TRUE;
         wchar_t* pwchTestString = L"Foo bar";
         _pTest->_pwchExpectedWindowTitle = pwchTestString;
-        _pTest->_sCchExpectedTitleLength = 8; 
+        _pTest->_sCchExpectedTitleLength = 8;
 
         VERIFY_IS_TRUE(_pDispatch->SetWindowTitle(pwchTestString, 8));
 
@@ -3158,7 +3138,7 @@ public:
         srRegion.Bottom = _pTest->_srViewport.Bottom - _pTest->_srViewport.Top - 1;
         srRegion.Right = _pTest->_srViewport.Right - _pTest->_srViewport.Left - 1;
         _pTest->_srExpectedConsoleWindow = srRegion;
-        // The cursor will be moved to the same relative location in the new viewport with origin @ 0, 0        
+        // The cursor will be moved to the same relative location in the new viewport with origin @ 0, 0
         const COORD coordRelativeCursor = { _pTest->_coordCursorPos.X - _pTest->_srViewport.Left,
                                             _pTest->_coordCursorPos.Y - _pTest->_srViewport.Top };
 
@@ -3187,13 +3167,13 @@ public:
         Log::Comment(L"Test 3: Gracefully fail when filling the rectangle fails.");
         _pTest->PrepData();
         _pTest->_fFillConsoleOutputCharacterWResult = false;
-        
+
         VERIFY_IS_FALSE(_pDispatch->HardReset());
 
         Log::Comment(L"Test 4: Gracefully fail when setting the window fails.");
         _pTest->PrepData();
         _pTest->_fSetConsoleWindowInfoResult = false;
-        
+
         VERIFY_IS_FALSE(_pDispatch->HardReset());
     }
 

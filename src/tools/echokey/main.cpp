@@ -22,7 +22,7 @@ using namespace std;
 bool gVtInput = false;
 bool gVtOutput = true;
 
-const char CTRL_C = 0x3;
+static const char CTRL_C = 0x3;
 
 void csi(string seq)
 {

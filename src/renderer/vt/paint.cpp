@@ -23,7 +23,7 @@ using namespace Microsoft::Console::Render;
 HRESULT VtEngine::StartPaint()
 {
     // If there's nothing to do, quick return
-    bool somethingToDo = _fInvalidRectUsed | (_scrollDelta.X != 0 || _scrollDelta.Y != 0);
+    bool somethingToDo = _fInvalidRectUsed || (_scrollDelta.X != 0 || _scrollDelta.Y != 0);
 
     _quickReturn = !somethingToDo;
 

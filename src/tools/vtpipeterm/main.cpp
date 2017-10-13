@@ -38,10 +38,8 @@ void ReadCallback(byte* buffer, DWORD dwRead)
     // We already set the console to UTF-8 CP, so we can just write straight to it
     THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
 }
-void DebugReadCallback(byte* buffer, DWORD dwRead)
+void DebugReadCallback(byte* /*buffer*/, DWORD /*dwRead*/)
 {
-    UNREFERENCED_PARAMETER(buffer);
-    UNREFERENCED_PARAMETER(dwRead);
     // do nothing.
 }
 

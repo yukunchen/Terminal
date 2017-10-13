@@ -12,6 +12,7 @@
 #include "..\..\host\dbcs.h"
 #include "..\..\host\input.h"
 #include "..\..\renderer\wddmcon\wddmconrenderer.hpp"
+#include "..\..\types\inc\IInputEvent.hpp"
 
 #include "..\inc\ServiceLocator.hpp"
 
@@ -226,12 +227,21 @@ NTSTATUS ConIoSrvComm::ServiceInputPipe()
             switch (Event.Type)
             {
             case CIS_EVENT_TYPE_INPUT:
-                HandleGenericKeyEvent(Event.InputEvent.Record, FALSE);
-            break;
+                try
+                {
+                    KEY_EVENT_RECORD keyRecord = Event.InputEvent.Record.Event.KeyEvent;
+                    KeyEvent keyEvent{ keyRecord };
+                    HandleGenericKeyEvent(keyEvent, false);
+                }
+                catch (...)
+                {
+                    LOG_HR(wil::ResultFromCaughtException());
+                }
+                break;
 
             case CIS_EVENT_TYPE_FOCUS:
                 HandleFocusEvent(&Event);
-            break;
+                break;
             }
             UnlockConsole();
         }
@@ -268,7 +278,7 @@ NTSTATUS ConIoSrvComm::SendRequestReceiveReply(PCIS_MSG Message) const
                                        &ActualReceiveMessageLength,
                                        NULL,
                                        0);
-                                       
+
     return Status;
 }
 
@@ -283,7 +293,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
     WddmConEngine *WddmEngine;
 
     CIS_EVENT ReplyEvent;
-    
+
     Status = RequestGetDisplayMode(&DisplayMode);
 
     if (NT_SUCCESS(Status))
@@ -433,7 +443,7 @@ NTSTATUS ConIoSrvComm::RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisp
 
     CIS_MSG Message = { 0 };
     Message.Type = CIS_MSG_TYPE_GETDISPLAYSIZE;
-    
+
     Status = SendRequestReceiveReply(&Message);
     if (NT_SUCCESS(Status))
     {
@@ -450,7 +460,7 @@ NTSTATUS ConIoSrvComm::RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize) 
 
     CIS_MSG Message = { 0 };
     Message.Type = CIS_MSG_TYPE_GETFONTSIZE;
-    
+
     Status = SendRequestReceiveReply(&Message);
     if (NT_SUCCESS(Status))
     {
@@ -468,7 +478,7 @@ NTSTATUS ConIoSrvComm::RequestSetCursor(_In_ CD_IO_CURSOR_INFORMATION* const pCd
     CIS_MSG Message = { 0 };
     Message.Type = CIS_MSG_TYPE_SETCURSOR;
     Message.SetCursorParams.CursorInformation = *pCdCursorInformation;
-    
+
     Status = SendRequestReceiveReply(&Message);
     if (NT_SUCCESS(Status))
     {
@@ -600,7 +610,7 @@ UINT ConIoSrvComm::MapVirtualKeyW(UINT uCode, UINT uMapType)
 
     UINT ReturnValue;
     Status = RequestMapVirtualKey(uCode, uMapType, &ReturnValue);
-    
+
     if (!NT_SUCCESS(Status))
     {
         ReturnValue = 0;
@@ -616,7 +626,7 @@ SHORT ConIoSrvComm::VkKeyScanW(WCHAR ch)
 
     SHORT ReturnValue;
     Status = RequestVkKeyScan(ch, &ReturnValue);
-    
+
     if (!NT_SUCCESS(Status))
     {
         ReturnValue = 0;
@@ -632,7 +642,7 @@ SHORT ConIoSrvComm::GetKeyState(int nVirtKey)
 
     SHORT ReturnValue;
     Status = RequestGetKeyState(nVirtKey, &ReturnValue);
-    
+
     if (!NT_SUCCESS(Status))
     {
         ReturnValue = 0;

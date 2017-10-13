@@ -283,23 +283,21 @@ BOOL ConhostInternalGetSet::SetConsoleRGBTextAttribute(_In_ COLORREF const rgbCo
 // Routine Description:
 // - Connects the WriteConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
-// - rgInputRecords - An array of input records to be copied into the the head of the input buffer for the underlying attached process
-// - nLength - The number of records in the rgInputRecords array
-// - pNumberOfEventsWritten - Pointer to memory location to hold the total number of elements written into the buffer
+// - events - the input events to be copied into the head of the input
+// buffer for the underlying attached process
+// - eventsWritten - on output, the number of events written
 // Return Value:
 // - TRUE if successful (see DoSrvWriteConsoleInput). FALSE otherwise.
-BOOL ConhostInternalGetSet::WriteConsoleInputW(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords, _In_ DWORD const nLength, _Out_ DWORD* const pNumberOfEventsWritten)
+
+BOOL ConhostInternalGetSet::WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                               _Out_ size_t& eventsWritten)
 {
-    CONSOLE_WRITECONSOLEINPUT_MSG msg;
-    msg.Append = true;
-    msg.NumRecords = nLength;
-    msg.Unicode = true;
-
-    BOOL fSuccess = NT_SUCCESS(DoSrvWriteConsoleInput(_pInputBuffer, &msg, rgInputRecords));
-
-    *pNumberOfEventsWritten = msg.NumRecords;
-
-    return fSuccess;
+    eventsWritten = 0;
+    return SUCCEEDED(DoSrvWriteConsoleInput(_pInputBuffer,
+                                            events,
+                                            eventsWritten,
+                                            true, // unicode
+                                            true)); // append
 }
 
 // Routine Description:
@@ -605,11 +603,11 @@ BOOL ConhostInternalGetSet::PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* 
 // - pNumberOfEventsWritten - Pointer to memory location to hold the total number of elements written into the buffer
 // Return Value:
 // - TRUE if successful (see DoSrvPrivatePrependConsoleInput). FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivatePrependConsoleInput(_In_reads_(nLength) INPUT_RECORD* const rgInputRecords, _In_ DWORD const nLength, _Out_ DWORD* const pNumberOfEventsWritten)
+BOOL ConhostInternalGetSet::PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                                       _Out_ size_t& eventsWritten)
 {
-    BOOL fSuccess = NT_SUCCESS(DoSrvPrivatePrependConsoleInput(_pInputBuffer,
-                                                               rgInputRecords,
-                                                               nLength,
-                                                               pNumberOfEventsWritten));
+    BOOL fSuccess = SUCCEEDED(DoSrvPrivatePrependConsoleInput(_pInputBuffer,
+                                                              events,
+                                                              eventsWritten));
     return fSuccess;
 }

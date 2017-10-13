@@ -158,10 +158,6 @@ void RedrawCommandLine(_Inout_ COOKED_READ_DATA* CookedReadData);
 
 PCOMMAND_HISTORY FindCommandHistory(_In_ const HANDLE hProcess);
 
-bool IsCommandLinePopupKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
-
-bool IsCommandLineEditingKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
-
 void CleanUpPopups(_In_ COOKED_READ_DATA* const CookedReadData);
 
 // Values for WriteChars(), WriteCharsLegacy() dwFlags
@@ -181,12 +177,6 @@ void CleanUpPopups(_In_ COOKED_READ_DATA* const CookedReadData);
 // InitExtendedEditKey
 // If lpwstr is nullptr, the default value will be used.
 void InitExtendedEditKeys(_In_opt_ ExtKeyDefBuf const * const pKeyDefBuf);
-
-// IsPauseKey
-// returns TRUE if pKeyEvent is pause.
-// The default key is Ctrl-S if extended edit keys are not specified.
-bool IsPauseKey(_In_ PKEY_EVENT_RECORD const pKeyEvent);
-bool IsPauseKey(_In_ const KeyEvent* const pKeyEvent);
 
 // Word delimiters
 #define IS_WORD_DELIM(wch)  ((wch) == L' ' || (ServiceLocator::LocateGlobals()->aWordDelimChars[0] && IsWordDelim(wch)))
@@ -212,3 +202,5 @@ void FreeAliasBuffers();
 void FreeCommandHistory(_In_ HANDLE const hProcess);
 void FreeCommandHistoryBuffers();
 void ResizeCommandHistoryBuffers(_In_ UINT const cCommands);
+
+const ExtKeyDef* const GetKeyDef(WORD virtualKeyCode);

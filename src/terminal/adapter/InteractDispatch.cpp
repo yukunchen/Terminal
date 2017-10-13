@@ -39,11 +39,11 @@ bool InteractDispatch::CreateInstance(_In_ std::unique_ptr<ConGetSet> pConApi,
 
 bool InteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) 
 {
-    size_t size = inputEvents.size();
-    INPUT_RECORD rgInput[64]; // This is a placeholder till I get austin's stuff
-    IInputEvent::ToInputRecords(inputEvents, rgInput, size);
-    DWORD dwWritten = 0;
-    return !!_pConApi->WriteConsoleInputW(rgInput, (DWORD)size, &dwWritten);
+    // size_t size = inputEvents.size();
+    // INPUT_RECORD rgInput[64]; // This is a placeholder till I get austin's stuff
+    // IInputEvent::ToInputRecords(inputEvents, rgInput, size);
+    size_t dwWritten = 0;
+    return !!_pConApi->WriteConsoleInputW(inputEvents, dwWritten);
 }
 
 

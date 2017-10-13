@@ -514,28 +514,26 @@ void MouseInput::EnableAnyEventTracking(_In_ const bool fEnable)
 // - cchLength - the length of pwszSequence
 // Return value:
 // <none>
-void MouseInput::_SendInputSequence(_In_reads_(cchLength) const wchar_t* const pwszSequence, _In_ const size_t cchLength) const
+void MouseInput::_SendInputSequence(_In_reads_(cchLength) const wchar_t* const pwszSequence,
+                                    _In_ const size_t cchLength) const
 {
     size_t cch = 0;
     // + 1 to max sequence length for null terminator count which is required by StringCchLengthW
     if (SUCCEEDED(StringCchLengthW(pwszSequence, cchLength + 1, &cch)) && cch > 0 && cch < DWORD_MAX)
     {
-        INPUT_RECORD* rgInput = new INPUT_RECORD[cchLength];
-        if (rgInput != nullptr)
+        std::deque<std::unique_ptr<IInputEvent>> events;
+        try
         {
-            for (size_t i = 0; i < cch; i++)
+            for (size_t i = 0; i < cch; ++i)
             {
-                rgInput[i].EventType = KEY_EVENT;
-                rgInput[i].Event.KeyEvent.bKeyDown = TRUE;
-                rgInput[i].Event.KeyEvent.dwControlKeyState = 0;
-                rgInput[i].Event.KeyEvent.wRepeatCount = 1;
-                rgInput[i].Event.KeyEvent.wVirtualKeyCode = 0;
-                rgInput[i].Event.KeyEvent.wVirtualScanCode = 0;
-
-                rgInput[i].Event.KeyEvent.uChar.UnicodeChar = pwszSequence[i];
+                events.push_back(std::make_unique<KeyEvent>(TRUE, 1ui16, 0ui16, 0ui16, pwszSequence[i], 0));
             }
-            _pfnWriteEvents(rgInput, (DWORD)cch);
-            delete[] rgInput;
+
+            _pfnWriteEvents(events);
+        }
+        catch (...)
+        {
+            LOG_HR(wil::ResultFromCaughtException());
         }
     }
 }
