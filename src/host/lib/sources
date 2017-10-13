@@ -61,6 +61,7 @@ SOURCES = \
     ..\utf8ToWideCharParser.cpp \
     ..\conimeinfo.cpp \
     ..\conattrs.cpp \
+    ..\KeyEventHelpers.cpp \
 
 INCLUDES = \
     $(INCLUDES); \

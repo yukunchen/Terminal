@@ -18,6 +18,9 @@ Abstract:
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <memory>
+
 // WIL
 #include <wil\Common.h>
 #include <wil\Result.h>
+
