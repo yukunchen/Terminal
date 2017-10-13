@@ -349,12 +349,6 @@ void InputEngineTest::RoundTripTest()
         {
             uiActualKeystate = SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
         }
-        else if (vkey == VK_F1 || vkey == VK_F2 || vkey == VK_F3 || vkey == VK_F4)
-        {
-            // todo MSFT:13420038
-            // Skip for now
-            continue;
-        }
 
         INPUT_RECORD irTest = { 0 };
         irTest.EventType = KEY_EVENT;
