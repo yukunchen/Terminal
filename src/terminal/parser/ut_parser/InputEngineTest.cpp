@@ -79,6 +79,12 @@ private:
     std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteInputCallback;
 };
 
+TestInteractDispatch::TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn) :
+    _pfnWriteInputCallback(pfn)
+{
+
+}
+
 bool TestInteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents)
 {
     _pfnWriteInputCallback(inputEvents);
