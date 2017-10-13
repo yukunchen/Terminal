@@ -5,7 +5,7 @@ Module Name:
 - termDispatch.hpp
 
 Abstract:
-- This is the base class for all state machine callbacks. When actions occur, they will be dispatched to the methods on this interface
+- This is the base class for all output state machine callbacks. When actions occur, they will be dispatched to the methods on this interface
   which must be implemented by a child class and passed into the state machine on creation.
 
 Author(s):
@@ -176,6 +176,18 @@ namespace Microsoft
 
                 virtual bool SoftReset(){ return false; } // DECSTR
                 virtual bool HardReset(){ return false; } // RIS
+
+                enum WindowManipulationFunction : unsigned int
+                {
+                    Invalid = 0,
+                    ResizeWindowInCharacters = 8,
+                };
+
+                // DTTERM_WindowManipulation
+                virtual bool WindowManipulation(_In_ const WindowManipulationFunction /*uiFunction*/,
+                                                _In_reads_(cParams) const unsigned short* const /*rgusParams*/,
+                                                _In_ size_t const /*cParams*/) { return false; } 
+
             };
         };
     };

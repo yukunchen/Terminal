@@ -80,6 +80,8 @@ namespace Microsoft
                 virtual BOOL PrivateEnableAlternateScroll(_In_ bool const fEnabled) = 0;
                 virtual BOOL PrivateEraseAll() = 0;
                 virtual BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes) = 0;
+                virtual BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                                        _Out_ size_t& eventsWritten) = 0;
             };
         };
     };

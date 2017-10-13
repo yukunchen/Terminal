@@ -200,6 +200,10 @@ void VtRendererTest::VtSequenceHelperTests()
 
     qExpectedInput.push_back("\x1b[H");
     engine->_CursorHome();
+
+    qExpectedInput.push_back("\x1b[8;32;80t");
+    engine->_ResizeWindow(80, 32);
+
 }
 
 void VtRendererTest::Xterm256TestInvalidate()
@@ -211,9 +215,10 @@ void VtRendererTest::Xterm256TestInvalidate()
 
     SMALL_RECT view = {};
     view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
+    view.Bottom = 31;
+    view.Right = 79;
 
+    qExpectedInput.push_back("\x1b[8;32;80t");
     engine->UpdateViewport(view);
 
     Log::Comment(NoThrowString().Format(
@@ -364,9 +369,10 @@ void VtRendererTest::Xterm256TestColors()
 
     SMALL_RECT view = {};
     view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
+    view.Bottom = 31;
+    view.Right = 79;
 
+    qExpectedInput.push_back("\x1b[8;32;80t");
     engine->UpdateViewport(view);
 
     Log::Comment(NoThrowString().Format(
@@ -418,9 +424,10 @@ void VtRendererTest::Xterm256TestCursor()
 
     SMALL_RECT view = {};
     view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
+    view.Bottom = 31;
+    view.Right = 79;
 
+    qExpectedInput.push_back("\x1b[8;32;80t");
     engine->UpdateViewport(view);
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."
@@ -545,9 +552,10 @@ void VtRendererTest::XtermTestInvalidate()
 
     SMALL_RECT view = {};
     view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
+    view.Bottom = 31;
+    view.Right = 79;
 
+    qExpectedInput.push_back("\x1b[8;32;80t");
     engine->UpdateViewport(view);
 
     Log::Comment(NoThrowString().Format(
@@ -698,9 +706,10 @@ void VtRendererTest::XtermTestColors()
 
     SMALL_RECT view = {};
     view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
+    view.Bottom = 31;
+    view.Right = 79;
 
+    qExpectedInput.push_back("\x1b[8;32;80t");
     engine->UpdateViewport(view);
 
     Log::Comment(NoThrowString().Format(
@@ -765,9 +774,10 @@ void VtRendererTest::XtermTestCursor()
 
     SMALL_RECT view = {};
     view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
+    view.Bottom = 31;
+    view.Right = 79;
 
+    qExpectedInput.push_back("\x1b[8;32;80t");
     engine->UpdateViewport(view);
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."
@@ -893,9 +903,10 @@ void VtRendererTest::WinTelnetTestInvalidate()
 
     SMALL_RECT view = {};
     view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
+    view.Bottom = 31;
+    view.Right = 79;
 
+    qExpectedInput.push_back("\x1b[8;32;80t");
     engine->UpdateViewport(view);
 
     Log::Comment(NoThrowString().Format(
@@ -981,9 +992,10 @@ void VtRendererTest::WinTelnetTestColors()
 
     SMALL_RECT view = {};
     view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
+    view.Bottom = 31;
+    view.Right = 79;
 
+    qExpectedInput.push_back("\x1b[8;32;80t");
     engine->UpdateViewport(view);
 
     Log::Comment(NoThrowString().Format(
@@ -1047,9 +1059,10 @@ void VtRendererTest::WinTelnetTestCursor()
 
     SMALL_RECT view = {};
     view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
+    view.Bottom = 31;
+    view.Right = 79;
 
+    qExpectedInput.push_back("\x1b[8;32;80t");
     engine->UpdateViewport(view);
 
     Log::Comment(NoThrowString().Format(

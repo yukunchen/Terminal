@@ -176,12 +176,20 @@ HRESULT VtEngine::UpdateDpi(_In_ int const /*iDpi*/)
 // - HRESULT S_OK
 HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 {
+    HRESULT hr = S_OK;
+    const short sOldWidth = _srLastViewport.Right - _srLastViewport.Left + 1;
+    const short sOldHeight = _srLastViewport.Bottom - _srLastViewport.Top + 1;
+    const short sNewWidth = srNewViewport.Right - srNewViewport.Left + 1;
+    const short sNewHeight = srNewViewport.Bottom - srNewViewport.Top + 1;
+    
     _srLastViewport = srNewViewport;
 
-    // If the viewport has changed, then send a window update.
-    // TODO: 13847317(adapter), 13271084(renderer)
+    if ((sOldHeight != sNewHeight) || (sOldWidth != sNewWidth))
+    {
+        hr = _ResizeWindow(sNewWidth, sNewHeight);
+    }
 
-    return S_OK;
+    return hr;
 }
 
 // Method Description:

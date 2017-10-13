@@ -160,64 +160,100 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
     for (int i = 0; i < cEvents; ++i)
     {
         INPUT_RECORD event = inputBuffer[i];
-        if (event.EventType != KEY_EVENT)
+
+        if (event.EventType == KEY_EVENT)
         {
-            continue;
-        }
-
-        KEY_EVENT_RECORD keyEvent = event.Event.KeyEvent;
-                
-        if (keyEvent.bKeyDown)
-        {
-            const char c = keyEvent.uChar.AsciiChar;
-
-            if (c == '\0' && keyEvent.wVirtualScanCode != 0)
+            KEY_EVENT_RECORD keyEvent = event.Event.KeyEvent;
+            if (keyEvent.bKeyDown)
             {
-                // This is a special keyboard key that was pressed, not actually NUL
-                continue;
-            }
+                const char c = keyEvent.uChar.AsciiChar;
 
-            if (!prefixPressed)
-            {
-                if (c == '\x2')
+                if (c == '\0' && keyEvent.wVirtualScanCode != 0)
                 {
-                    prefixPressed = true;
+                    // This is a special keyboard key that was pressed, not actually NUL
+                    continue;
                 }
-                else
+
+                if (!prefixPressed)
                 {
-                    *nextBuffer = c;
-                    nextBuffer++;
-                    bufferCch++;
-                }
-            }
-            else
-            {
-                switch(c)
-                {
-                    case 'n':
-                    case '\t':
-                        nextConsole();
-                        break;
-                    case 'c':
-                        newConsole();
-                        break;
-                    case 't':
-                        newConsole();
-                        nextConsole();
-                        break;
-                    default:
+                    if (c == '\x2')
+                    {
+                        prefixPressed = true;
+                    }
+                    else
+                    {
                         *nextBuffer = c;
                         nextBuffer++;
                         bufferCch++;
+                    }
                 }
-                prefixPressed = false;
+                else
+                {
+                    switch(c)
+                    {
+                        case 'n':
+                        case '\t':
+                            nextConsole();
+                            break;
+                        case 'c':
+                            newConsole();
+                            break;
+                        case 't':
+                            newConsole();
+                            nextConsole();
+                            break;
+                        default:
+                            *nextBuffer = c;
+                            nextBuffer++;
+                            bufferCch++;
+                    }
+                    prefixPressed = false;
+                }
+                int numPrintable = 0;
+                toPrintableBuffer(c, nextPrintable, &numPrintable);
+                nextPrintable += numPrintable;
+                printableCch += numPrintable;
             }
-            int numPrintable = 0;
-            toPrintableBuffer(c, nextPrintable, &numPrintable);
-            nextPrintable += numPrintable;
-            printableCch += numPrintable;
-            
         }
+        else if (event.EventType == WINDOW_BUFFER_SIZE_EVENT)
+        {
+            WINDOW_BUFFER_SIZE_RECORD resize = event.Event.WindowBufferSizeEvent;
+            // the resize event doesn't actually have the info we want.
+            CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+            csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+            bool fSuccess = !!GetConsoleScreenBufferInfoEx(hOut, &csbiex);
+            if (fSuccess)
+            {
+                SMALL_RECT srViewport = csbiex.srWindow;
+                
+                std::stringstream ss;
+                std::stringstream debugSs;
+                ss << "\x1b[8;";
+                debugSs << "\\x1b[8;";
+                short width = srViewport.Right - srViewport.Left + 1;
+                short height = srViewport.Bottom - srViewport.Top + 1;
+                
+                ss << height;
+                debugSs << height;
+
+                ss << ";";
+                debugSs << ";";
+                
+                ss << width;
+                debugSs << width;
+                
+                ss << "t";
+                debugSs << "t";
+
+                std::string seq;
+                std::string debugSeq;
+                ss >> seq;
+                debugSs >> debugSeq;
+                getConsole()->WriteInput(seq);
+                debug->WriteInput(debugSeq);
+            }
+        }
+
     }
 
     if (bufferCch > 0)

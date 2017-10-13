@@ -745,4 +745,144 @@ class ScreenBufferTests
             viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
         ));
     }
+
+    TEST_METHOD(VtResize);
 };
+
+
+void ScreenBufferTests::VtResize()
+{
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
+    StateMachine* const stateMachine = psi->GetStateMachine();
+    Cursor* const cursor = tbi->GetCursor();
+    SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    VERIFY_IS_NOT_NULL(stateMachine);
+    VERIFY_IS_NOT_NULL(cursor);
+
+    cursor->SetXPosition(0);
+    cursor->SetYPosition(0);
+
+    auto initialSbHeight = psi->GetScreenBufferSize().Y;
+    auto initialSbWidth = psi->GetScreenBufferSize().X;
+    // The viewport is an inclusive rect, so we need +1's
+    auto initialViewHeight = psi->GetBufferViewport().Bottom - psi->GetBufferViewport().Top + 1;
+    auto initialViewWidth = psi->GetBufferViewport().Right - psi->GetBufferViewport().Left + 1;
+
+    Log::Comment(NoThrowString().Format(
+        L"Write '\x1b[8;30;80t'"
+        L" The Screen buffer height should remain unchanged, but the width should be 80 columns"
+        L" The viewport should be w,h=80,30"
+    ));
+
+    std::wstring sequence = L"\x1b[8;30;80t";
+    stateMachine->ProcessString(&sequence[0], sequence.length());
+
+    auto newSbHeight = psi->GetScreenBufferSize().Y;
+    auto newSbWidth = psi->GetScreenBufferSize().X;
+    // The viewport is an inclusive rect, so we need +1's
+    auto newViewHeight = psi->GetBufferViewport().Bottom - psi->GetBufferViewport().Top + 1;
+    auto newViewWidth = psi->GetBufferViewport().Right - psi->GetBufferViewport().Left + 1;
+
+    VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
+    VERIFY_ARE_EQUAL(80, newSbWidth);
+    VERIFY_ARE_EQUAL(30, newViewHeight);
+    VERIFY_ARE_EQUAL(80, newViewWidth);
+
+    initialSbHeight = newSbHeight;
+    initialSbWidth = newSbWidth;
+    initialViewHeight = newViewHeight;
+    initialViewWidth = newViewWidth;
+
+    Log::Comment(NoThrowString().Format(
+        L"Write '\x1b[8;40;80t'"
+        L" The Screen buffer height should remain unchanged, but the width should be 80 columns"
+        L" The viewport should be w,h=80,40"
+    ));
+
+    sequence = L"\x1b[8;40;80t";
+    stateMachine->ProcessString(&sequence[0], sequence.length());
+
+    newSbHeight = psi->GetScreenBufferSize().Y;
+    newSbWidth = psi->GetScreenBufferSize().X;
+    newViewHeight = psi->GetBufferViewport().Bottom - psi->GetBufferViewport().Top + 1;
+    newViewWidth = psi->GetBufferViewport().Right - psi->GetBufferViewport().Left + 1;
+
+    VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
+    VERIFY_ARE_EQUAL(80, newSbWidth);
+    VERIFY_ARE_EQUAL(40, newViewHeight);
+    VERIFY_ARE_EQUAL(80, newViewWidth);
+
+    initialSbHeight = newSbHeight;
+    initialSbWidth = newSbWidth;
+    initialViewHeight = newViewHeight;
+    initialViewWidth = newViewWidth;
+
+    Log::Comment(NoThrowString().Format(
+        L"Write '\x1b[8;40;90t'"
+        L" The Screen buffer height should remain unchanged, but the width should be 90 columns"
+        L" The viewport should be w,h=90,40"
+    ));
+
+    sequence = L"\x1b[8;40;90t";
+    stateMachine->ProcessString(&sequence[0], sequence.length());
+
+    newSbHeight = psi->GetScreenBufferSize().Y;
+    newSbWidth = psi->GetScreenBufferSize().X;
+    newViewHeight = psi->GetBufferViewport().Bottom - psi->GetBufferViewport().Top + 1;
+    newViewWidth = psi->GetBufferViewport().Right - psi->GetBufferViewport().Left + 1;
+
+    VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
+    VERIFY_ARE_EQUAL(90, newSbWidth);
+    VERIFY_ARE_EQUAL(40, newViewHeight);
+    VERIFY_ARE_EQUAL(90, newViewWidth);
+
+    initialSbHeight = newSbHeight;
+    initialSbWidth = newSbWidth;
+    initialViewHeight = newViewHeight;
+    initialViewWidth = newViewWidth;
+
+    Log::Comment(NoThrowString().Format(
+        L"Write '\x1b[8;12;12t'"
+        L" The Screen buffer height should remain unchanged, but the width should be 12 columns"
+        L" The viewport should be w,h=12,12"
+    ));
+
+    sequence = L"\x1b[8;12;12t";
+    stateMachine->ProcessString(&sequence[0], sequence.length());
+
+    newSbHeight = psi->GetScreenBufferSize().Y;
+    newSbWidth = psi->GetScreenBufferSize().X;
+    newViewHeight = psi->GetBufferViewport().Bottom - psi->GetBufferViewport().Top + 1;
+    newViewWidth = psi->GetBufferViewport().Right - psi->GetBufferViewport().Left + 1;
+
+    VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
+    VERIFY_ARE_EQUAL(12, newSbWidth);
+    VERIFY_ARE_EQUAL(12, newViewHeight);
+    VERIFY_ARE_EQUAL(12, newViewWidth);
+
+    initialSbHeight = newSbHeight;
+    initialSbWidth = newSbWidth;
+    initialViewHeight = newViewHeight;
+    initialViewWidth = newViewWidth;
+
+    Log::Comment(NoThrowString().Format(
+        L"Write '\x1b[8;0;0t'"
+        L" Nothing should change"
+    ));
+
+    sequence = L"\x1b[8;0;0t";
+    stateMachine->ProcessString(&sequence[0], sequence.length());
+
+    newSbHeight = psi->GetScreenBufferSize().Y;
+    newSbWidth = psi->GetScreenBufferSize().X;
+    newViewHeight = psi->GetBufferViewport().Bottom - psi->GetBufferViewport().Top + 1;
+    newViewWidth = psi->GetBufferViewport().Right - psi->GetBufferViewport().Left + 1;
+
+    VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
+    VERIFY_ARE_EQUAL(initialSbWidth, newSbWidth);
+    VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
+    VERIFY_ARE_EQUAL(initialViewWidth, newViewWidth);
+
+}
