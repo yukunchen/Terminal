@@ -47,9 +47,9 @@ namespace Microsoft
                                        _In_ const unsigned short sOscParam,
                                        _Inout_ wchar_t* const pwchOscStringBuffer,
                                        _In_ const unsigned short cchOscString) override;
-
-                // TODO: MSFT:13420038
-                // bool ActionSs3Dispatch(_In_ wchar_t const wch) override;
+                bool ActionSs3Dispatch(_In_ wchar_t const wch, 
+                                       _In_ const unsigned short* const rgusParams,
+                                       _In_ const unsigned short cParams) override;
 
                 bool FlushAtEndOfString() const override;
 
