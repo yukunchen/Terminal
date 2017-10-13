@@ -1723,3 +1723,29 @@ bool AdaptDispatch::EnableAlternateScroll(_In_ bool const fEnabled)
 {
     return !!_pConApi->PrivateEnableAlternateScroll(fEnabled);
 }
+
+
+bool AdaptDispatch::SetColorTableEntry(_In_ size_t tableIndex, _In_ DWORD dwColor)
+{
+    bool fSuccess = tableIndex < 16;
+    if (fSuccess)
+    {
+        CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+        csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+        fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+        if (fSuccess)
+        {
+            size_t realIndex = 
+                (IsFlagSet(tableIndex, 8)? 8 : 0) + // intensity
+                (IsFlagSet(tableIndex, 1)? 4 : 0) + // r
+                (IsFlagSet(tableIndex, 2)? 2 : 0) + // g
+                (IsFlagSet(tableIndex, 4)? 1 : 0);  //b
+
+            csbiex.ColorTable[realIndex] = dwColor;
+            fSuccess = !!_pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
+        }
+    }
+    return fSuccess;
+}
+
+

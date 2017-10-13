@@ -204,7 +204,7 @@ bool StateMachine::s_IsOscDelimiter(_In_ wchar_t const wch)
 // - True if it is. False if it isn't.
 bool StateMachine::s_IsOscParamValue(_In_ wchar_t const wch)
 {
-    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
+    return s_IsNumber(wch); // 0x30 - 0x39
 }
 
 // Routine Description:
@@ -230,6 +230,30 @@ bool StateMachine::s_IsOscInvalid(_In_ wchar_t const wch)
 bool StateMachine::s_IsOscTerminator(_In_ wchar_t const wch)
 {
     return wch == L'\x7'; // Bell character
+}
+
+// Routine Description:
+// - Determines if a character is a valid number character, 0-9.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+bool StateMachine::s_IsNumber(_In_ wchar_t const wch)
+{
+    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
+}
+
+// Routine Description:
+// - Determines if a character is a valid hex character, 0-9a-fA-F.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+bool StateMachine::s_IsHexNumber(_In_ wchar_t const wch)
+{
+    return (wch >= L'0' && wch <= L'9') || // 0x30 - 0x39
+           (wch >= L'A' && wch <= L'F') || 
+           (wch >= L'a' && wch <= L'f');
 }
 
 // Routine Description:

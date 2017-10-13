@@ -520,6 +520,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
     bool fSuccess = false;
     wchar_t* pwchTitle = nullptr;  
     unsigned short sCchTitleLength = 0;
+    size_t tableIndex = 0;
+    DWORD dwColor = 0;
 
     switch (sOscParam)
     {
@@ -527,6 +529,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
     case OscActionCodes::SetWindowIcon:
     case OscActionCodes::SetWindowTitle:
         fSuccess = _GetOscTitle(pwchOscStringBuffer, cchOscString, &pwchTitle, &sCchTitleLength);
+        break;
+    case OscActionCodes::SetColor:
+        fSuccess = _GetOscSetColorTable(pwchOscStringBuffer, cchOscString, &tableIndex, &dwColor);
         break;
     default:
         // If no functions to call, overall dispatch was a failure.
@@ -541,6 +546,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
         case OscActionCodes::SetWindowIcon:
         case OscActionCodes::SetWindowTitle:
             fSuccess = _pDispatch->SetWindowTitle(pwchTitle, sCchTitleLength);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCWT);
+            break;
+        case OscActionCodes::SetColor:
+            fSuccess = _pDispatch->SetColorTableEntry(tableIndex, dwColor);
+            // todo replace telemetry
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCWT);
             break;
         default:
@@ -1056,3 +1066,168 @@ bool OutputStateMachineEngine::FlushAtEndOfString() const
 {
     return false;
 }
+
+
+// Routine Description:
+// - Determines if a character is a valid hex character, 0-9a-fA-F.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+unsigned int OutputStateMachineEngine::s_HexToUint(_In_ wchar_t const wch)
+{
+    unsigned int value = 0;
+    if (wch >= L'0' && wch <= L'9')
+    {
+        value = wch - L'0';
+    }
+    else if (wch >= L'A' && wch <= L'F')
+    {
+        value = (wch - L'A') + 10;
+    }
+    else if (wch >= L'a' && wch <= L'f')
+    {
+        value = (wch - L'a') + 10;
+    }
+    return value;
+}
+
+// Routine Description:
+// - Determines if a character is a valid number character, 0-9.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+bool OutputStateMachineEngine::s_IsNumber(_In_ wchar_t const wch)
+{
+    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
+}
+
+// Routine Description:
+// - Determines if a character is a valid hex character, 0-9a-fA-F.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+bool OutputStateMachineEngine::s_IsHexNumber(_In_ wchar_t const wch)
+{
+    return (wch >= L'0' && wch <= L'9') || // 0x30 - 0x39
+           (wch >= L'A' && wch <= L'F') || 
+           (wch >= L'a' && wch <= L'f');
+}
+
+// Routine Description:
+// - OSC 4 ; c ; spec ST
+//      c: the index of the ansi color table
+//      spec: a color in the following format:
+//          "rgb:<red>/<green>/<blue>"
+//          where <color> is two hex digits
+// Arguments: 
+// - ppwchTitle - a pointer to point to the Osc String to use as a title.
+// - pcchTitleLength - a pointer place the length of ppwchTitle into.
+// Return Value:
+// - True if there was a title to output. (a title with length=0 is still valid)
+bool OutputStateMachineEngine::_GetOscSetColorTable(wchar_t* pwchOscStringBuffer,
+                                                    size_t cchOscString,
+                                                    size_t* pTableIndex,
+                                                    DWORD* pRgb)
+{
+    // DebugBreak();
+    *pTableIndex = 0;
+    *pRgb = 0;
+    const wchar_t* pwchCurr = pwchOscStringBuffer;
+    size_t cchConsumed = 0;
+    size_t _TableIndex = 0;
+
+    for (auto i = 0; i < 4; i++)
+    {
+        if (i == 3)
+        {
+            // We read 3 characters, there was no semicolon. Not a valid string. 
+            return false;
+        }
+        const wchar_t wch = *pwchCurr;
+        if (s_IsNumber(wch))
+        {
+            _TableIndex *= 10;
+            _TableIndex += wch - L'0';
+
+            pwchCurr++;
+            cchConsumed++;
+        }
+        else if (wch == L';')
+        {
+            pwchCurr++;
+            cchConsumed++;
+            break;
+        }
+        else return false;
+        // if we're at the end of the OSC string
+        if (cchConsumed > cchOscString) return false;
+    }
+
+    // We need at least 4 characters for the "rgb:"
+    if (cchConsumed+4 > cchOscString) return false;
+    if (!(
+          (pwchCurr[0] == L'r') && 
+          (pwchCurr[1] == L'g') && 
+          (pwchCurr[2] == L'b') &&
+          (pwchCurr[3] == L':')
+         ))
+    {
+        return false;
+    }
+    pwchCurr+=4;
+    cchConsumed += 4;
+
+    // Colorspecs are up to hh/hh/hh, for 1-2 h's
+    unsigned int rguiColorValues[3] = {0};
+    for (auto j = 0; j < 3; j++)
+    {
+        // if (j == 2) DebugBreak();
+        auto pValue = &(rguiColorValues[j]);
+        for (auto i = 0; i < 5; i++)
+        {
+            if (i==2 && j == 2) break;
+            if (i == 4)
+            {
+                return false;
+                // We read 5 characters, there was no /. Not a valid string. 
+                // return false;
+            }
+            const wchar_t wch = *pwchCurr;
+            pwchCurr++;
+            cchConsumed++;
+
+            if (s_IsHexNumber(wch))
+            {
+                *pValue *= 16;
+                *pValue += s_HexToUint(wch);
+            }
+            else if (wch == L'/')
+            {
+                // Break this component, and start the next one.
+                break;
+            }
+            else
+            {
+                // Encountered something weird oh no
+                return false;
+            } 
+            if (cchConsumed == cchOscString && j == 2) break;
+        }
+        if (cchConsumed > cchOscString)
+        {
+            return false;
+        }
+    }
+    // DebugBreak();
+    DWORD color = RGB(LOBYTE(rguiColorValues[0]), LOBYTE(rguiColorValues[1]), LOBYTE(rguiColorValues[2]));
+
+    *pTableIndex = _TableIndex;
+    *pRgb = color;
+
+    return true;
+}
+
+
