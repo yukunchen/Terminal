@@ -73,3 +73,13 @@ InputEventType KeyEvent::EventType() const
 {
     return InputEventType::KeyEvent;
 }
+
+bool KeyEvent::IsKeyDown() const
+{
+    return !!_keyDown;
+}
+
+void KeyEvent::SetKeyDown(_In_ const bool keyDown)
+{
+    _keyDown = !!keyDown;
+}

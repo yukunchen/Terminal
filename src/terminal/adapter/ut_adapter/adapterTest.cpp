@@ -830,7 +830,7 @@ public:
             const KeyEvent* const keyEvent = static_cast<const KeyEvent* const>(_events[iInput].get());
 
             // every even key is down. every odd key is up. DOWN = 0, UP = 1. DOWN = 2, UP = 3. and so on.
-            VERIFY_ARE_EQUAL((BOOL)!(iInput % 2), keyEvent->_keyDown);
+            VERIFY_ARE_EQUAL((bool)!(iInput % 2), keyEvent->IsKeyDown());
             VERIFY_ARE_EQUAL(0u, keyEvent->_activeModifierKeys);
             Log::Comment(NoThrowString().Format(L"Comparing '%c' with '%c'...", wch, keyEvent->_charData));
             VERIFY_ARE_EQUAL(wch, keyEvent->_charData);

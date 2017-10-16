@@ -102,7 +102,10 @@ VOID SetConsoleWindowOwner(_In_ const HWND hwnd, _Inout_opt_ ConsoleProcessHandl
 // - pInputRecord - Input record event from the general input event handler
 // Return Value:
 // - True if the modes were appropriate for converting to a terminal sequence AND there was a matching terminal sequence for this key. False otherwise.
-bool HandleTerminalMouseEvent(_In_ const COORD cMousePosition, _In_ const unsigned int uiButton, _In_ const short sModifierKeystate, _In_ const short sWheelDelta)
+bool HandleTerminalMouseEvent(_In_ const COORD cMousePosition,
+                              _In_ const unsigned int uiButton,
+                              _In_ const short sModifierKeystate,
+                              _In_ const short sWheelDelta)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     // If the modes don't align, this is unhandled by default.
@@ -167,7 +170,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
         // --- END LOAD BEARING CODE ---
     }
 
-    keyEvent._keyDown = bKeyDown;
+    keyEvent.SetKeyDown(!!bKeyDown);
     keyEvent._repeatCount = LOWORD(lParam);
 
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)

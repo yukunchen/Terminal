@@ -116,7 +116,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
 
     if (IsAnyFlagSet(keyEvent._activeModifierKeys, CTRL_PRESSED) &&
         !IsAnyFlagSet(keyEvent._activeModifierKeys, ALT_PRESSED) &&
-        keyEvent._keyDown)
+        keyEvent.IsKeyDown())
     {
         // check for ctrl-c, if in line input mode.
         if (keyEvent._virtualKeyCode == 'C' && IsInProcessedInputMode())
@@ -157,7 +157,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
         }
     }
     else if (IsAnyFlagSet(keyEvent._activeModifierKeys, ALT_PRESSED) &&
-             keyEvent._keyDown &&
+             keyEvent.IsKeyDown() &&
              keyEvent._virtualKeyCode == VK_ESCAPE)
     {
         ContinueProcessing = FALSE;
@@ -171,7 +171,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
             EventsWritten = gci->pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
             if (EventsWritten && generateBreak)
             {
-                keyEvent._keyDown = FALSE;
+                keyEvent.SetKeyDown(false);
                 EventsWritten = gci->pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
             }
         }

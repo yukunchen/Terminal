@@ -345,7 +345,7 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
         KeyEvent keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
 
         // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
-        if (keyEvent._keyDown)
+        if (keyEvent.IsKeyDown())
         {
             // For AltGr enabled keyboards, the Windows system will
             // emit Left Ctrl + Right Alt as the modifier keys and

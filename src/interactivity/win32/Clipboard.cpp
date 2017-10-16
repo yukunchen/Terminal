@@ -230,7 +230,7 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToKeyboardEvents(_In_ const
 
     // add key event down and up
     keyEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-    keyEvent._keyDown = FALSE;
+    keyEvent.SetKeyDown(false);
     keyEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
 
     // add modifier key up event

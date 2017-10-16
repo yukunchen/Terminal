@@ -109,7 +109,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
             if (keyEvent->_charData != 0 && !commandLineEditKey)
             {
                 // chars that are generated using alt + numpad
-                if (!keyEvent->_keyDown && keyEvent->_virtualKeyCode == VK_MENU)
+                if (!keyEvent->IsKeyDown() && keyEvent->_virtualKeyCode == VK_MENU)
                 {
                     if (IsFlagSet(keyEvent->_activeModifierKeys, ALTNUMPAD_BIT))
                     {
@@ -137,7 +137,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                     return STATUS_SUCCESS;
                 }
                 // Ignore Escape and Newline chars
-                else if (keyEvent->_keyDown &&
+                else if (keyEvent->IsKeyDown() &&
                          (IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
                           (keyEvent->_virtualKeyCode != VK_ESCAPE &&
                            keyEvent->_charData != UNICODE_LINEFEED)))
@@ -147,7 +147,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                 }
             }
 
-            if (keyEvent->_keyDown)
+            if (keyEvent->IsKeyDown())
             {
                 if (pCommandLineEditingKeys && commandLineEditKey)
                 {

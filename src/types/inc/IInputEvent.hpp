@@ -90,12 +90,20 @@ public:
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;
 
+    bool IsKeyDown() const;
+    void SetKeyDown(_In_ const bool keyDown);
+
+
+private:
     int _keyDown;
+public:
     WORD _repeatCount;
     WORD _virtualKeyCode;
     WORD _virtualScanCode;
     wchar_t _charData;
     DWORD _activeModifierKeys;
+
+    friend bool operator==(const KeyEvent& a, const KeyEvent& b);
 };
 
 bool operator==(const KeyEvent& a, const KeyEvent& b);

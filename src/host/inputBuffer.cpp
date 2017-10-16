@@ -708,8 +708,8 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
         const KeyEvent* const pInKeyEvent = static_cast<const KeyEvent* const>(pFirstInEvent);
         const KeyEvent* const pLastKeyEvent = static_cast<const KeyEvent* const>(pLastStoredEvent);
 
-        if (pInKeyEvent->_keyDown &&
-            pLastKeyEvent->_keyDown &&
+        if (pInKeyEvent->IsKeyDown() &&
+            pLastKeyEvent->IsKeyDown() &&
             !IsCharFullWidth(pInKeyEvent->_charData))
         {
             bool sameKey = false;
@@ -763,7 +763,7 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::uniq
             if (currEvent->EventType() == InputEventType::KeyEvent)
             {
                 const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currEvent.get());
-                if (pKeyEvent->_keyDown)
+                if (pKeyEvent->IsKeyDown())
                 {
                     if (IsFlagSet(gci->Flags, CONSOLE_SUSPENDED) &&
                         !IsSystemKey(pKeyEvent->_virtualKeyCode))
