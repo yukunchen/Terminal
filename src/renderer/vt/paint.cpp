@@ -44,11 +44,6 @@ HRESULT VtEngine::EndPaint()
     _srcInvalid = { 0 };
     _fInvalidRectUsed = false;
 
-    if (_lastText.X != _lastRealCursor.X || _lastText.Y != _lastRealCursor.Y )
-    {
-        _MoveCursor(_lastRealCursor);
-    }
-
     _scrollDelta = {0};
     
     return S_OK;
@@ -136,16 +131,12 @@ HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const /*lines*/,
 // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-HRESULT VtEngine::PaintCursor(_In_ COORD const coord,
+HRESULT VtEngine::PaintCursor(_In_ COORD const /*coord*/,
                               _In_ ULONG const /*ulHeightPercent*/,
                               _In_ bool const /*fIsDoubleWidth*/)
 {
-    // TODO: MSFT 13310327
-    // The cursor needs some help. It invalidates itself, and really that should 
-    //      be the renderer's responsibility. We don't want to keep repainting 
-    //      the character under the cursor.
-
-    _lastRealCursor = coord;
+    COORD const coord = _cursor.GetPosition();
+    _MoveCursor(coord);
 
     return S_OK;
 }

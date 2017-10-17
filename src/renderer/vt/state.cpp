@@ -27,12 +27,12 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe) :
     _hFile(std::move(pipe)),
     _srLastViewport({0}),
     _srcInvalid({0}),
-    _lastRealCursor({0}),
     _lastText({0}),
     _scrollDelta({0}),
     _LastFG(INVALID_COLOR),
     _LastBG(INVALID_COLOR),
-    _usingTestCallback(false)
+    _usingTestCallback(false),
+    _cursor(this)
 
 {
 #ifndef UNIT_TESTING
@@ -100,7 +100,19 @@ HRESULT VtEngine::_Write(_In_ const char* const psz)
         std::string seq = std::string(psz);
         _Write(seq.c_str(), seq.length());
     }
-    CATCH_RETURN();
+    catch (...) 
+    {
+        if (_usingTestCallback)
+        {
+            // It's possiblee a TAEF exception can be thrown by the TestCallback.
+            // Let it bubble up.
+            THROW_NORMALIZED_CAUGHT_EXCEPTION();
+        }
+        else
+        {
+            RETURN_CAUGHT_EXCEPTION();
+        }
+    }
 
     return S_OK;
 }

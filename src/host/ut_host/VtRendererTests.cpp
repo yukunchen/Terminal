@@ -142,7 +142,7 @@ void VtRendererTest::TestPaintXterm(XtermEngine& engine, std::function<void()> p
 {
     qExpectedInput.push_back("\x1b[?25l");
     HRESULT hr = engine.StartPaint();
-    if (hr == S_FALSE)
+    if (hr == S_FALSE || engine._WillWriteSingleChar())
     {
         // Still do what the caller passed in, but without expecting the wrapping VT sequences.
         qExpectedInput.pop_front();
@@ -485,14 +485,14 @@ void VtRendererTest::Xterm256TestCursor()
         qExpectedInput.push_back("\r"); 
         engine->_MoveCursor({0,1});
 
-        // The "real" location is the last place the cursor was moved to not 
-        //  during the course of VT operations - eg the last place text was written,
-        //  or the cursor was manually painted at (MSFT 13310327)
-        Log::Comment(NoThrowString().Format(
-            L"Make sure the cursor gets moved back to the last real location it was at"
-        ));
-        qExpectedInput.push_back("\x1b[H");
-        // EndPaint will send this sequence for us.
+        // // The "real" location is the last place the cursor was moved to not 
+        // //  during the course of VT operations - eg the last place text was written,
+        // //  or the cursor was manually painted at (MSFT 13310327)
+        // Log::Comment(NoThrowString().Format(
+        //     L"Make sure the cursor gets moved back to the last real location it was at"
+        // ));
+        // qExpectedInput.push_back("\x1b[H");
+        // // EndPaint will send this sequence for us.
     });
 
     TestPaintXterm(*engine, [&]()
@@ -502,7 +502,7 @@ void VtRendererTest::Xterm256TestCursor()
             L"The cursor's last \"real\" position was 0,0"
         ));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
-        engine->_MoveCursor({0,0});
+        engine->_MoveCursor({0,1});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
 
         Log::Comment(NoThrowString().Format(
@@ -519,8 +519,6 @@ void VtRendererTest::Xterm256TestCursor()
         engine->_MoveCursor({10,1});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
 
-        // todo: MSFT 13310327 Testing painting the cursor might need to be fixed.
-        engine->PaintCursor({10,1}, 0, 0);
     });
 
     // Note that only PaintBufferLine updates the "Real" cursor position, which 
@@ -832,14 +830,14 @@ void VtRendererTest::XtermTestCursor()
         qExpectedInput.push_back("\r"); 
         engine->_MoveCursor({0,1});
 
-        // The "real" location is the last place the cursor was moved to not 
-        //  during the course of VT operations - eg the last place text was written,
-        //  or the cursor was manually painted at (MSFT 13310327)
-        Log::Comment(NoThrowString().Format(
-            L"Make sure the cursor gets moved back to the last real location it was at"
-        ));
-        qExpectedInput.push_back("\x1b[H");
-        // EndPaint will send this sequence for us.
+        // // The "real" location is the last place the cursor was moved to not 
+        // //  during the course of VT operations - eg the last place text was written,
+        // //  or the cursor was manually painted at (MSFT 13310327)
+        // Log::Comment(NoThrowString().Format(
+        //     L"Make sure the cursor gets moved back to the last real location it was at"
+        // ));
+        // qExpectedInput.push_back("\x1b[H");
+        // // EndPaint will send this sequence for us.
     });
 
     TestPaintXterm(*engine, [&]()
@@ -849,7 +847,7 @@ void VtRendererTest::XtermTestCursor()
             L"The cursor's last \"real\" position was 0,0"
         ));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
-        engine->_MoveCursor({0,0});
+        engine->_MoveCursor({0,1});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
 
         Log::Comment(NoThrowString().Format(
@@ -866,8 +864,6 @@ void VtRendererTest::XtermTestCursor()
         engine->_MoveCursor({10,1});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
 
-        // todo: MSFT 13310327 Testing painting the cursor might need to be fixed.
-        engine->PaintCursor({10,1}, 0, 0);
     });
 
     // Note that only PaintBufferLine updates the "Real" cursor position, which 
@@ -1113,8 +1109,6 @@ void VtRendererTest::WinTelnetTestCursor()
         engine->_MoveCursor({10,1});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
 
-        // todo: MSFT 13310327 Testing painting the cursor might need to be fixed.
-        engine->PaintCursor({10,1}, 0, 0);
     });
 
     // Note that only PaintBufferLine updates the "Real" cursor position, which 

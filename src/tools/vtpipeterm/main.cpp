@@ -32,12 +32,26 @@ VtConsole* debug;
 bool prefixPressed = false;
 
 ////////////////////////////////////////////////////////////////////////////////
+// Forward decls
+std::string toPrintableString(std::string& inString);
+void toPrintableBuffer(char c, char* printBuffer, int* printCch);
+////////////////////////////////////////////////////////////////////////////////
+
 
 void ReadCallback(byte* buffer, DWORD dwRead)
 {
     // We already set the console to UTF-8 CP, so we can just write straight to it
     THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
+
+    // std::string renderData = std::string(static_cast<char*>(buffer));
+    std::string renderData = std::string((char*)buffer, dwRead);
+    std::string printable = toPrintableString(renderData);
+    std::string seq = "\n";
+    WriteFile(debug->inPipe(), printable.c_str(), (DWORD)printable.length(), 0, 0);
+    WriteFile(debug->inPipe(), seq.c_str(), (DWORD)seq.length(), 0, 0);
+
 }
+
 void DebugReadCallback(byte* /*buffer*/, DWORD /*dwRead*/)
 {
     // do nothing.
@@ -75,10 +89,10 @@ void newConsole()
     consoles.push_back(con);
 }
 
-void csi(string seq){
+std::string csi(string seq){
     string fullSeq = "\x1b[";
     fullSeq += seq;
-    printf(fullSeq.c_str());
+    return fullSeq;
 }
 
 void printKeyEvent(KEY_EVENT_RECORD keyEvent)
@@ -144,7 +158,34 @@ void toPrintableBuffer(char c, char* printBuffer, int* printCch)
         printBuffer[0] = (char)c;
         *printCch = 1;
     }
+}
 
+std::string toPrintableString(std::string& inString)
+{
+    std::string retval = "";
+    for (int i = 0; i < inString.length(); i++)
+    {
+        char c = inString[i];
+        if (c < '\x20')
+        {
+            retval += "^";
+            char actual = (c + 0x40);
+            retval += std::string(1, actual);
+        }
+        else if (c == '\x7f')
+        {
+            retval += "\\x7f";
+        }
+        else if (c == '\x20')
+        {
+            retval += "SPC";
+        }
+        else
+        {
+            retval += std::string(1, c);
+        }
+    }
+    return retval;
 }
 
 void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
@@ -231,7 +272,7 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
         // csi("0m");
 
         WriteFile(inPipe(), vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
-        WriteFile(debug->inPipe(), printSeq.c_str(), (DWORD)printSeq.length(), nullptr, nullptr);
+        // WriteFile(debug->inPipe(), printSeq.c_str(), (DWORD)printSeq.length(), nullptr, nullptr);
     }
 }
 
@@ -314,7 +355,6 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 {
     // initialize random seed: 
     srand((unsigned int)time(NULL));
-
     SetConsoleCtrlHandler( (PHANDLER_ROUTINE) CtrlHandler, TRUE );
 
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -329,7 +369,8 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 
     // Create a debug console for writting debugging output to.
     debug = new VtConsole(DebugReadCallback);
-    debug->spawn(L"ubuntu run cat");
+    // Echo stdin to stdout, but ignore newlines (so cat doesn't echo the input)
+    debug->spawn(L"ubuntu run tr -d '\n' | cat -sA");
     debug->activate();
 
     // Exit the thread so the CRT won't clean us up and kill. The IO thread owns the lifetime now.

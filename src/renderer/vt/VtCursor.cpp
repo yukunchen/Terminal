@@ -6,13 +6,13 @@
 
 #include "precomp.h"
 
-#include "gdicursor.hpp"
+#include "VtCursor.hpp"
 
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
 
-GdiCursor::GdiCursor(IRenderEngine* const pEngine) :
+VtCursor::VtCursor(IRenderEngine* const pEngine) :
     _coordPosition({-1, -1}),
     _pEngine(pEngine)
 {
@@ -21,32 +21,15 @@ GdiCursor::GdiCursor(IRenderEngine* const pEngine) :
 
 // Method Description:
 // - Moves the renderer's cursor.
-//      For GDI, invalidates both the old position of the cursor (where the 
-//      inverted cursor was) and the new position.
+//      For VT, does effectively nothing, but does store the "real" position of
+//       the cursor.
 // Arguments:
 // - cPos: The new cursor position, in viewport origin character coordinates.
 // Return Value:
 // - <none>
-void GdiCursor::Move(_In_ const COORD cPos)
+void VtCursor::Move(_In_ const COORD cPos)
 {
-    SMALL_RECT sr;
-
-    // Invalidate both the old position and the new one
-
-    sr.Left = _coordPosition.X;
-    sr.Right = sr.Left + 1;
-    sr.Top = _coordPosition.Y;
-    sr.Bottom = sr.Top + 1;
-    _pEngine->Invalidate(&sr);
-
-    _coordPosition = cPos;
-    
-    sr.Left = _coordPosition.X;
-    sr.Right = sr.Left + 1;
-    sr.Top = _coordPosition.Y;
-    sr.Bottom = sr.Top + 1;
-    _pEngine->Invalidate(&sr);
-
+    _coordPosition = cPos;   
 }
 
 // Method Description:
@@ -55,7 +38,7 @@ void GdiCursor::Move(_In_ const COORD cPos)
 // - <none>
 // Return Value:
 // - The cursor position.
-COORD GdiCursor::GetPosition()
+COORD VtCursor::GetPosition()
 {
     return _coordPosition;
 }

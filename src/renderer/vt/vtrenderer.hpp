@@ -15,7 +15,7 @@ Author(s):
 #pragma once
 
 #include "..\inc\IRenderEngine.hpp"
-#include "..\inc\NoOpCursor.hpp"
+#include "VtCursor.hpp"
 #include <string>
 #include <functional>
 
@@ -101,7 +101,7 @@ protected:
 
     bool _quickReturn;
     
-    NoOpCursor _cursor;
+    VtCursor _cursor;
 
     HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);
     HRESULT _Write(_In_ const std::string& str);
@@ -135,7 +135,9 @@ protected:
                                          _In_ COLORREF const colorBackground,
                                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                          _In_ const WORD cColorTable);
+    bool _WillWriteSingleChar() const;
 
+    /////////////////////////// Unit Testing Helpers ///////////////////////////
     std::function<bool(const char* const, size_t const)> _pfnTestCallback;
     bool _usingTestCallback;
 
