@@ -766,13 +766,13 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::uniq
                 if (pKeyEvent->IsKeyDown())
                 {
                     if (IsFlagSet(gci->Flags, CONSOLE_SUSPENDED) &&
-                        !IsSystemKey(pKeyEvent->_virtualKeyCode))
+                        !IsSystemKey(pKeyEvent->GetVirtualKeyCode()))
                     {
                         UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
                         continue;
                     }
                     else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
-                             (pKeyEvent->_virtualKeyCode == VK_PAUSE || ::IsPauseKey(*pKeyEvent)))
+                             (pKeyEvent->GetVirtualKeyCode() == VK_PAUSE || ::IsPauseKey(*pKeyEvent)))
                     {
                         SetFlag(gci->Flags, CONSOLE_SUSPENDED);
                         continue;

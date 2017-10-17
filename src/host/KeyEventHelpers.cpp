@@ -19,7 +19,7 @@ bool IsCommandLineEditingKey(_In_ const KeyEvent& keyEvent)
 {
     if (!IsAnyFlagSet(keyEvent._activeModifierKeys, ALT_PRESSED | CTRL_PRESSED))
     {
-        switch (keyEvent._virtualKeyCode)
+        switch (keyEvent.GetVirtualKeyCode())
         {
         case VK_ESCAPE:
         case VK_PRIOR:
@@ -48,7 +48,7 @@ bool IsCommandLineEditingKey(_In_ const KeyEvent& keyEvent)
     }
     if (IsAnyFlagSet(keyEvent._activeModifierKeys, CTRL_PRESSED))
     {
-        switch (keyEvent._virtualKeyCode)
+        switch (keyEvent.GetVirtualKeyCode())
         {
         case VK_END:
         case VK_HOME:
@@ -71,7 +71,7 @@ bool IsCommandLineEditingKey(_In_ const KeyEvent& keyEvent)
 
     if (IsAnyFlagSet(keyEvent._activeModifierKeys, ALT_PRESSED))
     {
-        switch (keyEvent._virtualKeyCode)
+        switch (keyEvent.GetVirtualKeyCode())
         {
         case VK_F7:
         case VK_F10:
@@ -93,7 +93,7 @@ bool IsCommandLinePopupKey(_In_ const KeyEvent& keyEvent)
 {
     if (!IsAnyFlagSet(keyEvent._activeModifierKeys, ALT_PRESSED | CTRL_PRESSED))
     {
-        switch (keyEvent._virtualKeyCode)
+        switch (keyEvent.GetVirtualKeyCode())
         {
         case VK_ESCAPE:
         case VK_PRIOR:
@@ -140,7 +140,7 @@ const ExtKeySubst* const ParseEditKeyInfo(_Inout_ KeyEvent& keyEvent)
     {
         // Substitute the input with ext key.
         keyEvent._activeModifierKeys = pKeySubst->wMod;
-        keyEvent._virtualKeyCode = pKeySubst->wVirKey;
+        keyEvent.SetVirtualKeyCode(pKeySubst->wVirKey);
         keyEvent._charData = pKeySubst->wUnicodeChar;
     }
 
@@ -160,12 +160,12 @@ const ExtKeySubst* const GetKeySubst(_In_ const KeyEvent& keyEvent)
     // If not extended mode, or Control key or Alt key is not pressed, or virtual keycode is out of range, just bail.
     if (!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey() ||
         (keyEvent._activeModifierKeys & (CTRL_PRESSED | ALT_PRESSED)) == 0 ||
-        keyEvent._virtualKeyCode < 'A' || keyEvent._virtualKeyCode > 'Z')
+        keyEvent.GetVirtualKeyCode() < 'A' || keyEvent.GetVirtualKeyCode() > 'Z')
     {
         return nullptr;
     }
 
-    const ExtKeyDef* const pKeyDef = GetKeyDef(keyEvent._virtualKeyCode);
+    const ExtKeyDef* const pKeyDef = GetKeyDef(keyEvent.GetVirtualKeyCode());
     const ExtKeySubst* pKeySubst;
 
     // Get the KeySubst based on the modifier status.
@@ -213,8 +213,7 @@ bool IsPauseKey(_In_ const KeyEvent& keyEvent)
     }
     else
     {
-        isPauseKey = (keyEvent._virtualKeyCode == L'S' && CTRL_BUT_NOT_ALT(keyEvent._activeModifierKeys));
+        isPauseKey = (keyEvent.GetVirtualKeyCode() == L'S' && CTRL_BUT_NOT_ALT(keyEvent._activeModifierKeys));
     }
     return isPauseKey;
 }
-

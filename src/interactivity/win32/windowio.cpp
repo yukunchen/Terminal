@@ -146,7 +146,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
     // Make sure we retrieve the key info first, or we could chew up
     // unneeded space in the key info table if we bail out early.
     KeyEvent keyEvent;
-    keyEvent._virtualKeyCode = VirtualKeyCode;
+    keyEvent.SetVirtualKeyCode(VirtualKeyCode);
     keyEvent._virtualScanCode = static_cast<BYTE>(HIWORD(lParam));
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
     {
@@ -162,11 +162,11 @@ void HandleKeyEvent(_In_ const HWND hWnd,
         //       Most notably this affects Ctrl-C, Ctrl-Break, and Pause/Break among others.
         //
         RetrieveKeyInfo(hWnd,
-                        &keyEvent._virtualKeyCode,
+                        &VirtualKeyCode,
                         &keyEvent._virtualScanCode,
                         !gci->pInputBuffer->fInComposition);
 
-        VirtualKeyCode = keyEvent._virtualKeyCode;
+        keyEvent.SetVirtualKeyCode(VirtualKeyCode);
         // --- END LOAD BEARING CODE ---
     }
 

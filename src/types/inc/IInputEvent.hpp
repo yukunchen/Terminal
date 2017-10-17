@@ -90,6 +90,8 @@ public:
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;
 
+    bool IsCursorKey() const;
+
     bool IsKeyDown() const;
     void SetKeyDown(_In_ const bool keyDown);
 
@@ -98,13 +100,17 @@ public:
     void SetRepeatCount(_In_ const size_t repeatCount);
     */
 
+    WORD GetVirtualKeyCode() const;
+    void SetVirtualKeyCode(_In_ const WORD virtualKeyCode);
 
 private:
     bool _keyDown;
 public:
     WORD _repeatCount;
     //size_t _repeatCount;
+private:
     WORD _virtualKeyCode;
+public:
     WORD _virtualScanCode;
     wchar_t _charData;
     DWORD _activeModifierKeys;

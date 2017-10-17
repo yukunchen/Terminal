@@ -109,7 +109,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
             if (keyEvent->_charData != 0 && !commandLineEditKey)
             {
                 // chars that are generated using alt + numpad
-                if (!keyEvent->IsKeyDown() && keyEvent->_virtualKeyCode == VK_MENU)
+                if (!keyEvent->IsKeyDown() && keyEvent->GetVirtualKeyCode() == VK_MENU)
                 {
                     if (IsFlagSet(keyEvent->_activeModifierKeys, ALTNUMPAD_BIT))
                     {
@@ -139,7 +139,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                 // Ignore Escape and Newline chars
                 else if (keyEvent->IsKeyDown() &&
                          (IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
-                          (keyEvent->_virtualKeyCode != VK_ESCAPE &&
+                          (keyEvent->GetVirtualKeyCode() != VK_ESCAPE &&
                            keyEvent->_charData != UNICODE_LINEFEED)))
                 {
                     *pwchOut = keyEvent->_charData;
@@ -152,13 +152,13 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                 if (pCommandLineEditingKeys && commandLineEditKey)
                 {
                     *pCommandLineEditingKeys = true;
-                    *pwchOut = static_cast<wchar_t>(keyEvent->_virtualKeyCode);
+                    *pwchOut = static_cast<wchar_t>(keyEvent->GetVirtualKeyCode());
                     return STATUS_SUCCESS;
                 }
                 else if (pCommandLinePopupKeys && commandLineEditKey)
                 {
                     *pCommandLinePopupKeys = true;
-                    *pwchOut = static_cast<char>(keyEvent->_virtualKeyCode);
+                    *pwchOut = static_cast<char>(keyEvent->GetVirtualKeyCode());
                     return STATUS_SUCCESS;
                 }
                 else
@@ -182,7 +182,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                     {
                         const DWORD winmod = consoleModifierTranslator[zeroControlKeyState];
 
-                        if (zeroVKey == keyEvent->_virtualKeyCode &&
+                        if (zeroVKey == keyEvent->GetVirtualKeyCode() &&
                             AreAllFlagsSet(keyEvent->_activeModifierKeys, winmod) &&
                             AreAllFlagsClear(keyEvent->_activeModifierKeys, ~winmod))
                         {

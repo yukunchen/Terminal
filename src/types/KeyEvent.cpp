@@ -74,6 +74,12 @@ InputEventType KeyEvent::EventType() const
     return InputEventType::KeyEvent;
 }
 
+bool KeyEvent::IsCursorKey() const
+{
+    // true iff vk in [End, Home, Left, Up, Right, Down]
+    return (_virtualKeyCode >= VK_END) && (_virtualKeyCode <= VK_DOWN);
+}
+
 bool KeyEvent::IsKeyDown() const
 {
     return _keyDown;
@@ -95,3 +101,13 @@ void KeyEvent::SetRepeatCount(_In_ const size_t repeatCount)
     _repeatCount = repeatCount;
 }
 */
+
+WORD KeyEvent::GetVirtualKeyCode() const
+{
+    return _virtualKeyCode;
+}
+
+void KeyEvent::SetVirtualKeyCode(_In_ const WORD virtualKeyCode)
+{
+    _virtualKeyCode = virtualKeyCode;
+}

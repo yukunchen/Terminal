@@ -835,7 +835,7 @@ public:
             Log::Comment(NoThrowString().Format(L"Comparing '%c' with '%c'...", wch, keyEvent->_charData));
             VERIFY_ARE_EQUAL(wch, keyEvent->_charData);
             VERIFY_ARE_EQUAL(1u, keyEvent->_repeatCount);
-            VERIFY_ARE_EQUAL(0u, keyEvent->_virtualKeyCode);
+            VERIFY_ARE_EQUAL(0u, keyEvent->GetVirtualKeyCode());
             VERIFY_ARE_EQUAL(0u, keyEvent->_virtualScanCode);
         }
     }

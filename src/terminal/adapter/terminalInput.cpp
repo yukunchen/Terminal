@@ -211,7 +211,7 @@ bool TerminalInput::s_IsModifierPressed(_In_ const KeyEvent& keyEvent)
 bool TerminalInput::s_IsCursorKey(_In_ const KeyEvent& keyEvent)
 {
     // true iff vk in [End, Home, Left, Up, Right, Down]
-    return (keyEvent._virtualKeyCode >= VK_END) && (keyEvent._virtualKeyCode <= VK_DOWN);
+    return (keyEvent.GetVirtualKeyCode() >= VK_END) && (keyEvent.GetVirtualKeyCode() <= VK_DOWN);
 }
 
 const size_t TerminalInput::GetKeyMappingLength(_In_ const KeyEvent& keyEvent) const
@@ -302,7 +302,7 @@ bool TerminalInput::_SearchKeyMapping(_In_ const KeyEvent& keyEvent,
     {
         const _TermKeyMap* const pMap = &(keyMapping[i]);
 
-        if (pMap->wVirtualKey == keyEvent._virtualKeyCode)
+        if (pMap->wVirtualKey == keyEvent.GetVirtualKeyCode())
         {
             fKeyTranslated = true;
             *pMatchingMapping = pMap;
@@ -370,13 +370,13 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
             if (s_IsAltPressed(keyEvent) &&
                 s_IsCtrlPressed(keyEvent) &&
                 (keyEvent._charData == 0 || keyEvent._charData == 0x20) &&
-                ((keyEvent._virtualKeyCode > 0x40 && keyEvent._virtualKeyCode <= 0x5A) ||
-                 keyEvent._virtualKeyCode == VK_SPACE) )
+                ((keyEvent.GetVirtualKeyCode() > 0x40 && keyEvent.GetVirtualKeyCode() <= 0x5A) ||
+                 keyEvent.GetVirtualKeyCode() == VK_SPACE) )
             {
                 // For Alt+Ctrl+Key messages, the UnicodeChar is NOT the Ctrl+key char, it's null.
                 //      So we need to get the char from the vKey.
                 //      EXCEPT for Alt+Ctrl+Space. Then the UnicodeChar is space, not NUL.
-                wchar_t wchPressedChar = static_cast<wchar_t>(MapVirtualKeyW(keyEvent._virtualKeyCode, MAPVK_VK_TO_CHAR));
+                wchar_t wchPressedChar = static_cast<wchar_t>(MapVirtualKeyW(keyEvent.GetVirtualKeyCode(), MAPVK_VK_TO_CHAR));
                 // This is a trick - C-Spc is supposed to send NUL. So quick change space -> @ (0x40)
                 wchPressedChar = (wchPressedChar == UNICODE_SPACE) ? 0x40 : wchPressedChar;
                 if (wchPressedChar >= 0x40 && wchPressedChar < 0x7F)
@@ -396,10 +396,10 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
             else if (s_IsCtrlPressed(keyEvent))
             {
                 if ((keyEvent._charData == UNICODE_SPACE ) || // Ctrl+Space
-                     // when Ctrl+@ comes through, the unicodechar
-                     // will be '\x0' (UNICODE_NULL), and the vkey will be
-                     // VkKeyScanW(0), the vkey for null
-                     (keyEvent._charData == UNICODE_NULL && keyEvent._virtualKeyCode == LOBYTE(VkKeyScanW(0))))
+                    // when Ctrl+@ comes through, the unicodechar
+                    // will be '\x0' (UNICODE_NULL), and the vkey will be
+                    // VkKeyScanW(0), the vkey for null
+                    (keyEvent._charData == UNICODE_NULL && keyEvent.GetVirtualKeyCode() == LOBYTE(VkKeyScanW(0))))
                 {
                     _SendNullInputSequence(keyEvent._activeModifierKeys);
                     fKeyHandled = true;
@@ -418,8 +418,8 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
                 // For perf optimization, filter out any typically printable Virtual Keys (e.g. A-Z)
                 // This is in lieu of an O(1) sparse table or other such less-maintanable methods.
                 // VK_CANCEL is an exception and we want to send the associated uChar as is.
-                if ((keyEvent._virtualKeyCode < '0' || keyEvent._virtualKeyCode > 'Z') &&
-                    keyEvent._virtualKeyCode != VK_CANCEL)
+                if ((keyEvent.GetVirtualKeyCode() < '0' || keyEvent.GetVirtualKeyCode() > 'Z') &&
+                    keyEvent.GetVirtualKeyCode() != VK_CANCEL)
                 {
                     fKeyHandled = _TranslateDefaultMapping(keyEvent, GetKeyMapping(keyEvent), GetKeyMappingLength(keyEvent));
                 }

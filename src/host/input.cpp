@@ -119,7 +119,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
         keyEvent.IsKeyDown())
     {
         // check for ctrl-c, if in line input mode.
-        if (keyEvent._virtualKeyCode == 'C' && IsInProcessedInputMode())
+        if (keyEvent.GetVirtualKeyCode() == 'C' && IsInProcessedInputMode())
         {
             HandleCtrlEvent(CTRL_C_EVENT);
             if (gci->PopupCount == 0)
@@ -135,7 +135,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
 
 
         // Check for ctrl-break.
-        else if (keyEvent._virtualKeyCode == VK_CANCEL)
+        else if (keyEvent.GetVirtualKeyCode() == VK_CANCEL)
         {
             gci->pInputBuffer->Flush();
             HandleCtrlEvent(CTRL_BREAK_EVENT);
@@ -151,14 +151,14 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
         }
 
         // don't write ctrl-esc to the input buffer
-        else if (keyEvent._virtualKeyCode == VK_ESCAPE)
+        else if (keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
         {
             ContinueProcessing = FALSE;
         }
     }
     else if (IsAnyFlagSet(keyEvent._activeModifierKeys, ALT_PRESSED) &&
              keyEvent.IsKeyDown() &&
-             keyEvent._virtualKeyCode == VK_ESCAPE)
+             keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
     {
         ContinueProcessing = FALSE;
     }
