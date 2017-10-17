@@ -1067,7 +1067,7 @@ void StateMachine::_EventSs3Entry(_In_ wchar_t const wch)
     }
     else if (s_IsCsiInvalid(wch))
     {
-        // It's safefor us to go into the CSI ignore here, because both SS3 and 
+        // It's safe for us to go into the CSI ignore here, because both SS3 and 
         //      CSI sequences ignore characters the same way.
         _EnterCsiIgnore();
     }
