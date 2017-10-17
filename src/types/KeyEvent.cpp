@@ -74,6 +74,26 @@ InputEventType KeyEvent::EventType() const
     return InputEventType::KeyEvent;
 }
 
+bool KeyEvent::IsShiftPressed() const
+{
+    return IsFlagSet(_activeModifierKeys, SHIFT_PRESSED);
+}
+
+bool KeyEvent::IsAltPressed() const
+{
+    return IsAnyFlagSet(_activeModifierKeys, ALT_PRESSED);
+}
+
+bool KeyEvent::IsCtrlPressed() const
+{
+    return IsAnyFlagSet(_activeModifierKeys, CTRL_PRESSED);
+}
+
+bool KeyEvent::IsModifierPressed() const
+{
+    return IsAnyFlagSet(_activeModifierKeys, MOD_PRESSED);
+}
+
 bool KeyEvent::IsCursorKey() const
 {
     // true iff vk in [End, Home, Left, Up, Right, Down]

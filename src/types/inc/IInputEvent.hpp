@@ -90,6 +90,10 @@ public:
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;
 
+    bool IsShiftPressed() const;
+    bool IsAltPressed() const;
+    bool IsCtrlPressed() const;
+    bool IsModifierPressed() const;
     bool IsCursorKey() const;
 
     bool IsKeyDown() const;

@@ -188,36 +188,10 @@ void TerminalInput::ChangeCursorKeysMode(_In_ bool const fApplicationMode)
     _fCursorApplicationMode = fApplicationMode;
 }
 
-bool TerminalInput::s_IsShiftPressed(_In_ const KeyEvent& keyEvent)
-{
-    return IsFlagSet(keyEvent._activeModifierKeys, SHIFT_PRESSED);
-}
-
-bool TerminalInput::s_IsAltPressed(_In_ const KeyEvent& keyEvent)
-{
-    return IsAnyFlagSet(keyEvent._activeModifierKeys, ALT_PRESSED);
-}
-
-bool TerminalInput::s_IsCtrlPressed(_In_ const KeyEvent& keyEvent)
-{
-    return IsAnyFlagSet(keyEvent._activeModifierKeys, CTRL_PRESSED);
-}
-
-bool TerminalInput::s_IsModifierPressed(_In_ const KeyEvent& keyEvent)
-{
-    return IsAnyFlagSet(keyEvent._activeModifierKeys, MOD_PRESSED);
-}
-
-bool TerminalInput::s_IsCursorKey(_In_ const KeyEvent& keyEvent)
-{
-    // true iff vk in [End, Home, Left, Up, Right, Down]
-    return (keyEvent.GetVirtualKeyCode() >= VK_END) && (keyEvent.GetVirtualKeyCode() <= VK_DOWN);
-}
-
 const size_t TerminalInput::GetKeyMappingLength(_In_ const KeyEvent& keyEvent) const
 {
     size_t length = 0;
-    if (s_IsCursorKey(keyEvent))
+    if (keyEvent.IsCursorKey())
     {
         length = (_fCursorApplicationMode) ? s_cCursorKeysApplicationMapping : s_cCursorKeysNormalMapping;
     }
@@ -232,7 +206,7 @@ const TerminalInput::_TermKeyMap* TerminalInput::GetKeyMapping(_In_ const KeyEve
 {
     const TerminalInput::_TermKeyMap* mapping = nullptr;
 
-    if (s_IsCursorKey(keyEvent))
+    if (keyEvent.IsCursorKey())
     {
         mapping = (_fCursorApplicationMode) ? s_rgCursorKeysApplicationMapping : s_rgCursorKeysNormalMapping;
     }
@@ -269,9 +243,9 @@ bool TerminalInput::_SearchWithModifier(_In_ const KeyEvent& keyEvent) const
             if (rwchModifiedSequence != nullptr)
             {
                 memcpy(rwchModifiedSequence, pMatchingMapping->pwszSequence, cch * sizeof(wchar_t));
-                const bool fShift = s_IsShiftPressed(keyEvent);
-                const bool fAlt = s_IsAltPressed(keyEvent);
-                const bool fCtrl = s_IsCtrlPressed(keyEvent);
+                const bool fShift = keyEvent.IsShiftPressed();
+                const bool fAlt = keyEvent.IsAltPressed();
+                const bool fCtrl = keyEvent.IsCtrlPressed();
                 rwchModifiedSequence[cch - 2] = L'1' + (fShift ? 1 : 0) + (fAlt ? 2 : 0) + (fCtrl ? 4 : 0);
                 rwchModifiedSequence[cch] = 0;
                 _SendInputSequence(rwchModifiedSequence);
@@ -367,8 +341,8 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
                 ClearAllFlags(keyEvent._activeModifierKeys, dwAltGrFlags);
             }
 
-            if (s_IsAltPressed(keyEvent) &&
-                s_IsCtrlPressed(keyEvent) &&
+            if (keyEvent.IsAltPressed() &&
+                keyEvent.IsCtrlPressed() &&
                 (keyEvent._charData == 0 || keyEvent._charData == 0x20) &&
                 ((keyEvent.GetVirtualKeyCode() > 0x40 && keyEvent.GetVirtualKeyCode() <= 0x5A) ||
                  keyEvent.GetVirtualKeyCode() == VK_SPACE) )
@@ -388,12 +362,12 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
                 }
             }
             // ALT is a sequence of ESC + KEY.
-            else if (keyEvent._charData != 0 && s_IsAltPressed(keyEvent))
+            else if (keyEvent._charData != 0 && keyEvent.IsAltPressed())
             {
                 _SendEscapedInputSequence(keyEvent._charData);
                 fKeyHandled = true;
             }
-            else if (s_IsCtrlPressed(keyEvent))
+            else if (keyEvent.IsCtrlPressed())
             {
                 if ((keyEvent._charData == UNICODE_SPACE ) || // Ctrl+Space
                     // when Ctrl+@ comes through, the unicodechar
@@ -407,7 +381,7 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
             }
 
             // If a modifier key was pressed, then we need to try and send the modified sequence.
-            if (!fKeyHandled && s_IsModifierPressed(keyEvent))
+            if (!fKeyHandled && keyEvent.IsModifierPressed())
             {
                 // Translate the key using the modifier table
                 fKeyHandled = _SearchWithModifier(keyEvent);
