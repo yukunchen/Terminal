@@ -33,8 +33,8 @@
   <file
       destinationPath="$(runtime.system32)\"
       importPath="$(build.nttree)\"
-      name="ConhostV2.dll"
-      sourceName="ConhostV2.dll"
+      name="conhost.exe"
+      sourceName="conhost.exe"
       sourcePath=".\"
       />
   <localization>
@@ -42,11 +42,11 @@
       <stringTable>
         <string
             id="displayName0"
-            value="Microsoft-Windows-Console-Host"
+            value="Microsoft-OneCore-Console-Host"
             />
         <string
             id="description1"
-            value="Microsoft-Windows-Console-Host"
+            value="Microsoft-OneCore-Console-Host"
             />
       </stringTable>
     </resources>

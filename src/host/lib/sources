@@ -62,6 +62,7 @@ SOURCES = \
     ..\conimeinfo.cpp \
     ..\conattrs.cpp \
     ..\KeyEventHelpers.cpp \
+    ..\ConsoleArguments.cpp \
 
 INCLUDES = \
     $(INCLUDES); \
