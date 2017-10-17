@@ -236,3 +236,7 @@ void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t
 }
 
 
+IRenderCursor* VtEngine::GetCursor()
+{
+    return &_cursor;
+}

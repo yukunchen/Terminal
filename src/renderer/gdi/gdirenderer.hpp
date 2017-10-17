@@ -14,6 +14,7 @@ Author(s):
 #pragma once
 
 #include "..\inc\IRenderEngine.hpp"
+#include "GdiCursor.hpp"
 
 namespace Microsoft
 {
@@ -63,6 +64,8 @@ namespace Microsoft
                 COORD GetFontSize();
                 bool IsCharFullWidthByFont(_In_ WCHAR const wch);
 
+                IRenderCursor* GetCursor();
+
             private:
                 HWND _hwndTargetWindow;
 
@@ -81,6 +84,8 @@ namespace Microsoft
                 HRESULT _FlushBufferLines();
 
                 RECT _rcCursorInvert;
+
+                GdiCursor _cursor;
 
                 COORD _coordFontLast;
                 int _iCurrentDpi;

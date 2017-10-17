@@ -393,3 +393,8 @@ bool WddmConEngine::IsCharFullWidthByFont(WCHAR const wch)
 
     return false;
 }
+
+IRenderCursor* WddmConEngine::GetCursor()
+{
+    return &_cursor;
+}

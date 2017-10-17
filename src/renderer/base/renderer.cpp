@@ -1001,3 +1001,28 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
     _rgpEngines.push_back(pEngine);
 }
 
+void Renderer::MoveCursor(_In_ const COORD cPosition)
+{
+    SMALL_RECT srRegion = _RegionFromCoord(&cPosition);
+ 
+    Viewport view(_pData->GetViewport());
+    SMALL_RECT srUpdateRegion = srRegion;
+    if (view.TrimToViewport(&srUpdateRegion))
+    {
+        view.ConvertToOrigin(&srUpdateRegion);
+        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+            // LOG_IF_FAILED(pEngine->Invalidate(&srUpdateRegion));
+            
+            pEngine->GetCursor()->Move({srUpdateRegion.Left, srUpdateRegion.Top});
+        });
+
+        // _NotifyPaintFrame();
+    }
+
+    // std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+    //     // LOG_IF_FAILED(pEngine->GetCursor()->Move(cPosition));
+    //     pEngine->GetCursor()->Move(cPosition);
+    // });
+
+    _NotifyPaintFrame();
+}

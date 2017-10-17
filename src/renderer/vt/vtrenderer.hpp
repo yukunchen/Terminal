@@ -15,6 +15,7 @@ Author(s):
 #pragma once
 
 #include "..\inc\IRenderEngine.hpp"
+#include "..\inc\NoOpCursor.hpp"
 #include <string>
 #include <functional>
 
@@ -80,6 +81,9 @@ public:
     SMALL_RECT GetDirtyRectInChars() override;
     COORD GetFontSize() override;
     bool IsCharFullWidthByFont(_In_ WCHAR const wch) override;
+            
+    IRenderCursor* GetCursor() override;
+                
 
 protected:
     wil::unique_hfile _hFile;
@@ -97,6 +101,8 @@ protected:
 
     bool _quickReturn;
     
+    NoOpCursor _cursor;
+
     HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);
     HRESULT _Write(_In_ const std::string& str);
     HRESULT _Write(_In_ const char* const psz);

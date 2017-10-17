@@ -22,6 +22,7 @@ Author(s):
 #pragma once
 
 #include "..\..\renderer\inc\IRenderEngine.hpp"
+#include "..\..\renderer\inc\NoOpCursor.hpp"
 
 namespace Microsoft
 {
@@ -65,6 +66,8 @@ namespace Microsoft
                 SMALL_RECT GetDirtyRectInChars();
                 COORD GetFontSize();
                 bool IsCharFullWidthByFont(WCHAR const wch);
+                
+                IRenderCursor* GetCursor() override;
 
             private:
                 ULONG_PTR _sharedViewBase;
@@ -76,6 +79,8 @@ namespace Microsoft
                 COORD _fontSize;
 
                 WORD _currentLegacyColorAttribute;
+
+                NoOpCursor _cursor;
             };
         };
     };

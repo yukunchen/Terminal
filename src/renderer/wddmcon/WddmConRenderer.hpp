@@ -1,6 +1,7 @@
 #pragma once
 
 #include "..\..\renderer\inc\IRenderEngine.hpp"
+#include "..\..\renderer\inc\NoOpCursor.hpp"
 
 namespace Microsoft
 {
@@ -55,7 +56,9 @@ namespace Microsoft
                 SMALL_RECT GetDirtyRectInChars();
                 COORD GetFontSize();
                 bool IsCharFullWidthByFont(WCHAR const wch);
-            
+                
+                IRenderCursor* GetCursor() override;
+
             private:
                 HANDLE _hWddmConCtx;
 
@@ -69,6 +72,8 @@ namespace Microsoft
                 PCD_IO_ROW_INFORMATION *_displayState;
 
                 WORD _currentLegacyColorAttribute;
+
+                NoOpCursor _cursor;
             };
         };
     };

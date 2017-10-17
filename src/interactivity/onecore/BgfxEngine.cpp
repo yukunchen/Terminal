@@ -261,3 +261,8 @@ bool BgfxEngine::IsCharFullWidthByFont(WCHAR const wch)
 
     return false;
 }
+
+IRenderCursor* BgfxEngine::GetCursor()
+{
+    return &_cursor;
+}
