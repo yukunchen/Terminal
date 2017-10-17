@@ -70,7 +70,7 @@ namespace Microsoft
                 virtual COORD GetFontSize() = 0;
                 virtual bool IsCharFullWidthByFont(_In_ WCHAR const wch) = 0;
 
-                virtual IRenderCursor* GetCursor() = 0;
+                virtual IRenderCursor* const GetCursor() = 0;
             };
         };
     };

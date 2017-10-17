@@ -82,7 +82,7 @@ public:
     COORD GetFontSize() override;
     bool IsCharFullWidthByFont(_In_ WCHAR const wch) override;
             
-    IRenderCursor* GetCursor() override;
+    IRenderCursor* const GetCursor() override;
                 
 
 protected:
@@ -138,10 +138,10 @@ protected:
     bool _WillWriteSingleChar() const;
 
     /////////////////////////// Unit Testing Helpers ///////////////////////////
+#ifdef UNIT_TESTING
     std::function<bool(const char* const, size_t const)> _pfnTestCallback;
     bool _usingTestCallback;
 
-#ifdef UNIT_TESTING
     friend class VtRendererTest;
 #endif
     

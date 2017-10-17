@@ -57,7 +57,7 @@ namespace Microsoft
                 COORD GetFontSize();
                 bool IsCharFullWidthByFont(WCHAR const wch);
                 
-                IRenderCursor* GetCursor() override;
+                IRenderCursor* const GetCursor() override;
 
             private:
                 HANDLE _hWddmConCtx;

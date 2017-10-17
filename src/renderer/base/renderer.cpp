@@ -1001,6 +1001,13 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
     _rgpEngines.push_back(pEngine);
 }
 
+// Method Description:
+// - Updates each renderer's cursor with the new cursor position, in viewport 
+//      origin, character coordinates
+// Arguments:
+// - the new cursor position, in buffer origin character coordinates
+// Return Value:
+// - <none>
 void Renderer::MoveCursor(_In_ const COORD cPosition)
 {
     SMALL_RECT srRegion = _RegionFromCoord(&cPosition);
@@ -1011,18 +1018,10 @@ void Renderer::MoveCursor(_In_ const COORD cPosition)
     {
         view.ConvertToOrigin(&srUpdateRegion);
         std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-            // LOG_IF_FAILED(pEngine->Invalidate(&srUpdateRegion));
-            
             pEngine->GetCursor()->Move({srUpdateRegion.Left, srUpdateRegion.Top});
         });
 
-        // _NotifyPaintFrame();
     }
-
-    // std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-    //     // LOG_IF_FAILED(pEngine->GetCursor()->Move(cPosition));
-    //     pEngine->GetCursor()->Move(cPosition);
-    // });
 
     _NotifyPaintFrame();
 }

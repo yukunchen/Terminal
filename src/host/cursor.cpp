@@ -430,7 +430,6 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
     }
 
 DoScroll:
-    // I think this should be called by Cursor::MoveCursor
     Scrolling::s_ScrollIfNecessary(ScreenInfo);
 }
 

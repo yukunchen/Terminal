@@ -193,10 +193,10 @@ void VtRendererTest::VtSequenceHelperTests()
     engine->_InsertLine(2);
     
     qExpectedInput.push_back("\x1b[2;3H");
-    engine->_CursorPosition({2,1});
+    engine->_CursorPosition({2, 1});
 
     qExpectedInput.push_back("\x1b[1;1H");
-    engine->_CursorPosition({0,0});
+    engine->_CursorPosition({0, 0});
 
     qExpectedInput.push_back("\x1b[H");
     engine->_CursorHome();
@@ -428,71 +428,63 @@ void VtRendererTest::Xterm256TestCursor()
     TestPaintXterm(*engine, [&]()
     {
         qExpectedInput.push_back("\x1b[2;2H"); 
-        engine->_MoveCursor({1,1});
+        engine->_MoveCursor({1, 1});
 
         Log::Comment(NoThrowString().Format(
             L"----Only move X coord----"
         ));
         qExpectedInput.push_back("\x1b[31;2H"); 
-        engine->_MoveCursor({1,30});
+        engine->_MoveCursor({1, 30});
 
         Log::Comment(NoThrowString().Format(
             L"----Only move Y coord----"
         ));
         qExpectedInput.push_back("\x1b[31;31H"); 
-        engine->_MoveCursor({30,30});
+        engine->_MoveCursor({30, 30});
 
         Log::Comment(NoThrowString().Format(
             L"----Sending the same move sends nothing----"
         ));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
-        engine->_MoveCursor({30,30});
+        engine->_MoveCursor({30, 30});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
 
         Log::Comment(NoThrowString().Format(
             L"----moving home sends a simple sequence----"
         ));
         qExpectedInput.push_back("\x1b[H"); 
-        engine->_MoveCursor({0,0});
+        engine->_MoveCursor({0, 0});
 
         Log::Comment(NoThrowString().Format(
             L"----move into the line to test some other sequnces----"
         ));
         qExpectedInput.push_back("\x1b[1;8H"); 
-        engine->_MoveCursor({7,0});
+        engine->_MoveCursor({7, 0});
 
         Log::Comment(NoThrowString().Format(
             L"----move down one line (x stays the same)----"
         ));
         qExpectedInput.push_back("\n"); 
-        engine->_MoveCursor({7,1});
+        engine->_MoveCursor({7, 1});
 
         Log::Comment(NoThrowString().Format(
             L"----move to the start of the next line----"
         ));
         qExpectedInput.push_back("\r\n"); 
-        engine->_MoveCursor({0,2});
+        engine->_MoveCursor({0, 2});
 
         Log::Comment(NoThrowString().Format(
             L"----move into the line to test some other sequnces----"
         ));
         qExpectedInput.push_back("\x1b[2;8H"); 
-        engine->_MoveCursor({7,1});
+        engine->_MoveCursor({7, 1});
 
         Log::Comment(NoThrowString().Format(
             L"----move to the start of this line (y stays the same)----"
         ));
         qExpectedInput.push_back("\r"); 
-        engine->_MoveCursor({0,1});
+        engine->_MoveCursor({0, 1});
 
-        // // The "real" location is the last place the cursor was moved to not 
-        // //  during the course of VT operations - eg the last place text was written,
-        // //  or the cursor was manually painted at (MSFT 13310327)
-        // Log::Comment(NoThrowString().Format(
-        //     L"Make sure the cursor gets moved back to the last real location it was at"
-        // ));
-        // qExpectedInput.push_back("\x1b[H");
-        // // EndPaint will send this sequence for us.
     });
 
     TestPaintXterm(*engine, [&]()
@@ -502,7 +494,7 @@ void VtRendererTest::Xterm256TestCursor()
             L"The cursor's last \"real\" position was 0,0"
         ));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
-        engine->_MoveCursor({0,1});
+        engine->_MoveCursor({0, 1});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
 
         Log::Comment(NoThrowString().Format(
@@ -516,7 +508,7 @@ void VtRendererTest::Xterm256TestCursor()
         engine->PaintBufferLine(line, rgWidths, 9, {1,1}, false);
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
-        engine->_MoveCursor({10,1});
+        engine->_MoveCursor({10, 1});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
 
     });
@@ -529,7 +521,7 @@ void VtRendererTest::Xterm256TestCursor()
             L"Sending the same move across paint calls sends nothing."
         ));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
-        engine->_MoveCursor({10,1});
+        engine->_MoveCursor({10, 1});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
     });
 }
@@ -773,56 +765,56 @@ void VtRendererTest::XtermTestCursor()
     TestPaintXterm(*engine, [&]()
     {
         qExpectedInput.push_back("\x1b[2;2H"); 
-        engine->_MoveCursor({1,1});
+        engine->_MoveCursor({1, 1});
 
         Log::Comment(NoThrowString().Format(
             L"----Only move X coord----"
         ));
         qExpectedInput.push_back("\x1b[31;2H"); 
-        engine->_MoveCursor({1,30});
+        engine->_MoveCursor({1, 30});
 
         Log::Comment(NoThrowString().Format(
             L"----Only move Y coord----"
         ));
         qExpectedInput.push_back("\x1b[31;31H"); 
-        engine->_MoveCursor({30,30});
+        engine->_MoveCursor({30, 30});
 
         Log::Comment(NoThrowString().Format(
             L"----Sending the same move sends nothing----"
         ));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
-        engine->_MoveCursor({30,30});
+        engine->_MoveCursor({30, 30});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
 
         Log::Comment(NoThrowString().Format(
             L"----moving home sends a simple sequence----"
         ));
         qExpectedInput.push_back("\x1b[H"); 
-        engine->_MoveCursor({0,0});
+        engine->_MoveCursor({0, 0});
 
         Log::Comment(NoThrowString().Format(
             L"----move into the line to test some other sequnces----"
         ));
         qExpectedInput.push_back("\x1b[1;8H"); 
-        engine->_MoveCursor({7,0});
+        engine->_MoveCursor({7, 0});
 
         Log::Comment(NoThrowString().Format(
             L"----move down one line (x stays the same)----"
         ));
         qExpectedInput.push_back("\n"); 
-        engine->_MoveCursor({7,1});
+        engine->_MoveCursor({7, 1});
 
         Log::Comment(NoThrowString().Format(
             L"----move to the start of the next line----"
         ));
         qExpectedInput.push_back("\r\n"); 
-        engine->_MoveCursor({0,2});
+        engine->_MoveCursor({0, 2});
 
         Log::Comment(NoThrowString().Format(
             L"----move into the line to test some other sequnces----"
         ));
         qExpectedInput.push_back("\x1b[2;8H"); 
-        engine->_MoveCursor({7,1});
+        engine->_MoveCursor({7, 1});
 
         Log::Comment(NoThrowString().Format(
             L"----move to the start of this line (y stays the same)----"
@@ -830,14 +822,6 @@ void VtRendererTest::XtermTestCursor()
         qExpectedInput.push_back("\r"); 
         engine->_MoveCursor({0,1});
 
-        // // The "real" location is the last place the cursor was moved to not 
-        // //  during the course of VT operations - eg the last place text was written,
-        // //  or the cursor was manually painted at (MSFT 13310327)
-        // Log::Comment(NoThrowString().Format(
-        //     L"Make sure the cursor gets moved back to the last real location it was at"
-        // ));
-        // qExpectedInput.push_back("\x1b[H");
-        // // EndPaint will send this sequence for us.
     });
 
     TestPaintXterm(*engine, [&]()
@@ -861,7 +845,7 @@ void VtRendererTest::XtermTestCursor()
         engine->PaintBufferLine(line, rgWidths, 9, {1,1}, false);
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
-        engine->_MoveCursor({10,1});
+        engine->_MoveCursor({10, 1});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
 
     });
@@ -874,7 +858,7 @@ void VtRendererTest::XtermTestCursor()
             L"Sending the same move across paint calls sends nothing."
         ));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
-        engine->_MoveCursor({10,1});
+        engine->_MoveCursor({10, 1});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
     });
 
@@ -1054,25 +1038,25 @@ void VtRendererTest::WinTelnetTestCursor()
     TestPaint(*engine, [&]()
     {
         qExpectedInput.push_back("\x1b[2;2H"); 
-        engine->_MoveCursor({1,1});
+        engine->_MoveCursor({1, 1});
 
         Log::Comment(NoThrowString().Format(
             L"----Only move X coord----"
         ));
         qExpectedInput.push_back("\x1b[31;2H"); 
-        engine->_MoveCursor({1,30});
+        engine->_MoveCursor({1, 30});
 
         Log::Comment(NoThrowString().Format(
             L"----Only move Y coord----"
         ));
         qExpectedInput.push_back("\x1b[31;31H"); 
-        engine->_MoveCursor({30,30});
+        engine->_MoveCursor({30, 30});
 
         Log::Comment(NoThrowString().Format(
             L"----Sending the same move sends nothing----"
         ));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
-        engine->_MoveCursor({30,30});
+        engine->_MoveCursor({30, 30});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
 
         // The "real" location is the last place the cursor was moved to not 
@@ -1092,7 +1076,7 @@ void VtRendererTest::WinTelnetTestCursor()
             L"The cursor's last \"real\" position was 0,0"
         ));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
-        engine->_MoveCursor({0,0});
+        engine->_MoveCursor({0, 0});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
 
         Log::Comment(NoThrowString().Format(
@@ -1106,7 +1090,7 @@ void VtRendererTest::WinTelnetTestCursor()
         engine->PaintBufferLine(line, rgWidths, 9, {1,1}, false);
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
-        engine->_MoveCursor({10,1});
+        engine->_MoveCursor({10, 1});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
 
     });
@@ -1119,7 +1103,7 @@ void VtRendererTest::WinTelnetTestCursor()
             L"Sending the same move across paint calls sends nothing."
         ));
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); 
-        engine->_MoveCursor({10,1});
+        engine->_MoveCursor({10, 1});
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1);
     });
 }

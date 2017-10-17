@@ -269,13 +269,12 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
         // Maybe come back to later - trying to print the debug output in different colors.
         // csi("38;5;242m");
         // wprintf(L"\tWriting \"%hs\" length=[%d]\n", printSeq.c_str(), (int)vtseq.length());
+        // WriteFile(debug->inPipe(), printSeq.c_str(), (DWORD)printSeq.length(), nullptr, nullptr);
         // csi("0m");
 
         WriteFile(inPipe(), vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
-        // WriteFile(debug->inPipe(), printSeq.c_str(), (DWORD)printSeq.length(), nullptr, nullptr);
     }
 }
-
 
 void SetupOutput()
 {
