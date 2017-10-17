@@ -450,8 +450,8 @@ void TerminalInput::_SendEscapedInputSequence(_In_ const wchar_t wch) const
     try
     {
         std::deque<std::unique_ptr<IInputEvent>> inputEvents;
-        inputEvents.push_back(std::make_unique<KeyEvent>(TRUE, 1ui16, 0ui16, 0ui16, L'\x1b', 0));
-        inputEvents.push_back(std::make_unique<KeyEvent>(TRUE, 1ui16, 0ui16, 0ui16, wch, 0));
+        inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, L'\x1b', 0));
+        inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, wch, 0));
         _pfnWriteEvents(inputEvents);
     }
     catch (...)
@@ -465,7 +465,7 @@ void TerminalInput::_SendNullInputSequence(_In_ DWORD const dwControlKeyState) c
     try
     {
         std::deque<std::unique_ptr<IInputEvent>> inputEvents;
-        inputEvents.push_back(std::make_unique<KeyEvent>(TRUE,
+        inputEvents.push_back(std::make_unique<KeyEvent>(true,
                                                          1ui16,
                                                          LOBYTE(VkKeyScanW(0)),
                                                          0ui16,
@@ -490,7 +490,7 @@ void TerminalInput::_SendInputSequence(_In_ PCWSTR const pwszSequence) const
             std::deque<std::unique_ptr<IInputEvent>> inputEvents;
             for (size_t i = 0; i < cch; i++)
             {
-                inputEvents.push_back(std::make_unique<KeyEvent>(TRUE, 1ui16, 0ui16, 0ui16, pwszSequence[i], 0));
+                inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, pwszSequence[i], 0));
             }
             _pfnWriteEvents(inputEvents);
         }

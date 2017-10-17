@@ -79,7 +79,7 @@ class KeyEvent : public IInputEvent
 {
 public:
     KeyEvent(_In_ const KEY_EVENT_RECORD& record);
-    KeyEvent(_In_ const int keyDown,
+    KeyEvent(_In_ const bool keyDown,
              _In_ const WORD repeatCount,
              _In_ const WORD virtualKeyCode,
              _In_ const WORD virtualScanCode,
@@ -93,11 +93,17 @@ public:
     bool IsKeyDown() const;
     void SetKeyDown(_In_ const bool keyDown);
 
+    /*
+    size_t GetRepeatCount() const;
+    void SetRepeatCount(_In_ const size_t repeatCount);
+    */
+
 
 private:
-    int _keyDown;
+    bool _keyDown;
 public:
     WORD _repeatCount;
+    //size_t _repeatCount;
     WORD _virtualKeyCode;
     WORD _virtualScanCode;
     wchar_t _charData;

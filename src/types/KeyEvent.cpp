@@ -37,7 +37,7 @@ KeyEvent::KeyEvent() :
 {
 }
 
-KeyEvent::KeyEvent(_In_ const int keyDown,
+KeyEvent::KeyEvent(_In_ const bool keyDown,
                    _In_ const WORD repeatCount,
                    _In_ const WORD virtualKeyCode,
                    _In_ const WORD virtualScanCode,
@@ -60,7 +60,7 @@ INPUT_RECORD KeyEvent::ToInputRecord() const
 {
     INPUT_RECORD record{ 0 };
     record.EventType = KEY_EVENT;
-    record.Event.KeyEvent.bKeyDown = _keyDown;
+    record.Event.KeyEvent.bKeyDown = !!_keyDown;
     record.Event.KeyEvent.wRepeatCount = _repeatCount;
     record.Event.KeyEvent.wVirtualKeyCode = _virtualKeyCode;
     record.Event.KeyEvent.wVirtualScanCode = _virtualScanCode;
@@ -76,10 +76,22 @@ InputEventType KeyEvent::EventType() const
 
 bool KeyEvent::IsKeyDown() const
 {
-    return !!_keyDown;
+    return _keyDown;
 }
 
 void KeyEvent::SetKeyDown(_In_ const bool keyDown)
 {
-    _keyDown = !!keyDown;
+    _keyDown = keyDown;
 }
+
+/*
+size_t KeyEvent::GetRepeatCount() const
+{
+    return repeatCount;
+}
+
+void KeyEvent::SetRepeatCount(_In_ const size_t repeatCount)
+{
+    _repeatCount = repeatCount;
+}
+*/

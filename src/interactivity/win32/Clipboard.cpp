@@ -202,7 +202,7 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToKeyboardEvents(_In_ const
     if (AreAllFlagsSet(modifierState, VkKeyScanModState::CtrlAndAltPressed))
     {
         altGrSet = true;
-        keyEvents.push_back(std::make_unique<KeyEvent>(TRUE,
+        keyEvents.push_back(std::make_unique<KeyEvent>(true,
                                                        1ui16,
                                                        static_cast<WORD>(VK_MENU),
                                                        altScanCode,
@@ -212,7 +212,7 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToKeyboardEvents(_In_ const
     else if (IsFlagSet(modifierState, VkKeyScanModState::ShiftPressed))
     {
         shiftSet = true;
-        keyEvents.push_back(std::make_unique<KeyEvent>(TRUE,
+        keyEvents.push_back(std::make_unique<KeyEvent>(true,
                                                        1ui16,
                                                        static_cast<WORD>(VK_SHIFT),
                                                        leftShiftScanCode,
@@ -221,7 +221,7 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToKeyboardEvents(_In_ const
     }
 
     const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
-    KeyEvent keyEvent{ TRUE, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
+    KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
 
     // add modifier flags if necessary
     SetFlagIf(keyEvent._activeModifierKeys, SHIFT_PRESSED, IsFlagSet(modifierState, VkKeyScanModState::ShiftPressed));
@@ -236,7 +236,7 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToKeyboardEvents(_In_ const
     // add modifier key up event
     if (altGrSet)
     {
-        keyEvents.push_back(std::make_unique<KeyEvent>(FALSE,
+        keyEvents.push_back(std::make_unique<KeyEvent>(false,
                                                        1ui16,
                                                        static_cast<WORD>(VK_MENU),
                                                        altScanCode,
@@ -245,7 +245,7 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToKeyboardEvents(_In_ const
     }
     else if (shiftSet)
     {
-        keyEvents.push_back(std::make_unique<KeyEvent>(FALSE,
+        keyEvents.push_back(std::make_unique<KeyEvent>(false,
                                                        1ui16,
                                                        static_cast<WORD>(VK_SHIFT),
                                                        leftShiftScanCode,
@@ -284,7 +284,7 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToNumpad(_In_ const wchar_t
         char charString[4] = { 0 };
         THROW_HR_IF(E_INVALIDARG, 0 != _itoa_s(ch, charString, ARRAYSIZE(charString), radix));
 
-        keyEvents.push_back(std::make_unique<KeyEvent>(TRUE,
+        keyEvents.push_back(std::make_unique<KeyEvent>(true,
                                                        1ui16,
                                                        static_cast<WORD>(VK_MENU),
                                                        altScanCode,
@@ -299,20 +299,20 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToNumpad(_In_ const wchar_t
             const WORD virtualKey = charString[i] + '0' + VK_NUMPAD0;
             const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
 
-            keyEvents.push_back(std::make_unique<KeyEvent>(TRUE,
+            keyEvents.push_back(std::make_unique<KeyEvent>(true,
                                                            1ui16,
                                                            virtualKey,
                                                            virtualScanCode,
                                                            UNICODE_NULL,
                                                            LEFT_ALT_PRESSED));
-            keyEvents.push_back(std::make_unique<KeyEvent>(FALSE,
+            keyEvents.push_back(std::make_unique<KeyEvent>(false,
                                                            1ui16,
                                                            virtualKey,
                                                            virtualScanCode,
                                                            UNICODE_NULL,
                                                            LEFT_ALT_PRESSED));
         }
-        keyEvents.push_back(std::make_unique<KeyEvent>(FALSE,
+        keyEvents.push_back(std::make_unique<KeyEvent>(false,
                                                        1ui16,
                                                        static_cast<WORD>(VK_MENU),
                                                        altScanCode,
