@@ -105,12 +105,15 @@ public:
     WORD GetVirtualKeyCode() const;
     void SetVirtualKeyCode(_In_ const WORD virtualKeyCode);
 
+    WORD GetVirtualScanCode() const;
+    void SetVirtualScanCode(_In_ const WORD virtualScanCode);
+
 private:
     bool _keyDown;
     WORD _repeatCount;
     WORD _virtualKeyCode;
-public:
     WORD _virtualScanCode;
+public:
     wchar_t _charData;
     DWORD _activeModifierKeys;
 

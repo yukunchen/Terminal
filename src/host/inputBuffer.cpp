@@ -720,9 +720,9 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
                 sameKey = true;
             }
             // other key events check
-            else if (pInKeyEvent->_virtualScanCode == pLastKeyEvent->_virtualScanCode &&
-                    pInKeyEvent->_charData == pLastKeyEvent->_charData &&
-                    pInKeyEvent->_activeModifierKeys == pLastKeyEvent->_activeModifierKeys)
+            else if (pInKeyEvent->GetVirtualScanCode() == pLastKeyEvent->GetVirtualScanCode() &&
+                     pInKeyEvent->_charData == pLastKeyEvent->_charData &&
+                     pInKeyEvent->_activeModifierKeys == pLastKeyEvent->_activeModifierKeys)
             {
                 sameKey = true;
             }

@@ -147,7 +147,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
     // unneeded space in the key info table if we bail out early.
     KeyEvent keyEvent;
     keyEvent.SetVirtualKeyCode(VirtualKeyCode);
-    keyEvent._virtualScanCode = static_cast<BYTE>(HIWORD(lParam));
+    keyEvent.SetVirtualScanCode(static_cast<BYTE>(HIWORD(lParam)));
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
     {
         // --- START LOAD BEARING CODE ---
@@ -161,12 +161,14 @@ void HandleKeyEvent(_In_ const HWND hWnd,
         //       or other input channels to help portray certain key sequences.
         //       Most notably this affects Ctrl-C, Ctrl-Break, and Pause/Break among others.
         //
+        WORD VirtualScanCode = keyEvent.GetVirtualScanCode();
         RetrieveKeyInfo(hWnd,
                         &VirtualKeyCode,
-                        &keyEvent._virtualScanCode,
+                        &VirtualScanCode,
                         !gci->pInputBuffer->fInComposition);
 
         keyEvent.SetVirtualKeyCode(VirtualKeyCode);
+        keyEvent.SetVirtualScanCode(VirtualScanCode);
         // --- END LOAD BEARING CODE ---
     }
 
@@ -178,7 +180,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
         // If this is a fake character, zero the scancode.
         if (lParam & 0x02000000)
         {
-            keyEvent._virtualScanCode = 0;
+            keyEvent.SetVirtualScanCode(0);
         }
         keyEvent._activeModifierKeys = GetControlKeyState(lParam);
         if (Message == WM_CHAR || Message == WM_SYSCHAR)

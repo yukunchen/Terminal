@@ -129,3 +129,13 @@ void KeyEvent::SetVirtualKeyCode(_In_ const WORD virtualKeyCode)
 {
     _virtualKeyCode = virtualKeyCode;
 }
+
+WORD KeyEvent::GetVirtualScanCode() const
+{
+    return _virtualScanCode;
+}
+
+void KeyEvent::SetVirtualScanCode(_In_ const WORD virtualScanCode)
+{
+    _virtualScanCode = virtualScanCode;
+}

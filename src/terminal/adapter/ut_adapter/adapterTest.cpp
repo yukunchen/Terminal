@@ -836,7 +836,7 @@ public:
             VERIFY_ARE_EQUAL(wch, keyEvent->_charData);
             VERIFY_ARE_EQUAL(1u, keyEvent->GetRepeatCount());
             VERIFY_ARE_EQUAL(0u, keyEvent->GetVirtualKeyCode());
-            VERIFY_ARE_EQUAL(0u, keyEvent->_virtualScanCode);
+            VERIFY_ARE_EQUAL(0u, keyEvent->GetVirtualScanCode());
         }
     }
 
