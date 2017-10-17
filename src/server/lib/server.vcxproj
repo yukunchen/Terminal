@@ -8,7 +8,6 @@
     <ClCompile Include="..\ApiMessageState.cpp" />
     <ClCompile Include="..\ApiRoutinesBase.cpp" />
     <ClCompile Include="..\ApiSorter.cpp" />
-    <ClCompile Include="..\ConsoleArguments.cpp" />
     <ClCompile Include="..\DeviceComm.cpp" />
     <ClCompile Include="..\DeviceHandle.cpp" />
     <ClCompile Include="..\Entrypoints.cpp" />

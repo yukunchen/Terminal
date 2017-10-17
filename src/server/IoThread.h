@@ -5,6 +5,6 @@
 ********************************************************/
 #pragma once
 
-HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server);
+class ConsoleArguments;
 
-HRESULT UseVtPipe(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode);
+HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, _In_ const ConsoleArguments* const args);

@@ -17,8 +17,8 @@
   <file
       destinationPath="$(runtime.system32)\$(build.cultureNameString)\"
       importPath="$(build.locsrc)\"
-      name="ConhostV2.dll.mui"
-      sourceName="ConhostV2.dll.mui"
+      name="Conhost.exe.mui"
+      sourceName="Conhost.exe.mui"
       sourcePath=".\"
       />
   <localization>
