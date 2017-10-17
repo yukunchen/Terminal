@@ -730,7 +730,8 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
             {
                 // increment repeat count
                 KeyEvent* const pKeyEvent = static_cast<KeyEvent* const>(_storage.back().release());
-                pKeyEvent->_repeatCount += pInKeyEvent->_repeatCount;
+                WORD repeatCount = pKeyEvent->GetRepeatCount() + pInKeyEvent->GetRepeatCount();
+                pKeyEvent->SetRepeatCount(repeatCount);
                 std::unique_ptr<IInputEvent> tempPtr(pKeyEvent);
                 tempPtr.swap(_storage.back());
 

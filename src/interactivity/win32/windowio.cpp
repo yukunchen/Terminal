@@ -171,7 +171,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
     }
 
     keyEvent.SetKeyDown(!!bKeyDown);
-    keyEvent._repeatCount = LOWORD(lParam);
+    keyEvent.SetRepeatCount(LOWORD(lParam));
 
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
     {

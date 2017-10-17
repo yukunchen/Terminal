@@ -99,20 +99,15 @@ public:
     bool IsKeyDown() const;
     void SetKeyDown(_In_ const bool keyDown);
 
-    /*
-    size_t GetRepeatCount() const;
-    void SetRepeatCount(_In_ const size_t repeatCount);
-    */
+    WORD GetRepeatCount() const;
+    void SetRepeatCount(_In_ const WORD repeatCount);
 
     WORD GetVirtualKeyCode() const;
     void SetVirtualKeyCode(_In_ const WORD virtualKeyCode);
 
 private:
     bool _keyDown;
-public:
     WORD _repeatCount;
-    //size_t _repeatCount;
-private:
     WORD _virtualKeyCode;
 public:
     WORD _virtualScanCode;

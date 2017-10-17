@@ -110,17 +110,15 @@ void KeyEvent::SetKeyDown(_In_ const bool keyDown)
     _keyDown = keyDown;
 }
 
-/*
-size_t KeyEvent::GetRepeatCount() const
+WORD KeyEvent::GetRepeatCount() const
 {
-    return repeatCount;
+    return _repeatCount;
 }
 
-void KeyEvent::SetRepeatCount(_In_ const size_t repeatCount)
+void KeyEvent::SetRepeatCount(_In_ const WORD repeatCount)
 {
     _repeatCount = repeatCount;
 }
-*/
 
 WORD KeyEvent::GetVirtualKeyCode() const
 {
