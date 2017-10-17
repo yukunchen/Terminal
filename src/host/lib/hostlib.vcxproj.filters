@@ -150,22 +150,19 @@
     <ClCompile Include="..\writeData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\FocusEvent.cpp">
+    <ClCompile Include="..\conattrs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\IInputEvent.cpp">
+    <ClCompile Include="..\KeyEventHelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\KeyEvent.cpp">
+    <ClCompile Include="..\VtInputThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\MenuEvent.cpp">
+    <ClCompile Include="..\VtIo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\MouseEvent.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\WindowBufferSizeEvent.cpp">
+    <ClCompile Include="..\ConsoleArguments.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -311,7 +308,16 @@
     <ClInclude Include="..\writeData.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\IInputEvent.hpp">
+    <ClInclude Include="..\KeyEventHelpers.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\VtInputThread.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\VtIo.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ConsoleArguments.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

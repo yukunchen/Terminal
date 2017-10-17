@@ -3,7 +3,6 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />
-    <ClInclude Include="..\ConsoleArguments.hpp" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
@@ -11,7 +10,6 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
-    <ClCompile Include="..\ConsoleArguments.cpp" />
     <ClCompile Include="..\exemain.cpp" />
   </ItemGroup>
   <ItemGroup>
