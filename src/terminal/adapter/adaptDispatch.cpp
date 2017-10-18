@@ -8,12 +8,14 @@
 
 #include "adaptDispatch.hpp"
 #include "conGetSet.hpp"
+#include "../../types/inc/Viewport.hpp"
 
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
 
 #include <assert.h>
 
+using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
 // Routine Description:
@@ -24,7 +26,9 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - Always false to signify we didn't handle it.
 bool NoOp() { return false; }
 
-AdaptDispatch::AdaptDispatch(_In_ ConGetSet* const pConApi, _In_ AdaptDefaults* const pDefaults, _In_ WORD const wDefaultTextAttributes)
+AdaptDispatch::AdaptDispatch(_Inout_ ConGetSet* const pConApi,
+                             _Inout_ AdaptDefaults* const pDefaults,
+                             _In_ const WORD wDefaultTextAttributes)
     : _pConApi(pConApi),
       _pDefaults(pDefaults),
       _wDefaultTextAttributes(wDefaultTextAttributes),
@@ -43,9 +47,9 @@ AdaptDispatch::AdaptDispatch(_In_ ConGetSet* const pConApi, _In_ AdaptDefaults* 
 
 }
 
-bool AdaptDispatch::CreateInstance(_In_ ConGetSet* pConApi,
-                                   _In_ AdaptDefaults* pDefaults,
-                                   _In_ WORD wDefaultTextAttributes,
+bool AdaptDispatch::CreateInstance(_Inout_ ConGetSet* const pConApi,
+                                   _Inout_ AdaptDefaults* const pDefaults,
+                                   _In_ const WORD wDefaultTextAttributes,
                                    _Outptr_ AdaptDispatch ** const ppDispatch)
 {
 
@@ -1724,7 +1728,13 @@ bool AdaptDispatch::EnableAlternateScroll(_In_ bool const fEnabled)
     return !!_pConApi->PrivateEnableAlternateScroll(fEnabled);
 }
 
-
+// Method Description:
+// - Sets a single entry of the colortable to a new value
+// Arguments:
+// - tableIndex: The VT color table index
+// - dwColor: The new RGB color value to use.
+// Return Value:
+// True if handled successfully. False othewise.
 bool AdaptDispatch::SetColorTableEntry(_In_ size_t tableIndex, _In_ DWORD dwColor)
 {
     bool fSuccess = tableIndex < 16;
@@ -1749,3 +1759,79 @@ bool AdaptDispatch::SetColorTableEntry(_In_ size_t tableIndex, _In_ DWORD dwColo
 }
 
 
+
+//Routine Description:
+// Window Manipulation - Performs a variety of actions relating to the window,
+//      such as moving the window position, resizing the window, querying 
+//      window state, forcing the window to repaint, etc.
+//Arguments:
+// - uiFunction - An identifier of the WindowManipulation function to perform
+// - rgusParams - Additional parameters to pass to the function
+// - cParams - size of rgusParams
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::WindowManipulation(_In_ const WindowManipulationType uiFunction,
+                                       _In_reads_(cParams) const unsigned short* const rgusParams,
+                                       _In_ size_t const cParams)
+{
+    bool fSuccess = false;
+    // Other Window Manipulation functions:
+    //  MSFT:13271098 - QueryViewport
+    //  MSFT:13271146 - QueryScreenSize
+    //  MSFT:14179497 - RefreshWindow
+    switch (uiFunction)
+    {
+        case WindowManipulationType::ResizeWindowInCharacters:
+            if (cParams == 2)
+            {
+                fSuccess = _ResizeWindow(rgusParams[1], rgusParams[0]);
+            }
+            break;
+        default:
+            fSuccess = false;
+    }
+
+    return fSuccess;
+}
+
+// Method Description:
+// - Resizes the window to the specified dimensions, in characters.
+// Arguments:
+// - usWidth: The new width of the window, in columns
+// - usHeight: The new height of the window, in rows
+// Return Value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::_ResizeWindow(_In_ const unsigned short usWidth,
+                                  _In_ const unsigned short usHeight)
+{
+    SHORT sColumns = 0;
+    SHORT sRows = 0;
+
+    // We should do nothing if 0 is passed in for a size.
+    bool fSuccess = SUCCEEDED(UShortToShort(usWidth, &sColumns)) &&
+                    SUCCEEDED(UIntToShort(usHeight, &sRows)) && 
+                    (usWidth > 0 && usHeight > 0);
+    if (fSuccess)
+    {
+        CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+        csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+        fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+        if (fSuccess)
+        {
+            const Viewport oldViewport = Viewport::FromInclusive(csbiex.srWindow);
+            csbiex.dwSize.X = sColumns;
+            // Can't just set the dwSize.Y - that's the buffer's height, not
+            //      the viewport's
+            fSuccess = !!_pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
+            if (fSuccess)
+            {
+                // SetConsoleWindowInfo expect inclusive rects
+                SMALL_RECT sr = Viewport::FromDimensions(oldViewport.Origin(),
+                                                         sColumns,
+                                                         sRows).ToInclusive();
+                fSuccess = !!_pConApi->SetConsoleWindowInfo(true, &sr);
+            }
+        }   
+    }
+    return fSuccess;
+}

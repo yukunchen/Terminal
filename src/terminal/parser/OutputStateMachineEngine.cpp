@@ -194,11 +194,15 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
     SHORT sBottomMargin = 0;
     SHORT sNumTabs = 0;
     SHORT sClearType = 0;
+    unsigned int uiFunction = 0;
     TermDispatch::EraseType eraseType = TermDispatch::EraseType::ToEnd;
     TermDispatch::GraphicsOptions rgGraphicsOptions[StateMachine::s_cParamsMax];
     size_t cOptions = ARRAYSIZE(rgGraphicsOptions);
     TermDispatch::AnsiStatusType deviceStatusType = (TermDispatch::AnsiStatusType)-1; // there is no default status type.
     
+    // This is all the args after the first arg, and the count of args not including the first one.
+    const unsigned short* const rgusRemainingArgs = (cParams > 1) ? rgusParams + 1 : rgusParams;
+    const unsigned short cRemainingArgs = (cParams >= 1) ? cParams - 1 : 0;
 
     if (cIntermediate == 0)
     {
@@ -256,6 +260,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             break;
         case VTActionCodes::TBC_TabClear:
             fSuccess = _GetTabClearType(rgusParams, cParams, &sClearType);
+            break;
+        case VTActionCodes::DTTERM_WindowManipulation:
+            fSuccess = _GetWindowManipulationType(rgusParams, cParams, &uiFunction);
             break;
         default:
             // If no params to fill, param filling was successful.
@@ -376,6 +383,12 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             case VTActionCodes::ECH_EraseCharacters:
                 fSuccess = _pDispatch->EraseCharacters(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::ECH);
+                break;
+            case VTActionCodes::DTTERM_WindowManipulation:
+                fSuccess = _pDispatch->WindowManipulation(static_cast<TermDispatch::WindowManipulationType>(uiFunction),
+                                                          rgusRemainingArgs,
+                                                          cRemainingArgs);
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::DTTERM_WM);
                 break;
             default:
                 // If no functions to call, overall dispatch was a failure.
@@ -589,7 +602,10 @@ bool OutputStateMachineEngine::ActionSs3Dispatch(_In_ wchar_t const /*wch*/,
 // Return Value:
 // - True if we successfully retrieved an array of valid graphics options from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetGraphicsOptions(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* rgGraphicsOptions, _Inout_ size_t* pcOptions) const
+bool OutputStateMachineEngine::_GetGraphicsOptions(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                   _In_ const unsigned short cParams,
+                                                   _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* const rgGraphicsOptions,
+                                                   _Inout_ size_t* const pcOptions) const
 {
     bool fSuccess = false;
 
@@ -894,7 +910,10 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(_In_reads_(cParams) con
 // Return Value:
 // - True if we successfully retrieved an array of private mode params from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetPrivateModeParams(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_writes_(*pcParams) TermDispatch::PrivateModeParams* rgPrivateModeParams, _Inout_ size_t* pcParams) const
+bool OutputStateMachineEngine::_GetPrivateModeParams(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                     _In_ const unsigned short cParams,
+                                                     _Out_writes_(*pcParams) TermDispatch::PrivateModeParams* const rgPrivateModeParams,
+                                                     _Inout_ size_t* const pcParams) const
 {
     bool fSuccess = false;
     // Can't just set nothing at all
@@ -1085,7 +1104,6 @@ bool OutputStateMachineEngine::FlushAtEndOfString() const
     return false;
 }
 
-
 // Routine Description:
 // - Determines if a character is a valid hex character, 0-9a-fA-F.
 // Arguments:
@@ -1273,4 +1291,34 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(wchar_t* pwchOscStringBuffer
     return fSuccess;
 }
 
+// Method Description:
+// - Retrieves the type of window manipulation operation from the parameter pool
+//      stored during Param actions.
+// Arguments:
+// - rgusParams - Array of parameters collected
+// - cParams - Number of parameters we've collected
+// - puiFunction - Memory location to receive the function type
+// Return Value:
+// - True iff we successfully pulled the function type from the parameters
+bool OutputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                          _In_ const unsigned short cParams,
+                                                          _Out_ unsigned int* const puiFunction) const
+{
+    bool fSuccess = false;
+    *puiFunction = s_DefaultWindowManipulationType;
 
+    if (cParams > 0)
+    {
+        switch(rgusParams[0])
+        {
+            case TermDispatch::WindowManipulationType::ResizeWindowInCharacters:
+                *puiFunction = TermDispatch::WindowManipulationType::ResizeWindowInCharacters;
+                fSuccess = true;
+                break;
+            default:
+                fSuccess = false;
+        }
+    }
+
+    return fSuccess;
+}
