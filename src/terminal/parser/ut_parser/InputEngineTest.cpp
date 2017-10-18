@@ -72,7 +72,7 @@ class Microsoft::Console::VirtualTerminal::TestInteractDispatch : public IIntera
 public:
     TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
     virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
-    virtual bool WindowManipulation(_In_ const WindowManipulationFunction uiFunction,
+    virtual bool WindowManipulation(_In_ const WindowManipulationType uiFunction,
                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                 _In_ size_t const cParams) override; // DTTERM_WindowManipulation
 private:
@@ -91,7 +91,7 @@ bool TestInteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEven
     return true;
 }
 
-bool TestInteractDispatch::WindowManipulation(_In_ const WindowManipulationFunction /*uiFunction*/,
+bool TestInteractDispatch::WindowManipulation(_In_ const WindowManipulationType /*uiFunction*/,
                                               _In_reads_(cParams) const unsigned short* const /*rgusParams*/,
                                               _In_ size_t const /*cParams*/)
 {

@@ -8,6 +8,7 @@
 
 #include "InteractDispatch.hpp"
 #include "conGetSet.hpp"
+#include "../../types/inc/Viewport.hpp"
 
 #include <math.h>
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
@@ -15,6 +16,7 @@
 
 #include <assert.h>
 
+using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
 InteractDispatch::InteractDispatch(_In_ std::unique_ptr<ConGetSet> pConApi)

@@ -35,7 +35,7 @@ public:
                                _Outptr_ InteractDispatch ** const ppDispatch);
 
     virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
-    virtual bool WindowManipulation(_In_ const WindowManipulationFunction uiFunction,
+    virtual bool WindowManipulation(_In_ const WindowManipulationType uiFunction,
                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                 _In_ size_t const cParams) override; // DTTERM_WindowManipulation
 private:
