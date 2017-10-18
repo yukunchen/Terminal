@@ -33,3 +33,14 @@ InputEventType WindowBufferSizeEvent::EventType() const
 {
     return InputEventType::WindowBufferSizeEvent;
 }
+
+
+COORD WindowBufferSizeEvent::GetSize() const
+{
+    return _size;
+}
+
+void WindowBufferSizeEvent::SetSize(_In_ const COORD size)
+{
+    _size = size;
+}

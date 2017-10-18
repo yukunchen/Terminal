@@ -188,6 +188,10 @@ public:
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;
 
+    COORD GetSize() const;
+    void SetSize(_In_ const COORD size);
+
+private:
     COORD _size;
 };
 
