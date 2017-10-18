@@ -665,8 +665,8 @@ bool InputBuffer::_CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<I
         const MouseEvent* const pInMouseEvent = static_cast<const MouseEvent* const>(pFirstInEvent);
         const MouseEvent* const pLastMouseEvent = static_cast<const MouseEvent* const>(pLastStoredEvent);
 
-        if (pInMouseEvent->_eventFlags == MOUSE_MOVED &&
-            pLastMouseEvent->_eventFlags == MOUSE_MOVED)
+        if (pInMouseEvent->GetEventFlags() == MOUSE_MOVED &&
+            pLastMouseEvent->GetEventFlags() == MOUSE_MOVED)
         {
             // update mouse moved position
             MouseEvent* const pMouseEvent = static_cast<MouseEvent* const>(_storage.back().release());

@@ -55,3 +55,33 @@ void MouseEvent::SetMousePosition(_In_ const COORD mousePosition)
 {
     _mousePosition = mousePosition;
 }
+
+DWORD MouseEvent::GetButtonState() const
+{
+    return _buttonState;
+}
+
+void MouseEvent::SetButtonState(_In_ const DWORD buttonState)
+{
+    _buttonState = buttonState;
+}
+
+DWORD MouseEvent::GetActiveModifierKeys() const
+{
+    return _activeModifierKeys;
+}
+
+void MouseEvent::SetActiveModifierKeys(_In_ const DWORD activeModifierKeys)
+{
+    _activeModifierKeys = activeModifierKeys;
+}
+
+DWORD MouseEvent::GetEventFlags() const
+{
+    return _eventFlags;
+}
+
+void MouseEvent::SetEventFlags(_In_ const DWORD eventFlags)
+{
+    _eventFlags = eventFlags;
+}

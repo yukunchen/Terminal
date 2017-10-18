@@ -163,9 +163,17 @@ public:
     COORD GetMousePosition() const;
     void SetMousePosition(_In_ const COORD mousePosition);
 
+    DWORD GetButtonState() const;
+    void SetButtonState(_In_ const DWORD buttonState);
+
+    DWORD GetActiveModifierKeys() const;
+    void SetActiveModifierKeys(_In_ const DWORD activeModifierKeys);
+
+    DWORD GetEventFlags() const;
+    void SetEventFlags(_In_ const DWORD eventFlags);
+
 private:
     COORD _mousePosition;
-public:
     DWORD _buttonState;
     DWORD _activeModifierKeys;
     DWORD _eventFlags;
