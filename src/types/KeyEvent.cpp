@@ -149,3 +149,13 @@ void KeyEvent::SetCharData(_In_ const wchar_t character)
 {
     _charData = character;
 }
+
+DWORD KeyEvent::GetActiveModifierKeys() const
+{
+    return _activeModifierKeys;
+}
+
+void KeyEvent::SetActiveModifierKeys(_In_ const DWORD activeModifierKeys)
+{
+    _activeModifierKeys = activeModifierKeys;
+}

@@ -103,7 +103,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
 
             if (pdwKeyState)
             {
-                *pdwKeyState = keyEvent->_activeModifierKeys;
+                *pdwKeyState = keyEvent->GetActiveModifierKeys();
             }
 
             if (keyEvent->GetCharData() != 0 && !commandLineEditKey)
@@ -111,7 +111,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                 // chars that are generated using alt + numpad
                 if (!keyEvent->IsKeyDown() && keyEvent->GetVirtualKeyCode() == VK_MENU)
                 {
-                    if (IsFlagSet(keyEvent->_activeModifierKeys, ALTNUMPAD_BIT))
+                    if (IsFlagSet(keyEvent->GetActiveModifierKeys(), ALTNUMPAD_BIT))
                     {
                         if (HIBYTE(keyEvent->GetCharData()))
                         {
@@ -183,8 +183,8 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                         const DWORD winmod = consoleModifierTranslator[zeroControlKeyState];
 
                         if (zeroVKey == keyEvent->GetVirtualKeyCode() &&
-                            AreAllFlagsSet(keyEvent->_activeModifierKeys, winmod) &&
-                            AreAllFlagsClear(keyEvent->_activeModifierKeys, ~winmod))
+                            AreAllFlagsSet(keyEvent->GetActiveModifierKeys(), winmod) &&
+                            AreAllFlagsClear(keyEvent->GetActiveModifierKeys(), ~winmod))
                         {
                             // This really is the character 0x0000
                             *pwchOut = keyEvent->GetCharData();

@@ -100,29 +100,29 @@ static bool RuntimeIsFlagSet(_In_ const DWORD flags, _In_ const DWORD flag)
 // Arguments:
 // - flags - legacy bitset to expand
 // Return Value:
-// - set of ControlKeyState values that represent flags
-std::unordered_set<ControlKeyState> ExpandControlKeyStateFlags(_In_ const DWORD flags)
+// - set of ModifierKeyState values that represent flags
+std::unordered_set<ModifierKeyState> ExpandModifierKeyStateFlags(_In_ const DWORD flags)
 {
-    std::unordered_set<ControlKeyState> keyStates;
+    std::unordered_set<ModifierKeyState> keyStates;
 
-    static const std::unordered_map<DWORD, ControlKeyState> mapping =
+    static const std::unordered_map<DWORD, ModifierKeyState> mapping =
     {
-        { RIGHT_ALT_PRESSED, ControlKeyState::RightAlt },
-        { LEFT_ALT_PRESSED, ControlKeyState::LeftAlt },
-        { RIGHT_CTRL_PRESSED, ControlKeyState::RightCtrl },
-        { LEFT_CTRL_PRESSED, ControlKeyState::LeftCtrl },
-        { SHIFT_PRESSED, ControlKeyState::Shift },
-        { NUMLOCK_ON, ControlKeyState::NumLock },
-        { SCROLLLOCK_ON, ControlKeyState::ScrollLock },
-        { CAPSLOCK_ON, ControlKeyState::CapsLock },
-        { ENHANCED_KEY, ControlKeyState::EnhancedKey },
-        { NLS_DBCSCHAR, ControlKeyState::NlsDbcsChar },
-        { NLS_ALPHANUMERIC, ControlKeyState::NlsAlphanumeric },
-        { NLS_KATAKANA, ControlKeyState::NlsKatakana },
-        { NLS_HIRAGANA, ControlKeyState::NlsHiragana },
-        { NLS_ROMAN, ControlKeyState::NlsRoman },
-        { NLS_IME_CONVERSION, ControlKeyState::NlsImeConversion },
-        { NLS_IME_DISABLE, ControlKeyState::NlsImeDisable }
+        { RIGHT_ALT_PRESSED, ModifierKeyState::RightAlt },
+        { LEFT_ALT_PRESSED, ModifierKeyState::LeftAlt },
+        { RIGHT_CTRL_PRESSED, ModifierKeyState::RightCtrl },
+        { LEFT_CTRL_PRESSED, ModifierKeyState::LeftCtrl },
+        { SHIFT_PRESSED, ModifierKeyState::Shift },
+        { NUMLOCK_ON, ModifierKeyState::NumLock },
+        { SCROLLLOCK_ON, ModifierKeyState::ScrollLock },
+        { CAPSLOCK_ON, ModifierKeyState::CapsLock },
+        { ENHANCED_KEY, ModifierKeyState::EnhancedKey },
+        { NLS_DBCSCHAR, ModifierKeyState::NlsDbcsChar },
+        { NLS_ALPHANUMERIC, ModifierKeyState::NlsAlphanumeric },
+        { NLS_KATAKANA, ModifierKeyState::NlsKatakana },
+        { NLS_HIRAGANA, ModifierKeyState::NlsHiragana },
+        { NLS_ROMAN, ModifierKeyState::NlsRoman },
+        { NLS_IME_CONVERSION, ModifierKeyState::NlsImeConversion },
+        { NLS_IME_DISABLE, ModifierKeyState::NlsImeDisable }
     };
 
     for (auto it = mapping.begin(); it != mapping.end(); ++it)

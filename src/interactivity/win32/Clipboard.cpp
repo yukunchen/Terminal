@@ -224,9 +224,24 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToKeyboardEvents(_In_ const
     KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
 
     // add modifier flags if necessary
-    SetFlagIf(keyEvent._activeModifierKeys, SHIFT_PRESSED, IsFlagSet(modifierState, VkKeyScanModState::ShiftPressed));
-    SetFlagIf(keyEvent._activeModifierKeys, LEFT_CTRL_PRESSED, IsFlagSet(modifierState, VkKeyScanModState::CtrlPressed));
-    SetFlagIf(keyEvent._activeModifierKeys, RIGHT_ALT_PRESSED, AreAllFlagsSet(modifierState, VkKeyScanModState::CtrlAndAltPressed));
+    if (IsFlagSet(modifierState, VkKeyScanModState::ShiftPressed))
+    {
+        DWORD activeModKeys = keyEvent.GetActiveModifierKeys();
+        SetFlag(activeModKeys, SHIFT_PRESSED);
+        keyEvent.SetActiveModifierKeys(activeModKeys);
+    }
+    if (IsFlagSet(modifierState, VkKeyScanModState::CtrlPressed))
+    {
+        DWORD activeModKeys = keyEvent.GetActiveModifierKeys();
+        SetFlag(activeModKeys, LEFT_CTRL_PRESSED);
+        keyEvent.SetActiveModifierKeys(activeModKeys);
+    }
+    if (AreAllFlagsSet(modifierState, VkKeyScanModState::CtrlAndAltPressed))
+    {
+        DWORD activeModKeys = keyEvent.GetActiveModifierKeys();
+        SetFlag(activeModKeys, RIGHT_ALT_PRESSED);
+        keyEvent.SetActiveModifierKeys(activeModKeys);
+    }
 
     // add key event down and up
     keyEvents.push_back(std::make_unique<KeyEvent>(keyEvent));

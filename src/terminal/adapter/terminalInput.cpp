@@ -336,9 +336,11 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
             // needs to be to check if both Left Ctrl + Right Alt are
             // pressed...
             // ... and if they are both pressed, strip them out of the control key state.
-            if (AreAllFlagsSet(keyEvent._activeModifierKeys, dwAltGrFlags))
+            if (AreAllFlagsSet(keyEvent.GetActiveModifierKeys(), dwAltGrFlags))
             {
-                ClearAllFlags(keyEvent._activeModifierKeys, dwAltGrFlags);
+                DWORD flags = keyEvent.GetActiveModifierKeys();
+                ClearAllFlags(flags, dwAltGrFlags);
+                keyEvent.SetActiveModifierKeys(flags);
             }
 
             if (keyEvent.IsAltPressed() &&
@@ -375,7 +377,7 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
                     // VkKeyScanW(0), the vkey for null
                     (keyEvent.GetCharData() == UNICODE_NULL && keyEvent.GetVirtualKeyCode() == LOBYTE(VkKeyScanW(0))))
                 {
-                    _SendNullInputSequence(keyEvent._activeModifierKeys);
+                    _SendNullInputSequence(keyEvent.GetActiveModifierKeys());
                     fKeyHandled = true;
                 }
             }

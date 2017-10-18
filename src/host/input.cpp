@@ -114,8 +114,8 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     BOOLEAN ContinueProcessing = TRUE;
 
-    if (IsAnyFlagSet(keyEvent._activeModifierKeys, CTRL_PRESSED) &&
-        !IsAnyFlagSet(keyEvent._activeModifierKeys, ALT_PRESSED) &&
+    if (IsAnyFlagSet(keyEvent.GetActiveModifierKeys(), CTRL_PRESSED) &&
+        !IsAnyFlagSet(keyEvent.GetActiveModifierKeys(), ALT_PRESSED) &&
         keyEvent.IsKeyDown())
     {
         // check for ctrl-c, if in line input mode.
@@ -156,7 +156,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
             ContinueProcessing = FALSE;
         }
     }
-    else if (IsAnyFlagSet(keyEvent._activeModifierKeys, ALT_PRESSED) &&
+    else if (IsAnyFlagSet(keyEvent.GetActiveModifierKeys(), ALT_PRESSED) &&
              keyEvent.IsKeyDown() &&
              keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
     {

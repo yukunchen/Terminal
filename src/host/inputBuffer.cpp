@@ -713,16 +713,16 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
             !IsCharFullWidth(pInKeyEvent->GetCharData()))
         {
             bool sameKey = false;
-            if (IsFlagSet(pInKeyEvent->_activeModifierKeys, NLS_IME_CONVERSION) &&
+            if (IsFlagSet(pInKeyEvent->GetActiveModifierKeys(), NLS_IME_CONVERSION) &&
                 pInKeyEvent->GetCharData() == pLastKeyEvent->GetCharData() &&
-                pInKeyEvent->_activeModifierKeys == pLastKeyEvent->_activeModifierKeys)
+                pInKeyEvent->GetActiveModifierKeys() == pLastKeyEvent->GetActiveModifierKeys())
             {
                 sameKey = true;
             }
             // other key events check
             else if (pInKeyEvent->GetVirtualScanCode() == pLastKeyEvent->GetVirtualScanCode() &&
                      pInKeyEvent->GetCharData() == pLastKeyEvent->GetCharData() &&
-                     pInKeyEvent->_activeModifierKeys == pLastKeyEvent->_activeModifierKeys)
+                     pInKeyEvent->GetActiveModifierKeys() == pLastKeyEvent->GetActiveModifierKeys())
             {
                 sameKey = true;
             }

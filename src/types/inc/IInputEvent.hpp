@@ -74,6 +74,27 @@ struct VkKeyScanModState
     static const byte ModPressed = ShiftPressed | CtrlPressed | AltPressed;
 };
 
+enum class ModifierKeyState
+{
+    RightAlt,
+    LeftAlt,
+    RightCtrl,
+    LeftCtrl,
+    Shift,
+    NumLock,
+    ScrollLock,
+    CapsLock,
+    EnhancedKey,
+    NlsDbcsChar,
+    NlsAlphanumeric,
+    NlsKatakana,
+    NlsHiragana,
+    NlsRoman,
+    NlsImeConversion,
+    NlsImeDisable
+};
+
+
 
 class KeyEvent : public IInputEvent
 {
@@ -108,9 +129,11 @@ public:
     WORD GetVirtualScanCode() const;
     void SetVirtualScanCode(_In_ const WORD virtualScanCode);
 
-    //using CharType = wchar_t;
     wchar_t GetCharData() const;
     void SetCharData(_In_ const wchar_t character);
+
+    DWORD GetActiveModifierKeys() const;
+    void SetActiveModifierKeys(_In_ const DWORD activeModifierKeys);
 
 private:
     bool _keyDown;
@@ -118,7 +141,6 @@ private:
     WORD _virtualKeyCode;
     WORD _virtualScanCode;
     wchar_t _charData;
-public:
     DWORD _activeModifierKeys;
 
     friend bool operator==(const KeyEvent& a, const KeyEvent& b);
@@ -180,24 +202,4 @@ public:
     int _setFocus;
 };
 
-enum class ControlKeyState
-{
-    RightAlt,
-    LeftAlt,
-    RightCtrl,
-    LeftCtrl,
-    Shift,
-    NumLock,
-    ScrollLock,
-    CapsLock,
-    EnhancedKey,
-    NlsDbcsChar,
-    NlsAlphanumeric,
-    NlsKatakana,
-    NlsHiragana,
-    NlsRoman,
-    NlsImeConversion,
-    NlsImeDisable
-};
-
-std::unordered_set<ControlKeyState> ExpandControlKeyStateFlags(_In_ const DWORD flags);
+std::unordered_set<ModifierKeyState> ExpandModifierKeyStateFlags(_In_ const DWORD flags);

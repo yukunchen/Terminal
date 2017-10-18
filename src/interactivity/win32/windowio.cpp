@@ -182,7 +182,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
         {
             keyEvent.SetVirtualScanCode(0);
         }
-        keyEvent._activeModifierKeys = GetControlKeyState(lParam);
+        keyEvent.SetActiveModifierKeys(GetControlKeyState(lParam));
         if (Message == WM_CHAR || Message == WM_SYSCHAR)
         {
             keyEvent.SetCharData(static_cast<wchar_t>(wParam));
@@ -199,7 +199,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
         {
             return;
         }
-        keyEvent._activeModifierKeys = ControlKeyState;
+        keyEvent.SetActiveModifierKeys(ControlKeyState);
         keyEvent.SetCharData(0);
     }
 
