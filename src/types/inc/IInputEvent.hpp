@@ -107,7 +107,10 @@ public:
              _In_ const wchar_t charData,
              _In_ const DWORD activeModifierKeys);
     KeyEvent();
+    KeyEvent(const KeyEvent& keyEvent) = default;
+    KeyEvent(KeyEvent&& keyEvent) = default;
     ~KeyEvent();
+
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
@@ -156,7 +159,10 @@ public:
                _In_ const DWORD buttonState,
                _In_ const DWORD activeModifierKeys,
                _In_ const DWORD eventFlags);
+    MouseEvent(const MouseEvent& mouseEvent) = default;
+    MouseEvent(MouseEvent&& mouseEvent) = default;
     ~MouseEvent();
+
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
@@ -184,7 +190,10 @@ class WindowBufferSizeEvent : public IInputEvent
 public:
     WindowBufferSizeEvent(_In_ const WINDOW_BUFFER_SIZE_RECORD& record);
     WindowBufferSizeEvent(_In_ const COORD);
+    WindowBufferSizeEvent(const WindowBufferSizeEvent& event) = default;
+    WindowBufferSizeEvent(WindowBufferSizeEvent&& event) = default;
     ~WindowBufferSizeEvent();
+
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
@@ -200,7 +209,10 @@ class MenuEvent : public IInputEvent
 public:
     MenuEvent(_In_ const MENU_EVENT_RECORD& record);
     MenuEvent(_In_ const UINT commandId);
+    MenuEvent(const MenuEvent& menuEvent) = default;
+    MenuEvent(MenuEvent&& menuEvent) = default;
     ~MenuEvent();
+
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
@@ -216,7 +228,10 @@ class FocusEvent : public IInputEvent
 public:
     FocusEvent(_In_ const FOCUS_EVENT_RECORD& record);
     FocusEvent(_In_ const bool focus);
+    FocusEvent(const FocusEvent& focusEvent) = default;
+    FocusEvent(FocusEvent&& focusEvent) = default;
     ~FocusEvent();
+
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
