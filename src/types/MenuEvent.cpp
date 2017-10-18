@@ -21,7 +21,7 @@ MenuEvent::~MenuEvent()
 {
 }
 
-INPUT_RECORD MenuEvent::ToInputRecord() const
+INPUT_RECORD MenuEvent::ToInputRecord() const noexcept
 {
     INPUT_RECORD record{ 0 };
     record.EventType = MENU_EVENT;
@@ -29,17 +29,17 @@ INPUT_RECORD MenuEvent::ToInputRecord() const
     return record;
 }
 
-InputEventType MenuEvent::EventType() const
+InputEventType MenuEvent::EventType() const noexcept
 {
     return InputEventType::MenuEvent;
 }
 
-UINT MenuEvent::GetCommandId() const
+UINT MenuEvent::GetCommandId() const noexcept
 {
     return _commandId;
 }
 
-void MenuEvent::SetCommandId(_In_ const UINT commandId)
+void MenuEvent::SetCommandId(_In_ const UINT commandId) noexcept
 {
     _commandId = commandId;
 }

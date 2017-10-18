@@ -90,7 +90,7 @@ HRESULT IInputEvent::ToInputRecords(_In_ const std::deque<std::unique_ptr<IInput
 // - The wil version of IsFlagSet is only to operate on values that
 // are compile time constants. This will work with runtime calculated
 // values.
-static bool RuntimeIsFlagSet(_In_ const DWORD flags, _In_ const DWORD flag)
+static bool RuntimeIsFlagSet(_In_ const DWORD flags, _In_ const DWORD flag) noexcept
 {
     return !!(flags & flag);
 }

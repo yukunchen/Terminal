@@ -30,7 +30,7 @@ MouseEvent::~MouseEvent()
 {
 }
 
-INPUT_RECORD MouseEvent::ToInputRecord() const
+INPUT_RECORD MouseEvent::ToInputRecord() const noexcept
 {
     INPUT_RECORD record{ 0 };
     record.EventType = MOUSE_EVENT;
@@ -41,47 +41,47 @@ INPUT_RECORD MouseEvent::ToInputRecord() const
     return record;
 }
 
-InputEventType MouseEvent::EventType() const
+InputEventType MouseEvent::EventType() const noexcept
 {
     return InputEventType::MouseEvent;
 }
 
-COORD MouseEvent::GetMousePosition() const
+COORD MouseEvent::GetMousePosition() const noexcept
 {
     return _mousePosition;
 }
 
-void MouseEvent::SetMousePosition(_In_ const COORD mousePosition)
+void MouseEvent::SetMousePosition(_In_ const COORD mousePosition) noexcept
 {
     _mousePosition = mousePosition;
 }
 
-DWORD MouseEvent::GetButtonState() const
+DWORD MouseEvent::GetButtonState() const noexcept
 {
     return _buttonState;
 }
 
-void MouseEvent::SetButtonState(_In_ const DWORD buttonState)
+void MouseEvent::SetButtonState(_In_ const DWORD buttonState) noexcept
 {
     _buttonState = buttonState;
 }
 
-DWORD MouseEvent::GetActiveModifierKeys() const
+DWORD MouseEvent::GetActiveModifierKeys() const noexcept
 {
     return _activeModifierKeys;
 }
 
-void MouseEvent::SetActiveModifierKeys(_In_ const DWORD activeModifierKeys)
+void MouseEvent::SetActiveModifierKeys(_In_ const DWORD activeModifierKeys) noexcept
 {
     _activeModifierKeys = activeModifierKeys;
 }
 
-DWORD MouseEvent::GetEventFlags() const
+DWORD MouseEvent::GetEventFlags() const noexcept
 {
     return _eventFlags;
 }
 
-void MouseEvent::SetEventFlags(_In_ const DWORD eventFlags)
+void MouseEvent::SetEventFlags(_In_ const DWORD eventFlags) noexcept
 {
     _eventFlags = eventFlags;
 }

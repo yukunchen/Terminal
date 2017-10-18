@@ -21,7 +21,7 @@ FocusEvent::~FocusEvent()
 {
 }
 
-INPUT_RECORD FocusEvent::ToInputRecord() const
+INPUT_RECORD FocusEvent::ToInputRecord() const noexcept
 {
     INPUT_RECORD record{ 0 };
     record.EventType = FOCUS_EVENT;
@@ -29,17 +29,17 @@ INPUT_RECORD FocusEvent::ToInputRecord() const
     return record;
 }
 
-InputEventType FocusEvent::EventType() const
+InputEventType FocusEvent::EventType() const noexcept
 {
     return InputEventType::FocusEvent;
 }
 
-bool FocusEvent::GetFocus() const
+bool FocusEvent::GetFocus() const noexcept
 {
     return _focus;
 }
 
-void FocusEvent::SetFocus(_In_ const bool focus)
+void FocusEvent::SetFocus(_In_ const bool focus) noexcept
 {
     _focus = focus;
 }
