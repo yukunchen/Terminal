@@ -68,6 +68,7 @@ namespace Microsoft
                 static bool s_IsOscTerminator(_In_ wchar_t const wch);
                 static bool s_IsDesignateCharsetIndicator(_In_ wchar_t const wch);
                 static bool s_IsCharsetCode(_In_ wchar_t const wch);
+                static bool s_IsSs3Indicator(_In_ wchar_t const wch);
 
 
                 void _ActionExecute(_In_ wchar_t const wch);
@@ -81,6 +82,7 @@ namespace Microsoft
                 void _ActionOscDispatch(_In_ wchar_t const wch);
                 bool _IntermediateQuestionMarkDispatch(_In_ wchar_t const wchAction);
                 bool _IntermediateExclamationDispatch(_In_ wchar_t const wchAction);
+                void _ActionSs3Dispatch(_In_ wchar_t const wch);
 
                 void _ActionClear();
                 void _ActionIgnore();
@@ -94,6 +96,8 @@ namespace Microsoft
                 void _EnterCsiIntermediate();
                 void _EnterOscParam();
                 void _EnterOscString();
+                void _EnterSs3Entry();
+                void _EnterSs3Param();
 
                 void _EventGround(_In_ wchar_t const wch);
                 void _EventEscape(_In_ wchar_t const wch);
@@ -104,6 +108,8 @@ namespace Microsoft
                 void _EventCsiParam(_In_ wchar_t const wch);
                 void _EventOscParam(_In_ wchar_t const wch);
                 void _EventOscString(_In_ wchar_t const wch);
+                void _EventSs3Entry(_In_ wchar_t const wch);
+                void _EventSs3Param(_In_ wchar_t const wch);
 
                 enum class VTStates
                 {
@@ -115,7 +121,9 @@ namespace Microsoft
                     CsiIgnore,
                     CsiParam,
                     OscParam,
-                    OscString
+                    OscString,
+                    Ss3Entry,
+                    Ss3Param
                 };
 
                 Microsoft::Console::VirtualTerminal::ParserTracing _trace;
