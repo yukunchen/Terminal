@@ -204,6 +204,10 @@ public:
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;
 
+    UINT GetCommandId() const;
+    void SetCommandId(_In_ const UINT commandId);
+
+private:
     UINT _commandId;
 };
 

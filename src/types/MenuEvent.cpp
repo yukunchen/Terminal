@@ -33,3 +33,13 @@ InputEventType MenuEvent::EventType() const
 {
     return InputEventType::MenuEvent;
 }
+
+UINT MenuEvent::GetCommandId() const
+{
+    return _commandId;
+}
+
+void MenuEvent::SetCommandId(_In_ const UINT commandId)
+{
+    _commandId = commandId;
+}
