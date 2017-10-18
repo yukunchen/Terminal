@@ -1132,20 +1132,31 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(wchar_t* pwchOscStringBuffer
                                                     size_t* pTableIndex,
                                                     DWORD* pRgb)
 {
-    // DebugBreak();
     *pTableIndex = 0;
     *pRgb = 0;
     const wchar_t* pwchCurr = pwchOscStringBuffer;
-    size_t cchConsumed = 0;
+    const wchar_t*const pwchEnd = pwchOscStringBuffer + cchOscString;
     size_t _TableIndex = 0;
-
-    for (auto i = 0; i < 4; i++)
+    unsigned int rguiColorValues[3] = {0};
+    
+    bool foundTableIndex = false;
+    bool foundRGB = false;
+    bool foundValidColorSpec = false;
+    bool fSuccess = false;
+    // We can have anywhere between [11,15] characters
+    // 11 "#;rgb:h/h/h"
+    // 15 "##;rgb:hh/hh/hh"
+    // Any fewer cannot be valid, and any more will be too many.
+    // Return early in this case. 
+    //      We'll still have to bounds check when parsing the hh/hh/hh values
+    if (cchOscString < 11 || cchOscString > 15)
     {
-        if (i == 3)
-        {
-            // We read 3 characters, there was no semicolon. Not a valid string. 
-            return false;
-        }
+        return false;
+    }
+
+    // First try to get the table index, a number between [0,15]
+    for (size_t i = 0; i < 3; i++)
+    {
         const wchar_t wch = *pwchCurr;
         if (s_IsNumber(wch))
         {
@@ -1153,81 +1164,95 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(wchar_t* pwchOscStringBuffer
             _TableIndex += wch - L'0';
 
             pwchCurr++;
-            cchConsumed++;
         }
-        else if (wch == L';')
+        else if (wch == L';' && i > 0)
         {
+            // We need to explicitly pass in a number, we can't default to 0 if 
+            //  there's no param
             pwchCurr++;
-            cchConsumed++;
+            foundTableIndex = true;
             break;
         }
-        else return false;
-        // if we're at the end of the OSC string
-        if (cchConsumed > cchOscString) return false;
-    }
-
-    // We need at least 4 characters for the "rgb:"
-    if (cchConsumed+4 > cchOscString) return false;
-    if (!(
-          (pwchCurr[0] == L'r') && 
-          (pwchCurr[1] == L'g') && 
-          (pwchCurr[2] == L'b') &&
-          (pwchCurr[3] == L':')
-         ))
-    {
-        return false;
-    }
-    pwchCurr+=4;
-    cchConsumed += 4;
-
-    // Colorspecs are up to hh/hh/hh, for 1-2 h's
-    unsigned int rguiColorValues[3] = {0};
-    for (auto j = 0; j < 3; j++)
-    {
-        // if (j == 2) DebugBreak();
-        auto pValue = &(rguiColorValues[j]);
-        for (auto i = 0; i < 5; i++)
+        else
         {
-            if (i==2 && j == 2) break;
-            if (i == 4)
-            {
-                return false;
-                // We read 5 characters, there was no /. Not a valid string. 
-                // return false;
-            }
-            const wchar_t wch = *pwchCurr;
-            pwchCurr++;
-            cchConsumed++;
+            // Found an unexpected character, fail.
+            break;
+        } 
+    }
+    // Now we look for "rgb:"
+    // Other colorspaces are theoretically possible, but we don't support them.
+    if (foundTableIndex)
+    {
+        if ((pwchCurr[0] == L'r') && 
+            (pwchCurr[1] == L'g') && 
+            (pwchCurr[2] == L'b') &&
+            (pwchCurr[3] == L':') )
+        {
+            foundRGB = true;
+        }
+        pwchCurr+=4;
+    }
 
-            if (s_IsHexNumber(wch))
-            {
-                *pValue *= 16;
-                *pValue += s_HexToUint(wch);
+    if (foundRGB)
+    {
+        // Colorspecs are up to hh/hh/hh, for 1-2 h's
+        for (size_t j = 0; j < 3; j++)
+        {
+            bool foundColor = false;
+            unsigned int* const pValue = &(rguiColorValues[j]);
+            for (size_t i = 0; i < 3; i++)
+            {   
+
+                const wchar_t wch = *pwchCurr;
+                pwchCurr++;
+
+                if (s_IsHexNumber(wch))
+                {
+                    *pValue *= 16;
+                    *pValue += s_HexToUint(wch);
+                    // If we're on the blue component, we're not going to see a /.
+                    // Break out once we hit the end.
+                    if (i == 2 && pwchCurr == pwchEnd)
+                    {
+                        foundValidColorSpec = true;
+                        break;
+                    }
+                }
+                else if (wch == L'/')
+                {
+                    // Break this component, and start the next one.
+                    foundColor = true;
+                    break;
+                }
+                else
+                {
+                    // Encountered something weird oh no
+                    foundColor = false;
+                    break;
+                } 
             }
-            else if (wch == L'/')
+            if (!foundColor || pwchCurr == pwchEnd)
             {
-                // Break this component, and start the next one.
+                // Indicates there was a some error parsing color
+                //  or we're at the end of the string.
                 break;
             }
-            else
-            {
-                // Encountered something weird oh no
-                return false;
-            } 
-            if (cchConsumed == cchOscString && j == 2) break;
-        }
-        if (cchConsumed > cchOscString)
-        {
-            return false;
         }
     }
-    // DebugBreak();
-    DWORD color = RGB(LOBYTE(rguiColorValues[0]), LOBYTE(rguiColorValues[1]), LOBYTE(rguiColorValues[2]));
 
-    *pTableIndex = _TableIndex;
-    *pRgb = color;
+    // Only if we find a valid colorspec can we pass it out successfully.
+    if (foundValidColorSpec)
+    {
+        DWORD color = RGB(LOBYTE(rguiColorValues[0]),
+                          LOBYTE(rguiColorValues[1]),
+                          LOBYTE(rguiColorValues[2]));
 
-    return true;
+        *pTableIndex = _TableIndex;
+        *pRgb = color;
+        fSuccess = true;
+    }
+
+    return fSuccess;
 }
 
 
