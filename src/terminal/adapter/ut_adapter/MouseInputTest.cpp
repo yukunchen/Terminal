@@ -106,7 +106,7 @@ public:
                 VERIFY_ARE_EQUAL(expectedKeyEvent, testKeyEvent,
                                  NoThrowString().Format(L"Chars='%c','%c'",
                                                         s_pwszInputExpected[i],
-                                                        testKeyEvent._charData));
+                                                        testKeyEvent.GetCharData()));
             }
         }
     }

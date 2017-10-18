@@ -139,3 +139,13 @@ void KeyEvent::SetVirtualScanCode(_In_ const WORD virtualScanCode)
 {
     _virtualScanCode = virtualScanCode;
 }
+
+wchar_t KeyEvent::GetCharData() const
+{
+    return _charData;
+}
+
+void KeyEvent::SetCharData(_In_ const wchar_t character)
+{
+    _charData = character;
+}

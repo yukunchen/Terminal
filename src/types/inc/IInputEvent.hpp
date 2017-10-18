@@ -108,13 +108,17 @@ public:
     WORD GetVirtualScanCode() const;
     void SetVirtualScanCode(_In_ const WORD virtualScanCode);
 
+    //using CharType = wchar_t;
+    wchar_t GetCharData() const;
+    void SetCharData(_In_ const wchar_t character);
+
 private:
     bool _keyDown;
     WORD _repeatCount;
     WORD _virtualKeyCode;
     WORD _virtualScanCode;
-public:
     wchar_t _charData;
+public:
     DWORD _activeModifierKeys;
 
     friend bool operator==(const KeyEvent& a, const KeyEvent& b);

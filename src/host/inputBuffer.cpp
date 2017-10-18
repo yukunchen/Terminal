@@ -378,7 +378,7 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>&
                 if (readEvents.back()->EventType() == InputEventType::KeyEvent)
                 {
                     const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(readEvents.back().get());
-                    if (IsCharFullWidth(pKeyEvent->_charData))
+                    if (IsCharFullWidth(pKeyEvent->GetCharData()))
                     {
                         ++virtualReadCount;
                     }
@@ -710,18 +710,18 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
 
         if (pInKeyEvent->IsKeyDown() &&
             pLastKeyEvent->IsKeyDown() &&
-            !IsCharFullWidth(pInKeyEvent->_charData))
+            !IsCharFullWidth(pInKeyEvent->GetCharData()))
         {
             bool sameKey = false;
             if (IsFlagSet(pInKeyEvent->_activeModifierKeys, NLS_IME_CONVERSION) &&
-                pInKeyEvent->_charData == pLastKeyEvent->_charData &&
+                pInKeyEvent->GetCharData() == pLastKeyEvent->GetCharData() &&
                 pInKeyEvent->_activeModifierKeys == pLastKeyEvent->_activeModifierKeys)
             {
                 sameKey = true;
             }
             // other key events check
             else if (pInKeyEvent->GetVirtualScanCode() == pLastKeyEvent->GetVirtualScanCode() &&
-                     pInKeyEvent->_charData == pLastKeyEvent->_charData &&
+                     pInKeyEvent->GetCharData() == pLastKeyEvent->GetCharData() &&
                      pInKeyEvent->_activeModifierKeys == pLastKeyEvent->_activeModifierKeys)
             {
                 sameKey = true;

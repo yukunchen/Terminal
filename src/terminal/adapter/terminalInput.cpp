@@ -343,7 +343,7 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
 
             if (keyEvent.IsAltPressed() &&
                 keyEvent.IsCtrlPressed() &&
-                (keyEvent._charData == 0 || keyEvent._charData == 0x20) &&
+                (keyEvent.GetCharData() == 0 || keyEvent.GetCharData() == 0x20) &&
                 ((keyEvent.GetVirtualKeyCode() > 0x40 && keyEvent.GetVirtualKeyCode() <= 0x5A) ||
                  keyEvent.GetVirtualKeyCode() == VK_SPACE) )
             {
@@ -362,18 +362,18 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
                 }
             }
             // ALT is a sequence of ESC + KEY.
-            else if (keyEvent._charData != 0 && keyEvent.IsAltPressed())
+            else if (keyEvent.GetCharData() != 0 && keyEvent.IsAltPressed())
             {
-                _SendEscapedInputSequence(keyEvent._charData);
+                _SendEscapedInputSequence(keyEvent.GetCharData());
                 fKeyHandled = true;
             }
             else if (keyEvent.IsCtrlPressed())
             {
-                if ((keyEvent._charData == UNICODE_SPACE ) || // Ctrl+Space
+                if ((keyEvent.GetCharData() == UNICODE_SPACE ) || // Ctrl+Space
                     // when Ctrl+@ comes through, the unicodechar
                     // will be '\x0' (UNICODE_NULL), and the vkey will be
                     // VkKeyScanW(0), the vkey for null
-                    (keyEvent._charData == UNICODE_NULL && keyEvent.GetVirtualKeyCode() == LOBYTE(VkKeyScanW(0))))
+                    (keyEvent.GetCharData() == UNICODE_NULL && keyEvent.GetVirtualKeyCode() == LOBYTE(VkKeyScanW(0))))
                 {
                     _SendNullInputSequence(keyEvent._activeModifierKeys);
                     fKeyHandled = true;
@@ -400,7 +400,7 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
                 else
                 {
                     WCHAR rgwchSequence[2];
-                    rgwchSequence[0] = keyEvent._charData;
+                    rgwchSequence[0] = keyEvent.GetCharData();
                     rgwchSequence[1] = UNICODE_NULL;
                     _SendInputSequence(rgwchSequence);
                     fKeyHandled = true;

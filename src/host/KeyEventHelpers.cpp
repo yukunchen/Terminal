@@ -66,7 +66,7 @@ bool IsCommandLineEditingKey(_In_ const KeyEvent& keyEvent)
         // If wUnicodeChar is specified in KeySubst,
         // the key should be handled as a normal key.
         // Basically this is for VK_BACK keys.
-        return (keyEvent._charData == 0);
+        return (keyEvent.GetCharData() == 0);
     }
 
     if (IsAnyFlagSet(keyEvent._activeModifierKeys, ALT_PRESSED))
@@ -117,7 +117,7 @@ bool IsCommandLinePopupKey(_In_ const KeyEvent& keyEvent)
     // Extended key handling
     if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey() && ::GetKeySubst(keyEvent))
     {
-        return (keyEvent._charData == 0);
+        return (keyEvent.GetCharData() == 0);
     }
 
     return false;
@@ -141,7 +141,7 @@ const ExtKeySubst* const ParseEditKeyInfo(_Inout_ KeyEvent& keyEvent)
         // Substitute the input with ext key.
         keyEvent._activeModifierKeys = pKeySubst->wMod;
         keyEvent.SetVirtualKeyCode(pKeySubst->wVirKey);
-        keyEvent._charData = pKeySubst->wUnicodeChar;
+        keyEvent.SetCharData(pKeySubst->wUnicodeChar);
     }
 
     return pKeySubst;

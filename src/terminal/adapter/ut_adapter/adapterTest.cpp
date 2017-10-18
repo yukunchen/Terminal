@@ -832,8 +832,8 @@ public:
             // every even key is down. every odd key is up. DOWN = 0, UP = 1. DOWN = 2, UP = 3. and so on.
             VERIFY_ARE_EQUAL((bool)!(iInput % 2), keyEvent->IsKeyDown());
             VERIFY_ARE_EQUAL(0u, keyEvent->_activeModifierKeys);
-            Log::Comment(NoThrowString().Format(L"Comparing '%c' with '%c'...", wch, keyEvent->_charData));
-            VERIFY_ARE_EQUAL(wch, keyEvent->_charData);
+            Log::Comment(NoThrowString().Format(L"Comparing '%c' with '%c'...", wch, keyEvent->GetCharData()));
+            VERIFY_ARE_EQUAL(wch, keyEvent->GetCharData());
             VERIFY_ARE_EQUAL(1u, keyEvent->GetRepeatCount());
             VERIFY_ARE_EQUAL(0u, keyEvent->GetVirtualKeyCode());
             VERIFY_ARE_EQUAL(0u, keyEvent->GetVirtualScanCode());
