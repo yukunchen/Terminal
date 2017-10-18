@@ -24,7 +24,7 @@ namespace Microsoft
     };
 };
 
-class Microsoft::Console::Types::Viewport sealed
+class Microsoft::Console::Types::Viewport final
 {
 public:
     

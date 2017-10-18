@@ -1796,13 +1796,10 @@ bool AdaptDispatch::_ResizeWindow(_In_ const unsigned short usWidth,
             fSuccess = !!_pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
             if (fSuccess)
             {
+                // SetConsoleWindowInfo expect inclusive rects
                 SMALL_RECT sr = Viewport::FromDimensions(oldViewport.Origin(),
                                                          sColumns,
                                                          sRows).ToInclusive();
-                // SMALL_RECT srNewViewport = csbiex.srWindow;
-                // // SetConsoleWindowInfo expect inclusive rects
-                // srNewViewport.Right = srNewViewport.Left + sColumns - 1;
-                // srNewViewport.Bottom = srNewViewport.Top + sRows - 1;
                 fSuccess = !!_pConApi->SetConsoleWindowInfo(true, &sr);
             }
         }   
