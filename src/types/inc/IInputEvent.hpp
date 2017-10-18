@@ -215,12 +215,16 @@ class FocusEvent : public IInputEvent
 {
 public:
     FocusEvent(_In_ const FOCUS_EVENT_RECORD& record);
-    FocusEvent(_In_ const int setFocus);
+    FocusEvent(_In_ const bool focus);
     ~FocusEvent();
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;
 
-    int _setFocus;
+    bool GetFocus() const;
+    void SetFocus(_In_ const bool focus);
+
+private:
+    bool _focus;
 };
 
 std::unordered_set<ModifierKeyState> ExpandModifierKeyStateFlags(_In_ const DWORD flags);
