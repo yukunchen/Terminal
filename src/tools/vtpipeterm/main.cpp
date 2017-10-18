@@ -163,7 +163,7 @@ void toPrintableBuffer(char c, char* printBuffer, int* printCch)
 std::string toPrintableString(std::string& inString)
 {
     std::string retval = "";
-    for (int i = 0; i < inString.length(); i++)
+    for (size_t i = 0; i < inString.length(); i++)
     {
         char c = inString[i];
         if (c < '\x20')
