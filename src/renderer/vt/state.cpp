@@ -15,6 +15,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Creates a new VT-based rendering engine
@@ -25,7 +26,7 @@ using namespace Microsoft::Console::Render;
 // - An instance of a Renderer.
 VtEngine::VtEngine(_In_ wil::unique_hfile pipe) :
     _hFile(std::move(pipe)),
-    _srLastViewport({0}),
+    _lastViewport({0}),
     _srcInvalid({0}),
     _lastRealCursor({0}),
     _lastText({0}),
@@ -176,12 +177,18 @@ HRESULT VtEngine::UpdateDpi(_In_ int const /*iDpi*/)
 // - HRESULT S_OK
 HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 {
-    _srLastViewport = srNewViewport;
+    HRESULT hr = S_OK;
+    const Viewport oldView = _lastViewport;
+    const Viewport newView = Viewport::FromInclusive(srNewViewport);
+    
+    _lastViewport = newView;
 
-    // If the viewport has changed, then send a window update.
-    // TODO: 13847317(adapter), 13271084(renderer)
+    if ((oldView.Height() != newView.Height()) || (oldView.Width() != newView.Width()))
+    {
+        hr = _ResizeWindow(newView.Width(), newView.Height());
+    }
 
-    return S_OK;
+    return hr;
 }
 
 // Method Description:

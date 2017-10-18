@@ -20,7 +20,7 @@ Abstract:
 
 #include <cwchar>
 
-#include "..\..\inc\viewport.hpp"
+#include "..\..\types\inc\viewport.hpp"
 #include "..\..\inc\operators.hpp"
 
 #ifndef _NTSTATUS_DEFINED

@@ -6,7 +6,6 @@
 
 #include "precomp.h"
 #include "Xterm256Engine.hpp"
-#include "..\..\inc\Viewport.hpp"
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
 
