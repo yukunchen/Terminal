@@ -123,7 +123,7 @@ namespace Microsoft
                 _Success_(return)
                 bool _GetGraphicsOptions(_In_reads_(cParams) const unsigned short* const rgusParams,
                                          _In_ const unsigned short cParams, 
-										 _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* const rgGraphicsOptions,
+                                         _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* const rgGraphicsOptions,
                                          _Inout_ size_t* const pcOptions) const;
 
                 static const TermDispatch::EraseType s_defaultEraseType = TermDispatch::EraseType::ToEnd;

@@ -6,11 +6,10 @@
 
 #include "precomp.h"
 #include "vtrenderer.hpp"
-#include "..\..\inc\conattrs.hpp"
+#include "../../inc/conattrs.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
-using namespace Microsoft::Console::Types;
 
 // Method Description:
 // - Formats and writes a sequence to stop the cursor from blinking.

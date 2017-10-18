@@ -9,7 +9,6 @@
 #include "..\..\inc\conattrs.hpp"
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
-using namespace Microsoft::Console::Types;
 
 WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
                                  _In_reads_(cColorTable) const COLORREF* const ColorTable,
