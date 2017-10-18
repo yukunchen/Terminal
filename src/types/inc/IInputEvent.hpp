@@ -160,7 +160,12 @@ public:
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;
 
+    COORD GetMousePosition() const;
+    void SetMousePosition(_In_ const COORD mousePosition);
+
+private:
     COORD _mousePosition;
+public:
     DWORD _buttonState;
     DWORD _activeModifierKeys;
     DWORD _eventFlags;

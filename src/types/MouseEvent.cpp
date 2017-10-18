@@ -45,3 +45,13 @@ InputEventType MouseEvent::EventType() const
 {
     return InputEventType::MouseEvent;
 }
+
+COORD MouseEvent::GetMousePosition() const
+{
+    return _mousePosition;
+}
+
+void MouseEvent::SetMousePosition(_In_ const COORD mousePosition)
+{
+    _mousePosition = mousePosition;
+}
