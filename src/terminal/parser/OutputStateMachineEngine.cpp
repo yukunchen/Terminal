@@ -200,6 +200,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
     size_t cOptions = ARRAYSIZE(rgGraphicsOptions);
     TermDispatch::AnsiStatusType deviceStatusType = (TermDispatch::AnsiStatusType)-1; // there is no default status type.
     
+    // This is all the args after the first arg, and the count of args not including the first one.
+    const unsigned short* const rgusRemainingArgs = (cParams > 1) ? rgusParams + 1 : rgusParams;
+    const unsigned short cRemainingArgs = (cParams >= 1) ? cParams - 1 : 0;
+
     if (cIntermediate == 0)
     {
         // fill params
@@ -258,7 +262,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             fSuccess = _GetTabClearType(rgusParams, cParams, &sClearType);
             break;
         case VTActionCodes::DTTERM_WindowManipulation:
-            fSuccess = _GetWindowManipulationFunction(rgusParams, cParams, &uiFunction);
+            fSuccess = _GetWindowManipulationType(rgusParams, cParams, &uiFunction);
             break;
         default:
             // If no params to fill, param filling was successful.
@@ -381,7 +385,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::ECH);
                 break;
             case VTActionCodes::DTTERM_WindowManipulation:
-                fSuccess = _pDispatch->WindowManipulation(static_cast<TermDispatch::WindowManipulationFunction>(uiFunction), rgusParams+1, cParams-1);
+                fSuccess = _pDispatch->WindowManipulation(static_cast<TermDispatch::WindowManipulationType>(uiFunction),
+                                                          rgusRemainingArgs,
+                                                          cRemainingArgs);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::DTTERM_WM);
                 break;
             default:
@@ -568,7 +574,10 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
 // Return Value:
 // - True if we successfully retrieved an array of valid graphics options from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetGraphicsOptions(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* rgGraphicsOptions, _Inout_ size_t* pcOptions) const
+bool OutputStateMachineEngine::_GetGraphicsOptions(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                   _In_ const unsigned short cParams,
+                                                   _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* const rgGraphicsOptions,
+                                                   _Inout_ size_t* const pcOptions) const
 {
     bool fSuccess = false;
 
@@ -873,7 +882,10 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(_In_reads_(cParams) con
 // Return Value:
 // - True if we successfully retrieved an array of private mode params from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetPrivateModeParams(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_writes_(*pcParams) TermDispatch::PrivateModeParams* rgPrivateModeParams, _Inout_ size_t* pcParams) const
+bool OutputStateMachineEngine::_GetPrivateModeParams(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                     _In_ const unsigned short cParams,
+                                                     _Out_writes_(*pcParams) TermDispatch::PrivateModeParams* const rgPrivateModeParams,
+                                                     _Inout_ size_t* const pcParams) const
 {
     bool fSuccess = false;
     // Can't just set nothing at all
@@ -1073,21 +1085,23 @@ bool OutputStateMachineEngine::FlushAtEndOfString() const
 // - puiFunction - Memory location to receive the function type
 // Return Value:
 // - True iff we successfully pulled the function type from the parameters
-bool OutputStateMachineEngine::_GetWindowManipulationFunction(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                                              _In_ const unsigned short cParams,
-                                                              _Out_ unsigned int* const puiFunction) const
+bool OutputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                          _In_ const unsigned short cParams,
+                                                          _Out_ unsigned int* const puiFunction) const
 {
     bool fSuccess = false;
-    *puiFunction = s_DefaulWindowManipulationFunction;
+    *puiFunction = s_DefaultWindowManipulationType;
 
     if (cParams > 0)
     {
         switch(rgusParams[0])
         {
-            case TermDispatch::WindowManipulationFunction::ResizeWindowInCharacters:
-                *puiFunction = TermDispatch::WindowManipulationFunction::ResizeWindowInCharacters;
+            case TermDispatch::WindowManipulationType::ResizeWindowInCharacters:
+                *puiFunction = TermDispatch::WindowManipulationType::ResizeWindowInCharacters;
                 fSuccess = true;
                 break;
+            default:
+                fSuccess = false;
         }
     }
 

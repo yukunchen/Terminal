@@ -122,9 +122,9 @@ namespace Microsoft
                 static const TermDispatch::GraphicsOptions s_defaultGraphicsOption = TermDispatch::GraphicsOptions::Off;
                 _Success_(return)
                 bool _GetGraphicsOptions(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                         _In_ const unsigned short cParams,
-                                         _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* rgGraphicsOptions,
-                                         _Inout_ size_t* pcOptions) const;
+                                         _In_ const unsigned short cParams, 
+										 _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* const rgGraphicsOptions,
+                                         _Inout_ size_t* const pcOptions) const;
 
                 static const TermDispatch::EraseType s_defaultEraseType = TermDispatch::EraseType::ToEnd;
                 _Success_(return)
@@ -173,8 +173,8 @@ namespace Microsoft
                 _Success_(return)
                 bool _GetPrivateModeParams(_In_reads_(cParams) const unsigned short* const rgusParams,
                                            _In_ const unsigned short cParams,
-                                           _Out_writes_(*pcParams) TermDispatch::PrivateModeParams* rgPrivateModeParams,
-                                           _Inout_ size_t* pcParams) const;
+                                           _Out_writes_(*pcParams) TermDispatch::PrivateModeParams* const rgPrivateModeParams,
+                                           _Inout_ size_t* const pcParams) const;
 
                 static const SHORT s_sDefaultTopMargin = 0;
                 static const SHORT s_sDefaultBottomMargin = 0;
@@ -207,11 +207,11 @@ namespace Microsoft
                 bool _GetDesignateType(_In_ const wchar_t wchIntermediate,
                                        _Out_ DesignateCharsetTypes* const pDesignateType) const;
 
-                static const TermDispatch::WindowManipulationFunction s_DefaulWindowManipulationFunction = TermDispatch::WindowManipulationFunction::Invalid;
+                static const TermDispatch::WindowManipulationType s_DefaultWindowManipulationType = TermDispatch::WindowManipulationType::Invalid;
                 _Success_(return)
-                bool _GetWindowManipulationFunction(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                                    _In_ const unsigned short cParams,
-                                                    _Out_ unsigned int* const puiFunction) const;
+                bool _GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                _In_ const unsigned short cParams,
+                                                _Out_ unsigned int* const puiFunction) const;
 
             };
         }

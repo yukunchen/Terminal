@@ -14,7 +14,8 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\IRenderEngine.hpp"
+#include "../inc/IRenderEngine.hpp"
+#include "../../types/inc/Viewport.hpp"
 #include <string>
 #include <functional>
 
@@ -87,7 +88,7 @@ protected:
     COLORREF _LastFG;
     COLORREF _LastBG;
 
-    SMALL_RECT _srLastViewport;
+    Microsoft::Console::Types::Viewport _lastViewport;
 
     SMALL_RECT _srcInvalid;
     bool _fInvalidRectUsed;

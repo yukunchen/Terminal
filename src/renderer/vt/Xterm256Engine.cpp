@@ -6,9 +6,9 @@
 
 #include "precomp.h"
 #include "Xterm256Engine.hpp"
-#include "..\..\inc\Viewport.hpp"
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
 Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe) :
     XtermEngine(std::move(hPipe), nullptr, 0)

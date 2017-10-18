@@ -15,6 +15,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Creates a new VT-based rendering engine
@@ -25,7 +26,7 @@ using namespace Microsoft::Console::Render;
 // - An instance of a Renderer.
 VtEngine::VtEngine(_In_ wil::unique_hfile pipe) :
     _hFile(std::move(pipe)),
-    _srLastViewport({0}),
+    _lastViewport({0}),
     _srcInvalid({0}),
     _lastRealCursor({0}),
     _lastText({0}),
@@ -177,16 +178,14 @@ HRESULT VtEngine::UpdateDpi(_In_ int const /*iDpi*/)
 HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 {
     HRESULT hr = S_OK;
-    const short sOldWidth = _srLastViewport.Right - _srLastViewport.Left + 1;
-    const short sOldHeight = _srLastViewport.Bottom - _srLastViewport.Top + 1;
-    const short sNewWidth = srNewViewport.Right - srNewViewport.Left + 1;
-    const short sNewHeight = srNewViewport.Bottom - srNewViewport.Top + 1;
+    const Viewport oldView = _lastViewport;
+    const Viewport newView = Viewport::FromInclusive(srNewViewport);
     
-    _srLastViewport = srNewViewport;
+    _lastViewport = newView;
 
-    if ((sOldHeight != sNewHeight) || (sOldWidth != sNewWidth))
+    if ((oldView.Height() != newView.Height()) || (oldView.Width() != newView.Width()))
     {
-        hr = _ResizeWindow(sNewWidth, sNewHeight);
+        hr = _ResizeWindow(newView.Width(), newView.Height());
     }
 
     return hr;
