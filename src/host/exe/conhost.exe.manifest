@@ -6,7 +6,7 @@
     name=SXS_ASSEMBLY_NAME
     type="win32"
 />
-<description>Console Window Host v2</description>
+<description>Console Window Host</description>
 
 <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>

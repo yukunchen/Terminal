@@ -49,10 +49,10 @@ const InputStateMachineEngine::CSI_TO_VKEY InputStateMachineEngine::s_rgCsiMap[]
     { CsiActionCodes::ArrowLeft, VK_LEFT },
     { CsiActionCodes::Home, VK_HOME },
     { CsiActionCodes::End, VK_END },
-    { CsiActionCodes::F1, VK_F1 },
-    { CsiActionCodes::F2, VK_F2 },
-    { CsiActionCodes::F3, VK_F3 },
-    { CsiActionCodes::F4, VK_F4 },
+    { CsiActionCodes::CSI_F1, VK_F1 },
+    { CsiActionCodes::CSI_F2, VK_F2 },
+    { CsiActionCodes::CSI_F3, VK_F3 },
+    { CsiActionCodes::CSI_F4, VK_F4 },
 };
 
 const InputStateMachineEngine::GENERIC_TO_VKEY InputStateMachineEngine::s_rgGenericMap[]
@@ -69,6 +69,14 @@ const InputStateMachineEngine::GENERIC_TO_VKEY InputStateMachineEngine::s_rgGene
     { GenericKeyIdentifiers::F10, VK_F10 },
     { GenericKeyIdentifiers::F11, VK_F11 },
     { GenericKeyIdentifiers::F12, VK_F12 },
+};
+
+const InputStateMachineEngine::SS3_TO_VKEY InputStateMachineEngine::s_rgSs3Map[]
+{
+    { Ss3ActionCodes::SS3_F1, VK_F1 },
+    { Ss3ActionCodes::SS3_F2, VK_F2 },
+    { Ss3ActionCodes::SS3_F3, VK_F3 },
+    { Ss3ActionCodes::SS3_F4, VK_F4 },
 };
 
 InputStateMachineEngine::InputStateMachineEngine(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn)
@@ -224,11 +232,11 @@ bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
 // - cParams - number of parameters found.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch, 
-                       _In_ const unsigned short cIntermediate,
-                       _In_ const wchar_t wchIntermediate,
-                       _In_ const unsigned short* const rgusParams,
-                       _In_ const unsigned short cParams)
+bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
+                                                _In_ const unsigned short cIntermediate,
+                                                _In_ const wchar_t wchIntermediate,
+                                                _In_ const unsigned short* const rgusParams,
+                                                _In_ const unsigned short cParams)
 {
     UNREFERENCED_PARAMETER(cIntermediate);
     UNREFERENCED_PARAMETER(wchIntermediate);
@@ -250,10 +258,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
         case CsiActionCodes::ArrowLeft:
         case CsiActionCodes::Home:
         case CsiActionCodes::End:
-        case CsiActionCodes::F1:
-        case CsiActionCodes::F2:
-        case CsiActionCodes::F3:
-        case CsiActionCodes::F4:
+        case CsiActionCodes::CSI_F1:
+        case CsiActionCodes::CSI_F2:
+        case CsiActionCodes::CSI_F3:
+        case CsiActionCodes::CSI_F4:
             dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
             fSuccess = _GetCursorKeysVkey(wch, &vkey);
             break;
@@ -262,6 +270,35 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             break;
 
     }
+
+    if (fSuccess)
+    {
+        fSuccess = _WriteSingleKey(vkey, dwModifierState);
+    }
+
+    return fSuccess;
+}
+
+// Routine Description:
+// - Triggers the Ss3Dispatch action to indicate that the listener should handle
+//      a control sequence. These sequences perform various API-type commands 
+//      that can include many parameters.
+// Arguments:
+// - wch - Character to dispatch.
+// - rgusParams - set of numeric parameters collected while pasring the sequence.
+// - cParams - number of parameters found.
+// Return Value:
+// - true iff we successfully dispatched the sequence.
+bool InputStateMachineEngine::ActionSs3Dispatch(_In_ wchar_t const wch,
+                                                _In_ const unsigned short* const /*rgusParams*/,
+                                                _In_ const unsigned short /*cParams*/)
+{
+    // Ss3 sequence keys aren't modified.
+    // When F1-F4 *are* modified, they're sent as CSI sequences, not SS3's.
+    DWORD dwModifierState = 0;
+    short vkey = 0;
+
+    bool fSuccess = _GetSs3KeysVkey(wch, &vkey);
 
     if (fSuccess)
     {
@@ -623,6 +660,29 @@ bool InputStateMachineEngine::_GetCursorKeysVkey(_In_ const wchar_t wch, _Out_ s
     for(int i = 0; i < ARRAYSIZE(s_rgCsiMap); i++)
     {
         CSI_TO_VKEY mapping = s_rgCsiMap[i];
+        if (mapping.Action == wch)
+        {
+            *pVkey = mapping.vkey;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// Method Description:
+// - Gets the Vkey from the SS3 codes table associated with a particular character.
+// Arguments:
+// - wch: the wchar_t to get the mapped vkey of.
+// - pVkey: Recieves the vkey
+// Return Value:
+// true iff we found the key
+bool InputStateMachineEngine::_GetSs3KeysVkey(_In_ const wchar_t wch, _Out_ short* const pVkey) const
+{
+    *pVkey = 0;
+    for(int i = 0; i < ARRAYSIZE(s_rgSs3Map); i++)
+    {
+        SS3_TO_VKEY mapping = s_rgSs3Map[i];
         if (mapping.Action == wch)
         {
             *pVkey = mapping.vkey;

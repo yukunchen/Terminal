@@ -564,6 +564,24 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
 }
 
 // Routine Description:
+// - Triggers the Ss3Dispatch action to indicate that the listener should handle
+//      a control sequence. These sequences perform various API-type commands 
+//      that can include many parameters.
+// Arguments:
+// - wch - Character to dispatch.
+// - rgusParams - set of numeric parameters collected while pasring the sequence.
+// - cParams - number of parameters found.
+// Return Value:
+// - true iff we successfully dispatched the sequence.
+bool OutputStateMachineEngine::ActionSs3Dispatch(_In_ wchar_t const /*wch*/, 
+                                                 _In_ const unsigned short* const /*rgusParams*/,
+                                                 _In_ const unsigned short /*cParams*/)
+{
+    // The output engine doesn't handle any SS3 sequences.
+    return false;
+}
+
+// Routine Description:
 // - Retrieves the listed graphics options to be applied in order to the "font style" of the next characters inserted into the buffer.
 // Arguments:
 // - rgGraphicsOptions - Pointer to array space (expected 16 max, the max number of params this can generate) that will be filled with valid options from the GraphicsOptions enum

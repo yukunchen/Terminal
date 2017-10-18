@@ -15,13 +15,13 @@ and not
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
 <assemblyIdentity
-    name="Microsoft.Windows.ConsoleHostv2.SystemDefault"
+    name="Microsoft.Console.Host.Core"
     version=SXS_ASSEMBLY_VERSION
     processorArchitecture=SXS_PROCESSOR_ARCHITECTURE
     publicKeyToken="6595b64144ccf1df"
     type="win32"
 />
-<description>Microsoft ConsoleHost v2 System Default</description>
+<description>Microsoft Console Host System Default</description>
 <dependency>
     <dependentAssembly>
         <assemblyIdentity

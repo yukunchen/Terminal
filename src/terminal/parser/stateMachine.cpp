@@ -170,7 +170,21 @@ bool StateMachine::s_IsCsiInvalid(_In_ wchar_t const wch)
 }
 
 // Routine Description:
-// - Determines if a character is "operating system control string" beginning indicator.
+// - Determines if a character is "operating system control string" beginning
+//      indicator.
+//   This immediately follows an escape and signifies a  signifies a varying 
+//      length control sequence, quite similar to CSI.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+bool StateMachine::s_IsSs3Indicator(_In_ wchar_t const wch)
+{
+    return wch == L'O'; // 0x4F
+}
+
+// Routine Description:
+// - Determines if a character is a "Single Shift Select" indicator.
 //   This immediately follows an escape and signifies a varying length control string.
 // Arguments:
 // - wch - Character to check.
@@ -529,6 +543,29 @@ void StateMachine::_ActionOscDispatch(_In_ wchar_t const wch)
 }
 
 // Routine Description:
+// - Triggers the Ss3Dispatch action to indicate that the listener should handle a control sequence.
+//   These sequences perform various API-type commands that can include many parameters.
+// Arguments:
+// - wch - Character to dispatch.
+// Return Value:
+// - <none>
+void StateMachine::_ActionSs3Dispatch(_In_ wchar_t const wch)
+{
+    _trace.TraceOnAction(L"Ss3Dispatch");
+    
+    bool fSuccess = _pEngine->ActionSs3Dispatch(wch, _rgusParams, _cParams);
+
+    // Trace the result.
+    _trace.DispatchSequenceTrace(fSuccess);
+
+    if (!fSuccess)
+    {
+        // Suppress it and log telemetry on failed cases
+        TermTelemetry::Instance().LogFailed(wch);
+    }
+}
+
+// Routine Description:
 // - Moves the state machine into the Ground state.
 //   This state is entered:
 //   1. By default at the beginning of operation
@@ -661,6 +698,35 @@ void StateMachine::_EnterOscString()
 }
 
 // Routine Description:
+// - Moves the state machine into the Ss3Entry state.
+//   This state is entered:
+//   1. When the Ss3Entry character is seen after an Escape entry (only from the Escape state)
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void StateMachine::_EnterSs3Entry()
+{
+    _state = VTStates::Ss3Entry;
+    _trace.TraceStateChange(L"Ss3Entry");
+    _ActionClear();
+}
+
+// Routine Description:
+// - Moves the state machine into the Ss3Param state.
+//   This state is entered:
+//   1. When valid parameter characters are detected on entering a SS3 (from Ss3Entry state)
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void StateMachine::_EnterSs3Param()
+{
+    _state = VTStates::Ss3Param;
+    _trace.TraceStateChange(L"Ss3Param");
+}
+
+// Routine Description:
 // - Processes a character event into an Action that occurs while in the Ground state.
 //   Events in this state will:
 //   1. Execute C0 control characters
@@ -722,6 +788,10 @@ void StateMachine::_EventEscape(_In_ wchar_t const wch)
     else if (s_IsOscIndicator(wch))
     {
         _EnterOscParam();
+    }
+    else if (s_IsSs3Indicator(wch))
+    {
+        _EnterSs3Entry();
     }
     else
     {
@@ -994,6 +1064,88 @@ void StateMachine::_EventOscString(_In_ wchar_t const wch)
 }
 
 // Routine Description:
+// - Processes a character event into an Action that occurs while in the Ss3Entry state.
+//   Events in this state will:
+//   1. Execute C0 control characters
+//   2. Ignore Delete characters
+//   3. Begin to ignore all remaining parameters when an invalid character is detected (CsiIgnore)
+//   4. Store parameter data
+//   5. Dispatch a control sequence with parameters for action
+//  SS3 sequences are structurally the same as CSI sequences, just with a 
+//      different initiation. It's safe to reuse CSI's functions for 
+//      determining if a character is a parameter, delimiter, or invalid.
+// Arguments:
+// - wch - Character that triggered the event
+// Return Value:
+// - <none>
+void StateMachine::_EventSs3Entry(_In_ wchar_t const wch)
+{
+    _trace.TraceOnEvent(L"Ss3Entry");
+    if (s_IsC0Code(wch))
+    {
+        _ActionExecute(wch);
+    }
+    else if (s_IsDelete(wch))
+    {
+        _ActionIgnore();
+    }
+    else if (s_IsCsiInvalid(wch))
+    {
+        // It's safe for us to go into the CSI ignore here, because both SS3 and 
+        //      CSI sequences ignore characters the same way.
+        _EnterCsiIgnore();
+    }
+    else if (s_IsCsiParamValue(wch) || s_IsCsiDelimiter(wch))
+    {
+        _ActionParam(wch);
+        _EnterSs3Param();
+    }
+    else
+    {
+        _ActionSs3Dispatch(wch);
+        _EnterGround();
+    }
+}
+
+// Routine Description:
+// - Processes a character event into an Action that occurs while in the CsiParam state.
+//   Events in this state will:
+//   1. Execute C0 control characters
+//   2. Ignore Delete characters
+//   3. Begin to ignore all remaining parameters when an invalid character is detected (CsiIgnore)
+//   4. Store parameter data
+//   5. Dispatch a control sequence with parameters for action
+// Arguments:
+// - wch - Character that triggered the event
+// Return Value:
+// - <none>
+void StateMachine::_EventSs3Param(_In_ wchar_t const wch)
+{
+    _trace.TraceOnEvent(L"Ss3Param");
+    if (s_IsC0Code(wch))
+    {
+        _ActionExecute(wch);
+    }
+    else if (s_IsDelete(wch))
+    {
+        _ActionIgnore();
+    }
+    else if (s_IsCsiParamValue(wch) || s_IsCsiDelimiter(wch))
+    {
+        _ActionParam(wch);
+    }
+    else if (s_IsCsiInvalid(wch) || s_IsCsiPrivateMarker(wch))
+    {
+        _EnterCsiIgnore();
+    }
+    else
+    {
+        _ActionSs3Dispatch(wch);
+        _EnterGround();
+    }
+}
+
+// Routine Description:
 // - Entry to the state machine. Takes characters one by one and processes them according to the state machine rules.
 // Arguments:
 // - wch - New character to operate upon
@@ -1037,6 +1189,10 @@ void StateMachine::ProcessCharacter(_In_ wchar_t const wch)
             return _EventOscParam(wch);
         case VTStates::OscString:
             return _EventOscString(wch);
+        case VTStates::Ss3Entry:
+            return _EventSs3Entry(wch);
+        case VTStates::Ss3Param:
+            return _EventSs3Param(wch);
         default:
             //assert(false);
             return;
@@ -1141,6 +1297,9 @@ void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, _In
             case VTStates::OscParam:
             case VTStates::OscString:
                 return _ActionOscDispatch(*pwch);
+            case VTStates::Ss3Entry:
+            case VTStates::Ss3Param:
+                return _ActionSs3Dispatch(*pwch);
             default:
                 return;
             }

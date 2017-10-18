@@ -36,7 +36,7 @@ namespace Microsoft
                     ConIoSrvComm();
 
                     NTSTATUS Connect();
-                    NTSTATUS ServiceInputPipe();
+                    VOID ServiceInputPipe();
 
                     NTSTATUS RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisplaySize) const;
                     NTSTATUS RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize) const;
