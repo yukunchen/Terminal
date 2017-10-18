@@ -97,7 +97,20 @@ class Microsoft::Console::Render::VtRendererTest
     bool WriteCallback(const char* const pch, size_t const cch);
     void TestPaint(VtEngine& engine, std::function<void()> pfn);
     void TestPaintXterm(XtermEngine& engine, std::function<void()> pfn);
+    SMALL_RECT SetUpViewport(VtEngine& engine);
 };
+
+SMALL_RECT VtRendererTest::SetUpViewport(VtEngine& engine)
+{
+    SMALL_RECT view = {};
+    view.Top = view.Left = 0;
+    view.Bottom = 31;
+    view.Right = 79;
+
+    qExpectedInput.push_back("\x1b[8;32;80t");
+    engine.UpdateViewport(view);
+    return view;
+}
 
 bool VtRendererTest::WriteCallback(const char* const pch, size_t const cch)
 {
@@ -200,6 +213,10 @@ void VtRendererTest::VtSequenceHelperTests()
 
     qExpectedInput.push_back("\x1b[H");
     engine->_CursorHome();
+
+    qExpectedInput.push_back("\x1b[8;32;80t");
+    engine->_ResizeWindow(80, 32);
+
 }
 
 void VtRendererTest::Xterm256TestInvalidate()
@@ -209,12 +226,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = {};
-    view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
-
-    engine->UpdateViewport(view);
+    SMALL_RECT view = SetUpViewport(*engine);
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."
@@ -362,12 +374,7 @@ void VtRendererTest::Xterm256TestColors()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = {};
-    view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
-
-    engine->UpdateViewport(view);
+    SMALL_RECT view = SetUpViewport(*engine);
 
     Log::Comment(NoThrowString().Format(
         L"Test changing the text attributes"
@@ -416,12 +423,8 @@ void VtRendererTest::Xterm256TestCursor()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = {};
-    view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
+    SMALL_RECT view = SetUpViewport(*engine);
 
-    engine->UpdateViewport(view);
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."
     ));
@@ -543,12 +546,7 @@ void VtRendererTest::XtermTestInvalidate()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = {};
-    view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
-
-    engine->UpdateViewport(view);
+    SMALL_RECT view = SetUpViewport(*engine);
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."
@@ -696,12 +694,7 @@ void VtRendererTest::XtermTestColors()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = {};
-    view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
-
-    engine->UpdateViewport(view);
+    SMALL_RECT view = SetUpViewport(*engine);
 
     Log::Comment(NoThrowString().Format(
         L"Test changing the text attributes"
@@ -763,12 +756,8 @@ void VtRendererTest::XtermTestCursor()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = {};
-    view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
+    SMALL_RECT view = SetUpViewport(*engine);
 
-    engine->UpdateViewport(view);
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."
     ));
@@ -891,12 +880,7 @@ void VtRendererTest::WinTelnetTestInvalidate()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = {};
-    view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
-
-    engine->UpdateViewport(view);
+    SMALL_RECT view = SetUpViewport(*engine);
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."
@@ -979,12 +963,7 @@ void VtRendererTest::WinTelnetTestColors()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = {};
-    view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
-
-    engine->UpdateViewport(view);
+    SMALL_RECT view = SetUpViewport(*engine);
 
     Log::Comment(NoThrowString().Format(
         L"Test changing the text attributes"
@@ -1045,12 +1024,7 @@ void VtRendererTest::WinTelnetTestCursor()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = {};
-    view.Top = view.Left = 0;
-    view.Bottom = 32;
-    view.Right = 80;
-
-    engine->UpdateViewport(view);
+    SMALL_RECT view = SetUpViewport(*engine);
 
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."

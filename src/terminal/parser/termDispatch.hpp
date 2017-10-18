@@ -176,6 +176,18 @@ namespace Microsoft
 
                 virtual bool SoftReset(){ return false; } // DECSTR
                 virtual bool HardReset(){ return false; } // RIS
+
+                enum WindowManipulationType : unsigned int
+                {
+                    Invalid = 0,
+                    ResizeWindowInCharacters = 8,
+                };
+
+                // DTTERM_WindowManipulation
+                virtual bool WindowManipulation(_In_ const WindowManipulationType /*uiFunction*/,
+                                                _In_reads_(cParams) const unsigned short* const /*rgusParams*/,
+                                                _In_ size_t const /*cParams*/) { return false; } 
+
             };
         };
     };
