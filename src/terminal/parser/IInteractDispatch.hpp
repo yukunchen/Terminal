@@ -23,7 +23,7 @@ namespace Microsoft
         namespace VirtualTerminal
         {
             class InteractDispatch;
-            enum WindowManipulationFunction;
+            enum WindowManipulationType;
         }
     }
 }
@@ -36,17 +36,14 @@ public:
     
     // This is kept seperate from the TermDispatch version, as there may be
     //  codes that are supported in one direction but not the other.
-    enum WindowManipulationFunction : unsigned int
+    enum WindowManipulationType : unsigned int
     {
         Invalid = 0,
         ResizeWindowInCharacters = 8,
     };
 
-    virtual bool WindowManipulation(_In_ const WindowManipulationFunction /*uiFunction*/,
+    virtual bool WindowManipulation(_In_ const WindowManipulationType /*uiFunction*/,
                                     _In_reads_(cParams) const unsigned short* const /*rgusParams*/,
                                     _In_ size_t const /*cParams*/) { return false; } 
-
-
-
 
 };

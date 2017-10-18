@@ -37,7 +37,6 @@ class Microsoft::Console::VirtualTerminal::InputStateMachineEngine : public ISta
 {
 public:
     InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch);
-    // InputStateMachineEngine(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
 
     bool ActionExecute(_In_ wchar_t const wch) override;
     bool ActionPrint(_In_ wchar_t const wch) override;
@@ -64,7 +63,6 @@ public:
 
 private:
     
-    std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteEvents;
     std::unique_ptr<IInteractDispatch> _pDispatch;
 
     enum CsiActionCodes : wchar_t
@@ -167,8 +165,8 @@ private:
                               _Inout_updates_(cRecords) INPUT_RECORD* const rgInput,
                               _In_ const size_t cRecords);
     
-    bool _GetWindowManipulationFunction(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                        _In_ const unsigned short cParams,
-                                        _Out_ unsigned int* const puiFunction) const;
+    bool _GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                    _In_ const unsigned short cParams,
+                                    _Out_ unsigned int* const puiFunction) const;
 
 };

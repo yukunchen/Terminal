@@ -37,15 +37,18 @@ bool InteractDispatch::CreateInstance(_In_ std::unique_ptr<ConGetSet> pConApi,
     return fSuccess;
 }
 
+// Method Description:
+// - Writes a collection of input to the host. The new input is appended to the 
+//      end of the input buffer.
+// Arguments:
+// - inputEvents: a collection of IInputEvents
+// Return Value:
+// True if handled successfully. False otherwise.
 bool InteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) 
 {
-    // size_t size = inputEvents.size();
-    // INPUT_RECORD rgInput[64]; // This is a placeholder till I get austin's stuff
-    // IInputEvent::ToInputRecords(inputEvents, rgInput, size);
     size_t dwWritten = 0;
     return !!_pConApi->WriteConsoleInputW(inputEvents, dwWritten);
 }
-
 
 //Method Description:
 // Window Manipulation - Performs a variety of actions relating to the window,
@@ -56,20 +59,22 @@ bool InteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>&
 // - rgusParams - Additional parameters to pass to the function
 // - cParams - size of rgusParams
 // Return value:
-// True if handled successfully. False othewise.
-bool InteractDispatch::WindowManipulation(_In_ const WindowManipulationFunction uiFunction,
+// True if handled successfully. False otherwise.
+bool InteractDispatch::WindowManipulation(_In_ const WindowManipulationType uiFunction,
                                        _In_reads_(cParams) const unsigned short* const rgusParams,
                                        _In_ size_t const cParams)
 {
     bool fSuccess = false;
     switch (uiFunction)
     {
-        case WindowManipulationFunction::ResizeWindowInCharacters:
+        case WindowManipulationType::ResizeWindowInCharacters:
             if (cParams == 2)
             {
                 fSuccess = _ResizeWindow(rgusParams[1], rgusParams[0]);
             }
             break;
+        default:
+            fSuccess = false;
     }
 
     return fSuccess;
@@ -84,10 +89,15 @@ bool InteractDispatch::WindowManipulation(_In_ const WindowManipulationFunction 
 bool InteractDispatch::_ResizeWindow(_In_ const unsigned short usWidth,
                                   _In_ const unsigned short usHeight)
 {
-    SHORT sColumns = 0, sRows = 0;
+    SHORT sColumns = 0;
+    SHORT sRows = 0;
+
+    // We should do nothing if 0 is passed in for a size.
     bool fSuccess = SUCCEEDED(UShortToShort(usWidth, &sColumns)) &&
-                    SUCCEEDED(UIntToShort(usHeight, &sRows));
-    if (fSuccess && usWidth > 0 && usHeight > 0)
+                    SUCCEEDED(UIntToShort(usHeight, &sRows)) && 
+                    (usWidth > 0 && usHeight > 0);
+    
+    if (fSuccess)
     {
         CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
         csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
@@ -95,17 +105,18 @@ bool InteractDispatch::_ResizeWindow(_In_ const unsigned short usWidth,
 
         if (fSuccess)
         {
+            const Viewport oldViewport = Viewport::FromInclusive(csbiex.srWindow);
             csbiex.dwSize.X = sColumns;
             // Can't just set the dwSize.Y - that's the buffer's height, not
             //      the viewport's
             fSuccess = !!_pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
             if (fSuccess)
             {
-                SMALL_RECT srNewViewport = csbiex.srWindow;
                 // SetConsoleWindowInfo expect inclusive rects
-                srNewViewport.Right = srNewViewport.Left + sColumns - 1;
-                srNewViewport.Bottom = srNewViewport.Top + sRows - 1;
-                fSuccess = !!_pConApi->SetConsoleWindowInfo(true, &srNewViewport);
+                SMALL_RECT sr = Viewport::FromDimensions(oldViewport.Origin(),
+                                                         sColumns,
+                                                         sRows).ToInclusive();
+                fSuccess = !!_pConApi->SetConsoleWindowInfo(true, &sr);
             }
         }   
     }

@@ -288,7 +288,6 @@ BOOL ConhostInternalGetSet::SetConsoleRGBTextAttribute(_In_ COLORREF const rgbCo
 // - eventsWritten - on output, the number of events written
 // Return Value:
 // - TRUE if successful (see DoSrvWriteConsoleInput). FALSE otherwise.
-
 BOOL ConhostInternalGetSet::WriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                                _Out_ size_t& eventsWritten)
 {
