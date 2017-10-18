@@ -12,8 +12,11 @@ const std::wstring ConsoleArguments::VT_IN_PIPE_ARG = L"--inpipe";
 const std::wstring ConsoleArguments::VT_OUT_PIPE_ARG = L"--outpipe";
 const std::wstring ConsoleArguments::VT_MODE_ARG = L"--vtmode";
 const std::wstring ConsoleArguments::HEADLESS_ARG = L"--headless";
-const std::wstring ConsoleArguments::SERVER_HANDLE_ARG = L"--handle";
+const std::wstring ConsoleArguments::SERVER_HANDLE_ARG = L"--server";
+const std::wstring ConsoleArguments::SERVER_HANDLE_PREFIX = L"0x";
 const std::wstring ConsoleArguments::CLIENT_COMMANDLINE_ARG = L"--";
+const std::wstring ConsoleArguments::FORCE_V1_ARG = L"-ForceV1";
+const std::wstring ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
 
 ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline)
     : _commandline(commandline)
@@ -25,6 +28,38 @@ ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline)
     _headless = false;
     _createServerHandle = true;
     _serverHandle = 0;
+    _forceV1 = false;
+}
+
+
+ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments & other)
+{
+    if (this != &other)
+    {
+        _commandline = other._commandline;
+        _clientCommandline = other._clientCommandline;
+        _vtInPipe = other._vtInPipe;
+        _vtOutPipe = other._vtOutPipe;
+        _vtMode = other._vtMode;
+        _headless = other._headless;
+        _createServerHandle = other._createServerHandle;
+        _serverHandle = other._serverHandle;
+        _forceV1 = other._forceV1;
+    }
+
+    return *this;
+}
+
+// Routine Description:
+// - Consumes the argument at the given index off of the vector.
+// Arguments:
+// - args - The vector full of args
+// - index - The item to consume/remove from the vector.
+// Return Value:
+// - <none>
+void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In_ size_t& index)
+{
+    args.erase(args.begin() + index);
 }
 
 // Routine Description:
@@ -49,18 +84,17 @@ ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline)
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
 //      failure.
-HRESULT _GetArgumentValue(_In_ std::vector<std::wstring>& args, _Inout_ size_t& index, _Out_opt_ std::wstring* const pSetting)
+HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index, _Out_opt_ std::wstring* const pSetting)
 {
     bool hasNext = (index+1) < args.size();
     if (hasNext)
     {
-        args.erase(args.begin()+index);
+        s_ConsumeArg(args, index);
         if (pSetting != nullptr)
         {
             *pSetting = args[index];
         }
-        args.erase(args.begin()+index);
-        index--;
+        s_ConsumeArg(args, index);
     }
     return (hasNext) ? S_OK : E_INVALIDARG;
 }
@@ -133,13 +167,11 @@ HRESULT ConsoleArguments::ParseCommandline()
     
     // Tokenize the commandline
     int argc = 0;
-    wchar_t** const argv = CommandLineToArgvW(copy.c_str(), &argc);
+    wil::unique_hlocal_ptr<PWSTR[]> argv;
+    argv.reset(CommandLineToArgvW(copy.c_str(), &argc));
     RETURN_LAST_ERROR_IF(argv == nullptr);
-    auto argvCleanup = wil::ScopeExit([&]{
-        LocalFree(argv);
-    });
 
-    for (int i = 0; i < argc; ++i)
+    for (int i = 1; i < argc; ++i)
     {
         args.push_back(argv[i]);
     }
@@ -147,21 +179,80 @@ HRESULT ConsoleArguments::ParseCommandline()
     // Parse args out of the commandline.
     //  As we handle a token, remove it from the args.
     //  At the end of parsing, there should be nothing left.
-    for (size_t i = 0; i < args.size(); i++)
+    for (size_t i = 0; i < args.size();)
     {
-        std::wstring arg = args[i];
+        hr = E_INVALIDARG;
 
-        if (arg == VT_IN_PIPE_ARG)
+        std::wstring arg = args[i];
+               
+        if (arg.substr(0, SERVER_HANDLE_PREFIX.length()) == SERVER_HANDLE_PREFIX ||
+                 arg == SERVER_HANDLE_ARG)
         {
-            hr = _GetArgumentValue(args, i, &_vtInPipe);
+            // server handle token accepted two ways:
+            // --server 0x4 (new method)
+            // 0x4 (legacy method)
+            // If we see >1 of these, it's invalid.
+            std::wstring serverHandleVal = arg;
+
+            if (arg == SERVER_HANDLE_ARG)
+            {
+                hr = s_GetArgumentValue(args, i, &serverHandleVal);
+            }
+            else
+            {
+                s_ConsumeArg(args, i);
+                hr = S_OK;
+            }
+
+            if (SUCCEEDED(hr))
+            {
+                if (0 == _serverHandle)
+                {
+                    _serverHandle = wcstoul(serverHandleVal.c_str(), nullptr /*endptr*/, 16 /*base*/);
+
+                    // If the handle didn't parse into a reasonable handle ID, invalid.
+                    if (_serverHandle == 0)
+                    {
+                        hr = E_INVALIDARG;
+                    }
+                    else
+                    {
+                        _createServerHandle = false;
+                        hr = S_OK;
+                    }
+                }
+                else
+                {
+                    // If we're trying to set the server handle a second time, invalid.
+                    hr = E_INVALIDARG;
+                }
+            }
+        }
+        else if (arg == FORCE_V1_ARG)
+        {
+            // -ForceV1 command line switch for NTVDM support
+            _forceV1 = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
+        else if (arg.substr(0, FILEPATH_LEADER_PREFIX.length()) == FILEPATH_LEADER_PREFIX)
+        {
+            // beginning of command line -- includes file path
+            // skipped for historical reasons.
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
+        else if (arg == VT_IN_PIPE_ARG)
+        {
+            hr = s_GetArgumentValue(args, i, &_vtInPipe);
         }
         else if (arg == VT_OUT_PIPE_ARG)
         {
-            hr = _GetArgumentValue(args, i, &_vtOutPipe);
+            hr = s_GetArgumentValue(args, i, &_vtOutPipe);
         }
         else if (arg == VT_MODE_ARG)
         {
-            hr = _GetArgumentValue(args, i, &_vtMode);
+            hr = s_GetArgumentValue(args, i, &_vtMode);
         }
         else if (arg == CLIENT_COMMANDLINE_ARG)
         {
@@ -179,7 +270,8 @@ HRESULT ConsoleArguments::ParseCommandline()
             hr = _GetClientCommandline(args, i, false);
             break;
         }
-        if (!SUCCEEDED(hr))
+
+        if (FAILED(hr))
         {
             break;
         }
@@ -207,9 +299,7 @@ HRESULT ConsoleArguments::ParseCommandline()
 //  true iff we have parsed both a VT input and output pipe name.
 bool ConsoleArguments::IsUsingVtPipe() const
 {    
-    const bool useVtIn = _vtInPipe.length() > 0;
-    const bool useVtOut = _vtOutPipe.length() > 0;
-    return useVtIn && useVtOut;
+    return (_vtInPipe.length() > 0) && (_vtOutPipe.length() > 0);
 }
 
 bool ConsoleArguments::IsHeadless() const
@@ -222,9 +312,9 @@ bool ConsoleArguments::ShouldCreateServerHandle() const
     return _createServerHandle;
 }
 
-DWORD ConsoleArguments::GetServerHandle() const
+HANDLE ConsoleArguments::GetServerHandle() const
 {
-    return _serverHandle;
+    return ULongToHandle(_serverHandle);
 }
 
 std::wstring ConsoleArguments::GetClientCommandline() const
@@ -245,4 +335,9 @@ std::wstring ConsoleArguments::GetVtOutPipe() const
 std::wstring ConsoleArguments::GetVtMode() const
 {
     return _vtMode;
+}
+
+bool ConsoleArguments::GetForceV1() const
+{
+    return _forceV1;
 }

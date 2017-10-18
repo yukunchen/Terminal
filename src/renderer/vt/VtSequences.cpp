@@ -5,10 +5,8 @@
 ********************************************************/
 
 #include "precomp.h"
-
 #include "vtrenderer.hpp"
-#include "..\..\inc\Viewport.hpp"
-#include "..\..\inc\conattrs.hpp"
+#include "../../inc/conattrs.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console::Render;

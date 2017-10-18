@@ -10,7 +10,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
-    <ClCompile Include="exemain.cpp" />
+    <ClCompile Include="..\exemain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\interactivity\base\lib\InteractivityBase.vcxproj">

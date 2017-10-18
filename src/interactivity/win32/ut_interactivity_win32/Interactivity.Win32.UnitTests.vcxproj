@@ -8,6 +8,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\renderer\vt\lib\vt.vcxproj">
+      <Project>{990f2657-8580-4828-943f-5dd657d11842}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\types\lib\types.vcxproj">
       <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
     </ProjectReference>
