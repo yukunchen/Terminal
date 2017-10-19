@@ -3,6 +3,7 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\adaptDispatch.cpp" />
+    <ClCompile Include="..\DispatchCommon.cpp" />
     <ClCompile Include="..\InteractDispatch.cpp" />
     <ClCompile Include="..\adaptDispatchGraphics.cpp" />
     <ClCompile Include="..\MouseInput.cpp" />
@@ -17,6 +18,7 @@
   <ItemGroup>
     <ClInclude Include="..\adaptDefaults.hpp" />
     <ClInclude Include="..\adaptDispatch.hpp" />
+    <ClInclude Include="..\DispatchCommon.hpp" />
     <ClInclude Include="..\InteractDispatch.hpp" />
     <ClInclude Include="..\conGetSet.hpp" />
     <ClInclude Include="..\MouseInput.hpp" />
@@ -24,6 +26,8 @@
     <ClInclude Include="..\telemetry.hpp" />
     <ClInclude Include="..\terminalInput.hpp" />
     <ClInclude Include="..\terminalOutput.hpp" />
+    <ClInclude Include="..\termDispatch.hpp" />
+    <ClInclude Include="..\IInteractDispatch.hpp" />
     <ClInclude Include="..\tracing.hpp" />
   </ItemGroup>
   <ItemGroup>

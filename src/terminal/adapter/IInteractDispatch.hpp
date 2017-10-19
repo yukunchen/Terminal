@@ -14,6 +14,7 @@ Author(s):
 --*/
 #pragma once
 
+#include "DispatchCommon.hpp"
 #include "../../types/inc/IInputEvent.hpp"
 
 namespace Microsoft
@@ -23,7 +24,6 @@ namespace Microsoft
         namespace VirtualTerminal
         {
             class InteractDispatch;
-            enum WindowManipulationType;
         }
     }
 }
@@ -33,16 +33,8 @@ class IInteractDispatch
 {
 public:
     virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& /*inputEvents*/) {return false;}
-    
-    // This is kept seperate from the TermDispatch version, as there may be
-    //  codes that are supported in one direction but not the other.
-    enum WindowManipulationType : unsigned int
-    {
-        Invalid = 0,
-        ResizeWindowInCharacters = 8,
-    };
 
-    virtual bool WindowManipulation(_In_ const WindowManipulationType /*uiFunction*/,
+    virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType /*uiFunction*/,
                                     _In_reads_(cParams) const unsigned short* const /*rgusParams*/,
                                     _In_ size_t const /*cParams*/) { return false; } 
 

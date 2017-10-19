@@ -47,6 +47,7 @@ PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES= \
     ..\adaptDispatch.cpp \
+    ..\DispatchCommon.cpp \
     ..\InteractDispatch.cpp \
     ..\adaptDispatchGraphics.cpp \
     ..\MouseInput.cpp \

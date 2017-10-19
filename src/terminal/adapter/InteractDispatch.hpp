@@ -13,7 +13,7 @@ Author(s):
 --*/
 #pragma once
 
-#include "../parser/IInteractDispatch.hpp"
+#include "IInteractDispatch.hpp"
 #include "conGetSet.hpp"
 
 namespace Microsoft
@@ -35,7 +35,7 @@ public:
                                _Outptr_ InteractDispatch ** const ppDispatch);
 
     virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
-    virtual bool WindowManipulation(_In_ const WindowManipulationType uiFunction,
+    virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                 _In_ size_t const cParams) override; // DTTERM_WindowManipulation
 private:
@@ -44,5 +44,4 @@ private:
     
     std::unique_ptr<ConGetSet> _pConApi;
     
-    bool _ResizeWindow(_In_ const unsigned short usWidth, _In_ const unsigned short usHeight);
 };

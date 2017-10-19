@@ -16,7 +16,6 @@ Author(s):
 
 #pragma once
 
-#include "termDispatch.hpp"
 #include "IStateMachineEngine.hpp"
 #include "telemetry.hpp"
 #include "tracing.hpp"
@@ -69,7 +68,6 @@ namespace Microsoft
                 static bool s_IsDesignateCharsetIndicator(_In_ wchar_t const wch);
                 static bool s_IsCharsetCode(_In_ wchar_t const wch);
                 static bool s_IsSs3Indicator(_In_ wchar_t const wch);
-
 
                 void _ActionExecute(_In_ wchar_t const wch);
                 void _ActionPrint(_In_ wchar_t const wch);

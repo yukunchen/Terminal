@@ -299,7 +299,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
                 fSuccess = _WriteSingleKey(vkey, dwModifierState);
                 break;
             case CsiActionCodes::DTTERM_WindowManipulation:
-                fSuccess = _pDispatch->WindowManipulation(static_cast<IInteractDispatch::WindowManipulationType>(uiFunction),
+                fSuccess = _pDispatch->WindowManipulation(static_cast<DispatchCommon::WindowManipulationType>(uiFunction),
                                                           rgusRemainingArgs,
                                                           cRemainingArgs);
                 break;
@@ -782,6 +782,8 @@ bool InputStateMachineEngine::FlushAtEndOfString() const
 // Method Description:
 // - Retrieves the type of window manipulation operation from the parameter pool
 //      stored during Param actions.
+//  This is kept seperate from the output version, as there may be
+//      codes that are supported in one direction but not the other.
 // Arguments:
 // - rgusParams - Array of parameters collected
 // - cParams - Number of parameters we've collected
@@ -793,16 +795,18 @@ bool InputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) con
                                                          _Out_ unsigned int* const puiFunction) const
 {
     bool fSuccess = false;
-    *puiFunction = IInteractDispatch::WindowManipulationType::Invalid;
+    *puiFunction = DispatchCommon::WindowManipulationType::Invalid;
 
     if (cParams > 0)
     {
         switch(rgusParams[0])
         {
-            case IInteractDispatch::WindowManipulationType::ResizeWindowInCharacters:
-                *puiFunction = IInteractDispatch::WindowManipulationType::ResizeWindowInCharacters;
+            case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
+                *puiFunction = DispatchCommon::WindowManipulationType::ResizeWindowInCharacters;
                 fSuccess = true;
                 break;
+            default:
+                fSuccess = false;
         }
     }
 

@@ -18,7 +18,7 @@ Author(s):
 #include "IStateMachineEngine.hpp"
 #include <functional>
 #include "../../types/inc/IInputEvent.hpp"
-#include "IInteractDispatch.hpp"
+#include "../adapter/IInteractDispatch.hpp"
 
 namespace Microsoft
 {

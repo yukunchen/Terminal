@@ -12,7 +12,7 @@ Author(s):
 --*/
 #pragma once
 
-#include "termDispatch.hpp"
+#include "../adapter/termDispatch.hpp"
 #include "telemetry.hpp"
 #include "IStateMachineEngine.hpp"
 
@@ -207,7 +207,7 @@ namespace Microsoft
                 bool _GetDesignateType(_In_ const wchar_t wchIntermediate,
                                        _Out_ DesignateCharsetTypes* const pDesignateType) const;
 
-                static const TermDispatch::WindowManipulationType s_DefaultWindowManipulationType = TermDispatch::WindowManipulationType::Invalid;
+                static const DispatchCommon::WindowManipulationType s_DefaultWindowManipulationType = DispatchCommon::WindowManipulationType::Invalid;
                 _Success_(return)
                 bool _GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
                                                 _In_ const unsigned short cParams,

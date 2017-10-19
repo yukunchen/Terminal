@@ -13,7 +13,7 @@ Author(s):
 
 #pragma once
 
-#include "..\parser\termDispatch.hpp"
+#include "termDispatch.hpp"
 #include "conGetSet.hpp"
 #include "adaptDefaults.hpp"
 #include "terminalOutput.hpp"
@@ -109,7 +109,7 @@ namespace Microsoft
                 virtual bool EnableButtonEventMouseMode(_In_ bool const fEnabled); // ?1002
                 virtual bool EnableAnyEventMouseMode(_In_ bool const fEnabled); // ?1003
                 virtual bool EnableAlternateScroll(_In_ bool const fEnabled); // ?1007
-                virtual bool WindowManipulation(_In_ const WindowManipulationType uiFunction,
+                virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
                                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                                 _In_ size_t const cParams); // DTTERM_WindowManipulation
             private:
@@ -176,7 +176,6 @@ namespace Microsoft
                 static bool s_IsXtermColorOption(_In_ GraphicsOptions const opt);
                 static bool s_IsRgbColorOption(_In_ GraphicsOptions const opt);
 
-                bool _ResizeWindow(_In_ const unsigned short usWidth, _In_ const unsigned short usHeight);
             };
         };
     };
