@@ -95,6 +95,8 @@ class ScreenBufferTests
     TEST_METHOD(EraseAllTests);
 
     TEST_METHOD(VtResize);
+    
+    TEST_METHOD(VtSetColorTable);
 };
 
 SCREEN_INFORMATION::TabStop** ScreenBufferTests::CreateSampleList()
@@ -910,5 +912,14 @@ void ScreenBufferTests::VtResize()
     VERIFY_ARE_EQUAL(initialSbWidth, newSbWidth);
     VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
     VERIFY_ARE_EQUAL(initialViewWidth, newViewWidth);
+
+}
+
+void ScreenBufferTests::VtSetColorTable()
+{
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
+    StateMachine* const stateMachine = psi->GetStateMachine();
 
 }
