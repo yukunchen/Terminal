@@ -23,13 +23,12 @@ namespace Microsoft
     {
         namespace VirtualTerminal
         {
-            class InteractDispatch;
+            class IInteractDispatch;
         }
     }
 }
-using namespace Microsoft::Console::VirtualTerminal;
 
-class IInteractDispatch
+class Microsoft::Console::VirtualTerminal::IInteractDispatch
 {
 public:
     virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& /*inputEvents*/) {return false;}
