@@ -597,9 +597,9 @@ BOOL ConhostInternalGetSet::PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* 
 // Routine Description:
 // - Connects the PrivatePrependConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
-// - rgInputRecords - An array of input records to be copied into the the head of the input buffer for the underlying attached process
-// - nLength - The number of records in the rgInputRecords array
-// - pNumberOfEventsWritten - Pointer to memory location to hold the total number of elements written into the buffer
+// - events - the input events to be copied into the head of the input
+// buffer for the underlying attached process
+// - eventsWritten - on output, the number of events written
 // Return Value:
 // - TRUE if successful (see DoSrvPrivatePrependConsoleInput). FALSE otherwise.
 BOOL ConhostInternalGetSet::PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,

@@ -63,7 +63,7 @@ public:
 
 private:
     
-    std::unique_ptr<IInteractDispatch> _pDispatch;
+    const std::unique_ptr<IInteractDispatch> _pDispatch;
 
     enum CsiActionCodes : wchar_t
     {

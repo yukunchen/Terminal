@@ -112,9 +112,8 @@ HRESULT VtInputThread::Start()
         std::make_unique<ConhostInternalGetSet>(gci->CurrentScreenBuffer, gci->pInputBuffer);
     THROW_IF_NULL_ALLOC(pGetSet);
 
-    InteractDispatch* _pDispatch;
-    THROW_HR_IF_FALSE(E_OUTOFMEMORY, InteractDispatch::CreateInstance(std::move(pGetSet), &_pDispatch));
-    std::unique_ptr<InteractDispatch> pDispatch = std::unique_ptr<InteractDispatch>(_pDispatch);
+    std::unique_ptr<InteractDispatch> pDispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));
+    THROW_IF_NULL_ALLOC(pDispatch);
     
     std::unique_ptr<InputStateMachineEngine> pEngine = 
         std::make_unique<InputStateMachineEngine>(std::move(pDispatch));

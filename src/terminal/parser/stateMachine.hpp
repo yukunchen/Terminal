@@ -31,6 +31,7 @@ namespace Microsoft
             {
 #ifdef UNIT_TESTING
                 friend class OutputEngineTest;
+                friend class InputEngineTest;
 #endif
 
             public:

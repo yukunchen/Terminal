@@ -10,11 +10,6 @@
 #include "conGetSet.hpp"
 #include "../../types/inc/Viewport.hpp"
 
-#define ENABLE_INTSAFE_SIGNED_FUNCTIONS
-#include <intsafe.h>
-
-#include <assert.h>
-
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -33,10 +28,10 @@ AdaptDispatch::AdaptDispatch(_Inout_ ConGetSet* const pConApi,
       _pDefaults(pDefaults),
       _wDefaultTextAttributes(wDefaultTextAttributes),
       _wBrightnessState(0),
-      _pTermOutput(nullptr),
       _fChangedBackground(false),
       _fChangedForeground(false),
-      _fChangedMetaAttrs(false)
+      _fChangedMetaAttrs(false),
+      _TermOutput()
 {
     // The top-left corner in VT-speak is 1,1. Our internal array uses 0 indexes, but VT uses 1,1 for top left corner.
     _coordSavedCursor.X = 1;
@@ -47,57 +42,22 @@ AdaptDispatch::AdaptDispatch(_Inout_ ConGetSet* const pConApi,
 
 }
 
-bool AdaptDispatch::CreateInstance(_Inout_ ConGetSet* const pConApi,
-                                   _Inout_ AdaptDefaults* const pDefaults,
-                                   _In_ const WORD wDefaultTextAttributes,
-                                   _Outptr_ AdaptDispatch ** const ppDispatch)
-{
-
-    AdaptDispatch* const pDispatch = new AdaptDispatch(pConApi, pDefaults, wDefaultTextAttributes);
-
-    bool fSuccess = pDispatch != nullptr;
-    if (fSuccess)
-    {
-        pDispatch->_pTermOutput = new TerminalOutput();
-        fSuccess = pDispatch->_pTermOutput != nullptr;
-        if (fSuccess)
-        {
-            *ppDispatch = pDispatch;
-        }
-        else
-        {
-            delete pDispatch;
-        }
-    }
-
-    return fSuccess;
-}
-
-AdaptDispatch::~AdaptDispatch()
-{
-    if (_pTermOutput != nullptr)
-    {
-        delete _pTermOutput;
-    }
-}
-
 void AdaptDispatch::Print(_In_ wchar_t const wchPrintable)
 {
-    _pDefaults->Print(_pTermOutput->TranslateKey(wchPrintable));
+    _pDefaults->Print(_TermOutput.TranslateKey(wchPrintable));
 }
 
 void AdaptDispatch::PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
 {
-    if (_pTermOutput->NeedToTranslate())
+    if (_TermOutput.NeedToTranslate())
     {
         for (size_t i = 0; i < cch; i++)
         {
-            rgwch[i] = _pTermOutput->TranslateKey(rgwch[i]);
+            rgwch[i] = _TermOutput.TranslateKey(rgwch[i]);
         }
     }
 
     _pDefaults->PrintString(rgwch, cch);
-
 }
 
 // Routine Description:
@@ -1447,7 +1407,7 @@ bool AdaptDispatch::TabClear(_In_ SHORT const sClearType)
 // True if handled successfully. False othewise.
 bool AdaptDispatch::DesignateCharset(_In_ wchar_t const wchCharset)
 {
-    return _pTermOutput->DesignateCharset(wchCharset);
+    return _TermOutput.DesignateCharset(wchCharset);
 }
 
 //Routine Description:
@@ -1754,7 +1714,7 @@ bool AdaptDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManipula
         case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
             if (cParams == 2)
             {
-                fSuccess = DispatchCommon::ResizeWindow(_pConApi, rgusParams[1], rgusParams[0]);
+                fSuccess = DispatchCommon::s_ResizeWindow(_pConApi, rgusParams[1], rgusParams[0]);
             }
             break;
         default:

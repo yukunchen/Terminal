@@ -10,12 +10,6 @@
 #include "conGetSet.hpp"
 #include "../../types/inc/Viewport.hpp"
 
-#include <math.h>
-#define ENABLE_INTSAFE_SIGNED_FUNCTIONS
-#include <intsafe.h>
-
-#include <assert.h>
-
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -23,20 +17,6 @@ InteractDispatch::InteractDispatch(_In_ std::unique_ptr<ConGetSet> pConApi)
     : _pConApi(std::move(pConApi))
 {
 
-}
-
-bool InteractDispatch::CreateInstance(_In_ std::unique_ptr<ConGetSet> pConApi,
-                                      _Outptr_ InteractDispatch ** const ppDispatch)
-{
-    bool fSuccess = false;
-    InteractDispatch* const pDispatch = new InteractDispatch(std::move(pConApi));
-    if (pDispatch != nullptr)
-    {
-        *ppDispatch = pDispatch;
-        fSuccess = true;
-    }
-    
-    return fSuccess;
 }
 
 // Method Description:
@@ -78,7 +58,7 @@ bool InteractDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManip
         case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
             if (cParams == 2)
             {
-                fSuccess = DispatchCommon::ResizeWindow(_pConApi.get(), rgusParams[1], rgusParams[0]);
+                fSuccess = DispatchCommon::s_ResizeWindow(_pConApi.get(), rgusParams[1], rgusParams[0]);
             }
             break;
         default:

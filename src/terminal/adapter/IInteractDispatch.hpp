@@ -31,7 +31,7 @@ namespace Microsoft
 class Microsoft::Console::VirtualTerminal::IInteractDispatch
 {
 public:
-    virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& /*inputEvents*/) {return false;}
+    virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& /*inputEvents*/) { return false; }
 
     virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType /*uiFunction*/,
                                     _In_reads_(cParams) const unsigned short* const /*rgusParams*/,

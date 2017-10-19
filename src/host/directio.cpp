@@ -428,7 +428,7 @@ HRESULT DoSrvWriteConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
 // - events - the events to written
 // - eventsWritten - on output, the number of events written
 // Return Value:
-// - STATUS_SUCCESS if we wrote all the events, else an appropriate NTSTATUS
+// - HRESULT indicating success or failure
 HRESULT DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
                                         _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                         _Out_ size_t& eventsWritten)
@@ -449,7 +449,7 @@ HRESULT DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
     CATCH_RETURN();
 
     // add to InputBuffer
-    eventsWritten = static_cast<ULONG>(pInputBuffer->Prepend(events));
+    eventsWritten = pInputBuffer->Prepend(events);
 
     return S_OK;
 }

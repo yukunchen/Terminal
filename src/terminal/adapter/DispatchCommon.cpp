@@ -9,11 +9,6 @@
 #include "DispatchCommon.hpp"
 #include "../../types/inc/Viewport.hpp"
 
-#define ENABLE_INTSAFE_SIGNED_FUNCTIONS
-#include <intsafe.h>
-
-#include <assert.h>
-
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -25,9 +20,9 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - usHeight: The new height of the window, in rows
 // Return Value:
 // True if handled successfully. False othewise.
-bool DispatchCommon::ResizeWindow(_In_ ConGetSet* const pConApi,
-                                  _In_ const unsigned short usWidth,
-                                  _In_ const unsigned short usHeight)
+bool DispatchCommon::s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
+                                    _In_ const unsigned short usWidth,
+                                    _In_ const unsigned short usHeight)
 {
     SHORT sColumns = 0;
     SHORT sRows = 0;
