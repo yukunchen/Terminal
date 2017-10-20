@@ -1232,10 +1232,10 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(wchar_t* pwchOscStringBuffer
     if (foundRGB)
     {
         // Colorspecs are up to hh/hh/hh, for 1-2 h's
-        for (size_t j = 0; j < 3; j++)
+        for (size_t component = 0; component < 3; component++)
         {
             bool foundColor = false;
-            unsigned int* const pValue = &(rguiColorValues[j]);
+            unsigned int* const pValue = &(rguiColorValues[component]);
             for (size_t i = 0; i < 3; i++)
             {   
 
@@ -1248,7 +1248,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(wchar_t* pwchOscStringBuffer
                     *pValue += s_HexToUint(wch);
                     // If we're on the blue component, we're not going to see a /.
                     // Break out once we hit the end.
-                    if (i == 2 && pwchCurr == pwchEnd)
+                    if (component == 2 && pwchCurr == pwchEnd)
                     {
                         foundValidColorSpec = true;
                         break;

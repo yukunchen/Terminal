@@ -16,6 +16,7 @@
 #include "getset.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
+#include "..\..\inc\conattrs.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -917,9 +918,121 @@ void ScreenBufferTests::VtResize()
 
 void ScreenBufferTests::VtSetColorTable()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
-    const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
+    // const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
 
+    // Start with a known value
+    gci->SetColorTableEntry(0, RGB(0, 0, 0));
+    
+    DisableVerifyExceptions disable;
+
+    Log::Comment(NoThrowString().Format(
+        L"Process some valid sequences for setting the table"
+    ));
+
+    std::wstring seq = L"\x1b]4;0;rgb:1/1/1\x7";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(1,1,1), gci->GetColorTableEntry(::XtermToWindowsIndex(0)));
+
+    seq = L"\x1b]4;1;rgb:1/23/1\x7";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(1,0x23,1), gci->GetColorTableEntry(::XtermToWindowsIndex(1)));
+
+    seq = L"\x1b]4;2;rgb:1/23/12\x7";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(1,0x23,0x12), gci->GetColorTableEntry(::XtermToWindowsIndex(2)));
+
+    seq = L"\x1b]4;3;rgb:12/23/12\x7";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(0x12,0x23,0x12), gci->GetColorTableEntry(::XtermToWindowsIndex(3)));
+    
+    seq = L"\x1b]4;4;rgb:ff/a1/1b\x7";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(0xff,0xa1,0x1b), gci->GetColorTableEntry(::XtermToWindowsIndex(4)));
+
+    seq = L"\x1b]4;5;rgb:ff/a1/1b\x1b\\";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(0xff,0xa1,0x1b), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+
+    Log::Comment(NoThrowString().Format(
+        L"Try a bunch of invalid sequences."
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"First start by setting an entry to a known value to compare to."
+    ));
+    seq = L"\x1b]4;5;rgb:9/9/9\x1b\\";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+
+    Log::Comment(NoThrowString().Format(
+        L"invalid: Missing the first component"
+    ));
+    seq = L"\x1b]4;5;rgb:/1/1\x1b\\";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+
+    Log::Comment(NoThrowString().Format(
+        L"invalid: too many characters in a component"
+    ));
+    seq = L"\x1b]4;5;rgb:111/1/1\x1b\\";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+
+    Log::Comment(NoThrowString().Format(
+        L"invalid: too many componenets"
+    ));
+    seq = L"\x1b]4;5;rgb:1/1/1/1\x1b\\";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+
+    Log::Comment(NoThrowString().Format(
+        L"invalid: no second component"
+    ));
+    seq = L"\x1b]4;5;rgb:1//1\x1b\\";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+
+    Log::Comment(NoThrowString().Format(
+        L"invalid: no components"
+    ));
+    seq = L"\x1b]4;5;rgb://\x1b\\";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+
+    Log::Comment(NoThrowString().Format(
+        L"invalid: no third component"
+    ));
+    seq = L"\x1b]4;5;rgb:1/11/\x1b\\";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+
+    Log::Comment(NoThrowString().Format(
+        L"invalid: rgbi is not a supported color space"
+    ));
+    seq = L"\x1b]4;5;rgbi:1/1/1\x1b\\";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+
+    Log::Comment(NoThrowString().Format(
+        L"invalid: cmyk is not a supported color space"
+    ));
+    seq = L"\x1b]4;5;cmyk:1/1/1\x1b\\";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+
+    Log::Comment(NoThrowString().Format(
+        L"invalid: no table index should do nothing"
+    ));
+    seq = L"\x1b]4;;rgb:1/1/1\x1b\\";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+
+    Log::Comment(NoThrowString().Format(
+        L"invalid: need to specify a color space"
+    ));
+    seq = L"\x1b]4;5;1/1/1\x1b\\";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
 }
