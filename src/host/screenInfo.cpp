@@ -1589,7 +1589,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSi
         // the memmove above invalidates the contract of a unique_ptr, which each ATTR_ROW
         // contains. we need to release the responsibility of managing the memory from the orignal object
         // because the copy is taking it over. this should be removed when the calls to memmove are.
-        for (size_t index = 0; index < coordScreenBufferSize.Y; ++index)
+        for (int index = 0; index < coordScreenBufferSize.Y; ++index)
         {
             pTextInfo->Rows[index].AttrRow._rgList.release();
         }
