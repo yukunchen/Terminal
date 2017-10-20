@@ -209,9 +209,9 @@ public:
     NTSTATUS UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ UINT const cRowLength) const;
 
     UINT _cList;   // length of attr pair array
+    wistd::unique_ptr<TextAttributeRun[]> _rgList;
 private:
 
-    wistd::unique_ptr<TextAttributeRun[]> _rgList;
     UINT _cchRowWidth;
 
 
@@ -289,8 +289,6 @@ public:
 
     CHAR_INFO GetFill() const;
     void SetFill(_In_ const CHAR_INFO ciFill);
-
-    void FreeExtraAttributeRows(_In_ const short sTopRowIndex, _In_ const short sOldHeight, _In_ const short sNewHeight);
 
     ROW* Rows;
     PWCHAR TextRows;
