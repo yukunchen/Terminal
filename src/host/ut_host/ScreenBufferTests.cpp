@@ -22,6 +22,8 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
+#define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(SUCCEEDED_NTSTATUS(x))
+
 class ScreenBufferTests
 {
     CommonState* m_state;
@@ -98,6 +100,8 @@ class ScreenBufferTests
     TEST_METHOD(VtResize);
     
     TEST_METHOD(VtSetColorTable);
+
+    TEST_METHOD(ResizeTraditionalDoesntDoubleFreeAttrRows);
 };
 
 SCREEN_INFORMATION::TabStop** ScreenBufferTests::CreateSampleList()
@@ -254,7 +258,7 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
 
 void ScreenBufferTests::TestReverseLineFeed()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();    
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
     auto bufferWriter = psi->GetBufferWriter();
     auto cursor = psi->TextInfo->GetCursor();
@@ -273,13 +277,13 @@ void ScreenBufferTests::TestReverseLineFeed()
     VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
 
     DoSrvPrivateReverseLineFeed(psi);
-    
+
     VERIFY_ARE_EQUAL(cursor->GetPosition().X, 3);
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
     viewport = psi->GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 0);
     Log::Comment(NoThrowString().Format(
-        L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+        L"viewport={L:%d,T:%d,R:%d,B:%d}",
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
 
@@ -292,13 +296,13 @@ void ScreenBufferTests::TestReverseLineFeed()
     VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
 
     DoSrvPrivateReverseLineFeed(psi);
-    
+
     VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 0);
     viewport = psi->GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 0);
     Log::Comment(NoThrowString().Format(
-        L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+        L"viewport={L:%d,T:%d,R:%d,B:%d}",
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
     auto c = psi->TextInfo->GetLastNonSpaceCharacter();
@@ -315,13 +319,13 @@ void ScreenBufferTests::TestReverseLineFeed()
     VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 5);
 
     DoSrvPrivateReverseLineFeed(psi);
-    
+
     VERIFY_ARE_EQUAL(cursor->GetPosition().X, 9);
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 5);
     viewport = psi->GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 5);
     Log::Comment(NoThrowString().Format(
-        L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+        L"viewport={L:%d,T:%d,R:%d,B:%d}",
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
     c = psi->TextInfo->GetLastNonSpaceCharacter();
@@ -720,13 +724,13 @@ void ScreenBufferTests::EraseAllTests()
     VERIFY_ARE_EQUAL(psi->GetBufferViewport().Top, 0);
 
     psi->VtEraseAll();
-    
+
     VERIFY_ARE_EQUAL(cursor->GetPosition().X, 0);
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 1);
     auto viewport = psi->GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 1);
     Log::Comment(NoThrowString().Format(
-        L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+        L"viewport={L:%d,T:%d,R:%d,B:%d}",
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
 
@@ -739,7 +743,7 @@ void ScreenBufferTests::EraseAllTests()
     viewport = psi->GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 1);
     Log::Comment(NoThrowString().Format(
-        L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+        L"viewport={L:%d,T:%d,R:%d,B:%d}",
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
 
@@ -749,7 +753,7 @@ void ScreenBufferTests::EraseAllTests()
     viewport = psi->GetBufferViewport();
     VERIFY_ARE_EQUAL(viewport.Top, 4);
     Log::Comment(NoThrowString().Format(
-        L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+        L"viewport={L:%d,T:%d,R:%d,B:%d}",
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
 
@@ -763,18 +767,18 @@ void ScreenBufferTests::EraseAllTests()
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, 277);
     viewport = psi->GetBufferViewport();
     Log::Comment(NoThrowString().Format(
-        L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+        L"viewport={L:%d,T:%d,R:%d,B:%d}",
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
     psi->VtEraseAll();
-    
+
     viewport = psi->GetBufferViewport();
     auto heightFromBottom = psi->GetScreenBufferSize().Y - (viewport.Bottom - viewport.Top + 1);
     VERIFY_ARE_EQUAL(cursor->GetPosition().X, 0);
     VERIFY_ARE_EQUAL(cursor->GetPosition().Y, heightFromBottom);
     VERIFY_ARE_EQUAL(viewport.Top, heightFromBottom);
     Log::Comment(NoThrowString().Format(
-        L"viewport={L:%d,T:%d,R:%d,B:%d}", 
+        L"viewport={L:%d,T:%d,R:%d,B:%d}",
         viewport.Left, viewport.Top, viewport.Right, viewport.Bottom
     ));
 }
@@ -915,7 +919,6 @@ void ScreenBufferTests::VtResize()
     VERIFY_ARE_EQUAL(initialViewWidth, newViewWidth);
 
 }
-
 void ScreenBufferTests::VtSetColorTable()
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
@@ -1034,4 +1037,18 @@ void ScreenBufferTests::VtSetColorTable()
     seq = L"\x1b]4;5;1/1/1\x1b\\";
     stateMachine->ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+}
+
+void ScreenBufferTests::ResizeTraditionalDoesntDoubleFreeAttrRows()
+{
+    // there is not much to verify here, this test passes if the console doesn't crash.
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+
+    gci->SetWrapText(false);
+    COORD newBufferSize = psi->_coordScreenBufferSize;
+    newBufferSize.Y--;
+
+    VERIFY_SUCCESS_NTSTATUS(psi->ResizeTraditional(newBufferSize));
+
 }
