@@ -17,7 +17,7 @@
 // - true if this key has special relevance to line editing, false otherwise
 bool IsCommandLineEditingKey(_In_ const KeyEvent& keyEvent)
 {
-    if (!IsAnyFlagSet(keyEvent.GetActiveModifierKeys(), ALT_PRESSED | CTRL_PRESSED))
+    if (!keyEvent.IsAltPressed() && !keyEvent.IsCtrlPressed())
     {
         switch (keyEvent.GetVirtualKeyCode())
         {
@@ -46,7 +46,7 @@ bool IsCommandLineEditingKey(_In_ const KeyEvent& keyEvent)
             break;
         }
     }
-    if (IsAnyFlagSet(keyEvent.GetActiveModifierKeys(), CTRL_PRESSED))
+    if (keyEvent.IsCtrlPressed())
     {
         switch (keyEvent.GetVirtualKeyCode())
         {
@@ -69,7 +69,7 @@ bool IsCommandLineEditingKey(_In_ const KeyEvent& keyEvent)
         return (keyEvent.GetCharData() == 0);
     }
 
-    if (IsAnyFlagSet(keyEvent.GetActiveModifierKeys(), ALT_PRESSED))
+    if (keyEvent.IsAltPressed())
     {
         switch (keyEvent.GetVirtualKeyCode())
         {
@@ -91,7 +91,7 @@ bool IsCommandLineEditingKey(_In_ const KeyEvent& keyEvent)
 // - true if this key has special relevance to popups, false otherwise
 bool IsCommandLinePopupKey(_In_ const KeyEvent& keyEvent)
 {
-    if (!IsAnyFlagSet(keyEvent.GetActiveModifierKeys(), ALT_PRESSED | CTRL_PRESSED))
+    if (!keyEvent.IsAltPressed() && !keyEvent.IsCtrlPressed())
     {
         switch (keyEvent.GetVirtualKeyCode())
         {
@@ -159,7 +159,7 @@ const ExtKeySubst* const GetKeySubst(_In_ const KeyEvent& keyEvent)
 {
     // If not extended mode, or Control key or Alt key is not pressed, or virtual keycode is out of range, just bail.
     if (!ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey() ||
-        (keyEvent.GetActiveModifierKeys() & (CTRL_PRESSED | ALT_PRESSED)) == 0 ||
+        (!keyEvent.IsCtrlPressed() && !keyEvent.IsAltPressed()) ||
         keyEvent.GetVirtualKeyCode() < 'A' || keyEvent.GetVirtualKeyCode() > 'Z')
     {
         return nullptr;
@@ -169,9 +169,9 @@ const ExtKeySubst* const GetKeySubst(_In_ const KeyEvent& keyEvent)
     const ExtKeySubst* pKeySubst;
 
     // Get the KeySubst based on the modifier status.
-    if (IsAnyFlagSet(keyEvent.GetActiveModifierKeys(), ALT_PRESSED))
+    if (keyEvent.IsAltPressed())
     {
-        if (IsAnyFlagSet(keyEvent.GetActiveModifierKeys(), CTRL_PRESSED))
+        if (keyEvent.IsCtrlPressed())
         {
             pKeySubst = &pKeyDef->keys[2];
         }
@@ -182,7 +182,7 @@ const ExtKeySubst* const GetKeySubst(_In_ const KeyEvent& keyEvent)
     }
     else
     {
-        assert(IsAnyFlagSet(keyEvent.GetActiveModifierKeys(), CTRL_PRESSED));
+        assert(keyEvent.IsCtrlPressed());
         pKeySubst = &pKeyDef->keys[0];
     }
 
@@ -213,7 +213,7 @@ bool IsPauseKey(_In_ const KeyEvent& keyEvent)
     }
     else
     {
-        isPauseKey = (keyEvent.GetVirtualKeyCode() == L'S' && CTRL_BUT_NOT_ALT(keyEvent.GetActiveModifierKeys()));
+        isPauseKey = (keyEvent.GetVirtualKeyCode() == L'S' && (keyEvent.IsCtrlPressed() && !keyEvent.IsAltPressed()));
     }
     return isPauseKey;
 }

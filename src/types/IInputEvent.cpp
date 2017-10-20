@@ -135,3 +135,35 @@ std::unordered_set<ModifierKeyState> ExpandModifierKeyStateFlags(_In_ const DWOR
 
     return keyStates;
 }
+
+DWORD ModifierKeyStateToConsoleBitFlag(_In_ const ModifierKeyState modifierKey)
+{
+    static const std::unordered_map<ModifierKeyState, DWORD> mapping =
+    {
+        { ModifierKeyState::RightAlt, RIGHT_ALT_PRESSED },
+        { ModifierKeyState::LeftAlt, LEFT_ALT_PRESSED },
+        { ModifierKeyState::RightCtrl, RIGHT_CTRL_PRESSED },
+        { ModifierKeyState::LeftCtrl, LEFT_CTRL_PRESSED },
+        { ModifierKeyState::Shift, SHIFT_PRESSED },
+        { ModifierKeyState::NumLock, NUMLOCK_ON },
+        { ModifierKeyState::ScrollLock, SCROLLLOCK_ON },
+        { ModifierKeyState::CapsLock, CAPSLOCK_ON },
+        { ModifierKeyState::EnhancedKey, ENHANCED_KEY },
+        { ModifierKeyState::NlsDbcsChar, NLS_DBCSCHAR },
+        { ModifierKeyState::NlsAlphanumeric, NLS_ALPHANUMERIC },
+        { ModifierKeyState::NlsKatakana, NLS_KATAKANA },
+        { ModifierKeyState::NlsHiragana, NLS_HIRAGANA },
+        { ModifierKeyState::NlsRoman, NLS_ROMAN },
+        { ModifierKeyState::NlsImeConversion, NLS_IME_CONVERSION },
+        { ModifierKeyState::NlsImeDisable, NLS_IME_DISABLE }
+    };
+
+    for (auto it = mapping.begin(); it != mapping.end(); ++it)
+    {
+        if (it->first == modifierKey)
+        {
+            return it->second;
+        }
+    }
+    return 0;
+}

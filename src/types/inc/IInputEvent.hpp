@@ -53,10 +53,6 @@ public:
 #define CTRL_PRESSED    (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED)
 #define MOD_PRESSED     (SHIFT_PRESSED | ALT_PRESSED | CTRL_PRESSED)
 
-#define CTRL_BUT_NOT_ALT(n) \
-        (((n) & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) && \
-        !((n) & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)))
-
 // Note taken from VkKeyScan docs (https://msdn.microsoft.com/en-us/library/windows/desktop/ms646329(v=vs.85).aspx):
 // For keyboard layouts that use the right-hand ALT key as a shift key
 // (for example, the French keyboard layout), the shift state is
@@ -91,10 +87,11 @@ enum class ModifierKeyState
     NlsHiragana,
     NlsRoman,
     NlsImeConversion,
+    AltNumpad,
     NlsImeDisable
 };
 
-
+DWORD ModifierKeyStateToConsoleBitFlag(_In_ const ModifierKeyState modifierKey);
 
 class KeyEvent : public IInputEvent
 {
@@ -117,8 +114,10 @@ public:
     bool IsShiftPressed() const noexcept;
     bool IsAltPressed() const noexcept;
     bool IsCtrlPressed() const noexcept;
+    bool IsAltGrPressed() const noexcept;
     bool IsModifierPressed() const noexcept;
     bool IsCursorKey() const noexcept;
+    bool IsAltNumpadSet() const noexcept;
 
     bool IsKeyDown() const noexcept;
     void SetKeyDown(_In_ const bool keyDown) noexcept;
@@ -137,6 +136,8 @@ public:
 
     DWORD GetActiveModifierKeys() const noexcept;
     void SetActiveModifierKeys(_In_ const DWORD activeModifierKeys) noexcept;
+    void DeactivateModifierKey(_In_ const ModifierKeyState modifierKey) noexcept;
+    void ActivateModifierKey(_In_ const ModifierKeyState modifierKey) noexcept;
 
 private:
     bool _keyDown;

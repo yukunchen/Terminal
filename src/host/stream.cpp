@@ -111,7 +111,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                 // chars that are generated using alt + numpad
                 if (!keyEvent->IsKeyDown() && keyEvent->GetVirtualKeyCode() == VK_MENU)
                 {
-                    if (IsFlagSet(keyEvent->GetActiveModifierKeys(), ALTNUMPAD_BIT))
+                    if (keyEvent->IsAltNumpadSet())
                     {
                         if (HIBYTE(keyEvent->GetCharData()))
                         {

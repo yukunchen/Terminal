@@ -17,10 +17,6 @@
 
 #pragma hdrstop
 
-#define CTRL_BUT_NOT_ALT(n) \
-        (((n) & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) && \
-        !((n) & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)))
-
 #define KEY_ENHANCED 0x01000000
 
 bool IsInProcessedInputMode()
@@ -114,8 +110,8 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     BOOLEAN ContinueProcessing = TRUE;
 
-    if (IsAnyFlagSet(keyEvent.GetActiveModifierKeys(), CTRL_PRESSED) &&
-        !IsAnyFlagSet(keyEvent.GetActiveModifierKeys(), ALT_PRESSED) &&
+    if (keyEvent.IsCtrlPressed() &&
+        !keyEvent.IsAltPressed() &&
         keyEvent.IsKeyDown())
     {
         // check for ctrl-c, if in line input mode.
@@ -156,7 +152,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
             ContinueProcessing = FALSE;
         }
     }
-    else if (IsAnyFlagSet(keyEvent.GetActiveModifierKeys(), ALT_PRESSED) &&
+    else if (keyEvent.IsAltPressed() &&
              keyEvent.IsKeyDown() &&
              keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
     {

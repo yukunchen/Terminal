@@ -89,6 +89,11 @@ bool KeyEvent::IsCtrlPressed() const noexcept
     return IsAnyFlagSet(_activeModifierKeys, CTRL_PRESSED);
 }
 
+bool KeyEvent::IsAltGrPressed() const noexcept
+{
+    return AreAllFlagsSet(_activeModifierKeys, LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED);
+}
+
 bool KeyEvent::IsModifierPressed() const noexcept
 {
     return IsAnyFlagSet(_activeModifierKeys, MOD_PRESSED);
@@ -98,6 +103,11 @@ bool KeyEvent::IsCursorKey() const noexcept
 {
     // true iff vk in [End, Home, Left, Up, Right, Down]
     return (_virtualKeyCode >= VK_END) && (_virtualKeyCode <= VK_DOWN);
+}
+
+bool KeyEvent::IsAltNumpadSet() const noexcept
+{
+    return IsFlagSet(_activeModifierKeys, ALTNUMPAD_BIT);
 }
 
 bool KeyEvent::IsKeyDown() const noexcept
@@ -158,4 +168,16 @@ DWORD KeyEvent::GetActiveModifierKeys() const noexcept
 void KeyEvent::SetActiveModifierKeys(_In_ const DWORD activeModifierKeys) noexcept
 {
     _activeModifierKeys = activeModifierKeys;
+}
+
+void KeyEvent::DeactivateModifierKey(_In_ const ModifierKeyState modifierKey) noexcept
+{
+    DWORD bitFlag = ModifierKeyStateToConsoleBitFlag(modifierKey);
+    ClearAllFlags(_activeModifierKeys, bitFlag);
+}
+
+void KeyEvent::ActivateModifierKey(_In_ const ModifierKeyState modifierKey) noexcept
+{
+    DWORD bitFlag = ModifierKeyStateToConsoleBitFlag(modifierKey);
+    SetAllFlags(_activeModifierKeys, bitFlag);
 }

@@ -226,21 +226,15 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToKeyboardEvents(_In_ const
     // add modifier flags if necessary
     if (IsFlagSet(modifierState, VkKeyScanModState::ShiftPressed))
     {
-        DWORD activeModKeys = keyEvent.GetActiveModifierKeys();
-        SetFlag(activeModKeys, SHIFT_PRESSED);
-        keyEvent.SetActiveModifierKeys(activeModKeys);
+        keyEvent.ActivateModifierKey(ModifierKeyState::Shift);
     }
     if (IsFlagSet(modifierState, VkKeyScanModState::CtrlPressed))
     {
-        DWORD activeModKeys = keyEvent.GetActiveModifierKeys();
-        SetFlag(activeModKeys, LEFT_CTRL_PRESSED);
-        keyEvent.SetActiveModifierKeys(activeModKeys);
+        keyEvent.ActivateModifierKey(ModifierKeyState::LeftCtrl);
     }
     if (AreAllFlagsSet(modifierState, VkKeyScanModState::CtrlAndAltPressed))
     {
-        DWORD activeModKeys = keyEvent.GetActiveModifierKeys();
-        SetFlag(activeModKeys, RIGHT_ALT_PRESSED);
-        keyEvent.SetActiveModifierKeys(activeModKeys);
+        keyEvent.ActivateModifierKey(ModifierKeyState::RightAlt);
     }
 
     // add key event down and up
