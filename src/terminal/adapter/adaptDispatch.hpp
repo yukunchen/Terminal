@@ -109,8 +109,8 @@ namespace Microsoft
                 virtual bool EnableButtonEventMouseMode(_In_ bool const fEnabled); // ?1002
                 virtual bool EnableAnyEventMouseMode(_In_ bool const fEnabled); // ?1003
                 virtual bool EnableAlternateScroll(_In_ bool const fEnabled); // ?1007
-                virtual bool SetColorTableEntry(_In_ size_t tableIndex,
-                                                _In_ DWORD dwColor); // OscColorTable
+                virtual bool SetColorTableEntry(_In_ const size_t tableIndex,
+                                                _In_ const DWORD dwColor); // OscColorTable
                 virtual bool WindowManipulation(_In_ const WindowManipulationType uiFunction,
                                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                                 _In_ size_t const cParams); // DTTERM_WindowManipulation

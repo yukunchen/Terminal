@@ -1735,7 +1735,8 @@ bool AdaptDispatch::EnableAlternateScroll(_In_ bool const fEnabled)
 // - dwColor: The new RGB color value to use.
 // Return Value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::SetColorTableEntry(_In_ size_t tableIndex, _In_ DWORD dwColor)
+bool AdaptDispatch::SetColorTableEntry(_In_ const size_t tableIndex,
+                                       _In_ const DWORD dwColor)
 {
     bool fSuccess = tableIndex < 16;
     if (fSuccess)
@@ -1745,11 +1746,7 @@ bool AdaptDispatch::SetColorTableEntry(_In_ size_t tableIndex, _In_ DWORD dwColo
         fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
         if (fSuccess)
         {
-            size_t realIndex = 
-                (IsFlagSet(tableIndex, 8)? 8 : 0) + // intensity
-                (IsFlagSet(tableIndex, 1)? 4 : 0) + // r
-                (IsFlagSet(tableIndex, 2)? 2 : 0) + // g
-                (IsFlagSet(tableIndex, 4)? 1 : 0);  //b
+            size_t realIndex = ::XtermToWindowsIndex(tableIndex);
 
             csbiex.ColorTable[realIndex] = dwColor;
             fSuccess = !!_pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
@@ -1757,8 +1754,6 @@ bool AdaptDispatch::SetColorTableEntry(_In_ size_t tableIndex, _In_ DWORD dwColo
     }
     return fSuccess;
 }
-
-
 
 //Routine Description:
 // Window Manipulation - Performs a variety of actions relating to the window,

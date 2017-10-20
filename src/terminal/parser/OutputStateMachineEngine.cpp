@@ -1105,11 +1105,11 @@ bool OutputStateMachineEngine::FlushAtEndOfString() const
 }
 
 // Routine Description:
-// - Determines if a character is a valid hex character, 0-9a-fA-F.
+// - Converts a hex character to it's equivalent integer value.
 // Arguments:
-// - wch - Character to check.
+// - wch - Character to convert.
 // Return Value:
-// - True if it is. False if it isn't.
+// - the integer value of the hex character, 0 if it's not a hex char.
 unsigned int OutputStateMachineEngine::s_HexToUint(_In_ wchar_t const wch)
 {
     unsigned int value = 0;
@@ -1163,10 +1163,10 @@ bool OutputStateMachineEngine::s_IsHexNumber(_In_ wchar_t const wch)
 // - pcchTitleLength - a pointer place the length of ppwchTitle into.
 // Return Value:
 // - True if there was a title to output. (a title with length=0 is still valid)
-bool OutputStateMachineEngine::_GetOscSetColorTable(wchar_t* pwchOscStringBuffer,
-                                                    size_t cchOscString,
-                                                    size_t* pTableIndex,
-                                                    DWORD* pRgb)
+bool OutputStateMachineEngine::_GetOscSetColorTable(_In_ const wchar_t* const pwchOscStringBuffer,
+                                                    _In_ const size_t cchOscString,
+                                                    _Out_ size_t* const pTableIndex,
+                                                    _Out_ DWORD* const pRgb)
 {
     *pTableIndex = 0;
     *pRgb = 0;
@@ -1226,7 +1226,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(wchar_t* pwchOscStringBuffer
         {
             foundRGB = true;
         }
-        pwchCurr+=4;
+        pwchCurr += 4;
     }
 
     if (foundRGB)

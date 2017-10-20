@@ -70,7 +70,6 @@ namespace Microsoft
                 static bool s_IsDesignateCharsetIndicator(_In_ wchar_t const wch);
                 static bool s_IsCharsetCode(_In_ wchar_t const wch);
                 static bool s_IsNumber(_In_ wchar_t const wch);
-                static bool s_IsHexNumber(_In_ wchar_t const wch);
                 static bool s_IsSs3Indicator(_In_ wchar_t const wch);
 
                 void _ActionExecute(_In_ wchar_t const wch);

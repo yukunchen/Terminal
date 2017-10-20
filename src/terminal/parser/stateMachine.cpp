@@ -269,19 +269,6 @@ bool StateMachine::s_IsNumber(_In_ wchar_t const wch)
 }
 
 // Routine Description:
-// - Determines if a character is a valid hex character, 0-9a-fA-F.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-bool StateMachine::s_IsHexNumber(_In_ wchar_t const wch)
-{
-    return (wch >= L'0' && wch <= L'9') || // 0x30 - 0x39
-           (wch >= L'A' && wch <= L'F') || 
-           (wch >= L'a' && wch <= L'f');
-}
-
-// Routine Description:
 // - Triggers the Execute action to indicate that the listener should immediately respond to a C0 control character.
 // Arguments:
 // - wch - Character to dispatch.

@@ -217,10 +217,10 @@ namespace Microsoft
                 static unsigned int s_HexToUint(_In_ wchar_t const wch);
                 static bool s_IsNumber(_In_ wchar_t const wch);
                 static bool s_IsHexNumber(_In_ wchar_t const wch);
-                bool _GetOscSetColorTable(wchar_t* pwchOscStringBuffer,
-                                          size_t cchOscString,
-                                          size_t* pTableIndex,
-                                          DWORD* pRgb);
+                bool _GetOscSetColorTable(_In_ const wchar_t* const pwchOscStringBuffer,
+                                          _In_ const size_t cchOscString,
+                                          _Out_ size_t* const pTableIndex,
+                                          _Out_ DWORD* const pRgb);
             };
         }
     }

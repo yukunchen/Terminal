@@ -110,10 +110,10 @@ WORD FindNearestTableIndex(_In_ COLORREF const Color, _In_reads_(cColorTable) co
 // - The windows color table equivalent.
 WORD XtermToWindowsIndex(_In_ const size_t xtermTableEntry)
 {
-    bool fRed = IsFlagSet(xtermTableEntry, 0x01);
-    bool fGreen = IsFlagSet(xtermTableEntry, 0x02);
-    bool fBlue = IsFlagSet(xtermTableEntry, 0x04);
-    bool fBright = IsFlagSet(xtermTableEntry, 0x08);
+    const bool fRed = IsFlagSet(xtermTableEntry, 0x01);
+    const bool fGreen = IsFlagSet(xtermTableEntry, 0x02);
+    const bool fBlue = IsFlagSet(xtermTableEntry, 0x04);
+    const bool fBright = IsFlagSet(xtermTableEntry, 0x08);
 
     return (fRed ? 0x4 : 0x0) +
            (fGreen ? 0x2 : 0x0) +
