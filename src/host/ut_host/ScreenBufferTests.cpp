@@ -920,7 +920,6 @@ void ScreenBufferTests::VtSetColorTable()
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
-    // const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
 
     // Start with a known value
