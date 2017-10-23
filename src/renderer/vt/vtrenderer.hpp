@@ -16,6 +16,7 @@ Author(s):
 
 #include "../inc/IRenderEngine.hpp"
 #include "../../types/inc/Viewport.hpp"
+#include "VtCursor.hpp"
 #include <string>
 #include <functional>
 
@@ -81,6 +82,9 @@ public:
     SMALL_RECT GetDirtyRectInChars() override;
     COORD GetFontSize() override;
     bool IsCharFullWidthByFont(_In_ WCHAR const wch) override;
+            
+    IRenderCursor* const GetCursor() override;
+                
 
 protected:
     wil::unique_hfile _hFile;
@@ -98,6 +102,8 @@ protected:
 
     bool _quickReturn;
     
+    VtCursor _cursor;
+
     HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);
     HRESULT _Write(_In_ const std::string& str);
     HRESULT _Write(_In_ const char* const psz);
@@ -131,10 +137,14 @@ protected:
                                          _In_ COLORREF const colorBackground,
                                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                          _In_ const WORD cColorTable);
+
+    bool _WillWriteSingleChar() const;
+
+    /////////////////////////// Unit Testing Helpers ///////////////////////////
+#ifdef UNIT_TESTING
     std::function<bool(const char* const, size_t const)> _pfnTestCallback;
     bool _usingTestCallback;
 
-#ifdef UNIT_TESTING
     friend class VtRendererTest;
 #endif
     

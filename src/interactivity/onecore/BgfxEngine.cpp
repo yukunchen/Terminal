@@ -261,3 +261,14 @@ bool BgfxEngine::IsCharFullWidthByFont(WCHAR const wch)
 
     return false;
 }
+
+// Method Description:
+// - Returns a reference to this engine's cursor implementation.
+// Arguments:
+// - <none>
+// Return Value:
+// - A referenct to this engine's cursor implementation.
+IRenderCursor* const BgfxEngine::GetCursor()
+{
+    return &_cursor;
+}

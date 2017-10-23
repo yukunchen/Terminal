@@ -14,6 +14,7 @@ Author(s):
 #pragma once
 
 #include "IRenderer.hpp"
+#include "IRenderCursor.hpp"
 #include "FontInfo.hpp"
 
 // Valid COLORREFs are of the pattern 0x00bbggrr. -1 works as an invalid color, 
@@ -68,6 +69,8 @@ namespace Microsoft
                 virtual SMALL_RECT GetDirtyRectInChars() = 0;
                 virtual COORD GetFontSize() = 0;
                 virtual bool IsCharFullWidthByFont(_In_ WCHAR const wch) = 0;
+
+                virtual IRenderCursor* const GetCursor() = 0;
             };
         };
     };
