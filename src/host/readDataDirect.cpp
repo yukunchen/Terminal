@@ -87,6 +87,7 @@ BOOL DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
 
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;
+    *pNumBytes = 0;
     bool retVal = true;
     std::deque<std::unique_ptr<IInputEvent>> readEvents;
 
