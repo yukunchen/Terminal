@@ -17,7 +17,7 @@ using namespace Microsoft::Console::Render;
 // Arguments:
 // - Coordinate
 // Return Value:
-// - Rectangle representing same 1x1 area as given coordinate.
+// - Exclusive rectangle representing same 1x1 area as given coordinate.
 SMALL_RECT Renderer::_RegionFromCoord(_In_ const COORD* const pcoord) const
 {
     SMALL_RECT sr;
