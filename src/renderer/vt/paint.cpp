@@ -80,8 +80,7 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                   _In_ COORD const coord,
                                   _In_ bool const /*fTrimLeft*/)
 {
-    return VtEngine::_PaintUtf8BufferLine(pwsLine, rgWidths, cchLine, coord);
-    // return VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord);
+    return VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord);
 }
 
 // Method Description:
