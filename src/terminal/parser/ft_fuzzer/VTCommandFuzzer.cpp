@@ -357,6 +357,29 @@ CStringA GenerateScrollToken()
     return GenerateFuzzedToken(FUZZ_MAP(map), tokens, ARRAYSIZE(tokens));
 }
 
+// Resize sequences, valid numeric values include 0-16384.
+CStringA GenerateResizeToken()
+{
+    const LPSTR tokens[] = { "t" };
+    // 5% - generate a random window manipulation with 1 params
+    // 5% - generate a random window manipulation with 2 params
+    // 5% - generate a random window manipulation with no params
+    // 45% - generate a resize with two params
+    // 10% - generate a resize with only the first param
+    // 10% - generate a resize with only the second param
+    const _fuzz_type_entry<CStringA> map[] =
+    {
+        { 5, [](CStringA) { CStringA s; s.AppendFormat("%d;%d;%d", CFuzzChance::GetRandom<USHORT>(0, 0x4000), CFuzzChance::GetRandom<USHORT>(0, 0x4000), CFuzzChance::GetRandom<USHORT>(0, 0x4000)); return s; } },
+        { 5, [](CStringA) { CStringA s; s.AppendFormat("%d;%d", CFuzzChance::GetRandom<USHORT>(0, 0x4000), CFuzzChance::GetRandom<USHORT>(0, 0x4000)); return s; } },
+        { 5, [](CStringA) { CStringA s; s.AppendFormat("%d", CFuzzChance::GetRandom<USHORT>(0, 0x4000)); return s; } },
+        { 45, [](CStringA) { CStringA s; s.AppendFormat("8;%d;%d", CFuzzChance::GetRandom<USHORT>(0, 0x4000), CFuzzChance::GetRandom<USHORT>(0, 0x4000)); return s; } },
+        { 10, [](CStringA) { CStringA s; s.AppendFormat("8;%d;", CFuzzChance::GetRandom<USHORT>(0, 0x4000)); return s; } },
+        { 10, [](CStringA) { CStringA s; s.AppendFormat("8;;%d", CFuzzChance::GetRandom<USHORT>(0, 0x4000)); return s; } },
+    };
+
+    return GenerateFuzzedToken(FUZZ_MAP(map), tokens, ARRAYSIZE(tokens));
+}
+
 // Osc Window Title String. An Osc followed by a param on [0, SHORT_MAX], followed by a ";", followed by a string,
 // and BEL terminated.
 CStringA GenerateOscTitleToken()

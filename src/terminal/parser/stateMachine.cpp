@@ -218,7 +218,18 @@ bool StateMachine::s_IsOscDelimiter(_In_ wchar_t const wch)
 // - True if it is. False if it isn't.
 bool StateMachine::s_IsOscParamValue(_In_ wchar_t const wch)
 {
-    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
+    return s_IsNumber(wch); // 0x30 - 0x39
+}
+
+// Routine Description:
+// - Determines if a character should be initiate the end of an OSC sequence.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+bool StateMachine::s_IsOscTerminationInitiator(_In_ wchar_t const wch)
+{
+    return wch == AsciiChars::ESC; 
 }
 
 // Routine Description:
@@ -243,7 +254,18 @@ bool StateMachine::s_IsOscInvalid(_In_ wchar_t const wch)
 // - True if it is. False if it isn't.
 bool StateMachine::s_IsOscTerminator(_In_ wchar_t const wch)
 {
-    return wch == L'\x7'; // Bell character
+    return wch == L'\x7' || wch == L'\x9C'; // Bell character or C1 terminator
+}
+
+// Routine Description:
+// - Determines if a character is a valid number character, 0-9.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+bool StateMachine::s_IsNumber(_In_ wchar_t const wch)
+{
+    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
 }
 
 // Routine Description:
@@ -674,6 +696,21 @@ void StateMachine::_EnterOscString()
 }
 
 // Routine Description:
+// - Moves the state machine into the OscTermination state.
+//   This state is entered:
+//   1. When an ESC is seen in an OSC string. This escape will be followed by a 
+//      '\', as to encode a 0x9C as a 7-bit ASCII char stream.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void StateMachine::_EnterOscTermination()
+{
+    _state = VTStates::OscTermination;
+    _trace.TraceStateChange(L"OscTermination");
+}
+
+// Routine Description:
 // - Moves the state machine into the Ss3Entry state.
 //   This state is entered:
 //   1. When the Ss3Entry character is seen after an Escape entry (only from the Escape state)
@@ -1014,8 +1051,10 @@ void StateMachine::_EventOscParam(_In_ wchar_t const wch)
 // - Processes a character event into a Action that occurs while in the OscParam state.
 //   Events in this state will:
 //   1. Trigger the OSC action associated with the param on an OscTerminator
-//   2. Ignore OscInvalid characters.
-//   3. Collect everything else into the OscString
+//   2. If we see a ESC, enter the OscTermination state. We'll wait for one 
+//      more character before we dispatch the string.
+//   3. Ignore OscInvalid characters.
+//   4. Collect everything else into the OscString
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
@@ -1028,6 +1067,10 @@ void StateMachine::_EventOscString(_In_ wchar_t const wch)
         _ActionOscDispatch(wch);
         _EnterGround();
     }
+    else if (s_IsOscTerminationInitiator(wch))
+    {
+        _EnterOscTermination();
+    }
     else if (s_IsOscInvalid(wch))
     {
         _ActionIgnore();
@@ -1037,6 +1080,22 @@ void StateMachine::_EventOscString(_In_ wchar_t const wch)
         // add this character to our OSC string
         _ActionOscPut(wch);
     }
+}
+
+// Routine Description:
+// - Handle the two-character termination of a OSC sequence. 
+//   Events in this state will:
+//   1. Trigger the OSC action associated with the param on an OscTerminator
+// Arguments:
+// - wch - Character that triggered the event
+// Return Value:
+// - <none>
+void StateMachine::_EventOscTermination(_In_ wchar_t const wch)
+{
+    _trace.TraceOnEvent(L"OscTermination");
+
+    _ActionOscDispatch(wch);
+    _EnterGround();
 }
 
 // Routine Description:
@@ -1067,7 +1126,7 @@ void StateMachine::_EventSs3Entry(_In_ wchar_t const wch)
     }
     else if (s_IsCsiInvalid(wch))
     {
-        // It's safefor us to go into the CSI ignore here, because both SS3 and 
+        // It's safe for us to go into the CSI ignore here, because both SS3 and 
         //      CSI sequences ignore characters the same way.
         _EnterCsiIgnore();
     }
@@ -1138,8 +1197,10 @@ void StateMachine::ProcessCharacter(_In_ wchar_t const wch)
         _ActionExecute(wch);
         _EnterGround();
     }
-    else if (s_IsEscape(wch))
+    else if (s_IsEscape(wch) && _state != VTStates::OscString)
     {
+        // Don't go to escape from the OSC string state - ESC can be used to 
+        //      terminate OSC strings.
         _EnterEscape();
     }
     else
@@ -1165,6 +1226,8 @@ void StateMachine::ProcessCharacter(_In_ wchar_t const wch)
             return _EventOscParam(wch);
         case VTStates::OscString:
             return _EventOscString(wch);
+        case VTStates::OscTermination:
+            return _EventOscTermination(wch);
         case VTStates::Ss3Entry:
             return _EventSs3Entry(wch);
         case VTStates::Ss3Param:
@@ -1272,6 +1335,7 @@ void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, _In
                 return _ActionCsiDispatch(*pwch);
             case VTStates::OscParam:
             case VTStates::OscString:
+            case VTStates::OscTermination:
                 return _ActionOscDispatch(*pwch);
             case VTStates::Ss3Entry:
             case VTStates::Ss3Param:

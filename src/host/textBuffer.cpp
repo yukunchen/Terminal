@@ -520,8 +520,8 @@ bool ATTR_ROW::Resize(_In_ const short sOldWidth, _In_ const short sNewWidth)
 //                  index was 3, CountOfAttr would be 2.
 // Return Value:
 // <none>
-void ATTR_ROW::FindAttrIndex(_In_ UINT const uiIndex, 
-                             _Outptr_ TextAttributeRun** const ppIndexedAttr, 
+void ATTR_ROW::FindAttrIndex(_In_ UINT const uiIndex,
+                             _Outptr_ TextAttributeRun** const ppIndexedAttr,
                              _Out_opt_ UINT* const pcAttrApplies) const
 {
     ASSERT(uiIndex < _cchRowWidth); // The requested index cannot be longer than the total length described by this set of Attrs.
@@ -683,7 +683,7 @@ void TextAttributeRun::SetAttributesFromLegacy(_In_ const WORD wNew)
 
 #if DBG
 // Routine Description:
-// - Debug only method to help add up the total length of every run to help diagnose issues with 
+// - Debug only method to help add up the total length of every run to help diagnose issues with
 //   manipulating run length encoding in-place.
 // Arguments:
 // - rgRun - The run to inspect
@@ -766,14 +766,14 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
             pExistingRun->SetAttributes(NewAttr);
 
             // We are assuming that if our existing run had only 1 item that it covered the entire buffer width.
-            assert(pExistingRun->GetLength() == cBufferWidth); 
+            assert(pExistingRun->GetLength() == cBufferWidth);
             pExistingRun->SetLength(cBufferWidth); // Set anyway to be safe.
 
             return S_OK;
         }
         // Else, fall down and keep trying other processing.
     }
-    
+
     // In the worst case scenario, we will need a new run that is the length of
     // The existing run in memory + The new run in memory + 1.
     // This worst case occurs when we inject a new item in the middle of an existing run like so
@@ -814,13 +814,13 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
         // attributes will fall in the final/new run.
         // Some examples:
         // - Starting with the original string R3 -> G5 -> B2
-        // - 1. If the insertion is Y5 at start index 3 
+        // - 1. If the insertion is Y5 at start index 3
         //      We are trying to get a result/final/new run of R3 -> Y5 -> B2.
         //      We just copied R3 to the new destination buffer and we can skip down and start inserting the new attrs.
         // - 2. If the insertion is Y3 at start index 5
         //      We are trying to get a result/final/new run of R3 -> G2 -> Y3 -> B2.
         //      We just copied R3 -> G5 to the new destination buffer with the code above.
-        //      But the insertion is going to cut out some of the length of the G5. 
+        //      But the insertion is going to cut out some of the length of the G5.
         //      We need to fix this up below so it says G2 instead to leave room for the Y3 to fit in
         //      the new/final run.
 
@@ -893,10 +893,10 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
         // Existing Run = R3 -> G5 -> B2 -> X5
         // Insert Run = Y2 @ iStart = 7 and iEnd = 8
         // ... then at this point in time, our states would look like...
-        // New Run so far = R3 -> G4 -> Y2 
-        // Existing Run Pointer is at X5 
+        // New Run so far = R3 -> G4 -> Y2
+        // Existing Run Pointer is at X5
         // Existing run coverage count at 3 + 5 + 2 = 10.
-        // However, in order to get the final desired New Run 
+        // However, in order to get the final desired New Run
         //   (which is R3 -> G4 -> Y2 -> B1 -> X5)
         //   we would need to grab a piece of that B2 we already skipped past.
         // iExistingRunCoverage = 10. iEnd = 8. iEnd+1 = 9. 10 > 9. So we skipped something.
@@ -925,12 +925,12 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
 
                 // Copy the existing run's color information to the new run
                 pNewRunPos->SetAttributes(pExistingRunPos->GetAttributes());
-                
+
                 // Adjust the length of that copied color to cover only the reduced number of columns needed
                 // now that some have been replaced by the insert run.
                 pNewRunPos->SetLength(iExistingRunCoverage - (iEnd + 1));
             }
-            
+
             // Now that we're done recovering a piece of the existing run we skipped, move the pointer forward again.
             pExistingRunPos++;
         }
@@ -980,7 +980,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
 
     _cList = (UINT)cNew;
     _rgList.swap(pNewRun);
-    
+
     return S_OK;
 }
 
@@ -1759,16 +1759,4 @@ CHAR_INFO TEXT_BUFFER_INFO::GetFill() const
 void TEXT_BUFFER_INFO::SetFill(_In_ const CHAR_INFO ciFill)
 {
     _ciFill = ciFill;
-}
-
-void TEXT_BUFFER_INFO::FreeExtraAttributeRows(_In_ const short sTopRowIndex, _In_ const short sOldHeight, _In_ const short sNewHeight)
-{
-    short i = (sTopRowIndex + sNewHeight) % sOldHeight;
-    for (short j = sNewHeight; j < sOldHeight; j++)
-    {
-        if (++i == sOldHeight)
-        {
-            i = 0;
-        }
-    }
 }

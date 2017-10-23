@@ -6,7 +6,6 @@
 
 #include "precomp.h"
 #include "WinTelnetEngine.hpp"
-#include "..\..\inc\Viewport.hpp"
 #include "..\..\inc\conattrs.hpp"
 #pragma hdrstop
 using namespace Microsoft::Console::Render;

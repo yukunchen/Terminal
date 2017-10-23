@@ -15,9 +15,11 @@ Revision History:
 
 #pragma once
 
+class ConsoleArguments;
+
 namespace Entrypoints
 {
-    HRESULT StartConsoleForServerHandle(_In_ HANDLE const ServerHandle);
-    HRESULT StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine);
+    HRESULT StartConsoleForServerHandle(_In_ HANDLE const ServerHandle, _In_ const ConsoleArguments* const args);
+    HRESULT StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine, _In_ const ConsoleArguments* const args);
 };
 

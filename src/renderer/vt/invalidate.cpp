@@ -7,7 +7,8 @@
 #include "precomp.h"
 
 #include "vtrenderer.hpp"
-#include "..\..\inc\Viewport.hpp"
+
+using namespace Microsoft::Console::Types;
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
@@ -66,9 +67,7 @@ HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::InvalidateAll()
 {
-    Viewport view(_srLastViewport);
-    SMALL_RECT rc = _srLastViewport;
-    view.ConvertToOrigin(&rc);
+    SMALL_RECT rc = _lastViewport.ToOrigin().ToInclusive();
 
     return this->_InvalidCombine(&rc);
 }
@@ -135,9 +134,7 @@ HRESULT VtEngine::_InvalidOffset(_In_ const COORD* const pCoord)
 // - S_OK, else an appropriate HRESULT for failing to allocate or safemath failure.
 HRESULT VtEngine::_InvalidRestrict()
 {
-    Viewport view(_srLastViewport);
-    SMALL_RECT rc = _srLastViewport;
-    view.ConvertToOrigin(&rc);
+    SMALL_RECT rc = _lastViewport.ToOrigin().ToInclusive();
 
     _srcInvalid.Left = clamp(_srcInvalid.Left, rc.Left, rc.Right);
     _srcInvalid.Right = clamp(_srcInvalid.Right, rc.Left, rc.Right);

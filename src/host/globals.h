@@ -18,6 +18,7 @@ Revision History:
 
 #include "selection.hpp"
 #include "server.h"
+#include "ConsoleArguments.hpp"
 
 #include "..\renderer\inc\IRenderData.hpp"
 #include "..\renderer\inc\IRenderEngine.hpp"
@@ -41,6 +42,8 @@ public:
      UINT uiWindowsCP;
      HINSTANCE hInstance;
      UINT uiDialogBoxCount;
+
+     ConsoleArguments launchArgs;
 
      CONSOLE_INFORMATION* getConsoleInformation();
 

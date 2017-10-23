@@ -31,14 +31,14 @@ namespace Microsoft
             {
             public:
 
-                static bool CreateInstance(_In_ ConGetSet* pConApi,
-                                           _In_ AdaptDefaults* pDefaults,
-                                           _In_ WORD wDefaultTextAttributes,
+                static bool CreateInstance(_Inout_ ConGetSet* const pConApi,
+                                           _Inout_ AdaptDefaults* const pDefaults,
+                                           _In_ const WORD wDefaultTextAttributes,
                                            _Outptr_ AdaptDispatch ** const ppDispatch);
 
                 ~AdaptDispatch();
 
-                void UpdateDefaults(_In_ AdaptDefaults* const pDefaults)
+                void UpdateDefaults(_Inout_ AdaptDefaults* const pDefaults)
                 {
                     _pDefaults = pDefaults;
                 }
@@ -109,13 +109,16 @@ namespace Microsoft
                 virtual bool EnableButtonEventMouseMode(_In_ bool const fEnabled); // ?1002
                 virtual bool EnableAnyEventMouseMode(_In_ bool const fEnabled); // ?1003
                 virtual bool EnableAlternateScroll(_In_ bool const fEnabled); // ?1007
-                virtual bool WindowManipulation(_In_ const WindowManipulationFunction uiFunction,
+                virtual bool SetColorTableEntry(_In_ const size_t tableIndex,
+                                                _In_ const DWORD dwColor); // OscColorTable
+                virtual bool WindowManipulation(_In_ const WindowManipulationType uiFunction,
                                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                                 _In_ size_t const cParams); // DTTERM_WindowManipulation
+
             private:
-                AdaptDispatch(_In_ ConGetSet* const pConApi,
-                              _In_ AdaptDefaults* const pDefaults,
-                              _In_ WORD const wDefaultTextAttributes);
+                AdaptDispatch(_Inout_ ConGetSet* const pConApi,
+                              _Inout_ AdaptDefaults* const pDefaults,
+                              _In_ const WORD wDefaultTextAttributes);
 
                 enum class CursorDirection
                 {
