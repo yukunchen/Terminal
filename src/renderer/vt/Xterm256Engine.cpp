@@ -33,3 +33,26 @@ HRESULT Xterm256Engine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground
 {
     return VtEngine::_RgbUpdateDrawingBrushes(colorForeground, colorBackground);
 }
+
+// Routine Description:
+// - Draws one line of the buffer to the screen. Writes the characters to the 
+//      pipe, encoded in UTF-8.
+// Arguments:
+// - pwsLine - string of text to be written
+// - rgWidths - array specifying how many column widths that the console is 
+//      expecting each character to take
+// - cchLine - length of line to be read
+// - coord - character coordinate target to render within viewport
+// - fTrimLeft - This specifies whether to trim one character width off the left
+//      side of the output. Used for drawing the right-half only of a 
+//      double-wide character.
+// Return Value:
+// - S_OK or suitable HRESULT error from writing pipe.
+HRESULT Xterm256Engine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
+                                  _In_reads_(cchLine) const unsigned char* const rgWidths,
+                                  _In_ size_t const cchLine,
+                                  _In_ COORD const coord,
+                                  _In_ bool const /*fTrimLeft*/)
+{
+    return VtEngine::_PaintUtf8BufferLine(pwsLine, rgWidths, cchLine, coord);
+}
