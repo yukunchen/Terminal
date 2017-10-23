@@ -140,7 +140,6 @@ protected:
 
     bool _WillWriteSingleChar() const;
 
-
     HRESULT _PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                  _In_reads_(cchLine) const unsigned char* const rgWidths,
                                  _In_ size_t const cchLine,

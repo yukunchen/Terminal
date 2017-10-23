@@ -11,6 +11,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Gets the size in characters of the current dirty portion of the frame.
@@ -21,11 +22,7 @@ using namespace Microsoft::Console::Render;
 //      This is an Inclusive rect.
 SMALL_RECT VtEngine::GetDirtyRectInChars()
 {
-    SMALL_RECT sr = _srcInvalid;
-    // Our current invalid is exclusive, make it inclusive 
-    sr.Right = min(sr.Left, sr.Right-1);
-    sr.Right = min(sr.Top, sr.Bottom-1);
-    return sr;
+    return Viewport::FromExclusive(_srcInvalid).ToInclusive();
 }
 
 // Routine Description:
@@ -68,10 +65,19 @@ void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, _In_ const SMALL
 bool VtEngine::_WillWriteSingleChar() const
 {
     COORD currentCursor = _lastText;
+
     bool noScrollDelta = (_scrollDelta.X == 0 && _scrollDelta.Y == 0);
+
     bool invalidIsOneChar = (_srcInvalid.Bottom ==_srcInvalid.Top+1) &&
                             (_srcInvalid.Right == (_srcInvalid.Left+1));
+
+    // Either the next character to the right or the immediately previous 
+    //      character should follow this code path
+    //      (The immediate previous character would suggest a backspace)
     bool invalidIsNext = (_srcInvalid.Top == _lastText.Y)
                          && (_srcInvalid.Left == _lastText.X);
-    return noScrollDelta && invalidIsOneChar && invalidIsNext;
+    bool invalidIsLast = (_srcInvalid.Top == _lastText.Y)
+                         && (_srcInvalid.Left == (_lastText.X-1));
+
+    return noScrollDelta && invalidIsOneChar && (invalidIsNext || invalidIsLast);
 }
