@@ -34,7 +34,6 @@ HRESULT XtermEngine::StartPaint()
     HRESULT hr = VtEngine::StartPaint();
     if (SUCCEEDED(hr))
     {
-        // todo come back to this before the PR is finished.
         if (!_quickReturn)
         {
             if (!_WillWriteSingleChar()) 
