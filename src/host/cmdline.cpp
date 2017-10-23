@@ -685,7 +685,7 @@ HRESULT GetConsoleAliasWImplHelper(_In_reads_or_z_(cchSourceBufferLength) const 
 {
     // Ensure output variables are initialized
     *pcchTargetBufferWrittenOrNeeded = 0;
-    if (nullptr != pwsTargetBuffer)
+    if (nullptr != pwsTargetBuffer && cchTargetBufferLength > 0)
     {
         *pwsTargetBuffer = L'\0';
     }
@@ -750,7 +750,10 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength)
 
     // Ensure output variables are initialized
     *pcchTargetBufferWritten = 0;
-    *psTargetBuffer = '\0';
+    if (nullptr != psTargetBuffer && cchTargetBufferLength > 0)
+    {
+        *psTargetBuffer = L'\0';
+    }
 
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
