@@ -16,7 +16,6 @@ Author(s):
 
 #pragma once
 
-#include "termDispatch.hpp"
 #include "IStateMachineEngine.hpp"
 #include "telemetry.hpp"
 #include "tracing.hpp"
@@ -32,6 +31,7 @@ namespace Microsoft
             {
 #ifdef UNIT_TESTING
                 friend class OutputEngineTest;
+                friend class InputEngineTest;
 #endif
 
             public:

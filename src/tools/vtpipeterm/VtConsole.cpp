@@ -28,7 +28,6 @@ bool VtConsole::WriteInput(std::string& seq)
     return !!WriteFile(inPipe(), seq.c_str(), (DWORD)seq.length(), nullptr, nullptr);
 }
 
-
 HANDLE VtConsole::inPipe()
 {
     return _inPipe;

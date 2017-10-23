@@ -577,7 +577,7 @@ HRESULT InputBuffer::_WriteBuffer(_Inout_ std::deque<std::unique_ptr<IInputEvent
             // If it's not coalesced, append it to the buffer.
             std::unique_ptr<IInputEvent> inEvent = std::move(inEvents.front());
             inEvents.pop_front();
-            if (vtInputMode/* && inEvent.get() != nullptr*/)
+            if (vtInputMode)
             {
                 const bool handled = _termInput.HandleKey(inEvent.get());
                 if (handled)

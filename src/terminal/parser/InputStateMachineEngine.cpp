@@ -245,6 +245,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
     short vkey = 0;
     unsigned int uiFunction = 0;
 
+    // This is all the args after the first arg, and the count of args not including the first one.
+    const unsigned short* const rgusRemainingArgs = (cParams > 1) ? rgusParams + 1 : rgusParams;
+    const unsigned short cRemainingArgs = (cParams >= 1) ? cParams - 1 : 0;
+
     bool fSuccess = false;
     switch(wch)
     {
@@ -266,9 +270,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             fSuccess = _GetCursorKeysVkey(wch, &vkey);
             break;
         case CsiActionCodes::DTTERM_WindowManipulation:
-            fSuccess = _GetWindowManipulationFunction(rgusParams,
-                                                      cParams,
-                                                      &uiFunction);
+            fSuccess = _GetWindowManipulationType(rgusParams,
+                                                  cParams,
+                                                  &uiFunction);
             break;
 
         default:
@@ -295,9 +299,9 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
                 fSuccess = _WriteSingleKey(vkey, dwModifierState);
                 break;
             case CsiActionCodes::DTTERM_WindowManipulation:
-                fSuccess = _pDispatch->WindowManipulation(static_cast<IInteractDispatch::WindowManipulationFunction>(uiFunction),
-                                                          rgusParams+1,
-                                                          cParams-1);
+                fSuccess = _pDispatch->WindowManipulation(static_cast<DispatchCommon::WindowManipulationType>(uiFunction),
+                                                          rgusRemainingArgs,
+                                                          cRemainingArgs);
                 break;
             default:
                 fSuccess = false;
@@ -778,31 +782,33 @@ bool InputStateMachineEngine::FlushAtEndOfString() const
 // Method Description:
 // - Retrieves the type of window manipulation operation from the parameter pool
 //      stored during Param actions.
+//  This is kept seperate from the output version, as there may be
+//      codes that are supported in one direction but not the other.
 // Arguments:
 // - rgusParams - Array of parameters collected
 // - cParams - Number of parameters we've collected
 // - puiFunction - Memory location to receive the function type
 // Return Value:
 // - True iff we successfully pulled the function type from the parameters
-bool InputStateMachineEngine::_GetWindowManipulationFunction(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                                              _In_ const unsigned short cParams,
-                                                              _Out_ unsigned int* const puiFunction) const
+bool InputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                         _In_ const unsigned short cParams,
+                                                         _Out_ unsigned int* const puiFunction) const
 {
     bool fSuccess = false;
-    *puiFunction = IInteractDispatch::WindowManipulationFunction::Invalid;
+    *puiFunction = DispatchCommon::WindowManipulationType::Invalid;
 
     if (cParams > 0)
     {
         switch(rgusParams[0])
         {
-            case IInteractDispatch::WindowManipulationFunction::ResizeWindowInCharacters:
-                *puiFunction = IInteractDispatch::WindowManipulationFunction::ResizeWindowInCharacters;
+            case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
+                *puiFunction = DispatchCommon::WindowManipulationType::ResizeWindowInCharacters;
                 fSuccess = true;
                 break;
+            default:
+                fSuccess = false;
         }
     }
 
     return fSuccess;
 }
-
-

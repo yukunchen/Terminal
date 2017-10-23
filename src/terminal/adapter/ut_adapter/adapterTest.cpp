@@ -1215,7 +1215,7 @@ public:
         }
         if (fSuccess)
         {
-            AdaptDispatch::CreateInstance(_pTest, this, s_wDefaultFill, &_pDispatch);
+            _pDispatch = new AdaptDispatch(_pTest, this, s_wDefaultFill);
         }
         if (_pDispatch == nullptr)
         {

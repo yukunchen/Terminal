@@ -13,7 +13,7 @@ Author(s):
 --*/
 #pragma once
 
-#include "../parser/IInteractDispatch.hpp"
+#include "IInteractDispatch.hpp"
 #include "conGetSet.hpp"
 
 namespace Microsoft
@@ -31,18 +31,15 @@ class Microsoft::Console::VirtualTerminal::InteractDispatch : public IInteractDi
 {
 public:
 
-    static bool CreateInstance(_In_ std::unique_ptr<ConGetSet> pConApi,
-                               _Outptr_ InteractDispatch ** const ppDispatch);
+    InteractDispatch(_In_ std::unique_ptr<ConGetSet> const pConApi);
 
     virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
-    virtual bool WindowManipulation(_In_ const WindowManipulationFunction uiFunction,
-                                _In_reads_(cParams) const unsigned short* const rgusParams,
-                                _In_ size_t const cParams) override; // DTTERM_WindowManipulation
+    virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
+                                    _In_reads_(cParams) const unsigned short* const rgusParams,
+                                    _In_ size_t const cParams) override; // DTTERM_WindowManipulation
 private:
 
-    InteractDispatch(_In_ std::unique_ptr<ConGetSet> const pConApi);
     
     std::unique_ptr<ConGetSet> _pConApi;
     
-    bool _ResizeWindow(_In_ const unsigned short usWidth, _In_ const unsigned short usHeight);
 };

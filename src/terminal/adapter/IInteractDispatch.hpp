@@ -10,9 +10,11 @@ Abstract:
     a child class and passed into the state machine on creation.
 
 Author(s): 
-- Mike Griese (migrie) 10 Oct 2017
+- Mike Griese (migrie) 11 Oct 2017
 --*/
-#include <functional>
+#pragma once
+
+#include "DispatchCommon.hpp"
 #include "../../types/inc/IInputEvent.hpp"
 
 namespace Microsoft
@@ -21,16 +23,18 @@ namespace Microsoft
     {
         namespace VirtualTerminal
         {
-            class InteractDispatch;
+            class IInteractDispatch;
         }
     }
-};
-
+}
 
 class Microsoft::Console::VirtualTerminal::IInteractDispatch
 {
 public:
-    virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& /*inputEvents*/) {return false;}
-    virtual bool ResizeWindow(_In_ const unsigned short /*usWidth*/,
-                              _In_ const unsigned short /*usHeight*/) {return false;}
-}
+    virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& /*inputEvents*/) { return false; }
+
+    virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType /*uiFunction*/,
+                                    _In_reads_(cParams) const unsigned short* const /*rgusParams*/,
+                                    _In_ size_t const /*cParams*/) { return false; } 
+
+};
