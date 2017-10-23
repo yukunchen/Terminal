@@ -206,10 +206,9 @@ NTSTATUS ConIoSrvComm::EnsureConnection()
     return Status;
 }
 
-NTSTATUS ConIoSrvComm::ServiceInputPipe()
+VOID ConIoSrvComm::ServiceInputPipe()
 {
     BOOL Ret;
-    NTSTATUS Status;
 
     CIS_EVENT Event = { 0 };
 
@@ -251,8 +250,6 @@ NTSTATUS ConIoSrvComm::ServiceInputPipe()
             TerminateProcess(GetCurrentProcess(), GetLastError());
         }
     }
-
-    return Status;
 }
 
 NTSTATUS ConIoSrvComm::SendRequestReceiveReply(PCIS_MSG Message) const

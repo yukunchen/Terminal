@@ -1,4 +1,4 @@
-DIRS=dll \
+DIRS=exe \
      lib \
      ut_host{noncrit} \
      ft_host{noncrit} \

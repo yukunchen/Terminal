@@ -54,9 +54,9 @@ public:
                            _In_ const unsigned short sOscParam,
                            _Inout_ wchar_t* const pwchOscStringBuffer,
                            _In_ const unsigned short cchOscString) override;
-    
-    // TODO: MSFT:13420038
-    // bool ActionSs3Dispatch(_In_ wchar_t const wch) override;
+    bool ActionSs3Dispatch(_In_ wchar_t const wch, 
+                           _In_ const unsigned short* const rgusParams,
+                           _In_ const unsigned short cParams) override;
     
     bool FlushAtEndOfString() const override;
 
@@ -73,28 +73,27 @@ private:
         Home = L'H',
         End = L'F',
         Generic = L'~', // Used for a whole bunch of possible keys
-        F1 = L'P',
-        F2 = L'Q',
-        F3 = L'R',
-        F4 = L'S',
+        CSI_F1 = L'P',
+        CSI_F2 = L'Q',
+        CSI_F3 = L'R',
+        CSI_F4 = L'S',
     };
 
-    // todo MSFT:13420038
-    // enum class Ss3ActionCodes : wchar_t
-    // {
-    //     // The "Cursor Keys" are sometimes sent as a Ss3 in "application mode"
-    //     //  But for now we'll only accept them as Normal Mode sequences, as CSI's.
-    //     // ArrowUp = L'A',
-    //     // ArrowDown = L'B',
-    //     // ArrowRight = L'C',
-    //     // ArrowLeft = L'D',
-    //     // Home = L'H',
-    //     // End = L'F',
-    //     F1 = L'P',
-    //     F2 = L'Q',
-    //     F3 = L'R',
-    //     F4 = L'S',
-    // };
+    enum Ss3ActionCodes : wchar_t
+    {
+        // The "Cursor Keys" are sometimes sent as a Ss3 in "application mode"
+        //  But for now we'll only accept them as Normal Mode sequences, as CSI's.
+        // ArrowUp = L'A',
+        // ArrowDown = L'B',
+        // ArrowRight = L'C',
+        // ArrowLeft = L'D',
+        // Home = L'H',
+        // End = L'F',
+        SS3_F1 = L'P',
+        SS3_F2 = L'Q',
+        SS3_F3 = L'R',
+        SS3_F4 = L'S',
+    };
 
     // Sequences ending in '~' use these numbers as identifiers.
     enum GenericKeyIdentifiers : unsigned short
@@ -123,8 +122,14 @@ private:
         short vkey;
     };
 
+    struct SS3_TO_VKEY {
+        Ss3ActionCodes Action;
+        short vkey;
+    };
+
     static const CSI_TO_VKEY s_rgCsiMap[];
     static const GENERIC_TO_VKEY s_rgGenericMap[];
+    static const SS3_TO_VKEY s_rgSs3Map[];
 
 
     DWORD _GetCursorKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams);
@@ -136,6 +141,7 @@ private:
 
     bool _GetGenericVkey(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ short* const pVkey) const;
     bool _GetCursorKeysVkey(_In_ const wchar_t wch, _Out_ short* const pVkey) const;
+    bool _GetSs3KeysVkey(_In_ const wchar_t wch, _Out_ short* const pVkey) const;
 
     bool _WriteSingleKey(_In_ const short vkey, _In_ const DWORD dwModifierState);
     bool _WriteSingleKey(_In_ const wchar_t wch, _In_ const short vkey, _In_ const DWORD dwModifierState);

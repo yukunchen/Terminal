@@ -53,6 +53,7 @@ SOURCES= \
     ..\KeyEvent.cpp \
     ..\MenuEvent.cpp \
     ..\MouseEvent.cpp \
+    ..\Viewport.cpp \
     ..\WindowBufferSizeEvent.cpp \
 
 INCLUDES= \

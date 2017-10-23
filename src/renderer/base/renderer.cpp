@@ -17,6 +17,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Creates a new renderer controller for a console.

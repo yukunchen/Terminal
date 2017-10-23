@@ -7,7 +7,7 @@ Module Name:
 Abstract:
 - Contains headers that are a part of the public DDK.
 - We don't include both the DDK and the SDK at the same time because they mesh poorly
-  and it's easier to include a copy of the infrequently changing defs here.
+and it's easier to include a copy of the infrequently changing defs here.
 --*/
 
 #pragma once
@@ -112,6 +112,37 @@ extern "C"
         ULONG_PTR Information;
     } IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
 
+    //
+    // Define the file system information class values
+    //
+    // WARNING:  The order of the following values are assumed by the I/O system.
+    //           Any changes made here should be reflected there as well.
+
+    typedef enum _FSINFOCLASS {
+        FileFsVolumeInformation = 1,
+        FileFsLabelInformation,         // 2
+        FileFsSizeInformation,          // 3
+        FileFsDeviceInformation,        // 4
+        FileFsAttributeInformation,     // 5
+        FileFsControlInformation,       // 6
+        FileFsFullSizeInformation,      // 7
+        FileFsObjectIdInformation,      // 8
+        FileFsDriverPathInformation,    // 9
+        FileFsVolumeFlagsInformation,   // 10
+        FileFsSectorSizeInformation,    // 11
+        FileFsDataCopyInformation,      // 12
+        FileFsMetadataSizeInformation,  // 13
+        FileFsMaximumInformation
+    } FS_INFORMATION_CLASS, *PFS_INFORMATION_CLASS;
+
+#ifndef DEVICE_TYPE
+#define DEVICE_TYPE DWORD
+#endif
+
+    typedef struct _FILE_FS_DEVICE_INFORMATION {
+        DEVICE_TYPE DeviceType;
+        ULONG Characteristics;
+    } FILE_FS_DEVICE_INFORMATION, *PFILE_FS_DEVICE_INFORMATION;
 
 #pragma region LIST_ENTRY manipulation
     FORCEINLINE
@@ -279,7 +310,18 @@ extern "C"
 
 extern "C"
 {
-    #define RtlOffsetToPointer(B,O)  ((PCHAR)( ((PCHAR)(B)) + ((ULONG_PTR)(O))  ))  
+#define RtlOffsetToPointer(B,O)  ((PCHAR)( ((PCHAR)(B)) + ((ULONG_PTR)(O))  ))  
+
+    __kernel_entry NTSYSCALLAPI
+        NTSTATUS
+        NTAPI
+        NtQueryVolumeInformationFile(
+            _In_ HANDLE FileHandle,
+            _Out_ PIO_STATUS_BLOCK IoStatusBlock,
+            _Out_writes_bytes_(Length) PVOID FsInformation,
+            _In_ ULONG Length,
+            _In_ FS_INFORMATION_CLASS FsInformationClass
+        );
 };
 
 #pragma endregion
