@@ -139,6 +139,13 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
     }
     else if (wch == '\x7f')
     {
+        // Note:
+        //  The windows telnet expects to send x7f as DELETE, not backspace.
+        //      However, the windows telnetd also wouldn't let you move the 
+        //      cursor back into the input line, so it wasn't possible to 
+        //      "delete" any input at all, only backspace. 
+        //  Because of this, we're treating x7f as backspace, like every sane 
+        //      terminal does.
         fSuccess = _WriteSingleKey('\x8', VK_BACK, 0);
     } 
     else 
