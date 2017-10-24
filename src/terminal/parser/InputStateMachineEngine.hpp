@@ -98,8 +98,10 @@ private:
     // Sequences ending in '~' use these numbers as identifiers.
     enum GenericKeyIdentifiers : unsigned short
     {
+        GenericHome = 1,
         Insert = 2,
         Delete = 3,
+        GenericEnd = 4,
         Prior = 5, //PgUp
         Next = 6, //PgDn
         F5 = 15,

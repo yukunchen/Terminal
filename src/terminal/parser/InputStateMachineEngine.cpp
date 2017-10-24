@@ -57,8 +57,10 @@ const InputStateMachineEngine::CSI_TO_VKEY InputStateMachineEngine::s_rgCsiMap[]
 
 const InputStateMachineEngine::GENERIC_TO_VKEY InputStateMachineEngine::s_rgGenericMap[]
 {
+    { GenericKeyIdentifiers::GenericHome, VK_HOME },
     { GenericKeyIdentifiers::Insert, VK_INSERT },
     { GenericKeyIdentifiers::Delete, VK_DELETE },
+    { GenericKeyIdentifiers::GenericEnd, VK_END },
     { GenericKeyIdentifiers::Prior, VK_PRIOR },
     { GenericKeyIdentifiers::Next, VK_NEXT },
     { GenericKeyIdentifiers::F5, VK_F5 },
