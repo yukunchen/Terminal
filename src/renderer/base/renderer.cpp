@@ -27,8 +27,10 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - An instance of a Renderer.
 // NOTE: CAN THROW IF MEMORY ALLOCATION FAILS.
-Renderer::Renderer(_In_ IRenderData* const pData, _In_reads_(cEngines) IRenderEngine** const rgpEngines, _In_ size_t const cEngines) :
-    _pData(pData),
+Renderer::Renderer(_In_ std::unique_ptr<IRenderData> pData,
+                   _In_reads_(cEngines) IRenderEngine** const rgpEngines,
+                   _In_ size_t const cEngines) :
+    _pData(std::move(pData)),
     _pThread(nullptr)
 {
     _srViewportPrevious = { 0 };
@@ -53,9 +55,19 @@ Renderer::~Renderer()
     {
         delete _pThread;
     }
+
+    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+        delete pEngine;
+    });
 }
 
-HRESULT Renderer::s_CreateInstance(_In_ IRenderData* const pData, 
+HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData, 
+                                   _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
+{
+    return Renderer::s_CreateInstance(std::move(pData), nullptr, 0,  ppRenderer);
+}
+
+HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
                                    _In_reads_(cEngines) IRenderEngine** const rgpEngines, 
                                    _In_ size_t const cEngines,
                                    _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
@@ -65,7 +77,7 @@ HRESULT Renderer::s_CreateInstance(_In_ IRenderData* const pData,
     Renderer* pNewRenderer = nullptr;
     try
     {
-        pNewRenderer = new Renderer(pData, rgpEngines, cEngines);
+        pNewRenderer = new Renderer(std::move(pData), rgpEngines, cEngines);
 
         if (pNewRenderer == nullptr)
         {

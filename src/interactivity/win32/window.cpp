@@ -69,16 +69,6 @@ Window::~Window()
     {
         delete ServiceLocator::LocateGlobals()->pRender;
     }
-
-    if (ServiceLocator::LocateGlobals()->pRenderData != nullptr)
-    {
-        delete ServiceLocator::LocateGlobals()->pRenderData;
-    }
-
-    if (ServiceLocator::LocateGlobals()->pRenderEngine != nullptr)
-    {
-        delete ServiceLocator::LocateGlobals()->pRenderEngine;
-    }
 }
 
 // Routine Description:
@@ -207,40 +197,55 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
     // Ensure we have appropriate system metrics before we start constructing the window.
     _UpdateSystemMetrics();
 
-    g->pRenderData = new RenderData();
-    status = NT_TESTNULL(g->pRenderData);
-    if (NT_SUCCESS(status))
+    GdiEngine* pGdiEngine = nullptr;
+    try
     {
-        GdiEngine* pGdiEngine = nullptr;
-
-        try
-        {
-            pGdiEngine = new GdiEngine();
-            status = NT_TESTNULL(pGdiEngine);
-        }
-        catch (...)
-        {
-            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-        }
-
+        pGdiEngine = new GdiEngine();
+        status = NT_TESTNULL(pGdiEngine);
         if (NT_SUCCESS(status))
         {
-            g->pRenderEngine = pGdiEngine;
-            Renderer* pNewRenderer = nullptr;
-
-            if (SUCCEEDED(Renderer::s_CreateInstance(g->pRenderData,
-                                                     &g->pRenderEngine,
-                                                     1,
-                                                     &pNewRenderer)))
-            {
-                g->pRender = pNewRenderer;
-            }
-
-            status = NT_TESTNULL(g->pRender);
-
-            // Allow the renderer to paint.
-            pNewRenderer->EnablePainting();
+            static_cast<Renderer*>(g->pRender)->AddRenderEngine(pGdiEngine);
         }
+    }
+    catch (...)
+    {
+        status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
+
+    // g->pRenderData = new RenderData();
+    // status = NT_TESTNULL(g->pRenderData);
+    if (NT_SUCCESS(status))
+    {
+        // GdiEngine* pGdiEngine = nullptr;
+
+        // try
+        // {
+        //     pGdiEngine = new GdiEngine();
+        //     status = NT_TESTNULL(pGdiEngine);
+        // }
+        // catch (...)
+        // {
+        //     status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        // }
+
+        // if (NT_SUCCESS(status))
+        // {
+        //     g->pRenderEngine = pGdiEngine;
+        //     Renderer* pNewRenderer = nullptr;
+
+        //     if (SUCCEEDED(Renderer::s_CreateInstance(g->pRenderData,
+        //                                              &g->pRenderEngine,
+        //                                              1,
+        //                                              &pNewRenderer)))
+        //     {
+        //         g->pRender = pNewRenderer;
+        //     }
+
+        //     status = NT_TESTNULL(g->pRender);
+
+        //     // Allow the renderer to paint.
+        //     pNewRenderer->EnablePainting();
+        // }
 
         if (NT_SUCCESS(status))
         {

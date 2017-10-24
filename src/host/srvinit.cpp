@@ -20,6 +20,9 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
+#include "renderData.hpp"
+#include "../renderer/base/renderer.hpp"
+
 #pragma hdrstop
 
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
@@ -430,12 +433,32 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 {
     // AllocConsole is outside our codebase, but we should be able to mostly track the call here.
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AllocConsole);
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+
+    Globals* const g = ServiceLocator::LocateGlobals();
+
+    CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
 
     NTSTATUS Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
     if (!NT_SUCCESS(Status))
     {
         return Status;
+    }
+
+    // No matter what, create a renderer.
+    std::unique_ptr<IRenderData> renderData = std::make_unique<RenderData>();
+    Status = NT_TESTNULL(renderData.get());
+    if (NT_SUCCESS(Status))
+    {
+        Renderer* pRender = nullptr;
+        g->pRender = nullptr;
+        Status = NTSTATUS_FROM_HRESULT(Renderer::s_CreateInstance(std::move(renderData), &(pRender)));
+        
+        if (NT_SUCCESS(Status))
+        {
+            g->pRender = pRender;
+            // Allow the renderer to paint.
+            g->pRender->EnablePainting();
+        }
     }
 
     if (NT_SUCCESS(Status) && p->WindowVisible)
