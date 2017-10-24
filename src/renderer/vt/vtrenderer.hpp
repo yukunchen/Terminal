@@ -62,8 +62,7 @@ public:
     HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                            _In_ UINT const cRectangles) override;
 
-    HRESULT PaintCursor(_In_ COORD const coordCursor,
-                        _In_ ULONG const ulCursorHeightPercent,
+    HRESULT PaintCursor(_In_ ULONG const ulCursorHeightPercent,
                         _In_ bool const fIsDoubleWidth) override;
     HRESULT ClearCursor() override;
 

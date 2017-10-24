@@ -276,12 +276,8 @@ HRESULT WddmConEngine::PaintSelection(const SMALL_RECT* const rgsrSelection, UIN
     return S_OK;
 }
 
-HRESULT WddmConEngine::PaintCursor(COORD const coordCursor, ULONG const ulCursorHeightPercent, bool const fIsDoubleWidth)
+HRESULT WddmConEngine::PaintCursor(ULONG const /*ulCursorHeightPercent*/, bool const /*fIsDoubleWidth*/)
 {
-    UNREFERENCED_PARAMETER(coordCursor);
-    UNREFERENCED_PARAMETER(ulCursorHeightPercent);
-    UNREFERENCED_PARAMETER(fIsDoubleWidth);
-
     return S_OK;
 }
 

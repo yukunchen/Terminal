@@ -111,8 +111,7 @@ HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const /*lines*/,
 // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-HRESULT VtEngine::PaintCursor(_In_ COORD const /*coord*/,
-                              _In_ ULONG const /*ulHeightPercent*/,
+HRESULT VtEngine::PaintCursor(_In_ ULONG const /*ulHeightPercent*/,
                               _In_ bool const /*fIsDoubleWidth*/)
 {
     COORD const coord = _cursor.GetPosition();

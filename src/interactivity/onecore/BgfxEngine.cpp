@@ -161,13 +161,13 @@ HRESULT BgfxEngine::PaintSelection(const SMALL_RECT* const rgsrSelection, UINT c
     return S_OK;
 }
 
-HRESULT BgfxEngine::PaintCursor(COORD const coordCursor, ULONG const ulCursorHeightPercent, bool const fIsDoubleWidth)
+HRESULT BgfxEngine::PaintCursor(ULONG const ulCursorHeightPercent, bool const fIsDoubleWidth)
 {
     // TODO: MSFT: 11448021 - Modify BGFX to support rendering full-width
     // characters and a full-width cursor.
     UNREFERENCED_PARAMETER(fIsDoubleWidth);
-
-    NTSTATUS Status;
+    
+    const COORD coordCursor = _cursor.GetPosition();
 
     CD_IO_CURSOR_INFORMATION CursorInfo;
     CursorInfo.Row = coordCursor.Y;
@@ -175,7 +175,7 @@ HRESULT BgfxEngine::PaintCursor(COORD const coordCursor, ULONG const ulCursorHei
     CursorInfo.Height = ulCursorHeightPercent;
     CursorInfo.IsVisible = TRUE;
 
-    Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestSetCursor(&CursorInfo);
+    NTSTATUS Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestSetCursor(&CursorInfo);
 
     return HRESULT_FROM_NT(Status);
 }

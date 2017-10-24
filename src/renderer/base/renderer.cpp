@@ -796,11 +796,8 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
             // Determine cursor width
             bool const fIsDoubleWidth = !!pCursor->IsDoubleWidth();
 
-            // Adjust cursor to viewport
-            view.ConvertToOrigin(&coordCursor);
-
             // Draw it within the viewport
-            LOG_IF_FAILED(pEngine->PaintCursor(coordCursor, ulHeight, fIsDoubleWidth));
+            LOG_IF_FAILED(pEngine->PaintCursor(ulHeight, fIsDoubleWidth));
         }
     }
 }
@@ -1012,17 +1009,15 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 // - <none>
 void Renderer::MoveCursor(_In_ const COORD cPosition)
 {
-    SMALL_RECT srRegion = _RegionFromCoord(&cPosition);
- 
     Viewport view(_pData->GetViewport());
-    SMALL_RECT srUpdateRegion = srRegion;
-    if (view.TrimToViewport(&srUpdateRegion))
+    if (view.IsWithinViewport(&cPosition))
     {
-        view.ConvertToOrigin(&srUpdateRegion);
-        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-            pEngine->GetCursor()->Move({srUpdateRegion.Left, srUpdateRegion.Top});
-        });
+        COORD relativePosition = cPosition;
+        view.ConvertToOrigin(&relativePosition);
 
+        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+            pEngine->GetCursor()->Move(relativePosition);
+        });
     }
 
     _NotifyPaintFrame();

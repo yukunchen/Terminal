@@ -425,11 +425,13 @@ HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORRE
 // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
 // Return Value:
 // - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI error where a specific error isn't set.
-HRESULT GdiEngine::PaintCursor(_In_ COORD const /*coord*/, _In_ ULONG const ulHeightPercent, _In_ bool const fIsDoubleWidth)
+HRESULT GdiEngine::PaintCursor(_In_ ULONG const ulHeightPercent,
+                               _In_ bool const fIsDoubleWidth)
 {
     LOG_IF_FAILED(_FlushBufferLines());
-    COORD const coord = _cursor.GetPosition();
-    
+
+    COORD const coord = _cursor.GetPosition();    
+
     COORD const coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
 

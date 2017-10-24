@@ -2394,6 +2394,12 @@ void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute* const pPop
     _PopupAttributes = *pPopupAttributes;
 }
 
+// Method Description:
+// - Returns an inclusive rectangle that describes the bounds of the buffer viewport.
+// Arguments:
+// - <none>
+// Return Value:
+// - the viewport bounds as an inclusive rect.
 SMALL_RECT SCREEN_INFORMATION::GetBufferViewport() const
 {
     return _srBufferViewport;

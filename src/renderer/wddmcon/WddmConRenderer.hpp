@@ -1,7 +1,7 @@
 #pragma once
 
 #include "..\..\renderer\inc\IRenderEngine.hpp"
-#include "..\..\renderer\inc\NoOpCursor.hpp"
+#include "..\..\renderer\inc\MinimalCursor.hpp"
 
 namespace Microsoft
 {
@@ -43,7 +43,7 @@ namespace Microsoft
                 HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget);
                 HRESULT PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles);
 
-                HRESULT PaintCursor(COORD const coordCursor, ULONG const ulCursorHeightPercent, bool const fIsDoubleWidth);
+                HRESULT PaintCursor(ULONG const ulCursorHeightPercent, bool const fIsDoubleWidth);
                 HRESULT ClearCursor();
 
                 HRESULT UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, bool const fIncludeBackgrounds);
@@ -73,7 +73,7 @@ namespace Microsoft
 
                 WORD _currentLegacyColorAttribute;
 
-                NoOpCursor _cursor;
+                MinimalCursor _cursor;
             };
         };
     };
