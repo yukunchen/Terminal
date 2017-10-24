@@ -19,6 +19,7 @@ Author:
 #include <unordered_set>
 #include <memory>
 #include <deque>
+#include <ostream>
 
 
 enum class InputEventType
@@ -47,7 +48,10 @@ public:
 
     virtual InputEventType EventType() const = 0;
 
+    friend std::wostream& operator<<(std::wostream& stream, const IInputEvent* const pEvent);
 };
+
+std::wostream& operator<<(std::wostream& stream, const IInputEvent* pEvent);
 
 #define ALT_PRESSED     (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)
 #define CTRL_PRESSED    (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED)
@@ -90,6 +94,8 @@ public:
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;
 
+    friend std::wostream& operator<<(std::wostream& stream, const KeyEvent* const pKeyEvent);
+
     int _keyDown;
     WORD _repeatCount;
     WORD _virtualKeyCode;
@@ -99,6 +105,7 @@ public:
 };
 
 bool operator==(const KeyEvent& a, const KeyEvent& b);
+std::wostream& operator<<(std::wostream& stream, const KeyEvent* const pKeyEvent);
 
 class MouseEvent : public IInputEvent
 {
@@ -112,11 +119,15 @@ public:
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;
 
+    friend std::wostream& operator<<(std::wostream& stream, const MouseEvent* const pMouseEvent);
+
     COORD _mousePosition;
     DWORD _buttonState;
     DWORD _activeModifierKeys;
     DWORD _eventFlags;
 };
+
+std::wostream& operator<<(std::wostream& stream, const MouseEvent* const pMouseEvent);
 
 class WindowBufferSizeEvent : public IInputEvent
 {
@@ -127,8 +138,12 @@ public:
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;
 
+    friend std::wostream& operator<<(std::wostream& stream, const WindowBufferSizeEvent* const pEvent);
+
     COORD _size;
 };
+
+std::wostream& operator<<(std::wostream& stream, const WindowBufferSizeEvent* const pEvent);
 
 class MenuEvent : public IInputEvent
 {
@@ -139,8 +154,12 @@ public:
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;
 
+    friend std::wostream& operator<<(std::wostream& stream, const MenuEvent* const pMenuEvent);
+
     UINT _commandId;
 };
+
+std::wostream& operator<<(std::wostream& stream, const MenuEvent* const pMenuEvent);
 
 class FocusEvent : public IInputEvent
 {
@@ -151,8 +170,12 @@ public:
     INPUT_RECORD ToInputRecord() const;
     InputEventType EventType() const;
 
+    friend std::wostream& operator<<(std::wostream& stream, const FocusEvent* const pFocusEvent);
+
     int _setFocus;
 };
+
+std::wostream& operator<<(std::wostream& stream, const FocusEvent* const pFocusEvent);
 
 enum class ControlKeyState
 {

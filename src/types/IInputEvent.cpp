@@ -79,6 +79,38 @@ HRESULT IInputEvent::ToInputRecords(_In_ const std::deque<std::unique_ptr<IInput
     return S_OK;
 }
 
+std::wostream& operator<<(std::wostream& stream, const IInputEvent* const pEvent)
+{
+    if (pEvent == nullptr)
+    {
+        return stream << L"nullptr";
+    }
+
+    try
+    {
+        switch (pEvent->EventType())
+        {
+            case InputEventType::KeyEvent:
+                return stream << static_cast<const KeyEvent* const>(pEvent);
+            case InputEventType::MouseEvent:
+                return stream << static_cast<const MouseEvent* const>(pEvent);
+            case InputEventType::WindowBufferSizeEvent:
+                return stream << static_cast<const WindowBufferSizeEvent* const>(pEvent);
+            case InputEventType::MenuEvent:
+                return stream << static_cast<const MenuEvent* const>(pEvent);
+            case InputEventType::FocusEvent:
+                return stream << static_cast<const FocusEvent* const>(pEvent);
+            default:
+                return stream << L"IInputEvent()";
+        }
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+        return stream << L"error";
+    }
+}
+
 // Routine Description:
 // - checks if flag is present in flags
 // Arguments:

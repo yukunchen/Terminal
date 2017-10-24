@@ -125,12 +125,14 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
     {
         wchar_t currentChar = pData[i];
 
+        const bool charAllowed = FilterCharacterOnPaste(&currentChar);
         // filter out linefeed if it's not the first char and preceded
         // by a carriage return
-        if (!(FilterCharacterOnPaste(&currentChar) &&
-              (currentChar != UNICODE_LINEFEED ||
-               i == 0 ||
-               pData[i - 1] != UNICODE_CARRIAGERETURN)))
+        const bool skipLinefeed = (i != 0  &&
+                                   currentChar == UNICODE_LINEFEED &&
+                                   pData[i -1] == UNICODE_CARRIAGERETURN);
+
+        if (!charAllowed || skipLinefeed)
         {
             continue;
         }

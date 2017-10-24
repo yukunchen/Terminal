@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 #include "inc/IInputEvent.hpp"
+#include <string>
 
 bool operator==(const KeyEvent& a, const KeyEvent& b)
 {
@@ -15,6 +16,29 @@ bool operator==(const KeyEvent& a, const KeyEvent& b)
             a._virtualScanCode == b._virtualScanCode &&
             a._charData == b._charData &&
             a._activeModifierKeys == b._activeModifierKeys);
+}
+
+std::wostream& operator<<(std::wostream& stream, const KeyEvent* const pKeyEvent)
+{
+    if (pKeyEvent == nullptr)
+    {
+        return stream << L"nullptr";
+    }
+
+    std::wstring keyMotion = pKeyEvent->_keyDown ? L"keyDown" : L"keyUp";
+    std::wstring charData = { pKeyEvent->_charData };
+    if (pKeyEvent->_charData == L'\0')
+    {
+        charData = L"null";
+    }
+
+    return stream << L"KeyEvent(" <<
+        keyMotion << L", " <<
+        L"repeat: " << pKeyEvent->_repeatCount << L", " <<
+        L"keyCode: " << pKeyEvent->_virtualKeyCode << L", " <<
+        L"scanCode: " << pKeyEvent->_virtualScanCode << L", " <<
+        L"char: " << charData << L", " <<
+        L"mods: " << pKeyEvent->_activeModifierKeys << L")";
 }
 
 KeyEvent::KeyEvent(_In_ const KEY_EVENT_RECORD& record) :

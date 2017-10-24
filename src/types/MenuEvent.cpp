@@ -7,6 +7,17 @@
 #include "precomp.h"
 #include "inc/IInputEvent.hpp"
 
+std::wostream& operator<<(std::wostream& stream, const MenuEvent* const pMenuEvent)
+{
+    if (pMenuEvent == nullptr)
+    {
+        return stream << L"nullptr";
+    }
+
+    return stream << L"MenuEvent(" <<
+        L"CommandId" << pMenuEvent->_commandId << L")";
+}
+
 MenuEvent::MenuEvent(_In_ const MENU_EVENT_RECORD& record) :
     _commandId{ record.dwCommandId }
 {

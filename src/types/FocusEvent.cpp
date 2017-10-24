@@ -6,6 +6,18 @@
 
 #include "precomp.h"
 #include "inc/IInputEvent.hpp"
+#include <string>
+
+std::wostream& operator<<(std::wostream& stream, const FocusEvent* const pFocusEvent)
+{
+    if (pFocusEvent == nullptr)
+    {
+        return stream << L"nullptr";
+    }
+
+    return stream << L"FocusEvent(" <<
+        L"focus" << pFocusEvent->_setFocus << L")";
+}
 
 FocusEvent::FocusEvent(_In_ const FOCUS_EVENT_RECORD& record) :
     _setFocus{ record.bSetFocus }
