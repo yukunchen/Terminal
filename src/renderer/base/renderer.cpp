@@ -758,6 +758,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 {
     const Cursor* const pCursor = _pData->GetCursor();
+    const IRenderCursor* const pRenderCursor = pEngine->GetCursor();
 
     if (pCursor->IsVisible() && pCursor->IsOn() && !pCursor->IsPopupShown())
     {
@@ -771,8 +772,8 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 
         Viewport viewDirty(srDirty);
 
-        // Check if cursor is within dirty area
-        if (viewDirty.IsWithinViewport(&coordCursor))
+        // Check if cursor is within dirty area, or if the cursor wants to be painted regardless.
+        if (viewDirty.IsWithinViewport(&coordCursor) || pRenderCursor->ForcePaint())
         {
             // Determine cursor height
             ULONG ulHeight = pCursor->GetSize();

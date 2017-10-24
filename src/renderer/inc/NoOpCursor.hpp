@@ -33,4 +33,5 @@ class Microsoft::Console::Render::NoOpCursor : public IRenderCursor
 public:
     NoOpCursor(){};
     void Move(_In_ const COORD /*cPos*/) override {};
+    bool ForcePaint() const override { return false; }
 };
