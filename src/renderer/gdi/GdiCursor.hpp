@@ -35,6 +35,8 @@ public:
     GdiCursor(IRenderEngine* const pEngine);
 
     void Move(_In_ const COORD cPos) override;
+    bool ForcePaint() const override;
+    
     COORD GetPosition();
 
 private:

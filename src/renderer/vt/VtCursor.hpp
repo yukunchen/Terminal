@@ -33,8 +33,14 @@ class Microsoft::Console::Render::VtCursor : public IRenderCursor
 public:
     VtCursor(IRenderEngine* const pEngine);
     void Move(_In_ const COORD cPos) override;
-    COORD GetPosition();
+    bool ForcePaint() const override;
+    
+    COORD GetPosition() const;
+    bool HasMoved() const;
+    void ClearMoved();
+
 private:
+    bool _fHasMoved;
     COORD _coordPosition;
     IRenderEngine* const _pEngine;
 };

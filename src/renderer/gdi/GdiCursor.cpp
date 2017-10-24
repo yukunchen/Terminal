@@ -59,3 +59,14 @@ COORD GdiCursor::GetPosition()
 {
     return _coordPosition;
 }
+
+// Method Description:
+// - Returns true if the cursor should always be painted, regardless if it's in
+//       the dirty portion of the screen or not.// Arguments:
+// - <none>
+// Return Value:
+// - true if we should manually paint the cursor
+bool GdiCursor::ForcePaint() const
+{
+    return false;
+}
