@@ -37,6 +37,11 @@ HANDLE VtConsole::outPipe()
     return _outPipe;
 }
 
+bool VtConsole::WriteInput(std::string& seq)
+{
+    return !!WriteFile(inPipe(), seq.c_str(), (DWORD)seq.length(), nullptr, nullptr);
+}
+
 void VtConsole::spawn()
 {
     _spawn2(L"");
