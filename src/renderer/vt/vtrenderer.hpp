@@ -146,11 +146,10 @@ protected:
                                   _In_ COORD const coordTarget);
 
     /////////////////////////// Unit Testing Helpers ///////////////////////////
-#ifdef UNIT_TESTING
-
     std::function<bool(const char* const, size_t const)> _pfnTestCallback;
     bool _usingTestCallback;
 
+#ifdef UNIT_TESTING
     friend class VtRendererTest;
 #endif
     
