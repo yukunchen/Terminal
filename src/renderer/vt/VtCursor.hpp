@@ -14,7 +14,7 @@ Author(s):
 #pragma once
 
 
-#include "..\inc\IRenderCursor.hpp"
+#include "..\inc\MinimalCursor.hpp"
 #include "..\inc\IRenderEngine.hpp"
 
 namespace Microsoft
@@ -28,19 +28,17 @@ namespace Microsoft
     }
 }
 
-class Microsoft::Console::Render::VtCursor : public IRenderCursor
+class Microsoft::Console::Render::VtCursor : public MinimalCursor
 {
 public:
     VtCursor(IRenderEngine* const pEngine);
     void Move(_In_ const COORD cPos) override;
     bool ForcePaint() const override;
     
-    COORD GetPosition() const;
     bool HasMoved() const;
     void ClearMoved();
 
 private:
     bool _fHasMoved;
-    COORD _coordPosition;
     IRenderEngine* const _pEngine;
 };

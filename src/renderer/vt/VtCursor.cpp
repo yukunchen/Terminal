@@ -13,7 +13,7 @@
 using namespace Microsoft::Console::Render;
 
 VtCursor::VtCursor(IRenderEngine* const pEngine) :
-    _coordPosition({-1, -1}),
+    MinimalCursor(),
     _pEngine(pEngine)
 {
 
@@ -29,20 +29,10 @@ VtCursor::VtCursor(IRenderEngine* const pEngine) :
 // - <none>
 void VtCursor::Move(_In_ const COORD cPos)
 {
-    _coordPosition = cPos; 
+    MinimalCursor::Move(cPos);
     _fHasMoved = true;  
 }
 
-// Method Description:
-// - Returns the position of the cursor in viewport origin, character coordinates.
-// Arguments:
-// - <none>
-// Return Value:
-// - The cursor position.
-COORD VtCursor::GetPosition() const
-{
-    return _coordPosition;
-}
 
 // Method Description:
 // - Returns true if the cursor should always be painted, regardless if it's in

@@ -30,5 +30,6 @@ class Microsoft::Console::Render::IRenderCursor
 public:
     virtual void Move(_In_ const COORD cPos) = 0;
     virtual bool ForcePaint() const = 0;
+    virtual COORD GetPosition() const = 0;
 
 };

@@ -15,7 +15,7 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\IRenderCursor.hpp"
+#include "..\inc\MinimalCursor.hpp"
 #include "..\inc\IRenderEngine.hpp"
 
 namespace Microsoft
@@ -29,19 +29,15 @@ namespace Microsoft
     }
 }
 
-class Microsoft::Console::Render::GdiCursor : public IRenderCursor
+class Microsoft::Console::Render::GdiCursor : public MinimalCursor
 {
 public:
+
     GdiCursor(IRenderEngine* const pEngine);
 
     void Move(_In_ const COORD cPos) override;
-    bool ForcePaint() const override;
-    
-    COORD GetPosition();
 
 private:
-    COORD _coordPosition;
     RECT _rcCursorInvert;
     IRenderEngine* const _pEngine;
-
 };
