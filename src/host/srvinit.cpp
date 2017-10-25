@@ -481,15 +481,15 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 
             // The ConsoleInputThread needs to lock the console so we must first unlock it ourselves.
             UnlockConsole();
-            ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.wait();
+            g->hConsoleInputInitEvent.wait();
             LockConsole();
 
             CloseHandle(Thread);
-            ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.release();
+            g->hConsoleInputInitEvent.release();
 
-            if (!NT_SUCCESS(ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus))
+            if (!NT_SUCCESS(g->ntstatusConsoleInputInitStatus))
             {
-                Status = ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus;
+                Status = g->ntstatusConsoleInputInitStatus;
             }
             else
             {
@@ -507,12 +507,8 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
              *      is only called when a window is created.
              */
 
-            LOG_IF_FAILED(ServiceLocator::LocateGlobals()->pDeviceComm->AllowUIAccess());
+            LOG_IF_FAILED(g->pDeviceComm->AllowUIAccess());
         }
-    }
-    else
-    {
-        SetFlag(gci->Flags, CONSOLE_NO_WINDOW);
     }
 
     // Potentially start the VT IO (if needed)

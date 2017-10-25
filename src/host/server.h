@@ -36,7 +36,11 @@ Revision History:
 #define CONSOLE_SCROLLING               0x00000020
 // unused (CONSOLE_DISABLE_CLOSE)       0x00000040
 // unused (CONSOLE_USE_POLY_TEXT)       0x00000080
-#define CONSOLE_NO_WINDOW               0x00000100
+
+// Removed Oct 2017 - added a headless mode, which revealed that the consumption
+//      of this flag was redundant.
+// unused (CONSOLE_NO_WINDOW)               0x00000100
+
 // unused (CONSOLE_VDM_REGISTERED)      0x00000200
 #define CONSOLE_UPDATING_SCROLL_BARS    0x00000400
 #define CONSOLE_QUICK_EDIT_MODE         0x00000800
