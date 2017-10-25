@@ -121,6 +121,7 @@ protected:
     HRESULT _InsertDeleteLine(_In_ const short sLines, _In_ const bool fInsertLine);
     HRESULT _DeleteLine(_In_ const short sLines);
     HRESULT _InsertLine(_In_ const short sLines);
+    HRESULT _EraseCharacter(_In_ const short chars);
     HRESULT _CursorPosition(_In_ const COORD coord);
     HRESULT _CursorHome();
     HRESULT _SetGraphicsRendition16Color(_In_ const WORD wAttr,
