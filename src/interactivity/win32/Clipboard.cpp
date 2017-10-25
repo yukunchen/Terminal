@@ -334,7 +334,6 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToNumpad(_In_ const wchar_t
     return keyEvents;
 }
 
-
 // Routine Description:
 // - Copies the selected area onto the global system clipboard.
 // Arguments:
