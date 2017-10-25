@@ -512,7 +512,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     }
     else
     {
-        gci->Flags |= CONSOLE_NO_WINDOW;
+        SetFlag(gci->Flags, CONSOLE_NO_WINDOW);
     }
 
     // Potentially start the VT IO (if needed)

@@ -13,8 +13,10 @@
 #include "misc.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
+#include "..\types\inc\Viewport.hpp"
 
 #pragma hdrstop
+using namespace Microsoft::Console::Types;
 
 // This routine figures out what parameters to pass to CreateScreenBuffer based on the data from STARTUPINFO and the
 // registry defaults, and then calls CreateScreenBuffer.
@@ -651,30 +653,25 @@ void ScrollScreen(_Inout_ PSCREEN_INFORMATION pScreenInfo,
         {
             pNotifier->NotifyConsoleUpdateScrollEvent(coordTarget.X - psrScroll->Left, coordTarget.Y - psrScroll->Right);
         }
-
-        if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+        IRenderer* const pRender = ServiceLocator::LocateGlobals()->pRender;
+        if (pRender != nullptr)
         {
             // psrScroll is the source rectangle which gets written with the same dimensions to the coordTarget position.
             // Therefore the final rectangle starts with the top left corner at coordTarget
             // and the size is the size of psrScroll.
             // NOTE: psrScroll is an INCLUSIVE rectangle, so we must add 1 when measuring width as R-L or B-T
-            SMALL_RECT rcWritten = *psrScroll;
-            rcWritten.Left = coordTarget.X;
-            rcWritten.Top = coordTarget.Y;
-            rcWritten.Right = rcWritten.Left + (psrScroll->Right - psrScroll->Left + 1);
-            rcWritten.Bottom = rcWritten.Top + (psrScroll->Bottom - psrScroll->Top + 1);
+            Viewport scrollRect = Viewport::FromInclusive(*psrScroll);
+            SMALL_RECT rcWritten = Viewport::FromDimensions(coordTarget, scrollRect.Width(), scrollRect.Height()).ToExclusive();
 
-            ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&rcWritten);
+            pRender->TriggerRedraw(&rcWritten);
 
             // psrMerge was just filled exactly where it's stated.
             if (psrMerge != nullptr)
             {
                 // psrMerge is an inclusive rectangle. Make it exclusive to deal with the renderer.
-                SMALL_RECT rcMerge = *psrMerge;
-                rcMerge.Bottom++;
-                rcMerge.Right++;
+                SMALL_RECT rcMerge = Viewport::FromInclusive(*psrMerge).ToExclusive();
 
-                ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&rcMerge);
+                pRender->TriggerRedraw(&rcMerge);
             }
         }
     }

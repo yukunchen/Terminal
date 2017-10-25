@@ -394,13 +394,18 @@ NTSTATUS Window::SetViewportOrigin(_In_ SMALL_RECT NewWindow)
 
     COORD const FontSize = ScreenInfo->GetScreenFontSize();
 
-    if (AreAllFlagsClear(gci->Flags, (CONSOLE_IS_ICONIC | CONSOLE_NO_WINDOW)))
+    if (IsFlagClear(gci->Flags, CONSOLE_IS_ICONIC))
     {
         Selection* pSelection = &Selection::Instance();
         pSelection->HideSelection();
 
         // Fire off an event to let accessibility apps know we've scrolled.
-        NotifyWinEvent(EVENT_CONSOLE_UPDATE_SCROLL, _hWnd, ScreenInfo->GetBufferViewport().Left - NewWindow.Left, ScreenInfo->GetBufferViewport().Top - NewWindow.Top);
+        IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+        if (pNotifier != nullptr)
+        {
+            pNotifier->NotifyConsoleUpdateScrollEvent(ScreenInfo->GetBufferViewport().Left - NewWindow.Left,
+                                                      ScreenInfo->GetBufferViewport().Top - NewWindow.Top);   
+        }
 
         // The new window is OK. Store it in screeninfo and refresh screen.
         ScreenInfo->SetBufferViewport(NewWindow);
