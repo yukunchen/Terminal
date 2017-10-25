@@ -9,9 +9,10 @@
 #include <sstream>
 #include <assert.h>
 
-VtConsole::VtConsole(PipeReadCallback const pfnReadCallback)
+VtConsole::VtConsole(PipeReadCallback const pfnReadCallback, bool const fHeadless)
 {
     _pfnReadCallback = pfnReadCallback;
+    _fHeadless = fHeadless;
 
     int r = rand();
     std::wstringstream ss;
@@ -45,29 +46,6 @@ void VtConsole::spawn()
 void VtConsole::spawn(const std::wstring& command)
 {
     _spawn2(command);
-}
-
-void VtConsole::_spawn1()
-{
-    _outPipeName = _inPipeName;
-    _inPipe = (
-        CreateNamedPipeW(_inPipeName.c_str(), sInPipeOpenMode, sInPipeMode, 1, 0, 0, 0, nullptr)
-    );
-    _outPipe = _inPipe;
-
-    THROW_IF_HANDLE_INVALID(_inPipe);
-    THROW_IF_HANDLE_INVALID(_outPipe);
-
-    _openConsole1();
-
-    bool fSuccess = !!ConnectNamedPipe(_inPipe, nullptr);
-    if (!fSuccess)
-    {
-        DWORD lastError = GetLastError();
-        if (lastError != ERROR_PIPE_CONNECTED) THROW_LAST_ERROR_IF_FALSE(fSuccess); 
-    }
-
-    _connected = true;
 }
 
 void VtConsole::_spawn2(const std::wstring& command)
@@ -113,31 +91,6 @@ void VtConsole::_spawn2(const std::wstring& command)
                                   &_dwOutputThreadId);
 }
 
-void VtConsole::_openConsole1()
-{
-    std::wstring cmdline = L"OpenConsole.exe";
-    if (_inPipeName.length() > 0)
-    {
-        cmdline += L" --pipe ";
-        cmdline += _inPipeName;
-    }
-    STARTUPINFO si = {0};
-    si.cb = sizeof(STARTUPINFOW);
-    bool fSuccess = !!CreateProcess(
-        nullptr,
-        &cmdline[0],
-        nullptr,    // lpProcessAttributes
-        nullptr,    // lpThreadAttributes
-        false,      // bInheritHandles
-        0,          // dwCreationFlags
-        nullptr,    // lpEnvironment
-        nullptr,    // lpCurrentDirectory
-        &si,        //lpStartupInfo
-        &pi         //lpProcessInformation
-    );
-    fSuccess;
-}
-
 void VtConsole::_openConsole2(const std::wstring& command)
 {
     std::wstring cmdline = L"OpenConsole.exe";
@@ -152,6 +105,11 @@ void VtConsole::_openConsole2(const std::wstring& command)
         cmdline += _outPipeName;
     }
     
+    if (_fHeadless)
+    {
+        cmdline += L" --headless";
+    }
+
     STARTUPINFO si = {0};
     si.cb = sizeof(STARTUPINFOW);
     
@@ -162,8 +120,8 @@ void VtConsole::_openConsole2(const std::wstring& command)
     }
     else 
     {
-        si.dwFlags = STARTF_USESHOWWINDOW;
-        si.wShowWindow = SW_MINIMIZE;
+        // si.dwFlags = STARTF_USESHOWWINDOW;
+        // si.wShowWindow = SW_MINIMIZE;
     }
 
     bool fSuccess = !!CreateProcess(

@@ -23,6 +23,8 @@ class ConsoleArgumentsTests
     TEST_METHOD(LegacyFormatsTests);
 
     TEST_METHOD(IsUsingVtPipeTests);
+    
+    TEST_METHOD(HeadlessArgTests);
 };
 
 ConsoleArguments CreateAndParse(std::wstring& commandline)
@@ -592,4 +594,65 @@ void ConsoleArgumentsTests::IsUsingVtPipeTests()
     args._vtInPipe = args._vtOutPipe;
     args._vtOutPipe = L"";
     VERIFY_IS_FALSE(args.IsUsingVtPipe());
+}
+
+void ConsoleArgumentsTests::HeadlessArgTests()
+{
+    std::wstring commandline;
+
+    commandline = L"conhost.exe --headless";
+    ArgTestsRunner(L"#1 Check that the headless arg works",
+                   commandline,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    false, // forceV1
+                                    true, // headless
+                                    true, // createServerHandle
+                                    0), // serverHandle
+                   true); // successful parse?
+
+    commandline = L"conhost.exe --headless 0x4";
+    ArgTestsRunner(L"#2 Check that headless arg works with the server param",
+                   commandline,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    false, // forceV1
+                                    true, // headless
+                                    false, // createServerHandle
+                                    4ul), // serverHandle
+                   true); // successful parse?
+
+    commandline = L"conhost.exe --headless --headless";
+    ArgTestsRunner(L"#3 multiple --headless params are all treated as one",
+                   commandline,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    false, // forceV1
+                                    true, // headless
+                                    true, // createServerHandle
+                                    0), // serverHandle
+                   true); // successful parse?
+
+    commandline = L"conhost.exe -- foo.exe --headless";
+    ArgTestsRunner(L"#4 ---headless as a client commandline does not make us headless",
+                   commandline,
+                   ConsoleArguments(commandline,
+                                    L"foo.exe --headless", // clientCommandLine
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0), // serverHandle
+                   true); // successful parse?
 }

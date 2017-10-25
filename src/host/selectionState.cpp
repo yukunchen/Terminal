@@ -148,15 +148,24 @@ void Selection::MouseDown()
 {
     _dwSelectionFlags |= CONSOLE_MOUSE_DOWN;
 
-    // We must capture the mouse on button down to ensure we receive messages if it comes back up outside the window.
-    ServiceLocator::LocateConsoleWindow()->CaptureMouse();
+    // We must capture the mouse on button down to ensure we receive messages if
+    //      it comes back up outside the window.
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr)
+    {
+        pWindow->CaptureMouse();
+    }
 }
 
 void Selection::MouseUp()
 {
     _dwSelectionFlags &= ~CONSOLE_MOUSE_DOWN;
 
-    ServiceLocator::LocateConsoleWindow()->ReleaseMouse();
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr)
+    {
+        pWindow->ReleaseMouse();
+    }
 }
 
 // Routine Description:

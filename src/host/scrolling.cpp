@@ -30,21 +30,30 @@ bool Scrolling::s_IsInScrollMode()
 void Scrolling::s_DoScroll()
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
     if (!s_IsInScrollMode())
     {
         // clear any selection we may have -- can't scroll and select at the same time
         Selection::Instance().ClearSelection();
 
-        gci->Flags |= CONSOLE_SCROLLING;
-        ServiceLocator::LocateConsoleWindow()->UpdateWindowText();
+        SetFlag(gci->Flags, CONSOLE_SCROLLING);
+
+        if (pWindow != nullptr)
+        {
+            pWindow->UpdateWindowText();
+        }
     }
 }
 
 void Scrolling::s_ClearScroll()
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->Flags &= ~CONSOLE_SCROLLING;
-    ServiceLocator::LocateConsoleWindow()->UpdateWindowText();
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    ClearFlag(gci->Flags, CONSOLE_SCROLLING);
+    if (pWindow != nullptr)
+    {
+        pWindow->UpdateWindowText();
+    }
 }
 
 void Scrolling::s_ScrollIfNecessary(_In_ const SCREEN_INFORMATION * const pScreenInfo)

@@ -212,41 +212,8 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
         status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-    // g->pRenderData = new RenderData();
-    // status = NT_TESTNULL(g->pRenderData);
     if (NT_SUCCESS(status))
     {
-        // GdiEngine* pGdiEngine = nullptr;
-
-        // try
-        // {
-        //     pGdiEngine = new GdiEngine();
-        //     status = NT_TESTNULL(pGdiEngine);
-        // }
-        // catch (...)
-        // {
-        //     status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-        // }
-
-        // if (NT_SUCCESS(status))
-        // {
-        //     g->pRenderEngine = pGdiEngine;
-        //     Renderer* pNewRenderer = nullptr;
-
-        //     if (SUCCEEDED(Renderer::s_CreateInstance(g->pRenderData,
-        //                                              &g->pRenderEngine,
-        //                                              1,
-        //                                              &pNewRenderer)))
-        //     {
-        //         g->pRender = pNewRenderer;
-        //     }
-
-        //     status = NT_TESTNULL(g->pRender);
-
-        //     // Allow the renderer to paint.
-        //     pNewRenderer->EnablePainting();
-        // }
-
         if (NT_SUCCESS(status))
         {
             SCREEN_INFORMATION* const psiAttached = GetScreenInfo();

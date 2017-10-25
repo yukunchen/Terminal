@@ -461,7 +461,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         }
     }
 
-    if (NT_SUCCESS(Status) && p->WindowVisible)
+    if (NT_SUCCESS(Status) && p->WindowVisible && !g->launchArgs.IsHeadless())
     {
         HANDLE Thread = nullptr;
 

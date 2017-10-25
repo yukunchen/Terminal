@@ -638,7 +638,10 @@ VOID SCREEN_INFORMATION::UpdateScrollBars()
 VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->Flags &= ~CONSOLE_UPDATING_SCROLL_BARS;
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+
+    ClearFlag(gci->Flags, CONSOLE_UPDATING_SCROLL_BARS);
+
     if (!this->IsActiveScreenBuffer())
     {
         return;
@@ -655,16 +658,19 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 
     const COORD coordScreenBufferSize = GetScreenBufferSize();
 
-    ServiceLocator::LocateConsoleWindow()->UpdateScrollBar(true,
-                                                           this->_IsAltBuffer(),
-                                                           this->GetScreenWindowSizeY(),
-                                                           coordScreenBufferSize.Y - 1,
-                                                           this->_srBufferViewport.Top);
-    ServiceLocator::LocateConsoleWindow()->UpdateScrollBar(false,
-                                                           this->_IsAltBuffer(),
-                                                           this->GetScreenWindowSizeX(),
-                                                           coordScreenBufferSize.X - 1,
-                                                           this->_srBufferViewport.Left);
+    if (pWindow != nullptr)
+    {
+        pWindow->UpdateScrollBar(true,
+                                 this->_IsAltBuffer(),
+                                 this->GetScreenWindowSizeY(),
+                                 coordScreenBufferSize.Y - 1,
+                                 this->_srBufferViewport.Top);
+        pWindow->UpdateScrollBar(false,
+                                 this->_IsAltBuffer(),
+                                 this->GetScreenWindowSizeX(),
+                                 coordScreenBufferSize.X - 1,
+                                 this->_srBufferViewport.Left);
+    }
 
     // Fire off an event to let accessibility apps know the layout has changed.
     _pAccessibilityNotifier->NotifyConsoleLayoutEvent();

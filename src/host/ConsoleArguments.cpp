@@ -254,6 +254,12 @@ HRESULT ConsoleArguments::ParseCommandline()
         {
             hr = s_GetArgumentValue(args, i, &_vtMode);
         }
+        else if (arg == HEADLESS_ARG)
+        {
+            _headless = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
         else if (arg == CLIENT_COMMANDLINE_ARG)
         {
             // Everything after this is the explicit commandline

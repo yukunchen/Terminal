@@ -30,11 +30,12 @@ std::deque<VtConsole*> consoles;
 VtConsole* debug;
 
 bool prefixPressed = false;
-
+bool g_headless = false;
 ////////////////////////////////////////////////////////////////////////////////
 // Forward decls
 std::string toPrintableString(std::string& inString);
 void toPrintableBuffer(char c, char* printBuffer, int* printCch);
+void PrintInputToDebug(std::string& rawInput);
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -83,7 +84,7 @@ HANDLE outPipe()
 
 void newConsole()
 {
-    auto con = new VtConsole(ReadCallback);
+    auto con = new VtConsole(ReadCallback, g_headless);
     con->spawn();
     consoles.push_back(con);
 }
@@ -287,30 +288,33 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                 SMALL_RECT srViewport = csbiex.srWindow;
                 
                 std::stringstream ss;
-                std::stringstream debugSs;
-                ss << "\x1b[8;";
-                debugSs << "\\x1b[8;";
+                // std::stringstream debugSs;
+                
                 short width = srViewport.Right - srViewport.Left + 1;
                 short height = srViewport.Bottom - srViewport.Top + 1;
                 
-                ss << height;
-                debugSs << height;
-
-                ss << ";";
-                debugSs << ";";
+                ss << "\x1b[8;" << height << ";" << width << "t";
+                // debugSs << "\\x1b[8;";
                 
-                ss << width;
-                debugSs << width;
-                
-                ss << "t";
-                debugSs << "t";
+                // ss ;
+                // debugSs << height;
 
-                std::string seq;
-                std::string debugSeq;
-                ss >> seq;
-                debugSs >> debugSeq;
+                // ss ;
+                // debugSs << ";";
+                
+                // ss ;
+                // debugSs << width;
+                
+                // ss ;
+                // debugSs << "t";
+
+                std::string seq = ss.str();
+                // std::string debugSeq;
+                // ss >> seq;
+                // debugSs >> debugSeq;
                 getConsole()->WriteInput(seq);
-                debug->WriteInput(debugSeq);
+                PrintInputToDebug(seq);
+                // debug->WriteInput(debugSeq);
             }
         }
 
@@ -322,11 +326,23 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
         std::string printSeq = std::string(printableBuffer, printableCch);
 
         getConsole()->WriteInput(vtseq);
+        PrintInputToDebug(vtseq);
+        // std::stringstream ss;
+        // ss << "Input \"" << printSeq.c_str() << "\" [" << vtseq.length() << "]\n";
+        // std::string debugString = ss.str();
+        // debug->WriteInput(debugString);
+    }
+}
 
+void PrintInputToDebug(std::string& rawInput)
+{
+    if (debug != nullptr)
+    {
+        std::string printable = toPrintableString(rawInput);
         std::stringstream ss;
-        ss << "Input \"" << printSeq.c_str() << "\" [" << vtseq.length() << "]\n";
-        std::string debugString = ss.str();
-        debug->WriteInput(debugString);
+        ss << "Input \"" << printable.c_str() << "\" [" << rawInput.length() << "]\n";
+        std::string output = ss.str();
+        debug->WriteInput(output);
     }
 }
 
@@ -404,7 +420,7 @@ BOOL CtrlHandler( DWORD fdwCtrlType )
 // disable the warning about it here.
 #pragma warning(push)
 #pragma warning(disable:4702)
-int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
+int __cdecl wmain(int argc, WCHAR* argv[])
 {
     // initialize random seed: 
     srand((unsigned int)time(NULL));
@@ -412,6 +428,18 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     hIn = GetStdHandle(STD_INPUT_HANDLE);
+
+    if (argc > 1)
+    {
+        for (int i = 0; i < argc; ++i)
+        {
+            std::wstring arg = argv[i];
+            if (arg == std::wstring(L"--headless"))
+            {
+                g_headless = true;
+            }
+        }
+    }
 
     SetupOutput();
     SetupInput();
@@ -421,7 +449,7 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     CreateIOThreads();
 
     // Create a debug console for writting debugging output to.
-    debug = new VtConsole(DebugReadCallback);
+    debug = new VtConsole(DebugReadCallback, false);
     // Echo stdin to stdout, but ignore newlines (so cat doesn't echo the input)
     debug->spawn(L"ubuntu run tr -d '\n' | cat -sA");
     debug->activate();

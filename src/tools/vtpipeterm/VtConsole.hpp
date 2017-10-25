@@ -12,7 +12,7 @@ typedef void(*PipeReadCallback)(byte* buffer, DWORD dwRead);
 class VtConsole
 {
 public:
-    VtConsole(PipeReadCallback const pfnReadCallback);
+    VtConsole(PipeReadCallback const pfnReadCallback, bool const fHeadless);
     void spawn();
     void spawn(const std::wstring& command);
     
@@ -46,16 +46,15 @@ private:
     bool _connected = false;
     DWORD _offset = 0;
     bool _active = false;
+    bool _fHeadless = false;
 
     PipeReadCallback _pfnReadCallback;
 
     DWORD _dwOutputThreadId;
     HANDLE _hOutputThread = INVALID_HANDLE_VALUE;
 
-    void _openConsole1();
     void _openConsole2(const std::wstring& command);
 
-    void _spawn1();
     void _spawn2(const std::wstring& command);
 
     DWORD _OutputThread();
