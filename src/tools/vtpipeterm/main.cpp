@@ -42,13 +42,22 @@ void PrintInputToDebug(std::string& rawInput);
 void ReadCallback(byte* buffer, DWORD dwRead)
 {
     // We already set the console to UTF-8 CP, so we can just write straight to it
-    THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
+    bool fSuccess = !!WriteFile(hOut, buffer, dwRead, nullptr, nullptr);
+    if (fSuccess)
+    {
+        std::string renderData = std::string((char*)buffer, dwRead);
+        std::string printable = toPrintableString(renderData);
+        std::string seq = "\n";
+        debug->WriteInput(printable);
+        debug->WriteInput(seq);
+    }
+    else
+    {
+        HRESULT hr = GetLastError();
+        exit(hr);
+    }
+    // THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
 
-    std::string renderData = std::string((char*)buffer, dwRead);
-    std::string printable = toPrintableString(renderData);
-    std::string seq = "\n";
-    debug->WriteInput(printable);
-    debug->WriteInput(seq);
 
 }
 
@@ -288,33 +297,15 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                 SMALL_RECT srViewport = csbiex.srWindow;
                 
                 std::stringstream ss;
-                // std::stringstream debugSs;
                 
                 short width = srViewport.Right - srViewport.Left + 1;
                 short height = srViewport.Bottom - srViewport.Top + 1;
                 
                 ss << "\x1b[8;" << height << ";" << width << "t";
-                // debugSs << "\\x1b[8;";
                 
-                // ss ;
-                // debugSs << height;
-
-                // ss ;
-                // debugSs << ";";
-                
-                // ss ;
-                // debugSs << width;
-                
-                // ss ;
-                // debugSs << "t";
-
                 std::string seq = ss.str();
-                // std::string debugSeq;
-                // ss >> seq;
-                // debugSs >> debugSeq;
                 getConsole()->WriteInput(seq);
                 PrintInputToDebug(seq);
-                // debug->WriteInput(debugSeq);
             }
         }
 
@@ -327,10 +318,6 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
 
         getConsole()->WriteInput(vtseq);
         PrintInputToDebug(vtseq);
-        // std::stringstream ss;
-        // ss << "Input \"" << printSeq.c_str() << "\" [" << vtseq.length() << "]\n";
-        // std::string debugString = ss.str();
-        // debug->WriteInput(debugString);
     }
 }
 
@@ -382,8 +369,15 @@ DWORD InputThread(LPVOID lpParameter)
     {
         INPUT_RECORD rc[256];
         DWORD dwRead = 0;
-        ReadConsoleInputA(hIn, rc, 256, &dwRead);
-        handleManyEvents(rc, dwRead);
+        bool fSuccess = !!ReadConsoleInputA(hIn, rc, 256, &dwRead);
+        if (fSuccess)
+        {
+            handleManyEvents(rc, dwRead);
+        }
+        else
+        {
+            exit(GetLastError());
+        }
     }
 }
 

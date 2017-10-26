@@ -35,7 +35,13 @@ HANDLE VtConsole::outPipe()
 
 bool VtConsole::WriteInput(std::string& seq)
 {
-    return !!WriteFile(inPipe(), seq.c_str(), (DWORD)seq.length(), nullptr, nullptr);
+    bool fSuccess = !!WriteFile(inPipe(), seq.c_str(), (DWORD)seq.length(), nullptr, nullptr);
+    if (!fSuccess)
+    {
+        HRESULT hr = GetLastError();
+        exit(hr);
+    }
+    return fSuccess;
 }
 
 void VtConsole::spawn()

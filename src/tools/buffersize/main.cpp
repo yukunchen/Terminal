@@ -55,8 +55,8 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     THROW_LAST_ERROR_IF_FALSE(GetConsoleMode(hOut, &dwMode));
     dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     dwMode |= DISABLE_NEWLINE_AUTO_RETURN;
-    THROW_LAST_ERROR_IF_FALSE(SetConsoleMode(hOut, dwMode));
-
+    // THROW_LAST_ERROR_IF_FALSE(SetConsoleMode(hOut, dwMode));
+    SetConsoleMode(hOut, dwMode);
     // the resize event doesn't actually have the info we want.
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
