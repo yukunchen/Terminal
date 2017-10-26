@@ -420,7 +420,6 @@ HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORRE
 // Routine Description:
 // - Draws the cursor on the screen
 // Arguments:
-// - coord - Coordinate position where the cursor should be drawn
 // - ulHeightPercent - The cursor will be drawn at this percentage of the current font height.
 // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
 // Return Value:
