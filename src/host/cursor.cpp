@@ -177,12 +177,16 @@ void Cursor::SetIsDouble(_In_ BOOLEAN const fIsDouble)
 
 void Cursor::SetIsConversionArea(_In_ BOOLEAN const fIsConversionArea)
 {
+    // Functionally the same as "Hide cursor"
+    // Never called with TRUE, it's only used in the creation of a 
+    //      ConversionAreaInfo, and never changed after that.
     _fIsConversionArea = fIsConversionArea;
     _RedrawCursorAlways();
 }
 
 void Cursor::SetIsPopupShown(_In_ BOOLEAN const fIsPopupShown)
 {
+    // Functionally the same as "Hide cursor"
     _fIsPopupShown = fIsPopupShown;
     _RedrawCursorAlways();
 }
@@ -196,6 +200,21 @@ void Cursor::SetSize(_In_ ULONG const ulSize)
 {
     _ulSize = ulSize;
     _RedrawCursor();
+}
+
+// Method Description:
+// - Tells the renderer that the cursor has moved. It will handle any possible 
+//      invalidating.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Cursor::RendererMoveCursor()
+{
+    if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+    {
+        ServiceLocator::LocateGlobals()->pRender->MoveCursor(_cPosition);
+    }
 }
 
 // Routine Description:
@@ -251,58 +270,51 @@ void Cursor::_RedrawCursorAlways()
 
 void Cursor::SetPosition(_In_ COORD const cPosition)
 {
-    _RedrawCursor();
     _cPosition.X = cPosition.X;
     _cPosition.Y = cPosition.Y;
-    _RedrawCursor();
+    RendererMoveCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::SetXPosition(_In_ int const NewX)
 {
-    _RedrawCursor();
     _cPosition.X = (SHORT)NewX;
-    _RedrawCursor();
+    RendererMoveCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::SetYPosition(_In_ int const NewY)
 {
-    _RedrawCursor();
     _cPosition.Y = (SHORT)NewY;
-    _RedrawCursor();
+    RendererMoveCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::IncrementXPosition(_In_ int const DeltaX)
 {
-    _RedrawCursor();
     _cPosition.X += (SHORT)DeltaX;
-    _RedrawCursor();
+    RendererMoveCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::IncrementYPosition(_In_ int const DeltaY)
 {
-    _RedrawCursor();
     _cPosition.Y += (SHORT)DeltaY;
-    _RedrawCursor();
+    RendererMoveCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::DecrementXPosition(_In_ int const DeltaX)
 {
-    _RedrawCursor();
     _cPosition.X -= (SHORT)DeltaX;
-    _RedrawCursor();
+    RendererMoveCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::DecrementYPosition(_In_ int const DeltaY)
 {
-    _RedrawCursor();
     _cPosition.Y -= (SHORT)DeltaY;
-    _RedrawCursor();
+    RendererMoveCursor();
     ResetDelayEOLWrap();
 }
 

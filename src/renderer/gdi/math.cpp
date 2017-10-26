@@ -18,6 +18,7 @@ using namespace Microsoft::Console::Render;
 // - <none>
 // Return Value:
 // - The character dimensions of the current dirty area of the frame.
+//      This is an Inclusive rect.
 SMALL_RECT GdiEngine::GetDirtyRectInChars()
 {
     RECT rc = _psInvalidData.rcPaint;

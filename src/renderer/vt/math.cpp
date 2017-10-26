@@ -11,16 +11,18 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Gets the size in characters of the current dirty portion of the frame.
 // Arguments:
 // - <none>
 // Return Value:
-// - The character dimensions of the current dirty area of the frame.
+// - The character dimensions of the current dirty area of the frame. 
+//      This is an Inclusive rect.
 SMALL_RECT VtEngine::GetDirtyRectInChars()
 {
-    return _srcInvalid;
+    return Viewport::FromExclusive(_srcInvalid).ToInclusive();
 }
 
 // Routine Description:
@@ -49,4 +51,33 @@ void VtEngine::_OrRect(_Inout_ SMALL_RECT* const pRectExisting, _In_ const SMALL
     pRectExisting->Top = min(pRectExisting->Top, pRectToOr->Top);
     pRectExisting->Right = max(pRectExisting->Right, pRectToOr->Right);
     pRectExisting->Bottom = max(pRectExisting->Bottom, pRectToOr->Bottom);
+}
+
+// Method Description:
+// - Returns true if the invalidated region indicates that we only need to 
+//      simply print text from the current cursor position. This will prevent us
+//      from sending extra VT set-up/tear down sequences (?12h/l) when all we 
+//      need to do is print more text at the current cursor position.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff only the next character is invalid
+bool VtEngine::_WillWriteSingleChar() const
+{
+    COORD currentCursor = _lastText;
+
+    bool noScrollDelta = (_scrollDelta.X == 0 && _scrollDelta.Y == 0);
+
+    bool invalidIsOneChar = (_srcInvalid.Bottom ==_srcInvalid.Top+1) &&
+                            (_srcInvalid.Right == (_srcInvalid.Left+1));
+
+    // Either the next character to the right or the immediately previous 
+    //      character should follow this code path
+    //      (The immediate previous character would suggest a backspace)
+    bool invalidIsNext = (_srcInvalid.Top == _lastText.Y)
+                         && (_srcInvalid.Left == _lastText.X);
+    bool invalidIsLast = (_srcInvalid.Top == _lastText.Y)
+                         && (_srcInvalid.Left == (_lastText.X-1));
+
+    return noScrollDelta && invalidIsOneChar && (invalidIsNext || invalidIsLast);
 }

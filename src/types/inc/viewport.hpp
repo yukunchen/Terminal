@@ -39,6 +39,8 @@ public:
     static Viewport FromDimensions(_In_ const COORD origin,
                                    _In_ const short width,
                                    _In_ const short height);
+    static Viewport FromCoord(_In_ const COORD origin);
+    
     SHORT Left() const;
     SHORT RightInclusive() const;
     SHORT RightExclusive() const;

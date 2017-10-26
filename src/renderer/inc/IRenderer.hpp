@@ -52,6 +52,8 @@ namespace Microsoft
 
                 virtual void EnablePainting() = 0;
                 virtual void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) = 0;
+
+                virtual void MoveCursor(_In_ const COORD cPosition) = 0;
             };
         };
     };

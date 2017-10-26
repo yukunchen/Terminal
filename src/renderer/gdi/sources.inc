@@ -48,6 +48,7 @@ SOURCES = \
     ..\math.cpp \
     ..\paint.cpp \
     ..\state.cpp \
+    ..\GdiCursor.cpp \
 
 INCLUDES = \
     ..; \
