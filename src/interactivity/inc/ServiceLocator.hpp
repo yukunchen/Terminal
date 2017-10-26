@@ -29,6 +29,9 @@ namespace Microsoft
             class ServiceLocator
             {
             public:
+
+                static void RundownAndExit(_In_ HRESULT const hr);
+
                 // N.B.: Location methods without corresponding creation methods
                 //       automatically create the singleton object on demand.
                 //       In case the on-demand creation fails, the return value
