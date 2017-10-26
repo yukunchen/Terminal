@@ -134,12 +134,8 @@ HRESULT VtEngine::_InvalidOffset(_In_ const COORD* const pCoord)
 // - S_OK, else an appropriate HRESULT for failing to allocate or safemath failure.
 HRESULT VtEngine::_InvalidRestrict()
 {
-    SMALL_RECT rc = _lastViewport.ToOrigin().ToInclusive();
 
-    _srcInvalid.Left = clamp(_srcInvalid.Left, rc.Left, rc.Right);
-    _srcInvalid.Right = clamp(_srcInvalid.Right, rc.Left, rc.Right);
-    _srcInvalid.Top = clamp(_srcInvalid.Top, rc.Top, rc.Bottom);
-    _srcInvalid.Bottom = clamp(_srcInvalid.Bottom, rc.Top, rc.Bottom);
+    _lastViewport.ToOrigin().TrimToViewport(&_srcInvalid);
 
     return S_OK;
 }

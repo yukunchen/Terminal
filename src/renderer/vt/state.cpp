@@ -28,17 +28,18 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe) :
     _hFile(std::move(pipe)),
     _lastViewport({0}),
     _srcInvalid({0}),
-    _lastRealCursor({0}),
     _lastText({0}),
     _scrollDelta({0}),
     _LastFG(INVALID_COLOR),
     _LastBG(INVALID_COLOR),
-    _usingTestCallback(false)
-
+    _cursor(this)
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
     THROW_IF_HANDLE_INVALID(_hFile.get());
+#else
+    // member is only defined when UNIT_TESTING is.
+    _usingTestCallback = false;
 #endif
 }
 
@@ -101,7 +102,23 @@ HRESULT VtEngine::_Write(_In_ const char* const psz)
         std::string seq = std::string(psz);
         _Write(seq.c_str(), seq.length());
     }
-    CATCH_RETURN();
+    catch (...) 
+    {
+        #ifdef UNIT_TESTING
+        if (_usingTestCallback)
+        {
+            // It's possiblee a TAEF exception can be thrown by the TestCallback.
+            // Let it bubble up.
+            THROW_NORMALIZED_CAUGHT_EXCEPTION();
+        }
+        else
+        {
+            RETURN_CAUGHT_EXCEPTION();
+        }
+        #else
+        RETURN_CAUGHT_EXCEPTION();
+        #endif
+    }
 
     return S_OK;
 }
@@ -242,4 +259,13 @@ void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t
 
 }
 
-
+// Method Description:
+// - Returns a reference to this engine's cursor implementation.
+// Arguments:
+// - <none>
+// Return Value:
+// - A referenct to this engine's cursor implementation.
+IRenderCursor* const VtEngine::GetCursor()
+{
+    return &_cursor;
+}

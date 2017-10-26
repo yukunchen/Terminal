@@ -34,11 +34,18 @@ HRESULT XtermEngine::StartPaint()
     HRESULT hr = VtEngine::StartPaint();
     if (SUCCEEDED(hr))
     {
-        // todo come back to this before the PR is finished.
         if (!_quickReturn)
         {
-            // Turn off cursor
-            hr = _HideCursor();
+            if (!_WillWriteSingleChar()) 
+            {
+                // Turn off cursor
+                hr = _HideCursor();
+            }
+            else
+            {
+                // Don't re-enable the cursor.
+                _quickReturn = true;
+            }
         }
     }
 
@@ -127,6 +134,12 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord)
         {
             // Down one line, same X position
             std::string seq = "\n";
+            hr = _Write(seq);
+        }
+        else if (coord.X == (_lastText.X-1) && coord.Y == (_lastText.Y))
+        {
+            // Back one char, same Y position
+            std::string seq = "\b";
             hr = _Write(seq);
         }
         else

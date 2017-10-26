@@ -77,8 +77,8 @@ public:
     void ResetDelayEOLWrap();
     COORD GetDelayedAtPosition() const;
     BOOL IsDelayedEOLWrap() const;
-
 private:
+    void RendererMoveCursor();
     Microsoft::Console::Interactivity::IAccessibilityNotifier *_pAccessibilityNotifier;
 
     //TODO: seperate the rendering and text placement
