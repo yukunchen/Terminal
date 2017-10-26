@@ -105,10 +105,10 @@ HRESULT VtInputThread::Start()
     
     //Initialize the state machine here, because the gci->pInputBuffer 
     // hasn't been initialized when we initialize the VtInputThread object.
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     
     std::unique_ptr<ConhostInternalGetSet> pGetSet = 
-        std::make_unique<ConhostInternalGetSet>(gci->CurrentScreenBuffer, gci->pInputBuffer);
+        std::make_unique<ConhostInternalGetSet>(gci);
     THROW_IF_NULL_ALLOC(pGetSet);
 
     std::unique_ptr<InteractDispatch> pDispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));

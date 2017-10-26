@@ -238,14 +238,14 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
 NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
 {
     ASSERT(_pConApi == nullptr);
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    _pConApi = new ConhostInternalGetSet(this, gci->pInputBuffer);
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    _pConApi = new ConhostInternalGetSet(gci);
     NTSTATUS status = NT_TESTNULL(_pConApi);
 
     if (NT_SUCCESS(status))
     {
         ASSERT(_pBufferWriter == nullptr);
-        _pBufferWriter = new WriteBuffer(this);
+        _pBufferWriter = new WriteBuffer(gci);
         status = NT_TESTNULL(_pBufferWriter);
     }
 
@@ -313,11 +313,6 @@ void SCREEN_INFORMATION::_FreeOutputStateMachine()
         {
             delete _pConApi;
         }
-    }
-    else
-    {
-        _pConApi->SetActiveScreenBuffer(this->_psiMainBuffer);
-        _pBufferWriter->SetActiveScreenBuffer(this->_psiMainBuffer);
     }
 }
 #pragma endregion
@@ -2067,10 +2062,6 @@ NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
         {
             s_RemoveScreenBuffer(psiOldAltBuffer); // this will also delete the old alt buffer
         }
-        // hook it up to our state machine, this needs to be done after deleting the old alt buffer,
-        // otherwise deleting the old alt buffer will reattach the GetSet to the main buffer.
-        _pConApi->SetActiveScreenBuffer(psiNewAltBuffer);
-        _pBufferWriter->SetActiveScreenBuffer(psiNewAltBuffer);
 
         Status = ::SetActiveScreenBuffer(psiNewAltBuffer);
 

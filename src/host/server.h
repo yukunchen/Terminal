@@ -15,10 +15,9 @@ Revision History:
 
 #pragma once
 
-#include "screenInfo.hpp"
+#include "IIoProvider.hpp"
 
 #include "settings.hpp"
-#include "inputBuffer.hpp"
 
 #include "conimeinfo.h"
 #include "..\terminal\adapter\MouseInput.hpp"
@@ -66,7 +65,7 @@ Revision History:
 
 class COOKED_READ_DATA;
 
-class CONSOLE_INFORMATION : public Settings
+class CONSOLE_INFORMATION : public Settings, public Microsoft::Console::IIoProvider
 {
 public:
     CONSOLE_INFORMATION();
@@ -115,6 +114,9 @@ public:
     Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
     
     static void HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
+
+    SCREEN_INFORMATION* const GetActiveOutputBuffer() const;
+    InputBuffer* const GetActiveInputBuffer() const;
 
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this

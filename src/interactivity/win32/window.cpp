@@ -576,7 +576,7 @@ NTSTATUS Window::_InternalSetWindowSize() const
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     SCREEN_INFORMATION* const psiAttached = GetScreenInfo();
 
-    gci->Flags &= ~CONSOLE_SETTING_WINDOW_SIZE;
+    ClearFlag(gci->Flags, CONSOLE_SETTING_WINDOW_SIZE);
     if (!IsInFullscreen())
     {
         // Figure out how big to make the window, given the desired client area size.
