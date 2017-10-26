@@ -88,10 +88,13 @@ enum class ModifierKeyState
     NlsRoman,
     NlsImeConversion,
     AltNumpad,
-    NlsImeDisable
+    NlsImeDisable,
+    ENUM_COUNT // must be the last element in the enum class
 };
 
-DWORD ModifierKeyStateToConsoleBitFlag(_In_ const ModifierKeyState modifierKey);
+std::unordered_set<ModifierKeyState> FromVkKeyScan(_In_ const short vkKeyScanFlags);
+std::unordered_set<ModifierKeyState> FromConsoleControlKeyFlags(_In_ const DWORD flags);
+DWORD ToConsoleControlKeyFlag(_In_ const ModifierKeyState modifierKey) noexcept;
 
 class KeyEvent : public IInputEvent
 {
@@ -138,6 +141,7 @@ public:
     void SetActiveModifierKeys(_In_ const DWORD activeModifierKeys) noexcept;
     void DeactivateModifierKey(_In_ const ModifierKeyState modifierKey) noexcept;
     void ActivateModifierKey(_In_ const ModifierKeyState modifierKey) noexcept;
+    bool DoActiveModifierKeysMatch(_In_ const std::unordered_set<ModifierKeyState>& consoleModifiers) noexcept;
 
 private:
     bool _keyDown;
@@ -167,8 +171,10 @@ public:
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
-    COORD GetMousePosition() const noexcept;
-    void SetMousePosition(_In_ const COORD mousePosition) noexcept;
+    bool IsMouseMoveEvent() const noexcept;
+
+    COORD GetPosition() const noexcept;
+    void SetPosition(_In_ const COORD position) noexcept;
 
     DWORD GetButtonState() const noexcept;
     void SetButtonState(_In_ const DWORD buttonState) noexcept;
@@ -180,7 +186,7 @@ public:
     void SetEventFlags(_In_ const DWORD eventFlags) noexcept;
 
 private:
-    COORD _mousePosition;
+    COORD _position;
     DWORD _buttonState;
     DWORD _activeModifierKeys;
     DWORD _eventFlags;

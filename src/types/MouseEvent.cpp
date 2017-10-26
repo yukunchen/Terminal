@@ -8,18 +8,18 @@
 #include "inc/IInputEvent.hpp"
 
 MouseEvent::MouseEvent(_In_ const MOUSE_EVENT_RECORD& record) :
-    _mousePosition{ record.dwMousePosition },
+    _position{ record.dwMousePosition },
     _buttonState{ record.dwButtonState },
     _activeModifierKeys{ record.dwControlKeyState },
     _eventFlags{ record.dwEventFlags }
 {
 }
 
-MouseEvent::MouseEvent(_In_ const COORD mousePosition,
+MouseEvent::MouseEvent(_In_ const COORD position,
                        _In_ const DWORD buttonState,
                        _In_ const DWORD activeModifierKeys,
                        _In_ const DWORD eventFlags) :
-    _mousePosition{ mousePosition },
+    _position{ position },
     _buttonState{ buttonState },
     _activeModifierKeys{ activeModifierKeys },
     _eventFlags{ eventFlags }
@@ -34,7 +34,7 @@ INPUT_RECORD MouseEvent::ToInputRecord() const noexcept
 {
     INPUT_RECORD record{ 0 };
     record.EventType = MOUSE_EVENT;
-    record.Event.MouseEvent.dwMousePosition = _mousePosition;
+    record.Event.MouseEvent.dwMousePosition = _position;
     record.Event.MouseEvent.dwButtonState = _buttonState;
     record.Event.MouseEvent.dwControlKeyState = _activeModifierKeys;
     record.Event.MouseEvent.dwEventFlags = _eventFlags;
@@ -46,14 +46,19 @@ InputEventType MouseEvent::EventType() const noexcept
     return InputEventType::MouseEvent;
 }
 
-COORD MouseEvent::GetMousePosition() const noexcept
+bool MouseEvent::IsMouseMoveEvent() const noexcept
 {
-    return _mousePosition;
+    return _eventFlags == MOUSE_MOVED;
 }
 
-void MouseEvent::SetMousePosition(_In_ const COORD mousePosition) noexcept
+COORD MouseEvent::GetPosition() const noexcept
 {
-    _mousePosition = mousePosition;
+    return _position;
+}
+
+void MouseEvent::SetPosition(_In_ const COORD position) noexcept
+{
+    _position = position;
 }
 
 DWORD MouseEvent::GetButtonState() const noexcept

@@ -166,30 +166,23 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                     const short zeroVkeyData = ServiceLocator::LocateInputServices()->VkKeyScanW(0);
                     const byte zeroVKey = LOBYTE(zeroVkeyData);
                     const byte zeroControlKeyState = HIBYTE(zeroVkeyData);
-                    // Convert real Windows NT modifier bit into bizarre Console bits
-                    const DWORD consoleModifierTranslator[] =
+
+                    try
                     {
-                        0,
-                        SHIFT_PRESSED,
-                        CTRL_PRESSED,
-                        SHIFT_PRESSED | CTRL_PRESSED,
-                        ALT_PRESSED,
-                        SHIFT_PRESSED | ALT_PRESSED,
-                        CTRL_PRESSED | ALT_PRESSED,
-                        MOD_PRESSED
-                    };
-                    if (static_cast<unsigned int>(zeroControlKeyState) < ARRAYSIZE(consoleModifierTranslator))
-                    {
-                        const DWORD winmod = consoleModifierTranslator[zeroControlKeyState];
+                        // Convert real Windows NT modifier bit into bizarre Console bits
+                        std::unordered_set<ModifierKeyState> consoleModKeyState = FromVkKeyScan(zeroControlKeyState);
 
                         if (zeroVKey == keyEvent->GetVirtualKeyCode() &&
-                            AreAllFlagsSet(keyEvent->GetActiveModifierKeys(), winmod) &&
-                            AreAllFlagsClear(keyEvent->GetActiveModifierKeys(), ~winmod))
+                            keyEvent->DoActiveModifierKeysMatch(consoleModKeyState))
                         {
                             // This really is the character 0x0000
                             *pwchOut = keyEvent->GetCharData();
                             return STATUS_SUCCESS;
                         }
+                    }
+                    catch (...)
+                    {
+                        LOG_HR(wil::ResultFromCaughtException());
                     }
                 }
             }

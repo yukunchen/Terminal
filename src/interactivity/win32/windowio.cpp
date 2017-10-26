@@ -130,6 +130,8 @@ void HandleKeyEvent(_In_ const HWND hWnd,
 
     // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(lParam) is a character
     WORD VirtualKeyCode = LOWORD(wParam);
+    WORD VirtualScanCode = HIWORD(lParam);
+    const WORD RepeatCount = LOWORD(lParam);
     const ULONG ControlKeyState = GetControlKeyState(lParam);
     const BOOL bKeyDown = IsFlagClear(lParam, KEY_TRANSITION_UP);
 
@@ -145,9 +147,6 @@ void HandleKeyEvent(_In_ const HWND hWnd,
 
     // Make sure we retrieve the key info first, or we could chew up
     // unneeded space in the key info table if we bail out early.
-    KeyEvent keyEvent;
-    keyEvent.SetVirtualKeyCode(VirtualKeyCode);
-    keyEvent.SetVirtualScanCode(static_cast<BYTE>(HIWORD(lParam)));
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
     {
         // --- START LOAD BEARING CODE ---
@@ -161,19 +160,15 @@ void HandleKeyEvent(_In_ const HWND hWnd,
         //       or other input channels to help portray certain key sequences.
         //       Most notably this affects Ctrl-C, Ctrl-Break, and Pause/Break among others.
         //
-        WORD VirtualScanCode = keyEvent.GetVirtualScanCode();
         RetrieveKeyInfo(hWnd,
                         &VirtualKeyCode,
                         &VirtualScanCode,
                         !gci->pInputBuffer->fInComposition);
 
-        keyEvent.SetVirtualKeyCode(VirtualKeyCode);
-        keyEvent.SetVirtualScanCode(VirtualScanCode);
         // --- END LOAD BEARING CODE ---
     }
 
-    keyEvent.SetKeyDown(!!bKeyDown);
-    keyEvent.SetRepeatCount(LOWORD(lParam));
+    KeyEvent keyEvent{ !!bKeyDown, RepeatCount, VirtualKeyCode, VirtualScanCode, UNICODE_NULL, 0 };
 
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
     {
