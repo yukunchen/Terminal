@@ -76,22 +76,6 @@ HRESULT VtEngine::_EraseLine()
 // - fInsertLine: true iff we should insert the lines, false to delete them.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-HRESULT VtEngine::_EraseCharacter(_In_ const short chars)
-{
-
-    const PCSTR pszFormat = "\x1b[%dX";
-
-    return _WriteFormattedString(pszFormat, chars);
-}
-
-// Method Description:
-// - Formats and writes a sequence to either insert or delete a number of lines 
-//      into the buffer at the current cursor location.
-// Arguments:
-// - sLines: a number of lines to insert or delete
-// - fInsertLine: true iff we should insert the lines, false to delete them.
-// Return Value:
-// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_InsertDeleteLine(_In_ const short sLines, _In_ const bool fInsertLine)
 {
     if (sLines <= 0)

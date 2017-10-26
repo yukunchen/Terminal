@@ -297,18 +297,7 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
     RETURN_IF_FAILED(_MoveCursor(coord));
 
     // TODO: MSFT:14099536 Try and optimize the spaces.
-    size_t lastNonSpace = 0;
-    for (size_t i = 0; i < cchLine; i++)
-    {
-        if (pwsLine[i] != L'\x20')
-        {
-            lastNonSpace = i;
-        }
-    }
-    const size_t numSpaces = cchLine - lastNonSpace;
-
-    // const size_t actualCch = cchLine;
-    const size_t actualCch = min(cchLine - numSpaces + 1, cchLine);
+    const size_t actualCch = cchLine;
 
     const DWORD dwNeeded = WideCharToMultiByte(CP_UTF8, 0, pwsLine, static_cast<int>(actualCch), nullptr, 0, nullptr, nullptr);
     wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(dwNeeded + 1);
@@ -317,7 +306,6 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
     rgchNeeded[dwNeeded] = '\0';
 
     RETURN_IF_FAILED(_Write(rgchNeeded.get(), dwNeeded));
-    RETURN_IF_FAILED(_EraseCharacter((short)numSpaces));
     
     // Update our internal tracker of the cursor's position
     short totalWidth = 0;
@@ -325,9 +313,7 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
     {
         totalWidth += static_cast<short>(rgWidths[i]);
     }
-    totalWidth += (short)numSpaces;
     _lastText.X += totalWidth;
-    RETURN_IF_FAILED(_CursorPosition(_lastText));
 
 
     return S_OK;
