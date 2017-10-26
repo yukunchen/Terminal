@@ -7,16 +7,6 @@
 #include "precomp.h"
 #include "inc/IInputEvent.hpp"
 
-FocusEvent::FocusEvent(_In_ const FOCUS_EVENT_RECORD& record) :
-    _focus{ !!record.bSetFocus }
-{
-}
-
-FocusEvent::FocusEvent(_In_ const bool focus) :
-    _focus{ focus }
-{
-}
-
 FocusEvent::~FocusEvent()
 {
 }
@@ -32,11 +22,6 @@ INPUT_RECORD FocusEvent::ToInputRecord() const noexcept
 InputEventType FocusEvent::EventType() const noexcept
 {
     return InputEventType::FocusEvent;
-}
-
-bool FocusEvent::GetFocus() const noexcept
-{
-    return _focus;
 }
 
 void FocusEvent::SetFocus(_In_ const bool focus) noexcept

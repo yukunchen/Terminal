@@ -6,9 +6,9 @@
 
 #include "precomp.h"
 #include "inc/IInputEvent.hpp"
+#include "../inc/cpp2017.hpp"
 
 #include <unordered_map>
-
 
 // Routine Description:
 // - checks if flag is present in flags
@@ -21,7 +21,7 @@
 // - The wil version of IsFlagSet is only to operate on values that
 // are compile time constants. This will work with runtime calculated
 // values.
-constexpr static bool RuntimeIsFlagSet(_In_ const DWORD flags, _In_ const DWORD flag) noexcept
+constexpr bool RuntimeIsFlagSet(_In_ const DWORD flags, _In_ const DWORD flag) noexcept
 {
     return !!(flags & flag);
 }
@@ -99,7 +99,7 @@ constexpr static ModifierKeyStateMapping ModifierKeyStateTranslationTable[] =
     { ModifierKeyState::NlsImeDisable, NLS_IME_DISABLE }
 };
 
-static_assert(ARRAYSIZE(ModifierKeyStateTranslationTable) == static_cast<int>(ModifierKeyState::ENUM_COUNT),
+static_assert(size(ModifierKeyStateTranslationTable) == static_cast<int>(ModifierKeyState::ENUM_COUNT),
               "ModifierKeyStateTranslationTable must have a valid mapping for each modifier value");
 
 // Routine Description:

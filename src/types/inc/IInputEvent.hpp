@@ -13,13 +13,16 @@ Author:
 
 #pragma once
 
+#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
+#include <wil\common.h>
+#include <wil\resource.h>
+
 #include <winconp.h>
 #include <wtypes.h>
 
 #include <unordered_set>
 #include <memory>
 #include <deque>
-
 
 enum class InputEventType
 {
@@ -99,14 +102,41 @@ DWORD ToConsoleControlKeyFlag(_In_ const ModifierKeyState modifierKey) noexcept;
 class KeyEvent : public IInputEvent
 {
 public:
-    KeyEvent(_In_ const KEY_EVENT_RECORD& record);
-    KeyEvent(_In_ const bool keyDown,
-             _In_ const WORD repeatCount,
-             _In_ const WORD virtualKeyCode,
-             _In_ const WORD virtualScanCode,
-             _In_ const wchar_t charData,
-             _In_ const DWORD activeModifierKeys);
-    KeyEvent();
+    constexpr KeyEvent(_In_ const KEY_EVENT_RECORD& record) :
+        _keyDown{ !!record.bKeyDown },
+        _repeatCount{ record.wRepeatCount },
+        _virtualKeyCode{ record.wVirtualKeyCode },
+        _virtualScanCode{ record.wVirtualScanCode },
+        _charData{ record.uChar.UnicodeChar },
+        _activeModifierKeys{ record.dwControlKeyState }
+    {
+    }
+
+    constexpr KeyEvent(_In_ const bool keyDown,
+                       _In_ const WORD repeatCount,
+                       _In_ const WORD virtualKeyCode,
+                       _In_ const WORD virtualScanCode,
+                       _In_ const wchar_t charData,
+                       _In_ const DWORD activeModifierKeys) :
+        _keyDown{ keyDown },
+        _repeatCount{ repeatCount },
+        _virtualKeyCode{ virtualKeyCode },
+        _virtualScanCode{ virtualScanCode },
+        _charData{ charData },
+        _activeModifierKeys{ activeModifierKeys }
+    {
+    }
+
+    constexpr KeyEvent() :
+        _keyDown{ 0 },
+        _repeatCount{ 0 },
+        _virtualKeyCode{ 0 },
+        _virtualScanCode{ 0 },
+        _charData { 0 },
+        _activeModifierKeys{ 0 }
+    {
+    }
+
     KeyEvent(const KeyEvent& keyEvent) = default;
     KeyEvent(KeyEvent&& keyEvent) = default;
     ~KeyEvent();
@@ -114,34 +144,83 @@ public:
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
-    bool IsShiftPressed() const noexcept;
-    bool IsAltPressed() const noexcept;
-    bool IsCtrlPressed() const noexcept;
-    bool IsAltGrPressed() const noexcept;
-    bool IsModifierPressed() const noexcept;
-    bool IsCursorKey() const noexcept;
-    bool IsAltNumpadSet() const noexcept;
+    constexpr bool IsShiftPressed() const noexcept
+    {
+        return IsFlagSet(_activeModifierKeys, SHIFT_PRESSED);
+    }
 
-    bool IsKeyDown() const noexcept;
+    constexpr bool IsAltPressed() const noexcept
+    {
+        return IsAnyFlagSet(_activeModifierKeys, ALT_PRESSED);
+    }
+
+    constexpr bool IsCtrlPressed() const noexcept
+    {
+        return IsAnyFlagSet(_activeModifierKeys, CTRL_PRESSED);
+    }
+
+    constexpr bool IsAltGrPressed() const noexcept
+    {
+        return IsFlagSet(_activeModifierKeys, LEFT_CTRL_PRESSED) &&
+               IsFlagSet(_activeModifierKeys, RIGHT_ALT_PRESSED);
+    }
+
+    constexpr bool IsModifierPressed() const noexcept
+    {
+        return IsAnyFlagSet(_activeModifierKeys, MOD_PRESSED);
+    }
+
+    constexpr bool IsCursorKey() const noexcept
+    {
+        // true iff vk in [End, Home, Left, Up, Right, Down]
+        return (_virtualKeyCode >= VK_END) && (_virtualKeyCode <= VK_DOWN);
+    }
+
+    constexpr bool IsAltNumpadSet() const noexcept
+    {
+        return IsFlagSet(_activeModifierKeys, ALTNUMPAD_BIT);
+    }
+
+    constexpr bool IsKeyDown() const noexcept
+    {
+        return _keyDown;
+    }
+
+    constexpr WORD GetRepeatCount() const noexcept
+    {
+        return _repeatCount;
+    }
+
+    constexpr WORD GetVirtualKeyCode() const noexcept
+    {
+        return _virtualKeyCode;
+    }
+
+    constexpr WORD GetVirtualScanCode() const noexcept
+    {
+        return _virtualScanCode;
+    }
+
+    constexpr wchar_t GetCharData() const noexcept
+    {
+        return _charData;
+    }
+
+    constexpr DWORD GetActiveModifierKeys() const noexcept
+    {
+        return _activeModifierKeys;
+    }
+
     void SetKeyDown(_In_ const bool keyDown) noexcept;
-
-    WORD GetRepeatCount() const noexcept;
     void SetRepeatCount(_In_ const WORD repeatCount) noexcept;
-
-    WORD GetVirtualKeyCode() const noexcept;
     void SetVirtualKeyCode(_In_ const WORD virtualKeyCode) noexcept;
-
-    WORD GetVirtualScanCode() const noexcept;
     void SetVirtualScanCode(_In_ const WORD virtualScanCode) noexcept;
-
-    wchar_t GetCharData() const noexcept;
     void SetCharData(_In_ const wchar_t character) noexcept;
 
-    DWORD GetActiveModifierKeys() const noexcept;
     void SetActiveModifierKeys(_In_ const DWORD activeModifierKeys) noexcept;
     void DeactivateModifierKey(_In_ const ModifierKeyState modifierKey) noexcept;
     void ActivateModifierKey(_In_ const ModifierKeyState modifierKey) noexcept;
-    bool DoActiveModifierKeysMatch(_In_ const std::unordered_set<ModifierKeyState>& consoleModifiers) noexcept;
+    bool DoActiveModifierKeysMatch(_In_ const std::unordered_set<ModifierKeyState>& consoleModifiers) const noexcept;
 
 private:
     bool _keyDown;
@@ -151,19 +230,41 @@ private:
     wchar_t _charData;
     DWORD _activeModifierKeys;
 
-    friend bool operator==(const KeyEvent& a, const KeyEvent& b) noexcept;
+    friend constexpr bool operator==(const KeyEvent& a, const KeyEvent& b) noexcept;
 };
 
-bool operator==(const KeyEvent& a, const KeyEvent& b) noexcept;
+constexpr bool operator==(const KeyEvent& a, const KeyEvent& b) noexcept
+{
+    return (a._keyDown == b._keyDown &&
+            a._repeatCount == b._repeatCount &&
+            a._virtualKeyCode == b._virtualKeyCode &&
+            a._virtualScanCode == b._virtualScanCode &&
+            a._charData == b._charData &&
+            a._activeModifierKeys == b._activeModifierKeys);
+}
 
 class MouseEvent : public IInputEvent
 {
 public:
-    MouseEvent(_In_ const MOUSE_EVENT_RECORD& record);
-    MouseEvent(_In_ const COORD mousePosition,
-               _In_ const DWORD buttonState,
-               _In_ const DWORD activeModifierKeys,
-               _In_ const DWORD eventFlags);
+    constexpr MouseEvent(_In_ const MOUSE_EVENT_RECORD& record) :
+        _position{ record.dwMousePosition },
+        _buttonState{ record.dwButtonState },
+        _activeModifierKeys{ record.dwControlKeyState },
+        _eventFlags{ record.dwEventFlags }
+    {
+    }
+
+    constexpr MouseEvent(_In_ const COORD position,
+                         _In_ const DWORD buttonState,
+                         _In_ const DWORD activeModifierKeys,
+                         _In_ const DWORD eventFlags) :
+        _position{ position },
+        _buttonState{ buttonState },
+        _activeModifierKeys{ activeModifierKeys },
+        _eventFlags{ eventFlags }
+    {
+    }
+
     MouseEvent(const MouseEvent& mouseEvent) = default;
     MouseEvent(MouseEvent&& mouseEvent) = default;
     ~MouseEvent();
@@ -171,18 +272,34 @@ public:
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
-    bool IsMouseMoveEvent() const noexcept;
+    constexpr bool IsMouseMoveEvent() const noexcept
+    {
+        return _eventFlags == MOUSE_MOVED;
+    }
 
-    COORD GetPosition() const noexcept;
+    constexpr COORD GetPosition() const noexcept
+    {
+        return _position;
+    }
+
+    constexpr DWORD GetButtonState() const noexcept
+    {
+        return _buttonState;
+    }
+
+    constexpr DWORD GetActiveModifierKeys() const noexcept
+    {
+        return _activeModifierKeys;
+    }
+
+    constexpr DWORD GetEventFlags() const noexcept
+    {
+        return _eventFlags;
+    }
+
     void SetPosition(_In_ const COORD position) noexcept;
-
-    DWORD GetButtonState() const noexcept;
     void SetButtonState(_In_ const DWORD buttonState) noexcept;
-
-    DWORD GetActiveModifierKeys() const noexcept;
     void SetActiveModifierKeys(_In_ const DWORD activeModifierKeys) noexcept;
-
-    DWORD GetEventFlags() const noexcept;
     void SetEventFlags(_In_ const DWORD eventFlags) noexcept;
 
 private:
@@ -195,8 +312,16 @@ private:
 class WindowBufferSizeEvent : public IInputEvent
 {
 public:
-    WindowBufferSizeEvent(_In_ const WINDOW_BUFFER_SIZE_RECORD& record);
-    WindowBufferSizeEvent(_In_ const COORD);
+    constexpr WindowBufferSizeEvent(_In_ const WINDOW_BUFFER_SIZE_RECORD& record) :
+        _size{ record.dwSize }
+    {
+    }
+
+    constexpr WindowBufferSizeEvent(_In_ const COORD size) :
+        _size{ size }
+    {
+    }
+
     WindowBufferSizeEvent(const WindowBufferSizeEvent& event) = default;
     WindowBufferSizeEvent(WindowBufferSizeEvent&& event) = default;
     ~WindowBufferSizeEvent();
@@ -204,7 +329,11 @@ public:
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
-    COORD GetSize() const noexcept;
+    constexpr COORD GetSize() const noexcept
+    {
+        return _size;
+    }
+
     void SetSize(_In_ const COORD size) noexcept;
 
 private:
@@ -214,8 +343,16 @@ private:
 class MenuEvent : public IInputEvent
 {
 public:
-    MenuEvent(_In_ const MENU_EVENT_RECORD& record);
-    MenuEvent(_In_ const UINT commandId);
+    constexpr MenuEvent(_In_ const MENU_EVENT_RECORD& record) :
+        _commandId{ record.dwCommandId }
+    {
+    }
+
+    constexpr MenuEvent(_In_ const UINT commandId) :
+        _commandId{ commandId }
+    {
+    }
+
     MenuEvent(const MenuEvent& menuEvent) = default;
     MenuEvent(MenuEvent&& menuEvent) = default;
     ~MenuEvent();
@@ -223,7 +360,11 @@ public:
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
-    UINT GetCommandId() const noexcept;
+    constexpr UINT MenuEvent::GetCommandId() const noexcept
+    {
+        return _commandId;
+    }
+
     void SetCommandId(_In_ const UINT commandId) noexcept;
 
 private:
@@ -233,8 +374,16 @@ private:
 class FocusEvent : public IInputEvent
 {
 public:
-    FocusEvent(_In_ const FOCUS_EVENT_RECORD& record);
-    FocusEvent(_In_ const bool focus);
+    constexpr FocusEvent(_In_ const FOCUS_EVENT_RECORD& record) :
+        _focus{ !!record.bSetFocus }
+    {
+    }
+
+    constexpr FocusEvent(_In_ const bool focus) :
+        _focus{ focus }
+    {
+    }
+
     FocusEvent(const FocusEvent& focusEvent) = default;
     FocusEvent(FocusEvent&& focusEvent) = default;
     ~FocusEvent();
@@ -242,11 +391,13 @@ public:
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
 
-    bool GetFocus() const noexcept;
+    constexpr bool GetFocus() const noexcept
+    {
+        return _focus;
+    }
+
     void SetFocus(_In_ const bool focus) noexcept;
 
 private:
     bool _focus;
 };
-
-std::unordered_set<ModifierKeyState> ExpandModifierKeyStateFlags(_In_ const DWORD flags);
