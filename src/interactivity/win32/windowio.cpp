@@ -130,7 +130,7 @@ void HandleKeyEvent(_In_ const HWND hWnd,
 
     // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(lParam) is a character
     WORD VirtualKeyCode = LOWORD(wParam);
-    WORD VirtualScanCode = HIWORD(lParam);
+    WORD VirtualScanCode = LOBYTE(HIWORD(lParam));
     const WORD RepeatCount = LOWORD(lParam);
     const ULONG ControlKeyState = GetControlKeyState(lParam);
     const BOOL bKeyDown = IsFlagClear(lParam, KEY_TRANSITION_UP);
