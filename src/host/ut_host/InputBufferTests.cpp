@@ -105,8 +105,8 @@ class InputBufferTests
         // check that the mouse position is being updated correctly
         const IInputEvent* const pOutEvent = inputBuffer._storage.front().get();
         const MouseEvent* const pMouseEvent = static_cast<const MouseEvent* const>(pOutEvent);
-        VERIFY_ARE_EQUAL(pMouseEvent->_mousePosition.X, static_cast<SHORT>(RECORD_INSERT_COUNT));
-        VERIFY_ARE_EQUAL(pMouseEvent->_mousePosition.Y, static_cast<SHORT>(RECORD_INSERT_COUNT * 2));
+        VERIFY_ARE_EQUAL(pMouseEvent->GetPosition().X, static_cast<SHORT>(RECORD_INSERT_COUNT));
+        VERIFY_ARE_EQUAL(pMouseEvent->GetPosition().Y, static_cast<SHORT>(RECORD_INSERT_COUNT * 2));
 
         // add a key event and another mouse event to make sure that
         // an event between two mouse events stopped the coalescing.
@@ -178,7 +178,7 @@ class InputBufferTests
 
         VERIFY_ARE_NOT_EQUAL(nullptr, outEvent.get());
         const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(outEvent.get());
-        VERIFY_ARE_EQUAL(pKeyEvent->_repeatCount, RECORD_INSERT_COUNT);
+        VERIFY_ARE_EQUAL(pKeyEvent->GetRepeatCount(), RECORD_INSERT_COUNT);
     }
 
     TEST_METHOD(InputBufferDoesNotCoalesceBulkKeyEvents)

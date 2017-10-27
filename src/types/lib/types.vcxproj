@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
@@ -7,6 +7,7 @@
     <ClCompile Include="..\IInputEvent.cpp" />
     <ClCompile Include="..\KeyEvent.cpp" />
     <ClCompile Include="..\MenuEvent.cpp" />
+    <ClCompile Include="..\ModifierKeyState.cpp" />
     <ClCompile Include="..\Viewport.cpp" />
     <ClCompile Include="..\WindowBufferSizeEvent.cpp" />
     <ClCompile Include="..\precomp.cpp">

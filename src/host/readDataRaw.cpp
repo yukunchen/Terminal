@@ -131,7 +131,7 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
         {
             std::unique_ptr<IInputEvent> event = _pInputBuffer->FetchReadPartialByteSequence(false);
             const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-            *lpBuffer = static_cast<char>(pKeyEvent->_charData);
+            *lpBuffer = static_cast<char>(pKeyEvent->GetCharData());
             _BufferSize -= sizeof(wchar_t);
             *pReplyStatus = STATUS_SUCCESS;
             fAddDbcsLead = true;

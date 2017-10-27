@@ -188,36 +188,10 @@ void TerminalInput::ChangeCursorKeysMode(_In_ bool const fApplicationMode)
     _fCursorApplicationMode = fApplicationMode;
 }
 
-bool TerminalInput::s_IsShiftPressed(_In_ const KeyEvent& keyEvent)
-{
-    return IsFlagSet(keyEvent._activeModifierKeys, SHIFT_PRESSED);
-}
-
-bool TerminalInput::s_IsAltPressed(_In_ const KeyEvent& keyEvent)
-{
-    return IsAnyFlagSet(keyEvent._activeModifierKeys, ALT_PRESSED);
-}
-
-bool TerminalInput::s_IsCtrlPressed(_In_ const KeyEvent& keyEvent)
-{
-    return IsAnyFlagSet(keyEvent._activeModifierKeys, CTRL_PRESSED);
-}
-
-bool TerminalInput::s_IsModifierPressed(_In_ const KeyEvent& keyEvent)
-{
-    return IsAnyFlagSet(keyEvent._activeModifierKeys, MOD_PRESSED);
-}
-
-bool TerminalInput::s_IsCursorKey(_In_ const KeyEvent& keyEvent)
-{
-    // true iff vk in [End, Home, Left, Up, Right, Down]
-    return (keyEvent._virtualKeyCode >= VK_END) && (keyEvent._virtualKeyCode <= VK_DOWN);
-}
-
 const size_t TerminalInput::GetKeyMappingLength(_In_ const KeyEvent& keyEvent) const
 {
     size_t length = 0;
-    if (s_IsCursorKey(keyEvent))
+    if (keyEvent.IsCursorKey())
     {
         length = (_fCursorApplicationMode) ? s_cCursorKeysApplicationMapping : s_cCursorKeysNormalMapping;
     }
@@ -232,7 +206,7 @@ const TerminalInput::_TermKeyMap* TerminalInput::GetKeyMapping(_In_ const KeyEve
 {
     const TerminalInput::_TermKeyMap* mapping = nullptr;
 
-    if (s_IsCursorKey(keyEvent))
+    if (keyEvent.IsCursorKey())
     {
         mapping = (_fCursorApplicationMode) ? s_rgCursorKeysApplicationMapping : s_rgCursorKeysNormalMapping;
     }
@@ -269,9 +243,9 @@ bool TerminalInput::_SearchWithModifier(_In_ const KeyEvent& keyEvent) const
             if (rwchModifiedSequence != nullptr)
             {
                 memcpy(rwchModifiedSequence, pMatchingMapping->pwszSequence, cch * sizeof(wchar_t));
-                const bool fShift = s_IsShiftPressed(keyEvent);
-                const bool fAlt = s_IsAltPressed(keyEvent);
-                const bool fCtrl = s_IsCtrlPressed(keyEvent);
+                const bool fShift = keyEvent.IsShiftPressed();
+                const bool fAlt = keyEvent.IsAltPressed();
+                const bool fCtrl = keyEvent.IsCtrlPressed();
                 rwchModifiedSequence[cch - 2] = L'1' + (fShift ? 1 : 0) + (fAlt ? 2 : 0) + (fCtrl ? 4 : 0);
                 rwchModifiedSequence[cch] = 0;
                 _SendInputSequence(rwchModifiedSequence);
@@ -302,7 +276,7 @@ bool TerminalInput::_SearchKeyMapping(_In_ const KeyEvent& keyEvent,
     {
         const _TermKeyMap* const pMap = &(keyMapping[i]);
 
-        if (pMap->wVirtualKey == keyEvent._virtualKeyCode)
+        if (pMap->wVirtualKey == keyEvent.GetVirtualKeyCode())
         {
             fKeyTranslated = true;
             *pMatchingMapping = pMap;
@@ -345,7 +319,7 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
         KeyEvent keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
 
         // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
-        if (keyEvent._keyDown)
+        if (keyEvent.IsKeyDown())
         {
             // For AltGr enabled keyboards, the Windows system will
             // emit Left Ctrl + Right Alt as the modifier keys and
@@ -362,21 +336,22 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
             // needs to be to check if both Left Ctrl + Right Alt are
             // pressed...
             // ... and if they are both pressed, strip them out of the control key state.
-            if (AreAllFlagsSet(keyEvent._activeModifierKeys, dwAltGrFlags))
+            if (keyEvent.IsAltGrPressed())
             {
-                ClearAllFlags(keyEvent._activeModifierKeys, dwAltGrFlags);
+                keyEvent.DeactivateModifierKey(ModifierKeyState::LeftCtrl);
+                keyEvent.DeactivateModifierKey(ModifierKeyState::RightAlt);
             }
 
-            if (s_IsAltPressed(keyEvent) &&
-                s_IsCtrlPressed(keyEvent) &&
-                (keyEvent._charData == 0 || keyEvent._charData == 0x20) &&
-                ((keyEvent._virtualKeyCode > 0x40 && keyEvent._virtualKeyCode <= 0x5A) ||
-                 keyEvent._virtualKeyCode == VK_SPACE) )
+            if (keyEvent.IsAltPressed() &&
+                keyEvent.IsCtrlPressed() &&
+                (keyEvent.GetCharData() == 0 || keyEvent.GetCharData() == 0x20) &&
+                ((keyEvent.GetVirtualKeyCode() > 0x40 && keyEvent.GetVirtualKeyCode() <= 0x5A) ||
+                 keyEvent.GetVirtualKeyCode() == VK_SPACE) )
             {
                 // For Alt+Ctrl+Key messages, the UnicodeChar is NOT the Ctrl+key char, it's null.
                 //      So we need to get the char from the vKey.
                 //      EXCEPT for Alt+Ctrl+Space. Then the UnicodeChar is space, not NUL.
-                wchar_t wchPressedChar = static_cast<wchar_t>(MapVirtualKeyW(keyEvent._virtualKeyCode, MAPVK_VK_TO_CHAR));
+                wchar_t wchPressedChar = static_cast<wchar_t>(MapVirtualKeyW(keyEvent.GetVirtualKeyCode(), MAPVK_VK_TO_CHAR));
                 // This is a trick - C-Spc is supposed to send NUL. So quick change space -> @ (0x40)
                 wchPressedChar = (wchPressedChar == UNICODE_SPACE) ? 0x40 : wchPressedChar;
                 if (wchPressedChar >= 0x40 && wchPressedChar < 0x7F)
@@ -388,26 +363,26 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
                 }
             }
             // ALT is a sequence of ESC + KEY.
-            else if (keyEvent._charData != 0 && s_IsAltPressed(keyEvent))
+            else if (keyEvent.GetCharData() != 0 && keyEvent.IsAltPressed())
             {
-                _SendEscapedInputSequence(keyEvent._charData);
+                _SendEscapedInputSequence(keyEvent.GetCharData());
                 fKeyHandled = true;
             }
-            else if (s_IsCtrlPressed(keyEvent))
+            else if (keyEvent.IsCtrlPressed())
             {
-                if ((keyEvent._charData == UNICODE_SPACE ) || // Ctrl+Space
-                     // when Ctrl+@ comes through, the unicodechar
-                     // will be '\x0' (UNICODE_NULL), and the vkey will be
-                     // VkKeyScanW(0), the vkey for null
-                     (keyEvent._charData == UNICODE_NULL && keyEvent._virtualKeyCode == LOBYTE(VkKeyScanW(0))))
+                if ((keyEvent.GetCharData() == UNICODE_SPACE ) || // Ctrl+Space
+                    // when Ctrl+@ comes through, the unicodechar
+                    // will be '\x0' (UNICODE_NULL), and the vkey will be
+                    // VkKeyScanW(0), the vkey for null
+                    (keyEvent.GetCharData() == UNICODE_NULL && keyEvent.GetVirtualKeyCode() == LOBYTE(VkKeyScanW(0))))
                 {
-                    _SendNullInputSequence(keyEvent._activeModifierKeys);
+                    _SendNullInputSequence(keyEvent.GetActiveModifierKeys());
                     fKeyHandled = true;
                 }
             }
 
             // If a modifier key was pressed, then we need to try and send the modified sequence.
-            if (!fKeyHandled && s_IsModifierPressed(keyEvent))
+            if (!fKeyHandled && keyEvent.IsModifierPressed())
             {
                 // Translate the key using the modifier table
                 fKeyHandled = _SearchWithModifier(keyEvent);
@@ -418,15 +393,15 @@ bool TerminalInput::HandleKey(_In_ const IInputEvent* const pInEvent) const
                 // For perf optimization, filter out any typically printable Virtual Keys (e.g. A-Z)
                 // This is in lieu of an O(1) sparse table or other such less-maintanable methods.
                 // VK_CANCEL is an exception and we want to send the associated uChar as is.
-                if ((keyEvent._virtualKeyCode < '0' || keyEvent._virtualKeyCode > 'Z') &&
-                    keyEvent._virtualKeyCode != VK_CANCEL)
+                if ((keyEvent.GetVirtualKeyCode() < '0' || keyEvent.GetVirtualKeyCode() > 'Z') &&
+                    keyEvent.GetVirtualKeyCode() != VK_CANCEL)
                 {
                     fKeyHandled = _TranslateDefaultMapping(keyEvent, GetKeyMapping(keyEvent), GetKeyMappingLength(keyEvent));
                 }
                 else
                 {
                     WCHAR rgwchSequence[2];
-                    rgwchSequence[0] = keyEvent._charData;
+                    rgwchSequence[0] = keyEvent.GetCharData();
                     rgwchSequence[1] = UNICODE_NULL;
                     _SendInputSequence(rgwchSequence);
                     fKeyHandled = true;
@@ -450,8 +425,8 @@ void TerminalInput::_SendEscapedInputSequence(_In_ const wchar_t wch) const
     try
     {
         std::deque<std::unique_ptr<IInputEvent>> inputEvents;
-        inputEvents.push_back(std::make_unique<KeyEvent>(TRUE, 1ui16, 0ui16, 0ui16, L'\x1b', 0));
-        inputEvents.push_back(std::make_unique<KeyEvent>(TRUE, 1ui16, 0ui16, 0ui16, wch, 0));
+        inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, L'\x1b', 0));
+        inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, wch, 0));
         _pfnWriteEvents(inputEvents);
     }
     catch (...)
@@ -465,7 +440,7 @@ void TerminalInput::_SendNullInputSequence(_In_ DWORD const dwControlKeyState) c
     try
     {
         std::deque<std::unique_ptr<IInputEvent>> inputEvents;
-        inputEvents.push_back(std::make_unique<KeyEvent>(TRUE,
+        inputEvents.push_back(std::make_unique<KeyEvent>(true,
                                                          1ui16,
                                                          LOBYTE(VkKeyScanW(0)),
                                                          0ui16,
@@ -490,7 +465,7 @@ void TerminalInput::_SendInputSequence(_In_ PCWSTR const pwszSequence) const
             std::deque<std::unique_ptr<IInputEvent>> inputEvents;
             for (size_t i = 0; i < cch; i++)
             {
-                inputEvents.push_back(std::make_unique<KeyEvent>(TRUE, 1ui16, 0ui16, 0ui16, pwszSequence[i], 0));
+                inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, pwszSequence[i], 0));
             }
             _pfnWriteEvents(inputEvents);
         }

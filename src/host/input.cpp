@@ -17,10 +17,6 @@
 
 #pragma hdrstop
 
-#define CTRL_BUT_NOT_ALT(n) \
-        (((n) & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) && \
-        !((n) & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)))
-
 #define KEY_ENHANCED 0x01000000
 
 bool IsInProcessedInputMode()
@@ -114,12 +110,12 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     BOOLEAN ContinueProcessing = TRUE;
 
-    if (IsAnyFlagSet(keyEvent._activeModifierKeys, CTRL_PRESSED) &&
-        !IsAnyFlagSet(keyEvent._activeModifierKeys, ALT_PRESSED) &&
-        keyEvent._keyDown)
+    if (keyEvent.IsCtrlPressed() &&
+        !keyEvent.IsAltPressed() &&
+        keyEvent.IsKeyDown())
     {
         // check for ctrl-c, if in line input mode.
-        if (keyEvent._virtualKeyCode == 'C' && IsInProcessedInputMode())
+        if (keyEvent.GetVirtualKeyCode() == 'C' && IsInProcessedInputMode())
         {
             HandleCtrlEvent(CTRL_C_EVENT);
             if (gci->PopupCount == 0)
@@ -135,7 +131,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
 
 
         // Check for ctrl-break.
-        else if (keyEvent._virtualKeyCode == VK_CANCEL)
+        else if (keyEvent.GetVirtualKeyCode() == VK_CANCEL)
         {
             gci->pInputBuffer->Flush();
             HandleCtrlEvent(CTRL_BREAK_EVENT);
@@ -151,14 +147,14 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
         }
 
         // don't write ctrl-esc to the input buffer
-        else if (keyEvent._virtualKeyCode == VK_ESCAPE)
+        else if (keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
         {
             ContinueProcessing = FALSE;
         }
     }
-    else if (IsAnyFlagSet(keyEvent._activeModifierKeys, ALT_PRESSED) &&
-             keyEvent._keyDown &&
-             keyEvent._virtualKeyCode == VK_ESCAPE)
+    else if (keyEvent.IsAltPressed() &&
+             keyEvent.IsKeyDown() &&
+             keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
     {
         ContinueProcessing = FALSE;
     }
@@ -171,7 +167,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
             EventsWritten = gci->pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
             if (EventsWritten && generateBreak)
             {
-                keyEvent._keyDown = FALSE;
+                keyEvent.SetKeyDown(false);
                 EventsWritten = gci->pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
             }
         }
@@ -190,7 +186,7 @@ void HandleFocusEvent(_In_ const BOOL fSetFocus)
     size_t EventsWritten = 0;
     try
     {
-        EventsWritten = gci->pInputBuffer->Write(std::make_unique<FocusEvent>(fSetFocus));
+        EventsWritten = gci->pInputBuffer->Write(std::make_unique<FocusEvent>(!!fSetFocus));
     }
     catch (...)
     {

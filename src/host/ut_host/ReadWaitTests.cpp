@@ -125,7 +125,7 @@ class InputRecordConversionTests
         for (size_t i = 0; i < INPUT_RECORD_COUNT * 2; ++i)
         {
             const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(inEvents[i].get());
-            VERIFY_ARE_EQUAL(static_cast<char>(pKeyEvent->_charData), dbcsChars[i]);
+            VERIFY_ARE_EQUAL(static_cast<char>(pKeyEvent->GetCharData()), dbcsChars[i]);
         }
     }
 };

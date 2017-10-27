@@ -569,7 +569,7 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
             std::unique_ptr<KeyEvent> keyEvent = std::make_unique<KeyEvent>();
             if (keyEvent.get())
             {
-                keyEvent->_charData = AsciiDbcs[1];
+                keyEvent->SetCharData(AsciiDbcs[1]);
                 partialEvent.reset(static_cast<IInputEvent* const>(keyEvent.release()));
             }
         }

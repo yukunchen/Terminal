@@ -374,7 +374,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                         fAddDbcsLead = TRUE;
                         std::unique_ptr<IInputEvent> event = pCookedReadData->GetInputBuffer()->FetchReadPartialByteSequence(false);
                         const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                        *pCookedReadData->_UserBuffer = static_cast<char>(pKeyEvent->_charData);
+                        *pCookedReadData->_UserBuffer = static_cast<char>(pKeyEvent->GetCharData());
                         pCookedReadData->_UserBuffer++;
                         pCookedReadData->_UserBufferSize -= sizeof(wchar_t);
                     }
@@ -404,7 +404,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                         fAddDbcsLead = TRUE;
                         std::unique_ptr<IInputEvent> event = pCookedReadData->GetInputBuffer()->FetchReadPartialByteSequence(false);
                         const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                        *pCookedReadData->_UserBuffer = static_cast<char>(pKeyEvent->_charData);
+                        *pCookedReadData->_UserBuffer = static_cast<char>(pKeyEvent->GetCharData());
                         pCookedReadData->_UserBuffer++;
                         pCookedReadData->_UserBufferSize -= sizeof(wchar_t);
                     }
@@ -436,7 +436,7 @@ NTSTATUS CookedRead(_In_ COOKED_READ_DATA* const pCookedReadData,
                     fAddDbcsLead = TRUE;
                     std::unique_ptr<IInputEvent> event = pCookedReadData->GetInputBuffer()->FetchReadPartialByteSequence(false);
                     const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                    *pCookedReadData->_UserBuffer = static_cast<char>(pKeyEvent->_charData);
+                    *pCookedReadData->_UserBuffer = static_cast<char>(pKeyEvent->GetCharData());
                     pCookedReadData->_UserBuffer++;
                     pCookedReadData->_UserBufferSize -= sizeof(wchar_t);
 

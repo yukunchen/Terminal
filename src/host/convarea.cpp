@@ -680,7 +680,7 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
 
         while (*lpStr)
         {
-            keyEvent._charData = *lpStr;
+            keyEvent.SetCharData(*lpStr);
             inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
 
             ++lpStr;

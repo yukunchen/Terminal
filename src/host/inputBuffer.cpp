@@ -378,7 +378,7 @@ HRESULT InputBuffer::_ReadBuffer(_Out_ std::deque<std::unique_ptr<IInputEvent>>&
                 if (readEvents.back()->EventType() == InputEventType::KeyEvent)
                 {
                     const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(readEvents.back().get());
-                    if (IsCharFullWidth(pKeyEvent->_charData))
+                    if (IsCharFullWidth(pKeyEvent->GetCharData()))
                     {
                         ++virtualReadCount;
                     }
@@ -665,13 +665,12 @@ bool InputBuffer::_CoalesceMouseMovedEvents(_Inout_ std::deque<std::unique_ptr<I
         const MouseEvent* const pInMouseEvent = static_cast<const MouseEvent* const>(pFirstInEvent);
         const MouseEvent* const pLastMouseEvent = static_cast<const MouseEvent* const>(pLastStoredEvent);
 
-        if (pInMouseEvent->_eventFlags == MOUSE_MOVED &&
-            pLastMouseEvent->_eventFlags == MOUSE_MOVED)
+        if (pInMouseEvent->IsMouseMoveEvent() &&
+            pLastMouseEvent->IsMouseMoveEvent())
         {
             // update mouse moved position
             MouseEvent* const pMouseEvent = static_cast<MouseEvent* const>(_storage.back().release());
-            pMouseEvent->_mousePosition.X = pInMouseEvent->_mousePosition.X;
-            pMouseEvent->_mousePosition.Y = pInMouseEvent->_mousePosition.Y;
+            pMouseEvent->SetPosition(pInMouseEvent->GetPosition());
             std::unique_ptr<IInputEvent> tempPtr(pMouseEvent);
             tempPtr.swap(_storage.back());
 
@@ -708,21 +707,21 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
         const KeyEvent* const pInKeyEvent = static_cast<const KeyEvent* const>(pFirstInEvent);
         const KeyEvent* const pLastKeyEvent = static_cast<const KeyEvent* const>(pLastStoredEvent);
 
-        if (pInKeyEvent->_keyDown &&
-            pLastKeyEvent->_keyDown &&
-            !IsCharFullWidth(pInKeyEvent->_charData))
+        if (pInKeyEvent->IsKeyDown() &&
+            pLastKeyEvent->IsKeyDown() &&
+            !IsCharFullWidth(pInKeyEvent->GetCharData()))
         {
             bool sameKey = false;
-            if (IsFlagSet(pInKeyEvent->_activeModifierKeys, NLS_IME_CONVERSION) &&
-                pInKeyEvent->_charData == pLastKeyEvent->_charData &&
-                pInKeyEvent->_activeModifierKeys == pLastKeyEvent->_activeModifierKeys)
+            if (IsFlagSet(pInKeyEvent->GetActiveModifierKeys(), NLS_IME_CONVERSION) &&
+                pInKeyEvent->GetCharData() == pLastKeyEvent->GetCharData() &&
+                pInKeyEvent->GetActiveModifierKeys() == pLastKeyEvent->GetActiveModifierKeys())
             {
                 sameKey = true;
             }
             // other key events check
-            else if (pInKeyEvent->_virtualScanCode == pLastKeyEvent->_virtualScanCode &&
-                    pInKeyEvent->_charData == pLastKeyEvent->_charData &&
-                    pInKeyEvent->_activeModifierKeys == pLastKeyEvent->_activeModifierKeys)
+            else if (pInKeyEvent->GetVirtualScanCode() == pLastKeyEvent->GetVirtualScanCode() &&
+                     pInKeyEvent->GetCharData() == pLastKeyEvent->GetCharData() &&
+                     pInKeyEvent->GetActiveModifierKeys() == pLastKeyEvent->GetActiveModifierKeys())
             {
                 sameKey = true;
             }
@@ -730,7 +729,8 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
             {
                 // increment repeat count
                 KeyEvent* const pKeyEvent = static_cast<KeyEvent* const>(_storage.back().release());
-                pKeyEvent->_repeatCount += pInKeyEvent->_repeatCount;
+                WORD repeatCount = pKeyEvent->GetRepeatCount() + pInKeyEvent->GetRepeatCount();
+                pKeyEvent->SetRepeatCount(repeatCount);
                 std::unique_ptr<IInputEvent> tempPtr(pKeyEvent);
                 tempPtr.swap(_storage.back());
 
@@ -763,16 +763,16 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::uniq
             if (currEvent->EventType() == InputEventType::KeyEvent)
             {
                 const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currEvent.get());
-                if (pKeyEvent->_keyDown)
+                if (pKeyEvent->IsKeyDown())
                 {
                     if (IsFlagSet(gci->Flags, CONSOLE_SUSPENDED) &&
-                        !IsSystemKey(pKeyEvent->_virtualKeyCode))
+                        !IsSystemKey(pKeyEvent->GetVirtualKeyCode()))
                     {
                         UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
                         continue;
                     }
                     else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
-                             (pKeyEvent->_virtualKeyCode == VK_PAUSE || ::IsPauseKey(*pKeyEvent)))
+                             (pKeyEvent->GetVirtualKeyCode() == VK_PAUSE || ::IsPauseKey(*pKeyEvent)))
                     {
                         SetFlag(gci->Flags, CONSOLE_SUSPENDED);
                         continue;
