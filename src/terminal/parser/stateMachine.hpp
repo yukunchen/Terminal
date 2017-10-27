@@ -66,8 +66,10 @@ namespace Microsoft
                 static bool s_IsOscParamValue(_In_ wchar_t const wch);
                 static bool s_IsOscInvalid(_In_ wchar_t const wch);
                 static bool s_IsOscTerminator(_In_ wchar_t const wch);
+                static bool s_IsOscTerminationInitiator(_In_ wchar_t const wch);
                 static bool s_IsDesignateCharsetIndicator(_In_ wchar_t const wch);
                 static bool s_IsCharsetCode(_In_ wchar_t const wch);
+                static bool s_IsNumber(_In_ wchar_t const wch);
                 static bool s_IsSs3Indicator(_In_ wchar_t const wch);
 
                 void _ActionExecute(_In_ wchar_t const wch);
@@ -95,6 +97,7 @@ namespace Microsoft
                 void _EnterCsiIntermediate();
                 void _EnterOscParam();
                 void _EnterOscString();
+                void _EnterOscTermination();
                 void _EnterSs3Entry();
                 void _EnterSs3Param();
 
@@ -107,6 +110,7 @@ namespace Microsoft
                 void _EventCsiParam(_In_ wchar_t const wch);
                 void _EventOscParam(_In_ wchar_t const wch);
                 void _EventOscString(_In_ wchar_t const wch);
+                void _EventOscTermination(_In_ wchar_t const wch);
                 void _EventSs3Entry(_In_ wchar_t const wch);
                 void _EventSs3Param(_In_ wchar_t const wch);
 
@@ -121,6 +125,7 @@ namespace Microsoft
                     CsiParam,
                     OscParam,
                     OscString,
+                    OscTermination,
                     Ss3Entry,
                     Ss3Param
                 };

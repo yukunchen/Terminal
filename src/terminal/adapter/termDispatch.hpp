@@ -66,6 +66,7 @@ namespace Microsoft
                 virtual bool EnableButtonEventMouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1002
                 virtual bool EnableAnyEventMouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1003
                 virtual bool EnableAlternateScroll(_In_ bool const /*fEnabled*/) { return false; } // ?1007
+                virtual bool SetColorTableEntry(_In_ const size_t /*tableIndex*/, _In_ const DWORD /*dwColor*/) { return false; } // OSCColorTable
 
                 enum class EraseType : unsigned int
                 {
