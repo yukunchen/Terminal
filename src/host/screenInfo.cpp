@@ -252,7 +252,8 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
     if (NT_SUCCESS(status))
     {
         ASSERT(_pAdapter == nullptr);
-        if (!AdaptDispatch::CreateInstance(_pConApi, _pBufferWriter, _Attributes.GetLegacyAttributes(), &_pAdapter))
+        _pAdapter = new AdaptDispatch(_pConApi, _pBufferWriter, _Attributes.GetLegacyAttributes());
+        if (_pAdapter == nullptr)
         {
             status = STATUS_NO_MEMORY;
         }

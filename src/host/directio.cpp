@@ -419,6 +419,41 @@ HRESULT DoSrvWriteConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
     return S_OK;
 }
 
+// Function Description:
+// - Writes the input records to the beginning of the input buffer. This is used
+//      by VT sequences that need a response immediately written back to the 
+//      input.
+// Arguments:
+// - pInputBuffer - the input buffer to write to
+// - events - the events to written
+// - eventsWritten - on output, the number of events written
+// Return Value:
+// - HRESULT indicating success or failure
+HRESULT DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
+                                        _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                        _Out_ size_t& eventsWritten)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    eventsWritten = 0;
+
+    try
+    {
+        // add partial byte event if necessary
+        if (pInputBuffer->IsWritePartialByteSequenceAvailable())
+        {
+            events.push_front(pInputBuffer->FetchWritePartialByteSequence(false));
+        }
+    }
+    CATCH_RETURN();
+
+    // add to InputBuffer
+    eventsWritten = pInputBuffer->Prepend(events);
+
+    return S_OK;
+}
+
 // Routine Description:
 // - This is used when the app reads oem from the output buffer the app wants
 //   real OEM characters. We have real Unicode or UnicodeOem.

@@ -296,7 +296,7 @@ BOOL ConhostInternalGetSet::WriteConsoleInputW(_Inout_ std::deque<std::unique_pt
                                             events,
                                             eventsWritten,
                                             true, // unicode
-                                            false)); // append
+                                            true)); // append
 }
 
 // Routine Description:
@@ -592,4 +592,21 @@ BOOL ConhostInternalGetSet::PrivateEraseAll()
 BOOL ConhostInternalGetSet::PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes)
 {
     return NT_SUCCESS(DoSrvPrivateGetConsoleScreenBufferAttributes(_pScreenInfo, pwAttributes));
+}
+
+// Routine Description:
+// - Connects the PrivatePrependConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - events - the input events to be copied into the head of the input
+// buffer for the underlying attached process
+// - eventsWritten - on output, the number of events written
+// Return Value:
+// - TRUE if successful (see DoSrvPrivatePrependConsoleInput). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                                       _Out_ size_t& eventsWritten)
+{
+    BOOL fSuccess = SUCCEEDED(DoSrvPrivatePrependConsoleInput(_pInputBuffer,
+                                                              events,
+                                                              eventsWritten));
+    return fSuccess;
 }

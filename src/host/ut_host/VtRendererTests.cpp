@@ -747,7 +747,7 @@ void VtRendererTest::XtermTestCursor()
     engine->SetTestCallback(pfn);
 
     SMALL_RECT view = SetUpViewport(*engine);
-
+    
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."
     ));
