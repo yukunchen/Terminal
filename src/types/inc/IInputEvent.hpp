@@ -23,6 +23,7 @@ Author:
 #include <unordered_set>
 #include <memory>
 #include <deque>
+#include <ostream>
 
 enum class InputEventType
 {
@@ -50,7 +51,14 @@ public:
 
     virtual InputEventType EventType() const noexcept = 0;
 
+#ifdef UNIT_TESTING
+    friend std::wostream& operator<<(std::wostream& stream, const IInputEvent* const pEvent);
+#endif
 };
+
+#ifdef UNIT_TESTING
+std::wostream& operator<<(std::wostream& stream, const IInputEvent* pEvent);
+#endif
 
 #define ALT_PRESSED     (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)
 #define CTRL_PRESSED    (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED)
@@ -231,6 +239,9 @@ private:
     DWORD _activeModifierKeys;
 
     friend constexpr bool operator==(const KeyEvent& a, const KeyEvent& b) noexcept;
+#ifdef UNIT_TESTING
+    friend std::wostream& operator<<(std::wostream& stream, const KeyEvent* const pKeyEvent);
+#endif
 };
 
 constexpr bool operator==(const KeyEvent& a, const KeyEvent& b) noexcept
@@ -242,6 +253,10 @@ constexpr bool operator==(const KeyEvent& a, const KeyEvent& b) noexcept
             a._charData == b._charData &&
             a._activeModifierKeys == b._activeModifierKeys);
 }
+
+#ifdef UNIT_TESTING
+std::wostream& operator<<(std::wostream& stream, const KeyEvent* const pKeyEvent);
+#endif
 
 class MouseEvent : public IInputEvent
 {
@@ -307,7 +322,15 @@ private:
     DWORD _buttonState;
     DWORD _activeModifierKeys;
     DWORD _eventFlags;
+
+#ifdef UNIT_TESTING
+    friend std::wostream& operator<<(std::wostream& stream, const MouseEvent* const pMouseEvent);
+#endif
 };
+
+#ifdef UNIT_TESTING
+std::wostream& operator<<(std::wostream& stream, const MouseEvent* const pMouseEvent);
+#endif
 
 class WindowBufferSizeEvent : public IInputEvent
 {
@@ -338,7 +361,15 @@ public:
 
 private:
     COORD _size;
+
+#ifdef UNIT_TESTING
+    friend std::wostream& operator<<(std::wostream& stream, const WindowBufferSizeEvent* const pEvent);
+#endif
 };
+
+#ifdef UNIT_TESTING
+std::wostream& operator<<(std::wostream& stream, const WindowBufferSizeEvent* const pEvent);
+#endif
 
 class MenuEvent : public IInputEvent
 {
@@ -369,7 +400,15 @@ public:
 
 private:
     UINT _commandId;
+
+#ifdef UNIT_TESTING
+    friend std::wostream& operator<<(std::wostream& stream, const MenuEvent* const pMenuEvent);
+#endif
 };
+
+#ifdef UNIT_TESTING
+std::wostream& operator<<(std::wostream& stream, const MenuEvent* const pMenuEvent);
+#endif
 
 class FocusEvent : public IInputEvent
 {
@@ -400,4 +439,12 @@ public:
 
 private:
     bool _focus;
+
+#ifdef UNIT_TESTING
+    friend std::wostream& operator<<(std::wostream& stream, const FocusEvent* const pFocusEvent);
+#endif
 };
+
+#ifdef UNIT_TESTING
+std::wostream& operator<<(std::wostream& stream, const FocusEvent* const pFocusEvent);
+#endif

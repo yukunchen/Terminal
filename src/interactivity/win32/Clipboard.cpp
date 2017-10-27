@@ -125,12 +125,14 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
     {
         wchar_t currentChar = pData[i];
 
+        const bool charAllowed = FilterCharacterOnPaste(&currentChar);
         // filter out linefeed if it's not the first char and preceded
         // by a carriage return
-        if (!(FilterCharacterOnPaste(&currentChar) &&
-              (currentChar != UNICODE_LINEFEED ||
-               i == 0 ||
-               pData[i - 1] != UNICODE_CARRIAGERETURN)))
+        const bool skipLinefeed = (i != 0  &&
+                                   currentChar == UNICODE_LINEFEED &&
+                                   pData[i -1] == UNICODE_CARRIAGERETURN);
+
+        if (!charAllowed || skipLinefeed)
         {
             continue;
         }
@@ -277,35 +279,37 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToKeyboardEvents(_In_ const
 // - will throw exception on error
 std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToNumpad(_In_ const wchar_t wch)
 {
-    const UINT codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
-    const int radix = 10;
-
     std::deque<std::unique_ptr<KeyEvent>> keyEvents;
 
+    //alt keydown
+    keyEvents.push_back(std::make_unique<KeyEvent>(true,
+                                                   1ui16,
+                                                   static_cast<WORD>(VK_MENU),
+                                                   altScanCode,
+                                                   UNICODE_NULL,
+                                                   LEFT_ALT_PRESSED));
+
+    const UINT codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
+    const int radix = 10;
     std::wstring wstr{ wch };
     std::deque<char> convertedChars;
+
     convertedChars = ConvertToOem(codepage, wstr);
-
-    for (char ch : convertedChars)
+    if (convertedChars.size() == 1)
     {
-        // char values are in the range [-128, 127] so we need to be
-        // able to store up to 4 chars from the conversion
+        unsigned char uch = static_cast<unsigned char>(convertedChars[0]);
+        // unsigned char values are in the range [0, 255] so we need to be
+        // able to store up to 4 chars from the conversion (including the end of string char)
         char charString[4] = { 0 };
-        THROW_HR_IF(E_INVALIDARG, 0 != _itoa_s(ch, charString, ARRAYSIZE(charString), radix));
+        THROW_HR_IF(E_INVALIDARG, 0 != _itoa_s(uch, charString, ARRAYSIZE(charString), radix));
 
-        keyEvents.push_back(std::make_unique<KeyEvent>(true,
-                                                       1ui16,
-                                                       static_cast<WORD>(VK_MENU),
-                                                       altScanCode,
-                                                       UNICODE_NULL,
-                                                       LEFT_ALT_PRESSED));
         for (size_t i = 0; i < ARRAYSIZE(charString); ++i)
         {
             if (charString[i] == 0)
             {
                 break;
             }
-            const WORD virtualKey = charString[i] + '0' + VK_NUMPAD0;
+            const WORD virtualKey = charString[i] - '0' + VK_NUMPAD0;
             const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
 
             keyEvents.push_back(std::make_unique<KeyEvent>(true,
@@ -321,13 +325,15 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToNumpad(_In_ const wchar_t
                                                            UNICODE_NULL,
                                                            LEFT_ALT_PRESSED));
         }
-        keyEvents.push_back(std::make_unique<KeyEvent>(false,
-                                                       1ui16,
-                                                       static_cast<WORD>(VK_MENU),
-                                                       altScanCode,
-                                                       wch,
-                                                       0));
     }
+
+    // alt keyup
+    keyEvents.push_back(std::make_unique<KeyEvent>(false,
+                                                   1ui16,
+                                                   static_cast<WORD>(VK_MENU),
+                                                   altScanCode,
+                                                   wch,
+                                                   0));
     return keyEvents;
 }
 
