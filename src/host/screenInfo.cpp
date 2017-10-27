@@ -252,7 +252,8 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
     if (NT_SUCCESS(status))
     {
         ASSERT(_pAdapter == nullptr);
-        if (!AdaptDispatch::CreateInstance(_pConApi, _pBufferWriter, _Attributes.GetLegacyAttributes(), &_pAdapter))
+        _pAdapter = new AdaptDispatch(_pConApi, _pBufferWriter, _Attributes.GetLegacyAttributes());
+        if (_pAdapter == nullptr)
         {
             status = STATUS_NO_MEMORY;
         }
@@ -2393,6 +2394,12 @@ void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute* const pPop
     _PopupAttributes = *pPopupAttributes;
 }
 
+// Method Description:
+// - Returns an inclusive rectangle that describes the bounds of the buffer viewport.
+// Arguments:
+// - <none>
+// Return Value:
+// - the viewport bounds as an inclusive rect.
 SMALL_RECT SCREEN_INFORMATION::GetBufferViewport() const
 {
     return _srBufferViewport;

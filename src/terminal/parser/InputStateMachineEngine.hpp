@@ -18,6 +18,7 @@ Author(s):
 #include "IStateMachineEngine.hpp"
 #include <functional>
 #include "../../types/inc/IInputEvent.hpp"
+#include "../adapter/IInteractDispatch.hpp"
 
 namespace Microsoft
 {
@@ -35,7 +36,7 @@ namespace Microsoft
 class Microsoft::Console::VirtualTerminal::InputStateMachineEngine : public IStateMachineEngine
 {
 public:
-    InputStateMachineEngine(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
+    InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch);
 
     bool ActionExecute(_In_ wchar_t const wch) override;
     bool ActionPrint(_In_ wchar_t const wch) override;
@@ -62,7 +63,7 @@ public:
 
 private:
     
-    std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteEvents;
+    const std::unique_ptr<IInteractDispatch> _pDispatch;
 
     enum CsiActionCodes : wchar_t
     {
@@ -77,6 +78,7 @@ private:
         CSI_F2 = L'Q',
         CSI_F3 = L'R',
         CSI_F4 = L'S',
+        DTTERM_WindowManipulation = L't',
     };
 
     enum Ss3ActionCodes : wchar_t
@@ -132,14 +134,19 @@ private:
     static const SS3_TO_VKEY s_rgSs3Map[];
 
 
-    DWORD _GetCursorKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams);
-    DWORD _GetGenericKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams);
-    bool _GenerateKeyFromChar(_In_ const wchar_t wch, _Out_ short* const pVkey, _Out_ DWORD* const pdwModifierState);
+    DWORD _GetCursorKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                      _In_ const unsigned short cParams);
+    DWORD _GetGenericKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                       _In_ const unsigned short cParams);
+    bool _GenerateKeyFromChar(_In_ const wchar_t wch, _Out_ short* const pVkey,
+                              _Out_ DWORD* const pdwModifierState);
 
     bool _IsModified(_In_ const unsigned short cParams);
     DWORD _GetModifier(_In_ const unsigned short modifierParam);
 
-    bool _GetGenericVkey(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ short* const pVkey) const;
+    bool _GetGenericVkey(_In_reads_(cParams) const unsigned short* const rgusParams,
+                         _In_ const unsigned short cParams,
+                         _Out_ short* const pVkey) const;
     bool _GetCursorKeysVkey(_In_ const wchar_t wch, _Out_ short* const pVkey) const;
     bool _GetSs3KeysVkey(_In_ const wchar_t wch, _Out_ short* const pVkey) const;
 
@@ -157,5 +164,9 @@ private:
                               _In_ const DWORD dwModifierState,
                               _Inout_updates_(cRecords) INPUT_RECORD* const rgInput,
                               _In_ const size_t cRecords);
+    
+    bool _GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                    _In_ const unsigned short cParams,
+                                    _Out_ unsigned int* const puiFunction) const;
 
 };

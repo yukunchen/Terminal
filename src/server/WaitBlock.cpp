@@ -123,7 +123,7 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
     bool fRetVal;
 
     NTSTATUS status;
-    DWORD dwNumBytes;
+    DWORD dwNumBytes = 0;
     DWORD dwControlKeyState;
     BOOLEAN fIsUnicode = TRUE;
 

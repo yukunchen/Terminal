@@ -13,7 +13,7 @@ Author(s):
 
 #pragma once
 
-#include "..\parser\termDispatch.hpp"
+#include "termDispatch.hpp"
 #include "conGetSet.hpp"
 #include "adaptDefaults.hpp"
 #include "terminalOutput.hpp"
@@ -31,12 +31,9 @@ namespace Microsoft
             {
             public:
 
-                static bool CreateInstance(_Inout_ ConGetSet* const pConApi,
-                                           _Inout_ AdaptDefaults* const pDefaults,
-                                           _In_ const WORD wDefaultTextAttributes,
-                                           _Outptr_ AdaptDispatch ** const ppDispatch);
-
-                ~AdaptDispatch();
+                AdaptDispatch(_Inout_ ConGetSet* const pConApi,
+                              _Inout_ AdaptDefaults* const pDefaults,
+                              _In_ const WORD wDefaultTextAttributes);
 
                 void UpdateDefaults(_Inout_ AdaptDefaults* const pDefaults)
                 {
@@ -109,13 +106,13 @@ namespace Microsoft
                 virtual bool EnableButtonEventMouseMode(_In_ bool const fEnabled); // ?1002
                 virtual bool EnableAnyEventMouseMode(_In_ bool const fEnabled); // ?1003
                 virtual bool EnableAlternateScroll(_In_ bool const fEnabled); // ?1007
-                virtual bool WindowManipulation(_In_ const WindowManipulationType uiFunction,
+                virtual bool SetColorTableEntry(_In_ const size_t tableIndex,
+                                                _In_ const DWORD dwColor); // OscColorTable
+                virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
                                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                                 _In_ size_t const cParams); // DTTERM_WindowManipulation
+
             private:
-                AdaptDispatch(_Inout_ ConGetSet* const pConApi,
-                              _Inout_ AdaptDefaults* const pDefaults,
-                              _In_ const WORD wDefaultTextAttributes);
 
                 enum class CursorDirection
                 {
@@ -153,9 +150,10 @@ namespace Microsoft
                 bool _SetResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rgParams, _In_ size_t const cParams, _In_ bool const fEnable);
                 bool _PrivateModeParamsHelper(_In_ PrivateModeParams const param, _In_ bool const fEnable);
                 bool _DoDECCOLMHelper(_In_ unsigned int uiColumns);
+                
                 ConGetSet* _pConApi;
                 AdaptDefaults* _pDefaults;
-                TerminalOutput* _pTermOutput;
+                TerminalOutput _TermOutput;
 
                 WORD _wDefaultTextAttributes;
                 COORD _coordSavedCursor;
@@ -176,7 +174,6 @@ namespace Microsoft
                 static bool s_IsXtermColorOption(_In_ GraphicsOptions const opt);
                 static bool s_IsRgbColorOption(_In_ GraphicsOptions const opt);
 
-                bool _ResizeWindow(_In_ const unsigned short usWidth, _In_ const unsigned short usHeight);
             };
         };
     };

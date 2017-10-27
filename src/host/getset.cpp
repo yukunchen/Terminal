@@ -783,11 +783,7 @@ NTSTATUS DoSrvPrivateSetConsoleXtermTextAttribute(_In_ SCREEN_INFORMATION* pScre
     if (iXtermTableEntry < COLOR_TABLE_SIZE)
     {
         //Convert the xterm index to the win index
-        bool fRed = (iXtermTableEntry & 0x01) > 0;
-        bool fGreen = (iXtermTableEntry & 0x02) > 0;
-        bool fBlue = (iXtermTableEntry & 0x04) > 0;
-        bool fBright = (iXtermTableEntry & 0x08) > 0;
-        WORD iWinEntry = (fRed ? 0x4 : 0x0) | (fGreen ? 0x2 : 0x0) | (fBlue ? 0x1 : 0x0) | (fBright ? 0x8 : 0x0);
+        WORD iWinEntry = ::XtermToWindowsIndex(iXtermTableEntry);
 
         rgbColor = gci->GetColorTableEntry(iWinEntry);
     }
