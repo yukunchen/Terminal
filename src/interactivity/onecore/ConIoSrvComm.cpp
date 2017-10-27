@@ -39,6 +39,28 @@ ConIoSrvComm::ConIoSrvComm()
 
 }
 
+ConIoSrvComm::~ConIoSrvComm()
+{
+    // Free any handles we might have open.
+    if (INVALID_HANDLE_VALUE != _pipeReadHandle)
+    {
+        CloseHandle(_pipeReadHandle);
+        _pipeReadHandle = INVALID_HANDLE_VALUE;
+    }
+
+    if (INVALID_HANDLE_VALUE != _pipeWriteHandle)
+    {
+        CloseHandle(_pipeWriteHandle);
+        _pipeWriteHandle = INVALID_HANDLE_VALUE;
+    }
+
+    if (INVALID_HANDLE_VALUE != _alpcClientCommunicationPort)
+    {
+        CloseHandle(_alpcClientCommunicationPort);
+        _alpcClientCommunicationPort = INVALID_HANDLE_VALUE;
+    }
+}
+
 #pragma region Communication
 
 NTSTATUS ConIoSrvComm::Connect()
@@ -247,8 +269,8 @@ VOID ConIoSrvComm::ServiceInputPipe()
         else
         {
             // If we get disconnected, terminate.
-            TerminateProcess(GetCurrentProcess(), GetLastError());
-        }
+            ServiceLocator::RundownAndExit(GetLastError());
+       }
     }
 }
 

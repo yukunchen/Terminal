@@ -48,10 +48,11 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
 // - S_OK on success, otherwise an appropriate failure.
 HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const char* const charBuffer, _In_ const int cch)
 {
+
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     gci->LockConsole();
     auto Unlock = wil::ScopeExit([&] { gci->UnlockConsole(); });
-
+    
     unsigned int const uiCodePage = gci->CP;
     try
     {

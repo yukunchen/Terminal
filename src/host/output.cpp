@@ -1077,7 +1077,7 @@ void CloseConsoleProcessState()
     //      when it's created suspended and never resumed.
     if (gci->ProcessHandleList.IsEmpty())
     {
-        ExitProcess(STATUS_SUCCESS);
+        ServiceLocator::RundownAndExit(STATUS_SUCCESS);
     }
 
     HandleCtrlEvent(CTRL_CLOSE_EVENT);

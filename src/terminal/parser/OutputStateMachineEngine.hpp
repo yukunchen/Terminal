@@ -214,7 +214,8 @@ namespace Microsoft
                                                 _In_ const unsigned short cParams,
                                                 _Out_ unsigned int* const puiFunction) const;
 
-                static unsigned int s_HexToUint(_In_ wchar_t const wch);
+                static bool s_HexToUint(_In_ wchar_t const wch,
+                                        _Out_ unsigned int * const puiValue);
                 static bool s_IsNumber(_In_ wchar_t const wch);
                 static bool s_IsHexNumber(_In_ wchar_t const wch);
                 bool _GetOscSetColorTable(_In_ const wchar_t* const pwchOscStringBuffer,

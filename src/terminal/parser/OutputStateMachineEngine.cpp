@@ -563,8 +563,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
             break;
         case OscActionCodes::SetColor:
             fSuccess = _pDispatch->SetColorTableEntry(tableIndex, dwColor);
-            // todo replace telemetry
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCWT);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
             break;
         default:
             // If no functions to call, overall dispatch was a failure.
@@ -1108,24 +1107,30 @@ bool OutputStateMachineEngine::FlushAtEndOfString() const
 // - Converts a hex character to it's equivalent integer value.
 // Arguments:
 // - wch - Character to convert.
+// - puiValue - recieves the int value of the char
 // Return Value:
-// - the integer value of the hex character, 0 if it's not a hex char.
-unsigned int OutputStateMachineEngine::s_HexToUint(_In_ wchar_t const wch)
+// - true iff the character is a hex character.
+bool OutputStateMachineEngine::s_HexToUint(_In_ wchar_t const wch,
+                                           _Out_ unsigned int * const puiValue)
 {
-    unsigned int value = 0;
+    *puiValue = 0;
+    bool fSuccess = false;
     if (wch >= L'0' && wch <= L'9')
     {
-        value = wch - L'0';
+        *puiValue = wch - L'0';
+        fSuccess = true;
     }
     else if (wch >= L'A' && wch <= L'F')
     {
-        value = (wch - L'A') + 10;
+        *puiValue = (wch - L'A') + 10;
+        fSuccess = true;
     }
     else if (wch >= L'a' && wch <= L'f')
     {
-        value = (wch - L'a') + 10;
+        *puiValue = (wch - L'a') + 10;
+        fSuccess = true;
     }
-    return value;
+    return fSuccess;
 }
 
 // Routine Description:
@@ -1245,7 +1250,17 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(_In_ const wchar_t* const pw
                 if (s_IsHexNumber(wch))
                 {
                     *pValue *= 16;
-                    *pValue += s_HexToUint(wch);
+                    unsigned int intVal = 0;
+                    if (s_HexToUint(wch, &intVal))
+                    {
+                        *pValue += intVal;
+                    }
+                    else
+                    {
+                        // Encountered something weird oh no
+                        foundColor = false;
+                        break;
+                    }
                     // If we're on the blue component, we're not going to see a /.
                     // Break out once we hit the end.
                     if (component == 2 && pwchCurr == pwchEnd)

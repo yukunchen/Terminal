@@ -30,10 +30,11 @@ namespace Microsoft
         {
             namespace OneCore
             {
-                class ConIoSrvComm sealed : public IInputServices
+                class ConIoSrvComm final : public IInputServices
                 {
                 public:
                     ConIoSrvComm();
+                    ~ConIoSrvComm() override;
 
                     NTSTATUS Connect();
                     VOID ServiceInputPipe();
