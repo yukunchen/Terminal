@@ -343,6 +343,24 @@ public:
 
         return _fWriteConsoleInputWResult;
     }
+    
+    virtual BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                            _Out_ size_t& eventsWritten)
+    {
+        Log::Comment(L"PrivatePrependConsoleInput MOCK called...");
+
+        if (_fPrivatePrependConsoleInputResult)
+        {
+            // move all the input events we were given into local storage so we can test against them
+            Log::Comment(NoThrowString().Format(L"Moving %d input events into local storage...", events.size()));
+
+            _events.clear();
+            _events.swap(events);
+            eventsWritten = _events.size();
+        }
+
+        return _fPrivatePrependConsoleInputResult;
+    }
 
     bool _IsInsideClip(_In_ const SMALL_RECT* const pClipRectangle, _In_ SHORT const iRow, _In_ SHORT const iCol)
     {
@@ -658,6 +676,7 @@ public:
         _fFillConsoleOutputAttributeResult = TRUE;
         _fSetConsoleTextAttributeResult = TRUE;
         _fWriteConsoleInputWResult = TRUE;
+        _fPrivatePrependConsoleInputResult = TRUE;
         _fScrollConsoleScreenBufferWResult = TRUE;
         _fSetConsoleWindowInfoResult = TRUE;
         _fPrivateGetConsoleScreenBufferAttributesResult = TRUE;
@@ -1132,6 +1151,7 @@ public:
     BOOL _fFillConsoleOutputAttributeResult;
     BOOL _fSetConsoleTextAttributeResult;
     BOOL _fWriteConsoleInputWResult;
+    BOOL _fPrivatePrependConsoleInputResult;
     BOOL _fScrollConsoleScreenBufferWResult;
 
     BOOL _fSetConsoleWindowInfoResult;
@@ -1195,7 +1215,7 @@ public:
         }
         if (fSuccess)
         {
-            AdaptDispatch::CreateInstance(_pTest, this, s_wDefaultFill, &_pDispatch);
+            _pDispatch = new AdaptDispatch(_pTest, this, s_wDefaultFill);
         }
         if (_pDispatch == nullptr)
         {
@@ -2685,7 +2705,7 @@ public:
 
         Log::Comment(L"Test 2: Verify failure when WriteConsoleInput doesn't work.");
         _pTest->PrepData();
-        _pTest->_fWriteConsoleInputWResult = FALSE;
+        _pTest->_fPrivatePrependConsoleInputResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch->DeviceAttributes());
     }

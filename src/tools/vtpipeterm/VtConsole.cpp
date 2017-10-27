@@ -23,7 +23,6 @@ VtConsole::VtConsole(PipeReadCallback const pfnReadCallback)
     _outPipeName = L"\\\\.\\pipe\\convt-out-" + randString;
 }
 
-
 HANDLE VtConsole::inPipe()
 {
     return _inPipe;

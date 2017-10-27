@@ -533,7 +533,7 @@ DWORD ConsoleIoThread()
                 fShouldExit = true;
 
                 // This will not return. Terminate immediately when disconnected.
-                TerminateProcess(GetCurrentProcess(), STATUS_SUCCESS);
+                ServiceLocator::RundownAndExit(STATUS_SUCCESS);
             }
             RIPMSG1(RIP_WARNING, "DeviceIoControl failed with Result 0x%x", hr);
             ReplyMsg = nullptr;

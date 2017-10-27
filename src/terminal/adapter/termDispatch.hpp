@@ -5,13 +5,16 @@ Module Name:
 - termDispatch.hpp
 
 Abstract:
-- This is the base class for all state machine callbacks. When actions occur, they will be dispatched to the methods on this interface
-  which must be implemented by a child class and passed into the state machine on creation.
+- This is the base class for all output state machine callbacks. When actions 
+    occur, they will be dispatched to the methods on this interface which must 
+    be implemented by a child class and passed into the state machine on 
+    creation.
 
 Author(s):
 - Michael Niksa (MiNiksa) 30-July-2015
 --*/
 #pragma once
+#include "DispatchCommon.hpp"
 
 namespace Microsoft
 {
@@ -63,6 +66,7 @@ namespace Microsoft
                 virtual bool EnableButtonEventMouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1002
                 virtual bool EnableAnyEventMouseMode(_In_ bool const /*fEnabled*/) { return false; } // ?1003
                 virtual bool EnableAlternateScroll(_In_ bool const /*fEnabled*/) { return false; } // ?1007
+                virtual bool SetColorTableEntry(_In_ const size_t /*tableIndex*/, _In_ const DWORD /*dwColor*/) { return false; } // OSCColorTable
 
                 enum class EraseType : unsigned int
                 {
@@ -177,14 +181,8 @@ namespace Microsoft
                 virtual bool SoftReset(){ return false; } // DECSTR
                 virtual bool HardReset(){ return false; } // RIS
 
-                enum WindowManipulationType : unsigned int
-                {
-                    Invalid = 0,
-                    ResizeWindowInCharacters = 8,
-                };
-
                 // DTTERM_WindowManipulation
-                virtual bool WindowManipulation(_In_ const WindowManipulationType /*uiFunction*/,
+                virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType /*uiFunction*/,
                                                 _In_reads_(cParams) const unsigned short* const /*rgusParams*/,
                                                 _In_ size_t const /*cParams*/) { return false; } 
 

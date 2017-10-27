@@ -5,14 +5,17 @@ Module Name:
 - terminalOutput.hpp
 
 Abstract:
-- 
+- Provides a set of functions for translating certain characters into other 
+    characters. There are special VT modes where the display characters (values 
+    x20 - x7f) should be displayed as other characters. This module provides an
+    componentization of that logic.
 
 Author(s):
 - Mike Griese (migrie) 03-Mar-2016
 --*/
 #pragma once
 
-#include "..\parser\termDispatch.hpp"
+#include "termDispatch.hpp"
 
 namespace Microsoft
 {

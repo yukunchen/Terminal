@@ -47,6 +47,18 @@ Viewport Viewport::FromDimensions(_In_ const COORD origin,
                                      origin.X+width, origin.Y+height });
 }
 
+// Method Description:
+// - Creates a Viewport equivalent to a 1x1 rectangle at the given coordinate.
+// Arguments:
+// - origin: origin of the rectangle to create.
+// Return Value:
+// - a 1x1 Viewport at the given coordinate
+Viewport Viewport::FromCoord(_In_ const COORD origin)
+{ 
+    return Viewport::FromInclusive({ origin.X, origin.Y, 
+                                     origin.X, origin.Y });
+}
+
 SHORT Viewport::Left() const 
 {
     return _sr.Left;
