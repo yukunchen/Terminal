@@ -33,6 +33,8 @@ public:
     
     static DWORD StaticOutputThreadProc(LPVOID lpParameter);
 
+    bool WriteInput(std::string& seq);
+
 private:
     PROCESS_INFORMATION pi;
 

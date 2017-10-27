@@ -4,7 +4,7 @@
 *                                                       *
 ********************************************************/
 
-#include "..\termDispatch.hpp"
+#include "../../adapter/termDispatch.hpp"
 
 namespace Microsoft
 {
