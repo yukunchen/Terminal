@@ -274,11 +274,11 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToNumpad(_In_ const wchar_t
 
     //alt keydown
     keyEvents.push_back(std::make_unique<KeyEvent>(TRUE,
-                                                    1ui16,
-                                                    static_cast<WORD>(VK_MENU),
-                                                    altScanCode,
-                                                    UNICODE_NULL,
-                                                    LEFT_ALT_PRESSED));
+                                                   1ui16,
+                                                   static_cast<WORD>(VK_MENU),
+                                                   altScanCode,
+                                                   UNICODE_NULL,
+                                                   LEFT_ALT_PRESSED));
 
     const UINT codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
     if (codepage != CP_UTF8)

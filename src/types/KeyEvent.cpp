@@ -6,7 +6,6 @@
 
 #include "precomp.h"
 #include "inc/IInputEvent.hpp"
-#include <string>
 
 bool operator==(const KeyEvent& a, const KeyEvent& b)
 {
