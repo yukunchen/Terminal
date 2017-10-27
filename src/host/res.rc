@@ -21,7 +21,7 @@
 IDI_APPICON             ICON    "..\\..\\..\\res\\console.ico"
 
 // Fusion default manifest (needed since we are created w/ RtlCreateUserProcess)
-IDR_SYSTEM_MANIFEST     RT_MANIFEST MOVEABLE    PURE    "..\\dll\\SystemDefault.Manifest"
+IDR_SYSTEM_MANIFEST     RT_MANIFEST MOVEABLE    PURE    "..\\exe\\SystemDefault.Manifest"
 
 //
 //  Menus

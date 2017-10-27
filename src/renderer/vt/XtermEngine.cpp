@@ -6,9 +6,9 @@
 
 #include "precomp.h"
 #include "XtermEngine.hpp"
-#include "..\..\inc\Viewport.hpp"
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
 XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
@@ -34,11 +34,18 @@ HRESULT XtermEngine::StartPaint()
     HRESULT hr = VtEngine::StartPaint();
     if (SUCCEEDED(hr))
     {
-        // todo come back to this before the PR is finished.
         if (!_quickReturn)
         {
-            // Turn off cursor
-            hr = _HideCursor();
+            if (!_WillWriteSingleChar()) 
+            {
+                // Turn off cursor
+                hr = _HideCursor();
+            }
+            else
+            {
+                // Don't re-enable the cursor.
+                _quickReturn = true;
+            }
         }
     }
 
@@ -129,6 +136,12 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord)
             std::string seq = "\n";
             hr = _Write(seq);
         }
+        else if (coord.X == (_lastText.X-1) && coord.Y == (_lastText.Y))
+        {
+            // Back one char, same Y position
+            std::string seq = "\b";
+            hr = _Write(seq);
+        }
         else
         {
             hr = _CursorPosition(coord);
@@ -169,10 +182,6 @@ HRESULT XtermEngine::ScrollFrame()
     const short dy = _scrollDelta.Y;
     const short absDy = static_cast<short>(abs(dy));
 
-    Viewport view(_srLastViewport);
-    SMALL_RECT v = _srLastViewport;
-    view.ConvertToOrigin(&v);
-
     HRESULT hr = _MoveCursor({0,0});
     if (SUCCEEDED(hr))
     {
@@ -209,17 +218,15 @@ HRESULT XtermEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
         RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
 
         // Add the top/bottom of the window to the invalid area
-        Viewport view(_srLastViewport);
-        SMALL_RECT v = _srLastViewport;
-        view.ConvertToOrigin(&v);
-        SMALL_RECT invalid = v;
+        SMALL_RECT invalid = _lastViewport.ToOrigin().ToInclusive();
+
         if (dy > 0)
         {
             invalid.Bottom = dy;
         }
         else if (dy < 0)
         {
-            invalid.Top = v.Bottom + dy;
+            invalid.Top = invalid.Bottom + dy;
         }
         _InvalidCombine(&invalid);
 

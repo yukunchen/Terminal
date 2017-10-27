@@ -70,7 +70,7 @@ DirectReadData::~DirectReadData()
 BOOL DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
                             _In_ BOOLEAN const fIsUnicode,
                             _Out_ NTSTATUS* const pReplyStatus,
-                            _Out_ DWORD* const /*pNumBytes*/,
+                            _Out_ DWORD* const pNumBytes,
                             _Out_ DWORD* const pControlKeyState,
                             _Out_ void* const pOutputData)
 {
@@ -87,6 +87,7 @@ BOOL DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
 
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;
+    *pNumBytes = 0;
     bool retVal = true;
     std::deque<std::unique_ptr<IInputEvent>> readEvents;
 
@@ -186,6 +187,7 @@ BOOL DirectReadData::Notify(_In_ WaitTerminationReason const TerminationReason,
 
         // move events to pOutputData
         std::deque<std::unique_ptr<IInputEvent>>* const pOutputDeque = reinterpret_cast<std::deque<std::unique_ptr<IInputEvent>>* const>(pOutputData);
+        *pNumBytes = static_cast<DWORD>(_outEvents.size() * sizeof(INPUT_RECORD));
         pOutputDeque->swap(_outEvents);
     }
     return retVal;

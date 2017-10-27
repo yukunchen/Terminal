@@ -30,6 +30,7 @@ SOURCES = \
     InputBufferTests.cpp \
     VtIoTests.cpp \
     VtRendererTests.cpp \
+    ConsoleArgumentsTests.cpp \
     DefaultResource.rc \
 
 # -------------------------------------

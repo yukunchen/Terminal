@@ -252,7 +252,8 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
     if (NT_SUCCESS(status))
     {
         ASSERT(_pAdapter == nullptr);
-        if (!AdaptDispatch::CreateInstance(_pConApi, _pBufferWriter, _Attributes.GetLegacyAttributes(), &_pAdapter))
+        _pAdapter = new AdaptDispatch(_pConApi, _pBufferWriter, _Attributes.GetLegacyAttributes());
+        if (_pAdapter == nullptr)
         {
             status = STATUS_NO_MEMORY;
         }
@@ -1572,24 +1573,29 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSi
 
         NumToCopy = coordScreenBufferSize.Y - TopRowIndex;
         if (NumToCopy > coordNewScreenSize.Y)
+        {
             NumToCopy = coordNewScreenSize.Y;
+        }
         memmove(Temp, &pTextInfo->Rows[TopRowIndex], NumToCopy * sizeof(ROW));
         if (TopRowIndex != 0 && NumToCopy != coordNewScreenSize.Y)
         {
             NumToCopy2 = TopRowIndex;
             if (NumToCopy2 > (coordNewScreenSize.Y - NumToCopy))
+            {
                 NumToCopy2 = coordNewScreenSize.Y - NumToCopy;
+            }
             memmove(&Temp[NumToCopy], pTextInfo->Rows, NumToCopy2 * sizeof(ROW));
         }
 
-        // if the new screen buffer has fewer rows than the existing one,
-        // free the extra rows.  if the new screen buffer has more rows
-        // than the existing one, allocate new rows.
-        if (coordNewScreenSize.Y < coordScreenBufferSize.Y)
+        // the memmove above invalidates the contract of a unique_ptr, which each ATTR_ROW
+        // contains. we need to release the responsibility of managing the memory from the orignal object
+        // because the copy is taking it over. this should be removed when the calls to memmove are.
+        for (int index = 0; index < coordScreenBufferSize.Y; ++index)
         {
-            pTextInfo->FreeExtraAttributeRows(TopRowIndex, coordScreenBufferSize.Y, coordNewScreenSize.Y);
+            pTextInfo->Rows[index].AttrRow._rgList.release();
         }
-        else if (coordNewScreenSize.Y > coordScreenBufferSize.Y)
+
+        if (coordNewScreenSize.Y > coordScreenBufferSize.Y)
         {
             for (i = coordScreenBufferSize.Y; i < coordNewScreenSize.Y; i++)
             {
@@ -2388,6 +2394,12 @@ void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute* const pPop
     _PopupAttributes = *pPopupAttributes;
 }
 
+// Method Description:
+// - Returns an inclusive rectangle that describes the bounds of the buffer viewport.
+// Arguments:
+// - <none>
+// Return Value:
+// - the viewport bounds as an inclusive rect.
 SMALL_RECT SCREEN_INFORMATION::GetBufferViewport() const
 {
     return _srBufferViewport;
@@ -2399,11 +2411,11 @@ void SCREEN_INFORMATION::SetBufferViewport(SMALL_RECT srBufferViewport)
 }
 
 // Method Description:
-// - Performs a VT Erase All operation. In most terminals, this is done by 
+// - Performs a VT Erase All operation. In most terminals, this is done by
 //      moving the viewport into the scrollback, clearing out the current screen.
-//      For them, there can never be any characters beneath the viewport, as the 
-//      viewport is always at the bottom. So, we can accomplish the same behavior 
-//      by using the LastNonspaceCharacter as the "bottom", and placing the new 
+//      For them, there can never be any characters beneath the viewport, as the
+//      viewport is always at the bottom. So, we can accomplish the same behavior
+//      by using the LastNonspaceCharacter as the "bottom", and placing the new
 //      viewport underneath that character.
 // Parameters:
 //  <none>

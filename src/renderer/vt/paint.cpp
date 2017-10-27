@@ -7,8 +7,7 @@
 #include "precomp.h"
 
 #include "vtrenderer.hpp"
-#include "..\..\inc\Viewport.hpp"
-#include "..\..\inc\conattrs.hpp"
+#include "../../inc/conattrs.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
@@ -23,7 +22,9 @@ using namespace Microsoft::Console::Render;
 HRESULT VtEngine::StartPaint()
 {
     // If there's nothing to do, quick return
-    bool somethingToDo = _fInvalidRectUsed || (_scrollDelta.X != 0 || _scrollDelta.Y != 0);
+    bool somethingToDo = _fInvalidRectUsed || 
+                         (_scrollDelta.X != 0 || _scrollDelta.Y != 0) ||
+                         _cursor.HasMoved();
 
     _quickReturn = !somethingToDo;
 
@@ -43,13 +44,8 @@ HRESULT VtEngine::EndPaint()
 {
     _srcInvalid = { 0 };
     _fInvalidRectUsed = false;
-
-    if (_lastText.X != _lastRealCursor.X || _lastText.Y != _lastRealCursor.Y )
-    {
-        _MoveCursor(_lastRealCursor);
-    }
-
     _scrollDelta = {0};
+    _cursor.ClearMoved();
     
     return S_OK;
 }
@@ -130,22 +126,16 @@ HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const /*lines*/,
 // Routine Description:
 // - Draws the cursor on the screen
 // Arguments:
-// - coord - Coordinate position where the cursor should be drawn
 // - ulHeightPercent - The cursor will be drawn at this percentage of the 
 //      current font height.
 // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-HRESULT VtEngine::PaintCursor(_In_ COORD const coord,
-                              _In_ ULONG const /*ulHeightPercent*/,
+HRESULT VtEngine::PaintCursor(_In_ ULONG const /*ulHeightPercent*/,
                               _In_ bool const /*fIsDoubleWidth*/)
 {
-    // TODO: MSFT 13310327
-    // The cursor needs some help. It invalidates itself, and really that should 
-    //      be the renderer's responsibility. We don't want to keep repainting 
-    //      the character under the cursor.
-
-    _lastRealCursor = coord;
+    COORD const coord = _cursor.GetPosition();
+    _MoveCursor(coord);
 
     return S_OK;
 }

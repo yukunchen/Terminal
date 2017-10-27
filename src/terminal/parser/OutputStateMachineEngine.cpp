@@ -194,11 +194,15 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
     SHORT sBottomMargin = 0;
     SHORT sNumTabs = 0;
     SHORT sClearType = 0;
+    unsigned int uiFunction = 0;
     TermDispatch::EraseType eraseType = TermDispatch::EraseType::ToEnd;
     TermDispatch::GraphicsOptions rgGraphicsOptions[StateMachine::s_cParamsMax];
     size_t cOptions = ARRAYSIZE(rgGraphicsOptions);
     TermDispatch::AnsiStatusType deviceStatusType = (TermDispatch::AnsiStatusType)-1; // there is no default status type.
     
+    // This is all the args after the first arg, and the count of args not including the first one.
+    const unsigned short* const rgusRemainingArgs = (cParams > 1) ? rgusParams + 1 : rgusParams;
+    const unsigned short cRemainingArgs = (cParams >= 1) ? cParams - 1 : 0;
 
     if (cIntermediate == 0)
     {
@@ -256,6 +260,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             break;
         case VTActionCodes::TBC_TabClear:
             fSuccess = _GetTabClearType(rgusParams, cParams, &sClearType);
+            break;
+        case VTActionCodes::DTTERM_WindowManipulation:
+            fSuccess = _GetWindowManipulationType(rgusParams, cParams, &uiFunction);
             break;
         default:
             // If no params to fill, param filling was successful.
@@ -376,6 +383,12 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
             case VTActionCodes::ECH_EraseCharacters:
                 fSuccess = _pDispatch->EraseCharacters(uiDistance);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::ECH);
+                break;
+            case VTActionCodes::DTTERM_WindowManipulation:
+                fSuccess = _pDispatch->WindowManipulation(static_cast<DispatchCommon::WindowManipulationType>(uiFunction),
+                                                          rgusRemainingArgs,
+                                                          cRemainingArgs);
+                TermTelemetry::Instance().Log(TermTelemetry::Codes::DTTERM_WM);
                 break;
             default:
                 // If no functions to call, overall dispatch was a failure.
@@ -520,6 +533,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
     bool fSuccess = false;
     wchar_t* pwchTitle = nullptr;  
     unsigned short sCchTitleLength = 0;
+    size_t tableIndex = 0;
+    DWORD dwColor = 0;
 
     switch (sOscParam)
     {
@@ -527,6 +542,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
     case OscActionCodes::SetWindowIcon:
     case OscActionCodes::SetWindowTitle:
         fSuccess = _GetOscTitle(pwchOscStringBuffer, cchOscString, &pwchTitle, &sCchTitleLength);
+        break;
+    case OscActionCodes::SetColor:
+        fSuccess = _GetOscSetColorTable(pwchOscStringBuffer, cchOscString, &tableIndex, &dwColor);
         break;
     default:
         // If no functions to call, overall dispatch was a failure.
@@ -543,6 +561,10 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
             fSuccess = _pDispatch->SetWindowTitle(pwchTitle, sCchTitleLength);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCWT);
             break;
+        case OscActionCodes::SetColor:
+            fSuccess = _pDispatch->SetColorTableEntry(tableIndex, dwColor);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
+            break;
         default:
             // If no functions to call, overall dispatch was a failure.
             fSuccess = false;
@@ -554,6 +576,24 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
 }
 
 // Routine Description:
+// - Triggers the Ss3Dispatch action to indicate that the listener should handle
+//      a control sequence. These sequences perform various API-type commands 
+//      that can include many parameters.
+// Arguments:
+// - wch - Character to dispatch.
+// - rgusParams - set of numeric parameters collected while pasring the sequence.
+// - cParams - number of parameters found.
+// Return Value:
+// - true iff we successfully dispatched the sequence.
+bool OutputStateMachineEngine::ActionSs3Dispatch(_In_ wchar_t const /*wch*/, 
+                                                 _In_ const unsigned short* const /*rgusParams*/,
+                                                 _In_ const unsigned short /*cParams*/)
+{
+    // The output engine doesn't handle any SS3 sequences.
+    return false;
+}
+
+// Routine Description:
 // - Retrieves the listed graphics options to be applied in order to the "font style" of the next characters inserted into the buffer.
 // Arguments:
 // - rgGraphicsOptions - Pointer to array space (expected 16 max, the max number of params this can generate) that will be filled with valid options from the GraphicsOptions enum
@@ -561,7 +601,10 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
 // Return Value:
 // - True if we successfully retrieved an array of valid graphics options from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetGraphicsOptions(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* rgGraphicsOptions, _Inout_ size_t* pcOptions) const
+bool OutputStateMachineEngine::_GetGraphicsOptions(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                   _In_ const unsigned short cParams,
+                                                   _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* const rgGraphicsOptions,
+                                                   _Inout_ size_t* const pcOptions) const
 {
     bool fSuccess = false;
 
@@ -866,7 +909,10 @@ bool OutputStateMachineEngine::_GetDeviceStatusOperation(_In_reads_(cParams) con
 // Return Value:
 // - True if we successfully retrieved an array of private mode params from the parameters we've stored. False otherwise.
 _Success_(return)
-bool OutputStateMachineEngine::_GetPrivateModeParams(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_writes_(*pcParams) TermDispatch::PrivateModeParams* rgPrivateModeParams, _Inout_ size_t* pcParams) const
+bool OutputStateMachineEngine::_GetPrivateModeParams(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                     _In_ const unsigned short cParams,
+                                                     _Out_writes_(*pcParams) TermDispatch::PrivateModeParams* const rgPrivateModeParams,
+                                                     _Inout_ size_t* const pcParams) const
 {
     bool fSuccess = false;
     // Can't just set nothing at all
@@ -1055,4 +1101,243 @@ bool OutputStateMachineEngine::_GetDesignateType(_In_ const wchar_t wchIntermedi
 bool OutputStateMachineEngine::FlushAtEndOfString() const
 {
     return false;
+}
+
+// Routine Description:
+// - Converts a hex character to it's equivalent integer value.
+// Arguments:
+// - wch - Character to convert.
+// - puiValue - recieves the int value of the char
+// Return Value:
+// - true iff the character is a hex character.
+bool OutputStateMachineEngine::s_HexToUint(_In_ wchar_t const wch,
+                                           _Out_ unsigned int * const puiValue)
+{
+    *puiValue = 0;
+    bool fSuccess = false;
+    if (wch >= L'0' && wch <= L'9')
+    {
+        *puiValue = wch - L'0';
+        fSuccess = true;
+    }
+    else if (wch >= L'A' && wch <= L'F')
+    {
+        *puiValue = (wch - L'A') + 10;
+        fSuccess = true;
+    }
+    else if (wch >= L'a' && wch <= L'f')
+    {
+        *puiValue = (wch - L'a') + 10;
+        fSuccess = true;
+    }
+    return fSuccess;
+}
+
+// Routine Description:
+// - Determines if a character is a valid number character, 0-9.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+bool OutputStateMachineEngine::s_IsNumber(_In_ wchar_t const wch)
+{
+    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
+}
+
+// Routine Description:
+// - Determines if a character is a valid hex character, 0-9a-fA-F.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+bool OutputStateMachineEngine::s_IsHexNumber(_In_ wchar_t const wch)
+{
+    return (wch >= L'0' && wch <= L'9') || // 0x30 - 0x39
+           (wch >= L'A' && wch <= L'F') || 
+           (wch >= L'a' && wch <= L'f');
+}
+
+// Routine Description:
+// - OSC 4 ; c ; spec ST
+//      c: the index of the ansi color table
+//      spec: a color in the following format:
+//          "rgb:<red>/<green>/<blue>"
+//          where <color> is two hex digits
+// Arguments: 
+// - ppwchTitle - a pointer to point to the Osc String to use as a title.
+// - pcchTitleLength - a pointer place the length of ppwchTitle into.
+// Return Value:
+// - True if there was a title to output. (a title with length=0 is still valid)
+bool OutputStateMachineEngine::_GetOscSetColorTable(_In_ const wchar_t* const pwchOscStringBuffer,
+                                                    _In_ const size_t cchOscString,
+                                                    _Out_ size_t* const pTableIndex,
+                                                    _Out_ DWORD* const pRgb)
+{
+    *pTableIndex = 0;
+    *pRgb = 0;
+    const wchar_t* pwchCurr = pwchOscStringBuffer;
+    const wchar_t*const pwchEnd = pwchOscStringBuffer + cchOscString;
+    size_t _TableIndex = 0;
+    unsigned int rguiColorValues[3] = {0};
+    
+    bool foundTableIndex = false;
+    bool foundRGB = false;
+    bool foundValidColorSpec = false;
+    bool fSuccess = false;
+    // We can have anywhere between [11,15] characters
+    // 11 "#;rgb:h/h/h"
+    // 15 "##;rgb:hh/hh/hh"
+    // Any fewer cannot be valid, and any more will be too many.
+    // Return early in this case. 
+    //      We'll still have to bounds check when parsing the hh/hh/hh values
+    if (cchOscString < 11 || cchOscString > 15)
+    {
+        return false;
+    }
+
+    // First try to get the table index, a number between [0,15]
+    for (size_t i = 0; i < 3; i++)
+    {
+        const wchar_t wch = *pwchCurr;
+        if (s_IsNumber(wch))
+        {
+            _TableIndex *= 10;
+            _TableIndex += wch - L'0';
+
+            pwchCurr++;
+        }
+        else if (wch == L';' && i > 0)
+        {
+            // We need to explicitly pass in a number, we can't default to 0 if 
+            //  there's no param
+            pwchCurr++;
+            foundTableIndex = true;
+            break;
+        }
+        else
+        {
+            // Found an unexpected character, fail.
+            break;
+        } 
+    }
+    // Now we look for "rgb:"
+    // Other colorspaces are theoretically possible, but we don't support them.
+    if (foundTableIndex)
+    {
+        if ((pwchCurr[0] == L'r') && 
+            (pwchCurr[1] == L'g') && 
+            (pwchCurr[2] == L'b') &&
+            (pwchCurr[3] == L':') )
+        {
+            foundRGB = true;
+        }
+        pwchCurr += 4;
+    }
+
+    if (foundRGB)
+    {
+        // Colorspecs are up to hh/hh/hh, for 1-2 h's
+        for (size_t component = 0; component < 3; component++)
+        {
+            bool foundColor = false;
+            unsigned int* const pValue = &(rguiColorValues[component]);
+            for (size_t i = 0; i < 3; i++)
+            {   
+
+                const wchar_t wch = *pwchCurr;
+                pwchCurr++;
+
+                if (s_IsHexNumber(wch))
+                {
+                    *pValue *= 16;
+                    unsigned int intVal = 0;
+                    if (s_HexToUint(wch, &intVal))
+                    {
+                        *pValue += intVal;
+                    }
+                    else
+                    {
+                        // Encountered something weird oh no
+                        foundColor = false;
+                        break;
+                    }
+
+                    // If we're on the blue component, we're not going to see a /.
+                    // Break out once we hit the end.
+                    if (component == 2 && pwchCurr == pwchEnd)
+                    {
+                        foundValidColorSpec = true;
+                        break;
+                    }
+                }
+                else if (wch == L'/')
+                {
+                    // Break this component, and start the next one.
+                    foundColor = true;
+                    break;
+                }
+                else
+                {
+                    // Encountered something weird oh no
+                    foundColor = false;
+                    break;
+                } 
+            }
+            if (!foundColor || pwchCurr == pwchEnd)
+            {
+                // Indicates there was a some error parsing color
+                //  or we're at the end of the string.
+                break;
+            }
+        }
+    }
+
+    // Only if we find a valid colorspec can we pass it out successfully.
+    if (foundValidColorSpec)
+    {
+        DWORD color = RGB(LOBYTE(rguiColorValues[0]),
+                          LOBYTE(rguiColorValues[1]),
+                          LOBYTE(rguiColorValues[2]));
+
+        *pTableIndex = _TableIndex;
+        *pRgb = color;
+        fSuccess = true;
+    }
+
+    return fSuccess;
+}
+
+// Method Description:
+// - Retrieves the type of window manipulation operation from the parameter pool
+//      stored during Param actions.
+//  This is kept seperate from the input version, as there may be
+//      codes that are supported in one direction but not the other.
+// Arguments:
+// - rgusParams - Array of parameters collected
+// - cParams - Number of parameters we've collected
+// - puiFunction - Memory location to receive the function type
+// Return Value:
+// - True iff we successfully pulled the function type from the parameters
+bool OutputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                          _In_ const unsigned short cParams,
+                                                          _Out_ unsigned int* const puiFunction) const
+{
+    bool fSuccess = false;
+    *puiFunction = s_DefaultWindowManipulationType;
+
+    if (cParams > 0)
+    {
+        switch(rgusParams[0])
+        {
+            case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
+                *puiFunction = DispatchCommon::WindowManipulationType::ResizeWindowInCharacters;
+                fSuccess = true;
+                break;
+            default:
+                fSuccess = false;
+                break;
+        }
+    }
+
+    return fSuccess;
 }

@@ -49,10 +49,10 @@ const InputStateMachineEngine::CSI_TO_VKEY InputStateMachineEngine::s_rgCsiMap[]
     { CsiActionCodes::ArrowLeft, VK_LEFT },
     { CsiActionCodes::Home, VK_HOME },
     { CsiActionCodes::End, VK_END },
-    { CsiActionCodes::F1, VK_F1 },
-    { CsiActionCodes::F2, VK_F2 },
-    { CsiActionCodes::F3, VK_F3 },
-    { CsiActionCodes::F4, VK_F4 },
+    { CsiActionCodes::CSI_F1, VK_F1 },
+    { CsiActionCodes::CSI_F2, VK_F2 },
+    { CsiActionCodes::CSI_F3, VK_F3 },
+    { CsiActionCodes::CSI_F4, VK_F4 },
 };
 
 const InputStateMachineEngine::GENERIC_TO_VKEY InputStateMachineEngine::s_rgGenericMap[]
@@ -71,9 +71,17 @@ const InputStateMachineEngine::GENERIC_TO_VKEY InputStateMachineEngine::s_rgGene
     { GenericKeyIdentifiers::F12, VK_F12 },
 };
 
-InputStateMachineEngine::InputStateMachineEngine(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn)
+const InputStateMachineEngine::SS3_TO_VKEY InputStateMachineEngine::s_rgSs3Map[]
 {
-    _pfnWriteEvents = pfn;
+    { Ss3ActionCodes::SS3_F1, VK_F1 },
+    { Ss3ActionCodes::SS3_F2, VK_F2 },
+    { Ss3ActionCodes::SS3_F3, VK_F3 },
+    { Ss3ActionCodes::SS3_F4, VK_F4 },
+};
+
+InputStateMachineEngine::InputStateMachineEngine(_In_ std::unique_ptr<IInteractDispatch> pDispatch) :
+    _pDispatch(std::move(pDispatch))
+{
 }
 
 // Method Description:
@@ -224,20 +232,24 @@ bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
 // - cParams - number of parameters found.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch, 
-                       _In_ const unsigned short cIntermediate,
-                       _In_ const wchar_t wchIntermediate,
-                       _In_ const unsigned short* const rgusParams,
-                       _In_ const unsigned short cParams)
+bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
+                                                _In_ const unsigned short cIntermediate,
+                                                _In_ const wchar_t wchIntermediate,
+                                                _In_ const unsigned short* const rgusParams,
+                                                _In_ const unsigned short cParams)
 {
     UNREFERENCED_PARAMETER(cIntermediate);
     UNREFERENCED_PARAMETER(wchIntermediate);
 
     DWORD dwModifierState = 0;
     short vkey = 0;
+    unsigned int uiFunction = 0;
+
+    // This is all the args after the first arg, and the count of args not including the first one.
+    const unsigned short* const rgusRemainingArgs = (cParams > 1) ? rgusParams + 1 : rgusParams;
+    const unsigned short cRemainingArgs = (cParams >= 1) ? cParams - 1 : 0;
 
     bool fSuccess = false;
-
     switch(wch)
     {
         case CsiActionCodes::Generic:
@@ -250,18 +262,78 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
         case CsiActionCodes::ArrowLeft:
         case CsiActionCodes::Home:
         case CsiActionCodes::End:
-        case CsiActionCodes::F1:
-        case CsiActionCodes::F2:
-        case CsiActionCodes::F3:
-        case CsiActionCodes::F4:
+        case CsiActionCodes::CSI_F1:
+        case CsiActionCodes::CSI_F2:
+        case CsiActionCodes::CSI_F3:
+        case CsiActionCodes::CSI_F4:
             dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
             fSuccess = _GetCursorKeysVkey(wch, &vkey);
             break;
+        case CsiActionCodes::DTTERM_WindowManipulation:
+            fSuccess = _GetWindowManipulationType(rgusParams,
+                                                  cParams,
+                                                  &uiFunction);
+            break;
+
         default:
             fSuccess = false;
             break;
 
     }
+
+    if (fSuccess)
+    {
+        switch(wch)
+        {
+            case CsiActionCodes::Generic:
+            case CsiActionCodes::ArrowUp:
+            case CsiActionCodes::ArrowDown:
+            case CsiActionCodes::ArrowRight:
+            case CsiActionCodes::ArrowLeft:
+            case CsiActionCodes::Home:
+            case CsiActionCodes::End:
+            case CsiActionCodes::CSI_F1:
+            case CsiActionCodes::CSI_F2:
+            case CsiActionCodes::CSI_F3:
+            case CsiActionCodes::CSI_F4:
+                fSuccess = _WriteSingleKey(vkey, dwModifierState);
+                break;
+            case CsiActionCodes::DTTERM_WindowManipulation:
+                fSuccess = _pDispatch->WindowManipulation(static_cast<DispatchCommon::WindowManipulationType>(uiFunction),
+                                                          rgusRemainingArgs,
+                                                          cRemainingArgs);
+                break;
+            default:
+                fSuccess = false;
+                break;
+
+        }
+
+    }
+
+    return fSuccess;
+}
+
+// Routine Description:
+// - Triggers the Ss3Dispatch action to indicate that the listener should handle
+//      a control sequence. These sequences perform various API-type commands 
+//      that can include many parameters.
+// Arguments:
+// - wch - Character to dispatch.
+// - rgusParams - set of numeric parameters collected while pasring the sequence.
+// - cParams - number of parameters found.
+// Return Value:
+// - true iff we successfully dispatched the sequence.
+bool InputStateMachineEngine::ActionSs3Dispatch(_In_ wchar_t const wch,
+                                                _In_ const unsigned short* const /*rgusParams*/,
+                                                _In_ const unsigned short /*cParams*/)
+{
+    // Ss3 sequence keys aren't modified.
+    // When F1-F4 *are* modified, they're sent as CSI sequences, not SS3's.
+    DWORD dwModifierState = 0;
+    short vkey = 0;
+
+    bool fSuccess = _GetSs3KeysVkey(wch, &vkey);
 
     if (fSuccess)
     {
@@ -497,8 +569,8 @@ bool InputStateMachineEngine::_WriteSingleKey(_In_ const wchar_t wch, _In_ const
     size_t cInput = _GenerateWrappedSequence(wch, vkey, dwModifierState, rgInput, WRAPPED_SEQUENCE_MAX_LENGTH);
 
     std::deque<std::unique_ptr<IInputEvent>> inputEvents = IInputEvent::Create(rgInput, cInput);
-    _pfnWriteEvents(inputEvents);
-    return true;
+
+    return _pDispatch->WriteInput(inputEvents);
 }
 
 // Method Description:
@@ -634,6 +706,29 @@ bool InputStateMachineEngine::_GetCursorKeysVkey(_In_ const wchar_t wch, _Out_ s
 }
 
 // Method Description:
+// - Gets the Vkey from the SS3 codes table associated with a particular character.
+// Arguments:
+// - wch: the wchar_t to get the mapped vkey of.
+// - pVkey: Recieves the vkey
+// Return Value:
+// true iff we found the key
+bool InputStateMachineEngine::_GetSs3KeysVkey(_In_ const wchar_t wch, _Out_ short* const pVkey) const
+{
+    *pVkey = 0;
+    for(int i = 0; i < ARRAYSIZE(s_rgSs3Map); i++)
+    {
+        SS3_TO_VKEY mapping = s_rgSs3Map[i];
+        if (mapping.Action == wch)
+        {
+            *pVkey = mapping.vkey;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// Method Description:
 // - Gets the Vkey and modifier state that's associated with a particular char.
 // Arguments:
 // - wch: the wchar_t to get the vkey and modifier state of.
@@ -682,4 +777,38 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch, _Out_
 bool InputStateMachineEngine::FlushAtEndOfString() const
 {
     return true;
+}
+
+// Method Description:
+// - Retrieves the type of window manipulation operation from the parameter pool
+//      stored during Param actions.
+//  This is kept seperate from the output version, as there may be
+//      codes that are supported in one direction but not the other.
+// Arguments:
+// - rgusParams - Array of parameters collected
+// - cParams - Number of parameters we've collected
+// - puiFunction - Memory location to receive the function type
+// Return Value:
+// - True iff we successfully pulled the function type from the parameters
+bool InputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                         _In_ const unsigned short cParams,
+                                                         _Out_ unsigned int* const puiFunction) const
+{
+    bool fSuccess = false;
+    *puiFunction = DispatchCommon::WindowManipulationType::Invalid;
+
+    if (cParams > 0)
+    {
+        switch(rgusParams[0])
+        {
+            case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
+                *puiFunction = DispatchCommon::WindowManipulationType::ResizeWindowInCharacters;
+                fSuccess = true;
+                break;
+            default:
+                fSuccess = false;
+        }
+    }
+
+    return fSuccess;
 }

@@ -15,6 +15,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Creates a new VT-based rendering engine
@@ -25,19 +26,20 @@ using namespace Microsoft::Console::Render;
 // - An instance of a Renderer.
 VtEngine::VtEngine(_In_ wil::unique_hfile pipe) :
     _hFile(std::move(pipe)),
-    _srLastViewport({0}),
+    _lastViewport({0}),
     _srcInvalid({0}),
-    _lastRealCursor({0}),
     _lastText({0}),
     _scrollDelta({0}),
     _LastFG(INVALID_COLOR),
     _LastBG(INVALID_COLOR),
-    _usingTestCallback(false)
-
+    _cursor(this)
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
     THROW_IF_HANDLE_INVALID(_hFile.get());
+#else
+    // member is only defined when UNIT_TESTING is.
+    _usingTestCallback = false;
 #endif
 }
 
@@ -100,7 +102,23 @@ HRESULT VtEngine::_Write(_In_ const char* const psz)
         std::string seq = std::string(psz);
         _Write(seq.c_str(), seq.length());
     }
-    CATCH_RETURN();
+    catch (...) 
+    {
+        #ifdef UNIT_TESTING
+        if (_usingTestCallback)
+        {
+            // It's possiblee a TAEF exception can be thrown by the TestCallback.
+            // Let it bubble up.
+            THROW_NORMALIZED_CAUGHT_EXCEPTION();
+        }
+        else
+        {
+            RETURN_CAUGHT_EXCEPTION();
+        }
+        #else
+        RETURN_CAUGHT_EXCEPTION();
+        #endif
+    }
 
     return S_OK;
 }
@@ -176,12 +194,18 @@ HRESULT VtEngine::UpdateDpi(_In_ int const /*iDpi*/)
 // - HRESULT S_OK
 HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 {
-    _srLastViewport = srNewViewport;
+    HRESULT hr = S_OK;
+    const Viewport oldView = _lastViewport;
+    const Viewport newView = Viewport::FromInclusive(srNewViewport);
+    
+    _lastViewport = newView;
 
-    // If the viewport has changed, then send a window update.
-    // TODO: 13847317(adapter), 13271084(renderer)
+    if ((oldView.Height() != newView.Height()) || (oldView.Width() != newView.Width()))
+    {
+        hr = _ResizeWindow(newView.Width(), newView.Height());
+    }
 
-    return S_OK;
+    return hr;
 }
 
 // Method Description:
@@ -235,4 +259,13 @@ void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t
 
 }
 
-
+// Method Description:
+// - Returns a reference to this engine's cursor implementation.
+// Arguments:
+// - <none>
+// Return Value:
+// - A referenct to this engine's cursor implementation.
+IRenderCursor* const VtEngine::GetCursor()
+{
+    return &_cursor;
+}

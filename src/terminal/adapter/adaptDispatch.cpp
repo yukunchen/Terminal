@@ -8,12 +8,9 @@
 
 #include "adaptDispatch.hpp"
 #include "conGetSet.hpp"
+#include "../../types/inc/Viewport.hpp"
 
-#define ENABLE_INTSAFE_SIGNED_FUNCTIONS
-#include <intsafe.h>
-
-#include <assert.h>
-
+using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
 // Routine Description:
@@ -24,15 +21,17 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - Always false to signify we didn't handle it.
 bool NoOp() { return false; }
 
-AdaptDispatch::AdaptDispatch(_In_ ConGetSet* const pConApi, _In_ AdaptDefaults* const pDefaults, _In_ WORD const wDefaultTextAttributes)
+AdaptDispatch::AdaptDispatch(_Inout_ ConGetSet* const pConApi,
+                             _Inout_ AdaptDefaults* const pDefaults,
+                             _In_ const WORD wDefaultTextAttributes)
     : _pConApi(pConApi),
       _pDefaults(pDefaults),
       _wDefaultTextAttributes(wDefaultTextAttributes),
       _wBrightnessState(0),
-      _pTermOutput(nullptr),
       _fChangedBackground(false),
       _fChangedForeground(false),
-      _fChangedMetaAttrs(false)
+      _fChangedMetaAttrs(false),
+      _TermOutput()
 {
     // The top-left corner in VT-speak is 1,1. Our internal array uses 0 indexes, but VT uses 1,1 for top left corner.
     _coordSavedCursor.X = 1;
@@ -43,57 +42,22 @@ AdaptDispatch::AdaptDispatch(_In_ ConGetSet* const pConApi, _In_ AdaptDefaults* 
 
 }
 
-bool AdaptDispatch::CreateInstance(_In_ ConGetSet* pConApi,
-                                   _In_ AdaptDefaults* pDefaults,
-                                   _In_ WORD wDefaultTextAttributes,
-                                   _Outptr_ AdaptDispatch ** const ppDispatch)
-{
-
-    AdaptDispatch* const pDispatch = new AdaptDispatch(pConApi, pDefaults, wDefaultTextAttributes);
-
-    bool fSuccess = pDispatch != nullptr;
-    if (fSuccess)
-    {
-        pDispatch->_pTermOutput = new TerminalOutput();
-        fSuccess = pDispatch->_pTermOutput != nullptr;
-        if (fSuccess)
-        {
-            *ppDispatch = pDispatch;
-        }
-        else
-        {
-            delete pDispatch;
-        }
-    }
-
-    return fSuccess;
-}
-
-AdaptDispatch::~AdaptDispatch()
-{
-    if (_pTermOutput != nullptr)
-    {
-        delete _pTermOutput;
-    }
-}
-
 void AdaptDispatch::Print(_In_ wchar_t const wchPrintable)
 {
-    _pDefaults->Print(_pTermOutput->TranslateKey(wchPrintable));
+    _pDefaults->Print(_TermOutput.TranslateKey(wchPrintable));
 }
 
 void AdaptDispatch::PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
 {
-    if (_pTermOutput->NeedToTranslate())
+    if (_TermOutput.NeedToTranslate())
     {
         for (size_t i = 0; i < cch; i++)
         {
-            rgwch[i] = _pTermOutput->TranslateKey(rgwch[i]);
+            rgwch[i] = _TermOutput.TranslateKey(rgwch[i]);
         }
     }
 
     _pDefaults->PrintString(rgwch, cch);
-
 }
 
 // Routine Description:
@@ -922,7 +886,7 @@ bool AdaptDispatch::_WriteResponse(_In_reads_(cchReply) PCWSTR pwszReply, _In_ s
     }
 
     size_t eventsWritten;
-    fSuccess = !!_pConApi->WriteConsoleInputW(inEvents, eventsWritten);
+    fSuccess = !!_pConApi->PrivatePrependConsoleInput(inEvents, eventsWritten);
 
     return fSuccess;
 }
@@ -1443,7 +1407,7 @@ bool AdaptDispatch::TabClear(_In_ SHORT const sClearType)
 // True if handled successfully. False othewise.
 bool AdaptDispatch::DesignateCharset(_In_ wchar_t const wchCharset)
 {
-    return _pTermOutput->DesignateCharset(wchCharset);
+    return _TermOutput.DesignateCharset(wchCharset);
 }
 
 //Routine Description:
@@ -1722,4 +1686,67 @@ bool AdaptDispatch::EnableAnyEventMouseMode(_In_ bool const fEnabled)
 bool AdaptDispatch::EnableAlternateScroll(_In_ bool const fEnabled)
 {
     return !!_pConApi->PrivateEnableAlternateScroll(fEnabled);
+}
+
+// Method Description:
+// - Sets a single entry of the colortable to a new value
+// Arguments:
+// - tableIndex: The VT color table index
+// - dwColor: The new RGB color value to use.
+// Return Value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::SetColorTableEntry(_In_ const size_t tableIndex,
+                                       _In_ const DWORD dwColor)
+{
+    bool fSuccess = tableIndex < 16;
+    if (fSuccess)
+    {
+        CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+        csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+        fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+        if (fSuccess)
+        {
+            size_t realIndex = ::XtermToWindowsIndex(tableIndex);
+
+            csbiex.ColorTable[realIndex] = dwColor;
+            fSuccess = !!_pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
+        }
+    }
+    return fSuccess;
+}
+
+//Routine Description:
+// Window Manipulation - Performs a variety of actions relating to the window,
+//      such as moving the window position, resizing the window, querying 
+//      window state, forcing the window to repaint, etc.
+//  This is kept seperate from the input version, as there may be
+//      codes that are supported in one direction but not the other.
+//Arguments:
+// - uiFunction - An identifier of the WindowManipulation function to perform
+// - rgusParams - Additional parameters to pass to the function
+// - cParams - size of rgusParams
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
+                                       _In_reads_(cParams) const unsigned short* const rgusParams,
+                                       _In_ size_t const cParams)
+{
+    bool fSuccess = false;
+    // Other Window Manipulation functions:
+    //  MSFT:13271098 - QueryViewport
+    //  MSFT:13271146 - QueryScreenSize
+    //  MSFT:14179497 - RefreshWindow
+    switch (uiFunction)
+    {
+        case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
+            if (cParams == 2)
+            {
+                fSuccess = DispatchCommon::s_ResizeWindow(_pConApi, rgusParams[1], rgusParams[0]);
+            }
+            break;
+        default:
+            fSuccess = false;
+    }
+
+    return fSuccess;
 }

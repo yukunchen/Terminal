@@ -8,6 +8,7 @@
     <ClCompile Include="..\KeyEvent.cpp" />
     <ClCompile Include="..\MenuEvent.cpp" />
     <ClCompile Include="..\ModifierKeyState.cpp" />
+    <ClCompile Include="..\Viewport.cpp" />
     <ClCompile Include="..\WindowBufferSizeEvent.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -15,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\inc\IInputEvent.hpp" />
+    <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\precomp.h" />
   </ItemGroup>
   <PropertyGroup>

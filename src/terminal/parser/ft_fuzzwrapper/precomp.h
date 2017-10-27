@@ -18,6 +18,9 @@ Abstract:
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <memory>
+
 // WIL
+#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil\Common.h>
 #include <wil\Result.h>

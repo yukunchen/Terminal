@@ -11,22 +11,17 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Converts a coordinate into a 1x1 rectangle (with exclusive bottom/right) representing the same location.
 // Arguments:
 // - Coordinate
 // Return Value:
-// - Rectangle representing same 1x1 area as given coordinate.
+// - Exclusive rectangle representing same 1x1 area as given coordinate.
 SMALL_RECT Renderer::_RegionFromCoord(_In_ const COORD* const pcoord) const
 {
-    SMALL_RECT sr;
-    sr.Left = pcoord->X;
-    sr.Right = sr.Left + 1;
-    sr.Top = pcoord->Y;
-    sr.Bottom = sr.Top + 1;
-
-    return sr;
+    return Viewport::FromCoord(*pcoord).ToExclusive();
 }
 
 // Routine Description:

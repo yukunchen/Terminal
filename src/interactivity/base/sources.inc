@@ -32,8 +32,6 @@ C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DBUILD_ONECORE_INTE
 # Warning 4201: nonstandard extension used: nameless struct/union
 MSC_WARNING_LEVEL       = /W4 /WX /wd4201
 
-# Check out https://osgwiki.com/wiki/Dev_14_Migration for more details about -Zc:implicitNoexcept-
-USER_C_FLAGS=$(USER_C_FLAGS) -Zc:implicitNoexcept-
 
 # -------------------------------------
 # Build System Settings

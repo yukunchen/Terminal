@@ -7,7 +7,6 @@
 TARGETNAME              = ConRenderVt.Unittest
 TARGETTYPE              = LIBRARY
 
-UNIVERSAL_TEST          = 1
 TEST_CODE               = 1
 
 # -------------------------------------

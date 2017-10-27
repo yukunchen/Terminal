@@ -138,7 +138,8 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
                             ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.SetEvent();
 
                             // Start listening for input (returns on failure only).
-                            Status = Server->ServiceInputPipe();
+                            // This will never return.
+                            Server->ServiceInputPipe();
                         }
                     }
                 }

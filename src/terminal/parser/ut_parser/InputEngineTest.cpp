@@ -6,7 +6,6 @@
 #include "precomp.h"
 #include "WexTestClass.h"
 
-
 #include "stateMachine.hpp"
 #include "InputStateMachineEngine.hpp"
 #include "../adapter/terminalInput.hpp"
@@ -14,6 +13,8 @@
 
 #include <vector>
 #include <functional>
+#include <sstream>
+#include <string>
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
 #include "../../../interactivity/inc/VtApiRedirection.hpp"
@@ -30,6 +31,7 @@ namespace Microsoft
         namespace VirtualTerminal
         {
             class InputEngineTest;
+            class TestInteractDispatch;
         };
     };
 };
@@ -60,10 +62,60 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(C0Test);
     TEST_METHOD(AlphanumericTest);
     TEST_METHOD(RoundTripTest);
+    TEST_METHOD(WindowManipulationTest);
 
     StateMachine* _pStateMachine;
+
     std::vector<INPUT_RECORD> vExpectedInput;
+
+    bool _expectedToCallWindowManipulation;
+    DispatchCommon::WindowManipulationType _expectedWindowManipulation;
+    unsigned short _expectedParams[16];
+    size_t _expectedCParams;
+
+    friend class TestInteractDispatch;
 };
+
+
+class Microsoft::Console::VirtualTerminal::TestInteractDispatch : public IInteractDispatch
+{
+public:
+    TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn, InputEngineTest* testInstance);
+    virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
+    virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
+                                _In_reads_(cParams) const unsigned short* const rgusParams,
+                                _In_ size_t const cParams) override; // DTTERM_WindowManipulation
+private:
+    std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteInputCallback;
+    InputEngineTest* _testInstance;
+};
+
+TestInteractDispatch::TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn, InputEngineTest* testInstance) :
+    _pfnWriteInputCallback(pfn),
+    _testInstance(testInstance)
+{
+
+}
+
+bool TestInteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents)
+{
+    _pfnWriteInputCallback(inputEvents);
+    return true;
+}
+
+bool TestInteractDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
+                                              _In_reads_(cParams) const unsigned short* const rgusParams,
+                                              _In_ size_t const cParams)
+{
+
+    VERIFY_ARE_EQUAL(true, _testInstance->_expectedToCallWindowManipulation);
+    VERIFY_ARE_EQUAL(_testInstance->_expectedWindowManipulation, uiFunction);
+    for(size_t i = 0; i < cParams; i++)
+    {
+        VERIFY_ARE_EQUAL(_testInstance->_expectedParams[i], rgusParams[i]);
+    }
+    return true;
+}
 
 bool IsShiftPressed(const DWORD modifierState)
 {
@@ -166,7 +218,11 @@ void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>
 void InputEngineTest::C0Test()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(std::make_unique<InputStateMachineEngine>(pfn));
+    _pStateMachine = new StateMachine(
+            std::make_unique<InputStateMachineEngine>(
+                std::make_unique<TestInteractDispatch>(pfn, this)
+            )
+    );
     VERIFY_IS_NOT_NULL(_pStateMachine);
     
     Log::Comment(L"Sending 0x0-0x19 to parser to make sure they're translated correctly back to C-key");
@@ -230,7 +286,11 @@ void InputEngineTest::C0Test()
 void InputEngineTest::AlphanumericTest()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(std::make_unique<InputStateMachineEngine>(pfn));
+    _pStateMachine = new StateMachine(
+            std::make_unique<InputStateMachineEngine>(
+                std::make_unique<TestInteractDispatch>(pfn, this)
+            )
+    );
     VERIFY_IS_NOT_NULL(_pStateMachine);
     
     Log::Comment(L"Sending every printable ASCII character");
@@ -269,11 +329,14 @@ void InputEngineTest::AlphanumericTest()
     
 }
 
-
 void InputEngineTest::RoundTripTest()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(std::make_unique<InputStateMachineEngine>(pfn));
+    _pStateMachine = new StateMachine(
+            std::make_unique<InputStateMachineEngine>(
+                std::make_unique<TestInteractDispatch>(pfn, this)
+            )
+    );
     VERIFY_IS_NOT_NULL(_pStateMachine);
     
     // Send Every VKEY through the TerminalInput module, then take the char's 
@@ -304,12 +367,6 @@ void InputEngineTest::RoundTripTest()
         {
             uiActualKeystate = SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
         }
-        else if (vkey == VK_F1 || vkey == VK_F2 || vkey == VK_F3 || vkey == VK_F4)
-        {
-            // todo MSFT:13420038
-            // Skip for now
-            continue;
-        }
 
         INPUT_RECORD irTest = { 0 };
         irTest.EventType = KEY_EVENT;
@@ -332,4 +389,57 @@ void InputEngineTest::RoundTripTest()
         pInput->HandleKey(inputKey.get());
     }
 
+}
+
+void InputEngineTest::WindowManipulationTest()
+{
+    auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
+    _pStateMachine = new StateMachine(
+            std::make_unique<InputStateMachineEngine>(
+                std::make_unique<TestInteractDispatch>(pfn, this)
+            )
+    );
+    VERIFY_IS_NOT_NULL(_pStateMachine);
+
+    Log::Comment(NoThrowString().Format(
+        L"Try sending a bunch of Window Manipulation sequences. "
+        L"Only the valid ones should call the "
+        L"TestInteractDispatch::WindowManipulation callback."
+    ));
+
+    bool fValidType = false;
+
+    unsigned short param1 = 123;
+    unsigned short param2 = 456;
+    for(unsigned int i = 0; i < static_cast<unsigned int>(BYTE_MAX); i++)
+    {
+        if (i == DispatchCommon::WindowManipulationType::ResizeWindowInCharacters)
+        {
+            fValidType = true;
+        }
+
+        std::wstringstream seqBuilder;
+        seqBuilder << L"\x1b[" << i << L";" << param1 << L";" << param2 << L"t";
+        std::wstring seq = seqBuilder.str();
+        Log::Comment(NoThrowString().Format(
+            L"Processing \"%s\"", seq.c_str()
+        ));
+
+        if (fValidType)
+        {
+            _expectedToCallWindowManipulation = true;
+            _expectedCParams = 2;
+            _expectedParams[0] = param1;
+            _expectedParams[1] = param2;
+            _expectedWindowManipulation = static_cast<DispatchCommon::WindowManipulationType>(i);
+        }
+        else
+        {
+            _expectedToCallWindowManipulation = false;
+            _expectedCParams = 0;
+            _expectedWindowManipulation = DispatchCommon::WindowManipulationType::Invalid;
+        }
+
+        _pStateMachine->ProcessString(&seq[0], seq.length());
+    }
 }

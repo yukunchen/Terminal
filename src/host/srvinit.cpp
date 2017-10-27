@@ -31,13 +31,20 @@ HRESULT UseVtPipe(_In_ const std::wstring& InPipeName, _In_ const std::wstring& 
     return gci->GetVtIo()->Initialize(InPipeName, OutPipeName, VtMode);
 }
 
-HRESULT ConsoleServerInitialization(_In_ HANDLE Server)
+HRESULT ConsoleServerInitialization(_In_ HANDLE Server, _In_ const ConsoleArguments* const args)
 {
     try
     {
         ServiceLocator::LocateGlobals()->pDeviceComm = new DeviceComm(Server);
     }
     CATCH_RETURN();
+
+    ServiceLocator::LocateGlobals()->launchArgs = *args;
+
+    if (args->IsUsingVtPipe())
+    {
+        RETURN_IF_FAILED(UseVtPipe(args->GetVtInPipe(), args->GetVtOutPipe(), args->GetVtMode()));
+    }
 
     ServiceLocator::LocateGlobals()->uiOEMCP = GetOEMCP();
     ServiceLocator::LocateGlobals()->uiWindowsCP = GetACP();
@@ -170,14 +177,14 @@ DWORD ConsoleIoThread();
 void ConsoleCheckDebug()
 {
 #ifdef DBG
-    HKEY hCurrentUser;
-    HKEY hConsole;
+    wil::unique_hkey hCurrentUser;
+    wil::unique_hkey hConsole;
     NTSTATUS status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUser, &hConsole);
 
     if (NT_SUCCESS(status))
     {
         DWORD dwData = 0;
-        status = RegistrySerialization::s_QueryValue(hConsole, L"DebugLaunch", sizeof(dwData), (BYTE*)&dwData, nullptr);
+        status = RegistrySerialization::s_QueryValue(hConsole.get(), L"DebugLaunch", sizeof(dwData), (BYTE*)&dwData, nullptr);
 
         if (NT_SUCCESS(status))
         {
@@ -186,18 +193,13 @@ void ConsoleCheckDebug()
                 DebugBreak();
             }
         }
-
-        RegCloseKey(hConsole);
-        RegCloseKey(hCurrentUser);
     }
 #endif
 }
 
-HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server)
+HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, _In_ const ConsoleArguments* const args)
 {
-    ConsoleCheckDebug();
-
-    RETURN_IF_FAILED(ConsoleServerInitialization(Server));
+    RETURN_IF_FAILED(ConsoleServerInitialization(Server, args));
     RETURN_IF_FAILED(ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.create(wil::EventOptions::None));
 
     // Set up and tell the driver about the input available event.
@@ -212,11 +214,6 @@ HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server)
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
     return S_OK;
-}
-
-HRESULT ConsoleCreateIoThread(_In_ HANDLE Server)
-{
-    return Entrypoints::StartConsoleForServerHandle(Server);
 }
 
 #define SYSTEM_ROOT         (L"%SystemRoot%")
@@ -536,7 +533,7 @@ DWORD ConsoleIoThread()
                 fShouldExit = true;
 
                 // This will not return. Terminate immediately when disconnected.
-                TerminateProcess(GetCurrentProcess(), STATUS_SUCCESS);
+                ServiceLocator::RundownAndExit(STATUS_SUCCESS);
             }
             RIPMSG1(RIP_WARNING, "DeviceIoControl failed with Result 0x%x", hr);
             ReplyMsg = nullptr;

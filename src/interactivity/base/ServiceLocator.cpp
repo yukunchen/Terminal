@@ -29,6 +29,34 @@ Globals                      *ServiceLocator::s_globals                     = ne
 
 #pragma region Public Methods
 
+void ServiceLocator::RundownAndExit(_In_ HRESULT const hr)
+{
+    // A History Lesson from MSFT: 13576341:
+    // We introduced RundownAndExit to give services that hold onto important handles
+    // an opportunity to let those go when we decide to exit from the console for various reasons.
+    // This was because Console IO Services (ConIoSvcComm) on OneCore editions was holding onto
+    // pipe and ALPC handles to talk to CSRSS ConIoSrv.dll to broker which console got display/keyboard control.
+    // If we simply run straight into TerminateProcess, those handles aren't necessarily released right away.
+    // The terminate operation can have a rundown period of time where APCs are serviced (such as from 
+    // a DirectX kernel callback/flush/cleanup) that can take substantially longer than we expect (several whole seconds).
+    // This rundown happens before the final destruction of any outstanding handles or resources.
+    // If someone is waiting on one of those handles or resources outside our process, they're stuck waiting
+    // for our terminate rundown and can't continue execution until we're done.
+    // We don't want to have other execution in the system get stuck , so this is a great
+    // place to clean up and notify any objects or threads in the system that have to cleanup safely before
+    // we head into TerminateProcess and tear everything else down less gracefully.
+
+    // TODO: MSFT: 14397093 - Expand graceful rundown beyond just the Hot Bug input services case.
+
+    if (s_inputServices != nullptr)
+    {
+        delete s_inputServices;
+        s_inputServices = nullptr;
+    }
+
+    TerminateProcess(GetCurrentProcess(), hr);
+}
+
 #pragma region Creation Methods
 
 NTSTATUS ServiceLocator::CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread)
