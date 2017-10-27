@@ -947,13 +947,9 @@ HRESULT ApiDispatchers::ServerGetConsoleDisplayMode(_Inout_ CONSOLE_API_MSG * co
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleDisplayMode);
     CONSOLE_GETDISPLAYMODE_MSG* const a = &m->u.consoleMsgL3.GetConsoleDisplayMode;
 
-    ConsoleHandleData* const pObjectHandle = m->GetObjectHandle();
-    RETURN_HR_IF_NULL(E_HANDLE, pObjectHandle);
+    // Historically this has never checked the handles. It just returns global state.
 
-    SCREEN_INFORMATION* pObj;
-    RETURN_IF_FAILED(pObjectHandle->GetScreenBuffer(GENERIC_READ, &pObj));
-
-    return m->_pApiRoutines->GetConsoleDisplayModeImpl(pObj, &a->ModeFlags);
+    return m->_pApiRoutines->GetConsoleDisplayModeImpl(&a->ModeFlags);
 }
 
 // TODO: MSFT: 9115192 - remove extern and fetch from cmdline.cpp

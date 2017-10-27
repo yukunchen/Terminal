@@ -312,8 +312,7 @@ class ApiRoutines : public IApiRoutines
                                       _In_ ULONG const Flags,
                                       _Out_ COORD* const pNewScreenBufferSize);
 
-    HRESULT GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                      _Out_ ULONG* const pFlags);
+    HRESULT GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags);
 
     HRESULT AddConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength) const char* const psSourceBuffer,
                                  _In_ size_t const cchSourceBufferLength,
