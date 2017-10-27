@@ -108,7 +108,8 @@ namespace Microsoft
                 {
                     SetIconAndWindowTitle = 0,
                     SetWindowIcon = 1,
-                    SetWindowTitle = 2
+                    SetWindowTitle = 2,
+                    SetColor = 4,
                 };
 
                 enum class DesignateCharsetTypes
@@ -213,6 +214,14 @@ namespace Microsoft
                                                 _In_ const unsigned short cParams,
                                                 _Out_ unsigned int* const puiFunction) const;
 
+                static bool s_HexToUint(_In_ wchar_t const wch,
+                                        _Out_ unsigned int * const puiValue);
+                static bool s_IsNumber(_In_ wchar_t const wch);
+                static bool s_IsHexNumber(_In_ wchar_t const wch);
+                bool _GetOscSetColorTable(_In_ const wchar_t* const pwchOscStringBuffer,
+                                          _In_ const size_t cchOscString,
+                                          _Out_ size_t* const pTableIndex,
+                                          _Out_ DWORD* const pRgb);
             };
         }
     }

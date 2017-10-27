@@ -1688,6 +1688,33 @@ bool AdaptDispatch::EnableAlternateScroll(_In_ bool const fEnabled)
     return !!_pConApi->PrivateEnableAlternateScroll(fEnabled);
 }
 
+// Method Description:
+// - Sets a single entry of the colortable to a new value
+// Arguments:
+// - tableIndex: The VT color table index
+// - dwColor: The new RGB color value to use.
+// Return Value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::SetColorTableEntry(_In_ const size_t tableIndex,
+                                       _In_ const DWORD dwColor)
+{
+    bool fSuccess = tableIndex < 16;
+    if (fSuccess)
+    {
+        CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+        csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+        fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+        if (fSuccess)
+        {
+            size_t realIndex = ::XtermToWindowsIndex(tableIndex);
+
+            csbiex.ColorTable[realIndex] = dwColor;
+            fSuccess = !!_pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
+        }
+    }
+    return fSuccess;
+}
+
 //Routine Description:
 // Window Manipulation - Performs a variety of actions relating to the window,
 //      such as moving the window position, resizing the window, querying 
