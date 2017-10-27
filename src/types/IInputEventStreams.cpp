@@ -70,8 +70,8 @@ std::wostream& operator<<(std::wostream& stream, const MouseEvent* const pMouseE
     }
 
     return stream << L"MouseEvent(" <<
-        L"X: " << pMouseEvent->_mousePosition.X << L", " <<
-        L"Y: " << pMouseEvent->_mousePosition.Y << L", " <<
+        L"X: " << pMouseEvent->_position.X << L", " <<
+        L"Y: " << pMouseEvent->_position.Y << L", " <<
         L"buttons: " << pMouseEvent->_buttonState << L", " <<
         L"mods: " << pMouseEvent->_activeModifierKeys << L", " <<
         L"events: " << pMouseEvent->_eventFlags << L")";
@@ -108,5 +108,5 @@ std::wostream& operator<<(std::wostream& stream, const FocusEvent* const pFocusE
     }
 
     return stream << L"FocusEvent(" <<
-        L"focus" << pFocusEvent->_setFocus << L")";
+        L"focus" << pFocusEvent->_focus << L")";
 }

@@ -498,13 +498,13 @@ HRESULT SplitToOem(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
             {
                 const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currentEvent.get());
                 // convert from wchar to char
-                std::wstring wstr{ pKeyEvent->_charData };
+                std::wstring wstr{ pKeyEvent->GetCharData() };
                 std::deque<char> chars = ConvertToOem(codepage, wstr);
 
                 while (!chars.empty())
                 {
                     std::unique_ptr<KeyEvent> tempEvent = std::make_unique<KeyEvent>(*pKeyEvent);
-                    tempEvent->_charData = chars.front();
+                    tempEvent->SetCharData(chars.front());
                     chars.pop_front();
                     convertedEvents.push_back(std::move(tempEvent));
                 }
