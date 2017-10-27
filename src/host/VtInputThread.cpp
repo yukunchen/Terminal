@@ -8,13 +8,10 @@
 
 #include "VtInputThread.hpp"
 
-#include "../interactivity/inc/ServiceLocator.hpp"
+#include "..\interactivity\inc\ServiceLocator.hpp"
 #include "input.h"
-#include "../terminal/parser/InputStateMachineEngine.hpp"
-#include "outputStream.hpp" // For ConhostInternalGetSet
-#include "../terminal/adapter/InteractDispatch.hpp"
+#include "..\terminal\parser\InputStateMachineEngine.hpp"
 #include "misc.h"
-#include "server.h"
 
 using namespace Microsoft::Console;
 
@@ -33,7 +30,13 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
 
+    std::unique_ptr<InputStateMachineEngine> pEngine = 
+        std::make_unique<InputStateMachineEngine>(_HandleTerminalKeyEventCallback);
 
+    THROW_IF_NULL_ALLOC(pEngine);
+
+    _pInputStateMachine = std::make_unique<StateMachine>(std::move(pEngine));
+    THROW_IF_NULL_ALLOC(_pInputStateMachine);
 
 }
 
@@ -48,11 +51,10 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
 // - S_OK on success, otherwise an appropriate failure.
 HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const char* const charBuffer, _In_ const int cch)
 {
-
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     gci->LockConsole();
     auto Unlock = wil::ScopeExit([&] { gci->UnlockConsole(); });
-    
+
     unsigned int const uiCodePage = gci->CP;
     try
     {
@@ -103,26 +105,9 @@ DWORD VtInputThread::_InputThread()
 HRESULT VtInputThread::Start()
 {
     RETURN_IF_HANDLE_INVALID(_hFile.get());
-    
-    //Initialize the state machine here, because the gci->pInputBuffer 
-    // hasn't been initialized when we initialize the VtInputThread object.
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    
-    std::unique_ptr<ConhostInternalGetSet> pGetSet = 
-        std::make_unique<ConhostInternalGetSet>(gci->CurrentScreenBuffer, gci->pInputBuffer);
-    THROW_IF_NULL_ALLOC(pGetSet);
 
-    std::unique_ptr<InteractDispatch> pDispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));
-    THROW_IF_NULL_ALLOC(pDispatch);
-    
-    std::unique_ptr<InputStateMachineEngine> pEngine = 
-        std::make_unique<InputStateMachineEngine>(std::move(pDispatch));
-    THROW_IF_NULL_ALLOC(pEngine);
-
-    _pInputStateMachine = std::make_unique<StateMachine>(std::move(pEngine));
-    THROW_IF_NULL_ALLOC(_pInputStateMachine);
-    
     HANDLE hThread = nullptr;
+    
     // 0 is the right value, https://blogs.msdn.microsoft.com/oldnewthing/20040223-00/?p=40503
     DWORD dwThreadId = 0;
 

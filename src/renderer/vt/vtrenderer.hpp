@@ -14,6 +14,7 @@ Author(s):
 
 #pragma once
 
+#include "VtCursor.hpp"
 #include "../inc/IRenderEngine.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include <string>
@@ -61,8 +62,7 @@ public:
     HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                            _In_ UINT const cRectangles) override;
 
-    HRESULT PaintCursor(_In_ COORD const coordCursor,
-                        _In_ ULONG const ulCursorHeightPercent,
+    HRESULT PaintCursor(_In_ ULONG const ulCursorHeightPercent,
                         _In_ bool const fIsDoubleWidth) override;
     HRESULT ClearCursor() override;
 
@@ -81,6 +81,9 @@ public:
     SMALL_RECT GetDirtyRectInChars() override;
     COORD GetFontSize() override;
     bool IsCharFullWidthByFont(_In_ WCHAR const wch) override;
+            
+    IRenderCursor* const GetCursor() override;
+                
 
 protected:
     wil::unique_hfile _hFile;
@@ -98,6 +101,8 @@ protected:
 
     bool _quickReturn;
     
+    VtCursor _cursor;
+
     HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);
     HRESULT _Write(_In_ const std::string& str);
     HRESULT _Write(_In_ const char* const psz);
@@ -131,10 +136,13 @@ protected:
                                          _In_ COLORREF const colorBackground,
                                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                          _In_ const WORD cColorTable);
+    bool _WillWriteSingleChar() const;
+
+    /////////////////////////// Unit Testing Helpers ///////////////////////////
+#ifdef UNIT_TESTING
     std::function<bool(const char* const, size_t const)> _pfnTestCallback;
     bool _usingTestCallback;
 
-#ifdef UNIT_TESTING
     friend class VtRendererTest;
 #endif
     
