@@ -1059,29 +1059,25 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
             // call so we take the 2nd half from BufPtr[0], put them together
             // and write the wide char to TransBuffer[0]
             ScreenInfo->WriteConsoleDbcsLeadByte[1] = *(PCHAR)BufPtr;
+            dbcsNumBytes = sizeof(ScreenInfo->WriteConsoleDbcsLeadByte);
+            /*
+            * Convert the OEM characters to real Unicode according to
+            * OutputCP. First find out if any special chars are involved.
+            */
+            dbcsNumBytes = sizeof(WCHAR) * MultiByteToWideChar(gci->OutputCP,
+                                                               0,
+                                                               (LPCCH)ScreenInfo->WriteConsoleDbcsLeadByte,
+                                                               dbcsNumBytes,
+                                                               TransBuffer,
+                                                               dbcsNumBytes);
 
-            wistd::unique_ptr<wchar_t[]> convertedChars;
-            size_t cchConverted = 0;
-            if (FAILED(ConvertToW(gci->OutputCP,
-                                  reinterpret_cast<const char* const>(ScreenInfo->WriteConsoleDbcsLeadByte),
-                                  ARRAYSIZE(ScreenInfo->WriteConsoleDbcsLeadByte),
-                                  convertedChars,
-                                  cchConverted)))
+            if (dbcsNumBytes == 0)
             {
                 Status = STATUS_UNSUCCESSFUL;
-                dbcsNumBytes = 0;
-            }
-            else
-            {
-                assert(cchConverted == 1);
-                dbcsNumBytes = sizeof(wchar_t);
-                TransBuffer[0] = convertedChars[0];
-                BufPtr++;
             }
 
-            // this looks weird to be always incrementing even if the conversion failed, but this is the
-            // original behavior so it's left unchanged.
             TransBuffer++;
+            BufPtr += (dbcsNumBytes / sizeof(WCHAR));
             BufPtrNumBytes = uiTextBufferLength - 1;
 
             // Note that we used a stored lead byte from a previous call in order to complete this write
