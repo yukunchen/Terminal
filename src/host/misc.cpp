@@ -7,6 +7,7 @@
 #include "precomp.h"
 
 #include "misc.h"
+#include "../inc/convert.hpp"
 
 #include "dbcs.h"
 

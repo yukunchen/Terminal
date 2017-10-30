@@ -13,7 +13,7 @@
 #include "../terminal/parser/InputStateMachineEngine.hpp"
 #include "outputStream.hpp" // For ConhostInternalGetSet
 #include "../terminal/adapter/InteractDispatch.hpp"
-#include "misc.h"
+#include "../inc/convert.hpp"
 #include "server.h"
 
 using namespace Microsoft::Console;
