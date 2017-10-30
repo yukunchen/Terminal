@@ -31,7 +31,6 @@ SOURCES = \
     VtIoTests.cpp \
     VtRendererTests.cpp \
     ConsoleArgumentsTests.cpp \
-    ..\..\types\IInputEventStreams.cpp \
     DefaultResource.rc \
 
 # -------------------------------------
