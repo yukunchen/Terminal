@@ -11,7 +11,7 @@
 
 #include "dbcs.h"
 #include "handle.h"
-#include "../inc/convert.hpp"
+#include "misc.h"
 #include "readDataRaw.hpp"
 
 #include "ApiRoutines.h"

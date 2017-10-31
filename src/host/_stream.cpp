@@ -17,7 +17,7 @@
 #include "dbcs.h"
 #include "handle.h"
 #include "misc.h"
-#include "../inc/convert.hpp"
+#include "../types/inc/convert.hpp"
 
 #include "utf8ToWidecharParser.hpp"
 

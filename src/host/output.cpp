@@ -10,7 +10,7 @@
 #include "output.h"
 
 #include "getset.h"
-#include "../inc/convert.hpp"
+#include "misc.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 

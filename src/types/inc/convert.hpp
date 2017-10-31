@@ -40,25 +40,5 @@ HRESULT GetUShortByteCount(_In_ size_t cchUnicode,
 HRESULT GetDwordByteCount(_In_ size_t cchUnicode,
                           _Out_ DWORD* const pcb);
 
-int ConvertToOem(_In_ const UINT uiCodePage,
-                 _In_reads_(cchSource) const WCHAR * const pwchSource,
-                 _In_ const UINT cchSource,
-                 _Out_writes_(cchTarget) CHAR * const pchTarget,
-                 _In_ const UINT cchTarget);
-
 std::deque<char> ConvertToOem(_In_ const UINT codepage,
                               _In_ const std::wstring& source);
-
-int ConvertInputToUnicode(_In_ const UINT uiCodePage,
-                          _In_reads_(cchSource) const CHAR * const pchSource,
-                          _In_ const UINT cchSource,
-                          _Out_writes_(cchTarget) WCHAR * const pwchTarget,
-                          _In_ const UINT cchTarget);
-
-WCHAR CharToWchar(_In_reads_(cch) const char * const pch, _In_ const UINT cch);
-
-int ConvertOutputToUnicode(_In_ UINT uiCodePage,
-                           _In_reads_(cchSource) const CHAR * const pchSource,
-                           _In_ UINT cchSource,
-                           _Out_writes_(cchTarget) WCHAR *pwchTarget,
-                           _In_ UINT cchTarget);

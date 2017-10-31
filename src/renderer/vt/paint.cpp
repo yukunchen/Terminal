@@ -8,7 +8,7 @@
 
 #include "vtrenderer.hpp"
 #include "../../inc/conattrs.hpp"
-#include "../../inc/convert.hpp"
+#include "../../types/inc/convert.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console::Render;

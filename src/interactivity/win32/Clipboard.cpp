@@ -10,7 +10,7 @@
 
 #include "..\..\host\dbcs.h"
 #include "..\..\host\scrolling.hpp"
-#include "..\..\inc\convert.hpp"
+#include "..\..\types\inc\convert.hpp"
 #include "..\..\host\output.h"
 
 #include "..\inc\ServiceLocator.hpp"
