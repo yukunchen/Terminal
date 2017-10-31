@@ -16,7 +16,7 @@
 using namespace Microsoft::Console;
 
 WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider* const pIo) :
-    _pIo(pIo)
+    _pIo(THROW_IF_NULL_ALLOC(pIo))
 {
 }
 
@@ -90,7 +90,7 @@ void WriteBuffer::_DefaultStringCase(_In_reads_(cch) wchar_t* const rgwch, _In_ 
 }
 
 ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider* const pIo) :
-    _pIo(pIo)
+    _pIo(THROW_IF_NULL_ALLOC(pIo))
 {
 }
 

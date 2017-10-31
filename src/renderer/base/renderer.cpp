@@ -33,6 +33,8 @@ Renderer::Renderer(_In_ std::unique_ptr<IRenderData> pData,
     _pData(std::move(pData)),
     _pThread(nullptr)
 {
+    THROW_IF_NULL_ALLOC(_pData);
+    
     _srViewportPrevious = { 0 };
 
     for (size_t i = 0; i < cEngines; i++)
@@ -1009,6 +1011,7 @@ NTSTATUS Renderer::_GetSelectionRects(
 //      engine to our collection.
 void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
+    THROW_IF_NULL_ALLOC(pEngine);
     _rgpEngines.push_back(pEngine);
 }
 

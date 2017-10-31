@@ -115,6 +115,7 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
                 ServiceLocator::SetConsoleWindowInstance(wnd);
 
                 // The console's renderer should be created before we get here.
+                ASSERT(Globals->pRender != nullptr);
 
                 switch (DisplayMode)
                 {
@@ -129,12 +130,12 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
 
                 if (NT_SUCCESS(Status))
                 {
-                            ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus = Status;
-                            ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.SetEvent();
+                    Globals->ntstatusConsoleInputInitStatus = Status;
+                    Globals->hConsoleInputInitEvent.SetEvent();
 
-                            // Start listening for input (returns on failure only).
-                            // This will never return.
-                            Server->ServiceInputPipe();
+                    // Start listening for input (returns on failure only).
+                    // This will never return.
+                    Server->ServiceInputPipe();
                 }
             }
         }

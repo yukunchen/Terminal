@@ -36,7 +36,7 @@ private:
     void _DefaultCase(_In_ wchar_t const wch);
     void _DefaultStringCase(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
 
-    Microsoft::Console::IIoProvider* _pIo;
+    const Microsoft::Console::IIoProvider* const _pIo;
     NTSTATUS _ntstatus;
 };
 
@@ -107,8 +107,6 @@ public:
 
     virtual BOOL PrivateUseMainScreenBuffer() override;
 
-    // void SetActiveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
-
     virtual BOOL PrivateHorizontalTabSet();
     virtual BOOL PrivateForwardTab(_In_ SHORT const sNumTabs) override;
     virtual BOOL PrivateBackwardsTab(_In_ SHORT const sNumTabs) override;
@@ -128,7 +126,7 @@ public:
                                             _Out_ size_t& eventsWritten) override;
 
 private:
-    Microsoft::Console::IIoProvider* _pIo;
+    const Microsoft::Console::IIoProvider* const _pIo;
     
     BOOL _FillConsoleOutput(_In_ USHORT const usElement,
                             _In_ ULONG const ulElementType,

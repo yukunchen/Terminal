@@ -239,14 +239,22 @@ NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
 {
     ASSERT(_pConApi == nullptr);
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    _pConApi = new ConhostInternalGetSet(gci);
-    NTSTATUS status = NT_TESTNULL(_pConApi);
-
-    if (NT_SUCCESS(status))
+    NTSTATUS status = STATUS_NO_MEMORY;
+    try
     {
-        ASSERT(_pBufferWriter == nullptr);
-        _pBufferWriter = new WriteBuffer(gci);
-        status = NT_TESTNULL(_pBufferWriter);
+        _pConApi = new ConhostInternalGetSet(gci);
+        status = NT_TESTNULL(_pConApi);
+
+        if (NT_SUCCESS(status))
+        {
+            ASSERT(_pBufferWriter == nullptr);
+            _pBufferWriter = new WriteBuffer(gci);
+            status = NT_TESTNULL(_pBufferWriter);
+        }
+    }
+    catch (...)
+    {
+        status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
     if (NT_SUCCESS(status))

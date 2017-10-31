@@ -159,7 +159,7 @@ HRESULT VtIo::StartIfNeeded()
     const Globals* const g = ServiceLocator::LocateGlobals();
     try
     {
-        static_cast<Renderer*>(g->pRender)->AddRenderEngine(_pVtRenderEngine.get());
+        g->pRender->AddRenderEngine(_pVtRenderEngine.get());
     }
     CATCH_RETURN();
 

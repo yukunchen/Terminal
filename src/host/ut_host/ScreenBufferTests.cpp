@@ -928,8 +928,6 @@ void ScreenBufferTests::VtSetColorTable()
     // Start with a known value
     gci->SetColorTableEntry(0, RGB(0, 0, 0));
     
-    DisableVerifyExceptions disable;
-
     Log::Comment(NoThrowString().Format(
         L"Process some valid sequences for setting the table"
     ));

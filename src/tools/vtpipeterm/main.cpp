@@ -56,9 +56,6 @@ void ReadCallback(byte* buffer, DWORD dwRead)
         HRESULT hr = GetLastError();
         exit(hr);
     }
-    // THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
-
-
 }
 
 void DebugReadCallback(byte* /*buffer*/, DWORD /*dwRead*/)

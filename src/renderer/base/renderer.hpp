@@ -65,7 +65,7 @@ namespace Microsoft
                 void EnablePainting();
                 void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs);
 
-                void AddRenderEngine(_In_ IRenderEngine* const pEngine);
+                void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
 
                 void MoveCursor(_In_ const COORD cPosition) override;
 

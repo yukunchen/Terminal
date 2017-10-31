@@ -204,7 +204,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
         status = NT_TESTNULL(pGdiEngine);
         if (NT_SUCCESS(status))
         {
-            static_cast<Renderer*>(g->pRender)->AddRenderEngine(pGdiEngine);
+            g->pRender->AddRenderEngine(pGdiEngine);
         }
     }
     catch (...)
