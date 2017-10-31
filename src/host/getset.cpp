@@ -923,8 +923,7 @@ HRESULT ApiRoutines::SetConsoleHistoryInfoImpl(_In_ const CONSOLE_HISTORY_INFO* 
 }
 
 // NOTE: This was in private.c, but turns out to be a public API: http://msdn.microsoft.com/en-us/library/windows/desktop/ms683164(v=vs.85).aspx
-HRESULT ApiRoutines::GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const /*pContext*/,
-                                               _Out_ ULONG* const pFlags)
+HRESULT ApiRoutines::GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags)
 {
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });

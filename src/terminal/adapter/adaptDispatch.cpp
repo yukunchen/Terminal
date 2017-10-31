@@ -875,7 +875,7 @@ bool AdaptDispatch::_WriteResponse(_In_reads_(cchReply) PCWSTR pwszReply, _In_ s
             KeyEvent keyEvent{ TRUE, 1, 0, 0, pwszReply[i], 0 };
 
             inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
-            keyEvent._keyDown = FALSE;
+            keyEvent.SetKeyDown(false);
             inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
         }
     }

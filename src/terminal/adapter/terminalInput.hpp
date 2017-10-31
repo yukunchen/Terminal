@@ -71,12 +71,6 @@ namespace Microsoft
                 static const size_t s_cKeypadApplicationMapping;
                 static const size_t s_cModifierKeyMapping;
 
-                static bool s_IsShiftPressed(_In_ const KeyEvent& keyEvent);
-                static bool s_IsAltPressed(_In_ const KeyEvent& keyEvent);
-                static bool s_IsCtrlPressed(_In_ const KeyEvent& keyEvent);
-                static bool s_IsModifierPressed(_In_ const KeyEvent& keyEvent);
-                static bool s_IsCursorKey(_In_ const KeyEvent& keyEvent);
-
                 bool _SearchKeyMapping(_In_ const KeyEvent& keyEvent,
                                        _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
                                        _In_ size_t const cKeyMapping,

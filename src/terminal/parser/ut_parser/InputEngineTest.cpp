@@ -53,6 +53,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     {
         return true;
     }
+
     TEST_METHOD_SETUP(MethodSetup)
     {
         vExpectedInput.clear();
@@ -409,8 +410,11 @@ void InputEngineTest::WindowManipulationTest()
 
     bool fValidType = false;
 
-    unsigned short param1 = 123;
-    unsigned short param2 = 456;
+    const unsigned short param1 = 123;
+    const unsigned short param2 = 456;
+    const wchar_t* const wszParam1 = L"123";
+    const wchar_t* const wszParam2 = L"456";
+
     for(unsigned int i = 0; i < static_cast<unsigned int>(BYTE_MAX); i++)
     {
         if (i == DispatchCommon::WindowManipulationType::ResizeWindowInCharacters)
@@ -419,7 +423,10 @@ void InputEngineTest::WindowManipulationTest()
         }
 
         std::wstringstream seqBuilder;
-        seqBuilder << L"\x1b[" << i << L";" << param1 << L";" << param2 << L"t";
+        // We need to build the string with the params as strings for some reason - 
+        //      x86 would implicitly convert them to chars (eg 123 -> '{') 
+        //      before appending them to the string 
+        seqBuilder << L"\x1b[" << i << L";" << wszParam1 << L";" << wszParam2 << L"t";
         std::wstring seq = seqBuilder.str();
         Log::Comment(NoThrowString().Format(
             L"Processing \"%s\"", seq.c_str()

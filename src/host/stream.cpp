@@ -103,21 +103,21 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
 
             if (pdwKeyState)
             {
-                *pdwKeyState = keyEvent->_activeModifierKeys;
+                *pdwKeyState = keyEvent->GetActiveModifierKeys();
             }
 
-            if (keyEvent->_charData != 0 && !commandLineEditKey)
+            if (keyEvent->GetCharData() != 0 && !commandLineEditKey)
             {
                 // chars that are generated using alt + numpad
-                if (!keyEvent->_keyDown && keyEvent->_virtualKeyCode == VK_MENU)
+                if (!keyEvent->IsKeyDown() && keyEvent->GetVirtualKeyCode() == VK_MENU)
                 {
-                    if (IsFlagSet(keyEvent->_activeModifierKeys, ALTNUMPAD_BIT))
+                    if (keyEvent->IsAltNumpadSet())
                     {
-                        if (HIBYTE(keyEvent->_charData))
+                        if (HIBYTE(keyEvent->GetCharData()))
                         {
                             char chT[2] = {
-                                static_cast<char>(HIBYTE(keyEvent->_charData)),
-                                static_cast<char>(LOBYTE(keyEvent->_charData)),
+                                static_cast<char>(HIBYTE(keyEvent->GetCharData())),
+                                static_cast<char>(LOBYTE(keyEvent->GetCharData())),
                             };
                             *pwchOut = CharToWchar(chT, 2);
                         }
@@ -126,39 +126,39 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                             // Because USER doesn't know our codepage,
                             // it gives us the raw OEM char and we
                             // convert it to a Unicode character.
-                            char chT = LOBYTE(keyEvent->_charData);
+                            char chT = LOBYTE(keyEvent->GetCharData());
                             *pwchOut = CharToWchar(&chT, 1);
                         }
                     }
                     else
                     {
-                        *pwchOut = keyEvent->_charData;
+                        *pwchOut = keyEvent->GetCharData();
                     }
                     return STATUS_SUCCESS;
                 }
                 // Ignore Escape and Newline chars
-                else if (keyEvent->_keyDown &&
+                else if (keyEvent->IsKeyDown() &&
                          (IsFlagSet(pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT) ||
-                          (keyEvent->_virtualKeyCode != VK_ESCAPE &&
-                           keyEvent->_charData != UNICODE_LINEFEED)))
+                          (keyEvent->GetVirtualKeyCode() != VK_ESCAPE &&
+                           keyEvent->GetCharData() != UNICODE_LINEFEED)))
                 {
-                    *pwchOut = keyEvent->_charData;
+                    *pwchOut = keyEvent->GetCharData();
                     return STATUS_SUCCESS;
                 }
             }
 
-            if (keyEvent->_keyDown)
+            if (keyEvent->IsKeyDown())
             {
                 if (pCommandLineEditingKeys && commandLineEditKey)
                 {
                     *pCommandLineEditingKeys = true;
-                    *pwchOut = static_cast<wchar_t>(keyEvent->_virtualKeyCode);
+                    *pwchOut = static_cast<wchar_t>(keyEvent->GetVirtualKeyCode());
                     return STATUS_SUCCESS;
                 }
                 else if (pCommandLinePopupKeys && commandLineEditKey)
                 {
                     *pCommandLinePopupKeys = true;
-                    *pwchOut = static_cast<char>(keyEvent->_virtualKeyCode);
+                    *pwchOut = static_cast<char>(keyEvent->GetVirtualKeyCode());
                     return STATUS_SUCCESS;
                 }
                 else
@@ -166,30 +166,23 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                     const short zeroVkeyData = ServiceLocator::LocateInputServices()->VkKeyScanW(0);
                     const byte zeroVKey = LOBYTE(zeroVkeyData);
                     const byte zeroControlKeyState = HIBYTE(zeroVkeyData);
-                    // Convert real Windows NT modifier bit into bizarre Console bits
-                    const DWORD consoleModifierTranslator[] =
-                    {
-                        0,
-                        SHIFT_PRESSED,
-                        CTRL_PRESSED,
-                        SHIFT_PRESSED | CTRL_PRESSED,
-                        ALT_PRESSED,
-                        SHIFT_PRESSED | ALT_PRESSED,
-                        CTRL_PRESSED | ALT_PRESSED,
-                        MOD_PRESSED
-                    };
-                    if (static_cast<unsigned int>(zeroControlKeyState) < ARRAYSIZE(consoleModifierTranslator))
-                    {
-                        const DWORD winmod = consoleModifierTranslator[zeroControlKeyState];
 
-                        if (zeroVKey == keyEvent->_virtualKeyCode &&
-                            AreAllFlagsSet(keyEvent->_activeModifierKeys, winmod) &&
-                            AreAllFlagsClear(keyEvent->_activeModifierKeys, ~winmod))
+                    try
+                    {
+                        // Convert real Windows NT modifier bit into bizarre Console bits
+                        std::unordered_set<ModifierKeyState> consoleModKeyState = FromVkKeyScan(zeroControlKeyState);
+
+                        if (zeroVKey == keyEvent->GetVirtualKeyCode() &&
+                            keyEvent->DoActiveModifierKeysMatch(consoleModKeyState))
                         {
                             // This really is the character 0x0000
-                            *pwchOut = keyEvent->_charData;
+                            *pwchOut = keyEvent->GetCharData();
                             return STATUS_SUCCESS;
                         }
+                    }
+                    catch (...)
+                    {
+                        LOG_HR(wil::ResultFromCaughtException());
                     }
                 }
             }
@@ -325,7 +318,7 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
             {
                 std::unique_ptr<IInputEvent> event = pInputBuffer->FetchReadPartialByteSequence(false);
                 const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                *pBuffer = static_cast<char>(pKeyEvent->_charData);
+                *pBuffer = static_cast<char>(pKeyEvent->GetCharData());
                 ++pBuffer;
                 bufferRemaining -= sizeof(wchar_t);
                 pHandleData->BytesAvailable -= sizeof(wchar_t);
@@ -369,7 +362,7 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
             {
                 std::unique_ptr<IInputEvent> event = pInputBuffer->FetchReadPartialByteSequence(false);
                 const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-                *pBuffer = static_cast<char>(pKeyEvent->_charData);
+                *pBuffer = static_cast<char>(pKeyEvent->GetCharData());
                 ++pBuffer;
                 bufferRemaining -= sizeof(wchar_t);
                 pHandleData->BytesAvailable -= sizeof(wchar_t);
@@ -668,7 +661,7 @@ NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
         {
             std::unique_ptr<IInputEvent> event = pInputBuffer->FetchReadPartialByteSequence(false);
             const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(event.get());
-            *pBuffer = static_cast<char>(pKeyEvent->_charData);
+            *pBuffer = static_cast<char>(pKeyEvent->GetCharData());
             ++pBuffer;
             bufferRemaining -= sizeof(wchar_t);
             addDbcsLead = true;

@@ -526,7 +526,7 @@ void MouseInput::_SendInputSequence(_In_reads_(cchLength) const wchar_t* const p
         {
             for (size_t i = 0; i < cch; ++i)
             {
-                events.push_back(std::make_unique<KeyEvent>(TRUE, 1ui16, 0ui16, 0ui16, pwszSequence[i], 0));
+                events.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, pwszSequence[i], 0));
             }
 
             _pfnWriteEvents(events);
