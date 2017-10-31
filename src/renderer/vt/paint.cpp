@@ -269,7 +269,6 @@ HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLin
     return S_OK;
 }
 
-
 // Routine Description:
 // - Draws one line of the buffer to the screen. Writes the characters to the 
 //      pipe, encoded in UTF-8.
