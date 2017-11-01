@@ -57,8 +57,10 @@ const InputStateMachineEngine::CSI_TO_VKEY InputStateMachineEngine::s_rgCsiMap[]
 
 const InputStateMachineEngine::GENERIC_TO_VKEY InputStateMachineEngine::s_rgGenericMap[]
 {
+    { GenericKeyIdentifiers::GenericHome, VK_HOME },
     { GenericKeyIdentifiers::Insert, VK_INSERT },
     { GenericKeyIdentifiers::Delete, VK_DELETE },
+    { GenericKeyIdentifiers::GenericEnd, VK_END },
     { GenericKeyIdentifiers::Prior, VK_PRIOR },
     { GenericKeyIdentifiers::Next, VK_NEXT },
     { GenericKeyIdentifiers::F5, VK_F5 },
@@ -137,6 +139,13 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
     }
     else if (wch == '\x7f')
     {
+        // Note:
+        //  The windows telnet expects to send x7f as DELETE, not backspace.
+        //      However, the windows telnetd also wouldn't let you move the 
+        //      cursor back into the input line, so it wasn't possible to 
+        //      "delete" any input at all, only backspace. 
+        //  Because of this, we're treating x7f as backspace, like every sane 
+        //      terminal does.
         fSuccess = _WriteSingleKey('\x8', VK_BACK, 0);
     } 
     else 

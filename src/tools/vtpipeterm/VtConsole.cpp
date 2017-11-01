@@ -23,11 +23,6 @@ VtConsole::VtConsole(PipeReadCallback const pfnReadCallback)
     _outPipeName = L"\\\\.\\pipe\\convt-out-" + randString;
 }
 
-bool VtConsole::WriteInput(std::string& seq)
-{
-    return !!WriteFile(inPipe(), seq.c_str(), (DWORD)seq.length(), nullptr, nullptr);
-}
-
 HANDLE VtConsole::inPipe()
 {
     return _inPipe;
@@ -35,6 +30,11 @@ HANDLE VtConsole::inPipe()
 HANDLE VtConsole::outPipe()
 {
     return _outPipe;
+}
+
+bool VtConsole::WriteInput(std::string& seq)
+{
+    return !!WriteFile(inPipe(), seq.c_str(), (DWORD)seq.length(), nullptr, nullptr);
 }
 
 void VtConsole::spawn()

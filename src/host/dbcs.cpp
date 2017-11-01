@@ -9,6 +9,7 @@
 #include "dbcs.h"
 
 #include "misc.h"
+#include "../types/inc/convert.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 

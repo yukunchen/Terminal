@@ -8,6 +8,7 @@
 
 #include "vtrenderer.hpp"
 #include "../../inc/conattrs.hpp"
+#include "../../types/inc/convert.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
@@ -63,7 +64,8 @@ HRESULT VtEngine::PaintBackground()
 
 // Routine Description:
 // - Draws one line of the buffer to the screen. Writes the characters to the 
-//      pipe, encoded in UTF-8.
+//      pipe. If the characters are outside the ASCII range (0-0x7f), then 
+//      instead writes a '?'
 // Arguments:
 // - pwsLine - string of text to be written
 // - rgWidths - array specifying how many column widths that the console is 
@@ -81,29 +83,7 @@ HRESULT VtEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
                                   _In_ COORD const coord,
                                   _In_ bool const /*fTrimLeft*/)
 {
-    RETURN_IF_FAILED(_MoveCursor(coord));
-
-    // TODO: MSFT:14099536 Try and optimize the spaces.
-    const size_t actualCch = cchLine;
-
-    const DWORD dwNeeded = WideCharToMultiByte(CP_UTF8, 0, pwsLine, static_cast<int>(actualCch), nullptr, 0, nullptr, nullptr);
-    wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(dwNeeded + 1);
-    RETURN_IF_NULL_ALLOC(rgchNeeded);
-    RETURN_LAST_ERROR_IF_FALSE(WideCharToMultiByte(CP_UTF8, 0, pwsLine, static_cast<int>(actualCch), rgchNeeded.get(), dwNeeded, nullptr, nullptr));
-    rgchNeeded[dwNeeded] = '\0';
-
-    RETURN_IF_FAILED(_Write(rgchNeeded.get(), dwNeeded));
-    
-    // Update our internal tracker of the cursor's position
-    short totalWidth = 0;
-    for (size_t i=0; i < actualCch; i++)
-    {
-        totalWidth += static_cast<short>(rgWidths[i]);
-    }
-    _lastText.X += totalWidth;
-
-
-    return S_OK;
+    return VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord);
 }
 
 // Method Description:
@@ -229,3 +209,101 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForegrou
     return S_OK;
 }
 
+// Routine Description:
+// - Draws one line of the buffer to the screen. Writes the characters to the 
+//      pipe. If the characters are outside the ASCII range (0-0x7f), then 
+//      instead writes a '?'.
+//   This is needed because the Windows internal telnet client implementation
+//      doesn't know how to handle >ASCII characters. The old telnetd would 
+//      just replace them with '?' characters. If we render the >ASCII 
+//      characters to telnet, it will likely end up drawing them wrong, which 
+//      will make the client appear buggy and broken.
+// Arguments:
+// - pwsLine - string of text to be written
+// - rgWidths - array specifying how many column widths that the console is 
+//      expecting each character to take
+// - cchLine - length of line to be read
+// - coord - character coordinate target to render within viewport
+// Return Value:
+// - S_OK or suitable HRESULT error from writing pipe.
+HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
+                                        _In_reads_(cchLine) const unsigned char* const rgWidths,
+                                        _In_ size_t const cchLine,
+                                        _In_ COORD const coord)
+{
+    RETURN_IF_FAILED(_MoveCursor(coord));
+
+    short totalWidth = 0;
+    for (size_t i = 0; i < cchLine; i++)
+    {
+        RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(rgWidths[i]), &totalWidth));
+    }
+    const size_t actualCch = cchLine;
+
+    wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(actualCch + 1);
+    RETURN_IF_NULL_ALLOC(rgchNeeded);
+    
+    char* nextChar = &rgchNeeded[0];
+    for (size_t i = 0; i < cchLine; i++)
+    {
+        if (pwsLine[i] > L'\x7f')
+        {
+            *nextChar = '?';
+            nextChar++;
+        }
+        else
+        {
+            // Mask off the non-ascii bits
+            *nextChar = static_cast<char>(pwsLine[i] & 0x7f);
+            nextChar++;
+        }
+    }
+
+    rgchNeeded[actualCch] = '\0';
+
+    RETURN_IF_FAILED(_Write(rgchNeeded.get(), actualCch));
+    
+    // Update our internal tracker of the cursor's position
+    _lastText.X += totalWidth;
+
+    return S_OK;
+}
+
+// Routine Description:
+// - Draws one line of the buffer to the screen. Writes the characters to the 
+//      pipe, encoded in UTF-8.
+// Arguments:
+// - pwsLine - string of text to be written
+// - rgWidths - array specifying how many column widths that the console is 
+//      expecting each character to take
+// - cchLine - length of line to be read
+// - coord - character coordinate target to render within viewport
+// Return Value:
+// - S_OK or suitable HRESULT error from writing pipe.
+HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
+                                       _In_reads_(cchLine) const unsigned char* const rgWidths,
+                                       _In_ size_t const cchLine,
+                                       _In_ COORD const coord)
+{
+    RETURN_IF_FAILED(_MoveCursor(coord));
+
+    // TODO: MSFT:14099536 Try and optimize the spaces.
+    const size_t actualCch = cchLine;
+    
+    wistd::unique_ptr<char[]> rgchNeeded;
+    size_t needed = 0;
+    RETURN_IF_FAILED(ConvertToA(CP_UTF8, pwsLine, cchLine, rgchNeeded, needed));
+
+    RETURN_IF_FAILED(_Write(rgchNeeded.get(), needed));
+    
+    // Update our internal tracker of the cursor's position
+    short totalWidth = 0;
+    for (size_t i = 0; i < cchLine; i++)
+    {
+        RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(rgWidths[i]), &totalWidth));
+    }
+    _lastText.X += totalWidth;
+
+
+    return S_OK;
+}

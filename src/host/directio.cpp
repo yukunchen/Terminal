@@ -13,6 +13,7 @@
 #include "dbcs.h"
 #include "handle.h"
 #include "misc.h"
+#include "../types/inc/convert.hpp"
 #include "readDataDirect.hpp"
 
 #include "ApiRoutines.h"

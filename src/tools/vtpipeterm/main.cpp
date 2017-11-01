@@ -37,18 +37,16 @@ std::string toPrintableString(std::string& inString);
 void toPrintableBuffer(char c, char* printBuffer, int* printCch);
 ////////////////////////////////////////////////////////////////////////////////
 
-
 void ReadCallback(byte* buffer, DWORD dwRead)
 {
     // We already set the console to UTF-8 CP, so we can just write straight to it
     THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
 
-    // std::string renderData = std::string(static_cast<char*>(buffer));
     std::string renderData = std::string((char*)buffer, dwRead);
     std::string printable = toPrintableString(renderData);
     std::string seq = "\n";
-    WriteFile(debug->inPipe(), printable.c_str(), (DWORD)printable.length(), 0, 0);
-    WriteFile(debug->inPipe(), seq.c_str(), (DWORD)seq.length(), 0, 0);
+    debug->WriteInput(printable);
+    debug->WriteInput(seq);
 
 }
 
@@ -89,7 +87,10 @@ void newConsole()
     consoles.push_back(con);
 }
 
-std::string csi(string seq){
+std::string csi(string seq)
+{
+    // Note: This doesn't do anything for the debug console currently. 
+    //      Somewhere, the TTY eats the control sequences. Still useful though.
     string fullSeq = "\x1b[";
     fullSeq += seq;
     return fullSeq;
@@ -153,6 +154,20 @@ void toPrintableBuffer(char c, char* printBuffer, int* printCch)
         printBuffer[1] = 'n';
         *printCch = 2;
     }
+    else if (c < '\x20')
+    {
+        printBuffer[0] = '^';
+        printBuffer[1] = c+0x40;
+        *printCch = 2;
+    }
+    else if (c == '\x7f')
+    {
+        printBuffer[0] = '\\';
+        printBuffer[1] = 'x';
+        printBuffer[2] = '7';
+        printBuffer[3] = 'f';
+        *printCch = 4;
+    }
     else
     {
         printBuffer[0] = (char)c;
@@ -191,7 +206,10 @@ std::string toPrintableString(std::string& inString)
 void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
 {
     char* const buffer = new char[cEvents];
-    char* const printableBuffer = new char[cEvents * 3];
+    char* const printableBuffer = new char[cEvents * 4];
+    memset(buffer, 0, cEvents);
+    memset(printableBuffer, 0, cEvents * 4);
+
     char* nextBuffer = buffer;
     char* nextPrintable = printableBuffer;
     int bufferCch = 0;
@@ -302,13 +320,12 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
         std::string vtseq = std::string(buffer, bufferCch);
         std::string printSeq = std::string(printableBuffer, printableCch);
 
-        // Maybe come back to later - trying to print the debug output in different colors.
-        // csi("38;5;242m");
-        // wprintf(L"\tWriting \"%hs\" length=[%d]\n", printSeq.c_str(), (int)vtseq.length());
-        // WriteFile(debug->inPipe(), printSeq.c_str(), (DWORD)printSeq.length(), nullptr, nullptr);
-        // csi("0m");
+        getConsole()->WriteInput(vtseq);
 
-        WriteFile(inPipe(), vtseq.c_str(), (DWORD)vtseq.length(), nullptr, nullptr);
+        std::stringstream ss;
+        ss << "Input \"" << printSeq.c_str() << "\" [" << vtseq.length() << "]\n";
+        std::string debugString = ss.str();
+        debug->WriteInput(debugString);
     }
 }
 

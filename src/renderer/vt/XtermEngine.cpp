@@ -12,10 +12,12 @@ using namespace Microsoft::Console::Types;
 
 XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                         _In_ const WORD cColorTable) :
+                         _In_ const WORD cColorTable,
+                         _In_ const bool fUseAsciiOnly) :
     VtEngine(std::move(hPipe)),
     _ColorTable(ColorTable),
-    _cColorTable(cColorTable)
+    _cColorTable(cColorTable),
+    _fUseAsciiOnly(fUseAsciiOnly)
 {
 }
 
@@ -241,3 +243,30 @@ HRESULT XtermEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 
     return S_OK;
 }
+
+// Routine Description:
+// - Draws one line of the buffer to the screen. Writes the characters to the 
+//      pipe, encoded in UTF-8 or ASCII only, depending on the VtIoMode.
+//      (See descriptions of both implementations for details.)
+// Arguments:
+// - pwsLine - string of text to be written
+// - rgWidths - array specifying how many column widths that the console is 
+//      expecting each character to take
+// - cchLine - length of line to be read
+// - coord - character coordinate target to render within viewport
+// - fTrimLeft - This specifies whether to trim one character width off the left
+//      side of the output. Used for drawing the right-half only of a 
+//      double-wide character.
+// Return Value:
+// - S_OK or suitable HRESULT error from writing pipe.
+HRESULT XtermEngine::PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
+                                     _In_reads_(cchLine) const unsigned char* const rgWidths,
+                                     _In_ size_t const cchLine,
+                                     _In_ COORD const coord,
+                                     _In_ bool const /*fTrimLeft*/)
+{
+    return _fUseAsciiOnly ?
+        VtEngine::_PaintAsciiBufferLine(pwsLine, rgWidths, cchLine, coord) :
+        VtEngine::_PaintUtf8BufferLine(pwsLine, rgWidths, cchLine, coord);
+}
+
