@@ -30,13 +30,14 @@ namespace Microsoft
         {
             namespace OneCore
             {
-                class ConIoSrvComm sealed : public IInputServices
+                class ConIoSrvComm final : public IInputServices
                 {
                 public:
                     ConIoSrvComm();
+                    ~ConIoSrvComm() override;
 
                     NTSTATUS Connect();
-                    NTSTATUS ServiceInputPipe();
+                    VOID ServiceInputPipe();
 
                     NTSTATUS RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisplaySize) const;
                     NTSTATUS RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize) const;
@@ -51,7 +52,7 @@ namespace Microsoft
 
                     PVOID GetSharedViewBase() const;
                     
-                    VOID SignalInputEventIfNecessary();
+                    VOID CleanupForHeadless(_In_ NTSTATUS const status);
 
                     // IInputServices Members
                     UINT MapVirtualKeyW(UINT uCode, UINT uMapType);

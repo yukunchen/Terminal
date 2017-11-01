@@ -16,4 +16,6 @@
 
 #include <ntuserconsoleext.h>
 
+#include <wil\result.h>
+
 #pragma hdrstop

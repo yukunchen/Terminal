@@ -39,6 +39,7 @@ Registry::~Registry()
 // - <none>
 void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     NTSTATUS Status;
     HKEY hCurrentUserKey = nullptr;
     if (hConsoleKey == nullptr)
@@ -55,7 +56,7 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
     Status = RegistrySerialization::s_QueryValue(hConsoleKey, CONSOLE_REGISTRY_ALLOW_ALTF4_CLOSE, sizeof(dwValue), (PBYTE)& dwValue, nullptr);
     if (NT_SUCCESS(Status) && dwValue <= 1)
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->SetAltF4CloseAllowed(!!dwValue);
+        gci->SetAltF4CloseAllowed(!!dwValue);
     }
 
     // get extended edit mode and keys from registry.
@@ -64,7 +65,7 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
     {
         ExtKeyDefBuf buf = { 0 };
 
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->SetExtendedEditKey(!!dwValue);
+        gci->SetExtendedEditKey(!!dwValue);
 
         // Initialize Extended Edit keys.
         InitExtendedEditKeys(nullptr);
@@ -77,11 +78,11 @@ void Registry::GetEditKeys(_In_opt_ HKEY hConsoleKey) const
     }
     else
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->SetExtendedEditKey(false);
+        gci->SetExtendedEditKey(false);
     }
 
     // Word delimiters
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey())
+    if (gci->GetExtendedEditKey())
     {
         // If extended edit key is given, provide extended word delimiters by default.
         memmove(ServiceLocator::LocateGlobals()->aWordDelimChars,

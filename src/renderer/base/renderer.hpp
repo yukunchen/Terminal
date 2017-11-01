@@ -20,6 +20,7 @@ Author(s):
 #include "..\inc\IRenderData.hpp"
 
 #include "thread.hpp"
+#include <deque>
 
 #include "..\..\host\textBuffer.hpp"
 
@@ -32,7 +33,10 @@ namespace Microsoft
             class Renderer sealed : public IRenderer
             {
             public:
-                static HRESULT s_CreateInstance(_In_ IRenderData* const pData, _In_ IRenderEngine* const pEngine, _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
+                static HRESULT s_CreateInstance(_In_ IRenderData* const pData,
+                                                _In_reads_(cEngines) IRenderEngine** const rgpEngines,
+                                                _In_ size_t const cEngines,
+                                                _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
                 ~Renderer();
 
                 HRESULT PaintFrame();
@@ -56,9 +60,13 @@ namespace Microsoft
                 void EnablePainting();
                 void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs);
 
+                void AddRenderEngine(_In_ IRenderEngine* const pEngine);
+
+                void MoveCursor(_In_ const COORD cPosition) override;
+
             private:
-                Renderer(_In_ IRenderData* const pData, _In_ IRenderEngine* const pEngine);
-                IRenderEngine* _pEngine;
+                Renderer(_In_ IRenderData* const pData, _In_reads_(cEngines) IRenderEngine** const pEngine, _In_ size_t const cEngines);
+                std::deque<IRenderEngine*> _rgpEngines;
                 IRenderData* _pData;
 
                 RenderThread* _pThread;
@@ -66,24 +74,40 @@ namespace Microsoft
 
                 bool _CheckViewportAndScroll();
 
-                void _PaintBackground();
+                HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
 
-                void _PaintBufferOutput();
-                void _PaintBufferOutputRasterFontHelper(_In_ const ROW* const pRow, _In_reads_(cchLine) PCWCHAR const pwsLine, _In_reads_(cchLine) PBYTE pbKAttrsLine, _In_ size_t cchLine, _In_ size_t iFirstAttr, _In_ COORD const coordTarget);
-                void _PaintBufferOutputColorHelper(_In_ const ROW* const pRow, _In_reads_(cchLine) PCWCHAR const pwsLine, _In_reads_(cchLine) PBYTE pbKAttrsLine, _In_ size_t cchLine, _In_ size_t iFirstAttr, _In_ COORD const coordTarget);
-                HRESULT _PaintBufferOutputDoubleByteHelper(_In_reads_(cchLine) PCWCHAR const pwsLine, _In_reads_(cchLine) PBYTE const pbKAttrsLine, _In_ size_t const cchLine, _In_ COORD const coordTarget);
-                void _PaintBufferOutputGridLineHelper(_In_ const TextAttribute textAttribute, _In_ size_t const cchLine, _In_ COORD const coordTarget);
+                void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
+                void _PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine, 
+                                                        _In_ const ROW* const pRow, 
+                                                        _In_reads_(cchLine) PCWCHAR const pwsLine, 
+                                                        _In_reads_(cchLine) PBYTE pbKAttrsLine, 
+                                                        _In_ size_t cchLine, 
+                                                        _In_ size_t iFirstAttr, 
+                                                        _In_ COORD const coordTarget);
+                void _PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine, 
+                                                   _In_ const ROW* const pRow, 
+                                                   _In_reads_(cchLine) PCWCHAR const pwsLine, 
+                                                   _In_reads_(cchLine) PBYTE pbKAttrsLine, 
+                                                   _In_ size_t cchLine, 
+                                                   _In_ size_t iFirstAttr, 
+                                                   _In_ COORD const coordTarget);
+                HRESULT _PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
+                                                           _In_reads_(cchLine) PCWCHAR const pwsLine, 
+                                                           _In_reads_(cchLine) PBYTE const pbKAttrsLine, 
+                                                           _In_ size_t const cchLine, 
+                                                           _In_ COORD const coordTarget);
+                void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute textAttribute, _In_ size_t const cchLine, _In_ COORD const coordTarget);
 
-                void _PaintSelection();
-                void _PaintCursor();
+                void _PaintSelection(_In_ IRenderEngine* const pEngine);
+                void _PaintCursor(_In_ IRenderEngine* const pEngine);
 
-                void _PaintIme(_In_ const ConversionAreaInfo* const pAreaInfo, _In_ const TEXT_BUFFER_INFO* const pTextInfo);
-                void _PaintImeCompositionString();
+                void _PaintIme(_In_ IRenderEngine* const pEngine, _In_ const ConversionAreaInfo* const pAreaInfo, _In_ const TEXT_BUFFER_INFO* const pTextInfo);
+                void _PaintImeCompositionString(_In_ IRenderEngine* const pEngine);
 
-                HRESULT _UpdateDrawingBrushes(_In_ const TextAttribute attr, _In_ bool const fIncludeBackground);
+                HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute attr, _In_ bool const fIncludeBackground);
 
-                void _ClearOverlays();
-                void _PerformScrolling();
+                HRESULT _ClearOverlays(_In_ IRenderEngine* const pEngine);
+                HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
 
                 SMALL_RECT _srViewportPrevious;
 

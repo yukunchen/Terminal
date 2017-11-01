@@ -12,9 +12,9 @@
 
 #include "winbasep.h"
 
-HRESULT Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle)
+HRESULT Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle, _In_ const ConsoleArguments* const args)
 {
-    return ConsoleCreateIoThreadLegacy(ServerHandle);
+    return ConsoleCreateIoThreadLegacy(ServerHandle, args);
 }
 
 // this function has unreachable code due to its unusual lifetime. We
@@ -22,11 +22,14 @@ HRESULT Entrypoints::StartConsoleForServerHandle(_In_ HANDLE const ServerHandle)
 #pragma warning(push)
 #pragma warning(disable:4702)
 
-HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
+HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine, _In_ const ConsoleArguments* const args)
 {
     // Create a scope because we're going to exit thread if everything goes well.
     // This scope will ensure all C++ objects and smart pointers get a chance to destruct before ExitThread is called.
     {
+        // TODO:MSFT:13271366 use the arguments from the commandline to determine if we need 
+        //  to create the server handle or not.
+
         // Create the server and reference handles and create the console object.
         wil::unique_handle ServerHandle;
         RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateServerHandle(ServerHandle.addressof(), FALSE));
@@ -37,7 +40,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine)
                                                                    L"\\Reference",
                                                                    FALSE));
 
-        RETURN_IF_NTSTATUS_FAILED(Entrypoints::StartConsoleForServerHandle(ServerHandle.get()));
+        RETURN_IF_NTSTATUS_FAILED(Entrypoints::StartConsoleForServerHandle(ServerHandle.get(), args));
 
         // If we get to here, we have transferred ownership of the server handle to the console, so release it.
         // Keep a copy of the value so we can open the client handles even though we're no longer the owner.

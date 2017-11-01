@@ -18,6 +18,7 @@ Revision History:
 
 #include "selection.hpp"
 #include "server.h"
+#include "ConsoleArguments.hpp"
 
 #include "..\renderer\inc\IRenderData.hpp"
 #include "..\renderer\inc\IRenderEngine.hpp"
@@ -42,6 +43,8 @@ public:
      HINSTANCE hInstance;
      UINT uiDialogBoxCount;
 
+     ConsoleArguments launchArgs;
+
      CONSOLE_INFORMATION* getConsoleInformation();
 
      DeviceComm* pDeviceComm;
@@ -60,8 +63,12 @@ public:
      WCHAR aWordDelimChars[WORD_DELIM_MAX];
 
      IRenderer* pRender;
+     
+     // Both of these should belong to the renderer.
+     // todo: msft:13631640
      IRenderData* pRenderData;
      IRenderEngine* pRenderEngine;
+     
      IFontDefaultList* pFontDefaultList;
 
 private:

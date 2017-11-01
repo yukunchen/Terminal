@@ -27,7 +27,8 @@ GdiEngine::GdiEngine() :
     _hbitmapMemorySurface(nullptr),
     _cPolyText(0),
     _fInvalidRectUsed(false),
-    _fPaintStarted(false)
+    _fPaintStarted(false),
+    _cursor{this}
 {
     ZeroMemory(_pPolyText, sizeof(POLYTEXTW) * s_cPolyTextCache);
     _rcInvalid = { 0 };
@@ -175,8 +176,16 @@ HRESULT GdiEngine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground, _In
     RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _hdcMemoryContext);
 
     // Set the colors for painting text
-    RETURN_LAST_ERROR_IF(CLR_INVALID == SetTextColor(_hdcMemoryContext, colorForeground));
-    RETURN_LAST_ERROR_IF(CLR_INVALID == SetBkColor(_hdcMemoryContext, colorBackground));
+    if (colorForeground != _lastFg)
+    {
+        RETURN_LAST_ERROR_IF(CLR_INVALID == SetTextColor(_hdcMemoryContext, colorForeground));
+        _lastFg = colorForeground;
+    }
+    if (colorBackground != _lastBg)
+    {
+        RETURN_LAST_ERROR_IF(CLR_INVALID == SetBkColor(_hdcMemoryContext, colorBackground));
+        _lastBg = colorBackground;
+    }
 
     if (fIncludeBackgrounds)
     {
@@ -236,6 +245,18 @@ HRESULT GdiEngine::UpdateFont(_In_ FontInfoDesired const * const pfiFontDesired,
 HRESULT GdiEngine::UpdateDpi(_In_ int const iDpi)
 {
     _iCurrentDpi = iDpi;
+    return S_OK;
+}
+
+// Method Description:
+// - This method will update our internal reference for how big the viewport is.
+//      Does nothing for GDI.
+// Arguments:
+// - srNewViewport - The bounds of the new viewport.
+// Return Value:
+// - HRESULT S_OK
+HRESULT GdiEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
+{
     return S_OK;
 }
 
@@ -447,4 +468,15 @@ bool GdiEngine::_IsMinimized() const
 bool GdiEngine::_IsFontTrueType() const
 {
     return !!(_tmFontMetrics.tmPitchAndFamily & TMPF_TRUETYPE);
+}
+
+// Method Description:
+// - Returns a reference to this engine's cursor implementation.
+// Arguments:
+// - <none>
+// Return Value:
+// - A referenct to this engine's cursor implementation.
+IRenderCursor* const GdiEngine::GetCursor()
+{
+    return &_cursor;
 }

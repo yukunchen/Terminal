@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
@@ -10,7 +10,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
-    <ClCompile Include="exemain.cpp" />
+    <ClCompile Include="..\exemain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\interactivity\base\lib\InteractivityBase.vcxproj">
@@ -28,6 +28,9 @@
     <ProjectReference Include="..\..\renderer\gdi\lib\gdi.vcxproj">
       <Project>{1c959542-bac2-4e55-9a6d-13251914cbb9}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\renderer\vt\lib\vt.vcxproj">
+      <Project>{990f2657-8580-4828-943f-5dd657d11842}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\server\lib\server.vcxproj">
       <Project>{18d09a24-8240-42d6-8cb6-236eee820262}</Project>
     </ProjectReference>
@@ -39,6 +42,9 @@
     </ProjectReference>
     <ProjectReference Include="..\..\tsf\tsf.vcxproj">
       <Project>{2fd12fbb-1ddb-46d8-b818-1023c624caca}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\types\lib\types.vcxproj">
+      <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
     </ProjectReference>
     <ProjectReference Include="..\lib\hostlib.vcxproj">
       <Project>{06ec74cb-9a12-429c-b551-8562ec954746}</Project>

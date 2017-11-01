@@ -62,6 +62,9 @@ filling in the last row, and updating the screen.
 #include "..\renderer\inc\FontInfo.hpp"
 #include "..\renderer\inc\FontInfoDesired.hpp"
 
+#include <wil/resource.h>
+#include <wil/wistd_memory.h>
+
 typedef struct _CHAR_ROW
 {
     static const SHORT INVALID_OLD_LENGTH = -1;
@@ -143,7 +146,7 @@ public:
 
     void SetFromLegacy(_In_ const WORD wLegacy);
     void SetMetaAttributes(_In_ const WORD wMeta);
-    
+
     void SetFrom(_In_ const TextAttribute& otherAttr);
     bool IsEqual(_In_ const TextAttribute& otherAttr) const;
     bool IsEqualToLegacy(_In_ const WORD wLegacy) const;
@@ -169,7 +172,7 @@ private:
 class TextAttributeRun sealed
 {
 public:
-    UINT GetLength();
+    UINT GetLength() const;
     void SetLength(_In_ UINT const cchLength);
 
     const TextAttribute GetAttributes() const;
@@ -179,6 +182,10 @@ public:
 private:
     UINT _cchLength;
     TextAttribute _attributes;
+
+#ifdef UNIT_TESTING
+    friend class AttrRowTests;
+#endif
 };
 
 // the attributes of one row of screen buffer
@@ -186,30 +193,27 @@ private:
 class ATTR_ROW sealed
 {
 public:
-
     bool Initialize(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr);
 
-    void FindAttrIndex(_In_ UINT const iIndex, _Outptr_ TextAttributeRun** const ppIndexedAttr, _Out_ UINT* const cAttrApplies) const;
-    TextAttributeRun* GetHead() const;
-
-    NTSTATUS PackAttrs(_In_reads_(cRowLength) const TextAttribute* const rgAttrs, _In_ UINT const cRowLength);
-    NTSTATUS UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ UINT const cRowLength) const;
-
+    void FindAttrIndex(_In_ UINT const iIndex, _Outptr_ TextAttributeRun** const ppIndexedAttr, _Out_opt_ UINT* const pcAttrApplies) const;
     bool SetAttrToEnd(_In_ UINT const iStart, _In_ const TextAttribute attr);
     void ReplaceLegacyAttrs(_In_ const WORD wToBeReplacedAttr, _In_ const WORD wReplaceWith);
     bool Resize(_In_ const short sOldWidth, _In_ const short sNewWidth);
 
-    NTSTATUS InsertAttrRuns(_In_reads_(cMergeAttrPairs) TextAttributeRun* prgMergeAttrPairs,
-                            _In_ const short cMergeAttrPairs,
-                            _In_ const short sStartIndex,
-                            _In_ const short sEndIndex,
-                            _In_ const short BufferWidth);
+    HRESULT InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* const prgAttrs,
+                           _In_ const UINT cAttrs,
+                           _In_ const UINT iStart,
+                           _In_ const UINT iEnd,
+                           _In_ const UINT cBufferWidth);
 
-    SHORT Length;   // length of attr pair array
+    NTSTATUS UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ UINT const cRowLength) const;
+
+    UINT _cList;   // length of attr pair array
+    wistd::unique_ptr<TextAttributeRun[]> _rgList;
 private:
 
-    UINT _TotalLength() const;
-    TextAttributeRun* _pAttribRunListHead = nullptr;
+    UINT _cchRowWidth;
+
 
 #ifdef UNIT_TESTING
     friend class AttrRowTests;
@@ -286,8 +290,6 @@ public:
     CHAR_INFO GetFill() const;
     void SetFill(_In_ const CHAR_INFO ciFill);
 
-    void FreeExtraAttributeRows(_In_ const short sTopRowIndex, _In_ const short sOldHeight, _In_ const short sNewHeight);
-
     ROW* Rows;
     PWCHAR TextRows;
     // all DBCS lead & trail bit buffer
@@ -317,7 +319,7 @@ private:
     CHAR_INFO _ciFill;
 
 #ifdef UNIT_TESTING
-friend class TextBufferTests;
+    friend class TextBufferTests;
 #endif
 };
 typedef TEXT_BUFFER_INFO *PTEXT_BUFFER_INFO;

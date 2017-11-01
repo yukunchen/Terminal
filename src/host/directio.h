@@ -21,10 +21,15 @@ Revision History:
 class SCREEN_INFORMATION;
 
 NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size);
-NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size, _Inout_ PCHAR_INFO OutputBufferR);
+NTSTATUS TranslateOutputToPaddingUnicode(_Inout_ PCHAR_INFO OutputBuffer,
+                                         _In_ COORD Size,
+                                         _Inout_ PCHAR_INFO OutputBufferR);
 
-NTSTATUS SrvWriteConsoleInput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
-NTSTATUS DoSrvWriteConsoleInput(_In_ InputBuffer* pInputBuffer, _Inout_ CONSOLE_WRITECONSOLEINPUT_MSG* pMsg, _In_ INPUT_RECORD* const rgInputRecords);
+HRESULT DoSrvWriteConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
+                               _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                               _Out_ size_t& eventsWritten,
+                               _In_ const bool unicode,
+                               _In_ const bool append);
 
 NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
 NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL ReplyPending);
@@ -38,3 +43,7 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
                                    _In_ PCONSOLE_API_MSG Message,
                                    _In_ PCD_CREATE_OBJECT_INFORMATION Information,
                                    _In_ PCONSOLE_CREATESCREENBUFFER_MSG a);
+
+NTSTATUS DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
+                                         _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                         _Out_ size_t& eventsWritten);

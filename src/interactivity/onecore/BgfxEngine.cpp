@@ -48,7 +48,7 @@ HRESULT BgfxEngine::InvalidateSystem(const RECT* const prcDirtyClient)
     return S_OK;
 }
 
-HRESULT BgfxEngine::InvalidateSelection(SMALL_RECT* const rgsrSelection, UINT const cRectangles)
+HRESULT BgfxEngine::InvalidateSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles)
 {
     UNREFERENCED_PARAMETER(rgsrSelection);
     UNREFERENCED_PARAMETER(cRectangles);
@@ -153,21 +153,23 @@ HRESULT BgfxEngine::PaintBufferGridLines(GridLines const lines, COLORREF const c
     return S_OK;
 }
 
-HRESULT BgfxEngine::PaintSelection(SMALL_RECT* const rgsrSelection, UINT const cRectangles)
+HRESULT BgfxEngine::PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles)
 {
     UNREFERENCED_PARAMETER(rgsrSelection);
     UNREFERENCED_PARAMETER(cRectangles);
 
     return S_OK;
 }
-
-HRESULT BgfxEngine::PaintCursor(COORD const coordCursor, ULONG const ulCursorHeightPercent, bool const fIsDoubleWidth)
+HRESULT BgfxEngine::PaintCursorEx(_In_ ULONG const ulCursorHeightPercent,
+                                  _In_ bool const /*fIsDoubleWidth*/,
+                                  _In_ Cursor::CursorType const /*cursorType*/,
+                                  _In_ bool const /*fUseColor*/,
+                                  _In_ COLORREF const /*cursorColor*/)
 {
     // TODO: MSFT: 11448021 - Modify BGFX to support rendering full-width
     // characters and a full-width cursor.
-    UNREFERENCED_PARAMETER(fIsDoubleWidth);
-
-    NTSTATUS Status;
+    
+    const COORD coordCursor = _cursor.GetPosition();
 
     CD_IO_CURSOR_INFORMATION CursorInfo;
     CursorInfo.Row = coordCursor.Y;
@@ -175,9 +177,10 @@ HRESULT BgfxEngine::PaintCursor(COORD const coordCursor, ULONG const ulCursorHei
     CursorInfo.Height = ulCursorHeightPercent;
     CursorInfo.IsVisible = TRUE;
 
-    Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestSetCursor(&CursorInfo);
+    NTSTATUS Status = ServiceLocator::LocateInputServices<ConIoSrvComm>()->RequestSetCursor(&CursorInfo);
 
     return HRESULT_FROM_NT(Status);
+
 }
 
 HRESULT BgfxEngine::ClearCursor()
@@ -216,6 +219,18 @@ HRESULT BgfxEngine::UpdateDpi(int const iDpi)
     UNREFERENCED_PARAMETER(iDpi);
 
     return S_OK;
+}    
+
+// Method Description:
+// - This method will update our internal reference for how big the viewport is.
+//      Does nothing for BGFX.
+// Arguments:
+// - srNewViewport - The bounds of the new viewport.
+// Return Value:
+// - HRESULT S_OK
+HRESULT BgfxEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
+{
+    return S_OK;
 }
 
 HRESULT BgfxEngine::GetProposedFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo, int const iDpi)
@@ -248,4 +263,15 @@ bool BgfxEngine::IsCharFullWidthByFont(WCHAR const wch)
     UNREFERENCED_PARAMETER(wch);
 
     return false;
+}
+
+// Method Description:
+// - Returns a reference to this engine's cursor implementation.
+// Arguments:
+// - <none>
+// Return Value:
+// - A referenct to this engine's cursor implementation.
+IRenderCursor* const BgfxEngine::GetCursor()
+{
+    return &_cursor;
 }

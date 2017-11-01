@@ -10,17 +10,17 @@
 
 #include "..\..\host\dbcs.h"
 #include "..\..\host\scrolling.hpp"
-#include "..\..\host\misc.h"
+#include "..\..\types\inc\convert.hpp"
 #include "..\..\host\output.h"
 
 #include "..\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
 
-#define DATA_CHUNK_SIZE 8192
-
-// 8 is maximum number of events per char that can be generated during the paste function.
-#define MAX_EVENTPER_CHAR 8
+// TODO: MSFT 14150722 - can these const values be generated at
+// runtime without breaking compatibility?
+static const WORD altScanCode = 0x38;
+static const WORD leftShiftScanCode = 0x2A;
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
@@ -72,204 +72,270 @@ Clipboard& Clipboard::Instance()
     return clipboard;
 }
 
-/*++
-
-Routine Description:
-
-This routine pastes given Unicode string into the console window.
-
-Arguments:
-Console  -   Pointer to CONSOLE_INFORMATION structure
-pwStr    -   Unicode string that is pasted to the console window
-DataSize -   Size of the Unicode String in characters
-
-
-Return Value:
-None
-
-
---*/
-void Clipboard::StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
+// Routine Description:
+// - This routine pastes given Unicode string into the console window.
+// Arguments:
+// - pData - Unicode string that is pasted to the console window
+// - cchData - Size of the Unicode String in characters
+// Return Value:
+// - None
+void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
                             _In_ const size_t cchData)
 {
-    if (pwchData == nullptr)
+    if (pData == nullptr)
     {
         return;
     }
 
-    size_t ChunkSize;
-    if (cchData > DATA_CHUNK_SIZE)
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+
+    try
     {
-        ChunkSize = DATA_CHUNK_SIZE;
+        std::deque<std::unique_ptr<IInputEvent>> inEvents = TextToKeyEvents(pData, cchData);
+        gci->pInputBuffer->Write(inEvents);
     }
-    else
+    catch (...)
     {
-        ChunkSize = cchData;
+        LOG_HR(wil::ResultFromCaughtException());
     }
-
-    // allocate space to copy data.
-    PINPUT_RECORD const StringData = new INPUT_RECORD[ChunkSize * MAX_EVENTPER_CHAR];
-    if (StringData == nullptr)
-    {
-        return;
-    }
-
-    // transfer data to the input buffer in chunks
-    PCWCHAR CurChar = pwchData;    // LATER remove this
-    for (size_t j = 0; j < cchData; j += ChunkSize)
-    {
-        if (ChunkSize > cchData - j)
-        {
-            ChunkSize = cchData - j;
-        }
-        PINPUT_RECORD CurRecord = StringData;
-        ULONG EventsWritten = 0;
-        for (DWORD i = 0; i < ChunkSize; i++)
-        {
-            // filter out LF if not first char and preceded by CR
-            WCHAR Char = *CurChar;
-            if (FilterCharacterOnPaste(&Char) && // note: FilterCharacterOnPaste might change the value of Char
-                (Char != UNICODE_LINEFEED ||
-                (i == 0 && j == 0) ||
-                    (*(CurChar - 1)) != UNICODE_CARRIAGERETURN))
-            {
-                SHORT KeyState;
-                BYTE KeyFlags;
-                BOOL AltGr = FALSE, Shift = FALSE;
-
-                if (Char == 0)
-                {
-                    j = cchData;
-                    break;
-                }
-
-                KeyState = VkKeyScanW(Char);
-                if (KeyState == -1)
-                {
-                    WORD CharType;
-
-                    // Determine DBCS character because these character does not know by VkKeyScan.
-                    // GetStringTypeW(CT_CTYPE3) & C3_ALPHA can determine all linguistic characters. However, this is
-                    // not include symbolic character for DBCS.
-                    //
-                    // IsCharFullWidth can help for DBCS symbolic character.
-                    GetStringTypeW(CT_CTYPE3, &Char, 1, &CharType);
-                    if ((CharType & C3_ALPHA) ||
-                        IsCharFullWidth(Char))
-                    {
-                        KeyState = 0;
-                    }
-                }
-
-                // if VkKeyScanW fails (char is not in kbd layout), we must
-                // emulate the key being input through the numpad
-                if (KeyState == -1)
-                {
-                    CHAR CharString[4];
-                    UCHAR OemChar;
-                    PCHAR pCharString;
-
-                    ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP, &Char, 1, (LPSTR)& OemChar, 1);
-
-                    (void)_itoa_s(OemChar, CharString, 4, 10);
-
-                    EventsWritten++;
-                    LoadKeyEvent(CurRecord, TRUE, 0, VK_MENU, 0x38, LEFT_ALT_PRESSED);
-                    CurRecord++;
-
-                    for (pCharString = CharString; *pCharString; pCharString++)
-                    {
-                        WORD wVirtualKey, wScancode;
-                        EventsWritten++;
-                        wVirtualKey = *pCharString - '0' + VK_NUMPAD0;
-                        wScancode = (WORD)MapVirtualKeyW(wVirtualKey, 0);
-                        LoadKeyEvent(CurRecord, TRUE, 0, wVirtualKey, wScancode, LEFT_ALT_PRESSED);
-                        CurRecord++;
-                        EventsWritten++;
-                        LoadKeyEvent(CurRecord, FALSE, 0, wVirtualKey, wScancode, LEFT_ALT_PRESSED);
-                        CurRecord++;
-                    }
-
-                    EventsWritten++;
-                    LoadKeyEvent(CurRecord, FALSE, Char, VK_MENU, 0x38, 0);
-                    CurRecord++;
-                }
-                else
-                {
-                    KeyFlags = HIBYTE(KeyState);
-
-                    // handle yucky alt-gr keys
-                    if ((KeyFlags & 6) == 6)
-                    {
-                        AltGr = TRUE;
-                        EventsWritten++;
-                        LoadKeyEvent(CurRecord, TRUE, 0, VK_MENU, 0x38, ENHANCED_KEY | LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED);
-                        CurRecord++;
-                    }
-                    else if (KeyFlags & 1)
-                    {
-                        Shift = TRUE;
-                        EventsWritten++;
-                        LoadKeyEvent(CurRecord, TRUE, 0, VK_SHIFT, 0x2A, SHIFT_PRESSED);
-                        CurRecord++;
-                    }
-
-                    EventsWritten++;
-                    LoadKeyEvent(CurRecord,
-                        TRUE,
-                        Char,
-                        LOBYTE(KeyState),
-                        (WORD)MapVirtualKeyW(CurRecord->Event.KeyEvent.wVirtualKeyCode, 0),
-                        0);
-                    if (KeyFlags & 1)
-                    {
-                        CurRecord->Event.KeyEvent.dwControlKeyState |= SHIFT_PRESSED;
-                    }
-
-                    if (KeyFlags & 2)
-                    {
-                        CurRecord->Event.KeyEvent.dwControlKeyState |= LEFT_CTRL_PRESSED;
-                    }
-
-                    if (KeyFlags & 4)
-                    {
-                        CurRecord->Event.KeyEvent.dwControlKeyState |= RIGHT_ALT_PRESSED;
-                    }
-
-                    CurRecord++;
-
-                    EventsWritten++;
-                    *CurRecord = *(CurRecord - 1);
-                    CurRecord->Event.KeyEvent.bKeyDown = FALSE;
-                    CurRecord++;
-
-                    // handle yucky alt-gr keys
-                    if (AltGr)
-                    {
-                        EventsWritten++;
-                        LoadKeyEvent(CurRecord, FALSE, 0, VK_MENU, 0x38, ENHANCED_KEY);
-                        CurRecord++;
-                    }
-                    else if (Shift)
-                    {
-                        EventsWritten++;
-                        LoadKeyEvent(CurRecord, FALSE, 0, VK_SHIFT, 0x2A, 0);
-                        CurRecord++;
-                    }
-                }
-            }
-            CurChar++;
-        }
-
-        EventsWritten = ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->WriteInputBuffer(StringData, EventsWritten);
-    }
-
-    delete[] StringData;
 }
 
 #pragma endregion
 
 #pragma region Private Methods
+
+// Routine Description:
+// - converts a wchar_t* into a series of KeyEvents as if it was typed
+// from the keyboard
+// Arguments:
+// - pData - the text to convert
+// - cchData - the size of pData, in wchars
+// Return Value:
+// - deque of KeyEvents that represent the string passed in
+// Note:
+// - will throw exception on error
+std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(cchData) const wchar_t* const pData,
+                                                                    _In_ const size_t cchData)
+{
+    THROW_IF_NULL_ALLOC(pData);
+
+    std::deque<std::unique_ptr<IInputEvent>> keyEvents;
+
+    for (size_t i = 0; i < cchData; ++i)
+    {
+        wchar_t currentChar = pData[i];
+
+        const bool charAllowed = FilterCharacterOnPaste(&currentChar);
+        // filter out linefeed if it's not the first char and preceded
+        // by a carriage return
+        const bool skipLinefeed = (i != 0  &&
+                                   currentChar == UNICODE_LINEFEED &&
+                                   pData[i -1] == UNICODE_CARRIAGERETURN);
+
+        if (!charAllowed || skipLinefeed)
+        {
+            continue;
+        }
+
+        if (currentChar == 0)
+        {
+            break;
+        }
+
+        const short invalidKey = -1;
+        short keyState = VkKeyScanW(currentChar);
+
+        if (keyState == invalidKey)
+        {
+            WORD CharType;
+
+            // Determine DBCS character because these character does not know by VkKeyScan.
+            // GetStringTypeW(CT_CTYPE3) & C3_ALPHA can determine all linguistic characters. However, this is
+            // not include symbolic character for DBCS.
+            //
+            // IsCharFullWidth can help for DBCS symbolic character.
+            GetStringTypeW(CT_CTYPE3, &currentChar, 1, &CharType);
+
+            if (IsFlagSet(CharType, C3_ALPHA) || IsCharFullWidth(currentChar))
+            {
+                keyState = 0;
+            }
+        }
+
+        std::deque<std::unique_ptr<KeyEvent>> convertedEvents;
+        if (keyState == invalidKey)
+        {
+            // if VkKeyScanW fails (char is not in kbd layout), we must
+            // emulate the key being input through the numpad
+            convertedEvents = CharToNumpad(currentChar);
+        }
+        else
+        {
+            convertedEvents = CharToKeyboardEvents(currentChar, keyState);
+        }
+
+        while (!convertedEvents.empty())
+        {
+            keyEvents.push_back(std::move(convertedEvents.front()));
+            convertedEvents.pop_front();
+        }
+    }
+    return keyEvents;
+}
+
+// Routine Description:
+// - converts a wchar_t into a series of KeyEvents as if it was typed
+// using the keyboard
+// Arguments:
+// - wch - the wchar_t to convert
+// Return Value:
+// - deque of KeyEvents that represent the wchar_t being typed
+// Note:
+// - will throw exception on error
+std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToKeyboardEvents(_In_ const wchar_t wch, _In_ const short keyState)
+{
+    const byte modifierState = HIBYTE(keyState);
+
+    bool altGrSet = false;
+    bool shiftSet = false;
+    std::deque<std::unique_ptr<KeyEvent>> keyEvents;
+
+    // add modifier key event if necessary
+    if (AreAllFlagsSet(modifierState, VkKeyScanModState::CtrlAndAltPressed))
+    {
+        altGrSet = true;
+        keyEvents.push_back(std::make_unique<KeyEvent>(true,
+                                                       1ui16,
+                                                       static_cast<WORD>(VK_MENU),
+                                                       altScanCode,
+                                                       UNICODE_NULL,
+                                                       (ENHANCED_KEY | LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED)));
+    }
+    else if (IsFlagSet(modifierState, VkKeyScanModState::ShiftPressed))
+    {
+        shiftSet = true;
+        keyEvents.push_back(std::make_unique<KeyEvent>(true,
+                                                       1ui16,
+                                                       static_cast<WORD>(VK_SHIFT),
+                                                       leftShiftScanCode,
+                                                       UNICODE_NULL,
+                                                       SHIFT_PRESSED));
+    }
+
+    const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
+    KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
+
+    // add modifier flags if necessary
+    if (IsFlagSet(modifierState, VkKeyScanModState::ShiftPressed))
+    {
+        keyEvent.ActivateModifierKey(ModifierKeyState::Shift);
+    }
+    if (IsFlagSet(modifierState, VkKeyScanModState::CtrlPressed))
+    {
+        keyEvent.ActivateModifierKey(ModifierKeyState::LeftCtrl);
+    }
+    if (AreAllFlagsSet(modifierState, VkKeyScanModState::CtrlAndAltPressed))
+    {
+        keyEvent.ActivateModifierKey(ModifierKeyState::RightAlt);
+    }
+
+    // add key event down and up
+    keyEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+    keyEvent.SetKeyDown(false);
+    keyEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+
+    // add modifier key up event
+    if (altGrSet)
+    {
+        keyEvents.push_back(std::make_unique<KeyEvent>(false,
+                                                       1ui16,
+                                                       static_cast<WORD>(VK_MENU),
+                                                       altScanCode,
+                                                       UNICODE_NULL,
+                                                       ENHANCED_KEY));
+    }
+    else if (shiftSet)
+    {
+        keyEvents.push_back(std::make_unique<KeyEvent>(false,
+                                                       1ui16,
+                                                       static_cast<WORD>(VK_SHIFT),
+                                                       leftShiftScanCode,
+                                                       UNICODE_NULL,
+                                                       0));
+    }
+
+    return keyEvents;
+}
+
+// Routine Description:
+// - converts a wchar_t into a series of KeyEvents as if it was typed
+// using Alt + numpad
+// Arguments:
+// - wch - the wchar_t to convert
+// Return Value:
+// - deque of KeyEvents that represent the wchar_t being typed using
+// alt + numpad
+// Note:
+// - will throw exception on error
+std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToNumpad(_In_ const wchar_t wch)
+{
+    std::deque<std::unique_ptr<KeyEvent>> keyEvents;
+
+    //alt keydown
+    keyEvents.push_back(std::make_unique<KeyEvent>(true,
+                                                   1ui16,
+                                                   static_cast<WORD>(VK_MENU),
+                                                   altScanCode,
+                                                   UNICODE_NULL,
+                                                   LEFT_ALT_PRESSED));
+
+    const UINT codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
+    const int radix = 10;
+    std::wstring wstr{ wch };
+    std::deque<char> convertedChars;
+
+    convertedChars = ConvertToOem(codepage, wstr);
+    if (convertedChars.size() == 1)
+    {
+        unsigned char uch = static_cast<unsigned char>(convertedChars[0]);
+        // unsigned char values are in the range [0, 255] so we need to be
+        // able to store up to 4 chars from the conversion (including the end of string char)
+        char charString[4] = { 0 };
+        THROW_HR_IF(E_INVALIDARG, 0 != _itoa_s(uch, charString, ARRAYSIZE(charString), radix));
+
+        for (size_t i = 0; i < ARRAYSIZE(charString); ++i)
+        {
+            if (charString[i] == 0)
+            {
+                break;
+            }
+            const WORD virtualKey = charString[i] - '0' + VK_NUMPAD0;
+            const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
+
+            keyEvents.push_back(std::make_unique<KeyEvent>(true,
+                                                           1ui16,
+                                                           virtualKey,
+                                                           virtualScanCode,
+                                                           UNICODE_NULL,
+                                                           LEFT_ALT_PRESSED));
+            keyEvents.push_back(std::make_unique<KeyEvent>(false,
+                                                           1ui16,
+                                                           virtualKey,
+                                                           virtualScanCode,
+                                                           UNICODE_NULL,
+                                                           LEFT_ALT_PRESSED));
+        }
+    }
+
+    // alt keyup
+    keyEvents.push_back(std::make_unique<KeyEvent>(false,
+                                                   1ui16,
+                                                   static_cast<WORD>(VK_MENU),
+                                                   altScanCode,
+                                                   wch,
+                                                   0));
+    return keyEvents;
+}
 
 // Routine Description:
 // - Copies the selected area onto the global system clipboard.
@@ -279,6 +345,7 @@ void Clipboard::StringPaste(_In_reads_(cchData) PCWCHAR pwchData,
 //  <none>
 void Clipboard::StoreSelectionToClipboard()
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     Selection* pSelection = &Selection::Instance();
 
     // See if there is a selection to get
@@ -288,7 +355,7 @@ void Clipboard::StoreSelectionToClipboard()
     }
 
     // read selection area.
-    SCREEN_INFORMATION* const pScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+    SCREEN_INFORMATION* const pScreenInfo = gci->CurrentScreenBuffer;
 
     SMALL_RECT* rgsrSelection;
     UINT cRectsSelected;
@@ -679,9 +746,10 @@ NTSTATUS Clipboard::CopyTextToSystemClipboard(_In_ const UINT cTotalRows,
 // Returns false if the character should not be emitted (e.g. <TAB>)
 bool Clipboard::FilterCharacterOnPaste(_Inout_ WCHAR * const pwch)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     bool fAllowChar = true;
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->GetFilterOnPaste() &&
-        (IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT)))
+    if (gci->GetFilterOnPaste() &&
+        (IsFlagSet(gci->pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT)))
     {
         switch (*pwch)
         {

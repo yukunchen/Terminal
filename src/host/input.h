@@ -23,6 +23,8 @@ Revision History:
 #include "inputReadHandleData.h"
 #include "inputBuffer.hpp"
 
+#include "../inc/unicode.hpp"
+
 // indicates how much to change the opacity at each mouse/key toggle
 // Opacity is defined as 0-255. 12 is therefore approximately 5% per tick.
 #define OPACITY_DELTA_INTERVAL 12
@@ -55,24 +57,6 @@ private:
     ULONG _ulControlKeyState;
 };
 
-#define UNICODE_BACKSPACE ((WCHAR)0x08)
-// NOTE: This isn't actually a backspace. It's a graphical block. But I believe it's emitted by one of our ANSI/OEM --> Unicode conversions.
-// We should dig further into this in the future.
-#define UNICODE_BACKSPACE2 ((WCHAR)0x25d8)
-#define UNICODE_CARRIAGERETURN ((WCHAR)0x0d)
-#define UNICODE_LINEFEED ((WCHAR)0x0a)
-#define UNICODE_BELL ((WCHAR)0x07)
-#define UNICODE_TAB ((WCHAR)0x09)
-#define UNICODE_SPACE ((WCHAR)0x20)
-#define UNICODE_LEFT_SMARTQUOTE ((WCHAR)0x201c)
-#define UNICODE_RIGHT_SMARTQUOTE ((WCHAR)0x201d)
-#define UNICODE_EM_DASH ((WCHAR)0x2014)
-#define UNICODE_EN_DASH ((WCHAR)0x2013)
-#define UNICODE_NBSP ((WCHAR)0xa0)
-#define UNICODE_NARROW_NBSP ((WCHAR)0x202f)
-#define UNICODE_QUOTE L'\"'
-#define UNICODE_HYPHEN L'-'
-
 #define TAB_SIZE 8
 #define TAB_MASK (TAB_SIZE - 1)
 // WHY IS THIS NOT POSITION % TAB_SIZE?!
@@ -81,16 +65,6 @@ private:
 // these values are related to GetKeyboardState
 #define KEY_PRESSED 0x8000
 #define KEY_TOGGLED 0x01
-
-#define LoadKeyEvent(PEVENT, KEYDOWN, CHAR, KEYCODE, SCANCODE, KEYSTATE) { \
-        (PEVENT)->EventType = KEY_EVENT;                                   \
-        (PEVENT)->Event.KeyEvent.bKeyDown = KEYDOWN;                       \
-        (PEVENT)->Event.KeyEvent.wRepeatCount = 1;                         \
-        (PEVENT)->Event.KeyEvent.uChar.UnicodeChar = CHAR;                 \
-        (PEVENT)->Event.KeyEvent.wVirtualKeyCode = KEYCODE;                \
-        (PEVENT)->Event.KeyEvent.wVirtualScanCode = SCANCODE;              \
-        (PEVENT)->Event.KeyEvent.dwControlKeyState = KEYSTATE;             \
-        }
 
 void ClearKeyInfo(_In_ const HWND hWnd);
 
@@ -103,8 +77,7 @@ bool ShouldTakeOverKeyboardShortcuts();
 void HandleMenuEvent(_In_ const DWORD wParam);
 void HandleFocusEvent(_In_ const BOOL fSetFocus);
 void HandleCtrlEvent(_In_ const DWORD EventType);
-bool HandleTerminalKeyEvent(_In_ const INPUT_RECORD* const pInputRecord);
-void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak);
+void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak);
 
 void ProcessCtrlEvents();
 

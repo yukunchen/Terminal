@@ -33,6 +33,7 @@ static CStringA GenerateTextToken();
 static CStringA GenerateOscTitleToken();
 static CStringA GenerateHardResetToken();
 static CStringA GenerateSoftResetToken();
+static CStringA GenerateOscColorTableToken();
 
 const fuzz::_fuzz_type_entry<BYTE> g_repeatMap[] =
 {
@@ -54,7 +55,8 @@ const std::function<CStringA()> g_tokenGenerators[] =
     GenerateEraseToken,
     GenerateOscTitleToken,
     GenerateHardResetToken,
-    GenerateSoftResetToken
+    GenerateSoftResetToken,
+    GenerateOscColorTableToken
 };
 
 CStringA GenerateTokenLowProbability()
@@ -357,6 +359,29 @@ CStringA GenerateScrollToken()
     return GenerateFuzzedToken(FUZZ_MAP(map), tokens, ARRAYSIZE(tokens));
 }
 
+// Resize sequences, valid numeric values include 0-16384.
+CStringA GenerateResizeToken()
+{
+    const LPSTR tokens[] = { "t" };
+    // 5% - generate a random window manipulation with 1 params
+    // 5% - generate a random window manipulation with 2 params
+    // 5% - generate a random window manipulation with no params
+    // 45% - generate a resize with two params
+    // 10% - generate a resize with only the first param
+    // 10% - generate a resize with only the second param
+    const _fuzz_type_entry<CStringA> map[] =
+    {
+        { 5, [](CStringA) { CStringA s; s.AppendFormat("%d;%d;%d", CFuzzChance::GetRandom<USHORT>(0, 0x4000), CFuzzChance::GetRandom<USHORT>(0, 0x4000), CFuzzChance::GetRandom<USHORT>(0, 0x4000)); return s; } },
+        { 5, [](CStringA) { CStringA s; s.AppendFormat("%d;%d", CFuzzChance::GetRandom<USHORT>(0, 0x4000), CFuzzChance::GetRandom<USHORT>(0, 0x4000)); return s; } },
+        { 5, [](CStringA) { CStringA s; s.AppendFormat("%d", CFuzzChance::GetRandom<USHORT>(0, 0x4000)); return s; } },
+        { 45, [](CStringA) { CStringA s; s.AppendFormat("8;%d;%d", CFuzzChance::GetRandom<USHORT>(0, 0x4000), CFuzzChance::GetRandom<USHORT>(0, 0x4000)); return s; } },
+        { 10, [](CStringA) { CStringA s; s.AppendFormat("8;%d;", CFuzzChance::GetRandom<USHORT>(0, 0x4000)); return s; } },
+        { 10, [](CStringA) { CStringA s; s.AppendFormat("8;;%d", CFuzzChance::GetRandom<USHORT>(0, 0x4000)); return s; } },
+    };
+
+    return GenerateFuzzedToken(FUZZ_MAP(map), tokens, ARRAYSIZE(tokens));
+}
+
 // Osc Window Title String. An Osc followed by a param on [0, SHORT_MAX], followed by a ";", followed by a string,
 // and BEL terminated.
 CStringA GenerateOscTitleToken()
@@ -380,6 +405,92 @@ CStringA GenerateOscTitleToken()
                 for(SHORT i = 0; i < limit; i++)
                 {
                     s.AppendFormat("%c", CFuzzChance::GetRandom<BYTE>());
+                }
+                return s;
+            }
+        }
+    };
+
+    return GenerateFuzzedOscToken(FUZZ_MAP(map), tokens, ARRAYSIZE(tokens));
+}
+
+// Osc Window Title String. An Osc followed by a param on [0, SHORT_MAX], followed by a ";", followed by a string,
+// and BEL terminated.
+CStringA GenerateOscColorTableToken()
+{
+    const LPSTR tokens[] = { "\x7", "\x1b\\" };
+    const _fuzz_type_entry<CStringA> map[] =
+    {
+        {
+            100,
+            [](CStringA) {
+                CStringA s;
+                SHORT limit = CFuzzChance::GetRandom<SHORT>(0, 10);
+                // append up to 10 numbers for the param
+                for(SHORT i = 0; i < limit; i++)
+                {
+                    s.AppendFormat("%d", CFuzzChance::GetRandom<BYTE>(0, 9));
+                }
+                s.Append(";");
+
+                // Append some random numbers for the index
+                limit = CFuzzChance::GetRandom<SHORT>(0, 10);
+                // append up to 10 numbers for the param
+                for(SHORT i = 0; i < limit; i++)
+                {
+                    s.AppendFormat("%d", CFuzzChance::GetRandom<BYTE>(0, 9));
+                }
+                // Maybe add more text
+                if (CFuzzChance::GetRandom<BOOL>())
+                {
+                    // usually add a RGB
+                    limit = CFuzzChance::GetRandom<SHORT>(0, 10);
+                    switch(limit)
+                    {
+                        case 0:
+                        case 1:
+                        case 2:
+                        case 3:
+                        case 4:
+                        case 5:
+                        case 6:
+                            s.AppendFormat("rgb:");
+                            break;
+                        case 7:
+                            s.AppendFormat("rgbi:");
+                            break;
+                        case 8:
+                            s.AppendFormat("cmyk:");
+                            break;
+                        default:
+                            // append some characters for the string
+                            limit = CFuzzChance::GetRandom<SHORT>();
+                            for(SHORT i = 0; i < limit; i++)
+                            {
+                                s.AppendFormat("%c", CFuzzChance::GetRandom<BYTE>());
+                            }
+                    }
+
+
+                    SHORT numColors = CFuzzChance::GetRandom<SHORT>(0, 5);
+
+                    // append up to 10 numbers for the param
+                    for(SHORT i = 0; i < numColors; i++)
+                    {
+                        // Append some random numbers for the value
+                        limit = CFuzzChance::GetRandom<SHORT>(0, 10);
+                        // append up to 10 numbers for the param
+                        for(SHORT j = 0; j < limit; j++)
+                        {
+                            s.AppendFormat("%d", CFuzzChance::GetRandom<BYTE>(0, 9));
+                        }
+                        // Sometimes don't add a '/'
+                        if (CFuzzChance::GetRandom<SHORT>(0, 10) != 0)
+                        {
+                            s.AppendFormat("/");
+                        }
+                    }
+
                 }
                 return s;
             }

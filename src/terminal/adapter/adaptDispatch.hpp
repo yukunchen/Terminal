@@ -13,7 +13,7 @@ Author(s):
 
 #pragma once
 
-#include "..\parser\termDispatch.hpp"
+#include "termDispatch.hpp"
 #include "conGetSet.hpp"
 #include "adaptDefaults.hpp"
 #include "terminalOutput.hpp"
@@ -30,15 +30,12 @@ namespace Microsoft
             class AdaptDispatch : public TermDispatch
             {
             public:
-                
-                static bool CreateInstance(_In_ ConGetSet* pConApi,
-                                               _In_ AdaptDefaults* pDefaults, 
-                                               _In_ WORD wDefaultTextAttributes,
-                                               _Outptr_ AdaptDispatch ** const ppDispatch);
 
-                ~AdaptDispatch();
+                AdaptDispatch(_Inout_ ConGetSet* const pConApi,
+                              _Inout_ AdaptDefaults* const pDefaults,
+                              _In_ const WORD wDefaultTextAttributes);
 
-                void UpdateDefaults(_In_ AdaptDefaults* const pDefaults)
+                void UpdateDefaults(_Inout_ AdaptDefaults* const pDefaults)
                 {
                     _pDefaults = pDefaults;
                 }
@@ -48,14 +45,14 @@ namespace Microsoft
                     _wDefaultTextAttributes = wAttributes;
                 }
 
-                virtual void Execute(_In_ wchar_t const wchControl) 
+                virtual void Execute(_In_ wchar_t const wchControl)
                 {
-                    _pDefaults->Execute(wchControl); 
+                    _pDefaults->Execute(wchControl);
                 }
 
                 virtual void PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
                 virtual void Print(_In_ wchar_t const wchPrintable);
-                
+
                 virtual bool CursorUp(_In_ unsigned int const uiDistance); // CUU
                 virtual bool CursorDown(_In_ unsigned int const uiDistance); // CUD
                 virtual bool CursorForward(_In_ unsigned int const uiDistance); // CUF
@@ -73,7 +70,8 @@ namespace Microsoft
                 virtual bool EraseCharacters(_In_ unsigned int const uiNumChars); // ECH
                 virtual bool InsertCharacter(_In_ unsigned int const uiCount); // ICH
                 virtual bool DeleteCharacter(_In_ unsigned int const uiCount); // DCH
-                virtual bool SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, _In_ size_t const cOptions); // SGR
+                virtual bool SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOptions* const rgOptions,
+                                                  _In_ size_t const cOptions); // SGR
                 virtual bool DeviceStatusReport(_In_ AnsiStatusType const statusType); // DSR
                 virtual bool DeviceAttributes(); // DA
                 virtual bool ScrollUp(_In_ unsigned int const uiDistance); // SU
@@ -81,14 +79,18 @@ namespace Microsoft
                 virtual bool InsertLine(_In_ unsigned int const uiDistance); // IL
                 virtual bool DeleteLine(_In_ unsigned int const uiDistance); // DL
                 virtual bool SetColumns(_In_ unsigned int const uiColumns); // DECSCPP, DECCOLM
-                virtual bool SetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rParams, _In_ size_t const cParams); // DECSET
-                virtual bool ResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rParams, _In_ size_t const cParams); // DECRST
+                virtual bool SetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rParams,
+                                             _In_ size_t const cParams); // DECSET
+                virtual bool ResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rParams,
+                                               _In_ size_t const cParams); // DECRST
                 virtual bool SetCursorKeysMode(_In_ bool const fApplicationMode);  // DECCKM
                 virtual bool SetKeypadMode(_In_ bool const fApplicationMode);  // DECKPAM, DECKPNM
                 virtual bool EnableCursorBlinking(_In_ bool const bEnable); // ATT610
-                virtual bool SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin, _In_ SHORT const sBottomMargin); // DECSTBM
+                virtual bool SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin,
+                                                          _In_ SHORT const sBottomMargin); // DECSTBM
                 virtual bool ReverseLineFeed(); // RI
-                virtual bool SetWindowTitle(_In_ const wchar_t* const pwchWindowTitle, _In_ unsigned short cchTitleLength); // OscWindowTitle
+                virtual bool SetWindowTitle(_In_ const wchar_t* const pwchWindowTitle,
+                                            _In_ unsigned short cchTitleLength); // OscWindowTitle
                 virtual bool UseAlternateScreenBuffer(); // ASBSET
                 virtual bool UseMainScreenBuffer(); // ASBRST
                 virtual bool HorizontalTabSet(); // HTS
@@ -104,10 +106,14 @@ namespace Microsoft
                 virtual bool EnableButtonEventMouseMode(_In_ bool const fEnabled); // ?1002
                 virtual bool EnableAnyEventMouseMode(_In_ bool const fEnabled); // ?1003
                 virtual bool EnableAlternateScroll(_In_ bool const fEnabled); // ?1007
-                virtual bool SetCursorStyle(_In_ TermDispatch::CursorStyle cursorStyle); // DECSCUSR
+                virtual bool SetCursorStyle(_In_ DispatchCommon::CursorStyle cursorStyle); // DECSCUSR
+                virtual bool SetColorTableEntry(_In_ const size_t tableIndex,
+                                                _In_ const DWORD dwColor); // OscColorTable
+                virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
+                                                _In_reads_(cParams) const unsigned short* const rgusParams,
+                                                _In_ size_t const cParams); // DTTERM_WindowManipulation
 
             private:
-                AdaptDispatch(_In_ ConGetSet* const pConApi, _In_ AdaptDefaults* const pDefaults, _In_ WORD const wDefaultTextAttributes);
 
                 enum class CursorDirection
                 {
@@ -141,13 +147,14 @@ namespace Microsoft
 
                 bool _CursorPositionReport() const;
 
-                bool _WriteResponse(_In_reads_(cReply) PCWSTR pwszReply, _In_ size_t const cReply) const;
+                bool _WriteResponse(_In_reads_(cchReply) PCWSTR pwszReply, _In_ size_t const cchReply) const;
                 bool _SetResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const rgParams, _In_ size_t const cParams, _In_ bool const fEnable);
                 bool _PrivateModeParamsHelper(_In_ PrivateModeParams const param, _In_ bool const fEnable);
                 bool _DoDECCOLMHelper(_In_ unsigned int uiColumns);
+                
                 ConGetSet* _pConApi;
                 AdaptDefaults* _pDefaults;
-                TerminalOutput* _pTermOutput;
+                TerminalOutput _TermOutput;
 
                 WORD _wDefaultTextAttributes;
                 COORD _coordSavedCursor;
@@ -160,13 +167,14 @@ namespace Microsoft
                 bool _fChangedBackground;
                 bool _fChangedMetaAttrs;
 
-                bool _SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptions* const rgOptions, 
-                                         _In_ size_t const cOptions, 
-                                         _Out_ COLORREF* const prgbColor, 
-                                         _Out_ bool* const pfIsForeground, 
+                bool _SetRgbColorsHelper(_In_reads_(cOptions) const GraphicsOptions* const rgOptions,
+                                         _In_ size_t const cOptions,
+                                         _Out_ COLORREF* const prgbColor,
+                                         _Out_ bool* const pfIsForeground,
                                          _Out_ size_t* const pcOptionsConsumed);
                 static bool s_IsXtermColorOption(_In_ GraphicsOptions const opt);
                 static bool s_IsRgbColorOption(_In_ GraphicsOptions const opt);
+
             };
         };
     };

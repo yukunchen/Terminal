@@ -51,6 +51,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
     _In_ PCWSTR pwszCurrDir,
     _In_ PCWSTR pwszAppName)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     WCHAR wszIconLocation[MAX_PATH] = { 0 };
     int iIconIndex = 0;
 
@@ -62,12 +63,12 @@ void SystemConfigurationProvider::GetSettingsFromLink(
         if (SUCCEEDED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED)))
         {
             const size_t cbTitle = (*pdwTitleLength + 1) * sizeof(WCHAR);
-            ServiceLocator::LocateGlobals()->getConsoleInformation()->LinkTitle = (PWSTR) new BYTE[cbTitle];
+            gci->LinkTitle = (PWSTR) new BYTE[cbTitle];
 
-            NTSTATUS Status = NT_TESTNULL(ServiceLocator::LocateGlobals()->getConsoleInformation()->LinkTitle);
+            NTSTATUS Status = NT_TESTNULL(gci->LinkTitle);
             if (NT_SUCCESS(Status))
             {
-                if (FAILED(StringCbCopyNW(ServiceLocator::LocateGlobals()->getConsoleInformation()->LinkTitle, cbTitle, pwszTitle, *pdwTitleLength)))
+                if (FAILED(StringCbCopyNW(gci->LinkTitle, cbTitle, pwszTitle, *pdwTitleLength)))
                 {
                     Status = STATUS_UNSUCCESSFUL;
                 }
@@ -75,7 +76,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
                 if (NT_SUCCESS(Status))
                 {
                     CONSOLE_STATE_INFO csi = { 0 };
-                    csi.LinkTitle = ServiceLocator::LocateGlobals()->getConsoleInformation()->LinkTitle;
+                    csi.LinkTitle = gci->LinkTitle;
                     WCHAR wszShortcutTitle[MAX_PATH];
                     BOOL fReadConsoleProperties;
                     WORD wShowWindow = pLinkSettings->GetShowWindow();

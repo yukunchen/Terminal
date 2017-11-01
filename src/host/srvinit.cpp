@@ -25,13 +25,26 @@
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
-HRESULT ConsoleServerInitialization(_In_ HANDLE Server)
+HRESULT UseVtPipe(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode)
+{
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return gci->GetVtIo()->Initialize(InPipeName, OutPipeName, VtMode);
+}
+
+HRESULT ConsoleServerInitialization(_In_ HANDLE Server, _In_ const ConsoleArguments* const args)
 {
     try
     {
         ServiceLocator::LocateGlobals()->pDeviceComm = new DeviceComm(Server);
     }
     CATCH_RETURN();
+
+    ServiceLocator::LocateGlobals()->launchArgs = *args;
+
+    if (args->IsUsingVtPipe())
+    {
+        RETURN_IF_FAILED(UseVtPipe(args->GetVtInPipe(), args->GetVtOutPipe(), args->GetVtMode()));
+    }
 
     ServiceLocator::LocateGlobals()->uiOEMCP = GetOEMCP();
     ServiceLocator::LocateGlobals()->uiWindowsCP = GetACP();
@@ -62,7 +75,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 
     // 4. Initializing Settings will establish hardcoded defaults.
     // Set to reference of global console information since that's the only place we need to hold the settings.
-    auto settings = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION* const settings = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     // 3. Read the default registry values.
     Registry reg(settings);
@@ -135,6 +148,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 
 NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     CONSOLE_INFORMATION *Console;
     NTSTATUS Status = RevalidateConsole(&Console);
     ASSERT(NT_SUCCESS(Status));
@@ -142,7 +156,7 @@ NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
     FreeCommandHistory((HANDLE)ProcessData);
 
     bool const fRecomputeOwner = ProcessData->fRootProcess;
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.FreeProcessData(ProcessData);
+    gci->ProcessHandleList.FreeProcessData(ProcessData);
 
     if (fRecomputeOwner)
     {
@@ -163,14 +177,14 @@ DWORD ConsoleIoThread();
 void ConsoleCheckDebug()
 {
 #ifdef DBG
-    HKEY hCurrentUser;
-    HKEY hConsole;
+    wil::unique_hkey hCurrentUser;
+    wil::unique_hkey hConsole;
     NTSTATUS status = RegistrySerialization::s_OpenConsoleKey(&hCurrentUser, &hConsole);
 
     if (NT_SUCCESS(status))
     {
         DWORD dwData = 0;
-        status = RegistrySerialization::s_QueryValue(hConsole, L"DebugLaunch", sizeof(dwData), (BYTE*)&dwData, nullptr);
+        status = RegistrySerialization::s_QueryValue(hConsole.get(), L"DebugLaunch", sizeof(dwData), (BYTE*)&dwData, nullptr);
 
         if (NT_SUCCESS(status))
         {
@@ -179,18 +193,13 @@ void ConsoleCheckDebug()
                 DebugBreak();
             }
         }
-
-        RegCloseKey(hConsole);
-        RegCloseKey(hCurrentUser);
     }
 #endif
 }
 
-HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server)
+HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, _In_ const ConsoleArguments* const args)
 {
-    ConsoleCheckDebug();
-
-    RETURN_IF_FAILED(ConsoleServerInitialization(Server));
+    RETURN_IF_FAILED(ConsoleServerInitialization(Server, args));
     RETURN_IF_FAILED(ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.create(wil::EventOptions::None));
 
     // Set up and tell the driver about the input available event.
@@ -205,11 +214,6 @@ HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server)
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
     return S_OK;
-}
-
-HRESULT ConsoleCreateIoThread(_In_ HANDLE Server)
-{
-    return Entrypoints::StartConsoleForServerHandle(Server);
 }
 
 #define SYSTEM_ROOT         (L"%SystemRoot%")
@@ -358,10 +362,11 @@ NTSTATUS GetConsoleLangId(_In_ const UINT uiOutputCP, _Out_ LANGID * const pLang
 
 HRESULT ApiRoutines::GetConsoleLangIdImpl(_Out_ LANGID* const pLangId)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    RETURN_NTSTATUS(GetConsoleLangId(ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP, pLangId));
+    RETURN_NTSTATUS(GetConsoleLangId(gci->OutputCP, pLangId));
 }
 
 // Routine Description:
@@ -425,6 +430,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 {
     // AllocConsole is outside our codebase, but we should be able to mostly track the call here.
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AllocConsole);
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     NTSTATUS Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
     if (!NT_SUCCESS(Status))
@@ -483,7 +489,13 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
     }
     else
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_NO_WINDOW;
+        gci->Flags |= CONSOLE_NO_WINDOW;
+    }
+
+    // Potentially start the VT IO (if needed)
+    if (NT_SUCCESS(Status))
+    {
+        gci->GetVtIo()->StartIfNeeded();
     }
 
     return Status;
@@ -521,7 +533,7 @@ DWORD ConsoleIoThread()
                 fShouldExit = true;
 
                 // This will not return. Terminate immediately when disconnected.
-                TerminateProcess(GetCurrentProcess(), STATUS_SUCCESS);
+                ServiceLocator::RundownAndExit(STATUS_SUCCESS);
             }
             RIPMSG1(RIP_WARNING, "DeviceIoControl failed with Result 0x%x", hr);
             ReplyMsg = nullptr;

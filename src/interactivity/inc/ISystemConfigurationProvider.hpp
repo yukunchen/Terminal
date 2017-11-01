@@ -14,6 +14,8 @@ Author(s):
 
 #pragma once
 
+class Settings;
+
 namespace Microsoft
 {
     namespace Console

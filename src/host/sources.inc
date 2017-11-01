@@ -65,8 +65,10 @@ INCLUDES = \
     ..\..\propslib; \
     ..\..\terminal\parser; \
     ..\..\terminal\adapter; \
+    ..\..\types; \
     ..\..\renderer\inc; \
     ..\..\renderer\gdi; \
+    ..\..\renderer\vt; \
     ..\..\renderer\base; \
     $(ONECOREUAPWINDOWS_PRIVATE_INC_PATH)\core\w32inc; \
     $(SHELL_INC_PATH); \
@@ -105,10 +107,12 @@ TARGETLIBS = \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-keyboard-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-gui-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-menu-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-message-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-misc-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-mouse-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-rectangle-ext-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-server-l1.lib \
+    $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-sysparams-ext-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-ntuser-window-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-gdi-object-l1.lib \
     $(MINCORE_PRIV_SDK_LIB_VPATH)\ext-ms-win-rtcore-gdi-rgn-l1.lib \
@@ -126,33 +130,37 @@ TARGETLIBS = \
     $(WINCORE_OBJ_PATH)\console\open\src\terminal\parser\lib\$(O)\ConTermParser.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\base\lib\$(O)\ConRenderBase.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\gdi\lib\$(O)\ConRenderGdi.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\renderer\vt\lib\$(O)\ConRenderVt.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\renderer\wddmcon\lib\$(O)\ConRenderWddmCon.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\server\lib\$(O)\ConServer.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\base\lib\$(O)\ConInteractivityBaseLib.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\win32\lib\$(O)\ConInteractivityWin32Lib.lib \
     $(WINCORE_OBJ_PATH)\console\open\src\interactivity\onecore\lib\$(O)\ConInteractivityOneCoreLib.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\types\lib\$(O)\ConTypes.lib \
 
 DELAYLOAD = \
     PROPSYS.dll; \
     OLEAUT32.dll; \
-    api-ms-win-mm-playsound-l1-1-0.dll; \
-    api-ms-win-shcore-scaling-l1-1-0.dll; \
-    api-ms-win-shell-namespace-l1-1-0.dll; \
+    api-ms-win-mm-playsound-l1.dll; \
+    api-ms-win-shcore-scaling-l1.dll; \
+    api-ms-win-shell-namespace-l1.dll; \
     ext-ms-win-gdi-dc-l1.dll; \
     ext-ms-win-gdi-dc-create-l1.dll; \
     ext-ms-win-gdi-draw-l1.dll; \
     ext-ms-win-gdi-font-l1.dll; \
-    ext-ms-win-gdi-internal-desktop-l1-1-0.dll; \
+    ext-ms-win-gdi-internal-desktop-l1.dll; \
     ext-ms-win-ntuser-caret-l1.dll; \
     ext-ms-win-ntuser-dialogbox-l1.dll; \
     ext-ms-win-ntuser-draw-l1.dll; \
     ext-ms-win-ntuser-keyboard-l1.dll; \
     ext-ms-win-ntuser-gui-l1.dll; \
     ext-ms-win-ntuser-menu-l1.dll; \
+    ext-ms-win-ntuser-message-l1.dll; \
     ext-ms-win-ntuser-misc-l1.dll; \
     ext-ms-win-ntuser-mouse-l1.dll; \
-    ext-ms-win-ntuser-rectangle-ext-l1-1-0.dll; \
-    ext-ms-win-ntuser-server-l1-1-0.dll; \
+    ext-ms-win-ntuser-rectangle-ext-l1.dll; \
+    ext-ms-win-ntuser-server-l1.dll; \
+    ext-ms-win-ntuser-sysparams-ext-l1.dll; \
     ext-ms-win-ntuser-window-l1.dll; \
     ext-ms-win-rtcore-gdi-object-l1.dll; \
     ext-ms-win-rtcore-gdi-rgn-l1.dll; \
@@ -163,6 +171,6 @@ DELAYLOAD = \
     ext-ms-win-rtcore-ntuser-sysparams-l1.dll; \
     ext-ms-win-rtcore-ntuser-window-ext-l1.dll; \
     ext-ms-win-shell-shell32-l1.dll; \
-    ext-ms-win-uiacore-l1-1-0.dll; \
+    ext-ms-win-uiacore-l1.dll; \
 
 DLOAD_ERROR_HANDLER = kernelbase

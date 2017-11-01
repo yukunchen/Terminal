@@ -1,0 +1,19 @@
+{
+  "$schema": "http://universaltest/schema/testmddefinition-2.json",
+  "Package": {
+    "ComponentName": "Console",
+    "SubComponentName": "Host-FeatureTests"
+  },
+  "Execution": {
+    "Type": "TAEF",
+    "Parameter": ""
+  },
+  "Dependencies": {
+    "Files": [ ],
+    "RemoteFiles": [ ],
+    "Packages": [ "Microsoft.Console.Tools.Nihilist" ],
+    "Binaries": [ ]
+  },
+  "Logs": [ ],
+  "Plugins": [ ]
+}

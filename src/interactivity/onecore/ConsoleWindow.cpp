@@ -41,8 +41,9 @@ void ConsoleWindow::SetIsFullscreen(bool const fFullscreenEnabled)
 NTSTATUS ConsoleWindow::SetViewportOrigin(SMALL_RECT NewWindow)
 {
     UNREFERENCED_PARAMETER(NewWindow);
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
-    SCREEN_INFORMATION* const ScreenInfo = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer;
+    SCREEN_INFORMATION* const ScreenInfo = gci->CurrentScreenBuffer;
     COORD const FontSize = ScreenInfo->GetScreenFontSize();
 
     Selection* pSelection = &Selection::Instance();
@@ -159,6 +160,11 @@ void ConsoleWindow::VerticalScroll(const WORD wScrollCommand, const WORD wAbsolu
 HRESULT ConsoleWindow::SignalUia(_In_ EVENTID id)
 {
     UNREFERENCED_PARAMETER(id);
+    return E_NOTIMPL;
+}
+
+HRESULT ConsoleWindow::UiaSetTextAreaFocus()
+{
     return E_NOTIMPL;
 }
 

@@ -26,8 +26,8 @@ HRESULT GdiEngine::StartPaint()
     // If we're already painting, we don't need to paint. Return quickly.
     RETURN_HR_IF(S_FALSE, _fPaintStarted);
 
-    // Signal that we're starting to paint.
-    _fPaintStarted = true;
+    // If the window we're painting on is invisible, we don't need to paint. Return quickly.
+    RETURN_HR_IF(S_FALSE, !IsWindowVisible(_hwndTargetWindow));
 
     // At the beginning of a new frame, we have 0 lines ready for painting in PolyTextOut
     _cPolyText = 0;
@@ -40,6 +40,9 @@ HRESULT GdiEngine::StartPaint()
     _psInvalidData.hdc = GetDC(_hwndTargetWindow);
     RETURN_LAST_ERROR_IF_NULL(_psInvalidData.hdc);
 
+    // Signal that we're starting to paint.
+    _fPaintStarted = true;
+
     _psInvalidData.fErase = TRUE;
     _psInvalidData.rcPaint = _rcInvalid;
 
@@ -47,8 +50,9 @@ HRESULT GdiEngine::StartPaint()
 }
 
 // Routine Description:
-// - Scrolls the existing data on the in-memory frame by the scroll region deltas we have collectively received
-//   through the Invalidate methods since the last time this was called.
+// - Scrolls the existing data on the in-memory frame by the scroll region 
+//      deltas we have collectively received through the Invalidate methods 
+//      since the last time this was called.
 // Arguments:
 // - <none>
 // Return Value:
@@ -413,61 +417,64 @@ HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORRE
     return S_OK;
 }
 
-// Routine Description:
-// - Draws the cursor on the screen
-// Arguments:
-// - coord - Coordinate position where the cursor should be drawn
-// - ulHeightPercent - The cursor will be drawn at this percentage of the current font height.
-// - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
-// Return Value:
-// - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI error where a specific error isn't set.
-HRESULT GdiEngine::PaintCursor(_In_ COORD const coord, _In_ ULONG const ulHeightPercent, _In_ bool const fIsDoubleWidth)
+// // Routine Description:
+// // - Draws the cursor on the screen
+// // Arguments:
+// // - ulHeightPercent - The cursor will be drawn at this percentage of the current font height.
+// // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
+// // Return Value:
+// // - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI error where a specific error isn't set.
+// HRESULT GdiEngine::PaintCursor(_In_ ULONG const ulHeightPercent,
+//                                _In_ bool const fIsDoubleWidth)
+// {
+//     LOG_IF_FAILED(_FlushBufferLines());
+
+//     COORD const coord = _cursor.GetPosition();    
+
+//     COORD const coordFontSize = _GetFontSize();
+//     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
+
+//     // First set up a block cursor the size of the font.
+//     RECT rcInvert;
+//     RETURN_IF_FAILED(LongMult(coord.X, coordFontSize.X, &rcInvert.left));
+//     RETURN_IF_FAILED(LongMult(coord.Y, coordFontSize.Y, &rcInvert.top));
+//     RETURN_IF_FAILED(LongAdd(rcInvert.left, coordFontSize.X, &rcInvert.right));
+//     RETURN_IF_FAILED(LongAdd(rcInvert.top, coordFontSize.Y, &rcInvert.bottom));
+
+//     // If we're double-width cursor, make it an extra font wider.
+//     if (fIsDoubleWidth)
+//     {
+//         RETURN_IF_FAILED(LongAdd(rcInvert.right, coordFontSize.X, &rcInvert.right));
+//     }
+
+//     // Now adjust the cursor height
+//     // enforce min/max cursor height
+//     ULONG ulHeight = ulHeightPercent;
+//     ulHeight = max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
+//     ulHeight = min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
+
+//     ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
+
+//     // Reduce the height of the top to be relative to the bottom by the height we want.
+//     RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
+
+//     RETURN_HR_IF_FALSE(E_FAIL, InvertRect(_hdcMemoryContext, &rcInvert));
+
+//     // Save inverted cursor position so we can clear it.
+//     _rcCursorInvert = rcInvert;
+
+//     return S_OK;
+// }
+
+HRESULT GdiEngine::PaintCursorEx(_In_ ULONG const ulCursorHeightPercent,
+                                 _In_ bool const fIsDoubleWidth,
+                                 _In_ Cursor::CursorType const cursorType,
+                                 _In_ bool const fUseColor,
+                                 _In_ COLORREF const cursorColor)
 {
     LOG_IF_FAILED(_FlushBufferLines());
-
-    COORD const coordFontSize = _GetFontSize();
-    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
-
-    // First set up a block cursor the size of the font.
-    RECT rcInvert;
-    RETURN_IF_FAILED(LongMult(coord.X, coordFontSize.X, &rcInvert.left));
-    RETURN_IF_FAILED(LongMult(coord.Y, coordFontSize.Y, &rcInvert.top));
-    RETURN_IF_FAILED(LongAdd(rcInvert.left, coordFontSize.X, &rcInvert.right));
-    RETURN_IF_FAILED(LongAdd(rcInvert.top, coordFontSize.Y, &rcInvert.bottom));
-
-    // If we're double-width cursor, make it an extra font wider.
-    if (fIsDoubleWidth)
-    {
-        RETURN_IF_FAILED(LongAdd(rcInvert.right, coordFontSize.X, &rcInvert.right));
-    }
-
-    // Now adjust the cursor height
-    // enforce min/max cursor height
-    ULONG ulHeight = ulHeightPercent;
-    ulHeight = max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
-    ulHeight = min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
-
-    ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
-
-    // Reduce the height of the top to be relative to the bottom by the height we want.
-    RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
-
-    RETURN_HR_IF_FALSE(E_FAIL, InvertRect(_hdcMemoryContext, &rcInvert));
-
-    // Save inverted cursor position so we can clear it.
-    _rcCursorInvert = rcInvert;
-
-    return S_OK;
-}
-
-HRESULT GdiEngine::PaintCursorEx(_In_ COORD const coordCursor, 
-                    _In_ ULONG const ulCursorHeightPercent,
-                    _In_ bool const fIsDoubleWidth,
-                    _In_ Cursor::CursorType const cursorType, 
-                    _In_ bool const fUseColor, 
-                    _In_ COLORREF const cursorColor)
-{
-    LOG_IF_FAILED(_FlushBufferLines());
+    
+    COORD const coordCursor = _cursor.GetPosition();  
 
     COORD const coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
@@ -597,7 +604,7 @@ HRESULT GdiEngine::ClearCursor()
 // - cRectangles - Count of rectangle array length
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
-HRESULT GdiEngine::PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
+HRESULT GdiEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
@@ -630,7 +637,7 @@ HRESULT GdiEngine::PaintSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsr
 //  - hrgnSelection - Handle to empty GDI region. Will be filled with selection region information.
 // Return Value:
 //  - HRESULT S_OK or Expect GDI-based errors or memory errors.
-HRESULT GdiEngine::_PaintSelectionCalculateRegion(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection,
+HRESULT GdiEngine::_PaintSelectionCalculateRegion(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                                                   _In_ UINT const cRectangles,
                                                   _Inout_ HRGN const hrgnSelection) const
 {

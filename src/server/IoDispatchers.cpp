@@ -41,6 +41,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 {
     NTSTATUS Status;
 
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     PCD_CREATE_OBJECT_INFORMATION const CreateInformation = &pMessage->CreateObject;
 
     LockConsole();
@@ -64,7 +65,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
     switch (CreateInformation->ObjectType)
     {
     case CD_IO_OBJECT_TYPE_CURRENT_INPUT:
-        Status = NTSTATUS_FROM_HRESULT(ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Input,
+        Status = NTSTATUS_FROM_HRESULT(gci->pInputBuffer->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Input,
                                                                                                     CreateInformation->DesiredAccess,
                                                                                                     CreateInformation->ShareMode,
                                                                                                     &Handle));
@@ -72,7 +73,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 
     case CD_IO_OBJECT_TYPE_CURRENT_OUTPUT:
     {
-        PSCREEN_INFORMATION const ScreenInformation = ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetMainBuffer();
+        PSCREEN_INFORMATION const ScreenInformation = gci->CurrentScreenBuffer->GetMainBuffer();
         if (ScreenInformation == nullptr)
         {
             Status = STATUS_OBJECT_NAME_NOT_FOUND;
@@ -150,6 +151,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCloseObject(_In_ PCONSOLE_API_MSG pMessag
 // - The response data to this request message.
 PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API_MSG pReceiveMsg)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AttachConsole);
 
     ConsoleProcessHandle* ProcessData = nullptr;
@@ -166,7 +168,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         goto Error;
     }
 
-    Status = NTSTATUS_FROM_HRESULT(ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.AllocProcessData(dwProcessId,
+    Status = NTSTATUS_FROM_HRESULT(gci->ProcessHandleList.AllocProcessData(dwProcessId,
                                                                                              dwThreadId,
                                                                                              Cac.ProcessGroupId,
                                                                                              nullptr,
@@ -177,7 +179,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         goto Error;
     }
 
-    ProcessData->fRootProcess = IsFlagClear(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_INITIALIZED);
+    ProcessData->fRootProcess = IsFlagClear(gci->Flags, CONSOLE_INITIALIZED);
 
     // ConsoleApp will be false in the AttachConsole case.
     if (Cac.ConsoleApp)
@@ -187,7 +189,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
     ServiceLocator::LocateAccessibilityNotifier()->NotifyConsoleStartApplicationEvent(dwProcessId);
 
-    if (IsFlagClear(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_INITIALIZED))
+    if (IsFlagClear(gci->Flags, CONSOLE_INITIALIZED))
     {
         Status = ConsoleAllocateConsole(&Cac);
         if (!NT_SUCCESS(Status))
@@ -195,16 +197,16 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
             goto Error;
         }
 
-        SetFlag(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_INITIALIZED);
+        SetFlag(gci->Flags, CONSOLE_INITIALIZED);
     }
 
     AllocateCommandHistory(Cac.AppName, Cac.AppNameLength, (HANDLE)ProcessData);
 
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.ModifyConsoleProcessFocus(IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_HAS_FOCUS));
+    gci->ProcessHandleList.ModifyConsoleProcessFocus(IsFlagSet(gci->Flags, CONSOLE_HAS_FOCUS));
 
     // Create the handles.
 
-    Status = NTSTATUS_FROM_HRESULT(ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Input,
+    Status = NTSTATUS_FROM_HRESULT(gci->pInputBuffer->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Input,
                                                                                                 GENERIC_READ | GENERIC_WRITE,
                                                                                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
                                                                                                 &ProcessData->pInputHandle));
@@ -215,7 +217,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     }
 
 
-    Status = NTSTATUS_FROM_HRESULT(ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->GetMainBuffer()->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
+    Status = NTSTATUS_FROM_HRESULT(gci->CurrentScreenBuffer->GetMainBuffer()->Header.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
                                                                                                                         GENERIC_READ | GENERIC_WRITE,
                                                                                                                         FILE_SHARE_READ | FILE_SHARE_WRITE,
                                                                                                                         &ProcessData->pOutputHandle));
@@ -240,7 +242,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     if (FAILED(ServiceLocator::LocateGlobals()->pDeviceComm->CompleteIo(&pReceiveMsg->Complete)))
     {
         FreeCommandHistory((HANDLE)ProcessData);
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.FreeProcessData(ProcessData);
+        gci->ProcessHandleList.FreeProcessData(ProcessData);
     }
 
     UnlockConsole();
@@ -254,7 +256,7 @@ Error:
     if (ProcessData != nullptr)
     {
         FreeCommandHistory((HANDLE)ProcessData);
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.FreeProcessData(ProcessData);
+        gci->ProcessHandleList.FreeProcessData(ProcessData);
     }
 
     UnlockConsole();

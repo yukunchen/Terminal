@@ -56,7 +56,7 @@ HRESULT GdiEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 // - cRectangles - Length of the array above.
 // Return Value:
 // - HRESULT S_OK or GDI-based error code
-HRESULT GdiEngine::InvalidateSelection(_In_reads_(cRectangles) SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
+HRESULT GdiEngine::InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles)
 {
     // Get the currently selected area as a GDI region
     wil::unique_hrgn hrgnSelection(CreateRectRgn(0, 0, 0, 0));

@@ -343,9 +343,8 @@ CreateBoldFont:
      */
     if (nFontType == TRUETYPE_FONTTYPE && gpStateInfo->fIsV2Console) {
         DeleteObject(hFont);
-        const HWND hwnd = WindowFromDC(hDC);
-        pelf->elfLogFont.lfWidth = GetDPIXScaledPixelSize(hwnd, SizeOriginal.X);
-        pelf->elfLogFont.lfHeight = GetDPIYScaledPixelSize(hwnd, SizeOriginal.Y);
+        pelf->elfLogFont.lfWidth = GetDPIXScaledPixelSize(gpStateInfo->hWnd, SizeOriginal.X);
+        pelf->elfLogFont.lfHeight = GetDPIYScaledPixelSize(gpStateInfo->hWnd, SizeOriginal.Y);
         hFont = CreateFontIndirect(&pelf->elfLogFont);
         if (!hFont) {
             return FE_SKIPFONT;

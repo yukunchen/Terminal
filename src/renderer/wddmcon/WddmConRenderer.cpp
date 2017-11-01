@@ -17,10 +17,10 @@ using namespace Microsoft::Console::Render;
 
 WddmConEngine::WddmConEngine()
     : _hWddmConCtx(INVALID_HANDLE_VALUE),
-      _displayHeight(0),
-      _displayWidth(0),
-      _displayState(nullptr),
-      _currentLegacyColorAttribute(DEFAULT_COLOR_ATTRIBUTE)  
+    _displayHeight(0),
+    _displayWidth(0),
+    _displayState(nullptr),
+    _currentLegacyColorAttribute(DEFAULT_COLOR_ATTRIBUTE)
 {
 
 }
@@ -29,7 +29,7 @@ void WddmConEngine::FreeResources(ULONG displayHeight)
 {
     if (_displayState)
     {
-        for (ULONG i = 0 ; i < displayHeight ; i++)
+        for (ULONG i = 0; i < displayHeight; i++)
         {
             if (_displayState[i])
             {
@@ -52,6 +52,7 @@ void WddmConEngine::FreeResources(ULONG displayHeight)
     if (_hWddmConCtx != INVALID_HANDLE_VALUE)
     {
         WDDMConDestroy(_hWddmConCtx);
+        _hWddmConCtx = INVALID_HANDLE_VALUE;
     }
 }
 
@@ -73,7 +74,7 @@ HRESULT WddmConEngine::Initialize()
         if (SUCCEEDED(hr))
         {
             hr = WDDMConGetDisplaySize(_hWddmConCtx, &DisplaySizeIoctl);
-            
+
             if (SUCCEEDED(hr))
             {
                 DisplaySize.top = 0;
@@ -85,13 +86,13 @@ HRESULT WddmConEngine::Initialize()
 
                 if (_displayState != nullptr)
                 {
-                    for (LONG i = 0 ; i < DisplaySize.bottom ; i++)
+                    for (LONG i = 0; i < DisplaySize.bottom; i++)
                     {
                         _displayState[i] = (PCD_IO_ROW_INFORMATION)calloc(1, sizeof(CD_IO_ROW_INFORMATION));
                         if (_displayState[i] == nullptr)
                         {
                             hr = E_OUTOFMEMORY;
-                            
+
                             break;
                         }
 
@@ -102,7 +103,7 @@ HRESULT WddmConEngine::Initialize()
                         if (_displayState[i]->Old == nullptr || _displayState[i]->New == nullptr)
                         {
                             hr = E_OUTOFMEMORY;
-                            
+
                             break;
                         }
                     }
@@ -145,40 +146,42 @@ bool WddmConEngine::IsInitialized()
 
 HRESULT WddmConEngine::Enable()
 {
+    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
     return WDDMConEnableDisplayAccess((PHANDLE)_hWddmConCtx, TRUE);
 }
 
 HRESULT WddmConEngine::Disable()
 {
+    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
     return WDDMConEnableDisplayAccess((PHANDLE)_hWddmConCtx, FALSE);
 }
 
 HRESULT WddmConEngine::Invalidate(const SMALL_RECT* const psrRegion)
 {
     UNREFERENCED_PARAMETER(psrRegion);
-    
+
     return S_OK;
 }
 
 HRESULT WddmConEngine::InvalidateSystem(const RECT* const prcDirtyClient)
 {
     UNREFERENCED_PARAMETER(prcDirtyClient);
-    
+
     return S_OK;
 }
 
-HRESULT WddmConEngine::InvalidateSelection(SMALL_RECT* const rgsrSelection, UINT const cRectangles)
+HRESULT WddmConEngine::InvalidateSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles)
 {
     UNREFERENCED_PARAMETER(rgsrSelection);
     UNREFERENCED_PARAMETER(cRectangles);
-    
+
     return S_OK;
 }
 
 HRESULT WddmConEngine::InvalidateScroll(const COORD* const pcoordDelta)
 {
     UNREFERENCED_PARAMETER(pcoordDelta);
-    
+
     return S_OK;
 }
 
@@ -189,21 +192,13 @@ HRESULT WddmConEngine::InvalidateAll()
 
 HRESULT WddmConEngine::StartPaint()
 {
-    if (_hWddmConCtx == INVALID_HANDLE_VALUE)
-    {
-        return E_HANDLE;
-    }
-
+    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
     return WDDMConBeginUpdateDisplayBatch(_hWddmConCtx);
 }
 
 HRESULT WddmConEngine::EndPaint()
 {
-    if (_hWddmConCtx == INVALID_HANDLE_VALUE)
-    {
-        return E_HANDLE;
-    }
-    
+    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
     return WDDMConEndUpdateDisplayBatch(_hWddmConCtx);
 }
 
@@ -214,34 +209,28 @@ HRESULT WddmConEngine::ScrollFrame()
 
 HRESULT WddmConEngine::PaintBackground()
 {
-    HRESULT hr = S_OK;
+    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
 
     PCD_IO_CHARACTER OldChar;
     PCD_IO_CHARACTER NewChar;
 
-    if (_hWddmConCtx != INVALID_HANDLE_VALUE)
+    for (LONG rowIndex = 0; rowIndex < _displayHeight; rowIndex++)
     {
-        for (LONG rowIndex = 0 ; rowIndex < _displayHeight ; rowIndex++)
+        for (LONG colIndex = 0; colIndex < _displayWidth; colIndex++)
         {
-            for (LONG colIndex = 0 ; colIndex < _displayWidth ; colIndex++)
-            {
-                OldChar = &_displayState[rowIndex]->Old[colIndex];
-                NewChar = &_displayState[rowIndex]->New[colIndex];
+            OldChar = &_displayState[rowIndex]->Old[colIndex];
+            NewChar = &_displayState[rowIndex]->New[colIndex];
 
-                OldChar->Character = NewChar->Character;
-                OldChar->Atribute  = NewChar->Atribute;
+            OldChar->Character = NewChar->Character;
+            OldChar->Atribute = NewChar->Atribute;
 
-                NewChar->Character = L' ';
-                NewChar->Atribute = 0x0;
-            }
+            NewChar->Character = L' ';
+            NewChar->Atribute = 0x0;
         }
     }
-    else
-    {
-        hr = E_HANDLE;
-    }
 
-    return hr;
+
+    return S_OK;
 }
 
 HRESULT WddmConEngine::PaintBufferLine(PCWCHAR const pwsLine, const unsigned char* const rgWidths, size_t const cchLine, COORD const coord, bool const fTrimLeft)
@@ -249,33 +238,24 @@ HRESULT WddmConEngine::PaintBufferLine(PCWCHAR const pwsLine, const unsigned cha
     UNREFERENCED_PARAMETER(rgWidths);
     UNREFERENCED_PARAMETER(fTrimLeft);
 
-    HRESULT hr;
+    RETURN_IF_HANDLE_INVALID(_hWddmConCtx);
 
     PCD_IO_CHARACTER OldChar;
     PCD_IO_CHARACTER NewChar;
 
-    if (_hWddmConCtx != INVALID_HANDLE_VALUE)
+    for (size_t i = 0; i < cchLine && i < (size_t)_displayWidth; i++)
     {
-        for (size_t i = 0 ; i < cchLine && i < (size_t)_displayWidth ; i++)
-        {
-            OldChar = &_displayState[coord.Y]->Old[coord.X + i];
-            NewChar = &_displayState[coord.Y]->New[coord.X + i];
+        OldChar = &_displayState[coord.Y]->Old[coord.X + i];
+        NewChar = &_displayState[coord.Y]->New[coord.X + i];
 
-            OldChar->Character = NewChar->Character;
-            OldChar->Atribute  = NewChar->Atribute;
+        OldChar->Character = NewChar->Character;
+        OldChar->Atribute = NewChar->Atribute;
 
-            NewChar->Character = pwsLine[i];
-            NewChar->Atribute = _currentLegacyColorAttribute;
-        }
-
-        hr = WDDMConUpdateDisplay(_hWddmConCtx, _displayState[coord.Y], FALSE);
-    }
-    else
-    {
-        hr = E_HANDLE;
+        NewChar->Character = pwsLine[i];
+        NewChar->Atribute = _currentLegacyColorAttribute;
     }
 
-    return hr;
+    return WDDMConUpdateDisplay(_hWddmConCtx, _displayState[coord.Y], FALSE);
 }
 
 HRESULT WddmConEngine::PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget)
@@ -284,24 +264,24 @@ HRESULT WddmConEngine::PaintBufferGridLines(GridLines const lines, COLORREF cons
     UNREFERENCED_PARAMETER(color);
     UNREFERENCED_PARAMETER(cchLine);
     UNREFERENCED_PARAMETER(coordTarget);
-    
+
     return S_OK;
 }
 
-HRESULT WddmConEngine::PaintSelection(SMALL_RECT* const rgsrSelection, UINT const cRectangles)
+HRESULT WddmConEngine::PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles)
 {
     UNREFERENCED_PARAMETER(rgsrSelection);
     UNREFERENCED_PARAMETER(cRectangles);
-    
+
     return S_OK;
 }
 
-HRESULT WddmConEngine::PaintCursor(COORD const coordCursor, ULONG const ulCursorHeightPercent, bool const fIsDoubleWidth)
+HRESULT WddmConEngine::PaintCursorEx(_In_ ULONG const /*ulCursorHeightPercent*/,
+                                     _In_ bool const /*fIsDoubleWidth*/,
+                                     _In_ Cursor::CursorType const /*cursorType*/,
+                                     _In_ bool const /*fUseColor*/,
+                                     _In_ COLORREF const /*cursorColor*/)
 {
-    UNREFERENCED_PARAMETER(coordCursor);
-    UNREFERENCED_PARAMETER(ulCursorHeightPercent);
-    UNREFERENCED_PARAMETER(fIsDoubleWidth);
-    
     return S_OK;
 }
 
@@ -324,8 +304,16 @@ HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const colorForeground, COLO
 HRESULT WddmConEngine::UpdateFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo)
 {
     UNREFERENCED_PARAMETER(pfiFontInfoDesired);
-    UNREFERENCED_PARAMETER(pfiFontInfo);
-    
+
+    const COORD coordSize = GetFontSize();
+
+    pfiFontInfo->SetFromEngine(pfiFontInfo->GetFaceName(),
+                               pfiFontInfo->GetFamily(),
+                               pfiFontInfo->GetWeight(),
+                               pfiFontInfo->IsTrueTypeFont(),
+                               coordSize,
+                               coordSize);
+
     return S_OK;
 }
 
@@ -335,13 +323,25 @@ HRESULT WddmConEngine::UpdateDpi(int const iDpi)
 
     return S_OK;
 }
+              
+// Method Description:
+// - This method will update our internal reference for how big the viewport is.
+//      Does nothing for WDDMCon.
+// Arguments:
+// - srNewViewport - The bounds of the new viewport.
+// Return Value:
+// - HRESULT S_OK  
+HRESULT WddmConEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
+{
+    return S_OK;
+}
 
 HRESULT WddmConEngine::GetProposedFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo, int const iDpi)
 {
     UNREFERENCED_PARAMETER(pfiFontInfoDesired);
     UNREFERENCED_PARAMETER(pfiFontInfo);
     UNREFERENCED_PARAMETER(iDpi);
-    
+
     return S_OK;
 }
 
@@ -363,7 +363,7 @@ RECT WddmConEngine::GetDisplaySize()
     r.left = 0;
     r.bottom = _displayHeight;
     r.right = _displayHeight;
-    
+
     return r;
 }
 
@@ -392,4 +392,15 @@ bool WddmConEngine::IsCharFullWidthByFont(WCHAR const wch)
     UNREFERENCED_PARAMETER(wch);
 
     return false;
+}
+
+// Method Description:
+// - Returns a reference to this engine's cursor implementation.
+// Arguments:
+// - <none>
+// Return Value:
+// - A referenct to this engine's cursor implementation.
+IRenderCursor* const WddmConEngine::GetCursor()
+{
+    return &_cursor;
 }

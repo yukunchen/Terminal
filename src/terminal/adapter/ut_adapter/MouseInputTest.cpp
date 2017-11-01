@@ -41,13 +41,13 @@ static COORD s_rgTestCoords [] = {
     {96, 96},
     {127,127},
     {128,128},
-    {SHORT_MAX-33,SHORT_MAX-33}, 
+    {SHORT_MAX-33,SHORT_MAX-33},
     {SHORT_MAX-32,SHORT_MAX-32},
 };
 
-// Note: We're going to be changing the value of the third char (the space) of 
+// Note: We're going to be changing the value of the third char (the space) of
 //      these strings as we test things with this array, to alter the expected button value.
-// The default value is the button=WM_LBUTTONDOWN case, which is element[3]=' ' 
+// The default value is the button=WM_LBUTTONDOWN case, which is element[3]=' '
 static wchar_t* s_rgDefaultTestOutput [] = {
     L"\x1b[M !!",
     L"\x1b[M !\"",
@@ -62,9 +62,9 @@ static wchar_t* s_rgDefaultTestOutput [] = {
     L"\x1b[M \x8000\x8000", // This one will always fail for Default and UTF8
 };
 
-// Note: We're going to be changing the value of the third char (the space) of 
+// Note: We're going to be changing the value of the third char (the space) of
 //      these strings as we test things with this array, to alter the expected button value.
-// The default value is the button=WM_LBUTTONDOWN case, which is element[3]='0' 
+// The default value is the button=WM_LBUTTONDOWN case, which is element[3]='0'
 // We're also going to change the last element, for button-down (M) vs button-up (m)
 static wchar_t* s_rgSgrTestOutput [] = {
     L"\x1b[<%d;1;1M",
@@ -88,28 +88,25 @@ public:
 
     TEST_CLASS(MouseInputTest);
 
-    static void s_MouseInputTestCallback(_In_reads_(cInput) INPUT_RECORD* rgInput, _In_ DWORD cInput)
+    static void s_MouseInputTestCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
     {
         Log::Comment(L"MouseInput successfully generated a sequence for the input, and sent it.");
 
         size_t cInputExpected = 0;
         VERIFY_SUCCEEDED(StringCchLengthW(s_pwszInputExpected, STRSAFE_MAX_CCH, &cInputExpected));
 
-        if (VERIFY_ARE_EQUAL(cInputExpected, cInput, L"Verify expected and actual input array lengths matched."))
+        if (VERIFY_ARE_EQUAL(cInputExpected, events.size(), L"Verify expected and actual input array lengths matched."))
         {
             Log::Comment(L"We are expecting always key events and always key down. All other properties should not be written by simulated keys.");
 
-            INPUT_RECORD irExpected = { 0 };
-            irExpected.EventType = KEY_EVENT;
-            irExpected.Event.KeyEvent.bKeyDown = TRUE;
-            irExpected.Event.KeyEvent.wRepeatCount = 1;
-
-            Log::Comment(L"Verifying individual array members...");
-            for (size_t i = 0; i < cInput; i++)
+            for (size_t i = 0; i < events.size(); ++i)
             {
-                irExpected.Event.KeyEvent.uChar.UnicodeChar = s_pwszInputExpected[i];
-                VERIFY_ARE_EQUAL(irExpected, rgInput[i], 
-                                 NoThrowString().Format(L"Chars='%c','%c'", s_pwszInputExpected[i], rgInput[i].Event.KeyEvent.uChar.UnicodeChar));
+                KeyEvent expectedKeyEvent(TRUE, 1, 0, 0, s_pwszInputExpected[i], 0);
+                KeyEvent testKeyEvent = *static_cast<const KeyEvent* const>(events[i].get());
+                VERIFY_ARE_EQUAL(expectedKeyEvent, testKeyEvent,
+                                 NoThrowString().Format(L"Chars='%c','%c'",
+                                                        s_pwszInputExpected[i],
+                                                        testKeyEvent.GetCharData()));
             }
         }
     }
@@ -129,10 +126,10 @@ public:
         size_t cchInputExpected = 0;
         VERIFY_SUCCEEDED(StringCchLengthW(pwchTestOutput, STRSAFE_MAX_CCH, &cchInputExpected));
         VERIFY_ARE_EQUAL(cchInputExpected, 6ul);
-        
+
         ClearTestBuffer();
         memcpy(s_pwszExpectedBuffer, pwchTestOutput, cchInputExpected * sizeof(wchar_t));
-        
+
         // Change the expected button value
         wchar_t wch = GetDefaultCharFromButton(uiButton, sModifierKeystate, sScrollDelta);
         Log::Comment(NoThrowString().Format(L"Button Char was:\'%d\' for uiButton '%d", (int)wch, uiButton));
@@ -143,7 +140,7 @@ public:
     }
 
     // Routine Description:
-    // Constructs a string from s_rgSgrTestOutput with the third and last chars 
+    // Constructs a string from s_rgSgrTestOutput with the third and last chars
     //      correctly filled in to match uiButton.
     wchar_t* BuildSGRTestOutput(wchar_t* pwchTestOutput, unsigned int uiButton, short sModifierKeystate, short sScrollDelta)
     {
@@ -152,12 +149,12 @@ public:
 
         // Copy the expected output into the buffer
         swprintf_s(s_pwszExpectedBuffer, BYTE_MAX, pwchTestOutput, GetSgrCharFromButton(uiButton, sModifierKeystate, sScrollDelta));
-        
+
         size_t cchInputExpected = 0;
         VERIFY_SUCCEEDED(StringCchLengthW(s_pwszExpectedBuffer, STRSAFE_MAX_CCH, &cchInputExpected));
 
         s_pwszExpectedBuffer[cchInputExpected-1] = IsButtonDown(uiButton)? L'M' : L'm';
-        
+
         Log::Comment(NoThrowString().Format(L"Expected Input:\'%s\'", s_pwszExpectedBuffer));
         return s_pwszExpectedBuffer;
     }
@@ -276,10 +273,10 @@ public:
     TEST_METHOD(DefaultModeTests)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            // TEST_METHOD_PROPERTY(L"Data:uiButton", L"{WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_RBUTTONDOWN, WM_RBUTTONUP}") 
-            TEST_METHOD_PROPERTY(L"Data:uiButton", L"{0x0201, 0x0202, 0x0207, 0x0208, 0x0204, 0x0205}") 
+            // TEST_METHOD_PROPERTY(L"Data:uiButton", L"{WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_RBUTTONDOWN, WM_RBUTTONUP}")
+            TEST_METHOD_PROPERTY(L"Data:uiButton", L"{0x0201, 0x0202, 0x0207, 0x0208, 0x0204, 0x0205}")
             // None, MK_SHIFT, MK_CONTROL
-            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}") 
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}")
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -345,9 +342,9 @@ public:
     TEST_METHOD(Utf8ModeTests)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            // TEST_METHOD_PROPERTY(L"Data:uiButton", L"{WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_RBUTTONDOWN, WM_RBUTTONUP}") 
-            TEST_METHOD_PROPERTY(L"Data:uiButton", L"{0x0201, 0x0202, 0x0207, 0x0208, 0x0204, 0x0205}") 
-            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}") 
+            // TEST_METHOD_PROPERTY(L"Data:uiButton", L"{WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_RBUTTONDOWN, WM_RBUTTONUP}")
+            TEST_METHOD_PROPERTY(L"Data:uiButton", L"{0x0201, 0x0202, 0x0207, 0x0208, 0x0204, 0x0205}")
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}")
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -399,7 +396,7 @@ public:
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
 
         }
-        
+
         pInput->EnableAnyEventTracking(true);
         for (int i = 0; i < s_iTestCoordsLength; i++)
         {
@@ -418,9 +415,9 @@ public:
     TEST_METHOD(SgrModeTests)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            // TEST_METHOD_PROPERTY(L"Data:uiButton", L"{WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_RBUTTONDOWN, WM_RBUTTONUP}") 
-            TEST_METHOD_PROPERTY(L"Data:uiButton", L"{0x0201, 0x0202, 0x0207, 0x0208, 0x0204, 0x0205}") 
-            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}") 
+            // TEST_METHOD_PROPERTY(L"Data:uiButton", L"{WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_RBUTTONDOWN, WM_RBUTTONUP}")
+            TEST_METHOD_PROPERTY(L"Data:uiButton", L"{0x0201, 0x0202, 0x0207, 0x0208, 0x0204, 0x0205}")
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}")
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -487,8 +484,8 @@ public:
     TEST_METHOD(ScrollWheelTests)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:sScrollDelta", L"{0, -1, 1, 100, -10000, 32736}") 
-            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}") 
+            TEST_METHOD_PROPERTY(L"Data:sScrollDelta", L"{0, -1, 1, 100, -10000, 32736}")
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}")
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -514,7 +511,7 @@ public:
         {
             COORD Coord = s_rgTestCoords[i];
             fExpectedKeyHandled = (Coord.X <= 94 && Coord.Y <= 94);
-            
+
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
@@ -531,7 +528,7 @@ public:
         {
             COORD Coord = s_rgTestCoords[i];
             fExpectedKeyHandled = (Coord.X <= MaxCoord && Coord.Y <= MaxCoord);
-            
+
             Log::Comment(NoThrowString().Format(L"fHandled, x, y = (%d, %d, %d)", fExpectedKeyHandled, Coord.X, Coord.Y));
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
@@ -559,4 +556,3 @@ public:
         }
     }
 };
-

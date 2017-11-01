@@ -16,7 +16,8 @@
 // - True if the console is in a selecting state. False otherwise.
 bool Selection::IsInSelectingState() const
 {
-    return (ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags & CONSOLE_SELECTING) != 0;
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return (gci->Flags & CONSOLE_SELECTING) != 0;
 }
 
 // Routine Description:
@@ -27,13 +28,14 @@ bool Selection::IsInSelectingState() const
 // - <none>
 void Selection::_SetSelectingState(_In_ const bool fSelectingOn)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     if (fSelectingOn)
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_SELECTING;
+        gci->Flags |= CONSOLE_SELECTING;
     }
     else
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags &= ~CONSOLE_SELECTING;
+        gci->Flags &= ~CONSOLE_SELECTING;
     }
 }
 
@@ -46,7 +48,8 @@ void Selection::_SetSelectingState(_In_ const bool fSelectingOn)
 // - True if quick edit mode is enabled. False otherwise.
 bool Selection::IsInQuickEditMode() const
 {
-    return (ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags & CONSOLE_QUICK_EDIT_MODE) != 0;
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return (gci->Flags & CONSOLE_QUICK_EDIT_MODE) != 0;
 }
 
 // Routine Description:

@@ -9,6 +9,7 @@
 #include "dbcs.h"
 
 #include "misc.h"
+#include "../types/inc/convert.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -151,7 +152,7 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
 // Apr-30-2015 MiNiksa  Corrected unknown character code assumption. Max Width in Text Metric
 //                      is not reliable for calculating half/full width. Must use current
 //                      display font data (cached) instead.
-// May-23-2017 migrie   Forced Box-Drawing Characters (x2500-x257F) to narrow. 
+// May-23-2017 migrie   Forced Box-Drawing Characters (x2500-x257F) to narrow.
 BOOL IsCharFullWidth(_In_ WCHAR wch)
 {
     // See http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
@@ -178,7 +179,7 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
         // From Unicode 9.0, this range is narrow (assorted languages)
         return FALSE;
     }
-    // 0x2500 - 0x257F is the box drawing character range - 
+    // 0x2500 - 0x257F is the box drawing character range -
     // Technically, these are ambiguous width characters, but applications that
     // use them generally assume that they're narrow to ensure proper alignment.
     else if (0x2500 <= wch && wch <= 0x257F)
@@ -485,7 +486,7 @@ BYTE CodePageToCharSet(_In_ UINT const uiCodePage)
 {
     CHARSETINFO csi;
 
-    if (!TranslateCharsetInfo((DWORD *) IntToPtr(uiCodePage), &csi, TCI_SRCCODEPAGE))
+    if (!ServiceLocator::LocateInputServices()->TranslateCharsetInfo((DWORD *) IntToPtr(uiCodePage), &csi, TCI_SRCCODEPAGE))
     {
         csi.ciCharset = OEM_CHARSET;
     }
@@ -514,8 +515,9 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
                             _In_ const ULONG cchUnicode,
                             _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
                             _In_ const ULONG cbAnsi,
-                            _Out_opt_ PINPUT_RECORD pDbcsInputRecord)
+                            _Outref_result_maybenull_ std::unique_ptr<IInputEvent>& partialEvent)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     PWCHAR const TmpUni = new WCHAR[cchUnicode];
     if (TmpUni == nullptr)
     {
@@ -533,8 +535,8 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
         if (IsCharFullWidth(TmpUni[i]))
         {
             ULONG const NumBytes = sizeof(AsciiDbcs);
-            ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, &TmpUni[i], 1, (LPSTR) & AsciiDbcs[0], NumBytes);
-            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &ServiceLocator::LocateGlobals()->getConsoleInformation()->CPInfo))
+            ConvertToOem(gci->CP, &TmpUni[i], 1, (LPSTR) & AsciiDbcs[0], NumBytes);
+            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &gci->CPInfo))
             {
                 if (j < cbAnsi - 1)
                 {   // -1 is safe DBCS in buffer
@@ -557,20 +559,24 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
         }
         else
         {
-            ConvertToOem(ServiceLocator::LocateGlobals()->getConsoleInformation()->CP, &TmpUni[i], 1, &pchAnsi[j], 1);
+            ConvertToOem(gci->CP, &TmpUni[i], 1, &pchAnsi[j], 1);
         }
     }
 
-    if (pDbcsInputRecord)
+    if (AsciiDbcs[1])
     {
-        if (AsciiDbcs[1])
+        try
         {
-            pDbcsInputRecord->EventType = KEY_EVENT;
-            pDbcsInputRecord->Event.KeyEvent.uChar.AsciiChar = AsciiDbcs[1];
+            std::unique_ptr<KeyEvent> keyEvent = std::make_unique<KeyEvent>();
+            if (keyEvent.get())
+            {
+                keyEvent->SetCharData(AsciiDbcs[1]);
+                partialEvent.reset(static_cast<IInputEvent* const>(keyEvent.release()));
+            }
         }
-        else
+        catch (...)
         {
-            ZeroMemory(pDbcsInputRecord, sizeof(INPUT_RECORD));
+            LOG_HR(wil::ResultFromCaughtException());
         }
     }
 

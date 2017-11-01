@@ -17,20 +17,18 @@
 
 #pragma hdrstop
 
-#define CTRL_BUT_NOT_ALT(n) \
-        (((n) & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) && \
-        !((n) & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)))
-
 #define KEY_ENHANCED 0x01000000
 
 bool IsInProcessedInputMode()
 {
-    return (ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->InputMode & ENABLE_PROCESSED_INPUT) != 0;
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return (gci->pInputBuffer->InputMode & ENABLE_PROCESSED_INPUT) != 0;
 }
 
 bool IsInVirtualTerminalInputMode()
 {
-    return IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return IsFlagSet(gci->pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
 }
 
 BOOL IsSystemKey(_In_ WORD const wVirtualKeyCode)
@@ -101,121 +99,117 @@ ULONG GetControlKeyState(_In_ const LPARAM lParam)
 // - returns true if we're in a mode amenable to us taking over keyboard shortcuts
 bool ShouldTakeOverKeyboardShortcuts()
 {
-    return !ServiceLocator::LocateGlobals()->getConsoleInformation()->GetCtrlKeyShortcutsDisabled() && IsInProcessedInputMode();
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return !gci->GetCtrlKeyShortcutsDisabled() && IsInProcessedInputMode();
 }
-
-
 
 // Routine Description:
 // - handles key events without reference to Win32 elements.
-void HandleGenericKeyEvent(INPUT_RECORD InputEvent, BOOL bGenerateBreak)
+void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak)
 {
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     BOOLEAN ContinueProcessing = TRUE;
-    ULONG EventsWritten;
-    
-    if (HandleTerminalKeyEvent(&InputEvent))
-    {
-        return;
-    }
 
-    if (CTRL_BUT_NOT_ALT(InputEvent.Event.KeyEvent.dwControlKeyState) && InputEvent.Event.KeyEvent.bKeyDown)
+    if (keyEvent.IsCtrlPressed() &&
+        !keyEvent.IsAltPressed() &&
+        keyEvent.IsKeyDown())
     {
         // check for ctrl-c, if in line input mode.
-        if (InputEvent.Event.KeyEvent.wVirtualKeyCode == 'C' && IsInProcessedInputMode())
+        if (keyEvent.GetVirtualKeyCode() == 'C' && IsInProcessedInputMode())
         {
             HandleCtrlEvent(CTRL_C_EVENT);
-            if (ServiceLocator::LocateGlobals()->getConsoleInformation()->PopupCount == 0)
+            if (gci->PopupCount == 0)
             {
-                ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->TerminateRead(WaitTerminationReason::CtrlC);
+                gci->pInputBuffer->TerminateRead(WaitTerminationReason::CtrlC);
             }
 
-            if (!(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags & CONSOLE_SUSPENDED))
+            if (!(IsFlagSet(gci->Flags, CONSOLE_SUSPENDED)))
             {
                 ContinueProcessing = FALSE;
             }
         }
 
-        // check for ctrl-break.
-        else if (InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_CANCEL)
+
+        // Check for ctrl-break.
+        else if (keyEvent.GetVirtualKeyCode() == VK_CANCEL)
         {
-            ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->Flush();
+            gci->pInputBuffer->Flush();
             HandleCtrlEvent(CTRL_BREAK_EVENT);
-            if (ServiceLocator::LocateGlobals()->getConsoleInformation()->PopupCount == 0)
+            if (gci->PopupCount == 0)
             {
-                ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->TerminateRead(WaitTerminationReason::CtrlBreak);
+                gci->pInputBuffer->TerminateRead(WaitTerminationReason::CtrlBreak);
             }
 
-            if (!(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags & CONSOLE_SUSPENDED))
+            if (!(IsFlagSet(gci->Flags, CONSOLE_SUSPENDED)))
             {
                 ContinueProcessing = FALSE;
             }
         }
 
         // don't write ctrl-esc to the input buffer
-        else if (InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE)
+        else if (keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
         {
             ContinueProcessing = FALSE;
         }
     }
-    else if ((InputEvent.Event.KeyEvent.dwControlKeyState & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)) &&
-             InputEvent.Event.KeyEvent.bKeyDown &&
-             InputEvent.Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE)
+    else if (keyEvent.IsAltPressed() &&
+             keyEvent.IsKeyDown() &&
+             keyEvent.GetVirtualKeyCode() == VK_ESCAPE)
     {
         ContinueProcessing = FALSE;
     }
 
     if (ContinueProcessing)
     {
-        EventsWritten = ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->WriteInputBuffer(&InputEvent, 1);
-        if (EventsWritten && bGenerateBreak)
+        size_t EventsWritten = 0;
+        try
         {
-            InputEvent.Event.KeyEvent.bKeyDown = FALSE;
-            ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->WriteInputBuffer(&InputEvent, 1);
+            EventsWritten = gci->pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
+            if (EventsWritten && generateBreak)
+            {
+                keyEvent.SetKeyDown(false);
+                EventsWritten = gci->pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
+            }
+        }
+        catch(...)
+        {
+            LOG_HR(wil::ResultFromCaughtException());
         }
     }
 }
 
-// Routine Description:
-// - Handler for detecting whether a key-press event can be appropriately converted into a terminal sequence.
-//   Will only trigger when virtual terminal input mode is set via STDIN handle
-// Arguments:
-// - pInputRecord - Input record event from the general input event handler
-// Return Value:
-// - True if the modes were appropriate for converting to a terminal sequence AND there was a matching terminal sequence for this key. False otherwise.
-bool HandleTerminalKeyEvent(_In_ const INPUT_RECORD* const pInputRecord)
-{
-    // If the modes don't align, this is unhandled by default.
-    bool fWasHandled = false;
-
-    // Virtual terminal input mode
-    if (IsInVirtualTerminalInputMode())
-    {
-        fWasHandled = ServiceLocator::LocateGlobals()->getConsoleInformation()->termInput.HandleKey(pInputRecord);
-    }
-
-    return fWasHandled;
-}
-
 void HandleFocusEvent(_In_ const BOOL fSetFocus)
 {
-    INPUT_RECORD InputEvent;
-    InputEvent.EventType = FOCUS_EVENT;
-    InputEvent.Event.FocusEvent.bSetFocus = fSetFocus;
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
 #pragma prefast(suppress:28931, "EventsWritten is not unused. Used by assertions.")
-    ULONG const EventsWritten = ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->WriteInputBuffer(&InputEvent, 1);
+    size_t EventsWritten = 0;
+    try
+    {
+        EventsWritten = gci->pInputBuffer->Write(std::make_unique<FocusEvent>(!!fSetFocus));
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+    }
     EventsWritten; // shut the fre build up.
     ASSERT(EventsWritten == 1);
 }
 
 void HandleMenuEvent(_In_ const DWORD wParam)
 {
-    INPUT_RECORD InputEvent;
-    InputEvent.EventType = MENU_EVENT;
-    InputEvent.Event.MenuEvent.dwCommandId = wParam;
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
 #pragma prefast(suppress:28931, "EventsWritten is not unused. Used by assertions.")
-    ULONG const EventsWritten = ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->WriteInputBuffer(&InputEvent, 1);
+    size_t EventsWritten = 0;
+    try
+    {
+        EventsWritten = gci->pInputBuffer->Write(std::make_unique<MenuEvent>(wParam));
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+    }
     EventsWritten; // shut the fre build up.
 #if DBG
     if (EventsWritten != 1)
@@ -227,16 +221,17 @@ void HandleMenuEvent(_In_ const DWORD wParam)
 
 void HandleCtrlEvent(_In_ const DWORD EventType)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     switch (EventType)
     {
         case CTRL_C_EVENT:
-            ServiceLocator::LocateGlobals()->getConsoleInformation()->CtrlFlags |= CONSOLE_CTRL_C_FLAG;
+            gci->CtrlFlags |= CONSOLE_CTRL_C_FLAG;
             break;
         case CTRL_BREAK_EVENT:
-            ServiceLocator::LocateGlobals()->getConsoleInformation()->CtrlFlags |= CONSOLE_CTRL_BREAK_FLAG;
+            gci->CtrlFlags |= CONSOLE_CTRL_BREAK_FLAG;
             break;
         case CTRL_CLOSE_EVENT:
-            ServiceLocator::LocateGlobals()->getConsoleInformation()->CtrlFlags |= CONSOLE_CTRL_CLOSE_FLAG;
+            gci->CtrlFlags |= CONSOLE_CTRL_CLOSE_FLAG;
             break;
         default:
             RIPMSG1(RIP_ERROR, "Invalid EventType: 0x%x", EventType);
@@ -245,41 +240,40 @@ void HandleCtrlEvent(_In_ const DWORD EventType)
 
 void ProcessCtrlEvents()
 {
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->CtrlFlags == 0)
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    if (gci->CtrlFlags == 0)
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+        gci->UnlockConsole();
         return;
     }
 
     // Make our own copy of the console process handle list.
-    DWORD const LimitingProcessId = ServiceLocator::LocateGlobals()->getConsoleInformation()->LimitingProcessId;
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->LimitingProcessId = 0;
+    DWORD const LimitingProcessId = gci->LimitingProcessId;
+    gci->LimitingProcessId = 0;
 
     ConsoleProcessTerminationRecord* rgProcessHandleList;
     size_t cProcessHandleList;
 
-    HRESULT hr = ServiceLocator::LocateGlobals()
-        ->getConsoleInformation()
-        ->ProcessHandleList
-        .GetTerminationRecordsByGroupId(LimitingProcessId,
-                                        IsFlagSet(ServiceLocator::LocateGlobals()->getConsoleInformation()->CtrlFlags,
-                                                  CONSOLE_CTRL_CLOSE_FLAG),
-                                        &rgProcessHandleList,
-                                        &cProcessHandleList);
+    HRESULT hr = gci->ProcessHandleList
+                    .GetTerminationRecordsByGroupId(LimitingProcessId,
+                                                    IsFlagSet(gci->CtrlFlags,
+                                                              CONSOLE_CTRL_CLOSE_FLAG),
+                                                    &rgProcessHandleList,
+                                                    &cProcessHandleList);
 
     if (FAILED(hr) || cProcessHandleList == 0)
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+        gci->UnlockConsole();
         return;
     }
 
     // Copy ctrl flags.
-    ULONG CtrlFlags = ServiceLocator::LocateGlobals()->getConsoleInformation()->CtrlFlags;
+    ULONG CtrlFlags = gci->CtrlFlags;
     ASSERT(!((CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG)) && (CtrlFlags & (CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG))));
 
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->CtrlFlags = 0;
+    gci->CtrlFlags = 0;
 
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->UnlockConsole();
+    gci->UnlockConsole();
 
     // the ctrl flags could be a combination of the following
     // values:

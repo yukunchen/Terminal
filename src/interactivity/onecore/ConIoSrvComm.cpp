@@ -9,8 +9,10 @@
 #include "ConIoSrvComm.hpp"
 #include "ConIoSrv.h"
 
+#include "..\..\host\dbcs.h"
 #include "..\..\host\input.h"
 #include "..\..\renderer\wddmcon\wddmconrenderer.hpp"
+#include "..\..\types\inc\IInputEvent.hpp"
 
 #include "..\inc\ServiceLocator.hpp"
 
@@ -19,6 +21,9 @@
 // For details on the mechanisms employed in this class, read the comments in
 // ConIoSrv.h, included above. For security-related considerations, see Trust.h
 // in the ConIoSrv directory.
+
+extern void LockConsole();
+extern void UnlockConsole();
 
 using namespace Microsoft::Console::Interactivity::OneCore;
 
@@ -32,6 +37,28 @@ ConIoSrvComm::ConIoSrvComm()
       _fIsInputInitialized(false)
 {
 
+}
+
+ConIoSrvComm::~ConIoSrvComm()
+{
+    // Free any handles we might have open.
+    if (INVALID_HANDLE_VALUE != _pipeReadHandle)
+    {
+        CloseHandle(_pipeReadHandle);
+        _pipeReadHandle = INVALID_HANDLE_VALUE;
+    }
+
+    if (INVALID_HANDLE_VALUE != _pipeWriteHandle)
+    {
+        CloseHandle(_pipeWriteHandle);
+        _pipeWriteHandle = INVALID_HANDLE_VALUE;
+    }
+
+    if (INVALID_HANDLE_VALUE != _alpcClientCommunicationPort)
+    {
+        CloseHandle(_alpcClientCommunicationPort);
+        _alpcClientCommunicationPort = INVALID_HANDLE_VALUE;
+    }
 }
 
 #pragma region Communication
@@ -201,10 +228,9 @@ NTSTATUS ConIoSrvComm::EnsureConnection()
     return Status;
 }
 
-NTSTATUS ConIoSrvComm::ServiceInputPipe()
+VOID ConIoSrvComm::ServiceInputPipe()
 {
     BOOL Ret;
-    NTSTATUS Status;
 
     CIS_EVENT Event = { 0 };
 
@@ -218,25 +244,34 @@ NTSTATUS ConIoSrvComm::ServiceInputPipe()
 
         if (Ret != FALSE)
         {
+            LockConsole();
             switch (Event.Type)
             {
             case CIS_EVENT_TYPE_INPUT:
-                HandleGenericKeyEvent(Event.InputEvent.Record, FALSE);
-            break;
+                try
+                {
+                    KEY_EVENT_RECORD keyRecord = Event.InputEvent.Record.Event.KeyEvent;
+                    KeyEvent keyEvent{ keyRecord };
+                    HandleGenericKeyEvent(keyEvent, false);
+                }
+                catch (...)
+                {
+                    LOG_HR(wil::ResultFromCaughtException());
+                }
+                break;
 
             case CIS_EVENT_TYPE_FOCUS:
                 HandleFocusEvent(&Event);
-            break;
+                break;
             }
+            UnlockConsole();
         }
         else
         {
             // If we get disconnected, terminate.
-            TerminateProcess(GetCurrentProcess(), GetLastError());
-        }
+            ServiceLocator::RundownAndExit(GetLastError());
+       }
     }
-
-    return Status;
 }
 
 NTSTATUS ConIoSrvComm::SendRequestReceiveReply(PCIS_MSG Message) const
@@ -262,7 +297,7 @@ NTSTATUS ConIoSrvComm::SendRequestReceiveReply(PCIS_MSG Message) const
                                        &ActualReceiveMessageLength,
                                        NULL,
                                        0);
-                                       
+
     return Status;
 }
 
@@ -277,7 +312,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
     WddmConEngine *WddmEngine;
 
     CIS_EVENT ReplyEvent;
-    
+
     Status = RequestGetDisplayMode(&DisplayMode);
 
     if (NT_SUCCESS(Status))
@@ -295,16 +330,19 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
 
                     // Force a complete redraw.
                     Renderer->TriggerRedrawAll();
-
-                    SignalInputEventIfNecessary();
                 }
             break;
 
             case CIS_DISPLAY_MODE_DIRECTX:
-                WddmEngine = (WddmConEngine *)ServiceLocator::LocateGlobals()->pRenderEngine;
+            {
+                Globals* const pGlobals = ServiceLocator::LocateGlobals();
+
+                WddmEngine = (WddmConEngine *)pGlobals->pRenderEngine;
 
                 if (Event->FocusEvent.IsActive)
                 {
+                    HRESULT hr = S_OK;
+
                     // Lazy-initialize the WddmCon engine.
                     //
                     // This is necessary because the engine cannot be allowed to
@@ -312,40 +350,66 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                     // of conhost was using it before has relinquished it.
                     if (!WddmEngine->IsInitialized())
                     {
-                        WddmEngine->Initialize();
+                        hr = WddmEngine->Initialize();
+                        LOG_IF_FAILED(hr);
+
+                        // Right after we initialize, synchronize the screen/viewport states with the WddmCon surface dimensions
+                        if (SUCCEEDED(hr))
+                        {
+                            const RECT rcOld = { 0 };
+
+                            // WddmEngine reports display size in characters, adjust to pixels for resize window calc.
+                            RECT rcDisplay = WddmEngine->GetDisplaySize();
+
+                            // Get font to adjust char to pixels.
+                            const COORD coordFont = WddmEngine->GetFontSize();
+                            rcDisplay.right *= coordFont.X;
+                            rcDisplay.bottom *= coordFont.Y;
+
+                            // Ask the screen buffer to resize itself (and all related components) based on the screen size.
+                            pGlobals->getConsoleInformation()->CurrentScreenBuffer->ProcessResizeWindow(&rcDisplay, &rcOld);
+                        }
                     }
 
-                    // Allow acquiring device resources before drawing.
-                    WddmEngine->Enable();
+                    if (SUCCEEDED(hr))
+                    {
+                        // Allow acquiring device resources before drawing.
+                        hr = WddmEngine->Enable();
+                        LOG_IF_FAILED(hr);
+                        if (SUCCEEDED(hr))
+                        {
+                            // Allow the renderer to paint.
+                            Renderer->EnablePainting();
 
-                    // Allow the renderer to paint.
-                    Renderer->EnablePainting();
-
-                    // Force a complete redraw.
-                    Renderer->TriggerRedrawAll();
-
-                    SignalInputEventIfNecessary();
+                            // Force a complete redraw.
+                            Renderer->TriggerRedrawAll();
+                        }
+                    }
                 }
                 else
                 {
-                    // Wait for the currently running paint operation, if any,
-                    // and prevent further attempts to render.
-                    Renderer->WaitForPaintCompletionAndDisable(1000);
+                    if (WddmEngine->IsInitialized())
+                    {
+                        // Wait for the currently running paint operation, if any,
+                        // and prevent further attempts to render.
+                        Renderer->WaitForPaintCompletionAndDisable(1000);
 
-                    // Relinquish control of the graphics device (only one
-                    // DirectX application may control the device at any one
-                    // time).
-                    WddmEngine->Disable();
+                        // Relinquish control of the graphics device (only one
+                        // DirectX application may control the device at any one
+                        // time).
+                        LOG_IF_FAILED(WddmEngine->Disable());
 
-                    // Let the Console IO Server that we have relinquished
-                    // control of the display.
-                    ReplyEvent.Type = CIS_EVENT_TYPE_FOCUS_ACK;
-                    Ret = WriteFile(_pipeWriteHandle,
-                                    &ReplyEvent,
-                                    sizeof(CIS_EVENT),
-                                    NULL,
-                                    NULL);
+                        // Let the Console IO Server that we have relinquished
+                        // control of the display.
+                        ReplyEvent.Type = CIS_EVENT_TYPE_FOCUS_ACK;
+                        Ret = WriteFile(_pipeWriteHandle,
+                                        &ReplyEvent,
+                                        sizeof(CIS_EVENT),
+                                        NULL,
+                                        NULL);
+                    }
                 }
+            }
             break;
 
             case CIS_DISPLAY_MODE_NONE:
@@ -355,10 +419,32 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
     }
 }
 
-VOID ConIoSrvComm::SignalInputEventIfNecessary()
+VOID ConIoSrvComm::CleanupForHeadless(_In_ NTSTATUS const status)
 {
     if (!_fIsInputInitialized)
     {
+        // Free any handles we might have open.
+        if (INVALID_HANDLE_VALUE != _pipeReadHandle)
+        {
+            CloseHandle(_pipeReadHandle);
+            _pipeReadHandle = INVALID_HANDLE_VALUE;
+        }
+
+        if (INVALID_HANDLE_VALUE != _pipeWriteHandle)
+        {
+            CloseHandle(_pipeWriteHandle);
+            _pipeWriteHandle = INVALID_HANDLE_VALUE;
+        }
+
+        if (INVALID_HANDLE_VALUE != _alpcClientCommunicationPort)
+        {
+            CloseHandle(_alpcClientCommunicationPort);
+            _alpcClientCommunicationPort = INVALID_HANDLE_VALUE;
+        }
+
+        // Set the status for the IO thread to find.
+        ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus = status;
+
         // Signal that input is ready to go.
         ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.SetEvent();
 
@@ -376,7 +462,7 @@ NTSTATUS ConIoSrvComm::RequestGetDisplaySize(_Inout_ PCD_IO_DISPLAY_SIZE pCdDisp
 
     CIS_MSG Message = { 0 };
     Message.Type = CIS_MSG_TYPE_GETDISPLAYSIZE;
-    
+
     Status = SendRequestReceiveReply(&Message);
     if (NT_SUCCESS(Status))
     {
@@ -393,7 +479,7 @@ NTSTATUS ConIoSrvComm::RequestGetFontSize(_Inout_ PCD_IO_FONT_SIZE pCdFontSize) 
 
     CIS_MSG Message = { 0 };
     Message.Type = CIS_MSG_TYPE_GETFONTSIZE;
-    
+
     Status = SendRequestReceiveReply(&Message);
     if (NT_SUCCESS(Status))
     {
@@ -411,7 +497,7 @@ NTSTATUS ConIoSrvComm::RequestSetCursor(_In_ CD_IO_CURSOR_INFORMATION* const pCd
     CIS_MSG Message = { 0 };
     Message.Type = CIS_MSG_TYPE_SETCURSOR;
     Message.SetCursorParams.CursorInformation = *pCdCursorInformation;
-    
+
     Status = SendRequestReceiveReply(&Message);
     if (NT_SUCCESS(Status))
     {
@@ -543,7 +629,7 @@ UINT ConIoSrvComm::MapVirtualKeyW(UINT uCode, UINT uMapType)
 
     UINT ReturnValue;
     Status = RequestMapVirtualKey(uCode, uMapType, &ReturnValue);
-    
+
     if (!NT_SUCCESS(Status))
     {
         ReturnValue = 0;
@@ -559,7 +645,7 @@ SHORT ConIoSrvComm::VkKeyScanW(WCHAR ch)
 
     SHORT ReturnValue;
     Status = RequestVkKeyScan(ch, &ReturnValue);
-    
+
     if (!NT_SUCCESS(Status))
     {
         ReturnValue = 0;
@@ -575,7 +661,7 @@ SHORT ConIoSrvComm::GetKeyState(int nVirtKey)
 
     SHORT ReturnValue;
     Status = RequestGetKeyState(nVirtKey, &ReturnValue);
-    
+
     if (!NT_SUCCESS(Status))
     {
         ReturnValue = 0;
@@ -587,12 +673,31 @@ SHORT ConIoSrvComm::GetKeyState(int nVirtKey)
 
 BOOL ConIoSrvComm::TranslateCharsetInfo(DWORD * lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags)
 {
-    UNREFERENCED_PARAMETER(lpSrc);
-    UNREFERENCED_PARAMETER(lpCs);
-    UNREFERENCED_PARAMETER(dwFlags);
+    SetLastError(ERROR_SUCCESS);
 
-    SetLastError(ERROR_PROC_NOT_FOUND);
+    if (TCI_SRCCODEPAGE == dwFlags)
+    {
+        *lpCs = { 0 };
+        
+        DWORD dwSrc = (DWORD)lpSrc;
+        switch (dwSrc)
+        {
+        case CP_JAPANESE:
+            lpCs->ciCharset = SHIFTJIS_CHARSET;
+            return TRUE;
+        case CP_CHINESE_SIMPLIFIED:
+            lpCs->ciCharset = GB2312_CHARSET;
+            return TRUE;
+        case CP_KOREAN:
+            lpCs->ciCharset = HANGEUL_CHARSET;
+            return TRUE;
+        case CP_CHINESE_TRADITIONAL:
+            lpCs->ciCharset = CHINESEBIG5_CHARSET;
+            return TRUE;
+        }
+    }
 
+    SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
 }
 

@@ -27,6 +27,9 @@ typedef InputBuffer IConsoleInputObject;
 class INPUT_READ_HANDLE_DATA;
 
 #include "IWaitRoutine.h"
+#include <deque>
+#include <memory>
+#include "../types/inc/IInputEvent.hpp"
 
 class IApiRoutines
 {
@@ -61,55 +64,51 @@ public:
                                                       _Out_ ULONG* const pEvents) = 0;
 
     virtual HRESULT PeekConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                          _In_ size_t const cRecords,
-                                          _Out_ size_t* const pcRecordsWritten,
+                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                          _In_ size_t const eventsToRead,
                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
 
     virtual HRESULT PeekConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                          _In_ size_t const cRecords,
-                                          _Out_ size_t* const pcRecordsWritten,
+                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                          _In_ size_t const eventsToRead,
                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
 
     virtual HRESULT ReadConsoleInputAImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                          _In_ size_t const cRecords,
-                                          _Out_ size_t* const pcRecordsWritten,
+                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                          _In_ size_t const eventsToRead,
                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
 
     virtual HRESULT ReadConsoleInputWImpl(_In_ IConsoleInputObject* const pInContext,
-                                          _Out_writes_to_(cRecords, *pcRecordsWritten) INPUT_RECORD* const pRecords,
-                                          _In_ size_t const cRecords,
-                                          _Out_ size_t* const pcRecordsWritten,
+                                          _Out_ std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                          _In_ size_t const eventsToRead,
                                           _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                                           _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter) = 0;
 
-    virtual HRESULT ReadConsoleAImpl(_In_ IConsoleInputObject* const pInContext,
+    virtual HRESULT ReadConsoleAImpl(_Inout_ IConsoleInputObject* const pInContext,
                                      _Out_writes_to_(cchTextBuffer, *pcchTextBufferWritten) char* const psTextBuffer,
                                      _In_ size_t const cchTextBuffer,
                                      _Out_ size_t* const pcchTextBufferWritten,
                                      _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
-                                     _In_reads_opt_(cchInitialData) char* const psInitialData,
+                                     _In_reads_opt_(cchInitialData) const char* const psInitialData,
                                      _In_ size_t const cchInitialData,
-                                     _In_reads_opt_(cchExeNameLength) wchar_t* const pwsExeName,
+                                     _In_reads_opt_(cchExeNameLength) const wchar_t* const pwsExeName,
                                      _In_ size_t const cchExeName,
                                      _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
                                      _In_ HANDLE const hConsoleClient,
                                      _In_ DWORD const dwControlWakeupMask,
                                      _Out_ DWORD* const pdwControlKeyState) = 0;
 
-    virtual HRESULT ReadConsoleWImpl(_In_ IConsoleInputObject* const pInContext,
+    virtual HRESULT ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInContext,
                                      _Out_writes_to_(cchTextBufferLength, *pcchTextBufferWritten) wchar_t* const pwsTextBuffer,
                                      _In_ size_t const cchTextBufferLength,
                                      _Out_ size_t* const pcchTextBufferWritten,
                                      _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
-                                     _In_reads_opt_(cchInitialDataLength) wchar_t* const pwsInitialData,
+                                     _In_reads_opt_(cchInitialDataLength) const wchar_t* const pwsInitialData,
                                      _In_ size_t const cchInitialDataLength,
-                                     _In_reads_opt_(cchExeNameLength) wchar_t* const pwsExeName,
+                                     _In_reads_opt_(cchExeNameLength) const wchar_t* const pwsExeName,
                                      _In_ size_t const cchExeName,
                                      _In_ INPUT_READ_HANDLE_DATA* const pHandleData,
                                      _In_ HANDLE const hConsoleClient,
@@ -325,8 +324,7 @@ public:
                                               _In_ ULONG const Flags,
                                               _Out_ COORD* const pNewScreenBufferSize) = 0;
 
-    virtual HRESULT GetConsoleDisplayModeImpl(_In_ SCREEN_INFORMATION* const pContext,
-                                              _Out_ ULONG* const pFlags) = 0;
+    virtual HRESULT GetConsoleDisplayModeImpl(_Out_ ULONG* const pFlags) = 0;
 
     virtual HRESULT AddConsoleAliasAImpl(_In_reads_or_z_(cchSourceBufferLength) const char* const psSourceBuffer,
                                          _In_ size_t const cchSourceBufferLength,

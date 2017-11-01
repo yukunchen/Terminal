@@ -29,6 +29,8 @@
 
 #include "..\inc\ServiceLocator.hpp"
 
+#include "../interactivity/win32/windowUiaProvider.hpp"
+
 #include <iomanip>
 #include <sstream>
 
@@ -85,6 +87,7 @@ LRESULT CALLBACK Window::s_ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, 
 
 LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     LRESULT Status = 0;
     BOOL Unlock = TRUE;
 
@@ -167,6 +170,16 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
     case WM_GETOBJECT:
     {
         Status = _HandleGetObject(hWnd, wParam, lParam);
+        break;
+    }
+
+    case WM_DESTROY:
+    {
+        // signal to uia that they can disconnect our uia provider
+        if (_pUiaProvider)
+        {
+            UiaReturnRawElementProvider(hWnd, 0, 0, NULL);
+        }
         break;
     }
 
@@ -265,7 +278,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         // we don't pass the click on to the app.
         if (LOWORD(wParam) == WA_CLICKACTIVE)
         {
-            ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_IGNORE_NEXT_MOUSE_INPUT;
+            gci->Flags |= CONSOLE_IGNORE_NEXT_MOUSE_INPUT;
         }
         goto CallDefWin;
         break;
@@ -273,29 +286,35 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_SETFOCUS:
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.ModifyConsoleProcessFocus(TRUE);
+        gci->ProcessHandleList.ModifyConsoleProcessFocus(TRUE);
 
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_HAS_FOCUS;
+        gci->Flags |= CONSOLE_HAS_FOCUS;
 
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor()->FocusStart();
+        gci->CurrentScreenBuffer->TextInfo->GetCursor()->FocusStart();
 
         HandleFocusEvent(TRUE);
 
         // ActivateTextServices does nothing if already active so this is OK to be called every focus.
         ActivateTextServices(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), GetImeSuggestionWindowPos);
 
+        // set the text area to have focus for accessibility consumers
+        if (_pUiaProvider)
+        {
+            _pUiaProvider->SetTextAreaFocus();
+        }
+
         break;
     }
 
     case WM_KILLFOCUS:
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->ProcessHandleList.ModifyConsoleProcessFocus(FALSE);
+        gci->ProcessHandleList.ModifyConsoleProcessFocus(FALSE);
 
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags &= ~CONSOLE_HAS_FOCUS;
+        gci->Flags &= ~CONSOLE_HAS_FOCUS;
 
         // turn it off when we lose focus.
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor()->SetIsOn(FALSE);
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor()->FocusEnd();
+        gci->CurrentScreenBuffer->TextInfo->GetCursor()->SetIsOn(FALSE);
+        gci->CurrentScreenBuffer->TextInfo->GetCursor()->FocusEnd();
 
         HandleFocusEvent(FALSE);
 
@@ -311,11 +330,11 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         //       That means this CONSOLE_IS_ICONIC is unnnecessary when/if we can decouple the drawing with D2D.
         if (IsIconic(hWnd))
         {
-            SetFlag(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_IS_ICONIC);
+            SetFlag(gci->Flags, CONSOLE_IS_ICONIC);
         }
         else
         {
-            ClearFlag(ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags, CONSOLE_IS_ICONIC);
+            ClearFlag(gci->Flags, CONSOLE_IS_ICONIC);
         }
 
         LOG_IF_FAILED(_HandlePaint());
@@ -346,7 +365,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_SETTINGCHANGE:
     {
-        ServiceLocator::LocateGlobals()->getConsoleInformation()->CurrentScreenBuffer->TextInfo->GetCursor()->SettingsChanged();
+        gci->CurrentScreenBuffer->TextInfo->GetCursor()->SettingsChanged();
     }
     __fallthrough;
 
@@ -649,8 +668,8 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         Status = 1;
 
-        bool isMouseWheel  = Message & WM_MOUSEHWHEEL ? true : false;
-        bool isMouseHWheel = Message & WM_MOUSEHWHEEL ? true : false;
+        bool isMouseWheel  = Message == WM_MOUSEWHEEL;
+        bool isMouseHWheel = Message == WM_MOUSEHWHEEL;
 
         if (isMouseWheel || isMouseHWheel)
         {
@@ -699,7 +718,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case CM_UPDATE_EDITKEYS:
     {
-        auto settings = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        auto settings = gci;
 
         // Re-read the edit key settings from registry.
         Registry reg(settings);
@@ -923,6 +942,7 @@ LRESULT Window::_HandleGetObject(_In_ HWND const hwnd, _In_ WPARAM const wParam,
 
 BOOL Window::PostUpdateWindowSize() const
 {
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     SCREEN_INFORMATION* const ScreenInfo = GetScreenInfo();
 
     if (ScreenInfo->ConvScreenInfo != nullptr)
@@ -930,12 +950,12 @@ BOOL Window::PostUpdateWindowSize() const
         return FALSE;
     }
 
-    if (ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags & CONSOLE_SETTING_WINDOW_SIZE)
+    if (gci->Flags & CONSOLE_SETTING_WINDOW_SIZE)
     {
         return FALSE;
     }
 
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->Flags |= CONSOLE_SETTING_WINDOW_SIZE;
+    gci->Flags |= CONSOLE_SETTING_WINDOW_SIZE;
     return PostMessageW(GetWindowHandle(), CM_SET_WINDOW_SIZE, (WPARAM)ScreenInfo, 0);
 }
 

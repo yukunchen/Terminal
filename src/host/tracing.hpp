@@ -16,6 +16,42 @@ Author(s):
 
 #pragma once
 
+namespace Microsoft
+{
+    namespace Console
+    {
+        namespace Interactivity
+        {
+            namespace Win32
+            {
+                class UiaTextRange;
+
+                namespace UiaTextRangeTracing
+                {
+                    enum class ApiCall;
+                    struct IApiMsg;
+                }
+
+                class ScreenInfoUiaProvider;
+
+                namespace ScreenInfoUiaProviderTracing
+                {
+                    enum class ApiCall;
+                    struct IApiMsg;
+                }
+
+                class WindowUiaProvider;
+
+                namespace WindowUiaProviderTracing
+                {
+                    enum class ApiCall;
+                    struct IApiMsg;
+                }
+            }
+        }
+    }
+}
+
 #if DBG
 #define DBGCHARS(_params_)   { Tracing::s_TraceChars _params_ ; }
 #define DBGOUTPUT(_params_)  { Tracing::s_TraceOutput _params_ ; }
@@ -49,6 +85,23 @@ public:
 
     static void __stdcall TraceFailure(const wil::FailureInfo& failure);
 
+    static void s_TraceUia(_In_ const Microsoft::Console::Interactivity::Win32::UiaTextRange* const range,
+                           _In_ const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::ApiCall apiCall,
+                           _In_ const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::IApiMsg* const apiMsg);
+
+    static void s_TraceUia(_In_ const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider* const pProvider,
+                           _In_ const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing::ApiCall apiCall,
+                           _In_ const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing::IApiMsg* const apiMsg);
+
+    static void s_TraceUia(_In_ const Microsoft::Console::Interactivity::Win32::WindowUiaProvider* const pProvider,
+                           _In_ const Microsoft::Console::Interactivity::Win32::WindowUiaProviderTracing::ApiCall apiCall,
+                           _In_ const Microsoft::Console::Interactivity::Win32::WindowUiaProviderTracing::IApiMsg* const apiMsg);
+
 private:
     static ULONG s_ulDebugFlag;
+
+    static const wchar_t* const _textPatternRangeEndpointToString(int endpoint);
+    static const wchar_t* const _textUnitToString(int unit);
+    static const wchar_t* const _eventIdToString(long eventId);
+    static const wchar_t* const _directionToString(int direction);
 };

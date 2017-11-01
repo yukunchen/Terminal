@@ -233,3 +233,4 @@ build*.metadata
 tools/.razzlerc.*
 # message compiler output
 MSG*.bin
+/*.exe

@@ -1,0 +1,343 @@
+/********************************************************
+*                                                       *
+*   Copyright (C) Microsoft. All rights reserved.       *
+*                                                       *
+********************************************************/
+
+#include "precomp.h"
+#include "ConsoleArguments.hpp"
+#include <shellapi.h>
+
+const std::wstring ConsoleArguments::VT_IN_PIPE_ARG = L"--inpipe";
+const std::wstring ConsoleArguments::VT_OUT_PIPE_ARG = L"--outpipe";
+const std::wstring ConsoleArguments::VT_MODE_ARG = L"--vtmode";
+const std::wstring ConsoleArguments::HEADLESS_ARG = L"--headless";
+const std::wstring ConsoleArguments::SERVER_HANDLE_ARG = L"--server";
+const std::wstring ConsoleArguments::SERVER_HANDLE_PREFIX = L"0x";
+const std::wstring ConsoleArguments::CLIENT_COMMANDLINE_ARG = L"--";
+const std::wstring ConsoleArguments::FORCE_V1_ARG = L"-ForceV1";
+const std::wstring ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
+
+ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline)
+    : _commandline(commandline)
+{
+    _clientCommandline = L"";
+    _vtInPipe = L"";
+    _vtOutPipe = L"";
+    _vtMode = L"";
+    _headless = false;
+    _createServerHandle = true;
+    _serverHandle = 0;
+    _forceV1 = false;
+}
+
+
+ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments & other)
+{
+    if (this != &other)
+    {
+        _commandline = other._commandline;
+        _clientCommandline = other._clientCommandline;
+        _vtInPipe = other._vtInPipe;
+        _vtOutPipe = other._vtOutPipe;
+        _vtMode = other._vtMode;
+        _headless = other._headless;
+        _createServerHandle = other._createServerHandle;
+        _serverHandle = other._serverHandle;
+        _forceV1 = other._forceV1;
+    }
+
+    return *this;
+}
+
+// Routine Description:
+// - Consumes the argument at the given index off of the vector.
+// Arguments:
+// - args - The vector full of args
+// - index - The item to consume/remove from the vector.
+// Return Value:
+// - <none>
+void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In_ size_t& index)
+{
+    args.erase(args.begin() + index);
+}
+
+// Routine Description:
+//  Given the commandline of tokens `args`, tries to find the argument at 
+//      index+1, and places it's value into pSetting.
+//  If there aren't enough args, then returns E_INVALIDARG.
+//  If we found a value, then we take the elements at both index and index+1 out
+//      of args. We'll also decrement index, so that a caller who is using index
+//      as a loop index will autoincrement it to have it point at the correct 
+//      next index.
+//   
+// EX: for args=[--foo, bar, --baz]
+//      index=0 would place "bar" in pSetting, 
+//          args is now [--baz], index is now -1, caller increments to 0
+//      index=2 would return E_INVALIDARG,
+//          args is still [--foo, bar, --baz], index is still 2, caller increments to 3.
+// Arguments:
+//  args: A collection of wstrings representing command-line arguments
+//  index: the index of the argument of which to get the value for. The value 
+//      should be at (index+1). index will be decremented by one on success.
+//  pSetting: recieves the string at index+1
+// Return Value:
+//  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
+//      failure.
+HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index, _Out_opt_ std::wstring* const pSetting)
+{
+    bool hasNext = (index+1) < args.size();
+    if (hasNext)
+    {
+        s_ConsumeArg(args, index);
+        if (pSetting != nullptr)
+        {
+            *pSetting = args[index];
+        }
+        s_ConsumeArg(args, index);
+    }
+    return (hasNext) ? S_OK : E_INVALIDARG;
+}
+
+// Routine Description:
+//  Given the commandline of tokens `args`, creates a wstring containing all of 
+//      the remaining args after index joined with spaces.  If skipFirst==true, 
+//      then we omit the argument at index from this finished string. skipFirst 
+//      should only be true if the first arg is 
+//      ConsoleArguments::CLIENT_COMMANDLINE_ARG. Removes all the args starting 
+//      at index from the collection.
+//  The finished commandline is placed in _clientCommandline
+// Arguments:
+//  args: A collection of wstrings representing command-line arguments
+//  index: the index of the argument of which to start the commandline from.
+//  skipFirst: if true, omit the arg at index (which should be "--")
+// Return Value:
+//  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
+//       failure.
+HRESULT ConsoleArguments::_GetClientCommandline(_In_ std::vector<std::wstring>& args, _In_ const size_t index, _In_ const bool skipFirst)
+{
+    auto start = args.begin()+index;
+
+    // Erase the first token.
+    //  Used to get rid of the explicit commandline token "--"
+    if (skipFirst)
+    {
+        // Make sure that the arg we're deleting is "--"
+        assert(CLIENT_COMMANDLINE_ARG == start->c_str());
+        args.erase(start);
+    }
+
+    _clientCommandline = L"";
+    size_t j = 0;
+    for (j = index; j < args.size(); j++)
+    {
+        _clientCommandline += args[j];
+        if (j+1 < args.size())
+        {
+            _clientCommandline += L" ";
+        }
+    }
+    args.erase(args.begin()+index, args.begin()+j);
+
+    return S_OK;
+}
+
+// Routine Description:
+//  Attempts to parse the commandline that this ConsoleArguments was initialized 
+//      with. Fills all of our members with values that were specified on the 
+//      commandline.
+// Arguments:
+//  <none>
+// Return Value:
+//  S_OK if we parsed our _commandline successfully, otherwise E_INVALIDARG 
+//      indicating failure.
+HRESULT ConsoleArguments::ParseCommandline()
+{
+    // If the commandline was empty, quick return.
+    if (_commandline.length() == 0)
+    {
+        return S_OK;
+    }
+
+    std::vector<std::wstring> args;
+    HRESULT hr = S_OK;
+
+    // Make a mutable copy of the commandline for tokenizing
+    std::wstring copy = _commandline;
+    
+    // Tokenize the commandline
+    int argc = 0;
+    wil::unique_hlocal_ptr<PWSTR[]> argv;
+    argv.reset(CommandLineToArgvW(copy.c_str(), &argc));
+    RETURN_LAST_ERROR_IF(argv == nullptr);
+
+    for (int i = 1; i < argc; ++i)
+    {
+        args.push_back(argv[i]);
+    }
+
+    // Parse args out of the commandline.
+    //  As we handle a token, remove it from the args.
+    //  At the end of parsing, there should be nothing left.
+    for (size_t i = 0; i < args.size();)
+    {
+        hr = E_INVALIDARG;
+
+        std::wstring arg = args[i];
+               
+        if (arg.substr(0, SERVER_HANDLE_PREFIX.length()) == SERVER_HANDLE_PREFIX ||
+                 arg == SERVER_HANDLE_ARG)
+        {
+            // server handle token accepted two ways:
+            // --server 0x4 (new method)
+            // 0x4 (legacy method)
+            // If we see >1 of these, it's invalid.
+            std::wstring serverHandleVal = arg;
+
+            if (arg == SERVER_HANDLE_ARG)
+            {
+                hr = s_GetArgumentValue(args, i, &serverHandleVal);
+            }
+            else
+            {
+                s_ConsumeArg(args, i);
+                hr = S_OK;
+            }
+
+            if (SUCCEEDED(hr))
+            {
+                if (0 == _serverHandle)
+                {
+                    _serverHandle = wcstoul(serverHandleVal.c_str(), nullptr /*endptr*/, 16 /*base*/);
+
+                    // If the handle didn't parse into a reasonable handle ID, invalid.
+                    if (_serverHandle == 0)
+                    {
+                        hr = E_INVALIDARG;
+                    }
+                    else
+                    {
+                        _createServerHandle = false;
+                        hr = S_OK;
+                    }
+                }
+                else
+                {
+                    // If we're trying to set the server handle a second time, invalid.
+                    hr = E_INVALIDARG;
+                }
+            }
+        }
+        else if (arg == FORCE_V1_ARG)
+        {
+            // -ForceV1 command line switch for NTVDM support
+            _forceV1 = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
+        else if (arg.substr(0, FILEPATH_LEADER_PREFIX.length()) == FILEPATH_LEADER_PREFIX)
+        {
+            // beginning of command line -- includes file path
+            // skipped for historical reasons.
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
+        else if (arg == VT_IN_PIPE_ARG)
+        {
+            hr = s_GetArgumentValue(args, i, &_vtInPipe);
+        }
+        else if (arg == VT_OUT_PIPE_ARG)
+        {
+            hr = s_GetArgumentValue(args, i, &_vtOutPipe);
+        }
+        else if (arg == VT_MODE_ARG)
+        {
+            hr = s_GetArgumentValue(args, i, &_vtMode);
+        }
+        else if (arg == CLIENT_COMMANDLINE_ARG)
+        {
+            // Everything after this is the explicit commandline
+            hr = _GetClientCommandline(args, i, true);
+            break;
+        }
+        // TODO: handle the rest of the possible params (MSFT:13271366, MSFT:13631640)
+        // TODO: handle invalid args 
+        //  eg "conhost --foo bar" should not make the clientCommandline "--foo bar"
+        else
+        {
+            // If we encounter something that doesn't match one of our other 
+            //      args, then it's the start of the commandline
+            hr = _GetClientCommandline(args, i, false);
+            break;
+        }
+
+        if (FAILED(hr))
+        {
+            break;
+        }
+    }
+
+    // We should have consumed every token at this point.    
+    // if not, it is some sort of parsing error. 
+    // If we failed to parse an arg, then no need to assert.
+    if (SUCCEEDED(hr))
+    {
+        assert(args.size() == 0);
+    }
+
+    return hr;
+}
+
+// Routine Description:
+//  Returns true if according to the arguments parsed from _commandline we 
+//      should start with the VT pipe enabled. This is when we have both a VT
+//      input and output pipe name given. Guarentees nothing about the pipe 
+//      itself or even the strings, just whether or not they were specified.
+// Arguments:
+//  <none>
+// Return Value:
+//  true iff we have parsed both a VT input and output pipe name.
+bool ConsoleArguments::IsUsingVtPipe() const
+{    
+    return (_vtInPipe.length() > 0) && (_vtOutPipe.length() > 0);
+}
+
+bool ConsoleArguments::IsHeadless() const
+{
+    return _headless;
+}
+
+bool ConsoleArguments::ShouldCreateServerHandle() const
+{
+    return _createServerHandle;
+}
+
+HANDLE ConsoleArguments::GetServerHandle() const
+{
+    return ULongToHandle(_serverHandle);
+}
+
+std::wstring ConsoleArguments::GetClientCommandline() const
+{
+    return _clientCommandline;
+}
+
+std::wstring ConsoleArguments::GetVtInPipe() const
+{
+    return _vtInPipe;
+}
+
+std::wstring ConsoleArguments::GetVtOutPipe() const
+{
+    return _vtOutPipe;
+}
+
+std::wstring ConsoleArguments::GetVtMode() const
+{
+    return _vtMode;
+}
+
+bool ConsoleArguments::GetForceV1() const
+{
+    return _forceV1;
+}

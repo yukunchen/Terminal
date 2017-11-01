@@ -32,7 +32,14 @@ namespace Host.Tests.UIA
         [AssemblyCleanup]
         public static void CleanupAll()
         {
-            appDriver.Kill();
+            try
+            {
+                appDriver.Kill();
+            }
+            catch
+            {
+
+            }
         }
     }
 }

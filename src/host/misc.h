@@ -11,54 +11,19 @@ Author:
 - Therese Stowell (ThereseS) 22-Jan-1991
 
 Revision History:
+ - Mike Griese, 30-oct-2017: Moved all functions that didn't require the host 
+    to the contypes lib. The ones that are still here in one way or another 
+    require code from the host to build.
 --*/
 
 #pragma once
 
 #include "screenInfo.hpp"
-
-HRESULT ConvertToW(_In_ const UINT uiCodePage,
-                   _In_reads_or_z_(cchSource) const char* const rgchSource,
-                   _In_ size_t const cchSource,
-                   _Inout_ wistd::unique_ptr<wchar_t[]>& pwsTarget,
-                   _Out_ size_t& cchTarget);
-
-HRESULT ConvertToA(_In_ const UINT uiCodePage,
-                   _In_reads_or_z_(cchSource) const wchar_t* const rgwchSource,
-                   _In_ size_t cchSource,
-                   _Inout_ wistd::unique_ptr<char[]>& psTarget,
-                   _Out_ size_t& cchTarget);
-
-HRESULT GetALengthFromW(_In_ const UINT uiCodePage,
-                        _In_reads_or_z_(cchSource) const wchar_t* const rgwchSource,
-                        _In_ size_t const cchSource,
-                        _Out_ size_t* const pcchTarget);
-
-HRESULT GetUShortByteCount(_In_ size_t cchUnicode,
-                           _Out_ USHORT* const pcb);
-
-HRESULT GetDwordByteCount(_In_ size_t cchUnicode,
-                          _Out_ DWORD* const pcb);
-
-int ConvertToOem(_In_ const UINT uiCodePage,
-                 _In_reads_(cchSource) const WCHAR * const pwchSource,
-                 _In_ const UINT cchSource,
-                 _Out_writes_(cchTarget) CHAR * const pchTarget,
-                 _In_ const UINT cchTarget);
-
-int ConvertInputToUnicode(_In_ const UINT uiCodePage,
-                          _In_reads_(cchSource) const CHAR * const pchSource,
-                          _In_ const UINT cchSource,
-                          _Out_writes_(cchTarget) WCHAR * const pwchTarget,
-                          _In_ const UINT cchTarget);
+#include "../types/inc/IInputEvent.hpp"
+#include <deque>
+#include <memory>
 
 WCHAR CharToWchar(_In_reads_(cch) const char * const pch, _In_ const UINT cch);
-
-int ConvertOutputToUnicode(_In_ UINT uiCodePage,
-                           _In_reads_(cchSource) const CHAR * const pchSource,
-                           _In_ UINT cchSource,
-                           _Out_writes_(cchTarget) WCHAR *pwchTarget,
-                           _In_ UINT cchTarget);
 
 void SetConsoleCPInfo(_In_ const BOOL fOutput);
 
@@ -72,7 +37,23 @@ BOOL CheckBisectProcessW(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                          _In_ SHORT sOriginalXPosition,
                          _In_ BOOL fEcho);
 
-ULONG TranslateInputToOem(_Inout_ PINPUT_RECORD InputRecords,
-                          _In_ const ULONG NumRecords,    // in : ASCII byte count
-                          _In_ const ULONG UnicodeLength, // in : Number of events (char count)
-                          _Inout_opt_ PINPUT_RECORD DbcsLeadInputRecord);
+int ConvertToOem(_In_ const UINT uiCodePage,
+                 _In_reads_(cchSource) const WCHAR * const pwchSource,
+                 _In_ const UINT cchSource,
+                 _Out_writes_(cchTarget) CHAR * const pchTarget,
+                 _In_ const UINT cchTarget);
+
+HRESULT SplitToOem(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
+
+int ConvertInputToUnicode(_In_ const UINT uiCodePage,
+                          _In_reads_(cchSource) const CHAR * const pchSource,
+                          _In_ const UINT cchSource,
+                          _Out_writes_(cchTarget) WCHAR * const pwchTarget,
+                          _In_ const UINT cchTarget);
+
+
+int ConvertOutputToUnicode(_In_ UINT uiCodePage,
+                           _In_reads_(cchSource) const CHAR * const pchSource,
+                           _In_ UINT cchSource,
+                           _Out_writes_(cchTarget) WCHAR *pwchTarget,
+                           _In_ UINT cchTarget);

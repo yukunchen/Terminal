@@ -14,8 +14,9 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\IInteractivityFactory.hpp"
-#include "..\inc\IConsoleWindow.hpp"
+#include "IInteractivityFactory.hpp"
+#include "IConsoleWindow.hpp"
+#include "../../host/globals.h"
 
 #pragma hdrstop
 
@@ -28,6 +29,9 @@ namespace Microsoft
             class ServiceLocator
             {
             public:
+
+                static void RundownAndExit(_In_ HRESULT const hr);
+
                 // N.B.: Location methods without corresponding creation methods
                 //       automatically create the singleton object on demand.
                 //       In case the on-demand creation fails, the return value
@@ -67,7 +71,7 @@ namespace Microsoft
                 {
                     return static_cast<T*>(LocateHighDpiApi());
                 }
-                
+
                 static IInputServices *LocateInputServices();
                 template <typename T> static T *LocateInputServices()
                 {

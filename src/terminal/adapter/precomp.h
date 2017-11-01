@@ -12,6 +12,7 @@ Abstract:
 #include <wchar.h>
 #include <assert.h>
 
+#include <math.h>
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
 
@@ -23,12 +24,10 @@ Abstract:
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
 
-
 // WIL
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil\Common.h>
 #include <wil\Result.h>
-
 
 #include "..\..\inc\conattrs.hpp"
 #include "..\..\host\cursor.h"

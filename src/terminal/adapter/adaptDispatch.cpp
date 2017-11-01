@@ -8,12 +8,9 @@
 
 #include "adaptDispatch.hpp"
 #include "conGetSet.hpp"
+#include "../../types/inc/Viewport.hpp"
 
-#define ENABLE_INTSAFE_SIGNED_FUNCTIONS
-#include <intsafe.h>
-
-#include <assert.h>
-
+using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
 // Routine Description:
@@ -24,12 +21,17 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - Always false to signify we didn't handle it.
 bool NoOp() { return false; }
 
-AdaptDispatch::AdaptDispatch(_In_ ConGetSet* const pConApi, _In_ AdaptDefaults* const pDefaults, _In_ WORD const wDefaultTextAttributes)
+AdaptDispatch::AdaptDispatch(_Inout_ ConGetSet* const pConApi,
+                             _Inout_ AdaptDefaults* const pDefaults,
+                             _In_ const WORD wDefaultTextAttributes)
     : _pConApi(pConApi),
       _pDefaults(pDefaults),
       _wDefaultTextAttributes(wDefaultTextAttributes),
       _wBrightnessState(0),
-      _pTermOutput(nullptr)
+      _fChangedBackground(false),
+      _fChangedForeground(false),
+      _fChangedMetaAttrs(false),
+      _TermOutput()
 {
     // The top-left corner in VT-speak is 1,1. Our internal array uses 0 indexes, but VT uses 1,1 for top left corner.
     _coordSavedCursor.X = 1;
@@ -40,57 +42,22 @@ AdaptDispatch::AdaptDispatch(_In_ ConGetSet* const pConApi, _In_ AdaptDefaults* 
 
 }
 
-bool AdaptDispatch::CreateInstance(_In_ ConGetSet* pConApi,
-                                   _In_ AdaptDefaults* pDefaults, 
-                                   _In_ WORD wDefaultTextAttributes,
-                                   _Outptr_ AdaptDispatch ** const ppDispatch)
+void AdaptDispatch::Print(_In_ wchar_t const wchPrintable)
 {
-
-    AdaptDispatch* const pDispatch = new AdaptDispatch(pConApi, pDefaults, wDefaultTextAttributes);
-
-    bool fSuccess = pDispatch != nullptr;
-    if (fSuccess)
-    {
-        pDispatch->_pTermOutput = new TerminalOutput();
-        fSuccess = pDispatch->_pTermOutput != nullptr;
-        if (fSuccess)
-        {
-            *ppDispatch = pDispatch;
-        }
-        else
-        {
-            delete pDispatch;
-        }
-    }
-
-    return fSuccess;
-}
-
-AdaptDispatch::~AdaptDispatch()
-{
-    if (_pTermOutput != nullptr) 
-    {
-        delete _pTermOutput;
-    }
-}
-
-void AdaptDispatch::Print(_In_ wchar_t const wchPrintable) 
-{
-    _pDefaults->Print(_pTermOutput->TranslateKey(wchPrintable));
+    _pDefaults->Print(_TermOutput.TranslateKey(wchPrintable));
 }
 
 void AdaptDispatch::PrintString(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch)
 {
-    if (_pTermOutput->NeedToTranslate())
+    if (_TermOutput.NeedToTranslate())
     {
         for (size_t i = 0; i < cch; i++)
         {
-            rgwch[i] = _pTermOutput->TranslateKey(rgwch[i]);
+            rgwch[i] = _TermOutput.TranslateKey(rgwch[i]);
         }
     }
 
     _pDefaults->PrintString(rgwch, cch);
-
 }
 
 // Routine Description:
@@ -229,9 +196,9 @@ bool AdaptDispatch::_CursorMovement(_In_ CursorDirection const dir, _In_ unsigne
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorUp(_In_ unsigned int const uiDistance)
-{ 
+{
     return _CursorMovement(CursorDirection::Up, uiDistance);
-} 
+}
 
 // Routine Description:
 // - CUD - Handles cursor downward movement by given distance
@@ -240,9 +207,9 @@ bool AdaptDispatch::CursorUp(_In_ unsigned int const uiDistance)
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorDown(_In_ unsigned int const uiDistance)
-{ 
+{
     return _CursorMovement(CursorDirection::Down, uiDistance);
-} 
+}
 
 // Routine Description:
 // - CUF - Handles cursor forward movement by given distance
@@ -251,9 +218,9 @@ bool AdaptDispatch::CursorDown(_In_ unsigned int const uiDistance)
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorForward(_In_ unsigned int const uiDistance)
-{ 
+{
     return _CursorMovement(CursorDirection::Right, uiDistance);
-} 
+}
 
 // Routine Description:
 // - CUB - Handles cursor backward movement by given distance
@@ -262,9 +229,9 @@ bool AdaptDispatch::CursorForward(_In_ unsigned int const uiDistance)
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorBackward(_In_ unsigned int const uiDistance)
-{ 
+{
     return _CursorMovement(CursorDirection::Left, uiDistance);
-} 
+}
 
 // Routine Description:
 // - CNL - Handles cursor movement to the following line (or N lines down)
@@ -274,9 +241,9 @@ bool AdaptDispatch::CursorBackward(_In_ unsigned int const uiDistance)
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorNextLine(_In_ unsigned int const uiDistance)
-{ 
+{
     return _CursorMovement(CursorDirection::NextLine, uiDistance);
-} 
+}
 
 // Routine Description:
 // - CPL - Handles cursor movement to the previous line (or N lines up)
@@ -370,7 +337,7 @@ bool AdaptDispatch::_CursorMovePosition(_In_opt_ const unsigned int* const puiRo
             }
         }
     }
-    
+
     return fSuccess;
 }
 
@@ -404,9 +371,9 @@ bool AdaptDispatch::VerticalLinePositionAbsolute(_In_ unsigned int const uiLine)
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorPosition(_In_ unsigned int const uiLine, _In_ unsigned int const uiColumn)
-{ 
+{
     return _CursorMovePosition(&uiLine, &uiColumn);
-} 
+}
 
 // Routine Description:
 // - DECSC - Saves the current cursor position into a memory buffer.
@@ -423,14 +390,14 @@ bool AdaptDispatch::CursorSavePosition()
 
     if (fSuccess)
     {
-        // The cursor is given to us by the API as relative to the whole buffer. 
+        // The cursor is given to us by the API as relative to the whole buffer.
         // But in VT speak, the cursor should be relative to the current viewport. Adjust.
         COORD const coordCursor = csbiex.dwCursorPosition;
 
         SMALL_RECT const srViewport = csbiex.srWindow;
 
         // VT is also 1 based, not 0 based, so correct by 1.
-        _coordSavedCursor.X = coordCursor.X - srViewport.Left + 1; 
+        _coordSavedCursor.X = coordCursor.X - srViewport.Left + 1;
         _coordSavedCursor.Y = coordCursor.Y - srViewport.Top + 1;
     }
 
@@ -634,14 +601,14 @@ bool AdaptDispatch::_EraseAreaHelper(_In_ COORD const coordStartPosition, _In_ C
 // Arguments:
 // - pcsbiex - Pointer to the console screen buffer that we will be erasing (and getting cursor data from within)
 // - eraseType - Enumeration mode of which kind of erase to perform: beginning to cursor, cursor to end, or entire line.
-// - sLineId - The line number (array index value, starts at 0) of the line to operate on within the buffer. 
+// - sLineId - The line number (array index value, starts at 0) of the line to operate on within the buffer.
 //           - This is not aware of circular buffer. Line 0 is always the top visible line if you scrolled the whole way up the window.
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::_EraseSingleLineHelper(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pcsbiex, _In_ EraseType const eraseType, _In_ SHORT const sLineId, _In_ WORD const wFillColor) const
 {
     COORD coordStartPosition = { 0 };
-    coordStartPosition.Y = sLineId ; 
+    coordStartPosition.Y = sLineId ;
 
     // determine start position from the erase type
     // remember that erases are inclusive of the current cursor position.
@@ -677,13 +644,13 @@ bool AdaptDispatch::_EraseSingleLineHelper(_In_ const CONSOLE_SCREEN_BUFFER_INFO
 }
 
 // Routine Description:
-// - ECH - Erase Characters from the current cursor position, by replacing 
+// - ECH - Erase Characters from the current cursor position, by replacing
 //     them with a space. This will only erase characters in the current line,
 //     and won't wrap to the next. The attributes of any erased positions
 //     recieve the currently selected attributes.
 // Arguments:
 // - uiNumChars - The number of characters to erase.
-// Return Value: 
+// Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EraseCharacters(_In_ unsigned int const uiNumChars)
 {
@@ -694,7 +661,7 @@ bool AdaptDispatch::EraseCharacters(_In_ unsigned int const uiNumChars)
     if (fSuccess)
     {
         const COORD coordStartPosition = csbiex.dwCursorPosition;
-        
+
         const SHORT sRemainingSpaces = csbiex.srWindow.Right - coordStartPosition.X;
         const unsigned short usActualRemaining = (sRemainingSpaces < 0)? 0 : sRemainingSpaces;
         // erase at max the number of characters remaining in the line from the current position.
@@ -708,12 +675,12 @@ bool AdaptDispatch::EraseCharacters(_In_ unsigned int const uiNumChars)
 // Routine Description:
 // - ED - Erases a portion of the current viewable area (viewport) of the console.
 // Arguments:
-// - eraseType - Determines whether to erase: 
+// - eraseType - Determines whether to erase:
 //      From beginning (top-left corner) to the cursor
 //      From cursor to end (bottom-right corner)
 //      The entire viewport area
 //      The scrollback (outside the viewport area)
-// Return Value: 
+// Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EraseInDisplay(_In_ EraseType const eraseType)
 {
@@ -758,7 +725,7 @@ bool AdaptDispatch::EraseInDisplay(_In_ EraseType const eraseType)
                 {
                     break;
                 }
-            }            
+            }
         }
 
         if (fSuccess)
@@ -794,7 +761,7 @@ bool AdaptDispatch::EraseInDisplay(_In_ EraseType const eraseType)
 // - EL - Erases the line that the cursor is currently on.
 // Arguments:
 // - eraseType - Determines whether to erase: From beginning (left edge) to the cursor, from cursor to end (right edge), or the entire line.
-// Return Value: 
+// Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EraseInLine(_In_ EraseType const eraseType)
 {
@@ -862,7 +829,7 @@ bool AdaptDispatch::_CursorPositionReport() const
     if (fSuccess)
     {
         // First pull the cursor position relative to the entire buffer out of the console.
-        COORD coordCursorPos = csbiex.dwCursorPosition; 
+        COORD coordCursorPos = csbiex.dwCursorPosition;
 
         // Now adjust it for its position in respect to the current viewport.
         coordCursorPos.X -= csbiex.srWindow.Left;
@@ -873,16 +840,15 @@ bool AdaptDispatch::_CursorPositionReport() const
         coordCursorPos.Y++;
 
         // Now send it back into the input channel of the console.
-        // First format the response string. 
+        // First format the response string.
         wchar_t pwszResponseBuffer[50];
         swprintf_s(pwszResponseBuffer, ARRAYSIZE(pwszResponseBuffer), L"\x1b[%d;%dR", coordCursorPos.Y, coordCursorPos.X);
 
-        // Measure the length of the formatted string to prepare the INPUT_RECORD buffer length
         size_t const cBuffer = wcslen(pwszResponseBuffer);
 
         fSuccess = _WriteResponse(pwszResponseBuffer, cBuffer);
     }
-    
+
     return fSuccess;
 }
 
@@ -894,48 +860,33 @@ bool AdaptDispatch::_CursorPositionReport() const
 // - pwszReply - The reply string to transmit back to the input stream
 // - cReply - The length of the string.
 // Return Value:
-// - True if the string was converted to INPUT_RECORDs and placed into the console input buffer successfuly. False otherwise.
-bool AdaptDispatch::_WriteResponse(_In_reads_(cReply) PCWSTR pwszReply, _In_ size_t const cReply) const
+// - True if the string was converted to input events and placed into the console input buffer successfuly. False otherwise.
+bool AdaptDispatch::_WriteResponse(_In_reads_(cchReply) PCWSTR pwszReply, _In_ size_t const cchReply) const
 {
     bool fSuccess = false;
-
-    // Create INPUT_RECORD buffer
-    size_t const cInputBuffer = cReply * 2; // 2x because it needs a down and up key for every character.
-    INPUT_RECORD* const rgInput = new INPUT_RECORD[cInputBuffer];
-
-    // Now generate a paired key down and key up event for every character to be sent into the console's input record
-    for (size_t i = 0; i < cInputBuffer; i++)
+    std::deque<std::unique_ptr<IInputEvent>> inEvents;
+    try
     {
-        INPUT_RECORD* const pir = &rgInput[i];
-        pir->EventType = KEY_EVENT;
+        // generate a paired key down and key up event for every
+        // character to be sent into the console's input buffer
+        for (size_t i = 0; i < cchReply; ++i)
+        {
+            // This wasn't from a real keyboard, so we're leaving key/scan codes blank.
+            KeyEvent keyEvent{ TRUE, 1, 0, 0, pwszReply[i], 0 };
 
-        // The even events are key down (true) and the odd events are key up (false)
-        // We will have a pair of events for every character in the response string
-        pir->Event.KeyEvent.bKeyDown = !(i % 2);
-        pir->Event.KeyEvent.dwControlKeyState = false;
-
-        // We want to use the same formatted string position twice.
-        // / 2 with integers will "round down" and let us effectively get 0, 0, 1, 1, 2, 2, etc. as the index into the formatted response string
-        pir->Event.KeyEvent.uChar.UnicodeChar = pwszReply[i / 2];
-
-        // We won't use the "repeat" feature. Every character is inserted with 1 record, so set this to 1.
-        pir->Event.KeyEvent.wRepeatCount = 1;
-
-        // This wasn't from a real keyboard, so we're leaving key/scan codes blank.
-        pir->Event.KeyEvent.wVirtualKeyCode = 0;
-        pir->Event.KeyEvent.wVirtualScanCode = 0;
+            inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+            keyEvent.SetKeyDown(false);
+            inEvents.push_back(std::make_unique<KeyEvent>(keyEvent));
+        }
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+        return false;
     }
 
-    if (cInputBuffer > 0)
-    {
-        DWORD dwWritten = 0;
-        fSuccess = !!_pConApi->WriteConsoleInputW(rgInput, (DWORD)cInputBuffer, &dwWritten);
-    }
-
-    if (rgInput != nullptr)
-    {
-        delete[] rgInput;
-    }
+    size_t eventsWritten;
+    fSuccess = !!_pConApi->PrivatePrependConsoleInput(inEvents, eventsWritten);
 
     return fSuccess;
 }
@@ -989,10 +940,10 @@ bool AdaptDispatch::_ScrollMovement(_In_ ScrollDirection const sdDirection, _In_
 // - uiDistance - Distance to move
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::ScrollUp(_In_ unsigned int const uiDistance) 
-{ 
+bool AdaptDispatch::ScrollUp(_In_ unsigned int const uiDistance)
+{
     return _ScrollMovement(ScrollDirection::Up, uiDistance);
-} 
+}
 
 // Routine Description:
 // - SD - Pans the window UP by given distance (uiDistance new lines appear at the top of the screen)
@@ -1000,10 +951,10 @@ bool AdaptDispatch::ScrollUp(_In_ unsigned int const uiDistance)
 // - uiDistance - Distance to move
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::ScrollDown(_In_ unsigned int const uiDistance) 
-{ 
+bool AdaptDispatch::ScrollDown(_In_ unsigned int const uiDistance)
+{
     return _ScrollMovement(ScrollDirection::Down, uiDistance);
-} 
+}
 
 // Routine Description:
 // - DECSCPP / DECCOLM Sets the number of columns "per page" AKA sets the console width.
@@ -1015,7 +966,7 @@ bool AdaptDispatch::ScrollDown(_In_ unsigned int const uiDistance)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetColumns(_In_ unsigned int const uiColumns)
 {
-    if (!_fIsSetColumnsEnabled) 
+    if (!_fIsSetColumnsEnabled)
     {
         // Only set columns if that option is available. Return true, as this is technically a successful handling.
         return true;
@@ -1033,10 +984,10 @@ bool AdaptDispatch::SetColumns(_In_ unsigned int const uiColumns)
         {
             csbiex.dwSize.X = sColumns;
             fSuccess = !!_pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
-        }   
+        }
     }
     return fSuccess;
-} 
+}
 
 // Routine Description:
 // - DECCOLM not only sets the number of columns, but also clears the screen buffer, resets the page margins, and places the cursor at 1,1
@@ -1160,7 +1111,7 @@ bool AdaptDispatch::ResetPrivateModes(_In_reads_(cParams) const PrivateModeParam
 // - fApplicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetKeypadMode(_In_ bool const fApplicationMode) 
+bool AdaptDispatch::SetKeypadMode(_In_ bool const fApplicationMode)
 {
     return !!_pConApi->PrivateSetKeypadMode(fApplicationMode);
 }
@@ -1170,7 +1121,7 @@ bool AdaptDispatch::SetKeypadMode(_In_ bool const fApplicationMode)
 // - fApplicationMode - set to true to enable Application Mode Input, false for Normal Mode Input.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetCursorKeysMode(_In_ bool const fApplicationMode) 
+bool AdaptDispatch::SetCursorKeysMode(_In_ bool const fApplicationMode)
 {
     return !!_pConApi->PrivateSetCursorKeysMode(fApplicationMode);
 }
@@ -1180,7 +1131,7 @@ bool AdaptDispatch::SetCursorKeysMode(_In_ bool const fApplicationMode)
 // - fEnable - set to true to enable blinking, false to disable
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableCursorBlinking(_In_ bool const fEnable) 
+bool AdaptDispatch::EnableCursorBlinking(_In_ bool const fEnable)
 {
     return !!_pConApi->PrivateAllowCursorBlinking(fEnable);
 }
@@ -1244,26 +1195,26 @@ bool AdaptDispatch::_InsertDeleteLines(_In_ unsigned int const uiDistance, _In_ 
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::InsertLine(_In_ unsigned int const uiDistance)
-{ 
+{
     return _InsertDeleteLines(uiDistance, true);
-} 
+}
 
 // Routine Description:
-// - DL - This control function deletes one or more lines in the scrolling 
+// - DL - This control function deletes one or more lines in the scrolling
 //    region, starting with the line that has the cursor.
 //    As lines are deleted, lines below the cursor and in the scrolling region
-//    move up. The terminal adds blank lines with no visual character 
+//    move up. The terminal adds blank lines with no visual character
 //    attributes at the bottom of the scrolling region. If uiDistance is greater than
-//    the number of lines remaining on the page, DL deletes only the remaining 
+//    the number of lines remaining on the page, DL deletes only the remaining
 //    lines. DL has no effect outside the scrolling margins.
 // Arguments:
 // - uiDistance - number of lines to delete
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::DeleteLine(_In_ unsigned int const uiDistance)
-{ 
+{
     return _InsertDeleteLines(uiDistance, false);
-} 
+}
 
 // Routine Description:
 // - DECSTBM - Set Scrolling Region
@@ -1275,8 +1226,8 @@ bool AdaptDispatch::DeleteLine(_In_ unsigned int const uiDistance)
 // - sBottomMargin - the line number for the bottom margin.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin, _In_ SHORT const sBottomMargin) 
-{ 
+bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin, _In_ SHORT const sBottomMargin)
+{
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     bool fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
@@ -1286,7 +1237,7 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin, _I
     // having only a bottom param is legal      ([;3r   -> 0,3   -> 1,3  -> 1,3,true)
     // having neither uses the defaults         ([;r [r -> 0,0   -> 0,0  -> 0,0,false)
     // an illegal combo (eg, 3;2r) is ignored
-    if (fSuccess) 
+    if (fSuccess)
     {
         SHORT sActualTop = sTopMargin;
         SHORT sActualBottom = sBottomMargin;
@@ -1296,7 +1247,7 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin, _I
             // Disable Margins
             // This case is valid, and nothing changes.
         }
-        else if (sActualBottom == 0) 
+        else if (sActualBottom == 0)
         {
             sActualBottom = sScreenHeight;
         }
@@ -1306,19 +1257,19 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin, _I
         }
         else if ((sActualTop == 0 || sActualTop == 1) && sActualBottom == sScreenHeight)
         {
-            // Client requests setting margins to the entire screen 
+            // Client requests setting margins to the entire screen
             //    - clear them instead of setting them.
-            // This is for apps like `apt` (NOT `apt-get` which set scroll 
+            // This is for apps like `apt` (NOT `apt-get` which set scroll
             //      margins, but don't use the alt buffer.)
             // Some apps will use 0 as a top, some will use 1. Both should behave the same.
             sActualBottom = 0;
         }
         // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
-        if (sActualTop > 0) 
+        if (sActualTop > 0)
         {
             sActualTop -= 1;
         }
-        if (sActualBottom > 0) 
+        if (sActualBottom > 0)
         {
             sActualBottom -= 1;
         }
@@ -1331,10 +1282,10 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin, _I
             {
                 this->CursorPosition(1,1);
             }
-        }  
+        }
     }
     return fSuccess;
-} 
+}
 
 // Routine Description:
 // - RI - Performs a "Reverse line feed", essentially, the opposite of '\n'.
@@ -1361,8 +1312,8 @@ bool AdaptDispatch::SetWindowTitle(_In_ const wchar_t* const pwchWindowTitle, _I
 }
 
 // - ASBSET - Creates and swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
-//     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already 
-//     existing alternate, it is discarded. 
+//     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
+//     existing alternate, it is discarded.
 // Arguments:
 // - None
 // Return Value:
@@ -1373,7 +1324,7 @@ bool AdaptDispatch::UseAlternateScreenBuffer()
 }
 
 // Routine Description:
-// - ASBRST - From the alternate buffer, returns to the main screen buffer. 
+// - ASBRST - From the alternate buffer, returns to the main screen buffer.
 //     From the main screen buffer, does nothing. The alternate is discarded.
 // Arguments:
 // - None
@@ -1396,7 +1347,7 @@ bool AdaptDispatch::HorizontalTabSet()
 }
 
 //Routine Description:
-// CHT - performing a forwards tab. This will take the 
+// CHT - performing a forwards tab. This will take the
 //     cursor to the tab stop following its current location. If there are no
 //     more tabs in this row, it will take it to the right side of the window.
 //     If it's already in the last column of the row, it will move it to the next line.
@@ -1410,7 +1361,7 @@ bool AdaptDispatch::ForwardTab(_In_ SHORT const sNumTabs)
 }
 
 //Routine Description:
-// CBT - performing a backwards tab. This will take the cursor to the tab stop 
+// CBT - performing a backwards tab. This will take the cursor to the tab stop
 //     previous to its current location. It will not reverse line feed.
 //Arguments:
 // - sNumTabs - the number of tabs to perform
@@ -1422,8 +1373,8 @@ bool AdaptDispatch::BackwardsTab(_In_ SHORT const sNumTabs)
 }
 
 //Routine Description:
-// TBC - Used to clear set tab stops. ClearType ClearCurrentColumn (0) results 
-//     in clearing only the tab stop in the cursor's current column, if there 
+// TBC - Used to clear set tab stops. ClearType ClearCurrentColumn (0) results
+//     in clearing only the tab stop in the cursor's current column, if there
 //     is one. ClearAllColumns (3) results in resetting all set tab stops.
 //Arguments:
 // - sClearType - Whether to clear the current column, or all columns, defined in TermDispatch::TabClearType
@@ -1445,7 +1396,7 @@ bool AdaptDispatch::TabClear(_In_ SHORT const sClearType)
 }
 
 //Routine Description:
-// Designate Charset - Sets the active charset to be the one mapped to wch. 
+// Designate Charset - Sets the active charset to be the one mapped to wch.
 //     See TermDispatch::VTCharacterSets for a list of supported charsets.
 //     Also http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Controls-beginning-with-ESC
 //       For a list of all charsets and their codes.
@@ -1456,31 +1407,31 @@ bool AdaptDispatch::TabClear(_In_ SHORT const sClearType)
 // True if handled successfully. False othewise.
 bool AdaptDispatch::DesignateCharset(_In_ wchar_t const wchCharset)
 {
-    return _pTermOutput->DesignateCharset(wchCharset);
+    return _TermOutput.DesignateCharset(wchCharset);
 }
 
 //Routine Description:
 // Soft Reset - Perform a soft reset. See http://www.vt100.net/docs/vt510-rm/DECSTR.html
 // The following table lists everything that should be done, 'X's indicate the ones that
-//   we actually perform. As the appropriate functionality is added to our ANSI support, 
+//   we actually perform. As the appropriate functionality is added to our ANSI support,
 //   we should update this.
 //  X Text cursor enable          DECTCEM     Cursor enabled.
 //    Insert/replace              IRM         Replace mode.
 //    Origin                      DECOM       Absolute (cursor origin at upper-left of screen.)
 //    Autowrap                    DECAWM      No autowrap.
 //    National replacement        DECNRCM     Multinational set.
-//        character set           
+//        character set
 //    Keyboard action             KAM         Unlocked.
 //  X Numeric keypad              DECNKM      Numeric characters.
 //  X Cursor keys                 DECCKM      Normal (arrow keys).
 //  X Set top and bottom margins  DECSTBM     Top margin = 1; bottom margin = page length.
 //  X All character sets          G0, G1, G2, Default settings.
-//                                G3, GL, GR  
+//                                G3, GL, GR
 //  X Select graphic rendition    SGR         Normal rendition.
 //    Select character attribute  DECSCA      Normal (erasable by DECSEL and DECSED).
 //  X Save cursor state           DECSC       Home position.
 //    Assign user preference      DECAUPSS    Set selected in Set-Up.
-//        supplemental set 
+//        supplemental set
 //    Select active               DECSASD     Main display.
 //        status display
 //    Keyboard position mode      DECKPM      Character codes.
@@ -1493,19 +1444,19 @@ bool AdaptDispatch::DesignateCharset(_In_ wchar_t const wchCharset)
 bool AdaptDispatch::SoftReset()
 {
     bool fSuccess = CursorVisibility(true); // Cursor enabled.
-    if (fSuccess) 
+    if (fSuccess)
     {
         fSuccess = SetCursorKeysMode(false); // Normal characters.
     }
-    if (fSuccess) 
+    if (fSuccess)
     {
         fSuccess = SetKeypadMode(false); // Numeric characters.
     }
-    if (fSuccess) 
+    if (fSuccess)
     {
         fSuccess = SetTopBottomScrollingMargins(0, 0); // Top margin = 1; bottom margin = page length.
     }
-    if (fSuccess) 
+    if (fSuccess)
     {
         fSuccess = DesignateCharset(TermDispatch::VTCharacterSets::USASCII); // Default Charset
     }
@@ -1513,9 +1464,9 @@ bool AdaptDispatch::SoftReset()
     {
         GraphicsOptions opt = GraphicsOptions::Off;
         fSuccess = SetGraphicsRendition(&opt, 1); // Normal rendition.
-    } 
-    // SetTopBottomMargins already moved the cursor to 1,1 
-    if (fSuccess) 
+    }
+    // SetTopBottomMargins already moved the cursor to 1,1
+    if (fSuccess)
     {
         fSuccess = CursorSavePosition(); // Home position.
     }
@@ -1546,25 +1497,25 @@ bool AdaptDispatch::HardReset()
 {
     // Clears the screen - Needs to be done in two operations.
     bool fSuccess = _EraseScrollback();
-    if (fSuccess) 
+    if (fSuccess)
     {
         fSuccess = EraseInDisplay(EraseType::All);
     }
 
     // Cursor to 1,1
-    if (fSuccess) 
+    if (fSuccess)
     {
         fSuccess = CursorPosition(1, 1);
     }
 
     // Sets the SGR state to normal.
-    if (fSuccess) 
+    if (fSuccess)
     {
         GraphicsOptions opt = GraphicsOptions::Off;
         fSuccess = SetGraphicsRendition(&opt, 1); // Normal rendition.
     }
-    
-    if (fSuccess) 
+
+    if (fSuccess)
     {
         fSuccess = DesignateCharset(TermDispatch::VTCharacterSets::USASCII); // Default Charset
     }
@@ -1575,10 +1526,10 @@ bool AdaptDispatch::HardReset()
 //Routine Description:
 // Erase Scrollback (^[[3J - ED extension by xterm)
 //  Because conhost doesn't exactly have a scrollback, We have to be tricky here.
-//  We need to move the entire viewport to 0,0, and clear everything outside 
-//      (0, 0, viewportWidth, viewportHeight) To give the appearance that 
+//  We need to move the entire viewport to 0,0, and clear everything outside
+//      (0, 0, viewportWidth, viewportHeight) To give the appearance that
 //      everything above the viewport was cleared.
-//  We don't want to save the text BELOW the viewport, because in *nix, there isn't anything there 
+//  We don't want to save the text BELOW the viewport, because in *nix, there isn't anything there
 //      (There isn't a scroll-forward, only a scrollback)
 //Arguments:
 // <none>
@@ -1624,7 +1575,7 @@ bool AdaptDispatch::_EraseScrollback()
                 const COORD coordBottomRight = {csbiex.dwSize.X, coordBelowStartPosition.Y};
 
                 const COORD coordRightStartPosition = {sWidth, 0};
-                // We use the Area helper here because the Line helper would 
+                // We use the Area helper here because the Line helper would
                 //      erase the parts of the screen we want to keep too
                 fSuccess = _EraseAreaHelper(coordRightStartPosition, coordBottomRight, csbiex.wAttributes);
 
@@ -1644,7 +1595,7 @@ bool AdaptDispatch::_EraseScrollback()
                         // Move the cursor to the same relative location.
                         const COORD newCursor = {Cursor.X-Screen.Left, Cursor.Y-Screen.Top};
                         fSuccess = !!_pConApi->SetConsoleCursorPosition(newCursor);
-                    } 
+                    }
                 }
             }
         }
@@ -1654,8 +1605,8 @@ bool AdaptDispatch::_EraseScrollback()
 
 //Routine Description:
 // Erase All (^[[2J - ED)
-//  Erase the current contents of the viewport. In most terminals, because they 
-//      only have a scrollback (and not a buffer per-se), they implement this 
+//  Erase the current contents of the viewport. In most terminals, because they
+//      only have a scrollback (and not a buffer per-se), they implement this
 //      by scrolling the current contents of the buffer off of the screen.
 //  We can't properly replicate this behavior with only the public API, because
 //      we need to know where the last character in the buffer is. (it may be below the viewport)
@@ -1680,8 +1631,8 @@ bool AdaptDispatch::EnableVT200MouseMode(_In_ bool const fEnabled)
 }
 
 //Routine Description:
-// Enable UTF-8 Extended Encoding - this changes the encoding scheme for sequences 
-//      emitted by the mouse input handler. Does not enable/disable mouse mode on it's own. 
+// Enable UTF-8 Extended Encoding - this changes the encoding scheme for sequences
+//      emitted by the mouse input handler. Does not enable/disable mouse mode on it's own.
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
@@ -1692,8 +1643,8 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(_In_ bool const fEnabled)
 }
 
 //Routine Description:
-// Enable SGR Extended Encoding - this changes the encoding scheme for sequences 
-//      emitted by the mouse input handler. Does not enable/disable mouse mode on it's own. 
+// Enable SGR Extended Encoding - this changes the encoding scheme for sequences
+//      emitted by the mouse input handler. Does not enable/disable mouse mode on it's own.
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
@@ -1726,7 +1677,7 @@ bool AdaptDispatch::EnableAnyEventMouseMode(_In_ bool const fEnabled)
 }
 
 //Routine Description:
-// Enable Alternate Scroll Mode - When in the Alt Buffer, send CUP and CUD on 
+// Enable Alternate Scroll Mode - When in the Alt Buffer, send CUP and CUD on
 //      scroll up/down events instead of the usual sequences
 //Arguments:
 // - fEnabled - true to enable, false to disable.
@@ -1743,40 +1694,39 @@ bool AdaptDispatch::EnableAlternateScroll(_In_ bool const fEnabled)
 // - cursorStyle - 
 // Return value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::SetCursorStyle(_In_ TermDispatch::CursorStyle cursorStyle)
+bool AdaptDispatch::SetCursorStyle(_In_ DispatchCommon::CursorStyle cursorStyle)
 {
     Cursor::CursorType actualType = Cursor::CursorType::Legacy;
     bool fEnableBlinking = false;
 
     switch(cursorStyle){
-    case TermDispatch::CursorStyle::BlinkingBlock:
-    case TermDispatch::CursorStyle::BlinkingBlockDefault:
+    case DispatchCommon::CursorStyle::BlinkingBlock:
+    case DispatchCommon::CursorStyle::BlinkingBlockDefault:
         fEnableBlinking = true;
         actualType = Cursor::CursorType::FullBox;
         break;
-    case TermDispatch::CursorStyle::SteadyBlock:
+    case DispatchCommon::CursorStyle::SteadyBlock:
         fEnableBlinking = false;
         actualType = Cursor::CursorType::FullBox;
         break;
 
-    case TermDispatch::CursorStyle::BlinkingUnderline:
+    case DispatchCommon::CursorStyle::BlinkingUnderline:
         fEnableBlinking = true;
         actualType = Cursor::CursorType::Underscore;
         break;
-    case TermDispatch::CursorStyle::SteadyUnderline:
+    case DispatchCommon::CursorStyle::SteadyUnderline:
         fEnableBlinking = false;
         actualType = Cursor::CursorType::Underscore;
         break;
 
-    case TermDispatch::CursorStyle::BlinkingBar:
+    case DispatchCommon::CursorStyle::BlinkingBar:
         fEnableBlinking = true;
         actualType = Cursor::CursorType::VerticalBar;
         break;
-    case TermDispatch::CursorStyle::SteadyBar:
+    case DispatchCommon::CursorStyle::SteadyBar:
         fEnableBlinking = false;
         actualType = Cursor::CursorType::VerticalBar;
         break;
-        
     }
 
     bool fSuccess = !!_pConApi->SetCursorStyle((unsigned int)actualType);
@@ -1788,3 +1738,65 @@ bool AdaptDispatch::SetCursorStyle(_In_ TermDispatch::CursorStyle cursorStyle)
     return fSuccess;
 }
 
+// Method Description:
+// - Sets a single entry of the colortable to a new value
+// Arguments:
+// - tableIndex: The VT color table index
+// - dwColor: The new RGB color value to use.
+// Return Value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::SetColorTableEntry(_In_ const size_t tableIndex,
+                                       _In_ const DWORD dwColor)
+{
+    bool fSuccess = tableIndex < 16;
+    if (fSuccess)
+    {
+        CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+        csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+        fSuccess = !!_pConApi->GetConsoleScreenBufferInfoEx(&csbiex);
+        if (fSuccess)
+        {
+            size_t realIndex = ::XtermToWindowsIndex(tableIndex);
+
+            csbiex.ColorTable[realIndex] = dwColor;
+            fSuccess = !!_pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
+        }
+    }
+    return fSuccess;
+}
+
+//Routine Description:
+// Window Manipulation - Performs a variety of actions relating to the window,
+//      such as moving the window position, resizing the window, querying 
+//      window state, forcing the window to repaint, etc.
+//  This is kept seperate from the input version, as there may be
+//      codes that are supported in one direction but not the other.
+//Arguments:
+// - uiFunction - An identifier of the WindowManipulation function to perform
+// - rgusParams - Additional parameters to pass to the function
+// - cParams - size of rgusParams
+// Return value:
+// True if handled successfully. False othewise.
+bool AdaptDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
+                                       _In_reads_(cParams) const unsigned short* const rgusParams,
+                                       _In_ size_t const cParams)
+{
+    bool fSuccess = false;
+    // Other Window Manipulation functions:
+    //  MSFT:13271098 - QueryViewport
+    //  MSFT:13271146 - QueryScreenSize
+    //  MSFT:14179497 - RefreshWindow
+    switch (uiFunction)
+    {
+        case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
+            if (cParams == 2)
+            {
+                fSuccess = DispatchCommon::s_ResizeWindow(_pConApi, rgusParams[1], rgusParams[0]);
+            }
+            break;
+        default:
+            fSuccess = false;
+    }
+
+    return fSuccess;
+}

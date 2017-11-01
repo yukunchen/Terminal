@@ -19,6 +19,8 @@ SOURCES = \
     ..\selectionState.cpp \
     ..\scrolling.cpp \
     ..\cmdline.cpp   \
+    ..\VtIo.cpp   \
+    ..\VtInputThread.cpp   \
     ..\consoleInformation.cpp \
     ..\cursor.cpp    \
     ..\search.cpp    \
@@ -58,6 +60,9 @@ SOURCES = \
     ..\renderFontDefaults.cpp \
     ..\utf8ToWideCharParser.cpp \
     ..\conimeinfo.cpp \
+    ..\conattrs.cpp \
+    ..\KeyEventHelpers.cpp \
+    ..\ConsoleArguments.cpp \
 
 INCLUDES = \
     $(INCLUDES); \
