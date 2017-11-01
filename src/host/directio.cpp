@@ -13,6 +13,7 @@
 #include "dbcs.h"
 #include "handle.h"
 #include "misc.h"
+#include "../types/inc/convert.hpp"
 #include "readDataDirect.hpp"
 
 #include "ApiRoutines.h"
@@ -58,7 +59,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             HRESULT hr;
 
             // convert char data to unicode
-            if (IsDBCSLeadByteConsole(static_cast<char>(keyEvent->_charData), &gci->CPInfo))
+            if (IsDBCSLeadByteConsole(static_cast<char>(keyEvent->GetCharData()), &gci->CPInfo))
             {
                 if (inEvents.empty())
                 {
@@ -73,8 +74,8 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 
                 char inBytes[] =
                 {
-                    static_cast<char>(keyEvent->_charData),
-                    static_cast<char>(keyEventEndByte->_charData)
+                    static_cast<char>(keyEvent->GetCharData()),
+                    static_cast<char>(keyEventEndByte->GetCharData())
                 };
                 hr = ConvertToW(gci->CP,
                                 inBytes,
@@ -86,7 +87,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             {
                 char inBytes[] =
                 {
-                    static_cast<char>(keyEvent->_charData)
+                    static_cast<char>(keyEvent->GetCharData())
                 };
                 hr = ConvertToW(gci->CP,
                                 inBytes,
@@ -101,7 +102,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                 KeyEvent unicodeKeyEvent = *keyEvent;
                 for (size_t i = 0; i < size; ++i)
                 {
-                    unicodeKeyEvent._charData = outWChar[i];
+                    unicodeKeyEvent.SetCharData(outWChar[i]);
                     try
                     {
                         outEvents.push_back(std::make_unique<KeyEvent>(unicodeKeyEvent));

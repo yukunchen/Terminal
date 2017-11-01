@@ -47,6 +47,10 @@ HRESULT VtIo::ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode& ioMod
     {
         ioMode = VtIoMode::WIN_TELNET;
     }
+    else if (VtMode == XTERM_ASCII_STRING)
+    {
+        ioMode = VtIoMode::XTERM_ASCII;
+    }
     else if (VtMode == DEFAULT_STRING)
     {
         ioMode = VtIoMode::XTERM_256;
@@ -115,7 +119,10 @@ HRESULT VtIo::Initialize(_In_ const std::wstring& InPipeName, _In_ const std::ws
                 _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(_hOutputFile));
                 break;
             case VtIoMode::XTERM:
-                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
+                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize(), false);
+                break;
+            case VtIoMode::XTERM_ASCII:
+                _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize(), true);
                 break;
             case VtIoMode::WIN_TELNET:
                 _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(_hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize());

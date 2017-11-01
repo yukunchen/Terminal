@@ -1,12 +1,14 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="..\convert.cpp" />
     <ClCompile Include="..\MouseEvent.cpp" />
     <ClCompile Include="..\FocusEvent.cpp" />
     <ClCompile Include="..\IInputEvent.cpp" />
     <ClCompile Include="..\KeyEvent.cpp" />
     <ClCompile Include="..\MenuEvent.cpp" />
+    <ClCompile Include="..\ModifierKeyState.cpp" />
     <ClCompile Include="..\Viewport.cpp" />
     <ClCompile Include="..\WindowBufferSizeEvent.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -16,6 +18,7 @@
   <ItemGroup>
     <ClInclude Include="..\inc\IInputEvent.hpp" />
     <ClInclude Include="..\inc\Viewport.hpp" />
+    <ClInclude Include="..\inc\convert.hpp" />
     <ClInclude Include="..\precomp.h" />
   </ItemGroup>
   <PropertyGroup>

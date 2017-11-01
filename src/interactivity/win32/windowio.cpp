@@ -102,7 +102,10 @@ VOID SetConsoleWindowOwner(_In_ const HWND hwnd, _Inout_opt_ ConsoleProcessHandl
 // - pInputRecord - Input record event from the general input event handler
 // Return Value:
 // - True if the modes were appropriate for converting to a terminal sequence AND there was a matching terminal sequence for this key. False otherwise.
-bool HandleTerminalMouseEvent(_In_ const COORD cMousePosition, _In_ const unsigned int uiButton, _In_ const short sModifierKeystate, _In_ const short sWheelDelta)
+bool HandleTerminalMouseEvent(_In_ const COORD cMousePosition,
+                              _In_ const unsigned int uiButton,
+                              _In_ const short sModifierKeystate,
+                              _In_ const short sWheelDelta)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     // If the modes don't align, this is unhandled by default.
@@ -127,6 +130,8 @@ void HandleKeyEvent(_In_ const HWND hWnd,
 
     // BOGUS for WM_CHAR/WM_DEADCHAR, in which LOWORD(lParam) is a character
     WORD VirtualKeyCode = LOWORD(wParam);
+    WORD VirtualScanCode = LOBYTE(HIWORD(lParam));
+    const WORD RepeatCount = LOWORD(lParam);
     const ULONG ControlKeyState = GetControlKeyState(lParam);
     const BOOL bKeyDown = IsFlagClear(lParam, KEY_TRANSITION_UP);
 
@@ -142,9 +147,6 @@ void HandleKeyEvent(_In_ const HWND hWnd,
 
     // Make sure we retrieve the key info first, or we could chew up
     // unneeded space in the key info table if we bail out early.
-    KeyEvent keyEvent;
-    keyEvent._virtualKeyCode = VirtualKeyCode;
-    keyEvent._virtualScanCode = static_cast<BYTE>(HIWORD(lParam));
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
     {
         // --- START LOAD BEARING CODE ---
@@ -159,32 +161,30 @@ void HandleKeyEvent(_In_ const HWND hWnd,
         //       Most notably this affects Ctrl-C, Ctrl-Break, and Pause/Break among others.
         //
         RetrieveKeyInfo(hWnd,
-                        &keyEvent._virtualKeyCode,
-                        &keyEvent._virtualScanCode,
+                        &VirtualKeyCode,
+                        &VirtualScanCode,
                         !gci->pInputBuffer->fInComposition);
 
-        VirtualKeyCode = keyEvent._virtualKeyCode;
         // --- END LOAD BEARING CODE ---
     }
 
-    keyEvent._keyDown = bKeyDown;
-    keyEvent._repeatCount = LOWORD(lParam);
+    KeyEvent keyEvent{ !!bKeyDown, RepeatCount, VirtualKeyCode, VirtualScanCode, UNICODE_NULL, 0 };
 
     if (Message == WM_CHAR || Message == WM_SYSCHAR || Message == WM_DEADCHAR || Message == WM_SYSDEADCHAR)
     {
         // If this is a fake character, zero the scancode.
         if (lParam & 0x02000000)
         {
-            keyEvent._virtualScanCode = 0;
+            keyEvent.SetVirtualScanCode(0);
         }
-        keyEvent._activeModifierKeys = GetControlKeyState(lParam);
+        keyEvent.SetActiveModifierKeys(GetControlKeyState(lParam));
         if (Message == WM_CHAR || Message == WM_SYSCHAR)
         {
-            keyEvent._charData = static_cast<wchar_t>(wParam);
+            keyEvent.SetCharData(static_cast<wchar_t>(wParam));
         }
         else
         {
-            keyEvent._charData = 0;
+            keyEvent.SetCharData(0);
         }
     }
     else
@@ -194,8 +194,8 @@ void HandleKeyEvent(_In_ const HWND hWnd,
         {
             return;
         }
-        keyEvent._activeModifierKeys = ControlKeyState;
-        keyEvent._charData = 0;
+        keyEvent.SetActiveModifierKeys(ControlKeyState);
+        keyEvent.SetCharData(0);
     }
 
     const INPUT_KEY_INFO inputKeyInfo(VirtualKeyCode, ControlKeyState);

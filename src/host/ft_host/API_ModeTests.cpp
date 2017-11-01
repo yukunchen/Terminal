@@ -20,6 +20,8 @@ class ModeTests
 
     TEST_METHOD(TestConsoleModeInputScenario);
     TEST_METHOD(TestConsoleModeScreenBufferScenario);
+
+    TEST_METHOD(TestGetConsoleDisplayMode);
 };
 
 bool ModeTests::TestSetup()
@@ -83,4 +85,13 @@ void ModeTests::TestConsoleModeScreenBufferScenario()
     dwOutputMode = (DWORD)-1;
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(Common::_hConsole, &dwOutputMode), L"Get zero output flags");
     VERIFY_ARE_EQUAL(dwOutputMode, (DWORD)0, L"Verify able to set zero output flags");
+}
+
+void ModeTests::TestGetConsoleDisplayMode()
+{
+    DWORD dwMode = 0;
+    SetLastError(0);
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleDisplayMode(&dwMode));
+    VERIFY_ARE_EQUAL(0u, GetLastError());
 }

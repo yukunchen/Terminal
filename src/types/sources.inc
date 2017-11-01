@@ -1,5 +1,5 @@
 # -------------------------------------
-# Windows Console 
+# Windows Console
 # - Console Server Communications Layer
 # -------------------------------------
 
@@ -52,9 +52,11 @@ SOURCES= \
     ..\FocusEvent.cpp \
     ..\KeyEvent.cpp \
     ..\MenuEvent.cpp \
+    ..\ModifierKeyState.cpp \
     ..\MouseEvent.cpp \
     ..\Viewport.cpp \
     ..\WindowBufferSizeEvent.cpp \
+    ..\convert.cpp \
 
 INCLUDES= \
     ..; \

@@ -35,11 +35,6 @@ public:
                                  _In_ WORD const legacyColorAttribute,
                                  _In_ bool const fIncludeBackgrounds) override;
 
-    HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
-                            _In_reads_(cchLine) const unsigned char* const rgWidths,
-                            _In_ size_t const cchLine,
-                            _In_ COORD const coordTarget,
-                            _In_ bool const fTrimLeft) override;
 private:
     
 #ifdef UNIT_TESTING

@@ -7,21 +7,11 @@
 #include "precomp.h"
 #include "inc/IInputEvent.hpp"
 
-WindowBufferSizeEvent::WindowBufferSizeEvent(_In_ const WINDOW_BUFFER_SIZE_RECORD& record) :
-    _size{ record.dwSize }
-{
-}
-
-WindowBufferSizeEvent::WindowBufferSizeEvent(_In_ const COORD size) :
-    _size{ size }
-{
-}
-
 WindowBufferSizeEvent::~WindowBufferSizeEvent()
 {
 }
 
-INPUT_RECORD WindowBufferSizeEvent::ToInputRecord() const
+INPUT_RECORD WindowBufferSizeEvent::ToInputRecord() const noexcept
 {
     INPUT_RECORD record{ 0 };
     record.EventType = WINDOW_BUFFER_SIZE_EVENT;
@@ -29,7 +19,12 @@ INPUT_RECORD WindowBufferSizeEvent::ToInputRecord() const
     return record;
 }
 
-InputEventType WindowBufferSizeEvent::EventType() const
+InputEventType WindowBufferSizeEvent::EventType() const noexcept
 {
     return InputEventType::WindowBufferSizeEvent;
+}
+
+void WindowBufferSizeEvent::SetSize(_In_ const COORD size) noexcept
+{
+    _size = size;
 }

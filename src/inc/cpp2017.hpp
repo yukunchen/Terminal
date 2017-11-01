@@ -20,3 +20,15 @@ template<typename T> T clamp(T val, T low, T high)
     assert(low <= high);
     return max(low, min(val, high));
 }
+
+template<typename T>
+constexpr auto size(const T& t) noexcept(noexcept(t.size())) -> decltype(t.size())
+{
+    return t.size();
+}
+
+template<typename T, std::size_t ArraySize>
+constexpr std::size_t size(T (&)[ArraySize]) noexcept
+{
+    return ArraySize;
+}

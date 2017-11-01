@@ -66,16 +66,11 @@ class Microsoft::Console::Render::VtRendererTest
     {
         return true;
     }
-    TEST_METHOD_SETUP(MethodSetup)
-    {
-        return true;
-    }
-    TEST_METHOD_CLEANUP(MethodCleanup)
-    {
-        // Make sure we don't leave anything behind to pollute another test.
-        qExpectedInput.clear();
-        return true;
-    }
+
+    // Defining a TEST_METHOD_CLEANUP seemed to break x86 test pass. Not sure why,
+    //  something about the clipboard tests and
+    //  YOU_CAN_ONLY_DESIGNATE_ONE_CLASS_METHOD_TO_BE_A_TEST_METHOD_SETUP_METHOD
+    // It's probably more correct to leave it out anyways.
 
     TEST_METHOD(VtSequenceHelperTests);
     
@@ -532,7 +527,7 @@ void VtRendererTest::Xterm256TestCursor()
 void VtRendererTest::XtermTestInvalidate()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE);
+    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE, false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -680,7 +675,7 @@ void VtRendererTest::XtermTestInvalidate()
 void VtRendererTest::XtermTestColors()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE);
+    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE, false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -742,7 +737,7 @@ void VtRendererTest::XtermTestColors()
 void VtRendererTest::XtermTestCursor()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE);
+    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE, false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
