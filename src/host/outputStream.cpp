@@ -590,7 +590,7 @@ BOOL ConhostInternalGetSet::PrivateEraseAll()
 // <none>
 // Return Value:
 // - TRUE if successful (see DoSrvSetCursorStyle). FALSE otherwise.
-BOOL ConhostInternalGetSet::SetCursorStyle(_In_ unsigned int const cursorType)
+BOOL ConhostInternalGetSet::SetCursorStyle(_In_ CursorType const cursorType)
 {
     return NT_SUCCESS(DoSrvSetCursorStyle(_pScreenInfo, cursorType));
 }

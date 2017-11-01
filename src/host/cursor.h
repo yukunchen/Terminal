@@ -16,8 +16,9 @@ Revision History:
 
 #pragma once
 
-#include "..\interactivity\inc\IConsoleWindow.hpp"
-#include "..\interactivity\inc\IAccessibilityNotifier.hpp"
+#include "../inc/conattrs.hpp"
+#include "../interactivity/inc/IConsoleWindow.hpp"
+#include "../interactivity/inc/IAccessibilityNotifier.hpp"
 
 // the following values are used to create the textmode cursor.
 #define CURSOR_SMALL_SIZE 25    // large enough to be one pixel on a six pixel font
@@ -27,16 +28,6 @@ typedef SCREEN_INFORMATION *PSCREEN_INFORMATION;
 class Cursor sealed
 {
 public:
-
-    enum CursorType : unsigned int
-    {
-        Legacy = 0x0,
-        VerticalBar = 0x1,
-        Underscore = 0x2,
-        EmptyBox = 0x3,
-        FullBox = 0x4
-        // Make sure to update Cursor::SetType if you add values
-    };
     
     static const unsigned int s_InvertCursorColor = 0xffffffff;
 
@@ -95,7 +86,7 @@ public:
     BOOL IsDelayedEOLWrap() const;
 
     void SetColor(_In_ unsigned int color);
-    void SetType(_In_ unsigned int type);
+    void SetType(_In_ CursorType type);
 
 private:
     void RendererMoveCursor();

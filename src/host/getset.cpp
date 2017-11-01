@@ -1345,7 +1345,7 @@ NTSTATUS DoSrvPrivateEraseAll(_In_ SCREEN_INFORMATION* const pScreenInfo)
 }
 
 NTSTATUS DoSrvSetCursorStyle(_In_ SCREEN_INFORMATION* const pScreenInfo,
-                             _In_ unsigned int const cursorType)
+                             _In_ CursorType const cursorType)
 {
     pScreenInfo->TextInfo->GetCursor()->SetType(cursorType);
     return STATUS_SUCCESS;

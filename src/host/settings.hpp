@@ -23,6 +23,7 @@ Revision History:
 #define COLOR_TABLE_SIZE (16)
 #define XTERM_COLOR_TABLE_SIZE (256)
 class TextAttribute;
+enum class CursorType : unsigned int;
 
 class Settings
 {
@@ -157,13 +158,12 @@ public:
     void SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, _In_ size_t const cSize);
     void SetColorTableEntry(_In_ size_t const index, _In_ COLORREF const ColorValue);
     COLORREF GetColorTableEntry(_In_ size_t const index) const;
-    
 
     unsigned int GetCursorColor() const;
-    unsigned int GetCursorType() const;
+    CursorType GetCursorType() const;
     
     void SetCursorColor(_In_ unsigned int CursorColor);
-    void SetCursorType(_In_ unsigned int CursorType);
+    void SetCursorType(_In_ const CursorType cursorType);
 
 
 private:
@@ -218,11 +218,9 @@ private:
     
     // Technically a COLORREF, but using 0xffffffff as "Invert Colors"
     unsigned int _CursorColor;
-    unsigned int _CursorType;
+    CursorType _CursorType;
 
     friend class RegistrySerialization;
-
-
 
 public:
 

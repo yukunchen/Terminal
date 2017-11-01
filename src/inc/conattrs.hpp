@@ -20,3 +20,13 @@ const WORD XTERM_RED_ATTR       = 0x01;
 const WORD XTERM_GREEN_ATTR     = 0x02;
 const WORD XTERM_BLUE_ATTR      = 0x04;
 const WORD XTERM_BRIGHT_ATTR    = 0x08;
+
+enum class CursorType : unsigned int
+{
+    Legacy = 0x0,
+    VerticalBar = 0x1,
+    Underscore = 0x2,
+    EmptyBox = 0x3,
+    FullBox = 0x4
+    // Make sure to update Cursor::SetType if you add values
+};

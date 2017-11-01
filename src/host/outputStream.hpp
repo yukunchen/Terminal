@@ -15,6 +15,7 @@ Author:
 
 #include "..\terminal\adapter\adaptDefaults.hpp"
 #include "..\types\inc\IInputEvent.hpp"
+#include "..\inc\conattrs.hpp"
 
 class SCREEN_INFORMATION;
 
@@ -128,7 +129,7 @@ public:
     virtual BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                             _Out_ size_t& eventsWritten) override;
 
-    virtual BOOL SetCursorStyle(_In_ unsigned int const cursorType);
+    virtual BOOL SetCursorStyle(_In_ CursorType const cursorType);
 
 private:
     SCREEN_INFORMATION* _pScreenInfo; // not const because switching to the alternate buffer will change this pointer.

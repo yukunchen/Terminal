@@ -73,7 +73,7 @@ Settings::Settings() :
     ZeroMemory((void*)&_LaunchFaceName, sizeof(_LaunchFaceName));
 
     _CursorColor = Cursor::s_InvertCursorColor;
-    _CursorType = Cursor::CursorType::Legacy;
+    _CursorType = CursorType::Legacy;
 
     // Default hardcoded colors for use in console. These are used when there are no overriding colors to load from the
     // registry or shortcut files.
@@ -943,7 +943,7 @@ unsigned int Settings::GetCursorColor() const
     return _CursorColor;
 }
 
-unsigned int Settings::GetCursorType() const
+CursorType Settings::GetCursorType() const
 {
     return _CursorType;
 }
@@ -953,7 +953,7 @@ void Settings::SetCursorColor(_In_ unsigned int CursorColor)
     _CursorColor = CursorColor;
 }
 
-void Settings::SetCursorType(_In_ unsigned int CursorType)
+void Settings::SetCursorType(_In_ CursorType cursorType)
 {
-    _CursorType = CursorType;
+    _CursorType = cursorType;
 }

@@ -468,7 +468,7 @@ HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORRE
 
 HRESULT GdiEngine::PaintCursorEx(_In_ ULONG const ulCursorHeightPercent,
                                  _In_ bool const fIsDoubleWidth,
-                                 _In_ Cursor::CursorType const cursorType,
+                                 _In_ CursorType const cursorType,
                                  _In_ bool const fUseColor,
                                  _In_ COLORREF const cursorColor)
 {
@@ -500,7 +500,7 @@ HRESULT GdiEngine::PaintCursorEx(_In_ ULONG const ulCursorHeightPercent,
     // depending on the cursorType, add rects to that set
     switch(cursorType)
     {
-    case Cursor::CursorType::Legacy:
+    case CursorType::Legacy:
         {
             // Now adjust the cursor height
             // enforce min/max cursor height
@@ -516,17 +516,17 @@ HRESULT GdiEngine::PaintCursorEx(_In_ ULONG const ulCursorHeightPercent,
             rects.push_back(rcInvert);
         }
         break;
-    case Cursor::CursorType::VerticalBar:
+    case CursorType::VerticalBar:
         RETURN_IF_FAILED(LongAdd(rcInvert.left, 1, &rcInvert.right));
 
         rects.push_back(rcInvert);
         break;
-    case Cursor::CursorType::Underscore:
+    case CursorType::Underscore:
         RETURN_IF_FAILED(LongAdd(rcInvert.bottom, -1, &rcInvert.top));
 
         rects.push_back(rcInvert);
         break;
-    case Cursor::CursorType::EmptyBox:
+    case CursorType::EmptyBox:
         {
             RECT top, left, right, bottom;
             top = left = right = bottom = rcBoundaries;
@@ -546,7 +546,7 @@ HRESULT GdiEngine::PaintCursorEx(_In_ ULONG const ulCursorHeightPercent,
             rects.push_back(bottom);
         }
         break;
-    case Cursor::CursorType::FullBox:
+    case CursorType::FullBox:
         rects.push_back(rcInvert);
         break;
     default:

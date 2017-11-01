@@ -136,10 +136,10 @@ public:
     AdaptDispatch* GetAdapterDispatch() const;
     StateMachine* GetStateMachine() const;
 
-    NTSTATUS SetCursorInformation(_In_ ULONG const Size, 
-        _In_ BOOLEAN const Visible,
-        _In_ unsigned int const Color,
-        _In_ unsigned int const Type);
+    NTSTATUS SetCursorInformation(_In_ ULONG const Size,
+                                  _In_ BOOLEAN const Visible,
+                                  _In_ unsigned int const Color,
+                                  _In_ CursorType const Type);
     
     NTSTATUS SetCursorDBMode(_In_ const BOOLEAN DoubleCursor);
     NTSTATUS SetCursorPosition(_In_ COORD const Position, _In_ BOOL const TurnOn);

@@ -113,7 +113,7 @@ HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const /*lines*/,
 // - S_OK or suitable HRESULT error from writing pipe.
 HRESULT VtEngine::PaintCursorEx(_In_ ULONG const /*ulCursorHeightPercent*/,
                                 _In_ bool const /*fIsDoubleWidth*/,
-                                _In_ Cursor::CursorType const /*cursorType*/,
+                                _In_ CursorType const /*cursorType*/,
                                 _In_ bool const /*fUseColor*/,
                                 _In_ COLORREF const /*cursorColor*/)
 {

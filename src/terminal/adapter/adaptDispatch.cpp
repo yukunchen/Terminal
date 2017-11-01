@@ -1696,40 +1696,41 @@ bool AdaptDispatch::EnableAlternateScroll(_In_ bool const fEnabled)
 // True if handled successfully. False othewise.
 bool AdaptDispatch::SetCursorStyle(_In_ DispatchCommon::CursorStyle cursorStyle)
 {
-    Cursor::CursorType actualType = Cursor::CursorType::Legacy;
+    CursorType actualType = CursorType::Legacy;
     bool fEnableBlinking = false;
 
-    switch(cursorStyle){
+    switch(cursorStyle)
+    {
     case DispatchCommon::CursorStyle::BlinkingBlock:
     case DispatchCommon::CursorStyle::BlinkingBlockDefault:
         fEnableBlinking = true;
-        actualType = Cursor::CursorType::FullBox;
+        actualType = CursorType::FullBox;
         break;
     case DispatchCommon::CursorStyle::SteadyBlock:
         fEnableBlinking = false;
-        actualType = Cursor::CursorType::FullBox;
+        actualType = CursorType::FullBox;
         break;
 
     case DispatchCommon::CursorStyle::BlinkingUnderline:
         fEnableBlinking = true;
-        actualType = Cursor::CursorType::Underscore;
+        actualType = CursorType::Underscore;
         break;
     case DispatchCommon::CursorStyle::SteadyUnderline:
         fEnableBlinking = false;
-        actualType = Cursor::CursorType::Underscore;
+        actualType = CursorType::Underscore;
         break;
 
     case DispatchCommon::CursorStyle::BlinkingBar:
         fEnableBlinking = true;
-        actualType = Cursor::CursorType::VerticalBar;
+        actualType = CursorType::VerticalBar;
         break;
     case DispatchCommon::CursorStyle::SteadyBar:
         fEnableBlinking = false;
-        actualType = Cursor::CursorType::VerticalBar;
+        actualType = CursorType::VerticalBar;
         break;
     }
 
-    bool fSuccess = !!_pConApi->SetCursorStyle((unsigned int)actualType);
+    bool fSuccess = !!_pConApi->SetCursorStyle(actualType);
     if (fSuccess)
     {
         fSuccess = !!_pConApi->PrivateAllowCursorBlinking(fEnableBlinking);

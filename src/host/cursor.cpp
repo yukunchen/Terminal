@@ -599,7 +599,7 @@ void Cursor::KillCaretTimer()
     }
 }
 
-const Cursor::CursorType Cursor::GetCursorType() const
+const CursorType Cursor::GetCursorType() const
 {
     return _cursorType;
 }
@@ -621,11 +621,11 @@ void Cursor::SetColor(_In_ unsigned int color)
     gci->SetCursorColor(_color);
 }
 
-void Cursor::SetType(_In_ unsigned int type)
+void Cursor::SetType(_In_ CursorType type)
 {
     if (type <= CursorType::FullBox)
     {
-        _cursorType = (Cursor::CursorType)type;
+        _cursorType = type;
     }
     else
     {

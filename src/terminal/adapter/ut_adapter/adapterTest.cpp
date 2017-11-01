@@ -606,7 +606,7 @@ public:
         return TRUE;
     }
 
-    virtual BOOL SetCursorStyle(_In_ unsigned int const cursorType)
+    virtual BOOL SetCursorStyle(_In_ CursorType const cursorType)
     {
         Log::Comment(L"SetCursorStyle MOCK called...");
         cursorType;

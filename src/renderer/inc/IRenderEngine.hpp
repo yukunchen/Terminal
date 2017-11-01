@@ -59,7 +59,7 @@ namespace Microsoft
 
                 virtual HRESULT PaintCursorEx(_In_ ULONG const ulCursorHeightPercent,
                                               _In_ bool const fIsDoubleWidth,
-                                              _In_ Cursor::CursorType const cursorType,
+                                              _In_ CursorType const cursorType,
                                               _In_ bool const fUseColor,
                                               _In_ COLORREF const cursorColor) = 0;
 
