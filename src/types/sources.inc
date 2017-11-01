@@ -56,6 +56,7 @@ SOURCES= \
     ..\MouseEvent.cpp \
     ..\Viewport.cpp \
     ..\WindowBufferSizeEvent.cpp \
+    ..\convert.cpp \
 
 INCLUDES= \
     ..; \

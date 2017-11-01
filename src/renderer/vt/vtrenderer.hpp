@@ -50,11 +50,11 @@ public:
     virtual HRESULT ScrollFrame() = 0;
 
     HRESULT PaintBackground() override;
-    HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
-                            _In_reads_(cchLine) const unsigned char* const rgWidths,
-                            _In_ size_t const cchLine,
-                            _In_ COORD const coordTarget,
-                            _In_ bool const fTrimLeft) override;
+    virtual HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
+                                    _In_reads_(cchLine) const unsigned char* const rgWidths,
+                                    _In_ size_t const cchLine,
+                                    _In_ COORD const coordTarget,
+                                    _In_ bool const fTrimLeft) override;
     HRESULT PaintBufferGridLines(_In_ GridLines const lines,
                                  _In_ COLORREF const color,
                                  _In_ size_t const cchLine,
@@ -136,7 +136,18 @@ protected:
                                          _In_ COLORREF const colorBackground,
                                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                          _In_ const WORD cColorTable);
+
     bool _WillWriteSingleChar() const;
+
+    HRESULT _PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
+                                 _In_reads_(cchLine) const unsigned char* const rgWidths,
+                                 _In_ size_t const cchLine,
+                                 _In_ COORD const coordTarget);
+
+    HRESULT _PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine,
+                                  _In_reads_(cchLine) const unsigned char* const rgWidths,
+                                  _In_ size_t const cchLine,
+                                  _In_ COORD const coordTarget);
 
     /////////////////////////// Unit Testing Helpers ///////////////////////////
 #ifdef UNIT_TESTING

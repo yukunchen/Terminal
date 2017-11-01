@@ -61,6 +61,9 @@ void VtIoTests::ModeParsingTest()
     VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"win-telnet", mode));
     VERIFY_ARE_EQUAL(mode, VtIoMode::WIN_TELNET);
 
+    VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"xterm-ascii", mode));
+    VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_ASCII);
+
     VERIFY_SUCCEEDED(VtIo::ParseIoMode(L"", mode));
     VERIFY_ARE_EQUAL(mode, VtIoMode::XTERM_256);
     

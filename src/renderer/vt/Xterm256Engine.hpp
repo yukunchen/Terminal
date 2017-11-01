@@ -34,6 +34,7 @@ public:
                                  _In_ COLORREF const colorBackground,
                                  _In_ WORD const legacyColorAttribute,
                                  _In_ bool const fIncludeBackgrounds) override;
+
 private:
     
 #ifdef UNIT_TESTING

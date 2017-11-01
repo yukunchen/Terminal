@@ -10,7 +10,7 @@
 using namespace Microsoft::Console::Render;
 
 Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe) :
-    XtermEngine(std::move(hPipe), nullptr, 0)
+    XtermEngine(std::move(hPipe), nullptr, 0, false)
 {
 }
 
