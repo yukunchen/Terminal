@@ -58,6 +58,14 @@ public:
     // - The cursor position.
     virtual COORD GetPosition() const { return _coordPosition; }
 
+    virtual COLORREF GetColor() const override { return _color; };
+    virtual void SetColor(_In_ const COLORREF color) override { _color = color; };
+
+    virtual CursorType GetType() const { return _type; };
+    virtual void SetType(_In_ const CursorType type) override { _type = type; };
+
 protected:
     COORD _coordPosition;
+    COLORREF _color;
+    CursorType _type;
 };

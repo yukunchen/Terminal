@@ -55,11 +55,11 @@ namespace Microsoft
                 HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                                        _In_ UINT const cRectangles) override;
 
-                HRESULT PaintCursorEx(_In_ ULONG const ulCursorHeightPercent,
-                                      _In_ bool const fIsDoubleWidth,
-                                      _In_ CursorType const cursorType,
-                                      _In_ bool const fUseColor,
-                                      _In_ COLORREF const cursorColor) override;
+                HRESULT PaintCursor(_In_ ULONG const ulCursorHeightPercent,
+                                    _In_ bool const fIsDoubleWidth,
+                                    _In_ CursorType const cursorType,
+                                    _In_ bool const fUseColor,
+                                    _In_ COLORREF const cursorColor) override;
 
                 HRESULT ClearCursor() override;
 

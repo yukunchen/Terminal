@@ -18,10 +18,6 @@ Author(s):
 #include "FontInfo.hpp"
 #include "..\..\host\Cursor.h"
 
-// Valid COLORREFs are of the pattern 0x00bbggrr. -1 works as an invalid color, 
-//      as the highest byte of a valid color is always 0.
-const COLORREF INVALID_COLOR = 0xffffffff;
-
 namespace Microsoft
 {
     namespace Console
@@ -57,11 +53,11 @@ namespace Microsoft
                 virtual HRESULT PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORREF const color, _In_ size_t const cchLine, _In_ COORD const coordTarget) = 0;
                 virtual HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles) = 0;
 
-                virtual HRESULT PaintCursorEx(_In_ ULONG const ulCursorHeightPercent,
-                                              _In_ bool const fIsDoubleWidth,
-                                              _In_ CursorType const cursorType,
-                                              _In_ bool const fUseColor,
-                                              _In_ COLORREF const cursorColor) = 0;
+                virtual HRESULT PaintCursor(_In_ ULONG const ulCursorHeightPercent,
+                                            _In_ bool const fIsDoubleWidth,
+                                            _In_ CursorType const cursorType,
+                                            _In_ bool const fUseColor,
+                                            _In_ COLORREF const cursorColor) = 0;
 
                 virtual HRESULT ClearCursor() = 0;
 

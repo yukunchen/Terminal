@@ -29,7 +29,7 @@ class Cursor sealed
 {
 public:
     
-    static const unsigned int s_InvertCursorColor = 0xffffffff;
+    static const unsigned int s_InvertCursorColor = INVALID_COLOR;
 
     Cursor(_In_ Microsoft::Console::Interactivity::IAccessibilityNotifier *pNotifier, _In_ ULONG const ulSize);
     static NTSTATUS CreateInstance(_In_ ULONG const ulSize, _Outptr_ Cursor ** const ppCursor);

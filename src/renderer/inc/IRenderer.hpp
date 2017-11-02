@@ -14,6 +14,7 @@ Author(s):
 #pragma once
 
 #include "FontInfoDesired.hpp"
+#include "../../inc/conattrs.hpp"
 
 namespace Microsoft
 {
@@ -54,6 +55,9 @@ namespace Microsoft
                 virtual void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) = 0;
 
                 virtual void MoveCursor(_In_ const COORD cPosition) = 0;
+
+                virtual void SetCursorAttributes(_In_ const COLORREF color,
+                                                 _In_ const CursorType type) = 0;
             };
         };
     };

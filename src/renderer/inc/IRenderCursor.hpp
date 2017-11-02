@@ -14,6 +14,8 @@ Author(s):
 --*/
 #pragma once
 
+#include "../../inc/conattrs.hpp"
+
 namespace Microsoft
 {
     namespace Console
@@ -31,5 +33,11 @@ public:
     virtual void Move(_In_ const COORD cPos) = 0;
     virtual bool ForcePaint() const = 0;
     virtual COORD GetPosition() const = 0;
+
+    virtual COLORREF GetColor() const = 0;
+    virtual void SetColor(_In_ const COLORREF color) = 0;
+
+    virtual CursorType GetType() const = 0;
+    virtual void SetType(_In_ const CursorType type) = 0;
 
 };

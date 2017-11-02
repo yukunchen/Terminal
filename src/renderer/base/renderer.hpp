@@ -63,7 +63,9 @@ namespace Microsoft
                 void AddRenderEngine(_In_ IRenderEngine* const pEngine);
 
                 void MoveCursor(_In_ const COORD cPosition) override;
-
+                
+                void SetCursorAttributes(_In_ const COLORREF color,
+                                         _In_ const CursorType type) override;
             private:
                 Renderer(_In_ IRenderData* const pData, _In_reads_(cEngines) IRenderEngine** const pEngine, _In_ size_t const cEngines);
                 std::deque<IRenderEngine*> _rgpEngines;

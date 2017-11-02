@@ -938,7 +938,7 @@ WORD Settings::FindNearestTableIndex(_In_ COLORREF const Color) const
     return ::FindNearestTableIndex(Color, _ColorTable, ARRAYSIZE(_ColorTable));
 }
 
-unsigned int Settings::GetCursorColor() const
+COLORREF Settings::GetCursorColor() const
 {
     return _CursorColor;
 }
@@ -948,12 +948,12 @@ CursorType Settings::GetCursorType() const
     return _CursorType;
 }
 
-void Settings::SetCursorColor(_In_ unsigned int CursorColor)
+void Settings::SetCursorColor(_In_ const COLORREF CursorColor)
 {
     _CursorColor = CursorColor;
 }
 
-void Settings::SetCursorType(_In_ CursorType cursorType)
+void Settings::SetCursorType(_In_ const CursorType cursorType)
 {
     _CursorType = cursorType;
 }

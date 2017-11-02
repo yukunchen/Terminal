@@ -160,11 +160,11 @@ HRESULT BgfxEngine::PaintSelection(const SMALL_RECT* const rgsrSelection, UINT c
 
     return S_OK;
 }
-HRESULT BgfxEngine::PaintCursorEx(_In_ ULONG const ulCursorHeightPercent,
-                                  _In_ bool const /*fIsDoubleWidth*/,
-                                  _In_ CursorType const /*cursorType*/,
-                                  _In_ bool const /*fUseColor*/,
-                                  _In_ COLORREF const /*cursorColor*/)
+HRESULT BgfxEngine::PaintCursor(_In_ ULONG const ulCursorHeightPercent,
+                                _In_ bool const /*fIsDoubleWidth*/,
+                                _In_ CursorType const /*cursorType*/,
+                                _In_ bool const /*fUseColor*/,
+                                _In_ COLORREF const /*cursorColor*/)
 {
     // TODO: MSFT: 11448021 - Modify BGFX to support rendering full-width
     // characters and a full-width cursor.

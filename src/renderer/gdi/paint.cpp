@@ -417,60 +417,11 @@ HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORRE
     return S_OK;
 }
 
-// // Routine Description:
-// // - Draws the cursor on the screen
-// // Arguments:
-// // - ulHeightPercent - The cursor will be drawn at this percentage of the current font height.
-// // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
-// // Return Value:
-// // - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI error where a specific error isn't set.
-// HRESULT GdiEngine::PaintCursor(_In_ ULONG const ulHeightPercent,
-//                                _In_ bool const fIsDoubleWidth)
-// {
-//     LOG_IF_FAILED(_FlushBufferLines());
-
-//     COORD const coord = _cursor.GetPosition();    
-
-//     COORD const coordFontSize = _GetFontSize();
-//     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
-
-//     // First set up a block cursor the size of the font.
-//     RECT rcInvert;
-//     RETURN_IF_FAILED(LongMult(coord.X, coordFontSize.X, &rcInvert.left));
-//     RETURN_IF_FAILED(LongMult(coord.Y, coordFontSize.Y, &rcInvert.top));
-//     RETURN_IF_FAILED(LongAdd(rcInvert.left, coordFontSize.X, &rcInvert.right));
-//     RETURN_IF_FAILED(LongAdd(rcInvert.top, coordFontSize.Y, &rcInvert.bottom));
-
-//     // If we're double-width cursor, make it an extra font wider.
-//     if (fIsDoubleWidth)
-//     {
-//         RETURN_IF_FAILED(LongAdd(rcInvert.right, coordFontSize.X, &rcInvert.right));
-//     }
-
-//     // Now adjust the cursor height
-//     // enforce min/max cursor height
-//     ULONG ulHeight = ulHeightPercent;
-//     ulHeight = max(ulHeight, s_ulMinCursorHeightPercent); // No smaller than 25%
-//     ulHeight = min(ulHeight, s_ulMaxCursorHeightPercent); // No larger than 100%
-
-//     ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
-
-//     // Reduce the height of the top to be relative to the bottom by the height we want.
-//     RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
-
-//     RETURN_HR_IF_FALSE(E_FAIL, InvertRect(_hdcMemoryContext, &rcInvert));
-
-//     // Save inverted cursor position so we can clear it.
-//     _rcCursorInvert = rcInvert;
-
-//     return S_OK;
-// }
-
-HRESULT GdiEngine::PaintCursorEx(_In_ ULONG const ulCursorHeightPercent,
-                                 _In_ bool const fIsDoubleWidth,
-                                 _In_ CursorType const cursorType,
-                                 _In_ bool const fUseColor,
-                                 _In_ COLORREF const cursorColor)
+HRESULT GdiEngine::PaintCursor(_In_ ULONG const ulCursorHeightPercent,
+                               _In_ bool const fIsDoubleWidth,
+                               _In_ CursorType const cursorType,
+                               _In_ bool const fUseColor,
+                               _In_ COLORREF const cursorColor)
 {
     LOG_IF_FAILED(_FlushBufferLines());
     
@@ -495,7 +446,6 @@ HRESULT GdiEngine::PaintCursorEx(_In_ ULONG const ulCursorHeightPercent,
     // Make a set of RECTs to paint.
     std::vector<RECT> rects;
 
-    
     RECT rcInvert = rcBoundaries;
     // depending on the cursorType, add rects to that set
     switch(cursorType)
@@ -516,16 +466,17 @@ HRESULT GdiEngine::PaintCursorEx(_In_ ULONG const ulCursorHeightPercent,
             rects.push_back(rcInvert);
         }
         break;
+
     case CursorType::VerticalBar:
         RETURN_IF_FAILED(LongAdd(rcInvert.left, 1, &rcInvert.right));
-
         rects.push_back(rcInvert);
         break;
+
     case CursorType::Underscore:
         RETURN_IF_FAILED(LongAdd(rcInvert.bottom, -1, &rcInvert.top));
-
         rects.push_back(rcInvert);
         break;
+
     case CursorType::EmptyBox:
         {
             RECT top, left, right, bottom;
@@ -546,12 +497,13 @@ HRESULT GdiEngine::PaintCursorEx(_In_ ULONG const ulCursorHeightPercent,
             rects.push_back(bottom);
         }
         break;
+
     case CursorType::FullBox:
         rects.push_back(rcInvert);
         break;
+
     default:
         return E_NOTIMPL;
-
     }
     // Either invert all the RECTs, or paint them.
     if (fUseColor)
@@ -570,10 +522,10 @@ HRESULT GdiEngine::PaintCursorEx(_In_ ULONG const ulCursorHeightPercent,
             RETURN_HR_IF_FALSE(E_FAIL, InvertRect(_hdcMemoryContext, &r));
         }
     }
+
     // Save inverted cursor position so we can clear it.
     _rcCursorInvert = rcBoundaries;
     return S_OK;
-
 }
 
 // Routine Description:

@@ -601,37 +601,39 @@ void Cursor::KillCaretTimer()
 
 const CursorType Cursor::GetCursorType() const
 {
-    return _cursorType;
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return gci->GetCursorType();
 }
+
 const bool Cursor::IsUsingColor() const
 {
-    return _fUseColor;
+    return GetColor() != INVALID_COLOR;
 }
+
 const COLORREF Cursor::GetColor() const
 {
-    return _color;
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return gci->GetCursorColor();
 }
 
 void Cursor::SetColor(_In_ unsigned int color)
 {
-    _fUseColor = (color != Cursor::s_InvertCursorColor);
-    _color = color;
-
-    auto gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->SetCursorColor(_color);
+    Globals* const g = ServiceLocator::LocateGlobals();
+    CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
+    gci->SetCursorColor(color);
+    if (g->pRender != nullptr)
+    {
+        g->pRender->SetCursorAttributes(gci->GetCursorColor(), gci->GetCursorType());
+    }
 }
 
 void Cursor::SetType(_In_ CursorType type)
 {
-    if (type <= CursorType::FullBox)
+    Globals* const g = ServiceLocator::LocateGlobals();
+    CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
+    gci->SetCursorType(type);
+    if (g->pRender != nullptr)
     {
-        _cursorType = type;
+        g->pRender->SetCursorAttributes(gci->GetCursorColor(), gci->GetCursorType());
     }
-    else
-    {
-        _cursorType = CursorType::Legacy;
-    }
-
-    auto gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->SetCursorType(_cursorType);
 }

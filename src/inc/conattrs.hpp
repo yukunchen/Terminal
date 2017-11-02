@@ -30,3 +30,7 @@ enum class CursorType : unsigned int
     FullBox = 0x4
     // Make sure to update Cursor::SetType if you add values
 };
+
+// Valid COLORREFs are of the pattern 0x00bbggrr. -1 works as an invalid color, 
+//      as the highest byte of a valid color is always 0.
+const COLORREF INVALID_COLOR = 0xffffffff;

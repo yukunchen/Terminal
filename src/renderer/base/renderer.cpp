@@ -797,11 +797,11 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
             bool const fIsDoubleWidth = !!pCursor->IsDoubleWidth();
 
             // Draw it within the viewport 
-            LOG_IF_FAILED(pEngine->PaintCursorEx(ulHeight,
-                                                 fIsDoubleWidth,
-                                                 pCursor->GetCursorType(),
-                                                 pCursor->IsUsingColor(),
-                                                 pCursor->GetColor()));
+            LOG_IF_FAILED(pEngine->PaintCursor(ulHeight,
+                                               fIsDoubleWidth,
+                                               pCursor->GetCursorType(),
+                                               pCursor->IsUsingColor(),
+                                               pCursor->GetColor()));
         }
 
     }
@@ -1024,6 +1024,32 @@ void Renderer::MoveCursor(_In_ const COORD cPosition)
             pEngine->GetCursor()->Move(relativePosition);
         });
     }
+
+    _NotifyPaintFrame();
+}
+
+// Method Description:
+// - Updates each renderer's cursor with the new cursor position, in viewport 
+//      origin, character coordinates
+// Arguments:
+// - the new cursor position, in buffer origin character coordinates
+// Return Value:
+// - <none>
+void Renderer::SetCursorAttributes(_In_ const COLORREF color,
+                                   _In_ const CursorType type)
+{
+    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+        IRenderCursor* pCursor = pEngine->GetCursor();
+        
+        if (pCursor->GetColor() != color)
+        {
+            pCursor->SetColor(color);
+        }
+        if (pCursor->GetType() != type)
+        {
+            pCursor->SetType(type);
+        }
+    });
 
     _NotifyPaintFrame();
 }

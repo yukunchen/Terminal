@@ -159,12 +159,11 @@ public:
     void SetColorTableEntry(_In_ size_t const index, _In_ COLORREF const ColorValue);
     COLORREF GetColorTableEntry(_In_ size_t const index) const;
 
-    unsigned int GetCursorColor() const;
+    COLORREF GetCursorColor() const;
     CursorType GetCursorType() const;
     
-    void SetCursorColor(_In_ unsigned int CursorColor);
+    void SetCursorColor(_In_ const COLORREF CursorColor);
     void SetCursorType(_In_ const CursorType cursorType);
-
 
 private:
     DWORD _dwHotKey;
