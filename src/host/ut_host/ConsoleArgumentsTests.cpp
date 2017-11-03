@@ -27,6 +27,9 @@ public:
     TEST_METHOD(IsUsingVtHandleTests);
     TEST_METHOD(CombineVtPipeHandleTests);
     TEST_METHOD(IsVtHandleValidTests);
+
+    TEST_METHOD(HeadlessArgTests);
+    
 };
 
 ConsoleArguments CreateAndParse(std::wstring& commandline, HANDLE hVtIn, HANDLE hVtOut)
@@ -869,4 +872,81 @@ void ConsoleArgumentsTests::IsVtHandleValidTests()
     VERIFY_IS_FALSE(ConsoleArguments::s_IsValidHandle(0), L"Zero handle invalid.");
     VERIFY_IS_FALSE(ConsoleArguments::s_IsValidHandle(INVALID_HANDLE_VALUE), L"Invalid handle invalid.");
     VERIFY_IS_TRUE(ConsoleArguments::s_IsValidHandle(UlongToHandle(0x4)), L"0x4 is valid.");
+}
+
+void ConsoleArgumentsTests::HeadlessArgTests()
+{
+    std::wstring commandline;
+
+    commandline = L"conhost.exe --headless";
+    ArgTestsRunner(L"#1 Check that the headless arg works",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE,
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    false, // forceV1
+                                    true, // headless
+                                    true, // createServerHandle
+                                    0), // serverHandle
+                   true); // successful parse?
+
+    commandline = L"conhost.exe --headless 0x4";
+    ArgTestsRunner(L"#2 Check that headless arg works with the server param",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE,
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    false, // forceV1
+                                    true, // headless
+                                    false, // createServerHandle
+                                    4ul), // serverHandle
+                   true); // successful parse?
+
+    commandline = L"conhost.exe --headless --headless";
+    ArgTestsRunner(L"#3 multiple --headless params are all treated as one",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE,
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    false, // forceV1
+                                    true, // headless
+                                    true, // createServerHandle
+                                    0), // serverHandle
+                   true); // successful parse?
+
+    commandline = L"conhost.exe -- foo.exe --headless";
+    ArgTestsRunner(L"#4 ---headless as a client commandline does not make us headless",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"foo.exe --headless", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE,
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0), // serverHandle
+                   true); // successful parse?
 }

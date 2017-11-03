@@ -13,9 +13,8 @@ Author(s):
 
 #pragma once
 
-#include "IRenderer.hpp"
 #include "IRenderCursor.hpp"
-#include "FontInfo.hpp"
+#include "FontInfoDesired.hpp"
 
 // Valid COLORREFs are of the pattern 0x00bbggrr. -1 works as an invalid color, 
 //      as the highest byte of a valid color is always 0.

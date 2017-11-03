@@ -1261,7 +1261,6 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(_In_ const wchar_t* const pw
                         foundColor = false;
                         break;
                     }
-
                     // If we're on the blue component, we're not going to see a /.
                     // Break out once we hit the end.
                     if (component == 2 && pwchCurr == pwchEnd)

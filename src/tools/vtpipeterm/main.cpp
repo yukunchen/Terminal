@@ -30,24 +30,31 @@ std::deque<VtConsole*> consoles;
 VtConsole* debug;
 
 bool prefixPressed = false;
-
+bool g_headless = false;
 ////////////////////////////////////////////////////////////////////////////////
 // Forward decls
 std::string toPrintableString(std::string& inString);
 void toPrintableBuffer(char c, char* printBuffer, int* printCch);
+void PrintInputToDebug(std::string& rawInput);
 ////////////////////////////////////////////////////////////////////////////////
 
-void ReadCallback(BYTE* buffer, DWORD dwRead)
+void ReadCallback(byte* buffer, DWORD dwRead)
 {
     // We already set the console to UTF-8 CP, so we can just write straight to it
-    THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
-
-    std::string renderData = std::string((char*)buffer, dwRead);
-    std::string printable = toPrintableString(renderData);
-    std::string seq = "\n";
-    debug->WriteInput(printable);
-    debug->WriteInput(seq);
-
+    bool fSuccess = !!WriteFile(hOut, buffer, dwRead, nullptr, nullptr);
+    if (fSuccess)
+    {
+        std::string renderData = std::string((char*)buffer, dwRead);
+        std::string printable = toPrintableString(renderData);
+        std::string seq = "\n";
+        debug->WriteInput(printable);
+        debug->WriteInput(seq);
+    }
+    else
+    {
+        HRESULT hr = GetLastError();
+        exit(hr);
+    }
 }
 
 void DebugReadCallback(BYTE* /*buffer*/, DWORD /*dwRead*/)
@@ -82,7 +89,7 @@ HANDLE outPipe()
 
 void newConsole()
 {
-    auto con = new VtConsole(ReadCallback);
+    auto con = new VtConsole(ReadCallback, g_headless);
     con->spawn();
     consoles.push_back(con);
 }
@@ -286,30 +293,15 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                 SMALL_RECT srViewport = csbiex.srWindow;
                 
                 std::stringstream ss;
-                std::stringstream debugSs;
-                ss << "\x1b[8;";
-                debugSs << "\\x1b[8;";
+                
                 short width = srViewport.Right - srViewport.Left + 1;
                 short height = srViewport.Bottom - srViewport.Top + 1;
                 
-                ss << height;
-                debugSs << height;
-
-                ss << ";";
-                debugSs << ";";
+                ss << "\x1b[8;" << height << ";" << width << "t";
                 
-                ss << width;
-                debugSs << width;
-                
-                ss << "t";
-                debugSs << "t";
-
-                std::string seq;
-                std::string debugSeq;
-                ss >> seq;
-                debugSs >> debugSeq;
+                std::string seq = ss.str();
                 getConsole()->WriteInput(seq);
-                debug->WriteInput(debugSeq);
+                PrintInputToDebug(seq);
             }
         }
 
@@ -321,11 +313,19 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
         std::string printSeq = std::string(printableBuffer, printableCch);
 
         getConsole()->WriteInput(vtseq);
+        PrintInputToDebug(vtseq);
+    }
+}
 
+void PrintInputToDebug(std::string& rawInput)
+{
+    if (debug != nullptr)
+    {
+        std::string printable = toPrintableString(rawInput);
         std::stringstream ss;
-        ss << "Input \"" << printSeq.c_str() << "\" [" << vtseq.length() << "]\n";
-        std::string debugString = ss.str();
-        debug->WriteInput(debugString);
+        ss << "Input \"" << printable.c_str() << "\" [" << rawInput.length() << "]\n";
+        std::string output = ss.str();
+        debug->WriteInput(output);
     }
 }
 
@@ -365,8 +365,15 @@ DWORD InputThread(LPVOID lpParameter)
     {
         INPUT_RECORD rc[256];
         DWORD dwRead = 0;
-        ReadConsoleInputA(hIn, rc, 256, &dwRead);
-        handleManyEvents(rc, dwRead);
+        bool fSuccess = !!ReadConsoleInputA(hIn, rc, 256, &dwRead);
+        if (fSuccess)
+        {
+            handleManyEvents(rc, dwRead);
+        }
+        else
+        {
+            exit(GetLastError());
+        }
     }
 }
 
@@ -403,7 +410,7 @@ BOOL CtrlHandler( DWORD fdwCtrlType )
 // disable the warning about it here.
 #pragma warning(push)
 #pragma warning(disable:4702)
-int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
+int __cdecl wmain(int argc, WCHAR* argv[])
 {
     // initialize random seed: 
     srand((unsigned int)time(NULL));
@@ -411,6 +418,18 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     hIn = GetStdHandle(STD_INPUT_HANDLE);
+
+    if (argc > 1)
+    {
+        for (int i = 0; i < argc; ++i)
+        {
+            std::wstring arg = argv[i];
+            if (arg == std::wstring(L"--headless"))
+            {
+                g_headless = true;
+            }
+        }
+    }
 
     SetupOutput();
     SetupInput();
@@ -420,7 +439,7 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     CreateIOThreads();
 
     // Create a debug console for writting debugging output to.
-    debug = new VtConsole(DebugReadCallback);
+    debug = new VtConsole(DebugReadCallback, false);
     // Echo stdin to stdout, but ignore newlines (so cat doesn't echo the input)
     debug->spawn(L"ubuntu run tr -d '\n' | cat -sA");
     debug->activate();

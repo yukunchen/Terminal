@@ -14,7 +14,6 @@
 #include "ConIoSrv.h"
 
 #include "..\..\host\input.h"
-#include "..\..\host\renderData.hpp"
 #include "..\..\renderer\base\renderer.hpp"
 #include "..\..\renderer\wddmcon\wddmconrenderer.hpp"
 
@@ -27,6 +26,7 @@ NTSTATUS InitializeBgfx()
     NTSTATUS Status;
 
     Globals * const Globals = ServiceLocator::LocateGlobals();
+    assert(Globals->pRender != nullptr);
     IWindowMetrics * const Metrics = ServiceLocator::LocateWindowMetrics();
     const ConIoSrvComm * const Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
 
@@ -52,7 +52,13 @@ NTSTATUS InitializeBgfx()
 
             if (NT_SUCCESS(Status))
             {
-                Globals->pRenderEngine = pBgfxEngine;
+                try
+                {
+                    Globals->pRender->AddRenderEngine(pBgfxEngine);
+                catch(...)
+                {
+                    Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
             }
         }
     }
@@ -65,13 +71,20 @@ NTSTATUS InitializeWddmCon()
     NTSTATUS Status;
 
     Globals * const Globals = ServiceLocator::LocateGlobals();
+    assert(Globals->pRender != nullptr);
 
     WddmConEngine * const pWddmConEngine = new WddmConEngine();
     Status = NT_TESTNULL(pWddmConEngine);
 
     if (NT_SUCCESS(Status))
     {
-        Globals->pRenderEngine = pWddmConEngine;
+        try
+        {
+            Globals->pRender->AddRenderEngine(pWddmConEngine);
+        catch(...)
+        {
+            Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        }
     }
 
     return Status;
@@ -81,11 +94,10 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
 {
     UNREFERENCED_PARAMETER(lpParam);
     
-    NTSTATUS Status;
-
     Globals * const Globals = ServiceLocator::LocateGlobals();
     ConIoSrvComm * const Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
-    Status = Server->Connect();
+    
+    NTSTATUS Status = Server->Connect();
 
     if (NT_SUCCESS(Status))
     {
@@ -102,6 +114,9 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
             {
                 ServiceLocator::SetConsoleWindowInstance(wnd);
 
+                // The console's renderer should be created before we get here.
+                ASSERT(Globals->pRender != nullptr);
+
                 switch (DisplayMode)
                 {
                 case CIS_DISPLAY_MODE_BGFX:
@@ -115,33 +130,12 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
 
                 if (NT_SUCCESS(Status))
                 {
-                    // Create and set the render data.
-                    Globals->pRenderData = new RenderData();
-                    Status = NT_TESTNULL(Globals->pRenderData);
+                    Globals->ntstatusConsoleInputInitStatus = Status;
+                    Globals->hConsoleInputInitEvent.SetEvent();
 
-                    if (NT_SUCCESS(Status))
-                    {
-                        // Create and set the renderer.
-                        Renderer* pNewRenderer = nullptr;
-                        Renderer::s_CreateInstance(Globals->pRenderData,
-                                                   &Globals->pRenderEngine,
-                                                   1,
-                                                   &pNewRenderer);
-                        Status = NT_TESTNULL(pNewRenderer);
-
-                        if (NT_SUCCESS(Status))
-                        {
-                            Globals->pRender = pNewRenderer;
-                            
-                            // Notify IO thread of our status and let it go.
-                            ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus = Status;
-                            ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.SetEvent();
-
-                            // Start listening for input (returns on failure only).
-                            // This will never return.
-                            Server->ServiceInputPipe();
-                        }
-                    }
+                    // Start listening for input (returns on failure only).
+                    // This will never return.
+                    Server->ServiceInputPipe();
                 }
             }
         }

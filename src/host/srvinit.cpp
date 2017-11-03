@@ -20,6 +20,9 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
+#include "renderData.hpp"
+#include "../renderer/base/renderer.hpp"
+
 #pragma hdrstop
 
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
@@ -426,7 +429,10 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 {
     // AllocConsole is outside our codebase, but we should be able to mostly track the call here.
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AllocConsole);
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+
+    Globals* const g = ServiceLocator::LocateGlobals();
+
+    CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
 
     NTSTATUS Status = SetUpConsole(&p->ConsoleInfo, p->TitleLength, p->Title, p->CurDir, p->AppName);
     if (!NT_SUCCESS(Status))
@@ -434,7 +440,32 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         return Status;
     }
 
-    if (NT_SUCCESS(Status) && p->WindowVisible)
+    // No matter what, create a renderer.
+    try
+    {
+        std::unique_ptr<IRenderData> renderData = std::make_unique<RenderData>();
+        Status = NT_TESTNULL(renderData.get());
+        if (NT_SUCCESS(Status))
+        {
+            Renderer* pRender = nullptr;
+            g->pRender = nullptr;
+            Status = NTSTATUS_FROM_HRESULT(Renderer::s_CreateInstance(std::move(renderData), &(pRender)));
+            
+            if (NT_SUCCESS(Status))
+            {
+                g->pRender = pRender;
+                // Allow the renderer to paint.
+                g->pRender->EnablePainting();
+            }
+        }
+    }
+    catch (...)
+    {
+        Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
+
+
+    if (NT_SUCCESS(Status) && p->WindowVisible && !g->launchArgs.IsHeadless())
     {
         HANDLE Thread = nullptr;
 
@@ -454,15 +485,15 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 
             // The ConsoleInputThread needs to lock the console so we must first unlock it ourselves.
             UnlockConsole();
-            ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.wait();
+            g->hConsoleInputInitEvent.wait();
             LockConsole();
 
             CloseHandle(Thread);
-            ServiceLocator::LocateGlobals()->hConsoleInputInitEvent.release();
+            g->hConsoleInputInitEvent.release();
 
-            if (!NT_SUCCESS(ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus))
+            if (!NT_SUCCESS(g->ntstatusConsoleInputInitStatus))
             {
-                Status = ServiceLocator::LocateGlobals()->ntstatusConsoleInputInitStatus;
+                Status = g->ntstatusConsoleInputInitStatus;
             }
             else
             {
@@ -480,12 +511,8 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
              *      is only called when a window is created.
              */
 
-            LOG_IF_FAILED(ServiceLocator::LocateGlobals()->pDeviceComm->AllowUIAccess());
+            LOG_IF_FAILED(g->pDeviceComm->AllowUIAccess());
         }
-    }
-    else
-    {
-        gci->Flags |= CONSOLE_NO_WINDOW;
     }
 
     // Potentially start the VT IO (if needed)

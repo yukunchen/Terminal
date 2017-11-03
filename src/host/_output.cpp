@@ -12,8 +12,11 @@
 #include "misc.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
+#include "..\types\inc\Viewport.hpp"
 
 #pragma hdrstop
+
+using namespace Microsoft::Console::Types;
 
 #define MAX_POLY_LINES 80
 
@@ -310,9 +313,7 @@ void WriteRegionToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PSMALL_RECT 
         if (ServiceLocator::LocateGlobals()->pRender != nullptr)
         {
             // convert inclusive rectangle to exclusive rectangle
-            SMALL_RECT srExclusive = *psrRegion;
-            srExclusive.Right++;
-            srExclusive.Bottom++;
+            SMALL_RECT srExclusive = Viewport::FromInclusive(*psrRegion).ToExclusive();
 
             ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&srExclusive);
         }
@@ -331,8 +332,7 @@ void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT s
     DBGOUTPUT(("WriteToScreen\n"));
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     // update to screen, if we're not iconic.
-    if (!pScreenInfo->IsActiveScreenBuffer() ||
-        (gci->Flags & (CONSOLE_IS_ICONIC | CONSOLE_NO_WINDOW)))
+    if (!pScreenInfo->IsActiveScreenBuffer() || IsFlagSet(gci->Flags, CONSOLE_IS_ICONIC))
     {
         return;
     }
