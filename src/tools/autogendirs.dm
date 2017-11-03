@@ -7,8 +7,9 @@
   <Module>
     <Identity>MsWin.OnecoreUap</Identity>
     <Partial>true</Partial>
-    <SpecFiles />
+    <SpecFiles>
+      <Item>nihilist\autogen.ds</Item>
+      <Item>vtapp\autogen.ds</Item>
+    </SpecFiles>
   </Module>
-  <Import>adapter\autogendirs.dm</Import>
-  <Import>parser\autogendirs.dm</Import>
 </DominoModule>

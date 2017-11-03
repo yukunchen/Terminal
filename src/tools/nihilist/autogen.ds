@@ -1,0 +1,244 @@
+<!--
+ <copyright file="autogen.ds" company="Microsoft">
+     Copyright (c) Microsoft Corporation. All rights reserved.
+ </copyright>
+-->
+
+<DominoSpec xmlns:d="http://schemas.microsoft.com/domino/extension/0.5" xmlns="http://schemas.microsoft.com/domino/0.5">
+  <Namespace Name="MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools">
+    <Path Name="DotDot" Visibility="Private">{SrcRoot}\onecore\windows\core\console\open\src\tools</Path>
+    <Path Name="O" Visibility="Private">{ObjRoot}\onecore\windows\core\console\open\src\tools\nihilist\{BuildAlt}</Path>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_PrePass-->
+
+    <LegacyBuilder Output="Nihilist_PrePass" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+      <Classification>Test</Classification>
+      <TargetPass>PrePass</TargetPass>
+
+      <!--Consumes-->
+
+      <Consumes>
+        <Item>autogen.ds</Item>
+        <Item>nihilist.vcxproj</Item>
+        <Item>product.pbxproj</Item>
+      </Consumes>
+    </LegacyBuilder>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Pass1-->
+
+    <LegacyBuilder Output="Nihilist_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+      <Classification>Test</Classification>
+      <TargetPass>Pass1</TargetPass>
+
+      <!--Consumes-->
+
+      <Consumes>
+        <Item>autogen.ds</Item>
+        <Item>main.cpp</Item>
+        <Item>nihilist.vcxproj</Item>
+        <Item>product.pbxproj</Item>
+        <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
+
+        <!--References-->
+
+        <Item>{MsWin.Crts.Public.Internal.Sdk.Inc.Ucrt.__Header}</Item>
+        <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.__Header}</Item>
+        <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreNet.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreSdkTools.Public.Internal.Onecoresdktools.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreSdkTools.Public.Internal.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreSdkTools.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_PrePass}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_ApiSet.Public.Sdk.Inc.Mincore.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Internal.Base.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.Minwin.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Shared.Inc.Minwin.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Shared.Inc.__Header}</Item>
+      </Consumes>
+
+      <!--Produces-->
+
+      <Produces>
+        <Item>{BinRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-tools-nihilist-nmake_to_mbs_pass1.props.br</Item>
+        <Item>{BinRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-tools-nihilist-nmake_to_mbs_pass1.props</Item>
+        <Item>{O}\main.obj</Item>
+        <Item>{O}\nmake_to_mbs_pass1.props</Item>
+      </Produces>
+    </LegacyBuilder>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Pass2-->
+
+    <LegacyBuilder Output="Nihilist_Pass2" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+      <Classification>Test</Classification>
+      <TargetPass>Pass2</TargetPass>
+
+      <!--Consumes-->
+
+      <Consumes>
+        <Item>autogen.ds</Item>
+        <Item>main.cpp</Item>
+        <Item>nihilist.vcxproj</Item>
+        <Item>product.pbxproj</Item>
+        <Item>res.rc</Item>
+        <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
+        <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
+
+        <!--References-->
+
+        <Item>{MsWin.Crts.Public.Internal.Sdk.Lib.Ucrt.__Library}</Item>
+        <Item Condition="{IsBuildDebug AND IsBuildCommonArchitecture}">{MsWin.Crts.Public.Internal.Sdk.Lib.__Library}</Item>
+        <Item Condition="{(IsBuildArm32 OR IsBuildArm64)}">{MsWin.Crts.Public.Sdk.Lib.__Library}</Item>
+        <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreMerged.Public.Sdk.Lib.Mincore.__Library}</Item>
+        <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_PrePass}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Internal.Sdk.Lib.__Library}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.Minwin.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Lib.Minwin.v1_8.__Library}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Lib.__Library}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Shared.Inc.__Header}</Item>
+      </Consumes>
+
+      <!--Produces-->
+
+      <Produces>
+        <Item>{BinRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-tools-nihilist-nmake_to_mbs_pass2.props.br</Item>
+        <Item>{BinRoot}\blg\unittests\nihilist.exe.br</Item>
+        <Item>{BinRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-tools-nihilist-nmake_to_mbs_pass2.props</Item>
+        <Item>{BinRoot}\symbols.pri\unittests\exe\nihilist.pdb</Item>
+        <Item>{BinRoot}\unittests\nihilist.exe</Item>
+        <Item>{O}\nihilist.exe</Item>
+        <Item>{O}\nihilist.pdb</Item>
+        <Item>{O}\nmake_to_mbs_pass2.props</Item>
+        <Item>{O}\res.res</Item>
+      </Produces>
+    </LegacyBuilder>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Pass3-->
+
+    <LegacyBuilder Output="Nihilist_Pass3" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+      <Classification>Test</Classification>
+      <TargetPass>Pass3</TargetPass>
+      <d:Tags>
+        <Item>Packages</Item>
+      </d:Tags>
+
+      <!--Consumes-->
+
+      <Consumes>
+        <Item>autogen.ds</Item>
+        <Item>nihilist.vcxproj</Item>
+
+        <!--References-->
+
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Pass2}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_PrePass}</Item>
+
+        <!--Conditional items-->
+
+        <If Condition="{IsBuildRelease AND IsBuildCommonArchitecture}">
+          <Item>{MsDev.Clr_Pkg.v45.Public.Sdk.Ref.Clr45.__MetaData}</Item>
+          <Item>{MsWin.Onecore_Pkg.BinPublic.Imagingtools.__Content}</Item>
+        </If>
+
+        <If Condition="{IsBuildRelease}">
+          <Item>product.pbxproj</Item>
+          <Item>sources.pkg.xml</Item>
+          <Item>{BinRoot}\msbuildprops\localization.txt</Item>
+          <Item>{ObjRoot}\{BuildAlt}\modularbuildglobalbuildsession.props</Item>
+          <Item>{ObjRoot}\{BuildAlt}\__bldlanguageoverride__.props</Item>
+          <Item>{ObjRoot}\{BuildAlt}\__bldlanguage__.props</Item>
+          <Item>{SrcRoot}\onecore\windows\project.props</Item>
+          <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
+        </If>
+
+      </Consumes>
+
+      <!--Produces-->
+
+      <Produces>
+
+        <!--Conditional items-->
+
+        <If Condition="{IsBuildRelease}">
+          <Item>{BinRoot}\blg\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.nihilist.cab.br</Item>
+          <Item>{BinRoot}\blg\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.nihilist.man.dsm.xml.br</Item>
+          <Item>{BinRoot}\blg\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.nihilist.spkg.br</Item>
+          <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.nihilist.cab</Item>
+          <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.nihilist.man.dsm.xml</Item>
+          <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.nihilist.spkg</Item>
+          <Item>{O}\microsoft.console.tools.nihilist.cab</Item>
+          <Item>{O}\microsoft.console.tools.nihilist.man.dsm.xml</Item>
+          <Item>{O}\microsoft.console.tools.nihilist.spkg</Item>
+        </If>
+
+      </Produces>
+    </LegacyBuilder>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Bin_BlgMsbuildpropsNmakeprops.__Content-->
+
+    <SdkCombineRunner Output="Nihilist_Bin_BlgMsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
+      <OutputDirectory>{BinRoot}\blg\msbuildprops\nmakeprops</OutputDirectory>
+      <Sources>
+        <Item>{Nihilist_Pass1.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
+        <Item>{Nihilist_Pass2.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
+      </Sources>
+    </SdkCombineRunner>
+    <LibrarySetRunner Output="Nihilist_Bin_BlgMsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Nihilist_Bin_BlgMsbuildpropsNmakeprops.s__Content}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Bin_BlgPrebuiltTest.__Content-->
+
+    <LibrarySetRunner Output="Nihilist_Bin_BlgPrebuiltTest.__Content" Visibility="Internal" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}">
+      <Directory>{Nihilist_Pass3.Directories[BinRoot.Combine("blg\prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Bin_BlgUnittests.__Content-->
+
+    <LibrarySetRunner Output="Nihilist_Bin_BlgUnittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Nihilist_Pass2.Directories[BinRoot.Combine("blg\unittests")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Bin_MsbuildpropsNmakeprops.__Content-->
+
+    <SdkCombineRunner Output="Nihilist_Bin_MsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
+      <OutputDirectory>{BinRoot}\msbuildprops\nmakeprops</OutputDirectory>
+      <Sources>
+        <Item>{Nihilist_Pass1.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
+        <Item>{Nihilist_Pass2.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
+      </Sources>
+    </SdkCombineRunner>
+    <LibrarySetRunner Output="Nihilist_Bin_MsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Nihilist_Bin_MsbuildpropsNmakeprops.s__Content}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Bin_PrebuiltTest.__Content-->
+
+    <LibrarySetRunner Output="Nihilist_Bin_PrebuiltTest.__Content" Visibility="Internal" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}">
+      <Directory>{Nihilist_Pass3.Directories[BinRoot.Combine("prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Bin_SymbolspriUnittestsExe.__Content-->
+
+    <LibrarySetRunner Output="Nihilist_Bin_SymbolspriUnittestsExe.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Nihilist_Pass2.Directories[BinRoot.Combine("symbols.pri\unittests\exe")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Bin_Unittests.__Content-->
+
+    <LibrarySetRunner Output="Nihilist_Bin_Unittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Nihilist_Pass2.Directories[BinRoot.Combine("unittests")]}</Directory>
+    </LibrarySetRunner>
+  </Namespace>
+</DominoSpec>
