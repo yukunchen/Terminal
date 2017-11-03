@@ -1,3 +1,17 @@
+/*++
+Copyright (c) Microsoft Corporation
+
+Module Name:
+- VtConsole.hpp
+
+Abstract:
+- This serves as an abstraction to allow for a test connection to a conhost.exe running
+  in VT server mode. It's abstracted to allow multiple simultaneous connections to multiple
+  conhost.exe servers.
+
+Author(s):
+- Mike Griese (MiGrie) 2017
+--*/
 
 
 #include <windows.h>
@@ -7,7 +21,7 @@
 #include <string>
 
 
-typedef void(*PipeReadCallback)(byte* buffer, DWORD dwRead);
+typedef void(*PipeReadCallback)(BYTE* buffer, DWORD dwRead);
 
 class VtConsole
 {
@@ -43,6 +57,9 @@ private:
     std::wstring _inPipeName;
     std::wstring _outPipeName;
     
+    HANDLE _outPipeConhostSide;
+    HANDLE _inPipeConhostSide;
+    
     bool _connected = false;
     DWORD _offset = 0;
     bool _active = false;
@@ -54,8 +71,10 @@ private:
     HANDLE _hOutputThread = INVALID_HANDLE_VALUE;
 
     void _openConsole2(const std::wstring& command);
+    void _openConsole3(const std::wstring& command);
 
     void _spawn2(const std::wstring& command);
+    void _spawn3(const std::wstring& command);
 
     DWORD _OutputThread();
 

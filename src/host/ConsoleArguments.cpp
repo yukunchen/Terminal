@@ -18,8 +18,12 @@ const std::wstring ConsoleArguments::CLIENT_COMMANDLINE_ARG = L"--";
 const std::wstring ConsoleArguments::FORCE_V1_ARG = L"-ForceV1";
 const std::wstring ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
 
-ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline)
-    : _commandline(commandline)
+ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline,
+                                   _In_ const HANDLE hStdIn,
+                                   _In_ const HANDLE hStdOut)
+    : _commandline(commandline),
+      _vtInHandle(hStdIn),
+      _vtOutHandle(hStdOut)
 {
     _clientCommandline = L"";
     _vtInPipe = L"";
@@ -31,13 +35,14 @@ ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline)
     _forceV1 = false;
 }
 
-
 ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments & other)
 {
     if (this != &other)
     {
         _commandline = other._commandline;
         _clientCommandline = other._clientCommandline;
+        _vtInHandle = other._vtInHandle;
+        _vtOutHandle = other._vtOutHandle;
         _vtInPipe = other._vtInPipe;
         _vtOutPipe = other._vtOutPipe;
         _vtMode = other._vtMode;
@@ -244,11 +249,27 @@ HRESULT ConsoleArguments::ParseCommandline()
         }
         else if (arg == VT_IN_PIPE_ARG)
         {
-            hr = s_GetArgumentValue(args, i, &_vtInPipe);
+            // It's only valid to capture one of these if we weren't also passed a valid handle
+            // on the process startup parameters through our standard handles.
+            if (!s_IsValidHandle(_vtInHandle))
+            {
+                hr = s_GetArgumentValue(args, i, &_vtInPipe);
+            }
+            else
+            {
+                hr = E_INVALIDARG;
+            }
         }
         else if (arg == VT_OUT_PIPE_ARG)
         {
-            hr = s_GetArgumentValue(args, i, &_vtOutPipe);
+            if (!s_IsValidHandle(_vtOutHandle))
+            {
+                hr = s_GetArgumentValue(args, i, &_vtOutPipe);
+            }
+            else
+            {
+                hr = E_INVALIDARG;
+            }
         }
         else if (arg == VT_MODE_ARG)
         {
@@ -295,6 +316,19 @@ HRESULT ConsoleArguments::ParseCommandline()
 }
 
 // Routine Description:
+// - Returns true if we already have opened handles to use for the VT server
+//   streams.
+// - If false, try next to see if we have pipe names to open instead.
+// Arguments:
+// - <none> - uses internal state
+// Return Value:
+// - True or false (see description)
+bool ConsoleArguments::HasVtHandles() const
+{
+    return s_IsValidHandle(_vtInHandle) && s_IsValidHandle(_vtOutHandle);
+}
+
+// Routine Description:
 //  Returns true if according to the arguments parsed from _commandline we 
 //      should start with the VT pipe enabled. This is when we have both a VT
 //      input and output pipe name given. Guarentees nothing about the pipe 
@@ -323,6 +357,16 @@ HANDLE ConsoleArguments::GetServerHandle() const
     return ULongToHandle(_serverHandle);
 }
 
+HANDLE ConsoleArguments::GetVtInHandle() const
+{
+    return _vtInHandle;
+}
+
+HANDLE ConsoleArguments::GetVtOutHandle() const
+{
+    return _vtOutHandle;
+}
+
 std::wstring ConsoleArguments::GetClientCommandline() const
 {
     return _clientCommandline;
@@ -346,4 +390,15 @@ std::wstring ConsoleArguments::GetVtMode() const
 bool ConsoleArguments::GetForceV1() const
 {
     return _forceV1;
+}
+
+// Routine Description:
+// - Shorthand check if a handle value is null or invalid.
+// Arguments:
+// - Handle
+// Return Value:
+// - True if non zero and not set to invalid magic value. False otherwise.
+bool ConsoleArguments::s_IsValidHandle(_In_ const HANDLE handle)
+{
+    return handle != 0 && handle != INVALID_HANDLE_VALUE;
 }

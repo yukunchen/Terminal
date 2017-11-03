@@ -38,7 +38,6 @@ void toPrintableBuffer(char c, char* printBuffer, int* printCch);
 void PrintInputToDebug(std::string& rawInput);
 ////////////////////////////////////////////////////////////////////////////////
 
-
 void ReadCallback(byte* buffer, DWORD dwRead)
 {
     // We already set the console to UTF-8 CP, so we can just write straight to it
@@ -58,7 +57,7 @@ void ReadCallback(byte* buffer, DWORD dwRead)
     }
 }
 
-void DebugReadCallback(byte* /*buffer*/, DWORD /*dwRead*/)
+void DebugReadCallback(BYTE* /*buffer*/, DWORD /*dwRead*/)
 {
     // do nothing.
 }

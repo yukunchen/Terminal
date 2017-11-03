@@ -1,3 +1,7 @@
+//
+//    Copyright (C) Microsoft.  All rights reserved.
+//
+
 #include "VtConsole.hpp"
 
 #include <stdlib.h>     /* srand, rand */
@@ -46,12 +50,12 @@ bool VtConsole::WriteInput(std::string& seq)
 
 void VtConsole::spawn()
 {
-    _spawn2(L"");
+    _spawn3(L"");
 }
 
 void VtConsole::spawn(const std::wstring& command)
 {
-    _spawn2(command);
+    _spawn3(command);
 }
 
 void VtConsole::_spawn2(const std::wstring& command)
@@ -97,9 +101,46 @@ void VtConsole::_spawn2(const std::wstring& command)
                                   &_dwOutputThreadId);
 }
 
+void VtConsole::_spawn3(const std::wstring& command)
+{
+    SECURITY_ATTRIBUTES sa;
+    sa = { 0 };
+    sa.nLength = sizeof(sa);
+    sa.bInheritHandle = TRUE;
+    sa.lpSecurityDescriptor = nullptr;
+
+    // Create some anon pipes so we can pass handles down and into the openconsole/console host.
+    THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&_inPipeConhostSide, &_inPipe, &sa, 0));
+    THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&_outPipe, &_outPipeConhostSide, &sa, 0));
+    
+    _openConsole3(command);
+    
+    _connected = true;
+    
+    // Create our own output handling thread
+    // Each console needs to make sure to drain the output from it's backing host.
+    _dwOutputThreadId = (DWORD)-1;
+    _hOutputThread = CreateThread(nullptr,
+                                  0,
+                                  (LPTHREAD_START_ROUTINE)StaticOutputThreadProc,
+                                  this,
+                                  0,
+                                  &_dwOutputThreadId);
+}
+
+PCWSTR GetCmdLine()
+{
+#ifdef __INSIDE_WINDOWS
+    return L"conhost.exe";
+#else
+    return L"OpenConsole.exe";
+#endif
+}
+
 void VtConsole::_openConsole2(const std::wstring& command)
 {
-    std::wstring cmdline = L"OpenConsole.exe";
+    std::wstring cmdline(GetCmdLine());
+
     if (_inPipeName.length() > 0)
     {
         cmdline += L" --inpipe ";
@@ -152,6 +193,55 @@ void VtConsole::_openConsole2(const std::wstring& command)
     fSuccess;
 }
 
+void VtConsole::_openConsole3(const std::wstring& command)
+{
+    std::wstring cmdline(GetCmdLine());
+
+    if (_fHeadless)
+    {
+        cmdline += L" --headless";
+    }
+
+    STARTUPINFO si = { 0 };
+    si.cb = sizeof(STARTUPINFOW);
+    si.hStdInput = _inPipeConhostSide;
+    si.hStdOutput = _outPipeConhostSide;
+    si.dwFlags |= STARTF_USESTDHANDLES;
+    
+
+    if (command.length() > 0)
+    {
+        cmdline += L" -- ";
+        cmdline += command;
+    }
+    else
+    {
+        si.dwFlags |= STARTF_USESHOWWINDOW;
+        si.wShowWindow = SW_MINIMIZE;
+    }
+
+    bool fSuccess = !!CreateProcess(
+        nullptr,
+        &cmdline[0],
+        nullptr,    // lpProcessAttributes
+        nullptr,    // lpThreadAttributes
+        true,      // bInheritHandles
+        0,          // dwCreationFlags
+        nullptr,    // lpEnvironment
+        nullptr,    // lpCurrentDirectory
+        &si,        //lpStartupInfo
+        &pi         //lpProcessInformation
+    );
+
+    if (!fSuccess)
+    {
+        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+        std::string msg = "Failed to launch Openconsole";
+        WriteFile(hOut, msg.c_str(), (DWORD)msg.length(), nullptr, nullptr);
+    }
+    fSuccess;
+}
+
 DWORD VtConsole::getReadOffset()
 {
     return _offset;
@@ -180,7 +270,7 @@ DWORD VtConsole::StaticOutputThreadProc(LPVOID lpParameter)
 
 DWORD VtConsole::_OutputThread()
 {
-    byte buffer[256];
+    BYTE buffer[256];
     DWORD dwRead;
     while (true)
     {
