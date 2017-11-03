@@ -367,9 +367,13 @@ void Cursor::CopyProperties(_In_ const Cursor* const pOtherCursor)
 void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    ServiceLocator::LocateConsoleWindow()->SetWindowHasMoved(false);
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    if (pWindow != nullptr)
+    {
+        pWindow->SetWindowHasMoved(false);
+    } 
 
-    if ((gci->Flags & CONSOLE_HAS_FOCUS) == 0)
+    if (!IsFlagSet(gci->Flags, CONSOLE_HAS_FOCUS))
     {
         goto DoScroll;
     }

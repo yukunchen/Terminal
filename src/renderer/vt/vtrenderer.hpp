@@ -14,9 +14,9 @@ Author(s):
 
 #pragma once
 
-#include "VtCursor.hpp"
 #include "../inc/IRenderEngine.hpp"
 #include "../../types/inc/Viewport.hpp"
+#include "VtCursor.hpp"
 #include <string>
 #include <functional>
 

@@ -238,15 +238,23 @@ void SCREEN_INFORMATION::s_RemoveScreenBuffer(_In_ SCREEN_INFORMATION* const pSc
 NTSTATUS SCREEN_INFORMATION::_InitializeOutputStateMachine()
 {
     ASSERT(_pConApi == nullptr);
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    _pConApi = new ConhostInternalGetSet(this, gci->pInputBuffer);
-    NTSTATUS status = NT_TESTNULL(_pConApi);
-
-    if (NT_SUCCESS(status))
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    NTSTATUS status = STATUS_NO_MEMORY;
+    try
     {
-        ASSERT(_pBufferWriter == nullptr);
-        _pBufferWriter = new WriteBuffer(this);
-        status = NT_TESTNULL(_pBufferWriter);
+        _pConApi = new ConhostInternalGetSet(gci);
+        status = NT_TESTNULL(_pConApi);
+
+        if (NT_SUCCESS(status))
+        {
+            ASSERT(_pBufferWriter == nullptr);
+            _pBufferWriter = new WriteBuffer(gci);
+            status = NT_TESTNULL(_pBufferWriter);
+        }
+    }
+    catch (...)
+    {
+        status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
     if (NT_SUCCESS(status))
@@ -313,11 +321,6 @@ void SCREEN_INFORMATION::_FreeOutputStateMachine()
         {
             delete _pConApi;
         }
-    }
-    else
-    {
-        _pConApi->SetActiveScreenBuffer(this->_psiMainBuffer);
-        _pBufferWriter->SetActiveScreenBuffer(this->_psiMainBuffer);
     }
 }
 #pragma endregion
@@ -638,7 +641,10 @@ VOID SCREEN_INFORMATION::UpdateScrollBars()
 VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->Flags &= ~CONSOLE_UPDATING_SCROLL_BARS;
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+
+    ClearFlag(gci->Flags, CONSOLE_UPDATING_SCROLL_BARS);
+
     if (!this->IsActiveScreenBuffer())
     {
         return;
@@ -655,16 +661,19 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 
     const COORD coordScreenBufferSize = GetScreenBufferSize();
 
-    ServiceLocator::LocateConsoleWindow()->UpdateScrollBar(true,
-                                                           this->_IsAltBuffer(),
-                                                           this->GetScreenWindowSizeY(),
-                                                           coordScreenBufferSize.Y - 1,
-                                                           this->_srBufferViewport.Top);
-    ServiceLocator::LocateConsoleWindow()->UpdateScrollBar(false,
-                                                           this->_IsAltBuffer(),
-                                                           this->GetScreenWindowSizeX(),
-                                                           coordScreenBufferSize.X - 1,
-                                                           this->_srBufferViewport.Left);
+    if (pWindow != nullptr)
+    {
+        pWindow->UpdateScrollBar(true,
+                                 this->_IsAltBuffer(),
+                                 this->GetScreenWindowSizeY(),
+                                 coordScreenBufferSize.Y - 1,
+                                 this->_srBufferViewport.Top);
+        pWindow->UpdateScrollBar(false,
+                                 this->_IsAltBuffer(),
+                                 this->GetScreenWindowSizeX(),
+                                 coordScreenBufferSize.X - 1,
+                                 this->_srBufferViewport.Left);
+    }
 
     // Fire off an event to let accessibility apps know the layout has changed.
     _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
@@ -2061,10 +2070,6 @@ NTSTATUS SCREEN_INFORMATION::UseAlternateScreenBuffer()
         {
             s_RemoveScreenBuffer(psiOldAltBuffer); // this will also delete the old alt buffer
         }
-        // hook it up to our state machine, this needs to be done after deleting the old alt buffer,
-        // otherwise deleting the old alt buffer will reattach the GetSet to the main buffer.
-        _pConApi->SetActiveScreenBuffer(psiNewAltBuffer);
-        _pBufferWriter->SetActiveScreenBuffer(psiNewAltBuffer);
 
         Status = ::SetActiveScreenBuffer(psiNewAltBuffer);
 

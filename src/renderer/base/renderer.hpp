@@ -21,6 +21,7 @@ Author(s):
 
 #include "thread.hpp"
 #include <deque>
+#include <memory>
 
 #include "..\..\host\textBuffer.hpp"
 
@@ -33,10 +34,14 @@ namespace Microsoft
             class Renderer sealed : public IRenderer
             {
             public:
-                static HRESULT s_CreateInstance(_In_ IRenderData* const pData,
+                static HRESULT s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
                                                 _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                                                 _In_ size_t const cEngines,
                                                 _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
+
+                static HRESULT s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
+                                                _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
+
                 ~Renderer();
 
                 HRESULT PaintFrame();
@@ -60,14 +65,16 @@ namespace Microsoft
                 void EnablePainting();
                 void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs);
 
-                void AddRenderEngine(_In_ IRenderEngine* const pEngine);
+                void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
 
                 void MoveCursor(_In_ const COORD cPosition) override;
 
             private:
-                Renderer(_In_ IRenderData* const pData, _In_reads_(cEngines) IRenderEngine** const pEngine, _In_ size_t const cEngines);
+                Renderer(_In_ std::unique_ptr<IRenderData> pData,
+                         _In_reads_(cEngines) IRenderEngine** const pEngine,
+                         _In_ size_t const cEngines);
                 std::deque<IRenderEngine*> _rgpEngines;
-                IRenderData* _pData;
+                const std::unique_ptr<IRenderData> _pData;
 
                 RenderThread* _pThread;
                 void _NotifyPaintFrame();

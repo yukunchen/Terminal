@@ -15,6 +15,7 @@ Author:
 
 #include "..\terminal\adapter\adaptDefaults.hpp"
 #include "..\types\inc\IInputEvent.hpp"
+#include "IIoProvider.hpp"
 
 class SCREEN_INFORMATION;
 
@@ -22,7 +23,7 @@ class SCREEN_INFORMATION;
 class WriteBuffer : public Microsoft::Console::VirtualTerminal::AdaptDefaults
 {
 public:
-    WriteBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
+    WriteBuffer(_In_ Microsoft::Console::IIoProvider* const pIo);
 
     // Implement Adapter callbacks for default cases (non-escape sequences)
     void Print(_In_ wchar_t const wch);
@@ -31,18 +32,16 @@ public:
 
     NTSTATUS GetResult() { return _ntstatus; };
 
-    void SetActiveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
 private:
     void _DefaultCase(_In_ wchar_t const wch);
     void _DefaultStringCase(_In_reads_(cch) wchar_t* const rgwch, _In_ size_t const cch);
 
-    SCREEN_INFORMATION* _dcsi;
+    const Microsoft::Console::IIoProvider* const _pIo;
     NTSTATUS _ntstatus;
 };
 
 #include "..\terminal\adapter\conGetSet.hpp"
 
-#include "inputBuffer.hpp"
 
 // The ConhostInternalGetSet is for the Conhost process to call the entrypoints for its own Get/Set APIs.
 // Normally, these APIs are accessible from the outside of the conhost process (like by the process being "hosted") through
@@ -52,7 +51,7 @@ private:
 class ConhostInternalGetSet : public Microsoft::Console::VirtualTerminal::ConGetSet
 {
 public:
-    ConhostInternalGetSet(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ InputBuffer* const pInputBuffer);
+    ConhostInternalGetSet(_In_ Microsoft::Console::IIoProvider* const pIo);
 
     virtual BOOL GetConsoleScreenBufferInfoEx(_Out_ CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const override;
     virtual BOOL SetConsoleScreenBufferInfoEx(_In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) const override;
@@ -108,8 +107,6 @@ public:
 
     virtual BOOL PrivateUseMainScreenBuffer() override;
 
-    void SetActiveScreenBuffer(_In_ SCREEN_INFORMATION* const pScreenInfo);
-
     virtual BOOL PrivateHorizontalTabSet();
     virtual BOOL PrivateForwardTab(_In_ SHORT const sNumTabs) override;
     virtual BOOL PrivateBackwardsTab(_In_ SHORT const sNumTabs) override;
@@ -129,9 +126,8 @@ public:
                                             _Out_ size_t& eventsWritten) override;
 
 private:
-    SCREEN_INFORMATION* _pScreenInfo; // not const because switching to the alternate buffer will change this pointer.
-    InputBuffer* const _pInputBuffer;
-
+    const Microsoft::Console::IIoProvider* const _pIo;
+    
     BOOL _FillConsoleOutput(_In_ USHORT const usElement,
                             _In_ ULONG const ulElementType,
                             _In_ DWORD const nLength,

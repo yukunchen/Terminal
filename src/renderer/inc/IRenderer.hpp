@@ -14,6 +14,7 @@ Author(s):
 #pragma once
 
 #include "FontInfoDesired.hpp"
+#include "IRenderEngine.hpp"
 
 namespace Microsoft
 {
@@ -54,6 +55,8 @@ namespace Microsoft
                 virtual void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) = 0;
 
                 virtual void MoveCursor(_In_ const COORD cPosition) = 0;
+                
+                virtual void AddRenderEngine(_In_ IRenderEngine* const pEngine) = 0;
             };
         };
     };

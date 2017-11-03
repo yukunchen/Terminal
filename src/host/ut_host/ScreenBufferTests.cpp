@@ -919,7 +919,6 @@ void ScreenBufferTests::VtResize()
     VERIFY_ARE_EQUAL(initialViewWidth, newViewWidth);
 
 }
-
 void ScreenBufferTests::VtSetColorTable()
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();

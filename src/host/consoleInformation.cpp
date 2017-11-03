@@ -98,3 +98,25 @@ void CONSOLE_INFORMATION::HandleTerminalKeyEventCallback(_Inout_ std::deque<std:
 {
     ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->Write(events);
 }
+
+// Method Description:
+// - Return the active screen buffer of the console.
+// Arguments:
+// - <none>
+// Return Value:
+// - the active screen buffer of the console.
+SCREEN_INFORMATION* const CONSOLE_INFORMATION::GetActiveOutputBuffer() const
+{
+    return CurrentScreenBuffer;
+}
+
+// Method Description:
+// - Return the active input buffer of the console.
+// Arguments:
+// - <none>
+// Return Value:
+// - the active input buffer of the console.
+InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
+{
+    return pInputBuffer;
+}
