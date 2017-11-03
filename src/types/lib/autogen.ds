@@ -5,11 +5,11 @@
 -->
 
 <DominoSpec xmlns:d="http://schemas.microsoft.com/domino/extension/0.5" xmlns="http://schemas.microsoft.com/domino/0.5">
-  <Namespace Name="MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Base">
-    <Path Name="DotDot" Visibility="Private">{SrcRoot}\onecore\windows\core\console\open\src\renderer\base</Path>
-    <Path Name="O" Visibility="Private">{ObjRoot}\onecore\windows\core\console\open\src\renderer\base\lib\{BuildAlt}</Path>
+  <Namespace Name="MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Types">
+    <Path Name="DotDot" Visibility="Private">{SrcRoot}\onecore\windows\core\console\open\src\types</Path>
+    <Path Name="O" Visibility="Private">{ObjRoot}\onecore\windows\core\console\open\src\types\lib\{BuildAlt}</Path>
 
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Base.Lib_PrePass-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Types.Lib_PrePass-->
 
     <LegacyBuilder Output="Lib_PrePass" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Product</Classification>
@@ -19,11 +19,11 @@
 
       <Consumes>
         <Item>autogen.ds</Item>
-        <Item>base.vcxproj</Item>
+        <Item>types.vcxproj</Item>
       </Consumes>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Base.Lib_Pass1-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Types.Lib_Pass1-->
 
     <LegacyBuilder Output="Lib_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Internal">
       <Classification>Product</Classification>
@@ -33,51 +33,40 @@
 
       <Consumes>
         <Item>autogen.ds</Item>
-        <Item>base.vcxproj</Item>
-        <Item>{DotDot}\fontinfo.cpp</Item>
-        <Item>{DotDot}\fontinfobase.cpp</Item>
-        <Item>{DotDot}\fontinfodesired.cpp</Item>
-        <Item>{DotDot}\math.cpp</Item>
+        <Item>types.vcxproj</Item>
+        <Item>{DotDot}\focusevent.cpp</Item>
+        <Item>{DotDot}\iinputevent.cpp</Item>
+        <Item>{DotDot}\keyevent.cpp</Item>
+        <Item>{DotDot}\menuevent.cpp</Item>
+        <Item>{DotDot}\mouseevent.cpp</Item>
         <Item>{DotDot}\precomp.cpp</Item>
         <Item>{DotDot}\precomp.h</Item>
-        <Item>{DotDot}\renderer.cpp</Item>
-        <Item>{DotDot}\renderer.hpp</Item>
-        <Item>{DotDot}\thread.cpp</Item>
-        <Item>{DotDot}\thread.hpp</Item>
+        <Item>{DotDot}\windowbuffersizeevent.cpp</Item>
+        <Item>{DotDot}\inc\iinputevent.hpp</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conimeinfo.h</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\cursor.h</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\textbuffer.hpp</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\conime.h</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\operators.hpp</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\viewport.hpp</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iaccessibilitynotifier.hpp</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsolewindow.hpp</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfo.hpp</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfobase.hpp</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfodesired.hpp</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\ifontdefaultlist.hpp</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderdata.hpp</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conddkrefs.h</Item>
 
         <!--References-->
 
+        <Item>{MsWin.Crts.Public.Internal.Sdk.Inc.Ucrt.Stl120.Thr.__Header}</Item>
         <Item>{MsWin.Crts.Public.Internal.Sdk.Inc.Ucrt.Stl120.__Header}</Item>
         <Item>{MsWin.Crts.Public.Internal.Sdk.Inc.Ucrt.__Header}</Item>
         <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.Sys.__Header}</Item>
         <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.__Header}</Item>
         <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreDrivers.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreNet.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreSdkTools.Public.Internal.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreSdkTools.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreShell.Public.Internal.Sdk.Inc.Wil.__Header}</Item>
         <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
-        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Base.Lib_PrePass}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Types.Lib_PrePass}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Internal.Onecorewindows.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Idl}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_ApiSet.Public.Sdk.Inc.Mincore.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.__Idl}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Internal.Base.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.Minwin.__Header}</Item>
@@ -89,16 +78,16 @@
       <!--Produces-->
 
       <Produces>
-        <Item>{O}\conrenderbase.lib</Item>
-        <Item>{O}\fontinfo.obj</Item>
-        <Item>{O}\fontinfobase.obj</Item>
-        <Item>{O}\fontinfodesired.obj</Item>
-        <Item>{O}\math.obj</Item>
+        <Item>{O}\contypes.lib</Item>
+        <Item>{O}\focusevent.obj</Item>
+        <Item>{O}\iinputevent.obj</Item>
+        <Item>{O}\keyevent.obj</Item>
+        <Item>{O}\menuevent.obj</Item>
+        <Item>{O}\mouseevent.obj</Item>
         <Item>{O}\pch_hdr.src</Item>
         <Item>{O}\precomp.obj</Item>
         <Item>{O}\precomp.pch</Item>
-        <Item>{O}\renderer.obj</Item>
-        <Item>{O}\thread.obj</Item>
+        <Item>{O}\windowbuffersizeevent.obj</Item>
       </Produces>
     </LegacyBuilder>
   </Namespace>

@@ -5,32 +5,43 @@
 -->
 
 <DominoSpec xmlns:d="http://schemas.microsoft.com/domino/extension/0.5" xmlns="http://schemas.microsoft.com/domino/0.5">
-  <Namespace Name="MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src">
+  <Namespace Name="MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src">
     <Path Name="DotDot" Visibility="Private">{SrcRoot}\onecore\windows\core\console\open\src</Path>
     <Path Name="O" Visibility="Private">{ObjRoot}\onecore\windows\core\console\open\src\propsheet\{BuildAlt}</Path>
 
-    <!--DEF: MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propsheet_PrePass-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_PrePass-->
 
     <LegacyBuilder Output="Propsheet_PrePass" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Product</Classification>
       <TargetPass>PrePass</TargetPass>
+
+      <!--Consumes-->
+
+      <Consumes>
+        <Item>autogen.ds</Item>
+        <Item>product.pbxproj</Item>
+        <Item>propsheet.vcxproj</Item>
+      </Consumes>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass0-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass0-->
 
-    <LegacyBuilder Output="Propsheet_Pass0" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake">
+    <LegacyBuilder Output="Propsheet_Pass0" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Product</Classification>
       <TargetPass>Pass0</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.ds</Item>
         <Item>product.pbxproj</Item>
+        <Item>propsheet.vcxproj</Item>
         <Item>strid.mc</Item>
+        <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
 
         <!--References-->
 
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propsheet_PrePass}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_PrePass}</Item>
       </Consumes>
 
       <!--Produces-->
@@ -46,15 +57,16 @@
       </Produces>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass1-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass1-->
 
-    <LegacyBuilder Output="Propsheet_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake">
+    <LegacyBuilder Output="Propsheet_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Product</Classification>
       <TargetPass>Pass1</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.ds</Item>
         <Item>colorspage.cpp</Item>
         <Item>colorspage.h</Item>
         <Item>console.cpp</Item>
@@ -79,6 +91,7 @@
         <Item>precomp.h</Item>
         <Item>preview.cpp</Item>
         <Item>product.pbxproj</Item>
+        <Item>propsheet.vcxproj</Item>
         <Item>propsheethandler.cpp</Item>
         <Item>readlink.cpp</Item>
         <Item>registry.cpp</Item>
@@ -92,75 +105,47 @@
         <Item>{DotDot}\propslib\registryserialization.hpp</Item>
         <Item>{DotDot}\propslib\shortcutserialization.hpp</Item>
         <Item>{DotDot}\propslib\truetypefontlist.hpp</Item>
+        <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
 
         <!--References-->
 
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Job.Current_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Namespace_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Processtopology.Current_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Systemtopology.Current_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minio.Rpc.Published.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Console.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Datetime.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Debug.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Enclave.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Errorhandling.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Fibers.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.File.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Handle.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Heap.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Interlocked.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Io.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Job_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Libloader.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Localregistry.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Memory.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Namedpipe.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Processenv.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Processthreads.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Profile.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Realtime.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Securityappcontainer_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Securitybase.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.String.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Synch.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Sysinfo.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Threadpool.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Threadpoollegacy.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Timezone.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Util.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Wow64.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Published_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Published.Base_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Published.Sdk_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Base.Published2_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Base.Published_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Com.Apiset.Libs.Combase.Current_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Com.Apiset.Libs.Coml2_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Com.Apiset.Libs.Winrt.Activation.Current_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Com.Apiset.Libs.Winrt.Error.V11_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Com.Apiset.Libs.Winrt.String.Current_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Com.Published.Idlole.Genxie_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Com.Published.Idlole.Public_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Com.Published.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Com.Published.Wrl.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Enduser.Sql.Xml.Msxml3.Idl_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Inetcore.Published.Sdk.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Net.Published.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Sdktools.Analysis.Prefast.Suppression.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Shell.Common.Legacy.Dpa_dsa.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Shell.Propsys.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Shell.Published.Inc.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Appcompat.Db_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propsheet_PrePass}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Published.Main_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Published.Movedfromdrivers_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecoreuap.Base.Appmodel.Search.Search.Search.Structuredquery.Interfaces.Structuredquery_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecoreuap.Shell.Propsys.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecoreuap.Shell.Published.Inc.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecoreuap.Shell.Shcore.Libs.Scaling.Idl_Pass0}</Item>
+        <Item>{MsWin.Crts.Public.Internal.Sdk.Inc.Ucrt.__Header}</Item>
+        <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.Sys.__Header}</Item>
+        <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.__Header}</Item>
+        <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Internal.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreEndUser.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreInetCore.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreNet.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreSdkTools.Public.Internal.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreSdkTools.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreShell.Public.Internal.Sdk.Inc.Wil.__Header}</Item>
+        <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreUapBase.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreUapShell.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreUapShell.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass0}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_PrePass}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Internal.Onecorewindows.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Internal.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_ApiSet.Public.Sdk.Inc.Mincore.__Header}</Item>
+        <Item>{MsWin.Onecore_MinIo.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Internal.Base.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.Minwin.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Shared.Inc.Minwin.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_Wrl.Public.Internal.Sdk.Inc.Wrl.__Header}</Item>
+        <Item>{MsWin.Onecore_Wrl.Public.Sdk.Inc.Wrl.Wrappers.__Header}</Item>
+        <Item>{MsWin.Onecore_Wrl.Public.Sdk.Inc.Wrl.__Header}</Item>
+        <Item>{MsWin.Onecore_Wrl.Public.Sdk.Inc.__Header}</Item>
       </Consumes>
 
       <!--Produces-->
@@ -193,15 +178,16 @@
       </Produces>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass2-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass2-->
 
-    <LegacyBuilder Output="Propsheet_Pass2" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake">
+    <LegacyBuilder Output="Propsheet_Pass2" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Product</Classification>
       <TargetPass>Pass2</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.ds</Item>
         <Item>colorspage.cpp</Item>
         <Item>colorspage.h</Item>
         <Item>console.cpp</Item>
@@ -225,11 +211,13 @@
         <Item>precomp.h</Item>
         <Item>preview.cpp</Item>
         <Item>product.pbxproj</Item>
+        <Item>propsheet.vcxproj</Item>
         <Item>propsheethandler.cpp</Item>
         <Item>readlink.cpp</Item>
         <Item>registry.cpp</Item>
         <Item>util.cpp</Item>
         <Item>windowsshell.manifest</Item>
+        <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
         <Item Condition="{IsBuildRelease}">{ObjRoot}\{BuildAlt}\pe_list\console.dll</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\res\console.ico</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\res\truetype.bmp</Item>
@@ -237,48 +225,31 @@
 
         <!--References-->
 
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Dccreateext.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Dcext.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Dlgboxext.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Drawext.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Fontext.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Gdiobjectext_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Keyboardext.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Ntuser.Cursorext.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Ntuser.Dcaccessext.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Ntuser.Syscolorsext_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Ntuser.Sysparamsext_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Ntuserext.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Ntusermiscext.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Shell32ext.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Userdrawext.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Windowext.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Ucrt.Lib_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Ucrt.Ucrtprivate._10_Pass1}</Item>
-        <Item Condition="{IsBuildArm32 OR IsBuildArm64}">{MsWin.OnecoreUap.Minkernel.Crts.Crtw32.Helper.Nt_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Crtw32.Linkopts.Nothrownewlib_Pass1}</Item>
-        <Item Condition="{IsBuildDebug}">{MsWin.OnecoreUap.Minkernel.Crts.Crtw32.Linkopts.Ucrt_dbgcrt_shims_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Devdiv.Vcstartup.Src.Lib.Md_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Devdiv.Vcstartup.Src.Linkopts.Mt_legacy_stdio_definitions_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Devdiv.Vcstartup.Src.Linkopts.Mt_legacy_stdio_msvcrt_compatibility_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Devdiv.Vcstartup.Src.Linkopts.Mt_legacy_stdio_wide_specifiers_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Src.Appcrt.Dll.Osmode_function_map_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Published.Base_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Tools.Guard_support_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Base.Published2_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Base.Published_Pass0}</Item>
-        <Item Condition="{IsBuildRelease AND (IsBuildX64 OR IsBuildX86)}">{MsWin.OnecoreUap.Onecore.Merged.Apiset.Schemagen.Apisetxml_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Merged.Umbrellalibs.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Shell.Common.Legacy.Dpa_dsa.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Shell.Published.Inc.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propsheet_PrePass}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propslib_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Published.Main_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecoreuap.Merged.Umbrellalibs.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Onecoreuap.Merged.Uuid_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Onecoreuap.Windows.Core.Ntgdi.Client.Apiset.Desktop.Current_Pass1}</Item>
+        <Item>{MsWin.Crts.Public.Internal.Sdk.Lib.Ucrt.__Library}</Item>
+        <Item>{MsWin.Crts.Public.Internal.Sdk.Lib.__Library}</Item>
+        <Item Condition="{(IsBuildArm32 OR IsBuildArm64)}">{MsWin.Crts.Public.Sdk.Lib.__Library}</Item>
+        <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.v1_7.__Library}</Item>
+        <Item Condition="{IsBuildRelease AND (IsBuildX64 OR IsBuildX86)}">{MsWin.OnecoreMerged.Public.Internal.Onecoremerged.Lib.__Content}</Item>
+        <Item>{MsWin.OnecoreMerged.Public.Sdk.Lib.Onecore.v1_7.__Library}</Item>
+        <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreUapMerged.Private.Internal.Onecore.Priv_sdk.Lib.v1_7.__Library}</Item>
+        <Item>{MsWin.OnecoreUapMerged.Public.Internal.Sdk.Lib.__Library}</Item>
+        <Item>{MsWin.OnecoreUapMerged.Public.Sdk.Lib.Onecore.v1_7.__Library}</Item>
+        <Item>{MsWin.OnecoreUapWindows.Public.Internal.Onecoreuapwindows.Lib.__Library}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass0}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_PrePass}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propslib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.Onecore_ApiSet.Private.Internal.Mincore.Priv_sdk.Lib.v1_7.__Library}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Internal.Sdk.Lib.__Library}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.Minwin.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Lib.Minwin.v1_8.__Library}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Lib.__Library}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Shared.Inc.__Header}</Item>
       </Consumes>
 
       <!--Produces-->
@@ -306,45 +277,58 @@
       </Produces>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass3-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass3-->
 
-    <LegacyBuilder Output="Propsheet_Pass3" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake">
+    <LegacyBuilder Output="Propsheet_Pass3" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Product</Classification>
       <TargetPass>Pass3</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
-        <Item>product.pbxproj</Item>
-        <Item>{BinRoot}\msbuildprops\localization.txt</Item>
-        <Item>{ObjRoot}\{BuildAlt}\modularbuildglobalbuildsession.props</Item>
-        <Item>{SrcRoot}\onecore\windows\project.props</Item>
+        <Item>autogen.ds</Item>
+        <Item>propsheet.vcxproj</Item>
 
         <!--References-->
 
-        <Item>{MsWin.OnecoreUap.Onecore.Redist.Mspartners.Netfx45.Core.Binary_release_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass2}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Propsheet_PrePass}</Item>
+        <Item Condition="{IsBuildRelease AND IsBuildCommonArchitecture}">{MsDev.Clr_Pkg.v45.Public.Sdk.Ref.Clr45.__MetaData}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass0}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass2}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_PrePass}</Item>
+
+        <!--Conditional items-->
+
+        <If Condition="{IsBuildRelease}">
+          <Item>product.pbxproj</Item>
+          <Item>{BinRoot}\msbuildprops\localization.txt</Item>
+          <Item>{ObjRoot}\{BuildAlt}\modularbuildglobalbuildsession.props</Item>
+          <Item>{ObjRoot}\{BuildAlt}\__bldlanguageoverride__.props</Item>
+          <Item>{ObjRoot}\{BuildAlt}\__bldlanguage__.props</Item>
+          <Item>{SrcRoot}\onecore\windows\project.props</Item>
+        </If>
+
       </Consumes>
 
       <!--Produces-->
 
       <Produces>
-        <Item>{BinRoot}\loc\en-us\console.dll.mui</Item>
-        <Item>{BinRoot}\loc\en-us\lct\console.dll.mui.lct</Item>
-        <Item>{O}\lsbuildcmd_4.0_en-us_console.dll.mui.rsp</Item>
 
         <!--Conditional items-->
 
-        <If Condition="{MsWin.Build.Localization.IsBuildPs_Mi}">
+        <If Condition="{IsBuildRelease}">
+          <Item>{BinRoot}\loc\en-us\console.dll.mui</Item>
+          <Item>{BinRoot}\loc\en-us\lct\console.dll.mui.lct</Item>
+          <Item>{O}\lsbuildcmd_4.0_en-us_console.dll.mui.rsp</Item>
+        </If>
+
+        <If Condition="{MsWin.Build.Localization.IsBuildPs_Mi AND (IsBuildRelease)}">
           <Item>{BinRoot}\loc\ps-mi\console.dll.mui</Item>
           <Item>{BinRoot}\loc\ps-mi\lct\console.dll.mui.lct</Item>
           <Item>{O}\lsbuildcmd_4.0_ps-mi_console.dll.mui.rsp</Item>
         </If>
 
-        <If Condition="{MsWin.Build.Localization.IsBuildPs_Ps}">
+        <If Condition="{MsWin.Build.Localization.IsBuildPs_Ps AND (IsBuildRelease)}">
           <Item>{BinRoot}\loc\ps-ps\console.dll.mui</Item>
           <Item>{BinRoot}\loc\ps-ps\lct\console.dll.mui.lct</Item>
           <Item>{O}\lsbuildcmd_4.0_ps-ps_console.dll.mui.rsp</Item>
@@ -352,5 +336,111 @@
 
       </Produces>
     </LegacyBuilder>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_.__Content-->
+
+    <LibrarySetRunner Output="Propsheet_Bin_.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Propsheet_Pass2.Directories[BinRoot]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_Blg.__Content-->
+
+    <LibrarySetRunner Output="Propsheet_Bin_Blg.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Propsheet_Pass2.Directories[BinRoot.Combine("blg")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_BlgLocSrcBin.__Content-->
+
+    <LibrarySetRunner Output="Propsheet_Bin_BlgLocSrcBin.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Propsheet_Pass2.Directories[BinRoot.Combine("blg\loc\src\bin")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_BlgLocSrcLcg.__Content-->
+
+    <LibrarySetRunner Output="Propsheet_Bin_BlgLocSrcLcg.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Propsheet_Pass2.Directories[BinRoot.Combine("blg\loc\src\lcg")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_BlgMsbuildpropsNmakeprops.__Content-->
+
+    <SdkCombineRunner Output="Propsheet_Bin_BlgMsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
+      <OutputDirectory>{BinRoot}\blg\msbuildprops\nmakeprops</OutputDirectory>
+      <Sources>
+        <Item>{Propsheet_Pass0.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
+        <Item>{Propsheet_Pass1.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
+        <Item>{Propsheet_Pass2.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
+      </Sources>
+    </SdkCombineRunner>
+    <LibrarySetRunner Output="Propsheet_Bin_BlgMsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Propsheet_Bin_BlgMsbuildpropsNmakeprops.s__Content}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocEnus.__Content-->
+
+    <LibrarySetRunner Output="Propsheet_Bin_LocEnus.__Content" Visibility="Internal" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}">
+      <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\en-us")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocEnusLct.__Content-->
+
+    <LibrarySetRunner Output="Propsheet_Bin_LocEnusLct.__Content" Visibility="Internal" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}">
+      <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\en-us\lct")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocPsmi.__Content-->
+
+    <LibrarySetRunner Output="Propsheet_Bin_LocPsmi.__Content" Visibility="Internal" Condition="{IsBuildRelease AND IsBuildCommonArchitecture AND MsWin.Build.Localization.IsBuildPs_Mi}">
+      <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\ps-mi")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocPsmiLct.__Content-->
+
+    <LibrarySetRunner Output="Propsheet_Bin_LocPsmiLct.__Content" Visibility="Internal" Condition="{IsBuildRelease AND IsBuildCommonArchitecture AND MsWin.Build.Localization.IsBuildPs_Mi}">
+      <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\ps-mi\lct")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocPsps.__Content-->
+
+    <LibrarySetRunner Output="Propsheet_Bin_LocPsps.__Content" Visibility="Internal" Condition="{IsBuildRelease AND IsBuildCommonArchitecture AND MsWin.Build.Localization.IsBuildPs_Ps}">
+      <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\ps-ps")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocPspsLct.__Content-->
+
+    <LibrarySetRunner Output="Propsheet_Bin_LocPspsLct.__Content" Visibility="Internal" Condition="{IsBuildRelease AND IsBuildCommonArchitecture AND MsWin.Build.Localization.IsBuildPs_Ps}">
+      <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\ps-ps\lct")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocSrcBin.__Content-->
+
+    <LibrarySetRunner Output="Propsheet_Bin_LocSrcBin.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Propsheet_Pass2.Directories[BinRoot.Combine("loc\src\bin")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocSrcLcg.__Content-->
+
+    <LibrarySetRunner Output="Propsheet_Bin_LocSrcLcg.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Propsheet_Pass2.Directories[BinRoot.Combine("loc\src\lcg")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_MsbuildpropsNmakeprops.__Content-->
+
+    <SdkCombineRunner Output="Propsheet_Bin_MsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
+      <OutputDirectory>{BinRoot}\msbuildprops\nmakeprops</OutputDirectory>
+      <Sources>
+        <Item>{Propsheet_Pass0.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
+        <Item>{Propsheet_Pass1.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
+        <Item>{Propsheet_Pass2.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
+      </Sources>
+    </SdkCombineRunner>
+    <LibrarySetRunner Output="Propsheet_Bin_MsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Propsheet_Bin_MsbuildpropsNmakeprops.s__Content}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_SymbolspriRetailDll.__Content-->
+
+    <LibrarySetRunner Output="Propsheet_Bin_SymbolspriRetailDll.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Propsheet_Pass2.Directories[BinRoot.Combine("symbols.pri\retail\dll")]}</Directory>
+    </LibrarySetRunner>
   </Namespace>
 </DominoSpec>

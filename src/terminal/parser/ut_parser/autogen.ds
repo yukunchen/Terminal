@@ -5,26 +5,37 @@
 -->
 
 <DominoSpec xmlns:d="http://schemas.microsoft.com/domino/extension/0.5" xmlns="http://schemas.microsoft.com/domino/0.5">
-  <Namespace Name="MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser">
+  <Namespace Name="MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser">
     <Path Name="DotDot" Visibility="Private">{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser</Path>
     <Path Name="O" Visibility="Private">{ObjRoot}\onecore\windows\core\console\open\src\terminal\parser\ut_parser\{BuildAlt}</Path>
 
-    <!--DEF: MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_PrePass-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_PrePass-->
 
     <LegacyBuilder Output="Ut_parser_PrePass" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>PrePass</TargetPass>
+
+      <!--Consumes-->
+
+      <Consumes>
+        <Item>autogen.ds</Item>
+        <Item>parser.unittests.vcxproj</Item>
+        <Item>product.pbxproj</Item>
+      </Consumes>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Pass1-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Pass1-->
 
-    <LegacyBuilder Output="Ut_parser_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake">
+    <LegacyBuilder Output="Ut_parser_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Internal">
       <Classification>Test</Classification>
       <TargetPass>Pass1</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.ds</Item>
+        <Item>parser.unittests.vcxproj</Item>
+        <Item>product.pbxproj</Item>
         <Item>statemachinetest.cpp</Item>
         <Item>{DotDot}\ascii.hpp</Item>
         <Item>{DotDot}\precomp.cpp</Item>
@@ -36,66 +47,47 @@
         <Item>{DotDot}\termdispatch.hpp</Item>
         <Item>{DotDot}\tracing.cpp</Item>
         <Item>{DotDot}\tracing.hpp</Item>
+        <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
+        <Item>{SrcRoot}\build\scripts\generatetestlist.cmd</Item>
 
         <!--References-->
 
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Job.Current_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Namespace_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Processtopology.Current_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Mincore.Apiset.Libs.Systemtopology.Current_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Console.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Datetime.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Debug.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Enclave.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Errorhandling.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Fibers.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.File.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Handle.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Heap.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Interlocked.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Io.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Job_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Libloader.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Localregistry.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Memory.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Namedpipe.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Processenv.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Processthreads.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Profile.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Realtime.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Securityappcontainer_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Securitybase.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.String.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Synch.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Sysinfo.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Threadpool.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Threadpoollegacy.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Timezone.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Util.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Wow64.Daytona_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Published_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Published.Base_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Published.Internal_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Published.Sdk_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Base.Published2_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Base.Published_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Com.Published.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Net.Published.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Redist.Mspartners.Taef.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Sdktools.Analysis.Prefast.Suppression.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Sdktools.Testlog.Testcode_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Shell.Published.Inc.Inc_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_PrePass}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Published.Main_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Published.Movedfromdrivers_Pass0}</Item>
+        <Item>{MsWin.Crts.Public.Internal.Sdk.Inc.Ucrt.Stl120.__Header}</Item>
+        <Item>{MsWin.Crts.Public.Internal.Sdk.Inc.Ucrt.__Header}</Item>
+        <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.Sys.__Header}</Item>
+        <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.__Header}</Item>
+        <Item>{MsWin.OnecoreBase.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreNet.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreSdkTools.Public.Internal.Onecoresdktools.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreSdkTools.Public.Internal.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreSdkTools.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_PrePass}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_ApiSet.Public.Sdk.Inc.Mincore.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.Telemetry.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Internal.Base.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.Minwin.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Shared.Inc.Minwin.__Header}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_Taef.Public.Internal.Sdktools.Inc.Wextest.Cue.__Header}</Item>
       </Consumes>
 
       <!--Produces-->
 
       <Produces>
-        <Item>{O}\conterm.parser.tests.exp</Item>
-        <Item>{O}\conterm.parser.tests.lib</Item>
+        <Item>{BinRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-terminal-parser-ut_parser-nmake_to_mbs_pass1.props.br</Item>
+        <Item>{BinRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-terminal-parser-ut_parser-nmake_to_mbs_pass1.props</Item>
+        <Item>{O}\microsoft.console.virtualterminal.parser.unittests.exp</Item>
+        <Item>{O}\microsoft.console.virtualterminal.parser.unittests.lib</Item>
+        <Item>{O}\microsoft.console.virtualterminal.parser.unittests.testmd_metadata</Item>
+        <Item>{O}\nmake_to_mbs_pass1.props</Item>
         <Item>{O}\pch_hdr.src</Item>
         <Item>{O}\precomp.obj</Item>
         <Item>{O}\precomp.pch</Item>
@@ -106,51 +98,183 @@
       </Produces>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Pass2-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Pass2-->
 
-    <LegacyBuilder Output="Ut_parser_Pass2" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake">
+    <LegacyBuilder Output="Ut_parser_Pass2" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass2</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.ds</Item>
+        <Item>parser.unittests.vcxproj</Item>
+        <Item>product.pbxproj</Item>
         <Item>statemachinetest.cpp</Item>
         <Item>{DotDot}\precomp.cpp</Item>
         <Item>{DotDot}\precomp.h</Item>
         <Item>{DotDot}\statemachine.cpp</Item>
         <Item>{DotDot}\telemetry.cpp</Item>
         <Item>{DotDot}\tracing.cpp</Item>
+        <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
+        <Item>{SrcRoot}\build\scripts\testmdgen.cmd</Item>
         <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
 
         <!--References-->
 
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Ucrt.Lib_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Apiset.Libs.Ucrt.Ucrtprivate._10_Pass1}</Item>
-        <Item Condition="{IsBuildArm32 OR IsBuildArm64}">{MsWin.OnecoreUap.Minkernel.Crts.Crtw32.Helper.Nt_Pass1}</Item>
-        <Item Condition="{IsBuildDebug}">{MsWin.OnecoreUap.Minkernel.Crts.Crtw32.Linkopts.Ucrt_dbgcrt_shims_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Devdiv.Stl.Src.Md_lib_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Devdiv.Vcstartup.Src.Lib.Md_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Devdiv.Vcstartup.Src.Linkopts.Mt_legacy_stdio_definitions_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Devdiv.Vcstartup.Src.Linkopts.Mt_legacy_stdio_msvcrt_compatibility_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Devdiv.Vcstartup.Src.Linkopts.Mt_legacy_stdio_wide_specifiers_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Crts.Ucrt.Src.Appcrt.Dll.Osmode_function_map_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Minkernel.Tools.Guard_support_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Merged.Umbrellalibs.Current_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Redist.Mspartners.Taef.Lib_Pass0}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Pass1}</Item>
-        <Item>{MsWin.OnecoreUap.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_PrePass}</Item>
+        <Item>{MsWin.Crts.Public.Internal.Sdk.Lib.Ucrt.__Library}</Item>
+        <Item Condition="{IsBuildDebug AND IsBuildCommonArchitecture}">{MsWin.Crts.Public.Internal.Sdk.Lib.__Library}</Item>
+        <Item Condition="{(IsBuildArm32 OR IsBuildArm64)}">{MsWin.Crts.Public.Sdk.Lib.__Library}</Item>
+        <Item>{MsWin.OnecoreMerged.Public.Sdk.Lib.Onecore.v1_7.__Library}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_PrePass}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Internal.Sdk.Lib.__Library}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Lib.Minwin.v1_8.__Library}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Lib.__Library}</Item>
+        <Item>{MsWin.Onecore_Taef.Public.Internal.Sdktools.Lib.Wextest.Cue.__Tlb}</Item>
       </Consumes>
 
       <!--Produces-->
 
       <Produces>
-        <Item>{BinRoot}\blg\unittests\conterm.parser.tests.dll.br</Item>
-        <Item>{BinRoot}\symbols.pri\unittests\dll\conterm.parser.tests.pdb</Item>
-        <Item>{BinRoot}\unittests\conterm.parser.tests.dll</Item>
-        <Item>{O}\conterm.parser.tests.dll</Item>
-        <Item>{O}\conterm.parser.tests.pdb</Item>
+        <Item>{BinRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-terminal-parser-ut_parser-nmake_to_mbs_pass2.props.br</Item>
+        <Item>{BinRoot}\blg\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.virtualterminal.parser.unittests.testmd.br</Item>
+        <Item>{BinRoot}\blg\prebuilt\windows\microsoft.console.virtualterminal.parser.unittests.testmd.br</Item>
+        <Item>{BinRoot}\blg\unittests\microsoft.console.virtualterminal.parser.unittests.dll.br</Item>
+        <Item>{BinRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-terminal-parser-ut_parser-nmake_to_mbs_pass2.props</Item>
+        <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.virtualterminal.parser.unittests.testmd</Item>
+        <Item>{BinRoot}\prebuilt\windows\microsoft.console.virtualterminal.parser.unittests.testmd</Item>
+        <Item>{BinRoot}\symbols.pri\unittests\dll\microsoft.console.virtualterminal.parser.unittests.pdb</Item>
+        <Item>{BinRoot}\unittests\microsoft.console.virtualterminal.parser.unittests.dll</Item>
+        <Item>{O}\microsoft-console-virtualterminal-parser-unittests.spkg.meta.xml</Item>
+        <Item>{O}\microsoft.console.virtualterminal.parser.unittests.dll</Item>
+        <Item>{O}\microsoft.console.virtualterminal.parser.unittests.pdb</Item>
+        <Item>{O}\microsoft.console.virtualterminal.parser.unittests.testmd</Item>
+        <Item>{O}\microsoft.console.virtualterminal.parser.unittests.wm.xml</Item>
+        <Item>{O}\nmake_to_mbs_pass2.props</Item>
       </Produces>
     </LegacyBuilder>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Pass3-->
+
+    <LegacyBuilder Output="Ut_parser_Pass3" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+      <Classification>Test</Classification>
+      <TargetPass>Pass3</TargetPass>
+      <d:Tags>
+        <Item>Packages</Item>
+      </d:Tags>
+
+      <!--Consumes-->
+
+      <Consumes>
+        <Item>autogen.ds</Item>
+        <Item>parser.unittests.vcxproj</Item>
+
+        <!--References-->
+
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Pass2}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_PrePass}</Item>
+        <Item Condition="{IsBuildRelease AND IsBuildCommonArchitecture}">{MsWin.Onecore_Pkg.BinPublic.Imagingtools.__Content}</Item>
+
+        <!--Conditional items-->
+
+        <If Condition="{IsBuildRelease}">
+          <Item>product.pbxproj</Item>
+          <Item>{SrcRoot}\build\scripts\signer.cmd</Item>
+          <Item>{SrcRoot}\onecore\windows\project.props</Item>
+          <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
+        </If>
+
+      </Consumes>
+
+      <!--Produces-->
+
+      <Produces>
+
+        <!--Conditional items-->
+
+        <If Condition="{IsBuildRelease}">
+          <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft-console-virtualterminal-parser-unittests.cab</Item>
+          <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft-console-virtualterminal-parser-unittests.man.dsm.xml</Item>
+        </If>
+
+      </Produces>
+    </LegacyBuilder>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Bin_BlgMsbuildpropsNmakeprops.__Content-->
+
+    <SdkCombineRunner Output="Ut_parser_Bin_BlgMsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
+      <OutputDirectory>{BinRoot}\blg\msbuildprops\nmakeprops</OutputDirectory>
+      <Sources>
+        <Item>{Ut_parser_Pass1.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
+        <Item>{Ut_parser_Pass2.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
+      </Sources>
+    </SdkCombineRunner>
+    <LibrarySetRunner Output="Ut_parser_Bin_BlgMsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Ut_parser_Bin_BlgMsbuildpropsNmakeprops.s__Content}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Bin_BlgPrebuiltTest.__Content-->
+
+    <LibrarySetRunner Output="Ut_parser_Bin_BlgPrebuiltTest.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Ut_parser_Pass2.Directories[BinRoot.Combine("blg\prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Bin_BlgPrebuiltWindows.__Content-->
+
+    <LibrarySetRunner Output="Ut_parser_Bin_BlgPrebuiltWindows.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Ut_parser_Pass2.Directories[BinRoot.Combine("blg\prebuilt\windows")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Bin_BlgUnittests.__Content-->
+
+    <LibrarySetRunner Output="Ut_parser_Bin_BlgUnittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Ut_parser_Pass2.Directories[BinRoot.Combine("blg\unittests")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Bin_MsbuildpropsNmakeprops.__Content-->
+
+    <SdkCombineRunner Output="Ut_parser_Bin_MsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
+      <OutputDirectory>{BinRoot}\msbuildprops\nmakeprops</OutputDirectory>
+      <Sources>
+        <Item>{Ut_parser_Pass1.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
+        <Item>{Ut_parser_Pass2.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
+      </Sources>
+    </SdkCombineRunner>
+    <LibrarySetRunner Output="Ut_parser_Bin_MsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Ut_parser_Bin_MsbuildpropsNmakeprops.s__Content}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Bin_PrebuiltTest.__Content-->
+
+    <SdkCombineRunner Output="Ut_parser_Bin_PrebuiltTest.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
+      <OutputDirectory>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}</OutputDirectory>
+      <Sources>
+        <Item>{Ut_parser_Pass2.Directories[BinRoot.Combine("prebuilt\test\", BuildArch, "\", BuildType)]}</Item>
+        <Item Condition="{IsBuildRelease AND IsBuildCommonArchitecture}">{Ut_parser_Pass3.Directories[BinRoot.Combine("prebuilt\test\", BuildArch, "\", BuildType)]}</Item>
+      </Sources>
+    </SdkCombineRunner>
+    <LibrarySetRunner Output="Ut_parser_Bin_PrebuiltTest.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Ut_parser_Bin_PrebuiltTest.s__Content}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Bin_PrebuiltWindows.__Content-->
+
+    <LibrarySetRunner Output="Ut_parser_Bin_PrebuiltWindows.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Ut_parser_Pass2.Directories[BinRoot.Combine("prebuilt\windows")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Bin_SymbolspriUnittestsDll.__Content-->
+
+    <LibrarySetRunner Output="Ut_parser_Bin_SymbolspriUnittestsDll.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Ut_parser_Pass2.Directories[BinRoot.Combine("symbols.pri\unittests\dll")]}</Directory>
+    </LibrarySetRunner>
+
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Bin_Unittests.__Content-->
+
+    <LibrarySetRunner Output="Ut_parser_Bin_Unittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+      <Directory>{Ut_parser_Pass2.Directories[BinRoot.Combine("unittests")]}</Directory>
+    </LibrarySetRunner>
   </Namespace>
 </DominoSpec>

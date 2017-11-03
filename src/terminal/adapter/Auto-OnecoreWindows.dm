@@ -1,13 +1,15 @@
 <!--
- <copyright file="autogendirs.dm" company="Microsoft">
+ <copyright file="Auto-OnecoreWindows.dm" company="Microsoft">
      Copyright (c) Microsoft Corporation. All rights reserved.
  </copyright>
 -->
 <DominoModule xmlns="http://schemas.microsoft.com/domino/0.5">
   <Module>
-    <Identity>MsWin.OnecoreUap</Identity>
+    <Identity>MsWin.OnecoreWindows</Identity>
     <Partial>true</Partial>
-    <SpecFiles />
+    <SpecFiles>
+      <Item>lib\autogen.ds</Item>
+      <Item>ut_adapter\autogen.ds</Item>
+    </SpecFiles>
   </Module>
-  <Import>src\autogendirs.dm</Import>
 </DominoModule>
