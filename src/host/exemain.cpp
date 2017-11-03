@@ -210,7 +210,11 @@ int CALLBACK wWinMain(
     TraceLoggingRegister(g_ConhostLauncherProvider);
     DetermineIfSendTelemetry();
 
-    ConsoleArguments args(GetCommandLineW());
+    // Pass command line and standard handles at this point in time as 
+    // potential preferences for execution that were passed on process creation.
+    ConsoleArguments args(GetCommandLineW(),
+                          GetStdHandle(STD_INPUT_HANDLE),
+                          GetStdHandle(STD_OUTPUT_HANDLE));
 
     HRESULT hr = args.ParseCommandline();
     if (SUCCEEDED(hr))

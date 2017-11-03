@@ -20,7 +20,10 @@ Author(s):
 class ConsoleArguments
 {
 public:
-    ConsoleArguments(_In_ const std::wstring& commandline);
+    ConsoleArguments(_In_ const std::wstring& commandline,
+                     _In_ const HANDLE hStdIn,
+                     _In_ const HANDLE hStdOut);
+
     ConsoleArguments() { }
 
     ConsoleArguments& operator=(const ConsoleArguments& other);
@@ -28,10 +31,13 @@ public:
     HRESULT ParseCommandline();
 
     bool IsUsingVtPipe() const;
+    bool HasVtHandles() const;
     bool IsHeadless() const;
     bool ShouldCreateServerHandle() const;
 
     HANDLE GetServerHandle() const;
+    HANDLE GetVtInHandle() const;
+    HANDLE GetVtOutHandle() const;
 
     std::wstring GetClientCommandline() const;
     std::wstring GetVtInPipe() const;
@@ -54,6 +60,8 @@ private:
     // This accessor used to create a copy of this class for unit testing comparison ease.
     ConsoleArguments(_In_ const std::wstring commandline,
                      _In_ const std::wstring clientCommandline,
+                     _In_ const HANDLE vtInHandle,
+                     _In_ const HANDLE vtOutHandle,
                      _In_ const std::wstring vtInPipe,
                      _In_ const std::wstring vtOutPipe,
                      _In_ const std::wstring vtMode,
@@ -63,6 +71,8 @@ private:
                      _In_ const DWORD serverHandle) :
         _commandline(commandline),
         _clientCommandline(clientCommandline),
+        _vtInHandle(vtInHandle),
+        _vtOutHandle(vtOutHandle),
         _vtInPipe(vtInPipe),
         _vtOutPipe(vtOutPipe),
         _vtMode(vtMode),
@@ -79,8 +89,12 @@ private:
 
     std::wstring _clientCommandline;
 
+    HANDLE _vtInHandle;
     std::wstring _vtInPipe;
+
+    HANDLE _vtOutHandle;
     std::wstring _vtOutPipe;
+
     std::wstring _vtMode;
 
     bool _forceV1;
@@ -93,6 +107,8 @@ private:
 
     static void s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In_ size_t& index);
     static HRESULT s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index, _Out_opt_ std::wstring* const pSetting);
+
+    static bool s_IsValidHandle(_In_ const HANDLE handle);
 
 #ifdef UNIT_TESTING
     friend class ConsoleArgumentsTests;
@@ -108,16 +124,36 @@ namespace WEX {
         public:
             static WEX::Common::NoThrowString ToString(const ConsoleArguments& ci)
             {
-                return WEX::Common::NoThrowString().Format(L"\r\nClient Command Line: '%ws', \r\nUse VT Pipe: '%ws', \r\nVT In Pipe: '%ws', \r\nVT Out Pipe: '%ws', \r\nVt Mode: '%ws', \r\nForceV1: '%ws', \r\nHeadless: '%ws', \r\nCreate Server Handle: '%ws', \r\nServer Handle: '0x%x'\r\n",
+                return WEX::Common::NoThrowString().Format(L"\r\nClient Command Line: '%ws',\r\n"
+                                                           L"Use VT Handles: '%ws',\r\n"
+                                                           L"VT In Handle: '0x%x',\r\n"
+                                                           L"VT Out Handle: '0x%x',\r\n"
+                                                           L"Use VT Pipe: '%ws',\r\n"
+                                                           L"VT In Pipe: '%ws',\r\n"
+                                                           L"VT Out Pipe: '%ws',\r\n"
+                                                           L"Vt Mode: '%ws',\r\n"
+                                                           L"ForceV1: '%ws',\r\n"
+                                                           L"Headless: '%ws',\r\n"
+                                                           L"Create Server Handle: '%ws',\r\n"
+                                                           L"Server Handle: '0x%x'\r\n",
                                                            ci.GetClientCommandline().c_str(),
-                                                           ci.IsUsingVtPipe() ? L"true" : L"false",
+                                                           s_ToBoolString(ci.HasVtHandles()),
+                                                           ci.GetVtInHandle(),
+                                                           ci.GetVtOutHandle(),
+                                                           s_ToBoolString(ci.IsUsingVtPipe()),
                                                            ci.GetVtInPipe().c_str(),
                                                            ci.GetVtOutPipe().c_str(),
                                                            ci.GetVtMode().c_str(),
-                                                           ci.GetForceV1() ? L"true" : L"false",
-                                                           ci.IsHeadless() ? L"true" : L"false",
-                                                           ci.ShouldCreateServerHandle() ? L"true" : L"false",
+                                                           s_ToBoolString(ci.GetForceV1()),
+                                                           s_ToBoolString(ci.IsHeadless()),
+                                                           s_ToBoolString(ci.ShouldCreateServerHandle()),
                                                            ci.GetServerHandle());
+            }
+
+        private:
+            static PCWSTR s_ToBoolString(_In_ const bool val)
+            {
+                return val ? L"true" : L"false";
             }
         };
 
@@ -129,6 +165,9 @@ namespace WEX {
             {
                 return
                     expected.GetClientCommandline() == actual.GetClientCommandline() &&
+                    expected.HasVtHandles() == actual.HasVtHandles() &&
+                    expected.GetVtInHandle() == actual.GetVtInHandle() &&
+                    expected.GetVtOutHandle() == actual.GetVtOutHandle() &&
                     expected.IsUsingVtPipe() == actual.IsUsingVtPipe() &&
                     expected.GetVtInPipe() == actual.GetVtInPipe() &&
                     expected.GetVtOutPipe() == actual.GetVtOutPipe() &&
@@ -152,6 +191,8 @@ namespace WEX {
             {
                 return
                     object.GetClientCommandline().empty() &&
+                    (object.GetVtInHandle() == 0 || object.GetVtInHandle() == INVALID_HANDLE_VALUE) &&
+                    (object.GetVtOutHandle() == 0 || object.GetVtOutHandle() == INVALID_HANDLE_VALUE) && 
                     object.GetVtInPipe().empty() &&
                     object.GetVtOutPipe().empty() &&
                     object.GetVtMode().empty() &&

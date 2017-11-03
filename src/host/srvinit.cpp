@@ -25,34 +25,30 @@
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
-HRESULT UseVtPipe(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode)
-{
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return gci->GetVtIo()->Initialize(InPipeName, OutPipeName, VtMode);
-}
-
 HRESULT ConsoleServerInitialization(_In_ HANDLE Server, _In_ const ConsoleArguments* const args)
 {
+    Globals* const pGlobals = ServiceLocator::LocateGlobals();
+
     try
     {
-        ServiceLocator::LocateGlobals()->pDeviceComm = new DeviceComm(Server);
+        pGlobals->pDeviceComm = new DeviceComm(Server);
     }
     CATCH_RETURN();
 
-    ServiceLocator::LocateGlobals()->launchArgs = *args;
+    pGlobals->launchArgs = *args;
 
-    if (args->IsUsingVtPipe())
-    {
-        RETURN_IF_FAILED(UseVtPipe(args->GetVtInPipe(), args->GetVtOutPipe(), args->GetVtMode()));
-    }
+    CONSOLE_INFORMATION* const pGci = pGlobals->getConsoleInformation();
 
-    ServiceLocator::LocateGlobals()->uiOEMCP = GetOEMCP();
-    ServiceLocator::LocateGlobals()->uiWindowsCP = GetACP();
+    // Give VT an opportunity to set itself up based on the args given.
+    RETURN_IF_FAILED(pGci->GetVtIo()->Initialize(args));
 
-    ServiceLocator::LocateGlobals()->pFontDefaultList = new RenderFontDefaults();
-    RETURN_IF_NULL_ALLOC(ServiceLocator::LocateGlobals()->pFontDefaultList);
+    pGlobals->uiOEMCP = GetOEMCP();
+    pGlobals->uiWindowsCP = GetACP();
 
-    FontInfo::s_SetFontDefaultList(ServiceLocator::LocateGlobals()->pFontDefaultList);
+    pGlobals->pFontDefaultList = new RenderFontDefaults();
+    RETURN_IF_NULL_ALLOC(pGlobals->pFontDefaultList);
+
+    FontInfo::s_SetFontDefaultList(pGlobals->pFontDefaultList);
 
     // Removed allocation of scroll buffer here.
     return S_OK;
