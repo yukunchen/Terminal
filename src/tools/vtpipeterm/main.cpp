@@ -37,7 +37,7 @@ std::string toPrintableString(std::string& inString);
 void toPrintableBuffer(char c, char* printBuffer, int* printCch);
 ////////////////////////////////////////////////////////////////////////////////
 
-void ReadCallback(byte* buffer, DWORD dwRead)
+void ReadCallback(BYTE* buffer, DWORD dwRead)
 {
     // We already set the console to UTF-8 CP, so we can just write straight to it
     THROW_LAST_ERROR_IF_FALSE(WriteFile(hOut, buffer, dwRead, nullptr, nullptr));
@@ -50,7 +50,7 @@ void ReadCallback(byte* buffer, DWORD dwRead)
 
 }
 
-void DebugReadCallback(byte* /*buffer*/, DWORD /*dwRead*/)
+void DebugReadCallback(BYTE* /*buffer*/, DWORD /*dwRead*/)
 {
     // do nothing.
 }

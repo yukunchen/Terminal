@@ -110,7 +110,7 @@ void VtIoTests::BasicPipeOpeningTest()
 
     VtIo vtio = VtIo();
     VERIFY_IS_FALSE(vtio.IsUsingVt());
-    VERIFY_SUCCEEDED(vtio.Initialize(inPipeName, outPipeName, L""));
+    VERIFY_SUCCEEDED(vtio._Initialize(inPipeName, outPipeName, L""));
     VERIFY_IS_TRUE(vtio.IsUsingVt());
 
     Log::Comment(L"\tconnecting the pipes");
@@ -155,7 +155,7 @@ void VtIoTests::NoInPipeOpeningTest()
 
     VtIo vtio = VtIo();
     VERIFY_IS_FALSE(vtio.IsUsingVt());
-    VERIFY_FAILED(vtio.Initialize(inPipeName, outPipeName, L""));
+    VERIFY_FAILED(vtio._Initialize(inPipeName, outPipeName, L""));
     VERIFY_IS_FALSE(vtio.IsUsingVt());
 
     Log::Comment(L"\tconnecting the pipes");
@@ -187,7 +187,7 @@ void VtIoTests::NoOutPipeOpeningTest()
 
     VtIo vtio = VtIo();
     VERIFY_IS_FALSE(vtio.IsUsingVt());
-    VERIFY_FAILED(vtio.Initialize(inPipeName, outPipeName, L""));
+    VERIFY_FAILED(vtio._Initialize(inPipeName, outPipeName, L""));
     VERIFY_IS_FALSE(vtio.IsUsingVt());
 
 }
@@ -228,7 +228,7 @@ void VtIoTests::NonOverlappedInModeTest()
 
     VtIo vtio = VtIo();
     VERIFY_IS_FALSE(vtio.IsUsingVt());
-    VERIFY_SUCCEEDED(vtio.Initialize(inPipeName, outPipeName, L""));
+    VERIFY_SUCCEEDED(vtio._Initialize(inPipeName, outPipeName, L""));
     VERIFY_IS_TRUE(vtio.IsUsingVt());
 
     Log::Comment(L"\tconnecting the pipes");
@@ -285,7 +285,7 @@ void VtIoTests::NonDuplexInModeTest()
 
     VtIo vtio = VtIo();
     VERIFY_IS_FALSE(vtio.IsUsingVt());
-    VERIFY_SUCCEEDED(vtio.Initialize(inPipeName, outPipeName, L""));
+    VERIFY_SUCCEEDED(vtio._Initialize(inPipeName, outPipeName, L""));
     VERIFY_IS_TRUE(vtio.IsUsingVt());
 
     Log::Comment(L"\tconnecting the pipes");
@@ -343,7 +343,7 @@ void VtIoTests::WrongInModeTest()
 
     VtIo vtio = VtIo();
     VERIFY_IS_FALSE(vtio.IsUsingVt());
-    VERIFY_FAILED(vtio.Initialize(inPipeName, outPipeName, L""));
+    VERIFY_FAILED(vtio._Initialize(inPipeName, outPipeName, L""));
     VERIFY_IS_FALSE(vtio.IsUsingVt());
 }
 
@@ -384,7 +384,7 @@ void VtIoTests::WrongOutModeTest()
 
     VtIo vtio = VtIo();
     VERIFY_IS_FALSE(vtio.IsUsingVt());
-    VERIFY_FAILED(vtio.Initialize(inPipeName, outPipeName, L""));
+    VERIFY_FAILED(vtio._Initialize(inPipeName, outPipeName, L""));
     VERIFY_IS_FALSE(vtio.IsUsingVt());
 }
 
@@ -427,7 +427,7 @@ void VtIoTests::MultipleInstanceTest()
 
     VtIo vtio = VtIo();
     VERIFY_IS_FALSE(vtio.IsUsingVt());
-    VERIFY_SUCCEEDED(vtio.Initialize(inPipeName, outPipeName, L""));
+    VERIFY_SUCCEEDED(vtio._Initialize(inPipeName, outPipeName, L""));
     VERIFY_IS_TRUE(vtio.IsUsingVt());
 
     Log::Comment(L"\tconnecting the pipes");
@@ -472,7 +472,7 @@ void VtIoTests::OnePipeForBothTest()
 
     VtIo vtio = VtIo();
     VERIFY_IS_FALSE(vtio.IsUsingVt());
-    VERIFY_FAILED(vtio.Initialize(onePipeName, onePipeName, L""));
+    VERIFY_FAILED(vtio._Initialize(onePipeName, onePipeName, L""));
     VERIFY_IS_FALSE(vtio.IsUsingVt());
 
 }
@@ -502,7 +502,7 @@ void VtIoTests::OnePipeMultipleInstancesTest()
 
     VtIo vtio = VtIo();
     VERIFY_IS_FALSE(vtio.IsUsingVt());
-    VERIFY_FAILED(vtio.Initialize(onePipeName, onePipeName, L""));
+    VERIFY_FAILED(vtio._Initialize(onePipeName, onePipeName, L""));
     VERIFY_IS_FALSE(vtio.IsUsingVt());
 
 }
@@ -561,7 +561,7 @@ void VtIoTests::PipeAlreadyOpenedTest()
 
     VtIo vtio = VtIo();
     VERIFY_IS_FALSE(vtio.IsUsingVt());
-    VERIFY_FAILED(vtio.Initialize(inPipeName, outPipeName, L""));
+    VERIFY_FAILED(vtio._Initialize(inPipeName, outPipeName, L""));
     VERIFY_IS_FALSE(vtio.IsUsingVt());
 
 }
@@ -620,7 +620,7 @@ void VtIoTests::MultipleInstancesPipeAlreadyOpenedTest()
 
     VtIo vtio = VtIo();
     VERIFY_IS_FALSE(vtio.IsUsingVt());
-    VERIFY_FAILED(vtio.Initialize(inPipeName, outPipeName, L""));
+    VERIFY_FAILED(vtio._Initialize(inPipeName, outPipeName, L""));
     VERIFY_IS_FALSE(vtio.IsUsingVt());
 
 }

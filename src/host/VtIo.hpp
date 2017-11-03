@@ -20,12 +20,15 @@ namespace Microsoft
     }
 }
 
+class ConsoleArguments;
+
 class Microsoft::Console::VirtualTerminal::VtIo
 {
 public:
     VtIo();
 
-    HRESULT Initialize(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode);
+    HRESULT Initialize(_In_ const ConsoleArguments* const pArgs);
+    
     bool IsUsingVt() const;
 
     HRESULT StartIfNeeded();
@@ -35,6 +38,9 @@ public:
 private:
     bool _usingVt;
     VtIoMode _IoMode;
+
+    HRESULT _Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandle, _In_ const std::wstring& VtMode);
+    HRESULT _Initialize(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode);
 
     std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
     std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
