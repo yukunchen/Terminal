@@ -337,7 +337,7 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
             {
                 Globals* const pGlobals = ServiceLocator::LocateGlobals();
 
-                WddmEngine = (WddmConEngine *)pGlobals->pRenderEngine;
+                WddmEngine = (WddmConEngine *)pGlobals->pWddmconEngine;
 
                 if (Event->FocusEvent.IsActive)
                 {
