@@ -90,7 +90,7 @@ RECT WindowMetrics::GetMinClientRectInPixels()
 
             case CIS_DISPLAY_MODE_DIRECTX:
             {
-                WddmConEngine *WddmEngine = (WddmConEngine *)ServiceLocator::LocateGlobals()->pRenderEngine;
+                WddmConEngine *WddmEngine = (WddmConEngine *)ServiceLocator::LocateGlobals()->pWddmconEngine;
 
                 FontSize = WddmEngine->GetFontSize();
                 DisplaySize = WddmEngine->GetDisplaySize();

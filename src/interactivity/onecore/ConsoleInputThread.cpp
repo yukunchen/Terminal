@@ -55,6 +55,7 @@ NTSTATUS InitializeBgfx()
                 try
                 {
                     Globals->pRender->AddRenderEngine(pBgfxEngine);
+                }
                 catch(...)
                 {
                     Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
@@ -81,6 +82,9 @@ NTSTATUS InitializeWddmCon()
         try
         {
             Globals->pRender->AddRenderEngine(pWddmConEngine);
+            //TODO: MSFT:14522377 this is a bad idea, but Coniosrv needs this later.
+            Globals->pWddmconEngine = pWddmConEngine;
+        }
         catch(...)
         {
             Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
