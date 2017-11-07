@@ -35,6 +35,7 @@ bool g_headless = false;
 // Forward decls
 std::string toPrintableString(std::string& inString);
 void toPrintableBuffer(char c, char* printBuffer, int* printCch);
+std::string csi(string seq);
 void PrintInputToDebug(std::string& rawInput);
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -46,9 +47,7 @@ void ReadCallback(byte* buffer, DWORD dwRead)
     {
         std::string renderData = std::string((char*)buffer, dwRead);
         std::string printable = toPrintableString(renderData);
-        std::string seq = "\n";
-        debug->WriteInput(printable);
-        debug->WriteInput(seq);
+        PrintInputToDebug(printable);
     }
     else
     {
@@ -75,6 +74,9 @@ void nextConsole()
     consoles.push_back(con);
     con = consoles[0];
     con->activate();
+    // Force the new console to repaint.
+    std::string seq = csi("7t");
+    con->WriteInput(seq);
 }
 
 HANDLE inPipe()
@@ -261,9 +263,6 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                         case '\t':
                             nextConsole();
                             break;
-                        case 'c':
-                            newConsole();
-                            break;
                         case 't':
                             newConsole();
                             nextConsole();
@@ -419,6 +418,8 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     hIn = GetStdHandle(STD_INPUT_HANDLE);
 
+    bool fUseDebug = false;
+
     if (argc > 1)
     {
         for (int i = 0; i < argc; ++i)
@@ -427,6 +428,10 @@ int __cdecl wmain(int argc, WCHAR* argv[])
             if (arg == std::wstring(L"--headless"))
             {
                 g_headless = true;
+            }
+            else if (arg == std::wstring(L"--debug"))
+            {
+                fUseDebug = true;
             }
         }
     }
@@ -438,11 +443,14 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     getConsole()->activate();
     CreateIOThreads();
 
-    // Create a debug console for writting debugging output to.
-    debug = new VtConsole(DebugReadCallback, false);
-    // Echo stdin to stdout, but ignore newlines (so cat doesn't echo the input)
-    debug->spawn(L"ubuntu run tr -d '\n' | cat -sA");
-    debug->activate();
+    if (fUseDebug)
+    {
+        // Create a debug console for writting debugging output to.
+        debug = new VtConsole(DebugReadCallback, false);
+        // Echo stdin to stdout, but ignore newlines (so cat doesn't echo the input)
+        debug->spawn(L"ubuntu run tr -d '\n' | cat -sA");
+        debug->activate();
+    }
 
     // Exit the thread so the CRT won't clean us up and kill. The IO thread owns the lifetime now.
     ExitThread(S_OK);
