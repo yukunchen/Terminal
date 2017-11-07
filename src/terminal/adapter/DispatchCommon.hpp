@@ -34,11 +34,14 @@ public:
     enum WindowManipulationType : unsigned int
     {
         Invalid = 0,
+        RefreshWindow = 7,
         ResizeWindowInCharacters = 8,
     };
 
     static bool s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
                                _In_ const unsigned short usWidth,
                                _In_ const unsigned short usHeight);
+
+    static bool s_RefreshWindow(_Inout_ ConGetSet* const pConApi);
 
 };

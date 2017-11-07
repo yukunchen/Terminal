@@ -1735,9 +1735,14 @@ bool AdaptDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManipula
     // Other Window Manipulation functions:
     //  MSFT:13271098 - QueryViewport
     //  MSFT:13271146 - QueryScreenSize
-    //  MSFT:14179497 - RefreshWindow
     switch (uiFunction)
     {
+        case DispatchCommon::WindowManipulationType::RefreshWindow:
+            if (cParams == 0)
+            {
+                fSuccess = DispatchCommon::s_RefreshWindow(_pConApi);
+            }
+            break;
         case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
             if (cParams == 2)
             {

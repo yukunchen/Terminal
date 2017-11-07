@@ -591,3 +591,16 @@ BOOL ConhostInternalGetSet::PrivatePrependConsoleInput(_Inout_ std::deque<std::u
                                                               eventsWritten));
     return fSuccess;
 }
+
+// Routine Description:
+// - Connects the PrivatePrependConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - events - the input events to be copied into the head of the input
+// buffer for the underlying attached process
+// - eventsWritten - on output, the number of events written
+// Return Value:
+// - TRUE if successful (see DoSrvPrivatePrependConsoleInput). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateRefreshWindow()
+{
+    return SUCCEEDED(DoSrvPrivateRefreshWindow(_pIo->GetActiveOutputBuffer()));
+}

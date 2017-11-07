@@ -810,6 +810,10 @@ bool InputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) con
     {
         switch(rgusParams[0])
         {
+            case DispatchCommon::WindowManipulationType::RefreshWindow:
+                *puiFunction = DispatchCommon::WindowManipulationType::RefreshWindow;
+                fSuccess = true;
+                break;
             case DispatchCommon::WindowManipulationType::ResizeWindowInCharacters:
                 *puiFunction = DispatchCommon::WindowManipulationType::ResizeWindowInCharacters;
                 fSuccess = true;

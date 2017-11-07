@@ -7,6 +7,7 @@
 #include "precomp.h"
 #include <wextestclass.h>
 #include "../../inc/consoletaeftemplates.hpp"
+#include "../../types/inc/Viewport.hpp"
 
 #include "../../renderer/vt/Xterm256Engine.hpp"
 #include "../../renderer/vt/XtermEngine.hpp"
@@ -28,6 +29,7 @@ namespace Microsoft
     };
 };
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
 COLORREF g_ColorTable[COLOR_TABLE_SIZE];
 
@@ -221,7 +223,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = SetUpViewport(*engine);
+    Viewport view = Viewport::FromInclusive(SetUpViewport(*engine));
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."
@@ -229,7 +231,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     engine->InvalidateAll();
     TestPaintXterm(*engine, [&]()
     {
-        VERIFY_ARE_EQUAL(view, engine->_srcInvalid);
+        VERIFY_ARE_EQUAL(view.ToExclusive(), engine->_srcInvalid);
     });
 
     Log::Comment(NoThrowString().Format(
@@ -252,7 +254,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one down, only top line is invalid. ----"
         ));
-        invalid = view;
+        invalid = view.ToInclusive();
         invalid.Bottom = 1;
 
         VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
@@ -270,7 +272,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"
         ));
-        invalid = view;
+        invalid = view.ToInclusive();
         invalid.Bottom = 3;
 
         VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
@@ -286,7 +288,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one up, only bottom line is invalid. ----"
         ));
-        invalid = view;
+        invalid = view.ToInclusive();
         invalid.Top = invalid.Bottom - 1;
 
         VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
@@ -304,7 +306,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three up, only bottom 3 lines are invalid. ----"
         ));
-        invalid = view;
+        invalid = view.ToInclusive();
         invalid.Top = invalid.Bottom - 3;
 
         VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
@@ -326,7 +328,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"
         ));
-        invalid = view;
+        invalid = view.ToInclusive();
         invalid.Bottom = 3;
 
         VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
@@ -353,7 +355,7 @@ void VtRendererTest::Xterm256TestInvalidate()
             L"---- Scrolled one down and one up, nothing should change ----"
             L" But it still does for now MSFT:14169294"
         ));
-        invalid = view;
+        invalid = view.ToInclusive();
         VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
@@ -531,7 +533,7 @@ void VtRendererTest::XtermTestInvalidate()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = SetUpViewport(*engine);
+    Viewport view = Viewport::FromInclusive(SetUpViewport(*engine));
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."
@@ -539,7 +541,7 @@ void VtRendererTest::XtermTestInvalidate()
     engine->InvalidateAll();
     TestPaintXterm(*engine, [&]()
     {
-        VERIFY_ARE_EQUAL(view, engine->_srcInvalid);
+        VERIFY_ARE_EQUAL(view.ToExclusive(), engine->_srcInvalid);
     });
 
     Log::Comment(NoThrowString().Format(
@@ -562,7 +564,7 @@ void VtRendererTest::XtermTestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one down, only top line is invalid. ----"
         ));
-        invalid = view;
+        invalid = view.ToInclusive();
         invalid.Bottom = 1;
 
         VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
@@ -580,7 +582,7 @@ void VtRendererTest::XtermTestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"
         ));
-        invalid = view;
+        invalid = view.ToInclusive();
         invalid.Bottom = 3;
 
         VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
@@ -596,7 +598,7 @@ void VtRendererTest::XtermTestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one up, only bottom line is invalid. ----"
         ));
-        invalid = view;
+        invalid = view.ToInclusive();
         invalid.Top = invalid.Bottom - 1;
 
         VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
@@ -614,7 +616,7 @@ void VtRendererTest::XtermTestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three up, only bottom 3 lines are invalid. ----"
         ));
-        invalid = view;
+        invalid = view.ToInclusive();
         invalid.Top = invalid.Bottom - 3;
 
         VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
@@ -636,7 +638,7 @@ void VtRendererTest::XtermTestInvalidate()
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"
         ));
-        invalid = view;
+        invalid = view.ToInclusive();
         invalid.Bottom = 3;
 
         VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
@@ -663,7 +665,7 @@ void VtRendererTest::XtermTestInvalidate()
             L"---- Scrolled one down and one up, nothing should change ----"
             L" But it still does for now MSFT:14169294"
         ));
-        invalid = view;
+        invalid = view.ToInclusive();
         VERIFY_ARE_EQUAL(invalid, engine->_srcInvalid);
 
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
@@ -855,7 +857,7 @@ void VtRendererTest::WinTelnetTestInvalidate()
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = SetUpViewport(*engine);
+    Viewport view = Viewport::FromInclusive(SetUpViewport(*engine));
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."
@@ -863,7 +865,7 @@ void VtRendererTest::WinTelnetTestInvalidate()
     engine->InvalidateAll();
     TestPaint(*engine, [&]()
     {
-        VERIFY_ARE_EQUAL(view, engine->_srcInvalid);
+        VERIFY_ARE_EQUAL(view.ToExclusive(), engine->_srcInvalid);
     });
 
     Log::Comment(NoThrowString().Format(
@@ -883,7 +885,7 @@ void VtRendererTest::WinTelnetTestInvalidate()
     engine->InvalidateScroll(&scrollDelta);
     TestPaint(*engine, [&]()
     {
-        VERIFY_ARE_EQUAL(view, engine->_srcInvalid);
+        VERIFY_ARE_EQUAL(view.ToExclusive(), engine->_srcInvalid);
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL); // sentinel
         VERIFY_SUCCEEDED(engine->ScrollFrame());
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
@@ -893,7 +895,7 @@ void VtRendererTest::WinTelnetTestInvalidate()
     engine->InvalidateScroll(&scrollDelta);
     TestPaint(*engine, [&]()
     {
-        VERIFY_ARE_EQUAL(view, engine->_srcInvalid);
+        VERIFY_ARE_EQUAL(view.ToExclusive(), engine->_srcInvalid);
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->ScrollFrame());
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
@@ -903,7 +905,7 @@ void VtRendererTest::WinTelnetTestInvalidate()
     engine->InvalidateScroll(&scrollDelta);
     TestPaint(*engine, [&]()
     {
-        VERIFY_ARE_EQUAL(view, engine->_srcInvalid);
+        VERIFY_ARE_EQUAL(view.ToExclusive(), engine->_srcInvalid);
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->ScrollFrame());
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
@@ -913,7 +915,7 @@ void VtRendererTest::WinTelnetTestInvalidate()
     engine->InvalidateScroll(&scrollDelta);
     TestPaint(*engine, [&]()
     {
-        VERIFY_ARE_EQUAL(view, engine->_srcInvalid);
+        VERIFY_ARE_EQUAL(view.ToExclusive(), engine->_srcInvalid);
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->ScrollFrame());
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
@@ -923,7 +925,7 @@ void VtRendererTest::WinTelnetTestInvalidate()
     engine->InvalidateScroll(&scrollDelta);
     TestPaint(*engine, [&]()
     {
-        VERIFY_ARE_EQUAL(view, engine->_srcInvalid);
+        VERIFY_ARE_EQUAL(view.ToExclusive(), engine->_srcInvalid);
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->ScrollFrame());
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback

@@ -57,3 +57,14 @@ bool DispatchCommon::s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
     }
     return fSuccess;
 }
+
+// Routine Description:
+// - Force the host to repaint the screen.
+// Arguments:
+// - pConApi: The ConGetSet implementation to call back into.
+// Return Value:
+// True if handled successfully. False othewise.
+bool DispatchCommon::s_RefreshWindow(_Inout_ ConGetSet* const pConApi)
+{
+    return !!pConApi->PrivateRefreshWindow();
+}

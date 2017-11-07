@@ -67,7 +67,7 @@ HRESULT VtEngine::Invalidate(const SMALL_RECT* const psrRegion)
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::InvalidateAll()
 {
-    SMALL_RECT rc = _lastViewport.ToOrigin().ToInclusive();
+    SMALL_RECT rc = _lastViewport.ToOrigin().ToExclusive();
 
     return this->_InvalidCombine(&rc);
 }
@@ -75,6 +75,7 @@ HRESULT VtEngine::InvalidateAll()
 // Routine Description:
 // - Helper to combine the given rectangle into the invalid region to be 
 //      updated on the next paint
+// Expects EXCLUSIVE rectangles.
 // Arguments:
 // - prc - Pixel region (RECT) that should be repainted on the next frame
 // Return Value:

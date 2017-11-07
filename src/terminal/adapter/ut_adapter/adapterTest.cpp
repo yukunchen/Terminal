@@ -617,6 +617,13 @@ public:
 
         return _fPrivateGetConsoleScreenBufferAttributesResult;
     }
+    
+    virtual BOOL PrivateRefreshWindow()
+    {
+        Log::Comment(L"PrivateRefreshWindow MOCK called...");
+        // We made it through the adapter, woo! Return true.
+        return TRUE;
+    }
 
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {

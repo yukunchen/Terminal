@@ -423,21 +423,28 @@ void InputEngineTest::WindowManipulationTest()
         }
 
         std::wstringstream seqBuilder;
-        // We need to build the string with the params as strings for some reason - 
-        //      x86 would implicitly convert them to chars (eg 123 -> '{') 
-        //      before appending them to the string 
-        seqBuilder << L"\x1b[" << i << L";" << wszParam1 << L";" << wszParam2 << L"t";
-        std::wstring seq = seqBuilder.str();
-        Log::Comment(NoThrowString().Format(
-            L"Processing \"%s\"", seq.c_str()
-        ));
+        seqBuilder << L"\x1b[" << i;
 
-        if (fValidType)
+
+        if (i == DispatchCommon::WindowManipulationType::ResizeWindowInCharacters)
         {
+            // We need to build the string with the params as strings for some reason - 
+            //      x86 would implicitly convert them to chars (eg 123 -> '{') 
+            //      before appending them to the string 
+            seqBuilder << L";" << wszParam1 << L";" << wszParam2;
+
             _expectedToCallWindowManipulation = true;
             _expectedCParams = 2;
             _expectedParams[0] = param1;
             _expectedParams[1] = param2;
+            _expectedWindowManipulation = static_cast<DispatchCommon::WindowManipulationType>(i);
+        }
+        else if (i == DispatchCommon::WindowManipulationType::RefreshWindow)
+        {
+            // refresh window doesn't expect any params.
+
+            _expectedToCallWindowManipulation = true;
+            _expectedCParams = 0;
             _expectedWindowManipulation = static_cast<DispatchCommon::WindowManipulationType>(i);
         }
         else
@@ -446,7 +453,11 @@ void InputEngineTest::WindowManipulationTest()
             _expectedCParams = 0;
             _expectedWindowManipulation = DispatchCommon::WindowManipulationType::Invalid;
         }
-
+        seqBuilder << L"t";
+        std::wstring seq = seqBuilder.str();
+        Log::Comment(NoThrowString().Format(
+            L"Processing \"%s\"", seq.c_str()
+        ));
         _pStateMachine->ProcessString(&seq[0], seq.length());
     }
 }

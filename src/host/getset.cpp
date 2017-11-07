@@ -1365,3 +1365,23 @@ NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ SCREEN_INFORMATION* c
 
     return Status;
 }
+
+// Routine Description:
+// - A private API call for forcing the renderer to repaint the screen. If the 
+//      input screen buffer is not the active one, then just do nothing. We only
+//      want to redraw the screen buffer that requested the repaint, and 
+//      switching screen buffers will already force a repaint.
+// Parameters:
+//  The ScreenBuffer to perform the repaint for.
+// Return value:
+// - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
+NTSTATUS DoSrvPrivateRefreshWindow(_In_ SCREEN_INFORMATION* const pScreenInfo)
+{
+    Globals* const g = ServiceLocator::LocateGlobals();
+    if (pScreenInfo == g->getConsoleInformation()->CurrentScreenBuffer)
+    {
+        g->pRender->TriggerRedrawAll();
+    }
+
+    return STATUS_SUCCESS;
+}

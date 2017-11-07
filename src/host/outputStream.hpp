@@ -125,6 +125,8 @@ public:
     virtual BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                             _Out_ size_t& eventsWritten) override;
 
+    virtual BOOL PrivateRefreshWindow() override;
+    
 private:
     const Microsoft::Console::IIoProvider* const _pIo;
     
