@@ -99,6 +99,8 @@ class ScreenBufferTests
 
     TEST_METHOD(VtResize);
     
+    TEST_METHOD(VtSoftResetCursorPosition);
+    
     TEST_METHOD(VtSetColorTable);
 
     TEST_METHOD(ResizeTraditionalDoesntDoubleFreeAttrRows);
@@ -919,6 +921,54 @@ void ScreenBufferTests::VtResize()
     VERIFY_ARE_EQUAL(initialViewWidth, newViewWidth);
 
 }
+
+void ScreenBufferTests::VtSoftResetCursorPosition()
+{
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
+    StateMachine* const stateMachine = psi->GetStateMachine();
+    Cursor* const cursor = tbi->GetCursor();
+
+    Log::Comment(NoThrowString().Format(
+        L"Make sure the viewport is at 0,0"
+    ));
+    psi->SetViewportOrigin(true, COORD({0, 0}));
+
+    Log::Comment(NoThrowString().Format(
+        L"Move the cursor to 2,2, then execute a soft reset.\n"
+        L"The cursor should not move."
+    ));
+
+    std::wstring seq = L"\x1b[2;2H";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor->GetPosition());
+
+    seq = L"\x1b[!p";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor->GetPosition());
+
+    Log::Comment(NoThrowString().Format(
+        L"Set some margins. The cursor should move home."
+    ));
+
+    seq = L"\x1b[2;10r";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL( COORD({0, 0}), cursor->GetPosition());
+
+    Log::Comment(NoThrowString().Format(
+        L"Move the cursor to 2,2, then execute a soft reset.\n"
+        L"The cursor should not move, even though there are margins."
+    ));
+    seq = L"\x1b[2;2H";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor->GetPosition());
+    seq = L"\x1b[!p";
+    stateMachine->ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL( COORD({1, 1}), cursor->GetPosition());
+}
+
+
 void ScreenBufferTests::VtSetColorTable()
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();

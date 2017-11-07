@@ -51,7 +51,7 @@ namespace Microsoft
                 virtual bool SetCursorKeysMode(_In_ bool const /*fApplicationMode*/) { return false; }  // DECCKM
                 virtual bool SetKeypadMode(_In_ bool const /*fApplicationMode*/) { return false; }  // DECKPAM, DECKPNM
                 virtual bool EnableCursorBlinking(_In_ bool const /*fEnable*/) { return false; }  // ATT610
-                virtual bool SetTopBottomScrollingMargins(_In_ SHORT const /*sTopMargin*/, _In_ SHORT const /*sBottomMargin*/) { return false; } // DECSTBM
+                virtual bool SetTopBottomScrollingMargins(_In_ SHORT const /*sTopMargin*/, _In_ SHORT const /*sBottomMargin*/, _In_ const bool /*fResetCursor*/) { return false; } // DECSTBM
                 virtual bool ReverseLineFeed() { return false; } // RI
                 virtual bool SetWindowTitle(_In_ const wchar_t* const /*pwchWindowTitle*/, _In_ unsigned short /*sCchTitleLength*/) { return false; } // OscWindowTitle
                 virtual bool UseAlternateScreenBuffer() { return false; } // ASBSET

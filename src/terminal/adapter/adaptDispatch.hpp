@@ -87,7 +87,8 @@ namespace Microsoft
                 virtual bool SetKeypadMode(_In_ bool const fApplicationMode);  // DECKPAM, DECKPNM
                 virtual bool EnableCursorBlinking(_In_ bool const bEnable); // ATT610
                 virtual bool SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin,
-                                                          _In_ SHORT const sBottomMargin); // DECSTBM
+                                                          _In_ SHORT const sBottomMargin,
+                                                          _In_ const bool fResetCursor); // DECSTBM
                 virtual bool ReverseLineFeed(); // RI
                 virtual bool SetWindowTitle(_In_ const wchar_t* const pwchWindowTitle,
                                             _In_ unsigned short cchTitleLength); // OscWindowTitle

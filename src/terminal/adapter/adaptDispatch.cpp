@@ -1006,7 +1006,7 @@ bool AdaptDispatch::_DoDECCOLMHelper(_In_ unsigned int const uiColumns)
             fSuccess = EraseInDisplay(EraseType::All);
             if (fSuccess)
             {
-                fSuccess = SetTopBottomScrollingMargins(0, 0);
+                fSuccess = SetTopBottomScrollingMargins(0, 0, false);
             }
         }
     }
@@ -1226,7 +1226,9 @@ bool AdaptDispatch::DeleteLine(_In_ unsigned int const uiDistance)
 // - sBottomMargin - the line number for the bottom margin.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin, _In_ SHORT const sBottomMargin)
+bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin,
+                                                 _In_ SHORT const sBottomMargin,
+                                                 _In_ const bool fResetCursor)
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
@@ -1278,7 +1280,7 @@ bool AdaptDispatch::SetTopBottomScrollingMargins(_In_ SHORT const sTopMargin, _I
             _srScrollMargins.Top = sActualTop;
             _srScrollMargins.Bottom = sActualBottom;
             fSuccess = !!_pConApi->PrivateSetScrollingRegion(&_srScrollMargins);
-            if (fSuccess)
+            if (fSuccess && fResetCursor)
             {
                 this->CursorPosition(1,1);
             }
@@ -1454,7 +1456,8 @@ bool AdaptDispatch::SoftReset()
     }
     if (fSuccess)
     {
-        fSuccess = SetTopBottomScrollingMargins(0, 0); // Top margin = 1; bottom margin = page length.
+        // Top margin = 1; bottom margin = page length.
+        fSuccess = SetTopBottomScrollingMargins(0, 0, false); 
     }
     if (fSuccess)
     {
@@ -1465,10 +1468,10 @@ bool AdaptDispatch::SoftReset()
         GraphicsOptions opt = GraphicsOptions::Off;
         fSuccess = SetGraphicsRendition(&opt, 1); // Normal rendition.
     }
-    // SetTopBottomMargins already moved the cursor to 1,1
     if (fSuccess)
     {
-        fSuccess = CursorSavePosition(); // Home position.
+        // Save cursor state: Home position.
+        _coordSavedCursor = {1, 1};
     }
 
     return fSuccess;
