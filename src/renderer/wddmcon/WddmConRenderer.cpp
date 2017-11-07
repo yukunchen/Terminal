@@ -301,7 +301,8 @@ HRESULT WddmConEngine::UpdateFont(FontInfoDesired const* const pfiFontInfoDesire
 {
     UNREFERENCED_PARAMETER(pfiFontInfoDesired);
 
-    const COORD coordSize = GetFontSize();
+    COORD coordSize = {0};
+    GetFontSize(&coordSize);
 
     pfiFontInfo->SetFromEngine(pfiFontInfo->GetFaceName(),
                                pfiFontInfo->GetFamily(),
@@ -380,7 +381,7 @@ HRESULT WddmConEngine::GetFontSize(_Out_ COORD* const pFontSize)
     c.X = DEFAULT_FONT_WIDTH;
     c.Y = DEFAULT_FONT_HEIGHT;
 
-    *pFontSize  = c;
+    *pFontSize = c;
     return S_OK;
 }
 
