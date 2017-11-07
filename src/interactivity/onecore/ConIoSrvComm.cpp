@@ -362,7 +362,9 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                             RECT rcDisplay = WddmEngine->GetDisplaySize();
 
                             // Get font to adjust char to pixels.
-                            const COORD coordFont = WddmEngine->GetFontSize();
+                            COORD coordFont = {0};
+                            WddmEngine->GetFontSize(&coordFont);
+                            
                             rcDisplay.right *= coordFont.X;
                             rcDisplay.bottom *= coordFont.Y;
 

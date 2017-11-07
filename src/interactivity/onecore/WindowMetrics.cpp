@@ -92,7 +92,7 @@ RECT WindowMetrics::GetMinClientRectInPixels()
             {
                 WddmConEngine *WddmEngine = (WddmConEngine *)ServiceLocator::LocateGlobals()->pWddmconEngine;
 
-                FontSize = WddmEngine->GetFontSize();
+                WddmEngine->GetFontSize(&FontSize);
                 DisplaySize = WddmEngine->GetDisplaySize();
             }
             break;
