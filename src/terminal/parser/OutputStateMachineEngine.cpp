@@ -313,7 +313,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::CUP);
                 break;
             case VTActionCodes::DECSTBM_SetScrollingRegion:
-                fSuccess = _pDispatch->SetTopBottomScrollingMargins(sTopMargin, sBottomMargin);
+                fSuccess = _pDispatch->SetTopBottomScrollingMargins(sTopMargin, sBottomMargin, true);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTBM);
                 break;
             case VTActionCodes::ICH_InsertCharacter:

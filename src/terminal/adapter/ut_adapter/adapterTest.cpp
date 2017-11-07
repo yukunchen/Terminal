@@ -2918,56 +2918,56 @@ public:
         Log::Comment(L"Test 1: Verify having both values is valid.");
         _pTest->_SetMarginsHelper(&srTestMargins, 2, 6);
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
         Log::Comment(L"Test 2: Verify having only top is valid.");
 
         _pTest->_SetMarginsHelper(&srTestMargins, 7, 0);
         _pTest->_srExpectedScrollRegion.Bottom = _pTest->_srViewport.Bottom - 1; // We expect the bottom to be the bottom of the viewport, exclusive.
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
         Log::Comment(L"Test 3: Verify having only bottom is valid.");
 
         _pTest->_SetMarginsHelper(&srTestMargins, 0, 7);
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
         Log::Comment(L"Test 4: Verify having no values is valid.");
 
         _pTest->_SetMarginsHelper(&srTestMargins, 0, 0);
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
         Log::Comment(L"Test 5: Verify having both values, but bad bounds is invalid.");
 
         _pTest->_SetMarginsHelper(&srTestMargins, 7, 3);
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
-        VERIFY_IS_FALSE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_FALSE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
 
         Log::Comment(L"Test 6: Verify Setting margins to (0, height) clears them");
         // First set,
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
         _pTest->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
         // Then clear
         _pTest->_srExpectedScrollRegion.Top = 0;
         _pTest->_srExpectedScrollRegion.Bottom = 0;
         _pTest->_SetMarginsHelper(&srTestMargins, 0, 7);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
 
         Log::Comment(L"Test 7: Verify Setting margins to (1, height) clears them");
         // First set,
         _pTest->_fPrivateSetScrollingRegionResult = TRUE;
         _pTest->_SetMarginsHelper(&srTestMargins, 2, 6);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
         // Then clear
         _pTest->_srExpectedScrollRegion.Top = 0;
         _pTest->_srExpectedScrollRegion.Bottom = 0;
         _pTest->_SetMarginsHelper(&srTestMargins, 0, 7);
-        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom, true));
 
     }
 

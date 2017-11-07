@@ -1074,8 +1074,6 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(_In_ SCREEN_INFORMATION* pScreenInfo, _I
         srScrollMargins.Bottom = psrScrollMargins->Bottom;
         pScreenInfo->SetScrollMargins(&srScrollMargins);
 
-        COORD newCursorPosition = { 0 };
-        Status = pScreenInfo->SetCursorPosition(newCursorPosition, TRUE);
     }
 
     return Status;
