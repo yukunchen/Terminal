@@ -79,8 +79,8 @@ public:
                             _Out_ FontInfo* const pfiFont, _In_ int const iDpi) override;
 
     SMALL_RECT GetDirtyRectInChars() override;
-    COORD GetFontSize() override;
-    bool IsCharFullWidthByFont(_In_ WCHAR const wch) override;
+    HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
+    HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
             
     IRenderCursor* const GetCursor() override;
                 

@@ -54,8 +54,8 @@ namespace Microsoft
                 HRESULT GetProposedFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo, int const iDpi);
 
                 SMALL_RECT GetDirtyRectInChars();
-                COORD GetFontSize();
-                bool IsCharFullWidthByFont(WCHAR const wch);
+                HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
+                HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
                 
                 IRenderCursor* const GetCursor() override;
 

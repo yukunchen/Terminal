@@ -66,8 +66,8 @@ namespace Microsoft
                 virtual HRESULT GetProposedFont(_In_ FontInfoDesired const * const pfiFontInfoDesired, _Out_ FontInfo* const pfiFontInfo, _In_ int const iDpi) = 0;
 
                 virtual SMALL_RECT GetDirtyRectInChars() = 0;
-                virtual COORD GetFontSize() = 0;
-                virtual bool IsCharFullWidthByFont(_In_ WCHAR const wch) = 0;
+                virtual HRESULT GetFontSize(_Out_ COORD* const pFontSize) = 0;
+                virtual HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) = 0;
 
                 virtual IRenderCursor* const GetCursor() = 0;
             };

@@ -87,7 +87,8 @@ LRESULT CALLBACK Window::s_ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, 
 
 LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    Globals* const g = ServiceLocator::LocateGlobals();
+    CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
     LRESULT Status = 0;
     BOOL Unlock = TRUE;
 
@@ -203,15 +204,19 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         // First retrieve the new DPI and the current DPI.
         DWORD const dpiProposed = (WORD)wParam;
-        DWORD const dpiCurrent = ServiceLocator::LocateGlobals()->dpi;
+        DWORD const dpiCurrent = g->dpi;
 
         // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
         FontInfo* pfiCurrent = ScreenInfo->TextInfo->GetCurrentFont();
         FontInfoDesired fiDesired(*pfiCurrent);
         FontInfo fiProposed(nullptr, 0, 0, { 0, 0 }, 0);
 
-        ServiceLocator::LocateGlobals()->pRender->GetProposedFont(dpiProposed, &fiDesired, &fiProposed); // fiProposal will be updated by the renderer for this new font.
-        COORD coordFontProposed = fiProposed.GetSize();
+        const HRESULT hr = g->pRender->GetProposedFont(dpiProposed, &fiDesired, &fiProposed); 
+        // fiProposal will be updated by the renderer for this new font.
+        // GetProposedFont can fail if there's no render engine yet.
+        // This can happen if we're headless.
+        // Just assume that the font is 1x1 in that case.
+        COORD coordFontProposed = SUCCEEDED(hr) ? fiProposed.GetSize() : COORD({1, 1});
 
         // Then from that font size, we need to calculate the client area.
         // Then from the client area we need to calculate the window area (using the proposed DPI scalar here as well.)

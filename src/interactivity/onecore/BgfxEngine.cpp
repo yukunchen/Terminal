@@ -230,12 +230,8 @@ HRESULT BgfxEngine::UpdateViewport(_In_ SMALL_RECT const /*srNewViewport*/)
     return S_OK;
 }
 
-HRESULT BgfxEngine::GetProposedFont(FontInfoDesired const* const pfiFontInfoDesired, FontInfo* const pfiFontInfo, int const iDpi)
+HRESULT BgfxEngine::GetProposedFont(FontInfoDesired const* const /*pfiFontInfoDesired*/, FontInfo* const /*pfiFontInfo*/, int const /*iDpi*/)
 {
-    UNREFERENCED_PARAMETER(pfiFontInfoDesired);
-    UNREFERENCED_PARAMETER(pfiFontInfo);
-    UNREFERENCED_PARAMETER(iDpi);
-
     return S_OK;
 }
 
@@ -250,16 +246,17 @@ SMALL_RECT BgfxEngine::GetDirtyRectInChars()
     return r;
 }
 
-COORD BgfxEngine::GetFontSize()
+HRESULT BgfxEngine::GetFontSize(_Out_ COORD* const pFontSize)
 {
-    return _fontSize;
+    *pFontSize =_fontSize;
+    return S_OK;
 }
 
-bool BgfxEngine::IsCharFullWidthByFont(WCHAR const wch)
+HRESULT BgfxEngine::IsCharFullWidthByFont(WCHAR const /*wch*/, _Out_ bool* const pResult)
 {
-    UNREFERENCED_PARAMETER(wch);
 
-    return false;
+    *pResult = false;
+    return S_OK;
 }
 
 // Method Description:

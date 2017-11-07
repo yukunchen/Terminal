@@ -352,8 +352,31 @@ void Renderer::TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
 {
-    // MSFT:13631640 Figure out what to do with this when there's no head.
-    return _rgpEngines[0]->GetProposedFont(pFontInfoDesired, pFontInfo, iDpi);
+    // If there's no head, return E_FAIL. The caller should decide how to 
+    //      handle this.
+    // Currently, the only caller is the WindowProc:WM_GETDPISCALEDSIZE handler.
+    //      It will assume that the proposed font is 1x1, regardless of DPI.
+    if (_rgpEngines.size() < 1)
+    {
+        return E_FAIL;
+    }
+
+    // There will only every really be two engines - the real head and the VT 
+    //      renderer. We won't know which is which, so iterate over them. 
+    //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
+    // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
+    assert(_rgpEngines.size() <= 2);
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        const HRESULT hr = LOG_IF_FAILED(pEngine->GetProposedFont(pFontInfoDesired, pFontInfo, iDpi));
+        // We're looking for specifically S_OK, S_FALSE is not good enough.
+        if (hr == S_OK)
+        {
+            return hr;
+        }
+    };
+
+    return E_FAIL;
 }
 
 // Routine Description:
@@ -365,8 +388,24 @@ HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired cons
 // - COORD representing the current pixel size of the selected font
 COORD Renderer::GetFontSize()
 {
-    // MSFT:13631640 Figure out what to do with this when there's no head.
-    return _rgpEngines[0]->GetFontSize();
+    COORD fontSize = {1, 1};
+    // There will only every really be two engines - the real head and the VT 
+    //      renderer. We won't know which is which, so iterate over them. 
+    //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
+    // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
+    assert(_rgpEngines.size() <= 2);
+
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        const HRESULT hr = LOG_IF_FAILED(pEngine->GetFontSize(&fontSize));
+        // We're looking for specifically S_OK, S_FALSE is not good enough.
+        if (hr == S_OK)
+        {
+            return fontSize;
+        }
+    };
+
+    return fontSize;
 }
 
 // Routine Description:
@@ -379,8 +418,24 @@ COORD Renderer::GetFontSize()
 // - True if the character is full-width (two wide), false if it is half-width (one wide).
 bool Renderer::IsCharFullWidthByFont(_In_ WCHAR const wch)
 {
-    // MSFT:13631640 Figure out what to do with this when there's no head.
-    return _rgpEngines[0]->IsCharFullWidthByFont(wch);
+    bool fIsFullWidth = false;
+
+    // There will only every really be two engines - the real head and the VT 
+    //      renderer. We won't know which is which, so iterate over them. 
+    //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
+    // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
+    assert(_rgpEngines.size() <= 2);
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        const HRESULT hr = LOG_IF_FAILED(pEngine->IsCharFullWidthByFont(wch, &fIsFullWidth));
+        // We're looking for specifically S_OK, S_FALSE is not good enough.
+        if (hr == S_OK)
+        {
+            return fIsFullWidth;
+        }
+    }
+
+    return fIsFullWidth;
 }
 
 // Routine Description:
