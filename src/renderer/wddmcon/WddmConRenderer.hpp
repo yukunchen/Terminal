@@ -13,7 +13,7 @@ namespace Microsoft
             {
             public:
                 WddmConEngine();
-                ~WddmConEngine();
+                ~WddmConEngine() override;
 
                 HRESULT Initialize();
                 bool IsInitialized();

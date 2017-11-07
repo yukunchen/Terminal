@@ -34,7 +34,7 @@ namespace Microsoft
             {
             public:
                 BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWidth, LONG FontWidth, LONG FontHeight);
-                ~BgfxEngine();
+                ~BgfxEngine() override = default;
 
                 // IRenderEngine Members
                 HRESULT Invalidate(const SMALL_RECT* const psrRegion);

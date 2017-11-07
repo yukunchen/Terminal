@@ -35,7 +35,7 @@ class Microsoft::Console::Render::VtEngine : public IRenderEngine
 {
 public:
     VtEngine(_In_ wil::unique_hfile hPipe);
-    ~VtEngine();
+    virtual ~VtEngine() override = default;
 
     HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                                 _In_ UINT const cRectangles) override;

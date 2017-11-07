@@ -43,16 +43,6 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe) :
 #endif
 }
 
-// Routine Description:
-// - Destroys an instance of a VT-based rendering engine
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-VtEngine::~VtEngine()
-{
-}
-
 // Method Description:
 // - Writes the characters to our file handle. If we're building the unit tests, 
 //      we can instead write to the test callback, in order to avoid needing to 
