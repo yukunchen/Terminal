@@ -39,6 +39,8 @@ namespace Microsoft
                     Right = 0x8
                 };
 
+                virtual ~IRenderEngine() = default;
+
                 virtual HRESULT StartPaint() = 0;
                 virtual HRESULT EndPaint() = 0;
 

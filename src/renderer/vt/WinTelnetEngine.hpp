@@ -32,6 +32,7 @@ public:
     WinTelnetEngine(_In_ wil::unique_hfile hPipe,
                     _In_reads_(cColorTable) const COLORREF* const ColorTable,
                     _In_ const WORD cColorTable);
+    virtual ~WinTelnetEngine() override = default;
     HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                  _In_ COLORREF const colorBackground,
                                  _In_ WORD const legacyColorAttribute,

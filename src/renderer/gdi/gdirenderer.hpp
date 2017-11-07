@@ -26,7 +26,7 @@ namespace Microsoft
             {
             public:
                 GdiEngine();
-                ~GdiEngine();
+                ~GdiEngine() override;
 
                 HRESULT SetHwnd(_In_ HWND const hwnd);
 

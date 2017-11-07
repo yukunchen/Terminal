@@ -37,6 +37,7 @@ public:
                 _In_reads_(cColorTable) const COLORREF* const ColorTable,
                 _In_ const WORD cColorTable,
                 _In_ const bool fUseAsciiOnly);
+    virtual ~XtermEngine() override = default;
     HRESULT StartPaint() override;
     HRESULT EndPaint() override;
     virtual HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,

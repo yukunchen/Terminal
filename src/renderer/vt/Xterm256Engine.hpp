@@ -30,6 +30,7 @@ class Microsoft::Console::Render::Xterm256Engine : public XtermEngine
 {
 public:
     Xterm256Engine(_In_ wil::unique_hfile hPipe);
+    virtual ~Xterm256Engine() override = default;
     HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                  _In_ COLORREF const colorBackground,
                                  _In_ WORD const legacyColorAttribute,
