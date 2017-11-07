@@ -219,23 +219,24 @@ HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 // - pfiFont - Pointer to font information where the chosen font information will be populated.
 // - iDpi - The DPI we will have when rendering
 // Return Value:
-// - S_OK
+// - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
 HRESULT VtEngine::GetProposedFont(_In_ FontInfoDesired const * const /*pfiFontDesired*/,
                                   _Out_ FontInfo* const /*pfiFont*/,
                                   _In_ int const /*iDpi*/)
 {
-    return S_OK;
+    return S_FALSE;
 }
 
 // Method Description:
 // - Retrieves the current pixel size of the font we have selected for drawing.
 // Arguments:
-// - <none>
+// - pFontSize - recieves the current X by Y size of the font.
 // Return Value:
-// - X by Y size of the font.
-COORD VtEngine::GetFontSize()
+// - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
+HRESULT VtEngine::GetFontSize(_Out_ COORD* const pFontSize)
 {
-    return{ 1, 1 };
+    *pFontSize = COORD({1, 1});
+    return S_FALSE;
 }
 
 // Method Description:

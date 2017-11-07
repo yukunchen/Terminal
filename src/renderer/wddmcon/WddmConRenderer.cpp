@@ -363,7 +363,7 @@ RECT WddmConEngine::GetDisplaySize()
     return r;
 }
 
-COORD WddmConEngine::GetFontSize()
+HRESULT WddmConEngine::GetFontSize(_Out_ COORD* const pFontSize)
 {
     // In order to retrieve the font size being used by DirectX, it is necessary
     // to modify the API set that defines the contract for WddmCon. However, the
@@ -380,14 +380,14 @@ COORD WddmConEngine::GetFontSize()
     c.X = DEFAULT_FONT_WIDTH;
     c.Y = DEFAULT_FONT_HEIGHT;
 
-    return c;
+    *pFontSize  = c;
+    return S_OK;
 }
 
-bool WddmConEngine::IsCharFullWidthByFont(WCHAR const wch)
+HRESULT WddmConEngine::IsCharFullWidthByFont(WCHAR const /*wch*/, _Out_ bool* const pResult)
 {
-    UNREFERENCED_PARAMETER(wch);
-
-    return false;
+    *pResult = false;
+    return S_OK;
 }
 
 // Method Description:

@@ -34,9 +34,10 @@ SMALL_RECT GdiEngine::GetDirtyRectInChars()
 // - NOTE: Only supports determining half-width/full-width status for CJK-type languages (e.g. is it 1 character wide or 2. a.k.a. is it a rectangle or square.)
 // Arguments:
 // - wch - Character to check
+// - pResult - recieves return value, True if it is full-width (2 wide). False if it is half-width (1 wide).
 // Return Value:
-// - True if it is full-width (2 wide). False if it is half-width (1 wide).
-bool GdiEngine::IsCharFullWidthByFont(_In_ WCHAR const wch)
+// - S_OK
+HRESULT GdiEngine::IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult)
 {
     bool isFullWidth = false;
 
@@ -59,7 +60,8 @@ bool GdiEngine::IsCharFullWidthByFont(_In_ WCHAR const wch)
         }
     }
 
-    return isFullWidth;
+    *pResult = isFullWidth;
+    return S_OK;
 }
 
 // Routine Description:
