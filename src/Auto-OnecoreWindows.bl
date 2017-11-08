@@ -1,0 +1,13 @@
+export const projects = [
+    f`propsheet/autogen.bp`,
+    f`propslib/autogen.bp`,
+    f`testlist/autogen.bp`,
+    f`tsf/autogen.bp`,
+    ...importFile(f`host/Auto-OnecoreWindows.bl`).projects,
+    ...importFile(f`interactivity/Auto-OnecoreWindows.bl`).projects,
+    ...importFile(f`renderer/Auto-OnecoreWindows.bl`).projects,
+    ...importFile(f`server/Auto-OnecoreWindows.bl`).projects,
+    ...importFile(f`terminal/Auto-OnecoreWindows.bl`).projects,
+    ...importFile(f`tools/Auto-OnecoreWindows.bl`).projects,
+    ...importFile(f`types/Auto-OnecoreWindows.bl`).projects,
+];
