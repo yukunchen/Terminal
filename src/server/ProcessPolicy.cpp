@@ -11,6 +11,8 @@
 #include "..\host\globals.h"
 #include "..\host\telemetry.hpp"
 
+#include <wil\TokenHelpers.h>
+
 // AttributesPresent flags
 #define ACCESS_CLAIM_WIN_SYSAPPID_PRESENT    0x00000001  // WIN://SYSAPPID
 #define ACCESS_CLAIM_WIN_PKG_PRESENT         0x00000002  // WIN://PKG
@@ -19,8 +21,8 @@
 #define NT_ASSERT(_exp) assert(_exp)
 
 typedef struct _PS_PKG_CLAIM {
-   ULONGLONG Flags:16;
-   ULONGLONG Origin:8;
+    ULONGLONG Flags : 16;
+    ULONGLONG Origin : 8;
 } PS_PKG_CLAIM, *PPS_PKG_CLAIM;
 
 extern "C" NTSYSAPI LONG NTAPI RtlQueryPackageClaims(
@@ -32,15 +34,15 @@ extern "C" NTSYSAPI LONG NTAPI RtlQueryPackageClaims(
     _Out_opt_ LPGUID DynamicId,
     _Out_opt_ PVOID /* PPS_PKG_CLAIM */ PkgClaim,
     _Out_opt_ PULONG64 AttributesPresent
-    );
-    
+);
+
 #include <appmodelpolicy.h>
 
 // Routine Description:
 // - Constructs a new instance of the process policy class.
 // Arguments:
 // - All arguments specify a true/false status to a policy that could be applied to a console client app.
-ConsoleProcessPolicy::ConsoleProcessPolicy(_In_ const bool fCanReadOutputBuffer, 
+ConsoleProcessPolicy::ConsoleProcessPolicy(_In_ const bool fCanReadOutputBuffer,
                                            _In_ const bool fCanWriteInputBuffer) :
     _fCanReadOutputBuffer(fCanReadOutputBuffer),
     _fCanWriteInputBuffer(fCanWriteInputBuffer)
@@ -63,30 +65,95 @@ ConsoleProcessPolicy::~ConsoleProcessPolicy()
 // - ConsoleProcessPolicy object containing resolved policy data.
 ConsoleProcessPolicy ConsoleProcessPolicy::s_CreateInstance(_In_ const HANDLE hProcess)
 {
+    // If we cannot determine the policy status, then we block access by default.
     bool fCanReadOutputBuffer = false;
     bool fCanWriteInputBuffer = false;
 
     wil::unique_handle hToken;
     if (LOG_IF_WIN32_BOOL_FALSE(OpenProcessToken(hProcess, TOKEN_READ, &hToken)))
     {
-        const AppModelPolicy::ConsoleBufferAccessPolicy bufferAccessPolicy = AppModelPolicy::GetConsoleBufferAccessPolicy(hToken.get());
+        bool fIsWrongWayBlocked = true;
 
-        switch (bufferAccessPolicy)
+        // First check AppModel Policy:
+        LOG_IF_FAILED(s_CheckAppModelPolicy(hToken.get(), fIsWrongWayBlocked));
+
+        // If we're not restricted by AppModel Policy, also check for Integrity Level below our own.
+        if (!fIsWrongWayBlocked)
         {
-        case AppModelPolicy::ConsoleBufferAccessPolicy::Unrestricted:
+            LOG_IF_FAILED(s_CheckIntegrityLevelPolicy(hToken.get(), fIsWrongWayBlocked));
+        }
+
+        // If we're not blocking wrong way verbs, adjust the read/write policies to permit read out and write in.
+        if (!fIsWrongWayBlocked)
+        {
             fCanReadOutputBuffer = true;
             fCanWriteInputBuffer = true;
-            break;
-        case AppModelPolicy::ConsoleBufferAccessPolicy::RestrictedUnidirectional:
-            fCanReadOutputBuffer = false;
-            fCanWriteInputBuffer = false;
-            break;
-        default:
-            THROW_HR(E_NOTIMPL);
         }
     }
 
     return ConsoleProcessPolicy(fCanReadOutputBuffer, fCanWriteInputBuffer);
+}
+
+HRESULT ConsoleProcessPolicy::s_CheckAppModelPolicy(_In_ const HANDLE hToken,
+                                                    _Inout_ bool& fIsWrongWayBlocked)
+{
+    // If we cannot determine the policy status, then we block access by default.
+    fIsWrongWayBlocked = true;
+
+    const AppModelPolicy::ConsoleBufferAccessPolicy bufferAccessPolicy = AppModelPolicy::GetConsoleBufferAccessPolicy(hToken);
+
+    switch (bufferAccessPolicy)
+    {
+    case AppModelPolicy::ConsoleBufferAccessPolicy::Unrestricted:
+        fIsWrongWayBlocked = false;
+        break;
+    case AppModelPolicy::ConsoleBufferAccessPolicy::RestrictedUnidirectional:
+        fIsWrongWayBlocked = true;
+        break;
+    default:
+        RETURN_HR(E_NOTIMPL);
+    }
+
+    return S_OK;
+}
+
+HRESULT ConsoleProcessPolicy::s_CheckIntegrityLevelPolicy(_In_ const HANDLE hOtherToken,
+                                                          _Inout_ bool& fIsWrongWayBlocked)
+{
+    // If we cannot determine the policy status, then we block access by default.
+    fIsWrongWayBlocked = true;
+
+    // This is a magic value, we don't need to free it.
+    const HANDLE hMyToken = GetCurrentProcessToken();
+
+    DWORD dwMyIntegrityLevel;
+    RETURN_IF_FAILED(s_GetIntegrityLevel(hMyToken, dwMyIntegrityLevel));
+
+    DWORD dwOtherIntegrityLevel;
+    RETURN_IF_FAILED(s_GetIntegrityLevel(hOtherToken, dwOtherIntegrityLevel));
+
+    // If the other process is at or above the conhost's integrity, we allow the verbs.
+    if (dwOtherIntegrityLevel >= dwMyIntegrityLevel)
+    {
+        fIsWrongWayBlocked = false;
+    }
+
+    return S_OK;
+}
+
+HRESULT ConsoleProcessPolicy::s_GetIntegrityLevel(_In_ const HANDLE hToken,
+                                                  _Out_ DWORD& dwIntegrityLevel)
+{
+    dwIntegrityLevel = 0;
+
+    // Get the Integrity level.
+    wistd::unique_ptr<TOKEN_MANDATORY_LABEL> tokenLabel;
+    RETURN_IF_FAILED(wil::GetTokenInformationNoThrow(tokenLabel, hToken));
+
+    dwIntegrityLevel = *GetSidSubAuthority(tokenLabel->Label.Sid,
+        (DWORD)(UCHAR)(*GetSidSubAuthorityCount(tokenLabel->Label.Sid) - 1));
+
+    return S_OK;
 }
 
 // Routine Description:
