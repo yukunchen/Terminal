@@ -1,0 +1,382 @@
+namespace Onecore.Windows.Core.Console.Open.Src.Propsheet {
+
+    const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src`;
+
+    const o = d`${objRoot}\onecore\windows\core\console\open\src\propsheet\${buildAlt}`;
+
+    const prePass = isBuildCommonArchitecture ? LegacySdk.build({
+        template: template_NMake,
+        classification: "product",
+        targetPass: "prePass",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`product.pbxproj`,
+            f`propsheet.vcxproj`,
+        ],
+    }) : undefined;
+
+    const pass0 = isBuildCommonArchitecture ? LegacySdk.build({
+        template: template_NMake,
+        classification: "product",
+        targetPass: "pass0",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`product.pbxproj`,
+            f`propsheet.vcxproj`,
+            f`strid.mc`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+
+            prePass,
+        ],
+        
+        produces: [
+            p`${binRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-propsheet-nmake_to_mbs_pass0.props.br`,
+            p`${binRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-propsheet-nmake_to_mbs_pass0.props`,
+            p`${o}\msg00001.bin`,
+            p`${o}\mui.rcc`,
+            p`${o}\nmake_to_mbs_pass0.props`,
+            p`${o}\strid.h`,
+            p`${o}\strid.rc`,
+        ],
+    }) : undefined;
+
+    const pass1 = isBuildCommonArchitecture ? LegacySdk.build({
+        template: template_NMake,
+        classification: "product",
+        targetPass: "pass1",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`colorspage.cpp`,
+            f`colorspage.h`,
+            f`console.cpp`,
+            f`console.def`,
+            f`console.h`,
+            f`dbcs.cpp`,
+            f`dialogs.h`,
+            f`dll.cpp`,
+            f`font.h`,
+            f`fontdlg.cpp`,
+            f`fontdlg.h`,
+            f`globals.cpp`,
+            f`globals.h`,
+            f`init.cpp`,
+            f`layoutpage.cpp`,
+            f`layoutpage.h`,
+            f`menu.h`,
+            f`misc.cpp`,
+            f`optionspage.cpp`,
+            f`optionspage.h`,
+            f`precomp.cpp`,
+            f`precomp.h`,
+            f`preview.cpp`,
+            f`product.pbxproj`,
+            f`propsheet.vcxproj`,
+            f`propsheethandler.cpp`,
+            f`readlink.cpp`,
+            f`registry.cpp`,
+            f`util.cpp`,
+            f`windowsshell.manifest`,
+            f`${dotDot}\commonincludes.h`,
+            f`${dotDot}\host\conddkrefs.h`,
+            f`${dotDot}\host\conwinuserrefs.h`,
+            f`${dotDot}\inc\cpl_core.h`,
+            f`${dotDot}\propslib\conpropsp.hpp`,
+            f`${dotDot}\propslib\registryserialization.hpp`,
+            f`${dotDot}\propslib\shortcutserialization.hpp`,
+            f`${dotDot}\propslib\truetypefontlist.hpp`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+
+            pass0,
+            prePass,
+
+            $.Public.Internal.Onecorewindows.Inc.header,
+            $.Public.Internal.Sdk.Inc.header,
+            $.Public.Sdk.Inc.header,
+            $.Public.Sdk.Inc.idl,
+            $.Public.Shared.Inc.header,
+            MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Sdk.Inc.Ucrt.Sys.header,
+            MsWinOnecoreBase.Public.Shared.Inc.header,
+            MsWinOnecoreCom.Public.Internal.Sdk.Inc.header,
+            MsWinOnecoreCom.Public.Sdk.Inc.header,
+            MsWinOnecoreCom.Public.Sdk.Inc.idl,
+            MsWinOnecoreCom.Public.Shared.Inc.header,
+            MsWinOnecoreEndUser.Public.Sdk.Inc.idl,
+            MsWinOnecoreInetCore.Public.Sdk.Inc.idl,
+            MsWinOnecoreNet.Public.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Internal.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Shared.Inc.header,
+            MsWinOnecoreShell.Public.Internal.Sdk.Inc.Wil.header,
+            MsWinOnecoreShell.Public.Sdk.Inc.header,
+            MsWinOnecoreShell.Public.Sdk.Inc.idl,
+            MsWinOnecoreUapBase.Public.Sdk.Inc.idl,
+            MsWinOnecoreUapShell.Public.Sdk.Inc.header,
+            MsWinOnecoreUapShell.Public.Sdk.Inc.idl,
+            MsWinOnecore_ApiSet.Public.Sdk.Inc.Mincore.header,
+            MsWinOnecore_MinIo.Public.Shared.Inc.header,
+            MsWinOnecore_MinKernel.Public.Internal.Base.Inc.header,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
+            MsWinOnecore_Wrl.Public.Internal.Sdk.Inc.Wrl.header,
+            MsWinOnecore_Wrl.Public.Sdk.Inc.header,
+            MsWinOnecore_Wrl.Public.Sdk.Inc.Wrl.header,
+            MsWinOnecore_Wrl.Public.Sdk.Inc.Wrl.Wrappers.header,
+        ],
+        
+        produces: [
+            p`${binRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-propsheet-nmake_to_mbs_pass1.props.br`,
+            p`${binRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-propsheet-nmake_to_mbs_pass1.props`,
+            p`${o}\colorspage.obj`,
+            p`${o}\console.exp`,
+            p`${o}\console.lib`,
+            p`${o}\console.obj`,
+            p`${o}\dbcs.obj`,
+            p`${o}\dll.obj`,
+            p`${o}\fontdlg.obj`,
+            p`${o}\globals.obj`,
+            p`${o}\init.obj`,
+            p`${o}\layoutpage.obj`,
+            p`${o}\misc.obj`,
+            p`${o}\nmake_to_mbs_pass1.props`,
+            p`${o}\optionspage.obj`,
+            p`${o}\pch_hdr.src`,
+            p`${o}\precomp.obj`,
+            p`${o}\precomp.pch`,
+            p`${o}\preview.obj`,
+            p`${o}\propsheethandler.obj`,
+            p`${o}\readlink.obj`,
+            p`${o}\registry.obj`,
+            p`${o}\util.obj`,
+            p`${o}\windowsshell.o_manifest`,
+        ],
+    }) : undefined;
+
+    const pass2 = isBuildCommonArchitecture ? LegacySdk.build({
+        template: template_NMake,
+        classification: "product",
+        targetPass: "pass2",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`colorspage.cpp`,
+            f`colorspage.h`,
+            f`console.cpp`,
+            f`console.def`,
+            f`console.dll.mui.lci`,
+            f`console.h`,
+            f`console.rc`,
+            f`dbcs.cpp`,
+            f`dialogs.h`,
+            f`dll.cpp`,
+            f`font.h`,
+            f`fontdlg.cpp`,
+            f`globals.cpp`,
+            f`init.cpp`,
+            f`layoutpage.cpp`,
+            f`layoutpage.h`,
+            f`misc.cpp`,
+            f`optionspage.cpp`,
+            f`optionspage.h`,
+            f`precomp.cpp`,
+            f`precomp.h`,
+            f`preview.cpp`,
+            f`product.pbxproj`,
+            f`propsheet.vcxproj`,
+            f`propsheethandler.cpp`,
+            f`readlink.cpp`,
+            f`registry.cpp`,
+            f`util.cpp`,
+            f`windowsshell.manifest`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            isBuildRelease ? f`${objRoot}\${buildAlt}\pe_list\console.dll` : undefined,
+            f`${srcRoot}\onecore\windows\core\console\open\res\console.ico`,
+            f`${srcRoot}\onecore\windows\core\console\open\res\truetype.bmp`,
+            f`${srcRoot}\public\sdk\inc\ntverp.h`,
+            MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
+            MsWinCrts.Public.Internal.Sdk.Lib.library,
+            isBuildArm32 || isBuildArm64 ? MsWinCrts.Public.Sdk.Lib.library : undefined,
+            MsWinOnecoreBase.Public.Shared.Inc.header,
+            MsWinOnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.V1_7.library,
+            isBuildRelease && (isBuildX64 || isBuildX86) ? MsWinOnecoreMerged.Public.Internal.Onecoremerged.Lib.content : undefined,
+            MsWinOnecoreMerged.Public.Sdk.Lib.Onecore.V1_7.library,
+            MsWinOnecoreShell.Public.Sdk.Inc.header,
+            MsWinOnecoreShell.Public.Sdk.Inc.idl,
+            MsWinOnecoreUapMerged.Private.Internal.Onecore.Priv_sdk.Lib.V1_7.library,
+            MsWinOnecoreUapMerged.Public.Internal.Sdk.Lib.library,
+            MsWinOnecoreUapMerged.Public.Sdk.Lib.Onecore.V1_7.library,
+            MsWinOnecoreUapWindows.Public.Internal.Onecoreuapwindows.Lib.library,
+            pass0,
+            pass1,
+            prePass,
+            $.Onecore.Windows.Core.Console.Open.Src.Propslib.pass1,
+            $.Public.Sdk.Inc.idl,
+            MsWinOnecore_ApiSet.Private.Internal.Mincore.Priv_sdk.Lib.V1_7.library,
+            MsWinOnecore_MinKernel.Public.Internal.Sdk.Lib.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_8.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.library,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.header,
+        ]
+        .filter(e => e !== undefined),
+        
+        produces: [
+            p`${binRoot}\console.dll`,
+            p`${binRoot}\blg\console.dll.br`,
+            p`${binRoot}\blg\loc\src\bin\console.dll.mui.br`,
+            p`${binRoot}\blg\loc\src\lcg\console.dll.mui.lcg.br`,
+            p`${binRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-propsheet-nmake_to_mbs_pass2.props.br`,
+            p`${binRoot}\loc\src\bin\console.dll.mui`,
+            p`${binRoot}\loc\src\lcg\console.dll.mui.lcg`,
+            p`${binRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-propsheet-nmake_to_mbs_pass2.props`,
+            p`${binRoot}\symbols.pri\retail\dll\console.pdb`,
+            p`${o}\console.dll`,
+            p`${o}\console.dll.mui`,
+            p`${o}\console.dll.mui.lcg`,
+            p`${o}\console.dll.mui.lcg.binplace.txt`,
+            p`${o}\console.lce`,
+            p`${o}\console.muires`,
+            p`${o}\console.pdb`,
+            p`${o}\console.rc_temp2`,
+            p`${o}\console.res`,
+            p`${o}\nmake_to_mbs_pass2.props`,
+        ],
+    }) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_Blg_content
+
+    export const bin_Blg_content = isBuildCommonArchitecture ? pass2.directories.get(p`${binRoot}\blg`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_BlgLocSrcBin_content
+
+    export const bin_BlgLocSrcBin_content = isBuildCommonArchitecture ? pass2.directories.get(p`${binRoot}\blg\loc\src\bin`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_BlgLocSrcLcg_content
+
+    export const bin_BlgLocSrcLcg_content = isBuildCommonArchitecture ? pass2.directories.get(p`${binRoot}\blg\loc\src\lcg`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_BlgMsbuildpropsNmakeprops_content
+
+    @@public
+    export const bin_BlgMsbuildpropsNmakeprops_content = isBuildCommonArchitecture ? MicrosoftSdk.SdkCombine.evaluate({
+        outputDirectory: d`${binRoot}\blg\msbuildprops\nmakeprops`,
+        sources: [
+            pass0.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+            pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+            pass2.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+        ],
+    }) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_content
+
+    export const bin_content = isBuildCommonArchitecture ? pass2.directories.get(binRoot.path) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocSrcBin_content
+
+    export const bin_LocSrcBin_content = isBuildCommonArchitecture ? pass2.directories.get(p`${binRoot}\loc\src\bin`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocSrcLcg_content
+
+    export const bin_LocSrcLcg_content = isBuildCommonArchitecture ? pass2.directories.get(p`${binRoot}\loc\src\lcg`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_MsbuildpropsNmakeprops_content
+
+    @@public
+    export const bin_MsbuildpropsNmakeprops_content = isBuildCommonArchitecture ? MicrosoftSdk.SdkCombine.evaluate({
+        outputDirectory: d`${binRoot}\msbuildprops\nmakeprops`,
+        sources: [
+            pass0.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+            pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+            pass2.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+        ],
+    }) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_SymbolspriRetailDll_content
+
+    export const bin_SymbolspriRetailDll_content = isBuildCommonArchitecture ? pass2.directories.get(p`${binRoot}\symbols.pri\retail\dll`) : undefined;
+
+    const pass3 = isBuildCommonArchitecture ? LegacySdk.build({
+        template: template_NMake,
+        classification: "product",
+        targetPass: "pass3",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`propsheet.vcxproj`,
+            isBuildRelease && isBuildCommonArchitecture ? MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata : undefined,
+            pass0,
+            pass1,
+            pass2,
+            prePass,
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    f`product.pbxproj`,
+                    f`${binRoot}\msbuildprops\localization.txt`,
+                    f`${objRoot}\${buildAlt}\modularbuildglobalbuildsession.props`,
+                    f`${objRoot}\${buildAlt}\__bldlanguageoverride__.props`,
+                    f`${objRoot}\${buildAlt}\__bldlanguage__.props`,
+                    f`${srcRoot}\onecore\windows\project.props`,
+                ]
+            ),
+        ]
+        .filter(e => e !== undefined),
+        
+        produces: [
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    p`${binRoot}\loc\en-us\console.dll.mui`,
+                    p`${binRoot}\loc\en-us\lct\console.dll.mui.lct`,
+                    p`${o}\lsbuildcmd_4.0_en-us_console.dll.mui.rsp`,
+                ]
+            ),
+            ...addIf(
+                MsWinBuild.Localization.isBuildPs_Mi && isBuildRelease,
+                () => [
+                    p`${binRoot}\loc\ps-mi\console.dll.mui`,
+                    p`${binRoot}\loc\ps-mi\lct\console.dll.mui.lct`,
+                    p`${o}\lsbuildcmd_4.0_ps-mi_console.dll.mui.rsp`,
+                ]
+            ),
+            ...addIf(
+                MsWinBuild.Localization.isBuildPs_Ps && isBuildRelease,
+                () => [
+                    p`${binRoot}\loc\ps-ps\console.dll.mui`,
+                    p`${binRoot}\loc\ps-ps\lct\console.dll.mui.lct`,
+                    p`${o}\lsbuildcmd_4.0_ps-ps_console.dll.mui.rsp`,
+                ]
+            ),
+        ],
+    }) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocEnus_content
+
+    export const bin_LocEnus_content = isBuildRelease && isBuildCommonArchitecture ? pass3.directories.get(p`${binRoot}\loc\en-us`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocEnusLct_content
+
+    export const bin_LocEnusLct_content = isBuildRelease && isBuildCommonArchitecture ? pass3.directories.get(p`${binRoot}\loc\en-us\lct`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocPsmi_content
+
+    export const bin_LocPsmi_content = isBuildRelease && isBuildCommonArchitecture && MsWinBuild.Localization.isBuildPs_Mi ? pass3.directories.get(p`${binRoot}\loc\ps-mi`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocPsmiLct_content
+
+    export const bin_LocPsmiLct_content = isBuildRelease && isBuildCommonArchitecture && MsWinBuild.Localization.isBuildPs_Mi ? pass3.directories.get(p`${binRoot}\loc\ps-mi\lct`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocPsps_content
+
+    export const bin_LocPsps_content = isBuildRelease && isBuildCommonArchitecture && MsWinBuild.Localization.isBuildPs_Ps ? pass3.directories.get(p`${binRoot}\loc\ps-ps`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocPspsLct_content
+
+    export const bin_LocPspsLct_content = isBuildRelease && isBuildCommonArchitecture && MsWinBuild.Localization.isBuildPs_Ps ? pass3.directories.get(p`${binRoot}\loc\ps-ps\lct`) : undefined;
+}

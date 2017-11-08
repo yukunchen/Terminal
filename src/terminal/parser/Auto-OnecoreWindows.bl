@@ -1,0 +1,6 @@
+export const projects = [
+    f`ft_fuzzer/autogen.bp`,
+    f`ft_fuzzwrapper/autogen.bp`,
+    f`lib/autogen.bp`,
+    f`ut_parser/autogen.bp`,
+];

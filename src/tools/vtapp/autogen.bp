@@ -1,0 +1,209 @@
+namespace Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp {
+
+    const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\tools`;
+
+    const o = d`${objRoot}\onecore\windows\core\console\open\src\tools\vtapp\${buildAlt}`;
+
+    const prePass = isBuildCommonArchitecture ? LegacySdk.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "prePass",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`product.pbxproj`,
+            f`vtapp.csproj`,
+        ],
+    }) : undefined;
+
+    const pass0 = isBuildCommonArchitecture ? LegacySdk.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass0",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`product.pbxproj`,
+            f`vtapp.csproj`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            f`${srcRoot}\public\sdk\inc\ntverp.h`,
+
+            prePass,
+        ],
+        
+        produces: [
+            p`${binRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-tools-vtapp-nmake_to_mbs_pass0.props.br`,
+            p`${binRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-tools-vtapp-nmake_to_mbs_pass0.props`,
+            p`${o}\_asmid.inc`,
+            p`${o}\_asmid.xml`,
+            p`${o}\nmake_to_mbs_pass0.props`,
+        ],
+    }) : undefined;
+
+    const pass1 = isBuildCommonArchitecture ? LegacySdk.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass1",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`product.pbxproj`,
+            f`program.cs`,
+            f`program2.cs`,
+            f`vtapp.csproj`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            f`${srcRoot}\build\scripts\csc.cmd`,
+            f`${srcRoot}\public\sdk\inc\ntverp.h`,
+
+            pass0,
+            prePass,
+
+            MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata,
+            MsWinOnecoreSdkTools.Public.Internal.Sdktools.Ref.content,
+        ],
+        
+        produces: [
+            p`${binRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-tools-vtapp-nmake_to_mbs_pass1.props.br`,
+            p`${binRoot}\blg\strongnamesigning\onecore-windows-core-console-open-src-tools-vtapp-sn-targ-req.xml.br`,
+            p`${binRoot}\blg\unittests\vtapp.exe.br`,
+            p`${binRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-tools-vtapp-nmake_to_mbs_pass1.props`,
+            p`${binRoot}\strongnamesigning\onecore-windows-core-console-open-src-tools-vtapp-sn-targ-req.xml`,
+            p`${binRoot}\symbols.pri\unittests\exe\vtapp.pdb`,
+            p`${binRoot}\unittests\vtapp.exe`,
+            p`${o}\_generated.cs`,
+            p`${o}\nmake_to_mbs_pass1.props`,
+            p`${o}\sn-targ-req.xml`,
+            p`${o}\vtapp.exe`,
+            p`${o}\vtapp.pdb`,
+        ],
+    }) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp.bin_BlgStrongnamesigning_content
+
+    export const bin_BlgStrongnamesigning_content = isBuildCommonArchitecture ? pass1.directories.get(p`${binRoot}\blg\strongnamesigning`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp.bin_BlgUnittests_content
+
+    export const bin_BlgUnittests_content = isBuildCommonArchitecture ? pass1.directories.get(p`${binRoot}\blg\unittests`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp.bin_Strongnamesigning_content
+
+    export const bin_Strongnamesigning_content = isBuildCommonArchitecture ? pass1.directories.get(p`${binRoot}\strongnamesigning`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp.bin_SymbolspriUnittestsExe_content
+
+    export const bin_SymbolspriUnittestsExe_content = isBuildCommonArchitecture ? pass1.directories.get(p`${binRoot}\symbols.pri\unittests\exe`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp.bin_Unittests_content
+
+    export const bin_Unittests_content = isBuildCommonArchitecture ? pass1.directories.get(p`${binRoot}\unittests`) : undefined;
+
+    const pass2 = isBuildCommonArchitecture ? LegacySdk.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass2",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`product.pbxproj`,
+            f`vtapp.csproj`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+
+            pass0,
+            pass1,
+            prePass,
+        ],
+        
+        produces: [
+            p`${binRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-tools-vtapp-nmake_to_mbs_pass2.props.br`,
+            p`${binRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-tools-vtapp-nmake_to_mbs_pass2.props`,
+            p`${o}\nmake_to_mbs_pass2.props`,
+        ],
+    }) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp.bin_BlgMsbuildpropsNmakeprops_content
+
+    @@public
+    export const bin_BlgMsbuildpropsNmakeprops_content = isBuildCommonArchitecture ? MicrosoftSdk.SdkCombine.evaluate({
+        outputDirectory: d`${binRoot}\blg\msbuildprops\nmakeprops`,
+        sources: [
+            pass0.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+            pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+            pass2.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+        ],
+    }) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp.bin_MsbuildpropsNmakeprops_content
+
+    @@public
+    export const bin_MsbuildpropsNmakeprops_content = isBuildCommonArchitecture ? MicrosoftSdk.SdkCombine.evaluate({
+        outputDirectory: d`${binRoot}\msbuildprops\nmakeprops`,
+        sources: [
+            pass0.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+            pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+            pass2.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+        ],
+    }) : undefined;
+
+    const pass3 = isBuildCommonArchitecture ? LegacySdk.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass3",
+        tags: [
+            "Packages",
+        ],
+        
+        consumes: [
+            f`autogen.bp`,
+            f`vtapp.csproj`,
+
+            pass0,
+            pass1,
+            pass2,
+            prePass,
+
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    f`product.pbxproj`,
+                    f`sources.pkg.xml`,
+                    f`${binRoot}\msbuildprops\localization.txt`,
+                    f`${objRoot}\${buildAlt}\__bldlanguage__.props`,
+                    f`${objRoot}\${buildAlt}\__bldlanguageoverride__.props`,
+                    f`${objRoot}\${buildAlt}\modularbuildglobalbuildsession.props`,
+                    f`${srcRoot}\onecore\windows\project.props`,
+                    f`${srcRoot}\public\sdk\inc\ntverp.h`,
+                ]
+            ),
+            ...addIf(isBuildRelease && isBuildCommonArchitecture, () => [
+                    MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata,
+                    MsWinOnecore_Pkg.BinPublic.Imagingtools.content,
+                ]),
+        ],
+        
+        produces: [
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.cab.br`,
+                    p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.man.dsm.xml.br`,
+                    p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.spkg.br`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.cab`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.man.dsm.xml`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.spkg`,
+                    p`${o}\microsoft.console.tools.vtapp.cab`,
+                    p`${o}\microsoft.console.tools.vtapp.man.dsm.xml`,
+                    p`${o}\microsoft.console.tools.vtapp.spkg`,
+                ]
+            ),
+        ],
+    }) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp.bin_BlgPrebuiltTest_content
+
+    export const bin_BlgPrebuiltTest_content = isBuildRelease && isBuildCommonArchitecture ? pass3.directories.get(p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp.bin_PrebuiltTest_content
+
+    export const bin_PrebuiltTest_content = isBuildRelease && isBuildCommonArchitecture ? pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`) : undefined;
+}

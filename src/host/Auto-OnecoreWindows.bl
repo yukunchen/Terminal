@@ -1,0 +1,7 @@
+export const projects = [
+    f`dll/autogen.bp`,
+    f`ft_host/autogen.bp`,
+    f`ft_uia/autogen.bp`,
+    f`lib/autogen.bp`,
+    f`ut_host/autogen.bp`,
+];

@@ -1,0 +1,93 @@
+namespace Onecore.Windows.Core.Console.Open.Src.Testlist {
+
+    export declare const qualifier: {
+        platform: "arm32" | "arm64" | "x64" | "x86",
+        configuration: "debug" | "release",
+        codeAnalysisMode: "simpleAnalysis" | "disabled",
+    };
+
+    const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src`;
+
+    const o = d`${objRoot}\onecore\windows\core\console\open\src\testlist\${buildAlt}`;
+
+    const prePass = LegacySdk.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "prePass",
+        
+        consumes: [
+            f`autogen.bp`,
+        ],
+    });
+
+    const pass1 = LegacySdk.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass1",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`microsoft.console.tests.desktoponly.testlist`,
+            f`microsoft.console.tests.testlist`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            f`${srcRoot}\build\scripts\generatetestlist.cmd`,
+
+            prePass,
+        ],
+        
+        produces: [
+            p`${o}\microsoft.console.tests.desktoponly.testlist_metadata`,
+            p`${o}\microsoft.console.tests.testlist_metadata`,
+        ],
+    });
+
+    const pass2 = LegacySdk.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass2",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`microsoft.console.tests.desktoponly.testlist`,
+            f`microsoft.console.tests.testlist`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            f`${srcRoot}\build\scripts\validatetestlist.cmd`,
+
+            pass1,
+            prePass,
+
+            $.Onecore.Windows.Core.Console.Open.Src.Host.Ft_host.pass1,
+            $.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia.pass1,
+            $.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host.pass1,
+            $.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter.pass1,
+            $.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser.pass1,
+        ],
+        
+        produces: [
+            p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tests.desktoponly.testlist.br`,
+            p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tests.testlist.br`,
+            p`${binRoot}\blg\prebuilt\windows\microsoft.console.tests.desktoponly.testlist.br`,
+            p`${binRoot}\blg\prebuilt\windows\microsoft.console.tests.testlist.br`,
+            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tests.desktoponly.testlist`,
+            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tests.testlist`,
+            p`${binRoot}\prebuilt\windows\microsoft.console.tests.desktoponly.testlist`,
+            p`${binRoot}\prebuilt\windows\microsoft.console.tests.testlist`,
+        ],
+    });
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist.bin_BlgPrebuiltTest_content
+
+    export const bin_BlgPrebuiltTest_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`);
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist.bin_BlgPrebuiltWindows_content
+
+    export const bin_BlgPrebuiltWindows_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\windows`);
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist.bin_PrebuiltTest_content
+
+    export const bin_PrebuiltTest_content = pass2.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`);
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist.bin_PrebuiltWindows_content
+
+    export const bin_PrebuiltWindows_content = pass2.directories.get(p`${binRoot}\prebuilt\windows`);
+}

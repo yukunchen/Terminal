@@ -1,0 +1,199 @@
+namespace Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist {
+
+    const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\tools`;
+
+    const o = d`${objRoot}\onecore\windows\core\console\open\src\tools\nihilist\${buildAlt}`;
+
+    const prePass = isBuildCommonArchitecture ? LegacySdk.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "prePass",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`nihilist.vcxproj`,
+            f`product.pbxproj`,
+        ],
+    }) : undefined;
+
+    const pass1 = isBuildCommonArchitecture ? LegacySdk.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass1",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`main.cpp`,
+            f`nihilist.vcxproj`,
+            f`product.pbxproj`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+
+            prePass,
+
+            $.Public.Sdk.Inc.header,
+            $.Public.Sdk.Inc.idl,
+            $.Public.Shared.Inc.header,
+            MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Sdk.Inc.Ucrt.header,
+            MsWinOnecoreBase.Public.Shared.Inc.header,
+            MsWinOnecoreNet.Public.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Internal.Onecoresdktools.Inc.header,
+            MsWinOnecoreSdkTools.Public.Internal.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Shared.Inc.header,
+            MsWinOnecoreShell.Public.Sdk.Inc.idl,
+            MsWinOnecore_ApiSet.Public.Sdk.Inc.Mincore.header,
+            MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Internal.Base.Inc.header,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
+        ],
+        
+        produces: [
+            p`${binRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-tools-nihilist-nmake_to_mbs_pass1.props.br`,
+            p`${binRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-tools-nihilist-nmake_to_mbs_pass1.props`,
+            p`${o}\main.obj`,
+            p`${o}\nmake_to_mbs_pass1.props`,
+        ],
+    }) : undefined;
+
+    const pass2 = isBuildCommonArchitecture ? LegacySdk.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass2",
+        
+        consumes: [
+            f`autogen.bp`,
+            f`main.cpp`,
+            f`nihilist.vcxproj`,
+            f`product.pbxproj`,
+            f`res.rc`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            f`${srcRoot}\public\sdk\inc\ntverp.h`,
+            MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
+            isBuildDebug && isBuildCommonArchitecture ? MsWinCrts.Public.Internal.Sdk.Lib.library : undefined,
+            isBuildArm32 || isBuildArm64 ? MsWinCrts.Public.Sdk.Lib.library : undefined,
+            MsWinOnecoreBase.Public.Shared.Inc.header,
+            MsWinOnecoreMerged.Public.Sdk.Lib.Mincore.library,
+            MsWinOnecoreShell.Public.Sdk.Inc.idl,
+            pass1,
+            prePass,
+            $.Public.Sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Internal.Sdk.Lib.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_8.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.library,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.header,
+        ]
+        .filter(e => e !== undefined),
+        
+        produces: [
+            p`${binRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-tools-nihilist-nmake_to_mbs_pass2.props.br`,
+            p`${binRoot}\blg\unittests\nihilist.exe.br`,
+            p`${binRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-tools-nihilist-nmake_to_mbs_pass2.props`,
+            p`${binRoot}\symbols.pri\unittests\exe\nihilist.pdb`,
+            p`${binRoot}\unittests\nihilist.exe`,
+            p`${o}\nihilist.exe`,
+            p`${o}\nihilist.pdb`,
+            p`${o}\nmake_to_mbs_pass2.props`,
+            p`${o}\res.res`,
+        ],
+    }) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist.bin_BlgMsbuildpropsNmakeprops_content
+
+    @@public
+    export const bin_BlgMsbuildpropsNmakeprops_content = isBuildCommonArchitecture ? MicrosoftSdk.SdkCombine.evaluate({
+        outputDirectory: d`${binRoot}\blg\msbuildprops\nmakeprops`,
+        sources: [
+            pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+            pass2.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+        ],
+    }) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist.bin_BlgUnittests_content
+
+    export const bin_BlgUnittests_content = isBuildCommonArchitecture ? pass2.directories.get(p`${binRoot}\blg\unittests`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist.bin_MsbuildpropsNmakeprops_content
+
+    @@public
+    export const bin_MsbuildpropsNmakeprops_content = isBuildCommonArchitecture ? MicrosoftSdk.SdkCombine.evaluate({
+        outputDirectory: d`${binRoot}\msbuildprops\nmakeprops`,
+        sources: [
+            pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+            pass2.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+        ],
+    }) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist.bin_SymbolspriUnittestsExe_content
+
+    export const bin_SymbolspriUnittestsExe_content = isBuildCommonArchitecture ? pass2.directories.get(p`${binRoot}\symbols.pri\unittests\exe`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist.bin_Unittests_content
+
+    export const bin_Unittests_content = isBuildCommonArchitecture ? pass2.directories.get(p`${binRoot}\unittests`) : undefined;
+
+    const pass3 = isBuildCommonArchitecture ? LegacySdk.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass3",
+        tags: [
+            "Packages",
+        ],
+        
+        consumes: [
+            f`autogen.bp`,
+            f`nihilist.vcxproj`,
+
+            pass1,
+            pass2,
+            prePass,
+
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    f`product.pbxproj`,
+                    f`sources.pkg.xml`,
+                    f`${binRoot}\msbuildprops\localization.txt`,
+                    f`${objRoot}\${buildAlt}\__bldlanguage__.props`,
+                    f`${objRoot}\${buildAlt}\__bldlanguageoverride__.props`,
+                    f`${objRoot}\${buildAlt}\modularbuildglobalbuildsession.props`,
+                    f`${srcRoot}\onecore\windows\project.props`,
+                    f`${srcRoot}\public\sdk\inc\ntverp.h`,
+                ]
+            ),
+            ...addIf(isBuildRelease && isBuildCommonArchitecture, () => [
+                    MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata,
+                    MsWinOnecore_Pkg.BinPublic.Imagingtools.content,
+                ]),
+        ],
+        
+        produces: [
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.cab.br`,
+                    p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.man.dsm.xml.br`,
+                    p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.spkg.br`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.cab`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.man.dsm.xml`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.spkg`,
+                    p`${o}\microsoft.console.tools.nihilist.cab`,
+                    p`${o}\microsoft.console.tools.nihilist.man.dsm.xml`,
+                    p`${o}\microsoft.console.tools.nihilist.spkg`,
+                ]
+            ),
+        ],
+    }) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist.bin_BlgPrebuiltTest_content
+
+    export const bin_BlgPrebuiltTest_content = isBuildRelease && isBuildCommonArchitecture ? pass3.directories.get(p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`) : undefined;
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist.bin_PrebuiltTest_content
+
+    export const bin_PrebuiltTest_content = isBuildRelease && isBuildCommonArchitecture ? pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`) : undefined;
+}
