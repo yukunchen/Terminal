@@ -1314,6 +1314,25 @@ ROW* TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ ROW* const pRow) const
     return pReturnRow;
 }
 
+const ROW* const TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index) const
+{
+    if (index >= TotalRowCount())
+    {
+        return nullptr;
+    }
+    return &Rows[index];
+}
+
+ROW* const TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index)
+{
+    if (index >= TotalRowCount())
+    {
+        return nullptr;
+    }
+    return &Rows[index];
+}
+
+
 //Routine Description:
 // - Corrects and enforces consistent double byte character state (KAttrs line) within a row of the text buffer.
 // - This will take the given double byte information and check that it will be consistent when inserted into the buffer
@@ -1759,4 +1778,191 @@ CHAR_INFO TEXT_BUFFER_INFO::GetFill() const
 void TEXT_BUFFER_INFO::SetFill(_In_ const CHAR_INFO ciFill)
 {
     _ciFill = ciFill;
+}
+
+// Routine Description:
+// - This is the legacy screen resize with minimal changes
+// Arguments:
+// - currentScreenBufferSize - current size of the screen buffer.
+// - coordNewScreenSize - new size of screen.
+// - attributes - attributes to set for resized rows
+// Return Value:
+// - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
+NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBufferSize,
+                                             _In_ COORD const coordNewScreenSize,
+                                             _In_ TextAttribute const attributes)
+{
+    SHORT i, j;
+    SHORT LimitX, LimitY;
+    PWCHAR newTextRows, TextRowPtr;
+    SHORT TopRow, TopRowIndex;  // new top row of screen buffer
+    PBYTE TextRowsA, TextRowPtrA;
+
+    if ((USHORT)coordNewScreenSize.X >= 0x7FFF || (USHORT)coordNewScreenSize.Y >= 0x7FFF)
+    {
+        RIPMSG2(RIP_WARNING, "Invalid screen buffer size (0x%x, 0x%x)", coordNewScreenSize.X, coordNewScreenSize.Y);
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    newTextRows = new WCHAR[coordNewScreenSize.X * coordNewScreenSize.Y];
+    if (newTextRows == nullptr)
+    {
+        return STATUS_NO_MEMORY;
+    }
+
+    TextRowsA = new BYTE[coordNewScreenSize.X * coordNewScreenSize.Y];
+    if (TextRowsA == nullptr)
+    {
+        delete[] newTextRows;
+        return STATUS_NO_MEMORY;
+    }
+
+    LimitX = min(coordNewScreenSize.X, currentScreenBufferSize.X);
+    LimitY = min(coordNewScreenSize.Y, currentScreenBufferSize.Y);
+    TopRow = 0;
+    if (coordNewScreenSize.Y <= GetCursor()->GetPosition().Y)
+    {
+        TopRow += GetCursor()->GetPosition().Y - coordNewScreenSize.Y + 1;
+    }
+    TopRowIndex = (GetFirstRowIndex() + TopRow) % currentScreenBufferSize.Y;
+    if (coordNewScreenSize.Y != currentScreenBufferSize.Y)
+    {
+        ROW* Temp;
+        SHORT NumToCopy, NumToCopy2;
+
+        // resize ROWs array.  first alloc a new ROWs array. then copy the old
+        // one over, resetting the FirstRow.
+        Temp = new ROW[coordNewScreenSize.Y];
+        if (Temp == nullptr)
+        {
+            delete[] newTextRows;
+            delete[] TextRowsA;
+            return STATUS_NO_MEMORY;
+        }
+
+        NumToCopy = currentScreenBufferSize.Y - TopRowIndex;
+        if (NumToCopy > coordNewScreenSize.Y)
+        {
+            NumToCopy = coordNewScreenSize.Y;
+        }
+        memmove(Temp, &Rows[TopRowIndex], NumToCopy * sizeof(ROW));
+        if (TopRowIndex != 0 && NumToCopy != coordNewScreenSize.Y)
+        {
+            NumToCopy2 = TopRowIndex;
+            if (NumToCopy2 > (coordNewScreenSize.Y - NumToCopy))
+            {
+                NumToCopy2 = coordNewScreenSize.Y - NumToCopy;
+            }
+            memmove(&Temp[NumToCopy], Rows, NumToCopy2 * sizeof(ROW));
+        }
+
+        // the memmove above invalidates the contract of a unique_ptr, which each ATTR_ROW
+        // contains. we need to release the responsibility of managing the memory from the orignal object
+        // because the copy is taking it over. this should be removed when the calls to memmove are.
+        for (int index = 0; index < currentScreenBufferSize.Y; ++index)
+        {
+            Rows[index].AttrRow._rgList.release();
+        }
+
+        if (coordNewScreenSize.Y > currentScreenBufferSize.Y)
+        {
+            for (i = currentScreenBufferSize.Y; i < coordNewScreenSize.Y; i++)
+            {
+                bool fSuccess = Temp[i].AttrRow.Initialize(coordNewScreenSize.X, attributes);
+                if (!fSuccess)
+                {
+                    delete[] TextRowsA;
+                    delete[] newTextRows;
+                    delete[] Temp;
+                    return STATUS_NO_MEMORY;
+                }
+            }
+        }
+        SetFirstRowIndex(0);
+        delete[] Rows;
+        Rows = Temp;
+    }
+
+    // Realloc each row.  any horizontal growth results in the last
+    // attribute in a row getting extended.
+    TextRowPtrA = TextRowsA;
+    for (i = 0, TextRowPtr = newTextRows; i < LimitY; i++, TextRowPtr += coordNewScreenSize.X)
+    {
+        memmove(TextRowPtr, Rows[i].CharRow.Chars, LimitX * sizeof(WCHAR));
+        if (TextRowPtrA)
+        {
+            memmove(TextRowPtrA, Rows[i].CharRow.KAttrs, LimitX * sizeof(CHAR));
+        }
+
+        for (j = currentScreenBufferSize.X; j < coordNewScreenSize.X; j++)
+        {
+            TextRowPtr[j] = UNICODE_SPACE;
+        }
+
+        if (Rows[i].CharRow.Right > coordNewScreenSize.X)
+        {
+            Rows[i].CharRow.Right = coordNewScreenSize.X;
+        }
+        Rows[i].CharRow.Chars = TextRowPtr;
+
+        Rows[i].CharRow.KAttrs = TextRowPtrA;
+        if (TextRowPtrA)
+        {
+            if (coordNewScreenSize.X > currentScreenBufferSize.X)
+                ZeroMemory(TextRowPtrA + currentScreenBufferSize.X, coordNewScreenSize.X - currentScreenBufferSize.X);
+            TextRowPtrA += coordNewScreenSize.X;
+        }
+
+        Rows[i].sRowId = i;
+    }
+
+    for (; i < coordNewScreenSize.Y; i++, TextRowPtr += coordNewScreenSize.X)
+    {
+        for (j = 0; j < coordNewScreenSize.X; j++)
+        {
+            #pragma prefast(suppress:26019, "J must be in the bounds of the X*Y based on the screen buffer size.")
+            TextRowPtr[j] = UNICODE_SPACE;
+        }
+
+        if (TextRowPtrA)
+        {
+            ZeroMemory(TextRowPtrA, coordNewScreenSize.X);
+        }
+
+        Rows[i].CharRow.Chars = TextRowPtr;
+        Rows[i].CharRow.Left = coordNewScreenSize.X;
+        Rows[i].CharRow.Right = 0;
+
+        Rows[i].CharRow.KAttrs = TextRowPtrA;
+        if (TextRowPtrA)
+        {
+            TextRowPtrA += coordNewScreenSize.X;
+        }
+
+        Rows[i].sRowId = i;
+    }
+
+    delete[] TextRows;
+    TextRows = newTextRows;
+    delete[] KAttrRows;
+    KAttrRows = TextRowsA;
+    SetCoordBufferSize(coordNewScreenSize);
+
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    if (coordNewScreenSize.X != currentScreenBufferSize.X)
+    {
+        for (i = 0; i < LimitY; i++)
+        {
+            ROW* pRow = &Rows[i];
+            bool fSuccess = pRow->AttrRow.Resize(currentScreenBufferSize.X, coordNewScreenSize.X);
+            if (!fSuccess)
+            {
+                Status = STATUS_NO_MEMORY;
+                break;
+            }
+        }
+    }
+
+    return Status;
 }

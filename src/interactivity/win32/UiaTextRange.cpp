@@ -716,8 +716,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     throw UIA_E_INVALIDOPERATION;
                 }
 
-                const ROW* const pRow = &pTextBuffer->Rows[rowIndex];
-
+                const ROW* const pRow = pTextBuffer->GetRowAtIndex(rowIndex);
                 if (pRow->CharRow.ContainsText())
                 {
                     int startIndex = 0;

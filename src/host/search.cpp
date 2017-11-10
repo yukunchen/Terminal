@@ -138,7 +138,7 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 		if (RecomputeRow)
 		{
 			RowIndex = (pScreenInfo->TextInfo->GetFirstRowIndex() + Position.Y) % pScreenInfo->GetScreenBufferSize().Y;
-			Row = &pScreenInfo->TextInfo->Rows[RowIndex];
+            Row = pScreenInfo->TextInfo->GetRowAtIndex(RowIndex);
 			RecomputeRow = FALSE;
 		}
 #if !defined(CON_TB_MARK)

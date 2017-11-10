@@ -77,26 +77,26 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
 
     const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
     SHORT const RowIndex = (pTextInfo->GetFirstRowIndex() + coordTarget.Y) % coordScreenBufferSize.Y;
-    ROW* const Row = &pTextInfo->Rows[RowIndex];
+    ROW* const Row = pTextInfo->GetRowAtIndex(RowIndex);
 
     ROW* RowPrev;
     if (RowIndex > 0)
     {
-        RowPrev = &pTextInfo->Rows[RowIndex - 1];
+        RowPrev = pTextInfo->GetRowAtIndex(RowIndex - 1);
     }
     else
     {
-        RowPrev = &pTextInfo->Rows[coordScreenBufferSize.Y - 1];
+        RowPrev = pTextInfo->GetRowAtIndex(coordScreenBufferSize.Y - 1);
     }
 
     ROW* RowNext;
     if (RowIndex + 1 < coordScreenBufferSize.Y)
     {
-        RowNext = &pTextInfo->Rows[RowIndex + 1];
+        RowNext = pTextInfo->GetRowAtIndex(RowIndex + 1);
     }
     else
     {
-        RowNext = &pTextInfo->Rows[0];
+        RowNext = pTextInfo->GetRowAtIndex(0);
     }
 
     if (Row->CharRow.KAttrs != nullptr)

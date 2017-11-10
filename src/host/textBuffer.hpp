@@ -258,6 +258,9 @@ public:
     ROW* GetPrevRowNoWrap(_In_ ROW* const pRow) const;
     ROW* GetNextRowNoWrap(_In_ ROW* const pRow) const;
 
+    const ROW* const GetRowAtIndex(_In_ const UINT index) const;
+    ROW* const GetRowAtIndex(_In_ const UINT index);
+
     // Text insertion functions
     bool InsertCharacter(_In_ WCHAR const wch, _In_ BYTE const bKAttr, _In_ const TextAttribute attr);
     bool IncrementCursor();
@@ -290,11 +293,15 @@ public:
     CHAR_INFO GetFill() const;
     void SetFill(_In_ const CHAR_INFO ciFill);
 
-    ROW* Rows;
+    NTSTATUS ResizeTraditional(_In_ COORD const currentSCreenBufferSize,
+                               _In_ COORD const coordNewScreenSize,
+                               _In_ TextAttribute const attributes);
+
     PWCHAR TextRows;
     // all DBCS lead & trail bit buffer
     PBYTE KAttrRows;
 private:
+    ROW* Rows;
 
     Cursor* _pCursor;
 
