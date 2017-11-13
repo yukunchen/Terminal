@@ -143,7 +143,7 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
         }
 
         const short invalidKey = -1;
-        short keyState = VkKeyScanW(currentChar);
+        short keyState = ServiceLocator::LocateInputServices()->VkKeyScanW(currentChar);
 
         if (keyState == invalidKey)
         {
@@ -222,7 +222,7 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToKeyboardEvents(_In_ const
                                                        SHIFT_PRESSED));
     }
 
-    const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
+    const WORD virtualScanCode = static_cast<WORD>(ServiceLocator::LocateInputServices()->MapVirtualKeyW(wch, MAPVK_VK_TO_VSC));
     KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wch, 0 };
 
     // add modifier flags if necessary
@@ -310,7 +310,7 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToNumpad(_In_ const wchar_t
                 break;
             }
             const WORD virtualKey = charString[i] - '0' + VK_NUMPAD0;
-            const WORD virtualScanCode = static_cast<WORD>(MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
+            const WORD virtualScanCode = static_cast<WORD>(ServiceLocator::LocateInputServices()->MapVirtualKeyW(virtualKey, MAPVK_VK_TO_VSC));
 
             keyEvents.push_back(std::make_unique<KeyEvent>(true,
                                                            1ui16,
