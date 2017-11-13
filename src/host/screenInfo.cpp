@@ -587,7 +587,7 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX, _In_ short con
         if (sStartX == sEndX && sStartY == sEndY)
         {
             RowIndex = (pTextInfo->GetFirstRowIndex() + sStartY) % coordScreenBufferSize.Y;
-            Row = pTextInfo->GetRowAtIndex(RowIndex);
+            Row = pTextInfo->GetRowPtrAtIndex(RowIndex);
             Char = Row->CharRow.Chars[sStartX];
             TextAttributeRun* pAttrRun;
             Row->AttrRow.FindAttrIndex(sStartX, &pAttrRun, &CountOfAttr);

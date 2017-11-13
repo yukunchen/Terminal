@@ -76,61 +76,39 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
 #endif
 
     const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
-    SHORT const RowIndex = (pTextInfo->GetFirstRowIndex() + coordTarget.Y) % coordScreenBufferSize.Y;
-    ROW* const Row = pTextInfo->GetRowAtIndex(RowIndex);
+    const SHORT rowIndex = (pTextInfo->GetFirstRowIndex() + coordTarget.Y) % coordScreenBufferSize.Y;
+    ROW& row = pTextInfo->GetRowAtIndex(rowIndex);
 
-    ROW* RowPrev;
-    if (RowIndex > 0)
-    {
-        RowPrev = pTextInfo->GetRowAtIndex(RowIndex - 1);
-    }
-    else
-    {
-        RowPrev = pTextInfo->GetRowAtIndex(coordScreenBufferSize.Y - 1);
-    }
-
-    ROW* RowNext;
-    if (RowIndex + 1 < coordScreenBufferSize.Y)
-    {
-        RowNext = pTextInfo->GetRowAtIndex(RowIndex + 1);
-    }
-    else
-    {
-        RowNext = pTextInfo->GetRowAtIndex(0);
-    }
-
-    if (Row->CharRow.KAttrs != nullptr)
+    if (row.CharRow.KAttrs != nullptr)
     {
         // Check start position of strings
-        if (Row->CharRow.KAttrs[coordTarget.X] & CHAR_ROW::ATTR_TRAILING_BYTE)
+        if (row.IsTrailingByteAtColumn(coordTarget.X))
         {
             if (coordTarget.X == 0)
             {
-                RowPrev->CharRow.Chars[coordScreenBufferSize.X - 1] = UNICODE_SPACE;
-                RowPrev->CharRow.KAttrs[coordScreenBufferSize.X - 1] = 0;
+                pTextInfo->GetPrevRow(row).ClearColumn(coordScreenBufferSize.X - 1);
             }
             else
             {
-                Row->CharRow.Chars[coordTarget.X - 1] = UNICODE_SPACE;
-                Row->CharRow.KAttrs[coordTarget.X - 1] = 0;
+                row.ClearColumn(coordTarget.X - 1);
             }
         }
 
         // Check end position of strings
         if (coordTarget.X + sStringLen < coordScreenBufferSize.X)
         {
-            if (Row->CharRow.KAttrs[coordTarget.X + sStringLen] & CHAR_ROW::ATTR_TRAILING_BYTE)
+            size_t column = coordTarget.X + sStringLen;
+            if (row.IsTrailingByteAtColumn(column))
             {
-                Row->CharRow.Chars[coordTarget.X + sStringLen] = UNICODE_SPACE;
-                Row->CharRow.KAttrs[coordTarget.X + sStringLen] = 0;
+                row.ClearColumn(column);
             }
         }
         else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
         {
-            if (RowNext->CharRow.KAttrs[0] & CHAR_ROW::ATTR_TRAILING_BYTE)
+            ROW& rowNext = pTextInfo->GetNextRow(row);
+            if (rowNext.IsTrailingByteAtColumn(0))
             {
-                RowNext->CharRow.Chars[0] = UNICODE_SPACE;
-                RowNext->CharRow.KAttrs[0] = 0;
+                rowNext.ClearColumn(0);
             }
         }
     }

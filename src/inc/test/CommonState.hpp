@@ -161,7 +161,7 @@ public:
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
-            ROW* pRow = pTextInfo->GetRowAtIndex(iRow);
+            ROW* pRow = pTextInfo->GetRowPtrAtIndex(iRow);
             FillRow(pRow);
         }
 
@@ -181,7 +181,7 @@ public:
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
-            ROW* pRow = pTextInfo->GetRowAtIndex(iRow);
+            ROW* pRow = pTextInfo->GetRowPtrAtIndex(iRow);
             FillBisect(pRow);
         }
 

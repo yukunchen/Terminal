@@ -231,6 +231,11 @@ public:
     SHORT sRowId;
 
     bool Initialize(_In_ short const sRowWidth, _In_ const TextAttribute Attr);
+
+    bool IsTrailingByteAtColumn(_In_ const size_t column) const;
+
+    void ClearColumn(_In_ const size_t column);
+
 #ifdef UNIT_TESTING
     friend class RowTests;
 #endif
@@ -258,8 +263,12 @@ public:
     ROW* GetPrevRowNoWrap(_In_ ROW* const pRow) const;
     ROW* GetNextRowNoWrap(_In_ ROW* const pRow) const;
 
-    const ROW* const GetRowAtIndex(_In_ const UINT index) const;
-    ROW* const GetRowAtIndex(_In_ const UINT index);
+    const ROW& GetRowAtIndex(_In_ const UINT index) const;
+    ROW& GetRowAtIndex(_In_ const UINT index);
+    ROW* const GetRowPtrAtIndex(_In_ const UINT index);
+
+    ROW& GetPrevRow(_In_ const ROW& row);
+    ROW& GetNextRow(_In_ const ROW& row);
 
     // Text insertion functions
     bool InsertCharacter(_In_ WCHAR const wch, _In_ BYTE const bKAttr, _In_ const TextAttribute attr);

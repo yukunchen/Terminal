@@ -1001,6 +1001,21 @@ bool ROW::Initialize(_In_ short const sRowWidth, _In_ const TextAttribute Attr)
     return this->AttrRow.Initialize(sRowWidth, Attr);
 
 }
+
+bool ROW::IsTrailingByteAtColumn(_In_ const size_t column) const
+{
+    // TODO bounds checkieng on column
+    return IsFlagSet(CharRow.KAttrs[column], CHAR_ROW::ATTR_TRAILING_BYTE);
+}
+
+void ROW::ClearColumn(_In_ const size_t column)
+{
+    // TODO bounds checking on column
+    CharRow.Chars[column] = UNICODE_SPACE;
+    CharRow.KAttrs[column] = 0;
+}
+
+
 #pragma endregion
 
 #pragma region TEXT_BUFFER_INFO
@@ -1314,16 +1329,41 @@ ROW* TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ ROW* const pRow) const
     return pReturnRow;
 }
 
-const ROW* const TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index) const
+const ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index) const
 {
     if (index >= TotalRowCount())
     {
-        return nullptr;
+        THROW_HR(E_INVALIDARG);
     }
-    return &_Rows[index];
+    return _Rows[index];
 }
 
-ROW* const TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index)
+ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index)
+{
+    return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetRowAtIndex(index));
+}
+
+ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row)
+{
+    const SHORT rowIndex = row.sRowId;
+    if (rowIndex == 0)
+    {
+        return _Rows[TotalRowCount() - 1];
+    }
+    return _Rows[rowIndex - 1];
+}
+
+ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row)
+{
+    const UINT rowIndex = static_cast<UINT>(row.sRowId);
+    if (rowIndex == TotalRowCount() - 1)
+    {
+        return _Rows[0];
+    }
+    return _Rows[rowIndex + 1];
+}
+
+ROW* const TEXT_BUFFER_INFO::GetRowPtrAtIndex(_In_ const UINT index)
 {
     if (index >= TotalRowCount())
     {

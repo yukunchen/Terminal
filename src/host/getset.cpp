@@ -688,7 +688,7 @@ NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attribut
         const SHORT sScreenBufferSizeY = ScreenInfo->GetScreenBufferSize().Y;
         for (SHORT i = 0; i < sScreenBufferSizeY; i++)
         {
-            ROW* const Row = ScreenInfo->TextInfo->GetRowAtIndex(i);
+            ROW* const Row = ScreenInfo->TextInfo->GetRowPtrAtIndex(i);
             Row->AttrRow.ReplaceLegacyAttrs(DefaultAttributes, Attributes);
             Row->AttrRow.ReplaceLegacyAttrs(DefaultPopupAttributes, PopupAttributes);
             Row->AttrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
