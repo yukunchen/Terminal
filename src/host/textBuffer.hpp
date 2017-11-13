@@ -297,11 +297,11 @@ public:
                                _In_ COORD const coordNewScreenSize,
                                _In_ TextAttribute const attributes);
 
+private:
+    ROW* Rows;
     PWCHAR TextRows;
     // all DBCS lead & trail bit buffer
     PBYTE KAttrRows;
-private:
-    ROW* Rows;
 
     Cursor* _pCursor;
 
