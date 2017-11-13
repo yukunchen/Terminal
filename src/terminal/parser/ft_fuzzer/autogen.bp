@@ -76,7 +76,9 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer {
         ],
     });
 
-    const pass2 = LegacySdk.build({
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer.pass2
+
+    export const pass2 = LegacySdk.build({
         template: template_NMake,
         classification: "test",
         targetPass: "pass2",
@@ -88,7 +90,7 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer {
             f`vtcommandfuzzer.cpp`,
             f`vtcommandfuzzer.vcxproj`,
             f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
-            f`${srcRoot}\public\sdk\inc\ntverp.h`,
+            f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
             MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
             isBuildDebug && isBuildCommonArchitecture ? MsWinCrts.Public.Internal.Sdk.Lib.library : undefined,
             isBuildArm32 || isBuildArm64 ? MsWinCrts.Public.Sdk.Lib.library : undefined,
@@ -112,16 +114,40 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer {
             p`${o}\vtcommandfuzzer.pdb`,
         ],
     });
+}
+namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer_Bin_BlgUnittests {
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer.bin_BlgUnittests_content
+    export declare const qualifier: {
+        platform: "arm32" | "arm64" | "x64" | "x86",
+        configuration: "debug" | "release",
+        codeAnalysisMode: "simpleAnalysis" | "disabled",
+    };
 
-    export const bin_BlgUnittests_content = pass2.directories.get(p`${binRoot}\blg\unittests`);
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer_Bin_BlgUnittests.content
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer.bin_SymbolspriUnittestsExe_content
+    export const content = $.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer.pass2.directories.get(p`${binRoot}\blg\unittests`);
+}
+namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer_Bin_SymbolspriUnittestsExe {
 
-    export const bin_SymbolspriUnittestsExe_content = pass2.directories.get(p`${binRoot}\symbols.pri\unittests\exe`);
+    export declare const qualifier: {
+        platform: "arm32" | "arm64" | "x64" | "x86",
+        configuration: "debug" | "release",
+        codeAnalysisMode: "simpleAnalysis" | "disabled",
+    };
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer.bin_Unittests_content
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer_Bin_SymbolspriUnittestsExe.content
 
-    export const bin_Unittests_content = pass2.directories.get(p`${binRoot}\unittests`);
+    export const content = $.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer.pass2.directories.get(p`${binRoot}\symbols.pri\unittests\exe`);
+}
+namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer_Bin_Unittests {
+
+    export declare const qualifier: {
+        platform: "arm32" | "arm64" | "x64" | "x86",
+        configuration: "debug" | "release",
+        codeAnalysisMode: "simpleAnalysis" | "disabled",
+    };
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer_Bin_Unittests.content
+
+    export const content = $.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer.pass2.directories.get(p`${binRoot}\unittests`);
 }

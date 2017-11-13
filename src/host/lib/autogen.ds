@@ -38,6 +38,7 @@
         <Item>{DotDot}\cmdline.cpp</Item>
         <Item>{DotDot}\cmdline.h</Item>
         <Item>{DotDot}\conapi.h</Item>
+        <Item>{DotDot}\conattrs.cpp</Item>
         <Item>{DotDot}\conddkrefs.h</Item>
         <Item>{DotDot}\conimeinfo.cpp</Item>
         <Item>{DotDot}\conimeinfo.h</Item>
@@ -67,6 +68,8 @@
         <Item>{DotDot}\inputkeyinfo.cpp</Item>
         <Item>{DotDot}\inputreadhandledata.cpp</Item>
         <Item>{DotDot}\inputreadhandledata.h</Item>
+        <Item>{DotDot}\keyeventhelpers.cpp</Item>
+        <Item>{DotDot}\keyeventhelpers.hpp</Item>
         <Item>{DotDot}\misc.cpp</Item>
         <Item>{DotDot}\misc.h</Item>
         <Item>{DotDot}\newdelete.cpp</Item>
@@ -120,6 +123,10 @@
         <Item>{DotDot}\utf8towidecharparser.hpp</Item>
         <Item>{DotDot}\utils.cpp</Item>
         <Item>{DotDot}\utils.hpp</Item>
+        <Item>{DotDot}\vtinputthread.cpp</Item>
+        <Item>{DotDot}\vtinputthread.hpp</Item>
+        <Item>{DotDot}\vtio.cpp</Item>
+        <Item>{DotDot}\vtio.hpp</Item>
         <Item>{DotDot}\writedata.cpp</Item>
         <Item>{DotDot}\writedata.hpp</Item>
         <Item>{DotDot}\_output.cpp</Item>
@@ -133,6 +140,8 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\contsf.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\cpp2017.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\operators.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\unicode.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\vtiomodes.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iaccessibilitynotifier.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsolecontrol.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsoleinputthread.hpp</Item>
@@ -151,6 +160,8 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\propslib\registryserialization.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\propslib\shortcutserialization.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\propslib\truetypefontlist.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\base\renderer.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\base\thread.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfo.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfobase.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfodesired.hpp</Item>
@@ -158,6 +169,10 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderdata.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\vtrenderer.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\wintelnetengine.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\xterm256engine.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\xtermengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\apimessage.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\apimessagestate.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\devicecomm.h</Item>
@@ -169,6 +184,7 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\objectheader.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\processhandle.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\processlist.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\processpolicy.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\waitblock.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\waitqueue.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\waitterminationreason.h</Item>
@@ -178,9 +194,13 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\mouseinput.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminalinput.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminaloutput.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\inputstatemachineengine.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\istatemachineengine.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\outputstatemachineengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\statemachine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\telemetry.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\tracing.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp</Item>
 
         <!--References-->
@@ -231,6 +251,7 @@
 
       <Produces>
         <Item>{O}\cmdline.obj</Item>
+        <Item>{O}\conattrs.obj</Item>
         <Item>{O}\conhostv2.lib</Item>
         <Item>{O}\conimeinfo.obj</Item>
         <Item>{O}\consoleinformation.obj</Item>
@@ -246,6 +267,7 @@
         <Item>{O}\inputbuffer.obj</Item>
         <Item>{O}\inputkeyinfo.obj</Item>
         <Item>{O}\inputreadhandledata.obj</Item>
+        <Item>{O}\keyeventhelpers.obj</Item>
         <Item>{O}\misc.obj</Item>
         <Item>{O}\newdelete.obj</Item>
         <Item>{O}\ntprivapi.obj</Item>
@@ -276,6 +298,8 @@
         <Item>{O}\tracing.obj</Item>
         <Item>{O}\utf8towidecharparser.obj</Item>
         <Item>{O}\utils.obj</Item>
+        <Item>{O}\vtinputthread.obj</Item>
+        <Item>{O}\vtio.obj</Item>
         <Item>{O}\writedata.obj</Item>
         <Item>{O}\_output.obj</Item>
         <Item>{O}\_stream.obj</Item>

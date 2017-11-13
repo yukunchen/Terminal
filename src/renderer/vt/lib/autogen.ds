@@ -5,11 +5,11 @@
 -->
 
 <DominoSpec xmlns:d="http://schemas.microsoft.com/domino/extension/0.5" xmlns="http://schemas.microsoft.com/domino/0.5">
-  <Namespace Name="MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser">
-    <Path Name="DotDot" Visibility="Private">{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser</Path>
-    <Path Name="O" Visibility="Private">{ObjRoot}\onecore\windows\core\console\open\src\terminal\parser\lib\{BuildAlt}</Path>
+  <Namespace Name="MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Vt">
+    <Path Name="DotDot" Visibility="Private">{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt</Path>
+    <Path Name="O" Visibility="Private">{ObjRoot}\onecore\windows\core\console\open\src\renderer\vt\lib\{BuildAlt}</Path>
 
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib_PrePass-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Lib_PrePass-->
 
     <LegacyBuilder Output="Lib_PrePass" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Product</Classification>
@@ -18,12 +18,11 @@
       <!--Consumes-->
 
       <Consumes>
-        <Item>autogen.ds</Item>
-        <Item>parser.vcxproj</Item>
+        <Item>vt.vcxproj</Item>
       </Consumes>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib_Pass1-->
+    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Lib_Pass1-->
 
     <LegacyBuilder Output="Lib_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Internal">
       <Classification>Product</Classification>
@@ -32,26 +31,31 @@
       <!--Consumes-->
 
       <Consumes>
-        <Item>autogen.ds</Item>
-        <Item>parser.vcxproj</Item>
-        <Item>{DotDot}\ascii.hpp</Item>
-        <Item>{DotDot}\inputstatemachineengine.cpp</Item>
-        <Item>{DotDot}\inputstatemachineengine.hpp</Item>
-        <Item>{DotDot}\istatemachineengine.hpp</Item>
-        <Item>{DotDot}\outputstatemachineengine.cpp</Item>
-        <Item>{DotDot}\outputstatemachineengine.hpp</Item>
+        <Item>vt.vcxproj</Item>
+        <Item>{DotDot}\invalidate.cpp</Item>
+        <Item>{DotDot}\math.cpp</Item>
+        <Item>{DotDot}\paint.cpp</Item>
         <Item>{DotDot}\precomp.cpp</Item>
         <Item>{DotDot}\precomp.h</Item>
-        <Item>{DotDot}\statemachine.cpp</Item>
-        <Item>{DotDot}\statemachine.hpp</Item>
-        <Item>{DotDot}\telemetry.cpp</Item>
-        <Item>{DotDot}\telemetry.hpp</Item>
-        <Item>{DotDot}\termdispatch.hpp</Item>
-        <Item>{DotDot}\tracing.cpp</Item>
-        <Item>{DotDot}\tracing.hpp</Item>
+        <Item>{DotDot}\state.cpp</Item>
+        <Item>{DotDot}\vtrenderer.hpp</Item>
+        <Item>{DotDot}\vtsequences.cpp</Item>
+        <Item>{DotDot}\wintelnetengine.cpp</Item>
+        <Item>{DotDot}\wintelnetengine.hpp</Item>
+        <Item>{DotDot}\xterm256engine.cpp</Item>
+        <Item>{DotDot}\xterm256engine.hpp</Item>
+        <Item>{DotDot}\xtermengine.cpp</Item>
+        <Item>{DotDot}\xtermengine.hpp</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\vtapiredirection.hpp</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\conattrs.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\cpp2017.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\viewport.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfo.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfobase.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfodesired.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\ifontdefaultlist.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp</Item>
 
         <!--References-->
 
@@ -59,24 +63,17 @@
         <Item>{MsWin.Crts.Public.Internal.Sdk.Inc.Ucrt.__Header}</Item>
         <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.Sys.__Header}</Item>
         <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.__Header}</Item>
-        <Item>{MsWin.OnecoreBase.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
-        <Item>{MsWin.OnecoreCom.Public.Sdk.Inc.__Header}</Item>
-        <Item>{MsWin.OnecoreCom.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreNet.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreSdkTools.Public.Internal.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreSdkTools.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreShell.Public.Internal.Sdk.Inc.Wil.__Header}</Item>
         <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
-        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib_PrePass}</Item>
-        <Item>{MsWin.OnecoreWindows.Public.Internal.Onecorewindows.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Lib_PrePass}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Idl}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_ApiSet.Public.Sdk.Inc.Mincore.__Header}</Item>
-        <Item>{MsWin.Onecore_MinIo.Private.Internal.Minwin.Priv_sdk.Inc.__Header}</Item>
-        <Item>{MsWin.Onecore_MinIo.Public.Shared.Inc.__Header}</Item>
-        <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.Telemetry.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.__Idl}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Internal.Base.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.Minwin.__Header}</Item>
@@ -88,16 +85,18 @@
       <!--Produces-->
 
       <Produces>
-        <Item>{O}\contermparser.lib</Item>
-        <Item>{O}\inputstatemachineengine.obj</Item>
-        <Item>{O}\outputstatemachineengine.obj</Item>
+        <Item>{O}\conrendervt.lib</Item>
+        <Item>{O}\invalidate.obj</Item>
+        <Item>{O}\math.obj</Item>
+        <Item>{O}\paint.obj</Item>
         <Item>{O}\pch_hdr.src</Item>
         <Item>{O}\precomp.obj</Item>
         <Item>{O}\precomp.pch</Item>
-        <Item>{O}\statemachine.obj</Item>
-        <Item>{O}\targetlibs.txt</Item>
-        <Item>{O}\telemetry.obj</Item>
-        <Item>{O}\tracing.obj</Item>
+        <Item>{O}\state.obj</Item>
+        <Item>{O}\vtsequences.obj</Item>
+        <Item>{O}\wintelnetengine.obj</Item>
+        <Item>{O}\xterm256engine.obj</Item>
+        <Item>{O}\xtermengine.obj</Item>
       </Produces>
     </LegacyBuilder>
   </Namespace>

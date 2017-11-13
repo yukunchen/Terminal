@@ -60,6 +60,7 @@
         <Item>{SrcRoot}\build\scripts\generatetestlist.cmd</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\conattrs.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\consoletaeftemplates.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\unicode.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\vtapiredirection.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp</Item>
@@ -72,6 +73,7 @@
         <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.__Header}</Item>
         <Item>{MsWin.OnecoreBase.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreCom.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreNet.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreSdkTools.Public.Internal.Onecoresdktools.Inc.__Header}</Item>
@@ -80,10 +82,13 @@
         <Item>{MsWin.OnecoreShell.Public.Internal.Sdk.Inc.Wil.__Header}</Item>
         <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter_PrePass}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Internal.Onecorewindows.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Idl}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_ApiSet.Public.Sdk.Inc.Mincore.__Header}</Item>
+        <Item>{MsWin.Onecore_MinIo.Private.Internal.Minwin.Priv_sdk.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinIo.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.Telemetry.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.__Idl}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Internal.Base.Inc.__Header}</Item>
@@ -146,8 +151,8 @@
         <Item>{DotDot}\tracing.cpp</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
         <Item>{SrcRoot}\build\scripts\expdelayload.cmd</Item>
+        <Item>{SrcRoot}\build\scripts\fixtsversionstringappend.cmd</Item>
         <Item>{SrcRoot}\build\scripts\testmdgen.cmd</Item>
-        <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
 
         <!--References-->
 
@@ -169,6 +174,7 @@
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propslib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Base.Lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Gdi.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Wddmcon.Lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Server.Lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Lib_Pass1}</Item>

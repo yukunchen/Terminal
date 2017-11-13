@@ -1,5 +1,6 @@
 export const projects = [
     ...importFile(f`base/Auto-OnecoreWindows.bl`).projects,
     ...importFile(f`gdi/Auto-OnecoreWindows.bl`).projects,
+    ...importFile(f`vt/Auto-OnecoreWindows.bl`).projects,
     ...importFile(f`wddmcon/Auto-OnecoreWindows.bl`).projects,
 ];

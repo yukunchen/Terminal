@@ -34,10 +34,16 @@
 
       <Consumes>
         <Item>autogen.ds</Item>
+        <Item>inputenginetest.cpp</Item>
+        <Item>outputenginetest.cpp</Item>
         <Item>parser.unittests.vcxproj</Item>
         <Item>product.pbxproj</Item>
-        <Item>statemachinetest.cpp</Item>
         <Item>{DotDot}\ascii.hpp</Item>
+        <Item>{DotDot}\inputstatemachineengine.cpp</Item>
+        <Item>{DotDot}\inputstatemachineengine.hpp</Item>
+        <Item>{DotDot}\istatemachineengine.hpp</Item>
+        <Item>{DotDot}\outputstatemachineengine.cpp</Item>
+        <Item>{DotDot}\outputstatemachineengine.hpp</Item>
         <Item>{DotDot}\precomp.cpp</Item>
         <Item>{DotDot}\precomp.h</Item>
         <Item>{DotDot}\statemachine.cpp</Item>
@@ -49,6 +55,10 @@
         <Item>{DotDot}\tracing.hpp</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
         <Item>{SrcRoot}\build\scripts\generatetestlist.cmd</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\consoletaeftemplates.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\vtapiredirection.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminalinput.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp</Item>
 
         <!--References-->
 
@@ -58,17 +68,22 @@
         <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.__Header}</Item>
         <Item>{MsWin.OnecoreBase.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreCom.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreNet.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreSdkTools.Public.Internal.Onecoresdktools.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreSdkTools.Public.Internal.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreSdkTools.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreShell.Public.Internal.Sdk.Inc.Wil.__Header}</Item>
         <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_PrePass}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Internal.Onecorewindows.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Idl}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_ApiSet.Public.Sdk.Inc.Mincore.__Header}</Item>
+        <Item>{MsWin.Onecore_MinIo.Private.Internal.Minwin.Priv_sdk.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinIo.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.Telemetry.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.__Idl}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Internal.Base.Inc.__Header}</Item>
@@ -84,15 +99,19 @@
       <Produces>
         <Item>{BinRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-terminal-parser-ut_parser-nmake_to_mbs_pass1.props.br</Item>
         <Item>{BinRoot}\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-terminal-parser-ut_parser-nmake_to_mbs_pass1.props</Item>
+        <Item>{O}\inputenginetest.obj</Item>
+        <Item>{O}\inputstatemachineengine.obj</Item>
         <Item>{O}\microsoft.console.virtualterminal.parser.unittests.exp</Item>
         <Item>{O}\microsoft.console.virtualterminal.parser.unittests.lib</Item>
         <Item>{O}\microsoft.console.virtualterminal.parser.unittests.testmd_metadata</Item>
         <Item>{O}\nmake_to_mbs_pass1.props</Item>
+        <Item>{O}\outputenginetest.obj</Item>
+        <Item>{O}\outputstatemachineengine.obj</Item>
         <Item>{O}\pch_hdr.src</Item>
         <Item>{O}\precomp.obj</Item>
         <Item>{O}\precomp.pch</Item>
         <Item>{O}\statemachine.obj</Item>
-        <Item>{O}\statemachinetest.obj</Item>
+        <Item>{O}\targetlibs.txt</Item>
         <Item>{O}\telemetry.obj</Item>
         <Item>{O}\tracing.obj</Item>
       </Produces>
@@ -108,26 +127,55 @@
 
       <Consumes>
         <Item>autogen.ds</Item>
+        <Item>inputenginetest.cpp</Item>
+        <Item>outputenginetest.cpp</Item>
         <Item>parser.unittests.vcxproj</Item>
         <Item>product.pbxproj</Item>
-        <Item>statemachinetest.cpp</Item>
+        <Item>{DotDot}\inputstatemachineengine.cpp</Item>
+        <Item>{DotDot}\outputstatemachineengine.cpp</Item>
         <Item>{DotDot}\precomp.cpp</Item>
         <Item>{DotDot}\precomp.h</Item>
         <Item>{DotDot}\statemachine.cpp</Item>
         <Item>{DotDot}\telemetry.cpp</Item>
         <Item>{DotDot}\tracing.cpp</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
+        <Item>{SrcRoot}\build\scripts\expdelayload.cmd</Item>
+        <Item>{SrcRoot}\build\scripts\fixtsversionstringappend.cmd</Item>
         <Item>{SrcRoot}\build\scripts\testmdgen.cmd</Item>
-        <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
 
         <!--References-->
 
         <Item>{MsWin.Crts.Public.Internal.Sdk.Lib.Ucrt.__Library}</Item>
         <Item Condition="{IsBuildDebug AND IsBuildCommonArchitecture}">{MsWin.Crts.Public.Internal.Sdk.Lib.__Library}</Item>
         <Item Condition="{(IsBuildArm32 OR IsBuildArm64)}">{MsWin.Crts.Public.Sdk.Lib.__Library}</Item>
+        <Item>{MsWin.OnecoreAvcore.Private.Internal.Moderncore.Priv_sdk.Lib.v1_6.__Library}</Item>
+        <Item>{MsWin.OnecoreMerged.Private.Internal.Minwin.Priv_sdk.Lib.__Library}</Item>
+        <Item>{MsWin.OnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.v1_7.__Library}</Item>
+        <Item>{MsWin.OnecoreMerged.Public.Internal.Sdk.Lib.__Library}</Item>
         <Item>{MsWin.OnecoreMerged.Public.Sdk.Lib.Onecore.v1_7.__Library}</Item>
+        <Item>{MsWin.OnecoreUapMerged.Public.Internal.Sdk.Lib.__Library}</Item>
+        <Item>{MsWin.OnecoreUapShell.Public.Sdk.Lib.__Library}</Item>
+        <Item>{MsWin.OnecoreUapWindows.Public.Internal.Onecoreuapwindows.Lib.__Library}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Interactivity.Onecore.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Interactivity.Win32.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propslib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Base.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Gdi.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Wddmcon.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Server.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser_PrePass}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tsf_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Types.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Moderncore.Apiset.Libs.Uiacore.Current_InternalModerncorePriv_sdkLib16.__Library}</Item>
+        <Item>{MsWin.Onecore_ApiSet.Private.Internal.Mincore.Priv_sdk.Lib.v1_7.__Library}</Item>
+        <Item>{MsWin.Onecore_MinCore.Private.Internal.Mincore.Priv_sdk.Lib.__Library}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Lib.v1_8.__Library}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Internal.Sdk.Lib.__Library}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Lib.Minwin.v1_8.__Library}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Lib.__Library}</Item>
@@ -146,6 +194,8 @@
         <Item>{BinRoot}\prebuilt\windows\microsoft.console.virtualterminal.parser.unittests.testmd</Item>
         <Item>{BinRoot}\symbols.pri\unittests\dll\microsoft.console.virtualterminal.parser.unittests.pdb</Item>
         <Item>{BinRoot}\unittests\microsoft.console.virtualterminal.parser.unittests.dll</Item>
+        <Item>{O}\delayload.txt</Item>
+        <Item>{O}\delayload_expansion.inc</Item>
         <Item>{O}\microsoft-console-virtualterminal-parser-unittests.spkg.meta.xml</Item>
         <Item>{O}\microsoft.console.virtualterminal.parser.unittests.dll</Item>
         <Item>{O}\microsoft.console.virtualterminal.parser.unittests.pdb</Item>

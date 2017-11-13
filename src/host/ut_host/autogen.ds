@@ -39,6 +39,7 @@
         <Item>autogen.ds</Item>
         <Item>charrowtests.cpp</Item>
         <Item>clipboardtests.cpp</Item>
+        <Item>consoleargumentstests.cpp</Item>
         <Item>dbcstests.cpp</Item>
         <Item>host.unittests.vcxproj</Item>
         <Item>inittests.cpp</Item>
@@ -52,6 +53,8 @@
         <Item>unicodeliteral.hpp</Item>
         <Item>utf8towidecharparsertests.cpp</Item>
         <Item>utilstests.cpp</Item>
+        <Item>vtiotests.cpp</Item>
+        <Item>vtrenderertests.cpp</Item>
         <Item>{DotDot}\apiroutines.h</Item>
         <Item>{DotDot}\cmdline.h</Item>
         <Item>{DotDot}\conapi.h</Item>
@@ -84,6 +87,8 @@
         <Item>{DotDot}\tracing.hpp</Item>
         <Item>{DotDot}\utf8towidecharparser.hpp</Item>
         <Item>{DotDot}\utils.hpp</Item>
+        <Item>{DotDot}\vtinputthread.hpp</Item>
+        <Item>{DotDot}\vtio.hpp</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
         <Item>{SrcRoot}\build\scripts\generatetestlist.cmd</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\commonincludes.h</Item>
@@ -93,6 +98,8 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\contsf.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\cpp2017.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\operators.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\unicode.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\vtiomodes.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\test\commonstate.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iaccessibilitynotifier.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsolecontrol.hpp</Item>
@@ -117,8 +124,13 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderdata.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\vtrenderer.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\wintelnetengine.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\xterm256engine.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\xtermengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\apimessage.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\apimessagestate.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\consolearguments.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\devicecomm.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\iapiroutines.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\iwaitroutine.h</Item>
@@ -126,6 +138,7 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\objectheader.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\processhandle.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\processlist.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\processpolicy.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\waitblock.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\waitqueue.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\waitterminationreason.h</Item>
@@ -135,9 +148,11 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\mouseinput.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminalinput.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminaloutput.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\istatemachineengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\statemachine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\telemetry.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\tracing.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp</Item>
 
         <!--References-->
@@ -195,6 +210,7 @@
         <Item>{O}\attrrowtests.obj</Item>
         <Item>{O}\charrowtests.obj</Item>
         <Item>{O}\clipboardtests.obj</Item>
+        <Item>{O}\consoleargumentstests.obj</Item>
         <Item>{O}\dbcstests.obj</Item>
         <Item>{O}\inittests.obj</Item>
         <Item>{O}\inputbuffertests.obj</Item>
@@ -212,6 +228,8 @@
         <Item>{O}\titletests.obj</Item>
         <Item>{O}\utf8towidecharparsertests.obj</Item>
         <Item>{O}\utilstests.obj</Item>
+        <Item>{O}\vtiotests.obj</Item>
+        <Item>{O}\vtrenderertests.obj</Item>
       </Produces>
     </LegacyBuilder>
 
@@ -229,6 +247,7 @@
         <Item>autogen.ds</Item>
         <Item>charrowtests.cpp</Item>
         <Item>clipboardtests.cpp</Item>
+        <Item>consoleargumentstests.cpp</Item>
         <Item>dbcstests.cpp</Item>
         <Item>defaultresource.rc</Item>
         <Item>host.unittests.vcxproj</Item>
@@ -242,13 +261,15 @@
         <Item>titletests.cpp</Item>
         <Item>utf8towidecharparsertests.cpp</Item>
         <Item>utilstests.cpp</Item>
+        <Item>vtiotests.cpp</Item>
+        <Item>vtrenderertests.cpp</Item>
         <Item>{DotDot}\precomp.cpp</Item>
         <Item>{DotDot}\precomp.h</Item>
         <Item>{DotDot}\sources.test.inc</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
         <Item>{SrcRoot}\build\scripts\expdelayload.cmd</Item>
+        <Item>{SrcRoot}\build\scripts\fixtsversionstringappend.cmd</Item>
         <Item>{SrcRoot}\build\scripts\testmdgen.cmd</Item>
-        <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
 
         <!--References-->
 
@@ -273,6 +294,8 @@
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propslib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Base.Lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Gdi.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Ut_lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Wddmcon.Lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Server.Lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Lib_Pass1}</Item>

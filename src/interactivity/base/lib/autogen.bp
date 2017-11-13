@@ -69,11 +69,15 @@ namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
             f`${srcRoot}\onecore\windows\core\console\open\src\host\textbuffer.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\host\tracing.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\host\utils.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\host\vtinputthread.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\host\vtio.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\inc\conattrs.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\inc\conime.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\inc\contsf.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\inc\cpp2017.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\inc\operators.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\inc\unicode.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\inc\vtiomodes.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iaccessibilitynotifier.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsolecontrol.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsoleinputthread.hpp`,
@@ -111,6 +115,7 @@ namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderdata.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\vt\vtrenderer.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\apimessage.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\apimessagestate.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\devicecomm.h`,
@@ -120,6 +125,7 @@ namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
             f`${srcRoot}\onecore\windows\core\console\open\src\server\objectheader.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\processhandle.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\processlist.h`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\server\processpolicy.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\waitblock.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\waitqueue.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\waitterminationreason.h`,
@@ -129,9 +135,11 @@ namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\mouseinput.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminalinput.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminaloutput.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\istatemachineengine.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\statemachine.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\telemetry.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\tracing.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp`,
 
             prePass,
@@ -192,14 +200,6 @@ namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
         ],
     });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib.bin_BlgMsbuildpropsNmakeprops_content
-
-    export const bin_BlgMsbuildpropsNmakeprops_content = pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`);
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib.bin_MsbuildpropsNmakeprops_content
-
-    export const bin_MsbuildpropsNmakeprops_content = pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`);
-
     const pass3 = LegacySdk.build({
         template: template_NMake,
         classification: "product",
@@ -225,4 +225,28 @@ namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
         ]
         .filter(e => e !== undefined),
     });
+}
+namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib_Bin_BlgMsbuildpropsNmakeprops {
+
+    export declare const qualifier: {
+        platform: "arm32" | "arm64" | "x64" | "x86",
+        configuration: "debug" | "release",
+        codeAnalysisMode: "simpleAnalysis" | "disabled",
+    };
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib_Bin_BlgMsbuildpropsNmakeprops.content
+
+    export const content = $.Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib.pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`);
+}
+namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib_Bin_MsbuildpropsNmakeprops {
+
+    export declare const qualifier: {
+        platform: "arm32" | "arm64" | "x64" | "x86",
+        configuration: "debug" | "release",
+        codeAnalysisMode: "simpleAnalysis" | "disabled",
+    };
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib_Bin_MsbuildpropsNmakeprops.content
+
+    export const content = $.Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib.pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`);
 }
