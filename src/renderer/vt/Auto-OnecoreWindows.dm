@@ -7,10 +7,9 @@
   <Module>
     <Identity>MsWin.OnecoreWindows</Identity>
     <Partial>true</Partial>
-    <SpecFiles />
+    <SpecFiles>
+      <Item>lib\autogen.ds</Item>
+      <Item>ut_lib\autogen.ds</Item>
+    </SpecFiles>
   </Module>
-  <Import>base\Auto-OnecoreWindows.dm</Import>
-  <Import>gdi\Auto-OnecoreWindows.dm</Import>
-  <Import>vt\Auto-OnecoreWindows.dm</Import>
-  <Import>wddmcon\Auto-OnecoreWindows.dm</Import>
 </DominoModule>

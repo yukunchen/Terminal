@@ -219,9 +219,9 @@
         <Item>windowsshell.manifest</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
         <Item Condition="{IsBuildRelease}">{ObjRoot}\{BuildAlt}\pe_list\console.dll</Item>
+        <Item>{SrcRoot}\build\scripts\fixtsversionstringappend.cmd</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\res\console.ico</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\res\truetype.bmp</Item>
-        <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
 
         <!--References-->
 

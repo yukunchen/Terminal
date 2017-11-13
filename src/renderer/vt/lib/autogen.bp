@@ -1,4 +1,4 @@
-namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib {
+namespace Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Lib {
 
     export declare const qualifier: {
         platform: "arm32" | "arm64" | "x64" | "x86",
@@ -6,9 +6,9 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib {
         codeAnalysisMode: "simpleAnalysis" | "disabled",
     };
 
-    const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser`;
+    const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\renderer\vt`;
 
-    const o = d`${objRoot}\onecore\windows\core\console\open\src\terminal\parser\lib\${buildAlt}`;
+    const o = d`${objRoot}\onecore\windows\core\console\open\src\renderer\vt\lib\${buildAlt}`;
 
     const prePass = LegacySdk.build({
         template: template_NMake,
@@ -16,12 +16,11 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib {
         targetPass: "prePass",
         
         consumes: [
-            f`autogen.bp`,
-            f`parser.vcxproj`,
+            f`vt.vcxproj`,
         ],
     });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib.pass1
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Lib.pass1
 
     export const pass1 = LegacySdk.build({
         template: template_NMake,
@@ -29,30 +28,34 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib {
         targetPass: "pass1",
         
         consumes: [
-            f`autogen.bp`,
-            f`parser.vcxproj`,
-            f`${dotDot}\ascii.hpp`,
-            f`${dotDot}\inputstatemachineengine.cpp`,
-            f`${dotDot}\inputstatemachineengine.hpp`,
-            f`${dotDot}\istatemachineengine.hpp`,
-            f`${dotDot}\outputstatemachineengine.cpp`,
-            f`${dotDot}\outputstatemachineengine.hpp`,
+            f`vt.vcxproj`,
+            f`${dotDot}\invalidate.cpp`,
+            f`${dotDot}\math.cpp`,
+            f`${dotDot}\paint.cpp`,
             f`${dotDot}\precomp.cpp`,
             f`${dotDot}\precomp.h`,
-            f`${dotDot}\statemachine.cpp`,
-            f`${dotDot}\statemachine.hpp`,
-            f`${dotDot}\telemetry.cpp`,
-            f`${dotDot}\telemetry.hpp`,
-            f`${dotDot}\termdispatch.hpp`,
-            f`${dotDot}\tracing.cpp`,
-            f`${dotDot}\tracing.hpp`,
+            f`${dotDot}\state.cpp`,
+            f`${dotDot}\vtrenderer.hpp`,
+            f`${dotDot}\vtsequences.cpp`,
+            f`${dotDot}\wintelnetengine.cpp`,
+            f`${dotDot}\wintelnetengine.hpp`,
+            f`${dotDot}\xterm256engine.cpp`,
+            f`${dotDot}\xterm256engine.hpp`,
+            f`${dotDot}\xtermengine.cpp`,
+            f`${dotDot}\xtermengine.hpp`,
             f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
-            f`${srcRoot}\onecore\windows\core\console\open\src\interactivity\inc\vtapiredirection.hpp`,
-            f`${srcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\inc\conattrs.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\inc\cpp2017.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\inc\viewport.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfo.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfobase.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfodesired.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\ifontdefaultlist.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp`,
 
             prePass,
 
-            $.Public.Internal.Onecorewindows.Inc.header,
             $.Public.Sdk.Inc.header,
             $.Public.Sdk.Inc.idl,
             $.Public.Shared.Inc.header,
@@ -60,20 +63,14 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib {
             MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.Stl120.header,
             MsWinCrts.Public.Sdk.Inc.Ucrt.header,
             MsWinCrts.Public.Sdk.Inc.Ucrt.Sys.header,
-            MsWinOnecoreBase.Public.Sdk.Inc.header,
             MsWinOnecoreBase.Public.Shared.Inc.header,
-            MsWinOnecoreCom.Public.Sdk.Inc.header,
-            MsWinOnecoreCom.Public.Shared.Inc.header,
             MsWinOnecoreNet.Public.Sdk.Inc.header,
             MsWinOnecoreSdkTools.Public.Internal.Sdk.Inc.header,
             MsWinOnecoreSdkTools.Public.Shared.Inc.header,
             MsWinOnecoreShell.Public.Internal.Sdk.Inc.Wil.header,
             MsWinOnecoreShell.Public.Sdk.Inc.idl,
             MsWinOnecore_ApiSet.Public.Sdk.Inc.Mincore.header,
-            MsWinOnecore_MinIo.Private.Internal.Minwin.Priv_sdk.Inc.header,
-            MsWinOnecore_MinIo.Public.Shared.Inc.header,
             MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.idl,
-            MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.Telemetry.header,
             MsWinOnecore_MinKernel.Public.Internal.Base.Inc.header,
             MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
             MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
@@ -82,16 +79,18 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib {
         ],
         
         produces: [
-            p`${o}\contermparser.lib`,
-            p`${o}\inputstatemachineengine.obj`,
-            p`${o}\outputstatemachineengine.obj`,
+            p`${o}\conrendervt.lib`,
+            p`${o}\invalidate.obj`,
+            p`${o}\math.obj`,
+            p`${o}\paint.obj`,
             p`${o}\pch_hdr.src`,
             p`${o}\precomp.obj`,
             p`${o}\precomp.pch`,
-            p`${o}\statemachine.obj`,
-            p`${o}\targetlibs.txt`,
-            p`${o}\telemetry.obj`,
-            p`${o}\tracing.obj`,
+            p`${o}\state.obj`,
+            p`${o}\vtsequences.obj`,
+            p`${o}\wintelnetengine.obj`,
+            p`${o}\xterm256engine.obj`,
+            p`${o}\xtermengine.obj`,
         ],
     });
 }

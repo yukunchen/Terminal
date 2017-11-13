@@ -44,6 +44,8 @@
         <Item>{DotDot}\apiroutinesbase.cpp</Item>
         <Item>{DotDot}\apisorter.cpp</Item>
         <Item>{DotDot}\apisorter.h</Item>
+        <Item>{DotDot}\consolearguments.cpp</Item>
+        <Item>{DotDot}\consolearguments.hpp</Item>
         <Item>{DotDot}\devicecomm.cpp</Item>
         <Item>{DotDot}\devicecomm.h</Item>
         <Item>{DotDot}\devicehandle.cpp</Item>
@@ -67,6 +69,8 @@
         <Item>{DotDot}\processhandle.h</Item>
         <Item>{DotDot}\processlist.cpp</Item>
         <Item>{DotDot}\processlist.h</Item>
+        <Item>{DotDot}\processpolicy.cpp</Item>
+        <Item>{DotDot}\processpolicy.h</Item>
         <Item>{DotDot}\waitblock.cpp</Item>
         <Item>{DotDot}\waitblock.h</Item>
         <Item>{DotDot}\waitqueue.cpp</Item>
@@ -104,7 +108,11 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\textbuffer.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\tracing.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\utils.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\vtinputthread.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\vtio.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\conime.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\unicode.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\vtiomodes.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iaccessibilitynotifier.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsolecontrol.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsoleinputthread.hpp</Item>
@@ -122,15 +130,18 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderdata.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\vtrenderer.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\adaptdefaults.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\adaptdispatch.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\congetset.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\mouseinput.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminalinput.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminaloutput.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\istatemachineengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\statemachine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\telemetry.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\tracing.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp</Item>
 
         <!--References-->
@@ -142,18 +153,24 @@
         <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.__Header}</Item>
         <Item>{MsWin.OnecoreBase.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreDrivers.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreNet.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreSdkTools.Public.Internal.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreSdkTools.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreShell.Public.Internal.Sdk.Inc.Wil.__Header}</Item>
         <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
+        <Item>{MsWin.OnecoreUapShell.Public.Sdk.Inc.__Idl}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Server.Lib_PrePass}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Internal.Onecorewindows.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Idl}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_ApiSet.Private.Internal.Mincore.Priv_sdk.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_ApiSet.Public.Sdk.Inc.Mincore.__Header}</Item>
+        <Item>{MsWin.Onecore_MinIo.Private.Internal.Minwin.Priv_sdk.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinIo.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.Telemetry.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.__Idl}</Item>
@@ -174,6 +191,7 @@
         <Item>{O}\apiroutinesbase.obj</Item>
         <Item>{O}\apisorter.obj</Item>
         <Item>{O}\conserver.lib</Item>
+        <Item>{O}\consolearguments.obj</Item>
         <Item>{O}\devicecomm.obj</Item>
         <Item>{O}\devicehandle.obj</Item>
         <Item>{O}\entrypoints.obj</Item>
@@ -186,6 +204,7 @@
         <Item>{O}\precomp.pch</Item>
         <Item>{O}\processhandle.obj</Item>
         <Item>{O}\processlist.obj</Item>
+        <Item>{O}\processpolicy.obj</Item>
         <Item>{O}\waitblock.obj</Item>
         <Item>{O}\waitqueue.obj</Item>
         <Item>{O}\winntcontrol.obj</Item>

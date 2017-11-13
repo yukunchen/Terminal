@@ -41,7 +41,9 @@ namespace Onecore.Windows.Core.Console.Open.Src.Testlist {
         ],
     });
 
-    const pass2 = LegacySdk.build({
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist.pass2
+
+    export const pass2 = LegacySdk.build({
         template: template_NMake,
         classification: "test",
         targetPass: "pass2",
@@ -74,20 +76,52 @@ namespace Onecore.Windows.Core.Console.Open.Src.Testlist {
             p`${binRoot}\prebuilt\windows\microsoft.console.tests.testlist`,
         ],
     });
+}
+namespace Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_BlgPrebuiltTest {
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist.bin_BlgPrebuiltTest_content
+    export declare const qualifier: {
+        platform: "arm32" | "arm64" | "x64" | "x86",
+        configuration: "debug" | "release",
+        codeAnalysisMode: "simpleAnalysis" | "disabled",
+    };
 
-    export const bin_BlgPrebuiltTest_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`);
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_BlgPrebuiltTest.content
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist.bin_BlgPrebuiltWindows_content
+    export const content = $.Onecore.Windows.Core.Console.Open.Src.Testlist.pass2.directories.get(p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`);
+}
+namespace Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_BlgPrebuiltWindows {
 
-    export const bin_BlgPrebuiltWindows_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\windows`);
+    export declare const qualifier: {
+        platform: "arm32" | "arm64" | "x64" | "x86",
+        configuration: "debug" | "release",
+        codeAnalysisMode: "simpleAnalysis" | "disabled",
+    };
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist.bin_PrebuiltTest_content
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_BlgPrebuiltWindows.content
 
-    export const bin_PrebuiltTest_content = pass2.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`);
+    export const content = $.Onecore.Windows.Core.Console.Open.Src.Testlist.pass2.directories.get(p`${binRoot}\blg\prebuilt\windows`);
+}
+namespace Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_PrebuiltTest {
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist.bin_PrebuiltWindows_content
+    export declare const qualifier: {
+        platform: "arm32" | "arm64" | "x64" | "x86",
+        configuration: "debug" | "release",
+        codeAnalysisMode: "simpleAnalysis" | "disabled",
+    };
 
-    export const bin_PrebuiltWindows_content = pass2.directories.get(p`${binRoot}\prebuilt\windows`);
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_PrebuiltTest.content
+
+    export const content = $.Onecore.Windows.Core.Console.Open.Src.Testlist.pass2.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`);
+}
+namespace Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_PrebuiltWindows {
+
+    export declare const qualifier: {
+        platform: "arm32" | "arm64" | "x64" | "x86",
+        configuration: "debug" | "release",
+        codeAnalysisMode: "simpleAnalysis" | "disabled",
+    };
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_PrebuiltWindows.content
+
+    export const content = $.Onecore.Windows.Core.Console.Open.Src.Testlist.pass2.directories.get(p`${binRoot}\prebuilt\windows`);
 }

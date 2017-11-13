@@ -53,6 +53,7 @@
         <Item>{DotDot}\tracing.hpp</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\conattrs.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\unicode.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\vtapiredirection.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp</Item>
@@ -65,16 +66,21 @@
         <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.__Header}</Item>
         <Item>{MsWin.OnecoreBase.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreNet.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreSdkTools.Public.Internal.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreSdkTools.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreShell.Public.Internal.Sdk.Inc.Wil.__Header}</Item>
         <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Lib_PrePass}</Item>
+        <Item>{MsWin.OnecoreWindows.Public.Internal.Onecorewindows.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Idl}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_ApiSet.Public.Sdk.Inc.Mincore.__Header}</Item>
+        <Item>{MsWin.Onecore_MinIo.Private.Internal.Minwin.Priv_sdk.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinIo.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.Telemetry.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.__Idl}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Internal.Base.Inc.__Header}</Item>

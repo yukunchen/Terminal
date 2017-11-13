@@ -43,6 +43,7 @@
         <Item>api_fonttests.cpp</Item>
         <Item>api_inputtests.cpp</Item>
         <Item>api_modetests.cpp</Item>
+        <Item>api_policytests.cpp</Item>
         <Item>api_rgbcolortests.cpp</Item>
         <Item>api_titletests.cpp</Item>
         <Item>autogen.ds</Item>
@@ -109,6 +110,7 @@
         <Item>{O}\api_fonttests.obj</Item>
         <Item>{O}\api_inputtests.obj</Item>
         <Item>{O}\api_modetests.obj</Item>
+        <Item>{O}\api_policytests.obj</Item>
         <Item>{O}\api_rgbcolortests.obj</Item>
         <Item>{O}\api_titletests.obj</Item>
         <Item>{O}\cjk_dbcstests.obj</Item>
@@ -144,6 +146,7 @@
         <Item>api_fonttests.cpp</Item>
         <Item>api_inputtests.cpp</Item>
         <Item>api_modetests.cpp</Item>
+        <Item>api_policytests.cpp</Item>
         <Item>api_rgbcolortests.cpp</Item>
         <Item>api_titletests.cpp</Item>
         <Item>autogen.ds</Item>
@@ -161,8 +164,8 @@
         <Item>{DotDot}\sources.test.inc</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
         <Item>{SrcRoot}\build\scripts\expdelayload.cmd</Item>
+        <Item>{SrcRoot}\build\scripts\fixtsversionstringappend.cmd</Item>
         <Item>{SrcRoot}\build\scripts\testmdgen.cmd</Item>
-        <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
 
         <!--References-->
 
@@ -187,6 +190,8 @@
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propslib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Base.Lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Gdi.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Ut_lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Wddmcon.Lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Server.Lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Lib_Pass1}</Item>

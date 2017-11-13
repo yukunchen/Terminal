@@ -87,7 +87,7 @@
         <Item>product.pbxproj</Item>
         <Item>res.rc</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
-        <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
+        <Item>{SrcRoot}\build\scripts\fixtsversionstringappend.cmd</Item>
 
         <!--References-->
 

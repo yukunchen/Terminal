@@ -1,0 +1,97 @@
+namespace Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Ut_lib {
+
+    export declare const qualifier: {
+        platform: "arm32" | "arm64" | "x64" | "x86",
+        configuration: "debug" | "release",
+        codeAnalysisMode: "simpleAnalysis" | "disabled",
+    };
+
+    const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\renderer\vt`;
+
+    const o = d`${objRoot}\onecore\windows\core\console\open\src\renderer\vt\ut_lib\${buildAlt}`;
+
+    const prePass = LegacySdk.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "prePass",
+        
+        consumes: [
+            f`vt.unittest.vcxproj`,
+        ],
+    });
+
+    // DEF: Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Ut_lib.pass1
+
+    export const pass1 = LegacySdk.build({
+        template: template_NMake,
+        classification: "test",
+        targetPass: "pass1",
+        
+        consumes: [
+            f`vt.unittest.vcxproj`,
+            f`${dotDot}\invalidate.cpp`,
+            f`${dotDot}\math.cpp`,
+            f`${dotDot}\paint.cpp`,
+            f`${dotDot}\precomp.cpp`,
+            f`${dotDot}\precomp.h`,
+            f`${dotDot}\state.cpp`,
+            f`${dotDot}\vtrenderer.hpp`,
+            f`${dotDot}\vtsequences.cpp`,
+            f`${dotDot}\wintelnetengine.cpp`,
+            f`${dotDot}\wintelnetengine.hpp`,
+            f`${dotDot}\xterm256engine.cpp`,
+            f`${dotDot}\xterm256engine.hpp`,
+            f`${dotDot}\xtermengine.cpp`,
+            f`${dotDot}\xtermengine.hpp`,
+            f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\inc\conattrs.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\inc\cpp2017.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\inc\viewport.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfo.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfobase.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfodesired.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\ifontdefaultlist.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp`,
+
+            prePass,
+
+            $.Public.Sdk.Inc.header,
+            $.Public.Sdk.Inc.idl,
+            $.Public.Shared.Inc.header,
+            MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.Stl120.header,
+            MsWinCrts.Public.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Sdk.Inc.Ucrt.Sys.header,
+            MsWinOnecoreBase.Public.Shared.Inc.header,
+            MsWinOnecoreNet.Public.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Internal.Onecoresdktools.Inc.header,
+            MsWinOnecoreSdkTools.Public.Internal.Sdk.Inc.header,
+            MsWinOnecoreSdkTools.Public.Shared.Inc.header,
+            MsWinOnecoreShell.Public.Internal.Sdk.Inc.Wil.header,
+            MsWinOnecoreShell.Public.Sdk.Inc.idl,
+            MsWinOnecore_ApiSet.Public.Sdk.Inc.Mincore.header,
+            MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Internal.Base.Inc.header,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.header,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
+        ],
+        
+        produces: [
+            p`${o}\conrendervt.unittest.lib`,
+            p`${o}\invalidate.obj`,
+            p`${o}\math.obj`,
+            p`${o}\paint.obj`,
+            p`${o}\pch_hdr.src`,
+            p`${o}\precomp.obj`,
+            p`${o}\precomp.pch`,
+            p`${o}\state.obj`,
+            p`${o}\vtsequences.obj`,
+            p`${o}\wintelnetengine.obj`,
+            p`${o}\xterm256engine.obj`,
+            p`${o}\xtermengine.obj`,
+        ],
+    });
+}
