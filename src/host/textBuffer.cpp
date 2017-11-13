@@ -1343,7 +1343,7 @@ ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index)
     return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetRowAtIndex(index));
 }
 
-ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row)
+const ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) const
 {
     const SHORT rowIndex = row.sRowId;
     if (rowIndex == 0)
@@ -1353,7 +1353,12 @@ ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row)
     return _Rows[rowIndex - 1];
 }
 
-ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row)
+ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row)
+{
+    return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetPrevRow(row));
+}
+
+const ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) const
 {
     const UINT rowIndex = static_cast<UINT>(row.sRowId);
     if (rowIndex == TotalRowCount() - 1)
@@ -1361,6 +1366,11 @@ ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row)
         return _Rows[0];
     }
     return _Rows[rowIndex + 1];
+}
+
+ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row)
+{
+    return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetNextRow(row));
 }
 
 ROW* const TEXT_BUFFER_INFO::GetRowPtrAtIndex(_In_ const UINT index)

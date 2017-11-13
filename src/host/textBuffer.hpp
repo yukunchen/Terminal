@@ -265,9 +265,13 @@ public:
 
     const ROW& GetRowAtIndex(_In_ const UINT index) const;
     ROW& GetRowAtIndex(_In_ const UINT index);
+
     ROW* const GetRowPtrAtIndex(_In_ const UINT index);
 
+    const ROW& GetPrevRow(_In_ const ROW& row) const;
     ROW& GetPrevRow(_In_ const ROW& row);
+
+    const ROW& GetNextRow(_In_ const ROW& row) const;
     ROW& GetNextRow(_In_ const ROW& row);
 
     // Text insertion functions
