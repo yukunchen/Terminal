@@ -298,10 +298,10 @@ public:
                                _In_ TextAttribute const attributes);
 
 private:
-    ROW* Rows;
-    PWCHAR TextRows;
+    ROW* _Rows;
+    PWCHAR _TextRows;
     // all DBCS lead & trail bit buffer
-    PBYTE KAttrRows;
+    PBYTE _KAttrRows;
 
     Cursor* _pCursor;
 

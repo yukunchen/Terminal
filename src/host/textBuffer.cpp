@@ -1008,8 +1008,8 @@ bool ROW::Initialize(_In_ short const sRowWidth, _In_ const TextAttribute Attr)
 // Routine Description:
 // - Constructor to set default properties for TEXT_BUFFER_INFO
 TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(_In_ const FontInfo* const pfiFont) :
-    Rows(),
-    TextRows(nullptr),
+    _Rows(),
+    _TextRows(nullptr),
     _fiCurrentFont(*pfiFont),
     _fiDesiredFont(*pfiFont)
 {
@@ -1023,19 +1023,19 @@ TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(_In_ const FontInfo* const pfiFont) :
 #pragma prefast(disable:6001, "Prefast fires that *this is not initialized, which is absurd since this is a destructor.")
 TEXT_BUFFER_INFO::~TEXT_BUFFER_INFO()
 {
-    if (this->TextRows != nullptr)
+    if (this->_TextRows != nullptr)
     {
-        delete[] this->TextRows;
+        delete[] this->_TextRows;
     }
 
-    if (this->Rows != nullptr)
+    if (this->_Rows != nullptr)
     {
-        delete[] this->Rows;
+        delete[] this->_Rows;
     }
 
-    if (this->KAttrRows != nullptr)
+    if (this->_KAttrRows != nullptr)
     {
-        delete[] this->KAttrRows;
+        delete[] this->_KAttrRows;
     }
 
     if (this->_pCursor != nullptr)
@@ -1083,24 +1083,24 @@ NTSTATUS TEXT_BUFFER_INFO::CreateInstance(_In_ const FontInfo* const pFontInfo,
 
             pTextBufferInfo->_coordBufferSize = coordScreenBufferSize;
 
-            pTextBufferInfo->Rows = new ROW[coordScreenBufferSize.Y];
-            status = NT_TESTNULL(pTextBufferInfo->Rows);
+            pTextBufferInfo->_Rows = new ROW[coordScreenBufferSize.Y];
+            status = NT_TESTNULL(pTextBufferInfo->_Rows);
             if (NT_SUCCESS(status))
             {
-                pTextBufferInfo->TextRows = new WCHAR[coordScreenBufferSize.X * coordScreenBufferSize.Y];
-                status = NT_TESTNULL(pTextBufferInfo->TextRows);
+                pTextBufferInfo->_TextRows = new WCHAR[coordScreenBufferSize.X * coordScreenBufferSize.Y];
+                status = NT_TESTNULL(pTextBufferInfo->_TextRows);
                 if (NT_SUCCESS(status))
                 {
-                    pTextBufferInfo->KAttrRows = new BYTE[coordScreenBufferSize.X * coordScreenBufferSize.Y];
-                    status = NT_TESTNULL(pTextBufferInfo->KAttrRows);
+                    pTextBufferInfo->_KAttrRows = new BYTE[coordScreenBufferSize.X * coordScreenBufferSize.Y];
+                    status = NT_TESTNULL(pTextBufferInfo->_KAttrRows);
                     if (NT_SUCCESS(status))
                     {
-                        PBYTE AttrRowPtr = pTextBufferInfo->KAttrRows;
-                        PWCHAR TextRowPtr = pTextBufferInfo->TextRows;
+                        PBYTE AttrRowPtr = pTextBufferInfo->_KAttrRows;
+                        PWCHAR TextRowPtr = pTextBufferInfo->_TextRows;
 
                         for (long i = 0; i < coordScreenBufferSize.Y; i++, TextRowPtr += coordScreenBufferSize.X)
                         {
-                            ROW* const pRow = &pTextBufferInfo->Rows[i];
+                            ROW* const pRow = &pTextBufferInfo->_Rows[i];
 
                             pRow->CharRow.Chars = TextRowPtr;
                             pRow->CharRow.KAttrs = AttrRowPtr;
@@ -1246,7 +1246,7 @@ ROW* TEXT_BUFFER_INFO::GetRowByOffset(_In_ UINT const rowIndex) const
 
     if (offsetIndex < totalRows)
     {
-        retVal = &this->Rows[offsetIndex];
+        retVal = &this->_Rows[offsetIndex];
     }
 
     return retVal;
@@ -1278,7 +1278,7 @@ ROW* TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ ROW* const pRow) const
     // if the prev row would be before the first, we don't want to return anything to signify we've reached the end
     if (pRow->sRowId != this->_FirstRow)
     {
-        pReturnRow = &this->Rows[prevRowIndex];
+        pReturnRow = &this->_Rows[prevRowIndex];
     }
 
     return pReturnRow;
@@ -1308,7 +1308,7 @@ ROW* TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ ROW* const pRow) const
     // if the next row would be the first again, we don't want to return anything to signify we've reached the end
     if ((short)nextRowIndex != this->_FirstRow)
     {
-        pReturnRow = &this->Rows[nextRowIndex];
+        pReturnRow = &this->_Rows[nextRowIndex];
     }
 
     return pReturnRow;
@@ -1320,7 +1320,7 @@ const ROW* const TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index) const
     {
         return nullptr;
     }
-    return &Rows[index];
+    return &_Rows[index];
 }
 
 ROW* const TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index)
@@ -1329,7 +1329,7 @@ ROW* const TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index)
     {
         return nullptr;
     }
-    return &Rows[index];
+    return &_Rows[index];
 }
 
 
@@ -1660,7 +1660,7 @@ bool TEXT_BUFFER_INFO::IncrementCircularBuffer()
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     TextAttribute FillAttributes;
     FillAttributes.SetFromLegacy(_ciFill.Attributes);
-    bool fSuccess = this->Rows[this->_FirstRow].Initialize(this->_coordBufferSize.X, FillAttributes);
+    bool fSuccess = this->_Rows[this->_FirstRow].Initialize(this->_coordBufferSize.X, FillAttributes);
     if (fSuccess)
     {
         // Now proceed to increment.
@@ -1845,7 +1845,7 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
         {
             NumToCopy = coordNewScreenSize.Y;
         }
-        memmove(Temp, &Rows[TopRowIndex], NumToCopy * sizeof(ROW));
+        memmove(Temp, &_Rows[TopRowIndex], NumToCopy * sizeof(ROW));
         if (TopRowIndex != 0 && NumToCopy != coordNewScreenSize.Y)
         {
             NumToCopy2 = TopRowIndex;
@@ -1853,7 +1853,7 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
             {
                 NumToCopy2 = coordNewScreenSize.Y - NumToCopy;
             }
-            memmove(&Temp[NumToCopy], Rows, NumToCopy2 * sizeof(ROW));
+            memmove(&Temp[NumToCopy], _Rows, NumToCopy2 * sizeof(ROW));
         }
 
         // the memmove above invalidates the contract of a unique_ptr, which each ATTR_ROW
@@ -1861,7 +1861,7 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
         // because the copy is taking it over. this should be removed when the calls to memmove are.
         for (int index = 0; index < currentScreenBufferSize.Y; ++index)
         {
-            Rows[index].AttrRow._rgList.release();
+            _Rows[index].AttrRow._rgList.release();
         }
 
         if (coordNewScreenSize.Y > currentScreenBufferSize.Y)
@@ -1879,8 +1879,8 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
             }
         }
         SetFirstRowIndex(0);
-        delete[] Rows;
-        Rows = Temp;
+        delete[] _Rows;
+        _Rows = Temp;
     }
 
     // Realloc each row.  any horizontal growth results in the last
@@ -1888,10 +1888,10 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
     TextRowPtrA = TextRowsA;
     for (i = 0, TextRowPtr = newTextRows; i < LimitY; i++, TextRowPtr += coordNewScreenSize.X)
     {
-        memmove(TextRowPtr, Rows[i].CharRow.Chars, LimitX * sizeof(WCHAR));
+        memmove(TextRowPtr, _Rows[i].CharRow.Chars, LimitX * sizeof(WCHAR));
         if (TextRowPtrA)
         {
-            memmove(TextRowPtrA, Rows[i].CharRow.KAttrs, LimitX * sizeof(CHAR));
+            memmove(TextRowPtrA, _Rows[i].CharRow.KAttrs, LimitX * sizeof(CHAR));
         }
 
         for (j = currentScreenBufferSize.X; j < coordNewScreenSize.X; j++)
@@ -1899,13 +1899,13 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
             TextRowPtr[j] = UNICODE_SPACE;
         }
 
-        if (Rows[i].CharRow.Right > coordNewScreenSize.X)
+        if (_Rows[i].CharRow.Right > coordNewScreenSize.X)
         {
-            Rows[i].CharRow.Right = coordNewScreenSize.X;
+            _Rows[i].CharRow.Right = coordNewScreenSize.X;
         }
-        Rows[i].CharRow.Chars = TextRowPtr;
+        _Rows[i].CharRow.Chars = TextRowPtr;
 
-        Rows[i].CharRow.KAttrs = TextRowPtrA;
+        _Rows[i].CharRow.KAttrs = TextRowPtrA;
         if (TextRowPtrA)
         {
             if (coordNewScreenSize.X > currentScreenBufferSize.X)
@@ -1913,7 +1913,7 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
             TextRowPtrA += coordNewScreenSize.X;
         }
 
-        Rows[i].sRowId = i;
+        _Rows[i].sRowId = i;
     }
 
     for (; i < coordNewScreenSize.Y; i++, TextRowPtr += coordNewScreenSize.X)
@@ -1929,23 +1929,23 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
             ZeroMemory(TextRowPtrA, coordNewScreenSize.X);
         }
 
-        Rows[i].CharRow.Chars = TextRowPtr;
-        Rows[i].CharRow.Left = coordNewScreenSize.X;
-        Rows[i].CharRow.Right = 0;
+        _Rows[i].CharRow.Chars = TextRowPtr;
+        _Rows[i].CharRow.Left = coordNewScreenSize.X;
+        _Rows[i].CharRow.Right = 0;
 
-        Rows[i].CharRow.KAttrs = TextRowPtrA;
+        _Rows[i].CharRow.KAttrs = TextRowPtrA;
         if (TextRowPtrA)
         {
             TextRowPtrA += coordNewScreenSize.X;
         }
 
-        Rows[i].sRowId = i;
+        _Rows[i].sRowId = i;
     }
 
-    delete[] TextRows;
-    TextRows = newTextRows;
-    delete[] KAttrRows;
-    KAttrRows = TextRowsA;
+    delete[] _TextRows;
+    _TextRows = newTextRows;
+    delete[] _KAttrRows;
+    _KAttrRows = TextRowsA;
     SetCoordBufferSize(coordNewScreenSize);
 
     NTSTATUS Status = STATUS_SUCCESS;
@@ -1954,7 +1954,7 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
     {
         for (i = 0; i < LimitY; i++)
         {
-            ROW* pRow = &Rows[i];
+            ROW* pRow = &_Rows[i];
             bool fSuccess = pRow->AttrRow.Resize(currentScreenBufferSize.X, coordNewScreenSize.X);
             if (!fSuccess)
             {
