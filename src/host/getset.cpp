@@ -667,7 +667,10 @@ VOID UpdatePopups(IN WORD NewAttributes, IN WORD NewPopupAttributes, IN WORD Old
     }
 }
 
-NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attributes, _In_ WORD PopupAttributes, _In_ BOOL UpdateWholeScreen)
+NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo,
+                         _In_ WORD Attributes,
+                         _In_ WORD PopupAttributes,
+                         _In_ BOOL UpdateWholeScreen)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     WORD const DefaultAttributes = ScreenInfo->GetAttributes().GetLegacyAttributes();
@@ -688,10 +691,17 @@ NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attribut
         const SHORT sScreenBufferSizeY = ScreenInfo->GetScreenBufferSize().Y;
         for (SHORT i = 0; i < sScreenBufferSizeY; i++)
         {
-            ROW* const Row = ScreenInfo->TextInfo->GetRowPtrAtIndex(i);
-            Row->AttrRow.ReplaceLegacyAttrs(DefaultAttributes, Attributes);
-            Row->AttrRow.ReplaceLegacyAttrs(DefaultPopupAttributes, PopupAttributes);
-            Row->AttrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
+            try
+            {
+                ROW& Row = ScreenInfo->TextInfo->GetRowAtIndex(i);
+                Row.AttrRow.ReplaceLegacyAttrs(DefaultAttributes, Attributes);
+                Row.AttrRow.ReplaceLegacyAttrs(DefaultPopupAttributes, PopupAttributes);
+                Row.AttrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
+            }
+            catch (...)
+            {
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+            }
         }
 
         if (gci->PopupCount)

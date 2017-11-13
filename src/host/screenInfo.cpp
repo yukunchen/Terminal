@@ -569,10 +569,12 @@ void SCREEN_INFORMATION::UpdateFont(_In_ const FontInfo* const pfiNewFont)
 // to aggregate drawing metadata to determine whether or not to use PolyTextOut.
 // After the Nov 2015 graphics refactor, the metadata drawing flag calculation is no longer necessary.
 // This now only notifies accessibility apps of a change.
-void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX, _In_ short const sStartY, _In_ short const sEndX, _In_ short const sEndY)
+void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX,
+                                        _In_ short const sStartY,
+                                        _In_ short const sEndX,
+                                        _In_ short const sEndY)
 {
     SHORT RowIndex;
-    ROW* Row;
     WCHAR Char;
     UINT CountOfAttr;
     PTEXT_BUFFER_INFO pTextInfo = this->TextInfo;
@@ -587,10 +589,19 @@ void SCREEN_INFORMATION::ResetTextFlags(_In_ short const sStartX, _In_ short con
         if (sStartX == sEndX && sStartY == sEndY)
         {
             RowIndex = (pTextInfo->GetFirstRowIndex() + sStartY) % coordScreenBufferSize.Y;
-            Row = pTextInfo->GetRowPtrAtIndex(RowIndex);
-            Char = Row->CharRow.Chars[sStartX];
             TextAttributeRun* pAttrRun;
-            Row->AttrRow.FindAttrIndex(sStartX, &pAttrRun, &CountOfAttr);
+
+            try
+            {
+                const ROW& Row = pTextInfo->GetRowAtIndex(RowIndex);
+                Char = Row.CharRow.Chars[sStartX];
+                Row.AttrRow.FindAttrIndex(sStartX, &pAttrRun, &CountOfAttr);
+            }
+            catch (...)
+            {
+                LOG_HR(wil::ResultFromCaughtException());
+                return;
+            }
 
             LONG charAndAttr = MAKELONG(Char,
                                         gci->GenerateLegacyAttributes(pAttrRun->GetAttributes()));

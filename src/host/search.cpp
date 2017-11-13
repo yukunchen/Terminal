@@ -100,76 +100,84 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 	// search for the string
 	BOOL RecomputeRow = TRUE;
 	COORD const EndPosition = Position;
-	SHORT RowIndex;
-	ROW* Row = nullptr;
-	do
-	{
-#if !defined(CON_TB_MARK)
-#if DBG
-		int nLoop = 0;
-#endif
-	recalc:
-#endif
-		if (Reverse)
-		{
-			if (--Position.X < 0)
-			{
-				Position.X = MaxPosition.X;
-				if (--Position.Y < 0)
-				{
-					Position.Y = MaxPosition.Y;
-				}
-				RecomputeRow = TRUE;
-			}
-		}
-		else
-		{
-			if (++Position.X > MaxPosition.X)
-			{
-				Position.X = 0;
-				if (++Position.Y > MaxPosition.Y)
-				{
-					Position.Y = 0;
-				}
-				RecomputeRow = TRUE;
-			}
-		}
+	SHORT RowIndex = 0;
+    try
+    {
+        do
+        {
+    #if !defined(CON_TB_MARK)
+    #if DBG
+            int nLoop = 0;
+    #endif
+        recalc:
+    #endif
+            if (Reverse)
+            {
+                if (--Position.X < 0)
+                {
+                    Position.X = MaxPosition.X;
+                    if (--Position.Y < 0)
+                    {
+                        Position.Y = MaxPosition.Y;
+                    }
+                    RecomputeRow = TRUE;
+                }
+            }
+            else
+            {
+                if (++Position.X > MaxPosition.X)
+                {
+                    Position.X = 0;
+                    if (++Position.Y > MaxPosition.Y)
+                    {
+                        Position.Y = 0;
+                    }
+                    RecomputeRow = TRUE;
+                }
+            }
 
-		if (RecomputeRow)
-		{
-			RowIndex = (pScreenInfo->TextInfo->GetFirstRowIndex() + Position.Y) % pScreenInfo->GetScreenBufferSize().Y;
-            Row = pScreenInfo->TextInfo->GetRowPtrAtIndex(RowIndex);
-			RecomputeRow = FALSE;
-		}
-#if !defined(CON_TB_MARK)
-		ASSERT(nLoop++ < 2);
-		if (Row->CharRow.KAttrs && (Row->CharRow.KAttrs[Position.X] & CHAR_ROW::ATTR_TRAILING_BYTE))
-		{
-			goto recalc;
-		}
-#endif
-		if (IgnoreCase ?
-			0 == _wcsnicmp(pwszSearch, &Row->CharRow.Chars[Position.X], cchSearch) :
-			0 == wcsncmp(pwszSearch, &Row->CharRow.Chars[Position.X], cchSearch))
-		{
-			//  If this operation was a normal user find, then return now. Otherwise set the attributes of this match,
-			//  and continue searching the whole buffer.
-			if (!SearchAndSetAttr)
-			{
-				*coordStringPosition = Position;
-				return ColumnWidth;
-			}
-			else
-			{
-				SMALL_RECT Rect;
-				Rect.Top = Rect.Bottom = Position.Y;
-				Rect.Left = Position.X;
-				Rect.Right = Rect.Left + ColumnWidth - 1;
+            const ROW* pRow = &pScreenInfo->TextInfo->GetRowAtIndex(RowIndex);
+            if (RecomputeRow)
+            {
+                RowIndex = (pScreenInfo->TextInfo->GetFirstRowIndex() + Position.Y) % pScreenInfo->GetScreenBufferSize().Y;
+                pRow = &pScreenInfo->TextInfo->GetRowAtIndex(RowIndex);
+                RecomputeRow = FALSE;
+            }
 
-				pSelection->ColorSelection(&Rect, ulAttr);
-			}
-		}
-	} while (!((Position.X == EndPosition.X) && (Position.Y == EndPosition.Y)));
+    #if !defined(CON_TB_MARK)
+            ASSERT(nLoop++ < 2);
+            if (pRow->CharRow.KAttrs && pRow->IsTrailingByteAtColumn(Position.X))
+            {
+                goto recalc;
+            }
+    #endif
+            if (IgnoreCase ?
+                0 == _wcsnicmp(pwszSearch, &pRow->CharRow.Chars[Position.X], cchSearch) :
+                0 == wcsncmp(pwszSearch, &pRow->CharRow.Chars[Position.X], cchSearch))
+            {
+                //  If this operation was a normal user find, then return now. Otherwise set the attributes of this match,
+                //  and continue searching the whole buffer.
+                if (!SearchAndSetAttr)
+                {
+                    *coordStringPosition = Position;
+                    return ColumnWidth;
+                }
+                else
+                {
+                    SMALL_RECT Rect;
+                    Rect.Top = Rect.Bottom = Position.Y;
+                    Rect.Left = Position.X;
+                    Rect.Right = Rect.Left + ColumnWidth - 1;
+
+                    pSelection->ColorSelection(&Rect, ulAttr);
+                }
+            }
+        } while (!((Position.X == EndPosition.X) && (Position.Y == EndPosition.Y)));
+    }
+    catch (...)
+    {
+        return 0;
+    }
 
 	return 0;   // the string was not found
 }

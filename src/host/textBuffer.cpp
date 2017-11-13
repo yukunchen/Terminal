@@ -1373,16 +1373,6 @@ ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row)
     return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetNextRow(row));
 }
 
-ROW* const TEXT_BUFFER_INFO::GetRowPtrAtIndex(_In_ const UINT index)
-{
-    if (index >= TotalRowCount())
-    {
-        return nullptr;
-    }
-    return &_Rows[index];
-}
-
-
 //Routine Description:
 // - Corrects and enforces consistent double byte character state (KAttrs line) within a row of the text buffer.
 // - This will take the given double byte information and check that it will be consistent when inserted into the buffer
