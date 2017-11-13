@@ -177,6 +177,11 @@ static HRESULT ActivateLegacyConhost(_In_ const HANDLE handle)
         // setup status error
         hr = HRESULT_FROM_WIN32(GetLastError());
     }
+    
+    if (SUCCEEDED(hr))
+    {
+        hConhostBin.release();
+    }
 
     return hr;
 }
