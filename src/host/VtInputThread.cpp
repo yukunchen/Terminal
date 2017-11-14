@@ -32,9 +32,6 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
     : _hFile(std::move(hPipe))
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
-
-
-
 }
 
 // Method Description:

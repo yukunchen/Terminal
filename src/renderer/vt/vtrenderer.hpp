@@ -157,6 +157,7 @@ protected:
 
     friend class VtRendererTest;
 #endif
-    
+
     void SetTestCallback(_In_ std::function<bool(const char* const, size_t const)> pfn);
+
 };

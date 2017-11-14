@@ -3,7 +3,9 @@
 rem bcz - Clean and build the project
 rem This is another script to help Microsoft developers feel at home working on the openconsole project.
 
-set _LAST_BUILD_CONF=%DEFAULT_CONFIGURATION%
+if (%_LAST_BUILD_CONF%)==() (
+    set _LAST_BUILD_CONF=%DEFAULT_CONFIGURATION%
+)
 
 set _MSBUILD_TARGET=Clean,Build
 
