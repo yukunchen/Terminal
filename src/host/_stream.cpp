@@ -568,7 +568,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                         CursorPosition.Y -= 1;
 
                         // since you just backspaced yourself back up into the previous row, unset the wrap flag on the prev row if it was set
-                        ROW* pRow = pTextBuffer->GetRowByOffset(CursorPosition.Y);
+                        ROW* pRow = pTextBuffer->GetRowPtrByOffset(CursorPosition.Y);
                         pRow->CharRow.SetWrapStatus(false);
                     }
                 }
@@ -634,7 +634,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     CursorPosition.Y = (SHORT)(pCursor->GetPosition().Y - 1);
 
                     // since you just backspaced yourself back up into the previous row, unset the wrap flag on the prev row if it was set
-                    ROW* pRow = pTextBuffer->GetRowByOffset(CursorPosition.Y);
+                    ROW* pRow = pTextBuffer->GetRowPtrByOffset(CursorPosition.Y);
                     ASSERT(pRow != nullptr);
                     __analysis_assume(pRow != nullptr);
                     pRow->CharRow.SetWrapStatus(false);
@@ -673,7 +673,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     CursorPosition.Y = pCursor->GetPosition().Y + 1;
 
                     // since you just tabbed yourself past the end of the row, set the wrap
-                    ROW* pRow = pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y);
+                    ROW* pRow = pTextBuffer->GetRowPtrByOffset(pCursor->GetPosition().Y);
                     pRow->CharRow.SetWrapStatus(true);
                 }
                 else
@@ -721,7 +721,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             {
                 // since we explicitly just moved down a row, clear the wrap status on the row we just came from
-                ROW* pRow = pTextBuffer->GetRowByOffset(pCursor->GetPosition().Y);
+                ROW* pRow = pTextBuffer->GetRowPtrByOffset(pCursor->GetPosition().Y);
                 pRow->CharRow.SetWrapStatus(false);
             }
 
@@ -737,7 +737,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 (pScreenInfo->OutputMode & ENABLE_WRAP_AT_EOL_OUTPUT))
             {
                 COORD const TargetPoint = pCursor->GetPosition();
-                ROW* const pRow = pTextBuffer->GetRowByOffset(TargetPoint.Y);
+                ROW* const pRow = pTextBuffer->GetRowPtrByOffset(TargetPoint.Y);
                 ASSERT(pRow != nullptr);
 
                 PWCHAR const CharTmp = &pRow->CharRow.Chars[TargetPoint.X];

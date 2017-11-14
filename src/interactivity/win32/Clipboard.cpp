@@ -508,7 +508,7 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ SCREEN_INFORMATION* const pScree
                         BOOL bMungeData = (GetKeyState(VK_SHIFT) & KEY_PRESSED) == 0;
                         if (bMungeData)
                         {
-                            ROW* pRow = pScreenInfo->TextInfo->GetRowByOffset(iRow);
+                            ROW* pRow = pScreenInfo->TextInfo->GetRowPtrByOffset(iRow);
 
                             if (pRow == nullptr)
                             {
@@ -557,7 +557,7 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ SCREEN_INFORMATION* const pScree
                                     // a.k.a. if the row was NOT wrapped, then we can assume a CR/LF is proper
                                     // always apply \r\n for box selection
                                     if (!fLineSelection
-                                        || !pScreenInfo->TextInfo->GetRowByOffset(iRow)->CharRow.WasWrapForced())
+                                        || !pScreenInfo->TextInfo->GetRowPtrByOffset(iRow)->CharRow.WasWrapForced())
                                     {
                                         pwszSelection[cSelectionLength++] = UNICODE_CARRIAGERETURN;
                                         pwszSelection[cSelectionLength++] = UNICODE_LINEFEED;

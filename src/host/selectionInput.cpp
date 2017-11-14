@@ -156,7 +156,7 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
     }
 
     // get the character at the new position
-    ROW *pRow = pTextInfo->GetRowByOffset(pcoordSelPoint->Y);
+    ROW *pRow = pTextInfo->GetRowPtrByOffset(pcoordSelPoint->Y);
     WCHAR wchTest = pRow->CharRow.Chars[pcoordSelPoint->X];
 
     // we want to go until the state change from delim to non-delim
@@ -235,7 +235,7 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
         }
 
         // get the character associated with the new position
-        pRow = gci->CurrentScreenBuffer->TextInfo->GetRowByOffset(pcoordSelPoint->Y);
+        pRow = gci->CurrentScreenBuffer->TextInfo->GetRowPtrByOffset(pcoordSelPoint->Y);
         ASSERT(pRow != nullptr);
         __analysis_assume(pRow != nullptr);
         wchTest = pRow->CharRow.Chars[pcoordSelPoint->X];
@@ -359,7 +359,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
             Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
 
             const TEXT_BUFFER_INFO* const pTextInfo = gci->CurrentScreenBuffer->TextInfo;
-            const ROW* const pRow = pTextInfo->GetRowByOffset(coordSelPoint.Y);
+            const ROW* const pRow = pTextInfo->GetRowPtrByOffset(coordSelPoint.Y);
             const BYTE bAttr = pRow->CharRow.KAttrs[coordSelPoint.X];
 
             // if we're about to split a character in half, keep moving right
@@ -581,7 +581,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
 
     // ensure we're not planting the cursor in the middle of a double-wide character.
     const TEXT_BUFFER_INFO* const pTextInfo = gci->CurrentScreenBuffer->TextInfo;
-    ROW* const pRow = pTextInfo->GetRowByOffset(coordSelPoint.Y);
+    ROW* const pRow = pTextInfo->GetRowPtrByOffset(coordSelPoint.Y);
     ASSERT(pRow != nullptr);
     __analysis_assume(pRow != nullptr);
     BYTE bAttr = pRow->CharRow.KAttrs[coordSelPoint.X];
@@ -685,7 +685,7 @@ bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKey
             // Pull the selection out of the buffer to pass to the
             // search function. Clamp to max search string length.
             // We just copy the bytes out of the row buffer.
-            const ROW* pRow = pScreenInfo->TextInfo->GetRowByOffset(psrSelection->Top);
+            const ROW* pRow = pScreenInfo->TextInfo->GetRowPtrByOffset(psrSelection->Top);
 
             ASSERT(pRow != nullptr);
             __analysis_assume(pRow != nullptr);
@@ -740,7 +740,7 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
         SHORT iNextLeftX = 0;
 
         const COORD cursorPos = pTextInfo->GetCursor()->GetPosition();
-        ROW* const pRow = pTextInfo->GetRowByOffset(cursorPos.Y);
+        ROW* const pRow = pTextInfo->GetRowPtrByOffset(cursorPos.Y);
 
 
         bKAttrs = pRow->CharRow.KAttrs[cursorPos.X];

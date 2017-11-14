@@ -89,7 +89,7 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
     ASSERT(sYSize > 0);
     const int ScreenBufferWidth = pScreenInfo->GetScreenBufferSize().X;
 
-    ROW* pRow = pScreenInfo->TextInfo->GetRowByOffset(coordSourcePoint.Y);
+    ROW* pRow = pScreenInfo->TextInfo->GetRowPtrByOffset(coordSourcePoint.Y);
 
     // Allocate the TextAttributes once for every row to unpack them
     TextAttribute* rgUnpackedRowAttributes = new TextAttribute[ScreenBufferWidth];
@@ -155,7 +155,7 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
                 iCol += 1;
             }
 
-            pRow = pScreenInfo->TextInfo->GetNextRowNoWrap(pRow);
+            pRow = pScreenInfo->TextInfo->GetNextRowPtrNoWrap(pRow);
         }
         delete[] rgUnpackedRowAttributes;
     }
@@ -425,7 +425,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     }
 
     {
-        ROW* Row = pScreenInfo->TextInfo->GetRowByOffset(coordRead.Y);
+        ROW* Row = pScreenInfo->TextInfo->GetRowPtrByOffset(coordRead.Y);
         ASSERT(Row != nullptr);
         PWCHAR Char;
         SHORT j, k;
@@ -462,7 +462,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
                 NumRead += coordScreenBufferSize.X - X;
 
-                Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
+                Row = pScreenInfo->TextInfo->GetNextRowPtrNoWrap(Row);
 
                 X = 0;
                 Y++;
@@ -589,7 +589,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                     AttrP++;
                 }
 
-                Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
+                Row = pScreenInfo->TextInfo->GetNextRowPtrNoWrap(Row);
 
                 X = 0;
                 Y++;

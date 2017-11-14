@@ -213,13 +213,13 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
     BeginKAttrCheck(pScreenInfo);
 #endif
 
-    ROW* pRow = pTextInfo->GetRowByOffset(coordTargetPoint.Y);
+    ROW* pRow = pTextInfo->GetRowPtrByOffset(coordTargetPoint.Y);
     if (pRow == nullptr)
     {
         return;
     }
 
-    ROW* pRowNext = pTextInfo->GetNextRowNoWrap(pRow);
+    ROW* pRowNext = pTextInfo->GetNextRowPtrNoWrap(pRow);
 
     // Check start position of strings
     if (pRow->CharRow.KAttrs[coordTargetPoint.X] & CHAR_ROW::ATTR_TRAILING_BYTE)
@@ -344,7 +344,7 @@ void Selection::InitializeMouseSelection(_In_ const COORD coordBufferPos)
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
-    } 
+    }
 
     // Fire off an event to let accessibility apps know the selection has changed.
 
@@ -612,7 +612,7 @@ void Selection::InitializeMarkSelection()
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
-    } 
+    }
 }
 
 // Routine Description:

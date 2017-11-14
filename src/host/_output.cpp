@@ -32,7 +32,7 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
 {
     DBGOUTPUT(("StreamWriteToScreenBuffer\n"));
     COORD const TargetPoint = pScreenInfo->TextInfo->GetCursor()->GetPosition();
-    ROW* const Row = pScreenInfo->TextInfo->GetRowByOffset(TargetPoint.Y);
+    ROW* const Row = pScreenInfo->TextInfo->GetRowPtrByOffset(TargetPoint.Y);
     DBGOUTPUT(("Row = 0x%p, TargetPoint = (0x%x,0x%x)\n", Row, TargetPoint.X, TargetPoint.Y));
 
     // TODO: from BisectWrite to the end of the if statement seems to never execute
@@ -128,7 +128,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
         }
 
         const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
-        ROW* Row = pScreenInfo->TextInfo->GetRowByOffset(coordDest.Y);
+        ROW* Row = pScreenInfo->TextInfo->GetRowPtrByOffset(coordDest.Y);
         for (SHORT i = 0; i < YSize; i++)
         {
             // ensure we have a valid row pointer, if not, skip.
@@ -249,7 +249,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                                         (SHORT)(coordDest.X + XSize - 1),
                                         coordScreenBufferSize.X);
 
-            Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
+            Row = pScreenInfo->TextInfo->GetNextRowPtrNoWrap(Row);
         }
         pScreenInfo->ResetTextFlags(coordDest.X, coordDest.Y, (SHORT)(coordDest.X + XSize - 1), (SHORT)(coordDest.Y + YSize - 1));
 
@@ -269,7 +269,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             //  If the current attr is different then the last one, then insert the last one, and start a new run.
             for (int y = coordDest.Y; y < coordSrcDimensions.Y + coordDest.Y; y++)
             {
-                ROW* pRow = pScreenInfo->TextInfo->GetRowByOffset(y);
+                ROW* pRow = pScreenInfo->TextInfo->GetRowPtrByOffset(y);
 
                 TextAttributeRun insert;
                 int currentLength = 1;  // This is the length of the current run.
@@ -539,7 +539,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
         BufferA = TransBufferA;
     }
 
-    ROW* Row = pScreenInfo->TextInfo->GetRowByOffset(coordWrite.Y);
+    ROW* Row = pScreenInfo->TextInfo->GetRowPtrByOffset(coordWrite.Y);
     if ((ulStringType == CONSOLE_REAL_UNICODE) || (ulStringType == CONSOLE_FALSE_UNICODE) || (ulStringType == CONSOLE_ASCII))
     {
         for (;;)
@@ -647,7 +647,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 break;
             }
 
-            Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
+            Row = pScreenInfo->TextInfo->GetNextRowPtrNoWrap(Row);
         }
     }
     else if (ulStringType == CONSOLE_ATTRIBUTE)
@@ -699,7 +699,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             Row->AttrRow.InsertAttrRuns(rAttrRunsBuff, NumAttrRuns, (SHORT)((Y == coordWrite.Y) ? coordWrite.X : 0), X, coordScreenBufferSize.X);
 
-            Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
+            Row = pScreenInfo->TextInfo->GetNextRowPtrNoWrap(Row);
 
             if (NumWritten < *pcRecords)
             {
@@ -835,7 +835,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
         }
     }
 
-    ROW* Row = pScreenInfo->TextInfo->GetRowByOffset(coordWrite.Y);
+    ROW* Row = pScreenInfo->TextInfo->GetRowPtrByOffset(coordWrite.Y);
     if ((ulElementType == CONSOLE_ASCII) || (ulElementType == CONSOLE_REAL_UNICODE) || (ulElementType == CONSOLE_FALSE_UNICODE))
     {
         DWORD StartPosFlag = 0;
@@ -958,7 +958,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                 break;
             }
 
-            Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
+            Row = pScreenInfo->TextInfo->GetNextRowPtrNoWrap(Row);
         }
     }
     else if (ulElementType == CONSOLE_ATTRIBUTE)
@@ -992,13 +992,13 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             // attribute strings.
             AttrRun.SetLength((SHORT)((Y == coordWrite.Y) ? (X - coordWrite.X + 1) : (X + 1)));
 
-            // Here we're being a little clever - 
+            // Here we're being a little clever -
             // Because RGB color can't roundtrip the API, certain VT sequences will forget the RGB color
             // because their first call to GetScreenBufferInfo returned a legacy attr.
             // If they're calling this with the default attrs, they likely wanted to use the RGB default attrs.
-            // This could create a scenario where someone emitted RGB with VT, 
+            // This could create a scenario where someone emitted RGB with VT,
             // THEN used the API to FillConsoleOutput with the default attrs, and DIDN'T want the RGB color
-            // they had set. 
+            // they had set.
             if (pScreenInfo->InVTMode() && pScreenInfo->GetAttributes().GetLegacyAttributes() == wElement)
             {
                 AttrRun.SetAttributes(pScreenInfo->GetAttributes());
@@ -1027,7 +1027,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                 break;
             }
 
-            Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
+            Row = pScreenInfo->TextInfo->GetNextRowPtrNoWrap(Row);
         }
 
         pScreenInfo->ResetTextFlags(coordWrite.X, coordWrite.Y, X, Y);
@@ -1096,7 +1096,7 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill, _In_ PSCREEN_INFORMATIO
 
     SHORT XSize = (SHORT)(psrTarget->Right - psrTarget->Left + 1);
 
-    ROW* Row = pScreenInfo->TextInfo->GetRowByOffset(psrTarget->Top);
+    ROW* Row = pScreenInfo->TextInfo->GetRowPtrByOffset(psrTarget->Top);
     for (SHORT i = psrTarget->Top; i <= psrTarget->Bottom; i++)
     {
         if (Row == nullptr)
@@ -1161,7 +1161,7 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill, _In_ PSCREEN_INFORMATIO
         // invalidate row wrapping for rectangular drawing
         Row->CharRow.SetWrapStatus(false);
 
-        Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
+        Row = pScreenInfo->TextInfo->GetNextRowPtrNoWrap(Row);
     }
 
     pScreenInfo->ResetTextFlags(psrTarget->Left, psrTarget->Top, psrTarget->Right, psrTarget->Bottom);

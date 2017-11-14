@@ -707,7 +707,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
     COORD TargetPoint = ScreenInfo->TextInfo->GetCursor()->GetPosition();
 
-    ROW* const Row = ScreenInfo->TextInfo->GetRowByOffset(TargetPoint.Y);
+    ROW* const Row = ScreenInfo->TextInfo->GetRowPtrByOffset(TargetPoint.Y);
     ASSERT(Row != nullptr);
     DBGOUTPUT(("Row = 0x%p, TargetPoint = (0x%x,0x%x)\n", Row, TargetPoint.X, TargetPoint.Y));
 

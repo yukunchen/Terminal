@@ -1200,7 +1200,7 @@ short TEXT_BUFFER_INFO::GetMinBufferWidthNeeded() const
 {
     short sMaxRight = 0;
 
-    ROW* pRow = this->GetFirstRow();
+    ROW* pRow = this->GetFirstRowPtr();
 
     while (pRow != nullptr)
     {
@@ -1213,7 +1213,7 @@ short TEXT_BUFFER_INFO::GetMinBufferWidthNeeded() const
             sMaxRight = sRowRight;
         }
 
-        pRow = this->GetNextRowNoWrap(pRow);
+        pRow = this->GetNextRowPtrNoWrap(pRow);
     }
 
     return sMaxRight;
@@ -1238,9 +1238,9 @@ UINT TEXT_BUFFER_INFO::TotalRowCount() const
 // - <none>
 //Return Value:
 //  - Pointer to the first row.
-ROW* TEXT_BUFFER_INFO::GetFirstRow() const
+ROW* TEXT_BUFFER_INFO::GetFirstRowPtr() const
 {
-    return GetRowByOffset(0);
+    return GetRowPtrByOffset(0);
 }
 
 //Routine Description:
@@ -1249,7 +1249,7 @@ ROW* TEXT_BUFFER_INFO::GetFirstRow() const
 // - Number of rows down from the top of the buffer.
 //Return Value:
 // - Pointer to the requested row. Asserts if out of bounds.
-ROW* TEXT_BUFFER_INFO::GetRowByOffset(_In_ UINT const rowIndex) const
+ROW* TEXT_BUFFER_INFO::GetRowPtrByOffset(_In_ UINT const rowIndex) const
 {
     UINT const totalRows = this->TotalRowCount();
     ROW* retVal = nullptr;
@@ -1274,7 +1274,7 @@ ROW* TEXT_BUFFER_INFO::GetRowByOffset(_In_ UINT const rowIndex) const
 // - The current row.
 //Return Value:
 // - Pointer to the previous row, or nullptr if there is no previous row.
-ROW* TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ ROW* const pRow) const
+ROW* TEXT_BUFFER_INFO::GetPrevRowPtrNoWrap(_In_ ROW* const pRow) const
 {
     ROW* pReturnRow = nullptr;
 
@@ -1306,7 +1306,7 @@ ROW* TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ ROW* const pRow) const
 // - The current row.
 //Return Value:
 // - Pointer to the next row, or nullptr if there is no next row.
-ROW* TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ ROW* const pRow) const
+ROW* TEXT_BUFFER_INFO::GetNextRowPtrNoWrap(_In_ ROW* const pRow) const
 {
     ROW* pReturnRow = nullptr;
 
@@ -1386,7 +1386,7 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ BYTE const bKAttr)
 {
     // To figure out if the sequence is valid, we have to look at the character that comes before the current one
     const COORD coordPrevPosition = GetPreviousFromCursor();
-    const ROW* pPrevRow = GetRowByOffset(coordPrevPosition.Y);
+    const ROW* pPrevRow = GetRowPtrByOffset(coordPrevPosition.Y);
 
     // By default, assume it's a single byte character if no KAttrs data exists
     BYTE bPrevKAttr = CHAR_ROW::ATTR_SINGLE_BYTE;
@@ -1481,7 +1481,7 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ BYTE const bKAttr)
         if (this->GetCursor()->GetPosition().X == sBufferWidth - 1)
         {
             // set that we're wrapping for double byte reasons
-            GetRowByOffset(this->GetCursor()->GetPosition().Y)->CharRow.SetDoubleBytePadded(true);
+            GetRowPtrByOffset(this->GetCursor()->GetPosition().Y)->CharRow.SetDoubleBytePadded(true);
 
             // then move the cursor forward and onto the next row
             fSuccess = IncrementCursor();
@@ -1511,7 +1511,7 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ WCHAR const wch, _In_ BYTE const bKA
         short const iCol = this->GetCursor()->GetPosition().X; // column logical and array positions are equal.
 
         // Get the row associated with the given logical position
-        ROW* const pRow = this->GetRowByOffset(iRow);
+        ROW* const pRow = this->GetRowPtrByOffset(iRow);
 
         // Store character and double byte data
         CHAR_ROW* const pCharRow = &pRow->CharRow;
@@ -1573,7 +1573,7 @@ void TEXT_BUFFER_INFO::AdjustWrapOnCurrentRow(_In_ bool const fSet)
 
     // Translate the offset position (the logical position within the window where 0 is the top of the window)
     // into the circular buffer position (rows array index) using the helper function.
-    ROW* const pCurrentRow = this->GetRowByOffset(uiCurrentRowOffset);
+    ROW* const pCurrentRow = this->GetRowPtrByOffset(uiCurrentRowOffset);
 
     // Set the wrap status as appropriate
     pCurrentRow->CharRow.SetWrapStatus(fSet);
@@ -1728,7 +1728,7 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
     // Always search the whole buffer, by starting at the bottom.
     coordEndOfText.Y = _coordBufferSize.Y - 1;
 
-    ROW* pCurrRow = this->GetRowByOffset(coordEndOfText.Y);
+    ROW* pCurrRow = this->GetRowPtrByOffset(coordEndOfText.Y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
     coordEndOfText.X = pCurrRow->CharRow.Right - 1;
 
@@ -1737,7 +1737,7 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
     while (fDoBackUp)
     {
         coordEndOfText.Y--;
-        pCurrRow = this->GetRowByOffset(coordEndOfText.Y);
+        pCurrRow = this->GetRowPtrByOffset(coordEndOfText.Y);
         // We need to back up to the previous row if this line is empty, AND there are more rows
 
         coordEndOfText.X = pCurrRow->CharRow.Right - 1;

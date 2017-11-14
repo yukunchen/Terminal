@@ -79,10 +79,10 @@ class TextBufferTests
 
     TEST_METHOD(TestDoubleBytePadFlag);
 
-    void DoBoundaryTest(PWCHAR const pwszInputString, 
-                        short const cLength, 
-                        short const cMax, 
-                        short const cLeft, 
+    void DoBoundaryTest(PWCHAR const pwszInputString,
+                        short const cLength,
+                        short const cMax,
+                        short const cLeft,
                         short const cRight);
 
     TEST_METHOD(TestBoundaryMeasuresRegularString);
@@ -100,22 +100,22 @@ class TextBufferTests
     void TestLastNonSpace(short const cursorPosY);
 
     TEST_METHOD(TestGetLastNonSpaceCharacter);
-    
+
     TEST_METHOD(TestSetWrapOnCurrentRow);
-    
+
     TEST_METHOD(TestIncrementCircularBuffer);
-    
+
     TEST_METHOD(TestMixedRgbAndLegacyForeground);
     TEST_METHOD(TestMixedRgbAndLegacyBackground);
     TEST_METHOD(TestMixedRgbAndLegacyUnderline);
     TEST_METHOD(TestMixedRgbAndLegacyBrightness);
-    
+
     TEST_METHOD(TestRgbEraseLine);
-    
+
     TEST_METHOD(TestUnBold);
     TEST_METHOD(TestUnBoldRgb);
     TEST_METHOD(TestComplexUnBold);
-    
+
     TEST_METHOD(CopyAttrs);
 
 };
@@ -127,7 +127,7 @@ void TextBufferTests::TestBufferCreate()
 
 void TextBufferTests::DoBufferRowIterationTest(TEXT_BUFFER_INFO* pTbi)
 {
-    ROW* pFirstRow = pTbi->GetFirstRow();
+    ROW* pFirstRow = pTbi->GetFirstRowPtr();
     ROW* pPrior = nullptr;
     ROW* pRow = pFirstRow;
     VERIFY_IS_NOT_NULL(pRow);
@@ -137,16 +137,16 @@ void TextBufferTests::DoBufferRowIterationTest(TEXT_BUFFER_INFO* pTbi)
     {
         cRows++;
         pPrior = pRow; // save off the previous for a reverse check
-        pRow = pTbi->GetNextRowNoWrap(pRow);
+        pRow = pTbi->GetNextRowPtrNoWrap(pRow);
 
         // if we didn't just hit the last row...
         if (pRow != nullptr)
         {
             // grab the previous row from the one we just found
-            ROW* pPriorCheck = pTbi->GetPrevRowNoWrap(pRow);
+            ROW* pPriorCheck = pTbi->GetPrevRowPtrNoWrap(pRow);
 
             // it should still equal what the row was before we started this iteration
-            VERIFY_ARE_EQUAL(pPrior, pPriorCheck); 
+            VERIFY_ARE_EQUAL(pPrior, pPriorCheck);
         }
     }
 
@@ -198,7 +198,7 @@ void TextBufferTests::TestBufferRowByOffset()
 
     short sId = csBufferHeight / 2 - 5;
 
-    ROW* pRow = tbi->GetRowByOffset(sId);
+    ROW* pRow = tbi->GetRowPtrByOffset(sId);
     VERIFY_IS_NOT_NULL(pRow);
 
     if (pRow != nullptr)
@@ -212,7 +212,7 @@ void TextBufferTests::TestWrapFlag()
 {
     TEXT_BUFFER_INFO* tbi = GetTbi();
 
-    ROW* pRow = tbi->GetFirstRow();
+    ROW* pRow = tbi->GetFirstRowPtr();
 
     // no wrap by default
     VERIFY_IS_FALSE(pRow->CharRow.WasWrapForced());
@@ -230,7 +230,7 @@ void TextBufferTests::TestDoubleBytePadFlag()
 {
     TEXT_BUFFER_INFO* tbi = GetTbi();
 
-    ROW* pRow = tbi->GetFirstRow();
+    ROW* pRow = tbi->GetFirstRowPtr();
 
     // no padding by default
     VERIFY_IS_FALSE(pRow->CharRow.WasDoubleBytePadded());
@@ -245,15 +245,15 @@ void TextBufferTests::TestDoubleBytePadFlag()
 }
 
 
-void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString, 
-                                     short const cLength, 
-                                     short const cMax, 
-                                     short const cLeft, 
+void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
+                                     short const cLength,
+                                     short const cMax,
+                                     short const cLeft,
                                      short const cRight)
 {
     TEXT_BUFFER_INFO* tbi = GetTbi();
 
-    ROW* pRow = tbi->GetFirstRow();
+    ROW* pRow = tbi->GetFirstRowPtr();
     CHAR_ROW* pCharRow = &pRow->CharRow;
 
     // copy string into buffer
@@ -298,7 +298,7 @@ void TextBufferTests::TestBoundaryMeasuresRegularString()
     SHORT csBufferWidth = GetBufferWidth();
 
     // length 44, left 0, right 44
-    const PWCHAR pwszLazyDog = L"The quick brown fox jumps over the lazy dog."; 
+    const PWCHAR pwszLazyDog = L"The quick brown fox jumps over the lazy dog.";
     DoBoundaryTest(pwszLazyDog, 44, csBufferWidth, 0, 44);
 }
 
@@ -307,7 +307,7 @@ void TextBufferTests::TestBoundaryMeasuresFloatingString()
     SHORT csBufferWidth = GetBufferWidth();
 
     // length 5 spaces + 4 chars + 5 spaces = 14, left 5, right 9
-    const PWCHAR pwszOffsets = L"     C:\\>     "; 
+    const PWCHAR pwszOffsets = L"     C:\\>     ";
     DoBoundaryTest(pwszOffsets, 14, csBufferWidth, 5, 9);
 }
 
@@ -355,7 +355,7 @@ void TextBufferTests::TestInsertCharacter()
     COORD const coordCursorBefore = pTbi->GetCursor()->GetPosition();
 
     // Get current row from the buffer
-    ROW* const pRow = pTbi->GetRowByOffset(coordCursorBefore.Y);
+    ROW* const pRow = pTbi->GetRowPtrByOffset(coordCursorBefore.Y);
 
     // create some sample test data
     WCHAR const wchTest = L'Z';
@@ -491,7 +491,7 @@ void TextBufferTests::TestLastNonSpace(short const cursorPosY)
     COORD coordExpected = pTbi->GetCursor()->GetPosition();
 
     // Try to get the X position from the current cursor position.
-    coordExpected.X = pTbi->GetRowByOffset(coordExpected.Y)->CharRow.Right - 1;
+    coordExpected.X = pTbi->GetRowPtrByOffset(coordExpected.Y)->CharRow.Right - 1;
 
     // If we went negative, this row was empty and we need to continue seeking upward...
     // - As long as X is negative (empty rows)
@@ -499,7 +499,7 @@ void TextBufferTests::TestLastNonSpace(short const cursorPosY)
     while (coordExpected.X < 0 && coordExpected.Y > 0)
     {
         coordExpected.Y--;
-        coordExpected.X = pTbi->GetRowByOffset(coordExpected.Y)->CharRow.Right - 1;
+        coordExpected.X = pTbi->GetRowPtrByOffset(coordExpected.Y)->CharRow.Right - 1;
     }
 
     VERIFY_ARE_EQUAL(coordLastNonSpace.X, coordExpected.X);
@@ -526,7 +526,7 @@ void TextBufferTests::TestSetWrapOnCurrentRow()
 
     short sCurrentRow = pTbi->GetCursor()->GetPosition().Y;
 
-    ROW* pRow = pTbi->GetRowByOffset(sCurrentRow);
+    ROW* pRow = pTbi->GetRowPtrByOffset(sCurrentRow);
 
     Log::Comment(L"Testing off to on");
 
@@ -577,7 +577,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
         pTbi->_FirstRow = iRowToTestIndex;
 
         // fill first row with some stuff
-        ROW* pFirstRow = pTbi->GetFirstRow();
+        ROW* pFirstRow = pTbi->GetFirstRowPtr();
         pFirstRow->CharRow.Left = 0;
         pFirstRow->CharRow.Right = 15;
 
@@ -589,7 +589,7 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
         // validate that first row has moved
         VERIFY_ARE_EQUAL(pTbi->_FirstRow, iNextRowIndex); // first row has incremented
-        VERIFY_ARE_NOT_EQUAL(pTbi->GetFirstRow(), pFirstRow); // the old first row is no longer the first
+        VERIFY_ARE_NOT_EQUAL(pTbi->GetFirstRowPtr(), pFirstRow); // the old first row is no longer the first
 
         // ensure old first row has been emptied
         VERIFY_IS_FALSE(pFirstRow->CharRow.ContainsText());
@@ -606,18 +606,18 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     VERIFY_IS_NOT_NULL(stateMachine);
     VERIFY_IS_NOT_NULL(cursor);
 
-    // Case 1 - 
+    // Case 1 -
     //      Write '\E[38;2;64;128;255mX\E[49mX\E[m'
     //      Make sure that the second X has RGB attributes (FG and BG)
     //      FG = rgb(64;128;255), BG = rgb(default)
     Log::Comment(L"Case 1 \"\\E[38;2;64;128;255mX\\E[49mX\\E[m\"");
-    
+
     wchar_t* sequence = L"\x1b[38;2;64;128;255mX\x1b[49mX\x1b[m";
 
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
     const short x = cursor->GetPosition().X;
     const short y = cursor->GetPosition().Y;
-    const ROW* const row = tbi->GetRowByOffset(y);
+    const ROW* const row = tbi->GetRowPtrByOffset(y);
     const auto attrRow = &row->AttrRow;
     const auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
     VERIFY_IS_NOT_NULL(attrs);
@@ -625,38 +625,38 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrA.IsLegacy(), attrA.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={FG:0x%x,BG:0x%x}", 
+        L"attrA={FG:0x%x,BG:0x%x}",
         attrA.GetRgbForeground(), attrA.GetRgbBackground()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrB.IsLegacy(), attrB.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={FG:0x%x,BG:0x%x}", 
+        L"attrB={FG:0x%x,BG:0x%x}",
         attrB.GetRgbForeground(), attrB.GetRgbBackground()
     ));
 
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
-    
+
     VERIFY_ARE_EQUAL(attrA.GetRgbForeground(), RGB(64,128,255));
     VERIFY_ARE_EQUAL(attrA.GetRgbBackground(), psi->GetAttributes().GetRgbBackground());
-    
+
     VERIFY_ARE_EQUAL(attrB.GetRgbForeground(), RGB(64,128,255));
     VERIFY_ARE_EQUAL(attrB.GetRgbBackground(), psi->GetAttributes().GetRgbBackground());
-    
+
     wchar_t* reset = L"\x1b[0m";
     stateMachine->ProcessString(reset, std::wcslen(reset));
-    
+
 }
 
 void TextBufferTests::TestMixedRgbAndLegacyBackground()
@@ -669,7 +669,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     VERIFY_IS_NOT_NULL(stateMachine);
     VERIFY_IS_NOT_NULL(cursor);
 
-    // Case 2 - 
+    // Case 2 -
     //      \E[48;2;64;128;255mX\E[39mX\E[m
     //      Make sure that the second X has RGB attributes (FG and BG)
     //      FG = rgb(default), BG = rgb(64;128;255)
@@ -679,7 +679,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
     const auto x = cursor->GetPosition().X;
     const auto y = cursor->GetPosition().Y;
-    const auto row = tbi->GetRowByOffset(y);
+    const auto row = tbi->GetRowPtrByOffset(y);
     const auto attrRow = &row->AttrRow;
     const auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
     VERIFY_IS_NOT_NULL(attrs);
@@ -687,23 +687,23 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrA.IsLegacy(), attrA.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={FG:0x%x,BG:0x%x}", 
+        L"attrA={FG:0x%x,BG:0x%x}",
         attrA.GetRgbForeground(), attrA.GetRgbBackground()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrB.IsLegacy(), attrB.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={FG:0x%x,BG:0x%x}", 
+        L"attrB={FG:0x%x,BG:0x%x}",
         attrB.GetRgbForeground(), attrB.GetRgbBackground()
     ));
 
@@ -712,10 +712,10 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
 
     VERIFY_ARE_EQUAL(attrA.GetRgbBackground(), RGB(64,128,255));
     VERIFY_ARE_EQUAL(attrA.GetRgbForeground(), psi->GetAttributes().GetRgbForeground());
-    
+
     VERIFY_ARE_EQUAL(attrB.GetRgbBackground(), RGB(64,128,255));
     VERIFY_ARE_EQUAL(attrB.GetRgbForeground(), psi->GetAttributes().GetRgbForeground());
-    
+
     wchar_t* reset = L"\x1b[0m";
     stateMachine->ProcessString(reset, std::wcslen(reset));
 
@@ -732,7 +732,7 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     VERIFY_IS_NOT_NULL(stateMachine);
     VERIFY_IS_NOT_NULL(cursor);
 
-    // Case 3 - 
+    // Case 3 -
     //      '\E[48;2;64;128;255mX\E[4mX\E[m'
     //      Make sure that the second X has RGB attributes AND underline
     Log::Comment(L"Case 3 \"\\E[48;2;64;128;255mX\\E[4mX\\E[m\"");
@@ -740,7 +740,7 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
     const auto x = cursor->GetPosition().X;
     const auto y = cursor->GetPosition().Y;
-    const auto row = tbi->GetRowByOffset(y);
+    const auto row = tbi->GetRowPtrByOffset(y);
     const auto attrRow = &row->AttrRow;
     const auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
     VERIFY_IS_NOT_NULL(attrs);
@@ -748,23 +748,23 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrA.IsLegacy(), attrA.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={FG:0x%x,BG:0x%x}", 
+        L"attrA={FG:0x%x,BG:0x%x}",
         attrA.GetRgbForeground(), attrA.GetRgbBackground()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrB.IsLegacy(), attrB.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={FG:0x%x,BG:0x%x}", 
+        L"attrB={FG:0x%x,BG:0x%x}",
         attrB.GetRgbForeground(), attrB.GetRgbBackground()
     ));
 
@@ -794,7 +794,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     const Cursor* const cursor = tbi->GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
     VERIFY_IS_NOT_NULL(cursor);
-    // Case 4 - 
+    // Case 4 -
     //      '\E[32mX\E[1mX'
     //      Make sure that the second X is a BRIGHT green, not white.
     Log::Comment(L"Case 4 ;\"\\E[32mX\\E[1mX\"");
@@ -806,7 +806,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
     const auto x = cursor->GetPosition().X;
     const auto y = cursor->GetPosition().Y;
-    const auto row = tbi->GetRowByOffset(y);
+    const auto row = tbi->GetRowPtrByOffset(y);
     const auto attrRow = &row->AttrRow;
     const auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
     VERIFY_IS_NOT_NULL(attrs);
@@ -814,23 +814,23 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrA.IsLegacy(), attrA.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={FG:0x%x,BG:0x%x}", 
+        L"attrA={FG:0x%x,BG:0x%x}",
         attrA.GetRgbForeground(), attrA.GetRgbBackground()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrB.IsLegacy(), attrB.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={FG:0x%x,BG:0x%x}", 
+        L"attrB={FG:0x%x,BG:0x%x}",
         attrB.GetRgbForeground(), attrB.GetRgbBackground()
     ));
 
@@ -842,7 +842,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine->ProcessString(reset, std::wcslen(reset));
-}  
+}
 
 void TextBufferTests::TestRgbEraseLine()
 {
@@ -856,7 +856,7 @@ void TextBufferTests::TestRgbEraseLine()
     VERIFY_IS_NOT_NULL(cursor);
 
     cursor->SetXPosition(0);
-    // Case 1 - 
+    // Case 1 -
     //      Write '\E[48;2;64;128;255X\E[48;2;128;128;255\E[KX'
     //      Make sure that all the characters after the first have the rgb attrs
     //      BG = rgb(128;128;255)
@@ -868,13 +868,13 @@ void TextBufferTests::TestRgbEraseLine()
         const auto y = cursor->GetPosition().Y;
 
         Log::Comment(NoThrowString().Format(
-            L"cursor={X:%d,Y:%d}", 
+            L"cursor={X:%d,Y:%d}",
             x, y
         ));
         VERIFY_ARE_EQUAL(x, 2);
         VERIFY_ARE_EQUAL(y, 0);
 
-        const auto row = tbi->GetRowByOffset(y);
+        const auto row = tbi->GetRowPtrByOffset(y);
         const auto attrRow = &row->AttrRow;
         const auto len = tbi->_coordBufferSize.X;
         const auto attrs = new TextAttribute[len];
@@ -889,11 +889,11 @@ void TextBufferTests::TestRgbEraseLine()
         {
             const auto attr = attrs[i];
             Log::Comment(NoThrowString().Format(
-                L"attr={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+                L"attr={IsLegacy:%d,GetLegacyAttributes:0x%x}",
                 attr.IsLegacy(), attr.GetLegacyAttributes()
             ));
             Log::Comment(NoThrowString().Format(
-                L"attr={FG:0x%x,BG:0x%x}", 
+                L"attr={FG:0x%x,BG:0x%x}",
                 attr.GetRgbForeground(), attr.GetRgbBackground()
             ));
             VERIFY_ARE_EQUAL(attr.IsLegacy(), false);
@@ -917,7 +917,7 @@ void TextBufferTests::TestUnBold()
     VERIFY_IS_NOT_NULL(cursor);
 
     cursor->SetXPosition(0);
-    // Case 1 - 
+    // Case 1 -
     //      Write '\E[1;32mX\E[22mX'
     //      The first X should be bright green.
     //      The second x should be dark green.
@@ -930,13 +930,13 @@ void TextBufferTests::TestUnBold()
     const auto bright_green = gci->GetColorTableEntry(10);
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     VERIFY_ARE_EQUAL(x, 2);
     VERIFY_ARE_EQUAL(y, 0);
 
-    const auto row = tbi->GetRowByOffset(y);
+    const auto row = tbi->GetRowPtrByOffset(y);
     const auto attrRow = &row->AttrRow;
     const auto len = tbi->_coordBufferSize.X;
     const auto attrs = new TextAttribute[len];
@@ -946,29 +946,29 @@ void TextBufferTests::TestUnBold()
     const auto attrB = attrs[x-1];
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrA.IsLegacy(), attrA.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={FG:0x%x,BG:0x%x}", 
+        L"attrA={FG:0x%x,BG:0x%x}",
         attrA.GetRgbForeground(), attrA.GetRgbBackground()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrB.IsLegacy(), attrB.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={FG:0x%x,BG:0x%x}", 
+        L"attrB={FG:0x%x,BG:0x%x}",
         attrB.GetRgbForeground(), attrB.GetRgbBackground()
     ));
 
     VERIFY_ARE_EQUAL(attrA.GetRgbForeground(), bright_green);
     VERIFY_ARE_EQUAL(attrB.GetRgbForeground(), dark_green);
-    
+
     std::wstring reset = L"\x1b[0m";
     stateMachine->ProcessString(&reset[0], reset.length());
 }
@@ -985,7 +985,7 @@ void TextBufferTests::TestUnBoldRgb()
     VERIFY_IS_NOT_NULL(cursor);
 
     cursor->SetXPosition(0);
-    // Case 2 - 
+    // Case 2 -
     //      Write '\E[1;32m\E[48;2;1;2;3mX\E[22mX'
     //      The first X should be bright green, and not legacy.
     //      The second X should be dark green, and not legacy.
@@ -999,13 +999,13 @@ void TextBufferTests::TestUnBoldRgb()
     const auto bright_green = gci->GetColorTableEntry(10);
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     VERIFY_ARE_EQUAL(x, 2);
     VERIFY_ARE_EQUAL(y, 0);
 
-    const auto row = tbi->GetRowByOffset(y);
+    const auto row = tbi->GetRowPtrByOffset(y);
     const auto attrRow = &row->AttrRow;
     const auto len = tbi->_coordBufferSize.X;
     const auto attrs = new TextAttribute[len];
@@ -1015,23 +1015,23 @@ void TextBufferTests::TestUnBoldRgb()
     const auto attrB = attrs[x-1];
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrA.IsLegacy(), attrA.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={FG:0x%x,BG:0x%x}", 
+        L"attrA={FG:0x%x,BG:0x%x}",
         attrA.GetRgbForeground(), attrA.GetRgbBackground()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrB.IsLegacy(), attrB.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={FG:0x%x,BG:0x%x}", 
+        L"attrB={FG:0x%x,BG:0x%x}",
         attrB.GetRgbForeground(), attrB.GetRgbBackground()
     ));
 
@@ -1040,7 +1040,7 @@ void TextBufferTests::TestUnBoldRgb()
 
     VERIFY_ARE_EQUAL(attrA.GetRgbForeground(), bright_green);
     VERIFY_ARE_EQUAL(attrB.GetRgbForeground(), dark_green);
-    
+
     std::wstring reset = L"\x1b[0m";
     stateMachine->ProcessString(&reset[0], reset.length());
 }
@@ -1057,7 +1057,7 @@ void TextBufferTests::TestComplexUnBold()
     VERIFY_IS_NOT_NULL(cursor);
 
     cursor->SetXPosition(0);
-    // Case 3 - 
+    // Case 3 -
     //      Write '\E[1;32m\E[48;2;1;2;3mX\E[22mX\E[38;2;32;32;32mX\E[1mX\E[38;2;64;64;64mX\E[22mX'
     //      The first X should be bright green, and not legacy.
     //      The second X should be dark green, and not legacy.
@@ -1075,13 +1075,13 @@ void TextBufferTests::TestComplexUnBold()
     const auto bright_green = gci->GetColorTableEntry(10);
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     VERIFY_ARE_EQUAL(x, 6);
     VERIFY_ARE_EQUAL(y, 0);
 
-    const auto row = tbi->GetRowByOffset(y);
+    const auto row = tbi->GetRowPtrByOffset(y);
     const auto attrRow = &row->AttrRow;
     const auto len = tbi->_coordBufferSize.X;
     const auto attrs = new TextAttribute[len];
@@ -1095,7 +1095,7 @@ void TextBufferTests::TestComplexUnBold()
     const auto attrF = attrs[x-1];
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(
@@ -1159,7 +1159,7 @@ void TextBufferTests::TestComplexUnBold()
 
     VERIFY_ARE_EQUAL(attrF.GetRgbForeground(), dark_green);
     VERIFY_ARE_EQUAL(attrF.GetRgbBackground(), RGB(1,2,3));
-    
+
     std::wstring reset = L"\x1b[0m";
     stateMachine->ProcessString(&reset[0], reset.length());
 }
@@ -1191,13 +1191,13 @@ void TextBufferTests::CopyAttrs()
     const auto dark_magenta = gci->GetColorTableEntry(5);
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     VERIFY_ARE_EQUAL(x, 0);
     VERIFY_ARE_EQUAL(y, 0);
 
-    const auto row = tbi->GetRowByOffset(0);
+    const auto row = tbi->GetRowPtrByOffset(0);
     const auto attrRow = &row->AttrRow;
     const auto len = tbi->_coordBufferSize.X;
     const auto attrs = std::make_unique<TextAttribute[]>(len);
@@ -1207,7 +1207,7 @@ void TextBufferTests::CopyAttrs()
     const auto attrB = attrs[1];
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(

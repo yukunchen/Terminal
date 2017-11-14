@@ -1366,7 +1366,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
         for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
         {
             // Fetch the row and its "right" which is the last printable character.
-            const ROW* const pRow = TextInfo->GetRowByOffset(iOldRow);
+            const ROW* const pRow = TextInfo->GetRowPtrByOffset(iOldRow);
             short iRight = pRow->CharRow.Right;
 
             // There is a special case here. If the row has a "wrap"
@@ -1468,7 +1468,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
 
                 // If the last row of the new buffer wrapped, there's going to be one less newline needed,
                 //   because the cursor is already on the next line
-                ROW* pLastRow = pNewBuffer->GetRowByOffset(cNewLastChar.Y);
+                ROW* pLastRow = pNewBuffer->GetRowPtrByOffset(cNewLastChar.Y);
                 if (pLastRow->CharRow.WasWrapForced())
                 {
                     iNewlines = max(iNewlines - 1, 0);
@@ -1477,7 +1477,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
                 {
                     // if this buffer didn't wrap, but the old one DID, then the d(columns) of the
                     //   old buffer will be one more than in this buffer, so new need one LESS.
-                    pLastRow = TextInfo->GetRowByOffset(cOldLastChar.Y);
+                    pLastRow = TextInfo->GetRowPtrByOffset(cOldLastChar.Y);
                     if (pLastRow->CharRow.WasWrapForced())
                     {
                         iNewlines = max(iNewlines - 1, 0);

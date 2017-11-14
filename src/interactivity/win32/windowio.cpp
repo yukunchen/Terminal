@@ -724,7 +724,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
 
             if ((MousePosition.X == coordSelectionAnchor.X) && (MousePosition.Y == coordSelectionAnchor.Y))
             {
-                ROW* const Row = pScreenInfo->TextInfo->GetRowByOffset(MousePosition.Y);
+                ROW* const Row = pScreenInfo->TextInfo->GetRowPtrByOffset(MousePosition.Y);
                 ASSERT(Row != nullptr);
 
                 while (coordSelectionAnchor.X > 0)

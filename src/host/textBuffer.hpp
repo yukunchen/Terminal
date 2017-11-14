@@ -258,10 +258,10 @@ public:
     short GetMinBufferWidthNeeded() const; // TODO: just store this when the row is manipulated
 
     // row manipulation
-    ROW* GetFirstRow() const;
-    ROW* GetRowByOffset(_In_ UINT const rowIndex) const;
-    ROW* GetPrevRowNoWrap(_In_ ROW* const pRow) const;
-    ROW* GetNextRowNoWrap(_In_ ROW* const pRow) const;
+    ROW* GetFirstRowPtr() const;
+    ROW* GetRowPtrByOffset(_In_ UINT const rowIndex) const;
+    ROW* GetPrevRowPtrNoWrap(_In_ ROW* const pRow) const;
+    ROW* GetNextRowPtrNoWrap(_In_ ROW* const pRow) const;
 
     const ROW& GetRowAtIndex(_In_ const UINT index) const;
     ROW& GetRowAtIndex(_In_ const UINT index);
