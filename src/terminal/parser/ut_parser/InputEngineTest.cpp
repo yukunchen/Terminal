@@ -10,6 +10,7 @@
 #include "InputStateMachineEngine.hpp"
 #include "../adapter/terminalInput.hpp"
 #include "../../inc/consoletaeftemplates.hpp"
+#include "../../inc/unicode.hpp"
 
 #include <vector>
 #include <functional>
@@ -70,6 +71,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     std::vector<INPUT_RECORD> vExpectedInput;
 
     bool _expectedToCallWindowManipulation;
+    bool _expectSendCtrlC;
     DispatchCommon::WindowManipulationType _expectedWindowManipulation;
     unsigned short _expectedParams[16];
     size_t _expectedCParams;
@@ -83,6 +85,7 @@ class Microsoft::Console::VirtualTerminal::TestInteractDispatch : public IIntera
 public:
     TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn, InputEngineTest* testInstance);
     virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
+    virtual bool WriteCtrlC() override;
     virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                 _In_ size_t const cParams) override; // DTTERM_WindowManipulation
@@ -102,6 +105,15 @@ bool TestInteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEven
 {
     _pfnWriteInputCallback(inputEvents);
     return true;
+}
+
+bool TestInteractDispatch::WriteCtrlC()
+{
+    VERIFY_IS_TRUE(_testInstance->_expectSendCtrlC);
+    KeyEvent key = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
+    std::deque<std::unique_ptr<IInputEvent>> inputEvents;
+    inputEvents.push_back(std::make_unique<KeyEvent>(key));
+    return WriteInput(inputEvents);
 }
 
 bool TestInteractDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
@@ -264,6 +276,28 @@ void InputEngineTest::C0Test()
             dwModifierState = SetFlag(dwModifierState, SHIFT_PRESSED);
         }
 
+        // Just make sure we write the same thing telnetd did:
+        if (wch == UNICODE_ETX)
+        {
+            Log::Comment(NoThrowString().Format(
+                L"We used to expect 0x%x, 0x%x, 0x%x, 0x%x here",
+                vkey, scanCode, wch, dwModifierState
+            ));
+            vkey = 'C';
+            scanCode = 0;
+            wch = UNICODE_ETX;
+            dwModifierState = LEFT_CTRL_PRESSED;
+            Log::Comment(NoThrowString().Format(
+                L"Now we expect 0x%x, 0x%x, 0x%x, 0x%x here",
+                vkey, scanCode, wch, dwModifierState
+            ));
+            _expectSendCtrlC = true;
+        }
+        else
+        {
+            _expectSendCtrlC = false;
+        }
+
         Log::Comment(NoThrowString().Format(L"Testing char 0x%x", wch));
         Log::Comment(NoThrowString().Format(L"Input Sequence=\"%s\"", inputSeq.c_str()));
 
@@ -367,6 +401,11 @@ void InputEngineTest::RoundTripTest()
         else if (vkey == VK_ESCAPE)
         {
             uiActualKeystate = SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
+        }
+
+        if (vkey == UNICODE_ETX)
+        {
+            _expectSendCtrlC = true;
         }
 
         INPUT_RECORD irTest = { 0 };

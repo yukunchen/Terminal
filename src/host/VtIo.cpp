@@ -15,6 +15,7 @@
 #include "../renderer/base/renderer.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
+using namespace Microsoft::Console::Types;
 
 VtIo::VtIo() :
     _usingVt(false)
@@ -116,19 +117,36 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
     {
         _pVtInputThread = std::make_unique<VtInputThread>(std::move(hInputFile));
 
+        // The Screen info hasn't been created yet, but SetUpConsole did get 
+        //      the launch settings already.
+        Viewport initialViewport = Viewport::FromDimensions({0, 0},
+                                                            gci->GetWindowSize().X,
+                                                            gci->GetWindowSize().Y);
         switch (_IoMode)
         {
         case VtIoMode::XTERM_256:
-            _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile));
+            _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
+                                                                initialViewport);
             break;
         case VtIoMode::XTERM:
-            _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize(), false);
+            _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                                                             initialViewport,
+                                                             gci->GetColorTable(),
+                                                             static_cast<WORD>(gci->GetColorTableSize()),
+                                                             false);
             break;
         case VtIoMode::XTERM_ASCII:
-            _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize(), true);
+            _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                                                             initialViewport,
+                                                             gci->GetColorTable(),
+                                                             static_cast<WORD>(gci->GetColorTableSize()),
+                                                             true);
             break;
         case VtIoMode::WIN_TELNET:
-            _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile), gci->GetColorTable(), (WORD)gci->GetColorTableSize());
+            _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
+                                                                 initialViewport,
+                                                                 gci->GetColorTable(),
+                                                                 static_cast<WORD>(gci->GetColorTableSize()));
             break;
         default:
             return E_FAIL;

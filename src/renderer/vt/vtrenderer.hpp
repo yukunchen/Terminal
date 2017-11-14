@@ -34,7 +34,8 @@ namespace Microsoft
 class Microsoft::Console::Render::VtEngine : public IRenderEngine
 {
 public:
-    VtEngine(_In_ wil::unique_hfile hPipe);
+    VtEngine(_In_ wil::unique_hfile hPipe,
+             _In_ const Microsoft::Console::Types::Viewport initialViewport);
     virtual ~VtEngine() override = default;
 
     HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,

@@ -71,6 +71,8 @@ public:
      
      IFontDefaultList* pFontDefaultList;
 
+     bool IsHeadless() const;
+
 private:
      CONSOLE_INFORMATION* ciConsoleInformation;
 };

@@ -24,9 +24,9 @@ using namespace Microsoft::Console::Types;
 // - <none>
 // Return Value:
 // - An instance of a Renderer.
-VtEngine::VtEngine(_In_ wil::unique_hfile pipe) :
+VtEngine::VtEngine(_In_ wil::unique_hfile pipe, _In_ const Viewport initialViewport) :
     _hFile(std::move(pipe)),
-    _lastViewport({0}),
+    _lastViewport(initialViewport),
     _srcInvalid({0}),
     _lastText({0}),
     _scrollDelta({0}),

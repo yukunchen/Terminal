@@ -34,10 +34,13 @@ class Microsoft::Console::Render::XtermEngine : public VtEngine
 {
 public:
     XtermEngine(_In_ wil::unique_hfile hPipe,
+                _In_ const Microsoft::Console::Types::Viewport initialViewport,
                 _In_reads_(cColorTable) const COLORREF* const ColorTable,
                 _In_ const WORD cColorTable,
                 _In_ const bool fUseAsciiOnly);
+    
     virtual ~XtermEngine() override = default;
+    
     HRESULT StartPaint() override;
     HRESULT EndPaint() override;
     virtual HRESULT UpdateDrawingBrushes(_In_ COLORREF const colorForeground,

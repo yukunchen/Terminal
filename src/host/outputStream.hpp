@@ -127,6 +127,7 @@ public:
 
     virtual BOOL PrivateRefreshWindow() override;
     
+    virtual BOOL PrivateWriteConsoleControlInput(_In_ KeyEvent key) override;
 private:
     const Microsoft::Console::IIoProvider* const _pIo;
     

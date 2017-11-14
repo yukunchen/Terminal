@@ -586,10 +586,9 @@ BOOL ConhostInternalGetSet::PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* 
 BOOL ConhostInternalGetSet::PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                                        _Out_ size_t& eventsWritten)
 {
-    BOOL fSuccess = SUCCEEDED(DoSrvPrivatePrependConsoleInput(_pIo->GetActiveInputBuffer(),
-                                                              events,
-                                                              eventsWritten));
-    return fSuccess;
+    return SUCCEEDED(DoSrvPrivatePrependConsoleInput(_pIo->GetActiveInputBuffer(),
+                                                     events,
+                                                     eventsWritten));
 }
 
 // Routine Description:
@@ -603,4 +602,17 @@ BOOL ConhostInternalGetSet::PrivatePrependConsoleInput(_Inout_ std::deque<std::u
 BOOL ConhostInternalGetSet::PrivateRefreshWindow()
 {
     return SUCCEEDED(DoSrvPrivateRefreshWindow(_pIo->GetActiveOutputBuffer()));
+}
+
+
+// Routine Description:
+// - Connects the PrivateWriteConsoleControlInput API call directly into our Driver Message servicing call inside Conhost.exe
+// Arguments:
+// - key - a KeyEvent representing a special type of keypress, typically Ctrl-C
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateWriteConsoleControlInput). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateWriteConsoleControlInput(_In_ KeyEvent key)
+{
+    return SUCCEEDED(DoSrvPrivateWriteConsoleControlInput(_pIo->GetActiveInputBuffer(),
+                                                          key));
 }

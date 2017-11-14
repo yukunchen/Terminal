@@ -8,9 +8,11 @@
 #include "Xterm256Engine.hpp"
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
-Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe) :
-    XtermEngine(std::move(hPipe), nullptr, 0, false)
+Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
+                               _In_ const Viewport initialViewport) :
+    XtermEngine(std::move(hPipe), initialViewport, nullptr, 0, false)
 {
 }
 

@@ -94,19 +94,17 @@ class Microsoft::Console::Render::VtRendererTest
     bool WriteCallback(const char* const pch, size_t const cch);
     void TestPaint(VtEngine& engine, std::function<void()> pfn);
     void TestPaintXterm(XtermEngine& engine, std::function<void()> pfn);
-    SMALL_RECT SetUpViewport(VtEngine& engine);
+    Viewport SetUpViewport();
 };
 
-SMALL_RECT VtRendererTest::SetUpViewport(VtEngine& engine)
+Viewport VtRendererTest::SetUpViewport()
 {
     SMALL_RECT view = {};
     view.Top = view.Left = 0;
     view.Bottom = 31;
     view.Right = 79;
 
-    qExpectedInput.push_back("\x1b[8;32;80t");
-    engine.UpdateViewport(view);
-    return view;
+    return Viewport::FromInclusive(view);
 }
 
 bool VtRendererTest::WriteCallback(const char* const pch, size_t const cch)
@@ -170,7 +168,7 @@ void VtRendererTest::TestPaintXterm(XtermEngine& engine, std::function<void()> p
 void VtRendererTest::VtSequenceHelperTests()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile));
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
 
     engine->SetTestCallback(pfn);
@@ -219,11 +217,11 @@ void VtRendererTest::VtSequenceHelperTests()
 void VtRendererTest::Xterm256TestInvalidate()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile));
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    Viewport view = Viewport::FromInclusive(SetUpViewport(*engine));
+    Viewport view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."
@@ -367,11 +365,13 @@ void VtRendererTest::Xterm256TestInvalidate()
 void VtRendererTest::Xterm256TestColors()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile));
+    // std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile));
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = SetUpViewport(*engine);
+    // Viewport view = Viewport::FromInclusive(SetUpViewport(*engine));
+    Viewport view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Test changing the text attributes"
@@ -416,11 +416,13 @@ void VtRendererTest::Xterm256TestColors()
 void VtRendererTest::Xterm256TestCursor()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile));
+    // std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile));
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport());
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = SetUpViewport(*engine);
+    // Viewport view = Viewport::FromInclusive(SetUpViewport(*engine));
+    Viewport view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."
@@ -529,11 +531,11 @@ void VtRendererTest::Xterm256TestCursor()
 void VtRendererTest::XtermTestInvalidate()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE, false);
+    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), g_ColorTable, (WORD)COLOR_TABLE_SIZE, false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    Viewport view = Viewport::FromInclusive(SetUpViewport(*engine));
+    Viewport view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."
@@ -677,11 +679,11 @@ void VtRendererTest::XtermTestInvalidate()
 void VtRendererTest::XtermTestColors()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE, false);
+    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), g_ColorTable, (WORD)COLOR_TABLE_SIZE, false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = SetUpViewport(*engine);
+    Viewport view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Test changing the text attributes"
@@ -739,11 +741,11 @@ void VtRendererTest::XtermTestColors()
 void VtRendererTest::XtermTestCursor()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE, false);
+    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), g_ColorTable, (WORD)COLOR_TABLE_SIZE, false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = SetUpViewport(*engine);
+    Viewport view = SetUpViewport();
     
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."
@@ -853,11 +855,11 @@ void VtRendererTest::XtermTestCursor()
 void VtRendererTest::WinTelnetTestInvalidate()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<WinTelnetEngine> engine = std::make_unique<WinTelnetEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE);
+    std::unique_ptr<WinTelnetEngine> engine = std::make_unique<WinTelnetEngine>(std::move(hFile), SetUpViewport(), g_ColorTable, (WORD)COLOR_TABLE_SIZE);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    Viewport view = Viewport::FromInclusive(SetUpViewport(*engine));
+    Viewport view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Make sure that invalidating all invalidates the whole viewport."
@@ -936,11 +938,11 @@ void VtRendererTest::WinTelnetTestInvalidate()
 void VtRendererTest::WinTelnetTestColors()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<WinTelnetEngine> engine = std::make_unique<WinTelnetEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE);
+    std::unique_ptr<WinTelnetEngine> engine = std::make_unique<WinTelnetEngine>(std::move(hFile), SetUpViewport(), g_ColorTable, (WORD)COLOR_TABLE_SIZE);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = SetUpViewport(*engine);
+    Viewport view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Test changing the text attributes"
@@ -997,11 +999,11 @@ void VtRendererTest::WinTelnetTestColors()
 void VtRendererTest::WinTelnetTestCursor()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<WinTelnetEngine> engine = std::make_unique<WinTelnetEngine>(std::move(hFile), g_ColorTable, (WORD)COLOR_TABLE_SIZE);
+    std::unique_ptr<WinTelnetEngine> engine = std::make_unique<WinTelnetEngine>(std::move(hFile), SetUpViewport(), g_ColorTable, (WORD)COLOR_TABLE_SIZE);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
-    SMALL_RECT view = SetUpViewport(*engine);
+    Viewport view = SetUpViewport();
 
     Log::Comment(NoThrowString().Format(
         L"Test moving the cursor around. Every sequence should have both params to CUP explicitly."
