@@ -1,5 +1,11 @@
 // Windows Internal Libraries (wil)
 // Note: do not include this file directly, include "wil\Resource.h"
+//
+// wil Usage Guidelines:
+// https://microsoft.sharepoint.com/teams/osg_development/Shared%20Documents/Windows%20Internal%20Libraries%20for%20C++%20Usage%20Guide.docx?web=1
+//
+// wil Discussion Alias (wildisc):
+// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
 
 #pragma once
 
@@ -144,7 +150,7 @@ public:
     typedef typename _Get_deleter_pointer_type<_Ty, _Dx_noref>::type pointer;
 
     _Unique_ptr_base(pointer _Ptr, _Dx _Dt) WI_NOEXCEPT
-        : _Myptr(_Ptr), _Mybase(_Dt)
+        : _Mybase(_Dt), _Myptr(_Ptr)
         {	// construct with pointer and deleter
         }
 
@@ -156,7 +162,7 @@ public:
     template<class _Ptr2,
         class _Dx2>
         _Unique_ptr_base(_Ptr2 _Ptr, _Dx2 _Dt) WI_NOEXCEPT
-        : _Myptr(_Ptr), _Mybase(_Dt)
+        : _Mybase(_Dt), _Myptr(_Ptr)
         {	// construct with compatible pointer and deleter
         }
 
@@ -252,9 +258,9 @@ public:
             typename enable_if<!is_array<_Ty2>::value
                 && is_convertible<typename unique_ptr<_Ty2, _Dx2>::pointer,
                     pointer>::value
-                && (is_reference<_Dx>::value && is_same<_Dx, _Dx2>::value
-                    || !is_reference<_Dx>::value
-                        && is_convertible<_Dx2, _Dx>::value),
+                && (is_reference<_Dx>::value
+                          ? is_same<_Dx, _Dx2>::value
+                          : is_convertible<_Dx2, _Dx>::value),
                 void>::type ** = 0) WI_NOEXCEPT
             : _Mybase(_Right.release(),
                 wistd::forward<_Dx2>(_Right.get_deleter()))

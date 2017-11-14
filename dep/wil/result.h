@@ -1,9 +1,18 @@
 // Windows Internal Libraries (wil)
+// Result.h:  WIL Error Handling Helpers Library
+//
+// Usage Guidelines:
+// https://osgwiki.com/wiki/WIL_Error_Handling_Helpers
+//
+// WIL Discussion Alias (wildisc):
+// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
 //
 //! @file
-//! Windows Error Handling Helpers: standard error handling mechanisms across return codes, fail fast, exceptions and logging
+//! WIL Error Handling Helpers: a family of macros and functions designed to uniformly handle and report
+//! errors across return codes, fail fast, exceptions and logging
 
-#pragma once
+#ifndef __WIL_RESULT_INCLUDED
+#define __WIL_RESULT_INCLUDED
 
 // Most functionality is picked up from ResultMacros.h.  This file specifically provides higher level processing of errors when
 // they are encountered by the underlying macros.
@@ -76,7 +85,7 @@ namespace wil
             HRESULT CreateFromPointer(PCWSTR name, void* pointer)
             {
                 ULONG_PTR value = reinterpret_cast<ULONG_PTR>(pointer);
-                FAIL_FAST_IMMEDIATE_IF(WI_IS_ANY_FLAG_SET(value, 0x3));
+                FAIL_FAST_IMMEDIATE_IF(WI_IsAnyFlagSet(value, 0x3));
                 return CreateFromValue(name, value >> 2);
             }
 
@@ -107,8 +116,8 @@ namespace wil
                 // This routine only supports 31 bits when semahporeHigh is not supplied or 62 bits when the value
                 // is supplied.  It's a programming error to use it when either of these conditions are not true.
 
-                FAIL_FAST_IMMEDIATE_IF((!is64Bit && WI_IS_ANY_FLAG_SET(value, 0xFFFFFFFF80000000)) ||
-                    (is64Bit && WI_IS_ANY_FLAG_SET(value, 0xC000000000000000)));
+                FAIL_FAST_IMMEDIATE_IF((!is64Bit && WI_IsAnyFlagSet(value, 0xFFFFFFFF80000000)) ||
+                    (is64Bit && WI_IsAnyFlagSet(value, 0xC000000000000000)));
 
                 wchar_t localName[MAX_PATH];
                 WI_VERIFY_SUCCEEDED(StringCchCopyW(localName, ARRAYSIZE(localName), name));
@@ -148,8 +157,7 @@ namespace wil
                     __WIL_PRIVATE_RETURN_IF_WIN32_BOOL_FALSE(::ReleaseSemaphore(semaphore, 1, &value));
                     value++;    // we waited first, so our actual value is one more than the old value
 
-                                // Make sure the value is correct by validating that we have no more posts.
-
+                    // Make sure the value is correct by validating that we have no more posts.
                     BOOL expectedFailure = ::ReleaseSemaphore(semaphore, 1, nullptr);
                     __WIL_PRIVATE_RETURN_HR_IF(E_UNEXPECTED, expectedFailure || (::GetLastError() != ERROR_TOO_MANY_POSTS));
                 }
@@ -178,7 +186,7 @@ namespace wil
 
             static HRESULT TryGetValueInternal(PCWSTR name, bool is64Bit, _Out_ unsigned __int64* value, _Out_opt_ bool* retrieved)
             {
-                AssignToOptParam(retrieved, false);
+                assign_to_opt_param(retrieved, false);
                 *value = 0;
 
                 wchar_t localName[MAX_PATH];
@@ -211,7 +219,7 @@ namespace wil
                 const unsigned __int64 newValueHigh = (static_cast<unsigned __int64>(countHigh) << 31);
                 const unsigned __int64 newValueLow = static_cast<unsigned __int64>(countLow);
 
-                AssignToOptParam(retrieved, true);
+                assign_to_opt_param(retrieved, true);
                 *value = (newValueHigh | newValueLow);
                 return S_OK;
             }
@@ -271,7 +279,10 @@ namespace wil
                 WI_VERIFY(SUCCEEDED(StringCchPrintfW(name, ARRAYSIZE(name), L"Local\\SM0:%d:%d:%hs", ::GetCurrentProcessId(), size, staticNameWithVersion)));
 
                 unique_mutex_nothrow mutex;
-                __WIL_PRIVATE_RETURN_IF_FAILED(mutex.create(name));
+                mutex.reset(::CreateMutexExW(nullptr, name, 0, MUTEX_ALL_ACCESS));
+
+                // This will fail in some environments and will be fixed with deliverable 12394134
+                RETURN_LAST_ERROR_IF_EXPECTED(!mutex);
                 auto lock = mutex.acquire();
 
                 void* pointer = nullptr;
@@ -302,7 +313,7 @@ namespace wil
 
                 const DWORD size = static_cast<DWORD>(sizeof(ProcessLocalStorageData<T>));
 
-                unique_hheap_ptr<ProcessLocalStorageData<T>> dataAlloc(static_cast<ProcessLocalStorageData<T>*>(::HeapAlloc(::GetProcessHeap(), HEAP_ZERO_MEMORY, size)));
+                unique_process_heap_ptr<ProcessLocalStorageData<T>> dataAlloc(static_cast<ProcessLocalStorageData<T>*>(::HeapAlloc(::GetProcessHeap(), HEAP_ZERO_MEMORY, size)));
                 __WIL_PRIVATE_RETURN_IF_NULL_ALLOC(dataAlloc);
 
                 SemaphoreValue semaphoreValue;
@@ -336,7 +347,11 @@ namespace wil
             {
                 if (!m_data)
                 {
-                    ProcessLocalStorageData<T>::Acquire(m_staticNameWithVersion, &m_data);
+                    ProcessLocalStorageData<T>* localTemp = nullptr;
+                    if (SUCCEEDED(ProcessLocalStorageData<T>::Acquire(m_staticNameWithVersion, &localTemp)) && !m_data)
+                    {
+                        m_data = localTemp;
+                    }
                 }
                 return m_data ? m_data->GetData() : nullptr;
             }
@@ -437,7 +452,7 @@ namespace wil
             unsigned short lineNumber;
             FailureType type;
             unsigned char reserved;     // packing, reserved
-            PCSTR module;
+            PCSTR modulePath;
             void* returnAddress;
             void* callerReturnAddress;
             PCWSTR message;
@@ -463,7 +478,7 @@ namespace wil
                 fileName = nullptr;
                 lineNumber = static_cast<unsigned short>(info.uLineNumber);
                 type = info.type;
-                module = nullptr;
+                modulePath = nullptr;
                 returnAddress = info.returnAddress;
                 callerReturnAddress = info.callerReturnAddress;
                 message = nullptr;
@@ -489,7 +504,7 @@ namespace wil
                     unsigned char *pBufferEnd = pBuffer + stringBufferSize;
 
                     pBuffer = details::WriteResultString(pBuffer, pBufferEnd, info.pszFile, &fileName);
-                    pBuffer = details::WriteResultString(pBuffer, pBufferEnd, info.pszModule, &module);
+                    pBuffer = details::WriteResultString(pBuffer, pBufferEnd, info.pszModule, &modulePath);
                     details::WriteResultString(pBuffer, pBufferEnd, info.pszMessage, &message);
                 }
             }
@@ -503,7 +518,7 @@ namespace wil
                 info.pszFile = fileName;
                 info.uLineNumber = lineNumber;
                 info.type = type;
-                info.pszModule = module;
+                info.pszModule = modulePath;
                 info.returnAddress = returnAddress;
                 info.callerReturnAddress = callerReturnAddress;
                 info.pszMessage = message;
@@ -683,18 +698,21 @@ namespace wil
             void ProcessShutdown() {}
         };
 
-        __declspec(selectany) ProcessLocalStorage<ProcessLocalData> g_processLocalData("WilError_01");
-        
+        __declspec(selectany) ProcessLocalStorage<ProcessLocalData>* g_pProcessLocalData = nullptr;
+
         __declspec(noinline) inline ThreadLocalData* GetThreadLocalDataCache(bool allocate = true)
         {
             ThreadLocalData* result = nullptr;
-            auto processData = g_processLocalData.GetShared();
-            if (processData)
+            if (g_pProcessLocalData)
             {
-                result = processData->threads.GetLocal(allocate);
-                if (result && !result->failureSequenceId)
+                auto processData = g_pProcessLocalData->GetShared();
+                if (processData)
                 {
-                    result->failureSequenceId = &(processData->failureSequenceId);
+                    result = processData->threads.GetLocal(allocate);
+                    if (result && !result->failureSequenceId)
+                    {
+                        result->failureSequenceId = &(processData->failureSequenceId);
+                    }
                 }
             }
             return result;
@@ -834,6 +852,13 @@ namespace wil
     };
 
 
+    enum class WilInitializeCommand
+    {
+        Create,
+        Destroy,
+    };
+
+
     /// @cond
     namespace details
     {
@@ -844,7 +869,7 @@ namespace wil
 
         class ThreadFailureCallbackHolder;
 
-        __declspec(selectany) details_abi::ThreadLocalStorage<ThreadFailureCallbackHolder*> g_threadFailureCallbacks;
+        __declspec(selectany) details_abi::ThreadLocalStorage<ThreadFailureCallbackHolder*>* g_pThreadFailureCallbacks = nullptr;
 
         class ThreadFailureCallbackHolder
         {
@@ -899,7 +924,7 @@ namespace wil
                 // out-of balance Start/Stop calls?
                 __FAIL_FAST_IMMEDIATE_ASSERT__(m_threadId == 0);
 
-                m_ppThreadList = g_threadFailureCallbacks.GetLocal(true);    // true = allocate thread list if missing
+                m_ppThreadList = g_pThreadFailureCallbacks ? g_pThreadFailureCallbacks->GetLocal(true) : nullptr; // true = allocate thread list if missing
                 if (m_ppThreadList)
                 {
                     m_pNext = *m_ppThreadList;
@@ -1000,7 +1025,7 @@ namespace wil
                 *callContextString = '\0';
                 bool reportedTelemetry = false;
 
-                ThreadFailureCallbackHolder **ppListeners = g_threadFailureCallbacks.GetLocal();
+                ThreadFailureCallbackHolder **ppListeners = g_pThreadFailureCallbacks ? g_pThreadFailureCallbacks->GetLocal() : nullptr;
                 if ((ppListeners != nullptr) && (*ppListeners != nullptr))
                 {
                     callContextString[0] = '\0';
@@ -1077,17 +1102,57 @@ namespace wil
             // Update the process-wide failure cache
             wil::SetLastError(*pFailure);
         }
+        
+        template<typename T, typename... TCtorArgs> void InitGlobalWithStorage(WilInitializeCommand state, void* storage, T*& global, TCtorArgs&&... args)
+        {
+            if ((state == WilInitializeCommand::Create) && !global)
+            {
+                global = ::new (storage) T(wistd::forward<TCtorArgs>(args)...);
+            }
+            else if ((state == WilInitializeCommand::Destroy) && global)
+            {
+                global->~T();
+                global = nullptr;
+            }
+        }
+    }
+    /// @endcond
 
+    /** Modules that cannot use CRT-based static initialization may call this method from their entrypoint
+        instead. Disable the use of CRT-based initializers by defining RESULT_SUPPRESS_STATIC_INITIALIZERS
+        while compiling this header.  Linking together libraries that disagree on this setting and calling
+        this method will behave correctly. It may be necessary to recompile all statically linked libraries
+        with the RESULT_SUPPRESS_... setting to eliminate all "LNK4201 - CRT section exists, but..." errors.
+    */
+    inline void WilInitialize_Result(WilInitializeCommand state)
+    {
+        static unsigned char s_processLocalData[sizeof(*details_abi::g_pProcessLocalData)];
+        static unsigned char s_threadFailureCallbacks[sizeof(*details::g_pThreadFailureCallbacks)];
+
+        details::InitGlobalWithStorage(state, s_processLocalData, details_abi::g_pProcessLocalData, "WilError_01");
+        details::InitGlobalWithStorage(state, s_threadFailureCallbacks, details::g_pThreadFailureCallbacks);
+    }
+
+    /// @cond
+    namespace details
+    {
+#ifndef RESULT_SUPPRESS_STATIC_INITIALIZERS
+        __declspec(selectany) ::wil::details_abi::ProcessLocalStorage<::wil::details_abi::ProcessLocalData> g_processLocalData("WilError_01");
+        __declspec(selectany) ::wil::details_abi::ThreadLocalStorage<ThreadFailureCallbackHolder*> g_threadFailureCallbacks;
+        
         WI_HEADER_INITITALIZATION_FUNCTION(InitializeResultHeader, []
         {
             g_pfnGetContextAndNotifyFailure = GetContextAndNotifyFailure;
+            ::wil::details_abi::g_pProcessLocalData = &g_processLocalData;
+            g_pThreadFailureCallbacks = &g_threadFailureCallbacks;
             return 1;
         });
+#endif
     }
     /// @endcond
 
 
-    // This helper functions much like ScopeExit -- give it a lambda and get back a local object that can be used to
+    // This helper functions much like scope_exit -- give it a lambda and get back a local object that can be used to
     // catch all errors happening in your module through all WIL error handling mechanisms.  The lambda will be called
     // once for each error throw, error return, or error catch that is handled while the returned object is still in
     // scope.  Usage:
@@ -1202,3 +1267,5 @@ namespace wil
 } // wil
 
 #pragma warning(pop)
+
+#endif // __WIL_RESULT_INCLUDED

@@ -1,21 +1,78 @@
 // Windows Internal Libraries (wil)
+// Resource.h: WIL Resource Wrappers (RAII) Library
+//
+// Usage Guidelines:
+// "https://osgwiki.com/wiki/Windows_Internal_Libraries_(wil)"
+//
+// wil Discussion Alias (wildisc):
+// http://idwebelements/GroupManagement.aspx?Group=wildisc&Operation=join  (one-click join)
 //
 //! @file
-//! Dependency-free straight c++ helpers, macros and type traits.
-//! This file is always included implicitly by all wil headers.  It contains helpers that are broadly applicable without
-//! requiring any dependencies.  Including this file naturally includes wistd_type_traits.h to supply functionality such
-//! as `wistd::move()` to exception-free code.
+//! WIL Common Helpers: Provides broadly applicable, dependency-free pure C++ helpers, macros and type traits.
 
-#pragma once
-#ifndef __cplusplus
-#error This file is designed for C++ consumers only
+#ifndef __WIL_COMMON_INCLUDED
+#define __WIL_COMMON_INCLUDED
+
+#if defined(_KERNEL_MODE ) && !defined(__WIL_MIN_KERNEL)
+// This define indicates that the WIL usage is in a kernel mode context where
+// a high degree of WIL functionality is desired.
+//
+// Use (sparingly) to change behavior based on whether WIL is being used in kernel
+// mode or user mode.
+#define WIL_KERNEL_MODE
 #endif
+
+// Defining WIL_HIDE_DEPRECATED will hide everything deprecated.
+// Each wave of deprecation will add a new WIL_HIDE_DEPRECATED_YYMM number that can be used to lock deprecation at
+// a particular point, allowing components to avoid backslide and catch up to the current independently.
+#ifdef WIL_HIDE_DEPRECATED
+#define WIL_HIDE_DEPRECATED_1612
+#endif
+#ifdef WIL_HIDE_DEPRECATED_1612
+#define WIL_HIDE_DEPRECATED_1611
+#endif
+
+// Implementation side note: ideally the deprecation would be done with the function-level declspec 
+// as it allows you to utter the error text when used.  The declspec works, but doing it selectively with
+// a macro makes intellisense deprecation comments not work.  So we just use the #pragma deprecation.
+#ifdef WIL_WARN_DEPRECATED
+#define WIL_WARN_DEPRECATED_1612
+#endif
+#ifdef WIL_WARN_DEPRECATED_1612
+#define WIL_WARN_DEPRECATED_1611
+#endif
+#ifdef WIL_WARN_DEPRECATED_1611
+#define WIL_WARN_DEPRECATED_1611_PRAGMA(...) __pragma(deprecated(__VA_ARGS__))
+#else
+#define WIL_WARN_DEPRECATED_1611_PRAGMA(...)
+#endif
+#ifdef WIL_WARN_DEPRECATED_1612
+#define WIL_WARN_DEPRECATED_1612_PRAGMA(...) __pragma(deprecated(__VA_ARGS__))
+#else
+#define WIL_WARN_DEPRECATED_1612_PRAGMA(...)
+#endif
+
+#if !defined(__cplusplus) || defined(__WIL_MIN_KERNEL)
+
+#define WI_ODR_PRAGMA(NAME, TOKEN)
+#define WI_NOEXCEPT
+
+#else
 #pragma warning(push)
 #pragma warning(disable:4714)    // __forceinline not honored
 
 // DO NOT add *any* further includes to this file -- there should be no dependencies from its usage
+#include <sal.h>
 #include "wistd_type_traits.h"
 
+//! This macro inserts ODR violation protection; the macro allows it to be compatible with straight "C" code
+#define WI_ODR_PRAGMA(NAME, TOKEN)  __pragma(detect_mismatch("ODR_violation_" NAME "_mismatch", TOKEN))
+
+#ifdef WIL_KERNEL_MODE
+WI_ODR_PRAGMA("WIL_KERNEL_MODE", "1")
+#else
+WI_ODR_PRAGMA("WIL_KERNEL_MODE", "0")
+#endif
 
 // Some SAL remapping / decoration to better support Doxygen.  Macros that look like function calls can
 // confuse Doxygen when they are used to decorate a function or variable.  We simplify some of these to
@@ -28,17 +85,17 @@
 /// @endcond
 
 #if defined(_CPPUNWIND) && !defined(WIL_SUPPRESS_EXCEPTIONS)
-//! This define is automatically set when exceptions are enabled within wil.
-//! It is automatically defined when your code is compiled with exceptions enabled (via checking for the built-in
-//! _CPPUNWIND flag) unless you explicitly define WIL_SUPPRESS_EXCEPTIONS ahead of including your first wil
-//! header.  All exception-based WIL methods and classes are included behind:
-//! ~~~~
-//! #ifdef WIL_ENABLE_EXCEPTIONS
-//! // code
-//! #endif
-//! ~~~~
-//! This enables exception-free code to directly include WIL headers without worrying about exception-based
-//! routines suddenly becoming available.
+/** This define is automatically set when exceptions are enabled within wil.
+It is automatically defined when your code is compiled with exceptions enabled (via checking for the built-in
+_CPPUNWIND flag) unless you explicitly define WIL_SUPPRESS_EXCEPTIONS ahead of including your first wil
+header.  All exception-based WIL methods and classes are included behind:
+~~~~
+#ifdef WIL_ENABLE_EXCEPTIONS
+// code
+#endif
+~~~~
+This enables exception-free code to directly include WIL headers without worrying about exception-based
+routines suddenly becoming available. */
 #define WIL_ENABLE_EXCEPTIONS
 #endif
 /// @endcond
@@ -71,12 +128,12 @@ classes and methods from WIL, define this macro ahead of including the first WIL
 
 /** This define can be explicitly set to lock the process exception mode to WIL_ENABLE_EXCEPTIONS.
 Locking the exception mode provides optimizations to exception barriers, staging hooks and DLL load costs as it eliminates the need to
-do copy-on-write initialization of various funciton pointers and the necessary indirection that's done within WIL to avoid ODR violations
+do copy-on-write initialization of various function pointers and the necessary indirection that's done within WIL to avoid ODR violations
 when linking libraries together with different exception handling semantics. */
 #define WIL_LOCK_EXCEPTION_MODE
 
 /** This define explicit sets the exception mode for the process to control optimizations.
-Three exception modes are avialable:
+Three exception modes are available:
 0)  This is the default.  This enables a binary to link both exception-based and non-exception based libraries together that
     use WIL.  This adds overhead to exception barriers, DLL copy on write pages and indirection through function pointers to avoid ODR
     violations when linking libraries together with different exception handling semantics.
@@ -84,7 +141,6 @@ Three exception modes are avialable:
 2)  This locks the binary to libraries built without exceptions. */
 #define WIL_EXCEPTION_MODE
 #endif
-
 
 //! @defgroup macrobuilding Macro Composition
 //! The following macros are building blocks primarily intended for authoring other macros.
@@ -96,6 +152,7 @@ Three exception modes are avialable:
 /// @cond
 #define __WI_PASTE_imp(a, b)                a##b
 /// @endcond
+
 //! This macro is for use in other macros to paste two tokens together, such as a constant and the __LINE__ macro.
 #define WI_PASTE(a, b)                      __WI_PASTE_imp(a, b)
 
@@ -109,6 +166,7 @@ Three exception modes are avialable:
                          39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0))
 #define __WI_ARGS_COUNT_PREFIX(...) 0, __VA_ARGS__
 /// @endcond
+
 //! This variadic macro returns the number of arguments passed to it (up to 99).
 #define WI_ARGS_COUNT(...) __WI_ARGS_COUNT0(__WI_ARGS_COUNT_PREFIX(__VA_ARGS__))
 
@@ -218,6 +276,7 @@ Three exception modes are avialable:
     WI_PASTE(__WI_FOR_imp, n) WI_FLATTEN((__VA_ARGS__))
 #define __WI_FOR_imp(n, fnAndArgs)  WI_PASTE(__WI_FOR_imp, n) fnAndArgs
 /// @endcond
+
 //! Iterates through each of the given arguments invoking the specified macro against each one.
 #define WI_FOREACH(fn, ...) __WI_FOR_imp(WI_ARGS_COUNT(__VA_ARGS__), (fn, __VA_ARGS__))
 
@@ -226,6 +285,8 @@ Three exception modes are avialable:
 
 //! @} // Macro composition helpers
 
+#define __R_ENABLE_IF_IS_CLASS(ptrType)                     typename wistd::enable_if_t<wistd::is_class<ptrType>::value, void*> = (void*)0
+#define __R_ENABLE_IF_IS_NOT_CLASS(ptrType)                 typename wistd::enable_if_t<!wistd::is_class<ptrType>::value, void*> = (void*)0
 
 //! @defgroup bitwise Bitwise Inspection and Manipulation
 //! Bitwise helpers to improve readability and reduce the error rate of bitwise operations.
@@ -240,12 +301,12 @@ Three exception modes are avialable:
 //! 2. To reduce the error rate associated with bitwise operations.
 //!
 //!    The readability improvements naturally lend themselves to this by cutting down the number of concepts.
-//!    Using `WI_IS_FLAG_SET(var, MyEnum::Flag)` rather than `((var & MyEnum::Flag) == MyEnum::Flag)` removes the comparison 
+//!    Using `WI_IsFlagSet(var, MyEnum::Flag)` rather than `((var & MyEnum::Flag) == MyEnum::Flag)` removes the comparison 
 //!    operator and repetition in the flag value.
 //!
 //!    Additionally, these macros separate single flag operations (which tend to be the most common) from multi-flag 
 //!    operations so that compile-time errors are generated for bitwise operations which are likely incorrect,
-//!    such as:  `WI_IS_FLAG_SET(var, MyEnum::None)` or `WI_IS_FLAG_SET(var, MyEnum::ValidMask)`.
+//!    such as:  `WI_IsFlagSet(var, MyEnum::None)` or `WI_IsFlagSet(var, MyEnum::ValidMask)`.
 //! 
 //! Note that the single flag helpers should be used when a compile-time constant single flag is being manipulated.  These
 //! helpers provide compile-time errors on misuse and should be preferred over the multi-flag helpers.  The multi-flag helpers
@@ -253,166 +314,90 @@ Three exception modes are avialable:
 //!
 //! Common example usage (manipulation of flag variables):
 //! ~~~~
-//! WI_SET_FLAG(m_flags, MyFlags::Foo);                                 // Set a single flag in the given variable
-//! WI_SET_ALL_FLAGS(m_flags, MyFlags::Foo | MyFlags::Bar);             // Set one or more flags
-//! WI_CLEAR_FLAG_IF(m_flags, MyFlags::Bar, isBarClosed);               // Conditionally clear a single flag based upon a bool
-//! WI_CLEAR_ALL_FLAGS(m_flags, MyFlags::Foo | MyFlags::Bar);           // Clear one or more flags from the given variable
-//! WI_TOGGLE_FLAG(m_flags, MyFlags::Foo);                              // Toggle (change to the opposite value) a single flag
-//! WI_UPDATE_FLAG(m_flags, MyFlags::Bar, isBarClosed);                 // Sets or Clears a single flag from the given variable based upon a bool value
-//! WI_UPDATE_FLAGS_IN_MASK(m_flags, flagsMask, newFlagValues);         // Sets or Clears the flags in flagsMask to the masked values from newFlagValues
+//! WI_SetFlag(m_flags, MyFlags::Foo);                              // Set a single flag in the given variable
+//! WI_SetAllFlags(m_flags, MyFlags::Foo | MyFlags::Bar);           // Set one or more flags
+//! WI_ClearFlagIf(m_flags, MyFlags::Bar, isBarClosed);             // Conditionally clear a single flag based upon a bool
+//! WI_ClearAllFlags(m_flags, MyFlags::Foo | MyFlags::Bar);         // Clear one or more flags from the given variable
+//! WI_ToggleFlag(m_flags, MyFlags::Foo);                           // Toggle (change to the opposite value) a single flag
+//! WI_UpdateFlag(m_flags, MyFlags::Bar, isBarClosed);              // Sets or Clears a single flag from the given variable based upon a bool value
+//! WI_UpdateFlagsInMask(m_flags, flagsMask, newFlagValues);        // Sets or Clears the flags in flagsMask to the masked values from newFlagValues
 //! ~~~~
 //! Common example usage (inspection of flag variables):
 //! ~~~~
-//! if (WI_IS_FLAG_SET(m_flags, MyFlags::Foo))                          // Is a single flag set in the given variable?
-//! if (WI_IS_ANY_FLAG_SET(m_flags, MyFlags::Foo | MyFlags::Bar))       // Is at least one flag from the given mask set?
-//! if (WI_ARE_ALL_FLAGS_CLEAR(m_flags, MyFlags::Foo | MyFlags::Bar))   // Are all flags in the given list clear?
-//! if (WI_IS_SINGLE_FLAG_SET(m_flags))                                 // Is *exactly* one flag set in the given variable?
+//! if (WI_IsFlagSet(m_flags, MyFlags::Foo))                        // Is a single flag set in the given variable?
+//! if (WI_IsAnyFlagSet(m_flags, MyFlags::Foo | MyFlags::Bar))      // Is at least one flag from the given mask set?
+//! if (WI_AreAllFlagsClear(m_flags, MyFlags::Foo | MyFlags::Bar))  // Are all flags in the given list clear?
+//! if (WI_IsSingleFlagSet(m_flags))                                // Is *exactly* one flag set in the given variable?
 //! ~~~~
 //! @{
 
-// block for documentation only
-#ifdef WIL_DOXYGEN
+//! Validates that exactly ONE bit is set in compile-time constant `flag`
+#define WI_StaticAssertSingleBitSet(flag)                   static_cast<decltype(flag)>(::wil::details::verify_single_flag_helper<static_cast<unsigned long long>(flag)>::value)
+//! Returns the unsigned type of the same width and numeric value as the given enum
+#define WI_EnumValue(val)                                   static_cast<::wil::integral_from_enum<decltype(val)>>(val)
 
-//! Allows assigning a set of flags to a compile-time constant bitwise or combination of enum class flag.
-//! Enum flags are typically constructed by DEFINE_ENUM_FLAG_OPERATORS which declares runtime functions to combine
-//! flag values.  This function doesn't allow assigning a set of flags to a compile-time constant.  This
-//! macro can be used to rectify that by allowing enum class flags to be combined (with a comma separating them
-//! instead of the '|' operator).
-//! ~~~~
-//! const EnumType flags = WI_COMPILETIME_COMBINE_FLAGS(EnumType::Value1, EnumType::Value2);
-//! ~~~~
-#define WI_COMPILETIME_COMBINE_FLAGS(...)
-
-//! Validates that exactly ONE bit is set in compile-time constant `flag` or a compilation error is produced.
-#define WI_STATIC_ASSERT_SINGLE_BIT_SET(flag)
-
-//! @name Bitwise modification macros
+//! @name Bitwise manipulation macros
 //! @{
 
-//! Set multiple bitflags specified by `flags` in the variable `var`.
-#define WI_SET_ALL_FLAGS(var, flags)
+//! Set zero or more bitflags specified by `flags` in the variable `var`.
+#define WI_SetAllFlags(var, flags)                          ((var) |= (flags))
 //! Set a single compile-time constant `flag` in the variable `var`.
-#define WI_SET_FLAG(var, flag)
+#define WI_SetFlag(var, flag)                               WI_SetAllFlags(var, WI_StaticAssertSingleBitSet(flag))
 //! Conditionally sets a single compile-time constant `flag` in the variable `var` only if `condition` is true.
-#define WI_SET_FLAG_IF(var, flag, condition)
-//! Conditionally sets a single compile-time constant `flag` in the variable `var` only if `condition` is false.
-#define WI_SET_FLAG_IF_FALSE(var, flag, condition)
+#define WI_SetFlagIf(var, flag, condition)                  do { if (wil::verify_bool(condition)) { WI_SetFlag(var, flag); } } while (0, 0)
 
-//! Clear multiple bitflags specified by `flags` from the variable `var`.
-#define WI_CLEAR_ALL_FLAGS(var, flags)
+//! Clear zero or more bitflags specified by `flags` from the variable `var`.
+#define WI_ClearAllFlags(var, flags)                        ((var) &= ~(flags))
 //! Clear a single compile-time constant `flag` from the variable `var`.
-#define WI_CLEAR_FLAG(var, flag)
+#define WI_ClearFlag(var, flag)                             WI_ClearAllFlags(var, WI_StaticAssertSingleBitSet(flag))
 //! Conditionally clear a single compile-time constant `flag` in the variable `var` only if `condition` is true.
-#define WI_CLEAR_FLAG_IF(var, flag, condition)
-//! Conditionally clear a single compile-time constant `flag` in the variable `var` only if `condition` is false.
-#define WI_CLEAR_FLAG_IF_FALSE(var, flag, condition)
+#define WI_ClearFlagIf(var, flag, condition)                do { if (wil::verify_bool(condition)) { WI_ClearFlag(var, flag); } } while (0, 0)
 
 //! Changes a single compile-time constant `flag` in the variable `var` to be set if `isFlagSet` is true or cleared if `isFlagSet` is false.
-#define WI_UPDATE_FLAG(var, flag, isFlagSet)
+#define WI_UpdateFlag(var, flag, isFlagSet)                 (wil::verify_bool(isFlagSet) ? WI_SetFlag(var, flag) : WI_ClearFlag(var, flag))
 //! Changes only the flags specified by `flagsMask` in the variable `var` to match the corresponding flags in `newFlags`.
-#define WI_UPDATE_FLAGS_IN_MASK(var, flagsMask, newFlags)
+#define WI_UpdateFlagsInMask(var, flagsMask, newFlags)      wil::details::UpdateFlagsInMaskHelper(var, flagsMask, newFlags)
 
 //! Toggles (XOR the value) of multiple bitflags specified by `flags` in the variable `var`.
-#define WI_TOGGLE_ALL_FLAGS(var, flags)
+#define WI_ToggleAllFlags(var, flags)                       ((var) ^= (flags))
 //! Toggles (XOR the value) of a single compile-time constant `flag` in the variable `var`.
-#define WI_TOGGLE_FLAG(var, flag)
-//! @}      // bitwise modification helpers
+#define WI_ToggleFlag(var, flag)                            WI_ToggleAllFlags(var, WI_StaticAssertSingleBitSet(flag))
+//! @}      // bitwise manipulation macros
 
 //! @name Bitwise inspection macros
 //! @{
 
 //! Evaluates as true if every bitflag specified in `flags` is set within `val`.
-#define WI_ARE_ALL_FLAGS_SET(val, flags)
+#define WI_AreAllFlagsSet(val, flags)                       wil::details::AreAllFlagsSetHelper(val, flags)
 //! Evaluates as true if one or more bitflags specified in `flags` are set within `val`.
-#define WI_IS_ANY_FLAG_SET(val, flags)
+#define WI_IsAnyFlagSet(val, flags)                         (static_cast<decltype((val) & (flags))>(WI_EnumValue(val) & WI_EnumValue(flags)) != static_cast<decltype((val) & (flags))>(0))
 //! Evaluates as true if a single compile-time constant `flag` is set within `val`.
-#define WI_IS_FLAG_SET(val, flag)
+#define WI_IsFlagSet(val, flag)                             WI_IsAnyFlagSet(val, WI_StaticAssertSingleBitSet(flag))
 
 //! Evaluates as true if every bitflag specified in `flags` is clear within `val`.
-#define WI_ARE_ALL_FLAGS_CLEAR(val, flags)
+#define WI_AreAllFlagsClear(val, flags)                     (static_cast<decltype((val) & (flags))>(WI_EnumValue(val) & WI_EnumValue(flags)) == static_cast<decltype((val) & (flags))>(0))
 //! Evaluates as true if one or more bitflags specified in `flags` are clear within `val`.
-#define WI_IS_ANY_FLAG_CLEAR(val, flags)
+#define WI_IsAnyFlagClear(val, flags)                       (!wil::details::AreAllFlagsSetHelper(val, flags))
 //! Evaluates as true if a single compile-time constant `flag` is clear within `val`.
-#define WI_IS_FLAG_CLEAR(val, flag)
+#define WI_IsFlagClear(val, flag)                           WI_AreAllFlagsClear(val, WI_StaticAssertSingleBitSet(flag))
 
 //! Evaluates as true if exactly one bit (any bit) is set within `val`.
-#define WI_IS_SINGLE_FLAG_SET(val)
+#define WI_IsSingleFlagSet(val)                             wil::details::IsSingleFlagSetHelper(val)
 //! Evaluates as true if exactly one bit from within the specified `mask` is set within `val`.
-#define WI_IS_SINGLE_FLAG_SET_IN_MASK(val, mask)
+#define WI_IsSingleFlagSetInMask(val, mask)                 wil::details::IsSingleFlagSetHelper((val) & (mask))
 //! Evaluates as true if exactly one bit (any bit) is set within `val` or if there are no bits set within `val`.
-#define WI_IS_CLEAR_OR_SINGLE_FLAG_SET(val)
+#define WI_IsClearOrSingleFlagSet(val)                      wil::details::IsClearOrSingleFlagSetHelper(val)
 //! Evaluates as true if exactly one bit from within the specified `mask` is set within `val` or if there are no bits from `mask` set within `val`.
-#define WI_IS_CLEAR_OR_SINGLE_FLAG_SET_IN_MASK(val, mask)
+#define WI_IsClearOrSingleFlagSetInMask(val, mask)          wil::details::IsClearOrSingleFlagSetHelper((val) & (mask))
 //! @}
 
-//! This define can be explicitly set to enable usage of PascalCase() macro names for bitwise operations.
-//! Defining WIL_SUPPORT_BITOPERATION_PASCAL_NAMES ahead of including a WIL header will enable the PascalCase name variants
-//! for all of the bitwise test and manipulation macros.  For example, when this define is set, you can use `SetFlag(var, flag)`
-//! in addition to the standard WIL macro name `WI_SET_FLAG(var, flag)`.
-//!
-//! These names are not enabled by default given the likelihood of a macro name like 'SetFlag' conflicting with existing code.
-//! Traditionally shell has enabled these fairly natural names through the cstock header, so they are provided as an option for teams 
-//! to enable.
-#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
-
-//! @name PascalNames for bitwise helper macros
-//! These are not enabled by default (see @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES for more information).
-//! @{
-
-//! Alias for @ref WI_SET_ALL_FLAGS when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define SetAllFlags(var, flags)
-//! Alias for @ref WI_SET_FLAG when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define SetFlag(var, flag)
-//! Alias for @ref WI_SET_FLAG_IF when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define SetFlagIf(var, flag, condition)
-//! Alias for @ref WI_SET_FLAG_IF_FALSE when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define SetFlagIfFalse(var, flag, condition)
-
-//! Alias for @ref WI_CLEAR_ALL_FLAGS when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define ClearAllFlags(var, flags)
-//! Alias for @ref WI_CLEAR_FLAG when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define ClearFlag(var, flag)
-//! Alias for @ref WI_CLEAR_FLAG_IF when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define ClearFlagIf(var, flag, condition)
-//! Alias for @ref WI_CLEAR_FLAG_IF_FALSE when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define ClearFlagIfFalse(var, flag, condition)
-
-//! Alias for @ref WI_UPDATE_FLAG when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define UpdateFlag(var, flag, isFlagSet)
-//! Alias for @ref WI_UPDATE_FLAGS_IN_MASK when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define UpdateFlagsInMask(var, flagsMask, newFlags)
-
-//! Alias for @ref WI_TOGGLE_ALL_FLAGS when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define ToggleAllFlags(var, flags)
-//! Alias for @ref WI_TOGGLE_FLAG when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define ToggleFlag(var, flag)
-
-//! Alias for @ref WI_ARE_ALL_FLAGS_SET when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define AreAllFlagsSet(val, flags)
-//! Alias for @ref WI_IS_ANY_FLAG_SET when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define IsAnyFlagSet(val, flags)
-//! Alias for @ref WI_IS_FLAG_SET when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define IsFlagSet(val, flag)
-
-//! Alias for @ref WI_ARE_ALL_FLAGS_CLEAR when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define AreAllFlagsClear(val, flags)
-//! Alias for @ref WI_IS_ANY_FLAG_CLEAR when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define IsAnyFlagClear(val, flags)
-//! Alias for @ref WI_IS_FLAG_CLEAR when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define IsFlagClear(val, flag)
-
-//! Alias for @ref WI_IS_SINGLE_FLAG_SET when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define IsSingleFlagSet(val)
-//! Alias for @ref WI_IS_SINGLE_FLAG_SET_IN_MASK when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define IsSingleFlagSetInMask(val, mask)
-//! Alias for @ref WI_IS_CLEAR_OR_SINGLE_FLAG_SET when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define IsClearOrSingleFlagSet(val)
-//! Alias for @ref WI_IS_CLEAR_OR_SINGLE_FLAG_SET_IN_MASK when @ref WIL_SUPPORT_BITOPERATION_PASCAL_NAMES is specified.
-#define IsClearOrSingleFlagSetInMask(val, mask)
-//! @}  // Alternate PascalNames for bitwise helpers
-
-#else // WIL_DOXYGEN
-
+/// @cond
+#ifndef WIL_HIDE_DEPRECATED_1611
+WIL_WARN_DEPRECATED_1611_PRAGMA("WI_SET_FLAG_IF_TRUE", "WI_IS_CLEAR_OR_SINGLE_FLAG_SET_IN_MASK", "WI_IS_CLEAR_OR_SINGLE_FLAG_SET",
+    "WI_IS_SINGLE_FLAG_SET_IN_MASK", "WI_IS_SINGLE_FLAG_SET", "WI_IS_FLAG_CLEAR", "WI_IS_ANY_FLAG_CLEAR", "WI_ARE_ALL_FLAGS_CLEAR",
+    "WI_IS_FLAG_SET", "WI_IS_ANY_FLAG_SET", "WI_ARE_ALL_FLAGS_SET", "WI_TOGGLE_ALL_FLAGS", "WI_TOGGLE_FLAG", "WI_UPDATE_FLAGS_IN_MASK",
+    "WI_UPDATE_FLAG", "WI_CLEAR_FLAG_IF_FALSE", "WI_CLEAR_FLAG_IF", "WI_CLEAR_FLAG", "WI_CLEAR_ALL_FLAGS", "WI_SET_FLAG_IF_FALSE",
+    "WI_SET_FLAG_IF", "WI_SET_FLAG", "WI_SET_ALL_FLAGS", "WI_COMPILETIME_COMBINE_FLAGS", AssignToOptParam, AssignNullToOptParam);
 #define __WI_COMPILETIME_COMBINE_FLAGS1(a1) (a1)
 #define __WI_COMPILETIME_COMBINE_FLAGS2(a1, a2) static_cast<decltype((a1) | (a2))>( \
     static_cast<::wil::integral_from_enum<decltype(a1)>>(a1) | \
@@ -432,103 +417,126 @@ Three exception modes are avialable:
     static_cast<::wil::integral_from_enum<decltype(a3)>>(a3) | \
     static_cast<::wil::integral_from_enum<decltype(a4)>>(a4) | \
     static_cast<::wil::integral_from_enum<decltype(a5)>>(a5))
-
+// DEPRECATED: constexpr support for the '|' flags operator should no longer require use of this construct
 #define WI_COMPILETIME_COMBINE_FLAGS(...)                   WI_MACRO_DISPATCH(__WI_COMPILETIME_COMBINE_FLAGS, __VA_ARGS__)
-
-#define WI_STATIC_ASSERT_SINGLE_BIT_SET(flag)               static_cast<decltype(flag)>(::wil::details::verify_single_flag_helper<static_cast<unsigned long long>(flag)>::value)
-
-#define  WI_ENUM_VALUE(val)                                 static_cast<::wil::integral_from_enum<decltype(val)>>(val)
-
-// Macros to manipulate flag bitmasks
-
-#define WI_SET_ALL_FLAGS(var, flags)                        ((var) |= (flags))
-#define WI_SET_FLAG(var, flag)                              WI_SET_ALL_FLAGS(var, WI_STATIC_ASSERT_SINGLE_BIT_SET(flag))
-#define WI_SET_FLAG_IF(var, flag, condition)                do { if (wil::verify_bool(condition)) { WI_SET_FLAG(var, flag); } } while (0, 0)
-#define WI_SET_FLAG_IF_FALSE(var, flag, condition)          do { if (!(wil::verify_bool(condition))) { WI_SET_FLAG(var, flag); } } while (0, 0)
-
-#define WI_CLEAR_ALL_FLAGS(var, flags)                      ((var) &= ~(flags))
-#define WI_CLEAR_FLAG(var, flag)                            WI_CLEAR_ALL_FLAGS(var, WI_STATIC_ASSERT_SINGLE_BIT_SET(flag))
-#define WI_CLEAR_FLAG_IF(var, flag, condition)              do { if (wil::verify_bool(condition)) { WI_CLEAR_FLAG(var, flag); } } while (0, 0)
-#define WI_CLEAR_FLAG_IF_FALSE(var, flag, condition)        do { if (!(wil::verify_bool(condition))) { WI_CLEAR_FLAG(var, flag); } } while (0, 0)
-
-#define WI_UPDATE_FLAG(var, flag, isFlagSet)                (wil::verify_bool(isFlagSet) ? WI_SET_FLAG(var, flag) : WI_CLEAR_FLAG(var, flag))
-#define WI_UPDATE_FLAGS_IN_MASK(var, flagsMask, newFlags)   wil::details::UpdateFlagsInMaskHelper(var, flagsMask, newFlags)
-
-#define WI_TOGGLE_FLAG(var, flag)                           WI_TOGGLE_ALL_FLAGS(var, WI_STATIC_ASSERT_SINGLE_BIT_SET(flag))
-#define WI_TOGGLE_ALL_FLAGS(var, flags)                     ((var) ^= (flags))
-
-// Macros to inspect flag bitmasks
-
-#define WI_ARE_ALL_FLAGS_SET(val, flags)                    wil::details::AreAllFlagsSetHelper(val, flags)
-#define WI_IS_ANY_FLAG_SET(val, flags)                      (static_cast<decltype((val) & (flags))>(WI_ENUM_VALUE(val) & WI_ENUM_VALUE(flags)) != static_cast<decltype((val) & (flags))>(0))
-#define WI_IS_FLAG_SET(val, flag)                           WI_IS_ANY_FLAG_SET(val, WI_STATIC_ASSERT_SINGLE_BIT_SET(flag))
-
-#define WI_ARE_ALL_FLAGS_CLEAR(val, flags)                  (static_cast<decltype((val) & (flags))>(WI_ENUM_VALUE(val) & WI_ENUM_VALUE(flags)) == static_cast<decltype((val) & (flags))>(0))
-#define WI_IS_ANY_FLAG_CLEAR(val, flags)                    (!wil::details::AreAllFlagsSetHelper(val, flags))
-#define WI_IS_FLAG_CLEAR(val, flag)                         WI_ARE_ALL_FLAGS_CLEAR(val, WI_STATIC_ASSERT_SINGLE_BIT_SET(flag))
-
-#define WI_IS_SINGLE_FLAG_SET(val)                          wil::details::IsSingleFlagSetHelper(val)
-#define WI_IS_SINGLE_FLAG_SET_IN_MASK(val, mask)            wil::details::IsSingleFlagSetHelper((val) & (mask))
-#define WI_IS_CLEAR_OR_SINGLE_FLAG_SET(val)                 wil::details::IsClearOrSingleFlagSetHelper(val)
-#define WI_IS_CLEAR_OR_SINGLE_FLAG_SET_IN_MASK(val, mask)   wil::details::IsClearOrSingleFlagSetHelper((val) & (mask))
-
+// DEPRECATED: Use WI_SetAllFlags
+#define WI_SET_ALL_FLAGS                                    WI_SetAllFlags
+// DEPRECATED: Use WI_SetFlag
+#define WI_SET_FLAG                                         WI_SetFlag
+// DEPRECATED: Use WI_SetFlagIf
+#define WI_SET_FLAG_IF                                      WI_SetFlagIf
+// DEPRECATED: Use WI_SetFlagIf(var, flag, !condition)
+#define WI_SET_FLAG_IF_FALSE(var, flag, condition)          do { if (!(wil::verify_bool(condition))) { WI_SetFlag(var, flag); } } while (0, 0)
+// DEPRECATED: Use WI_ClearAllFlags
+#define WI_CLEAR_ALL_FLAGS                                  WI_ClearAllFlags
+// DEPRECATED: Use WI_ClearFlag
+#define WI_CLEAR_FLAG                                       WI_ClearFlag
+// DEPRECATED: Use WI_ClearFlagIf
+#define WI_CLEAR_FLAG_IF                                    WI_ClearFlagIf
+// DEPRECATED: Use ClearFlagIf(var, flag, !condition)
+#define WI_CLEAR_FLAG_IF_FALSE(var, flag, condition)        do { if (!(wil::verify_bool(condition))) { WI_ClearFlag(var, flag); } } while (0, 0)
+// DEPRECATED: Use WI_UpdateFlag
+#define WI_UPDATE_FLAG                                      WI_UpdateFlag
+// DEPRECATED: Use WI_UpdateFlagsInMask
+#define WI_UPDATE_FLAGS_IN_MASK                             WI_UpdateFlagsInMask
+// DEPRECATED: Use WI_ToggleFlag
+#define WI_TOGGLE_FLAG                                      WI_ToggleFlag
+// DEPRECATED: Use WI_ToggleAllFlags
+#define WI_TOGGLE_ALL_FLAGS                                 WI_ToggleAllFlags
+// DEPRECATED: Use WI_AreAllFlagsSet
+#define WI_ARE_ALL_FLAGS_SET                                WI_AreAllFlagsSet
+// DEPRECATED: Use WI_IsAnyFlagSet
+#define WI_IS_ANY_FLAG_SET                                  WI_IsAnyFlagSet
+// DEPRECATED: Use WI_IsFlagSet
+#define WI_IS_FLAG_SET                                      WI_IsFlagSet
+// DEPRECATED: Use WI_AreAllFlagsClear
+#define WI_ARE_ALL_FLAGS_CLEAR                              WI_AreAllFlagsClear
+// DEPRECATED: Use WI_IsAnyFlagClear
+#define WI_IS_ANY_FLAG_CLEAR                                WI_IsAnyFlagClear
+// DEPRECATED: Use WI_IsFlagClear
+#define WI_IS_FLAG_CLEAR                                    WI_IsFlagClear
+// DEPRECATED: Use WI_IsSingleFlagSet
+#define WI_IS_SINGLE_FLAG_SET                               WI_IsSingleFlagSet
+// DEPRECATED: Use WI_IsSingleFlagSetInMask
+#define WI_IS_SINGLE_FLAG_SET_IN_MASK                       WI_IsSingleFlagSetInMask
+// DEPRECATED: Use WI_IsClearOrSingleFlagSet
+#define WI_IS_CLEAR_OR_SINGLE_FLAG_SET                      WI_IsClearOrSingleFlagSet
+// DEPRECATED: Use WI_IsClearOrSingleFlagSetInMask
+#define WI_IS_CLEAR_OR_SINGLE_FLAG_SET_IN_MASK              WI_IsClearOrSingleFlagSetInMask
+// DEPRECATED: Use WI_SetFlagIf
+#define WI_SET_FLAG_IF_TRUE                                 WI_SetFlagIf
 #if defined(WIL_SUPPORT_BITOPERATION_PASCAL_NAMES) || defined(SUPPORT_BITOPERATION_PASCAL_NAMES)
-
-#define SetAllFlags(var, flags)                             WI_SET_ALL_FLAGS(var, flags)
-#define SetFlag(var, flag)                                  WI_SET_FLAG(var, flag)
-#define SetFlagIf(var, flag, condition)                     WI_SET_FLAG_IF(var, flag, condition)
-#define SetFlagIfFalse(var, flag, condition)                WI_SET_FLAG_IF_FALSE(var, flag, condition)
-#define ClearAllFlags(var, flags)                           WI_CLEAR_ALL_FLAGS(var, flags)
-#define ClearFlag(var, flag)                                WI_CLEAR_FLAG(var, flag)
-#define ClearFlagIf(var, flag, condition)                   WI_CLEAR_FLAG_IF(var, flag, condition)
-#define ClearFlagIfFalse(var, flag, condition)              WI_CLEAR_FLAG_IF_FALSE(var, flag, condition)
-#define UpdateFlag(var, flag, isFlagSet)                    WI_UPDATE_FLAG(var, flag, isFlagSet)
-#define UpdateFlagsInMask(var, flagsMask, newFlags)         WI_UPDATE_FLAGS_IN_MASK(var, flagsMask, newFlags)
-#define ToggleAllFlags(var, flags)                          WI_TOGGLE_ALL_FLAGS(var, flags)
-#define ToggleFlag(var, flag)                               WI_TOGGLE_FLAG(var, flag)
-#define AreAllFlagsSet(val, flags)                          WI_ARE_ALL_FLAGS_SET(val, flags)
-#define IsAnyFlagSet(val, flags)                            WI_IS_ANY_FLAG_SET(val, flags)
-#define IsFlagSet(val, flag)                                WI_IS_FLAG_SET(val, flag)
-#define AreAllFlagsClear(val, flags)                        WI_ARE_ALL_FLAGS_CLEAR(val, flags)
-#define IsAnyFlagClear(val, flags)                          WI_IS_ANY_FLAG_CLEAR(val, flags)
-#define IsFlagClear(val, flag)                              WI_IS_FLAG_CLEAR(val, flag)
-#define IsSingleFlagSet (val)                               WI_IS_SINGLE_FLAG_SET(val)
-#define IsSingleFlagSetInMask(val, mask)                    WI_IS_SINGLE_FLAG_SET_IN_MASK(val, mask)
-#define IsClearOrSingleFlagSet(val)                         WI_IS_CLEAR_OR_SINGLE_FLAG_SET(val)
-#define IsClearOrSingleFlagSetInMask(val, mask)             WI_IS_CLEAR_OR_SINGLE_FLAG_SET_IN_MASK(val, mask)
-
+#define SetAllFlags                                         WI_SetAllFlags
+#define SetFlag                                             WI_SetFlag
+#define SetFlagIf                                           WI_SetFlagIf
+#define SetFlagIfFalse                                      WI_SetFlagIfFalse
+#define ClearAllFlags                                       WI_ClearAllFlags
+#define ClearFlag                                           WI_ClearFlag
+#define ClearFlagIf                                         WI_ClearFlagIf
+#define ClearFlagIfFalse                                    WI_ClearFlagIfFalse
+#define UpdateFlag                                          WI_UpdateFlag
+#define UpdateFlagsInMask                                   WI_UpdateFlagsInMask
+#define ToggleAllFlags                                      WI_ToggleAllFlags
+#define ToggleFlag                                          WI_ToggleFlag
+#define AreAllFlagsSet                                      WI_AreAllFlagsSet
+#define IsAnyFlagSet                                        WI_IsAnyFlagSet
+#define IsFlagSet                                           WI_IsFlagSet
+#define AreAllFlagsClear                                    WI_AreAllFlagsClear
+#define IsAnyFlagClear                                      WI_IsAnyFlagClear
+#define IsFlagClear                                         WI_IsFlagClear
+#define IsSingleFlagSet                                     WI_IsSingleFlagSet
+#define IsSingleFlagSetInMask                               WI_IsSingleFlagSetInMask
+#define IsClearOrSingleFlagSet                              WI_IsClearOrSingleFlagSet
+#define IsClearOrSingleFlagSetInMask                        WI_IsClearOrSingleFlagSetInMask
 #endif // WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
-#endif // !WIL_DOXYGEN
-
-//! @deprecated Will be removed in the future.
-#define WI_SET_FLAG_IF_TRUE                                 WI_SET_FLAG_IF
-
-//! @}  // end bitfields group
-
+namespace wil
+{
+    // DEPRECATED: use assign_to_opt_param
+    template <typename T>
+    inline void AssignToOptParam(_Out_opt_ T *outParam, T val)
+    {
+        if (outParam != nullptr)
+        {
+            *outParam = val;
+        }
+    }
+    // DEPRECATED: use assign_null_to_opt_param
+    template <typename T>
+    inline void AssignNullToOptParam(_Out_opt_ T *outParam)
+    {
+        if (outParam != nullptr)
+        {
+            *outParam = nullptr;
+        }
+    }
+}
+#endif // WIL_HIDE_DEPRECATED_1611
+/// @endcond
 
 #if defined(WIL_DOXYGEN)
-//! This macro provides a C++ header with a guaranteed initialization function.
-//! Normally, were a global object's constructor used for this purpose, the optimizer/linker might throw
-//! the object away if it's unreferenced (which throws away the side-effects that the initialization function
-//! was trying to achieve).  Using this macro forces linker inclusion of a variable that's initialized by the
-//! provided function to elide that optimization.
+/** This macro provides a C++ header with a guaranteed initialization function.
+Normally, were a global object's constructor used for this purpose, the optimizer/linker might throw
+the object away if it's unreferenced (which throws away the side-effects that the initialization function
+was trying to achieve).  Using this macro forces linker inclusion of a variable that's initialized by the
+provided function to elide that optimization.
 //!
-//! This functionality is primarily provided as a building block for header-based libraries (such as WIL)
-//! to be able to layer additional functionality into other libraries by their mere inclusion.  Alternative models
-//! of initialization should be used whenever they are available.
-//! ~~~~
-//! #if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-//! WI_HEADER_INITITALIZATION_FUNCTION(InitializeDesktopFamilyApis, []
-//! {
-//!     g_pfnGetModuleName              = GetCurrentModuleName;
-//!     g_pfnRtlNtStatusToDosErrorNoTeb = RtlNtStatusToDosErrorNoTeb;
-//!     return 1;
-//! });
-//! #endif
-//! ~~~~
-//! The above example is used within WIL to decide whether or not the library containing WIL is allowed to use
-//! desktop APIs.  Building this functionality as #IFDEFs within functions would create ODR violations, whereas
-//! doing it with global function pointers and header initialization allows a runtime determination.
+This functionality is primarily provided as a building block for header-based libraries (such as WIL)
+to be able to layer additional functionality into other libraries by their mere inclusion.  Alternative models
+of initialization should be used whenever they are available.
+~~~~
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+WI_HEADER_INITITALIZATION_FUNCTION(InitializeDesktopFamilyApis, []
+{
+    g_pfnGetModuleName              = GetCurrentModuleName;
+    g_pfnFailFastInLoaderCallout    = FailFastInLoaderCallout;
+    g_pfnRtlNtStatusToDosErrorNoTeb = RtlNtStatusToDosErrorNoTeb;
+    return 1;
+});
+#endif
+~~~~
+The above example is used within WIL to decide whether or not the library containing WIL is allowed to use
+desktop APIs.  Building this functionality as #IFDEFs within functions would create ODR violations, whereas
+doing it with global function pointers and header initialization allows a runtime determination. */
 #define WI_HEADER_INITITALIZATION_FUNCTION(name, fn)
 #elif defined(_M_IX86)
 #define WI_HEADER_INITITALIZATION_FUNCTION(name, fn) \
@@ -543,10 +551,10 @@ Three exception modes are avialable:
 #endif
 
 
-//! All Windows Internal Library classes and functions are located within the "wil" namespace.
-//! The 'wil' namespace is an intentionally short name as the intent is for code to be able to reference
-//! the namespace directly (example: `wil::srwlock lock;`) without a using statement.  Resist adding a using
-//! statement for wil to avoid introducing potential name collisions between wil and other namespaces.
+/** All Windows Internal Library classes and functions are located within the "wil" namespace.
+The 'wil' namespace is an intentionally short name as the intent is for code to be able to reference
+the namespace directly (example: `wil::srwlock lock;`) without a using statement.  Resist adding a using
+statement for wil to avoid introducing potential name collisions between wil and other namespaces. */
 namespace wil
 {
     /// @cond
@@ -566,26 +574,20 @@ namespace wil
     }
     /// @endcond
 
-    //! Enables using range-based for between a begin and end object pointer.
-    //! ~~~~
-    //! for (auto& obj : make_range(objPointerBegin, objPointerEnd))
-    //! {
-    //!     obj.Foo();
-    //! }
-    //! ~~~~
+    /** Enables using range-based for between a begin and end object pointer.
+    ~~~~
+    for (auto& obj : make_range(objPointerBegin, objPointerEnd)) { }
+    ~~~~ */
     template <typename T>
     details::pointer_range<T> make_range(T begin, T end)
     {
         return details::pointer_range<T>(begin, end);
     }
 
-    //! Enables using range-based on a range when given the base pointer and the number of objects in the range.
-    //! ~~~~
-    //! for (auto& obj : make_range(objPointer, objCount))
-    //! {
-    //!     obj.Foo();
-    //! }
-    //! ~~~~
+    /** Enables using range-based for on a range when given the base pointer and the number of objects in the range.
+    ~~~~
+    for (auto& obj : make_range(objPointer, objCount)) { }
+    ~~~~ */
     template <typename T>
     details::pointer_range<T> make_range(T begin, size_t count)
     {
@@ -597,22 +599,10 @@ namespace wil
     //! Improve the conciseness of assigning values to optional output parameters.
     //! @{
 
-    //! Assign a value-type to an optional output parameter.
-    //! Functions may have optional output parameters that want to receive a value calculated
-    //! as part of the function.  Using this routine allows removal of many `if (param != nullptr)` blocks when
-    //! commonly dealing with out parameters in routines.
-    //! ~~~~
-    //! void PerformTask(_Out_opt_ TaskResult* pResult = nullptr)
-    //! {
-    //!     TaskResult result = TaskResult::None;
-    //!     // calculate result
-    //!     wil::AssignToOptParam(pResult, result);
-    //! }
-    //! ~~~~
-    //! @param outParam The optional out-pointer
-    //! @param val The value to set in `outParam` if the out-pointer is non-null
+    /** Assign the given value to an optional output parameter.
+    Makes code more concise by removing trivial `if (outParam)` blocks. */
     template <typename T>
-    inline void AssignToOptParam(_Out_opt_ T *outParam, T val)
+    inline void assign_to_opt_param(_Out_opt_ T *outParam, T val)
     {
         if (outParam != nullptr)
         {
@@ -620,43 +610,27 @@ namespace wil
         }
     }
 
-    //! Assign nullptr to an optional output pointer parameter.
-    //! Functions may have optional output pointer parameters that want to receive an object from
-    //! a function.  Using this routine provides trivial best practice initialization of an optional pointer-based
-    //! output parameter on routine entry and will typically be combined with use of @ref AssignToOptParam or 
-    //! @ref DetachToOptParam on routine exit.
-    //! ~~~~
-    //! bool HasString(_Out_opt_ PCWSTR* outString = nullptr)
-    //! {
-    //!     wil::AssignNullToOptParam(outString);
-    //!     wil::unique_cotaskmem_string str = GetStringInternal();
-    //!     bool hasString = (str != nullptr);
-    //!     wil::DetachToOptParam(outString, str);
-    //!     return hasString;
-    //! }
-    //! ~~~~
-    //! @param outParam The optional out-pointer
+    /** Assign NULL to an optional output pointer parameter.
+    Makes code more concise by removing trivial `if (outParam)` blocks. */
     template <typename T>
-    inline void AssignNullToOptParam(_Out_opt_ T *outParam)
+    inline void assign_null_to_opt_param(_Out_opt_ T *outParam)
     {
         if (outParam != nullptr)
         {
             *outParam = nullptr;
         }
     }
-
     //! @}      // end output parameter helpers
 
-
-    //! Performs a logical or of the given variadic template parameters allowing indirect compile-time boolean evaluation.
-    //! Example usage:
-    //! ~~~~
-    //! template <unsigned int... Rest>
-    //! struct FeatureRequiredBy
-    //! {
-    //!     static const bool enabled = wil::variadic_logical_or<WilFeature<Rest>::enabled...>::value;
-    //! };
-    //! ~~~~
+    /** Performs a logical or of the given variadic template parameters allowing indirect compile-time boolean evaluation.
+    Example usage:
+    ~~~~
+    template <unsigned int... Rest>
+    struct FeatureRequiredBy
+    {
+        static const bool enabled = wil::variadic_logical_or<WilFeature<Rest>::enabled...>::value;
+    };
+    ~~~~ */
     template <bool...> struct variadic_logical_or;
     /// @cond
     template <> struct variadic_logical_or<> : wistd::false_type { };
@@ -673,36 +647,6 @@ namespace wil
             static_assert((flag != 0) && ((flag & (flag - 1)) == 0), "Single flag expected, zero or multiple flags found");
             static const unsigned long long value = flag;
         };
-
-        template <typename T>
-        __forceinline bool verify_bool_helper(T const& t, wistd::true_type)
-        {
-            return static_cast<bool>(t);
-        }
-
-        template <typename T>
-        __forceinline bool verify_bool_helper(T const& t, wistd::false_type)
-        {
-            static_assert((wistd::is_same<T, bool>::value), "Wrong Type: bool/BOOL/BOOLEAN/boolean expected");
-        }
-
-        template <>
-        __forceinline bool verify_bool_helper<bool>(bool const& t, wistd::false_type)
-        {
-            return t;
-        }
-
-        template <>
-        __forceinline bool verify_bool_helper<int>(int const& t, wistd::false_type)     // This supports BOOL
-        {
-            return (t != 0);
-        }
-
-        template <>
-        __forceinline bool verify_bool_helper<unsigned char>(unsigned char const& t, wistd::false_type)     // This supports BOOLEAN and boolean
-        {
-            return !!t;
-        }
     }
     /// @endcond
 
@@ -715,54 +659,83 @@ namespace wil
     //! macros to validate the types given to various macro parameters.
     //! @{
 
-    //! Verify that `val` can be evaluated as a logical bool.
-    //! Other types will generate an intentional compilation error.  Allowed types for a logical bool are bool, BOOL,
-    //! boolean, BOOLEAN, and classes with an explicit bool cast.
-    //! @param val The logical bool expression
-    //! @return A C++ bool representing the evaluation of `val`.
-    template <typename T>
-    __forceinline bool verify_bool(T const& val)
+    /** Verify that `val` can be evaluated as a logical bool.
+    Other types will generate an intentional compilation error.  Allowed types for a logical bool are bool, BOOL,
+    boolean, BOOLEAN, and classes with an explicit bool cast.
+    @param val The logical bool expression
+    @return A C++ bool representing the evaluation of `val`. */
+    template <typename T, __R_ENABLE_IF_IS_CLASS(T)>
+    _Post_satisfies_(return == static_cast<bool>(val))
+    __forceinline bool verify_bool(const T& val)
     {
-        return details::verify_bool_helper(val, typename wistd::is_class<T>::type());
+        return static_cast<bool>(val);
     }
 
-    //! Verify that `val` is a Win32 BOOL value.
-    //! Other types (including other logical bool expressions) will generate an intentional compilation error.  Note that this will
-    //! accept any `int` value as long as that is the underlying typedef behind `BOOL`.
-    //! @param val The Win32 BOOL returning expression
-    //! @return A Win32 BOOL representing the evaluation of `val`.
+    template <typename T, __R_ENABLE_IF_IS_NOT_CLASS(T)>
+    __forceinline bool verify_bool(T val)
+    {
+        static_assert(false, "Wrong Type: bool/BOOL/BOOLEAN/boolean expected");
+    }
+
+    template <>
+    _Post_satisfies_(return == val)
+    __forceinline bool verify_bool<bool>(bool val)
+    {
+        return val;
+    }
+
+    template <>
+    _Post_satisfies_(return == (val != 0))
+    __forceinline bool verify_bool<int>(int val)
+    {
+        return (val != 0);
+    }
+
+    template <>
+    _Post_satisfies_(return == !!val)
+    __forceinline bool verify_bool<unsigned char>(unsigned char val)
+    {
+        return !!val;
+    }
+
+    /** Verify that `val` is a Win32 BOOL value.
+    Other types (including other logical bool expressions) will generate an intentional compilation error.  Note that this will
+    accept any `int` value as long as that is the underlying typedef behind `BOOL`.
+    @param val The Win32 BOOL returning expression
+    @return A Win32 BOOL representing the evaluation of `val`. */
     template <typename T>
-    __forceinline int verify_BOOL(T const& val)
+    _Post_satisfies_(return == val)
+    __forceinline int verify_BOOL(T val)
     {
         // Note: Written in terms of 'int' as BOOL is actually:  typedef int BOOL;
         static_assert((wistd::is_same<T, int>::value), "Wrong Type: BOOL expected");
         return val;
     }
 
-    //! Verify that `hr` is an HRESULT value.
-    //! Other types will generate an intentional compilation error.  Note that this will accept any `long` value as that is the
-    //! underlying typedef behind HRESULT.
+    /** Verify that `hr` is an HRESULT value.
+    Other types will generate an intentional compilation error.  Note that this will accept any `long` value as that is the
+    underlying typedef behind HRESULT.
     //!
-    //! Note that occasionally you might run into an HRESULT which is directly defined with a #define, such as:
-    //! ~~~~
-    //! #define UIA_E_NOTSUPPORTED   0x80040204  
-    //! ~~~~
-    //! Though this looks like an `HRESULT`, this is actually an `unsigned long` (the hex specification forces this).  When
-    //! these are encountered and they are NOT in the public SDK (have not yet shipped to the public), then you should change
-    //! their definition to match the manner in which `HRESULT` constants are defined in winerror.h:
-    //! ~~~~
-    //! #define E_NOTIMPL            _HRESULT_TYPEDEF_(0x80004001L)
-    //! ~~~~
-    //! When these are encountered in the public SDK, their type should not be changed and you should use a static_cast
-    //! to use this value in a macro that utilizes `verify_hresult`, for example:
-    //! ~~~~
-    //! RETURN_HR_IF_FALSE(static_cast<HRESULT>(UIA_E_NOTSUPPORTED), (patternId == UIA_DragPatternId));
-    //! ~~~~
-    //! @param val The HRESULT returning expression
-    //! @return An HRESULT representing the evaluation of `val`.
+    Note that occasionally you might run into an HRESULT which is directly defined with a #define, such as:
+    ~~~~
+    #define UIA_E_NOTSUPPORTED   0x80040204  
+    ~~~~
+    Though this looks like an `HRESULT`, this is actually an `unsigned long` (the hex specification forces this).  When
+    these are encountered and they are NOT in the public SDK (have not yet shipped to the public), then you should change
+    their definition to match the manner in which `HRESULT` constants are defined in winerror.h:
+    ~~~~
+    #define E_NOTIMPL            _HRESULT_TYPEDEF_(0x80004001L)
+    ~~~~
+    When these are encountered in the public SDK, their type should not be changed and you should use a static_cast
+    to use this value in a macro that utilizes `verify_hresult`, for example:
+    ~~~~
+    RETURN_HR_IF_FALSE(static_cast<HRESULT>(UIA_E_NOTSUPPORTED), (patternId == UIA_DragPatternId));
+    ~~~~
+    @param val The HRESULT returning expression
+    @return An HRESULT representing the evaluation of `val`. */
     template <typename T>
     _Post_satisfies_(return == hr)
-    inline long verify_hresult(const T hr)
+    inline long verify_hresult(T hr)
     {
         // Note: Written in terms of 'int' as HRESULT is actually:  typedef _Return_type_success_(return >= 0) long HRESULT
         static_assert(wistd::is_same<T, long>::value, "Wrong Type: HRESULT expected");
@@ -841,11 +814,14 @@ namespace wil
         };
     } // details
     /// @endcond
-    //! Defines the unsigned type of the same width (1, 2, 4, or 8 bytes) as the given type.
-    //! This allows code to generically convert any enum class to it's corresponding underlying type.
+
+    /** Defines the unsigned type of the same width (1, 2, 4, or 8 bytes) as the given type.
+    This allows code to generically convert any enum class to it's corresponding underlying type. */
     template <typename T>
     using integral_from_enum = typename details::variable_size_mapping<T>::type;
-
 } // wil
 
 #pragma warning(pop)
+
+#endif // __cplusplus
+#endif // __WIL_COMMON_INCLUDED
