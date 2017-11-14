@@ -38,7 +38,6 @@ void toPrintableBuffer(char c, char* printBuffer, int* printCch);
 std::string csi(string seq);
 void PrintInputToDebug(std::string& rawInput);
 void PrintOutputToDebug(std::string& rawOutput);
-
 ////////////////////////////////////////////////////////////////////////////////
 
 void ReadCallback(BYTE* buffer, DWORD dwRead)

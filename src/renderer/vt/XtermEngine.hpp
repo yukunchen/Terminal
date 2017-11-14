@@ -56,7 +56,6 @@ public:
     HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta) override;
 protected:
     HRESULT _MoveCursor(_In_ const COORD coord);
-private:
     const COLORREF* const _ColorTable;
     const WORD _cColorTable;
     const bool _fUseAsciiOnly;

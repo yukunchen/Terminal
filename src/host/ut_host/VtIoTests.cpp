@@ -673,7 +673,7 @@ void VtIoTests::DtorTestJustEngine()
 
         wil::unique_hfile hOutputFile;
         hOutputFile.reset(INVALID_HANDLE_VALUE);
-		auto pRenderer256 = new Xterm256Engine(std::move(hOutputFile), SetUpViewport());
+		auto pRenderer256 = new Xterm256Engine(std::move(hOutputFile), SetUpViewport(), colorTable, colorTableSize);
         Log::Comment(NoThrowString().Format(L"Made Xterm256Engine"));
         delete pRenderer256;
         Log::Comment(NoThrowString().Format(L"Deleted."));
@@ -730,7 +730,9 @@ void VtIoTests::DtorTestDeleteVtio()
         VtIo* vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
-                                                                  SetUpViewport());
+                                                                  SetUpViewport(),
+                                                                  colorTable,
+                                                                  colorTableSize);
         Log::Comment(NoThrowString().Format(L"Made Xterm256Engine"));
         delete vtio;
         Log::Comment(NoThrowString().Format(L"Deleted."));
@@ -800,7 +802,9 @@ void VtIoTests::DtorTestStackAlloc()
         {
             VtIo vtio = VtIo();
             vtio._pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
-                                                                     SetUpViewport());
+                                                                     SetUpViewport(),
+                                                                     colorTable,
+                                                                     colorTableSize);
         }
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
@@ -861,7 +865,9 @@ void VtIoTests::DtorTestStackAllocMany()
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio1 = VtIo();
             vtio1._pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
-                                                                      SetUpViewport());
+                                                                      SetUpViewport(),
+                                                                      colorTable,
+                                                                      colorTableSize);
 
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio2 = VtIo();
