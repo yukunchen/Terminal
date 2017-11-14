@@ -48,6 +48,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host", "src\host\lib\hostli
 		{18D09A24-8240-42D6-8CB6-236EEE820263} = {18D09A24-8240-42D6-8CB6-236EEE820263}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.unittest", "src\host\ut_lib\host.unittest.vcxproj", "{06EC74CB-9A12-429C-B551-8562EC954747}"
+	ProjectSection(ProjectDependencies) = postProject
+		{18D09A24-8240-42D6-8CB6-236EEE820263} = {18D09A24-8240-42D6-8CB6-236EEE820263}
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.Tests.Unit", "src\host\ut_host\Host.UnitTests.vcxproj", "{531C23E7-4B76-4C08-8AAD-04164CB628C9}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.Tests.Feature", "src\host\ft_host\Host.FeatureTests.vcxproj", "{8CDB8850-7484-4EC7-B45B-181F85B2EE54}"
@@ -207,6 +212,14 @@ Global
 		{06EC74CB-9A12-429C-B551-8562EC954746}.Release|x64.Build.0 = Release|x64
 		{06EC74CB-9A12-429C-B551-8562EC954746}.Release|x86.ActiveCfg = Release|Win32
 		{06EC74CB-9A12-429C-B551-8562EC954746}.Release|x86.Build.0 = Release|Win32
+		{06EC74CB-9A12-429C-B551-8562EC954747}.Debug|x64.ActiveCfg = Debug|x64
+		{06EC74CB-9A12-429C-B551-8562EC954747}.Debug|x64.Build.0 = Debug|x64
+		{06EC74CB-9A12-429C-B551-8562EC954747}.Debug|x86.ActiveCfg = Debug|Win32
+		{06EC74CB-9A12-429C-B551-8562EC954747}.Debug|x86.Build.0 = Debug|Win32
+		{06EC74CB-9A12-429C-B551-8562EC954747}.Release|x64.ActiveCfg = Release|x64
+		{06EC74CB-9A12-429C-B551-8562EC954747}.Release|x64.Build.0 = Release|x64
+		{06EC74CB-9A12-429C-B551-8562EC954747}.Release|x86.ActiveCfg = Release|Win32
+		{06EC74CB-9A12-429C-B551-8562EC954747}.Release|x86.Build.0 = Release|Win32
 		{531C23E7-4B76-4C08-8AAD-04164CB628C9}.Debug|x64.ActiveCfg = Debug|x64
 		{531C23E7-4B76-4C08-8AAD-04164CB628C9}.Debug|x64.Build.0 = Debug|x64
 		{531C23E7-4B76-4C08-8AAD-04164CB628C9}.Debug|x86.ActiveCfg = Debug|Win32
