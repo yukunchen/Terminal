@@ -37,6 +37,8 @@ std::string toPrintableString(std::string& inString);
 void toPrintableBuffer(char c, char* printBuffer, int* printCch);
 std::string csi(string seq);
 void PrintInputToDebug(std::string& rawInput);
+void PrintOutputToDebug(std::string& rawOutput);
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void ReadCallback(BYTE* buffer, DWORD dwRead)
@@ -46,8 +48,7 @@ void ReadCallback(BYTE* buffer, DWORD dwRead)
     if (fSuccess)
     {
         std::string renderData = std::string((char*)buffer, dwRead);
-        std::string printable = toPrintableString(renderData);
-        PrintInputToDebug(printable);
+        PrintOutputToDebug(renderData);
     }
     else
     {
@@ -322,7 +323,19 @@ void PrintInputToDebug(std::string& rawInput)
     {
         std::string printable = toPrintableString(rawInput);
         std::stringstream ss;
-        ss << "Input \"" << printable.c_str() << "\" [" << rawInput.length() << "]\n";
+        ss << "Input \"" << printable << "\" [" << rawInput.length() << "]\n";
+        std::string output = ss.str();
+        debug->WriteInput(output);
+    }
+}
+
+void PrintOutputToDebug(std::string& rawOutput)
+{
+    if (debug != nullptr)
+    {
+        std::string printable = toPrintableString(rawOutput);
+        std::stringstream ss;
+        ss << printable << "\n";
         std::string output = ss.str();
         debug->WriteInput(output);
     }

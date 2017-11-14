@@ -47,3 +47,6 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
 NTSTATUS DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
                                          _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                          _Out_ size_t& eventsWritten);
+
+NTSTATUS DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const pInputBuffer,
+                                              _In_ KeyEvent key);

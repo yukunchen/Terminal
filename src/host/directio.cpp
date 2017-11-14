@@ -10,6 +10,7 @@
 
 #include "_output.h"
 #include "output.h"
+#include "input.h"
 #include "dbcs.h"
 #include "handle.h"
 #include "misc.h"
@@ -451,6 +452,32 @@ HRESULT DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
 
     // add to InputBuffer
     eventsWritten = pInputBuffer->Prepend(events);
+
+    return S_OK;
+}
+
+// Function Description:
+// - Writes the input KeyEvent to the console as a console control event. This 
+//      can be used for potentially generating Ctrl-C events, as 
+//      HandleGenericKeyEvent will correctly generate the Ctrl-C response in 
+//      the same way that it'd be handled from the window proc, with the proper
+//      processed vs raw input handling.
+//  If the input key is *not* a Ctrl-C key, then it will get written to the 
+//      buffer just the same as any other KeyEvent.
+// Arguments:
+// - pInputBuffer - the input buffer to write to. Currently unused, as 
+//      HandleGenericKeyEvent just gets the global input buffer, but all 
+//      ConGetSet API's require a input or output object.
+// - key - The keyevent to send to the console. 
+// Return Value:
+// - HRESULT indicating success or failure
+HRESULT DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const /*pInputBuffer*/,
+                                             _In_ KeyEvent key)
+{
+    LockConsole();
+    auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
+
+    HandleGenericKeyEvent(key, false);
 
     return S_OK;
 }
