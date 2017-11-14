@@ -63,11 +63,6 @@ public:
      WCHAR aWordDelimChars[WORD_DELIM_MAX];
 
      IRenderer* pRender;
-     // TODO: 14522377 Come back and remove this
-     // ConIoSrv needs another way to get ahold of this object, and now that
-     //   the renderer holds on to the engines all in a collection, coniosrv
-     //   can't be sure which engine is the actual WddmConEngine
-     IRenderEngine* pWddmconEngine;
      
      IFontDefaultList* pFontDefaultList;
 
