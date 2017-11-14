@@ -85,6 +85,8 @@ public:
             
     IRenderCursor* const GetCursor() override;
                 
+    // See _PaintUtf8BufferLine for explanation of this value.
+    static const size_t ERASE_CHARACTER_STRING_LENGTH = 8;
 
 protected:
     wil::unique_hfile _hFile;
@@ -101,7 +103,7 @@ protected:
     COORD _scrollDelta;
 
     bool _quickReturn;
-    
+    bool _clearedAllThisFrame;
     VtCursor _cursor;
 
     HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);
@@ -113,6 +115,7 @@ protected:
     HRESULT _InvalidCombine(_In_ const SMALL_RECT* const psrc);
     HRESULT _InvalidOffset(_In_ const COORD* const ppt);
     HRESULT _InvalidRestrict();
+    bool _AllIsInvalid() const;
     
     HRESULT _StopCursorBlinking();
     HRESULT _StartCursorBlinking();
@@ -122,8 +125,11 @@ protected:
     HRESULT _InsertDeleteLine(_In_ const short sLines, _In_ const bool fInsertLine);
     HRESULT _DeleteLine(_In_ const short sLines);
     HRESULT _InsertLine(_In_ const short sLines);
+    HRESULT _CursorForward(_In_ const short chars);
+    HRESULT _EraseCharacter(_In_ const short chars);
     HRESULT _CursorPosition(_In_ const COORD coord);
     HRESULT _CursorHome();
+    HRESULT _ClearScreen();
     HRESULT _SetGraphicsRendition16Color(_In_ const WORD wAttr,
                                          _In_ const bool fIsForeground);
     HRESULT _SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
@@ -132,7 +138,9 @@ protected:
     
     virtual HRESULT _MoveCursor(_In_ const COORD coord) = 0;
     HRESULT _RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                     _In_ COLORREF const colorBackground);
+                                     _In_ COLORREF const colorBackground,
+                                     _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                                     _In_ const WORD cColorTable);
     HRESULT _16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                          _In_ COLORREF const colorBackground,
                                          _In_reads_(cColorTable) const COLORREF* const ColorTable,

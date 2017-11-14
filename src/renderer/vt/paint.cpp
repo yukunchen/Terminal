@@ -47,7 +47,8 @@ HRESULT VtEngine::EndPaint()
     _fInvalidRectUsed = false;
     _scrollDelta = {0};
     _cursor.ClearMoved();
-    
+    _clearedAllThisFrame = false;
+
     return S_OK;
 }
 
@@ -158,18 +159,35 @@ HRESULT VtEngine::PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
-                                           _In_ COLORREF const colorBackground)
+                                           _In_ COLORREF const colorBackground,
+                                           _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                                           _In_ const WORD cColorTable)
 {
+    WORD wFoundColor = 0;
     if (colorForeground != _LastFG)
     {
-        RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(colorForeground, true));
+        if (::FindTableIndex(colorForeground, ColorTable, cColorTable, &wFoundColor))
+        {
+            RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, true));
+        }
+        else
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(colorForeground, true));
+        }
         _LastFG = colorForeground;
         
     }
 
     if (colorBackground != _LastBG) 
     {
-        RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(colorBackground, false));
+        if (::FindTableIndex(colorBackground, ColorTable, cColorTable, &wFoundColor))
+        {
+            RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, false));
+        }
+        else
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionRGBColor(colorBackground, false));
+        }
         _LastBG = colorBackground;
     }
     
@@ -238,9 +256,9 @@ HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLin
     {
         RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(rgWidths[i]), &totalWidth));
     }
-    const size_t actualCch = cchLine;
+    const size_t cchActual = cchLine;
 
-    wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(actualCch + 1);
+    wistd::unique_ptr<char[]> rgchNeeded = wil::make_unique_nothrow<char[]>(cchActual + 1);
     RETURN_IF_NULL_ALLOC(rgchNeeded);
     
     char* nextChar = &rgchNeeded[0];
@@ -259,9 +277,9 @@ HRESULT VtEngine::_PaintAsciiBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLin
         }
     }
 
-    rgchNeeded[actualCch] = '\0';
+    rgchNeeded[cchActual] = '\0';
 
-    RETURN_IF_FAILED(_Write(rgchNeeded.get(), actualCch));
+    RETURN_IF_FAILED(_Write(rgchNeeded.get(), cchActual));
     
     // Update our internal tracker of the cursor's position
     _lastText.X += totalWidth;
@@ -287,23 +305,79 @@ HRESULT VtEngine::_PaintUtf8BufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine
 {
     RETURN_IF_FAILED(_MoveCursor(coord));
 
-    // TODO: MSFT:14099536 Try and optimize the spaces.
-    const size_t actualCch = cchLine;
-    
-    wistd::unique_ptr<char[]> rgchNeeded;
-    size_t needed = 0;
-    RETURN_IF_FAILED(ConvertToA(CP_UTF8, pwsLine, cchLine, rgchNeeded, needed));
-
-    RETURN_IF_FAILED(_Write(rgchNeeded.get(), needed));
-    
-    // Update our internal tracker of the cursor's position
     short totalWidth = 0;
     for (size_t i = 0; i < cchLine; i++)
     {
         RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(rgWidths[i]), &totalWidth));
     }
-    _lastText.X += totalWidth;
 
+    bool foundNonspace = false;
+    size_t lastNonSpace = 0;
+    for (size_t i = 0; i < cchLine; i++)
+    {
+        if (pwsLine[i] != L'\x20')
+        {
+            lastNonSpace = i;
+            foundNonspace = true;
+        }
+    }
+    // Examples:
+    // - "  ":
+    //      cch = 2, lastNonSpace = 0, foundNonSpace = false
+    //      cch-lastNonSpace = 2 -> good
+    //      cch-lastNonSpace-(0) = 2 -> good
+    // - "A "
+    //      cch = 2, lastNonSpace = 0, foundNonSpace = true
+    //      cch-lastNonSpace = 2 -> bad
+    //      cch-lastNonSpace-(1) = 1 -> good
+    // - "AA"
+    //      cch = 2, lastNonSpace = 1, foundNonSpace = true
+    //      cch-lastNonSpace = 1 -> bad
+    //      cch-lastNonSpace-(1) = 0 -> good
+    const size_t numSpaces = cchLine - lastNonSpace - (foundNonspace ? 1 : 0);
+
+    // Optimizations:
+    // If there are lots of spaces at the end of the line, we can try to Erase 
+    //      Character that number of spaces, then move the cursor forward (to
+    //      where it would be if we had written the spaces)
+    // An erase character and move right sequence is 8 chars, and possibly 10 
+    //      (if there are at least 10 spaces, 2 digits to print)
+    // ESC [ %d X ESC [ %d C
+    // ESC [ %d %d X ESC [ %d %d C
+    // So we need at least 9 spaces for the optimized sequence to make sense.
+    // Also, if we already erased the entire display this frame, then 
+    //    don't do ANYTHING with erasing at all.
+
+    // Note: We're only doing these optimizations along the UTF-8 path, because
+    // the inbox telnet client doesn't understand the Erase Character sequence,
+    // and it uses xterm-ascii. This ensures that xterm and -256color consumers
+    // get the enhancements, and telnet isn't broken.
+
+    const bool useEraseChar = (numSpaces > ERASE_CHARACTER_STRING_LENGTH) &&
+                              (!_clearedAllThisFrame); 
+    // If we're not using erase char, but we did erase all at the start of the 
+    //      frame, don't add spaces at the end.
+    const size_t cchActual = (useEraseChar || _clearedAllThisFrame) ? 
+                                min(cchLine - numSpaces, cchLine) :
+                                cchLine;
+    
+    // Write the actual text string
+    {
+        wistd::unique_ptr<char[]> rgchNeeded;
+        size_t needed = 0;
+        RETURN_IF_FAILED(ConvertToA(CP_UTF8, pwsLine, cchActual, rgchNeeded, needed));
+
+        RETURN_IF_FAILED(_Write(rgchNeeded.get(), needed));
+    }
+    
+    if (useEraseChar)
+    {
+        RETURN_IF_FAILED(_EraseCharacter(static_cast<short>(numSpaces)));
+        RETURN_IF_FAILED(_CursorForward(static_cast<short>(numSpaces)));
+    }
+  
+    // Update our internal tracker of the cursor's position
+    _lastText.X += totalWidth;
 
     return S_OK;
 }

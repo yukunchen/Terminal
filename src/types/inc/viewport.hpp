@@ -12,6 +12,7 @@ Author(s):
 --*/
 
 #pragma once
+#include "../../inc/operators.hpp"
 
 namespace Microsoft
 {

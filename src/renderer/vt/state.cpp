@@ -5,7 +5,6 @@
 ********************************************************/
 
 #include "precomp.h"
-
 #include "vtrenderer.hpp"
 
 // For _vcprintf
@@ -32,6 +31,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe, _In_ const Viewport initialViewp
     _scrollDelta({0}),
     _LastFG(INVALID_COLOR),
     _LastBG(INVALID_COLOR),
+    _clearedAllThisFrame(false),
     _cursor(this)
 {
 #ifndef UNIT_TESTING
@@ -259,4 +259,9 @@ void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t
 IRenderCursor* const VtEngine::GetCursor()
 {
     return &_cursor;
+}
+
+bool VtEngine::_AllIsInvalid() const
+{
+    return _lastViewport.ToOrigin().ToExclusive() == _srcInvalid;
 }

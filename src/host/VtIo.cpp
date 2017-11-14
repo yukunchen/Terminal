@@ -126,7 +126,9 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
         {
         case VtIoMode::XTERM_256:
             _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
-                                                                initialViewport);
+                                                                initialViewport,
+                                                                gci->GetColorTable(),
+                                                                static_cast<WORD>(gci->GetColorTableSize()));
             break;
         case VtIoMode::XTERM:
             _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
