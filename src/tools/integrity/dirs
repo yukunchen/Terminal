@@ -1,0 +1,4 @@
+DIRS=exeuwp{noncrit} \
+     exewin32{noncrit} \
+     lib{noncrit} \
+     packageuwp{noncrit} \
