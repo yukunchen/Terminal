@@ -1269,7 +1269,7 @@ NTSTATUS TEXT_BUFFER_INFO::CreateInstance(_In_ const FontInfo* const pFontInfo,
         textBuffer->_ciFill = ciFill;
         textBuffer->_coordBufferSize = coordScreenBufferSize;
 
-        for (size_t i = 0; i < coordScreenBufferSize.Y; ++i)
+        for (size_t i = 0; i < static_cast<size_t>(coordScreenBufferSize.Y); ++i)
         {
             try
             {
@@ -1994,12 +1994,12 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
 
     // realloc in the Y direction
     // remove rows if we're shrinking
-    while (_storage.size() > coordNewScreenSize.Y)
+    while (_storage.size() > static_cast<size_t>(coordNewScreenSize.Y))
     {
         _storage.pop_back();
     }
     // add rows if we're growing
-    while (_storage.size() < coordNewScreenSize.Y)
+    while (_storage.size() < static_cast<size_t>(coordNewScreenSize.Y))
     {
         try
         {
@@ -2010,14 +2010,18 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
             return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
     }
+    HRESULT hr = S_OK;
     for (SHORT i = 0; static_cast<size_t>(i) < _storage.size(); ++i)
     {
         // fix values for sRowId on each row
         _storage[i].sRowId = i;
 
         // realloc in the X direction
-        _storage[i].CharRow.Resize(coordNewScreenSize.X);
-        _storage[i].AttrRow.Resize(currentScreenBufferSize.X, coordNewScreenSize.X);
+        hr = _storage[i].Resize(coordNewScreenSize.X);
+        if (FAILED(hr))
+        {
+            return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        }
     }
     SetCoordBufferSize(coordNewScreenSize);
     return STATUS_SUCCESS;
