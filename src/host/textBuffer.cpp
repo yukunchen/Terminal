@@ -10,6 +10,8 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
+#include <memory>
+
 #pragma hdrstop
 
 // Characters used for padding out the buffer with invalid/empty space
@@ -18,26 +20,138 @@
 
 #pragma region CHAR_ROW
 
+void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept
+{
+    std::swap(a.Left, b.Left);
+    std::swap(a.Right, b.Right);
+    std::swap(a.Chars, b.Chars);
+    std::swap(a.KAttrs, b.KAttrs);
+    std::swap(a.bRowFlags, b.bRowFlags);
+    std::swap(a._rowWidth, b._rowWidth);
+}
+
+CHAR_ROW::CHAR_ROW(short rowWidth) :
+    _rowWidth{ static_cast<size_t>(rowWidth) },
+    Left{ rowWidth },
+    Right{ 0 }
+{
+    std::unique_ptr<WCHAR[]> charBuffer = std::make_unique<WCHAR[]>(rowWidth);
+    THROW_IF_NULL_ALLOC(charBuffer.get());
+
+    std::unique_ptr<BYTE[]> attributesBuffer = std::make_unique<BYTE[]>(rowWidth);
+    THROW_IF_NULL_ALLOC(attributesBuffer.get());
+
+    Chars = charBuffer.release();
+    KAttrs = attributesBuffer.release();
+
+    wmemset(Chars, PADDING_CHAR, rowWidth);
+    memset(KAttrs, PADDING_KATTR, rowWidth);
+
+    SetWrapStatus(false);
+    SetDoubleBytePadded(false);
+}
+
+CHAR_ROW::CHAR_ROW(const CHAR_ROW& a) :
+    Left{ a.Left },
+    Right{ a.Right },
+    bRowFlags{ a.bRowFlags },
+    _rowWidth{ a._rowWidth }
+{
+    std::unique_ptr<WCHAR[]> charBuffer = std::make_unique<WCHAR[]>(_rowWidth);
+    THROW_IF_NULL_ALLOC(charBuffer.get());
+
+    std::unique_ptr<BYTE[]> attributesBuffer = std::make_unique<BYTE[]>(_rowWidth);
+    THROW_IF_NULL_ALLOC(attributesBuffer.get());
+
+    Chars = charBuffer.release();
+    KAttrs = attributesBuffer.release();
+
+    std::copy(a.Chars, a.Chars + a._rowWidth, Chars);
+    std::copy(a.KAttrs, a.KAttrs + a._rowWidth, KAttrs);
+}
+
+CHAR_ROW& CHAR_ROW::operator=(const CHAR_ROW& a)
+{
+    CHAR_ROW temp(a);
+    swap(*this, temp);
+    return *this;
+}
+
+CHAR_ROW::CHAR_ROW(CHAR_ROW&& a)
+{
+    swap(*this, a);
+}
+
+CHAR_ROW::~CHAR_ROW()
+{
+    if (Chars)
+    {
+        delete[] Chars;
+    }
+    if (KAttrs)
+    {
+        delete[] KAttrs;
+    }
+}
+
+size_t CHAR_ROW::GetWidth() const
+{
+    return _rowWidth;
+}
+
+
 // Routine Description:
 // - Sets all properties of the CHAR_ROW to default values
 // Arguments:
 // - sRowWidth - The width of the row.
 // Return Value:
 // - <none>
-void CHAR_ROW::Initialize(_In_ short const sRowWidth)
+void CHAR_ROW::Reset(_In_ short const sRowWidth)
 {
-    this->Left = sRowWidth;
-    this->Right = 0;
+    _rowWidth = static_cast<size_t>(sRowWidth);
+    Left = sRowWidth;
+    Right = 0;
 
-    wmemset(this->Chars, PADDING_CHAR, sRowWidth);
+    wmemset(Chars, PADDING_CHAR, sRowWidth);
 
-    if (this->KAttrs != nullptr)
+    if (KAttrs != nullptr)
     {
         memset(this->KAttrs, PADDING_KATTR, sRowWidth);
     }
 
-    this->SetWrapStatus(false);
-    this->SetDoubleBytePadded(false);
+    SetWrapStatus(false);
+    SetDoubleBytePadded(false);
+}
+
+HRESULT CHAR_ROW::Resize(_In_ size_t const newSize)
+{
+    std::unique_ptr<WCHAR[]> charBuffer = std::make_unique<WCHAR[]>(newSize);
+    RETURN_IF_NULL_ALLOC(charBuffer.get());
+
+    std::unique_ptr<BYTE[]> attributesBuffer = std::make_unique<BYTE[]>(newSize);
+    RETURN_IF_NULL_ALLOC(attributesBuffer.get());
+
+    const size_t copySize = min(newSize, _rowWidth);
+    std::copy(Chars, Chars + copySize, charBuffer.get());
+    std::copy(KAttrs, KAttrs + copySize, attributesBuffer.get());
+
+    if (newSize > _rowWidth)
+    {
+        // last attribute in a row gets extended to the end
+        BYTE lastAttribute = attributesBuffer[copySize - 1];
+        std::fill(attributesBuffer.get() + copySize, attributesBuffer.get() + newSize, lastAttribute);
+        std::fill(charBuffer.get() + copySize, charBuffer.get() + newSize, UNICODE_SPACE);
+    }
+
+    delete[] Chars;
+    delete[] KAttrs;
+    Chars = charBuffer.release();
+    KAttrs = attributesBuffer.release();
+    Left = static_cast<short>(newSize);
+    Right = 0;
+    _rowWidth = newSize;
+
+    return S_OK;
 }
 
 // Routine Description:
@@ -426,6 +540,42 @@ void TextAttributeRun::SetAttributes(_In_ const TextAttribute textAttribute)
 
 #pragma region ATTR_ROW
 
+void swap(ATTR_ROW& a, ATTR_ROW& b) noexcept
+{
+    std::swap(a._cList, b._cList);
+    std::swap(a._rgList, b._rgList);
+    std::swap(a._cchRowWidth, b._cchRowWidth);
+}
+
+ATTR_ROW::ATTR_ROW(_In_ const UINT cchRowWidth, _In_ const TextAttribute attr)
+{
+    _rgList = wil::make_unique_nothrow<TextAttributeRun[]>(1);
+    THROW_IF_NULL_ALLOC(_rgList.get());
+
+    _rgList[0].SetAttributes(attr);
+    _rgList[0].SetLength(cchRowWidth);
+    _cList = 1;
+    _cchRowWidth = cchRowWidth;
+}
+
+ATTR_ROW::ATTR_ROW(const ATTR_ROW& a) :
+    _cList{ a._cList },
+    _cchRowWidth{ a._cchRowWidth }
+{
+    _rgList = wil::make_unique_nothrow<TextAttributeRun[]>(1);
+    THROW_IF_NULL_ALLOC(_rgList.get());
+    std::copy(a._rgList.get(), a._rgList.get() + _cList, _rgList.get());
+}
+
+ATTR_ROW& ATTR_ROW::operator=(const ATTR_ROW& a)
+{
+    ATTR_ROW temp{ a };
+    std::swap(_cList, temp._cList);
+    std::swap(_cchRowWidth, temp._cchRowWidth);
+    std::swap(_rgList, temp._rgList);
+    return *this;
+}
+
 // Routine Description:
 // - Sets all properties of the ATTR_ROW to default values
 // Arguments:
@@ -433,7 +583,7 @@ void TextAttributeRun::SetAttributes(_In_ const TextAttribute textAttribute)
 // - pAttr - The default text attributes to use on text in this row.
 // Return Value:
 // - <none>
-bool ATTR_ROW::Initialize(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr)
+bool ATTR_ROW::Reset(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr)
 {
     wistd::unique_ptr<TextAttributeRun[]> pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(1);
     bool fSuccess = pNewRun != nullptr;
@@ -457,10 +607,9 @@ bool ATTR_ROW::Initialize(_In_ UINT const cchRowWidth, _In_ const TextAttribute 
 // - sOldWidth - The original width of the row.
 // - sNewWidth - The new width of the row.
 // Return Value:
-// - <none>
-bool ATTR_ROW::Resize(_In_ const short sOldWidth, _In_ const short sNewWidth)
+// - S_OK on success, otherwise relevant error HRESULT
+HRESULT ATTR_ROW::Resize(_In_ const short sOldWidth, _In_ const short sNewWidth)
 {
-    bool fSuccess = false;
     // Easy case. If the new row is longer, increase the length of the last run by how much new space there is.
     if (sNewWidth > sOldWidth)
     {
@@ -475,8 +624,6 @@ bool ATTR_ROW::Resize(_In_ const short sOldWidth, _In_ const short sNewWidth)
 
         // Store that the new total width we represent is the new width.
         _cchRowWidth = sNewWidth;
-
-        fSuccess = true;
     }
     // harder case: new row is shorter.
     else
@@ -504,10 +651,8 @@ bool ATTR_ROW::Resize(_In_ const short sOldWidth, _In_ const short sNewWidth)
         // NOTE: Under some circumstances here, we have leftover run segments in memory or blank run segments
         // in memory. We're not going to waste time redimensioning the array in the heap. We're just noting that the useful
         // portions of it have changed.
-
-        fSuccess = true;
     }
-    return fSuccess;
+    return S_OK;
 }
 
 // Routine Description:
@@ -988,6 +1133,43 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
 
 #pragma region ROW
 
+void swap(ROW& a, ROW& b)
+{
+    using std::swap;
+    swap(a.CharRow, b.CharRow);
+    swap(a.AttrRow, b.AttrRow);
+    swap(a.sRowId, b.sRowId);
+}
+
+ROW::ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttribute fillAttribute) :
+    sRowId{ rowId },
+    CharRow{ rowWidth },
+    AttrRow{ rowWidth, fillAttribute }
+{
+}
+
+ROW::ROW(const ROW& a) :
+    CharRow{ a.CharRow },
+    AttrRow{ a.AttrRow },
+    sRowId{ a.sRowId }
+{
+}
+
+ROW& ROW::operator=(const ROW& a)
+{
+    using std::swap;
+    ROW temp{ a };
+    swap(*this, temp);
+    return *this;
+}
+
+ROW::ROW(ROW&& a) :
+    CharRow{ std::move(a.CharRow) },
+    AttrRow{ std::move(a.AttrRow) },
+    sRowId{ std::move(a.sRowId) }
+{
+}
+
 // Routine Description:
 // - Sets all properties of the ROW to default values
 // Arguments:
@@ -995,11 +1177,18 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
 // - Attr - The default attribute (color) to fill
 // Return Value:
 // - <none>
-bool ROW::Initialize(_In_ short const sRowWidth, _In_ const TextAttribute Attr)
+bool ROW::Reset(_In_ short const sRowWidth, _In_ const TextAttribute Attr)
 {
-    this->CharRow.Initialize(sRowWidth);
-    return this->AttrRow.Initialize(sRowWidth, Attr);
+    CharRow.Reset(sRowWidth);
+    return AttrRow.Reset(sRowWidth, Attr);
+}
 
+HRESULT ROW::Resize(_In_ size_t const width)
+{
+    size_t oldWidth = CharRow.GetWidth();
+    RETURN_IF_FAILED(CharRow.Resize(width));
+    RETURN_IF_FAILED(AttrRow.Resize(static_cast<short>(oldWidth), static_cast<short>(width)));
+    return S_OK;
 }
 
 bool ROW::IsTrailingByteAtColumn(_In_ const size_t column) const
@@ -1023,8 +1212,6 @@ void ROW::ClearColumn(_In_ const size_t column)
 // Routine Description:
 // - Constructor to set default properties for TEXT_BUFFER_INFO
 TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(_In_ const FontInfo* const pfiFont) :
-    _Rows(),
-    _TextRows(nullptr),
     _fiCurrentFont(*pfiFont),
     _fiDesiredFont(*pfiFont)
 {
@@ -1038,21 +1225,6 @@ TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(_In_ const FontInfo* const pfiFont) :
 #pragma prefast(disable:6001, "Prefast fires that *this is not initialized, which is absurd since this is a destructor.")
 TEXT_BUFFER_INFO::~TEXT_BUFFER_INFO()
 {
-    if (this->_TextRows != nullptr)
-    {
-        delete[] this->_TextRows;
-    }
-
-    if (this->_Rows != nullptr)
-    {
-        delete[] this->_Rows;
-    }
-
-    if (this->_KAttrRows != nullptr)
-    {
-        delete[] this->_KAttrRows;
-    }
-
     if (this->_pCursor != nullptr)
     {
         delete this->_pCursor;
@@ -1081,78 +1253,37 @@ NTSTATUS TEXT_BUFFER_INFO::CreateInstance(_In_ const FontInfo* const pFontInfo,
 
     NTSTATUS status = STATUS_SUCCESS;
 
-    PTEXT_BUFFER_INFO pTextBufferInfo = new TEXT_BUFFER_INFO(pFontInfo);
+    std::unique_ptr<TEXT_BUFFER_INFO> textBuffer = std::make_unique<TEXT_BUFFER_INFO>(pFontInfo);
+    if (textBuffer.get() == nullptr)
+    {
+        return STATUS_NO_MEMORY;
+    }
 
-    status = NT_TESTNULL(pTextBufferInfo);
+    status = Cursor::CreateInstance(static_cast<ULONG>(uiCursorSize), &textBuffer->_pCursor);
     if (NT_SUCCESS(status))
     {
-        status = Cursor::CreateInstance((ULONG)uiCursorSize, &pTextBufferInfo->_pCursor);
-        if (NT_SUCCESS(status))
+        // This has to come after the font is set because this function is dependent on the font info.
+        // TODO: make this less prone to error by perhaps putting the storage of the first buffer font info as a part of TEXT_BUFFER_INFO's constructor
+
+        textBuffer->_FirstRow = 0;
+        textBuffer->_ciFill = ciFill;
+        textBuffer->_coordBufferSize = coordScreenBufferSize;
+
+        for (size_t i = 0; i < coordScreenBufferSize.Y; ++i)
         {
-            // This has to come after the font is set because this function is dependent on the font info.
-            // TODO: make this less prone to error by perhaps putting the storage of the first buffer font info as a part of TEXT_BUFFER_INFO's constructor
-
-            pTextBufferInfo->_FirstRow = 0;
-
-            pTextBufferInfo->_ciFill = ciFill;
-
-            pTextBufferInfo->_coordBufferSize = coordScreenBufferSize;
-
-            pTextBufferInfo->_Rows = new ROW[coordScreenBufferSize.Y];
-            status = NT_TESTNULL(pTextBufferInfo->_Rows);
-            if (NT_SUCCESS(status))
+            try
             {
-                pTextBufferInfo->_TextRows = new WCHAR[coordScreenBufferSize.X * coordScreenBufferSize.Y];
-                status = NT_TESTNULL(pTextBufferInfo->_TextRows);
-                if (NT_SUCCESS(status))
-                {
-                    pTextBufferInfo->_KAttrRows = new BYTE[coordScreenBufferSize.X * coordScreenBufferSize.Y];
-                    status = NT_TESTNULL(pTextBufferInfo->_KAttrRows);
-                    if (NT_SUCCESS(status))
-                    {
-                        PBYTE AttrRowPtr = pTextBufferInfo->_KAttrRows;
-                        PWCHAR TextRowPtr = pTextBufferInfo->_TextRows;
-
-                        for (long i = 0; i < coordScreenBufferSize.Y; i++, TextRowPtr += coordScreenBufferSize.X)
-                        {
-                            ROW* const pRow = &pTextBufferInfo->_Rows[i];
-
-                            pRow->CharRow.Chars = TextRowPtr;
-                            pRow->CharRow.KAttrs = AttrRowPtr;
-
-                            if (AttrRowPtr)
-                            {
-                                AttrRowPtr += coordScreenBufferSize.X;
-                            }
-
-                            pRow->sRowId = (SHORT)i;
-                            TextAttribute FillAttributes;
-                            FillAttributes.SetFromLegacy(ciFill.Attributes);
-                            bool fSuccess = pRow->Initialize(coordScreenBufferSize.X, FillAttributes);
-                            if (!fSuccess)
-                            {
-                                status = STATUS_NO_MEMORY;
-                                break;
-                            }
-                        }
-                    }
-                }
+                TextAttribute FillAttributes;
+                FillAttributes.SetFromLegacy(ciFill.Attributes);
+                textBuffer->_storage.emplace_back(static_cast<SHORT>(i), coordScreenBufferSize.X, FillAttributes);
+            }
+            catch (...)
+            {
+                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
             }
         }
+        *ppTextBufferInfo = textBuffer.release();
     }
-
-    if (!NT_SUCCESS(status))
-    {
-        if (pTextBufferInfo != nullptr)
-        {
-            delete pTextBufferInfo;
-        }
-    }
-    else
-    {
-        *ppTextBufferInfo = pTextBufferInfo;
-    }
-
     return status;
 }
 
@@ -1229,7 +1360,7 @@ short TEXT_BUFFER_INFO::GetMinBufferWidthNeeded() const
 // - Total number of rows in the buffer
 UINT TEXT_BUFFER_INFO::TotalRowCount() const
 {
-    return _coordBufferSize.Y;
+    return static_cast<UINT>(_storage.size());
 }
 
 //Routine Description:
@@ -1261,7 +1392,7 @@ ROW* TEXT_BUFFER_INFO::GetRowPtrByOffset(_In_ UINT const rowIndex) const
 
     if (offsetIndex < totalRows)
     {
-        retVal = &this->_Rows[offsetIndex];
+        retVal = const_cast<ROW*>(&this->_storage[offsetIndex]);
     }
 
     return retVal;
@@ -1293,7 +1424,7 @@ ROW* TEXT_BUFFER_INFO::GetPrevRowPtrNoWrap(_In_ ROW* const pRow) const
     // if the prev row would be before the first, we don't want to return anything to signify we've reached the end
     if (pRow->sRowId != this->_FirstRow)
     {
-        pReturnRow = &this->_Rows[prevRowIndex];
+        pReturnRow = const_cast<ROW*>(&this->_storage[prevRowIndex]);
     }
 
     return pReturnRow;
@@ -1323,7 +1454,7 @@ ROW* TEXT_BUFFER_INFO::GetNextRowPtrNoWrap(_In_ ROW* const pRow) const
     // if the next row would be the first again, we don't want to return anything to signify we've reached the end
     if ((short)nextRowIndex != this->_FirstRow)
     {
-        pReturnRow = &this->_Rows[nextRowIndex];
+        pReturnRow = const_cast<ROW*>(&this->_storage[nextRowIndex]);
     }
 
     return pReturnRow;
@@ -1335,7 +1466,7 @@ const ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index) const
     {
         THROW_HR(E_INVALIDARG);
     }
-    return _Rows[index];
+    return _storage[index];
 }
 
 ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index)
@@ -1348,9 +1479,9 @@ const ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) const
     const SHORT rowIndex = row.sRowId;
     if (rowIndex == 0)
     {
-        return _Rows[TotalRowCount() - 1];
+        return _storage[TotalRowCount() - 1];
     }
-    return _Rows[rowIndex - 1];
+    return _storage[rowIndex - 1];
 }
 
 ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row)
@@ -1363,9 +1494,9 @@ const ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) const
     const UINT rowIndex = static_cast<UINT>(row.sRowId);
     if (rowIndex == TotalRowCount() - 1)
     {
-        return _Rows[0];
+        return _storage[0];
     }
-    return _Rows[rowIndex + 1];
+    return _storage[rowIndex + 1];
 }
 
 ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row)
@@ -1700,7 +1831,7 @@ bool TEXT_BUFFER_INFO::IncrementCircularBuffer()
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     TextAttribute FillAttributes;
     FillAttributes.SetFromLegacy(_ciFill.Attributes);
-    bool fSuccess = this->_Rows[this->_FirstRow].Initialize(this->_coordBufferSize.X, FillAttributes);
+    bool fSuccess = _storage[_FirstRow].Reset(_coordBufferSize.X, FillAttributes);
     if (fSuccess)
     {
         // Now proceed to increment.
@@ -1832,177 +1963,62 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
                                              _In_ COORD const coordNewScreenSize,
                                              _In_ TextAttribute const attributes)
 {
-    SHORT i, j;
-    SHORT LimitX, LimitY;
-    PWCHAR newTextRows, TextRowPtr;
-    SHORT TopRow, TopRowIndex;  // new top row of screen buffer
-    PBYTE TextRowsA, TextRowPtrA;
-
     if ((USHORT)coordNewScreenSize.X >= 0x7FFF || (USHORT)coordNewScreenSize.Y >= 0x7FFF)
     {
         RIPMSG2(RIP_WARNING, "Invalid screen buffer size (0x%x, 0x%x)", coordNewScreenSize.X, coordNewScreenSize.Y);
         return STATUS_INVALID_PARAMETER;
     }
 
-    newTextRows = new WCHAR[coordNewScreenSize.X * coordNewScreenSize.Y];
-    if (newTextRows == nullptr)
-    {
-        return STATUS_NO_MEMORY;
-    }
-
-    TextRowsA = new BYTE[coordNewScreenSize.X * coordNewScreenSize.Y];
-    if (TextRowsA == nullptr)
-    {
-        delete[] newTextRows;
-        return STATUS_NO_MEMORY;
-    }
-
-    LimitX = min(coordNewScreenSize.X, currentScreenBufferSize.X);
-    LimitY = min(coordNewScreenSize.Y, currentScreenBufferSize.Y);
-    TopRow = 0;
+    SHORT TopRow = 0; // new top row of the screen buffer
     if (coordNewScreenSize.Y <= GetCursor()->GetPosition().Y)
     {
-        TopRow += GetCursor()->GetPosition().Y - coordNewScreenSize.Y + 1;
+        TopRow = GetCursor()->GetPosition().Y - coordNewScreenSize.Y + 1;
     }
-    TopRowIndex = (GetFirstRowIndex() + TopRow) % currentScreenBufferSize.Y;
-    if (coordNewScreenSize.Y != currentScreenBufferSize.Y)
+    const SHORT TopRowIndex = (GetFirstRowIndex() + TopRow) % currentScreenBufferSize.Y;
+
+    // rotate rows until the top row is at index 0
+    try
     {
-        ROW* Temp;
-        SHORT NumToCopy, NumToCopy2;
-
-        // resize ROWs array.  first alloc a new ROWs array. then copy the old
-        // one over, resetting the FirstRow.
-        Temp = new ROW[coordNewScreenSize.Y];
-        if (Temp == nullptr)
+        const ROW& newTopRow = _storage[TopRowIndex];
+        while (&newTopRow != &_storage.front())
         {
-            delete[] newTextRows;
-            delete[] TextRowsA;
-            return STATUS_NO_MEMORY;
+            _storage.push_back(std::move(_storage.front()));
+            _storage.pop_front();
         }
-
-        NumToCopy = currentScreenBufferSize.Y - TopRowIndex;
-        if (NumToCopy > coordNewScreenSize.Y)
-        {
-            NumToCopy = coordNewScreenSize.Y;
-        }
-        memmove(Temp, &_Rows[TopRowIndex], NumToCopy * sizeof(ROW));
-        if (TopRowIndex != 0 && NumToCopy != coordNewScreenSize.Y)
-        {
-            NumToCopy2 = TopRowIndex;
-            if (NumToCopy2 > (coordNewScreenSize.Y - NumToCopy))
-            {
-                NumToCopy2 = coordNewScreenSize.Y - NumToCopy;
-            }
-            memmove(&Temp[NumToCopy], _Rows, NumToCopy2 * sizeof(ROW));
-        }
-
-        // the memmove above invalidates the contract of a unique_ptr, which each ATTR_ROW
-        // contains. we need to release the responsibility of managing the memory from the orignal object
-        // because the copy is taking it over. this should be removed when the calls to memmove are.
-        for (int index = 0; index < currentScreenBufferSize.Y; ++index)
-        {
-            _Rows[index].AttrRow._rgList.release();
-        }
-
-        if (coordNewScreenSize.Y > currentScreenBufferSize.Y)
-        {
-            for (i = currentScreenBufferSize.Y; i < coordNewScreenSize.Y; i++)
-            {
-                bool fSuccess = Temp[i].AttrRow.Initialize(coordNewScreenSize.X, attributes);
-                if (!fSuccess)
-                {
-                    delete[] TextRowsA;
-                    delete[] newTextRows;
-                    delete[] Temp;
-                    return STATUS_NO_MEMORY;
-                }
-            }
-        }
-        SetFirstRowIndex(0);
-        delete[] _Rows;
-        _Rows = Temp;
     }
-
-    // Realloc each row.  any horizontal growth results in the last
-    // attribute in a row getting extended.
-    TextRowPtrA = TextRowsA;
-    for (i = 0, TextRowPtr = newTextRows; i < LimitY; i++, TextRowPtr += coordNewScreenSize.X)
+    catch (...)
     {
-        memmove(TextRowPtr, _Rows[i].CharRow.Chars, LimitX * sizeof(WCHAR));
-        if (TextRowPtrA)
-        {
-            memmove(TextRowPtrA, _Rows[i].CharRow.KAttrs, LimitX * sizeof(CHAR));
-        }
-
-        for (j = currentScreenBufferSize.X; j < coordNewScreenSize.X; j++)
-        {
-            TextRowPtr[j] = UNICODE_SPACE;
-        }
-
-        if (_Rows[i].CharRow.Right > coordNewScreenSize.X)
-        {
-            _Rows[i].CharRow.Right = coordNewScreenSize.X;
-        }
-        _Rows[i].CharRow.Chars = TextRowPtr;
-
-        _Rows[i].CharRow.KAttrs = TextRowPtrA;
-        if (TextRowPtrA)
-        {
-            if (coordNewScreenSize.X > currentScreenBufferSize.X)
-                ZeroMemory(TextRowPtrA + currentScreenBufferSize.X, coordNewScreenSize.X - currentScreenBufferSize.X);
-            TextRowPtrA += coordNewScreenSize.X;
-        }
-
-        _Rows[i].sRowId = i;
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
+    SetFirstRowIndex(0);
 
-    for (; i < coordNewScreenSize.Y; i++, TextRowPtr += coordNewScreenSize.X)
+    // realloc in the Y direction
+    // remove rows if we're shrinking
+    while (_storage.size() > coordNewScreenSize.Y)
     {
-        for (j = 0; j < coordNewScreenSize.X; j++)
-        {
-            #pragma prefast(suppress:26019, "J must be in the bounds of the X*Y based on the screen buffer size.")
-            TextRowPtr[j] = UNICODE_SPACE;
-        }
-
-        if (TextRowPtrA)
-        {
-            ZeroMemory(TextRowPtrA, coordNewScreenSize.X);
-        }
-
-        _Rows[i].CharRow.Chars = TextRowPtr;
-        _Rows[i].CharRow.Left = coordNewScreenSize.X;
-        _Rows[i].CharRow.Right = 0;
-
-        _Rows[i].CharRow.KAttrs = TextRowPtrA;
-        if (TextRowPtrA)
-        {
-            TextRowPtrA += coordNewScreenSize.X;
-        }
-
-        _Rows[i].sRowId = i;
+        _storage.pop_back();
     }
+    // add rows if we're growing
+    while (_storage.size() < coordNewScreenSize.Y)
+    {
+        try
+        {
+            _storage.emplace_back(static_cast<short>(_storage.size()), coordNewScreenSize.X, attributes);
+        }
+        catch (...)
+        {
+            return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        }
+    }
+    for (SHORT i = 0; static_cast<size_t>(i) < _storage.size(); ++i)
+    {
+        // fix values for sRowId on each row
+        _storage[i].sRowId = i;
 
-    delete[] _TextRows;
-    _TextRows = newTextRows;
-    delete[] _KAttrRows;
-    _KAttrRows = TextRowsA;
+        // realloc in the X direction
+        _storage[i].CharRow.Resize(coordNewScreenSize.X);
+        _storage[i].AttrRow.Resize(currentScreenBufferSize.X, coordNewScreenSize.X);
+    }
     SetCoordBufferSize(coordNewScreenSize);
-
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    if (coordNewScreenSize.X != currentScreenBufferSize.X)
-    {
-        for (i = 0; i < LimitY; i++)
-        {
-            ROW* pRow = &_Rows[i];
-            bool fSuccess = pRow->AttrRow.Resize(currentScreenBufferSize.X, coordNewScreenSize.X);
-            if (!fSuccess)
-            {
-                Status = STATUS_NO_MEMORY;
-                break;
-            }
-        }
-    }
-
-    return Status;
+    return STATUS_SUCCESS;
 }

@@ -65,8 +65,11 @@ filling in the last row, and updating the screen.
 #include <wil/resource.h>
 #include <wil/wistd_memory.h>
 
-typedef struct _CHAR_ROW
+#include <deque>
+
+class CHAR_ROW final
 {
+public:
     static const SHORT INVALID_OLD_LENGTH = -1;
 
     // for use with pbKAttrs
@@ -77,12 +80,20 @@ typedef struct _CHAR_ROW
     static const BYTE ATTR_SEPARATE_BYTE = 0x10;
     static const BYTE ATTR_EUDCFLAG_BYTE = 0x20;
 
+    CHAR_ROW(short rowWidth);
+    CHAR_ROW(const CHAR_ROW& a);
+    CHAR_ROW& operator=(const CHAR_ROW& a);
+    CHAR_ROW(CHAR_ROW&& a);
+    ~CHAR_ROW();
+
     SHORT Right;    // one past rightmost bound of chars in Chars array (array will be full width)
     SHORT Left; // leftmost bound of chars in Chars array (array will be full width)
     PWCHAR Chars;   // all chars in row up to last non-space char
     PBYTE KAttrs;   // all DBCS lead & trail bit in row
 
-    void Initialize(_In_ short const sRowWidth);
+    void Reset(_In_ short const sRowWidth);
+
+    HRESULT Resize(_In_ size_t const newSize);
 
     void SetWrapStatus(_In_ bool const fWrapWasForced);
     bool WasWrapForced() const;
@@ -111,20 +122,27 @@ typedef struct _CHAR_ROW
 
     bool ContainsText() const;
 
+    size_t GetWidth() const;
+
+
+    friend void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept;
+
 private:
     RowFlags bRowFlags;
+    size_t _rowWidth;
 
 #ifdef UNIT_TESTING
     friend class CharRowTests;
 #endif
 
-} CHAR_ROW, *PCHAR_ROW;
+};
 
-DEFINE_ENUM_FLAG_OPERATORS(_CHAR_ROW::RowFlags);
+DEFINE_ENUM_FLAG_OPERATORS(CHAR_ROW::RowFlags);
+void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept;
 
 // run-length encoded data structure for attributes
 
-class TextAttribute sealed
+class TextAttribute final
 {
 public:
     TextAttribute();
@@ -169,7 +187,7 @@ private:
     COLORREF _rgbBackground;
 };
 
-class TextAttributeRun sealed
+class TextAttributeRun final
 {
 public:
     UINT GetLength() const;
@@ -190,15 +208,22 @@ private:
 
 // the attributes of one row of screen buffer
 
-class ATTR_ROW sealed
+class ATTR_ROW final
 {
 public:
-    bool Initialize(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr);
+    ATTR_ROW(_In_ const UINT cchRowWidth, _In_ const TextAttribute attr);
+    ATTR_ROW(const ATTR_ROW& a);
+    ATTR_ROW& operator=(const ATTR_ROW& a);
+    ATTR_ROW(ATTR_ROW&& a) noexcept = default;
 
-    void FindAttrIndex(_In_ UINT const iIndex, _Outptr_ TextAttributeRun** const ppIndexedAttr, _Out_opt_ UINT* const pcAttrApplies) const;
+    bool Reset(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr);
+
+    void FindAttrIndex(_In_ UINT const iIndex,
+                       _Outptr_ TextAttributeRun** const ppIndexedAttr,
+                       _Out_opt_ UINT* const pcAttrApplies) const;
     bool SetAttrToEnd(_In_ UINT const iStart, _In_ const TextAttribute attr);
     void ReplaceLegacyAttrs(_In_ const WORD wToBeReplacedAttr, _In_ const WORD wReplaceWith);
-    bool Resize(_In_ const short sOldWidth, _In_ const short sNewWidth);
+    HRESULT Resize(_In_ const short sOldWidth, _In_ const short sNewWidth);
 
     HRESULT InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* const prgAttrs,
                            _In_ const UINT cAttrs,
@@ -207,6 +232,8 @@ public:
                            _In_ const UINT cBufferWidth);
 
     NTSTATUS UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ UINT const cRowLength) const;
+
+    friend void swap(ATTR_ROW& a, ATTR_ROW& b) noexcept;
 
     UINT _cList;   // length of attr pair array
     wistd::unique_ptr<TextAttributeRun[]> _rgList;
@@ -221,25 +248,37 @@ private:
 
 };
 
+void swap(ATTR_ROW& a, ATTR_ROW& b) noexcept;
+
 // information associated with one row of screen buffer
 
 class ROW
 {
 public:
+    ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttribute fillAttribute);
+    ROW(const ROW& a);
+    ROW& operator=(const ROW& a);
+    ROW(ROW&& a);
+
     CHAR_ROW CharRow;
     ATTR_ROW AttrRow;
     SHORT sRowId;
 
-    bool Initialize(_In_ short const sRowWidth, _In_ const TextAttribute Attr);
+    bool Reset(_In_ short const sRowWidth, _In_ const TextAttribute Attr);
+    HRESULT Resize(_In_ size_t const width);
 
     bool IsTrailingByteAtColumn(_In_ const size_t column) const;
 
     void ClearColumn(_In_ const size_t column);
 
+    friend void swap(ROW& a, ROW& b);
+
 #ifdef UNIT_TESTING
     friend class RowTests;
 #endif
 };
+
+void swap(ROW& a, ROW& b);
 
 class TEXT_BUFFER_INFO
 {
@@ -308,12 +347,9 @@ public:
                                _In_ COORD const coordNewScreenSize,
                                _In_ TextAttribute const attributes);
 
+    std::deque<ROW> _storage;
+    TEXT_BUFFER_INFO(_In_ const FontInfo* const pfiFont);
 private:
-    ROW* _Rows;
-    PWCHAR _TextRows;
-    // all DBCS lead & trail bit buffer
-    PBYTE _KAttrRows;
-
     Cursor* _pCursor;
 
     SHORT _FirstRow; // indexes top row (not necessarily 0)
@@ -323,7 +359,6 @@ private:
     FontInfo _fiCurrentFont;
     FontInfoDesired _fiDesiredFont;
 
-    TEXT_BUFFER_INFO(_In_ const FontInfo* const pfiFont);
 
     COORD GetPreviousFromCursor() const;
 

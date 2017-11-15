@@ -27,7 +27,7 @@ class CharRowTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        pSingleByte = new CHAR_ROW();
+        pSingleByte = new CHAR_ROW(_sRowWidth);
         pSingleByte->Chars = new WCHAR[_sRowWidth];
         pSingleByte->KAttrs = nullptr;
         pSingleByte->Left = 5;
@@ -35,7 +35,7 @@ class CharRowTests
         pSingleByte->SetWrapStatus(true);
         pSingleByte->SetDoubleBytePadded(true);
 
-        pDoubleByte = new CHAR_ROW();
+        pDoubleByte = new CHAR_ROW(_sRowWidth);
         pDoubleByte->Chars = new WCHAR[_sRowWidth];
         pDoubleByte->KAttrs = new BYTE[_sRowWidth];
         pDoubleByte->Left = 5;
@@ -66,7 +66,7 @@ class CharRowTests
         {
             CHAR_ROW* pUnderTest = pTestItems[iIndex];
 
-            pUnderTest->Initialize(sRowWidth);
+            pUnderTest->Reset(sRowWidth);
 
             VERIFY_ARE_EQUAL(pUnderTest->Left, sRowWidth);
             VERIFY_ARE_EQUAL(pUnderTest->Right, 0);
@@ -88,7 +88,7 @@ class CharRowTests
     TEST_METHOD(TestContainsText)
     {
         // After init, should have no text
-        pSingleByte->Initialize(_sRowWidth);
+        pSingleByte->Reset(_sRowWidth);
         VERIFY_IS_FALSE(pSingleByte->ContainsText());
 
         // Set right greater than Left, should have text

@@ -85,8 +85,7 @@ class AttrRowTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        pSingle = new ATTR_ROW();
-        VERIFY_IS_TRUE(pSingle->Initialize(_sDefaultLength, _DefaultAttr));
+        pSingle = new ATTR_ROW(_sDefaultLength, _DefaultAttr);
 
         // Segment length is the expected length divided by the row length
         // E.g. row of 80, 4 segments, 20 segment length each
@@ -106,7 +105,7 @@ class AttrRowTests
         }
 
         // Create the chain
-        pChain = new ATTR_ROW();
+        pChain = new ATTR_ROW(_sDefaultLength, _DefaultAttr);
         pChain->_cList = sChainSegmentsNeeded;
         pChain->_rgList = wil::make_unique_nothrow<TextAttributeRun[]>(sChainSegmentsNeeded);
         pChain->_cchRowWidth = _sDefaultLength;
@@ -157,7 +156,7 @@ class AttrRowTests
         {
             ATTR_ROW* pUnderTest = pTestItems[iIndex];
 
-            pUnderTest->Initialize(sRowWidth, attr);
+            pUnderTest->Reset(sRowWidth, attr);
 
             VERIFY_ARE_EQUAL(pUnderTest->_cList, 1u);
             VERIFY_IS_TRUE(pUnderTest->_rgList.get()->GetAttributes().IsEqual(attr));
@@ -174,12 +173,12 @@ class AttrRowTests
     // - pcAttrRun - Filled with length of newly allocated array.
     // Return Value:
     // - Success if success. Buffer too small if row length is incorrect.
-    HRESULT PackAttrs(_In_reads_(cRowLength) const TextAttribute* const rgAttrs, 
-                      _In_ UINT const cRowLength, 
+    HRESULT PackAttrs(_In_reads_(cRowLength) const TextAttribute* const rgAttrs,
+                      _In_ UINT const cRowLength,
                       _Out_writes_(*pcAttrRun) TextAttributeRun** const ppAttrRun,
                       _Out_ UINT* const pcAttrRun)
     {
-        
+
         NTSTATUS status = STATUS_SUCCESS;
 
         if (cRowLength == 0)
@@ -260,7 +259,7 @@ class AttrRowTests
                   _In_ size_t const cRun)
     {
         NoThrowString str(pwszPrefix);
-        
+
         if (cRun > 0)
         {
             str.Append(LogRunElement(rgRun[0]));
@@ -287,7 +286,7 @@ class AttrRowTests
 
         // Set up our "original row" that we are going to try to insert into.
         // This will represent a 10 column run of R3->B5->G2 that we will use for all tests.
-        ATTR_ROW originalRow;
+        ATTR_ROW originalRow{ static_cast<UINT>(_sDefaultLength), _DefaultAttr };
         originalRow._cList = 3;
         originalRow._rgList = wil::make_unique_failfast<TextAttributeRun[]>(originalRow._cList);
         originalRow._cchRowWidth = 10;
@@ -330,7 +329,7 @@ class AttrRowTests
 
         // Calculate our expected final/result run by unpacking original, laying our insertion on it at the index
         // then using our pack function to repack it.
-        // This method is easy to understand and very reliable, but its performance is bad. 
+        // This method is easy to understand and very reliable, but its performance is bad.
         // The InsertAttrRuns method we test against below is hard to understand but very high performance in production.
 
         // - 1. Unpack
@@ -445,7 +444,7 @@ class AttrRowTests
 
                     // When choosing the length of the second item, it can't be bigger than the remaining space in the run
                     // when accounting for the length of the first piece chosen.
-                    // For example if the total run length is 10 and the first piece chosen was 8 long, 
+                    // For example if the total run length is 10 and the first piece chosen was 8 long,
                     // the second piece can only be 1 or 2 long.
                     UINT const uiMaxCh2Length = uiTestRunLength - uiMaxCh1Length;
                     for (UINT iCh2Length = 1; iCh2Length <= uiMaxCh2Length; iCh2Length++)

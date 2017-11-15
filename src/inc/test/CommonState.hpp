@@ -218,7 +218,7 @@ private:
 
         // set some colors
         TextAttribute Attr = TextAttribute(0);
-        pRow->AttrRow.Initialize(15, Attr);
+        pRow->AttrRow.Reset(15, Attr);
         // A = bright red on dark gray
         // This string starts at index 0
         Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_INTENSITY);
@@ -280,7 +280,7 @@ private:
         pRow->CharRow.KAttrs[79] = CHAR_ROW::ATTR_LEADING_BYTE;
 
         // everything gets default attributes
-        pRow->AttrRow.Initialize(80, gci->CurrentScreenBuffer->GetAttributes());
+        pRow->AttrRow.Reset(80, gci->CurrentScreenBuffer->GetAttributes());
 
         pRow->CharRow.SetWrapStatus(true);
     }
