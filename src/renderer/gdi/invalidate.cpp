@@ -33,9 +33,20 @@ HRESULT GdiEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
 {
     if (pcoordDelta->X != 0 || pcoordDelta->Y != 0)
     {
+        // Invalidate where the cursor was before we scroll in case it was on in the last frame.
+        COORD const coordCursor = GdiEngine::GetCursor()->GetPosition();
+        SMALL_RECT srInvalidateCursor;
+        srInvalidateCursor.Left = coordCursor.X;
+        srInvalidateCursor.Right = coordCursor.X;
+        srInvalidateCursor.Top = coordCursor.Y;
+        srInvalidateCursor.Bottom = coordCursor.Y;
+        RETURN_IF_FAILED(Invalidate(&srInvalidateCursor));
+
+        // Take the scroll distance and scale to pixels
         POINT ptDelta = { 0 };
         RETURN_IF_FAILED(_ScaleByFont(pcoordDelta, &ptDelta));
 
+        // Adjust invalidated area by pixels that are uncovered with the scroll.
         RETURN_IF_FAILED(_InvalidOffset(&ptDelta));
 
         SIZE szInvalidScrollNew;
