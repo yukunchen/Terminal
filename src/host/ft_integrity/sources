@@ -60,3 +60,12 @@ UNIVERSAL_TEST_MACROS=CoffeeArch=x64
 UNIVERSAL_TEST_MACROS=CoffeeArch=$(_BUILDARCH)
 !endif
 
+!if 0
+This is used to adjust the source of the VCLibs package
+!endif
+!if "$(_BUILDARCH)" == "x86"
+UNIVERSAL_TEST_MACROS=$(UNIVERSAL_TEST_MACROS);CoffeeDir=i386
+!else
+UNIVERSAL_TEST_MACROS=$(UNIVERSAL_TEST_MACROS);CoffeeDir=$(_BUILDARCH)
+!endif
+
