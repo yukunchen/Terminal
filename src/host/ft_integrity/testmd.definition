@@ -11,7 +11,7 @@
   "Dependencies": {
     "Files": [
       {
-        "SourcePath": "$(BASEDIR)\\tools\\fkg\\vclibs\\$(TARGET_DIRECTORY)\\Microsoft.VCLibs.$(CoffeeArch).14.00.appx",
+        "SourcePath": "$(BASEDIR)\\tools\\fkg\\vclibs\\$(CoffeeDir)\\Microsoft.VCLibs.$(CoffeeArch).14.00.appx",
         "DestinationFolderPath": "$$(TEST_DEPLOY_BIN)"
       }
     ],
