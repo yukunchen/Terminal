@@ -24,6 +24,8 @@ Author(s):
 #include "ISystemConfigurationProvider.hpp"
 #include "IInputServices.hpp"
 
+#include <memory>
+
 namespace Microsoft
 {
     namespace Console
@@ -33,12 +35,12 @@ namespace Microsoft
             class IInteractivityFactory
             {
             public:
-                virtual NTSTATUS CreateConsoleControl(IConsoleControl** control) = 0;
-                virtual NTSTATUS CreateConsoleInputThread(IConsoleInputThread** thread) = 0;
+                virtual NTSTATUS CreateConsoleControl(std::unique_ptr<IConsoleControl>& control) = 0;
+                virtual NTSTATUS CreateConsoleInputThread(std::unique_ptr<IConsoleInputThread>& thread) = 0;
 
-                virtual NTSTATUS CreateHighDpiApi(IHighDpiApi** api) = 0;
-                virtual NTSTATUS CreateWindowMetrics(IWindowMetrics** metrics) = 0;
-                virtual NTSTATUS CreateAccessibilityNotifier(IAccessibilityNotifier** notifier) = 0;
+                virtual NTSTATUS CreateHighDpiApi(std::unique_ptr<IHighDpiApi>& api) = 0;
+                virtual NTSTATUS CreateWindowMetrics(_Inout_ std::unique_ptr<IWindowMetrics>& metrics) = 0;
+                virtual NTSTATUS CreateAccessibilityNotifier(_Inout_ std::unique_ptr<IAccessibilityNotifier>& notifier) = 0;
                 virtual NTSTATUS CreateSystemConfigurationProvider(ISystemConfigurationProvider** provider) = 0;
                 virtual NTSTATUS CreateInputServices(IInputServices** services) = 0;
             };
