@@ -519,8 +519,8 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
         if (iRight > iLeft)
         {
             // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
-            PWCHAR const pwsLine = pRow->CharRow.Chars + iLeft;
-            PBYTE const pbKAttrs = pRow->CharRow.KAttrs + iLeft; // the double byte flags corresponding to the characters above.
+            PWCHAR const pwsLine = pRow->CharRow.Chars.get() + iLeft;
+            PBYTE const pbKAttrs = pRow->CharRow.KAttrs.get() + iLeft; // the double byte flags corresponding to the characters above.
             size_t const cchLine = iRight - iLeft;
 
             // Calculate the target position in the buffer where we should start writing.
@@ -916,8 +916,8 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine, _In_ const Conversio
                 const ROW* const pRow = pTextInfo->GetRowPtrByOffset(iRow - pAreaInfo->CaInfo.coordConView.Y);
 
                 // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
-                PWCHAR const pwsLine = pRow->CharRow.Chars + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X;
-                PBYTE const pbKAttrs = pRow->CharRow.KAttrs + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X; // the double byte flags corresponding to the characters above.
+                PWCHAR const pwsLine = pRow->CharRow.Chars.get() + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X;
+                PBYTE const pbKAttrs = pRow->CharRow.KAttrs.get() + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X; // the double byte flags corresponding to the characters above.
                 size_t const cchLine = viewDirty.Width() - 1;
 
                 // Calculate the target position in the buffer where we should start writing.

@@ -748,12 +748,12 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
         {
             /* do nothing */ ;
         }
-        Row->CharRow.Left = (SHORT)(Char - Row->CharRow.Chars);
+        Row->CharRow.Left = (SHORT)(Char - Row->CharRow.Chars.get());
     }
 
     if ((TargetPoint.X + StringLength) >= Row->CharRow.Right)
     {
-        PWCHAR FirstChar = Row->CharRow.Chars;
+        PWCHAR FirstChar = Row->CharRow.Chars.get();
         PWCHAR Char;
 
         for (Char = &Row->CharRow.Chars[TargetPoint.X + StringLength - 1]; *Char == (WCHAR)' ' && Char >= FirstChar; Char--)

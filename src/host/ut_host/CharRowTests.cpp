@@ -28,16 +28,13 @@ class CharRowTests
     TEST_METHOD_SETUP(MethodSetup)
     {
         pSingleByte = new CHAR_ROW(_sRowWidth);
-        pSingleByte->Chars = new WCHAR[_sRowWidth];
-        pSingleByte->KAttrs = nullptr;
+        pSingleByte->KAttrs.reset(nullptr);
         pSingleByte->Left = 5;
         pSingleByte->Right = 15;
         pSingleByte->SetWrapStatus(true);
         pSingleByte->SetDoubleBytePadded(true);
 
         pDoubleByte = new CHAR_ROW(_sRowWidth);
-        pDoubleByte->Chars = new WCHAR[_sRowWidth];
-        pDoubleByte->KAttrs = new BYTE[_sRowWidth];
         pDoubleByte->Left = 5;
         pDoubleByte->Right = 15;
         pDoubleByte->SetWrapStatus(true);

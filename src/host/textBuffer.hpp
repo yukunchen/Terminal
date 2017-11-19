@@ -66,6 +66,7 @@ filling in the last row, and updating the screen.
 #include <wil/wistd_memory.h>
 
 #include <deque>
+#include <memory>
 
 class CHAR_ROW final
 {
@@ -88,8 +89,8 @@ public:
 
     SHORT Right;    // one past rightmost bound of chars in Chars array (array will be full width)
     SHORT Left; // leftmost bound of chars in Chars array (array will be full width)
-    PWCHAR Chars;   // all chars in row up to last non-space char
-    PBYTE KAttrs;   // all DBCS lead & trail bit in row
+    std::unique_ptr<wchar_t[]> Chars; // all chars in row
+    std::unique_ptr<BYTE[]> KAttrs; // all DBCS lead & trail bit in row
 
     void Reset(_In_ short const sRowWidth);
 

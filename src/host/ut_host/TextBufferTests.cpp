@@ -257,14 +257,14 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
     CHAR_ROW* pCharRow = &pRow->CharRow;
 
     // copy string into buffer
-    CopyMemory(pCharRow->Chars, pwszInputString, cLength * sizeof(WCHAR));
+    CopyMemory(pCharRow->Chars.get(), pwszInputString, cLength * sizeof(WCHAR));
 
     // space pad the rest of the string
     if (cLength < cMax)
     {
-        PWCHAR pChars= pCharRow->Chars;
+        PWCHAR pChars= pCharRow->Chars.get();
 
-        for (short cStart = cLength; cStart <= cMax; cStart++)
+        for (short cStart = cLength; cStart < cMax; cStart++)
         {
             pChars[cStart] = UNICODE_SPACE;
         }

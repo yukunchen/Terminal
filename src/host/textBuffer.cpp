@@ -35,17 +35,14 @@ CHAR_ROW::CHAR_ROW(short rowWidth) :
     Left{ rowWidth },
     Right{ 0 }
 {
-    std::unique_ptr<WCHAR[]> charBuffer = std::make_unique<WCHAR[]>(rowWidth);
-    THROW_IF_NULL_ALLOC(charBuffer.get());
+    Chars = std::make_unique<wchar_t[]>(rowWidth);
+    THROW_IF_NULL_ALLOC(Chars.get());
 
-    std::unique_ptr<BYTE[]> attributesBuffer = std::make_unique<BYTE[]>(rowWidth);
-    THROW_IF_NULL_ALLOC(attributesBuffer.get());
+    KAttrs = std::make_unique<BYTE[]>(rowWidth);
+    THROW_IF_NULL_ALLOC(KAttrs.get());
 
-    Chars = charBuffer.release();
-    KAttrs = attributesBuffer.release();
-
-    wmemset(Chars, PADDING_CHAR, rowWidth);
-    memset(KAttrs, PADDING_KATTR, rowWidth);
+    wmemset(Chars.get(), PADDING_CHAR, rowWidth);
+    memset(KAttrs.get(), PADDING_KATTR, rowWidth);
 
     SetWrapStatus(false);
     SetDoubleBytePadded(false);
@@ -57,17 +54,14 @@ CHAR_ROW::CHAR_ROW(const CHAR_ROW& a) :
     bRowFlags{ a.bRowFlags },
     _rowWidth{ a._rowWidth }
 {
-    std::unique_ptr<WCHAR[]> charBuffer = std::make_unique<WCHAR[]>(_rowWidth);
-    THROW_IF_NULL_ALLOC(charBuffer.get());
+    Chars = std::make_unique<WCHAR[]>(_rowWidth);
+    THROW_IF_NULL_ALLOC(Chars.get());
 
-    std::unique_ptr<BYTE[]> attributesBuffer = std::make_unique<BYTE[]>(_rowWidth);
-    THROW_IF_NULL_ALLOC(attributesBuffer.get());
+    KAttrs = std::make_unique<BYTE[]>(_rowWidth);
+    THROW_IF_NULL_ALLOC(KAttrs.get());
 
-    Chars = charBuffer.release();
-    KAttrs = attributesBuffer.release();
-
-    std::copy(a.Chars, a.Chars + a._rowWidth, Chars);
-    std::copy(a.KAttrs, a.KAttrs + a._rowWidth, KAttrs);
+    std::copy(a.Chars.get(), a.Chars.get() + a._rowWidth, Chars.get());
+    std::copy(a.KAttrs.get(), a.KAttrs.get() + a._rowWidth, KAttrs.get());
 }
 
 CHAR_ROW& CHAR_ROW::operator=(const CHAR_ROW& a)
@@ -84,14 +78,6 @@ CHAR_ROW::CHAR_ROW(CHAR_ROW&& a)
 
 CHAR_ROW::~CHAR_ROW()
 {
-    if (Chars)
-    {
-        delete[] Chars;
-    }
-    if (KAttrs)
-    {
-        delete[] KAttrs;
-    }
 }
 
 size_t CHAR_ROW::GetWidth() const
@@ -112,11 +98,11 @@ void CHAR_ROW::Reset(_In_ short const sRowWidth)
     Left = sRowWidth;
     Right = 0;
 
-    wmemset(Chars, PADDING_CHAR, sRowWidth);
+    wmemset(Chars.get(), PADDING_CHAR, sRowWidth);
 
-    if (KAttrs != nullptr)
+    if (KAttrs.get() != nullptr)
     {
-        memset(this->KAttrs, PADDING_KATTR, sRowWidth);
+        memset(KAttrs.get(), PADDING_KATTR, sRowWidth);
     }
 
     SetWrapStatus(false);
@@ -132,8 +118,8 @@ HRESULT CHAR_ROW::Resize(_In_ size_t const newSize)
     RETURN_IF_NULL_ALLOC(attributesBuffer.get());
 
     const size_t copySize = min(newSize, _rowWidth);
-    std::copy(Chars, Chars + copySize, charBuffer.get());
-    std::copy(KAttrs, KAttrs + copySize, attributesBuffer.get());
+    std::copy(Chars.get(), Chars.get() + copySize, charBuffer.get());
+    std::copy(KAttrs.get(), KAttrs.get() + copySize, attributesBuffer.get());
 
     if (newSize > _rowWidth)
     {
@@ -143,10 +129,8 @@ HRESULT CHAR_ROW::Resize(_In_ size_t const newSize)
         std::fill(charBuffer.get() + copySize, charBuffer.get() + newSize, UNICODE_SPACE);
     }
 
-    delete[] Chars;
-    delete[] KAttrs;
-    Chars = charBuffer.release();
-    KAttrs = attributesBuffer.release();
+    Chars.swap(charBuffer);
+    KAttrs.swap(attributesBuffer);
     Left = static_cast<short>(newSize);
     Right = 0;
     _rowWidth = newSize;
@@ -233,14 +217,14 @@ void CHAR_ROW::RemeasureBoundaryValues(_In_ short const sRowWidth)
 short CHAR_ROW::MeasureLeft(_In_ short const sRowWidth) const
 {
     PWCHAR pLastChar = &this->Chars[sRowWidth];
-    PWCHAR pChar = this->Chars;
+    PWCHAR pChar = this->Chars.get();
 
     for (; pChar < pLastChar && *pChar == PADDING_CHAR; pChar++)
     {
         /* do nothing */
     }
 
-    return short(pChar - this->Chars);
+    return short(pChar - this->Chars.get());
 }
 
 // Routine Description:
@@ -251,7 +235,7 @@ short CHAR_ROW::MeasureLeft(_In_ short const sRowWidth) const
 // - The calculated right boundary of the internal string.
 short CHAR_ROW::MeasureRight(_In_ short const sRowWidth) const
 {
-    PWCHAR pFirstChar = this->Chars;
+    PWCHAR pFirstChar = this->Chars.get();
     PWCHAR pChar = &this->Chars[sRowWidth - 1];
 
     for (; pChar >= pFirstChar && *pChar == PADDING_CHAR; pChar--)
@@ -259,7 +243,7 @@ short CHAR_ROW::MeasureRight(_In_ short const sRowWidth) const
         /* do nothing */
     }
 
-    return short((pChar - this->Chars) + 1);
+    return short((pChar - this->Chars.get()) + 1);
 }
 
 // Routine Description:

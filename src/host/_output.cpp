@@ -225,13 +225,13 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                 {
                     /* do nothing */ ;
                 }
-                Row->CharRow.Left = (SHORT)(Char - Row->CharRow.Chars);
+                Row->CharRow.Left = (SHORT)(Char - Row->CharRow.Chars.get());
             }
 
             if ((coordDest.X + XSize) >= Row->CharRow.Right)
             {
                 SHORT LastNonSpace;
-                PWCHAR FirstChar = Row->CharRow.Chars;
+                PWCHAR FirstChar = Row->CharRow.Chars.get();
 
                 LastNonSpace = (SHORT)(coordDest.X + XSize - 1);
                 for (Char = &Row->CharRow.Chars[(coordDest.X + XSize - 1)]; *Char == (WCHAR)' ' && Char >= FirstChar; Char--)

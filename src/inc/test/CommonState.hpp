@@ -206,7 +206,7 @@ private:
         // か = \x304b
         // き = \x304d
         PCWSTR pwszText = L"AB" L"\x304b\x304b" L"C" L"\x304d\x304d" L"DE      ";
-        memcpy_s(pRow->CharRow.Chars, CommonState::s_csBufferWidth, pwszText, wcslen(pwszText));
+        memcpy_s(pRow->CharRow.Chars.get(), CommonState::s_csBufferWidth, pwszText, wcslen(pwszText));
         pRow->CharRow.Left = 0;
         pRow->CharRow.Right = 9; // 1 past the last valid character in the array
 
@@ -265,7 +265,7 @@ private:
             L"\x304d\x304d"
             L"0123456789"
             L"\x304d";
-        memcpy_s(pRow->CharRow.Chars, CommonState::s_csBufferWidth, pwszText, wcslen(pwszText));
+        memcpy_s(pRow->CharRow.Chars.get(), CommonState::s_csBufferWidth, pwszText, wcslen(pwszText));
         pRow->CharRow.Left = 0;
         pRow->CharRow.Right = 80; // 1 past the last valid character in the array
 
