@@ -188,7 +188,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                           _In_ const DWORD dwFlags,
                           _Inout_opt_ PSHORT const psScrollY)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PTEXT_BUFFER_INFO pTextBuffer = pScreenInfo->TextInfo;
     Cursor* const pCursor = pTextBuffer->GetCursor();
     COORD CursorPosition = pCursor->GetPosition();
@@ -399,7 +399,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                         GetStringTypeW(CT_CTYPE1, &RealUnicodeChar, 1, &CharType);
                         if (CharType == C1_CNTRL)
                         {
-                            ConvertOutputToUnicode(gci->OutputCP,
+                            ConvertOutputToUnicode(gci.OutputCP,
                                                    (LPSTR)& RealUnicodeChar,
                                                    1,
                                                    LocalBufPtr,
@@ -709,7 +709,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             // move cursor to the next line.
             pwchBuffer++;
 
-            if (gci->IsReturnOnNewlineAutomatic())
+            if (gci.IsReturnOnNewlineAutomatic())
             {
                 // Traditionally, we reset the X position to 0 with a newline automatically.
                 // Some things might not want this automatic "ONLCR line discipline" (for example, things that are expecting a *NIX behavior.)
@@ -890,8 +890,8 @@ NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
                         _In_ PSCREEN_INFORMATION pScreenInfo,
                         _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    if (IsAnyFlagSet(gci->Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    if (IsAnyFlagSet(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         try
         {
@@ -981,7 +981,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
                                        _Out_ size_t* const pcchTextBufferRead,
                                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Ensure output variables are initialized.
     *pcchTextBufferRead = 0;
     *ppWaiter = nullptr;
@@ -997,16 +997,16 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
         return S_OK;
     }
 
-    UINT const uiCodePage = gci->OutputCP;
+    UINT const uiCodePage = gci.OutputCP;
 
     // Convert our input parameters to Unicode
     std::unique_ptr<wchar_t[]> wideCharBuffer{ nullptr };
-    static Utf8ToWideCharParser parser{ gci->OutputCP };
+    static Utf8ToWideCharParser parser{ gci.OutputCP };
 
     // update current codepage in case it was changed from last time
     // this was called. We do this outside the UTF-8 check because the parser drops its state
     // when the codepage changes.
-    parser.SetCodePage(gci->OutputCP);
+    parser.SetCodePage(gci.OutputCP);
 
     PSCREEN_INFORMATION const ScreenInfo = pOutContext->GetActiveBuffer();
     wchar_t* pwchBuffer;
@@ -1063,7 +1063,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
 
             wistd::unique_ptr<wchar_t[]> convertedChars;
             size_t cchConverted = 0;
-            if (FAILED(ConvertToW(gci->OutputCP,
+            if (FAILED(ConvertToW(gci.OutputCP,
                                   reinterpret_cast<const char* const>(ScreenInfo->WriteConsoleDbcsLeadByte),
                                   ARRAYSIZE(ScreenInfo->WriteConsoleDbcsLeadByte),
                                   convertedChars,
@@ -1102,7 +1102,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
         // save it for the next time this function is called and we can piece it
         // back together then
         __analysis_assume(BufPtrNumBytes <= uiTextBufferLength);
-        if (BufPtrNumBytes && CheckBisectStringA((PCHAR)BufPtr, BufPtrNumBytes, &gci->OutputCPInfo))
+        if (BufPtrNumBytes && CheckBisectStringA((PCHAR)BufPtr, BufPtrNumBytes, &gci.OutputCPInfo))
         {
             ScreenInfo->WriteConsoleDbcsLeadByte[0] = *((PCHAR)BufPtr + BufPtrNumBytes - 1);
             BufPtrNumBytes--;
@@ -1116,7 +1116,7 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
         if (BufPtrNumBytes != 0)
         {
             // convert the remaining bytes in BufPtr to wide chars
-            Length = sizeof(WCHAR) * MultiByteToWideChar(gci->OutputCP,
+            Length = sizeof(WCHAR) * MultiByteToWideChar(gci.OutputCP,
                                                          0,
                                                          (LPCCH)BufPtr,
                                                          BufPtrNumBytes,

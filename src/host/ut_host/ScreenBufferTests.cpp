@@ -54,9 +54,9 @@ class ScreenBufferTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         m_state->PrepareNewTextBufferInfo();
-        gci->CurrentScreenBuffer->SetViewportOrigin(true, {0,0});
+        gci.CurrentScreenBuffer->SetViewportOrigin(true, {0,0});
 
         return true;
     }
@@ -98,9 +98,9 @@ class ScreenBufferTests
     TEST_METHOD(EraseAllTests);
 
     TEST_METHOD(VtResize);
-    
+
     TEST_METHOD(VtSoftResetCursorPosition);
-    
+
     TEST_METHOD(VtSetColorTable);
 
     TEST_METHOD(ResizeTraditionalDoesntDoubleFreeAttrRows);
@@ -142,9 +142,9 @@ void ScreenBufferTests::FreeSampleList(SCREEN_INFORMATION::TabStop** rgList)
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     Log::Comment(L"Testing creating one alternate buffer, then returning to the main buffer.");
-    SCREEN_INFORMATION* const psiOriginal = gci->CurrentScreenBuffer;
+    SCREEN_INFORMATION* const psiOriginal = gci.CurrentScreenBuffer;
     VERIFY_IS_NULL(psiOriginal->_psiAlternateBuffer);
     VERIFY_IS_NULL(psiOriginal->_psiMainBuffer);
 
@@ -152,7 +152,7 @@ void ScreenBufferTests::SingleAlternateBufferCreationTest()
     if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
     {
         Log::Comment(L"First alternate buffer successfully created");
-        SCREEN_INFORMATION* psiFirstAlternate = gci->CurrentScreenBuffer;
+        SCREEN_INFORMATION* psiFirstAlternate = gci.CurrentScreenBuffer;
         VERIFY_ARE_NOT_EQUAL(psiOriginal, psiFirstAlternate);
         VERIFY_ARE_EQUAL(psiFirstAlternate, psiOriginal->_psiAlternateBuffer);
         VERIFY_ARE_EQUAL(psiOriginal, psiFirstAlternate->_psiMainBuffer);
@@ -163,7 +163,7 @@ void ScreenBufferTests::SingleAlternateBufferCreationTest()
         if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
         {
             Log::Comment(L"successfully swapped to the main buffer");
-            SCREEN_INFORMATION* psiFinal = gci->CurrentScreenBuffer;
+            SCREEN_INFORMATION* psiFinal = gci.CurrentScreenBuffer;
             VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
             VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
             VERIFY_IS_NULL(psiFinal->_psiMainBuffer);
@@ -174,14 +174,14 @@ void ScreenBufferTests::SingleAlternateBufferCreationTest()
 
 void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     Log::Comment(L"Testing creating one alternate buffer, then creating another alternate from that first alternate, before returning to the main buffer.");
-    SCREEN_INFORMATION* const psiOriginal = gci->CurrentScreenBuffer;
+    SCREEN_INFORMATION* const psiOriginal = gci.CurrentScreenBuffer;
     NTSTATUS Status = psiOriginal->UseAlternateScreenBuffer();
     if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
     {
         Log::Comment(L"First alternate buffer successfully created");
-        SCREEN_INFORMATION* psiFirstAlternate = gci->CurrentScreenBuffer;
+        SCREEN_INFORMATION* psiFirstAlternate = gci.CurrentScreenBuffer;
         VERIFY_ARE_NOT_EQUAL(psiOriginal, psiFirstAlternate);
         VERIFY_ARE_EQUAL(psiFirstAlternate, psiOriginal->_psiAlternateBuffer);
         VERIFY_ARE_EQUAL(psiOriginal, psiFirstAlternate->_psiMainBuffer);
@@ -192,7 +192,7 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
         if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
         {
             Log::Comment(L"Second alternate buffer successfully created");
-            SCREEN_INFORMATION* psiSecondAlternate = gci->CurrentScreenBuffer;
+            SCREEN_INFORMATION* psiSecondAlternate = gci.CurrentScreenBuffer;
             VERIFY_ARE_NOT_EQUAL(psiOriginal, psiSecondAlternate);
             VERIFY_ARE_NOT_EQUAL(psiSecondAlternate, psiFirstAlternate);
             VERIFY_ARE_EQUAL(psiSecondAlternate, psiOriginal->_psiAlternateBuffer);
@@ -204,7 +204,7 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
             if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
             {
                 Log::Comment(L"successfully swapped to the main buffer");
-                SCREEN_INFORMATION* psiFinal = gci->CurrentScreenBuffer;
+                SCREEN_INFORMATION* psiFinal = gci.CurrentScreenBuffer;
                 VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
                 VERIFY_ARE_NOT_EQUAL(psiFinal, psiSecondAlternate);
                 VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
@@ -217,14 +217,14 @@ void ScreenBufferTests::MultipleAlternateBufferCreationTest()
 
 void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     Log::Comment(L"Testing creating one alternate buffer, then creating another alternate from the main, before returning to the main buffer.");
-    SCREEN_INFORMATION* const psiOriginal = gci->CurrentScreenBuffer;
+    SCREEN_INFORMATION* const psiOriginal = gci.CurrentScreenBuffer;
     NTSTATUS Status = psiOriginal->UseAlternateScreenBuffer();
     if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
     {
         Log::Comment(L"First alternate buffer successfully created");
-        SCREEN_INFORMATION* psiFirstAlternate = gci->CurrentScreenBuffer;
+        SCREEN_INFORMATION* psiFirstAlternate = gci.CurrentScreenBuffer;
         VERIFY_ARE_NOT_EQUAL(psiOriginal, psiFirstAlternate);
         VERIFY_ARE_EQUAL(psiFirstAlternate, psiOriginal->_psiAlternateBuffer);
         VERIFY_ARE_EQUAL(psiOriginal, psiFirstAlternate->_psiMainBuffer);
@@ -235,7 +235,7 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
         if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
         {
             Log::Comment(L"Second alternate buffer successfully created");
-            SCREEN_INFORMATION* psiSecondAlternate = gci->CurrentScreenBuffer;
+            SCREEN_INFORMATION* psiSecondAlternate = gci.CurrentScreenBuffer;
             VERIFY_ARE_NOT_EQUAL(psiOriginal, psiSecondAlternate);
             VERIFY_ARE_NOT_EQUAL(psiSecondAlternate, psiFirstAlternate);
             VERIFY_ARE_EQUAL(psiSecondAlternate, psiOriginal->_psiAlternateBuffer);
@@ -247,7 +247,7 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
             if(VERIFY_IS_TRUE(NT_SUCCESS(Status)))
             {
                 Log::Comment(L"successfully swapped to the main buffer");
-                SCREEN_INFORMATION* psiFinal = gci->CurrentScreenBuffer;
+                SCREEN_INFORMATION* psiFinal = gci.CurrentScreenBuffer;
                 VERIFY_ARE_NOT_EQUAL(psiFinal, psiFirstAlternate);
                 VERIFY_ARE_NOT_EQUAL(psiFinal, psiSecondAlternate);
                 VERIFY_ARE_EQUAL(psiFinal, psiOriginal);
@@ -260,8 +260,8 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
 
 void ScreenBufferTests::TestReverseLineFeed()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
     auto bufferWriter = psi->GetBufferWriter();
     auto cursor = psi->TextInfo->GetCursor();
     auto viewport = psi->GetBufferViewport();
@@ -336,8 +336,8 @@ void ScreenBufferTests::TestReverseLineFeed()
 
 void ScreenBufferTests::TestAddTabStop()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
     psi->_ptsTabs = nullptr;
 
     Log::Comment(L"Add tab to empty list.");
@@ -378,8 +378,8 @@ void ScreenBufferTests::TestAddTabStop()
 
 void ScreenBufferTests::TestClearTabStops()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
     psi->_ptsTabs = nullptr;
 
     Log::Comment(L"Clear non-existant tab stops.");
@@ -410,8 +410,8 @@ void ScreenBufferTests::TestClearTabStops()
 
 void ScreenBufferTests::TestClearTabStop()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
     psi->_ptsTabs = nullptr;
 
     Log::Comment(L"Try to clear nonexistant list.");
@@ -583,8 +583,8 @@ void ScreenBufferTests::TestClearTabStop()
 
 void ScreenBufferTests::TestGetForwardTab()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
     psi->_ptsTabs = nullptr;
 
     SCREEN_INFORMATION::TabStop** rgpTabs = CreateSampleList();
@@ -638,8 +638,8 @@ void ScreenBufferTests::TestGetForwardTab()
 
 void ScreenBufferTests::TestGetReverseTab()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
     psi->_ptsTabs = nullptr;
 
     SCREEN_INFORMATION::TabStop** rgpTabs = CreateSampleList();
@@ -692,8 +692,8 @@ void ScreenBufferTests::TestGetReverseTab()
 
 void ScreenBufferTests::TestAreTabsSet()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
     psi->_ptsTabs = nullptr;
 
     VERIFY_IS_FALSE(psi->AreTabsSet());
@@ -708,8 +708,8 @@ void ScreenBufferTests::TestAreTabsSet()
 
 void ScreenBufferTests::EraseAllTests()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
     auto bufferWriter = psi->GetBufferWriter();
     auto cursor = psi->TextInfo->GetCursor();
     VERIFY_IS_NOT_NULL(bufferWriter);
@@ -787,8 +787,8 @@ void ScreenBufferTests::EraseAllTests()
 
 void ScreenBufferTests::VtResize()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor* const cursor = tbi->GetCursor();
@@ -924,8 +924,8 @@ void ScreenBufferTests::VtResize()
 
 void ScreenBufferTests::VtSoftResetCursorPosition()
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor* const cursor = tbi->GetCursor();
@@ -971,40 +971,40 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
 
 void ScreenBufferTests::VtSetColorTable()
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     StateMachine* const stateMachine = psi->GetStateMachine();
 
     // Start with a known value
-    gci->SetColorTableEntry(0, RGB(0, 0, 0));
-    
+    gci.SetColorTableEntry(0, RGB(0, 0, 0));
+
     Log::Comment(NoThrowString().Format(
         L"Process some valid sequences for setting the table"
     ));
 
     std::wstring seq = L"\x1b]4;0;rgb:1/1/1\x7";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(1,1,1), gci->GetColorTableEntry(::XtermToWindowsIndex(0)));
+    VERIFY_ARE_EQUAL(RGB(1,1,1), gci.GetColorTableEntry(::XtermToWindowsIndex(0)));
 
     seq = L"\x1b]4;1;rgb:1/23/1\x7";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(1,0x23,1), gci->GetColorTableEntry(::XtermToWindowsIndex(1)));
+    VERIFY_ARE_EQUAL(RGB(1,0x23,1), gci.GetColorTableEntry(::XtermToWindowsIndex(1)));
 
     seq = L"\x1b]4;2;rgb:1/23/12\x7";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(1,0x23,0x12), gci->GetColorTableEntry(::XtermToWindowsIndex(2)));
+    VERIFY_ARE_EQUAL(RGB(1,0x23,0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(2)));
 
     seq = L"\x1b]4;3;rgb:12/23/12\x7";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(0x12,0x23,0x12), gci->GetColorTableEntry(::XtermToWindowsIndex(3)));
-    
+    VERIFY_ARE_EQUAL(RGB(0x12,0x23,0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(3)));
+
     seq = L"\x1b]4;4;rgb:ff/a1/1b\x7";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(0xff,0xa1,0x1b), gci->GetColorTableEntry(::XtermToWindowsIndex(4)));
+    VERIFY_ARE_EQUAL(RGB(0xff,0xa1,0x1b), gci.GetColorTableEntry(::XtermToWindowsIndex(4)));
 
     seq = L"\x1b]4;5;rgb:ff/a1/1b\x1b\\";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(0xff,0xa1,0x1b), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(0xff,0xa1,0x1b), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"Try a bunch of invalid sequences."
@@ -1014,86 +1014,86 @@ void ScreenBufferTests::VtSetColorTable()
     ));
     seq = L"\x1b]4;5;rgb:9/9/9\x1b\\";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: Missing the first component"
     ));
     seq = L"\x1b]4;5;rgb:/1/1\x1b\\";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: too many characters in a component"
     ));
     seq = L"\x1b]4;5;rgb:111/1/1\x1b\\";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: too many componenets"
     ));
     seq = L"\x1b]4;5;rgb:1/1/1/1\x1b\\";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no second component"
     ));
     seq = L"\x1b]4;5;rgb:1//1\x1b\\";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no components"
     ));
     seq = L"\x1b]4;5;rgb://\x1b\\";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no third component"
     ));
     seq = L"\x1b]4;5;rgb:1/11/\x1b\\";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: rgbi is not a supported color space"
     ));
     seq = L"\x1b]4;5;rgbi:1/1/1\x1b\\";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: cmyk is not a supported color space"
     ));
     seq = L"\x1b]4;5;cmyk:1/1/1\x1b\\";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no table index should do nothing"
     ));
     seq = L"\x1b]4;;rgb:1/1/1\x1b\\";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: need to specify a color space"
     ));
     seq = L"\x1b]4;5;1/1/1\x1b\\";
     stateMachine->ProcessString(&seq[0], seq.length());
-    VERIFY_ARE_EQUAL(RGB(9,9,9), gci->GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9,9,9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 }
 
 void ScreenBufferTests::ResizeTraditionalDoesntDoubleFreeAttrRows()
 {
     // there is not much to verify here, this test passes if the console doesn't crash.
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
 
-    gci->SetWrapText(false);
+    gci.SetWrapText(false);
     COORD newBufferSize = psi->_coordScreenBufferSize;
     newBufferSize.Y--;
 

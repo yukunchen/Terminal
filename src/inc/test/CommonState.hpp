@@ -62,7 +62,7 @@ public:
 
     void PrepareGlobalScreenBuffer()
     {
-        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         COORD coordWindowSize;
         coordWindowSize.X = s_csWindowWidth;
         coordWindowSize.Y = s_csWindowHeight;
@@ -85,42 +85,42 @@ public:
                                            ciFill,
                                            ciPopupFill,
                                            uiCursorSize,
-                                           &gci->CurrentScreenBuffer);
+                                           &gci.CurrentScreenBuffer);
     }
 
     void CleanupGlobalScreenBuffer()
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        delete gci->CurrentScreenBuffer;
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        delete gci.CurrentScreenBuffer;
     }
 
     void PrepareGlobalInputBuffer()
     {
-        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        gci->pInputBuffer = new InputBuffer();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.pInputBuffer = new InputBuffer();
     }
 
     void CleanupGlobalInputBuffer()
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        delete gci->pInputBuffer;
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        delete gci.pInputBuffer;
     }
 
     void PrepareCookedReadData()
     {
-        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        gci->lpCookedReadData = new COOKED_READ_DATA();
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.lpCookedReadData = new COOKED_READ_DATA();
     }
 
     void CleanupCookedReadData()
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        delete gci->lpCookedReadData;
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        delete gci.lpCookedReadData;
     }
 
     void PrepareNewTextBufferInfo()
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         COORD coordScreenBufferSize;
         coordScreenBufferSize.X = s_csBufferWidth;
         coordScreenBufferSize.Y = s_csBufferHeight;
@@ -130,34 +130,34 @@ public:
 
         UINT uiCursorSize = 12;
 
-        m_backupTextBufferInfo = gci->CurrentScreenBuffer->TextInfo;
+        m_backupTextBufferInfo = gci.CurrentScreenBuffer->TextInfo;
 
         m_ntstatusTextBufferInfo = TEXT_BUFFER_INFO::CreateInstance(m_pFontInfo,
                                                                     coordScreenBufferSize,
                                                                     ciFill,
                                                                     uiCursorSize,
-                                                                    &gci->CurrentScreenBuffer->TextInfo);
+                                                                    &gci.CurrentScreenBuffer->TextInfo);
     }
 
     void CleanupNewTextBufferInfo()
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        ASSERT(gci->CurrentScreenBuffer != nullptr);
-        delete gci->CurrentScreenBuffer->TextInfo;
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        ASSERT(gci.CurrentScreenBuffer != nullptr);
+        delete gci.CurrentScreenBuffer->TextInfo;
 
-        gci->CurrentScreenBuffer->TextInfo = m_backupTextBufferInfo;
+        gci.CurrentScreenBuffer->TextInfo = m_backupTextBufferInfo;
     }
 
     void FillTextBuffer()
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // fill with some assorted text that doesn't consume the whole row
         const SHORT cRowsToFill = 4;
 
-        ASSERT(gci->CurrentScreenBuffer != nullptr);
-        ASSERT(gci->CurrentScreenBuffer->TextInfo != nullptr);
+        ASSERT(gci.CurrentScreenBuffer != nullptr);
+        ASSERT(gci.CurrentScreenBuffer->TextInfo != nullptr);
 
-        TEXT_BUFFER_INFO* pTextInfo = gci->CurrentScreenBuffer->TextInfo;
+        TEXT_BUFFER_INFO* pTextInfo = gci.CurrentScreenBuffer->TextInfo;
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
@@ -170,14 +170,14 @@ public:
 
     void FillTextBufferBisect()
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // fill with some text that fills the whole row and has bisecting double byte characters
         const SHORT cRowsToFill = s_csBufferHeight;
 
-        ASSERT(gci->CurrentScreenBuffer != nullptr);
-        ASSERT(gci->CurrentScreenBuffer->TextInfo != nullptr);
+        ASSERT(gci.CurrentScreenBuffer != nullptr);
+        ASSERT(gci.CurrentScreenBuffer->TextInfo != nullptr);
 
-        TEXT_BUFFER_INFO* pTextInfo = gci->CurrentScreenBuffer->TextInfo;
+        TEXT_BUFFER_INFO* pTextInfo = gci.CurrentScreenBuffer->TextInfo;
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
@@ -252,7 +252,7 @@ private:
 
     void FillBisect(ROW *pRow)
     {
-        const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // length 80 string of text with bisecting characters at the beginning and end.
         // positions of き(\x304d) are at 0, 27-28, 39-40, 67-68, 79
         PWCHAR pwszText =
@@ -280,7 +280,7 @@ private:
         pRow->CharRow.KAttrs[79] = CHAR_ROW::ATTR_LEADING_BYTE;
 
         // everything gets default attributes
-        pRow->AttrRow.Initialize(80, gci->CurrentScreenBuffer->GetAttributes());
+        pRow->AttrRow.Initialize(80, gci.CurrentScreenBuffer->GetAttributes());
 
         pRow->CharRow.SetWrapStatus(true);
     }

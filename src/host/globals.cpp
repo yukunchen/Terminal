@@ -4,12 +4,7 @@
 
 #pragma hdrstop
 
-CONSOLE_INFORMATION* Globals::getConsoleInformation()
+CONSOLE_INFORMATION& Globals::getConsoleInformation()
 {
-    if (!ciConsoleInformation)
-    {
-        ciConsoleInformation = new CONSOLE_INFORMATION();
-    }
-
     return ciConsoleInformation;
 }

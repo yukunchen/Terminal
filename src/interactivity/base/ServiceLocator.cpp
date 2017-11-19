@@ -23,7 +23,7 @@ IAccessibilityNotifier       *ServiceLocator::s_accessibilityNotifier       = nu
 ISystemConfigurationProvider *ServiceLocator::s_systemConfigurationProvider = nullptr;
 IInputServices               *ServiceLocator::s_inputServices               = nullptr;
 
-Globals                      *ServiceLocator::s_globals                     = new Globals();
+Globals ServiceLocator::s_globals;
 
 #pragma endregion
 
@@ -37,7 +37,7 @@ void ServiceLocator::RundownAndExit(_In_ HRESULT const hr)
     // This was because Console IO Services (ConIoSvcComm) on OneCore editions was holding onto
     // pipe and ALPC handles to talk to CSRSS ConIoSrv.dll to broker which console got display/keyboard control.
     // If we simply run straight into TerminateProcess, those handles aren't necessarily released right away.
-    // The terminate operation can have a rundown period of time where APCs are serviced (such as from 
+    // The terminate operation can have a rundown period of time where APCs are serviced (such as from
     // a DirectX kernel callback/flush/cleanup) that can take substantially longer than we expect (several whole seconds).
     // This rundown happens before the final destruction of any outstanding handles or resources.
     // If someone is waiting on one of those handles or resources outside our process, they're stuck waiting
@@ -244,7 +244,7 @@ IInputServices* ServiceLocator::LocateInputServices()
     return s_inputServices;
 }
 
-Globals* ServiceLocator::LocateGlobals()
+Globals& ServiceLocator::LocateGlobals()
 {
     return s_globals;
 }

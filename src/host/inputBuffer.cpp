@@ -29,7 +29,7 @@ InputBuffer::InputBuffer() :
     // The _termInput's constructor takes a reference to this object's _HandleTerminalInputCallback.
     // We need to use std::bind to create a reference to that function without a reference to this InputBuffer
 
-    InputWaitEvent = ServiceLocator::LocateGlobals()->hInputEvent.get();
+    InputWaitEvent = ServiceLocator::LocateGlobals().hInputEvent.get();
     // initialize buffer header
     fInComposition = false;
 }
@@ -752,7 +752,7 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
 // - The console lock must be held when calling this routine.
 HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     try
     {
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
@@ -765,7 +765,7 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::uniq
                 const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currEvent.get());
                 if (pKeyEvent->IsKeyDown())
                 {
-                    if (IsFlagSet(gci->Flags, CONSOLE_SUSPENDED) &&
+                    if (IsFlagSet(gci.Flags, CONSOLE_SUSPENDED) &&
                         !IsSystemKey(pKeyEvent->GetVirtualKeyCode()))
                     {
                         UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
@@ -774,7 +774,7 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::uniq
                     else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
                              (pKeyEvent->GetVirtualKeyCode() == VK_PAUSE || ::IsPauseKey(*pKeyEvent)))
                     {
-                        SetFlag(gci->Flags, CONSOLE_SUSPENDED);
+                        SetFlag(gci.Flags, CONSOLE_SUSPENDED);
                         continue;
                     }
                 }

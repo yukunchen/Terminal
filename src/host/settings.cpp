@@ -36,7 +36,7 @@ Settings::Settings() :
     _uNumberOfHistoryBuffers(DEFAULT_NUMBER_OF_BUFFERS),
     _bHistoryNoDup(false),
     // ColorTable initialized below
-    _uCodePage(ServiceLocator::LocateGlobals()->uiOEMCP),
+    _uCodePage(ServiceLocator::LocateGlobals().uiOEMCP),
     _uScrollScale(1),
     _bLineSelection(true),
     _bWrapText(true),
@@ -514,9 +514,9 @@ void Settings::SetGridRenderingAllowedWorldwide(_In_ bool const fGridRenderingAl
     {
         this->_fRenderGridWorldwide = fGridRenderingAllowed;
 
-        if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+        if (ServiceLocator::LocateGlobals().pRender != nullptr)
         {
-            ServiceLocator::LocateGlobals()->pRender->TriggerRedrawAll();
+            ServiceLocator::LocateGlobals().pRender->TriggerRedrawAll();
         }
     }
 }
@@ -648,7 +648,7 @@ void Settings::SetFillAttribute(_In_ const WORD wFillAttribute)
     _wFillAttribute = wFillAttribute;
 
     // Do not allow the default fill attribute to use any attrs other than fg/bg colors.
-    // This prevents us from accidentally inverting everything or suddenly drawing lines 
+    // This prevents us from accidentally inverting everything or suddenly drawing lines
     // everywhere by defualt.
     ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 }
@@ -662,7 +662,7 @@ void Settings::SetPopupFillAttribute(_In_ const WORD wPopupFillAttribute)
     _wPopupFillAttribute = wPopupFillAttribute;
 
     // Do not allow the default popup fill attribute to use any attrs other than fg/bg colors.
-    // This prevents us from accidentally inverting everything or suddenly drawing lines 
+    // This prevents us from accidentally inverting everything or suddenly drawing lines
     // everywhere by defualt.
     ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 }

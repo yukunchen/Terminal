@@ -20,14 +20,14 @@ using namespace Microsoft::Console;
 
 void _HandleTerminalKeyEventCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->pInputBuffer->Write(inEvents);
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.pInputBuffer->Write(inEvents);
 }
 
 // Constructor Description:
 // - Creates the VT Input Thread.
 // Arguments:
-// - hPipe - a handle to the file representing the read end of the VT pipe. 
+// - hPipe - a handle to the file representing the read end of the VT pipe.
 VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
     : _hFile(std::move(hPipe))
 {
@@ -38,9 +38,9 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
 }
 
 // Method Description:
-// - Processes a buffer of input characters. The characters should be utf-8 
-//      encoded, and will get converted to wchar_t's to be processed by the 
-//      input state machine. 
+// - Processes a buffer of input characters. The characters should be utf-8
+//      encoded, and will get converted to wchar_t's to be processed by the
+//      input state machine.
 // Arguments:
 // - charBuffer - the UTF-8 characters recieved.
 // - cch - number of UTF-8 characters in charBuffer
@@ -49,11 +49,11 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
 HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const char* const charBuffer, _In_ const int cch)
 {
 
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->LockConsole();
-    auto Unlock = wil::ScopeExit([&] { gci->UnlockConsole(); });
-    
-    unsigned int const uiCodePage = gci->CP;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole();
+    auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
+
+    unsigned int const uiCodePage = gci.CP;
     try
     {
         wistd::unique_ptr<wchar_t[]> pwsSequence;
@@ -80,8 +80,8 @@ DWORD VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 }
 
 // Method Description:
-// - The ThreadProc for the VT Input Thread. Reads input from the pipe, and 
-//      passes it to _HandleRunInput to be processed by the 
+// - The ThreadProc for the VT Input Thread. Reads input from the pipe, and
+//      passes it to _HandleRunInput to be processed by the
 //      InputStateMachineEngine.
 // Return Value:
 // - <none>
@@ -103,25 +103,25 @@ DWORD VtInputThread::_InputThread()
 HRESULT VtInputThread::Start()
 {
     RETURN_IF_HANDLE_INVALID(_hFile.get());
-    
-    //Initialize the state machine here, because the gci->pInputBuffer 
+
+    //Initialize the state machine here, because the gci.pInputBuffer
     // hasn't been initialized when we initialize the VtInputThread object.
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    
-    std::unique_ptr<ConhostInternalGetSet> pGetSet = 
-        std::make_unique<ConhostInternalGetSet>(gci);
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    std::unique_ptr<ConhostInternalGetSet> pGetSet =
+        std::make_unique<ConhostInternalGetSet>(&gci);
     THROW_IF_NULL_ALLOC(pGetSet);
 
     std::unique_ptr<InteractDispatch> pDispatch = std::make_unique<InteractDispatch>(std::move(pGetSet));
     THROW_IF_NULL_ALLOC(pDispatch);
-    
-    std::unique_ptr<InputStateMachineEngine> pEngine = 
+
+    std::unique_ptr<InputStateMachineEngine> pEngine =
         std::make_unique<InputStateMachineEngine>(std::move(pDispatch));
     THROW_IF_NULL_ALLOC(pEngine);
 
     _pInputStateMachine = std::make_unique<StateMachine>(std::move(pEngine));
     THROW_IF_NULL_ALLOC(_pInputStateMachine);
-    
+
     HANDLE hThread = nullptr;
     // 0 is the right value, https://blogs.msdn.microsoft.com/oldnewthing/20040223-00/?p=40503
     DWORD dwThreadId = 0;

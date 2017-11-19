@@ -79,10 +79,10 @@ class TextBufferTests
 
     TEST_METHOD(TestDoubleBytePadFlag);
 
-    void DoBoundaryTest(PWCHAR const pwszInputString, 
-                        short const cLength, 
-                        short const cMax, 
-                        short const cLeft, 
+    void DoBoundaryTest(PWCHAR const pwszInputString,
+                        short const cLength,
+                        short const cMax,
+                        short const cLeft,
                         short const cRight);
 
     TEST_METHOD(TestBoundaryMeasuresRegularString);
@@ -100,22 +100,22 @@ class TextBufferTests
     void TestLastNonSpace(short const cursorPosY);
 
     TEST_METHOD(TestGetLastNonSpaceCharacter);
-    
+
     TEST_METHOD(TestSetWrapOnCurrentRow);
-    
+
     TEST_METHOD(TestIncrementCircularBuffer);
-    
+
     TEST_METHOD(TestMixedRgbAndLegacyForeground);
     TEST_METHOD(TestMixedRgbAndLegacyBackground);
     TEST_METHOD(TestMixedRgbAndLegacyUnderline);
     TEST_METHOD(TestMixedRgbAndLegacyBrightness);
-    
+
     TEST_METHOD(TestRgbEraseLine);
-    
+
     TEST_METHOD(TestUnBold);
     TEST_METHOD(TestUnBoldRgb);
     TEST_METHOD(TestComplexUnBold);
-    
+
     TEST_METHOD(CopyAttrs);
 
 };
@@ -146,7 +146,7 @@ void TextBufferTests::DoBufferRowIterationTest(TEXT_BUFFER_INFO* pTbi)
             ROW* pPriorCheck = pTbi->GetPrevRowNoWrap(pRow);
 
             // it should still equal what the row was before we started this iteration
-            VERIFY_ARE_EQUAL(pPrior, pPriorCheck); 
+            VERIFY_ARE_EQUAL(pPrior, pPriorCheck);
         }
     }
 
@@ -156,8 +156,8 @@ void TextBufferTests::DoBufferRowIterationTest(TEXT_BUFFER_INFO* pTbi)
 
 TEXT_BUFFER_INFO* TextBufferTests::GetTbi()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return gci->CurrentScreenBuffer->TextInfo;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.CurrentScreenBuffer->TextInfo;
 }
 
 SHORT TextBufferTests::GetBufferWidth()
@@ -245,10 +245,10 @@ void TextBufferTests::TestDoubleBytePadFlag()
 }
 
 
-void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString, 
-                                     short const cLength, 
-                                     short const cMax, 
-                                     short const cLeft, 
+void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
+                                     short const cLength,
+                                     short const cMax,
+                                     short const cLeft,
                                      short const cRight)
 {
     TEXT_BUFFER_INFO* tbi = GetTbi();
@@ -298,7 +298,7 @@ void TextBufferTests::TestBoundaryMeasuresRegularString()
     SHORT csBufferWidth = GetBufferWidth();
 
     // length 44, left 0, right 44
-    const PWCHAR pwszLazyDog = L"The quick brown fox jumps over the lazy dog."; 
+    const PWCHAR pwszLazyDog = L"The quick brown fox jumps over the lazy dog.";
     DoBoundaryTest(pwszLazyDog, 44, csBufferWidth, 0, 44);
 }
 
@@ -307,7 +307,7 @@ void TextBufferTests::TestBoundaryMeasuresFloatingString()
     SHORT csBufferWidth = GetBufferWidth();
 
     // length 5 spaces + 4 chars + 5 spaces = 14, left 5, right 9
-    const PWCHAR pwszOffsets = L"     C:\\>     "; 
+    const PWCHAR pwszOffsets = L"     C:\\>     ";
     DoBoundaryTest(pwszOffsets, 14, csBufferWidth, 5, 9);
 }
 
@@ -598,20 +598,20 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
 void TextBufferTests::TestMixedRgbAndLegacyForeground()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    const SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     const Cursor* const cursor = tbi->GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
     VERIFY_IS_NOT_NULL(cursor);
 
-    // Case 1 - 
+    // Case 1 -
     //      Write '\E[38;2;64;128;255mX\E[49mX\E[m'
     //      Make sure that the second X has RGB attributes (FG and BG)
     //      FG = rgb(64;128;255), BG = rgb(default)
     Log::Comment(L"Case 1 \"\\E[38;2;64;128;255mX\\E[49mX\\E[m\"");
-    
+
     wchar_t* sequence = L"\x1b[38;2;64;128;255mX\x1b[49mX\x1b[m";
 
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
@@ -625,51 +625,51 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrA.IsLegacy(), attrA.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={FG:0x%x,BG:0x%x}", 
+        L"attrA={FG:0x%x,BG:0x%x}",
         attrA.GetRgbForeground(), attrA.GetRgbBackground()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrB.IsLegacy(), attrB.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={FG:0x%x,BG:0x%x}", 
+        L"attrB={FG:0x%x,BG:0x%x}",
         attrB.GetRgbForeground(), attrB.GetRgbBackground()
     ));
 
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
-    
+
     VERIFY_ARE_EQUAL(attrA.GetRgbForeground(), RGB(64,128,255));
     VERIFY_ARE_EQUAL(attrA.GetRgbBackground(), psi->GetAttributes().GetRgbBackground());
-    
+
     VERIFY_ARE_EQUAL(attrB.GetRgbForeground(), RGB(64,128,255));
     VERIFY_ARE_EQUAL(attrB.GetRgbBackground(), psi->GetAttributes().GetRgbBackground());
-    
+
     wchar_t* reset = L"\x1b[0m";
     stateMachine->ProcessString(reset, std::wcslen(reset));
-    
+
 }
 
 void TextBufferTests::TestMixedRgbAndLegacyBackground()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    const SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     const Cursor* const cursor = tbi->GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
     VERIFY_IS_NOT_NULL(cursor);
 
-    // Case 2 - 
+    // Case 2 -
     //      \E[48;2;64;128;255mX\E[39mX\E[m
     //      Make sure that the second X has RGB attributes (FG and BG)
     //      FG = rgb(default), BG = rgb(64;128;255)
@@ -687,23 +687,23 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrA.IsLegacy(), attrA.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={FG:0x%x,BG:0x%x}", 
+        L"attrA={FG:0x%x,BG:0x%x}",
         attrA.GetRgbForeground(), attrA.GetRgbBackground()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrB.IsLegacy(), attrB.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={FG:0x%x,BG:0x%x}", 
+        L"attrB={FG:0x%x,BG:0x%x}",
         attrB.GetRgbForeground(), attrB.GetRgbBackground()
     ));
 
@@ -712,10 +712,10 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
 
     VERIFY_ARE_EQUAL(attrA.GetRgbBackground(), RGB(64,128,255));
     VERIFY_ARE_EQUAL(attrA.GetRgbForeground(), psi->GetAttributes().GetRgbForeground());
-    
+
     VERIFY_ARE_EQUAL(attrB.GetRgbBackground(), RGB(64,128,255));
     VERIFY_ARE_EQUAL(attrB.GetRgbForeground(), psi->GetAttributes().GetRgbForeground());
-    
+
     wchar_t* reset = L"\x1b[0m";
     stateMachine->ProcessString(reset, std::wcslen(reset));
 
@@ -724,15 +724,15 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
 
 void TextBufferTests::TestMixedRgbAndLegacyUnderline()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    const SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     const Cursor* const cursor = tbi->GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
     VERIFY_IS_NOT_NULL(cursor);
 
-    // Case 3 - 
+    // Case 3 -
     //      '\E[48;2;64;128;255mX\E[4mX\E[m'
     //      Make sure that the second X has RGB attributes AND underline
     Log::Comment(L"Case 3 \"\\E[48;2;64;128;255mX\\E[4mX\\E[m\"");
@@ -748,23 +748,23 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrA.IsLegacy(), attrA.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={FG:0x%x,BG:0x%x}", 
+        L"attrA={FG:0x%x,BG:0x%x}",
         attrA.GetRgbForeground(), attrA.GetRgbBackground()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrB.IsLegacy(), attrB.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={FG:0x%x,BG:0x%x}", 
+        L"attrB={FG:0x%x,BG:0x%x}",
         attrB.GetRgbForeground(), attrB.GetRgbBackground()
     ));
 
@@ -787,19 +787,19 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
 
 void TextBufferTests::TestMixedRgbAndLegacyBrightness()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    const SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     const Cursor* const cursor = tbi->GetCursor();
     VERIFY_IS_NOT_NULL(stateMachine);
     VERIFY_IS_NOT_NULL(cursor);
-    // Case 4 - 
+    // Case 4 -
     //      '\E[32mX\E[1mX'
     //      Make sure that the second X is a BRIGHT green, not white.
     Log::Comment(L"Case 4 ;\"\\E[32mX\\E[1mX\"");
-    const auto dark_green = gci->GetColorTableEntry(2);
-    const auto bright_green = gci->GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(2);
+    const auto bright_green = gci.GetColorTableEntry(10);
     VERIFY_ARE_NOT_EQUAL(dark_green, bright_green);
 
     wchar_t* sequence = L"\x1b[32mX\x1b[1mX";
@@ -814,23 +814,23 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrA.IsLegacy(), attrA.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={FG:0x%x,BG:0x%x}", 
+        L"attrA={FG:0x%x,BG:0x%x}",
         attrA.GetRgbForeground(), attrA.GetRgbBackground()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrB.IsLegacy(), attrB.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={FG:0x%x,BG:0x%x}", 
+        L"attrB={FG:0x%x,BG:0x%x}",
         attrB.GetRgbForeground(), attrB.GetRgbBackground()
     ));
 
@@ -842,12 +842,12 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine->ProcessString(reset, std::wcslen(reset));
-}  
+}
 
 void TextBufferTests::TestRgbEraseLine()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor* const cursor = tbi->GetCursor();
@@ -856,7 +856,7 @@ void TextBufferTests::TestRgbEraseLine()
     VERIFY_IS_NOT_NULL(cursor);
 
     cursor->SetXPosition(0);
-    // Case 1 - 
+    // Case 1 -
     //      Write '\E[48;2;64;128;255X\E[48;2;128;128;255\E[KX'
     //      Make sure that all the characters after the first have the rgb attrs
     //      BG = rgb(128;128;255)
@@ -868,7 +868,7 @@ void TextBufferTests::TestRgbEraseLine()
         const auto y = cursor->GetPosition().Y;
 
         Log::Comment(NoThrowString().Format(
-            L"cursor={X:%d,Y:%d}", 
+            L"cursor={X:%d,Y:%d}",
             x, y
         ));
         VERIFY_ARE_EQUAL(x, 2);
@@ -889,11 +889,11 @@ void TextBufferTests::TestRgbEraseLine()
         {
             const auto attr = attrs[i];
             Log::Comment(NoThrowString().Format(
-                L"attr={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+                L"attr={IsLegacy:%d,GetLegacyAttributes:0x%x}",
                 attr.IsLegacy(), attr.GetLegacyAttributes()
             ));
             Log::Comment(NoThrowString().Format(
-                L"attr={FG:0x%x,BG:0x%x}", 
+                L"attr={FG:0x%x,BG:0x%x}",
                 attr.GetRgbForeground(), attr.GetRgbBackground()
             ));
             VERIFY_ARE_EQUAL(attr.IsLegacy(), false);
@@ -907,8 +907,8 @@ void TextBufferTests::TestRgbEraseLine()
 
 void TextBufferTests::TestUnBold()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor* const cursor = tbi->GetCursor();
@@ -917,7 +917,7 @@ void TextBufferTests::TestUnBold()
     VERIFY_IS_NOT_NULL(cursor);
 
     cursor->SetXPosition(0);
-    // Case 1 - 
+    // Case 1 -
     //      Write '\E[1;32mX\E[22mX'
     //      The first X should be bright green.
     //      The second x should be dark green.
@@ -926,11 +926,11 @@ void TextBufferTests::TestUnBold()
 
     const auto x = cursor->GetPosition().X;
     const auto y = cursor->GetPosition().Y;
-    const auto dark_green = gci->GetColorTableEntry(2);
-    const auto bright_green = gci->GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(2);
+    const auto bright_green = gci.GetColorTableEntry(10);
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     VERIFY_ARE_EQUAL(x, 2);
@@ -946,37 +946,37 @@ void TextBufferTests::TestUnBold()
     const auto attrB = attrs[x-1];
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrA.IsLegacy(), attrA.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={FG:0x%x,BG:0x%x}", 
+        L"attrA={FG:0x%x,BG:0x%x}",
         attrA.GetRgbForeground(), attrA.GetRgbBackground()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrB.IsLegacy(), attrB.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={FG:0x%x,BG:0x%x}", 
+        L"attrB={FG:0x%x,BG:0x%x}",
         attrB.GetRgbForeground(), attrB.GetRgbBackground()
     ));
 
     VERIFY_ARE_EQUAL(attrA.GetRgbForeground(), bright_green);
     VERIFY_ARE_EQUAL(attrB.GetRgbForeground(), dark_green);
-    
+
     std::wstring reset = L"\x1b[0m";
     stateMachine->ProcessString(&reset[0], reset.length());
 }
 
 void TextBufferTests::TestUnBoldRgb()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor* const cursor = tbi->GetCursor();
@@ -985,7 +985,7 @@ void TextBufferTests::TestUnBoldRgb()
     VERIFY_IS_NOT_NULL(cursor);
 
     cursor->SetXPosition(0);
-    // Case 2 - 
+    // Case 2 -
     //      Write '\E[1;32m\E[48;2;1;2;3mX\E[22mX'
     //      The first X should be bright green, and not legacy.
     //      The second X should be dark green, and not legacy.
@@ -995,11 +995,11 @@ void TextBufferTests::TestUnBoldRgb()
 
     const auto x = cursor->GetPosition().X;
     const auto y = cursor->GetPosition().Y;
-    const auto dark_green = gci->GetColorTableEntry(2);
-    const auto bright_green = gci->GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(2);
+    const auto bright_green = gci.GetColorTableEntry(10);
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     VERIFY_ARE_EQUAL(x, 2);
@@ -1015,23 +1015,23 @@ void TextBufferTests::TestUnBoldRgb()
     const auto attrB = attrs[x-1];
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrA={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrA.IsLegacy(), attrA.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrA={FG:0x%x,BG:0x%x}", 
+        L"attrA={FG:0x%x,BG:0x%x}",
         attrA.GetRgbForeground(), attrA.GetRgbBackground()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}", 
+        L"attrB={IsLegacy:%d,GetLegacyAttributes:0x%x}",
         attrB.IsLegacy(), attrB.GetLegacyAttributes()
     ));
     Log::Comment(NoThrowString().Format(
-        L"attrB={FG:0x%x,BG:0x%x}", 
+        L"attrB={FG:0x%x,BG:0x%x}",
         attrB.GetRgbForeground(), attrB.GetRgbBackground()
     ));
 
@@ -1040,15 +1040,15 @@ void TextBufferTests::TestUnBoldRgb()
 
     VERIFY_ARE_EQUAL(attrA.GetRgbForeground(), bright_green);
     VERIFY_ARE_EQUAL(attrB.GetRgbForeground(), dark_green);
-    
+
     std::wstring reset = L"\x1b[0m";
     stateMachine->ProcessString(&reset[0], reset.length());
 }
 
 void TextBufferTests::TestComplexUnBold()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor* const cursor = tbi->GetCursor();
@@ -1057,7 +1057,7 @@ void TextBufferTests::TestComplexUnBold()
     VERIFY_IS_NOT_NULL(cursor);
 
     cursor->SetXPosition(0);
-    // Case 3 - 
+    // Case 3 -
     //      Write '\E[1;32m\E[48;2;1;2;3mX\E[22mX\E[38;2;32;32;32mX\E[1mX\E[38;2;64;64;64mX\E[22mX'
     //      The first X should be bright green, and not legacy.
     //      The second X should be dark green, and not legacy.
@@ -1071,11 +1071,11 @@ void TextBufferTests::TestComplexUnBold()
 
     const auto x = cursor->GetPosition().X;
     const auto y = cursor->GetPosition().Y;
-    const auto dark_green = gci->GetColorTableEntry(2);
-    const auto bright_green = gci->GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(2);
+    const auto bright_green = gci.GetColorTableEntry(10);
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     VERIFY_ARE_EQUAL(x, 6);
@@ -1095,7 +1095,7 @@ void TextBufferTests::TestComplexUnBold()
     const auto attrF = attrs[x-1];
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(
@@ -1159,7 +1159,7 @@ void TextBufferTests::TestComplexUnBold()
 
     VERIFY_ARE_EQUAL(attrF.GetRgbForeground(), dark_green);
     VERIFY_ARE_EQUAL(attrF.GetRgbBackground(), RGB(1,2,3));
-    
+
     std::wstring reset = L"\x1b[0m";
     stateMachine->ProcessString(&reset[0], reset.length());
 }
@@ -1167,8 +1167,8 @@ void TextBufferTests::TestComplexUnBold()
 
 void TextBufferTests::CopyAttrs()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor* const cursor = tbi->GetCursor();
@@ -1187,11 +1187,11 @@ void TextBufferTests::CopyAttrs()
 
     const auto x = cursor->GetPosition().X;
     const auto y = cursor->GetPosition().Y;
-    const auto dark_blue = gci->GetColorTableEntry(1);
-    const auto dark_magenta = gci->GetColorTableEntry(5);
+    const auto dark_blue = gci.GetColorTableEntry(1);
+    const auto dark_magenta = gci.GetColorTableEntry(5);
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     VERIFY_ARE_EQUAL(x, 0);
@@ -1207,7 +1207,7 @@ void TextBufferTests::CopyAttrs()
     const auto attrB = attrs[1];
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     Log::Comment(NoThrowString().Format(

@@ -96,7 +96,7 @@ VtIo* CONSOLE_INFORMATION::GetVtIo()
 // - <none>
 void CONSOLE_INFORMATION::HandleTerminalKeyEventCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
 {
-    ServiceLocator::LocateGlobals()->getConsoleInformation()->pInputBuffer->Write(events);
+    ServiceLocator::LocateGlobals().getConsoleInformation().pInputBuffer->Write(events);
 }
 
 // Method Description:

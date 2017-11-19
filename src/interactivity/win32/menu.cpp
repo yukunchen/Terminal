@@ -58,7 +58,7 @@ NTSTATUS Menu::CreateInstance(HWND hWnd)
 
     // This gets the title bar menu.
     hMenu = GetSystemMenu(hWnd, FALSE);
-    hHeirMenu = LoadMenuW(ServiceLocator::LocateGlobals()->hInstance,
+    hHeirMenu = LoadMenuW(ServiceLocator::LocateGlobals().hInstance,
                           MAKEINTRESOURCE(ID_CONSOLE_SYSTEMMENU));
 
     Menu *pNewMenu = new Menu(hMenu, hHeirMenu);
@@ -69,7 +69,7 @@ NTSTATUS Menu::CreateInstance(HWND hWnd)
         // Load the submenu to the system menu.
         if (hHeirMenu)
         {
-            ItemLength = LoadStringW(ServiceLocator::LocateGlobals()->hInstance,
+            ItemLength = LoadStringW(ServiceLocator::LocateGlobals().hInstance,
                                      ID_CONSOLE_EDIT,
                                      ItemString,
                                      ARRAYSIZE(ItemString));
@@ -87,7 +87,7 @@ NTSTATUS Menu::CreateInstance(HWND hWnd)
         // - Edits the indicated control to one word.
         // - Trim the Accelerator key text off of the end of the standard menu
         //   items because we don't support the accelerators.
-        ItemLength = LoadStringW(ServiceLocator::LocateGlobals()->hInstance,
+        ItemLength = LoadStringW(ServiceLocator::LocateGlobals().hInstance,
                                  SC_CLOSE,
                                  ItemString,
                                  ARRAYSIZE(ItemString));
@@ -103,7 +103,7 @@ NTSTATUS Menu::CreateInstance(HWND hWnd)
         }
 
         // Add other items to the system menu.
-        ItemLength = LoadStringW(ServiceLocator::LocateGlobals()->hInstance,
+        ItemLength = LoadStringW(ServiceLocator::LocateGlobals().hInstance,
                                  ID_CONSOLE_DEFAULTS,
                                  ItemString,
                                  ARRAYSIZE(ItemString));
@@ -115,7 +115,7 @@ NTSTATUS Menu::CreateInstance(HWND hWnd)
                         ItemString);
         }
 
-        ItemLength = LoadStringW(ServiceLocator::LocateGlobals()->hInstance,
+        ItemLength = LoadStringW(ServiceLocator::LocateGlobals().hInstance,
                                  ID_CONSOLE_CONTROL,
                                  ItemString,
                                  ARRAYSIZE(ItemString));
@@ -148,12 +148,12 @@ Menu::~Menu()
 // - this initializes the system menu when a WM_INITMENU message is read.
 void Menu::Initialize()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     HMENU const hMenu = _hMenu;
     HMENU const hHeirMenu = _hHeirMenu;
 
     // If the console is iconic, disable Mark and Scroll.
-    if (gci->Flags & CONSOLE_IS_ICONIC)
+    if (gci.Flags & CONSOLE_IS_ICONIC)
     {
         EnableMenuItem(hHeirMenu, ID_CONSOLE_MARK, MF_GRAYED);
         EnableMenuItem(hHeirMenu, ID_CONSOLE_SCROLL, MF_GRAYED);
@@ -172,7 +172,7 @@ void Menu::Initialize()
         //   else
         //       enable mark
 
-        if (gci->CurrentScreenBuffer->IsMaximizedBoth() || gci->Flags & CONSOLE_SELECTING)
+        if (gci.CurrentScreenBuffer->IsMaximizedBoth() || gci.Flags & CONSOLE_SELECTING)
         {
             EnableMenuItem(hHeirMenu, ID_CONSOLE_SCROLL, MF_GRAYED);
         }
@@ -192,7 +192,7 @@ void Menu::Initialize()
     }
 
     // If we're selecting or scrolling, disable paste. Otherwise, enable it.
-    if (gci->Flags & (CONSOLE_SELECTING | CONSOLE_SCROLLING))
+    if (gci.Flags & (CONSOLE_SELECTING | CONSOLE_SCROLLING))
     {
         EnableMenuItem(hHeirMenu, ID_CONSOLE_PASTE, MF_GRAYED);
     }
@@ -202,7 +202,7 @@ void Menu::Initialize()
     }
 
     // If app has active selection, enable copy. Otherwise, disable it.
-    if (gci->Flags & CONSOLE_SELECTING && Selection::Instance().IsAreaSelected())
+    if (gci.Flags & CONSOLE_SELECTING && Selection::Instance().IsAreaSelected())
     {
         EnableMenuItem(hHeirMenu, ID_CONSOLE_COPY, MF_ENABLED);
     }
@@ -212,7 +212,7 @@ void Menu::Initialize()
     }
 
     // Enable move if not iconic.
-    if (gci->Flags & CONSOLE_IS_ICONIC)
+    if (gci.Flags & CONSOLE_IS_ICONIC)
     {
         EnableMenuItem(hMenu, SC_MOVE, MF_GRAYED);
     }
@@ -286,8 +286,8 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
 
 void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    PSCREEN_INFORMATION const ScreenInfo = gci->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    PSCREEN_INFORMATION const ScreenInfo = gci.CurrentScreenBuffer;
     pStateInfo->ScreenBufferSize = ScreenInfo->GetScreenBufferSize();
     pStateInfo->WindowSize.X = ScreenInfo->GetScreenWindowSizeX();
     pStateInfo->WindowSize.Y = ScreenInfo->GetScreenWindowSizeY();
@@ -307,9 +307,9 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     // Retrieve small icon for use in displaying the dialog
     Icon::Instance().GetIcons(nullptr, &pStateInfo->hIcon);
 
-    pStateInfo->QuickEdit = !!(gci->Flags & CONSOLE_QUICK_EDIT_MODE);
-    pStateInfo->AutoPosition = !!(gci->Flags & CONSOLE_AUTO_POSITION);
-    pStateInfo->InsertMode = gci->GetInsertMode();
+    pStateInfo->QuickEdit = !!(gci.Flags & CONSOLE_QUICK_EDIT_MODE);
+    pStateInfo->AutoPosition = !!(gci.Flags & CONSOLE_AUTO_POSITION);
+    pStateInfo->InsertMode = gci.GetInsertMode();
     pStateInfo->ScreenAttributes = ScreenInfo->GetAttributes().GetLegacyAttributes();
     pStateInfo->PopupAttributes = ScreenInfo->GetPopupAttributes()->GetLegacyAttributes();
 
@@ -317,23 +317,23 @@ void Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
     ClearAllFlags(pStateInfo->PopupAttributes, ~(FG_ATTRS | BG_ATTRS));
 
-    pStateInfo->HistoryBufferSize = gci->GetHistoryBufferSize();
-    pStateInfo->NumberOfHistoryBuffers = gci->GetNumberOfHistoryBuffers();
-    pStateInfo->HistoryNoDup = !!(gci->Flags & CONSOLE_HISTORY_NODUP);
+    pStateInfo->HistoryBufferSize = gci.GetHistoryBufferSize();
+    pStateInfo->NumberOfHistoryBuffers = gci.GetNumberOfHistoryBuffers();
+    pStateInfo->HistoryNoDup = !!(gci.Flags & CONSOLE_HISTORY_NODUP);
 
-    memmove(pStateInfo->ColorTable, gci->GetColorTable(), gci->GetColorTableSize() * sizeof(COLORREF));
+    memmove(pStateInfo->ColorTable, gci.GetColorTable(), gci.GetColorTableSize() * sizeof(COLORREF));
 
-    pStateInfo->OriginalTitle = gci->OriginalTitle;
-    pStateInfo->LinkTitle = gci->LinkTitle;
+    pStateInfo->OriginalTitle = gci.OriginalTitle;
+    pStateInfo->LinkTitle = gci.LinkTitle;
 
-    pStateInfo->CodePage = gci->OutputCP;
+    pStateInfo->CodePage = gci.OutputCP;
 
     // begin console v2 properties
     pStateInfo->fIsV2Console = TRUE;
-    pStateInfo->fWrapText = gci->GetWrapText();
-    pStateInfo->fFilterOnPaste = gci->GetFilterOnPaste();
-    pStateInfo->fCtrlKeyShortcutsDisabled = gci->GetCtrlKeyShortcutsDisabled();
-    pStateInfo->fLineSelection = gci->GetLineSelection();
+    pStateInfo->fWrapText = gci.GetWrapText();
+    pStateInfo->fFilterOnPaste = gci.GetFilterOnPaste();
+    pStateInfo->fCtrlKeyShortcutsDisabled = gci.GetCtrlKeyShortcutsDisabled();
+    pStateInfo->fLineSelection = gci.GetLineSelection();
     pStateInfo->bWindowTransparency = ServiceLocator::LocateConsoleWindow<Window>()->GetWindowOpacity();
     // end console v2 properties
 }
@@ -369,19 +369,19 @@ HMENU Menu::s_GetHeirMenuHandle()
 // Updates the console state from information sent by the properties dialog box.
 void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    PSCREEN_INFORMATION const ScreenInfo = gci->CurrentScreenBuffer;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    PSCREEN_INFORMATION const ScreenInfo = gci.CurrentScreenBuffer;
 
-    if (gci->OutputCP != pStateInfo->CodePage)
+    if (gci.OutputCP != pStateInfo->CodePage)
     {
-        gci->OutputCP = pStateInfo->CodePage;
+        gci.OutputCP = pStateInfo->CodePage;
 
         SetConsoleCPInfo(TRUE);
     }
 
-    if (gci->CP != pStateInfo->CodePage)
+    if (gci.CP != pStateInfo->CodePage)
     {
-        gci->CP = pStateInfo->CodePage;
+        gci.CP = pStateInfo->CodePage;
 
         SetConsoleCPInfo(FALSE);
     }
@@ -390,11 +390,11 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
     // NOTE: We must set the wrap state before further manipulating the buffer/window.
     // If we do not, the user will get a different result than the preview (e.g. we'll resize without scroll bars first then turn off wrapping.)
-    gci->SetWrapText(!!pStateInfo->fWrapText);
-    gci->SetFilterOnPaste(!!pStateInfo->fFilterOnPaste);
-    gci->SetCtrlKeyShortcutsDisabled(!!pStateInfo->fCtrlKeyShortcutsDisabled);
-    gci->SetLineSelection(!!pStateInfo->fLineSelection);
-    Selection::Instance().SetLineSelection(!!gci->GetLineSelection());
+    gci.SetWrapText(!!pStateInfo->fWrapText);
+    gci.SetFilterOnPaste(!!pStateInfo->fFilterOnPaste);
+    gci.SetCtrlKeyShortcutsDisabled(!!pStateInfo->fCtrlKeyShortcutsDisabled);
+    gci.SetLineSelection(!!pStateInfo->fLineSelection);
+    Selection::Instance().SetLineSelection(!!gci.GetLineSelection());
 
     ServiceLocator::LocateConsoleWindow<Window>()->SetWindowOpacity(pStateInfo->bWindowTransparency);
     ServiceLocator::LocateConsoleWindow<Window>()->ApplyWindowOpacity();
@@ -408,10 +408,10 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     const FontInfo* const pfiFontApplied = ScreenInfo->TextInfo->GetCurrentFont();
 
     // Now make sure internal font state reflects the font chosen
-    gci->SetFontFamily(pfiFontApplied->GetFamily());
-    gci->SetFontSize(pfiFontApplied->GetUnscaledSize());
-    gci->SetFontWeight(pfiFontApplied->GetWeight());
-    gci->SetFaceName(pfiFontApplied->GetFaceName(), LF_FACESIZE);
+    gci.SetFontFamily(pfiFontApplied->GetFamily());
+    gci.SetFontSize(pfiFontApplied->GetUnscaledSize());
+    gci.SetFontWeight(pfiFontApplied->GetWeight());
+    gci.SetFaceName(pfiFontApplied->GetFaceName(), LF_FACESIZE);
 
     ScreenInfo->SetCursorInformation(pStateInfo->CursorSize, ScreenInfo->TextInfo->GetCursor()->IsVisible());
 
@@ -429,7 +429,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
         coordWindow.X = min(coordLargest.X, coordWindow.X);
         coordWindow.Y = min(coordLargest.Y, coordWindow.Y);
 
-        if (gci->GetWrapText())
+        if (gci.GetWrapText())
         {
             // Then if wrap text is on, the buffer size gets fixed to the window size value.
             coordBuffer.X = coordWindow.X;
@@ -474,20 +474,20 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
     if (pStateInfo->QuickEdit)
     {
-        gci->Flags |= CONSOLE_QUICK_EDIT_MODE;
+        gci.Flags |= CONSOLE_QUICK_EDIT_MODE;
     }
     else
     {
-        gci->Flags &= ~CONSOLE_QUICK_EDIT_MODE;
+        gci.Flags &= ~CONSOLE_QUICK_EDIT_MODE;
     }
 
     if (pStateInfo->AutoPosition)
     {
-        gci->Flags |= CONSOLE_AUTO_POSITION;
+        gci.Flags |= CONSOLE_AUTO_POSITION;
     }
     else
     {
-        gci->Flags &= ~CONSOLE_AUTO_POSITION;
+        gci.Flags &= ~CONSOLE_AUTO_POSITION;
 
         POINT pt;
         pt.x = pStateInfo->WindowPosX;
@@ -496,17 +496,17 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
         ServiceLocator::LocateConsoleWindow<Window>()->UpdateWindowPosition(pt);
     }
 
-    if (gci->GetInsertMode() != !!pStateInfo->InsertMode)
+    if (gci.GetInsertMode() != !!pStateInfo->InsertMode)
     {
         ScreenInfo->SetCursorDBMode(FALSE);
-        gci->SetInsertMode(pStateInfo->InsertMode != FALSE);
-        if (gci->lpCookedReadData)
+        gci.SetInsertMode(pStateInfo->InsertMode != FALSE);
+        if (gci.lpCookedReadData)
         {
-            gci->lpCookedReadData->_InsertMode = !!gci->GetInsertMode();
+            gci.lpCookedReadData->_InsertMode = !!gci.GetInsertMode();
         }
     }
 
-    gci->SetColorTable(pStateInfo->ColorTable, gci->GetColorTableSize());
+    gci.SetColorTable(pStateInfo->ColorTable, gci.GetColorTableSize());
 
     // Ensure that attributes only contain color specification.
     ClearAllFlags(pStateInfo->ScreenAttributes, ~(FG_ATTRS | BG_ATTRS));
@@ -516,21 +516,21 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     ScreenInfo->GetAdapterDispatch()->UpdateDefaultColor(pStateInfo->ScreenAttributes);
 
     ResizeCommandHistoryBuffers(pStateInfo->HistoryBufferSize);
-    gci->SetNumberOfHistoryBuffers(pStateInfo->NumberOfHistoryBuffers);
+    gci.SetNumberOfHistoryBuffers(pStateInfo->NumberOfHistoryBuffers);
     if (pStateInfo->HistoryNoDup)
     {
-        gci->Flags |= CONSOLE_HISTORY_NODUP;
+        gci.Flags |= CONSOLE_HISTORY_NODUP;
     }
     else
     {
-        gci->Flags &= ~CONSOLE_HISTORY_NODUP;
+        gci.Flags &= ~CONSOLE_HISTORY_NODUP;
     }
 
     // Since edit keys are global state only stored once in the registry, post the message to the queue to reload
     // those properties specifically from the registry in case they were changed.
     ServiceLocator::LocateConsoleWindow<Window>()->PostUpdateExtendedEditKeys();
 
-    gci->ConsoleIme.RefreshAreaAttributes();
+    gci.ConsoleIme.RefreshAreaAttributes();
 }
 
 #pragma endregion

@@ -80,7 +80,7 @@ namespace Microsoft
 
                 static ISystemConfigurationProvider *LocateSystemConfigurationProvider();
 
-                static Globals *LocateGlobals();
+                static Globals& LocateGlobals();
 
             protected:
                 ServiceLocator(ServiceLocator const&) = delete;
@@ -100,7 +100,7 @@ namespace Microsoft
                 static IInputServices *s_inputServices;
                 static ISystemConfigurationProvider *s_systemConfigurationProvider;
 
-                static Globals *s_globals;
+                static Globals s_globals;
             };
         };
     };

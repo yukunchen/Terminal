@@ -83,7 +83,7 @@ static bool ShouldUseConhostV2()
 }
 
 // For the console host, we limit the amount of telemetry sent back by only sending it for an "interactive" session
-// where the user has clicked, typed, etc.  Because it relies on a live person, this drastically limits the amount of 
+// where the user has clicked, typed, etc.  Because it relies on a live person, this drastically limits the amount of
 // telemetry, which is good.
 //
 // The problem with the console launcher, is we can't tell if a user is launching the console
@@ -202,7 +202,7 @@ int CALLBACK wWinMain(
     _In_ int /*nCmdShow*/)
 {
     EnsureHeap();
-    ServiceLocator::LocateGlobals()->hInstance = hInstance;
+    ServiceLocator::LocateGlobals().hInstance = hInstance;
 
     ConsoleCheckDebug();
 
@@ -210,7 +210,7 @@ int CALLBACK wWinMain(
     TraceLoggingRegister(g_ConhostLauncherProvider);
     DetermineIfSendTelemetry();
 
-    // Pass command line and standard handles at this point in time as 
+    // Pass command line and standard handles at this point in time as
     // potential preferences for execution that were passed on process creation.
     ConsoleArguments args(GetCommandLineW(),
                           GetStdHandle(STD_INPUT_HANDLE),

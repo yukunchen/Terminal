@@ -34,11 +34,11 @@ ConversionAreaInfo::ConversionAreaInfo(_In_ COORD const coordBufferSize,
 // - NTSTATUS value. Normally STATUS_SUCCESSFUL if OK. Use appropriate checking macros.
 NTSTATUS ConversionAreaInfo::s_CreateInstance(_Outptr_ ConversionAreaInfo** const ppInfo)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS Status = STATUS_SUCCESS;
     *ppInfo = nullptr;
 
-    if (gci->CurrentScreenBuffer == nullptr)
+    if (gci.CurrentScreenBuffer == nullptr)
     {
         Status = STATUS_UNSUCCESSFUL;
     }
@@ -46,20 +46,20 @@ NTSTATUS ConversionAreaInfo::s_CreateInstance(_Outptr_ ConversionAreaInfo** cons
     if (NT_SUCCESS(Status))
     {
         // Each conversion area represents one row of the current screen buffer.
-        COORD coordCaBuffer = gci->CurrentScreenBuffer->GetScreenBufferSize();
+        COORD coordCaBuffer = gci.CurrentScreenBuffer->GetScreenBufferSize();
         coordCaBuffer.Y = 1;
 
         COORD dwWindowSize;
-        dwWindowSize.X = gci->CurrentScreenBuffer->GetScreenWindowSizeX();
-        dwWindowSize.Y = gci->CurrentScreenBuffer->GetScreenWindowSizeY();
+        dwWindowSize.X = gci.CurrentScreenBuffer->GetScreenWindowSizeX();
+        dwWindowSize.Y = gci.CurrentScreenBuffer->GetScreenWindowSizeY();
 
         CHAR_INFO Fill;
-        Fill.Attributes = gci->CurrentScreenBuffer->GetAttributes().GetLegacyAttributes();
+        Fill.Attributes = gci.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes();
 
         CHAR_INFO PopupFill;
-        PopupFill.Attributes = gci->CurrentScreenBuffer->GetPopupAttributes()->GetLegacyAttributes();
+        PopupFill.Attributes = gci.CurrentScreenBuffer->GetPopupAttributes()->GetLegacyAttributes();
 
-        const FontInfo* const pfiFont = gci->CurrentScreenBuffer->TextInfo->GetCurrentFont();
+        const FontInfo* const pfiFont = gci.CurrentScreenBuffer->TextInfo->GetCurrentFont();
 
         SCREEN_INFORMATION* pNewScreen;
         Status = SCREEN_INFORMATION::CreateInstance(dwWindowSize,
@@ -154,8 +154,8 @@ ConsoleImeInfo::~ConsoleImeInfo()
 // - <none>
 void ConsoleImeInfo::RefreshAreaAttributes()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    TextAttribute const Attributes = gci->CurrentScreenBuffer->GetAttributes();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    TextAttribute const Attributes = gci.CurrentScreenBuffer->GetAttributes();
 
     for (unsigned int i = 0; i < ConvAreaCompStr.size(); ++i)
     {

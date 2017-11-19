@@ -310,12 +310,12 @@ void WriteRegionToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PSMALL_RECT 
 {
     if (pScreenInfo->IsActiveScreenBuffer())
     {
-        if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+        if (ServiceLocator::LocateGlobals().pRender != nullptr)
         {
             // convert inclusive rectangle to exclusive rectangle
             SMALL_RECT srExclusive = Viewport::FromInclusive(*psrRegion).ToExclusive();
 
-            ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&srExclusive);
+            ServiceLocator::LocateGlobals().pRender->TriggerRedraw(&srExclusive);
         }
     }
 }
@@ -330,9 +330,9 @@ void WriteRegionToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ PSMALL_RECT 
 void WriteToScreen(_In_ PSCREEN_INFORMATION pScreenInfo, _In_ const SMALL_RECT srRegion)
 {
     DBGOUTPUT(("WriteToScreen\n"));
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // update to screen, if we're not iconic.
-    if (!pScreenInfo->IsActiveScreenBuffer() || IsFlagSet(gci->Flags, CONSOLE_IS_ICONIC))
+    if (!pScreenInfo->IsActiveScreenBuffer() || IsFlagSet(gci.Flags, CONSOLE_IS_ICONIC))
     {
         return;
     }
@@ -378,7 +378,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                            _Out_opt_ PULONG pcColumns)
 {
     DBGOUTPUT(("WriteOutputString\n"));
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     if (*pcRecords == 0)
     {
@@ -405,7 +405,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
     BOOL fLocalHeap = FALSE;
     if (ulStringType == CONSOLE_ASCII)
     {
-        UINT const Codepage = gci->OutputCP;
+        UINT const Codepage = gci.OutputCP;
 
         if (*pcRecords >= ARRAYSIZE(rgwchBuffer) ||
             *pcRecords >= ARRAYSIZE(rgbBufferA))
@@ -443,7 +443,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 break;
             }
 
-            if (IsDBCSLeadByteConsole(*TmpBuf, &gci->OutputCPInfo))
+            if (IsDBCSLeadByteConsole(*TmpBuf, &gci.OutputCPInfo))
             {
                 if (i + 1 >= *pcRecords)
                 {
@@ -790,7 +790,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     _Inout_ PULONG pcElements)  // this value is valid even for error cases
 {
     DBGOUTPUT(("FillOutput\n"));
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (*pcElements == 0)
     {
         return STATUS_SUCCESS;
@@ -808,10 +808,10 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
 
     if (ulElementType == CONSOLE_ASCII)
     {
-        UINT const Codepage = gci->OutputCP;
+        UINT const Codepage = gci.OutputCP;
         if (pScreenInfo->FillOutDbcsLeadChar == 0)
         {
-            if (IsDBCSLeadByteConsole((CHAR) wElement, &gci->OutputCPInfo))
+            if (IsDBCSLeadByteConsole((CHAR) wElement, &gci.OutputCPInfo))
             {
                 pScreenInfo->FillOutDbcsLeadChar = (CHAR) wElement;
                 *pcElements = 0;
@@ -992,13 +992,13 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             // attribute strings.
             AttrRun.SetLength((SHORT)((Y == coordWrite.Y) ? (X - coordWrite.X + 1) : (X + 1)));
 
-            // Here we're being a little clever - 
+            // Here we're being a little clever -
             // Because RGB color can't roundtrip the API, certain VT sequences will forget the RGB color
             // because their first call to GetScreenBufferInfo returned a legacy attr.
             // If they're calling this with the default attrs, they likely wanted to use the RGB default attrs.
-            // This could create a scenario where someone emitted RGB with VT, 
+            // This could create a scenario where someone emitted RGB with VT,
             // THEN used the API to FillConsoleOutput with the default attrs, and DIDN'T want the RGB color
-            // they had set. 
+            // they had set.
             if (pScreenInfo->InVTMode() && pScreenInfo->GetAttributes().GetLegacyAttributes() == wElement)
             {
                 AttrRun.SetAttributes(pScreenInfo->GetAttributes());
@@ -1052,14 +1052,14 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
         if (Y != coordWrite.Y)
         {
             WriteRegion.Left = 0;
-            WriteRegion.Right = (SHORT)(gci->CurrentScreenBuffer->GetScreenBufferSize().X - 1);
+            WriteRegion.Right = (SHORT)(gci.CurrentScreenBuffer->GetScreenBufferSize().X - 1);
         }
         else
         {
             WriteRegion.Left = coordWrite.X + pScreenInfo->GetBufferViewport().Top + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.X;
             WriteRegion.Right = X + pScreenInfo->GetBufferViewport().Top + pScreenInfo->ConvScreenInfo->CaInfo.coordConView.X;
         }
-        WriteConvRegionToScreen(gci->CurrentScreenBuffer, WriteRegion);
+        WriteConvRegionToScreen(gci.CurrentScreenBuffer, WriteRegion);
         *pcElements = NumWritten;
         return STATUS_SUCCESS;
     }

@@ -46,7 +46,7 @@ Selection& Selection::Instance()
 _Check_return_
 NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) SMALL_RECT** const prgsrSelection, _Out_ UINT* const pcRectangles) const
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;
     SMALL_RECT* rgsrSelection = nullptr;
     *prgsrSelection = nullptr;
@@ -59,7 +59,7 @@ NTSTATUS Selection::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles) 
 
     if (NT_SUCCESS(status))
     {
-        const PSCREEN_INFORMATION pScreenInfo = gci->CurrentScreenBuffer;
+        const PSCREEN_INFORMATION pScreenInfo = gci.CurrentScreenBuffer;
 
         const SMALL_RECT * const pSelectionRect = &_srSelectionRect;
         const UINT cRectangles = pSelectionRect->Bottom - pSelectionRect->Top + 1;
@@ -307,9 +307,9 @@ void Selection::_SetSelectionVisibility(_In_ bool const fMakeVisible)
 //  - <none>
 void Selection::_PaintSelection() const
 {
-    if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+    if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
-        ServiceLocator::LocateGlobals()->pRender->TriggerSelection();
+        ServiceLocator::LocateGlobals().pRender->TriggerSelection();
     }
 }
 
@@ -344,7 +344,7 @@ void Selection::InitializeMouseSelection(_In_ const COORD coordBufferPos)
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
-    } 
+    }
 
     // Fire off an event to let accessibility apps know the selection has changed.
 
@@ -375,8 +375,8 @@ void Selection::AdjustSelection(_In_ const COORD coordSelectionStart, _In_ const
 // - <none>
 void Selection::ExtendSelection(_In_ COORD coordBufferPos)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* pScreenInfo = gci->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
 
     // ensure position is within buffer bounds. Not less than 0 and not greater than the screen buffer size.
     pScreenInfo->ClipToScreenBuffer(&coordBufferPos);
@@ -446,8 +446,8 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
 // - <none>
 void Selection::_CancelMouseSelection()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* pScreenInfo = gci->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
 
     // invert old select rect.  if we're selecting by mouse, we
     // always have a selection rect.
@@ -474,8 +474,8 @@ void Selection::_CancelMouseSelection()
 // - <none>
 void Selection::_CancelMarkSelection()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* pScreenInfo = gci->CurrentScreenBuffer;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
 
     // Hide existing selection, if we have one.
     if (IsAreaSelected())
@@ -552,12 +552,12 @@ void Selection::ClearSelection(_In_ bool const fStartingNewSelection)
 // - <none>
 void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, _In_ ULONG const ulAttr)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // TODO: psrRect should likely one day be replaced with an array of rectangles (in case we have a line selection we want colored)
     ASSERT(ulAttr <= 0xff);
 
     // Read selection rectangle, assumed already clipped to buffer.
-    SCREEN_INFORMATION* pScreenInfo = gci->CurrentScreenBuffer;
+    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
 
     COORD coordTargetSize;
     coordTargetSize.X = CalcWindowSizeX(&_srSelectionRect);
@@ -584,7 +584,7 @@ void Selection::ColorSelection(_In_ SMALL_RECT* const psrRect, _In_ ULONG const 
 // - <none>
 void Selection::InitializeMarkSelection()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // clear any existing selection.
     ClearSelection(true);
 
@@ -595,7 +595,7 @@ void Selection::InitializeMarkSelection()
     _dwSelectionFlags = 0;
 
     // save old cursor position and make console cursor into selection cursor.
-    SCREEN_INFORMATION* pScreenInfo = gci->CurrentScreenBuffer;
+    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
     _SaveCursorData(pScreenInfo->TextInfo);
     pScreenInfo->SetCursorInformation(100, TRUE);
 
@@ -612,7 +612,7 @@ void Selection::InitializeMarkSelection()
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
-    } 
+    }
 }
 
 // Routine Description:
@@ -646,9 +646,9 @@ void Selection::SelectNewRegion(_In_ COORD const coordStart, _In_ COORD const co
 // - <none>
 void Selection::SelectAll()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // save the old window position
-    SCREEN_INFORMATION* pScreenInfo = gci->CurrentScreenBuffer;
+    SCREEN_INFORMATION* pScreenInfo = gci.CurrentScreenBuffer;
 
     COORD coordWindowOrigin;
     coordWindowOrigin.X = pScreenInfo->GetBufferViewport().Left;

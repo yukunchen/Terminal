@@ -45,7 +45,7 @@ public:
 
      ConsoleArguments launchArgs;
 
-     CONSOLE_INFORMATION* getConsoleInformation();
+     CONSOLE_INFORMATION& getConsoleInformation();
 
      DeviceComm* pDeviceComm;
 
@@ -68,9 +68,9 @@ public:
      //   the renderer holds on to the engines all in a collection, coniosrv
      //   can't be sure which engine is the actual WddmConEngine
      IRenderEngine* pWddmconEngine;
-     
+
      IFontDefaultList* pFontDefaultList;
 
 private:
-     CONSOLE_INFORMATION* ciConsoleInformation;
+     CONSOLE_INFORMATION ciConsoleInformation;
 };
