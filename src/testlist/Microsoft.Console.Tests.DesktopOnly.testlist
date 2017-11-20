@@ -3,7 +3,6 @@
   "TestMDs" :  [  
     { "FilePath": "Microsoft.Console.Host.UIAutomationTests.testmd" },
     { "FilePath": "Microsoft.Console.Host.IntegrityTests.testmd" },
-// MSFT: 14643028 - Get this settled and turned back on.
-//    { "FilePath": "Microsoft.Console.Interactivity.Win32.UnitTests.testmd" },
+    { "FilePath": "Microsoft.Console.Interactivity.Win32.UnitTests.testmd" },
   ]
 }
