@@ -797,7 +797,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
                 Row->AttrRow.InsertAttrRuns(&InsertedRun,
                                             1,
                                             TargetPoint.X + i,
-                                            (SHORT)(TargetPoint.X + i + 1),
+                                            (SHORT)(TargetPoint.X + i),
                                             coordScreenBufferSize.X);
             }
         }
