@@ -29,12 +29,12 @@ Revision History:
 
 extern BOOL g_fEditKeys;
 
-BOOL GetConsoleBoolValue(__in PCWSTR pszValueName)
+BOOL GetConsoleBoolValue(__in PCWSTR pszValueName, __in BOOL fDefault)
 {
     return SHRegGetBoolUSValue(CONSOLE_REGISTRY_STRING,
                                pszValueName,
                                FALSE /*fIgnoreHKCU*/,
-                               FALSE /*fDefault*/);
+                               fDefault);
 }
 
 /*++
@@ -159,8 +159,8 @@ DWORD GetRegistryValues(
     WCHAR awchBuffer[LF_FACESIZE];
 
     // initial values for global v2 settings
-    g_fForceV2 = GetConsoleBoolValue(CONSOLE_REGISTRY_FORCEV2);
-    g_fEditKeys = GetConsoleBoolValue(CONSOLE_REGISTRY_EXTENDEDEDITKEY);
+    g_fForceV2 = GetConsoleBoolValue(CONSOLE_REGISTRY_FORCEV2, TRUE);
+    g_fEditKeys = GetConsoleBoolValue(CONSOLE_REGISTRY_EXTENDEDEDITKEY, TRUE);
 
     //
     // Open the current user registry key and console key.
