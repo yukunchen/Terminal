@@ -18,10 +18,6 @@ TRACELOGGING_DEFINE_PROVIDER(
     // {770aa552-671a-5e97-579b-151709ec0dbd}
     (0x770aa552, 0x671a, 0x5e97, 0x57, 0x9b, 0x15, 0x17, 0x09, 0xec, 0x0d, 0xbd),
     TraceLoggingOptionMicrosoftTelemetry());
-static bool g_fConsoleLegacy = false;
-static bool g_fSendTelemetry = false;
-static const int c_iTelemetrySampleRate = 1000;
-PCSTR g_pszErrorDescription = nullptr;
 
 static bool ShouldUseConhostV2()
 {
@@ -68,38 +64,7 @@ static bool ShouldUseConhostV2()
         fIgnoreError = lStatus == ERROR_FILE_NOT_FOUND;
     }
 
-    if (ERROR_SUCCESS != lStatus && !fIgnoreError && g_fSendTelemetry)
-    {
-        TraceLoggingWrite(g_ConhostLauncherProvider, "ConhostLauncherError",
-                          TraceLoggingInt32(c_iTelemetrySampleRate, "SampleRatePer"),
-                          TraceLoggingString(__FUNCTION__, "Function"),
-                          TraceLoggingInt32(NTSTATUS_FROM_WIN32(lStatus), "NT_STATUS"),
-                          TraceLoggingBool(g_fConsoleLegacy, "ConsoleLegacy"),
-                          TraceLoggingString(pszErrorDescription, "ErrorDescription"),
-                          TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY));
-    }
-
     return fShouldUseConhostV2;
-}
-
-// For the console host, we limit the amount of telemetry sent back by only sending it for an "interactive" session
-// where the user has clicked, typed, etc.  Because it relies on a live person, this drastically limits the amount of 
-// telemetry, which is good.
-//
-// The problem with the console launcher, is we can't tell if a user is launching the console
-// or if the system launched it programmatically.  We're seeing cases where consoles are being launched hundreds
-// of times per minute on the same computer, sending back a stream of telemetry, which can affect the responsiveness of the computer.
-// To help limit the amount of telemetry being sent back, only send a small % back.  This should still be enough telemetry to help
-// determine the issues our users run into.
-//
-// Only call this method once, since we want to capture all or none of the telemetry while this process runs.
-static void DetermineIfSendTelemetry()
-{
-    LARGE_INTEGER time;
-    // QueryPerformanceCounter will succeed on Window XP+ computers, so ignore the return value.
-    QueryPerformanceCounter(&time);
-    srand(static_cast<unsigned int> (time.LowPart));
-    g_fSendTelemetry = !(rand() % c_iTelemetrySampleRate);
 }
 
 static HRESULT ValidateServerHandle(_In_ const HANDLE handle)
@@ -110,17 +75,10 @@ static HRESULT ValidateServerHandle(_In_ const HANDLE handle)
     NTSTATUS const Status = NtQueryVolumeInformationFile(handle, &IoStatusBlock, &DeviceInformation, sizeof(DeviceInformation), FileFsDeviceInformation);
     if (!NT_SUCCESS(Status))
     {
-        g_pszErrorDescription = "NtQueryVolumeInformationFile Failure";
         RETURN_NTSTATUS(Status);
     }
-    else if (DeviceInformation.DeviceType != FILE_DEVICE_CONSOLE && g_fSendTelemetry)
+    else if (DeviceInformation.DeviceType != FILE_DEVICE_CONSOLE)
     {
-        g_pszErrorDescription = "Unexpected Device Type";
-        TraceLoggingWrite(g_ConhostLauncherProvider, "ConhostLauncherError",
-                          TraceLoggingInt32(c_iTelemetrySampleRate, "SampleRatePer"),
-                          TraceLoggingInt64(DeviceInformation.DeviceType, "DeviceType"),
-                          TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY));
-
         return E_INVALIDARG;
     }
     else
@@ -137,16 +95,14 @@ static bool ShouldUseLegacyConhost(_In_ const bool fForceV1)
 static HRESULT ActivateLegacyConhost(_In_ const HANDLE handle)
 {
     HRESULT hr = S_OK;
-    g_fConsoleLegacy = true;
 
-    if (g_fSendTelemetry)
-    {
-        // Write version of console using TraceLogging
-        TraceLoggingWrite(g_ConhostLauncherProvider, "TypeOfConsoleLoaded",
-                          TraceLoggingInt32(c_iTelemetrySampleRate, "SampleRatePer"),
-                          TraceLoggingBool(g_fConsoleLegacy, "ConsoleLegacy"),
-                          TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY));
-    }
+    // TraceLog that we're using the legacy console. We won't log new console
+    // because there's already a count of how many total processes were launched.
+    // Total - legacy = new console.
+    // We expect legacy launches to be infrequent enough to not cause an issue.
+    TraceLoggingWrite(g_ConhostLauncherProvider, "IsLegacyLoaded",
+                      TraceLoggingBool(true, "ConsoleLegacy"),
+                      TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY));
 
     PCWSTR pszConhostDllName = L"ConhostV1.dll";
 
@@ -160,20 +116,14 @@ static HRESULT ActivateLegacyConhost(_In_ const HANDLE handle)
         if (pfnConsoleCreateIoThread != nullptr)
         {
             hr = HRESULT_FROM_NT(pfnConsoleCreateIoThread(handle));
-            if (FAILED(hr))
-            {
-                g_pszErrorDescription = "pfnConsoleCreateIoThread Failure";
-            }
         }
         else
         {
-            g_pszErrorDescription = "GetProcAddress failed";
             hr = HRESULT_FROM_WIN32(GetLastError());
         }
     }
     else
     {
-        g_pszErrorDescription = "LoadLibraryEx NULL Pointer";
         // setup status error
         hr = HRESULT_FROM_WIN32(GetLastError());
     }
@@ -213,7 +163,6 @@ int CALLBACK wWinMain(
 
     // Register Trace provider by GUID
     TraceLoggingRegister(g_ConhostLauncherProvider);
-    DetermineIfSendTelemetry();
 
     // Pass command line and standard handles at this point in time as 
     // potential preferences for execution that were passed on process creation.
@@ -229,12 +178,15 @@ int CALLBACK wWinMain(
             if (args.ShouldCreateServerHandle())
             {
                 hr = E_INVALIDARG;
-                g_pszErrorDescription = "Invalid Launch Mechanism for Legacy Console";
             }
             else
             {
-                g_fConsoleLegacy = true;
-                hr = ActivateLegacyConhost(args.GetServerHandle());
+                hr = ValidateServerHandle(args.GetServerHandle());
+
+                if (SUCCEEDED(hr))
+                {
+                    hr = ActivateLegacyConhost(args.GetServerHandle());
+                }
             }
         }
         else
@@ -245,39 +197,27 @@ int CALLBACK wWinMain(
             }
             else
             {
-                hr = Entrypoints::StartConsoleForServerHandle(args.GetServerHandle(), &args);
+                hr = ValidateServerHandle(args.GetServerHandle());
+
+                if (SUCCEEDED(hr))
+                {
+                    hr = Entrypoints::StartConsoleForServerHandle(args.GetServerHandle(), &args);
+                }
             }
         }
-    }
-    else
-    {
-        g_pszErrorDescription = "ParseCommandLine failure";
-    }
-
-    if (FAILED(hr) && g_fSendTelemetry)
-    {
-        TraceLoggingWrite(g_ConhostLauncherProvider, "ConhostLauncherError",
-                          TraceLoggingInt32(c_iTelemetrySampleRate, "SampleRatePer"),
-                          TraceLoggingString(__FUNCTION__, "Function"),
-                          TraceLoggingInt32(hr, "NT_STATUS"),
-                          TraceLoggingBool(g_fConsoleLegacy, "ConsoleLegacy"),
-                          TraceLoggingString(g_pszErrorDescription, "ErrorDescription"),
-                          TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY));
-        TraceLoggingUnregister(g_ConhostLauncherProvider);
-        return hr;
     }
 
     // Unregister Tracelogging
     TraceLoggingUnregister(g_ConhostLauncherProvider);
 
-    // Since the lifetime of conhost.exe is inextricably tied to the lifetime of its client processes we set our process
-    // shutdown priority to zero in order to effectively opt out of shutdown process enumeration. Conhost will exit when
-    // all of its client processes do.
-    SetProcessShutdownParameters(0, 0);
-
     // Only do this if startup was successful. Otherwise, this will leave conhost.exe running with no hosted application.
     if (SUCCEEDED(hr))
     {
+        // Since the lifetime of conhost.exe is inextricably tied to the lifetime of its client processes we set our process
+        // shutdown priority to zero in order to effectively opt out of shutdown process enumeration. Conhost will exit when
+        // all of its client processes do.
+        SetProcessShutdownParameters(0, 0);
+
         ExitThread(hr);
     }
 
