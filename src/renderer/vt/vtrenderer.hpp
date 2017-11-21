@@ -16,7 +16,6 @@ Author(s):
 
 #include "../inc/IRenderEngine.hpp"
 #include "../../types/inc/Viewport.hpp"
-#include "VtCursor.hpp"
 #include <string>
 #include <functional>
 
@@ -63,7 +62,8 @@ public:
     HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                            _In_ UINT const cRectangles) override;
 
-    HRESULT PaintCursor(_In_ ULONG const ulCursorHeightPercent,
+    HRESULT PaintCursor(_In_ COORD const coordCursor,
+                        _In_ ULONG const ulCursorHeightPercent,
                         _In_ bool const fIsDoubleWidth) override;
     HRESULT ClearCursor() override;
 
@@ -83,8 +83,6 @@ public:
     HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
     HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
             
-    IRenderCursor* const GetCursor() override;
-                
     // See _PaintUtf8BufferLine for explanation of this value.
     static const size_t ERASE_CHARACTER_STRING_LENGTH = 8;
 
@@ -104,7 +102,6 @@ protected:
 
     bool _quickReturn;
     bool _clearedAllThisFrame;
-    VtCursor _cursor;
 
     HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);
     HRESULT _Write(_In_ const std::string& str);

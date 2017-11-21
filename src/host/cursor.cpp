@@ -202,21 +202,6 @@ void Cursor::SetSize(_In_ ULONG const ulSize)
     _RedrawCursor();
 }
 
-// Method Description:
-// - Tells the renderer that the cursor has moved. It will handle any possible 
-//      invalidating.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Cursor::RendererMoveCursor()
-{
-    if (ServiceLocator::LocateGlobals()->pRender != nullptr)
-    {
-        ServiceLocator::LocateGlobals()->pRender->MoveCursor(_cPosition);
-    }
-}
-
 // Routine Description:
 // - Sends a redraw message to the renderer only if the cursor is currently on.
 // - NOTE: For use with most methods in this class.
@@ -270,51 +255,58 @@ void Cursor::_RedrawCursorAlways()
 
 void Cursor::SetPosition(_In_ COORD const cPosition)
 {
+    _RedrawCursor();
     _cPosition.X = cPosition.X;
     _cPosition.Y = cPosition.Y;
-    RendererMoveCursor();
+    _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::SetXPosition(_In_ int const NewX)
 {
+    _RedrawCursor();
     _cPosition.X = (SHORT)NewX;
-    RendererMoveCursor();
+    _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::SetYPosition(_In_ int const NewY)
 {
+    _RedrawCursor();
     _cPosition.Y = (SHORT)NewY;
-    RendererMoveCursor();
+    _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::IncrementXPosition(_In_ int const DeltaX)
 {
+    _RedrawCursor();
     _cPosition.X += (SHORT)DeltaX;
-    RendererMoveCursor();
+    _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::IncrementYPosition(_In_ int const DeltaY)
 {
+    _RedrawCursor();
     _cPosition.Y += (SHORT)DeltaY;
-    RendererMoveCursor();
+    _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::DecrementXPosition(_In_ int const DeltaX)
 {
+    _RedrawCursor();
     _cPosition.X -= (SHORT)DeltaX;
-    RendererMoveCursor();
+    _RedrawCursor();
     ResetDelayEOLWrap();
 }
 
 void Cursor::DecrementYPosition(_In_ int const DeltaY)
 {
+    _RedrawCursor();
     _cPosition.Y -= (SHORT)DeltaY;
-    RendererMoveCursor();
+    _RedrawCursor();
     ResetDelayEOLWrap();
 }
 

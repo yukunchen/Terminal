@@ -827,7 +827,6 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 {
     const Cursor* const pCursor = _pData->GetCursor();
-    const IRenderCursor* const pRenderCursor = pEngine->GetCursor();
 
     if (pCursor->IsVisible() && pCursor->IsOn() && !pCursor->IsPopupShown())
     {
@@ -841,8 +840,8 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 
         Viewport viewDirty(srDirty);
 
-        // Check if cursor is within dirty area, or if the cursor wants to be painted regardless.
-        if (viewDirty.IsWithinViewport(&coordCursor) || pRenderCursor->ForcePaint())
+        // Check if cursor is within dirty area
+        if (viewDirty.IsWithinViewport(&coordCursor))
         {
             // Determine cursor height
             ULONG ulHeight = pCursor->GetSize();
@@ -865,8 +864,11 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
             // Determine cursor width
             bool const fIsDoubleWidth = !!pCursor->IsDoubleWidth();
 
+            // Adjust cursor to viewport
+            view.ConvertToOrigin(&coordCursor);
+
             // Draw it within the viewport
-            LOG_IF_FAILED(pEngine->PaintCursor(ulHeight, fIsDoubleWidth));
+            LOG_IF_FAILED(pEngine->PaintCursor(coordCursor, ulHeight, fIsDoubleWidth));
         }
     }
 }
@@ -1068,27 +1070,4 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
     THROW_IF_NULL_ALLOC(pEngine);
     _rgpEngines.push_back(pEngine);
-}
-
-// Method Description:
-// - Updates each renderer's cursor with the new cursor position, in viewport 
-//      origin, character coordinates
-// Arguments:
-// - the new cursor position, in buffer origin character coordinates
-// Return Value:
-// - <none>
-void Renderer::MoveCursor(_In_ const COORD cPosition)
-{
-    Viewport view(_pData->GetViewport());
-    if (view.IsWithinViewport(&cPosition))
-    {
-        COORD relativePosition = cPosition;
-        view.ConvertToOrigin(&relativePosition);
-
-        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-            pEngine->GetCursor()->Move(relativePosition);
-        });
-    }
-
-    _NotifyPaintFrame();
 }

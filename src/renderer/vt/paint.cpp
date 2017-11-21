@@ -23,9 +23,8 @@ using namespace Microsoft::Console::Render;
 HRESULT VtEngine::StartPaint()
 {
     // If there's nothing to do, quick return
-    bool somethingToDo = _fInvalidRectUsed || 
-                         (_scrollDelta.X != 0 || _scrollDelta.Y != 0) ||
-                         _cursor.HasMoved();
+    bool somethingToDo = _fInvalidRectUsed ||
+        (_scrollDelta.X != 0 || _scrollDelta.Y != 0);
 
     _quickReturn = !somethingToDo;
 
@@ -46,7 +45,6 @@ HRESULT VtEngine::EndPaint()
     _srcInvalid = { 0 };
     _fInvalidRectUsed = false;
     _scrollDelta = {0};
-    _cursor.ClearMoved();
     _clearedAllThisFrame = false;
 
     return S_OK;
@@ -112,11 +110,11 @@ HRESULT VtEngine::PaintBufferGridLines(_In_ GridLines const /*lines*/,
 // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-HRESULT VtEngine::PaintCursor(_In_ ULONG const /*ulHeightPercent*/,
+HRESULT VtEngine::PaintCursor(_In_ COORD const coordCursor, 
+                              _In_ ULONG const /*ulHeightPercent*/,
                               _In_ bool const /*fIsDoubleWidth*/)
 {
-    COORD const coord = _cursor.GetPosition();
-    _MoveCursor(coord);
+    _MoveCursor(coordCursor);
 
     return S_OK;
 }
