@@ -11,26 +11,30 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Ut_lib_PrePass-->
 
-    <LegacyBuilder Output="Ut_lib_PrePass" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Ut_lib_PrePass" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>PrePass</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>vt.unittest.vcxproj</Item>
       </Consumes>
     </LegacyBuilder>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Ut_lib_Pass1-->
 
-    <LegacyBuilder Output="Ut_lib_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Internal">
+    <LegacyBuilder Output="Ut_lib_Pass1" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Internal">
       <Classification>Test</Classification>
       <TargetPass>Pass1</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>vt.unittest.vcxproj</Item>
         <Item>{DotDot}\invalidate.cpp</Item>
         <Item>{DotDot}\math.cpp</Item>

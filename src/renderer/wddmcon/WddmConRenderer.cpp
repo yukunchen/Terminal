@@ -276,7 +276,7 @@ HRESULT WddmConEngine::PaintSelection(const SMALL_RECT* const rgsrSelection, UIN
     return S_OK;
 }
 
-HRESULT WddmConEngine::PaintCursor(ULONG const /*ulCursorHeightPercent*/, bool const /*fIsDoubleWidth*/)
+HRESULT WddmConEngine::PaintCursor(COORD const /*coordCursor*/, ULONG const /*ulCursorHeightPercent*/, bool const /*fIsDoubleWidth*/)
 {
     return S_OK;
 }
@@ -389,15 +389,4 @@ HRESULT WddmConEngine::IsCharFullWidthByFont(WCHAR const /*wch*/, _Out_ bool* co
 {
     *pResult = false;
     return S_OK;
-}
-
-// Method Description:
-// - Returns a reference to this engine's cursor implementation.
-// Arguments:
-// - <none>
-// Return Value:
-// - A referenct to this engine's cursor implementation.
-IRenderCursor* const WddmConEngine::GetCursor()
-{
-    return &_cursor;
 }

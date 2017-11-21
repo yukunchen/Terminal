@@ -19,6 +19,7 @@
 
       <Consumes>
         <Item>adapter.vcxproj</Item>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
       </Consumes>
     </LegacyBuilder>
@@ -33,6 +34,7 @@
 
       <Consumes>
         <Item>adapter.vcxproj</Item>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>{DotDot}\adaptdefaults.hpp</Item>
         <Item>{DotDot}\adaptdispatch.cpp</Item>

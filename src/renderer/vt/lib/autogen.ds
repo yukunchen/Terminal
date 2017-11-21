@@ -18,6 +18,8 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>vt.vcxproj</Item>
       </Consumes>
     </LegacyBuilder>
@@ -31,6 +33,8 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>vt.vcxproj</Item>
         <Item>{DotDot}\invalidate.cpp</Item>
         <Item>{DotDot}\math.cpp</Item>

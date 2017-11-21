@@ -1,16 +1,12 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Lib {
 
-    export declare const qualifier: {
-        platform: "arm32" | "arm64" | "x64" | "x86",
-        configuration: "debug" | "release",
-        codeAnalysisMode: "simpleAnalysis" | "disabled",
-    };
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter`;
 
     const o = d`${objRoot}\onecore\windows\core\console\open\src\terminal\adapter\lib\${buildAlt}`;
 
-    const prePass = LegacySdk.build({
+    const prePass = LegacyBuild.build({
         template: template_NMake,
         classification: "product",
         targetPass: "prePass",
@@ -18,18 +14,18 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Lib {
         consumes: [
             f`adapter.vcxproj`,
             f`autogen.bp`,
+            f`autogen.bp`,
         ],
     });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Lib.pass1
-
-    export const pass1 = LegacySdk.build({
+    export const pass1 = LegacyBuild.build({
         template: template_NMake,
         classification: "product",
         targetPass: "pass1",
         
         consumes: [
             f`adapter.vcxproj`,
+            f`autogen.bp`,
             f`autogen.bp`,
             f`${dotDot}\adaptdefaults.hpp`,
             f`${dotDot}\adaptdispatch.cpp`,
@@ -57,10 +53,6 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Lib {
 
             prePass,
 
-            $.Public.Internal.Onecorewindows.Inc.header,
-            $.Public.Sdk.Inc.header,
-            $.Public.Sdk.Inc.idl,
-            $.Public.Shared.Inc.header,
             MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.header,
             MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.Stl120.header,
             MsWinCrts.Public.Sdk.Inc.Ucrt.header,
@@ -84,6 +76,10 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Lib {
             MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
             MsWinOnecore_MinKernel.Public.Shared.Inc.header,
             MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
+            Public.Internal.Onecorewindows.Inc.header,
+            Public.Sdk.Inc.header,
+            Public.Sdk.Inc.idl,
+            Public.Shared.Inc.header,
         ],
         
         produces: [

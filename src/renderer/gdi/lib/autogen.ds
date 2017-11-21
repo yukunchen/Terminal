@@ -18,6 +18,7 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>gdi.vcxproj</Item>
       </Consumes>
@@ -32,6 +33,7 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>gdi.vcxproj</Item>
         <Item>{DotDot}\gdirenderer.hpp</Item>
