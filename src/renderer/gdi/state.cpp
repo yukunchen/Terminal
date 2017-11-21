@@ -27,8 +27,7 @@ GdiEngine::GdiEngine() :
     _hbitmapMemorySurface(nullptr),
     _cPolyText(0),
     _fInvalidRectUsed(false),
-    _fPaintStarted(false),
-    _cursor{this}
+    _fPaintStarted(false)
 {
     ZeroMemory(_pPolyText, sizeof(POLYTEXTW) * s_cPolyTextCache);
     _rcInvalid = { 0 };
@@ -469,15 +468,4 @@ bool GdiEngine::_IsMinimized() const
 bool GdiEngine::_IsFontTrueType() const
 {
     return !!(_tmFontMetrics.tmPitchAndFamily & TMPF_TRUETYPE);
-}
-
-// Method Description:
-// - Returns a reference to this engine's cursor implementation.
-// Arguments:
-// - <none>
-// Return Value:
-// - A referenct to this engine's cursor implementation.
-IRenderCursor* const GdiEngine::GetCursor()
-{
-    return &_cursor;
 }

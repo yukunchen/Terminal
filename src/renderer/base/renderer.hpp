@@ -67,8 +67,6 @@ namespace Microsoft
 
                 void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
 
-                void MoveCursor(_In_ const COORD cPosition) override;
-
             private:
                 Renderer(_In_ std::unique_ptr<IRenderData> pData,
                          _In_reads_(cEngines) IRenderEngine** const pEngine,

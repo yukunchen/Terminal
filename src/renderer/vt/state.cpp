@@ -31,8 +31,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe, _In_ const Viewport initialViewp
     _scrollDelta({0}),
     _LastFG(INVALID_COLOR),
     _LastBG(INVALID_COLOR),
-    _clearedAllThisFrame(false),
-    _cursor(this)
+    _clearedAllThisFrame(false)
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
@@ -248,17 +247,6 @@ void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t
     THROW_HR(E_FAIL);
 #endif
 
-}
-
-// Method Description:
-// - Returns a reference to this engine's cursor implementation.
-// Arguments:
-// - <none>
-// Return Value:
-// - A referenct to this engine's cursor implementation.
-IRenderCursor* const VtEngine::GetCursor()
-{
-    return &_cursor;
 }
 
 bool VtEngine::_AllIsInvalid() const
