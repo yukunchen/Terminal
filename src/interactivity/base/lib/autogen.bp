@@ -1,35 +1,31 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
 
-    export declare const qualifier: {
-        platform: "arm32" | "arm64" | "x64" | "x86",
-        configuration: "debug" | "release",
-        codeAnalysisMode: "simpleAnalysis" | "disabled",
-    };
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\interactivity\base`;
 
     const o = d`${objRoot}\onecore\windows\core\console\open\src\interactivity\base\lib\${buildAlt}`;
 
-    const prePass = LegacySdk.build({
+    const prePass = LegacyBuild.build({
         template: template_NMake,
         classification: "product",
         targetPass: "prePass",
         
         consumes: [
             f`autogen.bp`,
+            f`autogen.bp`,
             f`interactivitybase.vcxproj`,
             f`product.pbxproj`,
         ],
     });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib.pass1
-
-    export const pass1 = LegacySdk.build({
+    export const pass1 = LegacyBuild.build({
         template: template_NMake,
         classification: "product",
         targetPass: "pass1",
         
         consumes: [
+            f`autogen.bp`,
             f`autogen.bp`,
             f`interactivitybase.vcxproj`,
             f`product.pbxproj`,
@@ -144,10 +140,6 @@ namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
 
             prePass,
 
-            $.Public.Internal.Onecorewindows.Inc.header,
-            $.Public.Sdk.Inc.header,
-            $.Public.Sdk.Inc.idl,
-            $.Public.Shared.Inc.header,
             MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.header,
             MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.Stl120.header,
             MsWinCrts.Public.Sdk.Inc.Ucrt.header,
@@ -183,6 +175,10 @@ namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
             MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
             MsWinOnecore_MinKernel.Public.Shared.Inc.header,
             MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
+            Public.Internal.Onecorewindows.Inc.header,
+            Public.Sdk.Inc.header,
+            Public.Sdk.Inc.idl,
+            Public.Shared.Inc.header,
         ],
         
         produces: [
@@ -200,12 +196,13 @@ namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
         ],
     });
 
-    const pass3 = LegacySdk.build({
+    const pass3 = LegacyBuild.build({
         template: template_NMake,
         classification: "product",
         targetPass: "pass3",
         
         consumes: [
+            f`autogen.bp`,
             f`autogen.bp`,
             f`interactivitybase.vcxproj`,
             isBuildRelease && isBuildCommonArchitecture ? MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata : undefined,
@@ -225,28 +222,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
         ]
         .filter(e => e !== undefined),
     });
-}
-namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib_Bin_BlgMsbuildpropsNmakeprops {
 
-    export declare const qualifier: {
-        platform: "arm32" | "arm64" | "x64" | "x86",
-        configuration: "debug" | "release",
-        codeAnalysisMode: "simpleAnalysis" | "disabled",
-    };
+    export const bin_BlgMsbuildpropsNmakeprops_content = pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`);
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib_Bin_BlgMsbuildpropsNmakeprops.content
-
-    export const content = $.Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib.pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`);
-}
-namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib_Bin_MsbuildpropsNmakeprops {
-
-    export declare const qualifier: {
-        platform: "arm32" | "arm64" | "x64" | "x86",
-        configuration: "debug" | "release",
-        codeAnalysisMode: "simpleAnalysis" | "disabled",
-    };
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib_Bin_MsbuildpropsNmakeprops.content
-
-    export const content = $.Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib.pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`);
+    export const bin_MsbuildpropsNmakeprops_content = pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`);
 }

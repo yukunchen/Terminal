@@ -18,6 +18,7 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>win32.lib.vcxproj</Item>
       </Consumes>
@@ -32,6 +33,7 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>win32.lib.vcxproj</Item>
         <Item>{DotDot}\accessibilitynotifier.cpp</Item>

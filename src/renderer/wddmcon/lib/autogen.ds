@@ -18,6 +18,7 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
       </Consumes>
     </LegacyBuilder>
@@ -31,6 +32,7 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>{DotDot}\precomp.cpp</Item>
         <Item>{DotDot}\precomp.h</Item>
