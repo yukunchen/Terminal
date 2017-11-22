@@ -1729,6 +1729,12 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(_In_ const COORD coordNewScreenS
     // cancel any active selection before resizing or it will not necessarily line up with the new buffer positions
     Selection::Instance().ClearSelection();
 
+    // cancel any popups before resizing or they will not necessarily line up with new buffer positions
+    if (nullptr != gci->lpCookedReadData)
+    {
+        CleanUpPopups(gci->lpCookedReadData);
+    }
+
     const bool fWrapText = gci->GetWrapText();
     if (fWrapText)
     {
