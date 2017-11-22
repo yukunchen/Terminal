@@ -25,7 +25,7 @@ namespace Microsoft
                 NTSTATUS CreateHighDpiApi(std::unique_ptr<IHighDpiApi>& api);
                 NTSTATUS CreateWindowMetrics(_Inout_ std::unique_ptr<IWindowMetrics>& metrics);
                 NTSTATUS CreateAccessibilityNotifier(_Inout_ std::unique_ptr<IAccessibilityNotifier>& notifier);
-                NTSTATUS CreateSystemConfigurationProvider(_Outptr_result_nullonfailure_ ISystemConfigurationProvider** provider);
+                NTSTATUS CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider);
                 NTSTATUS CreateInputServices(_Outptr_result_nullonfailure_ IInputServices** services);
             };
         };

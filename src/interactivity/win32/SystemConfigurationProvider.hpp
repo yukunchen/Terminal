@@ -25,7 +25,7 @@ namespace Microsoft
         {
             namespace Win32
             {
-                class SystemConfigurationProvider sealed : public ISystemConfigurationProvider
+                class SystemConfigurationProvider final : public ISystemConfigurationProvider
                 {
                 public:
                     bool IsCaretBlinkingEnabled();

@@ -187,13 +187,8 @@ NTSTATUS InteractivityFactory::CreateAccessibilityNotifier(_Inout_ std::unique_p
     return status;
 }
 
-NTSTATUS InteractivityFactory::CreateSystemConfigurationProvider(_Outptr_result_nullonfailure_ ISystemConfigurationProvider** provider)
+NTSTATUS InteractivityFactory::CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider)
 {
-    if (!provider)
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
-
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
@@ -201,23 +196,23 @@ NTSTATUS InteractivityFactory::CreateSystemConfigurationProvider(_Outptr_result_
 
     if (NT_SUCCESS(status))
     {
-        ISystemConfigurationProvider *pNewProvider = nullptr;
+        std::unique_ptr<ISystemConfigurationProvider> NewProvider;
         switch (level)
         {
         case ApiLevel::Win32:
-            pNewProvider = new Microsoft::Console::Interactivity::Win32::SystemConfigurationProvider();
+            NewProvider = std::make_unique<Microsoft::Console::Interactivity::Win32::SystemConfigurationProvider>();
             break;
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
         case ApiLevel::OneCore:
-            pNewProvider = new Microsoft::Console::Interactivity::OneCore::SystemConfigurationProvider();
+            NewProvider = std::make_unique<Microsoft::Console::Interactivity::OneCore::SystemConfigurationProvider>();
             break;
 #endif
         }
 
         if (NT_SUCCESS(status))
         {
-            *provider = pNewProvider;
+            provider.swap(NewProvider);
         }
     }
 

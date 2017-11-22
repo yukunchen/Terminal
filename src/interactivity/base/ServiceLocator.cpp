@@ -16,10 +16,10 @@ std::unique_ptr<IConsoleInputThread> ServiceLocator::s_consoleInputThread;
 std::unique_ptr<IWindowMetrics> ServiceLocator::s_windowMetrics;
 std::unique_ptr<IAccessibilityNotifier> ServiceLocator::s_accessibilityNotifier;
 std::unique_ptr<IHighDpiApi> ServiceLocator::s_highDpiApi;
+std::unique_ptr<ISystemConfigurationProvider> ServiceLocator::s_systemConfigurationProvider;
 
 IConsoleWindow* ServiceLocator::s_consoleWindow = nullptr;
-ISystemConfigurationProvider *ServiceLocator::s_systemConfigurationProvider = nullptr;
-IInputServices               *ServiceLocator::s_inputServices               = nullptr;
+IInputServices* ServiceLocator::s_inputServices = nullptr;
 
 Globals                      ServiceLocator::s_globals;
 
@@ -224,13 +224,13 @@ ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider(
 
         if (NT_SUCCESS(status))
         {
-            status = s_interactivityFactory->CreateSystemConfigurationProvider(&s_systemConfigurationProvider);
+            status = s_interactivityFactory->CreateSystemConfigurationProvider(s_systemConfigurationProvider);
         }
     }
 
     LOG_IF_NTSTATUS_FAILED(status);
 
-    return s_systemConfigurationProvider;
+    return s_systemConfigurationProvider.get();
 }
 
 IInputServices* ServiceLocator::LocateInputServices()
