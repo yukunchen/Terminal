@@ -26,6 +26,8 @@ namespace Microsoft
                 virtual HRESULT SetProcessPerMonitorDpiAwareness() = 0;
                 virtual BOOL EnablePerMonitorDialogScaling() = 0;
 
+                virtual ~IHighDpiApi() = default;
+
             protected:
                 IHighDpiApi() { }
 

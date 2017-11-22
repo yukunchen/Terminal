@@ -73,11 +73,11 @@ namespace Microsoft
 
 #ifdef CON_DPIAPI_INDIRECT
                     WindowDpiApi();
-                    ~WindowDpiApi();
+#endif
+                    virtual ~WindowDpiApi();
 
                 private:
                     HMODULE _hUser32;
-#endif
                 };
             }
         }

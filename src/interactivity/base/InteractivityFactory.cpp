@@ -104,7 +104,7 @@ NTSTATUS InteractivityFactory::CreateHighDpiApi(std::unique_ptr<IHighDpiApi>& ap
         switch (level)
         {
         case ApiLevel::Win32:
-            newApi = std::unique_ptr<Microsoft::Console::Interactivity::Win32::WindowDpiApi>();
+            newApi = std::make_unique<Microsoft::Console::Interactivity::Win32::WindowDpiApi>();
             break;
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
