@@ -17,6 +17,7 @@ Revision History:
 
 #include "..\inc\conime.h"
 #include <vector>
+#include <memory>
 
 class SCREEN_INFORMATION;
 
@@ -33,22 +34,36 @@ public:
 
 class ConversionAreaInfo
 {
+    // std::make_unique needs the constructor for ConversionAreaInfo
+    // to be public so that it can access it but ConversionAreaInfo
+    // objects should only be created by
+    // s_CreateInstance. ConstructorGuard is here to enforce this
+    // contract by only being allowed to be created from within the
+    // ConversionAreaInfo class itself and required by this
+    // ConversionAreaInfo constructor.
+    class ConstructorGuard final
+    {
+      public:
+        explicit ConstructorGuard() {}
+    };
+
 public:
 
     ConversionAreaBufferInfo CaInfo;
     SCREEN_INFORMATION* const ScreenBuffer;
 
-    static NTSTATUS s_CreateInstance(_Outptr_ ConversionAreaInfo** const ppInfo);
+    static NTSTATUS s_CreateInstance(_Inout_ std::unique_ptr<ConversionAreaInfo>& convAreaInfo);
 
     bool IsHidden() const;
     void SetHidden(_In_ bool const fIsHidden);
 
     ~ConversionAreaInfo();
 
-private:
     ConversionAreaInfo(_In_ COORD const coordBufferSize,
-                       _In_ SCREEN_INFORMATION* const pScreenInfo);
+                       _In_ SCREEN_INFORMATION* const pScreenInfo,
+                       _In_ ConstructorGuard guard);
 
+private:
     bool _fIsHidden;
 };
 
@@ -61,7 +76,7 @@ public:
 
     // IME compositon string information
     // There is one "composition string" per line that must be rendered on the screen
-    std::vector<ConversionAreaInfo*> ConvAreaCompStr;
+    std::vector<std::unique_ptr<ConversionAreaInfo>> ConvAreaCompStr;
 
     ConsoleImeInfo();
     ~ConsoleImeInfo();

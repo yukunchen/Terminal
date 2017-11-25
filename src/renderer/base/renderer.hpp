@@ -84,31 +84,33 @@ namespace Microsoft
                 HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
 
                 void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
-                void _PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine, 
-                                                        _In_ const ROW* const pRow, 
-                                                        _In_reads_(cchLine) PCWCHAR const pwsLine, 
-                                                        _In_reads_(cchLine) PBYTE pbKAttrsLine, 
-                                                        _In_ size_t cchLine, 
-                                                        _In_ size_t iFirstAttr, 
+                void _PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
+                                                        _In_ const ROW* const pRow,
+                                                        _In_reads_(cchLine) PCWCHAR const pwsLine,
+                                                        _In_reads_(cchLine) PBYTE pbKAttrsLine,
+                                                        _In_ size_t cchLine,
+                                                        _In_ size_t iFirstAttr,
                                                         _In_ COORD const coordTarget);
-                void _PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine, 
-                                                   _In_ const ROW* const pRow, 
-                                                   _In_reads_(cchLine) PCWCHAR const pwsLine, 
-                                                   _In_reads_(cchLine) PBYTE pbKAttrsLine, 
-                                                   _In_ size_t cchLine, 
-                                                   _In_ size_t iFirstAttr, 
+                void _PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
+                                                   _In_ const ROW* const pRow,
+                                                   _In_reads_(cchLine) PCWCHAR const pwsLine,
+                                                   _In_reads_(cchLine) PBYTE pbKAttrsLine,
+                                                   _In_ size_t cchLine,
+                                                   _In_ size_t iFirstAttr,
                                                    _In_ COORD const coordTarget);
                 HRESULT _PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
-                                                           _In_reads_(cchLine) PCWCHAR const pwsLine, 
-                                                           _In_reads_(cchLine) PBYTE const pbKAttrsLine, 
-                                                           _In_ size_t const cchLine, 
+                                                           _In_reads_(cchLine) PCWCHAR const pwsLine,
+                                                           _In_reads_(cchLine) PBYTE const pbKAttrsLine,
+                                                           _In_ size_t const cchLine,
                                                            _In_ COORD const coordTarget);
                 void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute textAttribute, _In_ size_t const cchLine, _In_ COORD const coordTarget);
 
                 void _PaintSelection(_In_ IRenderEngine* const pEngine);
                 void _PaintCursor(_In_ IRenderEngine* const pEngine);
 
-                void _PaintIme(_In_ IRenderEngine* const pEngine, _In_ const ConversionAreaInfo* const pAreaInfo, _In_ const TEXT_BUFFER_INFO* const pTextInfo);
+                void _PaintIme(_In_ IRenderEngine* const pEngine,
+                               _In_ const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
+                               _In_ const TEXT_BUFFER_INFO* const pTextInfo);
                 void _PaintImeCompositionString(_In_ IRenderEngine* const pEngine);
 
                 HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute attr, _In_ bool const fIncludeBackground);

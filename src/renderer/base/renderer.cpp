@@ -34,7 +34,7 @@ Renderer::Renderer(_In_ std::unique_ptr<IRenderData> pData,
     _pThread(nullptr)
 {
     THROW_IF_NULL_ALLOC(_pData);
-    
+
     _srViewportPrevious = { 0 };
 
     for (size_t i = 0; i < cEngines; i++)
@@ -63,14 +63,14 @@ Renderer::~Renderer()
     });
 }
 
-HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData, 
+HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
                                    _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
 {
     return Renderer::s_CreateInstance(std::move(pData), nullptr, 0,  ppRenderer);
 }
 
 HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
-                                   _In_reads_(cEngines) IRenderEngine** const rgpEngines, 
+                                   _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                                    _In_ size_t const cEngines,
                                    _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
 {
@@ -352,7 +352,7 @@ void Renderer::TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
 {
-    // If there's no head, return E_FAIL. The caller should decide how to 
+    // If there's no head, return E_FAIL. The caller should decide how to
     //      handle this.
     // Currently, the only caller is the WindowProc:WM_GETDPISCALEDSIZE handler.
     //      It will assume that the proposed font is 1x1, regardless of DPI.
@@ -361,8 +361,8 @@ HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired cons
         return E_FAIL;
     }
 
-    // There will only every really be two engines - the real head and the VT 
-    //      renderer. We won't know which is which, so iterate over them. 
+    // There will only every really be two engines - the real head and the VT
+    //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
     assert(_rgpEngines.size() <= 2);
@@ -389,8 +389,8 @@ HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired cons
 COORD Renderer::GetFontSize()
 {
     COORD fontSize = {1, 1};
-    // There will only every really be two engines - the real head and the VT 
-    //      renderer. We won't know which is which, so iterate over them. 
+    // There will only every really be two engines - the real head and the VT
+    //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
     assert(_rgpEngines.size() <= 2);
@@ -420,8 +420,8 @@ bool Renderer::IsCharFullWidthByFont(_In_ WCHAR const wch)
 {
     bool fIsFullWidth = false;
 
-    // There will only every really be two engines - the real head and the VT 
-    //      renderer. We won't know which is which, so iterate over them. 
+    // There will only every really be two engines - the real head and the VT
+    //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
     assert(_rgpEngines.size() <= 2);
@@ -548,7 +548,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 // - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to.
 // Return Value:
 // - <none>
-void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine, 
+void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
                                                   _In_ const ROW* const pRow,
                                                   _In_reads_(cchLine) PCWCHAR const pwsLine,
                                                   _In_reads_(cchLine) PBYTE pbKAttrsLine,
@@ -635,12 +635,12 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
 // - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to.
 // Return Value:
 // - <none>
-void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine, 
-                                             _In_ const ROW* const pRow, 
-                                             _In_reads_(cchLine) PCWCHAR const pwsLine, 
-                                             _In_reads_(cchLine) PBYTE pbKAttrsLine, 
-                                             _In_ size_t cchLine, 
-                                             _In_ size_t iFirstAttr, 
+void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
+                                             _In_ const ROW* const pRow,
+                                             _In_reads_(cchLine) PCWCHAR const pwsLine,
+                                             _In_reads_(cchLine) PBYTE pbKAttrsLine,
+                                             _In_ size_t cchLine,
+                                             _In_ size_t iFirstAttr,
                                              _In_ COORD const coordTarget)
 {
     // We may have to write this string in several pieces based on the colors.
@@ -707,10 +707,10 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
 // - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from. pwsLine[0] will be the character at position coordTarget within the original console buffer before it was prepared for this function.
 // Return Value:
 // - S_OK or memory allocation error
-HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine, 
-                                                     _In_reads_(cchLine) PCWCHAR const pwsLine, 
-                                                     _In_reads_(cchLine) PBYTE const pbKAttrsLine, 
-                                                     _In_ size_t const cchLine, 
+HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
+                                                     _In_reads_(cchLine) PCWCHAR const pwsLine,
+                                                     _In_reads_(cchLine) PBYTE const pbKAttrsLine,
+                                                     _In_ size_t const cchLine,
                                                      _In_ COORD const coordTarget)
 {
     // We need the ability to move the target back to the left slightly in case we start with a trailing byte character.
@@ -784,9 +784,9 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
 // - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from.
 // Return Value:
 // - <none>
-void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, 
-                                                _In_ const TextAttribute textAttribute, 
-                                                _In_ size_t const cchLine, 
+void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
+                                                _In_ const TextAttribute textAttribute,
+                                                _In_ size_t const cchLine,
                                                 _In_ COORD const coordTarget)
 {
     COLORREF rgb = textAttribute.GetRgbForeground();
@@ -875,14 +875,16 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 // - Paint helper to draw the IME within the buffer.
 // - This supports composition drawing area.
 // Arguments:
-// - pAreaInfo - Special IME area screen buffer metadata
+// - AreaInfo - Special IME area screen buffer metadata
 // - pTextInfo - Text backing buffer for the special IME area.
 // Return Value:
 // - <none>
-void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine, _In_ const ConversionAreaInfo* const pAreaInfo, _In_ const TEXT_BUFFER_INFO* const pTextInfo)
+void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
+                         _In_ const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
+                         _In_ const TEXT_BUFFER_INFO* const pTextInfo)
 {
     // If this conversion area isn't hidden (because it is off) or hidden for a scroll operation, then draw it.
-    if (!pAreaInfo->IsHidden())
+    if (!AreaInfo->IsHidden())
     {
         // First get the screen buffer's viewport.
         Viewport view(_pData->GetViewport());
@@ -891,11 +893,11 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine, _In_ const Conversio
         // The IME's buffer is typically only one row in size. Some segments are the whole row, some are only a partial row.
         // Then from those, there is a "view" much like there is a view into the main console buffer.
         // Use the "window" and "view" relative to the IME-specific special buffer to figure out the coordinates to draw at within the real console buffer.
-        SMALL_RECT srCaView = pAreaInfo->CaInfo.rcViewCaWindow;
-        srCaView.Top += pAreaInfo->CaInfo.coordConView.Y;
-        srCaView.Bottom += pAreaInfo->CaInfo.coordConView.Y;
-        srCaView.Left += pAreaInfo->CaInfo.coordConView.X;
-        srCaView.Right += pAreaInfo->CaInfo.coordConView.X;
+        SMALL_RECT srCaView = AreaInfo->CaInfo.rcViewCaWindow;
+        srCaView.Top += AreaInfo->CaInfo.coordConView.Y;
+        srCaView.Bottom += AreaInfo->CaInfo.coordConView.Y;
+        srCaView.Left += AreaInfo->CaInfo.coordConView.X;
+        srCaView.Right += AreaInfo->CaInfo.coordConView.X;
 
         // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
         Viewport viewConv(srCaView);
@@ -913,11 +915,11 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine, _In_ const Conversio
             for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
             {
                 // Get row of text data
-                const ROW* const pRow = pTextInfo->GetRowByOffset(iRow - pAreaInfo->CaInfo.coordConView.Y);
+                const ROW* const pRow = pTextInfo->GetRowByOffset(iRow - AreaInfo->CaInfo.coordConView.Y);
 
                 // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
-                PWCHAR const pwsLine = pRow->CharRow.Chars + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X;
-                PBYTE const pbKAttrs = pRow->CharRow.KAttrs + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X; // the double byte flags corresponding to the characters above.
+                PWCHAR const pwsLine = pRow->CharRow.Chars + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X;
+                PBYTE const pbKAttrs = pRow->CharRow.KAttrs + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X; // the double byte flags corresponding to the characters above.
                 size_t const cchLine = viewDirty.Width() - 1;
 
                 // Calculate the target position in the buffer where we should start writing.
@@ -945,12 +947,12 @@ void Renderer::_PaintImeCompositionString(_In_ IRenderEngine* const pEngine)
 
     for (size_t i = 0; i < pImeData->ConvAreaCompStr.size(); i++)
     {
-        ConversionAreaInfo* pAreaInfo = pImeData->ConvAreaCompStr[i];
+        const std::unique_ptr<ConversionAreaInfo>& AreaInfo = pImeData->ConvAreaCompStr[i];
 
-        if (pAreaInfo != nullptr)
+        if (AreaInfo.get() != nullptr)
         {
             const TEXT_BUFFER_INFO* const ptbi = _pData->GetImeCompositionStringBuffer(i);
-            _PaintIme(pEngine, pAreaInfo, ptbi);
+            _PaintIme(pEngine, AreaInfo, ptbi);
         }
     }
 }
@@ -1062,7 +1064,7 @@ NTSTATUS Renderer::_GetSelectionRects(
 // - pEngine: The new render engine to be added
 // Return Value:
 // - <none>
-// Throws if we ran out of memory or there was some other error appending the 
+// Throws if we ran out of memory or there was some other error appending the
 //      engine to our collection.
 void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
@@ -1071,7 +1073,7 @@ void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 }
 
 // Method Description:
-// - Updates each renderer's cursor with the new cursor position, in viewport 
+// - Updates each renderer's cursor with the new cursor position, in viewport
 //      origin, character coordinates
 // Arguments:
 // - the new cursor position, in buffer origin character coordinates

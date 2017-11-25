@@ -46,17 +46,17 @@ void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
     for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
     {
-        ConversionAreaInfo* const pConvAreaInfo = pIme->ConvAreaCompStr[i];
+        const std::unique_ptr<ConversionAreaInfo>& ConvAreaInfo = pIme->ConvAreaCompStr[i];
 
-        if (!pConvAreaInfo->IsHidden())
+        if (!ConvAreaInfo->IsHidden())
         {
             const SMALL_RECT currentViewport = pScreenInfo->GetBufferViewport();
             // Do clipping region
             SMALL_RECT Region;
-            Region.Left = currentViewport.Left + pConvAreaInfo->CaInfo.rcViewCaWindow.Left + pConvAreaInfo->CaInfo.coordConView.X;
-            Region.Right = Region.Left + (pConvAreaInfo->CaInfo.rcViewCaWindow.Right - pConvAreaInfo->CaInfo.rcViewCaWindow.Left);
-            Region.Top = currentViewport.Top + pConvAreaInfo->CaInfo.rcViewCaWindow.Top + pConvAreaInfo->CaInfo.coordConView.Y;
-            Region.Bottom = Region.Top + (pConvAreaInfo->CaInfo.rcViewCaWindow.Bottom - pConvAreaInfo->CaInfo.rcViewCaWindow.Top);
+            Region.Left = currentViewport.Left + ConvAreaInfo->CaInfo.rcViewCaWindow.Left + ConvAreaInfo->CaInfo.coordConView.X;
+            Region.Right = Region.Left + (ConvAreaInfo->CaInfo.rcViewCaWindow.Right - ConvAreaInfo->CaInfo.rcViewCaWindow.Left);
+            Region.Top = currentViewport.Top + ConvAreaInfo->CaInfo.rcViewCaWindow.Top + ConvAreaInfo->CaInfo.coordConView.Y;
+            Region.Bottom = Region.Top + (ConvAreaInfo->CaInfo.rcViewCaWindow.Bottom - ConvAreaInfo->CaInfo.rcViewCaWindow.Top);
 
             SMALL_RECT ClippedRegion;
             ClippedRegion.Left = max(Region.Left, currentViewport.Left);
@@ -166,7 +166,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                 return Status;
             }
         }
-        ConvAreaInfo = ConsoleIme->ConvAreaCompStr[ConvAreaIndex];
+        ConvAreaInfo = ConsoleIme->ConvAreaCompStr[ConvAreaIndex].get();
         PSCREEN_INFORMATION const ConvScreenInfo = ConvAreaInfo->ScreenBuffer;
         ConvScreenInfo->TextInfo->GetCursor()->SetXPosition(Position.X);
 
@@ -296,7 +296,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
 
     for (; ConvAreaIndex < ConsoleIme->ConvAreaCompStr.size(); ConvAreaIndex++)
     {
-        ConvAreaInfo = ConsoleIme->ConvAreaCompStr[ConvAreaIndex];
+        ConvAreaInfo = ConsoleIme->ConvAreaCompStr[ConvAreaIndex].get();
         if (!ConvAreaInfo->IsHidden())
         {
             ConvAreaInfo->SetHidden(true);
@@ -307,7 +307,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
     return STATUS_SUCCESS;
 }
 
-NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* ConvAreaInfo)
+NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* const ConvAreaInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ConvAreaInfo->SetHidden(true);
@@ -348,10 +348,10 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         // Determine string.
         for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
         {
-            ConversionAreaInfo* const ConvAreaInfo = pIme->ConvAreaCompStr[i];
-            if (ConvAreaInfo && !ConvAreaInfo->IsHidden())
+            const std::unique_ptr<ConversionAreaInfo>& ConvAreaInfo = pIme->ConvAreaCompStr[i];
+            if (ConvAreaInfo.get() && !ConvAreaInfo->IsHidden())
             {
-                FillUndetermineChars(ConvAreaInfo);
+                FillUndetermineChars(ConvAreaInfo.get());
             }
         }
 
@@ -388,10 +388,10 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         // Composition string.
         for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
         {
-            ConversionAreaInfo* const ConvAreaInfo = pIme->ConvAreaCompStr[i];
-            if (ConvAreaInfo && !ConvAreaInfo->IsHidden())
+            const std::unique_ptr<ConversionAreaInfo>& ConvAreaInfo = pIme->ConvAreaCompStr[i];
+            if (ConvAreaInfo.get() && !ConvAreaInfo->IsHidden())
             {
-                FillUndetermineChars(ConvAreaInfo);
+                FillUndetermineChars(ConvAreaInfo.get());
             }
         }
 
@@ -416,10 +416,10 @@ NTSTATUS ConsoleImeResizeCompStrView()
     {
         for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
         {
-            ConversionAreaInfo* const ConvAreaInfo = pIme->ConvAreaCompStr[i];
-            if (ConvAreaInfo && !ConvAreaInfo->IsHidden())
+            const std::unique_ptr<ConversionAreaInfo>& ConvAreaInfo = pIme->ConvAreaCompStr[i];
+            if (ConvAreaInfo.get() && !ConvAreaInfo->IsHidden())
             {
-                FillUndetermineChars(ConvAreaInfo);
+                FillUndetermineChars(ConvAreaInfo.get());
             }
         }
 
@@ -441,17 +441,17 @@ NTSTATUS ConsoleImeResizeCompStrScreenBuffer(_In_ COORD const coordNewScreenSize
     // Composition string
     for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
     {
-        ConversionAreaInfo* const ConvAreaInfo = pIme->ConvAreaCompStr[i];
+        std::unique_ptr<ConversionAreaInfo>& ConvAreaInfo = pIme->ConvAreaCompStr[i];
 
-        if (ConvAreaInfo)
+        if (ConvAreaInfo.get())
         {
             if (!ConvAreaInfo->IsHidden())
             {
                 ConvAreaInfo->SetHidden(true);
-                ConsoleImePaint(ConvAreaInfo);
+                ConsoleImePaint(ConvAreaInfo.get());
             }
 
-            NTSTATUS Status = ConsoleImeResizeScreenBuffer(ConvAreaInfo->ScreenBuffer, coordNewScreenSize, ConvAreaInfo);
+            NTSTATUS Status = ConsoleImeResizeScreenBuffer(ConvAreaInfo->ScreenBuffer, coordNewScreenSize, ConvAreaInfo.get());
             if (!NT_SUCCESS(Status))
             {
                 return Status;
@@ -485,7 +485,7 @@ SHORT CalcWideCharToColumn(_In_reads_(NumberOfChars) PCHAR_INFO Buffer, _In_ siz
 }
 
 
-void ConsoleImePaint(_In_ ConversionAreaInfo* pConvAreaInfo)
+void ConsoleImePaint(_In_ const ConversionAreaInfo* const pConvAreaInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (pConvAreaInfo == nullptr)
@@ -515,7 +515,7 @@ void ConsoleImePaint(_In_ ConversionAreaInfo* pConvAreaInfo)
     }
 }
 
-void ConsoleImeViewInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ COORD coordConView)
+void ConsoleImeViewInfo(_Inout_ ConversionAreaInfo* const ConvAreaInfo, _In_ COORD coordConView)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -550,7 +550,7 @@ void ConsoleImeViewInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ COORD coordC
     }
 }
 
-void ConsoleImeWindowInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ SMALL_RECT rcViewCaWindow)
+void ConsoleImeWindowInfo(_Inout_ ConversionAreaInfo* const ConvAreaInfo, _In_ SMALL_RECT rcViewCaWindow)
 {
     if (rcViewCaWindow.Left != ConvAreaInfo->CaInfo.rcViewCaWindow.Left ||
         rcViewCaWindow.Top != ConvAreaInfo->CaInfo.rcViewCaWindow.Top ||

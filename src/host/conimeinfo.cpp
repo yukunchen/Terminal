@@ -18,7 +18,8 @@ ConversionAreaBufferInfo::ConversionAreaBufferInfo(_In_ COORD const coordBufferS
 }
 
 ConversionAreaInfo::ConversionAreaInfo(_In_ COORD const coordBufferSize,
-                                       _In_ SCREEN_INFORMATION* const pScreenInfo) :
+                                       _In_ SCREEN_INFORMATION* const pScreenInfo,
+                                       _In_ ConstructorGuard /*guard*/) :
     CaInfo(coordBufferSize),
     _fIsHidden(true),
     ScreenBuffer(pScreenInfo)
@@ -29,14 +30,13 @@ ConversionAreaInfo::ConversionAreaInfo(_In_ COORD const coordBufferSize,
 // Routine Description:
 // - Instantiates a new instance of the ConversionAreaInfo class in a way that can return error codes.
 // Arguments:
-// - ppInfo - Pointer to a pointer that will receive the location of the newly created object.
+// - convAreaInfo - reference to the unique_ptr that will hold the newly created object.
 // Return value:
 // - NTSTATUS value. Normally STATUS_SUCCESSFUL if OK. Use appropriate checking macros.
-NTSTATUS ConversionAreaInfo::s_CreateInstance(_Outptr_ ConversionAreaInfo** const ppInfo)
+NTSTATUS ConversionAreaInfo::s_CreateInstance(_Inout_ std::unique_ptr<ConversionAreaInfo>& convAreaInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS Status = STATUS_SUCCESS;
-    *ppInfo = nullptr;
 
     if (gci.CurrentScreenBuffer == nullptr)
     {
@@ -75,13 +75,12 @@ NTSTATUS ConversionAreaInfo::s_CreateInstance(_Outptr_ ConversionAreaInfo** cons
             // Suppress painting notifications for modifying a conversion area cursor as they're not actually rendered.
             pNewScreen->TextInfo->GetCursor()->SetIsConversionArea(TRUE);
 
-            ConversionAreaInfo* pca = new ConversionAreaInfo(coordCaBuffer, pNewScreen);
+            convAreaInfo = std::make_unique<ConversionAreaInfo>(coordCaBuffer, pNewScreen, ConstructorGuard{});
 
-            Status = NT_TESTNULL(pca);
+            Status = NT_TESTNULL(convAreaInfo.get());
             if (NT_SUCCESS(Status))
             {
-                pNewScreen->ConvScreenInfo = pca;
-                *ppInfo = pca;
+                pNewScreen->ConvScreenInfo = convAreaInfo.get();
             }
         }
 
@@ -133,13 +132,6 @@ ConsoleImeInfo::ConsoleImeInfo() :
 
 ConsoleImeInfo::~ConsoleImeInfo()
 {
-    while (!ConvAreaCompStr.empty())
-    {
-        // No throw is guaranteed for these operations on a non-empty container.
-        delete ConvAreaCompStr.back();
-        ConvAreaCompStr.pop_back();
-    }
-
     if (CompStrData != nullptr)
     {
         delete[] CompStrData;
@@ -171,14 +163,13 @@ void ConsoleImeInfo::RefreshAreaAttributes()
 // - Status successful or appropriate NTSTATUS response.
 NTSTATUS ConsoleImeInfo::AddConversionArea()
 {
-    ConversionAreaInfo* pca;
-
-    NTSTATUS Status = ConversionAreaInfo::s_CreateInstance(&pca);
+    std::unique_ptr<ConversionAreaInfo> convAreaInfo;
+    NTSTATUS Status = ConversionAreaInfo::s_CreateInstance(convAreaInfo);
     if (NT_SUCCESS(Status))
     {
         try
         {
-            ConvAreaCompStr.push_back(pca);
+            ConvAreaCompStr.push_back(std::move(convAreaInfo));
         }
         catch (std::bad_alloc)
         {
