@@ -29,6 +29,8 @@ class Settings
 public:
     Settings();
 
+    void ApplyDesktopSpecificDefaults();
+
     void ApplyStartupInfo(_In_ const Settings* const pStartupSettings);
     void InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo);
     void Validate();
@@ -201,6 +203,8 @@ private:
     DWORD _dwVirtTermLevel;
     bool _fAutoReturnOnNewline;
     bool _fRenderGridWorldwide;
+
+    void _InitColorTable();
 
     COLORREF _XtermColorTable[XTERM_COLOR_TABLE_SIZE];
     void _InitXtermTableValue(_In_ const size_t iIndex, _In_ const BYTE bRed, _In_ const BYTE bGreen, _In_ const BYTE bBlue);

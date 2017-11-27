@@ -19,6 +19,7 @@
 #include "..\server\IoSorter.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
+#include "..\interactivity\base\ApiDetector.hpp"
 
 #include "renderData.hpp"
 #include "../renderer/base/renderer.hpp"
@@ -57,6 +58,37 @@ HRESULT ConsoleServerInitialization(_In_ HANDLE Server, _In_ const ConsoleArgume
     return S_OK;
 }
 
+static bool s_IsOnDesktop()
+{
+    // Persist this across calls so we don't dig it out a whole bunch of times. Once is good enough for the system.
+    static bool fAlreadyQueried = false;
+    static bool fIsDesktop = false;
+
+    if (!fAlreadyQueried)
+    {
+        Microsoft::Console::Interactivity::ApiLevel level;
+        const NTSTATUS status = Microsoft::Console::Interactivity::ApiDetector::DetectNtUserWindow(&level);
+        LOG_IF_NTSTATUS_FAILED(status);
+
+        if (NT_SUCCESS(status))
+        {
+            switch (level)
+            {
+            case Microsoft::Console::Interactivity::ApiLevel::OneCore:
+                fIsDesktop = false;
+                break;
+            case Microsoft::Console::Interactivity::ApiLevel::Win32:
+                fIsDesktop = true;
+                break;
+            }
+        }
+
+        fAlreadyQueried = true;
+    }
+
+    return fIsDesktop;
+}
+
 NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
                       _In_ DWORD TitleLength,
                       _In_reads_bytes_(TitleLength) LPWSTR Title,
@@ -75,6 +107,13 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
     // 4. Initializing Settings will establish hardcoded defaults.
     // Set to reference of global console information since that's the only place we need to hold the settings.
     CONSOLE_INFORMATION* const settings = ServiceLocator::LocateGlobals()->getConsoleInformation();
+
+    // 4b. On Desktop editions, we need to apply a series of Desktop-specific defaults that are better than the
+    // ones from the constructor (which are great for OneCore systems.)
+    if (s_IsOnDesktop())
+    {
+        settings->ApplyDesktopSpecificDefaults();
+    }
 
     // 3. Read the default registry values.
     Registry reg(settings);
