@@ -7,7 +7,14 @@ Copyright (c) Microsoft Corporation
 #define BG_ATTRS (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)
 #define META_ATTRS (COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE | COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE )
 
-WORD FindNearestTableIndex(_In_ COLORREF const Color, _In_reads_(cColorTable) const COLORREF* const ColorTable, _In_ const WORD cColorTable);
+WORD FindNearestTableIndex(_In_ COLORREF const Color,
+                           _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                           _In_ const WORD cColorTable);
+
+bool FindTableIndex(_In_ COLORREF const Color,
+                    _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                    _In_ const WORD cColorTable,
+                    _Out_ WORD* const pFoundIndex);
 
 WORD XtermToWindowsIndex(_In_ const size_t index);
 

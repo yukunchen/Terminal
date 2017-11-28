@@ -41,9 +41,16 @@ bool DispatchCommon::s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
         if (fSuccess)
         {
             const Viewport oldViewport = Viewport::FromInclusive(csbiex.srWindow);
+            
+            // Always resize the width of the console
             csbiex.dwSize.X = sColumns;
-            // Can't just set the dwSize.Y - that's the buffer's height, not
-            //      the viewport's
+            // Only set the screen buffer's height if it's currently less than 
+            //  what we're requesting.
+            if(sRows > csbiex.dwSize.Y)
+            {
+                csbiex.dwSize.Y = sRows;
+            }
+
             fSuccess = !!pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
             if (fSuccess)
             {

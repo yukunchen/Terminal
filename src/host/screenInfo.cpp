@@ -422,15 +422,21 @@ COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(_In_ COORD const coordFon
     assert(coordFontSize.X != 0);
     assert(coordFontSize.Y != 0);
 
-    COORD coordWindowRestrictedSize = GetLargestWindowSizeInCharacters(coordFontSize);
-
-    COORD coordClientAreaSize;
-
-    // If the buffer is smaller than what the max window would allow, then the max client area can only be as big as the
-    // buffer we have.
     const COORD coordScreenBufferSize = GetScreenBufferSize();
-    coordClientAreaSize.X = min(coordScreenBufferSize.X, coordWindowRestrictedSize.X);
-    coordClientAreaSize.Y = min(coordScreenBufferSize.Y, coordWindowRestrictedSize.Y);
+    COORD coordClientAreaSize = coordScreenBufferSize;
+    
+    //  Important re: headless consoles on onecore (for telnetd, etc.)
+    // GetConsoleScreenBufferInfoEx hits this to get the max size of the display. 
+    // Because we're headless, we don't really care about the max size of the display.
+    // In that case, we'll just return the buffer size as the "max" window size.
+    if (!ServiceLocator::LocateGlobals()->IsHeadless())
+    {
+        const COORD coordWindowRestrictedSize = GetLargestWindowSizeInCharacters(coordFontSize);
+        // If the buffer is smaller than what the max window would allow, then the max client area can only be as big as the
+        // buffer we have.
+        coordClientAreaSize.X = min(coordScreenBufferSize.X, coordWindowRestrictedSize.X);
+        coordClientAreaSize.Y = min(coordScreenBufferSize.Y, coordWindowRestrictedSize.Y);
+    }
 
     return coordClientAreaSize;
 }
@@ -1556,6 +1562,12 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(_In_ const COORD coordNewScreenS
 
     // cancel any active selection before resizing or it will not necessarily line up with the new buffer positions
     Selection::Instance().ClearSelection();
+
+    // cancel any popups before resizing or they will not necessarily line up with new buffer positions
+    if (nullptr != gci->lpCookedReadData)
+    {
+        CleanUpPopups(gci->lpCookedReadData);
+    }
 
     const bool fWrapText = gci->GetWrapText();
     if (fWrapText)

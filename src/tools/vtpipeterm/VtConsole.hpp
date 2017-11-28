@@ -39,9 +39,6 @@ public:
     static const DWORD sInPipeMode = PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT;
     static const DWORD sOutPipeMode = PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT;
 
-    DWORD getReadOffset();
-    void incrementReadOffset(DWORD offset);
-
     void activate();
     void deactivate();
     
@@ -57,11 +54,7 @@ private:
     std::wstring _inPipeName;
     std::wstring _outPipeName;
     
-    HANDLE _outPipeConhostSide;
-    HANDLE _inPipeConhostSide;
-    
     bool _connected = false;
-    DWORD _offset = 0;
     bool _active = false;
     bool _fHeadless = false;
 

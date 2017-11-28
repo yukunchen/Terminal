@@ -1,31 +1,32 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Testlist {
 
     export declare const qualifier: {
-        platform: "arm32" | "arm64" | "x64" | "x86",
-        configuration: "debug" | "release",
-        codeAnalysisMode: "simpleAnalysis" | "disabled",
+        platform: WdgBuild.StandardPlatforms,
+        configuration: "release",
     };
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src`;
 
     const o = d`${objRoot}\onecore\windows\core\console\open\src\testlist\${buildAlt}`;
 
-    const prePass = LegacySdk.build({
+    const prePass = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
         targetPass: "prePass",
         
         consumes: [
             f`autogen.bp`,
+            f`autogen.bp`,
         ],
     });
 
-    const pass1 = LegacySdk.build({
+    const pass1 = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
         targetPass: "pass1",
         
         consumes: [
+            f`autogen.bp`,
             f`autogen.bp`,
             f`microsoft.console.tests.desktoponly.testlist`,
             f`microsoft.console.tests.testlist`,
@@ -41,12 +42,13 @@ namespace Onecore.Windows.Core.Console.Open.Src.Testlist {
         ],
     });
 
-    const pass2 = LegacySdk.build({
+    const pass2 = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
         targetPass: "pass2",
         
         consumes: [
+            f`autogen.bp`,
             f`autogen.bp`,
             f`microsoft.console.tests.desktoponly.testlist`,
             f`microsoft.console.tests.testlist`,
@@ -56,11 +58,11 @@ namespace Onecore.Windows.Core.Console.Open.Src.Testlist {
             pass1,
             prePass,
 
-            $.Onecore.Windows.Core.Console.Open.Src.Host.Ft_host.pass1,
-            $.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia.pass1,
-            $.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host.pass1,
-            $.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter.pass1,
-            $.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Host.Ft_host.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Host.Ut_host.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ut_parser.pass1,
         ],
         
         produces: [
@@ -75,19 +77,11 @@ namespace Onecore.Windows.Core.Console.Open.Src.Testlist {
         ],
     });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist.bin_BlgPrebuiltTest_content
-
     export const bin_BlgPrebuiltTest_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`);
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist.bin_BlgPrebuiltWindows_content
 
     export const bin_BlgPrebuiltWindows_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\windows`);
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist.bin_PrebuiltTest_content
-
     export const bin_PrebuiltTest_content = pass2.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`);
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Testlist.bin_PrebuiltWindows_content
 
     export const bin_PrebuiltWindows_content = pass2.directories.get(p`${binRoot}\prebuilt\windows`);
 }

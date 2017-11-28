@@ -11,13 +11,14 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer_PrePass-->
 
-    <LegacyBuilder Output="Ft_fuzzer_PrePass" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Ft_fuzzer_PrePass" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>PrePass</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>vtcommandfuzzer.vcxproj</Item>
       </Consumes>
@@ -25,13 +26,14 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer_Pass1-->
 
-    <LegacyBuilder Output="Ft_fuzzer_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Ft_fuzzer_Pass1" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass1</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>fuzzing_directed.h</Item>
         <Item>fuzzing_logic.h</Item>
@@ -86,26 +88,26 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer_Pass2-->
 
-    <LegacyBuilder Output="Ft_fuzzer_Pass2" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Ft_fuzzer_Pass2" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass2</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>stdafx.cpp</Item>
         <Item>stdafx.h</Item>
         <Item>vtcommandfuzzer.cpp</Item>
         <Item>vtcommandfuzzer.vcxproj</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
-        <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
+        <Item>{SrcRoot}\build\scripts\fixtsversionstringappend.cmd</Item>
 
         <!--References-->
 
         <Item>{MsWin.Crts.Public.Internal.Sdk.Lib.Ucrt.__Library}</Item>
-        <Item Condition="{IsBuildDebug AND IsBuildCommonArchitecture}">{MsWin.Crts.Public.Internal.Sdk.Lib.__Library}</Item>
-        <Item Condition="{(IsBuildArm32 OR IsBuildArm64)}">{MsWin.Crts.Public.Sdk.Lib.__Library}</Item>
+        <Item Condition="{IsBuildRelease AND (IsBuildArm32 OR IsBuildArm64)}">{MsWin.Crts.Public.Sdk.Lib.__Library}</Item>
         <Item>{MsWin.OnecoreEndUser.Public.Internal.Sdk.Lib.__Library}</Item>
         <Item>{MsWin.OnecoreEndUser.Public.Sdk.Lib.__Library}</Item>
         <Item>{MsWin.OnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.v1_7.__Library}</Item>
@@ -130,19 +132,19 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer_Bin_BlgUnittests.__Content-->
 
-    <LibrarySetRunner Output="Ft_fuzzer_Bin_BlgUnittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Ft_fuzzer_Bin_BlgUnittests.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Ft_fuzzer_Pass2.Directories[BinRoot.Combine("blg\unittests")]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer_Bin_SymbolspriUnittestsExe.__Content-->
 
-    <LibrarySetRunner Output="Ft_fuzzer_Bin_SymbolspriUnittestsExe.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Ft_fuzzer_Bin_SymbolspriUnittestsExe.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Ft_fuzzer_Pass2.Directories[BinRoot.Combine("symbols.pri\unittests\exe")]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer_Bin_Unittests.__Content-->
 
-    <LibrarySetRunner Output="Ft_fuzzer_Bin_Unittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Ft_fuzzer_Bin_Unittests.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Ft_fuzzer_Pass2.Directories[BinRoot.Combine("unittests")]}</Directory>
     </LibrarySetRunner>
   </Namespace>

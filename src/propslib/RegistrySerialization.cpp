@@ -156,17 +156,32 @@ NTSTATUS RegistrySerialization::s_LoadRegString(_In_ HKEY const hKey, _In_ const
 _Check_return_
 NTSTATUS RegistrySerialization::s_OpenConsoleKey(_Out_ HKEY* phCurrentUserKey, _Out_ HKEY* phConsoleKey)
 {
+    // Always set an output value. It will be made valid before the end if everything succeeds.
+    *phCurrentUserKey = static_cast<HKEY>(INVALID_HANDLE_VALUE);
+    *phConsoleKey = static_cast<HKEY>(INVALID_HANDLE_VALUE);
+
+    wil::unique_hkey currentUserKey;
+    wil::unique_hkey consoleKey;
+
     // Open the current user registry key.
-    NTSTATUS Status = NTSTATUS_FROM_WIN32(RegOpenCurrentUser(KEY_READ | KEY_WRITE, phCurrentUserKey));
+    NTSTATUS Status = NTSTATUS_FROM_WIN32(RegOpenCurrentUser(KEY_READ | KEY_WRITE, &currentUserKey));
 
     if (NT_SUCCESS(Status))
     {
         // Open the console registry key.
-        Status = s_OpenKey(*phCurrentUserKey, CONSOLE_REGISTRY_STRING, phConsoleKey);
+        Status = s_OpenKey(currentUserKey.get(), CONSOLE_REGISTRY_STRING, &consoleKey);
 
-        if (!NT_SUCCESS(Status))
+        // If we can't open the console registry key, create one and open it.
+        if (NTSTATUS_FROM_WIN32(ERROR_FILE_NOT_FOUND) == Status)
         {
-            RegCloseKey(*phCurrentUserKey);
+            Status = s_CreateKey(currentUserKey.get(), CONSOLE_REGISTRY_STRING, &consoleKey);
+        }
+
+        // If we're successful, give the keys back.
+        if (NT_SUCCESS(Status))
+        {
+            *phCurrentUserKey = currentUserKey.release();
+            *phConsoleKey = consoleKey.release();
         }
     }
 

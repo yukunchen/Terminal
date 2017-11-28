@@ -5,7 +5,6 @@
 ********************************************************/
 
 #include "precomp.h"
-
 #include "vtrenderer.hpp"
 
 // For _vcprintf
@@ -24,15 +23,15 @@ using namespace Microsoft::Console::Types;
 // - <none>
 // Return Value:
 // - An instance of a Renderer.
-VtEngine::VtEngine(_In_ wil::unique_hfile pipe) :
+VtEngine::VtEngine(_In_ wil::unique_hfile pipe, _In_ const Viewport initialViewport) :
     _hFile(std::move(pipe)),
-    _lastViewport({0}),
+    _lastViewport(initialViewport),
     _srcInvalid({0}),
     _lastText({0}),
     _scrollDelta({0}),
     _LastFG(INVALID_COLOR),
     _LastBG(INVALID_COLOR),
-    _cursor(this)
+    _clearedAllThisFrame(false)
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
@@ -250,13 +249,7 @@ void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t
 
 }
 
-// Method Description:
-// - Returns a reference to this engine's cursor implementation.
-// Arguments:
-// - <none>
-// Return Value:
-// - A referenct to this engine's cursor implementation.
-IRenderCursor* const VtEngine::GetCursor()
+bool VtEngine::_AllIsInvalid() const
 {
-    return &_cursor;
+    return _lastViewport.ToOrigin().ToExclusive() == _srcInvalid;
 }

@@ -49,6 +49,64 @@ TARGET_DESTINATION      = retail
 # Defines IME and Codepage support
 W32_SB                  = 1
 
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+SOURCES = \
+    $(SOURCES) \
+    ..\selection.cpp \
+    ..\selectionInput.cpp \
+    ..\selectionState.cpp \
+    ..\scrolling.cpp \
+    ..\cmdline.cpp   \
+    ..\VtIo.cpp   \
+    ..\VtInputThread.cpp   \
+    ..\consoleInformation.cpp \
+    ..\cursor.cpp    \
+    ..\search.cpp    \
+    ..\directio.cpp  \
+    ..\getset.cpp    \
+    ..\globals.cpp   \
+    ..\handle.cpp    \
+    ..\init.cpp      \
+    ..\input.cpp     \
+    ..\inputBuffer.cpp \
+    ..\inputKeyInfo.cpp \
+    ..\inputReadHandleData.cpp \
+    ..\misc.cpp      \
+    ..\output.cpp    \
+    ..\srvinit.cpp   \
+    ..\outputStream.cpp \
+    ..\stream.cpp    \
+    ..\dbcs.cpp      \
+    ..\convarea.cpp  \
+    ..\textBuffer.cpp \
+    ..\screenInfo.cpp \
+    ..\newdelete.cpp \
+    ..\_output.cpp   \
+    ..\_stream.cpp   \
+    ..\utils.cpp     \
+    ..\telemetry.cpp \
+    ..\tracing.cpp   \
+    ..\registry.cpp  \
+    ..\settings.cpp  \
+    ..\ntprivapi.cpp \
+    ..\readData.cpp \
+    ..\readDataCooked.cpp \
+    ..\readDataDirect.cpp \
+    ..\readDataRaw.cpp \
+    ..\writeData.cpp \
+    ..\renderData.cpp \
+    ..\renderFontDefaults.cpp \
+    ..\utf8ToWideCharParser.cpp \
+    ..\conimeinfo.cpp \
+    ..\conattrs.cpp \
+    ..\KeyEventHelpers.cpp \
+    ..\ConsoleArguments.cpp \
+
+
 # -------------------------------------
 # Sources, Headers, and Libraries
 # -------------------------------------

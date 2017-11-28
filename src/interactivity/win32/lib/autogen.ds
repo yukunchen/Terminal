@@ -18,6 +18,7 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>win32.lib.vcxproj</Item>
       </Consumes>
@@ -32,6 +33,7 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>win32.lib.vcxproj</Item>
         <Item>{DotDot}\accessibilitynotifier.cpp</Item>
@@ -112,6 +114,8 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\textbuffer.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\tracing.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\utils.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\vtinputthread.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\vtio.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\_output.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\conattrs.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\conime.h</Item>
@@ -119,6 +123,8 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\cpl_core.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\cpp2017.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\operators.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\unicode.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\vtiomodes.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iaccessibilitynotifier.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsolecontrol.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsoleinputthread.hpp</Item>
@@ -143,6 +149,7 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderdata.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\vtrenderer.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\apimessage.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\apimessagestate.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\devicecomm.h</Item>
@@ -152,6 +159,7 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\objectheader.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\processhandle.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\processlist.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\processpolicy.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\waitblock.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\waitqueue.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\waitterminationreason.h</Item>
@@ -161,9 +169,11 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\mouseinput.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminalinput.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminaloutput.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\istatemachineengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\statemachine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\telemetry.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\tracing.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp</Item>
 
         <!--References-->

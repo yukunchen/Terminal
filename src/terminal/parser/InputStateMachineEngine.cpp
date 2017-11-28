@@ -9,6 +9,7 @@
 #include "stateMachine.hpp"
 #include "InputStateMachineEngine.hpp"
 
+#include "../../inc/unicode.hpp"
 #include "ascii.hpp"
 #include <assert.h>
 
@@ -96,7 +97,12 @@ InputStateMachineEngine::InputStateMachineEngine(_In_ std::unique_ptr<IInteractD
 bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
 {
     bool fSuccess = false;
-    if (wch >= '\x0' && wch < '\x20')
+    if (wch == UNICODE_ETX)
+    {
+        // This is Ctrl+C, which is handled specially by the host.
+        fSuccess = _pDispatch->WriteCtrlC();
+    }
+    else if (wch >= '\x0' && wch < '\x20')
     {
         // This is a C0 Control Character.
         // This should be translated as Ctrl+(wch+x40)

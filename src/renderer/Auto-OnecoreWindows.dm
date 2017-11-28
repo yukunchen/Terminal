@@ -11,5 +11,6 @@
   </Module>
   <Import>base\Auto-OnecoreWindows.dm</Import>
   <Import>gdi\Auto-OnecoreWindows.dm</Import>
+  <Import>vt\Auto-OnecoreWindows.dm</Import>
   <Import>wddmcon\Auto-OnecoreWindows.dm</Import>
 </DominoModule>

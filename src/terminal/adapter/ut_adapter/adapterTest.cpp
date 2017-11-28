@@ -362,6 +362,20 @@ public:
         return _fPrivatePrependConsoleInputResult;
     }
 
+    virtual BOOL PrivateWriteConsoleControlInput(_In_ KeyEvent key)
+    {
+        Log::Comment(L"PrivateWriteConsoleControlInput MOCK called...");
+
+        if (_fPrivateWriteConsoleControlInputResult)
+        {
+            VERIFY_ARE_EQUAL('C', key.GetVirtualKeyCode());
+            VERIFY_ARE_EQUAL(0x3, key.GetCharData());
+            VERIFY_ARE_EQUAL(true, key.IsCtrlPressed());
+        }
+
+        return _fPrivateWriteConsoleControlInputResult;
+    }
+
     bool _IsInsideClip(_In_ const SMALL_RECT* const pClipRectangle, _In_ SHORT const iRow, _In_ SHORT const iCol)
     {
         if (pClipRectangle == nullptr)
@@ -684,6 +698,7 @@ public:
         _fSetConsoleTextAttributeResult = TRUE;
         _fWriteConsoleInputWResult = TRUE;
         _fPrivatePrependConsoleInputResult = TRUE;
+        _fPrivateWriteConsoleControlInputResult = TRUE;
         _fScrollConsoleScreenBufferWResult = TRUE;
         _fSetConsoleWindowInfoResult = TRUE;
         _fPrivateGetConsoleScreenBufferAttributesResult = TRUE;
@@ -1159,6 +1174,7 @@ public:
     BOOL _fSetConsoleTextAttributeResult;
     BOOL _fWriteConsoleInputWResult;
     BOOL _fPrivatePrependConsoleInputResult;
+    BOOL _fPrivateWriteConsoleControlInputResult;
     BOOL _fScrollConsoleScreenBufferWResult;
 
     BOOL _fSetConsoleWindowInfoResult;

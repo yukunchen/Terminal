@@ -65,7 +65,54 @@ HRESULT VtEngine::_ShowCursor()
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_EraseLine()
 {
-    return _Write("\x1b[0K");
+    // The default no-param action of erase line is erase to the right.
+    // telnet client doesn't understand the parameterized version,
+    // so emit the implicit sequence instead.
+    return _Write("\x1b[K");
+}
+
+// Method Description:
+// - Formats and writes a sequence to either insert or delete a number of lines 
+//      into the buffer at the current cursor location.
+//   Delete/insert Character removes/adds N characters from/to the buffer, and
+//      shifts the remaining chars in the row to the left/right, while Erase 
+//      Character replaces N characters with spaces, and leaves the rest
+//      untouched.
+// Arguments:
+// - chars: a number of characters to erase (by overwriting with space)
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::_EraseCharacter(_In_ const short chars)
+{
+    const PCSTR pszFormat = "\x1b[%dX";
+
+    return _WriteFormattedString(pszFormat, chars);
+}
+
+// Method Description:
+// - Moves the cursor forward (right) a number of characters.
+// Arguments:
+// - chars: a number of characters to move cursor right by.
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::_CursorForward(_In_ const short chars)
+{
+
+    const PCSTR pszFormat = "\x1b[%dD";
+
+    return _WriteFormattedString(pszFormat, chars);
+}
+
+// Method Description:
+// - Formats and writes a sequence to erase the remainer of the line starting 
+//      from the cursor position.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::_ClearScreen()
+{
+    return _Write("\x1b[2J");
 }
 
 // Method Description:

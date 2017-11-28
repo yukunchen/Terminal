@@ -161,14 +161,11 @@ HRESULT BgfxEngine::PaintSelection(const SMALL_RECT* const rgsrSelection, UINT c
     return S_OK;
 }
 
-HRESULT BgfxEngine::PaintCursor(ULONG const ulCursorHeightPercent, bool const fIsDoubleWidth)
+HRESULT BgfxEngine::PaintCursor(COORD const coordCursor, ULONG const ulCursorHeightPercent, bool const /*fIsDoubleWidth*/)
 {
     // TODO: MSFT: 11448021 - Modify BGFX to support rendering full-width
     // characters and a full-width cursor.
-    UNREFERENCED_PARAMETER(fIsDoubleWidth);
-    
-    const COORD coordCursor = _cursor.GetPosition();
-
+       
     CD_IO_CURSOR_INFORMATION CursorInfo;
     CursorInfo.Row = coordCursor.Y;
     CursorInfo.Column = coordCursor.X;
@@ -257,15 +254,4 @@ HRESULT BgfxEngine::IsCharFullWidthByFont(WCHAR const /*wch*/, _Out_ bool* const
 
     *pResult = false;
     return S_OK;
-}
-
-// Method Description:
-// - Returns a reference to this engine's cursor implementation.
-// Arguments:
-// - <none>
-// Return Value:
-// - A referenct to this engine's cursor implementation.
-IRenderCursor* const BgfxEngine::GetCursor()
-{
-    return &_cursor;
 }
