@@ -1195,7 +1195,7 @@ void ROW::ClearColumn(_In_ const size_t column)
 
 // Routine Description:
 // - Constructor to set default properties for TEXT_BUFFER_INFO
-TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(_In_ const FontInfo* const pfiFont) :
+TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(_In_ const FontInfo* const pfiFont, _In_ const ConstructorGuard /*guard*/) :
     _fiCurrentFont(*pfiFont),
     _fiDesiredFont(*pfiFont)
 {
@@ -1237,7 +1237,7 @@ NTSTATUS TEXT_BUFFER_INFO::CreateInstance(_In_ const FontInfo* const pFontInfo,
 
     NTSTATUS status = STATUS_SUCCESS;
 
-    std::unique_ptr<TEXT_BUFFER_INFO> textBuffer = std::make_unique<TEXT_BUFFER_INFO>(pFontInfo);
+    std::unique_ptr<TEXT_BUFFER_INFO> textBuffer = std::make_unique<TEXT_BUFFER_INFO>(pFontInfo, ConstructorGuard{});
     if (textBuffer.get() == nullptr)
     {
         return STATUS_NO_MEMORY;

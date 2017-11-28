@@ -325,7 +325,7 @@ void TextBufferTests::TestCopyProperties()
 {
     TEXT_BUFFER_INFO* pOtherTbi = GetTbi();
 
-    TEXT_BUFFER_INFO* pNewTbi = new TEXT_BUFFER_INFO(&pOtherTbi->_fiCurrentFont);
+    TEXT_BUFFER_INFO* pNewTbi = new TEXT_BUFFER_INFO(&pOtherTbi->_fiCurrentFont, TEXT_BUFFER_INFO::ConstructorGuard{});
     // value is irrelevant for this test
     pNewTbi->_pCursor = new Cursor(ServiceLocator::LocateAccessibilityNotifier(), 40);
     // set initial mapping values
