@@ -15,6 +15,8 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
+#define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(SUCCEEDED_NTSTATUS(x))
+
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -127,9 +129,9 @@ void TextBufferTests::TestBufferCreate()
 
 void TextBufferTests::DoBufferRowIterationTest(TEXT_BUFFER_INFO* pTbi)
 {
-    ROW* pFirstRow = pTbi->GetFirstRowPtr();
-    ROW* pPrior = nullptr;
-    ROW* pRow = pFirstRow;
+    const ROW* pFirstRow = &pTbi->GetFirstRow();
+    const ROW* pPrior = nullptr;
+    const ROW* pRow = pFirstRow;
     VERIFY_IS_NOT_NULL(pRow);
 
     UINT cRows = 0;
@@ -137,13 +139,28 @@ void TextBufferTests::DoBufferRowIterationTest(TEXT_BUFFER_INFO* pTbi)
     {
         cRows++;
         pPrior = pRow; // save off the previous for a reverse check
-        pRow = pTbi->GetNextRowPtrNoWrap(pRow);
+        try
+        {
+            pRow = &pTbi->GetNextRowNoWrap(*pRow);
+        }
+        catch (...)
+        {
+            pRow = nullptr;
+        }
 
         // if we didn't just hit the last row...
         if (pRow != nullptr)
         {
             // grab the previous row from the one we just found
-            ROW* pPriorCheck = pTbi->GetPrevRowPtrNoWrap(pRow);
+            const ROW* pPriorCheck;
+            try
+            {
+                pPriorCheck = &pTbi->GetPrevRowNoWrap(*pRow);
+            }
+            catch (...)
+            {
+                pPriorCheck = nullptr;
+            }
 
             // it should still equal what the row was before we started this iteration
             VERIFY_ARE_EQUAL(pPrior, pPriorCheck);
@@ -198,50 +215,44 @@ void TextBufferTests::TestBufferRowByOffset()
 
     short sId = csBufferHeight / 2 - 5;
 
-    ROW* pRow = tbi->GetRowPtrByOffset(sId);
-    VERIFY_IS_NOT_NULL(pRow);
-
-    if (pRow != nullptr)
-    {
-        VERIFY_ARE_EQUAL(pRow->sRowId, sId);
-    }
-
+    const ROW& row = tbi->GetRowByOffset(sId);
+    VERIFY_ARE_EQUAL(row.sRowId, sId);
 }
 
 void TextBufferTests::TestWrapFlag()
 {
     TEXT_BUFFER_INFO* tbi = GetTbi();
 
-    ROW* pRow = tbi->GetFirstRowPtr();
+    ROW& Row = tbi->GetFirstRow();
 
     // no wrap by default
-    VERIFY_IS_FALSE(pRow->CharRow.WasWrapForced());
+    VERIFY_IS_FALSE(Row.CharRow.WasWrapForced());
 
     // try set wrap and check
-    pRow->CharRow.SetWrapStatus(true);
-    VERIFY_IS_TRUE(pRow->CharRow.WasWrapForced());
+    Row.CharRow.SetWrapStatus(true);
+    VERIFY_IS_TRUE(Row.CharRow.WasWrapForced());
 
     // try unset wrap and check
-    pRow->CharRow.SetWrapStatus(false);
-    VERIFY_IS_FALSE(pRow->CharRow.WasWrapForced());
+    Row.CharRow.SetWrapStatus(false);
+    VERIFY_IS_FALSE(Row.CharRow.WasWrapForced());
 }
 
 void TextBufferTests::TestDoubleBytePadFlag()
 {
     TEXT_BUFFER_INFO* tbi = GetTbi();
 
-    ROW* pRow = tbi->GetFirstRowPtr();
+    ROW& Row = tbi->GetFirstRow();
 
     // no padding by default
-    VERIFY_IS_FALSE(pRow->CharRow.WasDoubleBytePadded());
+    VERIFY_IS_FALSE(Row.CharRow.WasDoubleBytePadded());
 
     // try set and check
-    pRow->CharRow.SetDoubleBytePadded(true);
-    VERIFY_IS_TRUE(pRow->CharRow.WasDoubleBytePadded());
+    Row.CharRow.SetDoubleBytePadded(true);
+    VERIFY_IS_TRUE(Row.CharRow.WasDoubleBytePadded());
 
     // try unset and check
-    pRow->CharRow.SetDoubleBytePadded(false);
-    VERIFY_IS_FALSE(pRow->CharRow.WasDoubleBytePadded());
+    Row.CharRow.SetDoubleBytePadded(false);
+    VERIFY_IS_FALSE(Row.CharRow.WasDoubleBytePadded());
 }
 
 
@@ -251,10 +262,9 @@ void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
                                      short const cLeft,
                                      short const cRight)
 {
-    TEXT_BUFFER_INFO* tbi = GetTbi();
+    TEXT_BUFFER_INFO* const tbi = GetTbi();
 
-    ROW* pRow = tbi->GetFirstRowPtr();
-    CHAR_ROW* pCharRow = &pRow->CharRow;
+    CHAR_ROW* const pCharRow = &tbi->GetFirstRow().CharRow;
 
     // copy string into buffer
     CopyMemory(pCharRow->Chars.get(), pwszInputString, cLength * sizeof(WCHAR));
@@ -355,7 +365,7 @@ void TextBufferTests::TestInsertCharacter()
     COORD const coordCursorBefore = pTbi->GetCursor()->GetPosition();
 
     // Get current row from the buffer
-    ROW* const pRow = pTbi->GetRowPtrByOffset(coordCursorBefore.Y);
+    const ROW& Row = pTbi->GetRowByOffset(coordCursorBefore.Y);
 
     // create some sample test data
     WCHAR const wchTest = L'Z';
@@ -364,12 +374,12 @@ void TextBufferTests::TestInsertCharacter()
     TextAttribute TestAttributes = TextAttribute(wAttrTest);
 
     // ensure that the buffer didn't start with these fields
-    VERIFY_ARE_NOT_EQUAL(pRow->CharRow.Chars[coordCursorBefore.X], wchTest);
-    VERIFY_ARE_NOT_EQUAL(pRow->CharRow.KAttrs[coordCursorBefore.X], bKAttrTest);
+    VERIFY_ARE_NOT_EQUAL(Row.CharRow.Chars[coordCursorBefore.X], wchTest);
+    VERIFY_ARE_NOT_EQUAL(Row.CharRow.KAttrs[coordCursorBefore.X], bKAttrTest);
 
     TextAttributeRun* pAttrRun;
     UINT cAttrApplies;
-    pRow->AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, &cAttrApplies);
+    Row.AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, &cAttrApplies);
 
     VERIFY_IS_FALSE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
 
@@ -377,10 +387,10 @@ void TextBufferTests::TestInsertCharacter()
     pTbi->InsertCharacter(wchTest, bKAttrTest, TestAttributes);
 
     // ensure that the buffer position where the cursor WAS contains the test items
-    VERIFY_ARE_EQUAL(pRow->CharRow.Chars[coordCursorBefore.X], wchTest);
-    VERIFY_ARE_EQUAL(pRow->CharRow.KAttrs[coordCursorBefore.X], bKAttrTest);
+    VERIFY_ARE_EQUAL(Row.CharRow.Chars[coordCursorBefore.X], wchTest);
+    VERIFY_ARE_EQUAL(Row.CharRow.KAttrs[coordCursorBefore.X], bKAttrTest);
 
-    pRow->AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, &cAttrApplies);
+    Row.AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, &cAttrApplies);
     VERIFY_IS_TRUE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
 
     // ensure that the cursor moved to a new position (X or Y or both have changed)
@@ -491,7 +501,7 @@ void TextBufferTests::TestLastNonSpace(short const cursorPosY)
     COORD coordExpected = pTbi->GetCursor()->GetPosition();
 
     // Try to get the X position from the current cursor position.
-    coordExpected.X = pTbi->GetRowPtrByOffset(coordExpected.Y)->CharRow.Right - 1;
+    coordExpected.X = pTbi->GetRowByOffset(coordExpected.Y).CharRow.Right - 1;
 
     // If we went negative, this row was empty and we need to continue seeking upward...
     // - As long as X is negative (empty rows)
@@ -499,7 +509,7 @@ void TextBufferTests::TestLastNonSpace(short const cursorPosY)
     while (coordExpected.X < 0 && coordExpected.Y > 0)
     {
         coordExpected.Y--;
-        coordExpected.X = pTbi->GetRowPtrByOffset(coordExpected.Y)->CharRow.Right - 1;
+        coordExpected.X = pTbi->GetRowByOffset(coordExpected.Y).CharRow.Right - 1;
     }
 
     VERIFY_ARE_EQUAL(coordLastNonSpace.X, coordExpected.X);
@@ -526,29 +536,29 @@ void TextBufferTests::TestSetWrapOnCurrentRow()
 
     short sCurrentRow = pTbi->GetCursor()->GetPosition().Y;
 
-    ROW* pRow = pTbi->GetRowPtrByOffset(sCurrentRow);
+    ROW& Row = pTbi->GetRowByOffset(sCurrentRow);
 
     Log::Comment(L"Testing off to on");
 
     // turn wrap status off first
-    pRow->CharRow.SetWrapStatus(false);
+    Row.CharRow.SetWrapStatus(false);
 
     // trigger wrap
     pTbi->SetWrapOnCurrentRow();
 
     // ensure this row was flipped
-    VERIFY_IS_TRUE(pRow->CharRow.WasWrapForced());
+    VERIFY_IS_TRUE(Row.CharRow.WasWrapForced());
 
     Log::Comment(L"Testing on stays on");
 
     // make sure wrap status is on
-    pRow->CharRow.SetWrapStatus(true);
+    Row.CharRow.SetWrapStatus(true);
 
     // trigger wrap
     pTbi->SetWrapOnCurrentRow();
 
     // ensure row is still on
-    VERIFY_IS_TRUE(pRow->CharRow.WasWrapForced());
+    VERIFY_IS_TRUE(Row.CharRow.WasWrapForced());
 }
 
 void TextBufferTests::TestIncrementCircularBuffer()
@@ -577,22 +587,22 @@ void TextBufferTests::TestIncrementCircularBuffer()
         pTbi->_FirstRow = iRowToTestIndex;
 
         // fill first row with some stuff
-        ROW* pFirstRow = pTbi->GetFirstRowPtr();
-        pFirstRow->CharRow.Left = 0;
-        pFirstRow->CharRow.Right = 15;
+        ROW& FirstRow = pTbi->GetFirstRow();
+        FirstRow.CharRow.Left = 0;
+        FirstRow.CharRow.Right = 15;
 
         // ensure it does say that it contains text
-        VERIFY_IS_TRUE(pFirstRow->CharRow.ContainsText());
+        VERIFY_IS_TRUE(FirstRow.CharRow.ContainsText());
 
         // try increment
         pTbi->IncrementCircularBuffer();
 
         // validate that first row has moved
         VERIFY_ARE_EQUAL(pTbi->_FirstRow, iNextRowIndex); // first row has incremented
-        VERIFY_ARE_NOT_EQUAL(pTbi->GetFirstRowPtr(), pFirstRow); // the old first row is no longer the first
+        VERIFY_ARE_NOT_EQUAL(pTbi->GetFirstRow(), FirstRow); // the old first row is no longer the first
 
         // ensure old first row has been emptied
-        VERIFY_IS_FALSE(pFirstRow->CharRow.ContainsText());
+        VERIFY_IS_FALSE(FirstRow.CharRow.ContainsText());
     }
 }
 
@@ -617,8 +627,8 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
     const short x = cursor->GetPosition().X;
     const short y = cursor->GetPosition().Y;
-    const ROW* const row = tbi->GetRowPtrByOffset(y);
-    const auto attrRow = &row->AttrRow;
+    const ROW& row = tbi->GetRowByOffset(y);
+    const auto attrRow = &row.AttrRow;
     const auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
     VERIFY_IS_NOT_NULL(attrs);
     attrRow->UnpackAttrs(attrs, tbi->_coordBufferSize.X);
@@ -679,11 +689,11 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
     const auto x = cursor->GetPosition().X;
     const auto y = cursor->GetPosition().Y;
-    const auto row = tbi->GetRowPtrByOffset(y);
-    const auto attrRow = &row->AttrRow;
-    const auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
-    VERIFY_IS_NOT_NULL(attrs);
-    attrRow->UnpackAttrs(attrs, tbi->_coordBufferSize.X);
+    const auto& row = tbi->GetRowByOffset(y);
+    const auto attrRow = &row.AttrRow;
+    const auto attrs = std::make_unique<TextAttribute[]>(tbi->_coordBufferSize.X);
+    VERIFY_IS_NOT_NULL(attrs.get());
+    VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), tbi->_coordBufferSize.X));
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -718,8 +728,6 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine->ProcessString(reset, std::wcslen(reset));
-
-
 }
 
 void TextBufferTests::TestMixedRgbAndLegacyUnderline()
@@ -740,8 +748,8 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
     const auto x = cursor->GetPosition().X;
     const auto y = cursor->GetPosition().Y;
-    const auto row = tbi->GetRowPtrByOffset(y);
-    const auto attrRow = &row->AttrRow;
+    const auto& row = tbi->GetRowByOffset(y);
+    const auto attrRow = &row.AttrRow;
     const auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
     VERIFY_IS_NOT_NULL(attrs);
     attrRow->UnpackAttrs(attrs, tbi->_coordBufferSize.X);
@@ -806,11 +814,11 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
     const auto x = cursor->GetPosition().X;
     const auto y = cursor->GetPosition().Y;
-    const auto row = tbi->GetRowPtrByOffset(y);
-    const auto attrRow = &row->AttrRow;
-    const auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
+    const auto& row = tbi->GetRowByOffset(y);
+    const auto attrRow = &row.AttrRow;
+    const auto attrs = std::make_unique<TextAttribute[]>(tbi->_coordBufferSize.X);
     VERIFY_IS_NOT_NULL(attrs);
-    attrRow->UnpackAttrs(attrs, tbi->_coordBufferSize.X);
+    VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), tbi->_coordBufferSize.X));
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -874,12 +882,12 @@ void TextBufferTests::TestRgbEraseLine()
         VERIFY_ARE_EQUAL(x, 2);
         VERIFY_ARE_EQUAL(y, 0);
 
-        const auto row = tbi->GetRowPtrByOffset(y);
-        const auto attrRow = &row->AttrRow;
+        const auto& row = tbi->GetRowByOffset(y);
+        const auto attrRow = &row.AttrRow;
         const auto len = tbi->_coordBufferSize.X;
-        const auto attrs = new TextAttribute[len];
-        VERIFY_IS_NOT_NULL(attrs);
-        attrRow->UnpackAttrs(attrs, len);
+        const auto attrs = std::make_unique<TextAttribute[]>(len);
+        VERIFY_IS_NOT_NULL(attrs.get());
+        VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
 
         const auto attr0 = attrs[0];
 
@@ -936,12 +944,12 @@ void TextBufferTests::TestUnBold()
     VERIFY_ARE_EQUAL(x, 2);
     VERIFY_ARE_EQUAL(y, 0);
 
-    const auto row = tbi->GetRowPtrByOffset(y);
-    const auto attrRow = &row->AttrRow;
+    const auto& row = tbi->GetRowByOffset(y);
+    const auto attrRow = &row.AttrRow;
     const auto len = tbi->_coordBufferSize.X;
-    const auto attrs = new TextAttribute[len];
-    VERIFY_IS_NOT_NULL(attrs);
-    attrRow->UnpackAttrs(attrs, len);
+    const auto attrs = std::make_unique<TextAttribute[]>(len);
+    VERIFY_IS_NOT_NULL(attrs.get());
+    VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
 
@@ -1005,12 +1013,12 @@ void TextBufferTests::TestUnBoldRgb()
     VERIFY_ARE_EQUAL(x, 2);
     VERIFY_ARE_EQUAL(y, 0);
 
-    const auto row = tbi->GetRowPtrByOffset(y);
-    const auto attrRow = &row->AttrRow;
+    const auto& row = tbi->GetRowByOffset(y);
+    const auto attrRow = &row.AttrRow;
     const auto len = tbi->_coordBufferSize.X;
-    const auto attrs = new TextAttribute[len];
-    VERIFY_IS_NOT_NULL(attrs);
-    attrRow->UnpackAttrs(attrs, len);
+    const auto attrs = std::make_unique<TextAttribute[]>(len);
+    VERIFY_IS_NOT_NULL(attrs.get());
+    VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
 
@@ -1081,12 +1089,12 @@ void TextBufferTests::TestComplexUnBold()
     VERIFY_ARE_EQUAL(x, 6);
     VERIFY_ARE_EQUAL(y, 0);
 
-    const auto row = tbi->GetRowPtrByOffset(y);
-    const auto attrRow = &row->AttrRow;
+    const auto& row = tbi->GetRowByOffset(y);
+    const auto attrRow = &row.AttrRow;
     const auto len = tbi->_coordBufferSize.X;
-    const auto attrs = new TextAttribute[len];
-    VERIFY_IS_NOT_NULL(attrs);
-    attrRow->UnpackAttrs(attrs, len);
+    const auto attrs = std::make_unique<TextAttribute[]>(len);
+    VERIFY_IS_NOT_NULL(attrs.get());
+    VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
     const auto attrA = attrs[x-6];
     const auto attrB = attrs[x-5];
     const auto attrC = attrs[x-4];
@@ -1197,8 +1205,8 @@ void TextBufferTests::CopyAttrs()
     VERIFY_ARE_EQUAL(x, 0);
     VERIFY_ARE_EQUAL(y, 0);
 
-    const auto row = tbi->GetRowPtrByOffset(0);
-    const auto attrRow = &row->AttrRow;
+    const auto& row = tbi->GetRowByOffset(0);
+    const auto attrRow = &row.AttrRow;
     const auto len = tbi->_coordBufferSize.X;
     const auto attrs = std::make_unique<TextAttribute[]>(len);
     VERIFY_IS_NOT_NULL(attrs);

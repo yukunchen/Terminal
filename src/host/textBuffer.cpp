@@ -546,7 +546,7 @@ ATTR_ROW::ATTR_ROW(const ATTR_ROW& a) :
     _cList{ a._cList },
     _cchRowWidth{ a._cchRowWidth }
 {
-    _rgList = wil::make_unique_nothrow<TextAttributeRun[]>(1);
+    _rgList = wil::make_unique_nothrow<TextAttributeRun[]>(_cList);
     THROW_IF_NULL_ALLOC(_rgList.get());
     std::copy(a._rgList.get(), a._rgList.get() + _cList, _rgList.get());
 }
@@ -1315,20 +1315,16 @@ short TEXT_BUFFER_INFO::GetMinBufferWidthNeeded() const
 {
     short sMaxRight = 0;
 
-    ROW* pRow = this->GetFirstRowPtr();
-
-    while (pRow != nullptr)
+    for (const ROW& row : _storage)
     {
         // note that .Right is always one position past the final character.
         // therefore a row with characters in array positions 0-19 will have a .Right of 20
-        const SHORT sRowRight = pRow->CharRow.Right;
+        const SHORT sRowRight = row.CharRow.Right;
 
         if (sRowRight > sMaxRight)
         {
             sMaxRight = sRowRight;
         }
-
-        pRow = this->GetNextRowPtrNoWrap(pRow);
     }
 
     return sMaxRight;
@@ -1336,96 +1332,116 @@ short TEXT_BUFFER_INFO::GetMinBufferWidthNeeded() const
 
 #pragma region Row Manipulation
 
-//Routine Description:
+// Routine Description:
 // - Gets the number of rows in the buffer
-//Arguments:
+// Arguments:
 // - <none>
-//Return Value:
+// Return Value:
 // - Total number of rows in the buffer
 UINT TEXT_BUFFER_INFO::TotalRowCount() const
 {
     return static_cast<UINT>(_storage.size());
 }
 
-//Routine Description:
-// -  Retrieves the first row from the underlying buffer.
-//Arguments:
+// Routine Description:
+// - Retrieves the first row from the underlying buffer.
+// Arguments:
 // - <none>
-//Return Value:
-//  - Pointer to the first row.
-ROW* TEXT_BUFFER_INFO::GetFirstRowPtr() const
+// Return Value:
+//  - const reference to the first row.
+const ROW& TEXT_BUFFER_INFO::GetFirstRow() const
 {
-    return GetRowPtrByOffset(0);
+    return GetRowByOffset(0);
 }
 
-//Routine Description:
-// - Retrieves a row from the buffer by its offset from the top
-//Arguments:
-// - Number of rows down from the top of the buffer.
-//Return Value:
-// - Pointer to the requested row. Asserts if out of bounds.
-ROW* TEXT_BUFFER_INFO::GetRowPtrByOffset(_In_ UINT const rowIndex) const
+// Routine Description:
+// - Retrieves the first row from the underlying buffer.
+// Arguments:
+// - <none>
+// Return Value:
+//  - reference to the first row.
+ROW& TEXT_BUFFER_INFO::GetFirstRow()
+{
+    return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetFirstRow());
+}
+
+
+// Routine Description:
+// - Retrieves a row from the buffer by its offset from the first row of the text buffer (what corresponds to
+// the top row of the screen buffer)
+// Arguments:
+// - Number of rows down from the first row of the buffer.
+// Return Value:
+// - const reference to the requested row. Asserts if out of bounds.
+const ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const UINT index) const
 {
     UINT const totalRows = this->TotalRowCount();
-    ROW* retVal = nullptr;
-
-    ASSERT(rowIndex < totalRows);
+    ASSERT(index < totalRows);
 
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
-    UINT const offsetIndex = (this->_FirstRow + rowIndex) % totalRows;
-
-    if (offsetIndex < totalRows)
-    {
-        retVal = const_cast<ROW*>(&this->_storage[offsetIndex]);
-    }
-
-    return retVal;
+    UINT const offsetIndex = (this->_FirstRow + index) % totalRows;
+    return _storage[offsetIndex];
 }
 
-//Routine Description:
-// - Retrieves the row that comes before the given row.
-// - Does not wrap around the buffer.
-//Arguments:
-// - The current row.
-//Return Value:
-// - Pointer to the previous row, or nullptr if there is no previous row.
-ROW* TEXT_BUFFER_INFO::GetPrevRowPtrNoWrap(_In_ ROW* const pRow) const
+// Routine Description:
+// - Retrieves a row from the buffer by its offset from the first row of the text buffer (what corresponds to
+// the top row of the screen buffer)
+// Arguments:
+// - Number of rows down from the first row of the buffer.
+// Return Value:
+// - reference to the requested row. Asserts if out of bounds.
+ROW& TEXT_BUFFER_INFO::GetRowByOffset(_In_ const UINT index)
 {
-    ROW* pReturnRow = nullptr;
+    return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetRowByOffset(index));
+}
 
-    int prevRowIndex = pRow->sRowId - 1;
-    int totalRows = (int)this->TotalRowCount();
-
-    ASSERT(totalRows >= 0);
-
+// Routine Description:
+// - Retrieves the row that comes before the given row.
+// - Does not wrap around the screen buffer.
+// Arguments:
+// - The current row.
+// Return Value:
+// - const reference to the previous row
+// Note:
+// - will throw exception if called with the first row of the text buffer
+const ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ const ROW& Row) const
+{
+    int prevRowIndex = Row.sRowId - 1;
     if (prevRowIndex < 0)
     {
-        prevRowIndex = totalRows - 1;
+        prevRowIndex = TotalRowCount() - 1;
     }
 
-    ASSERT(prevRowIndex >= 0 && prevRowIndex < (int)totalRows);
-
-    // if the prev row would be before the first, we don't want to return anything to signify we've reached the end
-    if (pRow->sRowId != this->_FirstRow)
-    {
-        pReturnRow = const_cast<ROW*>(&this->_storage[prevRowIndex]);
-    }
-
-    return pReturnRow;
+    THROW_HR_IF(E_FAIL, Row.sRowId == _FirstRow);
+    return _storage[prevRowIndex];
 }
 
-//Routine Description:
-// - Retrieves the row that comes after the given row.
-// - Does not wrap around the buffer.
-//Arguments:
+// Routine Description:
+// - Retrieves the row that comes before the given row.
+// - Does not wrap around the screen buffer.
+// Arguments:
 // - The current row.
-//Return Value:
-// - Pointer to the next row, or nullptr if there is no next row.
-ROW* TEXT_BUFFER_INFO::GetNextRowPtrNoWrap(_In_ ROW* const pRow) const
+// Return Value:
+// - reference to the previous row
+// Note:
+// - will throw exception if called with the first row of the text buffer
+ROW& TEXT_BUFFER_INFO::GetPrevRowNoWrap(_In_ const ROW& Row)
 {
-    ROW* pReturnRow = nullptr;
+    return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetPrevRowNoWrap(Row));
+}
 
-    UINT nextRowIndex = pRow->sRowId + 1;
+// Routine Description:
+// - Retrieves the row that comes after the given row.
+// - Does not wrap around the screen buffer.
+// Arguments:
+// - The current row.
+// Return Value:
+// - const reference to the next row
+// Note:
+// - will throw exception if the row passed in is the last row of the screen buffer.
+const ROW& TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ const ROW& row) const
+{
+    UINT nextRowIndex = row.sRowId + 1;
     UINT totalRows = this->TotalRowCount();
 
     if (nextRowIndex >= totalRows)
@@ -1433,17 +1449,33 @@ ROW* TEXT_BUFFER_INFO::GetNextRowPtrNoWrap(_In_ ROW* const pRow) const
         nextRowIndex = 0;
     }
 
-    ASSERT(nextRowIndex < totalRows);
-
-    // if the next row would be the first again, we don't want to return anything to signify we've reached the end
-    if ((short)nextRowIndex != this->_FirstRow)
-    {
-        pReturnRow = const_cast<ROW*>(&this->_storage[nextRowIndex]);
-    }
-
-    return pReturnRow;
+    THROW_HR_IF(E_FAIL, nextRowIndex == static_cast<UINT>(_FirstRow));
+    return _storage[nextRowIndex];
 }
 
+// Routine Description:
+// - Retrieves the row that comes after the given row.
+// - Does not wrap around the screen buffer.
+// Arguments:
+// - The current row.
+// Return Value:
+// - const reference to the next row
+// Note:
+// - will throw exception if the row passed in is the last row of the screen buffer.
+ROW& TEXT_BUFFER_INFO::GetNextRowNoWrap(_In_ const ROW& row)
+{
+    return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetNextRowNoWrap(row));
+}
+
+// Routine Description:
+// - Retrieves the row at the specified index of the text buffer, without referring to which row is the first
+// row of the screen buffer
+// Arguments:
+// - the index to fetch the row for
+// Return Value:
+// - const reference to the row
+// Note:
+// - will throw exception if the index passed would overflow the row storage
 const ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index) const
 {
     if (index >= TotalRowCount())
@@ -1453,11 +1485,27 @@ const ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index) const
     return _storage[index];
 }
 
+// Routine Description:
+// - Retrieves the row at the specified index of the text buffer, without referring to which row is the first
+// row of the screen buffer
+// Arguments:
+// - the index to fetch the row for
+// Return Value:
+// - reference to the row
+// Note:
+// - will throw exception if the index passed would overflow the row storage
 ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index)
 {
     return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetRowAtIndex(index));
 }
 
+// Routine Description:
+// - Retrieves the row previous to the one passed in.
+// - will wrap around the buffer, so don't use in a loop.
+// Arguments:
+// - the row to fetch the previous row for.
+// Return Value:
+// - const reference to the previous row.
 const ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) const
 {
     const SHORT rowIndex = row.sRowId;
@@ -1468,11 +1516,25 @@ const ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) const
     return _storage[rowIndex - 1];
 }
 
+// Routine Description:
+// - Retrieves the row previous to the one passed in.
+// - will wrap around the buffer, so don't use in a loop.
+// Arguments:
+// - the row to fetch the previous row for.
+// Return Value:
+// - reference to the previous row.
 ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row)
 {
     return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetPrevRow(row));
 }
 
+// Routine Description:
+// - Retrieves the row after the one passed in.
+// - will wrap around the buffer, so don't use in a loop.
+// Arguments:
+// - the row to fetch the next row for.
+// Return Value:
+// - const reference to the next row.
 const ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) const
 {
     const UINT rowIndex = static_cast<UINT>(row.sRowId);
@@ -1483,6 +1545,13 @@ const ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) const
     return _storage[rowIndex + 1];
 }
 
+// Routine Description:
+// - Retrieves the row after the one passed in.
+// - will wrap around the buffer, so don't use in a loop.
+// Arguments:
+// - the row to fetch the next row for.
+// Return Value:
+// - reference to the next row.
 ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row)
 {
     return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetNextRow(row));
@@ -1501,13 +1570,13 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ BYTE const bKAttr)
 {
     // To figure out if the sequence is valid, we have to look at the character that comes before the current one
     const COORD coordPrevPosition = GetPreviousFromCursor();
-    const ROW* pPrevRow = GetRowPtrByOffset(coordPrevPosition.Y);
+    const ROW& prevRow = GetRowByOffset(coordPrevPosition.Y);
 
     // By default, assume it's a single byte character if no KAttrs data exists
     BYTE bPrevKAttr = CHAR_ROW::ATTR_SINGLE_BYTE;
-    if (pPrevRow->CharRow.KAttrs != nullptr)
+    if (prevRow.CharRow.KAttrs != nullptr)
     {
-        bPrevKAttr = pPrevRow->CharRow.KAttrs[coordPrevPosition.X];
+        bPrevKAttr = prevRow.CharRow.KAttrs[coordPrevPosition.X];
     }
 
     bool fValidSequence = true; // Valid until proven otherwise
@@ -1553,11 +1622,11 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ BYTE const bKAttr)
     if (fCorrectableByErase)
     {
         // Erase previous character into an N type.
-        pPrevRow->CharRow.Chars[coordPrevPosition.X] = PADDING_CHAR;
+        prevRow.CharRow.Chars[coordPrevPosition.X] = PADDING_CHAR;
 
-        if (pPrevRow->CharRow.KAttrs != nullptr)
+        if (prevRow.CharRow.KAttrs != nullptr)
         {
-            pPrevRow->CharRow.KAttrs[coordPrevPosition.X] = PADDING_KATTR;
+            prevRow.CharRow.KAttrs[coordPrevPosition.X] = PADDING_KATTR;
         }
 
         // Sequence is now N N or N L, which are both okay. Set sequence back to valid.
@@ -1596,7 +1665,7 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ BYTE const bKAttr)
         if (this->GetCursor()->GetPosition().X == sBufferWidth - 1)
         {
             // set that we're wrapping for double byte reasons
-            GetRowPtrByOffset(this->GetCursor()->GetPosition().Y)->CharRow.SetDoubleBytePadded(true);
+            GetRowByOffset(this->GetCursor()->GetPosition().Y).CharRow.SetDoubleBytePadded(true);
 
             // then move the cursor forward and onto the next row
             fSuccess = IncrementCursor();
@@ -1626,10 +1695,10 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ WCHAR const wch, _In_ BYTE const bKA
         short const iCol = this->GetCursor()->GetPosition().X; // column logical and array positions are equal.
 
         // Get the row associated with the given logical position
-        ROW* const pRow = this->GetRowPtrByOffset(iRow);
+        ROW& Row = GetRowByOffset(iRow);
 
         // Store character and double byte data
-        CHAR_ROW* const pCharRow = &pRow->CharRow;
+        CHAR_ROW* const pCharRow = &Row.CharRow;
         short const cBufferWidth = this->_coordBufferSize.X;
 
         pCharRow->Chars[iCol] = wch;
@@ -1652,7 +1721,7 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ WCHAR const wch, _In_ BYTE const bKA
         }
 
         // Store color data
-        fSuccess = pRow->AttrRow.SetAttrToEnd(iCol, attr);
+        fSuccess = Row.AttrRow.SetAttrToEnd(iCol, attr);
         if (fSuccess)
         {
             // Advance the cursor
@@ -1686,12 +1755,8 @@ void TEXT_BUFFER_INFO::AdjustWrapOnCurrentRow(_In_ bool const fSet)
     // The vertical position of the cursor represents the current row we're manipulating.
     const UINT uiCurrentRowOffset = this->GetCursor()->GetPosition().Y;
 
-    // Translate the offset position (the logical position within the window where 0 is the top of the window)
-    // into the circular buffer position (rows array index) using the helper function.
-    ROW* const pCurrentRow = this->GetRowPtrByOffset(uiCurrentRowOffset);
-
     // Set the wrap status as appropriate
-    pCurrentRow->CharRow.SetWrapStatus(fSet);
+    GetRowByOffset(uiCurrentRowOffset).CharRow.SetWrapStatus(fSet);
 }
 
 //Routine Description:
@@ -1843,7 +1908,7 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
     // Always search the whole buffer, by starting at the bottom.
     coordEndOfText.Y = _coordBufferSize.Y - 1;
 
-    ROW* pCurrRow = this->GetRowPtrByOffset(coordEndOfText.Y);
+    const ROW* pCurrRow = &GetRowByOffset(coordEndOfText.Y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
     coordEndOfText.X = pCurrRow->CharRow.Right - 1;
 
@@ -1852,7 +1917,7 @@ COORD TEXT_BUFFER_INFO::GetLastNonSpaceCharacter() const
     while (fDoBackUp)
     {
         coordEndOfText.Y--;
-        pCurrRow = this->GetRowPtrByOffset(coordEndOfText.Y);
+        pCurrRow = &GetRowByOffset(coordEndOfText.Y);
         // We need to back up to the previous row if this line is empty, AND there are more rows
 
         coordEndOfText.X = pCurrRow->CharRow.Right - 1;

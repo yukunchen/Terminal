@@ -509,7 +509,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     for (SHORT iRow = viewDirty.Top(); iRow <= viewDirty.BottomInclusive(); iRow++)
     {
         // Get row of text data
-        const ROW* const pRow = ptbi->GetRowPtrByOffset(iRow);
+        const ROW& Row = ptbi->GetRowByOffset(iRow);
 
         // Get the requested left and right positions from the dirty rectangle.
         size_t iLeft = viewDirty.Left();
@@ -519,8 +519,8 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
         if (iRight > iLeft)
         {
             // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
-            PWCHAR const pwsLine = pRow->CharRow.Chars.get() + iLeft;
-            PBYTE const pbKAttrs = pRow->CharRow.KAttrs.get() + iLeft; // the double byte flags corresponding to the characters above.
+            PWCHAR const pwsLine = Row.CharRow.Chars.get() + iLeft;
+            PBYTE const pbKAttrs = Row.CharRow.KAttrs.get() + iLeft; // the double byte flags corresponding to the characters above.
             size_t const cchLine = iRight - iLeft;
 
             // Calculate the target position in the buffer where we should start writing.
@@ -529,7 +529,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             coordTarget.Y = iRow - view.Top();
 
             // Now draw it.
-            _PaintBufferOutputRasterFontHelper(pEngine, pRow, pwsLine, pbKAttrs, cchLine, iLeft, coordTarget);
+            _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, pbKAttrs, cchLine, iLeft, coordTarget);
         }
     }
 }
@@ -540,7 +540,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 // - This is required for raster fonts in GDI as it won't adapt them back on our behalf.
 // - See also: All related helpers and buffer output functions.
 // Arguments:
-// - pRow - Pointer to the row structure for the current line of text
+// - Row - reference to the row structure for the current line of text
 // - pwsLine - Pointer to the first character in the string/substring to be drawn.
 // - pbKAttrsLine - Pointer to the first attribute in a sequence that is perfectly in sync with the pwsLine parameter. e.g. The first attribute here goes with the first character in pwsLine.
 // - cchLine - The length of both pwsLine and pbKAttrsLine.
@@ -549,7 +549,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 // Return Value:
 // - <none>
 void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
-                                                  _In_ const ROW* const pRow,
+                                                  _In_ const ROW& Row,
                                                   _In_reads_(cchLine) PCWCHAR const pwsLine,
                                                   _In_reads_(cchLine) PBYTE pbKAttrsLine,
                                                   _In_ size_t cchLine,
@@ -613,7 +613,7 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
     }
 
     // If we are using a TrueType font, just call the next helper down.
-    _PaintBufferOutputColorHelper(pEngine, pRow, pwsData, pbKAttrsLine, cchLine, iFirstAttr, coordTarget);
+    _PaintBufferOutputColorHelper(pEngine, Row, pwsData, pbKAttrsLine, cchLine, iFirstAttr, coordTarget);
 
     if (pwsConvert != nullptr)
     {
@@ -627,7 +627,7 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
 // - It also identifies box drawing attributes and calls the respective helper.
 // - See also: All related helpers and buffer output functions.
 // Arguments:
-// - pRow - Pointer to the row structure for the current line of text
+// - Row - Reference to the row structure for the current line of text
 // - pwsLine - Pointer to the first character in the string/substring to be drawn.
 // - pbKAttrsLine - Pointer to the first attribute in a sequence that is perfectly in sync with the pwsLine parameter. e.g. The first attribute here goes with the first character in pwsLine.
 // - cchLine - The length of both pwsLine and pbKAttrsLine.
@@ -636,7 +636,7 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
 // Return Value:
 // - <none>
 void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
-                                             _In_ const ROW* const pRow,
+                                             _In_ const ROW& Row,
                                              _In_reads_(cchLine) PCWCHAR const pwsLine,
                                              _In_reads_(cchLine) PBYTE pbKAttrsLine,
                                              _In_ size_t cchLine,
@@ -661,7 +661,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
         // First retrieve the attribute that applies starting at the target position and the length for which it applies.
         TextAttributeRun* pRun = nullptr;
         UINT cAttrApplies = 0;
-        pRow->AttrRow.FindAttrIndex((UINT)(iFirstAttr + cchWritten), &pRun, &cAttrApplies);
+        Row.AttrRow.FindAttrIndex((UINT)(iFirstAttr + cchWritten), &pRun, &cAttrApplies);
 
         // Set the brushes in GDI to this color
         LOG_IF_FAILED(_UpdateDrawingBrushes(pEngine, pRun->GetAttributes(), false));
@@ -913,11 +913,11 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine, _In_ const Conversio
             for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
             {
                 // Get row of text data
-                const ROW* const pRow = pTextInfo->GetRowPtrByOffset(iRow - pAreaInfo->CaInfo.coordConView.Y);
+                const ROW& Row = pTextInfo->GetRowByOffset(iRow - pAreaInfo->CaInfo.coordConView.Y);
 
                 // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
-                PWCHAR const pwsLine = pRow->CharRow.Chars.get() + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X;
-                PBYTE const pbKAttrs = pRow->CharRow.KAttrs.get() + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X; // the double byte flags corresponding to the characters above.
+                PWCHAR const pwsLine = Row.CharRow.Chars.get() + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X;
+                PBYTE const pbKAttrs = Row.CharRow.KAttrs.get() + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X; // the double byte flags corresponding to the characters above.
                 size_t const cchLine = viewDirty.Width() - 1;
 
                 // Calculate the target position in the buffer where we should start writing.
@@ -925,7 +925,7 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine, _In_ const Conversio
                 coordTarget.X = viewDirty.Left();
                 coordTarget.Y = iRow;
 
-                _PaintBufferOutputRasterFontHelper(pEngine, pRow, pwsLine, pbKAttrs, cchLine, viewDirty.Left(), coordTarget);
+                _PaintBufferOutputRasterFontHelper(pEngine, Row, pwsLine, pbKAttrs, cchLine, viewDirty.Left(), coordTarget);
             }
         }
     }

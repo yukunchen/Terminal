@@ -213,16 +213,10 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
     BeginKAttrCheck(pScreenInfo);
 #endif
 
-    ROW* pRow = pTextInfo->GetRowPtrByOffset(coordTargetPoint.Y);
-    if (pRow == nullptr)
-    {
-        return;
-    }
-
-    ROW* pRowNext = pTextInfo->GetNextRowPtrNoWrap(pRow);
+    const ROW& Row = pTextInfo->GetRowByOffset(coordTargetPoint.Y);
 
     // Check start position of strings
-    if (pRow->CharRow.KAttrs[coordTargetPoint.X] & CHAR_ROW::ATTR_TRAILING_BYTE)
+    if (Row.CharRow.KAttrs[coordTargetPoint.X] & CHAR_ROW::ATTR_TRAILING_BYTE)
     {
         if (coordTargetPoint.X == 0)
         {
@@ -237,16 +231,24 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
     // Check end position of strings
     if (coordTargetPoint.X + sStringLength < pScreenInfo->GetScreenBufferSize().X)
     {
-        if (pRow->CharRow.KAttrs[coordTargetPoint.X + sStringLength] & CHAR_ROW::ATTR_TRAILING_BYTE)
+        if (Row.CharRow.KAttrs[coordTargetPoint.X + sStringLength] & CHAR_ROW::ATTR_TRAILING_BYTE)
         {
             pSmallRect->Right++;
         }
     }
-    else if (pRowNext != nullptr)
+    else
     {
-        if (pRowNext->CharRow.KAttrs[0] & CHAR_ROW::ATTR_TRAILING_BYTE)
+        try
         {
-            pSmallRect->Right--;
+            const ROW& RowNext = pTextInfo->GetNextRowNoWrap(Row);
+            if (RowNext.CharRow.KAttrs[0] & CHAR_ROW::ATTR_TRAILING_BYTE)
+            {
+                pSmallRect->Right--;
+            }
+        }
+        catch (...)
+        {
+            LOG_HR(wil::ResultFromCaughtException());
         }
     }
 }

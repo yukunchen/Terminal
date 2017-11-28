@@ -127,6 +127,7 @@ public:
 
 
     friend void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept;
+    friend constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept;
 
 private:
     RowFlags bRowFlags;
@@ -140,6 +141,15 @@ private:
 
 DEFINE_ENUM_FLAG_OPERATORS(CHAR_ROW::RowFlags);
 void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept;
+constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept
+{
+    return (a.bRowFlags == b.bRowFlags &&
+            a._rowWidth == b._rowWidth &&
+            a.Right == b.Right &&
+            a.Left == b.Left &&
+            a.Chars == b.Chars &&
+            a.KAttrs == b.KAttrs);
+}
 
 // run-length encoded data structure for attributes
 
@@ -235,6 +245,7 @@ public:
     NTSTATUS UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ UINT const cRowLength) const;
 
     friend void swap(ATTR_ROW& a, ATTR_ROW& b) noexcept;
+    friend constexpr bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept;
 
     UINT _cList;   // length of attr pair array
     wistd::unique_ptr<TextAttributeRun[]> _rgList;
@@ -250,6 +261,12 @@ private:
 };
 
 void swap(ATTR_ROW& a, ATTR_ROW& b) noexcept;
+constexpr bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept
+{
+    return (a._cList == b._cList &&
+            a._rgList == b._rgList &&
+            a._cchRowWidth == b._cchRowWidth);
+}
 
 // information associated with one row of screen buffer
 
@@ -273,6 +290,7 @@ public:
     void ClearColumn(_In_ const size_t column);
 
     friend void swap(ROW& a, ROW& b);
+    friend constexpr bool operator==(const ROW& a, const ROW& b) noexcept;
 
 #ifdef UNIT_TESTING
     friend class RowTests;
@@ -280,6 +298,12 @@ public:
 };
 
 void swap(ROW& a, ROW& b);
+constexpr bool operator==(const ROW& a, const ROW& b) noexcept
+{
+    return (a.CharRow == b.CharRow &&
+            a.AttrRow == b.AttrRow &&
+            a.sRowId == b.sRowId);
+}
 
 class TEXT_BUFFER_INFO
 {
@@ -298,10 +322,17 @@ public:
     short GetMinBufferWidthNeeded() const; // TODO: just store this when the row is manipulated
 
     // row manipulation
-    ROW* GetFirstRowPtr() const;
-    ROW* GetRowPtrByOffset(_In_ UINT const rowIndex) const;
-    ROW* GetPrevRowPtrNoWrap(_In_ ROW* const pRow) const;
-    ROW* GetNextRowPtrNoWrap(_In_ ROW* const pRow) const;
+    const ROW& GetFirstRow() const;
+    ROW& GetFirstRow();
+
+    const ROW& GetRowByOffset(_In_ const UINT index) const;
+    ROW& GetRowByOffset(_In_ const UINT index);
+
+    const ROW& GetPrevRowNoWrap(_In_ const ROW& row) const;
+    ROW& GetPrevRowNoWrap(_In_ const ROW& row);
+
+    const ROW& GetNextRowNoWrap(_In_ const ROW& row) const;
+    ROW& GetNextRowNoWrap(_In_ const ROW& row);
 
     const ROW& GetRowAtIndex(_In_ const UINT index) const;
     ROW& GetRowAtIndex(_In_ const UINT index);

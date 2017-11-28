@@ -724,12 +724,12 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
 
             if ((MousePosition.X == coordSelectionAnchor.X) && (MousePosition.Y == coordSelectionAnchor.Y))
             {
-                ROW* const Row = pScreenInfo->TextInfo->GetRowPtrByOffset(MousePosition.Y);
-                ASSERT(Row != nullptr);
+                const ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(MousePosition.Y);
+
 
                 while (coordSelectionAnchor.X > 0)
                 {
-                    if (IS_WORD_DELIM(Row->CharRow.Chars[coordSelectionAnchor.X - 1]))
+                    if (IS_WORD_DELIM(Row.CharRow.Chars[coordSelectionAnchor.X - 1]))
                     {
                         break;
                     }
@@ -737,7 +737,7 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
                 }
                 while (MousePosition.X < coordScreenBufferSize.X)
                 {
-                    if (IS_WORD_DELIM(Row->CharRow.Chars[MousePosition.X]))
+                    if (IS_WORD_DELIM(Row.CharRow.Chars[MousePosition.X]))
                     {
                         break;
                     }
@@ -748,11 +748,11 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
                     // Trim the leading zeros: 000fe12 -> fe12, except 0x and 0n.
                     // Useful for debugging
                     if (MousePosition.X > coordSelectionAnchor.X + 2 &&
-                        Row->CharRow.Chars[coordSelectionAnchor.X + 1] != L'x' &&
-                        Row->CharRow.Chars[coordSelectionAnchor.X + 1] != L'X' && Row->CharRow.Chars[coordSelectionAnchor.X + 1] != L'n')
+                        Row.CharRow.Chars[coordSelectionAnchor.X + 1] != L'x' &&
+                        Row.CharRow.Chars[coordSelectionAnchor.X + 1] != L'X' && Row.CharRow.Chars[coordSelectionAnchor.X + 1] != L'n')
                     {
                         // Don't touch the selection begins with 0x
-                        while (Row->CharRow.Chars[coordSelectionAnchor.X] == L'0' && coordSelectionAnchor.X < MousePosition.X - 1)
+                        while (Row.CharRow.Chars[coordSelectionAnchor.X] == L'0' && coordSelectionAnchor.X < MousePosition.X - 1)
                         {
                             coordSelectionAnchor.X++;
                         }

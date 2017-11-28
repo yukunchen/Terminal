@@ -121,8 +121,8 @@ const BOOLEAN Cursor::IsDoubleWidth() const
         ->getConsoleInformation()
         ->CurrentScreenBuffer
         ->TextInfo
-        ->GetRowPtrByOffset(_cPosition.Y)
-        ->CharRow.Chars[_cPosition.X];
+        ->GetRowByOffset(_cPosition.Y)
+        .CharRow.Chars[_cPosition.X];
     return !!IsCharFullWidth(c);
 }
 
