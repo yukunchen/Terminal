@@ -176,11 +176,24 @@ void FontTests::TestFontScenario()
     // Ensure that the entire structure we received matches what we expect to usually get for this Lucida Console Size 12 ask.
     CONSOLE_FONT_INFOEX cfieFullExpected = { 0 };
     cfieFullExpected.cbSize = sizeof(cfieFullExpected);
-    cfieFullExpected.dwFontSize.X = 7;
-    cfieFullExpected.dwFontSize.Y = 12;
-    cfieFullExpected.FontFamily = 54;
-    cfieFullExpected.FontWeight = 400;
     wcscpy_s(cfieFullExpected.FaceName, L"Lucida Console");
+
+    if (!OneCoreDelay::IsIsWindowPresent())
+    {
+        // On OneCore Windows without GDI, this is what we expect to get.
+        cfieFullExpected.dwFontSize.X = 8;
+        cfieFullExpected.dwFontSize.Y = 12;
+        cfieFullExpected.FontFamily = 4;
+        cfieFullExpected.FontWeight = 0;
+    }
+    else
+    {
+        // On client Windows with GDI, this is what we expect to get.
+        cfieFullExpected.dwFontSize.X = 7;
+        cfieFullExpected.dwFontSize.Y = 12;
+        cfieFullExpected.FontFamily = 54;
+        cfieFullExpected.FontWeight = 400;
+    }
 
     VERIFY_ARE_EQUAL(cfieFullExpected, cfiePost);
 }
