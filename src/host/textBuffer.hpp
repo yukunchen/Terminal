@@ -87,6 +87,8 @@ public:
     CHAR_ROW(CHAR_ROW&& a);
     ~CHAR_ROW();
 
+    void swap(CHAR_ROW& other) noexcept;
+
     SHORT Right;    // one past rightmost bound of chars in Chars array (array will be full width)
     SHORT Left; // leftmost bound of chars in Chars array (array will be full width)
     std::unique_ptr<wchar_t[]> Chars; // all chars in row
@@ -126,7 +128,6 @@ public:
     size_t GetWidth() const;
 
 
-    friend void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept;
     friend constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept;
 
 private:
@@ -227,6 +228,8 @@ public:
     ATTR_ROW& operator=(const ATTR_ROW& a);
     ATTR_ROW(ATTR_ROW&& a) noexcept = default;
 
+    void swap(ATTR_ROW& other) noexcept;
+
     bool Reset(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr);
 
     void FindAttrIndex(_In_ UINT const iIndex,
@@ -244,7 +247,6 @@ public:
 
     NTSTATUS UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ UINT const cRowLength) const;
 
-    friend void swap(ATTR_ROW& a, ATTR_ROW& b) noexcept;
     friend constexpr bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept;
 
     UINT _cList;   // length of attr pair array
@@ -270,13 +272,15 @@ constexpr bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept
 
 // information associated with one row of screen buffer
 
-class ROW
+class ROW final
 {
 public:
     ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttribute fillAttribute);
     ROW(const ROW& a);
     ROW& operator=(const ROW& a);
     ROW(ROW&& a);
+
+    void swap(ROW& other) noexcept;
 
     CHAR_ROW CharRow;
     ATTR_ROW AttrRow;
@@ -289,7 +293,6 @@ public:
 
     void ClearColumn(_In_ const size_t column);
 
-    friend void swap(ROW& a, ROW& b);
     friend constexpr bool operator==(const ROW& a, const ROW& b) noexcept;
 
 #ifdef UNIT_TESTING
@@ -297,7 +300,7 @@ public:
 #endif
 };
 
-void swap(ROW& a, ROW& b);
+void swap(ROW& a, ROW& b) noexcept;
 constexpr bool operator==(const ROW& a, const ROW& b) noexcept
 {
     return (a.CharRow == b.CharRow &&
@@ -305,7 +308,7 @@ constexpr bool operator==(const ROW& a, const ROW& b) noexcept
             a.sRowId == b.sRowId);
 }
 
-class TEXT_BUFFER_INFO
+class TEXT_BUFFER_INFO final
 {
 private:
     // TEXT_BUFFER_INFO is supposed to be created by calling the static CreateInstance() function instead of the
@@ -352,11 +355,11 @@ public:
     const ROW& GetRowAtIndex(_In_ const UINT index) const;
     ROW& GetRowAtIndex(_In_ const UINT index);
 
-    const ROW& GetPrevRow(_In_ const ROW& row) const;
-    ROW& GetPrevRow(_In_ const ROW& row);
+    const ROW& GetPrevRow(_In_ const ROW& row) const noexcept;
+    ROW& GetPrevRow(_In_ const ROW& row) noexcept;
 
-    const ROW& GetNextRow(_In_ const ROW& row) const;
-    ROW& GetNextRow(_In_ const ROW& row);
+    const ROW& GetNextRow(_In_ const ROW& row) const noexcept;
+    ROW& GetNextRow(_In_ const ROW& row) noexcept;
 
     // Text insertion functions
     bool InsertCharacter(_In_ WCHAR const wch, _In_ BYTE const bKAttr, _In_ const TextAttribute attr);
@@ -423,3 +426,26 @@ private:
 };
 typedef TEXT_BUFFER_INFO *PTEXT_BUFFER_INFO;
 typedef PTEXT_BUFFER_INFO *PPTEXT_BUFFER_INFO;
+
+// this sticks specializations of swap() into the std::namespace for our classes, so that callers that use
+// std::swap explicitly over calling the global swap can still get the performance benefit.
+namespace std
+{
+    template<>
+    inline void swap<CHAR_ROW>(CHAR_ROW& a, CHAR_ROW& b) noexcept
+    {
+        a.swap(b);
+    }
+
+    template<>
+    inline void swap<ATTR_ROW>(ATTR_ROW& a, ATTR_ROW& b) noexcept
+    {
+        a.swap(b);
+    }
+
+    template<>
+    inline void swap<ROW>(ROW& a, ROW& b) noexcept
+    {
+        a.swap(b);
+    }
+}

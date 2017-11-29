@@ -19,6 +19,8 @@ unit testing projects in the codebase without a bunch of overhead.
 
 #pragma once
 
+#define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(SUCCEEDED_NTSTATUS(x))
+
 #include "precomp.h"
 #include "../host/globals.h"
 #include "../host/newdelete.hpp"

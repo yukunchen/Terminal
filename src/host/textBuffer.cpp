@@ -22,12 +22,7 @@
 
 void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept
 {
-    std::swap(a.Left, b.Left);
-    std::swap(a.Right, b.Right);
-    std::swap(a.Chars, b.Chars);
-    std::swap(a.KAttrs, b.KAttrs);
-    std::swap(a.bRowFlags, b.bRowFlags);
-    std::swap(a._rowWidth, b._rowWidth);
+    a.swap(b);
 }
 
 CHAR_ROW::CHAR_ROW(short rowWidth) :
@@ -67,17 +62,28 @@ CHAR_ROW::CHAR_ROW(const CHAR_ROW& a) :
 CHAR_ROW& CHAR_ROW::operator=(const CHAR_ROW& a)
 {
     CHAR_ROW temp(a);
-    swap(*this, temp);
+    this->swap(temp);
     return *this;
 }
 
 CHAR_ROW::CHAR_ROW(CHAR_ROW&& a)
 {
-    swap(*this, a);
+    this->swap(a);
 }
 
 CHAR_ROW::~CHAR_ROW()
 {
+}
+
+void CHAR_ROW::swap(CHAR_ROW& other) noexcept
+{
+    using std::swap;
+    std::swap(Left, other.Left);
+    std::swap(Right, other.Right);
+    std::swap(Chars, other.Chars);
+    std::swap(KAttrs, other.KAttrs);
+    std::swap(bRowFlags, other.bRowFlags);
+    std::swap(_rowWidth, other._rowWidth);
 }
 
 size_t CHAR_ROW::GetWidth() const
@@ -526,9 +532,7 @@ void TextAttributeRun::SetAttributes(_In_ const TextAttribute textAttribute)
 
 void swap(ATTR_ROW& a, ATTR_ROW& b) noexcept
 {
-    std::swap(a._cList, b._cList);
-    std::swap(a._rgList, b._rgList);
-    std::swap(a._cchRowWidth, b._cchRowWidth);
+    a.swap(b);
 }
 
 ATTR_ROW::ATTR_ROW(_In_ const UINT cchRowWidth, _In_ const TextAttribute attr)
@@ -554,10 +558,16 @@ ATTR_ROW::ATTR_ROW(const ATTR_ROW& a) :
 ATTR_ROW& ATTR_ROW::operator=(const ATTR_ROW& a)
 {
     ATTR_ROW temp{ a };
-    std::swap(_cList, temp._cList);
-    std::swap(_cchRowWidth, temp._cchRowWidth);
-    std::swap(_rgList, temp._rgList);
+    this->swap(temp);
     return *this;
+}
+
+void ATTR_ROW::swap(ATTR_ROW& other) noexcept
+{
+    using std::swap;
+    swap(_cList, other._cList);
+    swap(_rgList, other._rgList);
+    swap(_cchRowWidth, other._cchRowWidth);
 }
 
 // Routine Description:
@@ -1117,12 +1127,9 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
 
 #pragma region ROW
 
-void swap(ROW& a, ROW& b)
+void swap(ROW& a, ROW& b) noexcept
 {
-    using std::swap;
-    swap(a.CharRow, b.CharRow);
-    swap(a.AttrRow, b.AttrRow);
-    swap(a.sRowId, b.sRowId);
+    a.swap(b);
 }
 
 ROW::ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttribute fillAttribute) :
@@ -1141,9 +1148,8 @@ ROW::ROW(const ROW& a) :
 
 ROW& ROW::operator=(const ROW& a)
 {
-    using std::swap;
     ROW temp{ a };
-    swap(*this, temp);
+    this->swap(temp);
     return *this;
 }
 
@@ -1152,6 +1158,14 @@ ROW::ROW(ROW&& a) :
     AttrRow{ std::move(a.AttrRow) },
     sRowId{ std::move(a.sRowId) }
 {
+}
+
+void ROW::swap(ROW& other) noexcept
+{
+    using std::swap;
+    swap(CharRow, other.CharRow);
+    swap(AttrRow, other.AttrRow);
+    swap(sRowId, other.sRowId);
 }
 
 // Routine Description:
@@ -1506,7 +1520,7 @@ ROW& TEXT_BUFFER_INFO::GetRowAtIndex(_In_ const UINT index)
 // - the row to fetch the previous row for.
 // Return Value:
 // - const reference to the previous row.
-const ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) const
+const ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) const noexcept
 {
     const SHORT rowIndex = row.sRowId;
     if (rowIndex == 0)
@@ -1523,7 +1537,7 @@ const ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) const
 // - the row to fetch the previous row for.
 // Return Value:
 // - reference to the previous row.
-ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row)
+ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row) noexcept
 {
     return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetPrevRow(row));
 }
@@ -1535,7 +1549,7 @@ ROW& TEXT_BUFFER_INFO::GetPrevRow(_In_ const ROW& row)
 // - the row to fetch the next row for.
 // Return Value:
 // - const reference to the next row.
-const ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) const
+const ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) const noexcept
 {
     const UINT rowIndex = static_cast<UINT>(row.sRowId);
     if (rowIndex == TotalRowCount() - 1)
@@ -1552,7 +1566,7 @@ const ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) const
 // - the row to fetch the next row for.
 // Return Value:
 // - reference to the next row.
-ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row)
+ROW& TEXT_BUFFER_INFO::GetNextRow(_In_ const ROW& row) noexcept
 {
     return const_cast<ROW&>(static_cast<const TEXT_BUFFER_INFO*>(this)->GetNextRow(row));
 }

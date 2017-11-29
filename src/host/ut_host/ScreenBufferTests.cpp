@@ -22,8 +22,6 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
-#define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(SUCCEEDED_NTSTATUS(x))
-
 class ScreenBufferTests
 {
     CommonState* m_state;
@@ -98,9 +96,9 @@ class ScreenBufferTests
     TEST_METHOD(EraseAllTests);
 
     TEST_METHOD(VtResize);
-    
+
     TEST_METHOD(VtSoftResetCursorPosition);
-    
+
     TEST_METHOD(VtSetColorTable);
 
     TEST_METHOD(ResizeTraditionalDoesntDoubleFreeAttrRows);
@@ -977,7 +975,7 @@ void ScreenBufferTests::VtSetColorTable()
 
     // Start with a known value
     gci->SetColorTableEntry(0, RGB(0, 0, 0));
-    
+
     Log::Comment(NoThrowString().Format(
         L"Process some valid sequences for setting the table"
     ));
@@ -997,7 +995,7 @@ void ScreenBufferTests::VtSetColorTable()
     seq = L"\x1b]4;3;rgb:12/23/12\x7";
     stateMachine->ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(0x12,0x23,0x12), gci->GetColorTableEntry(::XtermToWindowsIndex(3)));
-    
+
     seq = L"\x1b]4;4;rgb:ff/a1/1b\x7";
     stateMachine->ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(RGB(0xff,0xa1,0x1b), gci->GetColorTableEntry(::XtermToWindowsIndex(4)));
