@@ -10,8 +10,6 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
-#include <memory>
-
 #pragma hdrstop
 
 // Characters used for padding out the buffer with invalid/empty space
@@ -20,11 +18,25 @@
 
 #pragma region CHAR_ROW
 
+// Routine Description:
+// - swaps two CHAR_ROWs
+// Arguments:
+// - a - the first CHAR_ROW to swap
+// - b - the second CHAR_ROW to swap
+// Return Value:
+// - <none>
 void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept
 {
     a.swap(b);
 }
 
+// Routine Description:
+// - constructor
+// Arguments:
+// - rowWidth - the size (in wchar_t) of the char and attribute rows
+// Return Value:
+// - instantiated object
+// Note: will through if unable to allocate char/attribute buffers
 CHAR_ROW::CHAR_ROW(short rowWidth) :
     _rowWidth{ static_cast<size_t>(rowWidth) },
     Left{ rowWidth },
@@ -43,6 +55,13 @@ CHAR_ROW::CHAR_ROW(short rowWidth) :
     SetDoubleBytePadded(false);
 }
 
+// Routine Description:
+// - copy constructor
+// Arguments:
+// - CHAR_ROW to copy
+// Return Value:
+// - instantiated object
+// Note: will through if unable to allocate char/attribute buffers
 CHAR_ROW::CHAR_ROW(const CHAR_ROW& a) :
     Left{ a.Left },
     Right{ a.Right },
@@ -59,6 +78,12 @@ CHAR_ROW::CHAR_ROW(const CHAR_ROW& a) :
     std::copy(a.KAttrs.get(), a.KAttrs.get() + a._rowWidth, KAttrs.get());
 }
 
+// Routine Description:
+// - assignment operator
+// Arguments:
+// - CHAR_ROW to copy
+// Return Value:
+// - reference to this object
 CHAR_ROW& CHAR_ROW::operator=(const CHAR_ROW& a)
 {
     CHAR_ROW temp(a);
@@ -66,7 +91,13 @@ CHAR_ROW& CHAR_ROW::operator=(const CHAR_ROW& a)
     return *this;
 }
 
-CHAR_ROW::CHAR_ROW(CHAR_ROW&& a)
+// Routine Description:
+// - move constructor
+// Arguments:
+// - CHAR_ROW to move
+// Return Value:
+// - instantiated object
+CHAR_ROW::CHAR_ROW(CHAR_ROW&& a) noexcept
 {
     this->swap(a);
 }
@@ -75,6 +106,12 @@ CHAR_ROW::~CHAR_ROW()
 {
 }
 
+// Routine Description:
+// - swaps values with another CHAR_ROW
+// Arguments:
+// - other - the CHAR_ROW to swap with
+// Return Value:
+// - <none>
 void CHAR_ROW::swap(CHAR_ROW& other) noexcept
 {
     using std::swap;
@@ -86,6 +123,12 @@ void CHAR_ROW::swap(CHAR_ROW& other) noexcept
     std::swap(_rowWidth, other._rowWidth);
 }
 
+// Routine Description:
+// - gets the size of the char row, in text elements
+// Arguments:
+// - <none>
+// Return Value:
+// - the size of the wchar_t and attribute buffer, in their respective elements
 size_t CHAR_ROW::GetWidth() const
 {
     return _rowWidth;
@@ -115,6 +158,12 @@ void CHAR_ROW::Reset(_In_ short const sRowWidth)
     SetDoubleBytePadded(false);
 }
 
+// Routine Description:
+// - resizes the width of the CHAR_ROW
+// Arguments:
+// - newSize - the new width of the character and attributes rows
+// Return Value:
+// - S_OK on success, otherwise relevant error code
 HRESULT CHAR_ROW::Resize(_In_ size_t const newSize)
 {
     std::unique_ptr<WCHAR[]> charBuffer = std::make_unique<WCHAR[]>(newSize);
@@ -530,11 +579,26 @@ void TextAttributeRun::SetAttributes(_In_ const TextAttribute textAttribute)
 
 #pragma region ATTR_ROW
 
+// Routine Description:
+// - swaps two ATTR_ROWs
+// Arguments:
+// - a - the first ATTR_ROW to swap
+// - b - the second ATTR_ROW to swap
+// Return Value:
+// - <none>
 void swap(ATTR_ROW& a, ATTR_ROW& b) noexcept
 {
     a.swap(b);
 }
 
+// Routine Description:
+// - constructor
+// Arguments:
+// - cchRowWidth - the length of the default text attribute
+// - attr - the default text attribute
+// Return Value:
+// - constructed object
+// Note: will throw exception if unable to allocate memory for text attribute storage
 ATTR_ROW::ATTR_ROW(_In_ const UINT cchRowWidth, _In_ const TextAttribute attr)
 {
     _rgList = wil::make_unique_nothrow<TextAttributeRun[]>(1);
@@ -546,6 +610,13 @@ ATTR_ROW::ATTR_ROW(_In_ const UINT cchRowWidth, _In_ const TextAttribute attr)
     _cchRowWidth = cchRowWidth;
 }
 
+// Routine Description:
+// - copy constructor
+// Arguments:
+// - object to copy
+// Return Value:
+// - copied object
+// Note: will throw exception if unable to allocated memory
 ATTR_ROW::ATTR_ROW(const ATTR_ROW& a) :
     _cList{ a._cList },
     _cchRowWidth{ a._cchRowWidth }
@@ -555,6 +626,12 @@ ATTR_ROW::ATTR_ROW(const ATTR_ROW& a) :
     std::copy(a._rgList.get(), a._rgList.get() + _cList, _rgList.get());
 }
 
+// Routine Description:
+// - assignement operator overload
+// Arguments:
+// - a - the object to copy
+// Return Value:
+// - reference to this object
 ATTR_ROW& ATTR_ROW::operator=(const ATTR_ROW& a)
 {
     ATTR_ROW temp{ a };
@@ -562,6 +639,12 @@ ATTR_ROW& ATTR_ROW::operator=(const ATTR_ROW& a)
     return *this;
 }
 
+// Routine Description:
+// - swaps field of this object with another
+// Arguments:
+// - other - the other object to swap with
+// Return Value:
+// - <none>
 void ATTR_ROW::swap(ATTR_ROW& other) noexcept
 {
     using std::swap;
@@ -1127,11 +1210,26 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
 
 #pragma region ROW
 
+// Routine Description:
+// - swaps two ROWs
+// Arguments:
+// - a - the first ROW to swap
+// - b - the second ROW to swap
+// Return Value:
+// - <none>
 void swap(ROW& a, ROW& b) noexcept
 {
     a.swap(b);
 }
 
+// Routine Description:
+// - constructor
+// Arguments:
+// - rowId - the row index in the text buffer
+// - rowWidth - the width of the row, cell elements
+// - fillAttribute - the default text attribute
+// Return Value:
+// - constructed object
 ROW::ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttribute fillAttribute) :
     sRowId{ rowId },
     CharRow{ rowWidth },
@@ -1139,6 +1237,12 @@ ROW::ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttri
 {
 }
 
+// Routine Description:
+// - copy constructor
+// Arguments:
+// - a - the object to copy
+// Return Value:
+// - the copied object
 ROW::ROW(const ROW& a) :
     CharRow{ a.CharRow },
     AttrRow{ a.AttrRow },
@@ -1146,6 +1250,12 @@ ROW::ROW(const ROW& a) :
 {
 }
 
+// Routine Description:
+// - assignment operator overload
+// Arguments:
+// - a - the object to copy to this one
+// Return Value:
+// - a reference to this object
 ROW& ROW::operator=(const ROW& a)
 {
     ROW temp{ a };
@@ -1153,13 +1263,25 @@ ROW& ROW::operator=(const ROW& a)
     return *this;
 }
 
-ROW::ROW(ROW&& a) :
+// Routine Description:
+// - move constructor
+// Arguments:
+// - a - the object to move
+// Return Value:
+// - the constructed object
+ROW::ROW(ROW&& a) noexcept :
     CharRow{ std::move(a.CharRow) },
     AttrRow{ std::move(a.AttrRow) },
     sRowId{ std::move(a.sRowId) }
 {
 }
 
+// Routine Description:
+// - swaps fields with another ROW
+// Arguments:
+// - other - the object to swap with
+// Return Value:
+// - <none>
 void ROW::swap(ROW& other) noexcept
 {
     using std::swap;
@@ -1181,6 +1303,12 @@ bool ROW::Reset(_In_ short const sRowWidth, _In_ const TextAttribute Attr)
     return AttrRow.Reset(sRowWidth, Attr);
 }
 
+// Routine Description:
+// - resizes ROW to new width
+// Arguments:
+// - width - the new width, in cells
+// Return Value:
+// - S_OK if successful, otherwise relevant error
 HRESULT ROW::Resize(_In_ size_t const width)
 {
     size_t oldWidth = CharRow.GetWidth();
@@ -1189,12 +1317,24 @@ HRESULT ROW::Resize(_In_ size_t const width)
     return S_OK;
 }
 
+// Routine Description:
+// - checks if column in row is a trailing byte
+// Arguments:
+// - column - 0-indexed column index
+// Return Value:
+// - true if column is a trailing byte, false otherwise
 bool ROW::IsTrailingByteAtColumn(_In_ const size_t column) const
 {
     // TODO bounds checkieng on column
     return IsFlagSet(CharRow.KAttrs[column], CHAR_ROW::ATTR_TRAILING_BYTE);
 }
 
+// Routine Description:
+// - clears char data in column in row
+// Arguments:
+// - column - 0-indexed column index
+// Return Value:
+// - <none>
 void ROW::ClearColumn(_In_ const size_t column)
 {
     // TODO bounds checking on column

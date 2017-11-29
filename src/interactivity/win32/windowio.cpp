@@ -726,7 +726,6 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
             {
                 const ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(MousePosition.Y);
 
-
                 while (coordSelectionAnchor.X > 0)
                 {
                     if (IS_WORD_DELIM(Row.CharRow.Chars[coordSelectionAnchor.X - 1]))

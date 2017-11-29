@@ -48,6 +48,15 @@ filling in the last row, and updating the screen.
 
 #pragma once
 
+#include "cursor.h"
+#include "..\renderer\inc\FontInfo.hpp"
+#include "..\renderer\inc\FontInfoDesired.hpp"
+
+#include <deque>
+#include <memory>
+#include <wil/resource.h>
+#include <wil/wistd_memory.h>
+
 // the characters of one row of screen buffer
 // we keep the following values so that we don't write
 // more pixels to the screen than we have to:
@@ -58,16 +67,6 @@ filling in the last row, and updating the screen.
 //       ^    ^                  ^                     ^
 //       |    |                  |                     |
 //     Chars Left               Right                end of Chars buffer
-#include "cursor.h"
-#include "..\renderer\inc\FontInfo.hpp"
-#include "..\renderer\inc\FontInfoDesired.hpp"
-
-#include <wil/resource.h>
-#include <wil/wistd_memory.h>
-
-#include <deque>
-#include <memory>
-
 class CHAR_ROW final
 {
 public:
@@ -84,7 +83,7 @@ public:
     CHAR_ROW(short rowWidth);
     CHAR_ROW(const CHAR_ROW& a);
     CHAR_ROW& operator=(const CHAR_ROW& a);
-    CHAR_ROW(CHAR_ROW&& a);
+    CHAR_ROW(CHAR_ROW&& a) noexcept;
     ~CHAR_ROW();
 
     void swap(CHAR_ROW& other) noexcept;
@@ -278,7 +277,7 @@ public:
     ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttribute fillAttribute);
     ROW(const ROW& a);
     ROW& operator=(const ROW& a);
-    ROW(ROW&& a);
+    ROW(ROW&& a) noexcept;
 
     void swap(ROW& other) noexcept;
 
