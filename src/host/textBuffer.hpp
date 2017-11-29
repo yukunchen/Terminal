@@ -361,7 +361,7 @@ public:
     ROW& GetNextRow(_In_ const ROW& row) noexcept;
 
     // Text insertion functions
-    bool InsertCharacter(_In_ WCHAR const wch, _In_ BYTE const bKAttr, _In_ const TextAttribute attr);
+    bool InsertCharacter(_In_ wchar_t const wch, _In_ BYTE const bKAttr, _In_ const TextAttribute attr);
     bool IncrementCursor();
     bool NewlineCursor();
 

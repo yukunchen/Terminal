@@ -68,7 +68,7 @@ CHAR_ROW::CHAR_ROW(const CHAR_ROW& a) :
     bRowFlags{ a.bRowFlags },
     _rowWidth{ a._rowWidth }
 {
-    Chars = std::make_unique<WCHAR[]>(_rowWidth);
+    Chars = std::make_unique<wchar_t[]>(_rowWidth);
     THROW_IF_NULL_ALLOC(Chars.get());
 
     KAttrs = std::make_unique<BYTE[]>(_rowWidth);
@@ -114,13 +114,15 @@ CHAR_ROW::~CHAR_ROW()
 // - <none>
 void CHAR_ROW::swap(CHAR_ROW& other) noexcept
 {
+    // this looks kinda weird, but we want the compiler to be able to choose between std::swap and a
+    // specialized swap, so we include both in the same namespace and let it sort it out.
     using std::swap;
-    std::swap(Left, other.Left);
-    std::swap(Right, other.Right);
-    std::swap(Chars, other.Chars);
-    std::swap(KAttrs, other.KAttrs);
-    std::swap(bRowFlags, other.bRowFlags);
-    std::swap(_rowWidth, other._rowWidth);
+    swap(Left, other.Left);
+    swap(Right, other.Right);
+    swap(Chars, other.Chars);
+    swap(KAttrs, other.KAttrs);
+    swap(bRowFlags, other.bRowFlags);
+    swap(_rowWidth, other._rowWidth);
 }
 
 // Routine Description:
@@ -166,10 +168,20 @@ void CHAR_ROW::Reset(_In_ short const sRowWidth)
 // - S_OK on success, otherwise relevant error code
 HRESULT CHAR_ROW::Resize(_In_ size_t const newSize)
 {
-    std::unique_ptr<WCHAR[]> charBuffer = std::make_unique<WCHAR[]>(newSize);
+    std::unique_ptr<wchar_t[]> charBuffer;
+    try
+    {
+        charBuffer = std::make_unique<wchar_t[]>(newSize);
+    }
+    CATCH_RETURN();
     RETURN_IF_NULL_ALLOC(charBuffer.get());
 
-    std::unique_ptr<BYTE[]> attributesBuffer = std::make_unique<BYTE[]>(newSize);
+    std::unique_ptr<BYTE[]> attributesBuffer;
+    try
+    {
+        attributesBuffer = std::make_unique<BYTE[]>(newSize);
+    }
+    CATCH_RETURN();
     RETURN_IF_NULL_ALLOC(attributesBuffer.get());
 
     const size_t copySize = min(newSize, _rowWidth);
@@ -271,8 +283,8 @@ void CHAR_ROW::RemeasureBoundaryValues(_In_ short const sRowWidth)
 // - The calculated left boundary of the internal string.
 short CHAR_ROW::MeasureLeft(_In_ short const sRowWidth) const
 {
-    PWCHAR pLastChar = &this->Chars[sRowWidth];
-    PWCHAR pChar = this->Chars.get();
+    wchar_t* pLastChar = &this->Chars[sRowWidth];
+    wchar_t* pChar = this->Chars.get();
 
     for (; pChar < pLastChar && *pChar == PADDING_CHAR; pChar++)
     {
@@ -290,8 +302,8 @@ short CHAR_ROW::MeasureLeft(_In_ short const sRowWidth) const
 // - The calculated right boundary of the internal string.
 short CHAR_ROW::MeasureRight(_In_ short const sRowWidth) const
 {
-    PWCHAR pFirstChar = this->Chars.get();
-    PWCHAR pChar = &this->Chars[sRowWidth - 1];
+    wchar_t* pFirstChar = this->Chars.get();
+    wchar_t* pChar = &this->Chars[sRowWidth - 1];
 
     for (; pChar >= pFirstChar && *pChar == PADDING_CHAR; pChar--)
     {
@@ -1391,7 +1403,13 @@ NTSTATUS TEXT_BUFFER_INFO::CreateInstance(_In_ const FontInfo* const pFontInfo,
 
     NTSTATUS status = STATUS_SUCCESS;
 
-    std::unique_ptr<TEXT_BUFFER_INFO> textBuffer = std::make_unique<TEXT_BUFFER_INFO>(pFontInfo, ConstructorGuard{});
+    std::unique_ptr<TEXT_BUFFER_INFO> textBuffer;
+    try
+    {
+        textBuffer = std::make_unique<TEXT_BUFFER_INFO>(pFontInfo, ConstructorGuard{});
+    }
+    CATCH_RETURN();
+
     if (textBuffer.get() == nullptr)
     {
         return STATUS_NO_MEMORY;
@@ -1837,7 +1855,7 @@ bool TEXT_BUFFER_INFO::_PrepareForDoubleByteSequence(_In_ BYTE const bKAttr)
 //Return Value:
 // - true if we successfully inserted the character
 // - false otherwise (out of memory)
-bool TEXT_BUFFER_INFO::InsertCharacter(_In_ WCHAR const wch, _In_ BYTE const bKAttr, _In_ const TextAttribute attr)
+bool TEXT_BUFFER_INFO::InsertCharacter(_In_ wchar_t const wch, _In_ BYTE const bKAttr, _In_ const TextAttribute attr)
 {
     // Ensure consistent buffer state for double byte characters based on the character type we're about to insert
     bool fSuccess = _PrepareForDoubleByteSequence(bKAttr);
@@ -2158,24 +2176,24 @@ void TEXT_BUFFER_INFO::SetFill(_In_ const CHAR_INFO ciFill)
 // - This is the legacy screen resize with minimal changes
 // Arguments:
 // - currentScreenBufferSize - current size of the screen buffer.
-// - coordNewScreenSize - new size of screen.
+// - newScreenBufferSize - new size of screen.
 // - attributes - attributes to set for resized rows
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
 NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBufferSize,
-                                             _In_ COORD const coordNewScreenSize,
+                                             _In_ COORD const newScreenBufferSize,
                                              _In_ TextAttribute const attributes)
 {
-    if ((USHORT)coordNewScreenSize.X >= 0x7FFF || (USHORT)coordNewScreenSize.Y >= 0x7FFF)
+    if ((USHORT)newScreenBufferSize.X >= 0x7FFF || (USHORT)newScreenBufferSize.Y >= 0x7FFF)
     {
-        RIPMSG2(RIP_WARNING, "Invalid screen buffer size (0x%x, 0x%x)", coordNewScreenSize.X, coordNewScreenSize.Y);
+        RIPMSG2(RIP_WARNING, "Invalid screen buffer size (0x%x, 0x%x)", newScreenBufferSize.X, newScreenBufferSize.Y);
         return STATUS_INVALID_PARAMETER;
     }
 
     SHORT TopRow = 0; // new top row of the screen buffer
-    if (coordNewScreenSize.Y <= GetCursor()->GetPosition().Y)
+    if (newScreenBufferSize.Y <= GetCursor()->GetPosition().Y)
     {
-        TopRow = GetCursor()->GetPosition().Y - coordNewScreenSize.Y + 1;
+        TopRow = GetCursor()->GetPosition().Y - newScreenBufferSize.Y + 1;
     }
     const SHORT TopRowIndex = (GetFirstRowIndex() + TopRow) % currentScreenBufferSize.Y;
 
@@ -2197,16 +2215,16 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
 
     // realloc in the Y direction
     // remove rows if we're shrinking
-    while (_storage.size() > static_cast<size_t>(coordNewScreenSize.Y))
+    while (_storage.size() > static_cast<size_t>(newScreenBufferSize.Y))
     {
         _storage.pop_back();
     }
     // add rows if we're growing
-    while (_storage.size() < static_cast<size_t>(coordNewScreenSize.Y))
+    while (_storage.size() < static_cast<size_t>(newScreenBufferSize.Y))
     {
         try
         {
-            _storage.emplace_back(static_cast<short>(_storage.size()), coordNewScreenSize.X, attributes);
+            _storage.emplace_back(static_cast<short>(_storage.size()), newScreenBufferSize.X, attributes);
         }
         catch (...)
         {
@@ -2220,12 +2238,12 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
         _storage[i].sRowId = i;
 
         // realloc in the X direction
-        hr = _storage[i].Resize(coordNewScreenSize.X);
+        hr = _storage[i].Resize(newScreenBufferSize.X);
         if (FAILED(hr))
         {
             return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
     }
-    SetCoordBufferSize(coordNewScreenSize);
+    SetCoordBufferSize(newScreenBufferSize);
     return STATUS_SUCCESS;
 }
