@@ -142,7 +142,8 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgKeypadApplicationMapping[]
 };
 
 // Sequences to send when a modifier is pressed with any of these keys
-// Basically, the 'm' will be replaced with a character indicating which modifier keys are pressed.
+// Basically, the 'm' will be replaced with a character indicating which 
+//      modifier keys are pressed.
 const TerminalInput::_TermKeyMap TerminalInput::s_rgModifierKeyMapping[]
 {
     // HEY YOU. UPDATE THE MAX LENGTH DEF WHEN YOU MAKE CHANGES HERE.
@@ -156,6 +157,10 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgModifierKeyMapping[]
     { VK_F2, L"\x1b[1;mQ" },
     { VK_F3, L"\x1b[1;mR" },
     { VK_F4, L"\x1b[1;mS" },
+    { VK_INSERT, L"\x1b[2;m~" },
+    { VK_DELETE, L"\x1b[3;m~" },
+    { VK_PRIOR, L"\x1b[5;m~" },
+    { VK_NEXT, L"\x1b[6;m~" },
     { VK_F5, L"\x1b[15;m~" },
     { VK_F6, L"\x1b[17;m~" },
     { VK_F7, L"\x1b[18;m~" },
@@ -169,6 +174,25 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgModifierKeyMapping[]
     //  \xC2\x9B, but then translated to \x1b\x1b if the C1 codepoint isn't supported by the current encoding
 };
 
+// Sequences to send when a modifier is pressed with any of these keys
+// These sequences are not later updated to encode the modifier state in the 
+//      sequence itself, they are just weird exceptional cases to the general 
+//      rules above.
+const TerminalInput::_TermKeyMap TerminalInput::s_rgSimpleModifedKeyMapping[]
+{
+    // HEY YOU. UPDATE THE MAX LENGTH DEF WHEN YOU MAKE CHANGES HERE.
+    { VK_BACK, CTRL_PRESSED, L"\x8"},
+    { VK_BACK, ALT_PRESSED, L"\x1b\x7f"},
+    { VK_BACK, CTRL_PRESSED | ALT_PRESSED, L"\x1b\x8"},
+    { VK_TAB, CTRL_PRESSED, L"\t"},
+    { VK_TAB, SHIFT_PRESSED, L"\x1b[Z"},
+    { VK_DIVIDE, CTRL_PRESSED, L"\x1F"},
+    // { VK_TAB, ALT_PRESSED, L""}, This is the Windows system shortcut for switching windows.
+    // { VK_ESCAPE, ALT_PRESSED, L""}, This is another Windows system shortcut for switching windows.
+};
+
+const wchar_t* const CTRL_SLASH_SEQUENCE = L"\x1f";
+
 // Do NOT include the null terminator in the count.
 const size_t TerminalInput::_TermKeyMap::s_cchMaxSequenceLength = 7; // UPDATE THIS DEF WHEN THE LONGEST MAPPED STRING CHANGES
 
@@ -177,6 +201,7 @@ const size_t TerminalInput::s_cCursorKeysApplicationMapping = ARRAYSIZE(s_rgCurs
 const size_t TerminalInput::s_cKeypadNumericMapping         = ARRAYSIZE(s_rgKeypadNumericMapping);
 const size_t TerminalInput::s_cKeypadApplicationMapping     = ARRAYSIZE(s_rgKeypadApplicationMapping);
 const size_t TerminalInput::s_cModifierKeyMapping           = ARRAYSIZE(s_rgModifierKeyMapping);
+const size_t TerminalInput::s_cSimpleModifedKeyMapping      = ARRAYSIZE(s_rgSimpleModifedKeyMapping);
 
 void TerminalInput::ChangeKeypadMode(_In_ bool const fApplicationMode)
 {
@@ -254,6 +279,37 @@ bool TerminalInput::_SearchWithModifier(_In_ const KeyEvent& keyEvent) const
             }
         }
     }
+    else
+    {
+        // We didn't find the key in the map of modified keys that need editing,
+        //      maybe it's in the other map of modified keys with sequences that 
+        //      don't need editing before sending.
+        fSuccess = _SearchKeyMapping(keyEvent,
+                                     s_rgSimpleModifedKeyMapping,
+                                     s_cSimpleModifedKeyMapping,
+                                     &pMatchingMapping);
+        if (fSuccess)
+        {
+            // This mapping doesn't need to be changed at all.
+            _SendInputSequence(pMatchingMapping->pwszSequence);
+            fSuccess = true;
+        }
+        else
+        {
+            // One last check: C-/ is supposed to be C-_
+            // But '/' is not the same VKEY on all keyboards. So we have to 
+            //      figure out the vkey at runtime.
+            const static BYTE slashVkey = LOBYTE(VkKeyScan(L'/'));
+            if (keyEvent.GetVirtualKeyCode() == slashVkey && keyEvent.IsCtrlPressed())
+            {
+                // This mapping doesn't need to be changed at all.
+                _SendInputSequence(CTRL_SLASH_SEQUENCE);
+                fSuccess = true;
+
+            }
+        }
+    }
+
     return fSuccess;
 }
 
@@ -278,9 +334,29 @@ bool TerminalInput::_SearchKeyMapping(_In_ const KeyEvent& keyEvent,
 
         if (pMap->wVirtualKey == keyEvent.GetVirtualKeyCode())
         {
-            fKeyTranslated = true;
-            *pMatchingMapping = pMap;
-            break;
+            // If the mapping has no modifiers set, then it doesn't really care
+            //      what the modifiers are on the key. The caller will likely do
+            //      something with them.
+            // However, if there are modifiers set, then we only want to match 
+            //      if the key's modifiers are the same as the modifiers in the
+            //      mapping. Ex - 
+            bool modifiersMatch = AreAllFlagsClear(pMap->dwModifiers, MOD_PRESSED);
+            if (!modifiersMatch)
+            {
+                // The modifier mapping expects certain modifier keys to be 
+                //      pressed. Check those as well.
+                modifiersMatch = 
+                    (IsFlagSet(pMap->dwModifiers, SHIFT_PRESSED) == keyEvent.IsShiftPressed()) &&
+                    (IsAnyFlagSet(pMap->dwModifiers, ALT_PRESSED) == keyEvent.IsAltPressed()) &&
+                    (IsAnyFlagSet(pMap->dwModifiers, CTRL_PRESSED) == keyEvent.IsCtrlPressed());
+            }
+
+            if (modifiersMatch)
+            {
+                fKeyTranslated = true;
+                *pMatchingMapping = pMap;
+                break;
+            }
         }
     }
     return fKeyTranslated;
