@@ -702,11 +702,15 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 // - <none>
 void SCREEN_INFORMATION::SetViewportSize(_In_ const COORD* const pcoordSize)
 {
-    _InternalSetViewportSize(pcoordSize, false, false);
+    // If this is the alt buffer:
+    //      first resize ourselves to match the new viewport
+    //      then also make sure that the main buffer gets the same call.
     if (_psiMainBuffer)
     {
+        ResizeScreenBuffer(*pcoordSize, TRUE);
         _psiMainBuffer->_InternalSetViewportSize(pcoordSize, false, false);
     }
+    _InternalSetViewportSize(pcoordSize, false, false);
 }
 
 NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ const COORD coordWindowOrigin)
@@ -1787,26 +1791,6 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(_In_ const COORD coordNewScreenS
         ScreenBufferSizeChange(coordSetScreenBufferSize);
     }
 
-    if (NT_SUCCESS(status))
-    {
-        // If we're an alt buffer, we want to make sure the main buffer gets 
-        //      updated as well. However, the alt buffer's height is forced to 
-        //      match the height of the window. So, only update the height if 
-        //      we've resized the alt buffer to be bigger than the original 
-        //      main buffer size.
-        if (_psiMainBuffer)
-        {
-            COORD newMainBufferSize = coordNewScreenSize;
-            if (coordNewScreenSize.Y < _psiMainBuffer->GetScreenBufferSize().Y)
-            {
-                newMainBufferSize.Y = coordNewScreenSize.Y;
-            }
-
-            _psiMainBuffer->ResizeScreenBuffer(newMainBufferSize, fDoScrollBarUpdate);
-
-        }
-    }
-
     return status;
 }
 
@@ -2431,20 +2415,6 @@ const TextAttribute* const  SCREEN_INFORMATION::GetPopupAttributes() const
     return &_PopupAttributes;
 }
 
-// Routine Description:
-// - Sets the value of the attributes on this screen buffer. Also propagates
-//     the change down to the fill of the text buffer attached to this screen buffer.
-// Parameters:
-// - attributes - The new value of the attributes to use.
-// Return value:
-// <none>
-void SCREEN_INFORMATION::SetDefaultAttributes(_In_ const TextAttribute attributes,
-                                              _In_ const TextAttribute popupAttributes)
-{
-    SetAttributes(attributes);
-    SetPopupAttributes(popupAttributes);
-    GetAdapterDispatch()->UpdateDefaultColor(attributes.GetLegacyAttributes());
-}
 
 // Routine Description:
 // - Sets the value of the attributes on this screen buffer. Also propagates
@@ -2468,10 +2438,10 @@ void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute attributes)
     }
 }
 
-// Routine Description:
+// Method Description:
 // - Sets the value of the popup attributes on this screen buffer.
 // Parameters:
-// - wPopupAttributes - The new value of the popup attributes to use.
+// - popupAttributes - The new value of the popup attributes to use.
 // Return value:
 // <none>
 void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute popupAttributes)
@@ -2481,6 +2451,67 @@ void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute popupAttrib
     if (_psiMainBuffer)
     {
         _psiMainBuffer->SetPopupAttributes(popupAttributes);
+    }
+}
+
+// Method Description:
+// - Sets the value of the attributes on this screen buffer. Also propagates
+//     the change down to the fill of the attached text buffer.
+// Parameters:
+// - attributes - The new value of the attributes to use.
+// - popupAttributes - The new value of the popup attributes to use.
+// Return value:
+// <none>
+void SCREEN_INFORMATION::SetDefaultAttributes(_In_ const TextAttribute attributes,
+                                              _In_ const TextAttribute popupAttributes)
+{
+    SetAttributes(attributes);
+    SetPopupAttributes(popupAttributes);
+    GetAdapterDispatch()->UpdateDefaultColor(attributes.GetLegacyAttributes());
+}
+
+// Method Description:
+// - Replaces the given oldAttributes and oldPopupAttributes with the 
+//      newAttributes thoughout the entirety of our buffer. 
+//   This is called when the default screen attributes change, (eg through the 
+//      propsheet or the API) and we want to replace all of the attributes of 
+//      characters that had the old default attributes with the new setting.
+// NOTE: Only replaces legacy style attributes. If a character had RGB 
+//      attributes, then we know that it wasn't using the default attributes.
+// Parameters:
+// - oldAttributes - The old attributes containing legacy attributes to replace.
+// - oldPopupAttributes - The old popoup attributes to replace.
+// - newAttributes - The new value of the attributes to use.
+// - newPopupAttributes - The new value of the popup attributes to use.
+// Return value:
+// <none>
+void SCREEN_INFORMATION::ReplaceDefaultAttributes(_In_ const TextAttribute oldAttributes,
+                                                  _In_ const TextAttribute oldPopupAttributes,
+                                                  _In_ const TextAttribute newAttributes,
+                                                  _In_ const TextAttribute newPopupAttributes)
+{        
+    WORD const oldLegacyAttributes = oldAttributes.GetLegacyAttributes();
+    WORD const oldLegacyPopupAttributes = oldPopupAttributes.GetLegacyAttributes();
+    WORD const newLegacyAttributes = newAttributes.GetLegacyAttributes();
+    WORD const newLegacyPopupAttributes = newPopupAttributes.GetLegacyAttributes();
+
+    // TODO: MSFT 9354902: Fix this up to be clearer with less magic bit shifting and less magic numbers. http://osgvsowi/9354902
+    WORD const InvertedOldPopupAttributes = (WORD)(((oldLegacyPopupAttributes << 4) & 0xf0) | ((oldLegacyPopupAttributes >> 4) & 0x0f));
+    WORD const InvertedNewPopupAttributes = (WORD)(((newLegacyPopupAttributes << 4) & 0xf0) | ((newLegacyPopupAttributes >> 4) & 0x0f));
+
+    // change all chars with default color
+    const SHORT sScreenBufferSizeY = GetScreenBufferSize().Y;
+    for (SHORT i = 0; i < sScreenBufferSizeY; i++)
+    {
+        ROW* const Row = &TextInfo->Rows[i];
+        Row->AttrRow.ReplaceLegacyAttrs(oldLegacyAttributes, newLegacyAttributes);
+        Row->AttrRow.ReplaceLegacyAttrs(oldLegacyPopupAttributes, newLegacyPopupAttributes);
+        Row->AttrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
+    }
+
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->ReplaceDefaultAttributes(oldAttributes, oldPopupAttributes, newAttributes, newPopupAttributes);
     }
 }
 
