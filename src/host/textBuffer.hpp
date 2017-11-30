@@ -377,8 +377,8 @@ public:
     CHAR_INFO GetFill() const;
     void SetFill(_In_ const CHAR_INFO ciFill);
 
-    NTSTATUS ResizeTraditional(_In_ COORD const currentSCreenBufferSize,
-                               _In_ COORD const coordNewScreenSize,
+    NTSTATUS ResizeTraditional(_In_ COORD const currentScreenBufferSize,
+                               _In_ COORD const newScreenBufferSize,
                                _In_ TextAttribute const attributes);
 private:
 
