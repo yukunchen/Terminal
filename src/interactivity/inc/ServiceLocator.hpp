@@ -28,7 +28,7 @@ namespace Microsoft
     {
         namespace Interactivity
         {
-            class ServiceLocator
+            class ServiceLocator final
             {
             public:
 
@@ -106,6 +106,6 @@ namespace Microsoft
 
                 static Globals s_globals;
             };
-        };
-    };
-};
+        }
+    }
+}

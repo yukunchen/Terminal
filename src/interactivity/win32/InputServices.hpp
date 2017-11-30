@@ -21,15 +21,16 @@ namespace Microsoft
         {
             namespace Win32
             {
-                class InputServices : public IInputServices
+                class InputServices final : public IInputServices
                 {
                     // Inherited via IInputServices
+                    ~InputServices() = default;
                     UINT MapVirtualKeyW(UINT uCode, UINT uMapType);
                     SHORT VkKeyScanW(WCHAR ch);
                     SHORT GetKeyState(int nVirtKey);
                     BOOL TranslateCharsetInfo(DWORD * lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags);
                 };
-            };
-        };
-    };
-};
+            }
+        }
+    }
+}
