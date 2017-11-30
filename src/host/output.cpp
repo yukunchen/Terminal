@@ -469,7 +469,14 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
                 NumRead += coordScreenBufferSize.X - X;
 
-                pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                try
+                {
+                    pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                }
+                catch (...)
+                {
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
 
                 X = 0;
                 Y++;
@@ -596,7 +603,14 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                     AttrP++;
                 }
 
-                pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                try
+                {
+                    pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                }
+                catch (...)
+                {
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
 
                 X = 0;
                 Y++;

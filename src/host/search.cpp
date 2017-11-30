@@ -136,13 +136,23 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                 }
             }
 
-            const ROW* pRow = &pScreenInfo->TextInfo->GetRowAtIndex(RowIndex);
-            if (RecomputeRow)
+            const ROW* pRow;
+            try
             {
-                RowIndex = (pScreenInfo->TextInfo->GetFirstRowIndex() + Position.Y) % pScreenInfo->GetScreenBufferSize().Y;
                 pRow = &pScreenInfo->TextInfo->GetRowAtIndex(RowIndex);
-                RecomputeRow = FALSE;
+                if (RecomputeRow)
+                {
+                    RowIndex = (pScreenInfo->TextInfo->GetFirstRowIndex() + Position.Y) % pScreenInfo->GetScreenBufferSize().Y;
+                    pRow = &pScreenInfo->TextInfo->GetRowAtIndex(RowIndex);
+                    RecomputeRow = FALSE;
+                }
             }
+            catch (...)
+            {
+                LOG_CAUGHT_EXCEPTION();
+                return 0;
+            }
+
 
     #if !defined(CON_TB_MARK)
             ASSERT(nLoop++ < 2);

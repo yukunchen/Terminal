@@ -77,11 +77,12 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
 
     const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
     const SHORT rowIndex = (pTextInfo->GetFirstRowIndex() + coordTarget.Y) % coordScreenBufferSize.Y;
-    ROW& row = pTextInfo->GetRowAtIndex(rowIndex);
 
-    if (row.CharRow.KAttrs != nullptr)
+    try
     {
-        try
+        ROW& row = pTextInfo->GetRowAtIndex(rowIndex);
+
+        if (row.CharRow.KAttrs != nullptr)
         {
             // Check start position of strings
             if (row.IsTrailingByteAtColumn(coordTarget.X))
@@ -114,8 +115,8 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
                 }
             }
         }
-        CATCH_LOG_RETURN();
     }
+    CATCH_LOG_RETURN();
 }
 
 // Routine Description:
