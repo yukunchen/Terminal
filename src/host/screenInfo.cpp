@@ -2438,6 +2438,21 @@ const TextAttribute* const  SCREEN_INFORMATION::GetPopupAttributes() const
 // - attributes - The new value of the attributes to use.
 // Return value:
 // <none>
+void SCREEN_INFORMATION::SetDefaultAttributes(_In_ const TextAttribute attributes,
+                                              _In_ const TextAttribute popupAttributes)
+{
+    SetAttributes(attributes);
+    SetPopupAttributes(popupAttributes);
+    GetAdapterDispatch()->UpdateDefaultColor(attributes.GetLegacyAttributes());
+}
+
+// Routine Description:
+// - Sets the value of the attributes on this screen buffer. Also propagates
+//     the change down to the fill of the text buffer attached to this screen buffer.
+// Parameters:
+// - attributes - The new value of the attributes to use.
+// Return value:
+// <none>
 void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute attributes)
 {
     _Attributes.SetFrom(attributes);
@@ -2459,14 +2474,13 @@ void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute attributes)
 // - wPopupAttributes - The new value of the popup attributes to use.
 // Return value:
 // <none>
-void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute* const pPopupAttributes)
+void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute popupAttributes)
 {
-    _PopupAttributes = *pPopupAttributes;
-    
+    _PopupAttributes.SetFrom(popupAttributes);
     // If we're an alt buffer, also update our main buffer.
     if (_psiMainBuffer)
     {
-        _psiMainBuffer->SetPopupAttributes(pPopupAttributes);
+        _psiMainBuffer->SetPopupAttributes(popupAttributes);
     }
 }
 

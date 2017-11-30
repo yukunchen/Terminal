@@ -167,7 +167,9 @@ public:
     const TextAttribute* const GetPopupAttributes() const;
 
     void SetAttributes(_In_ const TextAttribute attributes);
-    void SetPopupAttributes(_In_ const TextAttribute* const pPopupAttributes);
+    void SetPopupAttributes(_In_ const TextAttribute popupAttributes);
+    void SetDefaultAttributes(_In_ const TextAttribute attributes,
+                              _In_ const TextAttribute popupAttributes);
 
     HRESULT VtEraseAll();
     

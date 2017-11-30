@@ -514,7 +514,6 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     ClearAllFlags(pStateInfo->PopupAttributes, ~(FG_ATTRS | BG_ATTRS));
 
     SetScreenColors(ScreenInfo, pStateInfo->ScreenAttributes, pStateInfo->PopupAttributes, TRUE);
-    ScreenInfo->GetAdapterDispatch()->UpdateDefaultColor(pStateInfo->ScreenAttributes);
 
     ResizeCommandHistoryBuffers(pStateInfo->HistoryBufferSize);
     gci->SetNumberOfHistoryBuffers(pStateInfo->NumberOfHistoryBuffers);
