@@ -626,7 +626,6 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 void ScreenBufferSizeChange(_In_ COORD const coordNewSize)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-
     try
     {
         gci->pInputBuffer->Write(std::make_unique<WindowBufferSizeEvent>(coordNewSize));

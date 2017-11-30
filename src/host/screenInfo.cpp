@@ -14,6 +14,7 @@
 #include "..\terminal\parser\OutputStateMachineEngine.hpp"
 
 #pragma hdrstop
+using namespace Microsoft::Console::Types;
 
 #pragma region Construct/Destruct
 
@@ -1212,7 +1213,28 @@ void SCREEN_INFORMATION::_AdjustViewportSize(_In_ const RECT* const prcClientNew
     bool const fResizeFromTop = prcClientNew->top != prcClientOld->top &&
                                 prcClientNew->bottom == prcClientOld->bottom;
 
+    Viewport oldViewport = Viewport::FromInclusive(_srBufferViewport);
+
     _InternalSetViewportSize(pcoordSize, fResizeFromLeft, fResizeFromTop);
+
+    // MSFT 13194969, related to 12092729.
+    // If we're in virtual terminal mode, and the viewport dimensions change, 
+    //      send a WindowBufferSizeEvent. If the client wants VT mode, then they
+    //      probably want the viewport resizes, not just the screen buffer 
+    //      resizes. This does change the behavior of the API for v2 callers, 
+    //      but only callers who've requested VT mode. In 12092729, we enabled 
+    //      sending notifications from window resizes in cases where the buffer 
+    //      didn't resize, so this applies the same expansion to resizes using 
+    //      the window, not the API.
+    if (IsInVirtualTerminalInputMode())
+    {
+        Viewport newViewport = Viewport::FromInclusive(_srBufferViewport);
+        if ((newViewport.Width() != oldViewport.Width()) || 
+            (newViewport.Height() != oldViewport.Height()))
+        {
+            ScreenBufferSizeChange(GetScreenBufferSize());
+        }
+    }
 }
 
 // Routine Description:

@@ -26,6 +26,7 @@ Revision History:
 #include "..\terminal\adapter\adaptDispatch.hpp"
 #include "..\terminal\parser\stateMachine.hpp"
 #include "..\server\ObjectHeader.h"
+#include "..\types\inc\Viewport.hpp"
 
 #include "..\interactivity\inc\IAccessibilityNotifier.hpp"
 #include "..\interactivity\inc\IConsoleWindow.hpp"
