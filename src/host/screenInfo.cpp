@@ -107,7 +107,26 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
 
         pScreen->SetScreenBufferSize(coordScreenBufferSize);
 
-        status = TEXT_BUFFER_INFO::CreateInstance(pfiFont, coordScreenBufferSize, ciFill, uiCursorSize, &pScreen->TextInfo);
+        try
+        {
+            std::unique_ptr<TEXT_BUFFER_INFO> textBuffer = std::make_unique<TEXT_BUFFER_INFO>(pfiFont,
+                                                                                              coordScreenBufferSize,
+                                                                                              ciFill,
+                                                                                              uiCursorSize);
+            if (textBuffer.get() == nullptr)
+            {
+                status = STATUS_NO_MEMORY;
+            }
+            else
+            {
+                pScreen->TextInfo = textBuffer.release();
+                status = STATUS_SUCCESS;
+            }
+        }
+        catch (...)
+        {
+            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        }
 
         if (NT_SUCCESS(status))
         {
@@ -424,9 +443,9 @@ COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(_In_ COORD const coordFon
 
     const COORD coordScreenBufferSize = GetScreenBufferSize();
     COORD coordClientAreaSize = coordScreenBufferSize;
-    
+
     //  Important re: headless consoles on onecore (for telnetd, etc.)
-    // GetConsoleScreenBufferInfoEx hits this to get the max size of the display. 
+    // GetConsoleScreenBufferInfoEx hits this to get the max size of the display.
     // Because we're headless, we don't really care about the max size of the display.
     // In that case, we'll just return the buffer size as the "max" window size.
     if (!ServiceLocator::LocateGlobals()->IsHeadless())
@@ -1340,88 +1359,162 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
     CHAR_INFO ciFill;
     ciFill.Attributes = _Attributes.GetLegacyAttributes();
 
-    TEXT_BUFFER_INFO* pNewBuffer;
-    NTSTATUS status = TEXT_BUFFER_INFO::CreateInstance(TextInfo->GetCurrentFont(),
-                                                       coordNewScreenSize,
-                                                       ciFill,
-                                                       0, // temporarily set size to 0 so it won't render.
-                                                       &pNewBuffer);
+    std::unique_ptr<TEXT_BUFFER_INFO> newTextBuffer;
+    try
+    {
+        newTextBuffer = std::make_unique<TEXT_BUFFER_INFO>(TextInfo->GetCurrentFont(),
+                                                           coordNewScreenSize,
+                                                           ciFill,
+                                                           0); // temporarily set size to 0 so it won't render.
+    }
+    catch (...)
+    {
+        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+    }
 
     // Save cursor's relative height versus the viewport
     SHORT const sCursorHeightInViewportBefore = TextInfo->GetCursor()->GetPosition().Y - _srBufferViewport.Top;
 
-    if (NT_SUCCESS(status))
+    Cursor* const pOldCursor = TextInfo->GetCursor();
+    Cursor* const pNewCursor = newTextBuffer->GetCursor();
+    // skip any drawing updates that might occur as we manipulate the new buffer
+    pNewCursor->StartDeferDrawing();
+
+    // We need to save the old cursor position so that we can
+    // place the new cursor back on the equivalent character in
+    // the new buffer.
+    COORD cOldCursorPos = pOldCursor->GetPosition();
+    COORD cOldLastChar = TextInfo->GetLastNonSpaceCharacter();
+
+    short const cOldRowsTotal = cOldLastChar.Y + 1;
+    short const cOldColsTotal = GetScreenBufferSize().X;
+
+    COORD cNewCursorPos = { 0 };
+    bool fFoundCursorPos = false;
+    NTSTATUS status = STATUS_SUCCESS;
+    // Loop through all the rows of the old buffer and reprint them into the new buffer
+    for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
     {
-        Cursor* const pOldCursor = TextInfo->GetCursor();
-        Cursor* const pNewCursor = pNewBuffer->GetCursor();
-        // skip any drawing updates that might occur as we manipulate the new buffer
-        pNewCursor->StartDeferDrawing();
+        // Fetch the row and its "right" which is the last printable character.
+        const ROW& Row = TextInfo->GetRowByOffset(iOldRow);
+        short iRight = Row.CharRow.Right;
 
-        // We need to save the old cursor position so that we can
-        // place the new cursor back on the equivalent character in
-        // the new buffer.
-        COORD cOldCursorPos = pOldCursor->GetPosition();
-        COORD cOldLastChar = TextInfo->GetLastNonSpaceCharacter();
-
-        short const cOldRowsTotal = cOldLastChar.Y + 1;
-        short const cOldColsTotal = GetScreenBufferSize().X;
-
-        COORD cNewCursorPos = { 0 };
-        bool fFoundCursorPos = false;
-        // Loop through all the rows of the old buffer and reprint them into the new buffer
-        for (short iOldRow = 0; iOldRow < cOldRowsTotal; iOldRow++)
+        // There is a special case here. If the row has a "wrap"
+        // flag on it, but the right isn't equal to the width (one
+        // index past the final valid index in the row) then there
+        // were a bunch trailing of spaces in the row.
+        // (But the measuring functions for each row Left/Right do
+        // not count spaces as "displayable" so they're not
+        // included.)
+        // As such, adjust the "right" to be the width of the row
+        // to capture all these spaces
+        if (Row.CharRow.WasWrapForced())
         {
-            // Fetch the row and its "right" which is the last printable character.
-            const ROW& Row = TextInfo->GetRowByOffset(iOldRow);
-            short iRight = Row.CharRow.Right;
+            iRight = cOldColsTotal;
 
-            // There is a special case here. If the row has a "wrap"
-            // flag on it, but the right isn't equal to the width (one
-            // index past the final valid index in the row) then there
-            // were a bunch trailing of spaces in the row.
-            // (But the measuring functions for each row Left/Right do
-            // not count spaces as "displayable" so they're not
-            // included.)
-            // As such, adjust the "right" to be the width of the row
-            // to capture all these spaces
-            if (Row.CharRow.WasWrapForced())
+            // And a combined special case.
+            // If we wrapped off the end of the row by adding a
+            // piece of padding because of a double byte LEADING
+            // character, then remove one from the "right" to
+            // leave this padding out of the copy process.
+            if (Row.CharRow.WasDoubleBytePadded())
             {
-                iRight = cOldColsTotal;
+                iRight--;
+            }
+        }
 
-                // And a combined special case.
-                // If we wrapped off the end of the row by adding a
-                // piece of padding because of a double byte LEADING
-                // character, then remove one from the "right" to
-                // leave this padding out of the copy process.
-                if (Row.CharRow.WasDoubleBytePadded())
-                {
-                    iRight--;
-                }
+        // Loop through every character in the current row (up to
+        // the "right" boundary, which is one past the final valid
+        // character)
+        for (short iOldCol = 0; iOldCol < iRight; iOldCol++)
+        {
+            // Retrieve old character and double-byte attributes
+            const WCHAR wchChar = Row.CharRow.Chars[iOldCol];
+            const BYTE bKAttr = Row.CharRow.KAttrs[iOldCol];
+
+            // Extract the color attribute that applies to this character
+            TextAttributeRun* rAttrRun;
+            UINT cAttrApplies;
+
+            Row.AttrRow.FindAttrIndex(iOldCol, &rAttrRun, &cAttrApplies);
+
+            if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
+            {
+                cNewCursorPos = pNewCursor->GetPosition();
+                fFoundCursorPos = true;
             }
 
-            // Loop through every character in the current row (up to
-            // the "right" boundary, which is one past the final valid
-            // character)
-            for (short iOldCol = 0; iOldCol < iRight; iOldCol++)
+            // Insert it into the new buffer
+            if (!newTextBuffer->InsertCharacter(wchChar, bKAttr, rAttrRun->GetAttributes()))
             {
-                // Retrieve old character and double-byte attributes
-                const WCHAR wchChar = Row.CharRow.Chars[iOldCol];
-                const BYTE bKAttr = Row.CharRow.KAttrs[iOldCol];
-
-                // Extract the color attribute that applies to this character
-                TextAttributeRun* rAttrRun;
-                UINT cAttrApplies;
-
-                Row.AttrRow.FindAttrIndex(iOldCol, &rAttrRun, &cAttrApplies);
-
-                if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
+                status = STATUS_NO_MEMORY;
+                break;
+            }
+        }
+        if (NT_SUCCESS(status))
+        {
+            // If we didn't have a full row to copy, insert a new
+            // line into the new buffer.
+            // Only do so if we were not forced to wrap. If we did
+            // force a word wrap, then the existing line break was
+            // only because we ran out of space.
+            if (iRight < cOldColsTotal && !Row.CharRow.WasWrapForced())
+            {
+                if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
                 {
                     cNewCursorPos = pNewCursor->GetPosition();
                     fFoundCursorPos = true;
                 }
+                // Only do this if it's not the final line in the buffer.
+                // On the final line, we want the cursor to sit
+                // where it is done printing for the cursor
+                // adjustment to follow.
+                if (iOldRow < cOldRowsTotal - 1)
+                {
+                    status = newTextBuffer->NewlineCursor() ? status : STATUS_NO_MEMORY;
+                }
+            }
+        }
+    }
+    if (NT_SUCCESS(status))
+    {
+        // Finish copying remaining parameters from the old text buffer to the new one
+        newTextBuffer->CopyProperties(TextInfo);
 
-                // Insert it into the new buffer
-                if (!pNewBuffer->InsertCharacter(wchChar, bKAttr, rAttrRun->GetAttributes()))
+        // If we found where to put the cursor while placing characters into the buffer,
+        //   just put the cursor there. Otherwise we have to advance manually.
+        if (fFoundCursorPos)
+        {
+            pNewCursor->SetPosition(cNewCursorPos);
+        }
+        else
+        {
+            // Advance the cursor to the same offset as before
+            // get the number of newlines and spaces between the old end of text and the old cursor,
+            //   then advance that many newlines and chars
+            int iNewlines = cOldCursorPos.Y - cOldLastChar.Y;
+            int iIncrements = cOldCursorPos.X - cOldLastChar.X;
+            const COORD cNewLastChar = newTextBuffer->GetLastNonSpaceCharacter();
+
+            // If the last row of the new buffer wrapped, there's going to be one less newline needed,
+            //   because the cursor is already on the next line
+            if (newTextBuffer->GetRowByOffset(cNewLastChar.Y).CharRow.WasWrapForced())
+            {
+                iNewlines = max(iNewlines - 1, 0);
+            }
+            else
+            {
+                // if this buffer didn't wrap, but the old one DID, then the d(columns) of the
+                //   old buffer will be one more than in this buffer, so new need one LESS.
+                if (TextInfo->GetRowByOffset(cOldLastChar.Y).CharRow.WasWrapForced())
+                {
+                    iNewlines = max(iNewlines - 1, 0);
+                }
+            }
+
+            for (int r = 0; r < iNewlines; r++)
+            {
+                if (!newTextBuffer->NewlineCursor())
                 {
                     status = STATUS_NO_MEMORY;
                     break;
@@ -1429,107 +1522,37 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
             }
             if (NT_SUCCESS(status))
             {
-                // If we didn't have a full row to copy, insert a new
-                // line into the new buffer.
-                // Only do so if we were not forced to wrap. If we did
-                // force a word wrap, then the existing line break was
-                // only because we ran out of space.
-                if (iRight < cOldColsTotal && !Row.CharRow.WasWrapForced())
+                for (int c = 0; c < iIncrements - 1; c++)
                 {
-                    if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
-                    {
-                        cNewCursorPos = pNewCursor->GetPosition();
-                        fFoundCursorPos = true;
-                    }
-                    // Only do this if it's not the final line in the buffer.
-                    // On the final line, we want the cursor to sit
-                    // where it is done printing for the cursor
-                    // adjustment to follow.
-                    if (iOldRow < cOldRowsTotal - 1)
-                    {
-                        status = pNewBuffer->NewlineCursor() ? status : STATUS_NO_MEMORY;
-                    }
-                }
-            }
-        }
-        if (NT_SUCCESS(status))
-        {
-            // Finish copying remaining parameters from the old text buffer to the new one
-            pNewBuffer->CopyProperties(TextInfo);
-
-            // If we found where to put the cursor while placing characters into the buffer,
-            //   just put the cursor there. Otherwise we have to advance manually.
-            if (fFoundCursorPos)
-            {
-                pNewCursor->SetPosition(cNewCursorPos);
-            }
-            else
-            {
-                // Advance the cursor to the same offset as before
-                // get the number of newlines and spaces between the old end of text and the old cursor,
-                //   then advance that many newlines and chars
-                int iNewlines = cOldCursorPos.Y - cOldLastChar.Y;
-                int iIncrements = cOldCursorPos.X - cOldLastChar.X;
-                const COORD cNewLastChar = pNewBuffer->GetLastNonSpaceCharacter();
-
-                // If the last row of the new buffer wrapped, there's going to be one less newline needed,
-                //   because the cursor is already on the next line
-                if (pNewBuffer->GetRowByOffset(cNewLastChar.Y).CharRow.WasWrapForced())
-                {
-                    iNewlines = max(iNewlines - 1, 0);
-                }
-                else
-                {
-                    // if this buffer didn't wrap, but the old one DID, then the d(columns) of the
-                    //   old buffer will be one more than in this buffer, so new need one LESS.
-                    if (TextInfo->GetRowByOffset(cOldLastChar.Y).CharRow.WasWrapForced())
-                    {
-                        iNewlines = max(iNewlines - 1, 0);
-                    }
-                }
-
-                for (int r = 0; r < iNewlines; r++)
-                {
-                    if (!pNewBuffer->NewlineCursor())
+                    if (!newTextBuffer->IncrementCursor())
                     {
                         status = STATUS_NO_MEMORY;
                         break;
                     }
                 }
-                if (NT_SUCCESS(status))
-                {
-                    for (int c = 0; c < iIncrements - 1; c++)
-                    {
-                        if (!pNewBuffer->IncrementCursor())
-                        {
-                            status = STATUS_NO_MEMORY;
-                            break;
-                        }
-                    }
-                }
             }
         }
-        if (NT_SUCCESS(status))
-        {
-            // Adjust the viewport so the cursor doesn't wildly fly off up or down.
-            SHORT const sCursorHeightInViewportAfter = pNewCursor->GetPosition().Y - _srBufferViewport.Top;
-            COORD coordCursorHeightDiff = { 0 };
-            coordCursorHeightDiff.Y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
-            SetViewportOrigin(FALSE, coordCursorHeightDiff);
+    }
+    if (NT_SUCCESS(status))
+    {
+        // Adjust the viewport so the cursor doesn't wildly fly off up or down.
+        SHORT const sCursorHeightInViewportAfter = pNewCursor->GetPosition().Y - _srBufferViewport.Top;
+        COORD coordCursorHeightDiff = { 0 };
+        coordCursorHeightDiff.Y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
+        SetViewportOrigin(FALSE, coordCursorHeightDiff);
 
-            // Save old cursor size before we delete it
-            ULONG const ulSize = pOldCursor->GetSize();
+        // Save old cursor size before we delete it
+        ULONG const ulSize = pOldCursor->GetSize();
 
-            // Free old text buffer
-            delete TextInfo;
+        // Free old text buffer
+        delete TextInfo;
 
-            // Place new text buffer into position
-            TextInfo = pNewBuffer;
+        // Place new text buffer into position
+        TextInfo = newTextBuffer.release();
 
-            // Set size back to real size as it will be taking over the rendering duties.
-            pNewCursor->SetSize(ulSize);
-            pNewCursor->EndDeferDrawing();
-        }
+        // Set size back to real size as it will be taking over the rendering duties.
+        pNewCursor->SetSize(ulSize);
+        pNewCursor->EndDeferDrawing();
     }
 
     return status;

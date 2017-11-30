@@ -309,27 +309,12 @@ constexpr bool operator==(const ROW& a, const ROW& b) noexcept
 
 class TEXT_BUFFER_INFO final
 {
-private:
-    // TEXT_BUFFER_INFO is supposed to be created by calling the static CreateInstance() function instead of the
-    // constructor. But CreateInstance() uses std::make_unique() (which cannot be made a friend function) so the
-    // constructor must be public. In order to enforce usage of CreateInstance() a dummy class is added to the
-    // constructor which can only be created from within TEXT_BUFFER_INFO, effectively making the constructor
-    // out of reach to the rest of the codebase (even if it is public). This should be removed if
-    // CreateInstance() is ever removed.
-    class ConstructorGuard final
-    {
-    public:
-        explicit ConstructorGuard() {}
-    };
-
 public:
-    TEXT_BUFFER_INFO(_In_ const FontInfo* const pfiFont, _In_ const ConstructorGuard guard);
-
-    static NTSTATUS CreateInstance(_In_ const FontInfo* const pFontInfo,
-                                   _In_ COORD coordScreenBufferSize,
-                                   _In_ CHAR_INFO const Fill,
-                                   _In_ UINT const uiCursorSize,
-                                   _Outptr_ TEXT_BUFFER_INFO ** const ppTextBufferInfo);
+    TEXT_BUFFER_INFO(_In_ const FontInfo* const pFontInfo,
+                     _In_ const COORD screenBufferSize,
+                     _In_ const CHAR_INFO fill,
+                     _In_ const UINT cursorSize);
+    TEXT_BUFFER_INFO(_In_ const TEXT_BUFFER_INFO& a) = delete;
 
     ~TEXT_BUFFER_INFO();
 

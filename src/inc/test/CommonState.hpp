@@ -133,12 +133,22 @@ public:
         UINT uiCursorSize = 12;
 
         m_backupTextBufferInfo = gci->CurrentScreenBuffer->TextInfo;
-
-        m_ntstatusTextBufferInfo = TEXT_BUFFER_INFO::CreateInstance(m_pFontInfo,
-                                                                    coordScreenBufferSize,
-                                                                    ciFill,
-                                                                    uiCursorSize,
-                                                                    &gci->CurrentScreenBuffer->TextInfo);
+        try
+        {
+            std::unique_ptr<TEXT_BUFFER_INFO> textBuffer = std::make_unique<TEXT_BUFFER_INFO>(m_pFontInfo,
+                                                                                              coordScreenBufferSize,
+                                                                                              ciFill,
+                                                                                              uiCursorSize);
+            if (textBuffer.get() == nullptr)
+            {
+                m_ntstatusTextBufferInfo = STATUS_NO_MEMORY;
+            }
+            gci->CurrentScreenBuffer->TextInfo = textBuffer.release();
+        }
+        catch (...)
+        {
+            m_ntstatusTextBufferInfo = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        }
     }
 
     void CleanupNewTextBufferInfo()

@@ -323,36 +323,37 @@ void TextBufferTests::TestCopyProperties()
 {
     TEXT_BUFFER_INFO* pOtherTbi = GetTbi();
 
-    TEXT_BUFFER_INFO* pNewTbi = new TEXT_BUFFER_INFO(&pOtherTbi->_fiCurrentFont, TEXT_BUFFER_INFO::ConstructorGuard{});
-    // value is irrelevant for this test
-    pNewTbi->_pCursor = new Cursor(ServiceLocator::LocateAccessibilityNotifier(), 40);
+    std::unique_ptr<TEXT_BUFFER_INFO> testTextBuffer = std::make_unique<TEXT_BUFFER_INFO>(&pOtherTbi->_fiCurrentFont,
+                                                                                          pOtherTbi->_coordBufferSize,
+                                                                                          pOtherTbi->_ciFill,
+                                                                                          12);
+    VERIFY_IS_NOT_NULL(testTextBuffer.get());
+
     // set initial mapping values
-    pNewTbi->GetCursor()->SetHasMoved(FALSE);
+    testTextBuffer->GetCursor()->SetHasMoved(FALSE);
     pOtherTbi->GetCursor()->SetHasMoved(TRUE);
 
-    pNewTbi->GetCursor()->SetIsVisible(FALSE);
+    testTextBuffer->GetCursor()->SetIsVisible(FALSE);
     pOtherTbi->GetCursor()->SetIsVisible(TRUE);
 
-    pNewTbi->GetCursor()->SetIsOn(FALSE);
+    testTextBuffer->GetCursor()->SetIsOn(FALSE);
     pOtherTbi->GetCursor()->SetIsOn(TRUE);
 
-    pNewTbi->GetCursor()->SetIsDouble(FALSE);
+    testTextBuffer->GetCursor()->SetIsDouble(FALSE);
     pOtherTbi->GetCursor()->SetIsDouble(TRUE);
 
-    pNewTbi->GetCursor()->SetDelay(FALSE);
+    testTextBuffer->GetCursor()->SetDelay(FALSE);
     pOtherTbi->GetCursor()->SetDelay(TRUE);
 
     // run copy
-    pNewTbi->CopyProperties(pOtherTbi);
+    testTextBuffer->CopyProperties(pOtherTbi);
 
     // test that new now contains values from other
-    VERIFY_ARE_EQUAL(pNewTbi->GetCursor()->HasMoved(), TRUE);
-    VERIFY_ARE_EQUAL(pNewTbi->GetCursor()->IsVisible(), TRUE);
-    VERIFY_ARE_EQUAL(pNewTbi->GetCursor()->IsOn(), TRUE);
-    VERIFY_ARE_EQUAL(pNewTbi->GetCursor()->IsDouble(), TRUE);
-    VERIFY_ARE_EQUAL(pNewTbi->GetCursor()->GetDelay(), TRUE);
-
-    delete pNewTbi;
+    VERIFY_ARE_EQUAL(testTextBuffer->GetCursor()->HasMoved(), TRUE);
+    VERIFY_ARE_EQUAL(testTextBuffer->GetCursor()->IsVisible(), TRUE);
+    VERIFY_ARE_EQUAL(testTextBuffer->GetCursor()->IsOn(), TRUE);
+    VERIFY_ARE_EQUAL(testTextBuffer->GetCursor()->IsDouble(), TRUE);
+    VERIFY_ARE_EQUAL(testTextBuffer->GetCursor()->GetDelay(), TRUE);
 }
 
 void TextBufferTests::TestInsertCharacter()

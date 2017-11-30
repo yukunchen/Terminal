@@ -1360,12 +1360,36 @@ void ROW::ClearColumn(_In_ const size_t column)
 #pragma region TEXT_BUFFER_INFO
 
 // Routine Description:
-// - Constructor to set default properties for TEXT_BUFFER_INFO
-TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(_In_ const FontInfo* const pfiFont, _In_ const ConstructorGuard /*guard*/) :
-    _fiCurrentFont(*pfiFont),
-    _fiDesiredFont(*pfiFont)
+// - Creates a new instance of TEXT_BUFFER_INFO
+// Arguments:
+// - pFontInfo - The font to use for this text buffer as specified in the global font cache
+// - screenBufferSize - The X by Y dimensions of the new screen buffer
+// - fill - Uses the .Attributes property to decide which default color to apply to all text in this buffer
+// - cursorSize - The height of the cursor within this buffer
+// Return Value:
+// - constructed object
+// Note: may throw exception
+TEXT_BUFFER_INFO::TEXT_BUFFER_INFO(_In_ const FontInfo* const pFontInfo,
+                                   _In_ const COORD screenBufferSize,
+                                   _In_ const CHAR_INFO fill,
+                                   _In_ const UINT cursorSize) :
+    _fiCurrentFont{ *pFontInfo },
+    _fiDesiredFont{ *pFontInfo },
+    _FirstRow{ 0 },
+    _ciFill{ fill },
+    _coordBufferSize{ screenBufferSize },
+    _pCursor{ nullptr },
+    _storage{}
 {
+    THROW_IF_FAILED(HRESULT_FROM_NT(Cursor::CreateInstance(static_cast<ULONG>(cursorSize), &_pCursor)));
 
+    // initialize ROWs
+    for (size_t i = 0; i < static_cast<size_t>(screenBufferSize.Y); ++i)
+    {
+        TextAttribute FillAttributes;
+        FillAttributes.SetFromLegacy(_ciFill.Attributes);
+        _storage.emplace_back(static_cast<SHORT>(i), screenBufferSize.X, FillAttributes);
+    }
 }
 
 // Routine Description:
@@ -1381,67 +1405,6 @@ TEXT_BUFFER_INFO::~TEXT_BUFFER_INFO()
     }
 }
 #pragma prefast(pop)
-
-// Routine Description:
-// - Creates a new instance of TEXT_BUFFER_INFO
-// Arguments:
-// - nFont - The index of the font to use for this text buffer as specified in the global font cache
-// - coordScreenBufferSize - The X by Y dimensions of the new screen buffer
-// - ciFill - Uses the .Attributes property to decide which default color to apply to all text in this buffer
-// - uiCursorSize - The height of the cursor within this buffer
-// - pwszFaceName - (Optional) Used in conjunction with nFont to look up the appropriate font in the global font cache
-// - ppTextBufferInfo - Pointer to accept the instance of the newly created text buffer
-// Return Value:
-// - Success or a relevant error status (usually out of memory).
-NTSTATUS TEXT_BUFFER_INFO::CreateInstance(_In_ const FontInfo* const pFontInfo,
-                                          _In_ COORD const coordScreenBufferSize,
-                                          _In_ CHAR_INFO const ciFill,
-                                          _In_ UINT const uiCursorSize,
-                                          _Outptr_ PPTEXT_BUFFER_INFO const ppTextBufferInfo)
-{
-    *ppTextBufferInfo = nullptr;
-
-    NTSTATUS status = STATUS_SUCCESS;
-
-    std::unique_ptr<TEXT_BUFFER_INFO> textBuffer;
-    try
-    {
-        textBuffer = std::make_unique<TEXT_BUFFER_INFO>(pFontInfo, ConstructorGuard{});
-    }
-    CATCH_RETURN();
-
-    if (textBuffer.get() == nullptr)
-    {
-        return STATUS_NO_MEMORY;
-    }
-
-    status = Cursor::CreateInstance(static_cast<ULONG>(uiCursorSize), &textBuffer->_pCursor);
-    if (NT_SUCCESS(status))
-    {
-        // This has to come after the font is set because this function is dependent on the font info.
-        // TODO: make this less prone to error by perhaps putting the storage of the first buffer font info as a part of TEXT_BUFFER_INFO's constructor
-
-        textBuffer->_FirstRow = 0;
-        textBuffer->_ciFill = ciFill;
-        textBuffer->_coordBufferSize = coordScreenBufferSize;
-
-        for (size_t i = 0; i < static_cast<size_t>(coordScreenBufferSize.Y); ++i)
-        {
-            try
-            {
-                TextAttribute FillAttributes;
-                FillAttributes.SetFromLegacy(ciFill.Attributes);
-                textBuffer->_storage.emplace_back(static_cast<SHORT>(i), coordScreenBufferSize.X, FillAttributes);
-            }
-            catch (...)
-            {
-                return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-            }
-        }
-        *ppTextBufferInfo = textBuffer.release();
-    }
-    return status;
-}
 
 // Routine Description:
 // - Copies properties from another text buffer into this one.
