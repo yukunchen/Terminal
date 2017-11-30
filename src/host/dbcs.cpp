@@ -81,36 +81,40 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
 
     if (row.CharRow.KAttrs != nullptr)
     {
-        // Check start position of strings
-        if (row.IsTrailingByteAtColumn(coordTarget.X))
+        try
         {
-            if (coordTarget.X == 0)
+            // Check start position of strings
+            if (row.IsTrailingByteAtColumn(coordTarget.X))
             {
-                pTextInfo->GetPrevRow(row).ClearColumn(coordScreenBufferSize.X - 1);
+                if (coordTarget.X == 0)
+                {
+                    pTextInfo->GetPrevRow(row).ClearColumn(coordScreenBufferSize.X - 1);
+                }
+                else
+                {
+                    row.ClearColumn(coordTarget.X - 1);
+                }
             }
-            else
-            {
-                row.ClearColumn(coordTarget.X - 1);
-            }
-        }
 
-        // Check end position of strings
-        if (coordTarget.X + sStringLen < coordScreenBufferSize.X)
-        {
-            size_t column = coordTarget.X + sStringLen;
-            if (row.IsTrailingByteAtColumn(column))
+            // Check end position of strings
+            if (coordTarget.X + sStringLen < coordScreenBufferSize.X)
             {
-                row.ClearColumn(column);
+                size_t column = coordTarget.X + sStringLen;
+                if (row.IsTrailingByteAtColumn(column))
+                {
+                    row.ClearColumn(column);
+                }
+            }
+            else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
+            {
+                ROW& rowNext = pTextInfo->GetNextRow(row);
+                if (rowNext.IsTrailingByteAtColumn(0))
+                {
+                    rowNext.ClearColumn(0);
+                }
             }
         }
-        else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
-        {
-            ROW& rowNext = pTextInfo->GetNextRow(row);
-            if (rowNext.IsTrailingByteAtColumn(0))
-            {
-                rowNext.ClearColumn(0);
-            }
-        }
+        CATCH_LOG_RETURN();
     }
 }
 

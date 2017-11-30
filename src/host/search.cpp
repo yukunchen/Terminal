@@ -146,9 +146,17 @@ USHORT SearchForString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
     #if !defined(CON_TB_MARK)
             ASSERT(nLoop++ < 2);
-            if (pRow->CharRow.KAttrs && pRow->IsTrailingByteAtColumn(Position.X))
+            try
             {
-                goto recalc;
+                if (pRow->CharRow.KAttrs && pRow->IsTrailingByteAtColumn(Position.X))
+                {
+                    goto recalc;
+                }
+            }
+            catch (...)
+            {
+                LOG_CAUGHT_EXCEPTION();
+                return 0;
             }
     #endif
             if (IgnoreCase ?
