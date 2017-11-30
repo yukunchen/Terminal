@@ -697,6 +697,10 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 void SCREEN_INFORMATION::SetViewportSize(_In_ const COORD* const pcoordSize)
 {
     _InternalSetViewportSize(pcoordSize, false, false);
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->_InternalSetViewportSize(pcoordSize, false, false);
+    }
 }
 
 NTSTATUS SCREEN_INFORMATION::SetViewportOrigin(_In_ const BOOL fAbsolute, _In_ const COORD coordWindowOrigin)
