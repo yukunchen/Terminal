@@ -569,6 +569,12 @@ void SCREEN_INFORMATION::UpdateFont(_In_ const FontInfo* const pfiNewFont)
             pWindow->UpdateWindowSize(coordViewport);
         }
     }
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->UpdateFont(pfiNewFont);
+    }
 }
 
 // NOTE: This method was historically used to notify accessibility apps AND
@@ -1725,7 +1731,8 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSi
 // - DoScrollBarUpdate - indicates whether to update scroll bars at the end
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
-NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(_In_ const COORD coordNewScreenSize, _In_ const bool fDoScrollBarUpdate)
+NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(_In_ const COORD coordNewScreenSize,
+                                                _In_ const bool fDoScrollBarUpdate)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;
@@ -1778,6 +1785,26 @@ NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(_In_ const COORD coordNewScreenS
             this->UpdateScrollBars();
         }
         ScreenBufferSizeChange(coordSetScreenBufferSize);
+    }
+
+    if (NT_SUCCESS(status))
+    {
+        // If we're an alt buffer, we want to make sure the main buffer gets 
+        //      updated as well. However, the alt buffer's height is forced to 
+        //      match the height of the window. So, only update the height if 
+        //      we've resized the alt buffer to be bigger than the original 
+        //      main buffer size.
+        if (_psiMainBuffer)
+        {
+            COORD newMainBufferSize = coordNewScreenSize;
+            if (coordNewScreenSize.Y < _psiMainBuffer->GetScreenBufferSize().Y)
+            {
+                newMainBufferSize.Y = coordNewScreenSize.Y;
+            }
+
+            _psiMainBuffer->ResizeScreenBuffer(newMainBufferSize, fDoScrollBarUpdate);
+
+        }
     }
 
     return status;
@@ -1845,7 +1872,9 @@ void SCREEN_INFORMATION::MakeCurrentCursorVisible()
 }
 
 // Routine Description:
-// - This routine sets the cursor size and visibility both in the data structures and on the screen.
+// - This routine sets the cursor size and visibility both in the data 
+//      structures and on the screen. Also updates the cursor information of 
+//      this buffer's main buffer, if this buffer is an alt buffer.
 // Arguments:
 // - ScreenInfo - pointer to screen info structure.
 // - Size - cursor size
@@ -1859,6 +1888,13 @@ NTSTATUS SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size, _In_ BO
 
     pCursor->SetSize(Size);
     pCursor->SetIsVisible(Visible);
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetCursorInformation(Size, Visible);
+    }
+
     return STATUS_SUCCESS;
 }
 
@@ -1880,6 +1916,13 @@ NTSTATUS SCREEN_INFORMATION::SetCursorDBMode(_In_ BOOLEAN const DoubleCursor)
     {
         pCursor->SetIsDouble(DoubleCursor);
     }
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetCursorDBMode(DoubleCursor);
+    }
+
     return STATUS_SUCCESS;
 }
 
@@ -2402,6 +2445,12 @@ void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute attributes)
     CHAR_INFO ciFill = TextInfo->GetFill();
     ciFill.Attributes = _Attributes.GetLegacyAttributes();
     TextInfo->SetFill(ciFill);
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetAttributes(attributes);
+    }
 }
 
 // Routine Description:
@@ -2413,6 +2462,12 @@ void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute attributes)
 void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute* const pPopupAttributes)
 {
     _PopupAttributes = *pPopupAttributes;
+    
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetPopupAttributes(pPopupAttributes);
+    }
 }
 
 // Method Description:

@@ -371,9 +371,6 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     PSCREEN_INFORMATION const ScreenInfo = gci->CurrentScreenBuffer;
-    // If there is a main buffer (we're currently in the alt buffer), we're 
-    //      going to change it's properties as well.
-    SCREEN_INFORMATION* const mainBuffer = ScreenInfo->GetMainBuffer();
 
     if (gci->OutputCP != pStateInfo->CodePage)
     {
@@ -407,10 +404,6 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     FontInfo fiNewFont(pStateInfo->FaceName, static_cast<BYTE>(pStateInfo->FontFamily), pStateInfo->FontWeight, pStateInfo->FontSize, pStateInfo->CodePage);
 
     ScreenInfo->UpdateFont(&fiNewFont);
-    if (mainBuffer)
-    {
-        mainBuffer->UpdateFont(&fiNewFont);
-    }
 
     const FontInfo* const pfiFontApplied = ScreenInfo->TextInfo->GetCurrentFont();
 
@@ -421,10 +414,6 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci->SetFaceName(pfiFontApplied->GetFaceName(), LF_FACESIZE);
 
     ScreenInfo->SetCursorInformation(pStateInfo->CursorSize, ScreenInfo->TextInfo->GetCursor()->IsVisible());
-    if (mainBuffer)
-    {
-        mainBuffer->SetCursorInformation(pStateInfo->CursorSize, mainBuffer->TextInfo->GetCursor()->IsVisible());
-    }
 
     {
         // Requested window in characters
@@ -468,21 +457,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
             pCommandLine->Hide(FALSE);
 
-            ScreenInfo->ResizeScreenBuffer(coordBuffer, TRUE);            
-            if (mainBuffer)
-            {
-                COORD mainBufferSize = mainBuffer->GetScreenBufferSize();
-                if (coordBuffer.X != mainBufferSize.X)
-                {
-                    mainBufferSize.X = coordBuffer.X;
-                }
-                if (coordBuffer.Y > mainBufferSize.Y)
-                {
-                    mainBufferSize.Y = coordBuffer.Y;
-                }
-
-                mainBuffer->ResizeScreenBuffer(mainBufferSize, TRUE);
-            }
+            ScreenInfo->ResizeScreenBuffer(coordBuffer, TRUE);
 
             pCommandLine->Show();
         }
@@ -525,10 +500,6 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     if (gci->GetInsertMode() != !!pStateInfo->InsertMode)
     {
         ScreenInfo->SetCursorDBMode(FALSE);
-        if (mainBuffer)
-        {
-            mainBuffer->SetCursorDBMode(FALSE);
-        }
         gci->SetInsertMode(pStateInfo->InsertMode != FALSE);
         if (gci->lpCookedReadData)
         {
@@ -543,11 +514,6 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     ClearAllFlags(pStateInfo->PopupAttributes, ~(FG_ATTRS | BG_ATTRS));
 
     SetScreenColors(ScreenInfo, pStateInfo->ScreenAttributes, pStateInfo->PopupAttributes, TRUE);
-    if (mainBuffer)
-    {
-        SetScreenColors(mainBuffer, pStateInfo->ScreenAttributes, pStateInfo->PopupAttributes, TRUE);
-    }
-
     ScreenInfo->GetAdapterDispatch()->UpdateDefaultColor(pStateInfo->ScreenAttributes);
 
     ResizeCommandHistoryBuffers(pStateInfo->HistoryBufferSize);

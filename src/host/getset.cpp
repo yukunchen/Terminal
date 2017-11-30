@@ -678,6 +678,10 @@ NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attribut
     ScreenInfo->SetPopupAttributes(&NewPopupAttributes);
     gci->ConsoleIme.RefreshAreaAttributes();
 
+    // TODO come back to this before the PR is done.
+    // Merge in 14277077 to this branch, move the "UpdateWholeScreen" path into
+    // UpdateDefaults() as well, and then have updateDefaults call the main's updateDefaults
+
     if (UpdateWholeScreen)
     {
         // TODO: MSFT 9354902: Fix this up to be clearer with less magic bit shifting and less magic numbers. http://osgvsowi/9354902
