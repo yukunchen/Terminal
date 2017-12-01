@@ -122,7 +122,12 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
             fSuccess = _GenerateKeyFromChar(wch, &vkey, nullptr);
             break;
         case L'\x1b':
-            fSuccess = _GenerateKeyFromChar(wch+0x40, &vkey, nullptr);
+            // Translate escape as the ESC key, NOT C-[.
+            // This means that C-[ won't insert ^[ into the buffer anymore, 
+            //      which isn't the worst tradeoff.
+            vkey = VK_ESCAPE; 
+            writeCtrl = false;
+            fSuccess = true; 
             break;
         case L'\t':
             writeCtrl = false;

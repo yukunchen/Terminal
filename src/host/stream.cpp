@@ -152,6 +152,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
                 if (pCommandLineEditingKeys && commandLineEditKey)
                 {
                     *pCommandLineEditingKeys = true;
+                    // This can't possibly be right...
                     *pwchOut = static_cast<wchar_t>(keyEvent->GetVirtualKeyCode());
                     return STATUS_SUCCESS;
                 }
