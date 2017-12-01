@@ -18,11 +18,12 @@ Revision History:
 
 #pragma once
 
+#include "TextAttribute.hpp"
+
 // To prevent invisible windows, set a lower threshold on window alpha channel.
 #define MIN_WINDOW_OPACITY 0x4D // 0x4D is approximately 30% visible/opaque (70% transparent). Valid range is 0x00-0xff.
 #define COLOR_TABLE_SIZE (16)
 #define XTERM_COLOR_TABLE_SIZE (256)
-class TextAttribute;
 
 class Settings
 {
