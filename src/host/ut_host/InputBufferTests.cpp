@@ -7,11 +7,10 @@
 #include "precomp.h"
 #include "WexTestClass.h"
 #include "..\..\inc\consoletaeftemplates.hpp"
+#include "CommonState.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\types\inc\IInputEvent.hpp"
-
-#define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(SUCCEEDED_NTSTATUS(x))
 
 using namespace WEX::Logging;
 

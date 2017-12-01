@@ -114,7 +114,7 @@ class UiaTextRangeTests
 
     const unsigned int _getRowWidth() const
     {
-        const CHAR_ROW charRow = _pTextBuffer->GetFirstRow()->CharRow;
+        const CHAR_ROW charRow = _pTextBuffer->GetFirstRow().CharRow;
         return charRow.Left - charRow.Right;
     }
 

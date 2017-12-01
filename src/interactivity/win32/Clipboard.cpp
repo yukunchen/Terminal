@@ -508,17 +508,11 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ SCREEN_INFORMATION* const pScree
                         BOOL bMungeData = (GetKeyState(VK_SHIFT) & KEY_PRESSED) == 0;
                         if (bMungeData)
                         {
-                            ROW* pRow = pScreenInfo->TextInfo->GetRowByOffset(iRow);
-
-                            if (pRow == nullptr)
-                            {
-                                status = STATUS_UNSUCCESSFUL;
-                                break;
-                            }
+                            const ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(iRow);
 
                             // FOR LINE SELECTION ONLY: if the row was wrapped, don't remove the spaces at the end.
                             if (!fLineSelection
-                                || !pRow->CharRow.WasWrapForced())
+                                || !Row.CharRow.WasWrapForced())
                             {
                                 for (int iCol = (int)(sStringLength - 1); iCol >= 0; iCol--)
                                 {
@@ -557,7 +551,7 @@ NTSTATUS Clipboard::RetrieveTextFromBuffer(_In_ SCREEN_INFORMATION* const pScree
                                     // a.k.a. if the row was NOT wrapped, then we can assume a CR/LF is proper
                                     // always apply \r\n for box selection
                                     if (!fLineSelection
-                                        || !pScreenInfo->TextInfo->GetRowByOffset(iRow)->CharRow.WasWrapForced())
+                                        || !pScreenInfo->TextInfo->GetRowByOffset(iRow).CharRow.WasWrapForced())
                                     {
                                         pwszSelection[cSelectionLength++] = UNICODE_CARRIAGERETURN;
                                         pwszSelection[cSelectionLength++] = UNICODE_LINEFEED;

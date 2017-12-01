@@ -156,8 +156,7 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
     }
 
     // get the character at the new position
-    ROW *pRow = pTextInfo->GetRowByOffset(pcoordSelPoint->Y);
-    WCHAR wchTest = pRow->CharRow.Chars[pcoordSelPoint->X];
+    WCHAR wchTest = pTextInfo->GetRowByOffset(pcoordSelPoint->Y).CharRow.Chars[pcoordSelPoint->X];
 
     // we want to go until the state change from delim to non-delim
     bool fCurrIsDelim = IS_WORD_DELIM(wchTest);
@@ -235,11 +234,7 @@ void Selection::WordByWordSelection(_In_ const bool fReverse,
         }
 
         // get the character associated with the new position
-        pRow = gci->CurrentScreenBuffer->TextInfo->GetRowByOffset(pcoordSelPoint->Y);
-        ASSERT(pRow != nullptr);
-        __analysis_assume(pRow != nullptr);
-        wchTest = pRow->CharRow.Chars[pcoordSelPoint->X];
-
+        wchTest = gci->CurrentScreenBuffer->TextInfo->GetRowByOffset(pcoordSelPoint->Y).CharRow.Chars[pcoordSelPoint->X];
         fCurrIsDelim = IS_WORD_DELIM(wchTest);
 
         // This is a bit confusing.
@@ -359,8 +354,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
             Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
 
             const TEXT_BUFFER_INFO* const pTextInfo = gci->CurrentScreenBuffer->TextInfo;
-            const ROW* const pRow = pTextInfo->GetRowByOffset(coordSelPoint.Y);
-            const BYTE bAttr = pRow->CharRow.KAttrs[coordSelPoint.X];
+            const BYTE bAttr = pTextInfo->GetRowByOffset(coordSelPoint.Y).CharRow.KAttrs[coordSelPoint.X];
 
             // if we're about to split a character in half, keep moving right
             if (bAttr & CHAR_ROW::ATTR_TRAILING_BYTE)
@@ -581,10 +575,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
 
     // ensure we're not planting the cursor in the middle of a double-wide character.
     const TEXT_BUFFER_INFO* const pTextInfo = gci->CurrentScreenBuffer->TextInfo;
-    ROW* const pRow = pTextInfo->GetRowByOffset(coordSelPoint.Y);
-    ASSERT(pRow != nullptr);
-    __analysis_assume(pRow != nullptr);
-    BYTE bAttr = pRow->CharRow.KAttrs[coordSelPoint.X];
+    const BYTE bAttr = pTextInfo->GetRowByOffset(coordSelPoint.Y).CharRow.KAttrs[coordSelPoint.X];
 
     if (bAttr & CHAR_ROW::ATTR_TRAILING_BYTE)
     {
@@ -685,13 +676,10 @@ bool Selection::_HandleColorSelection(_In_ const INPUT_KEY_INFO* const pInputKey
             // Pull the selection out of the buffer to pass to the
             // search function. Clamp to max search string length.
             // We just copy the bytes out of the row buffer.
-            const ROW* pRow = pScreenInfo->TextInfo->GetRowByOffset(psrSelection->Top);
-
-            ASSERT(pRow != nullptr);
-            __analysis_assume(pRow != nullptr);
+            const ROW& Row = pScreenInfo->TextInfo->GetRowByOffset(psrSelection->Top);
 
             WCHAR pwszSearchString[SEARCH_STRING_LENGTH + 1];
-            memmove(pwszSearchString, &pRow->CharRow.Chars[psrSelection->Left], cLength * sizeof(WCHAR));
+            memmove(pwszSearchString, &Row.CharRow.Chars[psrSelection->Left], cLength * sizeof(WCHAR));
 
             pwszSearchString[cLength] = L'\0';
 
@@ -735,15 +723,14 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
     {
         SCREEN_INFORMATION* const pScreenInfo = gci->CurrentScreenBuffer;
         TEXT_BUFFER_INFO* const pTextInfo = pScreenInfo->TextInfo;
-        BYTE bKAttrs;
         SHORT iNextRightX;
         SHORT iNextLeftX = 0;
 
         const COORD cursorPos = pTextInfo->GetCursor()->GetPosition();
-        ROW* const pRow = pTextInfo->GetRowByOffset(cursorPos.Y);
+        const ROW& Row = pTextInfo->GetRowByOffset(cursorPos.Y);
 
 
-        bKAttrs = pRow->CharRow.KAttrs[cursorPos.X];
+        BYTE bKAttrs = Row.CharRow.KAttrs[cursorPos.X];
         if (bKAttrs & CHAR_ROW::ATTR_LEADING_BYTE)
         {
             iNextRightX = 2;
@@ -755,7 +742,7 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
 
         if (cursorPos.X > 0)
         {
-            bKAttrs = pRow->CharRow.KAttrs[cursorPos.X - 1];
+            bKAttrs = Row.CharRow.KAttrs[cursorPos.X - 1];
             if (bKAttrs & CHAR_ROW::ATTR_TRAILING_BYTE)
             {
                 iNextLeftX = 2;
@@ -764,7 +751,7 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
             {
                 if (cursorPos.X - 1 > 0)
                 {
-                    bKAttrs = pRow->CharRow.KAttrs[cursorPos.X - 2];
+                    bKAttrs = Row.CharRow.KAttrs[cursorPos.X - 2];
                     if (bKAttrs & CHAR_ROW::ATTR_TRAILING_BYTE)
                     {
                         iNextLeftX = 3;

@@ -48,6 +48,15 @@ filling in the last row, and updating the screen.
 
 #pragma once
 
+#include "cursor.h"
+#include "..\renderer\inc\FontInfo.hpp"
+#include "..\renderer\inc\FontInfoDesired.hpp"
+
+#include <deque>
+#include <memory>
+#include <wil/resource.h>
+#include <wil/wistd_memory.h>
+
 // the characters of one row of screen buffer
 // we keep the following values so that we don't write
 // more pixels to the screen than we have to:
@@ -58,15 +67,9 @@ filling in the last row, and updating the screen.
 //       ^    ^                  ^                     ^
 //       |    |                  |                     |
 //     Chars Left               Right                end of Chars buffer
-#include "cursor.h"
-#include "..\renderer\inc\FontInfo.hpp"
-#include "..\renderer\inc\FontInfoDesired.hpp"
-
-#include <wil/resource.h>
-#include <wil/wistd_memory.h>
-
-typedef struct _CHAR_ROW
+class CHAR_ROW final
 {
+public:
     static const SHORT INVALID_OLD_LENGTH = -1;
 
     // for use with pbKAttrs
@@ -77,12 +80,22 @@ typedef struct _CHAR_ROW
     static const BYTE ATTR_SEPARATE_BYTE = 0x10;
     static const BYTE ATTR_EUDCFLAG_BYTE = 0x20;
 
+    CHAR_ROW(short rowWidth);
+    CHAR_ROW(const CHAR_ROW& a);
+    CHAR_ROW& operator=(const CHAR_ROW& a);
+    CHAR_ROW(CHAR_ROW&& a) noexcept;
+    ~CHAR_ROW();
+
+    void swap(CHAR_ROW& other) noexcept;
+
     SHORT Right;    // one past rightmost bound of chars in Chars array (array will be full width)
     SHORT Left; // leftmost bound of chars in Chars array (array will be full width)
-    PWCHAR Chars;   // all chars in row up to last non-space char
-    PBYTE KAttrs;   // all DBCS lead & trail bit in row
+    std::unique_ptr<wchar_t[]> Chars; // all chars in row
+    std::unique_ptr<BYTE[]> KAttrs; // all DBCS lead & trail bit in row
 
-    void Initialize(_In_ short const sRowWidth);
+    void Reset(_In_ short const sRowWidth);
+
+    HRESULT Resize(_In_ size_t const newSize);
 
     void SetWrapStatus(_In_ bool const fWrapWasForced);
     bool WasWrapForced() const;
@@ -111,20 +124,36 @@ typedef struct _CHAR_ROW
 
     bool ContainsText() const;
 
+    size_t GetWidth() const;
+
+
+    friend constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept;
+
 private:
     RowFlags bRowFlags;
+    size_t _rowWidth;
 
 #ifdef UNIT_TESTING
     friend class CharRowTests;
 #endif
 
-} CHAR_ROW, *PCHAR_ROW;
+};
 
-DEFINE_ENUM_FLAG_OPERATORS(_CHAR_ROW::RowFlags);
+DEFINE_ENUM_FLAG_OPERATORS(CHAR_ROW::RowFlags);
+void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept;
+constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept
+{
+    return (a.bRowFlags == b.bRowFlags &&
+            a._rowWidth == b._rowWidth &&
+            a.Right == b.Right &&
+            a.Left == b.Left &&
+            a.Chars == b.Chars &&
+            a.KAttrs == b.KAttrs);
+}
 
 // run-length encoded data structure for attributes
 
-class TextAttribute sealed
+class TextAttribute final
 {
 public:
     TextAttribute();
@@ -169,7 +198,7 @@ private:
     COLORREF _rgbBackground;
 };
 
-class TextAttributeRun sealed
+class TextAttributeRun final
 {
 public:
     UINT GetLength() const;
@@ -190,15 +219,24 @@ private:
 
 // the attributes of one row of screen buffer
 
-class ATTR_ROW sealed
+class ATTR_ROW final
 {
 public:
-    bool Initialize(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr);
+    ATTR_ROW(_In_ const UINT cchRowWidth, _In_ const TextAttribute attr);
+    ATTR_ROW(const ATTR_ROW& a);
+    ATTR_ROW& operator=(const ATTR_ROW& a);
+    ATTR_ROW(ATTR_ROW&& a) noexcept = default;
 
-    void FindAttrIndex(_In_ UINT const iIndex, _Outptr_ TextAttributeRun** const ppIndexedAttr, _Out_opt_ UINT* const pcAttrApplies) const;
+    void swap(ATTR_ROW& other) noexcept;
+
+    bool Reset(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr);
+
+    void FindAttrIndex(_In_ UINT const iIndex,
+                       _Outptr_ TextAttributeRun** const ppIndexedAttr,
+                       _Out_opt_ UINT* const pcAttrApplies) const;
     bool SetAttrToEnd(_In_ UINT const iStart, _In_ const TextAttribute attr);
     void ReplaceLegacyAttrs(_In_ const WORD wToBeReplacedAttr, _In_ const WORD wReplaceWith);
-    bool Resize(_In_ const short sOldWidth, _In_ const short sNewWidth);
+    HRESULT Resize(_In_ const short sOldWidth, _In_ const short sNewWidth);
 
     HRESULT InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* const prgAttrs,
                            _In_ const UINT cAttrs,
@@ -207,6 +245,8 @@ public:
                            _In_ const UINT cBufferWidth);
 
     NTSTATUS UnpackAttrs(_Out_writes_(cRowLength) TextAttribute* const rgAttrs, _In_ UINT const cRowLength) const;
+
+    friend constexpr bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept;
 
     UINT _cList;   // length of attr pair array
     wistd::unique_ptr<TextAttributeRun[]> _rgList;
@@ -221,29 +261,60 @@ private:
 
 };
 
+void swap(ATTR_ROW& a, ATTR_ROW& b) noexcept;
+constexpr bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept
+{
+    return (a._cList == b._cList &&
+            a._rgList == b._rgList &&
+            a._cchRowWidth == b._cchRowWidth);
+}
+
 // information associated with one row of screen buffer
 
-class ROW
+class ROW final
 {
 public:
+    ROW(_In_ const SHORT rowId, _In_ const short rowWidth, _In_ const TextAttribute fillAttribute);
+    ROW(const ROW& a);
+    ROW& operator=(const ROW& a);
+    ROW(ROW&& a) noexcept;
+
+    void swap(ROW& other) noexcept;
+
     CHAR_ROW CharRow;
     ATTR_ROW AttrRow;
     SHORT sRowId;
 
-    bool Initialize(_In_ short const sRowWidth, _In_ const TextAttribute Attr);
+    bool Reset(_In_ short const sRowWidth, _In_ const TextAttribute Attr);
+    HRESULT Resize(_In_ size_t const width);
+
+    bool IsTrailingByteAtColumn(_In_ const size_t column) const;
+
+    void ClearColumn(_In_ const size_t column);
+
+    friend constexpr bool operator==(const ROW& a, const ROW& b) noexcept;
+
 #ifdef UNIT_TESTING
     friend class RowTests;
 #endif
 };
 
-class TEXT_BUFFER_INFO
+void swap(ROW& a, ROW& b) noexcept;
+constexpr bool operator==(const ROW& a, const ROW& b) noexcept
+{
+    return (a.CharRow == b.CharRow &&
+            a.AttrRow == b.AttrRow &&
+            a.sRowId == b.sRowId);
+}
+
+class TEXT_BUFFER_INFO final
 {
 public:
-    static NTSTATUS CreateInstance(_In_ const FontInfo* const pFontInfo,
-                                   _In_ COORD coordScreenBufferSize,
-                                   _In_ CHAR_INFO const Fill,
-                                   _In_ UINT const uiCursorSize,
-                                   _Outptr_ TEXT_BUFFER_INFO ** const ppTextBufferInfo);
+    TEXT_BUFFER_INFO(_In_ const FontInfo* const pFontInfo,
+                     _In_ const COORD screenBufferSize,
+                     _In_ const CHAR_INFO fill,
+                     _In_ const UINT cursorSize);
+    TEXT_BUFFER_INFO(_In_ const TEXT_BUFFER_INFO& a) = delete;
 
     ~TEXT_BUFFER_INFO();
 
@@ -253,13 +324,29 @@ public:
     short GetMinBufferWidthNeeded() const; // TODO: just store this when the row is manipulated
 
     // row manipulation
-    ROW* GetFirstRow() const;
-    ROW* GetRowByOffset(_In_ UINT const rowIndex) const;
-    ROW* GetPrevRowNoWrap(_In_ ROW* const pRow) const;
-    ROW* GetNextRowNoWrap(_In_ ROW* const pRow) const;
+    const ROW& GetFirstRow() const;
+    ROW& GetFirstRow();
+
+    const ROW& GetRowByOffset(_In_ const UINT index) const;
+    ROW& GetRowByOffset(_In_ const UINT index);
+
+    const ROW& GetPrevRowNoWrap(_In_ const ROW& row) const;
+    ROW& GetPrevRowNoWrap(_In_ const ROW& row);
+
+    const ROW& GetNextRowNoWrap(_In_ const ROW& row) const;
+    ROW& GetNextRowNoWrap(_In_ const ROW& row);
+
+    const ROW& GetRowAtIndex(_In_ const UINT index) const;
+    ROW& GetRowAtIndex(_In_ const UINT index);
+
+    const ROW& GetPrevRow(_In_ const ROW& row) const noexcept;
+    ROW& GetPrevRow(_In_ const ROW& row) noexcept;
+
+    const ROW& GetNextRow(_In_ const ROW& row) const noexcept;
+    ROW& GetNextRow(_In_ const ROW& row) noexcept;
 
     // Text insertion functions
-    bool InsertCharacter(_In_ WCHAR const wch, _In_ BYTE const bKAttr, _In_ const TextAttribute attr);
+    bool InsertCharacter(_In_ wchar_t const wch, _In_ BYTE const bKAttr, _In_ const TextAttribute attr);
     bool IncrementCursor();
     bool NewlineCursor();
 
@@ -290,12 +377,12 @@ public:
     CHAR_INFO GetFill() const;
     void SetFill(_In_ const CHAR_INFO ciFill);
 
-    ROW* Rows;
-    PWCHAR TextRows;
-    // all DBCS lead & trail bit buffer
-    PBYTE KAttrRows;
+    NTSTATUS ResizeTraditional(_In_ COORD const currentScreenBufferSize,
+                               _In_ COORD const newScreenBufferSize,
+                               _In_ TextAttribute const attributes);
 private:
 
+    std::deque<ROW> _storage;
     Cursor* _pCursor;
 
     SHORT _FirstRow; // indexes top row (not necessarily 0)
@@ -305,7 +392,6 @@ private:
     FontInfo _fiCurrentFont;
     FontInfoDesired _fiDesiredFont;
 
-    TEXT_BUFFER_INFO(_In_ const FontInfo* const pfiFont);
 
     COORD GetPreviousFromCursor() const;
 
@@ -324,3 +410,26 @@ private:
 };
 typedef TEXT_BUFFER_INFO *PTEXT_BUFFER_INFO;
 typedef PTEXT_BUFFER_INFO *PPTEXT_BUFFER_INFO;
+
+// this sticks specializations of swap() into the std::namespace for our classes, so that callers that use
+// std::swap explicitly over calling the global swap can still get the performance benefit.
+namespace std
+{
+    template<>
+    inline void swap<CHAR_ROW>(CHAR_ROW& a, CHAR_ROW& b) noexcept
+    {
+        a.swap(b);
+    }
+
+    template<>
+    inline void swap<ATTR_ROW>(ATTR_ROW& a, ATTR_ROW& b) noexcept
+    {
+        a.swap(b);
+    }
+
+    template<>
+    inline void swap<ROW>(ROW& a, ROW& b) noexcept
+    {
+        a.swap(b);
+    }
+}

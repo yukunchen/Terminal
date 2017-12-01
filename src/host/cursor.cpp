@@ -122,7 +122,7 @@ const BOOLEAN Cursor::IsDoubleWidth() const
         ->CurrentScreenBuffer
         ->TextInfo
         ->GetRowByOffset(_cPosition.Y)
-        ->CharRow.Chars[_cPosition.X];
+        .CharRow.Chars[_cPosition.X];
     return !!IsCharFullWidth(c);
 }
 
@@ -178,7 +178,7 @@ void Cursor::SetIsDouble(_In_ BOOLEAN const fIsDouble)
 void Cursor::SetIsConversionArea(_In_ BOOLEAN const fIsConversionArea)
 {
     // Functionally the same as "Hide cursor"
-    // Never called with TRUE, it's only used in the creation of a 
+    // Never called with TRUE, it's only used in the creation of a
     //      ConversionAreaInfo, and never changed after that.
     _fIsConversionArea = fIsConversionArea;
     _RedrawCursorAlways();
@@ -363,7 +363,7 @@ void Cursor::TimerRoutine(_In_ PSCREEN_INFORMATION const ScreenInfo)
     if (pWindow != nullptr)
     {
         pWindow->SetWindowHasMoved(false);
-    } 
+    }
 
     if (!IsFlagSet(gci->Flags, CONSOLE_HAS_FOCUS))
     {

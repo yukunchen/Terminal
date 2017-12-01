@@ -197,7 +197,7 @@ class ApiRoutinesTests
         Log::Comment(L"Input mode should be set anyway despite FAILED return code.");
         VerifySetConsoleInputModeImpl(E_INVALIDARG, 0x1E4);
     }
-    
+
     TEST_METHOD(ApiGetConsoleTitleA)
     {
         CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
@@ -206,7 +206,7 @@ class ApiRoutinesTests
         int const iBytesNeeded = WideCharToMultiByte(gci->OutputCP,
                                                      0,
                                                      gci->Title,
-                                                     (int)wcslen(gci->Title),
+                                                     -1,
                                                      nullptr,
                                                      0,
                                                      nullptr,
@@ -218,7 +218,7 @@ class ApiRoutinesTests
         VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci->OutputCP,
                                                         0,
                                                         gci->Title,
-                                                        (int)wcslen(gci->Title),
+                                                        -1,
                                                         pszExpected.get(),
                                                         iBytesNeeded,
                                                         nullptr,
@@ -261,7 +261,7 @@ class ApiRoutinesTests
         int const iBytesNeeded = WideCharToMultiByte(gci->OutputCP,
                                                      0,
                                                      gci->OriginalTitle,
-                                                     (int)wcslen(gci->OriginalTitle),
+                                                     -1,
                                                      nullptr,
                                                      0,
                                                      nullptr,
@@ -273,7 +273,7 @@ class ApiRoutinesTests
         VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci->OutputCP,
                                                         0,
                                                         gci->OriginalTitle,
-                                                        (int)wcslen(gci->OriginalTitle),
+                                                        -1,
                                                         pszExpected.get(),
                                                         iBytesNeeded,
                                                         nullptr,

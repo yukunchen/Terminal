@@ -716,12 +716,11 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     throw UIA_E_INVALIDOPERATION;
                 }
 
-                const ROW* const pRow = &pTextBuffer->Rows[rowIndex];
-
-                if (pRow->CharRow.ContainsText())
+                const ROW& row = pTextBuffer->GetRowAtIndex(rowIndex);
+                if (row.CharRow.ContainsText())
                 {
                     int startIndex = 0;
-                    int endIndex = pRow->CharRow.Right;
+                    int endIndex = row.CharRow.Right;
                     if (currentScreenInfoRow == startScreenInfoRow)
                     {
                         startIndex = startColumn;
@@ -729,7 +728,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     if (currentScreenInfoRow == endScreenInfoRow)
                     {
                         // prevent the end from going past the last non-whitespace char in the row
-                        endIndex = min(static_cast<int>(endColumn + 1), pRow->CharRow.Right);
+                        endIndex = min(static_cast<int>(endColumn + 1), row.CharRow.Right);
                     }
 
                     // if startIndex >= endIndex then _start is
@@ -738,8 +737,8 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
                     // wouldn't be any text to grab.
                     if (startIndex < endIndex)
                     {
-                        std::wstring tempString = std::wstring(pRow->CharRow.Chars + startIndex,
-                                                               pRow->CharRow.Chars + endIndex);
+                        std::wstring tempString = std::wstring(row.CharRow.Chars.get() + startIndex,
+                                                               row.CharRow.Chars.get() + endIndex);
                         // add to result string
                         wstr += tempString;
                     }
