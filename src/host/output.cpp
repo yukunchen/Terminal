@@ -433,7 +433,6 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
     {
         const ROW* pRow = &pScreenInfo->TextInfo->GetRowByOffset(coordRead.Y);
-        ASSERT(pRow != nullptr);
         PWCHAR Char;
         SHORT j, k;
         PBYTE AttrP = nullptr;
@@ -442,12 +441,6 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         {
             while (NumRead < *pcRecords)
             {
-                if (pRow == nullptr)
-                {
-                    ASSERT(false);
-                    break;
-                }
-
                 // copy the chars from its array
                 Char = &pRow->CharRow.Chars[X];
                 AttrP = &pRow->CharRow.KAttrs[X];
@@ -538,12 +531,6 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
             while (NumRead < *pcRecords)
             {
-                if (pRow == nullptr)
-                {
-                    ASSERT(false);
-                    break;
-                }
-
                 // Copy the attrs from its array.
                 AttrP = &pRow->CharRow.KAttrs[X];
 

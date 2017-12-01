@@ -2147,7 +2147,7 @@ NTSTATUS TEXT_BUFFER_INFO::ResizeTraditional(_In_ COORD const currentScreenBuffe
                                              _In_ COORD const newScreenBufferSize,
                                              _In_ TextAttribute const attributes)
 {
-    if ((USHORT)newScreenBufferSize.X >= 0x7FFF || (USHORT)newScreenBufferSize.Y >= 0x7FFF)
+    if (newScreenBufferSize.X < 0 || newScreenBufferSize.Y < 0)
     {
         RIPMSG2(RIP_WARNING, "Invalid screen buffer size (0x%x, 0x%x)", newScreenBufferSize.X, newScreenBufferSize.Y);
         return STATUS_INVALID_PARAMETER;
