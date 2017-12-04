@@ -65,8 +65,8 @@ class SelectionTests
         UINT cRectangles;
 
         NTSTATUS status = m_pSelection->GetSelectionRects(&rgsrSelection, &cRectangles);
-
         VERIFY_IS_TRUE(NT_SUCCESS(status));
+        auto scopeExit = wil::ScopeExit([&]() { delete[] rgsrSelection; });
 
         const UINT cRectanglesExpected = m_pSelection->_srSelectionRect.Bottom - m_pSelection->_srSelectionRect.Top + 1;
 

@@ -174,7 +174,8 @@ class AttrRowTests
     // - Success if success. Buffer too small if row length is incorrect.
     HRESULT PackAttrs(_In_reads_(cRowLength) const TextAttribute* const rgAttrs,
                       _In_ UINT const cRowLength,
-                      _Inout_ std::unique_ptr<TextAttributeRun[]>& outAttrRun)
+                      _Inout_ std::unique_ptr<TextAttributeRun[]>& outAttrRun,
+                      _Out_ UINT* cOutAttrRun)
     {
         NTSTATUS status = STATUS_SUCCESS;
 
@@ -232,6 +233,7 @@ class AttrRowTests
                         }
                     }
                     attrRun.swap(outAttrRun);
+                    *cOutAttrRun = static_cast<UINT>(cAttrLength);
                 }
             }
             else
@@ -358,7 +360,7 @@ class AttrRowTests
         // - 3. Pack.
         std::unique_ptr<TextAttributeRun[]> packedRun;
         UINT cPackedRun;
-        VERIFY_SUCCEEDED(PackAttrs(unpackedOriginal.get(), originalRow._cchRowWidth, packedRun));
+        VERIFY_SUCCEEDED(PackAttrs(unpackedOriginal.get(), originalRow._cchRowWidth, packedRun, &cPackedRun));
 
         // Now send parameters into InsertAttrRuns and get its opinion on the subject.
         VERIFY_SUCCEEDED(originalRow.InsertAttrRuns(insertRow.get(), (UINT)cInsertRow, uiStartPos, uiEndPos, (UINT)originalRow._cchRowWidth));

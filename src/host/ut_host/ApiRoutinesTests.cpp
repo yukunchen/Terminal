@@ -20,14 +20,14 @@ class ApiRoutinesTests
 {
     TEST_CLASS(ApiRoutinesTests);
 
-    CommonState* m_state;
+    std::unique_ptr<CommonState> m_state;
 
     ApiRoutines _Routines;
     IApiRoutines* _pApiRoutines = &_Routines;
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        m_state = new CommonState();
+        m_state = std::make_unique<CommonState>();
 
         m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
@@ -44,7 +44,7 @@ class ApiRoutinesTests
         m_state->CleanupGlobalScreenBuffer();
         m_state->CleanupGlobalFont();
 
-        delete m_state;
+        m_state.reset(nullptr);
 
         return true;
     }
