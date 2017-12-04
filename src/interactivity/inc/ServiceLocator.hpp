@@ -102,7 +102,7 @@ namespace Microsoft
                 static std::unique_ptr<IWindowMetrics> s_windowMetrics;
                 static std::unique_ptr<IHighDpiApi> s_highDpiApi;
                 static std::unique_ptr<ISystemConfigurationProvider> s_systemConfigurationProvider;
-                static IInputServices *s_inputServices;
+                static std::unique_ptr<IInputServices> s_inputServices;
 
                 static Globals s_globals;
             };

@@ -17,9 +17,9 @@ std::unique_ptr<IWindowMetrics> ServiceLocator::s_windowMetrics;
 std::unique_ptr<IAccessibilityNotifier> ServiceLocator::s_accessibilityNotifier;
 std::unique_ptr<IHighDpiApi> ServiceLocator::s_highDpiApi;
 std::unique_ptr<ISystemConfigurationProvider> ServiceLocator::s_systemConfigurationProvider;
+std::unique_ptr<IInputServices> ServiceLocator::s_inputServices;
 
 IConsoleWindow* ServiceLocator::s_consoleWindow = nullptr;
-IInputServices* ServiceLocator::s_inputServices = nullptr;
 
 Globals                      ServiceLocator::s_globals;
 
@@ -46,10 +46,9 @@ void ServiceLocator::RundownAndExit(_In_ HRESULT const hr)
 
     // TODO: MSFT: 14397093 - Expand graceful rundown beyond just the Hot Bug input services case.
 
-    if (s_inputServices != nullptr)
+    if (s_inputServices.get() != nullptr)
     {
-        delete s_inputServices;
-        s_inputServices = nullptr;
+        s_inputServices.reset(nullptr);
     }
 
     TerminateProcess(GetCurrentProcess(), hr);
@@ -246,13 +245,13 @@ IInputServices* ServiceLocator::LocateInputServices()
 
         if (NT_SUCCESS(status))
         {
-            status = s_interactivityFactory->CreateInputServices(&s_inputServices);
+            status = s_interactivityFactory->CreateInputServices(s_inputServices);
         }
     }
 
     LOG_IF_NTSTATUS_FAILED(status);
 
-    return s_inputServices;
+    return s_inputServices.get();
 }
 
 Globals& ServiceLocator::LocateGlobals()

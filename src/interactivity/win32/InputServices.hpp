@@ -23,6 +23,7 @@ namespace Microsoft
             {
                 class InputServices final : public IInputServices
                 {
+                public:
                     // Inherited via IInputServices
                     ~InputServices() = default;
                     UINT MapVirtualKeyW(UINT uCode, UINT uMapType);

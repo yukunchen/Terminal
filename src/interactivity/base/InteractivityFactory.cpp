@@ -219,13 +219,8 @@ NTSTATUS InteractivityFactory::CreateSystemConfigurationProvider(_Inout_ std::un
     return status;
 }
 
-NTSTATUS InteractivityFactory::CreateInputServices(_Outptr_result_nullonfailure_ IInputServices** services)
+NTSTATUS InteractivityFactory::CreateInputServices(_Inout_ std::unique_ptr<IInputServices>& services)
 {
-    if (!services)
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
-
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
@@ -233,23 +228,23 @@ NTSTATUS InteractivityFactory::CreateInputServices(_Outptr_result_nullonfailure_
 
     if (NT_SUCCESS(status))
     {
-        IInputServices *pNewServices = nullptr;
+        std::unique_ptr<IInputServices> newServices;
         switch (level)
         {
         case ApiLevel::Win32:
-            pNewServices = new Microsoft::Console::Interactivity::Win32::InputServices();
+            newServices = std::make_unique<Microsoft::Console::Interactivity::Win32::InputServices>();
             break;
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
         case ApiLevel::OneCore:
-            pNewServices = new Microsoft::Console::Interactivity::OneCore::ConIoSrvComm();
+            newServices = std::make_unique<Microsoft::Console::Interactivity::OneCore::ConIoSrvComm>();
             break;
 #endif
         }
 
         if (NT_SUCCESS(status))
         {
-            *services = pNewServices;
+            services.swap(newServices);
         }
     }
 
