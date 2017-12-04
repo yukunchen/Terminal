@@ -170,16 +170,14 @@ class AttrRowTests
     // Arguments:
     // - rgAttrs - Array of words representing the attribute associated with each character position in the row.
     // - cRowLength - Length of preceeding array.
-    // - ppAttrRun - Filled with pointer to newly allocate run-length-encoded array. CALLER MUST FREE.
-    // - pcAttrRun - Filled with length of newly allocated array.
+    // - outAttrRun - reference to unique_ptr that will contain packed attr run on success.
     // Return Value:
     // - Success if success. Buffer too small if row length is incorrect.
-    HRESULT PackAttrs(_In_reads_(cRowLength) const TextAttribute* const rgAttrs, 
-                      _In_ UINT const cRowLength, 
-                      _Out_writes_(*pcAttrRun) TextAttributeRun** const ppAttrRun,
-                      _Out_ UINT* const pcAttrRun)
+    HRESULT PackAttrs(_In_reads_(cRowLength) const TextAttribute* const rgAttrs,
+                      _In_ UINT const cRowLength,
+                      _Inout_ std::unique_ptr<TextAttributeRun[]>& outAttrRun)
     {
-        
+
         NTSTATUS status = STATUS_SUCCESS;
 
         if (cRowLength == 0)
@@ -215,11 +213,11 @@ class AttrRowTests
             short cAttrLength;
             if (SUCCEEDED(IntToShort(cDeltas, &cAttrLength)))
             {
-                TextAttributeRun* const pAttrRun = new TextAttributeRun[cAttrLength];
-                status = NT_TESTNULL(pAttrRun);
+                std::unique_ptr<TextAttributeRun[]> attrRun = std::make_unique<TextAttributeRun[]>(cAttrLength);
+                status = NT_TESTNULL(attrRun.get());
                 if (NT_SUCCESS(status))
                 {
-                    TextAttributeRun* pCurrentRun = pAttrRun;
+                    TextAttributeRun* pCurrentRun = attrRun.get();
                     pCurrentRun->SetAttributes(rgAttrs[0]);
                     pCurrentRun->SetLength(1);
                     for (unsigned int i = 1; i < cRowLength; i++)
@@ -235,9 +233,7 @@ class AttrRowTests
                             pCurrentRun->SetLength(1);
                         }
                     }
-
-                    *ppAttrRun = pAttrRun;
-                    *pcAttrRun = cAttrLength;
+                    attrRun.swap(outAttrRun);
                 }
             }
             else
@@ -260,7 +256,7 @@ class AttrRowTests
                   _In_ size_t const cRun)
     {
         NoThrowString str(pwszPrefix);
-        
+
         if (cRun > 0)
         {
             str.Append(LogRunElement(rgRun[0]));
@@ -330,7 +326,7 @@ class AttrRowTests
 
         // Calculate our expected final/result run by unpacking original, laying our insertion on it at the index
         // then using our pack function to repack it.
-        // This method is easy to understand and very reliable, but its performance is bad. 
+        // This method is easy to understand and very reliable, but its performance is bad.
         // The InsertAttrRuns method we test against below is hard to understand but very high performance in production.
 
         // - 1. Unpack
@@ -362,9 +358,9 @@ class AttrRowTests
         }
 
         // - 3. Pack.
-        TextAttributeRun* pPackedRun;
+        std::unique_ptr<TextAttributeRun[]> packedRun;
         UINT cPackedRun;
-        VERIFY_SUCCEEDED(PackAttrs(unpackedOriginal.get(), originalRow._cchRowWidth, &pPackedRun, &cPackedRun));
+        VERIFY_SUCCEEDED(PackAttrs(unpackedOriginal.get(), originalRow._cchRowWidth, packedRun));
 
         // Now send parameters into InsertAttrRuns and get its opinion on the subject.
         VERIFY_SUCCEEDED(originalRow.InsertAttrRuns(insertRow.get(), (UINT)cInsertRow, uiStartPos, uiEndPos, (UINT)originalRow._cchRowWidth));
@@ -372,12 +368,12 @@ class AttrRowTests
         // Compare and ensure that the expected and actual match.
         VERIFY_ARE_EQUAL(cPackedRun, originalRow._cList, L"Ensure that number of array elements required for RLE are the same.");
 
-        LogChain(L"Expected: ", pPackedRun, cPackedRun);
+        LogChain(L"Expected: ", packedRun.get(), cPackedRun);
         LogChain(L"Actual: ", originalRow._rgList.get(), originalRow._cList);
 
         for (UINT uiTestIndex = 0; uiTestIndex < cPackedRun; uiTestIndex++)
         {
-            VERIFY_ARE_EQUAL(pPackedRun[uiTestIndex], originalRow._rgList[uiTestIndex]);
+            VERIFY_ARE_EQUAL(packedRun[uiTestIndex], originalRow._rgList[uiTestIndex]);
         }
     }
 
@@ -445,7 +441,7 @@ class AttrRowTests
 
                     // When choosing the length of the second item, it can't be bigger than the remaining space in the run
                     // when accounting for the length of the first piece chosen.
-                    // For example if the total run length is 10 and the first piece chosen was 8 long, 
+                    // For example if the total run length is 10 and the first piece chosen was 8 long,
                     // the second piece can only be 1 or 2 long.
                     UINT const uiMaxCh2Length = uiTestRunLength - uiMaxCh1Length;
                     for (UINT iCh2Length = 1; iCh2Length <= uiMaxCh2Length; iCh2Length++)
