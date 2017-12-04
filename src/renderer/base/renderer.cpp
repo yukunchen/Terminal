@@ -933,11 +933,11 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
             for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
             {
                 // Get row of text data
-                const ROW& Row = pTextInfo->GetRowByOffset(iRow - pAreaInfo->CaInfo.coordConView.Y);
+                const ROW& Row = pTextInfo->GetRowByOffset(iRow - AreaInfo->CaInfo.coordConView.Y);
 
                 // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
-                PWCHAR const pwsLine = Row.CharRow.Chars.get() + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X;
-                PBYTE const pbKAttrs = Row.CharRow.KAttrs.get() + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X; // the double byte flags corresponding to the characters above.
+                PWCHAR const pwsLine = Row.CharRow.Chars.get() + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X;
+                PBYTE const pbKAttrs = Row.CharRow.KAttrs.get() + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X; // the double byte flags corresponding to the characters above.
                 size_t const cchLine = viewDirty.Width() - 1;
 
                 // Calculate the target position in the buffer where we should start writing.

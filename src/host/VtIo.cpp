@@ -120,15 +120,15 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
         // The Screen info hasn't been created yet, but SetUpConsole did get
         //      the launch settings already.
         Viewport initialViewport = Viewport::FromDimensions({0, 0},
-                                                            gci->GetWindowSize().X,
-                                                            gci->GetWindowSize().Y);
+                                                            gci.GetWindowSize().X,
+                                                            gci.GetWindowSize().Y);
         switch (_IoMode)
         {
         case VtIoMode::XTERM_256:
             _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
                                                                 initialViewport,
-                                                                gci->GetColorTable(),
-                                                                static_cast<WORD>(gci->GetColorTableSize()));
+                                                                gci.GetColorTable(),
+                                                                static_cast<WORD>(gci.GetColorTableSize()));
             break;
         case VtIoMode::XTERM:
             _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),

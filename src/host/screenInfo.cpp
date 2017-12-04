@@ -448,7 +448,7 @@ COORD SCREEN_INFORMATION::GetMaxWindowSizeInCharacters(_In_ COORD const coordFon
     // GetConsoleScreenBufferInfoEx hits this to get the max size of the display.
     // Because we're headless, we don't really care about the max size of the display.
     // In that case, we'll just return the buffer size as the "max" window size.
-    if (!ServiceLocator::LocateGlobals()->IsHeadless())
+    if (!ServiceLocator::LocateGlobals().IsHeadless())
     {
         const COORD coordWindowRestrictedSize = GetLargestWindowSizeInCharacters(coordFontSize);
         // If the buffer is smaller than what the max window would allow, then the max client area can only be as big as the

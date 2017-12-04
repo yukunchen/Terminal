@@ -112,7 +112,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
     // ones from the constructor (which are great for OneCore systems.)
     if (s_IsOnDesktop())
     {
-        settings->ApplyDesktopSpecificDefaults();
+        settings.ApplyDesktopSpecificDefaults();
     }
 
     // 3. Read the default registry values.
