@@ -34,7 +34,7 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // CPInfo initialized below
     // OutputCPInfo initialized below
     lpCookedReadData(nullptr),
-    // ConsoleIme initialized below
+    ConsoleIme{},
     terminalMouseInput(HandleTerminalKeyEventCallback),
     _vtIo()
 {
@@ -43,7 +43,6 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
 
     ZeroMemory((void*)&CPInfo, sizeof(CPInfo));
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
-    ZeroMemory((void*)&ConsoleIme, sizeof(ConsoleIme));
     InitializeCriticalSection(&_csConsoleLock);
 }
 

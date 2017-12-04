@@ -338,7 +338,8 @@ void ScreenBufferTests::TestAddTabStop()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
-    psi->_ptsTabs = nullptr;
+    psi->ClearTabStops();
+    auto scopeExit = wil::ScopeExit([&]() { psi->ClearTabStops(); });
 
     Log::Comment(L"Add tab to empty list.");
     VERIFY_SUCCEEDED(HRESULT_FROM_NT(psi->AddTabStop(12)));
@@ -373,7 +374,6 @@ void ScreenBufferTests::TestAddTabStop()
     VERIFY_ARE_EQUAL(24, psi->_ptsTabs->ptsNext->ptsNext->sColumn);
     VERIFY_ARE_EQUAL(30, psi->_ptsTabs->ptsNext->ptsNext->ptsNext->sColumn);
 
-    //global free should clean this one up successfully since we created it with all class methods.
 }
 
 void ScreenBufferTests::TestClearTabStops()

@@ -44,6 +44,8 @@ class ApiRoutinesTests
         m_state->CleanupGlobalScreenBuffer();
         m_state->CleanupGlobalFont();
 
+        delete m_state;
+
         return true;
     }
 

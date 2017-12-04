@@ -133,7 +133,7 @@ class Utf8ToWideCharParserTests
         count = 1;
         consumed = 0;
         generated = 0;
-        output.release();
+        output.reset(nullptr);
         parser.Parse(sushi + 4, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
         VERIFY_ARE_EQUAL(generated, (unsigned int)0);
@@ -143,7 +143,7 @@ class Utf8ToWideCharParserTests
         count = 1;
         consumed = 0;
         generated = 0;
-        output.release();
+        output.reset(nullptr);
         parser.Parse(sushi + 5, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)1);
         VERIFY_ARE_EQUAL(generated, (unsigned int)1);
@@ -202,7 +202,7 @@ class Utf8ToWideCharParserTests
         count = 16;
         consumed = 0;
         generated = 0;
-        output.release();
+        output.reset(nullptr);
         parser.Parse(doomoArigatoo + 4, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)16);
         VERIFY_ARE_EQUAL(generated, (unsigned int)5);
@@ -218,7 +218,7 @@ class Utf8ToWideCharParserTests
         count = 4;
         consumed = 0;
         generated = 0;
-        output.release();
+        output.reset(nullptr);
         parser.Parse(doomoArigatoo + 20, count, consumed, output, generated);
         VERIFY_ARE_EQUAL(consumed, (unsigned int)4);
         VERIFY_ARE_EQUAL(generated, (unsigned int)2);
