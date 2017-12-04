@@ -424,20 +424,19 @@ HRESULT GdiEngine::PaintBufferGridLines(_In_ GridLines const lines, _In_ COLORRE
 // - fIsDoubleWidth - The cursor should be drawn twice as wide as usual.
 // Return Value:
 // - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI error where a specific error isn't set.
-HRESULT GdiEngine::PaintCursor(_In_ ULONG const ulHeightPercent,
+HRESULT GdiEngine::PaintCursor(_In_ COORD const coordCursor, 
+                               _In_ ULONG const ulHeightPercent,
                                _In_ bool const fIsDoubleWidth)
 {
     LOG_IF_FAILED(_FlushBufferLines());
-
-    COORD const coord = _cursor.GetPosition();    
 
     COORD const coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
 
     // First set up a block cursor the size of the font.
     RECT rcInvert;
-    RETURN_IF_FAILED(LongMult(coord.X, coordFontSize.X, &rcInvert.left));
-    RETURN_IF_FAILED(LongMult(coord.Y, coordFontSize.Y, &rcInvert.top));
+    RETURN_IF_FAILED(LongMult(coordCursor.X, coordFontSize.X, &rcInvert.left));
+    RETURN_IF_FAILED(LongMult(coordCursor.Y, coordFontSize.Y, &rcInvert.top));
     RETURN_IF_FAILED(LongAdd(rcInvert.left, coordFontSize.X, &rcInvert.right));
     RETURN_IF_FAILED(LongAdd(rcInvert.top, coordFontSize.Y, &rcInvert.bottom));
 

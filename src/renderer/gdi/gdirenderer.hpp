@@ -14,7 +14,6 @@ Author(s):
 #pragma once
 
 #include "..\inc\IRenderEngine.hpp"
-#include "GdiCursor.hpp"
 
 namespace Microsoft
 {
@@ -55,7 +54,8 @@ namespace Microsoft
                 HRESULT PaintSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
                                        _In_ UINT const cRectangles) override;
 
-                HRESULT PaintCursor(_In_ ULONG const ulCursorHeightPercent,
+                HRESULT PaintCursor(_In_ COORD const coordCursor,
+                                    _In_ ULONG const ulCursorHeightPercent,
                                     _In_ bool const fIsDoubleWidth) override;
                 HRESULT ClearCursor() override;
 
@@ -75,8 +75,6 @@ namespace Microsoft
                 SMALL_RECT GetDirtyRectInChars() override;
                 HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
                 HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
-
-                IRenderCursor* const GetCursor() override;
 
             private:
                 HWND _hwndTargetWindow;
@@ -98,8 +96,6 @@ namespace Microsoft
                 HRESULT _FlushBufferLines();
 
                 RECT _rcCursorInvert;
-
-                GdiCursor _cursor;
 
                 COORD _coordFontLast;
                 int _iCurrentDpi;

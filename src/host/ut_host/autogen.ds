@@ -11,13 +11,14 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_PrePass-->
 
-    <LegacyBuilder Output="Ut_host_PrePass" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Ut_host_PrePass" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>PrePass</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>host.unittests.vcxproj</Item>
         <Item>product.pbxproj</Item>
@@ -27,7 +28,7 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_Pass1-->
 
-    <LegacyBuilder Output="Ut_host_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Internal">
+    <LegacyBuilder Output="Ut_host_Pass1" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Internal">
       <Classification>Test</Classification>
       <TargetPass>Pass1</TargetPass>
 
@@ -36,9 +37,11 @@
       <Consumes>
         <Item>apiroutinestests.cpp</Item>
         <Item>attrrowtests.cpp</Item>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>charrowtests.cpp</Item>
         <Item>clipboardtests.cpp</Item>
+        <Item>consoleargumentstests.cpp</Item>
         <Item>dbcstests.cpp</Item>
         <Item>host.unittests.vcxproj</Item>
         <Item>inittests.cpp</Item>
@@ -52,6 +55,8 @@
         <Item>unicodeliteral.hpp</Item>
         <Item>utf8towidecharparsertests.cpp</Item>
         <Item>utilstests.cpp</Item>
+        <Item>vtiotests.cpp</Item>
+        <Item>vtrenderertests.cpp</Item>
         <Item>{DotDot}\apiroutines.h</Item>
         <Item>{DotDot}\cmdline.h</Item>
         <Item>{DotDot}\conapi.h</Item>
@@ -84,6 +89,8 @@
         <Item>{DotDot}\tracing.hpp</Item>
         <Item>{DotDot}\utf8towidecharparser.hpp</Item>
         <Item>{DotDot}\utils.hpp</Item>
+        <Item>{DotDot}\vtinputthread.hpp</Item>
+        <Item>{DotDot}\vtio.hpp</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
         <Item>{SrcRoot}\build\scripts\generatetestlist.cmd</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\commonincludes.h</Item>
@@ -93,6 +100,8 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\contsf.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\cpp2017.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\operators.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\unicode.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\vtiomodes.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\test\commonstate.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iaccessibilitynotifier.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsolecontrol.hpp</Item>
@@ -117,8 +126,13 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderdata.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\vtrenderer.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\wintelnetengine.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\xterm256engine.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\xtermengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\apimessage.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\apimessagestate.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\consolearguments.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\devicecomm.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\iapiroutines.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\iwaitroutine.h</Item>
@@ -126,6 +140,7 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\objectheader.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\processhandle.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\processlist.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\processpolicy.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\waitblock.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\waitqueue.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\waitterminationreason.h</Item>
@@ -135,9 +150,11 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\mouseinput.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminalinput.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminaloutput.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\istatemachineengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\statemachine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\telemetry.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\tracing.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp</Item>
 
         <!--References-->
@@ -195,6 +212,7 @@
         <Item>{O}\attrrowtests.obj</Item>
         <Item>{O}\charrowtests.obj</Item>
         <Item>{O}\clipboardtests.obj</Item>
+        <Item>{O}\consoleargumentstests.obj</Item>
         <Item>{O}\dbcstests.obj</Item>
         <Item>{O}\inittests.obj</Item>
         <Item>{O}\inputbuffertests.obj</Item>
@@ -212,12 +230,14 @@
         <Item>{O}\titletests.obj</Item>
         <Item>{O}\utf8towidecharparsertests.obj</Item>
         <Item>{O}\utilstests.obj</Item>
+        <Item>{O}\vtiotests.obj</Item>
+        <Item>{O}\vtrenderertests.obj</Item>
       </Produces>
     </LegacyBuilder>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_Pass2-->
 
-    <LegacyBuilder Output="Ut_host_Pass2" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Ut_host_Pass2" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass2</TargetPass>
 
@@ -226,9 +246,11 @@
       <Consumes>
         <Item>apiroutinestests.cpp</Item>
         <Item>attrrowtests.cpp</Item>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>charrowtests.cpp</Item>
         <Item>clipboardtests.cpp</Item>
+        <Item>consoleargumentstests.cpp</Item>
         <Item>dbcstests.cpp</Item>
         <Item>defaultresource.rc</Item>
         <Item>host.unittests.vcxproj</Item>
@@ -242,19 +264,20 @@
         <Item>titletests.cpp</Item>
         <Item>utf8towidecharparsertests.cpp</Item>
         <Item>utilstests.cpp</Item>
+        <Item>vtiotests.cpp</Item>
+        <Item>vtrenderertests.cpp</Item>
         <Item>{DotDot}\precomp.cpp</Item>
         <Item>{DotDot}\precomp.h</Item>
         <Item>{DotDot}\sources.test.inc</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
         <Item>{SrcRoot}\build\scripts\expdelayload.cmd</Item>
+        <Item>{SrcRoot}\build\scripts\fixtsversionstringappend.cmd</Item>
         <Item>{SrcRoot}\build\scripts\testmdgen.cmd</Item>
-        <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
 
         <!--References-->
 
         <Item>{MsWin.Crts.Public.Internal.Sdk.Lib.Ucrt.__Library}</Item>
-        <Item Condition="{IsBuildDebug AND IsBuildCommonArchitecture}">{MsWin.Crts.Public.Internal.Sdk.Lib.__Library}</Item>
-        <Item Condition="{(IsBuildArm32 OR IsBuildArm64)}">{MsWin.Crts.Public.Sdk.Lib.__Library}</Item>
+        <Item Condition="{IsBuildRelease AND (IsBuildArm32 OR IsBuildArm64)}">{MsWin.Crts.Public.Sdk.Lib.__Library}</Item>
         <Item>{MsWin.OnecoreAvcore.Private.Internal.Moderncore.Priv_sdk.Lib.v1_6.__Library}</Item>
         <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreMerged.Private.Internal.Minwin.Priv_sdk.Lib.__Library}</Item>
@@ -273,6 +296,8 @@
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propslib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Base.Lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Gdi.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Lib_Pass1}</Item>
+        <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Ut_lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Renderer.Wddmcon.Lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Server.Lib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Lib_Pass1}</Item>
@@ -320,7 +345,7 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_Pass3-->
 
-    <LegacyBuilder Output="Ut_host_Pass3" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Ut_host_Pass3" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass3</TargetPass>
       <d:Tags>
@@ -330,114 +355,103 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>host.unittests.vcxproj</Item>
+        <Item>product.pbxproj</Item>
         <Item>{DotDot}\sources.test.inc</Item>
+        <Item>{SrcRoot}\build\scripts\signer.cmd</Item>
+        <Item>{SrcRoot}\onecore\windows\project.props</Item>
+        <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
 
         <!--References-->
 
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_Pass2}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_PrePass}</Item>
-        <Item Condition="{IsBuildRelease AND IsBuildCommonArchitecture}">{MsWin.Onecore_Pkg.BinPublic.Imagingtools.__Content}</Item>
-
-        <!--Conditional items-->
-
-        <If Condition="{IsBuildRelease}">
-          <Item>product.pbxproj</Item>
-          <Item>{SrcRoot}\build\scripts\signer.cmd</Item>
-          <Item>{SrcRoot}\onecore\windows\project.props</Item>
-          <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
-        </If>
-
+        <Item Condition="{(IsBuildRelease AND IsBuildArm32 AND MsWin.Build.IsOfficialBuild) OR (IsBuildRelease AND IsBuildArm64 AND MsWin.Build.IsOfficialBuild) OR (IsBuildRelease AND IsBuildX64 AND MsWin.Build.IsOfficialBuild) OR (IsBuildRelease AND IsBuildX86 AND MsWin.Build.IsOfficialBuild)}">{MsWin.Onecore_Pkg.BinPublic.Imagingtools.__Content}</Item>
       </Consumes>
 
       <!--Produces-->
 
       <Produces>
-
-        <!--Conditional items-->
-
-        <If Condition="{IsBuildRelease}">
-          <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft-console-host-unittests.cab</Item>
-          <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft-console-host-unittests.man.dsm.xml</Item>
-        </If>
-
+        <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft-console-host-unittests.cab</Item>
+        <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft-console-host-unittests.man.dsm.xml</Item>
       </Produces>
     </LegacyBuilder>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_Bin_BlgMsbuildpropsNmakeprops.__Content-->
 
-    <SdkCombineRunner Output="Ut_host_Bin_BlgMsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
+    <SdkCombineRunner Output="Ut_host_Bin_BlgMsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <OutputDirectory>{BinRoot}\blg\msbuildprops\nmakeprops</OutputDirectory>
       <Sources>
         <Item>{Ut_host_Pass1.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
         <Item>{Ut_host_Pass2.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
       </Sources>
     </SdkCombineRunner>
-    <LibrarySetRunner Output="Ut_host_Bin_BlgMsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Ut_host_Bin_BlgMsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Ut_host_Bin_BlgMsbuildpropsNmakeprops.s__Content}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_Bin_BlgPrebuiltTest.__Content-->
 
-    <LibrarySetRunner Output="Ut_host_Bin_BlgPrebuiltTest.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Ut_host_Bin_BlgPrebuiltTest.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Ut_host_Pass2.Directories[BinRoot.Combine("blg\prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_Bin_BlgPrebuiltWindows.__Content-->
 
-    <LibrarySetRunner Output="Ut_host_Bin_BlgPrebuiltWindows.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Ut_host_Bin_BlgPrebuiltWindows.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Ut_host_Pass2.Directories[BinRoot.Combine("blg\prebuilt\windows")]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_Bin_BlgUnittests.__Content-->
 
-    <LibrarySetRunner Output="Ut_host_Bin_BlgUnittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Ut_host_Bin_BlgUnittests.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Ut_host_Pass2.Directories[BinRoot.Combine("blg\unittests")]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_Bin_MsbuildpropsNmakeprops.__Content-->
 
-    <SdkCombineRunner Output="Ut_host_Bin_MsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
+    <SdkCombineRunner Output="Ut_host_Bin_MsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <OutputDirectory>{BinRoot}\msbuildprops\nmakeprops</OutputDirectory>
       <Sources>
         <Item>{Ut_host_Pass1.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
         <Item>{Ut_host_Pass2.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
       </Sources>
     </SdkCombineRunner>
-    <LibrarySetRunner Output="Ut_host_Bin_MsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Ut_host_Bin_MsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Ut_host_Bin_MsbuildpropsNmakeprops.s__Content}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_Bin_PrebuiltTest.__Content-->
 
-    <SdkCombineRunner Output="Ut_host_Bin_PrebuiltTest.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
+    <SdkCombineRunner Output="Ut_host_Bin_PrebuiltTest.s__Content" Visibility="Private" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <OutputDirectory>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}</OutputDirectory>
       <Sources>
         <Item>{Ut_host_Pass2.Directories[BinRoot.Combine("prebuilt\test\", BuildArch, "\", BuildType)]}</Item>
-        <Item Condition="{IsBuildRelease AND IsBuildCommonArchitecture}">{Ut_host_Pass3.Directories[BinRoot.Combine("prebuilt\test\", BuildArch, "\", BuildType)]}</Item>
+        <Item>{Ut_host_Pass3.Directories[BinRoot.Combine("prebuilt\test\", BuildArch, "\", BuildType)]}</Item>
       </Sources>
     </SdkCombineRunner>
-    <LibrarySetRunner Output="Ut_host_Bin_PrebuiltTest.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Ut_host_Bin_PrebuiltTest.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Ut_host_Bin_PrebuiltTest.s__Content}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_Bin_PrebuiltWindows.__Content-->
 
-    <LibrarySetRunner Output="Ut_host_Bin_PrebuiltWindows.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Ut_host_Bin_PrebuiltWindows.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Ut_host_Pass2.Directories[BinRoot.Combine("prebuilt\windows")]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_Bin_SymbolspriUnittestsDll.__Content-->
 
-    <LibrarySetRunner Output="Ut_host_Bin_SymbolspriUnittestsDll.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Ut_host_Bin_SymbolspriUnittestsDll.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Ut_host_Pass2.Directories[BinRoot.Combine("symbols.pri\unittests\dll")]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ut_host_Bin_Unittests.__Content-->
 
-    <LibrarySetRunner Output="Ut_host_Bin_Unittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Ut_host_Bin_Unittests.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Ut_host_Pass2.Directories[BinRoot.Combine("unittests")]}</Directory>
     </LibrarySetRunner>
   </Namespace>

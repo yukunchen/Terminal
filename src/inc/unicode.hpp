@@ -31,3 +31,8 @@ Author(s):
 #define UNICODE_NARROW_NBSP ((WCHAR)0x202f)
 #define UNICODE_QUOTE L'\"'
 #define UNICODE_HYPHEN L'-'
+
+// This is the "Ctrl+C" character. 
+//      With VKey='C', it generates a CTRL_C_EVENT
+//      With VKey=VK_CANCEL (0x3), it generates a CTRL_BREAK_EVENT
+#define UNICODE_ETX L'\x3'

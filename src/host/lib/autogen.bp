@@ -1,34 +1,30 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Host.Lib {
 
-    export declare const qualifier: {
-        platform: "arm32" | "arm64" | "x64" | "x86",
-        configuration: "debug" | "release",
-        codeAnalysisMode: "simpleAnalysis" | "disabled",
-    };
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\host`;
 
     const o = d`${objRoot}\onecore\windows\core\console\open\src\host\lib\${buildAlt}`;
 
-    const prePass = LegacySdk.build({
+    const prePass = LegacyBuild.build({
         template: template_NMake,
         classification: "product",
         targetPass: "prePass",
         
         consumes: [
             f`autogen.bp`,
+            f`autogen.bp`,
             f`hostlib.vcxproj`,
         ],
     });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Host.Lib.pass1
-
-    export const pass1 = LegacySdk.build({
+    export const pass1 = LegacyBuild.build({
         template: template_NMake,
         classification: "product",
         targetPass: "pass1",
         
         consumes: [
+            f`autogen.bp`,
             f`autogen.bp`,
             f`hostlib.vcxproj`,
             f`${dotDot}\_output.cpp`,
@@ -39,6 +35,7 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Lib {
             f`${dotDot}\cmdline.cpp`,
             f`${dotDot}\cmdline.h`,
             f`${dotDot}\conapi.h`,
+            f`${dotDot}\conattrs.cpp`,
             f`${dotDot}\conddkrefs.h`,
             f`${dotDot}\conimeinfo.cpp`,
             f`${dotDot}\conimeinfo.h`,
@@ -68,6 +65,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Lib {
             f`${dotDot}\inputkeyinfo.cpp`,
             f`${dotDot}\inputreadhandledata.cpp`,
             f`${dotDot}\inputreadhandledata.h`,
+            f`${dotDot}\keyeventhelpers.cpp`,
+            f`${dotDot}\keyeventhelpers.hpp`,
             f`${dotDot}\misc.cpp`,
             f`${dotDot}\misc.h`,
             f`${dotDot}\newdelete.cpp`,
@@ -121,6 +120,10 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Lib {
             f`${dotDot}\utf8towidecharparser.hpp`,
             f`${dotDot}\utils.cpp`,
             f`${dotDot}\utils.hpp`,
+            f`${dotDot}\vtinputthread.cpp`,
+            f`${dotDot}\vtinputthread.hpp`,
+            f`${dotDot}\vtio.cpp`,
+            f`${dotDot}\vtio.hpp`,
             f`${dotDot}\writedata.cpp`,
             f`${dotDot}\writedata.hpp`,
             f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
@@ -130,6 +133,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Lib {
             f`${srcRoot}\onecore\windows\core\console\open\src\inc\contsf.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\inc\cpp2017.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\inc\operators.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\inc\unicode.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\inc\vtiomodes.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iaccessibilitynotifier.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsolecontrol.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsoleinputthread.hpp`,
@@ -148,6 +153,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Lib {
             f`${srcRoot}\onecore\windows\core\console\open\src\propslib\registryserialization.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\propslib\shortcutserialization.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\propslib\truetypefontlist.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\base\renderer.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\base\thread.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfo.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfobase.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfodesired.hpp`,
@@ -155,6 +162,10 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Lib {
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderdata.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\vt\vtrenderer.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\vt\wintelnetengine.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\vt\xterm256engine.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\vt\xtermengine.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\apimessage.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\apimessagestate.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\devicecomm.h`,
@@ -166,6 +177,7 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Lib {
             f`${srcRoot}\onecore\windows\core\console\open\src\server\objectheader.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\processhandle.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\processlist.h`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\server\processpolicy.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\waitblock.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\waitqueue.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\waitterminationreason.h`,
@@ -175,17 +187,17 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Lib {
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\mouseinput.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminalinput.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminaloutput.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\inputstatemachineengine.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\istatemachineengine.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\outputstatemachineengine.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\statemachine.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\telemetry.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\tracing.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp`,
 
             prePass,
 
-            $.Public.Internal.Onecorewindows.Inc.header,
-            $.Public.Sdk.Inc.header,
-            $.Public.Sdk.Inc.idl,
-            $.Public.Shared.Inc.header,
             MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.header,
             MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.Stl120.header,
             MsWinCrts.Public.Sdk.Inc.Ucrt.header,
@@ -221,12 +233,17 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Lib {
             MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
             MsWinOnecore_MinKernel.Public.Shared.Inc.header,
             MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
+            Public.Internal.Onecorewindows.Inc.header,
+            Public.Sdk.Inc.header,
+            Public.Sdk.Inc.idl,
+            Public.Shared.Inc.header,
         ],
         
         produces: [
             p`${o}\_output.obj`,
             p`${o}\_stream.obj`,
             p`${o}\cmdline.obj`,
+            p`${o}\conattrs.obj`,
             p`${o}\conhostv2.lib`,
             p`${o}\conimeinfo.obj`,
             p`${o}\consoleinformation.obj`,
@@ -242,6 +259,7 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Lib {
             p`${o}\inputbuffer.obj`,
             p`${o}\inputkeyinfo.obj`,
             p`${o}\inputreadhandledata.obj`,
+            p`${o}\keyeventhelpers.obj`,
             p`${o}\misc.obj`,
             p`${o}\newdelete.obj`,
             p`${o}\ntprivapi.obj`,
@@ -272,6 +290,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Lib {
             p`${o}\tracing.obj`,
             p`${o}\utf8towidecharparser.obj`,
             p`${o}\utils.obj`,
+            p`${o}\vtinputthread.obj`,
+            p`${o}\vtio.obj`,
             p`${o}\writedata.obj`,
         ],
     });

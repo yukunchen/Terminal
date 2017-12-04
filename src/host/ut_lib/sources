@@ -1,0 +1,23 @@
+!include ..\sources.inc
+
+# -------------------------------------
+# Program Information
+# -------------------------------------
+
+TARGETNAME              = ConhostV2.Unittest
+TARGETTYPE              = LIBRARY
+UMTYPE                  = windows
+
+
+TEST_CODE               = 1
+
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
+
+C_DEFINES               = $(C_DEFINES) -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTING
+
+INCLUDES = \
+    $(INCLUDES); \
+    $(SDKTOOLS_INC_PATH)\WexTest\Cue; \
+    

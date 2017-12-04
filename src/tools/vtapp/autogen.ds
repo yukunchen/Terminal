@@ -11,13 +11,14 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_PrePass-->
 
-    <LegacyBuilder Output="Vtapp_PrePass" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Vtapp_PrePass" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>PrePass</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>product.pbxproj</Item>
         <Item>vtapp.csproj</Item>
@@ -26,13 +27,14 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Pass0-->
 
-    <LegacyBuilder Output="Vtapp_Pass0" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Vtapp_Pass0" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass0</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>product.pbxproj</Item>
         <Item>vtapp.csproj</Item>
@@ -57,13 +59,14 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Pass1-->
 
-    <LegacyBuilder Output="Vtapp_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Vtapp_Pass1" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass1</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>product.pbxproj</Item>
         <Item>program.cs</Item>
@@ -71,7 +74,7 @@
         <Item>vtapp.csproj</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
         <Item>{SrcRoot}\build\scripts\csc.cmd</Item>
-        <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
+        <Item>{SrcRoot}\build\scripts\fixtsversionstringappend.cmd</Item>
 
         <!--References-->
 
@@ -101,13 +104,14 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Pass2-->
 
-    <LegacyBuilder Output="Vtapp_Pass2" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Vtapp_Pass2" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass2</TargetPass>
 
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>product.pbxproj</Item>
         <Item>vtapp.csproj</Item>
@@ -131,7 +135,7 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Pass3-->
 
-    <LegacyBuilder Output="Vtapp_Pass3" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Vtapp_Pass3" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass3</TargetPass>
       <d:Tags>
@@ -141,60 +145,46 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
+        <Item>product.pbxproj</Item>
+        <Item>sources.pkg.xml</Item>
         <Item>vtapp.csproj</Item>
+        <Item>{BinRoot}\msbuildprops\localization.txt</Item>
+        <Item>{ObjRoot}\{BuildAlt}\modularbuildglobalbuildsession.props</Item>
+        <Item>{ObjRoot}\{BuildAlt}\__bldlanguageoverride__.props</Item>
+        <Item>{ObjRoot}\{BuildAlt}\__bldlanguage__.props</Item>
+        <Item>{SrcRoot}\onecore\windows\project.props</Item>
+        <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
 
         <!--References-->
 
+        <Item>{MsDev.Clr_Pkg.v45.Public.Sdk.Ref.Clr45.__MetaData}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Pass0}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Pass2}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_PrePass}</Item>
-
-        <!--Conditional items-->
-
-        <If Condition="{IsBuildRelease AND IsBuildCommonArchitecture}">
-          <Item>{MsDev.Clr_Pkg.v45.Public.Sdk.Ref.Clr45.__MetaData}</Item>
-          <Item>{MsWin.Onecore_Pkg.BinPublic.Imagingtools.__Content}</Item>
-        </If>
-
-        <If Condition="{IsBuildRelease}">
-          <Item>product.pbxproj</Item>
-          <Item>sources.pkg.xml</Item>
-          <Item>{BinRoot}\msbuildprops\localization.txt</Item>
-          <Item>{ObjRoot}\{BuildAlt}\modularbuildglobalbuildsession.props</Item>
-          <Item>{ObjRoot}\{BuildAlt}\__bldlanguageoverride__.props</Item>
-          <Item>{ObjRoot}\{BuildAlt}\__bldlanguage__.props</Item>
-          <Item>{SrcRoot}\onecore\windows\project.props</Item>
-          <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
-        </If>
-
+        <Item Condition="{(IsBuildRelease AND IsBuildArm32 AND MsWin.Build.IsOfficialBuild) OR (IsBuildRelease AND IsBuildArm64 AND MsWin.Build.IsOfficialBuild) OR (IsBuildRelease AND IsBuildX64 AND MsWin.Build.IsOfficialBuild) OR (IsBuildRelease AND IsBuildX86 AND MsWin.Build.IsOfficialBuild)}">{MsWin.Onecore_Pkg.BinPublic.Imagingtools.__Content}</Item>
       </Consumes>
 
       <!--Produces-->
 
       <Produces>
-
-        <!--Conditional items-->
-
-        <If Condition="{IsBuildRelease}">
-          <Item>{BinRoot}\blg\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.vtapp.cab.br</Item>
-          <Item>{BinRoot}\blg\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.vtapp.man.dsm.xml.br</Item>
-          <Item>{BinRoot}\blg\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.vtapp.spkg.br</Item>
-          <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.vtapp.cab</Item>
-          <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.vtapp.man.dsm.xml</Item>
-          <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.vtapp.spkg</Item>
-          <Item>{O}\microsoft.console.tools.vtapp.cab</Item>
-          <Item>{O}\microsoft.console.tools.vtapp.man.dsm.xml</Item>
-          <Item>{O}\microsoft.console.tools.vtapp.spkg</Item>
-        </If>
-
+        <Item>{BinRoot}\blg\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.vtapp.cab.br</Item>
+        <Item>{BinRoot}\blg\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.vtapp.man.dsm.xml.br</Item>
+        <Item>{BinRoot}\blg\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.vtapp.spkg.br</Item>
+        <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.vtapp.cab</Item>
+        <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.vtapp.man.dsm.xml</Item>
+        <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft.console.tools.vtapp.spkg</Item>
+        <Item>{O}\microsoft.console.tools.vtapp.cab</Item>
+        <Item>{O}\microsoft.console.tools.vtapp.man.dsm.xml</Item>
+        <Item>{O}\microsoft.console.tools.vtapp.spkg</Item>
       </Produces>
     </LegacyBuilder>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_BlgMsbuildpropsNmakeprops.__Content-->
 
-    <SdkCombineRunner Output="Vtapp_Bin_BlgMsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
+    <SdkCombineRunner Output="Vtapp_Bin_BlgMsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <OutputDirectory>{BinRoot}\blg\msbuildprops\nmakeprops</OutputDirectory>
       <Sources>
         <Item>{Vtapp_Pass0.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
@@ -202,31 +192,31 @@
         <Item>{Vtapp_Pass2.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
       </Sources>
     </SdkCombineRunner>
-    <LibrarySetRunner Output="Vtapp_Bin_BlgMsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Vtapp_Bin_BlgMsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Vtapp_Bin_BlgMsbuildpropsNmakeprops.s__Content}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_BlgPrebuiltTest.__Content-->
 
-    <LibrarySetRunner Output="Vtapp_Bin_BlgPrebuiltTest.__Content" Visibility="Internal" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Vtapp_Bin_BlgPrebuiltTest.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Vtapp_Pass3.Directories[BinRoot.Combine("blg\prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_BlgStrongnamesigning.__Content-->
 
-    <LibrarySetRunner Output="Vtapp_Bin_BlgStrongnamesigning.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Vtapp_Bin_BlgStrongnamesigning.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Vtapp_Pass1.Directories[BinRoot.Combine("blg\strongnamesigning")]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_BlgUnittests.__Content-->
 
-    <LibrarySetRunner Output="Vtapp_Bin_BlgUnittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Vtapp_Bin_BlgUnittests.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Vtapp_Pass1.Directories[BinRoot.Combine("blg\unittests")]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_MsbuildpropsNmakeprops.__Content-->
 
-    <SdkCombineRunner Output="Vtapp_Bin_MsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
+    <SdkCombineRunner Output="Vtapp_Bin_MsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <OutputDirectory>{BinRoot}\msbuildprops\nmakeprops</OutputDirectory>
       <Sources>
         <Item>{Vtapp_Pass0.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
@@ -234,31 +224,31 @@
         <Item>{Vtapp_Pass2.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
       </Sources>
     </SdkCombineRunner>
-    <LibrarySetRunner Output="Vtapp_Bin_MsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Vtapp_Bin_MsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Vtapp_Bin_MsbuildpropsNmakeprops.s__Content}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_PrebuiltTest.__Content-->
 
-    <LibrarySetRunner Output="Vtapp_Bin_PrebuiltTest.__Content" Visibility="Internal" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Vtapp_Bin_PrebuiltTest.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Vtapp_Pass3.Directories[BinRoot.Combine("prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_Strongnamesigning.__Content-->
 
-    <LibrarySetRunner Output="Vtapp_Bin_Strongnamesigning.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Vtapp_Bin_Strongnamesigning.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Vtapp_Pass1.Directories[BinRoot.Combine("strongnamesigning")]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_SymbolspriUnittestsExe.__Content-->
 
-    <LibrarySetRunner Output="Vtapp_Bin_SymbolspriUnittestsExe.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Vtapp_Bin_SymbolspriUnittestsExe.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Vtapp_Pass1.Directories[BinRoot.Combine("symbols.pri\unittests\exe")]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_Unittests.__Content-->
 
-    <LibrarySetRunner Output="Vtapp_Bin_Unittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
+    <LibrarySetRunner Output="Vtapp_Bin_Unittests.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Vtapp_Pass1.Directories[BinRoot.Combine("unittests")]}</Directory>
     </LibrarySetRunner>
   </Namespace>

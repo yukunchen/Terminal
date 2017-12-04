@@ -22,7 +22,6 @@ Author(s):
 #pragma once
 
 #include "..\..\renderer\inc\IRenderEngine.hpp"
-#include "..\..\renderer\inc\MinimalCursor.hpp"
 
 namespace Microsoft
 {
@@ -53,7 +52,7 @@ namespace Microsoft
                 HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget);
                 HRESULT PaintSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles);
 
-                HRESULT PaintCursor(ULONG const ulCursorHeightPercent, bool const fIsDoubleWidth);
+                HRESULT PaintCursor(COORD const coordCursor, ULONG const ulCursorHeightPercent, bool const fIsDoubleWidth);
                 HRESULT ClearCursor();
 
                 HRESULT UpdateDrawingBrushes(COLORREF const colorForeground, COLORREF const colorBackground, _In_ WORD const legacyColorAttribute, bool const fIncludeBackgrounds);
@@ -67,8 +66,6 @@ namespace Microsoft
                 HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
                 HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
                 
-                IRenderCursor* const GetCursor() override;
-
             private:
                 ULONG_PTR _sharedViewBase;
                 SIZE_T _runLength;
@@ -79,8 +76,6 @@ namespace Microsoft
                 COORD _fontSize;
 
                 WORD _currentLegacyColorAttribute;
-
-                MinimalCursor _cursor;
             };
         };
     };

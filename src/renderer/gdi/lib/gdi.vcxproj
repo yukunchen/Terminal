@@ -1,12 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(SolutionDir)src\common.build.pre.props"/>
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\invalidate.cpp" />
     <ClCompile Include="..\math.cpp" />
     <ClCompile Include="..\paint.cpp" />
     <ClCompile Include="..\state.cpp" />
-    <ClCompile Include="..\GdiCursor.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -23,6 +22,6 @@
     <TargetName>ConRenderGdi</TargetName>
   </PropertyGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <Import Project="$(SolutionDir)src\common.build.lib.props"/>
-  <Import Project="$(SolutionDir)src\common.build.post.props"/>
+  <Import Project="$(SolutionDir)src\common.build.lib.props" />
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>

@@ -18,6 +18,7 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>types.vcxproj</Item>
       </Consumes>
@@ -32,6 +33,7 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>types.vcxproj</Item>
         <Item>{DotDot}\focusevent.cpp</Item>
@@ -54,6 +56,8 @@
         <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.Sys.__Header}</Item>
         <Item>{MsWin.Crts.Public.Sdk.Inc.Ucrt.__Header}</Item>
         <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Sdk.Inc.__Header}</Item>
+        <Item>{MsWin.OnecoreCom.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreDrivers.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreNet.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreSdkTools.Public.Internal.Sdk.Inc.__Header}</Item>
@@ -66,6 +70,8 @@
         <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Idl}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_ApiSet.Public.Sdk.Inc.Mincore.__Header}</Item>
+        <Item>{MsWin.Onecore_MinIo.Private.Internal.Minwin.Priv_sdk.Inc.__Header}</Item>
+        <Item>{MsWin.Onecore_MinIo.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.__Idl}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Internal.Base.Inc.__Header}</Item>

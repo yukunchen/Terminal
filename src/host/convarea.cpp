@@ -707,9 +707,8 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
     COORD TargetPoint = ScreenInfo->TextInfo->GetCursor()->GetPosition();
 
-    ROW* const Row = ScreenInfo->TextInfo->GetRowByOffset(TargetPoint.Y);
-    ASSERT(Row != nullptr);
-    DBGOUTPUT(("Row = 0x%p, TargetPoint = (0x%x,0x%x)\n", Row, TargetPoint.X, TargetPoint.Y));
+    ROW& Row = ScreenInfo->TextInfo->GetRowByOffset(TargetPoint.Y);
+    DBGOUTPUT(("&Row = 0x%p, TargetPoint = (0x%x,0x%x)\n", &Row, TargetPoint.X, TargetPoint.Y));
 
     // copy chars
     BisectWrite(StringLength, TargetPoint, ScreenInfo);
@@ -734,41 +733,41 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
             }
         }
     }
-    memmove(&Row->CharRow.Chars[TargetPoint.X], String, StringLength * sizeof(WCHAR));
-    memmove(&Row->CharRow.KAttrs[TargetPoint.X], StringA, StringLength * sizeof(CHAR));
+    memmove(&Row.CharRow.Chars[TargetPoint.X], String, StringLength * sizeof(WCHAR));
+    memmove(&Row.CharRow.KAttrs[TargetPoint.X], StringA, StringLength * sizeof(CHAR));
 
     // recalculate first and last non-space char
-    if (TargetPoint.X < Row->CharRow.Left)
+    if (TargetPoint.X < Row.CharRow.Left)
     {
         // CharRow.Left is leftmost bound of chars in Chars array (array will be full width) i.e. type is COORD
-        PWCHAR LastChar = &Row->CharRow.Chars[coordScreenBufferSize.X - 1];
+        PWCHAR LastChar = &Row.CharRow.Chars[coordScreenBufferSize.X - 1];
         PWCHAR Char;
 
-        for (Char = &Row->CharRow.Chars[TargetPoint.X]; Char < LastChar && *Char == (WCHAR)' '; Char++)
+        for (Char = &Row.CharRow.Chars[TargetPoint.X]; Char < LastChar && *Char == (WCHAR)' '; Char++)
         {
             /* do nothing */ ;
         }
-        Row->CharRow.Left = (SHORT)(Char - Row->CharRow.Chars);
+        Row.CharRow.Left = (SHORT)(Char - Row.CharRow.Chars.get());
     }
 
-    if ((TargetPoint.X + StringLength) >= Row->CharRow.Right)
+    if ((TargetPoint.X + StringLength) >= Row.CharRow.Right)
     {
-        PWCHAR FirstChar = Row->CharRow.Chars;
+        PWCHAR FirstChar = Row.CharRow.Chars.get();
         PWCHAR Char;
 
-        for (Char = &Row->CharRow.Chars[TargetPoint.X + StringLength - 1]; *Char == (WCHAR)' ' && Char >= FirstChar; Char--)
+        for (Char = &Row.CharRow.Chars[TargetPoint.X + StringLength - 1]; *Char == (WCHAR)' ' && Char >= FirstChar; Char--)
         {
             /* do nothing */ ;
         }
 
-        Row->CharRow.Right = (SHORT)(Char + 1 - FirstChar);
+        Row.CharRow.Right = (SHORT)(Char + 1 - FirstChar);
     }
 
     // see if attr string is different.  if so, allocate a new attr buffer and merge the two strings.
     TextAttributeRun* pExistingHead;
-    Row->AttrRow.FindAttrIndex(0, &pExistingHead, nullptr);
+    Row.AttrRow.FindAttrIndex(0, &pExistingHead, nullptr);
 
-    if (Row->AttrRow._cList != 1 || !(pExistingHead->GetAttributes().IsEqual(ScreenInfo->GetAttributes())))
+    if (Row.AttrRow._cList != 1 || !(pExistingHead->GetAttributes().IsEqual(ScreenInfo->GetAttributes())))
     {
         TextAttributeRun InsertedRun;
 
@@ -794,22 +793,22 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
                 // Each time around the loop, take our new 1-length attribute with the appropriate line attributes (underlines, etc.)
                 // and insert it into the existing Run-Length-Encoded attribute list.
-                Row->AttrRow.InsertAttrRuns(&InsertedRun,
-                                            1,
-                                            TargetPoint.X + i,
-                                            (SHORT)(TargetPoint.X + i + 1),
-                                            coordScreenBufferSize.X);
+                Row.AttrRow.InsertAttrRuns(&InsertedRun,
+                                           1,
+                                           TargetPoint.X + i,
+                                           (SHORT)(TargetPoint.X + i),
+                                           coordScreenBufferSize.X);
             }
         }
         else
         {
             InsertedRun.SetLength(StringLength);
             InsertedRun.SetAttributesFromLegacy(wScreenAttributes);
-            Row->AttrRow.InsertAttrRuns(&InsertedRun,
-                                        1,
-                                        TargetPoint.X,
-                                        (SHORT)(TargetPoint.X + StringLength - 1),
-                                        coordScreenBufferSize.X);
+            Row.AttrRow.InsertAttrRuns(&InsertedRun,
+                                       1,
+                                       TargetPoint.X,
+                                       (SHORT)(TargetPoint.X + StringLength - 1),
+                                       coordScreenBufferSize.X);
         }
     }
 

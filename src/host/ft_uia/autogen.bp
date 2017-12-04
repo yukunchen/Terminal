@@ -1,33 +1,34 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia {
 
     export declare const qualifier: {
-        platform: "arm32" | "arm64" | "x64" | "x86",
-        configuration: "debug" | "release",
-        codeAnalysisMode: "simpleAnalysis" | "disabled",
+        platform: WdgBuild.StandardPlatforms,
+        configuration: "release",
     };
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\host`;
 
     const o = d`${objRoot}\onecore\windows\core\console\open\src\host\ft_uia\${buildAlt}`;
 
-    const prePass = LegacySdk.build({
+    const prePass = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
         targetPass: "prePass",
         
         consumes: [
             f`autogen.bp`,
+            f`autogen.bp`,
             f`host.tests.uia.csproj`,
             f`product.pbxproj`,
         ],
     });
 
-    const pass0 = LegacySdk.build({
+    const pass0 = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
         targetPass: "pass0",
         
         consumes: [
+            f`autogen.bp`,
             f`autogen.bp`,
             f`host.tests.uia.csproj`,
             f`product.pbxproj`,
@@ -46,14 +47,13 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia {
         ],
     });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia.pass1
-
-    export const pass1 = LegacySdk.build({
+    export const pass1 = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
         targetPass: "pass1",
         
         consumes: [
+            f`autogen.bp`,
             f`autogen.bp`,
             f`experimentaltabtests.cs`,
             f`host.tests.uia.csproj`,
@@ -86,8 +86,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia {
             f`properties\assemblyinfo.cs`,
             f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
             f`${srcRoot}\build\scripts\csc.cmd`,
+            f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
             f`${srcRoot}\build\scripts\generatetestlist.cmd`,
-            f`${srcRoot}\public\sdk\inc\ntverp.h`,
 
             pass0,
             prePass,
@@ -117,32 +117,13 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia {
         ],
     });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia.bin_BlgStrongnamesigning_content
-
-    export const bin_BlgStrongnamesigning_content = pass1.directories.get(p`${binRoot}\blg\strongnamesigning`);
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia.bin_BlgUnittests_content
-
-    export const bin_BlgUnittests_content = pass1.directories.get(p`${binRoot}\blg\unittests`);
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia.bin_Strongnamesigning_content
-
-    export const bin_Strongnamesigning_content = pass1.directories.get(p`${binRoot}\strongnamesigning`);
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia.bin_SymbolspriUnittestsDll_content
-
-    export const bin_SymbolspriUnittestsDll_content = pass1.directories.get(p`${binRoot}\symbols.pri\unittests\dll`);
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia.bin_Unittests_content
-
-    export const bin_Unittests_content = pass1.directories.get(p`${binRoot}\unittests`);
-
-    const pass2 = LegacySdk.build({
+    const pass2 = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
         targetPass: "pass2",
         
         consumes: [
+            f`autogen.bp`,
             f`autogen.bp`,
             f`host.tests.uia.csproj`,
             f`product.pbxproj`,
@@ -170,43 +151,17 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia {
         ],
     });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia.bin_BlgMsbuildpropsNmakeprops_content
+    export const bin_BlgStrongnamesigning_content = pass1.directories.get(p`${binRoot}\blg\strongnamesigning`);
 
-    @@public
-    export const bin_BlgMsbuildpropsNmakeprops_content = MicrosoftSdk.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\blg\msbuildprops\nmakeprops`,
-        sources: [
-            pass0.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-        ],
-    });
+    export const bin_BlgUnittests_content = pass1.directories.get(p`${binRoot}\blg\unittests`);
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia.bin_BlgPrebuiltTest_content
+    export const bin_Strongnamesigning_content = pass1.directories.get(p`${binRoot}\strongnamesigning`);
 
-    export const bin_BlgPrebuiltTest_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`);
+    export const bin_SymbolspriUnittestsDll_content = pass1.directories.get(p`${binRoot}\symbols.pri\unittests\dll`);
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia.bin_BlgPrebuiltWindows_content
+    export const bin_Unittests_content = pass1.directories.get(p`${binRoot}\unittests`);
 
-    export const bin_BlgPrebuiltWindows_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\windows`);
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia.bin_MsbuildpropsNmakeprops_content
-
-    @@public
-    export const bin_MsbuildpropsNmakeprops_content = MicrosoftSdk.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\msbuildprops\nmakeprops`,
-        sources: [
-            pass0.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-        ],
-    });
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia.bin_PrebuiltWindows_content
-
-    export const bin_PrebuiltWindows_content = pass2.directories.get(p`${binRoot}\prebuilt\windows`);
-
-    const pass3 = LegacySdk.build({
+    const pass3 = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
         targetPass: "pass3",
@@ -216,44 +171,58 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia {
         
         consumes: [
             f`autogen.bp`,
+            f`autogen.bp`,
             f`host.tests.uia.csproj`,
+            f`product.pbxproj`,
+            f`${srcRoot}\build\scripts\signer.cmd`,
+            f`${srcRoot}\onecore\windows\project.props`,
+            f`${srcRoot}\public\sdk\inc\ntverp.h`,
             pass0,
             pass1,
             pass2,
             prePass,
-            isBuildRelease && isBuildCommonArchitecture ? MsWinOnecore_Pkg.BinPublic.Imagingtools.content : undefined,
-            ...addIf(
-                isBuildRelease,
-                () => [
-                    f`product.pbxproj`,
-                    f`${srcRoot}\build\scripts\signer.cmd`,
-                    f`${srcRoot}\onecore\windows\project.props`,
-                    f`${srcRoot}\public\sdk\inc\ntverp.h`,
-                ]
-            ),
+            (isBuildRelease && isBuildArm32 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildArm64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX86 && MsWinBuild.isOfficialBuild) ? MsWinOnecore_Pkg.BinPublic.Imagingtools.content : undefined,
         ]
         .filter(e => e !== undefined),
         
         produces: [
-            ...addIf(
-                isBuildRelease,
-                () => [
-                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-uiautomationtests.cab`,
-                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-uiautomationtests.man.dsm.xml`,
-                ]
-            ),
+            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-uiautomationtests.cab`,
+            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-uiautomationtests.man.dsm.xml`,
         ],
     });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia.bin_PrebuiltTest_content
+    @@public
+    export const bin_BlgMsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
+        outputDirectory: d`${binRoot}\blg\msbuildprops\nmakeprops`,
+        sources: [
+            pass0.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+            pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+            pass2.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+        ],
+    });
+
+    export const bin_BlgPrebuiltTest_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`);
+
+    export const bin_BlgPrebuiltWindows_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\windows`);
 
     @@public
-    export const bin_PrebuiltTest_content = MicrosoftSdk.SdkCombine.evaluate({
+    export const bin_MsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
+        outputDirectory: d`${binRoot}\msbuildprops\nmakeprops`,
+        sources: [
+            pass0.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+            pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+            pass2.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+        ],
+    });
+
+    export const bin_PrebuiltWindows_content = pass2.directories.get(p`${binRoot}\prebuilt\windows`);
+
+    @@public
+    export const bin_PrebuiltTest_content = WdgBuild.SdkCombine.evaluate({
         outputDirectory: d`${binRoot}\prebuilt\test\${buildArch}\${buildType}`,
         sources: [
             pass2.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`),
-            isBuildRelease && isBuildCommonArchitecture ? pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`) : undefined,
-        ]
-        .filter(e => e !== undefined),
+            pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`),
+        ],
     });
 }

@@ -102,17 +102,7 @@ void VtConsole::_spawn2(const std::wstring& command)
 }
 
 void VtConsole::_spawn3(const std::wstring& command)
-{
-    SECURITY_ATTRIBUTES sa;
-    sa = { 0 };
-    sa.nLength = sizeof(sa);
-    sa.bInheritHandle = TRUE;
-    sa.lpSecurityDescriptor = nullptr;
-
-    // Create some anon pipes so we can pass handles down and into the openconsole/console host.
-    THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&_inPipeConhostSide, &_inPipe, &sa, 0));
-    THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&_outPipe, &_outPipeConhostSide, &sa, 0));
-    
+{    
     _openConsole3(command);
     
     _connected = true;
@@ -202,12 +192,43 @@ void VtConsole::_openConsole3(const std::wstring& command)
         cmdline += L" --headless";
     }
 
+    // Create some anon pipes so we can pass handles down and into the console.
+    // IMPORTANT NOTE:
+    // We're creating the pipe here with un-inheritable handles, then marking 
+    //      the conhost sides of the pipes as inheritable. We do this because if
+    //      the entire pipe is marked as inheritable, when we pass the handles 
+    //      to CreateProcess, at some point the entire pipe object is copied to
+    //      the conhost process, which includes the terminal side of the pipes 
+    //      (_inPipe and _outPipe). This means that if we die, there's still 
+    //      outstanding handles to our side of the pipes, and those handles are
+    //      in conhost, despite conhost being unable to reference those handles 
+    //      and close them.
+
+    // CRITICAL: Close our side of the handles. Otherwise you'll get the same 
+    //      problem if you close conhost, but not us (the terminal).
+    // The conhost sides of the pipe will be unique_hfile's so that they'll get 
+    //      closed automatically at the end of the method.
+    wil::unique_hfile outPipeConhostSide;
+    wil::unique_hfile inPipeConhostSide;
+
+    SECURITY_ATTRIBUTES sa;
+    sa = { 0 };
+    sa.nLength = sizeof(sa);
+    sa.bInheritHandle = FALSE;
+    sa.lpSecurityDescriptor = nullptr;
+
+    THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&inPipeConhostSide, &_inPipe, &sa, 0));
+    THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&_outPipe, &outPipeConhostSide, &sa, 0));
+
+    THROW_IF_WIN32_BOOL_FALSE(SetHandleInformation(inPipeConhostSide.get(), HANDLE_FLAG_INHERIT, 1));
+    THROW_IF_WIN32_BOOL_FALSE(SetHandleInformation(outPipeConhostSide.get(), HANDLE_FLAG_INHERIT, 1));
+
     STARTUPINFO si = { 0 };
     si.cb = sizeof(STARTUPINFOW);
-    si.hStdInput = _inPipeConhostSide;
-    si.hStdOutput = _outPipeConhostSide;
+    si.hStdInput = inPipeConhostSide.get();
+    si.hStdOutput = outPipeConhostSide.get();
+    si.hStdError = outPipeConhostSide.get();
     si.dwFlags |= STARTF_USESTDHANDLES;
-    
 
     if (command.length() > 0)
     {
@@ -218,19 +239,19 @@ void VtConsole::_openConsole3(const std::wstring& command)
     {
         si.dwFlags |= STARTF_USESHOWWINDOW;
         si.wShowWindow = SW_MINIMIZE;
-    }
+    }    
 
     bool fSuccess = !!CreateProcess(
         nullptr,
         &cmdline[0],
         nullptr,    // lpProcessAttributes
         nullptr,    // lpThreadAttributes
-        true,      // bInheritHandles
+        true,       // bInheritHandles
         0,          // dwCreationFlags
         nullptr,    // lpEnvironment
         nullptr,    // lpCurrentDirectory
-        &si,        //lpStartupInfo
-        &pi         //lpProcessInformation
+        &si,        // lpStartupInfo
+        &pi         // lpProcessInformation
     );
 
     if (!fSuccess)
@@ -239,17 +260,6 @@ void VtConsole::_openConsole3(const std::wstring& command)
         std::string msg = "Failed to launch Openconsole";
         WriteFile(hOut, msg.c_str(), (DWORD)msg.length(), nullptr, nullptr);
     }
-    fSuccess;
-}
-
-DWORD VtConsole::getReadOffset()
-{
-    return _offset;
-}
-
-void VtConsole::incrementReadOffset(DWORD offset)
-{
-    _offset += offset;
 }
 
 void VtConsole::activate()

@@ -1,16 +1,15 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
 
     export declare const qualifier: {
-        platform: "arm32" | "arm64" | "x64" | "x86",
-        configuration: "debug" | "release",
-        codeAnalysisMode: "simpleAnalysis" | "disabled",
+        platform: WdgBuild.StandardPlatforms,
+        configuration: "release",
     };
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter`;
 
     const o = d`${objRoot}\onecore\windows\core\console\open\src\terminal\adapter\ut_adapter\${buildAlt}`;
 
-    const prePass = LegacySdk.build({
+    const prePass = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
         targetPass: "prePass",
@@ -18,13 +17,12 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
         consumes: [
             f`adapter.unittests.vcxproj`,
             f`autogen.bp`,
+            f`autogen.bp`,
             f`product.pbxproj`,
         ],
     });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter.pass1
-
-    export const pass1 = LegacySdk.build({
+    export const pass1 = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
         targetPass: "pass1",
@@ -32,6 +30,7 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
         consumes: [
             f`adapter.unittests.vcxproj`,
             f`adaptertest.cpp`,
+            f`autogen.bp`,
             f`autogen.bp`,
             f`inputtest.cpp`,
             f`mouseinputtest.cpp`,
@@ -57,21 +56,20 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
             f`${srcRoot}\build\scripts\generatetestlist.cmd`,
             f`${srcRoot}\onecore\windows\core\console\open\src\inc\conattrs.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\inc\consoletaeftemplates.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\inc\unicode.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\interactivity\inc\vtapiredirection.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp`,
 
             prePass,
 
-            $.Public.Sdk.Inc.header,
-            $.Public.Sdk.Inc.idl,
-            $.Public.Shared.Inc.header,
             MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.header,
             MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.Stl120.header,
             MsWinCrts.Public.Sdk.Inc.Ucrt.header,
             MsWinCrts.Public.Sdk.Inc.Ucrt.Sys.header,
             MsWinOnecoreBase.Public.Sdk.Inc.header,
             MsWinOnecoreBase.Public.Shared.Inc.header,
+            MsWinOnecoreCom.Public.Sdk.Inc.header,
             MsWinOnecoreCom.Public.Shared.Inc.header,
             MsWinOnecoreNet.Public.Sdk.Inc.header,
             MsWinOnecoreSdkTools.Public.Internal.Onecoresdktools.Inc.header,
@@ -80,6 +78,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
             MsWinOnecoreShell.Public.Internal.Sdk.Inc.Wil.header,
             MsWinOnecoreShell.Public.Sdk.Inc.idl,
             MsWinOnecore_ApiSet.Public.Sdk.Inc.Mincore.header,
+            MsWinOnecore_MinIo.Private.Internal.Minwin.Priv_sdk.Inc.header,
+            MsWinOnecore_MinIo.Public.Shared.Inc.header,
             MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.idl,
             MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.Telemetry.header,
             MsWinOnecore_MinKernel.Public.Internal.Base.Inc.header,
@@ -88,6 +88,10 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
             MsWinOnecore_MinKernel.Public.Shared.Inc.header,
             MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
             MsWinOnecore_Taef.Public.Internal.Sdktools.Inc.Wextest.Cue.header,
+            Public.Internal.Onecorewindows.Inc.header,
+            Public.Sdk.Inc.header,
+            Public.Sdk.Inc.idl,
+            Public.Shared.Inc.header,
         ],
         
         produces: [
@@ -114,7 +118,7 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
         ],
     });
 
-    const pass2 = LegacySdk.build({
+    const pass2 = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
         targetPass: "pass2",
@@ -122,6 +126,7 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
         consumes: [
             f`adapter.unittests.vcxproj`,
             f`adaptertest.cpp`,
+            f`autogen.bp`,
             f`autogen.bp`,
             f`inputtest.cpp`,
             f`mouseinputtest.cpp`,
@@ -137,11 +142,10 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
             f`${dotDot}\tracing.cpp`,
             f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
             f`${srcRoot}\build\scripts\expdelayload.cmd`,
+            f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
             f`${srcRoot}\build\scripts\testmdgen.cmd`,
-            f`${srcRoot}\public\sdk\inc\ntverp.h`,
             MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
-            isBuildDebug && isBuildCommonArchitecture ? MsWinCrts.Public.Internal.Sdk.Lib.library : undefined,
-            isBuildArm32 || isBuildArm64 ? MsWinCrts.Public.Sdk.Lib.library : undefined,
+            isBuildRelease && (isBuildArm32 || isBuildArm64) ? MsWinCrts.Public.Sdk.Lib.library : undefined,
             MsWinOnecoreAvcore.Private.Internal.Moderncore.Priv_sdk.Lib.V1_6.library,
             MsWinOnecoreMerged.Private.Internal.Minwin.Priv_sdk.Lib.library,
             MsWinOnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.V1_7.library,
@@ -150,22 +154,23 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
             MsWinOnecoreUapMerged.Public.Internal.Sdk.Lib.library,
             MsWinOnecoreUapShell.Public.Sdk.Lib.library,
             MsWinOnecoreUapWindows.Public.Internal.Onecoreuapwindows.Lib.library,
-            $.Onecore.Windows.Core.Console.Open.Src.Host.Lib.pass1,
-            $.Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib.pass1,
-            $.Onecore.Windows.Core.Console.Open.Src.Interactivity.Onecore.Lib.pass1,
-            $.Onecore.Windows.Core.Console.Open.Src.Interactivity.Win32.Lib.pass1,
-            $.Onecore.Windows.Core.Console.Open.Src.Propslib.pass1,
-            $.Onecore.Windows.Core.Console.Open.Src.Renderer.Base.Lib.pass1,
-            $.Onecore.Windows.Core.Console.Open.Src.Renderer.Gdi.Lib.pass1,
-            $.Onecore.Windows.Core.Console.Open.Src.Renderer.Wddmcon.Lib.pass1,
-            $.Onecore.Windows.Core.Console.Open.Src.Server.Lib.pass1,
-            $.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Lib.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Host.Lib.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Interactivity.Onecore.Lib.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Interactivity.Win32.Lib.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Propslib.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Renderer.Base.Lib.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Renderer.Gdi.Lib.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Renderer.Vt.Lib.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Renderer.Wddmcon.Lib.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Server.Lib.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Lib.pass1,
             pass1,
             prePass,
-            $.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib.pass1,
-            $.Onecore.Windows.Core.Console.Open.Src.Tsf.pass1,
-            $.Onecore.Windows.Core.Console.Open.Src.Types.Lib.pass1,
-            $.Onecore.Windows.Moderncore.Apiset.Libs.Uiacore.Current.internalModerncorePriv_sdkLib16_library,
+            Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Tsf.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Types.Lib.pass1,
+            Onecore.Windows.Moderncore.Apiset.Libs.Uiacore.Current.internalModerncorePriv_sdkLib16_library,
             MsWinOnecore_ApiSet.Private.Internal.Mincore.Priv_sdk.Lib.V1_7.library,
             MsWinOnecore_MinCore.Private.Internal.Mincore.Priv_sdk.Lib.library,
             MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Lib.V1_8.library,
@@ -197,53 +202,7 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
         ],
     });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter.bin_BlgMsbuildpropsNmakeprops_content
-
-    @@public
-    export const bin_BlgMsbuildpropsNmakeprops_content = MicrosoftSdk.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\blg\msbuildprops\nmakeprops`,
-        sources: [
-            pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-        ],
-    });
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter.bin_BlgPrebuiltTest_content
-
-    export const bin_BlgPrebuiltTest_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`);
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter.bin_BlgPrebuiltWindows_content
-
-    export const bin_BlgPrebuiltWindows_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\windows`);
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter.bin_BlgUnittests_content
-
-    export const bin_BlgUnittests_content = pass2.directories.get(p`${binRoot}\blg\unittests`);
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter.bin_MsbuildpropsNmakeprops_content
-
-    @@public
-    export const bin_MsbuildpropsNmakeprops_content = MicrosoftSdk.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\msbuildprops\nmakeprops`,
-        sources: [
-            pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-        ],
-    });
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter.bin_PrebuiltWindows_content
-
-    export const bin_PrebuiltWindows_content = pass2.directories.get(p`${binRoot}\prebuilt\windows`);
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter.bin_SymbolspriUnittestsDll_content
-
-    export const bin_SymbolspriUnittestsDll_content = pass2.directories.get(p`${binRoot}\symbols.pri\unittests\dll`);
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter.bin_Unittests_content
-
-    export const bin_Unittests_content = pass2.directories.get(p`${binRoot}\unittests`);
-
-    const pass3 = LegacySdk.build({
+    const pass3 = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
         targetPass: "pass3",
@@ -254,42 +213,60 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
         consumes: [
             f`adapter.unittests.vcxproj`,
             f`autogen.bp`,
+            f`autogen.bp`,
+            f`product.pbxproj`,
+            f`${srcRoot}\build\scripts\signer.cmd`,
+            f`${srcRoot}\onecore\windows\project.props`,
+            f`${srcRoot}\public\sdk\inc\ntverp.h`,
             pass1,
             pass2,
             prePass,
-            isBuildRelease && isBuildCommonArchitecture ? MsWinOnecore_Pkg.BinPublic.Imagingtools.content : undefined,
-            ...addIf(
-                isBuildRelease,
-                () => [
-                    f`product.pbxproj`,
-                    f`${srcRoot}\build\scripts\signer.cmd`,
-                    f`${srcRoot}\onecore\windows\project.props`,
-                    f`${srcRoot}\public\sdk\inc\ntverp.h`,
-                ]
-            ),
+            (isBuildRelease && isBuildArm32 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildArm64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX86 && MsWinBuild.isOfficialBuild) ? MsWinOnecore_Pkg.BinPublic.Imagingtools.content : undefined,
         ]
         .filter(e => e !== undefined),
         
         produces: [
-            ...addIf(
-                isBuildRelease,
-                () => [
-                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-virtualterminal-adapter-unittests.cab`,
-                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-virtualterminal-adapter-unittests.man.dsm.xml`,
-                ]
-            ),
+            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-virtualterminal-adapter-unittests.cab`,
+            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-virtualterminal-adapter-unittests.man.dsm.xml`,
         ],
     });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter.bin_PrebuiltTest_content
+    @@public
+    export const bin_BlgMsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
+        outputDirectory: d`${binRoot}\blg\msbuildprops\nmakeprops`,
+        sources: [
+            pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+            pass2.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+        ],
+    });
+
+    export const bin_BlgPrebuiltTest_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`);
+
+    export const bin_BlgPrebuiltWindows_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\windows`);
+
+    export const bin_BlgUnittests_content = pass2.directories.get(p`${binRoot}\blg\unittests`);
 
     @@public
-    export const bin_PrebuiltTest_content = MicrosoftSdk.SdkCombine.evaluate({
+    export const bin_MsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
+        outputDirectory: d`${binRoot}\msbuildprops\nmakeprops`,
+        sources: [
+            pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+            pass2.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+        ],
+    });
+
+    export const bin_PrebuiltWindows_content = pass2.directories.get(p`${binRoot}\prebuilt\windows`);
+
+    export const bin_SymbolspriUnittestsDll_content = pass2.directories.get(p`${binRoot}\symbols.pri\unittests\dll`);
+
+    export const bin_Unittests_content = pass2.directories.get(p`${binRoot}\unittests`);
+
+    @@public
+    export const bin_PrebuiltTest_content = WdgBuild.SdkCombine.evaluate({
         outputDirectory: d`${binRoot}\prebuilt\test\${buildArch}\${buildType}`,
         sources: [
             pass2.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`),
-            isBuildRelease && isBuildCommonArchitecture ? pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`) : undefined,
-        ]
-        .filter(e => e !== undefined),
+            pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`),
+        ],
     });
 }

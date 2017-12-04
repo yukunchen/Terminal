@@ -8,9 +8,13 @@
 #include "Xterm256Engine.hpp"
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
-Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe) :
-    XtermEngine(std::move(hPipe), nullptr, 0, false)
+Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
+                               _In_ const Viewport initialViewport,
+                               _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                               _In_ const WORD cColorTable) :
+    XtermEngine(std::move(hPipe), initialViewport, ColorTable, cColorTable, false)
 {
 }
 
@@ -31,5 +35,8 @@ HRESULT Xterm256Engine::UpdateDrawingBrushes(_In_ COLORREF const colorForeground
                                              _In_ WORD const /*legacyColorAttribute*/,
                                              _In_ bool const /*fIncludeBackgrounds*/)
 {
-    return VtEngine::_RgbUpdateDrawingBrushes(colorForeground, colorBackground);
+    return VtEngine::_RgbUpdateDrawingBrushes(colorForeground,
+                                              colorBackground,
+                                              _ColorTable,
+                                              _cColorTable);
 }

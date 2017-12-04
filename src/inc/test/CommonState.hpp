@@ -19,6 +19,8 @@ unit testing projects in the codebase without a bunch of overhead.
 
 #pragma once
 
+#define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(NT_SUCCESS(x))
+
 #include "precomp.h"
 #include "../host/globals.h"
 #include "../host/newdelete.hpp"
@@ -131,12 +133,22 @@ public:
         UINT uiCursorSize = 12;
 
         m_backupTextBufferInfo = gci.CurrentScreenBuffer->TextInfo;
-
-        m_ntstatusTextBufferInfo = TEXT_BUFFER_INFO::CreateInstance(m_pFontInfo,
-                                                                    coordScreenBufferSize,
-                                                                    ciFill,
-                                                                    uiCursorSize,
-                                                                    &gci.CurrentScreenBuffer->TextInfo);
+        try
+        {
+            std::unique_ptr<TEXT_BUFFER_INFO> textBuffer = std::make_unique<TEXT_BUFFER_INFO>(m_pFontInfo,
+                                                                                              coordScreenBufferSize,
+                                                                                              ciFill,
+                                                                                              uiCursorSize);
+            if (textBuffer.get() == nullptr)
+            {
+                m_ntstatusTextBufferInfo = STATUS_NO_MEMORY;
+            }
+            gci.CurrentScreenBuffer->TextInfo = textBuffer.release();
+        }
+        catch (...)
+        {
+            m_ntstatusTextBufferInfo = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+        }
     }
 
     void CleanupNewTextBufferInfo()
@@ -161,8 +173,8 @@ public:
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
-            ROW* pRow = &pTextInfo->Rows[iRow];
-            FillRow(pRow);
+            ROW& row = pTextInfo->GetRowAtIndex(iRow);
+            FillRow(&row);
         }
 
         pTextInfo->GetCursor()->SetYPosition(cRowsToFill);
@@ -181,8 +193,8 @@ public:
 
         for (SHORT iRow = 0; iRow < cRowsToFill; iRow++)
         {
-            ROW* pRow = &pTextInfo->Rows[iRow];
-            FillBisect(pRow);
+            ROW& row = pTextInfo->GetRowAtIndex(iRow);
+            FillBisect(&row);
         }
 
         pTextInfo->GetCursor()->SetYPosition(cRowsToFill);
@@ -206,7 +218,7 @@ private:
         // か = \x304b
         // き = \x304d
         PCWSTR pwszText = L"AB" L"\x304b\x304b" L"C" L"\x304d\x304d" L"DE      ";
-        memcpy_s(pRow->CharRow.Chars, CommonState::s_csBufferWidth, pwszText, wcslen(pwszText));
+        memcpy_s(pRow->CharRow.Chars.get(), CommonState::s_csBufferWidth, pwszText, wcslen(pwszText));
         pRow->CharRow.Left = 0;
         pRow->CharRow.Right = 9; // 1 past the last valid character in the array
 
@@ -218,7 +230,7 @@ private:
 
         // set some colors
         TextAttribute Attr = TextAttribute(0);
-        pRow->AttrRow.Initialize(15, Attr);
+        pRow->AttrRow.Reset(15, Attr);
         // A = bright red on dark gray
         // This string starts at index 0
         Attr = TextAttribute(FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_INTENSITY);
@@ -265,7 +277,7 @@ private:
             L"\x304d\x304d"
             L"0123456789"
             L"\x304d";
-        memcpy_s(pRow->CharRow.Chars, CommonState::s_csBufferWidth, pwszText, wcslen(pwszText));
+        memcpy_s(pRow->CharRow.Chars.get(), CommonState::s_csBufferWidth, pwszText, wcslen(pwszText));
         pRow->CharRow.Left = 0;
         pRow->CharRow.Right = 80; // 1 past the last valid character in the array
 
@@ -280,7 +292,7 @@ private:
         pRow->CharRow.KAttrs[79] = CHAR_ROW::ATTR_LEADING_BYTE;
 
         // everything gets default attributes
-        pRow->AttrRow.Initialize(80, gci.CurrentScreenBuffer->GetAttributes());
+        pRow->AttrRow.Reset(80, gci.CurrentScreenBuffer->GetAttributes());
 
         pRow->CharRow.SetWrapStatus(true);
     }

@@ -15,6 +15,7 @@
 #include "../terminal/adapter/InteractDispatch.hpp"
 #include "../types/inc/convert.hpp"
 #include "server.h"
+#include "output.h"
 
 using namespace Microsoft::Console;
 
@@ -32,9 +33,6 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
     : _hFile(std::move(hPipe))
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
-
-
-
 }
 
 // Method Description:
@@ -89,11 +87,30 @@ DWORD VtInputThread::_InputThread()
 {
     char buffer[256];
     DWORD dwRead;
+
     while (true)
     {
         dwRead = 0;
-        THROW_LAST_ERROR_IF_FALSE(ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
-
+        bool fSuccess = !!ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
+        
+        // If we failed to read because the terminal broke our pipe (usually due
+        //      to dying itself), close gracefully with ERROR_BROKEN_PIPE.
+        // Otherwise throw an exception. ERROR_BROKEN_PIPE is the only case that
+        //       we want to gracefully close in.
+        if (!fSuccess)
+        {
+            DWORD lastError = GetLastError();
+            if (lastError == ERROR_BROKEN_PIPE)
+            {
+                // This won't return. We'll be terminated.
+                CloseConsoleProcessState();
+            }
+            else
+            {
+                THROW_WIN32(lastError);
+            }
+        }
+        
         THROW_IF_FAILED(_HandleRunInput(buffer, dwRead));
     }
 }

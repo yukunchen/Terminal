@@ -72,24 +72,7 @@ Settings::Settings() :
 
     ZeroMemory((void*)&_LaunchFaceName, sizeof(_LaunchFaceName));
 
-    // Default hardcoded colors for use in console. These are used when there are no overriding colors to load from the
-    // registry or shortcut files.
-    _ColorTable[0] =  RGB( 12,  12,  12); // Black
-    _ColorTable[1] =  RGB( 0,   55, 218); // Dark Blue
-    _ColorTable[2] =  RGB( 19, 161,  14); // Dark Green
-    _ColorTable[3] =  RGB( 58, 150, 221); // Dark Cyan
-    _ColorTable[4] =  RGB(197,  15,  31); // Dark Red
-    _ColorTable[5] =  RGB(136,  23, 152); // Dark Magenta
-    _ColorTable[6] =  RGB(193, 156,   0); // Dark Yellow
-    _ColorTable[7] =  RGB(204, 204, 204); // Dark White
-    _ColorTable[8] =  RGB(118, 118, 118); // Bright Black
-    _ColorTable[9] =  RGB( 59, 120, 255); // Bright Blue
-    _ColorTable[10] = RGB( 22, 198,  12); // Bright Green
-    _ColorTable[11] = RGB( 97, 214, 214); // Bright Cyan
-    _ColorTable[12] = RGB(231,  72,  86); // Bright Red
-    _ColorTable[13] = RGB(180,   0, 158); // Bright Magenta
-    _ColorTable[14] = RGB(249, 241, 165); // Bright Yellow
-    _ColorTable[15] = RGB(242, 242, 242); // White
+    _InitColorTable();
 
     _InitXtermTableValue(0,   0x00, 0x00, 0x00);
     _InitXtermTableValue(1,   0x80, 0x00, 0x00);
@@ -349,11 +332,81 @@ Settings::Settings() :
     _InitXtermTableValue(255, 0xee, 0xee, 0xee);
 }
 
-
-
 void Settings::_InitXtermTableValue(_In_ const size_t iIndex, _In_ const byte bRed, _In_ const byte bGreen, _In_ const byte bBlue)
 {
     _XtermColorTable[iIndex] = RGB(bRed, bGreen, bBlue);
+}
+
+// Routine Description:
+// - Assigns default colors to the color table. These match the manifest file for the registry.
+// Arguments:
+// - <none> - Operates on internal state
+// Return Value:
+// - <none>
+void Settings::_InitColorTable()
+{
+    // Default hardcoded colors for use in console. These are used when there are no overriding colors to load from the
+    // registry or shortcut files.
+    _ColorTable[0] = RGB(12, 12, 12); // Black
+    _ColorTable[1] = RGB(0, 55, 218); // Dark Blue
+    _ColorTable[2] = RGB(19, 161, 14); // Dark Green
+    _ColorTable[3] = RGB(58, 150, 221); // Dark Cyan
+    _ColorTable[4] = RGB(197, 15, 31); // Dark Red
+    _ColorTable[5] = RGB(136, 23, 152); // Dark Magenta
+    _ColorTable[6] = RGB(193, 156, 0); // Dark Yellow
+    _ColorTable[7] = RGB(204, 204, 204); // Dark White
+    _ColorTable[8] = RGB(118, 118, 118); // Bright Black
+    _ColorTable[9] = RGB(59, 120, 255); // Bright Blue
+    _ColorTable[10] = RGB(22, 198, 12); // Bright Green
+    _ColorTable[11] = RGB(97, 214, 214); // Bright Cyan
+    _ColorTable[12] = RGB(231, 72, 86); // Bright Red
+    _ColorTable[13] = RGB(180, 0, 158); // Bright Magenta
+    _ColorTable[14] = RGB(249, 241, 165); // Bright Yellow
+    _ColorTable[15] = RGB(242, 242, 242); // White
+}
+
+// Routine Description:
+// - Applies hardcoded default settings that are in line with what is defined
+//   in our Windows edition manifest (living in win32k-settings.man).
+// - NOTE: This exists in case we cannot access the registry on desktop platforms.
+//   We will use this to provide better defaults than the constructor values which
+//   are optimized for OneCore.
+// Arguments:
+// - <none>
+// Return Value: 
+// - <none> - Adjusts internal state only.
+void Settings::ApplyDesktopSpecificDefaults()
+{
+    _dwFontSize.X = 0;
+    _dwFontSize.Y = 16;
+    _uFontFamily = 0;
+    _dwScreenBufferSize.X = 120;
+    _dwScreenBufferSize.Y = 9001;
+    _uCursorSize = 25;
+    _dwWindowSize.X = 120;
+    _dwWindowSize.Y = 30;
+    _wFillAttribute = 0x7;
+    _wPopupFillAttribute = 0xf5;
+    wcscpy_s(_FaceName, L"__DefaultTTFont__");
+    _uFontWeight = 0;
+    _bInsertMode = TRUE;
+    _bFullScreen = FALSE;
+    _fCtrlKeyShortcutsDisabled = false;
+    _bWrapText = true;
+    _bLineSelection = TRUE;
+    _bWindowAlpha = 255;
+    _fFilterOnPaste = TRUE;
+    _bQuickEdit = TRUE;
+    _uHistoryBufferSize = 50;
+    _uNumberOfHistoryBuffers = 4;
+    _bHistoryNoDup = FALSE;
+
+    _InitColorTable();
+
+    _fExtendedEditKey = true;
+    _fTrimLeadingZeros = false;
+    _fEnableColorSelection = false;
+    _uScrollScale = 1;
 }
 
 void Settings::ApplyStartupInfo(_In_ const Settings* const pStartupSettings)

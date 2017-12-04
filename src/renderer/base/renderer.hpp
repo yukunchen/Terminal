@@ -67,8 +67,6 @@ namespace Microsoft
 
                 void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
 
-                void MoveCursor(_In_ const COORD cPosition) override;
-
             private:
                 Renderer(_In_ std::unique_ptr<IRenderData> pData,
                          _In_reads_(cEngines) IRenderEngine** const pEngine,
@@ -85,14 +83,14 @@ namespace Microsoft
 
                 void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
                 void _PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
-                                                        _In_ const ROW* const pRow,
+                                                        _In_ const ROW& pRow,
                                                         _In_reads_(cchLine) PCWCHAR const pwsLine,
                                                         _In_reads_(cchLine) PBYTE pbKAttrsLine,
                                                         _In_ size_t cchLine,
                                                         _In_ size_t iFirstAttr,
                                                         _In_ COORD const coordTarget);
                 void _PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
-                                                   _In_ const ROW* const pRow,
+                                                   _In_ const ROW& pRow,
                                                    _In_reads_(cchLine) PCWCHAR const pwsLine,
                                                    _In_reads_(cchLine) PBYTE pbKAttrsLine,
                                                    _In_ size_t cchLine,
@@ -127,6 +125,12 @@ namespace Microsoft
 
                 SMALL_RECT _RegionFromCoord(_In_ const COORD* const pcoord) const;
                 COLORREF _ConvertAttrToRGB(_In_ const BYTE bAttr);
+
+#ifdef DBG
+                // Helper functions to diagnose issues with painting and layout.
+                // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.
+                bool _fDebug = false;
+#endif
             };
         };
     };

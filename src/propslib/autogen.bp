@@ -1,34 +1,30 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Propslib {
 
-    export declare const qualifier: {
-        platform: "arm32" | "arm64" | "x64" | "x86",
-        configuration: "debug" | "release",
-        codeAnalysisMode: "simpleAnalysis" | "disabled",
-    };
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src`;
 
     const o = d`${objRoot}\onecore\windows\core\console\open\src\propslib\${buildAlt}`;
 
-    const prePass = LegacySdk.build({
+    const prePass = LegacyBuild.build({
         template: template_NMake,
         classification: "product",
         targetPass: "prePass",
         
         consumes: [
             f`autogen.bp`,
+            f`autogen.bp`,
             f`propslib.vcxproj`,
         ],
     });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propslib.pass1
-
-    export const pass1 = LegacySdk.build({
+    export const pass1 = LegacyBuild.build({
         template: template_NMake,
         classification: "product",
         targetPass: "pass1",
         
         consumes: [
+            f`autogen.bp`,
             f`autogen.bp`,
             f`conpropsp.hpp`,
             f`precomp.cpp`,
@@ -45,10 +41,6 @@ namespace Onecore.Windows.Core.Console.Open.Src.Propslib {
 
             prePass,
 
-            $.Public.Internal.Onecorewindows.Inc.header,
-            $.Public.Sdk.Inc.header,
-            $.Public.Sdk.Inc.idl,
-            $.Public.Shared.Inc.header,
             MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.header,
             MsWinCrts.Public.Sdk.Inc.Ucrt.header,
             MsWinOnecoreBase.Public.Shared.Inc.header,
@@ -73,6 +65,10 @@ namespace Onecore.Windows.Core.Console.Open.Src.Propslib {
             MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
             MsWinOnecore_MinKernel.Public.Shared.Inc.header,
             MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
+            Public.Internal.Onecorewindows.Inc.header,
+            Public.Sdk.Inc.header,
+            Public.Sdk.Inc.idl,
+            Public.Shared.Inc.header,
         ],
         
         produces: [

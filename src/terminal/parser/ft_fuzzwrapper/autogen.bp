@@ -1,32 +1,33 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
 
     export declare const qualifier: {
-        platform: "arm32" | "arm64" | "x64" | "x86",
-        configuration: "debug" | "release",
-        codeAnalysisMode: "simpleAnalysis" | "disabled",
+        platform: WdgBuild.StandardPlatforms,
+        configuration: "release",
     };
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser`;
 
     const o = d`${objRoot}\onecore\windows\core\console\open\src\terminal\parser\ft_fuzzwrapper\${buildAlt}`;
 
-    const prePass = LegacySdk.build({
+    const prePass = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
         targetPass: "prePass",
         
         consumes: [
             f`autogen.bp`,
+            f`autogen.bp`,
             f`fuzzwrapper.vcxproj`,
         ],
     });
 
-    const pass1 = LegacySdk.build({
+    const pass1 = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
         targetPass: "pass1",
         
         consumes: [
+            f`autogen.bp`,
             f`autogen.bp`,
             f`echodispatch.cpp`,
             f`echodispatch.hpp`,
@@ -34,24 +35,27 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
             f`main.cpp`,
             f`precomp.cpp`,
             f`precomp.h`,
+            f`${dotDot}\istatemachineengine.hpp`,
+            f`${dotDot}\outputstatemachineengine.hpp`,
             f`${dotDot}\statemachine.hpp`,
             f`${dotDot}\telemetry.hpp`,
             f`${dotDot}\termdispatch.hpp`,
+            f`${dotDot}\tracing.hpp`,
             f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
 
             prePass,
 
-            $.Public.Sdk.Inc.header,
-            $.Public.Sdk.Inc.idl,
-            $.Public.Shared.Inc.header,
             MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.Stl120.header,
             MsWinCrts.Public.Sdk.Inc.Ucrt.header,
+            MsWinCrts.Public.Sdk.Inc.Ucrt.Sys.header,
             MsWinOnecoreBase.Public.Sdk.Inc.header,
             MsWinOnecoreBase.Public.Shared.Inc.header,
             MsWinOnecoreNet.Public.Sdk.Inc.header,
             MsWinOnecoreSdkTools.Public.Internal.Onecoresdktools.Inc.header,
             MsWinOnecoreSdkTools.Public.Internal.Sdk.Inc.header,
             MsWinOnecoreSdkTools.Public.Shared.Inc.header,
+            MsWinOnecoreShell.Public.Internal.Sdk.Inc.Wil.header,
             MsWinOnecoreShell.Public.Sdk.Inc.idl,
             MsWinOnecore_ApiSet.Public.Sdk.Inc.Mincore.header,
             MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.idl,
@@ -61,6 +65,9 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
             MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
             MsWinOnecore_MinKernel.Public.Shared.Inc.header,
             MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
+            Public.Sdk.Inc.header,
+            Public.Sdk.Inc.idl,
+            Public.Shared.Inc.header,
         ],
         
         produces: [
@@ -72,12 +79,13 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
         ],
     });
 
-    const pass2 = LegacySdk.build({
+    const pass2 = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
         targetPass: "pass2",
         
         consumes: [
+            f`autogen.bp`,
             f`autogen.bp`,
             f`echodispatch.cpp`,
             f`fuzzwrapper.vcxproj`,
@@ -85,14 +93,13 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
             f`precomp.cpp`,
             f`precomp.h`,
             f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
-            f`${srcRoot}\public\sdk\inc\ntverp.h`,
+            f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
             MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
-            isBuildDebug && isBuildCommonArchitecture ? MsWinCrts.Public.Internal.Sdk.Lib.library : undefined,
-            isBuildArm32 || isBuildArm64 ? MsWinCrts.Public.Sdk.Lib.library : undefined,
+            isBuildRelease && (isBuildArm32 || isBuildArm64) ? MsWinCrts.Public.Sdk.Lib.library : undefined,
             MsWinOnecoreMerged.Public.Sdk.Lib.Onecore.V1_7.library,
             pass1,
             prePass,
-            $.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib.pass1,
+            Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib.pass1,
             MsWinOnecore_MinKernel.Public.Internal.Sdk.Lib.library,
             MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_8.library,
             MsWinOnecore_MinKernel.Public.Sdk.Lib.library,
@@ -108,15 +115,9 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
         ],
     });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper.bin_BlgUnittests_content
-
     export const bin_BlgUnittests_content = pass2.directories.get(p`${binRoot}\blg\unittests`);
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper.bin_SymbolspriUnittestsExe_content
-
     export const bin_SymbolspriUnittestsExe_content = pass2.directories.get(p`${binRoot}\symbols.pri\unittests\exe`);
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper.bin_Unittests_content
 
     export const bin_Unittests_content = pass2.directories.get(p`${binRoot}\unittests`);
 }

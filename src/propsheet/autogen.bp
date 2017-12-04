@@ -1,27 +1,31 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Propsheet {
 
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
+
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src`;
 
     const o = d`${objRoot}\onecore\windows\core\console\open\src\propsheet\${buildAlt}`;
 
-    const prePass = isBuildCommonArchitecture ? LegacySdk.build({
+    const prePass = LegacyBuild.build({
         template: template_NMake,
         classification: "product",
         targetPass: "prePass",
         
         consumes: [
             f`autogen.bp`,
+            f`autogen.bp`,
             f`product.pbxproj`,
             f`propsheet.vcxproj`,
         ],
-    }) : undefined;
+    });
 
-    const pass0 = isBuildCommonArchitecture ? LegacySdk.build({
+    const pass0 = LegacyBuild.build({
         template: template_NMake,
         classification: "product",
         targetPass: "pass0",
         
         consumes: [
+            f`autogen.bp`,
             f`autogen.bp`,
             f`product.pbxproj`,
             f`propsheet.vcxproj`,
@@ -40,14 +44,15 @@ namespace Onecore.Windows.Core.Console.Open.Src.Propsheet {
             p`${o}\strid.h`,
             p`${o}\strid.rc`,
         ],
-    }) : undefined;
+    });
 
-    const pass1 = isBuildCommonArchitecture ? LegacySdk.build({
+    const pass1 = LegacyBuild.build({
         template: template_NMake,
         classification: "product",
         targetPass: "pass1",
         
         consumes: [
+            f`autogen.bp`,
             f`autogen.bp`,
             f`colorspage.cpp`,
             f`colorspage.h`,
@@ -92,11 +97,6 @@ namespace Onecore.Windows.Core.Console.Open.Src.Propsheet {
             pass0,
             prePass,
 
-            $.Public.Internal.Onecorewindows.Inc.header,
-            $.Public.Internal.Sdk.Inc.header,
-            $.Public.Sdk.Inc.header,
-            $.Public.Sdk.Inc.idl,
-            $.Public.Shared.Inc.header,
             MsWinCrts.Public.Internal.Sdk.Inc.Ucrt.header,
             MsWinCrts.Public.Sdk.Inc.Ucrt.header,
             MsWinCrts.Public.Sdk.Inc.Ucrt.Sys.header,
@@ -127,6 +127,11 @@ namespace Onecore.Windows.Core.Console.Open.Src.Propsheet {
             MsWinOnecore_Wrl.Public.Sdk.Inc.header,
             MsWinOnecore_Wrl.Public.Sdk.Inc.Wrl.header,
             MsWinOnecore_Wrl.Public.Sdk.Inc.Wrl.Wrappers.header,
+            Public.Internal.Onecorewindows.Inc.header,
+            Public.Internal.Sdk.Inc.header,
+            Public.Sdk.Inc.header,
+            Public.Sdk.Inc.idl,
+            Public.Shared.Inc.header,
         ],
         
         produces: [
@@ -155,14 +160,15 @@ namespace Onecore.Windows.Core.Console.Open.Src.Propsheet {
             p`${o}\util.obj`,
             p`${o}\windowsshell.o_manifest`,
         ],
-    }) : undefined;
+    });
 
-    const pass2 = isBuildCommonArchitecture ? LegacySdk.build({
+    const pass2 = LegacyBuild.build({
         template: template_NMake,
         classification: "product",
         targetPass: "pass2",
         
         consumes: [
+            f`autogen.bp`,
             f`autogen.bp`,
             f`colorspage.cpp`,
             f`colorspage.h`,
@@ -195,9 +201,9 @@ namespace Onecore.Windows.Core.Console.Open.Src.Propsheet {
             f`windowsshell.manifest`,
             f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
             isBuildRelease ? f`${objRoot}\${buildAlt}\pe_list\console.dll` : undefined,
+            f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
             f`${srcRoot}\onecore\windows\core\console\open\res\console.ico`,
             f`${srcRoot}\onecore\windows\core\console\open\res\truetype.bmp`,
-            f`${srcRoot}\public\sdk\inc\ntverp.h`,
             MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
             MsWinCrts.Public.Internal.Sdk.Lib.library,
             isBuildArm32 || isBuildArm64 ? MsWinCrts.Public.Sdk.Lib.library : undefined,
@@ -214,8 +220,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Propsheet {
             pass0,
             pass1,
             prePass,
-            $.Onecore.Windows.Core.Console.Open.Src.Propslib.pass1,
-            $.Public.Sdk.Inc.idl,
+            Onecore.Windows.Core.Console.Open.Src.Propslib.pass1,
+            Public.Sdk.Inc.idl,
             MsWinOnecore_ApiSet.Private.Internal.Mincore.Priv_sdk.Lib.V1_7.library,
             MsWinOnecore_MinKernel.Public.Internal.Sdk.Lib.library,
             MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
@@ -247,66 +253,15 @@ namespace Onecore.Windows.Core.Console.Open.Src.Propsheet {
             p`${o}\console.res`,
             p`${o}\nmake_to_mbs_pass2.props`,
         ],
-    }) : undefined;
+    });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_Blg_content
-
-    export const bin_Blg_content = isBuildCommonArchitecture ? pass2.directories.get(p`${binRoot}\blg`) : undefined;
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_BlgLocSrcBin_content
-
-    export const bin_BlgLocSrcBin_content = isBuildCommonArchitecture ? pass2.directories.get(p`${binRoot}\blg\loc\src\bin`) : undefined;
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_BlgLocSrcLcg_content
-
-    export const bin_BlgLocSrcLcg_content = isBuildCommonArchitecture ? pass2.directories.get(p`${binRoot}\blg\loc\src\lcg`) : undefined;
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_BlgMsbuildpropsNmakeprops_content
-
-    @@public
-    export const bin_BlgMsbuildpropsNmakeprops_content = isBuildCommonArchitecture ? MicrosoftSdk.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\blg\msbuildprops\nmakeprops`,
-        sources: [
-            pass0.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-        ],
-    }) : undefined;
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_content
-
-    export const bin_content = isBuildCommonArchitecture ? pass2.directories.get(binRoot.path) : undefined;
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocSrcBin_content
-
-    export const bin_LocSrcBin_content = isBuildCommonArchitecture ? pass2.directories.get(p`${binRoot}\loc\src\bin`) : undefined;
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocSrcLcg_content
-
-    export const bin_LocSrcLcg_content = isBuildCommonArchitecture ? pass2.directories.get(p`${binRoot}\loc\src\lcg`) : undefined;
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_MsbuildpropsNmakeprops_content
-
-    @@public
-    export const bin_MsbuildpropsNmakeprops_content = isBuildCommonArchitecture ? MicrosoftSdk.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\msbuildprops\nmakeprops`,
-        sources: [
-            pass0.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-        ],
-    }) : undefined;
-
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_SymbolspriRetailDll_content
-
-    export const bin_SymbolspriRetailDll_content = isBuildCommonArchitecture ? pass2.directories.get(p`${binRoot}\symbols.pri\retail\dll`) : undefined;
-
-    const pass3 = isBuildCommonArchitecture ? LegacySdk.build({
+    const pass3 = LegacyBuild.build({
         template: template_NMake,
         classification: "product",
         targetPass: "pass3",
         
         consumes: [
+            f`autogen.bp`,
             f`autogen.bp`,
             f`propsheet.vcxproj`,
             isBuildRelease && isBuildCommonArchitecture ? MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata : undefined,
@@ -354,29 +309,51 @@ namespace Onecore.Windows.Core.Console.Open.Src.Propsheet {
                 ]
             ),
         ],
-    }) : undefined;
+    });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocEnus_content
+    export const bin_Blg_content = pass2.directories.get(p`${binRoot}\blg`);
 
-    export const bin_LocEnus_content = isBuildRelease && isBuildCommonArchitecture ? pass3.directories.get(p`${binRoot}\loc\en-us`) : undefined;
+    export const bin_BlgLocSrcBin_content = pass2.directories.get(p`${binRoot}\blg\loc\src\bin`);
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocEnusLct_content
+    export const bin_BlgLocSrcLcg_content = pass2.directories.get(p`${binRoot}\blg\loc\src\lcg`);
 
-    export const bin_LocEnusLct_content = isBuildRelease && isBuildCommonArchitecture ? pass3.directories.get(p`${binRoot}\loc\en-us\lct`) : undefined;
+    @@public
+    export const bin_BlgMsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
+        outputDirectory: d`${binRoot}\blg\msbuildprops\nmakeprops`,
+        sources: [
+            pass0.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+            pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+            pass2.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
+        ],
+    });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocPsmi_content
+    export const bin_content = pass2.directories.get(binRoot.path);
 
-    export const bin_LocPsmi_content = isBuildRelease && isBuildCommonArchitecture && MsWinBuild.Localization.isBuildPs_Mi ? pass3.directories.get(p`${binRoot}\loc\ps-mi`) : undefined;
+    export const bin_LocSrcBin_content = pass2.directories.get(p`${binRoot}\loc\src\bin`);
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocPsmiLct_content
+    export const bin_LocSrcLcg_content = pass2.directories.get(p`${binRoot}\loc\src\lcg`);
 
-    export const bin_LocPsmiLct_content = isBuildRelease && isBuildCommonArchitecture && MsWinBuild.Localization.isBuildPs_Mi ? pass3.directories.get(p`${binRoot}\loc\ps-mi\lct`) : undefined;
+    @@public
+    export const bin_MsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
+        outputDirectory: d`${binRoot}\msbuildprops\nmakeprops`,
+        sources: [
+            pass0.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+            pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+            pass2.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
+        ],
+    });
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocPsps_content
+    export const bin_SymbolspriRetailDll_content = pass2.directories.get(p`${binRoot}\symbols.pri\retail\dll`);
 
-    export const bin_LocPsps_content = isBuildRelease && isBuildCommonArchitecture && MsWinBuild.Localization.isBuildPs_Ps ? pass3.directories.get(p`${binRoot}\loc\ps-ps`) : undefined;
+    export const bin_LocEnus_content = pass3.directories.get(p`${binRoot}\loc\en-us`);
 
-    // DEF: Onecore.Windows.Core.Console.Open.Src.Propsheet.bin_LocPspsLct_content
+    export const bin_LocEnusLct_content = pass3.directories.get(p`${binRoot}\loc\en-us\lct`);
 
-    export const bin_LocPspsLct_content = isBuildRelease && isBuildCommonArchitecture && MsWinBuild.Localization.isBuildPs_Ps ? pass3.directories.get(p`${binRoot}\loc\ps-ps\lct`) : undefined;
+    export const bin_LocPsmi_content = pass3.directories.get(p`${binRoot}\loc\ps-mi`);
+
+    export const bin_LocPsmiLct_content = pass3.directories.get(p`${binRoot}\loc\ps-mi\lct`);
+
+    export const bin_LocPsps_content = pass3.directories.get(p`${binRoot}\loc\ps-ps`);
+
+    export const bin_LocPspsLct_content = pass3.directories.get(p`${binRoot}\loc\ps-ps\lct`);
 }

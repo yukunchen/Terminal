@@ -1,3 +1,4 @@
 DIRS=nihilist{noncrit} \
      vtapp{noncrit} \
      vtpipeterm{noncrit} \
+     integrity \

@@ -18,7 +18,8 @@ Author(s):
 #include "ConIoSrv.h"
 #include "..\..\inc\IInputServices.hpp"
 
-#include "ConIoSrvComm.hpp"
+#include "BgfxEngine.hpp"
+#include "..\..\renderer\wddmcon\wddmconrenderer.hpp"
 
 #pragma hdrstop
 
@@ -59,7 +60,11 @@ namespace Microsoft
                     SHORT VkKeyScanW(WCHAR ch);
                     SHORT GetKeyState(int nVirtKey);
                     BOOL TranslateCharsetInfo(DWORD * lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags);
-                
+                    
+                    NTSTATUS InitializeBgfx();
+                    NTSTATUS InitializeWddmCon();
+
+                    Microsoft::Console::Render::WddmConEngine* pWddmConEngine;
                 private:
                     NTSTATUS EnsureConnection();
                     NTSTATUS SendRequestReceiveReply(PCIS_MSG Message) const;
@@ -76,6 +81,7 @@ namespace Microsoft
                     USHORT _displayMode;
 
                     bool _fIsInputInitialized;
+
                 };
             };
         };

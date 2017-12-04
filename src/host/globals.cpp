@@ -8,3 +8,8 @@ CONSOLE_INFORMATION& Globals::getConsoleInformation()
 {
     return ciConsoleInformation;
 }
+
+bool Globals::IsHeadless() const
+{
+    return launchArgs.IsHeadless();
+}

@@ -89,7 +89,7 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
     ASSERT(sYSize > 0);
     const int ScreenBufferWidth = pScreenInfo->GetScreenBufferSize().X;
 
-    ROW* pRow = pScreenInfo->TextInfo->GetRowByOffset(coordSourcePoint.Y);
+    const ROW* pRow = &pScreenInfo->TextInfo->GetRowByOffset(coordSourcePoint.Y);
 
     // Allocate the TextAttributes once for every row to unpack them
     TextAttribute* rgUnpackedRowAttributes = new TextAttribute[ScreenBufferWidth];
@@ -155,7 +155,14 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
                 iCol += 1;
             }
 
-            pRow = pScreenInfo->TextInfo->GetNextRowNoWrap(pRow);
+            try
+            {
+                pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+            }
+            catch (...)
+            {
+                LOG_HR(wil::ResultFromCaughtException());
+            }
         }
         delete[] rgUnpackedRowAttributes;
     }
@@ -425,8 +432,7 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
     }
 
     {
-        ROW* Row = pScreenInfo->TextInfo->GetRowByOffset(coordRead.Y);
-        ASSERT(Row != nullptr);
+        const ROW* pRow = &pScreenInfo->TextInfo->GetRowByOffset(coordRead.Y);
         PWCHAR Char;
         SHORT j, k;
         PBYTE AttrP = nullptr;
@@ -435,15 +441,9 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
         {
             while (NumRead < *pcRecords)
             {
-                if (Row == nullptr)
-                {
-                    ASSERT(false);
-                    break;
-                }
-
                 // copy the chars from its array
-                Char = &Row->CharRow.Chars[X];
-                AttrP = &Row->CharRow.KAttrs[X];
+                Char = &pRow->CharRow.Chars[X];
+                AttrP = &pRow->CharRow.KAttrs[X];
 
                 if ((ULONG)(coordScreenBufferSize.X - X) >(*pcRecords - NumRead))
                 {
@@ -462,7 +462,14 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
                 NumRead += coordScreenBufferSize.X - X;
 
-                Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
+                try
+                {
+                    pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                }
+                catch (...)
+                {
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
 
                 X = 0;
                 Y++;
@@ -524,17 +531,11 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 
             while (NumRead < *pcRecords)
             {
-                if (Row == nullptr)
-                {
-                    ASSERT(false);
-                    break;
-                }
-
                 // Copy the attrs from its array.
-                AttrP = &Row->CharRow.KAttrs[X];
+                AttrP = &pRow->CharRow.KAttrs[X];
 
                 UINT uiCountOfAttr;
-                Row->AttrRow.FindAttrIndex(X, &pAttrRun, &uiCountOfAttr);
+                pRow->AttrRow.FindAttrIndex(X, &pAttrRun, &uiCountOfAttr);
 
                 // attempt safe cast. bail early if failed.
                 if (FAILED(UIntToShort(uiCountOfAttr, &CountOfAttr)))
@@ -589,7 +590,14 @@ NTSTATUS ReadOutputString(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                     AttrP++;
                 }
 
-                Row = pScreenInfo->TextInfo->GetNextRowNoWrap(Row);
+                try
+                {
+                    pRow = &pScreenInfo->TextInfo->GetNextRowNoWrap(*pRow);
+                }
+                catch (...)
+                {
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
 
                 X = 0;
                 Y++;
