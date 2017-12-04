@@ -1473,6 +1473,41 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
                 {
                     status = newTextBuffer->NewlineCursor() ? status : STATUS_NO_MEMORY;
                 }
+                else
+                {
+                    // If we are on the final line of the buffer, we have one more check.
+                    // We got into this code path because we are at the right most column of a row in the old buffer
+                    // that had a hard return (no wrap was forced).
+                    // However, as we're inserting, the old row might have just barely fit into the new buffer and
+                    // caused a new soft return (wrap was forced) putting the cursor at x=0 on the line just below.
+                    // We need to preserve the memory of the hard return at this point by inserting one additional
+                    // hard newline, otherwise we've lost that information.
+                    // We only do this when the cursor has just barely poured over onto the next line so the hard return
+                    // isn't covered by the soft one.
+                    // e.g.
+                    // The old line was:
+                    // |aaaaaaaaaaaaaaaaaaa | with no wrap which means there was a newline after that final a.
+                    // The cursor was here ^
+                    // And the new line will be:
+                    // |aaaaaaaaaaaaaaaaaaa| and show a wrap at the end
+                    // |                   |
+                    //  ^ and the cursor is now there.
+                    // If we leave it like this, we've lost the newline information.
+                    // So we insert one more newline so a continued reflow of this buffer by resizing larger will
+                    // continue to look as the original output intended with the newline data.
+                    // After this fix, it looks like this:
+                    // |aaaaaaaaaaaaaaaaaaa| no wrap at the end (preserved hard newline)
+                    // |                   |
+                    //  ^ and the cursor is now here.
+                    const COORD coordNewCursor = pNewCursor->GetPosition();
+                    if (coordNewCursor.X == 0 && coordNewCursor.Y > 0)
+                    {
+                        if (newTextBuffer->GetRowByOffset(coordNewCursor.Y - 1).CharRow.WasWrapForced())
+                        {
+                            status = newTextBuffer->NewlineCursor() ? status : STATUS_NO_MEMORY;
+                        }
+                    }
+                }
             }
         }
     }
