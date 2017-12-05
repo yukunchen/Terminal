@@ -108,6 +108,12 @@ HRESULT GdiEngine::InvalidateAll()
     RETURN_HR(InvalidateSystem(&rc));
 }
 
+HRESULT GdiEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
+{
+    *pForcePaint = false;
+    return S_FALSE;
+}
+
 // Routine Description:
 // - Helper to combine the given rectangle into the invalid region to be updated on the next paint
 // Arguments:

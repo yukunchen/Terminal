@@ -324,6 +324,33 @@ void Renderer::TriggerScroll(_In_ const COORD* const pcoordDelta)
 }
 
 // Routine Description:
+// - Called when the text buffer is about to circle it's backing buffer.
+//      A renderer might want to get painted before that happens.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerCircling()
+{
+    bool fForcePaint = false;
+
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        bool fEngineRequestsRepaint = false;
+        LOG_IF_FAILED(pEngine->InvalidateCircling(&fEngineRequestsRepaint));
+        fForcePaint |= fEngineRequestsRepaint;
+    }
+    if (fForcePaint)
+    {
+        PaintFrame();   
+    }
+    // if (_CheckViewportAndScroll())
+    // {
+    //     _NotifyPaintFrame();
+    // }
+}
+
+// Routine Description:
 // - Called when a change in font or DPI has been detected.
 // Arguments:
 // - iDpi - New DPI value
