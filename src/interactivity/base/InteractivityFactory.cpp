@@ -45,7 +45,7 @@ NTSTATUS InteractivityFactory::CreateConsoleControl(std::unique_ptr<IConsoleCont
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
         case ApiLevel::OneCore:
-            newControl = std::make_unqiue<Microsoft::Console::Interactivity::OneCore::ConsoleControl>();
+            newControl = std::make_unique<Microsoft::Console::Interactivity::OneCore::ConsoleControl>();
             break;
 #endif
         }
@@ -141,7 +141,7 @@ NTSTATUS InteractivityFactory::CreateWindowMetrics(_Inout_ std::unique_ptr<IWind
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
         case ApiLevel::OneCore:
-            newMetrics = std::make_unique<Microsoft::Console::Interactivity::OneCore::WindowMetrics>()
+            newMetrics = std::make_unique<Microsoft::Console::Interactivity::OneCore::WindowMetrics>();
             break;
 #endif
         }
