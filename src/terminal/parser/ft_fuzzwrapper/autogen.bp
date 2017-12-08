@@ -1,9 +1,6 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
 
-    export declare const qualifier: {
-        platform: WdgBuild.StandardPlatforms,
-        configuration: "release",
-    };
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser`;
 
@@ -39,9 +36,12 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
             f`${dotDot}\outputstatemachineengine.hpp`,
             f`${dotDot}\statemachine.hpp`,
             f`${dotDot}\telemetry.hpp`,
-            f`${dotDot}\termdispatch.hpp`,
             f`${dotDot}\tracing.hpp`,
             f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\congetset.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\dispatchcommon.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\termdispatch.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp`,
 
             prePass,
 
@@ -51,6 +51,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
             MsWinCrts.Public.Sdk.Inc.Ucrt.Sys.header,
             MsWinOnecoreBase.Public.Sdk.Inc.header,
             MsWinOnecoreBase.Public.Shared.Inc.header,
+            MsWinOnecoreCom.Public.Sdk.Inc.header,
+            MsWinOnecoreCom.Public.Shared.Inc.header,
             MsWinOnecoreNet.Public.Sdk.Inc.header,
             MsWinOnecoreSdkTools.Public.Internal.Onecoresdktools.Inc.header,
             MsWinOnecoreSdkTools.Public.Internal.Sdk.Inc.header,
@@ -58,6 +60,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
             MsWinOnecoreShell.Public.Internal.Sdk.Inc.Wil.header,
             MsWinOnecoreShell.Public.Sdk.Inc.idl,
             MsWinOnecore_ApiSet.Public.Sdk.Inc.Mincore.header,
+            MsWinOnecore_MinIo.Private.Internal.Minwin.Priv_sdk.Inc.header,
+            MsWinOnecore_MinIo.Public.Shared.Inc.header,
             MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.idl,
             MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Inc.Telemetry.header,
             MsWinOnecore_MinKernel.Public.Internal.Base.Inc.header,
@@ -65,6 +69,7 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
             MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
             MsWinOnecore_MinKernel.Public.Shared.Inc.header,
             MsWinOnecore_MinKernel.Public.Shared.Inc.Minwin.header,
+            Public.Internal.Onecorewindows.Inc.header,
             Public.Sdk.Inc.header,
             Public.Sdk.Inc.idl,
             Public.Shared.Inc.header,
@@ -95,13 +100,14 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
             f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
             f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
             MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
-            isBuildRelease && (isBuildArm32 || isBuildArm64) ? MsWinCrts.Public.Sdk.Lib.library : undefined,
-            MsWinOnecoreMerged.Public.Sdk.Lib.Onecore.V1_7.library,
+            isBuildDebug && isBuildCommonArchitecture ? MsWinCrts.Public.Internal.Sdk.Lib.library : undefined,
+            isBuildArm32 || isBuildArm64 ? MsWinCrts.Public.Sdk.Lib.library : undefined,
+            MsWinOnecoreMerged.Public.Sdk.Lib.Onecore.V1_8.library,
             pass1,
             prePass,
             Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib.pass1,
             MsWinOnecore_MinKernel.Public.Internal.Sdk.Lib.library,
-            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_8.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_9.library,
             MsWinOnecore_MinKernel.Public.Sdk.Lib.library,
         ]
         .filter(e => e !== undefined),
