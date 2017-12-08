@@ -888,7 +888,7 @@ NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
 NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
                         _Inout_ ULONG* const pcbBuffer,
                         _In_ PSCREEN_INFORMATION pScreenInfo,
-                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+                        _Outptr_result_maybenull_ WriteData** const ppWaiter)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     if (IsAnyFlagSet(gci->Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
@@ -897,7 +897,8 @@ NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
         {
             *ppWaiter = new WriteData(pScreenInfo,
                                       (wchar_t*)pwchBuffer,
-                                      *pcbBuffer);
+                                      *pcbBuffer,
+                                      gci->OutputCP);
         }
         catch (...)
         {
@@ -937,8 +938,12 @@ HRESULT WriteConsoleWImplHelper(_In_ IConsoleOutputObject* const pOutContext,
                                 _In_reads_(cchTextBufferLength) const wchar_t* const pwsTextBuffer,
                                 _In_ size_t const cchTextBufferLength,
                                 _Out_ size_t* const pcchTextBufferRead,
-                                _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter)
+                                _Outptr_result_maybenull_ WriteData** const ppWaiter)
 {
+    // Set out variables in case we exit early.
+    *pcchTextBufferRead = 0;
+    *ppWaiter = nullptr;
+
     // Convert characters to bytes to give to DoWriteConsole.
     size_t cbTextBufferLength;
     RETURN_IF_FAILED(SizeTMult(cchTextBufferLength, sizeof(wchar_t), &cbTextBufferLength));
@@ -1136,34 +1141,58 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
 
     // Make the W version of the call
     size_t cchBufferRead;
-    HRESULT const hr = WriteConsoleWImplHelper(ScreenInfo, pwchBuffer, cchBuffer, &cchBufferRead, ppWaiter);
 
-    // Calculate how many bytes of the original A buffer were consumed in the W version of the call to satisfy pcchTextBufferRead.
-    // For UTF-8 conversions, we've already returned this information above.
-    if (CP_UTF8 != uiCodePage)
+    // Hold the specific version of the waiter locally so we can tinker with it if we must to store additional context.
+    WriteData* pWriteDataWaiter = nullptr;
+
+    HRESULT const hr = WriteConsoleWImplHelper(ScreenInfo, pwchBuffer, cchBuffer, &cchBufferRead, &pWriteDataWaiter);
+
+    // If there is no waiter, process the byte count now.
+    if (nullptr == pWriteDataWaiter)
     {
-        size_t cchTextBufferRead = 0;
-
-        // Start by counting the number of A bytes we used in printing our W string to the screen.
-        LOG_IF_FAILED(GetALengthFromW(uiCodePage, pwchBuffer, cchBufferRead, &cchTextBufferRead));
-
-        // If we captured a byte off the string this time around up above, it means we didn't feed
-        // it into the WriteConsoleW above, and therefore its consumption isn't accounted for
-        // in the count we just made. Add +1 to compensate.
-        if (fLeadByteCaptured)
+        // Calculate how many bytes of the original A buffer were consumed in the W version of the call to satisfy pcchTextBufferRead.
+        // For UTF-8 conversions, we've already returned this information above.
+        if (CP_UTF8 != uiCodePage)
         {
-            cchTextBufferRead++;
-        }
+            size_t cchTextBufferRead = 0;
 
-        // If we consumed an internally-stored lead byte this time around up above, it means that we
-        // fed a byte into WriteConsoleW that wasn't a part of this particular call's request.
-        // We need to -1 to compensate and tell the caller the right number of bytes consumed this request.
-        if (fLeadByteConsumed)
+            // Start by counting the number of A bytes we used in printing our W string to the screen.
+            LOG_IF_FAILED(GetALengthFromW(uiCodePage, pwchBuffer, cchBufferRead, &cchTextBufferRead));
+
+            // If we captured a byte off the string this time around up above, it means we didn't feed
+            // it into the WriteConsoleW above, and therefore its consumption isn't accounted for
+            // in the count we just made. Add +1 to compensate.
+            if (fLeadByteCaptured)
+            {
+                cchTextBufferRead++;
+            }
+
+            // If we consumed an internally-stored lead byte this time around up above, it means that we
+            // fed a byte into WriteConsoleW that wasn't a part of this particular call's request.
+            // We need to -1 to compensate and tell the caller the right number of bytes consumed this request.
+            if (fLeadByteConsumed)
+            {
+                cchTextBufferRead--;
+            }
+
+            *pcchTextBufferRead = cchTextBufferRead;
+        }
+    }
+    else
+    {
+        // If there is a waiter, then we need to stow some additional information in the wait structure so 
+        // we can synthesize the correct byte count later when the wait routine is triggered.
+        if (CP_UTF8 != uiCodePage)
         {
-            cchTextBufferRead--;
+            // For non-UTF8 codepages, save the lead byte captured/consumed data so we can +1 or -1 the final decoded count
+            // in the WaitData::Notify method later.
+            pWriteDataWaiter->SetLeadByteAdjustmentStatus(fLeadByteCaptured, fLeadByteConsumed);
         }
-
-        *pcchTextBufferRead = cchTextBufferRead;
+        else
+        {
+            // For UTF8 codepages, just remember the consumption count from the UTF-8 parser.
+            pWriteDataWaiter->SetUtf8ConsumedCharacters(*pcchTextBufferRead);
+        }
     }
 
     // Free remaining data
@@ -1171,6 +1200,9 @@ HRESULT ApiRoutines::WriteConsoleAImpl(_In_ IConsoleOutputObject* const pOutCont
     {
         delete[] pwchBuffer;
     }
+
+    // Give back the waiter now that we're done with tinkering with it.
+    *ppWaiter = pWriteDataWaiter;
 
     return hr;
 }
@@ -1197,5 +1229,5 @@ HRESULT ApiRoutines::WriteConsoleWImpl(_In_ IConsoleOutputObject* const pOutCont
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
 
-    return WriteConsoleWImplHelper(pOutContext->GetActiveBuffer(), pwsTextBuffer, cchTextBufferLength, pcchTextBufferRead, ppWaiter);
+    return WriteConsoleWImplHelper(pOutContext->GetActiveBuffer(), pwsTextBuffer, cchTextBufferLength, pcchTextBufferRead, reinterpret_cast<WriteData**>(ppWaiter));
 }
