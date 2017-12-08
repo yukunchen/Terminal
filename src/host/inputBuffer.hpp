@@ -33,7 +33,6 @@ public:
     ConsoleObjectHeader Header;
     DWORD InputMode;
     ConsoleWaitQueue WaitQueue; // formerly ReadWaitQueue
-    HANDLE InputWaitEvent;
     bool fInComposition;  // specifies if there's an ongoing text composition
 
     InputBuffer();

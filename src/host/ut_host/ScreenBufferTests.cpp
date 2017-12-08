@@ -32,6 +32,7 @@ class ScreenBufferTests
     {
         m_state = new CommonState();
 
+        m_state->InitEvents();
         m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
         m_state->PrepareGlobalInputBuffer();

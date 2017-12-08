@@ -46,6 +46,11 @@ public:
         m_heap = nullptr;
     }
 
+    void InitEvents()
+    {
+        ServiceLocator::LocateGlobals().hInputEvent.create(wil::EventOptions::ManualReset);
+    }
+
     void PrepareGlobalFont()
     {
         COORD coordFontSize;
