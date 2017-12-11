@@ -19,10 +19,10 @@ namespace Microsoft
             class InteractivityFactory final : public IInteractivityFactory
             {
             public:
-                NTSTATUS CreateConsoleControl(std::unique_ptr<IConsoleControl>& control);
-                NTSTATUS CreateConsoleInputThread(std::unique_ptr<IConsoleInputThread>& thread);
+                NTSTATUS CreateConsoleControl(_Inout_ std::unique_ptr<IConsoleControl>& control);
+                NTSTATUS CreateConsoleInputThread(_Inout_ std::unique_ptr<IConsoleInputThread>& thread);
 
-                NTSTATUS CreateHighDpiApi(std::unique_ptr<IHighDpiApi>& api);
+                NTSTATUS CreateHighDpiApi(_Inout_ std::unique_ptr<IHighDpiApi>& api);
                 NTSTATUS CreateWindowMetrics(_Inout_ std::unique_ptr<IWindowMetrics>& metrics);
                 NTSTATUS CreateAccessibilityNotifier(_Inout_ std::unique_ptr<IAccessibilityNotifier>& notifier);
                 NTSTATUS CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider);

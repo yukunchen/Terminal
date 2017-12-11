@@ -74,7 +74,7 @@ namespace Microsoft
 #ifdef CON_DPIAPI_INDIRECT
                     WindowDpiApi();
 #endif
-                    virtual ~WindowDpiApi();
+                    ~WindowDpiApi();
 
                 private:
                     HMODULE _hUser32;

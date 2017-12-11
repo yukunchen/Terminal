@@ -56,12 +56,11 @@ using namespace Microsoft::Console::Types;
 
 void VtIoTests::NoOpStartTest()
 {
-    std::unique_ptr<VtIo> vtio = std::make_unique<VtIo>();
-    VERIFY_IS_NOT_NULL(vtio);
-    VERIFY_IS_FALSE(vtio->IsUsingVt());
+    VtIo vtio;
+    VERIFY_IS_FALSE(vtio.IsUsingVt());
 
     Log::Comment(L"Verify we succeed at StartIfNeeded even if we weren't initialized");
-    VERIFY_SUCCEEDED(vtio->StartIfNeeded());
+    VERIFY_SUCCEEDED(vtio.StartIfNeeded());
 }
 
 void VtIoTests::ModeParsingTest()
@@ -84,7 +83,6 @@ void VtIoTests::ModeParsingTest()
 
     VERIFY_FAILED(VtIo::ParseIoMode(L"garbage", mode));
     VERIFY_ARE_EQUAL(mode, VtIoMode::INVALID);
-
 }
 
 void VtIoTests::BasicPipeOpeningTest()

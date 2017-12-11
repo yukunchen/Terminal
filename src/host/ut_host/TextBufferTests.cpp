@@ -688,7 +688,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     stateMachine->ProcessString(sequence, std::wcslen(sequence));
     const auto x = cursor->GetPosition().X;
     const auto y = cursor->GetPosition().Y;
-    const auto row = tbi->GetRowByOffset(y);
+    const auto& row = tbi->GetRowByOffset(y);
     const auto attrRow = &row.AttrRow;
     const auto attrs = std::make_unique<TextAttribute[]>(tbi->_coordBufferSize.X);
     VERIFY_IS_NOT_NULL(attrs.get());

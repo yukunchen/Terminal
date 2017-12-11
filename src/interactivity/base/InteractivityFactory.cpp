@@ -27,7 +27,7 @@ using namespace Microsoft::Console::Interactivity;
 
 #pragma region Public Methods
 
-NTSTATUS InteractivityFactory::CreateConsoleControl(std::unique_ptr<IConsoleControl>& control)
+NTSTATUS InteractivityFactory::CreateConsoleControl(_Inout_ std::unique_ptr<IConsoleControl>& control)
 {
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -59,7 +59,7 @@ NTSTATUS InteractivityFactory::CreateConsoleControl(std::unique_ptr<IConsoleCont
     return status;
 }
 
-NTSTATUS InteractivityFactory::CreateConsoleInputThread(std::unique_ptr<IConsoleInputThread>& thread)
+NTSTATUS InteractivityFactory::CreateConsoleInputThread(_Inout_ std::unique_ptr<IConsoleInputThread>& thread)
 {
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -91,7 +91,7 @@ NTSTATUS InteractivityFactory::CreateConsoleInputThread(std::unique_ptr<IConsole
     return status;
 }
 
-NTSTATUS InteractivityFactory::CreateHighDpiApi(std::unique_ptr<IHighDpiApi>& api)
+NTSTATUS InteractivityFactory::CreateHighDpiApi(_Inout_ std::unique_ptr<IHighDpiApi>& api)
 {
     NTSTATUS status = STATUS_SUCCESS;
 
