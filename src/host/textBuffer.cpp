@@ -435,7 +435,16 @@ void TextAttributeRun::SetAttributes(_In_ const TextAttribute textAttribute)
 // - <none>
 bool ATTR_ROW::Initialize(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr)
 {
-    wistd::unique_ptr<TextAttributeRun[]> pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(1);
+    wistd::unique_ptr<TextAttributeRun[]> pNewRun;
+    try
+    {
+        pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(1);
+    }
+    catch (...)
+    {
+        return false;
+    }
+
     bool fSuccess = pNewRun != nullptr;
     if (fSuccess)
     {
@@ -782,7 +791,12 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
     // The original run was 3 long. The insertion run was 1 long. We need 1 more for the
     // fact that an existing piece of the run was split in half (to hold the latter half).
     UINT const cNewRun = _cList + cInsertAttrs + 1;
-    wistd::unique_ptr<TextAttributeRun[]> pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(cNewRun);
+    wistd::unique_ptr<TextAttributeRun[]> pNewRun;
+    try
+    {
+        pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(cNewRun);
+    }
+    CATCH_RETURN();
     RETURN_IF_NULL_ALLOC(pNewRun);
 
     // We will start analyzing from the beginning of our existing run.
