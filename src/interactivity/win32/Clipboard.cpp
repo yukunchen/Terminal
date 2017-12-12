@@ -232,14 +232,14 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToKeyboardEvents(_In_ const
     // This change doesn't break pasting text into any of those applications 
     //      with CR/LF (Windows) line endings either. That apparently always 
     //      worked right.
-    wchar_t actualWch = wch;
+    wchar_t wchActual = wch;
     if (IsInVirtualTerminalInputMode() && wch == UNICODE_LINEFEED)
     {
-        actualWch = UNICODE_CARRIAGERETURN;
+        wchActual = UNICODE_CARRIAGERETURN;
     }
 
-    const WORD virtualScanCode = static_cast<WORD>(ServiceLocator::LocateInputServices()->MapVirtualKeyW(actualWch, MAPVK_VK_TO_VSC));
-    KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, actualWch, 0 };
+    const WORD virtualScanCode = static_cast<WORD>(ServiceLocator::LocateInputServices()->MapVirtualKeyW(wchActual, MAPVK_VK_TO_VSC));
+    KeyEvent keyEvent{ true, 1, LOBYTE(keyState), virtualScanCode, wchActual, 0 };
 
     // add modifier flags if necessary
     if (IsFlagSet(modifierState, VkKeyScanModState::ShiftPressed))
