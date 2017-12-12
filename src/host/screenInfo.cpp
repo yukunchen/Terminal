@@ -11,6 +11,7 @@
 #include "output.h"
 #include <math.h>
 #include "..\interactivity\inc\ServiceLocator.hpp"
+#include "..\types\inc\Viewport.hpp"
 #include "..\terminal\parser\OutputStateMachineEngine.hpp"
 
 #pragma hdrstop
