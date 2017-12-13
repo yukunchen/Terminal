@@ -435,6 +435,11 @@ void TextAttributeRun::SetAttributes(_In_ const TextAttribute textAttribute)
 // - <none>
 bool ATTR_ROW::Initialize(_In_ UINT const cchRowWidth, _In_ const TextAttribute attr)
 {
+    // Disable C4702 (unreacable code) because we really do want to have the try/catch block here even if
+    // currently the catch block can't be reached. We want to guard against the possibility of
+    // TextAttributeRun's constructor changing from the default one to one that may throw.
+#pragma warning(push)
+#pragma warning(disable:4702)
     wistd::unique_ptr<TextAttributeRun[]> pNewRun;
     try
     {
@@ -444,6 +449,7 @@ bool ATTR_ROW::Initialize(_In_ UINT const cchRowWidth, _In_ const TextAttribute 
     {
         return false;
     }
+#pragma warning(pop)
 
     bool fSuccess = pNewRun != nullptr;
     if (fSuccess)
@@ -791,12 +797,20 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
     // The original run was 3 long. The insertion run was 1 long. We need 1 more for the
     // fact that an existing piece of the run was split in half (to hold the latter half).
     UINT const cNewRun = _cList + cInsertAttrs + 1;
+
+    // Disable C4702 (unreacable code) because we really do want to have the try/catch block here even if
+    // currently the catch block can't be reached. We want to guard against the possibility of
+    // TextAttributeRun's constructor changing from the default one to one that may throw.
+#pragma warning(push)
+#pragma warning(disable:4702)
     wistd::unique_ptr<TextAttributeRun[]> pNewRun;
     try
     {
         pNewRun = wil::make_unique_nothrow<TextAttributeRun[]>(cNewRun);
     }
     CATCH_RETURN();
+#pragma warning(pop)
+
     RETURN_IF_NULL_ALLOC(pNewRun);
 
     // We will start analyzing from the beginning of our existing run.
