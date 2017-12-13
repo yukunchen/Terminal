@@ -99,18 +99,24 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
             f`precomp.h`,
             f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
             f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
-            MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
-            isBuildDebug && isBuildCommonArchitecture ? MsWinCrts.Public.Internal.Sdk.Lib.library : undefined,
-            isBuildArm32 || isBuildArm64 ? MsWinCrts.Public.Sdk.Lib.library : undefined,
-            MsWinOnecoreMerged.Public.Sdk.Lib.Onecore.V1_8.library,
+
             pass1,
             prePass,
-            Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib.pass1,
+
+            MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
+            MsWinOnecoreMerged.Public.Sdk.Lib.Onecore.V1_8.library,
             MsWinOnecore_MinKernel.Public.Internal.Sdk.Lib.library,
-            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_9.library,
             MsWinOnecore_MinKernel.Public.Sdk.Lib.library,
-        ]
-        .filter(e => e !== undefined),
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_9.library,
+            Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib.pass1,
+
+            ...addIf(isBuildArm32 || isBuildArm64, () => [
+                    MsWinCrts.Public.Sdk.Lib.library,
+                ]),
+            ...addIf(isBuildDebug && isBuildCommonArchitecture, () => [
+                    MsWinCrts.Public.Internal.Sdk.Lib.library,
+                ]),
+        ],
         
         produces: [
             p`${binRoot}\blg\unittests\conterm.parser.fuzzwrapper.exe.br`,
@@ -121,9 +127,9 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
         ],
     });
 
-    export const bin_BlgUnittests_content = pass2.directories.get(p`${binRoot}\blg\unittests`);
+    export const bin_BlgUnittests_content = extractPart(pass2, p`${binRoot}\blg\unittests`);
 
-    export const bin_SymbolspriUnittestsExe_content = pass2.directories.get(p`${binRoot}\symbols.pri\unittests\exe`);
+    export const bin_SymbolspriUnittestsExe_content = extractPart(pass2, p`${binRoot}\symbols.pri\unittests\exe`);
 
-    export const bin_Unittests_content = pass2.directories.get(p`${binRoot}\unittests`);
+    export const bin_Unittests_content = extractPart(pass2, p`${binRoot}\unittests`);
 }

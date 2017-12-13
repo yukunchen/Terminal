@@ -18,6 +18,8 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>host.exe.vcxproj</Item>
         <Item>product.pbxproj</Item>
       </Consumes>
@@ -32,6 +34,8 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>conhost.man</Item>
         <Item>host.exe.vcxproj</Item>
         <Item>product.pbxproj</Item>
@@ -63,6 +67,8 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>conhost.exe.manifest</Item>
         <Item>host.exe.vcxproj</Item>
         <Item>product.pbxproj</Item>
@@ -228,6 +234,8 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>conhost.exe.manifest</Item>
         <Item>conhost.exe.mui.lci</Item>
         <Item>conhost.rcv</Item>
@@ -347,6 +355,8 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>host.exe.vcxproj</Item>
 
         <!--References-->
@@ -380,18 +390,6 @@
           <Item>{BinRoot}\loc\en-us\conhost.exe.mui</Item>
           <Item>{BinRoot}\loc\en-us\lct\conhost.exe.mui.lct</Item>
           <Item>{O}\lsbuildcmd_4.0_en-us_conhost.exe.mui.rsp</Item>
-        </If>
-
-        <If Condition="{MsWin.Build.Localization.IsBuildPs_Mi AND (IsBuildRelease)}">
-          <Item>{BinRoot}\loc\ps-mi\conhost.exe.mui</Item>
-          <Item>{BinRoot}\loc\ps-mi\lct\conhost.exe.mui.lct</Item>
-          <Item>{O}\lsbuildcmd_4.0_ps-mi_conhost.exe.mui.rsp</Item>
-        </If>
-
-        <If Condition="{MsWin.Build.Localization.IsBuildPs_Ps AND (IsBuildRelease)}">
-          <Item>{BinRoot}\loc\ps-ps\conhost.exe.mui</Item>
-          <Item>{BinRoot}\loc\ps-ps\lct\conhost.exe.mui.lct</Item>
-          <Item>{O}\lsbuildcmd_4.0_ps-ps_conhost.exe.mui.rsp</Item>
         </If>
 
       </Produces>
@@ -457,30 +455,6 @@
 
     <LibrarySetRunner Output="Exe_Bin_LocEnusLct.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Exe_Pass3.Directories[BinRoot.Combine("loc\en-us\lct")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_LocPsmi.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_LocPsmi.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease AND MsWin.Build.Localization.IsBuildPs_Mi)}">
-      <Directory>{Exe_Pass3.Directories[BinRoot.Combine("loc\ps-mi")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_LocPsmiLct.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_LocPsmiLct.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease AND MsWin.Build.Localization.IsBuildPs_Mi)}">
-      <Directory>{Exe_Pass3.Directories[BinRoot.Combine("loc\ps-mi\lct")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_LocPsps.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_LocPsps.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease AND MsWin.Build.Localization.IsBuildPs_Ps)}">
-      <Directory>{Exe_Pass3.Directories[BinRoot.Combine("loc\ps-ps")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_LocPspsLct.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_LocPspsLct.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease AND MsWin.Build.Localization.IsBuildPs_Ps)}">
-      <Directory>{Exe_Pass3.Directories[BinRoot.Combine("loc\ps-ps\lct")]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_LocSrcBin.__Content-->

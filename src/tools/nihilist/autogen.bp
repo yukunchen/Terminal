@@ -76,23 +76,29 @@ namespace Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist {
             f`res.rc`,
             f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
             f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
+
+            pass1,
+            prePass,
+
             MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
-            isBuildDebug && isBuildCommonArchitecture ? MsWinCrts.Public.Internal.Sdk.Lib.library : undefined,
-            isBuildArm32 || isBuildArm64 ? MsWinCrts.Public.Sdk.Lib.library : undefined,
             MsWinOnecoreBase.Public.Shared.Inc.header,
             MsWinOnecoreMerged.Public.Sdk.Lib.Mincore.library,
             MsWinOnecoreShell.Public.Sdk.Inc.idl,
-            pass1,
-            prePass,
-            Public.Sdk.Inc.idl,
             MsWinOnecore_MinKernel.Public.Internal.Sdk.Lib.library,
-            MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
             MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
-            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_9.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
             MsWinOnecore_MinKernel.Public.Sdk.Lib.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_9.library,
             MsWinOnecore_MinKernel.Public.Shared.Inc.header,
-        ]
-        .filter(e => e !== undefined),
+            Public.Sdk.Inc.idl,
+
+            ...addIf(isBuildArm32 || isBuildArm64, () => [
+                    MsWinCrts.Public.Sdk.Lib.library,
+                ]),
+            ...addIf(isBuildDebug && isBuildCommonArchitecture, () => [
+                    MsWinCrts.Public.Internal.Sdk.Lib.library,
+                ]),
+        ],
         
         produces: [
             p`${binRoot}\blg\msbuildprops\nmakeprops\onecore-windows-core-console-open-src-tools-nihilist-nmake_to_mbs_pass2.props.br`,
@@ -119,26 +125,36 @@ namespace Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist {
             f`autogen.bp`,
             f`autogen.bp`,
             f`nihilist.vcxproj`,
-            isBuildRelease && isBuildCommonArchitecture ? MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata : undefined,
+
             pass1,
             pass2,
             prePass,
-            (isBuildRelease && isBuildArm32 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildArm64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX86 && MsWinBuild.isOfficialBuild) ? MsWinOnecore_Pkg.BinPublic.Imagingtools.content : undefined,
+
             ...addIf(
                 isBuildRelease,
                 () => [
                     f`product.pbxproj`,
                     f`sources.pkg.xml`,
                     f`${binRoot}\msbuildprops\localization.txt`,
-                    f`${objRoot}\${buildAlt}\modularbuildglobalbuildsession.props`,
-                    f`${objRoot}\${buildAlt}\__bldlanguageoverride__.props`,
                     f`${objRoot}\${buildAlt}\__bldlanguage__.props`,
+                    f`${objRoot}\${buildAlt}\__bldlanguageoverride__.props`,
+                    f`${objRoot}\${buildAlt}\modularbuildglobalbuildsession.props`,
                     f`${srcRoot}\onecore\windows\project.props`,
                     f`${srcRoot}\public\sdk\inc\ntverp.h`,
                 ]
             ),
-        ]
-        .filter(e => e !== undefined),
+            ...addIf(
+                (isBuildRelease && isBuildArm32 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildArm64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX86 && MsWinBuild.isOfficialBuild),
+                (
+                )
+                => [
+                    MsWinOnecore_Pkg.BinPublic.Imagingtools.content,
+                ]
+            ),
+            ...addIf(isBuildRelease && isBuildCommonArchitecture, () => [
+                    MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata,
+                ]),
+        ],
         
         produces: [
             ...addIf(
@@ -167,7 +183,7 @@ namespace Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist {
         ],
     });
 
-    export const bin_BlgUnittests_content = pass2.directories.get(p`${binRoot}\blg\unittests`);
+    export const bin_BlgUnittests_content = extractPart(pass2, p`${binRoot}\blg\unittests`);
 
     @@public
     export const bin_MsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
@@ -178,11 +194,11 @@ namespace Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist {
         ],
     });
 
-    export const bin_SymbolspriUnittestsExe_content = pass2.directories.get(p`${binRoot}\symbols.pri\unittests\exe`);
+    export const bin_SymbolspriUnittestsExe_content = extractPart(pass2, p`${binRoot}\symbols.pri\unittests\exe`);
 
-    export const bin_Unittests_content = pass2.directories.get(p`${binRoot}\unittests`);
+    export const bin_Unittests_content = extractPart(pass2, p`${binRoot}\unittests`);
 
-    export const bin_BlgPrebuiltTest_content = pass3.directories.get(p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`);
+    export const bin_BlgPrebuiltTest_content = extractPart(pass3, p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`);
 
-    export const bin_PrebuiltTest_content = pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`);
+    export const bin_PrebuiltTest_content = extractPart(pass3, p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`);
 }

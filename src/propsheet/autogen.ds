@@ -327,18 +327,6 @@
           <Item>{O}\lsbuildcmd_4.0_en-us_console.dll.mui.rsp</Item>
         </If>
 
-        <If Condition="{MsWin.Build.Localization.IsBuildPs_Mi AND (IsBuildRelease)}">
-          <Item>{BinRoot}\loc\ps-mi\console.dll.mui</Item>
-          <Item>{BinRoot}\loc\ps-mi\lct\console.dll.mui.lct</Item>
-          <Item>{O}\lsbuildcmd_4.0_ps-mi_console.dll.mui.rsp</Item>
-        </If>
-
-        <If Condition="{MsWin.Build.Localization.IsBuildPs_Ps AND (IsBuildRelease)}">
-          <Item>{BinRoot}\loc\ps-ps\console.dll.mui</Item>
-          <Item>{BinRoot}\loc\ps-ps\lct\console.dll.mui.lct</Item>
-          <Item>{O}\lsbuildcmd_4.0_ps-ps_console.dll.mui.rsp</Item>
-        </If>
-
       </Produces>
     </LegacyBuilder>
 
@@ -390,30 +378,6 @@
 
     <LibrarySetRunner Output="Propsheet_Bin_LocEnusLct.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\en-us\lct")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocPsmi.__Content-->
-
-    <LibrarySetRunner Output="Propsheet_Bin_LocPsmi.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease AND MsWin.Build.Localization.IsBuildPs_Mi)}">
-      <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\ps-mi")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocPsmiLct.__Content-->
-
-    <LibrarySetRunner Output="Propsheet_Bin_LocPsmiLct.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease AND MsWin.Build.Localization.IsBuildPs_Mi)}">
-      <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\ps-mi\lct")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocPsps.__Content-->
-
-    <LibrarySetRunner Output="Propsheet_Bin_LocPsps.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease AND MsWin.Build.Localization.IsBuildPs_Ps)}">
-      <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\ps-ps")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocPspsLct.__Content-->
-
-    <LibrarySetRunner Output="Propsheet_Bin_LocPspsLct.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease AND MsWin.Build.Localization.IsBuildPs_Ps)}">
-      <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\ps-ps\lct")]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocSrcBin.__Content-->
