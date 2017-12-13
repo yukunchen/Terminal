@@ -40,6 +40,10 @@ public:
     static Viewport FromDimensions(_In_ const COORD origin,
                                    _In_ const short width,
                                    _In_ const short height);
+
+    static Viewport FromDimensions(_In_ const COORD origin,
+                                   _In_ const COORD dimensions);
+
     static Viewport FromCoord(_In_ const COORD origin);
     
     SHORT Left() const;
@@ -56,6 +60,7 @@ public:
     bool TrimToViewport(_Inout_ SMALL_RECT* const psr) const;
     void ConvertToOrigin(_Inout_ SMALL_RECT* const psr) const;
     void ConvertToOrigin(_Inout_ COORD* const pcoord) const;
+    Viewport ConvertToOrigin(_In_ const Viewport& other) const;
     void ConvertFromOrigin(_Inout_ SMALL_RECT* const psr) const;
     void ConvertFromOrigin(_Inout_ COORD* const pcoord) const;
 
@@ -64,6 +69,12 @@ public:
 
     Viewport ToOrigin(_In_ const Viewport& other) const;
     Viewport ToOrigin() const;
+    
+    static HRESULT AddCoord(_In_ const Viewport& original,
+                            _In_ const COORD delta,
+                            _Out_ Viewport& modified);
+    static Viewport OrViewports(_In_ const Viewport& lhs, _In_ const Viewport&  rhs);
+
 
 private:
     // This is always stored as a Inclusive rect.

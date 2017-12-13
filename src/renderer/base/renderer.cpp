@@ -222,6 +222,7 @@ void Renderer::TriggerRedraw(_In_ const SMALL_RECT* const psrRegion)
 // - <none>
 void Renderer::TriggerRedraw(_In_ const COORD* const pcoord)
 {
+    
     SMALL_RECT srRegion = _RegionFromCoord(pcoord);
     TriggerRedraw(&srRegion); // this will notify to paint if we need it.
 }

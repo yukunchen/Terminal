@@ -47,6 +47,13 @@ Viewport Viewport::FromDimensions(_In_ const COORD origin,
                                      origin.X+width, origin.Y+height });
 }
 
+Viewport Viewport::FromDimensions(_In_ const COORD origin,
+                                  _In_ const COORD dimensions)
+{ 
+    return Viewport::FromExclusive({ origin.X, origin.Y, 
+                                     origin.X+dimensions.X, origin.Y+dimensions.Y });
+}
+
 // Method Description:
 // - Creates a Viewport equivalent to a 1x1 rectangle at the given coordinate.
 // Arguments:
@@ -121,11 +128,13 @@ bool Viewport::TrimToViewport(_Inout_ SMALL_RECT* const psr) const
 }
 
 void Viewport::ConvertToOrigin(_Inout_ SMALL_RECT* const psr) const
-{
-    psr->Left -= Left();
-    psr->Right -= Left();
-    psr->Top -= Top();
-    psr->Bottom -= Top();
+{   
+    const short dx = Left();
+    const short dy = Top();
+    psr->Left -= dx;
+    psr->Right -= dx;
+    psr->Top -= dy;
+    psr->Bottom -= dy;
 }
 
 void Viewport::ConvertToOrigin(_Inout_ COORD* const pcoord) const
@@ -135,11 +144,13 @@ void Viewport::ConvertToOrigin(_Inout_ COORD* const pcoord) const
 }
 
 void Viewport::ConvertFromOrigin(_Inout_ SMALL_RECT* const psr) const
-{
-    psr->Left += Left();
-    psr->Right += Left();
-    psr->Top += Top();
-    psr->Bottom += Top();
+{    
+    const short dx = Left();
+    const short dy = Top();
+    psr->Left += dx;
+    psr->Right += dx;
+    psr->Top += dy;
+    psr->Bottom += dy;
 }
 
 void Viewport::ConvertFromOrigin(_Inout_ COORD* const pcoord) const
@@ -170,4 +181,40 @@ Viewport Viewport::ToOrigin() const
     Viewport returnVal = *this;
     ConvertToOrigin(&returnVal._sr);
     return returnVal;
+}
+
+Viewport Viewport::ConvertToOrigin(_In_ const Viewport& other) const
+{
+    Viewport returnVal = other;
+    ConvertToOrigin(&returnVal._sr);
+    return returnVal;
+}
+
+HRESULT Viewport::AddCoord(_In_ const Viewport& original,
+                           _In_ const COORD delta,
+                           _Out_ Viewport& modified)
+{
+    SHORT newTop = original._sr.Top;
+    SHORT newLeft = original._sr.Left;
+    SHORT newRight = original._sr.Right;
+    SHORT newBottom = original._sr.Bottom;
+
+    RETURN_IF_FAILED(ShortAdd(newLeft, delta.X, &newLeft));
+    RETURN_IF_FAILED(ShortAdd(newRight, delta.X, &newRight));
+    RETURN_IF_FAILED(ShortAdd(newTop, delta.Y, &newTop));
+    RETURN_IF_FAILED(ShortAdd(newBottom, delta.Y, &newBottom));
+
+    modified._sr = { newLeft, newTop, newRight, newBottom };
+    return S_OK;
+}
+
+
+Viewport Viewport::OrViewports(_In_ const Viewport& lhs, _In_ const Viewport& rhs)
+{
+    const short Left = min(lhs._sr.Left, rhs._sr.Left);
+    const short Top = min(lhs._sr.Top, rhs._sr.Top);
+    const short Right = max(lhs._sr.Right, rhs._sr.Right);
+    const short Bottom = max(lhs._sr.Bottom, rhs._sr.Bottom);
+
+    return Viewport({ Left, Top, Right, Bottom });
 }

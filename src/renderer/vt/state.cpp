@@ -26,7 +26,7 @@ using namespace Microsoft::Console::Types;
 VtEngine::VtEngine(_In_ wil::unique_hfile pipe, _In_ const Viewport initialViewport) :
     _hFile(std::move(pipe)),
     _lastViewport(initialViewport),
-    _srcInvalid({0}),
+    _invalidRect({0}),
     _lastText({0}),
     _scrollDelta({0}),
     _LastFG(INVALID_COLOR),
