@@ -81,3 +81,15 @@ private:
     SMALL_RECT _sr;
 
 };
+
+inline bool operator==(const Microsoft::Console::Types::Viewport& a,
+                          const Microsoft::Console::Types::Viewport& b) noexcept
+{
+    return a.ToInclusive() == b.ToInclusive();
+}
+
+inline bool operator!=(const Microsoft::Console::Types::Viewport& a,
+                          const Microsoft::Console::Types::Viewport& b) noexcept
+{
+    return !(a == b);
+}

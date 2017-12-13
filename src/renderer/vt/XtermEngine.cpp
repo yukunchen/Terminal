@@ -43,16 +43,6 @@ HRESULT XtermEngine::StartPaint()
             {
                 // Turn off cursor
                 hr = _HideCursor();
-                if (SUCCEEDED(hr))
-                {
-                    // If we've invalidated EVERYTHING, call ClearScreen as an
-                    //  optimization.
-                    if (_AllIsInvalid())
-                    {
-                        hr = _ClearScreen();
-                        _clearedAllThisFrame = true;   
-                    }
-                }
             }
             else
             {
@@ -246,7 +236,7 @@ HRESULT XtermEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
         RETURN_IF_FAILED(_InvalidOffset(pcoordDelta));
 
         // Add the top/bottom of the window to the invalid area
-        SMALL_RECT invalid = _lastViewport.ToOrigin().ToInclusive();
+        SMALL_RECT invalid = _lastViewport.ToOrigin().ToExclusive();
 
         if (dy > 0)
         {
@@ -256,7 +246,7 @@ HRESULT XtermEngine::InvalidateScroll(_In_ const COORD* const pcoordDelta)
         {
             invalid.Top = invalid.Bottom + dy;
         }
-        _InvalidCombine(&invalid);
+        _InvalidCombine(Viewport::FromExclusive(invalid));
 
         COORD invalidScrollNew;
         RETURN_IF_FAILED(ShortAdd(_scrollDelta.X, dx, &invalidScrollNew.X));

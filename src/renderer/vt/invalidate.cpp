@@ -85,7 +85,6 @@ HRESULT VtEngine::_InvalidCombine(_In_ const Viewport invalid)
     if (!_fInvalidRectUsed)
     {
         _invalidRect = invalid;
-        // _srcInvalid = *prc;
         _fInvalidRectUsed = true;
     }
     else
@@ -110,19 +109,11 @@ HRESULT VtEngine::_InvalidOffset(_In_ const COORD* const pCoord)
 {
     if (_fInvalidRectUsed)
     {
-        SMALL_RECT rcInvalidNew;
-
         Viewport newInvalid = _invalidRect;
-        RETURN_IF_FAILED(Viewport::AddCoord(_invalidRect, *pCoord, &newInvalid));
-
-        // RETURN_IF_FAILED(ShortAdd(_srcInvalid.Left, pCoord->X, &rcInvalidNew.Left));
-        // RETURN_IF_FAILED(ShortAdd(_srcInvalid.Right, pCoord->X, &rcInvalidNew.Right));
-        // RETURN_IF_FAILED(ShortAdd(_srcInvalid.Top, pCoord->Y, &rcInvalidNew.Top));
-        // RETURN_IF_FAILED(ShortAdd(_srcInvalid.Bottom, pCoord->Y, &rcInvalidNew.Bottom));
+        RETURN_IF_FAILED(Viewport::AddCoord(_invalidRect, *pCoord, newInvalid));
 
         // Add the scrolled invalid rectangle to what was left behind to get the new invalid area.
         // This is the equivalent of adding in the "update rectangle" that we would get out of ScrollWindowEx/ScrollDC.
-        // _OrRect(&_srcInvalid, &rcInvalidNew);
         _invalidRect = Viewport::OrViewports(_invalidRect, newInvalid);
 
         // Ensure invalid areas remain within bounds of window.
