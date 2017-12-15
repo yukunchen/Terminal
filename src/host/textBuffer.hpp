@@ -163,26 +163,3 @@ private:
 };
 typedef TEXT_BUFFER_INFO *PTEXT_BUFFER_INFO;
 typedef PTEXT_BUFFER_INFO *PPTEXT_BUFFER_INFO;
-
-// this sticks specializations of swap() into the std::namespace for our classes, so that callers that use
-// std::swap explicitly over calling the global swap can still get the performance benefit.
-namespace std
-{
-    template<>
-    inline void swap<CHAR_ROW>(CHAR_ROW& a, CHAR_ROW& b) noexcept
-    {
-        a.swap(b);
-    }
-
-    template<>
-    inline void swap<ATTR_ROW>(ATTR_ROW& a, ATTR_ROW& b) noexcept
-    {
-        a.swap(b);
-    }
-
-    template<>
-    inline void swap<ROW>(ROW& a, ROW& b) noexcept
-    {
-        a.swap(b);
-    }
-}

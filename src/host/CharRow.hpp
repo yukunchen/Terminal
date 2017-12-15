@@ -119,3 +119,14 @@ constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept
             a.Chars == b.Chars &&
             a.KAttrs == b.KAttrs);
 }
+
+// this sticks specialization of swap() into the std::namespace for CHAR_ROW, so that callers that use
+// std::swap explicitly over calling the global swap can still get the performance benefit.
+namespace std
+{
+    template<>
+    inline void swap<CHAR_ROW>(CHAR_ROW& a, CHAR_ROW& b) noexcept
+    {
+        a.swap(b);
+    }
+}
