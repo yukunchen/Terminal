@@ -438,7 +438,7 @@ bool ATTR_ROW::Initialize(_In_ UINT const cchRowWidth, _In_ const TextAttribute 
     // Disable C4702 (unreacable code) because we really do want to have the try/catch block here even if
     // currently the catch block can't be reached. We want to guard against the possibility of
     // TextAttributeRun's constructor changing from the default one to one that may throw.
-#pragma warning(push)
+#pragma warning(push,4)
 #pragma warning(disable:4702)
     wistd::unique_ptr<TextAttributeRun[]> pNewRun;
     try
@@ -801,7 +801,7 @@ HRESULT ATTR_ROW::InsertAttrRuns(_In_reads_(cAttrs) const TextAttributeRun* cons
     // Disable C4702 (unreacable code) because we really do want to have the try/catch block here even if
     // currently the catch block can't be reached. We want to guard against the possibility of
     // TextAttributeRun's constructor changing from the default one to one that may throw.
-#pragma warning(push)
+#pragma warning(push,4)
 #pragma warning(disable:4702)
     wistd::unique_ptr<TextAttributeRun[]> pNewRun;
     try
