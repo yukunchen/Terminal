@@ -54,7 +54,7 @@ COLORREF TextAttribute::GetRgbBackground() const
 
 COLORREF TextAttribute::_GetRgbForeground() const
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COLORREF rgbColor;
     if (_fUseRgbColor)
     {
@@ -65,16 +65,16 @@ COLORREF TextAttribute::_GetRgbForeground() const
         const byte iColorTableIndex = LOBYTE(_wAttrLegacy) & 0x0F;
 
         ASSERT(iColorTableIndex >= 0);
-        ASSERT(iColorTableIndex < gci->GetColorTableSize());
+        ASSERT(iColorTableIndex < gci.GetColorTableSize());
 
-        rgbColor = gci->GetColorTable()[iColorTableIndex];
+        rgbColor = gci.GetColorTable()[iColorTableIndex];
     }
     return rgbColor;
 }
 
 COLORREF TextAttribute::_GetRgbBackground() const
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COLORREF rgbColor;
     if (_fUseRgbColor)
     {
@@ -85,9 +85,9 @@ COLORREF TextAttribute::_GetRgbBackground() const
         const byte iColorTableIndex = (LOBYTE(_wAttrLegacy) & 0xF0) >> 4;
 
         ASSERT(iColorTableIndex >= 0);
-        ASSERT(iColorTableIndex < gci->GetColorTableSize());
+        ASSERT(iColorTableIndex < gci.GetColorTableSize());
 
-        rgbColor = gci->GetColorTable()[iColorTableIndex];
+        rgbColor = gci.GetColorTable()[iColorTableIndex];
     }
     return rgbColor;
 }
