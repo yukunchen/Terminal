@@ -35,7 +35,7 @@ void ConsoleWindow::SetIsFullscreen(bool const /*fFullscreenEnabled*/)
 {
 }
 
-NTSTATUS ConsoleWindow::SetViewportOrigin(SMALL_RECT /*NewWindow*/)
+NTSTATUS ConsoleWindow::SetViewportOrigin(SMALL_RECT NewWindow)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
@@ -90,7 +90,7 @@ BOOL ConsoleWindow::GetClientRectangle(LPRECT /*lpRect*/)
     return FALSE;
 }
 
-int ConsoleWindow::MapPoints(LPPOINT /*lpPoints*/, /*UINT*/ cPoints)
+int ConsoleWindow::MapPoints(LPPOINT /*lpPoints*/, UINT /*cPoints*/)
 {
     return 0;
 }
