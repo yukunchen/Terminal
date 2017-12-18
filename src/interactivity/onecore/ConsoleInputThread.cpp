@@ -19,13 +19,11 @@
 using namespace Microsoft::Console::Interactivity::OneCore;
 
 
-DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
+DWORD ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 {
-    UNREFERENCED_PARAMETER(lpParam);
-    
     Globals * const Globals = ServiceLocator::LocateGlobals();
     ConIoSrvComm * const Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
-    
+
     NTSTATUS Status = Server->Connect();
 
     if (NT_SUCCESS(Status))
@@ -86,7 +84,7 @@ DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
         {
             Status = STATUS_SUCCESS;
         }
-        
+
         // Notify IO thread of our status.
         Server->CleanupForHeadless(Status);
     }
