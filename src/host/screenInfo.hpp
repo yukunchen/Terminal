@@ -21,6 +21,7 @@ Revision History:
 #include "conapi.h"
 #include "textBuffer.hpp"
 #include "settings.hpp"
+#include "TextAttribute.hpp"
 
 #include "outputStream.hpp"
 #include "..\terminal\adapter\adaptDispatch.hpp"
