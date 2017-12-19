@@ -6,11 +6,11 @@ Module Name:
 
 Abstract:
 - This is the interface for a VT state machine language
-    The terminal handles input sequences and output sequences differently, 
-    almost as two seperate grammars. This enables different grammars to leverage 
+    The terminal handles input sequences and output sequences differently,
+    almost as two seperate grammars. This enables different grammars to leverage
     the existing VT parsing.
 
-Author(s): 
+Author(s):
 - Mike Griese (migrie) 18 Aug 2017
 --*/
 #pragma once
@@ -27,16 +27,21 @@ namespace Microsoft
                 virtual bool ActionExecute(_In_ wchar_t const wch) = 0;
                 virtual bool ActionPrint(_In_ wchar_t const wch) = 0;
                 virtual bool ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch) = 0;
-                virtual bool ActionEscDispatch(_In_ wchar_t const wch, _In_ const unsigned short cIntermediate, _In_ const wchar_t wchIntermediate) = 0;
-                virtual bool ActionCsiDispatch(_In_ wchar_t const wch, 
+                virtual bool ActionEscDispatch(_In_ wchar_t const wch,
+                                               _In_ const unsigned short cIntermediate,
+                                               _In_ const wchar_t wchIntermediate) = 0;
+                virtual bool ActionCsiDispatch(_In_ wchar_t const wch,
                                                _In_ const unsigned short cIntermediate,
                                                _In_ const wchar_t wchIntermediate,
-                                               _In_ const unsigned short* const rgusParams,
+                                               _In_reads_(cParams) const unsigned short* const rgusParams,
                                                _In_ const unsigned short cParams) = 0;
                 virtual bool ActionClear() = 0;
                 virtual bool ActionIgnore() = 0;
-                virtual bool ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _Inout_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString) = 0;
-                virtual bool ActionSs3Dispatch(_In_ wchar_t const wch, 
+                virtual bool ActionOscDispatch(_In_ wchar_t const wch,
+                                               _In_ const unsigned short sOscParam,
+                                               _Inout_ wchar_t* const pwchOscStringBuffer,
+                                               _In_ const unsigned short cchOscString) = 0;
+                virtual bool ActionSs3Dispatch(_In_ wchar_t const wch,
                                                _In_ const unsigned short* const rgusParams,
                                                _In_ const unsigned short cParams) = 0;
                 virtual bool FlushAtEndOfString() const = 0;

@@ -7,7 +7,7 @@ Module Name:
 Abstract:
 - This is the implementation of the client VT output state machine engine.
 
-Author(s): 
+Author(s):
 - Mike Griese (migrie) 18 Aug 2017
 --*/
 #pragma once
@@ -36,10 +36,10 @@ namespace Microsoft
                 bool ActionEscDispatch(_In_ wchar_t const wch,
                                        _In_ const unsigned short cIntermediate,
                                        _In_ const wchar_t wchIntermediate) override;
-                bool ActionCsiDispatch(_In_ wchar_t const wch, 
+                bool ActionCsiDispatch(_In_ wchar_t const wch,
                                        _In_ const unsigned short cIntermediate,
                                        _In_ const wchar_t wchIntermediate,
-                                       _In_ const unsigned short* const rgusParams,
+                                       _In_reads_(cParams) const unsigned short* const rgusParams,
                                        _In_ const unsigned short cParams);
                 bool ActionClear() override;
                 bool ActionIgnore() override;
@@ -47,7 +47,7 @@ namespace Microsoft
                                        _In_ const unsigned short sOscParam,
                                        _Inout_ wchar_t* const pwchOscStringBuffer,
                                        _In_ const unsigned short cchOscString) override;
-                bool ActionSs3Dispatch(_In_ wchar_t const wch, 
+                bool ActionSs3Dispatch(_In_ wchar_t const wch,
                                        _In_ const unsigned short* const rgusParams,
                                        _In_ const unsigned short cParams) override;
 
@@ -101,7 +101,7 @@ namespace Microsoft
                     HVP_HorizontalVerticalPosition = L'f',
                     DECSTR_SoftReset = L'p',
                     RIS_ResetToInitialState = L'c', // DA is prefaced by CSI, RIS by ESC
-                    DTTERM_WindowManipulation = L't' 
+                    DTTERM_WindowManipulation = L't'
                 };
 
                 enum OscActionCodes : unsigned int
@@ -123,7 +123,7 @@ namespace Microsoft
                 static const TermDispatch::GraphicsOptions s_defaultGraphicsOption = TermDispatch::GraphicsOptions::Off;
                 _Success_(return)
                 bool _GetGraphicsOptions(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                         _In_ const unsigned short cParams, 
+                                         _In_ const unsigned short cParams,
                                          _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* const rgGraphicsOptions,
                                          _Inout_ size_t* const pcOptions) const;
 

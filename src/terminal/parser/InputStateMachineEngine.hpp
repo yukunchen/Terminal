@@ -6,10 +6,10 @@ Module Name:
 
 Abstract:
 - This is the implementation of the client VT input state machine engine.
-    This generates InpueEvents from a stream of VT sequences emmited by a 
+    This generates InpueEvents from a stream of VT sequences emmited by a
     client "terminal" application.
 
-Author(s): 
+Author(s):
 - Mike Griese (migrie) 18 Aug 2017
 --*/
 #pragma once
@@ -44,10 +44,10 @@ public:
     bool ActionEscDispatch(_In_ wchar_t const wch,
                            _In_ const unsigned short cIntermediate,
                            _In_ const wchar_t wchIntermediate) override;
-    bool ActionCsiDispatch(_In_ wchar_t const wch, 
+    bool ActionCsiDispatch(_In_ wchar_t const wch,
                            _In_ const unsigned short cIntermediate,
                            _In_ const wchar_t wchIntermediate,
-                           _In_ const unsigned short* const rgusParams,
+                           _In_reads_(cParams) const unsigned short* const rgusParams,
                            _In_ const unsigned short cParams);
     bool ActionClear() override;
     bool ActionIgnore() override;
@@ -55,14 +55,14 @@ public:
                            _In_ const unsigned short sOscParam,
                            _Inout_ wchar_t* const pwchOscStringBuffer,
                            _In_ const unsigned short cchOscString) override;
-    bool ActionSs3Dispatch(_In_ wchar_t const wch, 
+    bool ActionSs3Dispatch(_In_ wchar_t const wch,
                            _In_ const unsigned short* const rgusParams,
                            _In_ const unsigned short cParams) override;
-    
+
     bool FlushAtEndOfString() const override;
 
 private:
-    
+
     const std::unique_ptr<IInteractDispatch> _pDispatch;
 
     enum CsiActionCodes : wchar_t
@@ -160,13 +160,13 @@ private:
                                     _In_ const DWORD dwModifierState,
                                     _Inout_updates_(cInput) INPUT_RECORD* rgInput,
                                     _In_ const size_t cInput);
-    
+
     size_t _GetSingleKeypress(_In_ const wchar_t wch,
                               _In_ const short vkey,
                               _In_ const DWORD dwModifierState,
                               _Inout_updates_(cRecords) INPUT_RECORD* const rgInput,
                               _In_ const size_t cRecords);
-    
+
     bool _GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
                                     _In_ const unsigned short cParams,
                                     _Out_ unsigned int* const puiFunction) const;

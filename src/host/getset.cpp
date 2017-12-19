@@ -746,7 +746,7 @@ HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _I
         UpdateFlagsInMask(wNewLegacy, META_ATTRS, Attribute);
     }
     NewAttributes.SetFromLegacy(wNewLegacy);
- 
+
     if (!OldAttributes.IsLegacy())
     {
         // The previous call to SetFromLegacy is going to trash our RGB.
@@ -879,7 +879,7 @@ HRESULT ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
     IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow != nullptr) 
+    if (pWindow != nullptr)
     {
         *pHwnd = pWindow->GetWindowHandle();
     }
@@ -1103,7 +1103,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(_In_ SCREEN_INFORMATION* pScreenInfo)
         newCursorPosition.Y -= 1;
         Status = AdjustCursorPosition(pScreenInfo, newCursorPosition, TRUE, nullptr);
     }
-    else 
+    else
     {
         // Cursor is at the top of the viewport
         const COORD bufferSize = pScreenInfo->GetScreenBufferSize();
@@ -1365,9 +1365,9 @@ NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ SCREEN_INFORMATION* c
 }
 
 // Routine Description:
-// - A private API call for forcing the renderer to repaint the screen. If the 
+// - A private API call for forcing the renderer to repaint the screen. If the
 //      input screen buffer is not the active one, then just do nothing. We only
-//      want to redraw the screen buffer that requested the repaint, and 
+//      want to redraw the screen buffer that requested the repaint, and
 //      switching screen buffers will already force a repaint.
 // Parameters:
 //  The ScreenBuffer to perform the repaint for.
@@ -1384,7 +1384,7 @@ NTSTATUS DoSrvPrivateRefreshWindow(_In_ SCREEN_INFORMATION* const pScreenInfo)
     return STATUS_SUCCESS;
 }
 
-HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
+HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                    _In_ size_t const cchTitleBufferSize,
                                    _Out_ size_t* const pcchTitleBufferWritten,
                                    _Out_ size_t* const pcchTitleBufferNeeded,
