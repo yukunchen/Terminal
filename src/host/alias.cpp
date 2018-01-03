@@ -1334,5 +1334,3 @@ NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
 
     return Status;
 }
-
-

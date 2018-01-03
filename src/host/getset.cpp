@@ -1384,7 +1384,6 @@ NTSTATUS DoSrvPrivateRefreshWindow(_In_ SCREEN_INFORMATION* const pScreenInfo)
     return STATUS_SUCCESS;
 }
 
-
 HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                    _In_ size_t const cchTitleBufferSize,
                                    _Out_ size_t* const pcchTitleBufferWritten,

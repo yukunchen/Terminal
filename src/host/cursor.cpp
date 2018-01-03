@@ -464,7 +464,6 @@ void Cursor::EndDeferDrawing()
     }
 
     _fDeferCursorRedraw = FALSE;
-    SetCaretTimer();
 }
 
 void Cursor::UpdateSystemMetrics()

@@ -1,9 +1,6 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Testlist {
 
-    export declare const qualifier: {
-        platform: WdgBuild.StandardPlatforms,
-        configuration: "release",
-    };
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src`;
 
