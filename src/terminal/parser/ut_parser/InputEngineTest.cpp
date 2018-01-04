@@ -254,6 +254,10 @@ void InputEngineTest::C0Test()
                 expectedWch = wch;
                 writeCtrl = false;
                 break;
+            case L'\x1b': // Escape
+                expectedWch = wch;
+                writeCtrl = false;
+                break;
             case L'\t': // Tab
                 writeCtrl = false;
                 break;
@@ -400,7 +404,7 @@ void InputEngineTest::RoundTripTest()
         }
         else if (vkey == VK_ESCAPE)
         {
-            uiActualKeystate = SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
+            // uiActualKeystate = SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
         }
 
         if (vkey == UNICODE_ETX)
