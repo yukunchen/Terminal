@@ -55,6 +55,7 @@ public:
     SHORT Height() const;
     SHORT Width() const;
     COORD Origin() const;
+    COORD Dimensions() const;
 
     bool IsWithinViewport(_In_ const COORD* const pcoord) const;
     bool TrimToViewport(_Inout_ SMALL_RECT* const psr) const;

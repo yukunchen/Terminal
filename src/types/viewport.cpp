@@ -134,6 +134,17 @@ COORD Viewport::Origin() const
 }
 
 // Method Description:
+// - Get a coord representing the dimensions of this viewport.
+// Arguments:
+// - <none>
+// Return Value:
+// - the dimensions of this viewport.
+COORD Viewport::Dimensions() const 
+{
+    return { Width(), Height() };
+}
+
+// Method Description:
 // - Returns true if the input coord is within the bounds of this viewport
 // Arguments:
 // - pcoord: a pointer to the coordinate to check
