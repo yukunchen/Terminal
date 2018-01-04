@@ -2391,8 +2391,8 @@ const TextAttribute* const  SCREEN_INFORMATION::GetPopupAttributes() const
 // - attributes - The new value of the attributes to use.
 // Return value:
 // <none>
-void SCREEN_INFORMATION::SetDefaultAttributes(_In_ const TextAttribute attributes,
-                                              _In_ const TextAttribute popupAttributes)
+void SCREEN_INFORMATION::SetDefaultAttributes(_In_ const TextAttribute& attributes,
+                                              _In_ const TextAttribute& popupAttributes)
 {
     SetAttributes(attributes);
     SetPopupAttributes(popupAttributes);
@@ -2406,7 +2406,7 @@ void SCREEN_INFORMATION::SetDefaultAttributes(_In_ const TextAttribute attribute
 // - attributes - The new value of the attributes to use.
 // Return value:
 // <none>
-void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute attributes)
+void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute& attributes)
 {
     _Attributes.SetFrom(attributes);
 
@@ -2421,7 +2421,7 @@ void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute attributes)
 // - wPopupAttributes - The new value of the popup attributes to use.
 // Return value:
 // <none>
-void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute popupAttributes)
+void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute& popupAttributes)
 {
     _PopupAttributes.SetFrom(popupAttributes);
 }
