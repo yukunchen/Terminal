@@ -720,11 +720,7 @@ HRESULT DoSrvSetConsoleTextAttribute(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ 
     RETURN_NTSTATUS(SetScreenColors(pScreenInfo, Attribute, pScreenInfo->GetPopupAttributes()->GetLegacyAttributes(), FALSE));
 }
 
-HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo,
-                                        _In_ WORD const Attribute,
-                                        _In_ const bool fForeground,
-                                        _In_ const bool fBackground,
-                                        _In_ const bool fMeta)
+HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _In_ WORD const Attribute, _In_ const bool fForeground, _In_ const bool fBackground, _In_ const bool fMeta)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     const TextAttribute OldAttributes = pScreenInfo->GetAttributes();
@@ -753,22 +749,8 @@ HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo,
     {
         // The previous call to SetFromLegacy is going to trash our RGB.
         // Restore it.
-        // If the old attributes were "reversed", and the new ones aren't,
-        //  then flip the colors back. 
-        bool resetReverse = (fMeta) &&
-            (!IsFlagSet(Attribute, COMMON_LVB_REVERSE_VIDEO)) &&
-            (IsFlagSet(OldAttributes.GetLegacyAttributes(), COMMON_LVB_REVERSE_VIDEO));
-        if (resetReverse)
-        {
-            NewAttributes.SetForeground(OldAttributes.GetRgbBackground());
-            NewAttributes.SetBackground(OldAttributes.GetRgbForeground());
-        }
-        else
-        {
-            NewAttributes.SetForeground(OldAttributes.GetRgbForeground());
-            NewAttributes.SetBackground(OldAttributes.GetRgbBackground());
-        }
-        
+        NewAttributes.SetForeground(OldAttributes.GetRgbForeground());
+        NewAttributes.SetBackground(OldAttributes.GetRgbBackground());
         if (fForeground)
         {
             COLORREF rgbColor = gci->GetColorTableEntry(Attribute & FG_ATTRS);
