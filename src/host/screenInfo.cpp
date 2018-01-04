@@ -2490,14 +2490,14 @@ void SCREEN_INFORMATION::ReplaceDefaultAttributes(_In_ const TextAttribute oldAt
                                                   _In_ const TextAttribute newAttributes,
                                                   _In_ const TextAttribute newPopupAttributes)
 {        
-    WORD const oldLegacyAttributes = oldAttributes.GetLegacyAttributes();
-    WORD const oldLegacyPopupAttributes = oldPopupAttributes.GetLegacyAttributes();
-    WORD const newLegacyAttributes = newAttributes.GetLegacyAttributes();
-    WORD const newLegacyPopupAttributes = newPopupAttributes.GetLegacyAttributes();
+    const WORD oldLegacyAttributes = oldAttributes.GetLegacyAttributes();
+    const WORD oldLegacyPopupAttributes = oldPopupAttributes.GetLegacyAttributes();
+    const WORD newLegacyAttributes = newAttributes.GetLegacyAttributes();
+    const WORD newLegacyPopupAttributes = newPopupAttributes.GetLegacyAttributes();
 
     // TODO: MSFT 9354902: Fix this up to be clearer with less magic bit shifting and less magic numbers. http://osgvsowi/9354902
-    WORD const InvertedOldPopupAttributes = (WORD)(((oldLegacyPopupAttributes << 4) & 0xf0) | ((oldLegacyPopupAttributes >> 4) & 0x0f));
-    WORD const InvertedNewPopupAttributes = (WORD)(((newLegacyPopupAttributes << 4) & 0xf0) | ((newLegacyPopupAttributes >> 4) & 0x0f));
+    const WORD InvertedOldPopupAttributes = (WORD)(((oldLegacyPopupAttributes << 4) & 0xf0) | ((oldLegacyPopupAttributes >> 4) & 0x0f));
+    const WORD InvertedNewPopupAttributes = (WORD)(((newLegacyPopupAttributes << 4) & 0xf0) | ((newLegacyPopupAttributes >> 4) & 0x0f));
 
     // change all chars with default color
     const SHORT sScreenBufferSizeY = GetScreenBufferSize().Y;
