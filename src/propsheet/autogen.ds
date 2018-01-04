@@ -233,25 +233,25 @@
         <Item>{MsWin.Crts.Public.Internal.Sdk.Lib.__Library}</Item>
         <Item Condition="{(IsBuildArm32 OR IsBuildArm64)}">{MsWin.Crts.Public.Sdk.Lib.__Library}</Item>
         <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
-        <Item>{MsWin.OnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.v1_7.__Library}</Item>
+        <Item>{MsWin.OnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.v1_8.__Library}</Item>
         <Item Condition="{IsBuildRelease AND (IsBuildX64 OR IsBuildX86)}">{MsWin.OnecoreMerged.Public.Internal.Onecoremerged.Lib.__Content}</Item>
-        <Item>{MsWin.OnecoreMerged.Public.Sdk.Lib.Onecore.v1_7.__Library}</Item>
+        <Item>{MsWin.OnecoreMerged.Public.Sdk.Lib.Onecore.v1_8.__Library}</Item>
         <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
-        <Item>{MsWin.OnecoreUapMerged.Private.Internal.Onecore.Priv_sdk.Lib.v1_7.__Library}</Item>
+        <Item>{MsWin.OnecoreUapMerged.Private.Internal.Onecore.Priv_sdk.Lib.v1_8.__Library}</Item>
         <Item>{MsWin.OnecoreUapMerged.Public.Internal.Sdk.Lib.__Library}</Item>
-        <Item>{MsWin.OnecoreUapMerged.Public.Sdk.Lib.Onecore.v1_7.__Library}</Item>
+        <Item>{MsWin.OnecoreUapMerged.Public.Sdk.Lib.Onecore.v1_8.__Library}</Item>
         <Item>{MsWin.OnecoreUapWindows.Public.Internal.Onecoreuapwindows.Lib.__Library}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass0}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_PrePass}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propslib_Pass1}</Item>
         <Item>{MsWin.OnecoreWindows.Public.Sdk.Inc.__Idl}</Item>
-        <Item>{MsWin.Onecore_ApiSet.Private.Internal.Mincore.Priv_sdk.Lib.v1_7.__Library}</Item>
+        <Item>{MsWin.Onecore_ApiSet.Private.Internal.Mincore.Priv_sdk.Lib.v1_8.__Library}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Internal.Sdk.Lib.__Library}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.Minwin.__Header}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Inc.__Idl}</Item>
-        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Lib.Minwin.v1_8.__Library}</Item>
+        <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Lib.Minwin.v1_9.__Library}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Sdk.Lib.__Library}</Item>
         <Item>{MsWin.Onecore_MinKernel.Public.Shared.Inc.__Header}</Item>
       </Consumes>

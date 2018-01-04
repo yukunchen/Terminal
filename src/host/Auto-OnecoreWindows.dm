@@ -8,7 +8,7 @@
     <Identity>MsWin.OnecoreWindows</Identity>
     <Partial>true</Partial>
     <SpecFiles>
-      <Item>dll\autogen.ds</Item>
+      <Item>exe\autogen.ds</Item>
       <Item>ft_host\autogen.ds</Item>
       <Item>ft_uia\autogen.ds</Item>
       <Item>lib\autogen.ds</Item>

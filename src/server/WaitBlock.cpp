@@ -151,7 +151,8 @@ bool ConsoleWaitBlock::Notify(_In_ WaitTerminationReason const TerminationReason
     }
     case API_NUMBER_WRITECONSOLE:
     {
-        fIsUnicode = TRUE; // write always unicode now. we translated to Unicode before the wait occurred.
+        CONSOLE_WRITECONSOLE_MSG* a = &(_WaitReplyMessage.u.consoleMsgL1.WriteConsole);
+        fIsUnicode = a->Unicode; 
         break;
     }
     default:

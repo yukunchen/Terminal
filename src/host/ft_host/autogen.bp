@@ -1,9 +1,6 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_host {
 
-    export declare const qualifier: {
-        platform: WdgBuild.StandardPlatforms,
-        configuration: "release",
-    };
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\host`;
 
@@ -158,11 +155,12 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_host {
             f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
             f`${srcRoot}\build\scripts\testmdgen.cmd`,
             MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
-            isBuildRelease && (isBuildArm32 || isBuildArm64) ? MsWinCrts.Public.Sdk.Lib.library : undefined,
-            MsWinOnecoreAvcore.Private.Internal.Moderncore.Priv_sdk.Lib.V1_6.library,
+            isBuildDebug && isBuildCommonArchitecture ? MsWinCrts.Public.Internal.Sdk.Lib.library : undefined,
+            isBuildArm32 || isBuildArm64 ? MsWinCrts.Public.Sdk.Lib.library : undefined,
+            MsWinOnecoreAvcore.Private.Internal.Moderncore.Priv_sdk.Lib.V1_7.library,
             MsWinOnecoreBase.Public.Shared.Inc.header,
             MsWinOnecoreMerged.Private.Internal.Minwin.Priv_sdk.Lib.library,
-            MsWinOnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.V1_7.library,
+            MsWinOnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.V1_8.library,
             MsWinOnecoreMerged.Public.Internal.Sdk.Lib.library,
             MsWinOnecoreShell.Public.Sdk.Inc.idl,
             MsWinOnecoreUapMerged.Public.Internal.Sdk.Lib.library,
@@ -185,15 +183,15 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_host {
             Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib.pass1,
             Onecore.Windows.Core.Console.Open.Src.Tsf.pass1,
             Onecore.Windows.Core.Console.Open.Src.Types.Lib.pass1,
-            Onecore.Windows.Moderncore.Apiset.Libs.Uiacore.Current.internalModerncorePriv_sdkLib16_library,
+            Onecore.Windows.Moderncore.Apiset.Libs.Uiacore.Current.internalModerncorePriv_sdkLib17_library,
             Public.Sdk.Inc.idl,
-            MsWinOnecore_ApiSet.Private.Internal.Mincore.Priv_sdk.Lib.V1_7.library,
+            MsWinOnecore_ApiSet.Private.Internal.Mincore.Priv_sdk.Lib.V1_8.library,
             MsWinOnecore_MinCore.Private.Internal.Mincore.Priv_sdk.Lib.library,
-            MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Lib.V1_8.library,
+            MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Lib.V1_9.library,
             MsWinOnecore_MinKernel.Public.Internal.Sdk.Lib.library,
             MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
             MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
-            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_8.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_9.library,
             MsWinOnecore_MinKernel.Public.Sdk.Lib.library,
             MsWinOnecore_MinKernel.Public.Shared.Inc.header,
             MsWinOnecore_Taef.Public.Internal.Sdktools.Lib.Wextest.Cue.tlb,
@@ -235,21 +233,31 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_host {
             f`autogen.bp`,
             f`autogen.bp`,
             f`host.featuretests.vcxproj`,
-            f`product.pbxproj`,
             f`${dotDot}\sources.test.inc`,
-            f`${srcRoot}\build\scripts\signer.cmd`,
-            f`${srcRoot}\onecore\windows\project.props`,
-            f`${srcRoot}\public\sdk\inc\ntverp.h`,
             pass1,
             pass2,
             prePass,
             (isBuildRelease && isBuildArm32 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildArm64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX86 && MsWinBuild.isOfficialBuild) ? MsWinOnecore_Pkg.BinPublic.Imagingtools.content : undefined,
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    f`product.pbxproj`,
+                    f`${srcRoot}\build\scripts\signer.cmd`,
+                    f`${srcRoot}\onecore\windows\project.props`,
+                    f`${srcRoot}\public\sdk\inc\ntverp.h`,
+                ]
+            ),
         ]
         .filter(e => e !== undefined),
         
         produces: [
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-featuretests.cab`,
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-featuretests.man.dsm.xml`,
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-featuretests.cab`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-featuretests.man.dsm.xml`,
+                ]
+            ),
         ],
     });
 
@@ -288,7 +296,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_host {
         outputDirectory: d`${binRoot}\prebuilt\test\${buildArch}\${buildType}`,
         sources: [
             pass2.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`),
-            pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`),
-        ],
+            isBuildCommonArchitecture && isBuildRelease ? pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`) : undefined,
+        ]
+        .filter(e => e !== undefined),
     });
 }

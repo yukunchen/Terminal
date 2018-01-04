@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="..\alias.cpp" />
     <ClCompile Include="..\cmdline.cpp" />
     <ClCompile Include="..\conattrs.cpp" />
     <ClCompile Include="..\ConsoleArguments.cpp" />
@@ -14,6 +15,7 @@
     <ClCompile Include="..\getset.cpp" />
     <ClCompile Include="..\globals.cpp" />
     <ClCompile Include="..\handle.cpp" />
+    <ClCompile Include="..\history.cpp" />
     <ClCompile Include="..\init.cpp" />
     <ClCompile Include="..\input.cpp" />
     <ClCompile Include="..\inputBuffer.cpp" />

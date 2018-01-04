@@ -359,7 +359,7 @@ RECT WddmConEngine::GetDisplaySize()
     r.top = 0;
     r.left = 0;
     r.bottom = _displayHeight;
-    r.right = _displayHeight;
+    r.right = _displayWidth;
 
     return r;
 }

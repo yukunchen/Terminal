@@ -48,11 +48,14 @@
         <Item>{DotDot}\statemachine.hpp</Item>
         <Item>{DotDot}\telemetry.cpp</Item>
         <Item>{DotDot}\telemetry.hpp</Item>
-        <Item>{DotDot}\termdispatch.hpp</Item>
         <Item>{DotDot}\tracing.cpp</Item>
         <Item>{DotDot}\tracing.hpp</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\vtapiredirection.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\congetset.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\dispatchcommon.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\iinteractdispatch.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\termdispatch.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp</Item>
 
         <!--References-->
