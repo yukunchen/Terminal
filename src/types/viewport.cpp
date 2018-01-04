@@ -39,19 +39,35 @@ Viewport Viewport::FromExclusive(_In_ const SMALL_RECT sr)
     return Viewport::FromInclusive(_sr);
 }
 
+// Function Description:
+// - Creates a new Viewport at the given origin, with the given dimensions.
+// Arguments:
+// - origin: The origin of the new Viewport. Becomes the Viewport's Left, Top
+// - width: The width of the new viewport
+// - height: The height of the new viewport
+// Return Value:
+// - a new Viewport at the given origin, with the given dimensions.
 Viewport Viewport::FromDimensions(_In_ const COORD origin,
                                   _In_ const short width,
                                   _In_ const short height)
 { 
     return Viewport::FromExclusive({ origin.X, origin.Y, 
-                                     origin.X+width, origin.Y+height });
+                                     origin.X + width, origin.Y + height });
 }
 
+// Function Description:
+// - Creates a new Viewport at the given origin, with the given dimensions.
+// Arguments:
+// - origin: The origin of the new Viewport. Becomes the Viewport's Left, Top
+// - dimensions: A coordinate containing the width and height of the new viewport
+//      in the x and y coordinates respectively.
+// Return Value:
+// - a new Viewport at the given origin, with the given dimensions. 
 Viewport Viewport::FromDimensions(_In_ const COORD origin,
                                   _In_ const COORD dimensions)
 { 
     return Viewport::FromExclusive({ origin.X, origin.Y, 
-                                     origin.X+dimensions.X, origin.Y+dimensions.Y });
+                                     origin.X + dimensions.X, origin.Y + dimensions.Y });
 }
 
 // Method Description:
@@ -106,17 +122,36 @@ SHORT Viewport::Width() const
     return RightExclusive() - Left();
 }
 
+// Method Description:
+// - Get a coord representing the origin of this viewport.
+// Arguments:
+// - <none>
+// Return Value:
+// - the coordinates of this viewport's origin.
 COORD Viewport::Origin() const 
 {
     return { Left(), Top() };
 }
 
+// Method Description:
+// - Returns true if the input coord is within the bounds of this viewport
+// Arguments:
+// - pcoord: a pointer to the coordinate to check
+// Return Value:
+// - true iff the coordinate is within the bounds of this viewport.
 bool Viewport::IsWithinViewport(_In_ const COORD* const pcoord) const
 {
     return pcoord->X >= Left() && pcoord->X < RightExclusive() &&
-        pcoord->Y >= Top() && pcoord->Y < BottomExclusive();
+           pcoord->Y >= Top() && pcoord->Y < BottomExclusive();
 }
 
+// Method Description:
+// - Clips the input rectangle to our bounds. Assumes that the input rectangle 
+//is an exclusive rectangle.
+// Arguments:
+// - psr: a pointer to an exclusive rect to clip.
+// Return Value:
+// - true iff the clipped rectangle is valid (with a width and height both >0)
 bool Viewport::TrimToViewport(_Inout_ SMALL_RECT* const psr) const
 {
     psr->Left = max(psr->Left, Left());
@@ -127,6 +162,13 @@ bool Viewport::TrimToViewport(_Inout_ SMALL_RECT* const psr) const
     return psr->Left < psr->Right && psr->Top < psr->Bottom;
 }
 
+// Method Description:
+// - Translates the input SMALL_RECT out of our coordinate space, whose origin is 
+//      at (this.Left, this.Right)
+// Arguments:
+// - psr: a pointer to a SMALL_RECT the translate into our coordinate space.
+// Return Value:
+// - <none>
 void Viewport::ConvertToOrigin(_Inout_ SMALL_RECT* const psr) const
 {   
     const short dx = Left();
@@ -137,12 +179,26 @@ void Viewport::ConvertToOrigin(_Inout_ SMALL_RECT* const psr) const
     psr->Bottom -= dy;
 }
 
+// Method Description:
+// - Translates the input coordinate out of our coordinate space, whose origin is 
+//      at (this.Left, this.Right)
+// Arguments:
+// - pcoord: a pointer to a coordinate the translate into our coordinate space.
+// Return Value:
+// - <none>
 void Viewport::ConvertToOrigin(_Inout_ COORD* const pcoord) const
 {
     pcoord->X -= Left();
     pcoord->Y -= Top();
 }
 
+// Method Description:
+// - Translates the input SMALL_RECT to our coordinate space, whose origin is 
+//      at (this.Left, this.Right)
+// Arguments:
+// - psr: a pointer to a SMALL_RECT the translate into our coordinate space.
+// Return Value:
+// - <none>
 void Viewport::ConvertFromOrigin(_Inout_ SMALL_RECT* const psr) const
 {    
     const short dx = Left();
@@ -153,29 +209,50 @@ void Viewport::ConvertFromOrigin(_Inout_ SMALL_RECT* const psr) const
     psr->Bottom += dy;
 }
 
+// Method Description:
+// - Translates the input coordinate to our coordinate space, whose origin is 
+//      at (this.Left, this.Right)
+// Arguments:
+// - pcoord: a pointer to a coordinate the translate into our coordinate space.
+// Return Value:
+// - <none>
 void Viewport::ConvertFromOrigin(_Inout_ COORD* const pcoord) const
 {
     pcoord->X += Left();
     pcoord->Y += Top();
 }
 
+// Method Description:
+// - Returns an exclusive SMALL_RECT equivalent to this viewport.
+// Arguments:
+// - <none>
+// Return Value:
+// - an exclusive SMALL_RECT equivalent to this viewport.
 SMALL_RECT Viewport::ToExclusive() const
 {
     return { Left(), Top(), RightExclusive(), BottomExclusive() };
 }
 
+// Method Description:
+// - Returns an inclusive SMALL_RECT equivalent to this viewport.
+// Arguments:
+// - <none>
+// Return Value:
+// - an inclusive SMALL_RECT equivalent to this viewport.
 SMALL_RECT Viewport::ToInclusive() const
 {
     return { Left(), Top(), RightInclusive(), BottomInclusive() };
 }
 
-Viewport Viewport::ToOrigin(_In_ const Viewport& other) const
-{
-    Viewport returnVal = other;
-    ConvertToOrigin(&returnVal._sr);
-    return returnVal;
-}
-
+// Method Description:
+// - Returns a new viewport representing this viewport at the origin.
+// For example:
+//  this = {6, 5, 11, 11} (w, h = 5, 6)
+//  result = {0, 0, 5, 6} (w, h = 5, 6)
+// Arguments:
+// - <none>
+// Return Value:
+// - a new viewport with the same dimensions as this viewport with top, left = 0, 0
 Viewport Viewport::ToOrigin() const
 {
     Viewport returnVal = *this;
@@ -183,6 +260,16 @@ Viewport Viewport::ToOrigin() const
     return returnVal;
 }
 
+// Method Description:
+// - Translates another viewport to this viewport's coordinate space.
+// For example:
+//  this = {5, 6, 7, 8} (w,h = 1, 1)
+//  other = {6, 5, 11, 11} (w, h = 5, 6)
+//  result = {1, -1, 6, 5} (w, h = 5, 6)
+// Arguments:
+// - other: the viewport to convert to this coordinate space
+// Return Value:
+// - the input viewport in a the coordinate space with origin at (this.Top, this.Left)
 Viewport Viewport::ConvertToOrigin(_In_ const Viewport& other) const
 {
     Viewport returnVal = other;
@@ -190,6 +277,15 @@ Viewport Viewport::ConvertToOrigin(_In_ const Viewport& other) const
     return returnVal;
 }
 
+// Function Description:
+// - Translates a given Viewport by the specified coord amount. Does the 
+//      addition with safemath.
+// Arguments:
+// - original: The initial viewport to translate. Is unmodified by this operation.
+// - delta: The amount to translate the original rect by, in both the x and y coordinates.
+// - modified: is set to the result of the addition. Any initial value is discarded.
+// Return Value:
+// - S_OK if safemath succeeded, otherwise an HR representing the safemath error
 HRESULT Viewport::AddCoord(_In_ const Viewport& original,
                            _In_ const COORD delta,
                            _Out_ Viewport& modified)
@@ -208,7 +304,16 @@ HRESULT Viewport::AddCoord(_In_ const Viewport& original,
     return S_OK;
 }
 
-
+// Function Description:
+// - Returns a viewport created from the union of both the parameter viewports.
+//      The result extends from the leftmost extent of either rect to the 
+//      rightmost extent of either rect, and from the lowest top value to the 
+//      highest bottom value, and everything in between.
+// Arguments:
+// - lhs: one of the viewports to or together
+// - rhs: the other viewport to or together
+// Return Value:
+// - a Veiwport representing the union of the other two viewports.
 Viewport Viewport::OrViewports(_In_ const Viewport& lhs, _In_ const Viewport& rhs)
 {
     const short Left = min(lhs._sr.Left, rhs._sr.Left);

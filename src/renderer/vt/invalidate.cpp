@@ -76,10 +76,10 @@ HRESULT VtEngine::InvalidateAll()
 //      updated on the next paint
 // Expects EXCLUSIVE rectangles.
 // Arguments:
-// - prc - Pixel region (RECT) that should be repainted on the next frame
+// - invalid - A viewport containing the character region that should be 
+//      repainted on the next frame
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
-// HRESULT VtEngine::_InvalidCombine(_In_ const SMALL_RECT* const prc)
 HRESULT VtEngine::_InvalidCombine(_In_ const Viewport invalid)
 {
     if (!_fInvalidRectUsed)

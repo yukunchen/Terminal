@@ -67,13 +67,13 @@ public:
     SMALL_RECT ToExclusive() const;
     SMALL_RECT ToInclusive() const;
 
-    Viewport ToOrigin(_In_ const Viewport& other) const;
     Viewport ToOrigin() const;
     
     static HRESULT AddCoord(_In_ const Viewport& original,
                             _In_ const COORD delta,
                             _Out_ Viewport& modified);
-    static Viewport OrViewports(_In_ const Viewport& lhs, _In_ const Viewport&  rhs);
+    static Viewport OrViewports(_In_ const Viewport& lhs,
+                                _In_ const Viewport& rhs);
 
 
 private:
@@ -83,13 +83,13 @@ private:
 };
 
 inline bool operator==(const Microsoft::Console::Types::Viewport& a,
-                          const Microsoft::Console::Types::Viewport& b) noexcept
+                       const Microsoft::Console::Types::Viewport& b) noexcept
 {
     return a.ToInclusive() == b.ToInclusive();
 }
 
 inline bool operator!=(const Microsoft::Console::Types::Viewport& a,
-                          const Microsoft::Console::Types::Viewport& b) noexcept
+                       const Microsoft::Console::Types::Viewport& b) noexcept
 {
     return !(a == b);
 }

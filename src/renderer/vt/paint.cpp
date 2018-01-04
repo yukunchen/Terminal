@@ -43,7 +43,6 @@ HRESULT VtEngine::StartPaint()
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::EndPaint()
 {
-    // _srcInvalid = { 0 };
     _invalidRect = Viewport({ 0 });
     _fInvalidRectUsed = false;
     _scrollDelta = {0};
