@@ -893,14 +893,16 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 // - Paint helper to draw the IME within the buffer.
 // - This supports composition drawing area.
 // Arguments:
-// - pAreaInfo - Special IME area screen buffer metadata
+// - AreaInfo - Special IME area screen buffer metadata
 // - pTextInfo - Text backing buffer for the special IME area.
 // Return Value:
 // - <none>
-void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine, _In_ const ConversionAreaInfo* const pAreaInfo, _In_ const TEXT_BUFFER_INFO* const pTextInfo)
+void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
+                         _In_ const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
+                         _In_ const TEXT_BUFFER_INFO* const pTextInfo)
 {
     // If this conversion area isn't hidden (because it is off) or hidden for a scroll operation, then draw it.
-    if (!pAreaInfo->IsHidden())
+    if (!AreaInfo->IsHidden())
     {
         // First get the screen buffer's viewport.
         Viewport view(_pData->GetViewport());
@@ -909,11 +911,11 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine, _In_ const Conversio
         // The IME's buffer is typically only one row in size. Some segments are the whole row, some are only a partial row.
         // Then from those, there is a "view" much like there is a view into the main console buffer.
         // Use the "window" and "view" relative to the IME-specific special buffer to figure out the coordinates to draw at within the real console buffer.
-        SMALL_RECT srCaView = pAreaInfo->CaInfo.rcViewCaWindow;
-        srCaView.Top += pAreaInfo->CaInfo.coordConView.Y;
-        srCaView.Bottom += pAreaInfo->CaInfo.coordConView.Y;
-        srCaView.Left += pAreaInfo->CaInfo.coordConView.X;
-        srCaView.Right += pAreaInfo->CaInfo.coordConView.X;
+        SMALL_RECT srCaView = AreaInfo->CaInfo.rcViewCaWindow;
+        srCaView.Top += AreaInfo->CaInfo.coordConView.Y;
+        srCaView.Bottom += AreaInfo->CaInfo.coordConView.Y;
+        srCaView.Left += AreaInfo->CaInfo.coordConView.X;
+        srCaView.Right += AreaInfo->CaInfo.coordConView.X;
 
         // Set it up in a Viewport helper structure and trim it the IME viewport to be within the full console viewport.
         Viewport viewConv(srCaView);
@@ -931,11 +933,11 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine, _In_ const Conversio
             for (SHORT iRow = viewDirty.Top(); iRow < viewDirty.BottomInclusive(); iRow++)
             {
                 // Get row of text data
-                const ROW& Row = pTextInfo->GetRowByOffset(iRow - pAreaInfo->CaInfo.coordConView.Y);
+                const ROW& Row = pTextInfo->GetRowByOffset(iRow - AreaInfo->CaInfo.coordConView.Y);
 
                 // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
-                PWCHAR const pwsLine = Row.CharRow.Chars.get() + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X;
-                PBYTE const pbKAttrs = Row.CharRow.KAttrs.get() + viewDirty.Left() - pAreaInfo->CaInfo.coordConView.X; // the double byte flags corresponding to the characters above.
+                PWCHAR const pwsLine = Row.CharRow.Chars.get() + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X;
+                PBYTE const pbKAttrs = Row.CharRow.KAttrs.get() + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X; // the double byte flags corresponding to the characters above.
                 size_t const cchLine = viewDirty.Width() - 1;
 
                 // Calculate the target position in the buffer where we should start writing.
@@ -963,12 +965,12 @@ void Renderer::_PaintImeCompositionString(_In_ IRenderEngine* const pEngine)
 
     for (size_t i = 0; i < pImeData->ConvAreaCompStr.size(); i++)
     {
-        ConversionAreaInfo* pAreaInfo = pImeData->ConvAreaCompStr[i];
+        const std::unique_ptr<ConversionAreaInfo>& AreaInfo = pImeData->ConvAreaCompStr[i];
 
-        if (pAreaInfo != nullptr)
+        if (AreaInfo.get() != nullptr)
         {
             const TEXT_BUFFER_INFO* const ptbi = _pData->GetImeCompositionStringBuffer(i);
-            _PaintIme(pEngine, pAreaInfo, ptbi);
+            _PaintIme(pEngine, AreaInfo, ptbi);
         }
     }
 }

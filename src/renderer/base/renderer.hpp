@@ -106,7 +106,9 @@ namespace Microsoft
                 void _PaintSelection(_In_ IRenderEngine* const pEngine);
                 void _PaintCursor(_In_ IRenderEngine* const pEngine);
 
-                void _PaintIme(_In_ IRenderEngine* const pEngine, _In_ const ConversionAreaInfo* const pAreaInfo, _In_ const TEXT_BUFFER_INFO* const pTextInfo);
+                void _PaintIme(_In_ IRenderEngine* const pEngine,
+                               _In_ const std::unique_ptr<ConversionAreaInfo>& AreaInfo,
+                               _In_ const TEXT_BUFFER_INFO* const pTextInfo);
                 void _PaintImeCompositionString(_In_ IRenderEngine* const pEngine);
 
                 HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute attr, _In_ bool const fIncludeBackground);

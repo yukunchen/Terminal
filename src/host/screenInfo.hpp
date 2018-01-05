@@ -21,6 +21,7 @@ Revision History:
 #include "conapi.h"
 #include "textBuffer.hpp"
 #include "settings.hpp"
+#include "TextAttribute.hpp"
 
 #include "outputStream.hpp"
 #include "..\terminal\adapter\adaptDispatch.hpp"
@@ -124,7 +125,10 @@ public:
 #define VERTICAL_LINE       3
 #define BOTTOM_LEFT_CORNER  4
 #define BOTTOM_RIGHT_CORNER 5
+
+    // non ownership pointer
     ConversionAreaInfo* ConvScreenInfo;
+
     UINT ScrollScale;
 
     BOOL IsActiveScreenBuffer() const;
@@ -170,7 +174,7 @@ public:
     void SetPopupAttributes(_In_ const TextAttribute* const pPopupAttributes);
 
     HRESULT VtEraseAll();
-    
+
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
                        _In_ IAccessibilityNotifier *pNotifier,

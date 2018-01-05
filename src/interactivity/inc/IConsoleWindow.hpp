@@ -26,6 +26,8 @@ namespace Microsoft
             class IConsoleWindow
             {
             public:
+                virtual ~IConsoleWindow() = 0;
+
                 virtual BOOL EnableBothScrollBars() = 0;
                 virtual int UpdateScrollBar(_In_ bool isVertical,
                                             _In_ bool isAltBuffer,
@@ -69,6 +71,8 @@ namespace Microsoft
                 virtual HRESULT UiaSetTextAreaFocus() = 0;
                 virtual RECT GetWindowRect() const = 0;
             };
+
+            inline IConsoleWindow::~IConsoleWindow() {}
         };
     };
 };

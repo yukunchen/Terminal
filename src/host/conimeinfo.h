@@ -17,6 +17,7 @@ Revision History:
 
 #include "..\inc\conime.h"
 #include <vector>
+#include <memory>
 
 class SCREEN_INFORMATION;
 
@@ -31,24 +32,23 @@ public:
     ConversionAreaBufferInfo(_In_ COORD const coordBufferSize);
 };
 
-class ConversionAreaInfo
+class ConversionAreaInfo final
 {
 public:
-
-    ConversionAreaBufferInfo CaInfo;
-    SCREEN_INFORMATION* const ScreenBuffer;
-
-    static NTSTATUS s_CreateInstance(_Outptr_ ConversionAreaInfo** const ppInfo);
+    ConversionAreaInfo(_In_ const COORD bufferSize,
+                       _In_ const COORD windowSize,
+                       _In_ const CHAR_INFO fill,
+                       _In_ const CHAR_INFO popupFill,
+                       _In_ const FontInfo* const pFontInfo);
+    ~ConversionAreaInfo();
 
     bool IsHidden() const;
     void SetHidden(_In_ bool const fIsHidden);
 
-    ~ConversionAreaInfo();
+    ConversionAreaBufferInfo CaInfo;
+    SCREEN_INFORMATION* ScreenBuffer;
 
 private:
-    ConversionAreaInfo(_In_ COORD const coordBufferSize,
-                       _In_ SCREEN_INFORMATION* const pScreenInfo);
-
     bool _fIsHidden;
 };
 
@@ -61,7 +61,7 @@ public:
 
     // IME compositon string information
     // There is one "composition string" per line that must be rendered on the screen
-    std::vector<ConversionAreaInfo*> ConvAreaCompStr;
+    std::vector<std::unique_ptr<ConversionAreaInfo>> ConvAreaCompStr;
 
     ConsoleImeInfo();
     ~ConsoleImeInfo();

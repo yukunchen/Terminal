@@ -10,20 +10,18 @@ using namespace Microsoft::Console::Interactivity;
 
 #pragma region Private Static Member Initialization
 
-IInteractivityFactory        *ServiceLocator::s_interactivityFactory        = nullptr;
+std::unique_ptr<IInteractivityFactory> ServiceLocator::s_interactivityFactory;
+std::unique_ptr<IConsoleControl> ServiceLocator::s_consoleControl;
+std::unique_ptr<IConsoleInputThread> ServiceLocator::s_consoleInputThread;
+std::unique_ptr<IWindowMetrics> ServiceLocator::s_windowMetrics;
+std::unique_ptr<IAccessibilityNotifier> ServiceLocator::s_accessibilityNotifier;
+std::unique_ptr<IHighDpiApi> ServiceLocator::s_highDpiApi;
+std::unique_ptr<ISystemConfigurationProvider> ServiceLocator::s_systemConfigurationProvider;
+std::unique_ptr<IInputServices> ServiceLocator::s_inputServices;
 
-IConsoleWindow               *ServiceLocator::s_consoleWindow               = nullptr;
+IConsoleWindow* ServiceLocator::s_consoleWindow = nullptr;
 
-IConsoleControl              *ServiceLocator::s_consoleControl              = nullptr;
-IConsoleInputThread          *ServiceLocator::s_consoleInputThread          = nullptr;
-
-IHighDpiApi                  *ServiceLocator::s_highDpiApi                  = nullptr;
-IWindowMetrics               *ServiceLocator::s_windowMetrics               = nullptr;
-IAccessibilityNotifier       *ServiceLocator::s_accessibilityNotifier       = nullptr;
-ISystemConfigurationProvider *ServiceLocator::s_systemConfigurationProvider = nullptr;
-IInputServices               *ServiceLocator::s_inputServices               = nullptr;
-
-Globals                      *ServiceLocator::s_globals                     = new Globals();
+Globals                      ServiceLocator::s_globals;
 
 #pragma endregion
 
@@ -37,7 +35,7 @@ void ServiceLocator::RundownAndExit(_In_ HRESULT const hr)
     // This was because Console IO Services (ConIoSvcComm) on OneCore editions was holding onto
     // pipe and ALPC handles to talk to CSRSS ConIoSrv.dll to broker which console got display/keyboard control.
     // If we simply run straight into TerminateProcess, those handles aren't necessarily released right away.
-    // The terminate operation can have a rundown period of time where APCs are serviced (such as from 
+    // The terminate operation can have a rundown period of time where APCs are serviced (such as from
     // a DirectX kernel callback/flush/cleanup) that can take substantially longer than we expect (several whole seconds).
     // This rundown happens before the final destruction of any outstanding handles or resources.
     // If someone is waiting on one of those handles or resources outside our process, they're stuck waiting
@@ -48,10 +46,9 @@ void ServiceLocator::RundownAndExit(_In_ HRESULT const hr)
 
     // TODO: MSFT: 14397093 - Expand graceful rundown beyond just the Hot Bug input services case.
 
-    if (s_inputServices != nullptr)
+    if (s_inputServices.get() != nullptr)
     {
-        delete s_inputServices;
-        s_inputServices = nullptr;
+        s_inputServices.reset(nullptr);
     }
 
     TerminateProcess(GetCurrentProcess(), hr);
@@ -69,16 +66,17 @@ NTSTATUS ServiceLocator::CreateConsoleInputThread(_Outptr_result_nullonfailure_ 
     }
     else
     {
-        IInteractivityFactory *factory;
-        status = ServiceLocator::LocateInteractivityFactory(&factory);
-
+        if (s_interactivityFactory.get() == nullptr)
+        {
+            status = ServiceLocator::LoadInteractivityFactory();
+        }
         if (NT_SUCCESS(status))
         {
-            status = factory->CreateConsoleInputThread(&s_consoleInputThread);
+            status = s_interactivityFactory->CreateConsoleInputThread(s_consoleInputThread);
 
             if (NT_SUCCESS(status))
             {
-                *thread = s_consoleInputThread;
+                *thread = s_consoleInputThread.get();
             }
         }
     }
@@ -125,23 +123,25 @@ IConsoleControl *ServiceLocator::LocateConsoleControl()
 
     if (!s_consoleControl)
     {
-        IInteractivityFactory *factory;
-        status = ServiceLocator::LocateInteractivityFactory(&factory);
+        if (s_interactivityFactory.get() == nullptr)
+        {
+            status = ServiceLocator::LoadInteractivityFactory();
+        }
 
         if (NT_SUCCESS(status))
         {
-            status = factory->CreateConsoleControl(&s_consoleControl);
+            status = s_interactivityFactory->CreateConsoleControl(s_consoleControl);
         }
     }
 
     LOG_IF_NTSTATUS_FAILED(status);
 
-    return s_consoleControl;
+    return s_consoleControl.get();
 }
 
 IConsoleInputThread* ServiceLocator::LocateConsoleInputThread()
 {
-    return s_consoleInputThread;
+    return s_consoleInputThread.get();
 }
 
 IHighDpiApi* ServiceLocator::LocateHighDpiApi()
@@ -150,18 +150,20 @@ IHighDpiApi* ServiceLocator::LocateHighDpiApi()
 
     if (!s_highDpiApi)
     {
-        IInteractivityFactory *factory;
-        status = ServiceLocator::LocateInteractivityFactory(&factory);
+        if (s_interactivityFactory.get() == nullptr)
+        {
+            status = ServiceLocator::LoadInteractivityFactory();
+        }
 
         if (NT_SUCCESS(status))
         {
-            status = factory->CreateHighDpiApi(&s_highDpiApi);
+            status = s_interactivityFactory->CreateHighDpiApi(s_highDpiApi);
         }
     }
 
     LOG_IF_NTSTATUS_FAILED(status);
 
-    return s_highDpiApi;
+    return s_highDpiApi.get();
 }
 
 IWindowMetrics* ServiceLocator::LocateWindowMetrics()
@@ -170,18 +172,20 @@ IWindowMetrics* ServiceLocator::LocateWindowMetrics()
 
     if (!s_windowMetrics)
     {
-        IInteractivityFactory *factory;
-        status = ServiceLocator::LocateInteractivityFactory(&factory);
+        if (s_interactivityFactory.get() == nullptr)
+        {
+            status = ServiceLocator::LoadInteractivityFactory();
+        }
 
         if (NT_SUCCESS(status))
         {
-            status = factory->CreateWindowMetrics(&s_windowMetrics);
+            status = s_interactivityFactory->CreateWindowMetrics(s_windowMetrics);
         }
     }
 
     LOG_IF_NTSTATUS_FAILED(status);
 
-    return s_windowMetrics;
+    return s_windowMetrics.get();
 }
 
 IAccessibilityNotifier* ServiceLocator::LocateAccessibilityNotifier()
@@ -190,18 +194,20 @@ IAccessibilityNotifier* ServiceLocator::LocateAccessibilityNotifier()
 
     if (!s_accessibilityNotifier)
     {
-        IInteractivityFactory *factory;
-        status = ServiceLocator::LocateInteractivityFactory(&factory);
+        if (s_interactivityFactory.get() == nullptr)
+        {
+            status = ServiceLocator::LoadInteractivityFactory();
+        }
 
         if (NT_SUCCESS(status))
         {
-            status = factory->CreateAccessibilityNotifier(&s_accessibilityNotifier);
+            status = s_interactivityFactory->CreateAccessibilityNotifier(s_accessibilityNotifier);
         }
     }
 
     LOG_IF_NTSTATUS_FAILED(status);
 
-    return s_accessibilityNotifier;
+    return s_accessibilityNotifier.get();
 }
 
 ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider()
@@ -210,18 +216,20 @@ ISystemConfigurationProvider* ServiceLocator::LocateSystemConfigurationProvider(
 
     if (!s_systemConfigurationProvider)
     {
-        IInteractivityFactory *factory;
-        status = ServiceLocator::LocateInteractivityFactory(&factory);
+        if (s_interactivityFactory.get() == nullptr)
+        {
+            status = ServiceLocator::LoadInteractivityFactory();
+        }
 
         if (NT_SUCCESS(status))
         {
-            status = factory->CreateSystemConfigurationProvider(&s_systemConfigurationProvider);
+            status = s_interactivityFactory->CreateSystemConfigurationProvider(s_systemConfigurationProvider);
         }
     }
 
     LOG_IF_NTSTATUS_FAILED(status);
 
-    return s_systemConfigurationProvider;
+    return s_systemConfigurationProvider.get();
 }
 
 IInputServices* ServiceLocator::LocateInputServices()
@@ -230,21 +238,23 @@ IInputServices* ServiceLocator::LocateInputServices()
 
     if (!s_inputServices)
     {
-        IInteractivityFactory *factory;
-        status = ServiceLocator::LocateInteractivityFactory(&factory);
+        if (s_interactivityFactory.get() == nullptr)
+        {
+            status = ServiceLocator::LoadInteractivityFactory();
+        }
 
         if (NT_SUCCESS(status))
         {
-            status = factory->CreateInputServices(&s_inputServices);
+            status = s_interactivityFactory->CreateInputServices(s_inputServices);
         }
     }
 
     LOG_IF_NTSTATUS_FAILED(status);
 
-    return s_inputServices;
+    return s_inputServices.get();
 }
 
-Globals* ServiceLocator::LocateGlobals()
+Globals& ServiceLocator::LocateGlobals()
 {
     return s_globals;
 }
@@ -255,25 +265,15 @@ Globals* ServiceLocator::LocateGlobals()
 
 #pragma region Private Methods
 
-NTSTATUS ServiceLocator::LocateInteractivityFactory(_Outptr_result_nullonfailure_ IInteractivityFactory** factory)
+NTSTATUS ServiceLocator::LoadInteractivityFactory()
 {
     NTSTATUS status = STATUS_SUCCESS;
 
-    if (s_interactivityFactory)
+    if (s_interactivityFactory.get() == nullptr)
     {
-        *factory = s_interactivityFactory;
+        s_interactivityFactory = std::make_unique<InteractivityFactory>();
+        status = NT_TESTNULL(s_interactivityFactory.get());
     }
-    else
-    {
-        s_interactivityFactory = new InteractivityFactory();
-        status = NT_TESTNULL(s_interactivityFactory);
-
-        if (NT_SUCCESS(status))
-        {
-            *factory = s_interactivityFactory;
-        }
-    }
-
     return status;
 }
 

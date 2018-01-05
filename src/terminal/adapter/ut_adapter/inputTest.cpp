@@ -46,9 +46,9 @@ public:
     {
         size_t cInput = inEvents.size();
         INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
+        auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
         VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
         VERIFY_IS_NOT_NULL(rgInput);
-        auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
 
         size_t cInputExpected = 0;
         VERIFY_SUCCEEDED(StringCchLengthW(s_pwszInputExpected, STRSAFE_MAX_CCH, &cInputExpected));
@@ -75,10 +75,10 @@ public:
     {
         size_t cInput = inEvents.size();
         INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
+        auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
         VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
         VERIFY_IS_NOT_NULL(rgInput);
-        auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
-        
+
         if (cInput == 1)
         {
             Log::Comment(L"We are expecting a null input event.");
@@ -132,7 +132,7 @@ public:
     {
         Log::Comment(L"Starting test...");
 
-        const TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
+        std::unique_ptr<TerminalInput> terminalInput = std::make_unique<TerminalInput>(s_TerminalInputTestCallback);
 
         Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
         for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
@@ -250,7 +250,7 @@ public:
             }
             auto inputEvent = IInputEvent::Create(irTest);
             // Send key into object (will trigger callback and verification)
-            VERIFY_ARE_EQUAL(fExpectedKeyHandled, pInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
+            VERIFY_ARE_EQUAL(fExpectedKeyHandled, terminalInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
         }
 
         Log::Comment(L"Sending every possible VKEY at the input stream for interception during key UP.");
@@ -266,7 +266,7 @@ public:
 
             auto inputEvent = IInputEvent::Create(irTest);
             // Send key into object (will trigger callback and verification)
-            VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify key was NOT handled.");
+            VERIFY_ARE_EQUAL(false, terminalInput->HandleKey(inputEvent.get()), L"Verify key was NOT handled.");
         }
 
         Log::Comment(L"Verify other types of events are not handled/intercepted.");
@@ -276,22 +276,22 @@ public:
         Log::Comment(L"Testing MOUSE_EVENT");
         irUnhandled.EventType = MOUSE_EVENT;
         auto inputEvent = IInputEvent::Create(irUnhandled);
-        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify MOUSE_EVENT was NOT handled.");
+        VERIFY_ARE_EQUAL(false, terminalInput->HandleKey(inputEvent.get()), L"Verify MOUSE_EVENT was NOT handled.");
 
         Log::Comment(L"Testing WINDOW_BUFFER_SIZE_EVENT");
         irUnhandled.EventType = WINDOW_BUFFER_SIZE_EVENT;
         inputEvent = IInputEvent::Create(irUnhandled);
-        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify WINDOW_BUFFER_SIZE_EVENT was NOT handled.");
+        VERIFY_ARE_EQUAL(false, terminalInput->HandleKey(inputEvent.get()), L"Verify WINDOW_BUFFER_SIZE_EVENT was NOT handled.");
 
         Log::Comment(L"Testing MENU_EVENT");
         irUnhandled.EventType = MENU_EVENT;
         inputEvent = IInputEvent::Create(irUnhandled);
-        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify MENU_EVENT was NOT handled.");
+        VERIFY_ARE_EQUAL(false, terminalInput->HandleKey(inputEvent.get()), L"Verify MENU_EVENT was NOT handled.");
 
         Log::Comment(L"Testing FOCUS_EVENT");
         irUnhandled.EventType = FOCUS_EVENT;
         inputEvent = IInputEvent::Create(irUnhandled);
-        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT was NOT handled.");
+        VERIFY_ARE_EQUAL(false, terminalInput->HandleKey(inputEvent.get()), L"Verify FOCUS_EVENT was NOT handled.");
     }
 
     wchar_t GetModifierChar(_In_ const bool fShift, _In_ const bool fAlt, _In_ const bool fCtrl)
@@ -337,7 +337,7 @@ public:
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiModifierKeystate", uiActualKeystate));
         unsigned int uiKeystate = uiActualKeystate;
 
-        const TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
+        std::unique_ptr<TerminalInput> terminalInput = std::make_unique<TerminalInput>(s_TerminalInputTestCallback);
 
         Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
         for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
@@ -465,12 +465,12 @@ public:
                 break;
             default:
                 // Alt+Key generates [0x1b, key] into the stream
-                if (AltPressed(uiKeystate) && (vkey > 0x40 && vkey <= 0x5A)) 
+                if (AltPressed(uiKeystate) && (vkey > 0x40 && vkey <= 0x5A))
                 {
                     wcscpy_s(s_pwsInputBuffer, L"\x1bm");
                     wchar_t wchShifted = vkey;
                     // Alt + Ctrl + key generates [0x1b, control key] in the stream.
-                    if (ControlPressed(uiKeystate)) 
+                    if (ControlPressed(uiKeystate))
                     {
                         // Generally the control key is key-0x40
                         wchShifted = vkey - 0x40;
@@ -506,7 +506,7 @@ public:
 
             auto inputEvent = IInputEvent::Create(irTest);
             // Send key into object (will trigger callback and verification)
-            VERIFY_ARE_EQUAL(fExpectedKeyHandled, pInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
+            VERIFY_ARE_EQUAL(fExpectedKeyHandled, terminalInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
 
         }
     }
@@ -517,7 +517,7 @@ public:
 
         unsigned int uiKeystate = LEFT_CTRL_PRESSED;
 
-        const TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestNullCallback);
+        std::unique_ptr<TerminalInput> terminalInput = std::make_unique<TerminalInput>(s_TerminalInputTestNullCallback);
 
         Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
 
@@ -533,33 +533,33 @@ public:
 
         // Send key into object (will trigger callback and verification)
         auto inputEvent = IInputEvent::Create(irTest);
-        VERIFY_ARE_EQUAL(true, pInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
+        VERIFY_ARE_EQUAL(true, terminalInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
 
         vkey = VK_SPACE;
         Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
         irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
         irTest.Event.KeyEvent.uChar.UnicodeChar = vkey;
         inputEvent = IInputEvent::Create(irTest);
-        VERIFY_ARE_EQUAL(true, pInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
+        VERIFY_ARE_EQUAL(true, terminalInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
 
         uiKeystate = LEFT_CTRL_PRESSED | LEFT_ALT_PRESSED;
         Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
         irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
         inputEvent = IInputEvent::Create(irTest);
-        VERIFY_ARE_EQUAL(true, pInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
+        VERIFY_ARE_EQUAL(true, terminalInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
 
         uiKeystate = RIGHT_CTRL_PRESSED | LEFT_ALT_PRESSED;
         Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
         irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
         inputEvent = IInputEvent::Create(irTest);
-        VERIFY_ARE_EQUAL(true, pInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
+        VERIFY_ARE_EQUAL(true, terminalInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
 
         uiKeystate = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
         // This is AltGr, this ISN'T handled.
         Log::Comment(NoThrowString().Format(L"Testing key, state =0x%x, 0x%x", vkey, uiKeystate));
         irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
         inputEvent = IInputEvent::Create(irTest);
-        VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
+        VERIFY_ARE_EQUAL(false, terminalInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
 
     }
 };

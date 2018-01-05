@@ -171,8 +171,8 @@ void TextBufferTests::DoBufferRowIterationTest(TEXT_BUFFER_INFO* pTbi)
 
 TEXT_BUFFER_INFO* TextBufferTests::GetTbi()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return gci->CurrentScreenBuffer->TextInfo;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.CurrentScreenBuffer->TextInfo;
 }
 
 SHORT TextBufferTests::GetBufferWidth()
@@ -607,8 +607,8 @@ void TextBufferTests::TestIncrementCircularBuffer()
 
 void TextBufferTests::TestMixedRgbAndLegacyForeground()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    const SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     const Cursor* const cursor = tbi->GetCursor();
@@ -628,9 +628,9 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     const short y = cursor->GetPosition().Y;
     const ROW& row = tbi->GetRowByOffset(y);
     const auto attrRow = &row.AttrRow;
-    const auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
-    VERIFY_IS_NOT_NULL(attrs);
-    attrRow->UnpackAttrs(attrs, tbi->_coordBufferSize.X);
+    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(tbi->_coordBufferSize.X);
+    VERIFY_IS_NOT_NULL(attrs.get());
+    attrRow->UnpackAttrs(attrs.get(), tbi->_coordBufferSize.X);
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -670,8 +670,8 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
 
 void TextBufferTests::TestMixedRgbAndLegacyBackground()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    const SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     const Cursor* const cursor = tbi->GetCursor();
@@ -731,8 +731,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
 
 void TextBufferTests::TestMixedRgbAndLegacyUnderline()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    const SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     const Cursor* const cursor = tbi->GetCursor();
@@ -749,9 +749,9 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     const auto y = cursor->GetPosition().Y;
     const auto& row = tbi->GetRowByOffset(y);
     const auto attrRow = &row.AttrRow;
-    const auto attrs = new TextAttribute[tbi->_coordBufferSize.X];
-    VERIFY_IS_NOT_NULL(attrs);
-    attrRow->UnpackAttrs(attrs, tbi->_coordBufferSize.X);
+    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(tbi->_coordBufferSize.X);
+    VERIFY_IS_NOT_NULL(attrs.get());
+    attrRow->UnpackAttrs(attrs.get(), tbi->_coordBufferSize.X);
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -794,8 +794,8 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
 
 void TextBufferTests::TestMixedRgbAndLegacyBrightness()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    const SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     const Cursor* const cursor = tbi->GetCursor();
@@ -805,8 +805,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     //      '\E[32mX\E[1mX'
     //      Make sure that the second X is a BRIGHT green, not white.
     Log::Comment(L"Case 4 ;\"\\E[32mX\\E[1mX\"");
-    const auto dark_green = gci->GetColorTableEntry(2);
-    const auto bright_green = gci->GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(2);
+    const auto bright_green = gci.GetColorTableEntry(10);
     VERIFY_ARE_NOT_EQUAL(dark_green, bright_green);
 
     wchar_t* sequence = L"\x1b[32mX\x1b[1mX";
@@ -815,9 +815,9 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     const auto y = cursor->GetPosition().Y;
     const auto& row = tbi->GetRowByOffset(y);
     const auto attrRow = &row.AttrRow;
-    const auto attrs = std::make_unique<TextAttribute[]>(tbi->_coordBufferSize.X);
-    VERIFY_IS_NOT_NULL(attrs);
-    VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), tbi->_coordBufferSize.X));
+    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(tbi->_coordBufferSize.X);
+    VERIFY_IS_NOT_NULL(attrs.get());
+    attrRow->UnpackAttrs(attrs.get(), tbi->_coordBufferSize.X);
     const auto attrA = attrs[x-2];
     const auto attrB = attrs[x-1];
     Log::Comment(NoThrowString().Format(
@@ -853,8 +853,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
 
 void TextBufferTests::TestRgbEraseLine()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor* const cursor = tbi->GetCursor();
@@ -884,7 +884,7 @@ void TextBufferTests::TestRgbEraseLine()
         const auto& row = tbi->GetRowByOffset(y);
         const auto attrRow = &row.AttrRow;
         const auto len = tbi->_coordBufferSize.X;
-        const auto attrs = std::make_unique<TextAttribute[]>(len);
+        std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(len);
         VERIFY_IS_NOT_NULL(attrs.get());
         VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
 
@@ -914,8 +914,8 @@ void TextBufferTests::TestRgbEraseLine()
 
 void TextBufferTests::TestUnBold()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor* const cursor = tbi->GetCursor();
@@ -933,8 +933,8 @@ void TextBufferTests::TestUnBold()
 
     const auto x = cursor->GetPosition().X;
     const auto y = cursor->GetPosition().Y;
-    const auto dark_green = gci->GetColorTableEntry(2);
-    const auto bright_green = gci->GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(2);
+    const auto bright_green = gci.GetColorTableEntry(10);
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -946,7 +946,7 @@ void TextBufferTests::TestUnBold()
     const auto& row = tbi->GetRowByOffset(y);
     const auto attrRow = &row.AttrRow;
     const auto len = tbi->_coordBufferSize.X;
-    const auto attrs = std::make_unique<TextAttribute[]>(len);
+    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(len);
     VERIFY_IS_NOT_NULL(attrs.get());
     VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
     const auto attrA = attrs[x-2];
@@ -982,8 +982,8 @@ void TextBufferTests::TestUnBold()
 
 void TextBufferTests::TestUnBoldRgb()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor* const cursor = tbi->GetCursor();
@@ -1002,8 +1002,8 @@ void TextBufferTests::TestUnBoldRgb()
 
     const auto x = cursor->GetPosition().X;
     const auto y = cursor->GetPosition().Y;
-    const auto dark_green = gci->GetColorTableEntry(2);
-    const auto bright_green = gci->GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(2);
+    const auto bright_green = gci.GetColorTableEntry(10);
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -1015,7 +1015,7 @@ void TextBufferTests::TestUnBoldRgb()
     const auto& row = tbi->GetRowByOffset(y);
     const auto attrRow = &row.AttrRow;
     const auto len = tbi->_coordBufferSize.X;
-    const auto attrs = std::make_unique<TextAttribute[]>(len);
+    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(len);
     VERIFY_IS_NOT_NULL(attrs.get());
     VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
     const auto attrA = attrs[x-2];
@@ -1054,8 +1054,8 @@ void TextBufferTests::TestUnBoldRgb()
 
 void TextBufferTests::TestComplexUnBold()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor* const cursor = tbi->GetCursor();
@@ -1078,8 +1078,8 @@ void TextBufferTests::TestComplexUnBold()
 
     const auto x = cursor->GetPosition().X;
     const auto y = cursor->GetPosition().Y;
-    const auto dark_green = gci->GetColorTableEntry(2);
-    const auto bright_green = gci->GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(2);
+    const auto bright_green = gci.GetColorTableEntry(10);
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -1091,7 +1091,7 @@ void TextBufferTests::TestComplexUnBold()
     const auto& row = tbi->GetRowByOffset(y);
     const auto attrRow = &row.AttrRow;
     const auto len = tbi->_coordBufferSize.X;
-    const auto attrs = std::make_unique<TextAttribute[]>(len);
+    std::unique_ptr<TextAttribute[]> attrs = std::make_unique<TextAttribute[]>(len);
     VERIFY_IS_NOT_NULL(attrs.get());
     VERIFY_SUCCESS_NTSTATUS(attrRow->UnpackAttrs(attrs.get(), len));
     const auto attrA = attrs[x-6];
@@ -1174,8 +1174,8 @@ void TextBufferTests::TestComplexUnBold()
 
 void TextBufferTests::CopyAttrs()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor* const cursor = tbi->GetCursor();
@@ -1194,8 +1194,8 @@ void TextBufferTests::CopyAttrs()
 
     const auto x = cursor->GetPosition().X;
     const auto y = cursor->GetPosition().Y;
-    const auto dark_blue = gci->GetColorTableEntry(1);
-    const auto dark_magenta = gci->GetColorTableEntry(5);
+    const auto dark_blue = gci.GetColorTableEntry(1);
+    const auto dark_magenta = gci.GetColorTableEntry(5);
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",

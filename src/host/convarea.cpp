@@ -36,27 +36,27 @@ bool IsValidSmallRect(_In_ PSMALL_RECT const Rect)
 void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                              _In_ const SMALL_RECT srConvRegion)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (!pScreenInfo->IsActiveScreenBuffer())
     {
         return;
     }
 
-    ConsoleImeInfo* const pIme = &gci->ConsoleIme;
+    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
 
     for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
     {
-        ConversionAreaInfo* const pConvAreaInfo = pIme->ConvAreaCompStr[i];
+        const std::unique_ptr<ConversionAreaInfo>& ConvAreaInfo = pIme->ConvAreaCompStr[i];
 
-        if (!pConvAreaInfo->IsHidden())
+        if (!ConvAreaInfo->IsHidden())
         {
             const SMALL_RECT currentViewport = pScreenInfo->GetBufferViewport();
             // Do clipping region
             SMALL_RECT Region;
-            Region.Left = currentViewport.Left + pConvAreaInfo->CaInfo.rcViewCaWindow.Left + pConvAreaInfo->CaInfo.coordConView.X;
-            Region.Right = Region.Left + (pConvAreaInfo->CaInfo.rcViewCaWindow.Right - pConvAreaInfo->CaInfo.rcViewCaWindow.Left);
-            Region.Top = currentViewport.Top + pConvAreaInfo->CaInfo.rcViewCaWindow.Top + pConvAreaInfo->CaInfo.coordConView.Y;
-            Region.Bottom = Region.Top + (pConvAreaInfo->CaInfo.rcViewCaWindow.Bottom - pConvAreaInfo->CaInfo.rcViewCaWindow.Top);
+            Region.Left = currentViewport.Left + ConvAreaInfo->CaInfo.rcViewCaWindow.Left + ConvAreaInfo->CaInfo.coordConView.X;
+            Region.Right = Region.Left + (ConvAreaInfo->CaInfo.rcViewCaWindow.Right - ConvAreaInfo->CaInfo.rcViewCaWindow.Left);
+            Region.Top = currentViewport.Top + ConvAreaInfo->CaInfo.rcViewCaWindow.Top + ConvAreaInfo->CaInfo.coordConView.Y;
+            Region.Bottom = Region.Top + (ConvAreaInfo->CaInfo.rcViewCaWindow.Bottom - ConvAreaInfo->CaInfo.rcViewCaWindow.Top);
 
             SMALL_RECT ClippedRegion;
             ClippedRegion.Left = max(Region.Left, currentViewport.Left);
@@ -76,14 +76,14 @@ void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
                     // if we have a renderer, we need to update.
                     // we've already confirmed (above with an early return) that we're on conversion areas that are a part of the active (visible/rendered) screen
                     // so send invalidates to those regions such that we're queried for data on the next frame and repainted.
-                    if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+                    if (ServiceLocator::LocateGlobals().pRender != nullptr)
                     {
                         // convert inclusive rectangle to exclusive rectangle
                         SMALL_RECT srExclusive = ClippedRegion;
                         srExclusive.Right++;
                         srExclusive.Bottom++;
 
-                        ServiceLocator::LocateGlobals()->pRender->TriggerRedraw(&srExclusive);
+                        ServiceLocator::LocateGlobals().pRender->TriggerRedraw(&srExclusive);
                     }
                 }
             }
@@ -94,9 +94,9 @@ void WriteConvRegionToScreen(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 #define LOCAL_BUFFER_SIZE 100
 NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE lpAtr, _In_reads_(CONIME_ATTRCOLOR_SIZE) PWORD lpAtrIdx, _In_ DWORD NumChars)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    ConsoleImeInfo* const ConsoleIme = &gci->ConsoleIme;
-    PSCREEN_INFORMATION const ScreenInfo = gci->CurrentScreenBuffer;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    ConsoleImeInfo* const ConsoleIme = &gci.ConsoleIme;
+    PSCREEN_INFORMATION const ScreenInfo = gci.CurrentScreenBuffer;
 
     COORD Position = ScreenInfo->TextInfo->GetCursor()->GetPosition();
     COORD WindowOrigin;
@@ -160,13 +160,13 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
         {
             NTSTATUS Status;
 
-            Status = gci->ConsoleIme.AddConversionArea();
+            Status = gci.ConsoleIme.AddConversionArea();
             if (!NT_SUCCESS(Status))
             {
                 return Status;
             }
         }
-        ConvAreaInfo = ConsoleIme->ConvAreaCompStr[ConvAreaIndex];
+        ConvAreaInfo = ConsoleIme->ConvAreaCompStr[ConvAreaIndex].get();
         PSCREEN_INFORMATION const ConvScreenInfo = ConvAreaInfo->ScreenBuffer;
         ConvScreenInfo->TextInfo->GetCursor()->SetXPosition(Position.X);
 
@@ -296,7 +296,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
 
     for (; ConvAreaIndex < ConsoleIme->ConvAreaCompStr.size(); ConvAreaIndex++)
     {
-        ConvAreaInfo = ConsoleIme->ConvAreaCompStr[ConvAreaIndex];
+        ConvAreaInfo = ConsoleIme->ConvAreaCompStr[ConvAreaIndex].get();
         if (!ConvAreaInfo->IsHidden())
         {
             ConvAreaInfo->SetHidden(true);
@@ -307,9 +307,9 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
     return STATUS_SUCCESS;
 }
 
-NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* ConvAreaInfo)
+NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* const ConvAreaInfo)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ConvAreaInfo->SetHidden(true);
 
     COORD Coord = { 0 };
@@ -320,7 +320,7 @@ NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* ConvAreaInfo)
 
     CharsToWrite = ConvAreaInfo->ScreenBuffer->GetScreenBufferSize().X;
     FillOutput(ConvAreaInfo->ScreenBuffer,
-               gci->CurrentScreenBuffer->GetAttributes().GetLegacyAttributes(),
+               gci.CurrentScreenBuffer->GetAttributes().GetLegacyAttributes(),
                Coord,
                CONSOLE_ATTRIBUTE,
                &CharsToWrite);
@@ -331,8 +331,8 @@ NTSTATUS FillUndetermineChars(_In_ ConversionAreaInfo* ConvAreaInfo)
 
 NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    ConsoleImeInfo* const pIme = &gci->ConsoleIme;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
 
     if (CompStr->dwCompStrLen == 0 || CompStr->dwResultStrLen != 0)
     {
@@ -340,18 +340,18 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         if (pIme->SavedCursorVisible)
         {
             pIme->SavedCursorVisible = FALSE;
-            gci->CurrentScreenBuffer
-                ->SetCursorInformation(gci->CurrentScreenBuffer->TextInfo->GetCursor()->GetSize(),
+            gci.CurrentScreenBuffer
+                ->SetCursorInformation(gci.CurrentScreenBuffer->TextInfo->GetCursor()->GetSize(),
                                        TRUE);
         }
 
         // Determine string.
         for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
         {
-            ConversionAreaInfo* const ConvAreaInfo = pIme->ConvAreaCompStr[i];
-            if (ConvAreaInfo && !ConvAreaInfo->IsHidden())
+            const std::unique_ptr<ConversionAreaInfo>& ConvAreaInfo = pIme->ConvAreaCompStr[i];
+            if (ConvAreaInfo.get() && !ConvAreaInfo->IsHidden())
             {
-                FillUndetermineChars(ConvAreaInfo);
+                FillUndetermineChars(ConvAreaInfo.get());
             }
         }
 
@@ -377,21 +377,21 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
         PWORD lpAtrIdx;
 
         // Cursor turn OFF.
-        if (gci->CurrentScreenBuffer->TextInfo->GetCursor()->IsVisible())
+        if (gci.CurrentScreenBuffer->TextInfo->GetCursor()->IsVisible())
         {
             pIme->SavedCursorVisible = TRUE;
-            gci->CurrentScreenBuffer
-                ->SetCursorInformation(gci->CurrentScreenBuffer->TextInfo->GetCursor()->GetSize(),
+            gci.CurrentScreenBuffer
+                ->SetCursorInformation(gci.CurrentScreenBuffer->TextInfo->GetCursor()->GetSize(),
                                        FALSE);
         }
 
         // Composition string.
         for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
         {
-            ConversionAreaInfo* const ConvAreaInfo = pIme->ConvAreaCompStr[i];
-            if (ConvAreaInfo && !ConvAreaInfo->IsHidden())
+            const std::unique_ptr<ConversionAreaInfo>& ConvAreaInfo = pIme->ConvAreaCompStr[i];
+            if (ConvAreaInfo.get() && !ConvAreaInfo->IsHidden())
             {
-                FillUndetermineChars(ConvAreaInfo);
+                FillUndetermineChars(ConvAreaInfo.get());
             }
         }
 
@@ -407,8 +407,8 @@ NTSTATUS ConsoleImeCompStr(_In_ LPCONIME_UICOMPMESSAGE CompStr)
 
 NTSTATUS ConsoleImeResizeCompStrView()
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    ConsoleImeInfo* const pIme = &gci->ConsoleIme;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
 
     // Compositon string
     LPCONIME_UICOMPMESSAGE const CompStr = pIme->CompStrData;
@@ -416,10 +416,10 @@ NTSTATUS ConsoleImeResizeCompStrView()
     {
         for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
         {
-            ConversionAreaInfo* const ConvAreaInfo = pIme->ConvAreaCompStr[i];
-            if (ConvAreaInfo && !ConvAreaInfo->IsHidden())
+            const std::unique_ptr<ConversionAreaInfo>& ConvAreaInfo = pIme->ConvAreaCompStr[i];
+            if (ConvAreaInfo.get() && !ConvAreaInfo->IsHidden())
             {
-                FillUndetermineChars(ConvAreaInfo);
+                FillUndetermineChars(ConvAreaInfo.get());
             }
         }
 
@@ -435,23 +435,23 @@ NTSTATUS ConsoleImeResizeCompStrView()
 
 NTSTATUS ConsoleImeResizeCompStrScreenBuffer(_In_ COORD const coordNewScreenSize)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    ConsoleImeInfo* const pIme = &gci->ConsoleIme;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
 
     // Composition string
     for (unsigned int i = 0; i < pIme->ConvAreaCompStr.size(); ++i)
     {
-        ConversionAreaInfo* const ConvAreaInfo = pIme->ConvAreaCompStr[i];
+        std::unique_ptr<ConversionAreaInfo>& ConvAreaInfo = pIme->ConvAreaCompStr[i];
 
-        if (ConvAreaInfo)
+        if (ConvAreaInfo.get())
         {
             if (!ConvAreaInfo->IsHidden())
             {
                 ConvAreaInfo->SetHidden(true);
-                ConsoleImePaint(ConvAreaInfo);
+                ConsoleImePaint(ConvAreaInfo.get());
             }
 
-            NTSTATUS Status = ConsoleImeResizeScreenBuffer(ConvAreaInfo->ScreenBuffer, coordNewScreenSize, ConvAreaInfo);
+            NTSTATUS Status = ConsoleImeResizeScreenBuffer(ConvAreaInfo->ScreenBuffer, coordNewScreenSize, ConvAreaInfo.get());
             if (!NT_SUCCESS(Status))
             {
                 return Status;
@@ -485,15 +485,15 @@ SHORT CalcWideCharToColumn(_In_reads_(NumberOfChars) PCHAR_INFO Buffer, _In_ siz
 }
 
 
-void ConsoleImePaint(_In_ ConversionAreaInfo* pConvAreaInfo)
+void ConsoleImePaint(_In_ const ConversionAreaInfo* const pConvAreaInfo)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (pConvAreaInfo == nullptr)
     {
         return;
     }
 
-    PSCREEN_INFORMATION const ScreenInfo = gci->CurrentScreenBuffer;
+    PSCREEN_INFORMATION const ScreenInfo = gci.CurrentScreenBuffer;
     if (ScreenInfo == nullptr)
     {
         return;
@@ -515,9 +515,9 @@ void ConsoleImePaint(_In_ ConversionAreaInfo* pConvAreaInfo)
     }
 }
 
-void ConsoleImeViewInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ COORD coordConView)
+void ConsoleImeViewInfo(_Inout_ ConversionAreaInfo* const ConvAreaInfo, _In_ COORD coordConView)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     if (ConvAreaInfo->IsHidden())
     {
@@ -539,18 +539,18 @@ void ConsoleImeViewInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ COORD coordC
         OldRegion.Bottom += ConvAreaInfo->CaInfo.coordConView.Y;
         ConvAreaInfo->CaInfo.coordConView = coordConView;
 
-        WriteToScreen(gci->CurrentScreenBuffer, OldRegion);
+        WriteToScreen(gci.CurrentScreenBuffer, OldRegion);
 
         NewRegion = ConvAreaInfo->CaInfo.rcViewCaWindow;
         NewRegion.Left += ConvAreaInfo->CaInfo.coordConView.X;
         NewRegion.Right += ConvAreaInfo->CaInfo.coordConView.X;
         NewRegion.Top += ConvAreaInfo->CaInfo.coordConView.Y;
         NewRegion.Bottom += ConvAreaInfo->CaInfo.coordConView.Y;
-        WriteToScreen(gci->CurrentScreenBuffer, NewRegion);
+        WriteToScreen(gci.CurrentScreenBuffer, NewRegion);
     }
 }
 
-void ConsoleImeWindowInfo(_In_ ConversionAreaInfo* ConvAreaInfo, _In_ SMALL_RECT rcViewCaWindow)
+void ConsoleImeWindowInfo(_Inout_ ConversionAreaInfo* const ConvAreaInfo, _In_ SMALL_RECT rcViewCaWindow)
 {
     if (rcViewCaWindow.Left != ConvAreaInfo->CaInfo.rcViewCaWindow.Left ||
         rcViewCaWindow.Top != ConvAreaInfo->CaInfo.rcViewCaWindow.Top ||
@@ -612,7 +612,7 @@ NTSTATUS ConsoleImeResizeScreenBuffer(_In_ PSCREEN_INFORMATION ScreenInfo, _In_ 
 // Return Value:
 NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (pCopyDataStruct == nullptr)
     {
         // fail safe.
@@ -629,27 +629,27 @@ NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct)
                 CompStr = (LPCONIME_UICOMPMESSAGE) pCopyDataStruct->lpData;
                 if (CompStr && CompStr->dwSize == pCopyDataStruct->cbData)
                 {
-                    if (gci->ConsoleIme.CompStrData)
+                    if (gci.ConsoleIme.CompStrData)
                     {
-                        delete[] gci->ConsoleIme.CompStrData;
+                        delete[] gci.ConsoleIme.CompStrData;
                     }
 
-                    gci->ConsoleIme.CompStrData = (LPCONIME_UICOMPMESSAGE) new BYTE[CompStr->dwSize];
-                    if (gci->ConsoleIme.CompStrData == nullptr)
+                    gci.ConsoleIme.CompStrData = (LPCONIME_UICOMPMESSAGE) new BYTE[CompStr->dwSize];
+                    if (gci.ConsoleIme.CompStrData == nullptr)
                     {
                         break;
                     }
 
-                    memmove(gci->ConsoleIme.CompStrData, CompStr, CompStr->dwSize);
-                    ConsoleImeCompStr(gci->ConsoleIme.CompStrData);
+                    memmove(gci.ConsoleIme.CompStrData, CompStr, CompStr->dwSize);
+                    ConsoleImeCompStr(gci.ConsoleIme.CompStrData);
                 }
             }
             break;
         case CI_ONSTARTCOMPOSITION:
-            gci->pInputBuffer->fInComposition = true;
+            gci.pInputBuffer->fInComposition = true;
             break;
         case CI_ONENDCOMPOSITION:
-            gci->pInputBuffer->fInComposition = false;
+            gci.pInputBuffer->fInComposition = false;
             break;
     }
 
@@ -658,13 +658,13 @@ NTSTATUS ImeControl(_In_ PCOPYDATASTRUCT pCopyDataStruct)
 
 bool InsertConvertedString(_In_ LPCWSTR lpStr)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     bool fResult = false;
 
-    if (gci->CurrentScreenBuffer->TextInfo->GetCursor()->IsOn())
+    if (gci.CurrentScreenBuffer->TextInfo->GetCursor()->IsOn())
     {
-        gci->CurrentScreenBuffer->TextInfo->GetCursor()
-            ->TimerRoutine(gci->CurrentScreenBuffer);
+        gci.CurrentScreenBuffer->TextInfo->GetCursor()
+            ->TimerRoutine(gci.CurrentScreenBuffer);
     }
 
     const DWORD dwControlKeyState = GetControlKeyState(0);
@@ -686,7 +686,7 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
             ++lpStr;
         }
 
-        gci->pInputBuffer->Write(inEvents);
+        gci.pInputBuffer->Write(inEvents);
 
         fResult = true;
     }

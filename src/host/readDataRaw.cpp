@@ -83,7 +83,7 @@ BOOL RAW_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason,
     _pInputReadHandleData->UnlockReadCount();
 #endif
 
-    assert(ServiceLocator::LocateGlobals()->getConsoleInformation()->IsConsoleLocked());
+    assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;

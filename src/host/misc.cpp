@@ -20,26 +20,26 @@
 
 WCHAR CharToWchar(_In_reads_(cch) const char * const pch, _In_ const UINT cch)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WCHAR wc = L'\0';
 
-    ASSERT(IsDBCSLeadByteConsole(*pch, &gci->OutputCPInfo) || cch == 1);
+    ASSERT(IsDBCSLeadByteConsole(*pch, &gci.OutputCPInfo) || cch == 1);
 
-    ConvertOutputToUnicode(gci->OutputCP, pch, cch, &wc, 1);
+    ConvertOutputToUnicode(gci.OutputCP, pch, cch, &wc, 1);
 
     return wc;
 }
 
 void SetConsoleCPInfo(_In_ const BOOL fOutput)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (fOutput)
     {
         // If we're changing the output codepage, we want to update the font as well to give the engine an opportunity
         // to pick a more appropriate font should the current one be unable to render in the new codepage.
         // To do this, we create a copy of the existing font but we change the codepage value to be the new one that was just set in the global structures.
         // NOTE: We need to do this only if everything is set up. This can get called while we're still initializing, so carefully check things for nullptr.
-        SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer;
+        SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer;
         if (psi != nullptr)
         {
             TEXT_BUFFER_INFO* const pti = psi->TextInfo;
@@ -50,21 +50,21 @@ void SetConsoleCPInfo(_In_ const BOOL fOutput)
                                pfiOld->GetFamily(),
                                pfiOld->GetWeight(),
                                pfiOld->GetUnscaledSize(),
-                               gci->OutputCP);
+                               gci.OutputCP);
                 psi->UpdateFont(&fiNew);
             }
         }
 
-        if (!GetCPInfo(gci->OutputCP, &gci->OutputCPInfo))
+        if (!GetCPInfo(gci.OutputCP, &gci.OutputCPInfo))
         {
-            gci->OutputCPInfo.LeadByte[0] = 0;
+            gci.OutputCPInfo.LeadByte[0] = 0;
         }
     }
     else
     {
-        if (!GetCPInfo(gci->CP, &gci->CPInfo))
+        if (!GetCPInfo(gci.CP, &gci.CPInfo))
         {
-            gci->CPInfo.LeadByte[0] = 0;
+            gci.CPInfo.LeadByte[0] = 0;
         }
     }
 }
@@ -214,7 +214,7 @@ BOOL CheckBisectProcessW(_In_ const SCREEN_INFORMATION * const pScreenInfo,
 // - HRESULT indicating success or error.
 HRESULT SplitToOem(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
 {
-    const UINT codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->CP;
+    const UINT codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
     try
     {
         // convert events to oem codepage

@@ -298,9 +298,9 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
     // Currently we do not support codepoints above 0xffff
     else
     {
-        if (ServiceLocator::LocateGlobals()->pRender != nullptr)
+        if (ServiceLocator::LocateGlobals().pRender != nullptr)
         {
-            return ServiceLocator::LocateGlobals()->pRender->IsCharFullWidthByFont(wch);
+            return ServiceLocator::LocateGlobals().pRender->IsCharFullWidthByFont(wch);
         }
     }
 
@@ -500,7 +500,7 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
                             _In_ const ULONG cbAnsi,
                             _Outref_result_maybenull_ std::unique_ptr<IInputEvent>& partialEvent)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PWCHAR const TmpUni = new WCHAR[cchUnicode];
     if (TmpUni == nullptr)
     {
@@ -518,8 +518,8 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
         if (IsCharFullWidth(TmpUni[i]))
         {
             ULONG const NumBytes = sizeof(AsciiDbcs);
-            ConvertToOem(gci->CP, &TmpUni[i], 1, (LPSTR) & AsciiDbcs[0], NumBytes);
-            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &gci->CPInfo))
+            ConvertToOem(gci.CP, &TmpUni[i], 1, (LPSTR) & AsciiDbcs[0], NumBytes);
+            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &gci.CPInfo))
             {
                 if (j < cbAnsi - 1)
                 {   // -1 is safe DBCS in buffer
@@ -542,7 +542,7 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
         }
         else
         {
-            ConvertToOem(gci->CP, &TmpUni[i], 1, &pchAnsi[j], 1);
+            ConvertToOem(gci.CP, &TmpUni[i], 1, &pchAnsi[j], 1);
         }
     }
 

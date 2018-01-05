@@ -139,9 +139,9 @@ bool Utils::s_DoIncrementScreenCoordinate(_In_ const SMALL_RECT srectEdges, _Ino
 // -  The magnitude of the result is the distance between the two coordinates when typing characters into the buffer (left to right, top to bottom)
 int Utils::s_CompareCoords(_In_ const COORD coordFirst, _In_ const COORD coordSecond)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // find the width of one row
-    const COORD coordScreenBufferSize = gci->CurrentScreenBuffer->GetScreenBufferSize();
+    const COORD coordScreenBufferSize = gci.CurrentScreenBuffer->GetScreenBufferSize();
     const short cRowWidth = coordScreenBufferSize.X;
 
 #ifdef _DEBUG
@@ -246,6 +246,6 @@ bool Utils::s_AddToPosition(_In_ const SMALL_RECT srectEdges, _In_ const int iAd
 // - <none>
 void Utils::s_GetCurrentBufferEdges(_Out_ SMALL_RECT* const psrectEdges)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->CurrentScreenBuffer->GetScreenEdges(psrectEdges);
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.CurrentScreenBuffer->GetScreenEdges(psrectEdges);
 }

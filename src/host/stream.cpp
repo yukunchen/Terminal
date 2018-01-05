@@ -95,7 +95,7 @@ NTSTATUS GetChar(_Inout_ InputBuffer* const pInputBuffer,
             }
 
             if ((pCommandLineEditingKeys || pCommandLinePopupKeys) &&
-                ServiceLocator::LocateGlobals()->getConsoleInformation()->GetExtendedEditKey() &&
+                ServiceLocator::LocateGlobals().getConsoleInformation().GetExtendedEditKey() &&
                 ::GetKeySubst(*keyEvent))
             {
                 ::ParseEditKeyInfo(*keyEvent);
@@ -484,8 +484,8 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter,
                        _In_ const size_t OutputBufferSize)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const pScreenInfo = gci->CurrentScreenBuffer;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
     if (nullptr == pScreenInfo)
     {
         return STATUS_UNSUCCESSFUL;
@@ -549,7 +549,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
                                     dwCtrlWakeupMask,
                                     pCommandHistory,
                                     !!Echo,
-                                    !!gci->GetInsertMode(),
+                                    !!gci.GetInsertMode(),
                                     IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT),
                                     IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT),
                                     pTempHandleData);
@@ -590,7 +590,7 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
         }
     }
 
-    gci->lpCookedReadData = &CookedReadData;
+    gci.lpCookedReadData = &CookedReadData;
 
     Status = CookedRead(&CookedReadData, Unicode, pReadByteCount, pControlKeyState);
     if (CONSOLE_STATUS_WAIT == Status)
@@ -602,14 +602,14 @@ NTSTATUS ReadLineInput(_Inout_ InputBuffer* const pInputBuffer,
         }
         else
         {
-            gci->lpCookedReadData = pCookedReadWaiter;
+            gci.lpCookedReadData = pCookedReadWaiter;
             *ppWaiter = pCookedReadWaiter;
         }
     }
 
     if (CONSOLE_STATUS_WAIT != Status)
     {
-        gci->lpCookedReadData = nullptr;
+        gci.lpCookedReadData = nullptr;
     }
 
     return Status;
@@ -990,12 +990,12 @@ HRESULT ApiRoutines::ReadConsoleWImpl(_Inout_ IConsoleInputObject* const pInCont
 
 VOID UnblockWriteConsole(_In_ const DWORD dwReason)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    gci->Flags &= ~dwReason;
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.Flags &= ~dwReason;
 
-    if (AreAllFlagsClear(gci->Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
+    if (AreAllFlagsClear(gci.Flags, (CONSOLE_SUSPENDED | CONSOLE_SELECTING | CONSOLE_SCROLLBAR_TRACKING)))
     {
         // There is no longer any reason to suspend output, so unblock it.
-        gci->OutputQueue.NotifyWaiters(true);
+        gci.OutputQueue.NotifyWaiters(true);
     }
 }

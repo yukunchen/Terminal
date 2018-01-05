@@ -87,12 +87,12 @@ void Clipboard::StringPaste(_In_reads_(cchData) const wchar_t* const pData,
         return;
     }
 
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     try
     {
         std::deque<std::unique_ptr<IInputEvent>> inEvents = TextToKeyEvents(pData, cchData);
-        gci->pInputBuffer->Write(inEvents);
+        gci.pInputBuffer->Write(inEvents);
     }
     catch (...)
     {
@@ -289,7 +289,7 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToNumpad(_In_ const wchar_t
                                                    UNICODE_NULL,
                                                    LEFT_ALT_PRESSED));
 
-    const UINT codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
+    const UINT codepage = ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP;
     const int radix = 10;
     std::wstring wstr{ wch };
     std::deque<char> convertedChars;
@@ -345,7 +345,7 @@ std::deque<std::unique_ptr<KeyEvent>> Clipboard::CharToNumpad(_In_ const wchar_t
 //  <none>
 void Clipboard::StoreSelectionToClipboard()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     Selection* pSelection = &Selection::Instance();
 
     // See if there is a selection to get
@@ -355,7 +355,7 @@ void Clipboard::StoreSelectionToClipboard()
     }
 
     // read selection area.
-    SCREEN_INFORMATION* const pScreenInfo = gci->CurrentScreenBuffer;
+    SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
 
     SMALL_RECT* rgsrSelection;
     UINT cRectsSelected;
@@ -740,10 +740,10 @@ NTSTATUS Clipboard::CopyTextToSystemClipboard(_In_ const UINT cTotalRows,
 // Returns false if the character should not be emitted (e.g. <TAB>)
 bool Clipboard::FilterCharacterOnPaste(_Inout_ WCHAR * const pwch)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     bool fAllowChar = true;
-    if (gci->GetFilterOnPaste() &&
-        (IsFlagSet(gci->pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT)))
+    if (gci.GetFilterOnPaste() &&
+        (IsFlagSet(gci.pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT)))
     {
         switch (*pwch)
         {

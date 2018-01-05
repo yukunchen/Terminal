@@ -28,18 +28,18 @@ class InputRecordConversionTests
 
     TEST_CLASS_SETUP(ClassSetup)
     {
-        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        savedCodepage = gci->CP;
-        gci->CP = CP_JAPANESE;
-        VERIFY_IS_TRUE(!!GetCPInfo(gci->CP, &gci->CPInfo));
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        savedCodepage = gci.CP;
+        gci.CP = CP_JAPANESE;
+        VERIFY_IS_TRUE(!!GetCPInfo(gci.CP, &gci.CPInfo));
         return true;
     }
 
     TEST_CLASS_CLEANUP(ClassCleanup)
     {
-        CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-        gci->CP = savedCodepage;
-        VERIFY_IS_TRUE(!!GetCPInfo(gci->CP, &gci->CPInfo));
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.CP = savedCodepage;
+        VERIFY_IS_TRUE(!!GetCPInfo(gci.CP, &gci.CPInfo));
         return true;
     }
 
@@ -92,7 +92,7 @@ class InputRecordConversionTests
     {
         Log::Comment(L"dbcs chars should be split");
 
-        const UINT codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->CP;
+        const UINT codepage = ServiceLocator::LocateGlobals().getConsoleInformation().CP;
 
         INPUT_RECORD inRecords[INPUT_RECORD_COUNT * 2] = { 0 };
         std::deque<std::unique_ptr<IInputEvent>> inEvents;
