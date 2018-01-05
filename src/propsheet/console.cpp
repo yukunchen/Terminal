@@ -412,10 +412,8 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle)
 // For use by property sheets when added to file props dialog -- maintain refcount of each page and release things we've
 // registered when we hit 0. Needed because the lifetime of the property sheets isn't tied to the lifetime of our
 // IShellPropSheetExt object.
-UINT CALLBACK PropSheetPageProc(_In_ HWND hWnd, _In_ UINT uMsg, _Inout_ LPPROPSHEETPAGE ppsp)
+UINT CALLBACK PropSheetPageProc(_In_ HWND hWnd, _In_ UINT uMsg, _Inout_ LPPROPSHEETPAGE /*ppsp*/)
 {
-    UNREFERENCED_PARAMETER(hWnd);
-    UNREFERENCED_PARAMETER(ppsp);
     static UINT cRefs = 0;
     switch (uMsg)
     {
@@ -451,13 +449,13 @@ BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, _In_ co
     if (fRet)
     {
         // This has been validated above. OACR is being silly. Restate it so it can see the condition.
-        __analysis_assume(cPsps == NUMBER_OF_PAGES); 
+        __analysis_assume(cPsps == NUMBER_OF_PAGES);
 
         PROPSHEETPAGE* const pOptionsPage = &(pPsp[OPTIONS_PAGE_INDEX]);
         PROPSHEETPAGE* const pFontPage = &(pPsp[FONT_PAGE_INDEX]);
         PROPSHEETPAGE* const pLayoutPage = &(pPsp[LAYOUT_PAGE_INDEX]);
         PROPSHEETPAGE* const pColorsPage = &(pPsp[COLORS_PAGE_INDEX]);
-        
+
         pOptionsPage->dwSize      = sizeof(PROPSHEETPAGE);
         pOptionsPage->hInstance   = ghInstance;
         if (g_fIsComCtlV6Present)
@@ -529,7 +527,7 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
     {
         g_fEastAsianSystem = IsEastAsianCP(GetOEMCP());
     }
-    
+
     //
     // Initialize the state information.
     //
@@ -566,7 +564,7 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
     PopulatePropSheetPageArray(psp, ARRAYSIZE(psp), FALSE /*fRegisterCallbacks*/);
 
     psh.dwSize = sizeof(PROPSHEETHEADER);
-    psh.dwFlags = PSH_PROPTITLE | PSH_USEHICON | PSH_PROPSHEETPAGE | 
+    psh.dwFlags = PSH_PROPTITLE | PSH_USEHICON | PSH_PROPSHEETPAGE |
                   PSH_NOAPPLYNOW | PSH_USECALLBACK | PSH_NOCONTEXTHELP;
     if (gpStateInfo->Defaults) {
         LoadString(ghInstance, IDS_TITLE, awchBuffer, ARRAYSIZE(awchBuffer));

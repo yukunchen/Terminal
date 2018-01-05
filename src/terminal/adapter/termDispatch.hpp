@@ -5,9 +5,9 @@ Module Name:
 - termDispatch.hpp
 
 Abstract:
-- This is the base class for all output state machine callbacks. When actions 
-    occur, they will be dispatched to the methods on this interface which must 
-    be implemented by a child class and passed into the state machine on 
+- This is the base class for all output state machine callbacks. When actions
+    occur, they will be dispatched to the methods on this interface which must
+    be implemented by a child class and passed into the state machine on
     creation.
 
 Author(s):
@@ -89,7 +89,7 @@ namespace Microsoft
                     Underline = 4,
                     Xterm256Index = 5,
                     // 5 is also Blink (appears as Bold).
-                    // the 2 and 5 entries here are only for the extended graphics options 
+                    // the 2 and 5 entries here are only for the extended graphics options
                     // as we do not currently support those features individually
                     Negative = 7,
                     UnBold = 22,
@@ -157,10 +157,14 @@ namespace Microsoft
                     USASCII = L'B'
                 };
 
-                virtual bool SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOptions* const /*rgOptions*/, _In_ size_t const cOptions) { UNREFERENCED_PARAMETER(cOptions); return false; } // SGR
+                virtual bool SetGraphicsRendition(_In_reads_(_Param_(2)) const GraphicsOptions* const /*rgOptions*/,
+                                                  _In_ size_t const /*cOptions*/) { return false; } // SGR
 
-                virtual bool SetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const /*rgParams*/, _In_ size_t const cParams) { UNREFERENCED_PARAMETER(cParams); return false; } // DECSET
-                virtual bool ResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const /*rgParams*/, _In_ size_t const cParams) { UNREFERENCED_PARAMETER(cParams); return false; } // DECRST
+                virtual bool SetPrivateModes(_In_reads_(_Param_(2)) const PrivateModeParams* const /*rgParams*/,
+                                             _In_ size_t const /*cParams*/) { return false; } // DECSET
+
+                virtual bool ResetPrivateModes(_In_reads_(_Param_(2)) const PrivateModeParams* const /*rgParams*/,
+                                               _In_ size_t const /*cParams*/) { return false; } // DECRST
 
                 enum class AnsiStatusType : unsigned int
                 {
@@ -184,7 +188,7 @@ namespace Microsoft
                 // DTTERM_WindowManipulation
                 virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType /*uiFunction*/,
                                                 _In_reads_(cParams) const unsigned short* const /*rgusParams*/,
-                                                _In_ size_t const /*cParams*/) { return false; } 
+                                                _In_ size_t const /*cParams*/) { return false; }
 
             };
         };

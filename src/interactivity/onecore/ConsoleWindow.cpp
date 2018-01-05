@@ -17,14 +17,12 @@ BOOL ConsoleWindow::EnableBothScrollBars()
     return FALSE;
 }
 
-int ConsoleWindow::UpdateScrollBar(bool isVertical, bool isAltBuffer, UINT pageSize, int maxSize, int viewportPosition)
+int ConsoleWindow::UpdateScrollBar(bool /*isVertical*/,
+                                   bool /*isAltBuffer*/,
+                                   UINT /*pageSize*/,
+                                   int /*maxSize*/,
+                                   int /*viewportPosition*/)
 {
-    UNREFERENCED_PARAMETER(isVertical);
-    UNREFERENCED_PARAMETER(isAltBuffer);
-    UNREFERENCED_PARAMETER(pageSize);
-    UNREFERENCED_PARAMETER(maxSize);
-    UNREFERENCED_PARAMETER(viewportPosition);
-
     return 0;
 }
 
@@ -33,14 +31,12 @@ bool ConsoleWindow::IsInFullscreen() const
     return true;
 }
 
-void ConsoleWindow::SetIsFullscreen(bool const fFullscreenEnabled)
+void ConsoleWindow::SetIsFullscreen(bool const /*fFullscreenEnabled*/)
 {
-    UNREFERENCED_PARAMETER(fFullscreenEnabled);
 }
 
 NTSTATUS ConsoleWindow::SetViewportOrigin(SMALL_RECT NewWindow)
 {
-    UNREFERENCED_PARAMETER(NewWindow);
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     SCREEN_INFORMATION* const ScreenInfo = gci.CurrentScreenBuffer;
@@ -62,9 +58,8 @@ NTSTATUS ConsoleWindow::SetViewportOrigin(SMALL_RECT NewWindow)
     return STATUS_SUCCESS;
 }
 
-void ConsoleWindow::SetWindowHasMoved(BOOL const fHasMoved)
+void ConsoleWindow::SetWindowHasMoved(BOOL const /*fHasMoved*/)
 {
-    UNREFERENCED_PARAMETER(fHasMoved);
 }
 
 void ConsoleWindow::CaptureMouse()
@@ -85,32 +80,23 @@ void ConsoleWindow::SetOwner()
 {
 }
 
-BOOL ConsoleWindow::GetCursorPosition(LPPOINT lpPoint)
+BOOL ConsoleWindow::GetCursorPosition(LPPOINT /*lpPoint*/)
 {
-    UNREFERENCED_PARAMETER(lpPoint);
-
     return FALSE;
 }
 
-BOOL ConsoleWindow::GetClientRectangle(LPRECT lpRect)
+BOOL ConsoleWindow::GetClientRectangle(LPRECT /*lpRect*/)
 {
-    UNREFERENCED_PARAMETER(lpRect);
-
     return FALSE;
 }
 
-int ConsoleWindow::MapPoints(LPPOINT lpPoints, UINT cPoints)
+int ConsoleWindow::MapPoints(LPPOINT /*lpPoints*/, UINT /*cPoints*/)
 {
-    UNREFERENCED_PARAMETER(lpPoints);
-    UNREFERENCED_PARAMETER(cPoints);
-
     return 0;
 }
 
-BOOL ConsoleWindow::ConvertScreenToClient(LPPOINT lpPoint)
+BOOL ConsoleWindow::ConvertScreenToClient(LPPOINT /*lpPoint*/)
 {
-    UNREFERENCED_PARAMETER(lpPoint);
-
     return 0;
 }
 
@@ -124,10 +110,8 @@ BOOL ConsoleWindow::PostUpdateScrollBars() const
     return FALSE;
 }
 
-BOOL ConsoleWindow::PostUpdateTitleWithCopy(const PCWSTR pwszNewTitle) const
+BOOL ConsoleWindow::PostUpdateTitleWithCopy(const PCWSTR /*pwszNewTitle*/) const
 {
-    UNREFERENCED_PARAMETER(pwszNewTitle);
-
     return TRUE;
 }
 
@@ -136,30 +120,24 @@ BOOL ConsoleWindow::PostUpdateWindowSize() const
     return FALSE;
 }
 
-void ConsoleWindow::UpdateWindowSize(COORD const coordSizeInChars) const
+void ConsoleWindow::UpdateWindowSize(COORD const /*coordSizeInChars*/) const
 {
-    UNREFERENCED_PARAMETER(coordSizeInChars);
 }
 
 void ConsoleWindow::UpdateWindowText()
 {
 }
 
-void ConsoleWindow::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const
+void ConsoleWindow::HorizontalScroll(const WORD /*wScrollCommand*/, const WORD /*wAbsoluteChange*/) const
 {
-    UNREFERENCED_PARAMETER(wScrollCommand);
-    UNREFERENCED_PARAMETER(wAbsoluteChange);
 }
 
-void ConsoleWindow::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange) const
+void ConsoleWindow::VerticalScroll(const WORD /*wScrollCommand*/, const WORD /*wAbsoluteChange*/) const
 {
-    UNREFERENCED_PARAMETER(wScrollCommand);
-    UNREFERENCED_PARAMETER(wAbsoluteChange);
 }
 
-HRESULT ConsoleWindow::SignalUia(_In_ EVENTID id)
+HRESULT ConsoleWindow::SignalUia(_In_ EVENTID /*id*/)
 {
-    UNREFERENCED_PARAMETER(id);
     return E_NOTIMPL;
 }
 

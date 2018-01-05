@@ -19,10 +19,8 @@
 using namespace Microsoft::Console::Interactivity::OneCore;
 
 
-DWORD ConsoleInputThreadProcOneCore(LPVOID lpParam)
+DWORD ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 {
-    UNREFERENCED_PARAMETER(lpParam);
-
     Globals& globals = ServiceLocator::LocateGlobals();
     ConIoSrvComm * const Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
 

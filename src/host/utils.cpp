@@ -144,13 +144,14 @@ int Utils::s_CompareCoords(_In_ const COORD coordFirst, _In_ const COORD coordSe
     const COORD coordScreenBufferSize = gci.CurrentScreenBuffer->GetScreenBufferSize();
     const short cRowWidth = coordScreenBufferSize.X;
 
+#ifdef _DEBUG
     // Assert that our coordinates are within the expected boundaries
     const short cRowHeight = coordScreenBufferSize.Y;
     ASSERT(coordFirst.X >= 0 && coordFirst.X < cRowWidth);
     ASSERT(coordSecond.X >= 0 && coordSecond.X < cRowWidth);
     ASSERT(coordFirst.Y >= 0 && coordFirst.Y < cRowHeight);
     ASSERT(coordSecond.Y >= 0 && coordSecond.Y < cRowHeight);
-    UNREFERENCED_PARAMETER(cRowHeight);
+#endif
 
     // First set the distance vertically
     //   If first is on row 4 and second is on row 6, first will be -2 rows behind second * an 80 character row would be -160.

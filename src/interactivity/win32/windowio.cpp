@@ -910,11 +910,9 @@ BOOL HandleMouseEvent(_In_ const SCREEN_INFORMATION* const pScreenInfo,
 
 // Routine Description:
 // - This routine gets called to filter input to console dialogs so that we can do the special processing that StoreKeyInfo does.
-LRESULT DialogHookProc(int nCode, WPARAM wParam, LPARAM lParam)
+LRESULT DialogHookProc(int nCode, WPARAM /*wParam*/, LPARAM lParam)
 {
     MSG msg = *((PMSG)lParam);
-
-    UNREFERENCED_PARAMETER(wParam);
 
     if (nCode == MSGF_DIALOGBOX)
     {

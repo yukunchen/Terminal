@@ -24,7 +24,7 @@ OutputStateMachineEngine::~OutputStateMachineEngine()
 }
 
 // Routine Description:
-// - Triggers the Execute action to indicate that the listener should 
+// - Triggers the Execute action to indicate that the listener should
 //      immediately respond to a C0 control character.
 // Arguments:
 // - wch - Character to dispatch.
@@ -50,7 +50,7 @@ bool OutputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 }
 
 // Routine Description:
-// - Triggers the Print action to indicate that the listener should render the 
+// - Triggers the Print action to indicate that the listener should render the
 //      string of characters given.
 // Arguments:
 // - rgwch - string to dispatch.
@@ -65,7 +65,7 @@ bool OutputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* c
 
 // Routine Description:
 // - Triggers the EscDispatch action to indicate that the listener should handle
-//      a simple escape sequence. These sequences traditionally start with ESC 
+//      a simple escape sequence. These sequences traditionally start with ESC
 //      and a simple letter. No complicated parameters.
 // Arguments:
 // - wch - Character to dispatch.
@@ -73,7 +73,7 @@ bool OutputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* c
 // - wchIntermediate - Intermediate character in the sequence, if there was one.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, 
+bool OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
                                                  _In_ const unsigned short cIntermediate,
                                                  _In_ const wchar_t wchIntermediate)
 {
@@ -170,7 +170,7 @@ bool OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
 
 // Routine Description:
 // - Triggers the CsiDispatch action to indicate that the listener should handle
-//      a control sequence. These sequences perform various API-type commands 
+//      a control sequence. These sequences perform various API-type commands
 //      that can include many parameters.
 // Arguments:
 // - wch - Character to dispatch.
@@ -180,7 +180,7 @@ bool OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
 // - cParams - number of parameters found.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch, 
+bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
                                                  _In_ const unsigned short cIntermediate,
                                                  _In_ const wchar_t wchIntermediate,
                                                  _In_ const unsigned short* const rgusParams,
@@ -199,7 +199,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
     TermDispatch::GraphicsOptions rgGraphicsOptions[StateMachine::s_cParamsMax];
     size_t cOptions = ARRAYSIZE(rgGraphicsOptions);
     TermDispatch::AnsiStatusType deviceStatusType = (TermDispatch::AnsiStatusType)-1; // there is no default status type.
-    
+
     // This is all the args after the first arg, and the count of args not including the first one.
     const unsigned short* const rgusRemainingArgs = (cParams > 1) ? rgusParams + 1 : rgusParams;
     const unsigned short cRemainingArgs = (cParams >= 1) ? cParams - 1 : 0;
@@ -337,7 +337,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
                 break;
             case VTActionCodes::DSR_DeviceStatusReport:
-                fSuccess = _pDispatch->DeviceStatusReport(deviceStatusType); 
+                fSuccess = _pDispatch->DeviceStatusReport(deviceStatusType);
                 TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
                 break;
             case VTActionCodes::DA_DeviceAttributes:
@@ -436,7 +436,7 @@ bool OutputStateMachineEngine::_IntermediateQuestionMarkDispatch(_In_ wchar_t co
         case VTActionCodes::DECRST_PrivateModeReset:
             fSuccess = _GetPrivateModeParams(rgusParams, cParams, rgPrivateModeParams, &cOptions);
             break;
-            
+
         default:
             // If no params to fill, param filling was successful.
             fSuccess = true;
@@ -491,7 +491,7 @@ bool OutputStateMachineEngine::_IntermediateExclamationDispatch(_In_ wchar_t con
 
 
 // Routine Description:
-// - Triggers the Clear action to indicate that the state machine should erase 
+// - Triggers the Clear action to indicate that the state machine should erase
 //      all internal state.
 // Arguments:
 // - <none>
@@ -504,7 +504,7 @@ bool OutputStateMachineEngine::ActionClear()
 }
 
 // Routine Description:
-// - Triggers the Ignore action to indicate that the state machine should eat 
+// - Triggers the Ignore action to indicate that the state machine should eat
 //      this character and say nothing.
 // Arguments:
 // - <none>
@@ -526,12 +526,13 @@ bool OutputStateMachineEngine::ActionIgnore()
 // - cchOscString - length of pwchOscStringBuffer
 // Return Value:
 // - true if we handled the dsipatch.
-bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ const unsigned short sOscParam, _Inout_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString)
+bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
+                                                 _In_ const unsigned short sOscParam,
+                                                 _Inout_ wchar_t* const pwchOscStringBuffer,
+                                                 _In_ const unsigned short cchOscString)
 {
-    // The wch here is just the string terminator for the OSC string
-    UNREFERENCED_PARAMETER(wch);
     bool fSuccess = false;
-    wchar_t* pwchTitle = nullptr;  
+    wchar_t* pwchTitle = nullptr;
     unsigned short sCchTitleLength = 0;
     size_t tableIndex = 0;
     DWORD dwColor = 0;
@@ -550,7 +551,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
         // If no functions to call, overall dispatch was a failure.
         fSuccess = false;
         break;
-    }  
+    }
     if (fSuccess)
     {
         switch (sOscParam)
@@ -569,15 +570,15 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
             // If no functions to call, overall dispatch was a failure.
             fSuccess = false;
             break;
-        }        
-    }  
+        }
+    }
 
     return fSuccess;
 }
 
 // Routine Description:
 // - Triggers the Ss3Dispatch action to indicate that the listener should handle
-//      a control sequence. These sequences perform various API-type commands 
+//      a control sequence. These sequences perform various API-type commands
 //      that can include many parameters.
 // Arguments:
 // - wch - Character to dispatch.
@@ -585,7 +586,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch, _In_ co
 // - cParams - number of parameters found.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionSs3Dispatch(_In_ wchar_t const /*wch*/, 
+bool OutputStateMachineEngine::ActionSs3Dispatch(_In_ wchar_t const /*wch*/,
                                                  _In_ const unsigned short* const /*rgusParams*/,
                                                  _In_ const unsigned short /*cParams*/)
 {
@@ -640,7 +641,7 @@ bool OutputStateMachineEngine::_GetGraphicsOptions(_In_reads_(cParams) const uns
         }
     }
 
-    return fSuccess; 
+    return fSuccess;
 }
 
 // Routine Description:
@@ -705,7 +706,7 @@ bool OutputStateMachineEngine::_GetCursorDistance(_In_reads_(cParams) const unsi
         fSuccess = true;
     }
 
-    // Distances of 0 should be changed to 1. 
+    // Distances of 0 should be changed to 1.
     if (*puiDistance == 0)
     {
         *puiDistance = s_uiDefaultCursorDistance;
@@ -738,7 +739,7 @@ bool OutputStateMachineEngine::_GetScrollDistance(_In_reads_(cParams) const unsi
         fSuccess = true;
     }
 
-    // Distances of 0 should be changed to 1. 
+    // Distances of 0 should be changed to 1.
     if (*puiDistance == 0)
     {
         *puiDistance = s_uiDefaultScrollDistance;
@@ -771,7 +772,7 @@ bool OutputStateMachineEngine::_GetConsoleWidth(_In_reads_(cParams) const unsign
         fSuccess = true;
     }
 
-    // Distances of 0 should be changed to 80. 
+    // Distances of 0 should be changed to 80.
     if (*puiConsoleWidth == 0)
     {
         *puiConsoleWidth = s_uiDefaultConsoleWidth;
@@ -813,7 +814,7 @@ bool OutputStateMachineEngine::_GetXYPosition(_In_reads_(cParams) const unsigned
         fSuccess = true;
     }
 
-    // Distances of 0 should be changed to 1. 
+    // Distances of 0 should be changed to 1.
     if (*puiLine == 0)
     {
         *puiLine = s_uiDefaultLine;
@@ -933,11 +934,11 @@ bool OutputStateMachineEngine::_GetPrivateModeParams(_In_reads_(cParams) const u
             fSuccess = false; // not enough space in buffer to hold response.
         }
     }
-    return fSuccess; 
+    return fSuccess;
 }
 
 // - Verifies that no parameters were parsed for the current CSI sequence
-// Arguments: 
+// Arguments:
 // - <none>
 // Return Value:
 // - True if there were no parameters. False otherwise.
@@ -975,8 +976,8 @@ bool OutputStateMachineEngine::_VerifyDeviceAttributesParams(_In_reads_(cParams)
 }
 
 // Routine Description:
-// - Null terminates, then returns, the string that we've collected as part of the OSC string.  
-// Arguments: 
+// - Null terminates, then returns, the string that we've collected as part of the OSC string.
+// Arguments:
 // - ppwchTitle - a pointer to point to the Osc String to use as a title.
 // - pcchTitleLength - a pointer place the length of ppwchTitle into.
 // Return Value:
@@ -1018,7 +1019,7 @@ bool OutputStateMachineEngine::_GetTabDistance(_In_reads_(cParams) const unsigne
         fSuccess = true;
     }
 
-    // Distances of 0 should be changed to 1. 
+    // Distances of 0 should be changed to 1.
     if (*psDistance == 0)
     {
         *psDistance = s_sDefaultTabDistance;
@@ -1092,9 +1093,9 @@ bool OutputStateMachineEngine::_GetDesignateType(_In_ const wchar_t wchIntermedi
 }
 
 // Routine Description:
-// - Returns true if the engine should dispatch on the last charater of a string 
+// - Returns true if the engine should dispatch on the last charater of a string
 //      always, even if the sequence hasn't normally dispatched.
-//   If this is false, the engine will persist it's state across calls to 
+//   If this is false, the engine will persist it's state across calls to
 //      ProcessString, and dispatch only at the end of the sequence.
 // Return Value:
 // - True iff we should manually dispatch on the last character of a string.
@@ -1153,7 +1154,7 @@ bool OutputStateMachineEngine::s_IsNumber(_In_ wchar_t const wch)
 bool OutputStateMachineEngine::s_IsHexNumber(_In_ wchar_t const wch)
 {
     return (wch >= L'0' && wch <= L'9') || // 0x30 - 0x39
-           (wch >= L'A' && wch <= L'F') || 
+           (wch >= L'A' && wch <= L'F') ||
            (wch >= L'a' && wch <= L'f');
 }
 
@@ -1163,7 +1164,7 @@ bool OutputStateMachineEngine::s_IsHexNumber(_In_ wchar_t const wch)
 //      spec: a color in the following format:
 //          "rgb:<red>/<green>/<blue>"
 //          where <color> is two hex digits
-// Arguments: 
+// Arguments:
 // - ppwchTitle - a pointer to point to the Osc String to use as a title.
 // - pcchTitleLength - a pointer place the length of ppwchTitle into.
 // Return Value:
@@ -1179,7 +1180,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(_In_ const wchar_t* const pw
     const wchar_t*const pwchEnd = pwchOscStringBuffer + cchOscString;
     size_t _TableIndex = 0;
     unsigned int rguiColorValues[3] = {0};
-    
+
     bool foundTableIndex = false;
     bool foundRGB = false;
     bool foundValidColorSpec = false;
@@ -1188,7 +1189,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(_In_ const wchar_t* const pw
     // 11 "#;rgb:h/h/h"
     // 15 "##;rgb:hh/hh/hh"
     // Any fewer cannot be valid, and any more will be too many.
-    // Return early in this case. 
+    // Return early in this case.
     //      We'll still have to bounds check when parsing the hh/hh/hh values
     if (cchOscString < 11 || cchOscString > 15)
     {
@@ -1208,7 +1209,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(_In_ const wchar_t* const pw
         }
         else if (wch == L';' && i > 0)
         {
-            // We need to explicitly pass in a number, we can't default to 0 if 
+            // We need to explicitly pass in a number, we can't default to 0 if
             //  there's no param
             pwchCurr++;
             foundTableIndex = true;
@@ -1218,14 +1219,14 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(_In_ const wchar_t* const pw
         {
             // Found an unexpected character, fail.
             break;
-        } 
+        }
     }
     // Now we look for "rgb:"
     // Other colorspaces are theoretically possible, but we don't support them.
     if (foundTableIndex)
     {
-        if ((pwchCurr[0] == L'r') && 
-            (pwchCurr[1] == L'g') && 
+        if ((pwchCurr[0] == L'r') &&
+            (pwchCurr[1] == L'g') &&
             (pwchCurr[2] == L'b') &&
             (pwchCurr[3] == L':') )
         {
@@ -1242,7 +1243,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(_In_ const wchar_t* const pw
             bool foundColor = false;
             unsigned int* const pValue = &(rguiColorValues[component]);
             for (size_t i = 0; i < 3; i++)
-            {   
+            {
 
                 const wchar_t wch = *pwchCurr;
                 pwchCurr++;
@@ -1280,7 +1281,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(_In_ const wchar_t* const pw
                     // Encountered something weird oh no
                     foundColor = false;
                     break;
-                } 
+                }
             }
             if (!foundColor || pwchCurr == pwchEnd)
             {
