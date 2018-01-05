@@ -96,8 +96,9 @@ namespace Microsoft
                 static std::unique_ptr<IAccessibilityNotifier> s_accessibilityNotifier;
                 static std::unique_ptr<IConsoleControl> s_consoleControl;
                 static std::unique_ptr<IConsoleInputThread> s_consoleInputThread;
-                // some implementations of IConsoleWindow are currently singleton classes so we can't own a
-                // pointer to them here
+                // TODO: MSFT 15344939 - some implementations of IConsoleWindow are currently singleton
+                // classes so we can't own a pointer to them here. fix this so s_consoleWindow can follow the
+                // pattern of the rest of the service interface pointers.
                 static IConsoleWindow* s_consoleWindow;
                 static std::unique_ptr<IWindowMetrics> s_windowMetrics;
                 static std::unique_ptr<IHighDpiApi> s_highDpiApi;

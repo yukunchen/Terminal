@@ -13,15 +13,21 @@ const DWORD _dwStartupWaitPollingIntervalInMilliseconds = 200;
 
 wil::unique_handle hJob;
 
-static FILE* std_out;
-static FILE* std_in;
+static FILE* std_out = nullptr;
+static FILE* std_in = nullptr;
 
 // This will automatically try to terminate the job object (and all of the
 // binaries under test that are children) whenever this class gets shut down.
 // also closes the FILE pointers created by reopening stdin and stdout.
 auto OnAppExitKillJob = wil::ScopeExit([&] {
-    fclose(std_out);
-    fclose(std_in);
+    if (std_out != nullptr)
+    {
+        fclose(std_out);
+    }
+    if (std_in != nullptr)
+    {
+        fclose(std_in);
+    }
     if (nullptr != hJob.get())
     {
         THROW_LAST_ERROR_IF_FALSE(TerminateJobObject(hJob.get(), S_OK));
@@ -162,8 +168,11 @@ MODULE_SETUP(ModuleSetup)
     //
     // std_out and std_in need to be closed when tests are finished, this is handled by the wil::ScopeExit at the
     // top of this file.
-    freopen_s(&std_out, "CONOUT$", "w+", stdout);
-    freopen_s(&std_in, "CONIN$", "r+", stdin);
+    errno_t err = 0;
+    err = freopen_s(&std_out, "CONOUT$", "w+", stdout);
+    VERIFY_ARE_EQUAL(0, err);
+    err = freopen_s(&std_in, "CONIN$", "r+", stdin);
+    VERIFY_ARE_EQUAL(0, err);
 
     return true;
 }
