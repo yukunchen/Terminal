@@ -29,7 +29,6 @@ InputBuffer::InputBuffer() :
     // The _termInput's constructor takes a reference to this object's _HandleTerminalInputCallback.
     // We need to use std::bind to create a reference to that function without a reference to this InputBuffer
 
-    InputWaitEvent = ServiceLocator::LocateGlobals()->hInputEvent.get();
     // initialize buffer header
     fInComposition = false;
 }
@@ -41,9 +40,6 @@ InputBuffer::InputBuffer() :
 // Return Value:
 InputBuffer::~InputBuffer()
 {
-    // TODO: MSFT:8805366 check for null before trying to close this
-    // and check that it needs to be closing it in the first place.
-    CloseHandle(InputWaitEvent);
 }
 
 // Routine Description:
@@ -151,7 +147,7 @@ void InputBuffer::StoreWritePartialByteSequence(std::unique_ptr<IInputEvent> eve
 // - The console lock must be held when calling this routine.
 void InputBuffer::ReinitializeInputBuffer()
 {
-    ResetEvent(InputWaitEvent);
+    ServiceLocator::LocateGlobals().hInputEvent.ResetEvent();
     InputMode = INPUT_BUFFER_DEFAULT_INPUT_MODE;
     _storage.clear();
 }
@@ -202,7 +198,7 @@ size_t InputBuffer::GetNumberOfReadyEvents()
 void InputBuffer::Flush()
 {
     _storage.clear();
-    ResetEvent(InputWaitEvent);
+    ServiceLocator::LocateGlobals().hInputEvent.ResetEvent();
 }
 
 // Routine Description:
@@ -286,7 +282,7 @@ NTSTATUS InputBuffer::Read(_Out_ std::deque<std::unique_ptr<IInputEvent>>& OutEv
 
         if (resetWaitEvent)
         {
-            ResetEvent(InputWaitEvent);
+            ServiceLocator::LocateGlobals().hInputEvent.ResetEvent();
         }
         return Status;
     }
@@ -467,7 +463,7 @@ size_t InputBuffer::Prepend(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& in
         // when this whole thing started.
         if (existingStorage.empty())
         {
-            SetEvent(InputWaitEvent);
+            ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
         }
         WakeUpReadersWaitingForData();
 
@@ -532,7 +528,7 @@ size_t InputBuffer::Write(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEv
 
         if (SetWaitEvent)
         {
-            SetEvent(InputWaitEvent);
+            ServiceLocator::LocateGlobals().hInputEvent.SetEvent();
         }
 
         // Alert any writers waiting for space.
@@ -752,7 +748,7 @@ bool InputBuffer::_CoalesceRepeatedKeyPressEvents(_Inout_ std::deque<std::unique
 // - The console lock must be held when calling this routine.
 HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     try
     {
         std::deque<std::unique_ptr<IInputEvent>> outEvents;
@@ -765,7 +761,7 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::uniq
                 const KeyEvent* const pKeyEvent = static_cast<const KeyEvent* const>(currEvent.get());
                 if (pKeyEvent->IsKeyDown())
                 {
-                    if (IsFlagSet(gci->Flags, CONSOLE_SUSPENDED) &&
+                    if (IsFlagSet(gci.Flags, CONSOLE_SUSPENDED) &&
                         !IsSystemKey(pKeyEvent->GetVirtualKeyCode()))
                     {
                         UnblockWriteConsole(CONSOLE_OUTPUT_SUSPENDED);
@@ -774,7 +770,7 @@ HRESULT InputBuffer::_HandleConsoleSuspensionEvents(_Inout_ std::deque<std::uniq
                     else if (IsFlagSet(InputMode, ENABLE_LINE_INPUT) &&
                              (pKeyEvent->GetVirtualKeyCode() == VK_PAUSE || ::IsPauseKey(*pKeyEvent)))
                     {
-                        SetFlag(gci->Flags, CONSOLE_SUSPENDED);
+                        SetFlag(gci.Flags, CONSOLE_SUSPENDED);
                         continue;
                     }
                 }

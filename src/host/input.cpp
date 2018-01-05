@@ -21,14 +21,14 @@
 
 bool IsInProcessedInputMode()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return (gci->pInputBuffer->InputMode & ENABLE_PROCESSED_INPUT) != 0;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return (gci.pInputBuffer->InputMode & ENABLE_PROCESSED_INPUT) != 0;
 }
 
 bool IsInVirtualTerminalInputMode()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return IsFlagSet(gci->pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return IsFlagSet(gci.pInputBuffer->InputMode, ENABLE_VIRTUAL_TERMINAL_INPUT);
 }
 
 BOOL IsSystemKey(_In_ WORD const wVirtualKeyCode)
@@ -99,15 +99,15 @@ ULONG GetControlKeyState(_In_ const LPARAM lParam)
 // - returns true if we're in a mode amenable to us taking over keyboard shortcuts
 bool ShouldTakeOverKeyboardShortcuts()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return !gci->GetCtrlKeyShortcutsDisabled() && IsInProcessedInputMode();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return !gci.GetCtrlKeyShortcutsDisabled() && IsInProcessedInputMode();
 }
 
 // Routine Description:
 // - handles key events without reference to Win32 elements.
 void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     BOOLEAN ContinueProcessing = TRUE;
 
     if (keyEvent.IsCtrlPressed() &&
@@ -118,12 +118,12 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
         if (keyEvent.GetVirtualKeyCode() == 'C' && IsInProcessedInputMode())
         {
             HandleCtrlEvent(CTRL_C_EVENT);
-            if (gci->PopupCount == 0)
+            if (gci.PopupCount == 0)
             {
-                gci->pInputBuffer->TerminateRead(WaitTerminationReason::CtrlC);
+                gci.pInputBuffer->TerminateRead(WaitTerminationReason::CtrlC);
             }
 
-            if (!(IsFlagSet(gci->Flags, CONSOLE_SUSPENDED)))
+            if (!(IsFlagSet(gci.Flags, CONSOLE_SUSPENDED)))
             {
                 ContinueProcessing = FALSE;
             }
@@ -133,14 +133,14 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
         // Check for ctrl-break.
         else if (keyEvent.GetVirtualKeyCode() == VK_CANCEL)
         {
-            gci->pInputBuffer->Flush();
+            gci.pInputBuffer->Flush();
             HandleCtrlEvent(CTRL_BREAK_EVENT);
-            if (gci->PopupCount == 0)
+            if (gci.PopupCount == 0)
             {
-                gci->pInputBuffer->TerminateRead(WaitTerminationReason::CtrlBreak);
+                gci.pInputBuffer->TerminateRead(WaitTerminationReason::CtrlBreak);
             }
 
-            if (!(IsFlagSet(gci->Flags, CONSOLE_SUSPENDED)))
+            if (!(IsFlagSet(gci.Flags, CONSOLE_SUSPENDED)))
             {
                 ContinueProcessing = FALSE;
             }
@@ -164,11 +164,11 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
         size_t EventsWritten = 0;
         try
         {
-            EventsWritten = gci->pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
+            EventsWritten = gci.pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
             if (EventsWritten && generateBreak)
             {
                 keyEvent.SetKeyDown(false);
-                EventsWritten = gci->pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
+                EventsWritten = gci.pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
             }
         }
         catch(...)
@@ -180,13 +180,13 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
 
 void HandleFocusEvent(_In_ const BOOL fSetFocus)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
 #pragma prefast(suppress:28931, "EventsWritten is not unused. Used by assertions.")
     size_t EventsWritten = 0;
     try
     {
-        EventsWritten = gci->pInputBuffer->Write(std::make_unique<FocusEvent>(!!fSetFocus));
+        EventsWritten = gci.pInputBuffer->Write(std::make_unique<FocusEvent>(!!fSetFocus));
     }
     catch (...)
     {
@@ -198,13 +198,13 @@ void HandleFocusEvent(_In_ const BOOL fSetFocus)
 
 void HandleMenuEvent(_In_ const DWORD wParam)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
 #pragma prefast(suppress:28931, "EventsWritten is not unused. Used by assertions.")
     size_t EventsWritten = 0;
     try
     {
-        EventsWritten = gci->pInputBuffer->Write(std::make_unique<MenuEvent>(wParam));
+        EventsWritten = gci.pInputBuffer->Write(std::make_unique<MenuEvent>(wParam));
     }
     catch (...)
     {
@@ -221,17 +221,17 @@ void HandleMenuEvent(_In_ const DWORD wParam)
 
 void HandleCtrlEvent(_In_ const DWORD EventType)
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     switch (EventType)
     {
         case CTRL_C_EVENT:
-            gci->CtrlFlags |= CONSOLE_CTRL_C_FLAG;
+            gci.CtrlFlags |= CONSOLE_CTRL_C_FLAG;
             break;
         case CTRL_BREAK_EVENT:
-            gci->CtrlFlags |= CONSOLE_CTRL_BREAK_FLAG;
+            gci.CtrlFlags |= CONSOLE_CTRL_BREAK_FLAG;
             break;
         case CTRL_CLOSE_EVENT:
-            gci->CtrlFlags |= CONSOLE_CTRL_CLOSE_FLAG;
+            gci.CtrlFlags |= CONSOLE_CTRL_CLOSE_FLAG;
             break;
         default:
             RIPMSG1(RIP_ERROR, "Invalid EventType: 0x%x", EventType);
@@ -240,40 +240,40 @@ void HandleCtrlEvent(_In_ const DWORD EventType)
 
 void ProcessCtrlEvents()
 {
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    if (gci->CtrlFlags == 0)
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    if (gci.CtrlFlags == 0)
     {
-        gci->UnlockConsole();
+        gci.UnlockConsole();
         return;
     }
 
     // Make our own copy of the console process handle list.
-    DWORD const LimitingProcessId = gci->LimitingProcessId;
-    gci->LimitingProcessId = 0;
+    DWORD const LimitingProcessId = gci.LimitingProcessId;
+    gci.LimitingProcessId = 0;
 
     ConsoleProcessTerminationRecord* rgProcessHandleList;
     size_t cProcessHandleList;
 
-    HRESULT hr = gci->ProcessHandleList
+    HRESULT hr = gci.ProcessHandleList
                     .GetTerminationRecordsByGroupId(LimitingProcessId,
-                                                    IsFlagSet(gci->CtrlFlags,
+                                                    IsFlagSet(gci.CtrlFlags,
                                                               CONSOLE_CTRL_CLOSE_FLAG),
                                                     &rgProcessHandleList,
                                                     &cProcessHandleList);
 
     if (FAILED(hr) || cProcessHandleList == 0)
     {
-        gci->UnlockConsole();
+        gci.UnlockConsole();
         return;
     }
 
     // Copy ctrl flags.
-    ULONG CtrlFlags = gci->CtrlFlags;
+    ULONG CtrlFlags = gci.CtrlFlags;
     ASSERT(!((CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG)) && (CtrlFlags & (CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG))));
 
-    gci->CtrlFlags = 0;
+    gci.CtrlFlags = 0;
 
-    gci->UnlockConsole();
+    gci.UnlockConsole();
 
     // the ctrl flags could be a combination of the following
     // values:

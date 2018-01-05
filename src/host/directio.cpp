@@ -39,7 +39,7 @@ class CONSOLE_INFORMATION;
 void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                      _Outref_result_maybenull_ std::unique_ptr<IInputEvent>& partialEvent)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
 
     while (!inEvents.empty())
@@ -60,7 +60,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             HRESULT hr;
 
             // convert char data to unicode
-            if (IsDBCSLeadByteConsole(static_cast<char>(keyEvent->GetCharData()), &gci->CPInfo))
+            if (IsDBCSLeadByteConsole(static_cast<char>(keyEvent->GetCharData()), &gci.CPInfo))
             {
                 if (inEvents.empty())
                 {
@@ -78,7 +78,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                     static_cast<char>(keyEvent->GetCharData()),
                     static_cast<char>(keyEventEndByte->GetCharData())
                 };
-                hr = ConvertToW(gci->CP,
+                hr = ConvertToW(gci.CP,
                                 inBytes,
                                 ARRAYSIZE(inBytes),
                                 outWChar,
@@ -90,7 +90,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                 {
                     static_cast<char>(keyEvent->GetCharData())
                 };
-                hr = ConvertToW(gci->CP,
+                hr = ConvertToW(gci.CP,
                                 inBytes,
                                 ARRAYSIZE(inBytes),
                                 outWChar,
@@ -423,7 +423,7 @@ HRESULT DoSrvWriteConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
 
 // Function Description:
 // - Writes the input records to the beginning of the input buffer. This is used
-//      by VT sequences that need a response immediately written back to the 
+//      by VT sequences that need a response immediately written back to the
 //      input.
 // Arguments:
 // - pInputBuffer - the input buffer to write to
@@ -487,7 +487,7 @@ HRESULT DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const /*pInput
 //   real OEM characters. We have real Unicode or UnicodeOem.
 NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ULONG NumBytes;
     ULONG uX, uY;
     if (FAILED(ShortToULong(Size.X, &uX)) ||
@@ -504,7 +504,7 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
         return STATUS_NO_MEMORY;
     }
 
-    UINT const Codepage = gci->OutputCP;
+    UINT const Codepage = gci.OutputCP;
 
     memmove(TmpBuffer, OutputBuffer, Size.X * Size.Y * sizeof(CHAR_INFO));
 
@@ -560,15 +560,15 @@ NTSTATUS TranslateOutputToOem(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
 //   UnicodeOem or Unicode in the buffer, depending on font
 NTSTATUS TranslateOutputToUnicode(_Inout_ PCHAR_INFO OutputBuffer, _In_ COORD Size)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    UINT const Codepage = gci->OutputCP;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    UINT const Codepage = gci.OutputCP;
 
     for (int i = 0; i < Size.Y; i++)
     {
         for (int j = 0; j < Size.X; j++)
         {
             ClearAllFlags(OutputBuffer->Attributes, COMMON_LVB_SBCSDBCS);
-            if (IsDBCSLeadByteConsole(OutputBuffer->Char.AsciiChar, &gci->OutputCPInfo))
+            if (IsDBCSLeadByteConsole(OutputBuffer->Char.AsciiChar, &gci.OutputCPInfo))
             {
                 if (j < Size.X - 1)
                 {   // -1 is safe DBCS in buffer
@@ -672,12 +672,7 @@ NTSTATUS SrvReadConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         return Status;
     }
 
-    CONSOLE_INFORMATION *Console;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    LockConsole();
 
     ConsoleHandleData* HandleData = m->GetObjectHandle();
     if (HandleData == nullptr)
@@ -748,12 +743,7 @@ NTSTATUS SrvWriteConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*Reply
         return Status;
     }
 
-    CONSOLE_INFORMATION *Console;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    LockConsole();
 
     ConsoleHandleData* HandleData = m->GetObjectHandle();
     if (HandleData == nullptr)
@@ -862,12 +852,7 @@ NTSTATUS SrvReadConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*
         return Status;
     }
 
-    CONSOLE_INFORMATION *Console;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    LockConsole();
 
     ConsoleHandleData* HandleData = m->GetObjectHandle();
     if (HandleData == nullptr)
@@ -943,12 +928,7 @@ NTSTATUS SrvWriteConsoleOutputString(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /
         return Status;
     }
 
-    CONSOLE_INFORMATION *Console;
-    Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    LockConsole();
 
     ConsoleHandleData* HandleData = m->GetObjectHandle();
     if (HandleData == nullptr)
@@ -1008,12 +988,8 @@ NTSTATUS SrvFillConsoleOutput(_Inout_ PCONSOLE_API_MSG m, _Inout_ PBOOL /*ReplyP
         break;
     }
 
-    CONSOLE_INFORMATION *Console;
-    NTSTATUS Status = RevalidateConsole(&Console);
-    if (!NT_SUCCESS(Status))
-    {
-        return Status;
-    }
+    LockConsole();
+    NTSTATUS Status = STATUS_SUCCESS;
 
     ConsoleHandleData* HandleData = m->GetObjectHandle();
     if (HandleData == nullptr)
@@ -1061,7 +1037,7 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
                                    _In_ PCONSOLE_CREATESCREENBUFFER_MSG a)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::CreateConsoleScreenBuffer);
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     // If any buffer type except the one we support is set, it's invalid.
     if (IsAnyFlagSet(a->Flags, ~CONSOLE_TEXTMODE_BUFFER))
@@ -1072,7 +1048,7 @@ NTSTATUS ConsoleCreateScreenBuffer(_Out_ ConsoleHandleData** ppHandle,
 
     ConsoleHandleData::HandleType const HandleType = ConsoleHandleData::HandleType::Output;
 
-    const SCREEN_INFORMATION* const psiExisting = gci->CurrentScreenBuffer;
+    const SCREEN_INFORMATION* const psiExisting = gci.CurrentScreenBuffer;
 
     // Create new screen buffer.
     CHAR_INFO Fill;

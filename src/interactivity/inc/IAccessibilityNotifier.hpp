@@ -30,6 +30,8 @@ namespace Microsoft
                     CaretVisible
                 };
 
+                virtual ~IAccessibilityNotifier() = 0;
+
                 virtual void NotifyConsoleCaretEvent(_In_ RECT rectangle) = 0;
                 virtual void NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags flags, _In_ LONG position) = 0;
                 virtual void NotifyConsoleUpdateScrollEvent(_In_ LONG x, _In_ LONG y) = 0;
@@ -45,6 +47,8 @@ namespace Microsoft
                 IAccessibilityNotifier(IAccessibilityNotifier const&) = delete;
                 IAccessibilityNotifier& operator=(IAccessibilityNotifier const&) = delete;
             };
-        };
-    };
-};
+
+            inline IAccessibilityNotifier::~IAccessibilityNotifier() {}
+        }
+    }
+}

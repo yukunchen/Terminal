@@ -125,7 +125,10 @@ public:
 #define VERTICAL_LINE       3
 #define BOTTOM_LEFT_CORNER  4
 #define BOTTOM_RIGHT_CORNER 5
+
+    // non ownership pointer
     ConversionAreaInfo* ConvScreenInfo;
+
     UINT ScrollScale;
 
     BOOL IsActiveScreenBuffer() const;

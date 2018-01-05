@@ -26,53 +26,53 @@ RenderData::~RenderData()
 
 const SMALL_RECT RenderData::GetViewport()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return gci->CurrentScreenBuffer->GetBufferViewport();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.CurrentScreenBuffer->GetBufferViewport();
 }
 
 const TEXT_BUFFER_INFO* RenderData::GetTextBuffer()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return gci->CurrentScreenBuffer->TextInfo;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.CurrentScreenBuffer->TextInfo;
 }
 
 const FontInfo* RenderData::GetFontInfo()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return gci->CurrentScreenBuffer->TextInfo->GetCurrentFont();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.CurrentScreenBuffer->TextInfo->GetCurrentFont();
 }
 
 const TextAttribute RenderData::GetDefaultBrushColors()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return gci->CurrentScreenBuffer->GetAttributes();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.CurrentScreenBuffer->GetAttributes();
 }
 
 const void RenderData::GetColorTable(_Outptr_result_buffer_all_(*pcColors) COLORREF** const ppColorTable, _Out_ size_t* const pcColors)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    *ppColorTable = const_cast<COLORREF*>(gci->GetColorTable());
-    *pcColors = gci->GetColorTableSize();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    *ppColorTable = const_cast<COLORREF*>(gci.GetColorTable());
+    *pcColors = gci.GetColorTableSize();
 }
 
 const Cursor* RenderData::GetCursor()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return gci->CurrentScreenBuffer->TextInfo->GetCursor();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.CurrentScreenBuffer->TextInfo->GetCursor();
 }
 
 const ConsoleImeInfo* RenderData::GetImeData()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    return &gci->ConsoleIme;
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return &gci.ConsoleIme;
 }
 
 const TEXT_BUFFER_INFO* RenderData::GetImeCompositionStringBuffer(_In_ size_t iIndex)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    if (iIndex < gci->ConsoleIme.ConvAreaCompStr.size())
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    if (iIndex < gci.ConsoleIme.ConvAreaCompStr.size())
     {
-        return gci->ConsoleIme.ConvAreaCompStr[iIndex]->ScreenBuffer->TextInfo;
+        return gci.ConsoleIme.ConvAreaCompStr[iIndex]->ScreenBuffer->TextInfo;
     }
     else
     {
@@ -88,16 +88,16 @@ NTSTATUS RenderData::GetSelectionRects(_Outptr_result_buffer_all_(*pcRectangles)
 
 const bool RenderData::IsGridLineDrawingAllowed()
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // If virtual terminal output is set, grid line drawing is a must. It is always allowed.
-    if (IsFlagSet(gci->CurrentScreenBuffer->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    if (IsFlagSet(gci.CurrentScreenBuffer->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
     {
         return true;
     }
     else
     {
         // If someone explicitly asked for worldwide line drawing, enable it.
-        if (gci->IsGridRenderingAllowedWorldwide())
+        if (gci.IsGridRenderingAllowedWorldwide())
         {
             return true;
         }
@@ -107,7 +107,7 @@ const bool RenderData::IsGridLineDrawingAllowed()
             // we must enable grid line drawing only in a DBCS output codepage. (Line drawing historically only worked in DBCS codepages.)
             // The only known instance of this is Image for Windows by TeraByte, Inc. (TeryByte Unlimited) which used the bits accidentally and for no purpose
             //   (according to the app developer) in conjunction with the Borland Turbo C cgscrn library.
-            return !!IsAvailableEastAsianCodePage(gci->OutputCP);
+            return !!IsAvailableEastAsianCodePage(gci.OutputCP);
         }
     }
 }

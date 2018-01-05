@@ -32,7 +32,7 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ RECT rectangle)
 
 void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags flags, _In_ LONG position)
 {
-    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     DWORD dwFlags = 0;
 
     if (flags == ConsoleCaretEventFlags::CaretSelection)
@@ -47,15 +47,15 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
     // UIA event notification
     static COORD previousCursorLocation = { 0, 0 };
     IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-    
+
     if (pWindow != nullptr)
     {
         NotifyWinEvent(EVENT_CONSOLE_CARET,
                        pWindow->GetWindowHandle(),
                        dwFlags,
                        position);
-        
-        SCREEN_INFORMATION* const pScreenInfo = gci->CurrentScreenBuffer;
+
+        SCREEN_INFORMATION* const pScreenInfo = gci.CurrentScreenBuffer;
         if (pScreenInfo)
         {
             TEXT_BUFFER_INFO* const pTextBuffer = pScreenInfo->TextInfo;

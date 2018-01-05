@@ -44,7 +44,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
 
     void RoundtripTerminalInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     void TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-    
+
     TEST_CLASS_SETUP(ClassSetup)
     {
         return true;
@@ -66,7 +66,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(RoundTripTest);
     TEST_METHOD(WindowManipulationTest);
 
-    StateMachine* _pStateMachine;
+    std::unique_ptr<StateMachine> _stateMachine;
 
     std::vector<INPUT_RECORD> vExpectedInput;
 
@@ -80,21 +80,23 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
 };
 
 
-class Microsoft::Console::VirtualTerminal::TestInteractDispatch : public IInteractDispatch
+class Microsoft::Console::VirtualTerminal::TestInteractDispatch final : public IInteractDispatch
 {
 public:
-    TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn, InputEngineTest* testInstance);
+    TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn,
+                         _In_ InputEngineTest* testInstance);
     virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
     virtual bool WriteCtrlC() override;
     virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
-                                _In_reads_(cParams) const unsigned short* const rgusParams,
-                                _In_ size_t const cParams) override; // DTTERM_WindowManipulation
+                                    _In_reads_(cParams) const unsigned short* const rgusParams,
+                                    _In_ size_t const cParams) override; // DTTERM_WindowManipulation
 private:
     std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteInputCallback;
     InputEngineTest* _testInstance;
 };
 
-TestInteractDispatch::TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn, InputEngineTest* testInstance) :
+TestInteractDispatch::TestInteractDispatch(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn,
+                                           _In_ InputEngineTest* testInstance) :
     _pfnWriteInputCallback(pfn),
     _testInstance(testInstance)
 {
@@ -155,16 +157,16 @@ bool ModifiersEquivalent(DWORD a, DWORD b)
 
 void InputEngineTest::RoundtripTerminalInputCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
-    // Take all the characters out of the input records here, and put them into 
+    // Take all the characters out of the input records here, and put them into
     //  the input state machine.
     size_t cInput = inEvents.size();
     INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
-    VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
     VERIFY_IS_NOT_NULL(rgInput);
     auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
+    VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
 
     std::wstring vtseq = L"";
-    
+
     for (size_t i = 0; i < cInput; i++)
     {
         INPUT_RECORD inRec = rgInput[i];
@@ -178,7 +180,7 @@ void InputEngineTest::RoundtripTerminalInputCallback(_In_ std::deque<std::unique
         NoThrowString().Format(L"\tvtseq: \"%s\"(%d)", vtseq.c_str(), vtseq.length())
     );
 
-    _pStateMachine->ProcessString(&vtseq[0], vtseq.length());
+    _stateMachine->ProcessString(&vtseq[0], vtseq.length());
     Log::Comment(L"String processed");
 }
 
@@ -186,10 +188,10 @@ void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>
 {
     size_t cInput = inEvents.size();
     INPUT_RECORD* rgInput = new INPUT_RECORD[cInput];
-    VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
     VERIFY_IS_NOT_NULL(rgInput);
-    VERIFY_ARE_EQUAL((size_t)1, vExpectedInput.size());
     auto cleanup = wil::ScopeExit([&]{delete[] rgInput;});
+    VERIFY_SUCCEEDED(IInputEvent::ToInputRecords(inEvents, rgInput, cInput));
+    VERIFY_ARE_EQUAL((size_t)1, vExpectedInput.size());
 
     bool foundEqual = false;
     INPUT_RECORD irExpected = vExpectedInput.back();
@@ -210,7 +212,7 @@ void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>
             VerifyOutputTraits<INPUT_RECORD>::ToString(inRec)
         );
 
-        bool areEqual = 
+        bool areEqual =
             (irExpected.EventType == inRec.EventType) &&
             (irExpected.Event.KeyEvent.bKeyDown == inRec.Event.KeyEvent.bKeyDown) &&
             (irExpected.Event.KeyEvent.wRepeatCount == inRec.Event.KeyEvent.wRepeatCount) &&
@@ -231,19 +233,19 @@ void InputEngineTest::TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>
 void InputEngineTest::C0Test()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(
+    _stateMachine = std::make_unique<StateMachine>(
             std::make_unique<InputStateMachineEngine>(
                 std::make_unique<TestInteractDispatch>(pfn, this)
             )
     );
-    VERIFY_IS_NOT_NULL(_pStateMachine);
-    
+    VERIFY_IS_NOT_NULL(_stateMachine.get());
+
     Log::Comment(L"Sending 0x0-0x19 to parser to make sure they're translated correctly back to C-key");
     DisableVerifyExceptions disable;
     for (wchar_t wch = '\x0'; wch < '\x20'; wch++)
     {
         std::wstring inputSeq = std::wstring(&wch, 1);
-        // In general, he actual key that we're going to generate for a C0 char 
+        // In general, he actual key that we're going to generate for a C0 char
         //      is char+0x40 and with ctrl pressed.
         wchar_t expectedWch = wch + 0x40;
         bool writeCtrl = true;
@@ -263,7 +265,7 @@ void InputEngineTest::C0Test()
         short vkey =  keyscan & 0xff;
         short keyscanModifiers = (keyscan >> 8) & 0xff;
         WORD scanCode = (WORD)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
-        
+
         DWORD dwModifierState = 0;
         if (writeCtrl)
         {
@@ -313,7 +315,7 @@ void InputEngineTest::C0Test()
 
         vExpectedInput.push_back(inputRec);
 
-        _pStateMachine->ProcessString(&inputSeq[0], inputSeq.length());
+        _stateMachine->ProcessString(&inputSeq[0], inputSeq.length());
 
     }
 }
@@ -321,19 +323,19 @@ void InputEngineTest::C0Test()
 void InputEngineTest::AlphanumericTest()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(
+    _stateMachine = std::make_unique<StateMachine>(
             std::make_unique<InputStateMachineEngine>(
                 std::make_unique<TestInteractDispatch>(pfn, this)
             )
     );
-    VERIFY_IS_NOT_NULL(_pStateMachine);
-    
+    VERIFY_IS_NOT_NULL(_stateMachine.get());
+
     Log::Comment(L"Sending every printable ASCII character");
     DisableVerifyExceptions disable;
     for (wchar_t wch = '\x20'; wch < '\x7f'; wch++)
     {
         std::wstring inputSeq = std::wstring(&wch, 1);
-        
+
         short keyscan = VkKeyScan(wch);
         short vkey =  keyscan & 0xff;
         WORD scanCode = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
@@ -359,28 +361,28 @@ void InputEngineTest::AlphanumericTest()
 
         vExpectedInput.push_back(inputRec);
 
-        _pStateMachine->ProcessString(&inputSeq[0], inputSeq.length());
+        _stateMachine->ProcessString(&inputSeq[0], inputSeq.length());
     }
-    
+
 }
 
 void InputEngineTest::RoundTripTest()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(
+    _stateMachine = std::make_unique<StateMachine>(
             std::make_unique<InputStateMachineEngine>(
                 std::make_unique<TestInteractDispatch>(pfn, this)
             )
     );
-    VERIFY_IS_NOT_NULL(_pStateMachine);
-    
-    // Send Every VKEY through the TerminalInput module, then take the char's 
+    VERIFY_IS_NOT_NULL(_stateMachine.get());
+
+    // Send Every VKEY through the TerminalInput module, then take the char's
     //   from the generated INPUT_RECORDs and put them through the InputEngine.
     // The VKEY sequence it writes out should be the same as the original.
 
     auto pfn2 = std::bind(&InputEngineTest::RoundtripTerminalInputCallback, this, std::placeholders::_1);
-    const TerminalInput* const pInput = new TerminalInput(pfn2);
-    
+    TerminalInput terminalInput{ pfn2 };
+
     for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
     {
         wchar_t wch = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
@@ -416,7 +418,7 @@ void InputEngineTest::RoundTripTest()
         irTest.Event.KeyEvent.bKeyDown = TRUE;
         irTest.Event.KeyEvent.uChar.UnicodeChar = wch;
         irTest.Event.KeyEvent.wVirtualScanCode = scanCode;
-        
+
         Log::Comment(
             NoThrowString().Format(L"Expecting::   ") +
             VerifyOutputTraits<INPUT_RECORD>::ToString(irTest)
@@ -426,7 +428,7 @@ void InputEngineTest::RoundTripTest()
         vExpectedInput.push_back(irTest);
 
         auto inputKey = IInputEvent::Create(irTest);
-        pInput->HandleKey(inputKey.get());
+        terminalInput.HandleKey(inputKey.get());
     }
 
 }
@@ -434,12 +436,12 @@ void InputEngineTest::RoundTripTest()
 void InputEngineTest::WindowManipulationTest()
 {
     auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
-    _pStateMachine = new StateMachine(
+    _stateMachine = std::make_unique<StateMachine>(
             std::make_unique<InputStateMachineEngine>(
                 std::make_unique<TestInteractDispatch>(pfn, this)
             )
     );
-    VERIFY_IS_NOT_NULL(_pStateMachine);
+    VERIFY_IS_NOT_NULL(_stateMachine.get());
 
     Log::Comment(NoThrowString().Format(
         L"Try sending a bunch of Window Manipulation sequences. "
@@ -467,9 +469,9 @@ void InputEngineTest::WindowManipulationTest()
 
         if (i == DispatchCommon::WindowManipulationType::ResizeWindowInCharacters)
         {
-            // We need to build the string with the params as strings for some reason - 
-            //      x86 would implicitly convert them to chars (eg 123 -> '{') 
-            //      before appending them to the string 
+            // We need to build the string with the params as strings for some reason -
+            //      x86 would implicitly convert them to chars (eg 123 -> '{')
+            //      before appending them to the string
             seqBuilder << L";" << wszParam1 << L";" << wszParam2;
 
             _expectedToCallWindowManipulation = true;
@@ -497,6 +499,6 @@ void InputEngineTest::WindowManipulationTest()
         Log::Comment(NoThrowString().Format(
             L"Processing \"%s\"", seq.c_str()
         ));
-        _pStateMachine->ProcessString(&seq[0], seq.length());
+        _stateMachine->ProcessString(&seq[0], seq.length());
     }
 }

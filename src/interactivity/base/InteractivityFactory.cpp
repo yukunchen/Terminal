@@ -27,13 +27,8 @@ using namespace Microsoft::Console::Interactivity;
 
 #pragma region Public Methods
 
-NTSTATUS InteractivityFactory::CreateConsoleControl(_Outptr_result_nullonfailure_ IConsoleControl** control)
+NTSTATUS InteractivityFactory::CreateConsoleControl(_Inout_ std::unique_ptr<IConsoleControl>& control)
 {
-    if (!control)
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
-
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
@@ -41,36 +36,41 @@ NTSTATUS InteractivityFactory::CreateConsoleControl(_Outptr_result_nullonfailure
 
     if (NT_SUCCESS(status))
     {
-        IConsoleControl *pNewControl = nullptr;
-        switch (level)
+        std::unique_ptr<IConsoleControl> newControl;
+        try
         {
-        case ApiLevel::Win32:
-            pNewControl = new Microsoft::Console::Interactivity::Win32::ConsoleControl();
-            break;
+            switch (level)
+            {
+            case ApiLevel::Win32:
+                newControl = std::make_unique<Microsoft::Console::Interactivity::Win32::ConsoleControl>();
+                break;
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
-        case ApiLevel::OneCore:
-            pNewControl = new Microsoft::Console::Interactivity::OneCore::ConsoleControl();
-            break;
+            case ApiLevel::OneCore:
+                newControl = std::make_unique<Microsoft::Console::Interactivity::OneCore::ConsoleControl>();
+                break;
 #endif
+            default:
+                status = STATUS_INVALID_LEVEL;
+                break;
+            }
+        }
+        catch (...)
+        {
+            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
         if (NT_SUCCESS(status))
         {
-            *control = pNewControl;
+            control.swap(newControl);
         }
     }
 
     return status;
 }
 
-NTSTATUS InteractivityFactory::CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread)
+NTSTATUS InteractivityFactory::CreateConsoleInputThread(_Inout_ std::unique_ptr<IConsoleInputThread>& thread)
 {
-    if (!thread)
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
-
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
@@ -78,36 +78,41 @@ NTSTATUS InteractivityFactory::CreateConsoleInputThread(_Outptr_result_nullonfai
 
     if (NT_SUCCESS(status))
     {
-        IConsoleInputThread *pNewThread = nullptr;
-        switch (level)
+        std::unique_ptr<IConsoleInputThread> newThread;
+        try
         {
-        case ApiLevel::Win32:
-            pNewThread = new Microsoft::Console::Interactivity::Win32::ConsoleInputThread();
-            break;
+            switch (level)
+            {
+            case ApiLevel::Win32:
+                newThread = std::make_unique<Microsoft::Console::Interactivity::Win32::ConsoleInputThread>();
+                break;
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
-        case ApiLevel::OneCore:
-            pNewThread = new Microsoft::Console::Interactivity::OneCore::ConsoleInputThread();
-            break;
+            case ApiLevel::OneCore:
+                newThread = std::make_unique<Microsoft::Console::Interactivity::OneCore::ConsoleInputThread>();
+                break;
 #endif
+            default:
+                status = STATUS_INVALID_LEVEL;
+                break;
+            }
+        }
+        catch (...)
+        {
+            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
         if (NT_SUCCESS(status))
         {
-            *thread = pNewThread;
+            thread.swap(newThread);
         }
     }
 
     return status;
 }
 
-NTSTATUS InteractivityFactory::CreateHighDpiApi(_Outptr_result_nullonfailure_ IHighDpiApi** api)
+NTSTATUS InteractivityFactory::CreateHighDpiApi(_Inout_ std::unique_ptr<IHighDpiApi>& api)
 {
-    if (!api)
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
-
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
@@ -115,36 +120,41 @@ NTSTATUS InteractivityFactory::CreateHighDpiApi(_Outptr_result_nullonfailure_ IH
 
     if (NT_SUCCESS(status))
     {
-        IHighDpiApi *pNewApi = nullptr;
-        switch (level)
+        std::unique_ptr<IHighDpiApi> newApi;
+        try
         {
-        case ApiLevel::Win32:
-            pNewApi = new Microsoft::Console::Interactivity::Win32::WindowDpiApi();
-            break;
+            switch (level)
+            {
+            case ApiLevel::Win32:
+                newApi = std::make_unique<Microsoft::Console::Interactivity::Win32::WindowDpiApi>();
+                break;
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
-        case ApiLevel::OneCore:
-            pNewApi = nullptr;
-            break;
+            case ApiLevel::OneCore:
+                newApi.reset();
+                break;
 #endif
+            default:
+                status = STATUS_INVALID_LEVEL;
+                break;
+            }
+        }
+        catch (...)
+        {
+            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
         if (NT_SUCCESS(status))
         {
-            *api = pNewApi;
+            api.swap(newApi);
         }
     }
 
     return status;
 }
 
-NTSTATUS InteractivityFactory::CreateWindowMetrics(_Outptr_result_nullonfailure_ IWindowMetrics** metrics)
+NTSTATUS InteractivityFactory::CreateWindowMetrics(_Inout_ std::unique_ptr<IWindowMetrics>& metrics)
 {
-    if (!metrics)
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
-
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
@@ -152,36 +162,41 @@ NTSTATUS InteractivityFactory::CreateWindowMetrics(_Outptr_result_nullonfailure_
 
     if (NT_SUCCESS(status))
     {
-        IWindowMetrics *pNewMetrics = nullptr;
-        switch (level)
+        std::unique_ptr<IWindowMetrics> newMetrics;
+        try
         {
-        case ApiLevel::Win32:
-            pNewMetrics = new Microsoft::Console::Interactivity::Win32::WindowMetrics();
-            break;
+            switch (level)
+            {
+            case ApiLevel::Win32:
+                newMetrics = std::make_unique<Microsoft::Console::Interactivity::Win32::WindowMetrics>();
+                break;
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
-        case ApiLevel::OneCore:
-            pNewMetrics = new Microsoft::Console::Interactivity::OneCore::WindowMetrics();
-            break;
+            case ApiLevel::OneCore:
+                newMetrics = std::make_unique<Microsoft::Console::Interactivity::OneCore::WindowMetrics>();
+                break;
 #endif
+            default:
+                status = STATUS_INVALID_LEVEL;
+                break;
+            }
+        }
+        catch (...)
+        {
+            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
         if (NT_SUCCESS(status))
         {
-            *metrics = pNewMetrics;
+            metrics.swap(newMetrics);
         }
     }
 
     return status;
 }
 
-NTSTATUS InteractivityFactory::CreateAccessibilityNotifier(_Outptr_result_nullonfailure_ IAccessibilityNotifier** notifier)
+NTSTATUS InteractivityFactory::CreateAccessibilityNotifier(_Inout_ std::unique_ptr<IAccessibilityNotifier>& notifier)
 {
-    if (!notifier)
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
-
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
@@ -189,36 +204,41 @@ NTSTATUS InteractivityFactory::CreateAccessibilityNotifier(_Outptr_result_nullon
 
     if (NT_SUCCESS(status))
     {
-        IAccessibilityNotifier *pNewNotifier = nullptr;
-        switch (level)
+        std::unique_ptr<IAccessibilityNotifier> newNotifier;
+        try
         {
-        case ApiLevel::Win32:
-            pNewNotifier = new Microsoft::Console::Interactivity::Win32::AccessibilityNotifier();
-            break;
+            switch (level)
+            {
+            case ApiLevel::Win32:
+                newNotifier = std::make_unique<Microsoft::Console::Interactivity::Win32::AccessibilityNotifier>();
+                break;
 
-#ifdef BUILD_ONECORE_INTERACTIVITY
-        case ApiLevel::OneCore:
-            pNewNotifier = new Microsoft::Console::Interactivity::OneCore::AccessibilityNotifier();
-            break;
-#endif
+    #ifdef BUILD_ONECORE_INTERACTIVITY
+            case ApiLevel::OneCore:
+                newNotifier = std::make_unique<Microsoft::Console::Interactivity::OneCore::AccessibilityNotifier>();
+                break;
+    #endif
+            default:
+                status = STATUS_INVALID_LEVEL;
+                break;
+            }
+        }
+        catch (...)
+        {
+            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
         if (NT_SUCCESS(status))
         {
-            *notifier = pNewNotifier;
+            notifier.swap(newNotifier);
         }
     }
 
     return status;
 }
 
-NTSTATUS InteractivityFactory::CreateSystemConfigurationProvider(_Outptr_result_nullonfailure_ ISystemConfigurationProvider** provider)
+NTSTATUS InteractivityFactory::CreateSystemConfigurationProvider(_Inout_ std::unique_ptr<ISystemConfigurationProvider>& provider)
 {
-    if (!provider)
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
-
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
@@ -226,36 +246,41 @@ NTSTATUS InteractivityFactory::CreateSystemConfigurationProvider(_Outptr_result_
 
     if (NT_SUCCESS(status))
     {
-        ISystemConfigurationProvider *pNewProvider = nullptr;
-        switch (level)
+        std::unique_ptr<ISystemConfigurationProvider> NewProvider;
+        try
         {
-        case ApiLevel::Win32:
-            pNewProvider = new Microsoft::Console::Interactivity::Win32::SystemConfigurationProvider();
-            break;
+            switch (level)
+            {
+            case ApiLevel::Win32:
+                NewProvider = std::make_unique<Microsoft::Console::Interactivity::Win32::SystemConfigurationProvider>();
+                break;
 
-#ifdef BUILD_ONECORE_INTERACTIVITY
-        case ApiLevel::OneCore:
-            pNewProvider = new Microsoft::Console::Interactivity::OneCore::SystemConfigurationProvider();
-            break;
-#endif
+    #ifdef BUILD_ONECORE_INTERACTIVITY
+            case ApiLevel::OneCore:
+                NewProvider = std::make_unique<Microsoft::Console::Interactivity::OneCore::SystemConfigurationProvider>();
+                break;
+    #endif
+            default:
+                status = STATUS_INVALID_LEVEL;
+                break;
+            }
+        }
+        catch (...)
+        {
+            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
         if (NT_SUCCESS(status))
         {
-            *provider = pNewProvider;
+            provider.swap(NewProvider);
         }
     }
 
     return status;
 }
 
-NTSTATUS InteractivityFactory::CreateInputServices(_Outptr_result_nullonfailure_ IInputServices** services)
+NTSTATUS InteractivityFactory::CreateInputServices(_Inout_ std::unique_ptr<IInputServices>& services)
 {
-    if (!services)
-    {
-        return STATUS_INVALID_PARAMETER;
-    }
-
     NTSTATUS status = STATUS_SUCCESS;
 
     ApiLevel level;
@@ -263,23 +288,33 @@ NTSTATUS InteractivityFactory::CreateInputServices(_Outptr_result_nullonfailure_
 
     if (NT_SUCCESS(status))
     {
-        IInputServices *pNewServices = nullptr;
-        switch (level)
+        std::unique_ptr<IInputServices> newServices;
+        try
         {
-        case ApiLevel::Win32:
-            pNewServices = new Microsoft::Console::Interactivity::Win32::InputServices();
-            break;
+            switch (level)
+            {
+            case ApiLevel::Win32:
+                newServices = std::make_unique<Microsoft::Console::Interactivity::Win32::InputServices>();
+                break;
 
-#ifdef BUILD_ONECORE_INTERACTIVITY
-        case ApiLevel::OneCore:
-            pNewServices = new Microsoft::Console::Interactivity::OneCore::ConIoSrvComm();
-            break;
-#endif
+    #ifdef BUILD_ONECORE_INTERACTIVITY
+            case ApiLevel::OneCore:
+                newServices = std::make_unique<Microsoft::Console::Interactivity::OneCore::ConIoSrvComm>();
+                break;
+    #endif
+            default:
+                status = STATUS_INVALID_LEVEL;
+                break;
+            }
+        }
+        catch (...)
+        {
+            status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
         }
 
         if (NT_SUCCESS(status))
         {
-            *services = pNewServices;
+            services.swap(newServices);
         }
     }
 
