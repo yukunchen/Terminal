@@ -2447,6 +2447,7 @@ const TextAttribute* const  SCREEN_INFORMATION::GetPopupAttributes() const
 //     the change down to the fill of the text buffer attached to this screen buffer.
 // Parameters:
 // - attributes - The new value of the attributes to use.
+// - popupAttributes - The new value of the popup attributes to use.
 // Return value:
 // <none>
 void SCREEN_INFORMATION::SetDefaultAttributes(_In_ const TextAttribute& attributes,
