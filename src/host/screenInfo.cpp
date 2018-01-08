@@ -571,6 +571,12 @@ void SCREEN_INFORMATION::UpdateFont(_In_ const FontInfo* const pfiNewFont)
             pWindow->UpdateWindowSize(coordViewport);
         }
     }
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->UpdateFont(pfiNewFont);
+    }
 }
 
 // NOTE: This method was historically used to notify accessibility apps AND
@@ -698,6 +704,14 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 // - <none>
 void SCREEN_INFORMATION::SetViewportSize(_In_ const COORD* const pcoordSize)
 {
+    // If this is the alt buffer:
+    //      first resize ourselves to match the new viewport
+    //      then also make sure that the main buffer gets the same call.
+    if (_psiMainBuffer)
+    {
+        ResizeScreenBuffer(*pcoordSize, TRUE);
+        _psiMainBuffer->_InternalSetViewportSize(pcoordSize, false, false);
+    }
     _InternalSetViewportSize(pcoordSize, false, false);
 }
 
@@ -1779,7 +1793,8 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSi
 // - DoScrollBarUpdate - indicates whether to update scroll bars at the end
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
-NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(_In_ const COORD coordNewScreenSize, _In_ const bool fDoScrollBarUpdate)
+NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(_In_ const COORD coordNewScreenSize,
+                                                _In_ const bool fDoScrollBarUpdate)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;
@@ -1899,7 +1914,9 @@ void SCREEN_INFORMATION::MakeCurrentCursorVisible()
 }
 
 // Routine Description:
-// - This routine sets the cursor size and visibility both in the data structures and on the screen.
+// - This routine sets the cursor size and visibility both in the data 
+//      structures and on the screen. Also updates the cursor information of 
+//      this buffer's main buffer, if this buffer is an alt buffer.
 // Arguments:
 // - ScreenInfo - pointer to screen info structure.
 // - Size - cursor size
@@ -1913,6 +1930,13 @@ NTSTATUS SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size, _In_ BO
 
     pCursor->SetSize(Size);
     pCursor->SetIsVisible(Visible);
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetCursorInformation(Size, Visible);
+    }
+
     return STATUS_SUCCESS;
 }
 
@@ -1934,6 +1958,13 @@ NTSTATUS SCREEN_INFORMATION::SetCursorDBMode(_In_ BOOLEAN const DoubleCursor)
     {
         pCursor->SetIsDouble(DoubleCursor);
     }
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetCursorDBMode(DoubleCursor);
+    }
+
     return STATUS_SUCCESS;
 }
 
@@ -2437,25 +2468,9 @@ TextAttribute SCREEN_INFORMATION::GetAttributes() const
 // <none>
 // Return value:
 // - This screen buffer's popup attributes
-const TextAttribute* const  SCREEN_INFORMATION::GetPopupAttributes() const
+const TextAttribute* const SCREEN_INFORMATION::GetPopupAttributes() const
 {
     return &_PopupAttributes;
-}
-
-// Routine Description:
-// - Sets the value of the attributes on this screen buffer. Also propagates
-//     the change down to the fill of the text buffer attached to this screen buffer.
-// Parameters:
-// - attributes - The new value of the attributes to use.
-// - popupAttributes - The new value of the popup attributes to use.
-// Return value:
-// <none>
-void SCREEN_INFORMATION::SetDefaultAttributes(_In_ const TextAttribute& attributes,
-                                              _In_ const TextAttribute& popupAttributes)
-{
-    SetAttributes(attributes);
-    SetPopupAttributes(popupAttributes);
-    GetAdapterDispatch()->UpdateDefaultColor(attributes.GetLegacyAttributes());
 }
 
 // Routine Description:
@@ -2472,17 +2487,89 @@ void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute& attributes)
     CHAR_INFO ciFill = TextInfo->GetFill();
     ciFill.Attributes = _Attributes.GetLegacyAttributes();
     TextInfo->SetFill(ciFill);
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetAttributes(attributes);
+    }
 }
 
-// Routine Description:
+// Method Description:
 // - Sets the value of the popup attributes on this screen buffer.
 // Parameters:
-// - wPopupAttributes - The new value of the popup attributes to use.
+// - popupAttributes - The new value of the popup attributes to use.
 // Return value:
 // <none>
 void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute& popupAttributes)
 {
     _PopupAttributes.SetFrom(popupAttributes);
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetPopupAttributes(popupAttributes);
+    }
+}
+
+// Method Description:
+// - Sets the value of the attributes on this screen buffer. Also propagates
+//     the change down to the fill of the attached text buffer.
+// Parameters:
+// - attributes - The new value of the attributes to use.
+// - popupAttributes - The new value of the popup attributes to use.
+// Return value:
+// <none>
+void SCREEN_INFORMATION::SetDefaultAttributes(_In_ const TextAttribute& attributes,
+                                              _In_ const TextAttribute& popupAttributes)
+{
+    SetAttributes(attributes);
+    SetPopupAttributes(popupAttributes);
+    GetAdapterDispatch()->UpdateDefaultColor(attributes.GetLegacyAttributes());
+}
+
+// Method Description:
+// - Replaces the given oldAttributes and oldPopupAttributes with the 
+//      newAttributes thoughout the entirety of our buffer. 
+//   This is called when the default screen attributes change, (eg through the 
+//      propsheet or the API) and we want to replace all of the attributes of 
+//      characters that had the old default attributes with the new setting.
+// NOTE: Only replaces legacy style attributes. If a character had RGB 
+//      attributes, then we know that it wasn't using the default attributes.
+// Parameters:
+// - oldAttributes - The old attributes containing legacy attributes to replace.
+// - oldPopupAttributes - The old popoup attributes to replace.
+// - newAttributes - The new value of the attributes to use.
+// - newPopupAttributes - The new value of the popup attributes to use.
+// Return value:
+// <none>
+void SCREEN_INFORMATION::ReplaceDefaultAttributes(_In_ const TextAttribute& oldAttributes,
+                                                  _In_ const TextAttribute& oldPopupAttributes,
+                                                  _In_ const TextAttribute& newAttributes,
+                                                  _In_ const TextAttribute& newPopupAttributes)
+{        
+    const WORD oldLegacyAttributes = oldAttributes.GetLegacyAttributes();
+    const WORD oldLegacyPopupAttributes = oldPopupAttributes.GetLegacyAttributes();
+    const WORD newLegacyAttributes = newAttributes.GetLegacyAttributes();
+    const WORD newLegacyPopupAttributes = newPopupAttributes.GetLegacyAttributes();
+
+    // TODO: MSFT 9354902: Fix this up to be clearer with less magic bit shifting and less magic numbers. http://osgvsowi/9354902
+    const WORD InvertedOldPopupAttributes = (WORD)(((oldLegacyPopupAttributes << 4) & 0xf0) | ((oldLegacyPopupAttributes >> 4) & 0x0f));
+    const WORD InvertedNewPopupAttributes = (WORD)(((newLegacyPopupAttributes << 4) & 0xf0) | ((newLegacyPopupAttributes >> 4) & 0x0f));
+
+    // change all chars with default color
+    const SHORT sScreenBufferSizeY = GetScreenBufferSize().Y;
+    for (SHORT i = 0; i < sScreenBufferSizeY; i++)
+    {
+        ROW* const Row = &TextInfo->Rows[i];
+        Row->AttrRow.ReplaceLegacyAttrs(oldLegacyAttributes, newLegacyAttributes);
+        Row->AttrRow.ReplaceLegacyAttrs(oldLegacyPopupAttributes, newLegacyPopupAttributes);
+        Row->AttrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
+    }
+
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->ReplaceDefaultAttributes(oldAttributes, oldPopupAttributes, newAttributes, newPopupAttributes);
+    }
 }
 
 // Method Description:
