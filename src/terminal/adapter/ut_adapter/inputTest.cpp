@@ -388,7 +388,9 @@ void InputTest::TerminalInputModifierKeyTests()
         case VK_BACK:
             // Backspace is kinda different from other keys - we'll handle in another test.
         case VK_DIVIDE:
+        case VK_OEM_2:
             // Ctrl-/ is also handled in another test, because it's weird.
+            // VK_OEM_2 is typically the '/?' key
             continue;
             // wcscpy_s(s_pwsInputBuffer, L"\x7f");
             break;

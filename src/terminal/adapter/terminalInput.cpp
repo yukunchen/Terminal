@@ -187,6 +187,7 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgSimpleModifedKeyMapping[]
     { VK_TAB, CTRL_PRESSED, L"\t"},
     { VK_TAB, SHIFT_PRESSED, L"\x1b[Z"},
     { VK_DIVIDE, CTRL_PRESSED, L"\x1F"},
+    // These two are not implemented here, because they are system keys.
     // { VK_TAB, ALT_PRESSED, L""}, This is the Windows system shortcut for switching windows.
     // { VK_ESCAPE, ALT_PRESSED, L""}, This is another Windows system shortcut for switching windows.
 };
@@ -299,7 +300,7 @@ bool TerminalInput::_SearchWithModifier(_In_ const KeyEvent& keyEvent) const
             // One last check: C-/ is supposed to be C-_
             // But '/' is not the same VKEY on all keyboards. So we have to 
             //      figure out the vkey at runtime.
-            const static BYTE slashVkey = LOBYTE(VkKeyScan(L'/'));
+            const BYTE slashVkey = LOBYTE(VkKeyScan(L'/'));
             if (keyEvent.GetVirtualKeyCode() == slashVkey && keyEvent.IsCtrlPressed())
             {
                 // This mapping doesn't need to be changed at all.
@@ -339,7 +340,7 @@ bool TerminalInput::_SearchKeyMapping(_In_ const KeyEvent& keyEvent,
             //      something with them.
             // However, if there are modifiers set, then we only want to match 
             //      if the key's modifiers are the same as the modifiers in the
-            //      mapping. Ex - 
+            //      mapping.
             bool modifiersMatch = AreAllFlagsClear(pMap->dwModifiers, MOD_PRESSED);
             if (!modifiersMatch)
             {
