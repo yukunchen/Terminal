@@ -402,10 +402,6 @@ void InputEngineTest::RoundTripTest()
         {
             uiActualKeystate = SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
         }
-        else if (vkey == VK_ESCAPE)
-        {
-            // uiActualKeystate = SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
-        }
 
         if (vkey == UNICODE_ETX)
         {
