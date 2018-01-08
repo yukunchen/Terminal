@@ -11,9 +11,11 @@
 #include "output.h"
 #include <math.h>
 #include "..\interactivity\inc\ServiceLocator.hpp"
+#include "..\types\inc\Viewport.hpp"
 #include "..\terminal\parser\OutputStateMachineEngine.hpp"
 
 #pragma hdrstop
+using namespace Microsoft::Console::Types;
 
 #pragma region Construct/Destruct
 
@@ -1226,7 +1228,28 @@ void SCREEN_INFORMATION::_AdjustViewportSize(_In_ const RECT* const prcClientNew
     bool const fResizeFromTop = prcClientNew->top != prcClientOld->top &&
                                 prcClientNew->bottom == prcClientOld->bottom;
 
+    Viewport oldViewport = Viewport::FromInclusive(_srBufferViewport);
+
     _InternalSetViewportSize(pcoordSize, fResizeFromLeft, fResizeFromTop);
+
+    // MSFT 13194969, related to 12092729.
+    // If we're in virtual terminal mode, and the viewport dimensions change, 
+    //      send a WindowBufferSizeEvent. If the client wants VT mode, then they
+    //      probably want the viewport resizes, not just the screen buffer 
+    //      resizes. This does change the behavior of the API for v2 callers, 
+    //      but only callers who've requested VT mode. In 12092729, we enabled 
+    //      sending notifications from window resizes in cases where the buffer 
+    //      didn't resize, so this applies the same expansion to resizes using 
+    //      the window, not the API.
+    if (IsInVirtualTerminalInputMode())
+    {
+        Viewport newViewport = Viewport::FromInclusive(_srBufferViewport);
+        if ((newViewport.Width() != oldViewport.Width()) || 
+            (newViewport.Height() != oldViewport.Height()))
+        {
+            ScreenBufferSizeChange(GetScreenBufferSize());
+        }
+    }
 }
 
 // Routine Description:
@@ -1451,6 +1474,41 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
                     if (iOldRow < cOldRowsTotal - 1)
                     {
                         status = pNewBuffer->NewlineCursor() ? status : STATUS_NO_MEMORY;
+                    }
+                    else 
+                    {
+                        // If we are on the final line of the buffer, we have one more check.
+                        // We got into this code path because we are at the right most column of a row in the old buffer
+                        // that had a hard return (no wrap was forced).
+                        // However, as we're inserting, the old row might have just barely fit into the new buffer and 
+                        // caused a new soft return (wrap was forced) putting the cursor at x=0 on the line just below.
+                        // We need to preserve the memory of the hard return at this point by inserting one additional 
+                        // hard newline, otherwise we've lost that information.
+                        // We only do this when the cursor has just barely poured over onto the next line so the hard return
+                        // isn't covered by the soft one. 
+                        // e.g.
+                        // The old line was:
+                        // |aaaaaaaaaaaaaaaaaaa | with no wrap which means there was a newline after that final a.
+                        // The cursor was here ^
+                        // And the new line will be:
+                        // |aaaaaaaaaaaaaaaaaaa| and show a wrap at the end
+                        // |                   |
+                        //  ^ and the cursor is now there.
+                        // If we leave it like this, we've lost the newline information.
+                        // So we insert one more newline so a continued reflow of this buffer by resizing larger will 
+                        // continue to look as the original output intended with the newline data.
+                        // After this fix, it looks like this:
+                        // |aaaaaaaaaaaaaaaaaaa| no wrap at the end (preserved hard newline)
+                        // |                   |
+                        //  ^ and the cursor is now here.
+                        const COORD coordNewCursor = pNewCursor->GetPosition();
+                        if (coordNewCursor.X == 0 && coordNewCursor.Y > 0)
+                        {
+                            if (pNewBuffer->GetRowByOffset(coordNewCursor.Y - 1)->CharRow.WasWrapForced())
+                            {
+                                status = pNewBuffer->NewlineCursor() ? status : STATUS_NO_MEMORY;
+                            }
+                        }
                     }
                 }
             }
@@ -2410,11 +2468,10 @@ TextAttribute SCREEN_INFORMATION::GetAttributes() const
 // <none>
 // Return value:
 // - This screen buffer's popup attributes
-const TextAttribute* const  SCREEN_INFORMATION::GetPopupAttributes() const
+const TextAttribute* const SCREEN_INFORMATION::GetPopupAttributes() const
 {
     return &_PopupAttributes;
 }
-
 
 // Routine Description:
 // - Sets the value of the attributes on this screen buffer. Also propagates
@@ -2423,7 +2480,7 @@ const TextAttribute* const  SCREEN_INFORMATION::GetPopupAttributes() const
 // - attributes - The new value of the attributes to use.
 // Return value:
 // <none>
-void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute attributes)
+void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute& attributes)
 {
     _Attributes.SetFrom(attributes);
 
@@ -2444,7 +2501,7 @@ void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute attributes)
 // - popupAttributes - The new value of the popup attributes to use.
 // Return value:
 // <none>
-void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute popupAttributes)
+void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute& popupAttributes)
 {
     _PopupAttributes.SetFrom(popupAttributes);
     // If we're an alt buffer, also update our main buffer.
@@ -2462,8 +2519,8 @@ void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute popupAttrib
 // - popupAttributes - The new value of the popup attributes to use.
 // Return value:
 // <none>
-void SCREEN_INFORMATION::SetDefaultAttributes(_In_ const TextAttribute attributes,
-                                              _In_ const TextAttribute popupAttributes)
+void SCREEN_INFORMATION::SetDefaultAttributes(_In_ const TextAttribute& attributes,
+                                              _In_ const TextAttribute& popupAttributes)
 {
     SetAttributes(attributes);
     SetPopupAttributes(popupAttributes);
@@ -2485,10 +2542,10 @@ void SCREEN_INFORMATION::SetDefaultAttributes(_In_ const TextAttribute attribute
 // - newPopupAttributes - The new value of the popup attributes to use.
 // Return value:
 // <none>
-void SCREEN_INFORMATION::ReplaceDefaultAttributes(_In_ const TextAttribute oldAttributes,
-                                                  _In_ const TextAttribute oldPopupAttributes,
-                                                  _In_ const TextAttribute newAttributes,
-                                                  _In_ const TextAttribute newPopupAttributes)
+void SCREEN_INFORMATION::ReplaceDefaultAttributes(_In_ const TextAttribute& oldAttributes,
+                                                  _In_ const TextAttribute& oldPopupAttributes,
+                                                  _In_ const TextAttribute& newAttributes,
+                                                  _In_ const TextAttribute& newPopupAttributes)
 {        
     const WORD oldLegacyAttributes = oldAttributes.GetLegacyAttributes();
     const WORD oldLegacyPopupAttributes = oldPopupAttributes.GetLegacyAttributes();

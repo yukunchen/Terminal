@@ -61,6 +61,8 @@ SOURCES = \
     ..\selectionState.cpp \
     ..\scrolling.cpp \
     ..\cmdline.cpp   \
+    ..\alias.cpp   \
+    ..\history.cpp   \
     ..\VtIo.cpp   \
     ..\VtInputThread.cpp   \
     ..\consoleInformation.cpp \

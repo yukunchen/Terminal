@@ -46,7 +46,12 @@ void SetConsoleCPInfo(_In_ const BOOL fOutput)
             if (pti != nullptr)
             {
                 const FontInfo* const pfiOld = pti->GetCurrentFont();
-                FontInfo fiNew(pfiOld->GetFaceName(),
+
+                // Use the desired face name when updating the font.
+                // This ensures that if we had a fall back operation last time (the desired
+                // face name didn't support the code page and we have a different less-desirable font currently)
+                // that we'll now give it another shot to use the desired face name in the new code page.
+                FontInfo fiNew(pti->GetDesiredFont()->GetFaceName(),
                                pfiOld->GetFamily(),
                                pfiOld->GetWeight(),
                                pfiOld->GetUnscaledSize(),

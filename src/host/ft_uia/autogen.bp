@@ -1,9 +1,6 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia {
 
-    export declare const qualifier: {
-        platform: WdgBuild.StandardPlatforms,
-        configuration: "release",
-    };
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\host`;
 
@@ -173,21 +170,31 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia {
             f`autogen.bp`,
             f`autogen.bp`,
             f`host.tests.uia.csproj`,
-            f`product.pbxproj`,
-            f`${srcRoot}\build\scripts\signer.cmd`,
-            f`${srcRoot}\onecore\windows\project.props`,
-            f`${srcRoot}\public\sdk\inc\ntverp.h`,
             pass0,
             pass1,
             pass2,
             prePass,
             (isBuildRelease && isBuildArm32 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildArm64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX86 && MsWinBuild.isOfficialBuild) ? MsWinOnecore_Pkg.BinPublic.Imagingtools.content : undefined,
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    f`product.pbxproj`,
+                    f`${srcRoot}\build\scripts\signer.cmd`,
+                    f`${srcRoot}\onecore\windows\project.props`,
+                    f`${srcRoot}\public\sdk\inc\ntverp.h`,
+                ]
+            ),
         ]
         .filter(e => e !== undefined),
         
         produces: [
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-uiautomationtests.cab`,
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-uiautomationtests.man.dsm.xml`,
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-uiautomationtests.cab`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-uiautomationtests.man.dsm.xml`,
+                ]
+            ),
         ],
     });
 
@@ -222,7 +229,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia {
         outputDirectory: d`${binRoot}\prebuilt\test\${buildArch}\${buildType}`,
         sources: [
             pass2.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`),
-            pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`),
-        ],
+            isBuildCommonArchitecture && isBuildRelease ? pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`) : undefined,
+        ]
+        .filter(e => e !== undefined),
     });
 }

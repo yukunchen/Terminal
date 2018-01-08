@@ -19,7 +19,7 @@ Revision History:
 
 #include "screenInfo.hpp"
 
-#define CP_USA                 1252
+#define CP_USA                 437
 #define CP_KOREAN              949
 #define CP_JAPANESE            932
 #define CP_CHINESE_SIMPLIFIED  936

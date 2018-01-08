@@ -104,6 +104,11 @@ COORD Viewport::Origin() const
     return { Left(), Top() };
 }
 
+COORD Viewport::Dimensions() const 
+{
+    return { Width(), Height() };
+}
+
 bool Viewport::IsWithinViewport(_In_ const COORD* const pcoord) const
 {
     return pcoord->X >= Left() && pcoord->X < RightExclusive() &&

@@ -1,9 +1,6 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer {
 
-    export declare const qualifier: {
-        platform: WdgBuild.StandardPlatforms,
-        configuration: "release",
-    };
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser`;
 
@@ -92,15 +89,16 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzer {
             f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
             f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
             MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
-            isBuildRelease && (isBuildArm32 || isBuildArm64) ? MsWinCrts.Public.Sdk.Lib.library : undefined,
+            isBuildDebug && isBuildCommonArchitecture ? MsWinCrts.Public.Internal.Sdk.Lib.library : undefined,
+            isBuildArm32 || isBuildArm64 ? MsWinCrts.Public.Sdk.Lib.library : undefined,
             MsWinOnecoreEndUser.Public.Internal.Sdk.Lib.library,
             MsWinOnecoreEndUser.Public.Sdk.Lib.library,
-            MsWinOnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.V1_7.library,
-            MsWinOnecoreMerged.Public.Sdk.Lib.Onecore.V1_7.library,
+            MsWinOnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.V1_8.library,
+            MsWinOnecoreMerged.Public.Sdk.Lib.Onecore.V1_8.library,
             pass1,
             prePass,
             MsWinOnecore_MinKernel.Public.Internal.Sdk.Lib.library,
-            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_8.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_9.library,
             MsWinOnecore_MinKernel.Public.Sdk.Lib.library,
         ]
         .filter(e => e !== undefined),

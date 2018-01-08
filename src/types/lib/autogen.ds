@@ -36,17 +36,23 @@
         <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>types.vcxproj</Item>
+        <Item>{DotDot}\convert.cpp</Item>
         <Item>{DotDot}\focusevent.cpp</Item>
         <Item>{DotDot}\iinputevent.cpp</Item>
         <Item>{DotDot}\keyevent.cpp</Item>
         <Item>{DotDot}\menuevent.cpp</Item>
+        <Item>{DotDot}\modifierkeystate.cpp</Item>
         <Item>{DotDot}\mouseevent.cpp</Item>
         <Item>{DotDot}\precomp.cpp</Item>
         <Item>{DotDot}\precomp.h</Item>
+        <Item>{DotDot}\viewport.cpp</Item>
         <Item>{DotDot}\windowbuffersizeevent.cpp</Item>
+        <Item>{DotDot}\inc\convert.hpp</Item>
         <Item>{DotDot}\inc\iinputevent.hpp</Item>
+        <Item>{DotDot}\inc\viewport.hpp</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conddkrefs.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\cpp2017.hpp</Item>
 
         <!--References-->
 
@@ -85,14 +91,17 @@
 
       <Produces>
         <Item>{O}\contypes.lib</Item>
+        <Item>{O}\convert.obj</Item>
         <Item>{O}\focusevent.obj</Item>
         <Item>{O}\iinputevent.obj</Item>
         <Item>{O}\keyevent.obj</Item>
         <Item>{O}\menuevent.obj</Item>
+        <Item>{O}\modifierkeystate.obj</Item>
         <Item>{O}\mouseevent.obj</Item>
         <Item>{O}\pch_hdr.src</Item>
         <Item>{O}\precomp.obj</Item>
         <Item>{O}\precomp.pch</Item>
+        <Item>{O}\viewport.obj</Item>
         <Item>{O}\windowbuffersizeevent.obj</Item>
       </Produces>
     </LegacyBuilder>
