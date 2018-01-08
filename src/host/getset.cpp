@@ -752,8 +752,8 @@ HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo,
         // Restore it.
         // If the old attributes were "reversed", and the new ones aren't,
         //  then flip the colors back. 
-        bool resetReverse = (fMeta) &&
-            (!IsFlagSet(Attribute, COMMON_LVB_REVERSE_VIDEO)) &&
+        bool resetReverse = fMeta &&
+            (IsFlagClear(Attribute, COMMON_LVB_REVERSE_VIDEO)) &&
             (IsFlagSet(OldAttributes.GetLegacyAttributes(), COMMON_LVB_REVERSE_VIDEO));
         if (resetReverse)
         {
