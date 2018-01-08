@@ -674,8 +674,7 @@ NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attribut
     WORD const DefaultPopupAttributes = ScreenInfo->GetPopupAttributes()->GetLegacyAttributes();
     TextAttribute NewPrimaryAttributes = TextAttribute(Attributes);
     TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
-    ScreenInfo->SetAttributes(NewPrimaryAttributes);
-    ScreenInfo->SetPopupAttributes(&NewPopupAttributes);
+    ScreenInfo->SetDefaultAttributes(NewPrimaryAttributes, NewPopupAttributes);
     gci->ConsoleIme.RefreshAreaAttributes();
 
     if (UpdateWholeScreen)
