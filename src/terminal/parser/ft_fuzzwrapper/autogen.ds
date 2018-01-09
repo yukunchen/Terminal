@@ -139,23 +139,5 @@
         <Item>{O}\conterm.parser.fuzzwrapper.pdb</Item>
       </Produces>
     </LegacyBuilder>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper_Bin_BlgUnittests.__Content-->
-
-    <LibrarySetRunner Output="Ft_fuzzwrapper_Bin_BlgUnittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Ft_fuzzwrapper_Pass2.Directories[BinRoot.Combine("blg\unittests")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper_Bin_SymbolspriUnittestsExe.__Content-->
-
-    <LibrarySetRunner Output="Ft_fuzzwrapper_Bin_SymbolspriUnittestsExe.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Ft_fuzzwrapper_Pass2.Directories[BinRoot.Combine("symbols.pri\unittests\exe")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper_Bin_Unittests.__Content-->
-
-    <LibrarySetRunner Output="Ft_fuzzwrapper_Bin_Unittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Ft_fuzzwrapper_Pass2.Directories[BinRoot.Combine("unittests")]}</Directory>
-    </LibrarySetRunner>
   </Namespace>
 </DominoSpec>

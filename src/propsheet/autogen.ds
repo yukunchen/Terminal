@@ -222,7 +222,6 @@
         <Item>util.cpp</Item>
         <Item>windowsshell.manifest</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
-        <Item Condition="{IsBuildRelease}">{ObjRoot}\{BuildAlt}\pe_list\console.dll</Item>
         <Item>{SrcRoot}\build\scripts\fixtsversionstringappend.cmd</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\res\console.ico</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\res\truetype.bmp</Item>
@@ -234,7 +233,6 @@
         <Item Condition="{(IsBuildArm32 OR IsBuildArm64)}">{MsWin.Crts.Public.Sdk.Lib.__Library}</Item>
         <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.v1_8.__Library}</Item>
-        <Item Condition="{IsBuildRelease AND (IsBuildX64 OR IsBuildX86)}">{MsWin.OnecoreMerged.Public.Internal.Onecoremerged.Lib.__Content}</Item>
         <Item>{MsWin.OnecoreMerged.Public.Sdk.Lib.Onecore.v1_8.__Library}</Item>
         <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
@@ -348,48 +346,10 @@
       <Directory>{Propsheet_Pass2.Directories[BinRoot]}</Directory>
     </LibrarySetRunner>
 
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_Blg.__Content-->
-
-    <LibrarySetRunner Output="Propsheet_Bin_Blg.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Propsheet_Pass2.Directories[BinRoot.Combine("blg")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_BlgLocSrcBin.__Content-->
-
-    <LibrarySetRunner Output="Propsheet_Bin_BlgLocSrcBin.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Propsheet_Pass2.Directories[BinRoot.Combine("blg\loc\src\bin")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_BlgLocSrcLcg.__Content-->
-
-    <LibrarySetRunner Output="Propsheet_Bin_BlgLocSrcLcg.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Propsheet_Pass2.Directories[BinRoot.Combine("blg\loc\src\lcg")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_BlgMsbuildpropsNmakeprops.__Content-->
-
-    <SdkCombineRunner Output="Propsheet_Bin_BlgMsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
-      <OutputDirectory>{BinRoot}\blg\msbuildprops\nmakeprops</OutputDirectory>
-      <Sources>
-        <Item>{Propsheet_Pass0.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-        <Item>{Propsheet_Pass1.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-        <Item>{Propsheet_Pass2.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-      </Sources>
-    </SdkCombineRunner>
-    <LibrarySetRunner Output="Propsheet_Bin_BlgMsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Propsheet_Bin_BlgMsbuildpropsNmakeprops.s__Content}</Directory>
-    </LibrarySetRunner>
-
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocEnus.__Content-->
 
     <LibrarySetRunner Output="Propsheet_Bin_LocEnus.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\en-us")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocEnusLct.__Content-->
-
-    <LibrarySetRunner Output="Propsheet_Bin_LocEnusLct.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\en-us\lct")]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocPsmi.__Content-->
@@ -398,54 +358,10 @@
       <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\ps-mi")]}</Directory>
     </LibrarySetRunner>
 
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocPsmiLct.__Content-->
-
-    <LibrarySetRunner Output="Propsheet_Bin_LocPsmiLct.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease AND MsWin.Build.Localization.IsBuildPs_Mi)}">
-      <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\ps-mi\lct")]}</Directory>
-    </LibrarySetRunner>
-
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocPsps.__Content-->
 
     <LibrarySetRunner Output="Propsheet_Bin_LocPsps.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease AND MsWin.Build.Localization.IsBuildPs_Ps)}">
       <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\ps-ps")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocPspsLct.__Content-->
-
-    <LibrarySetRunner Output="Propsheet_Bin_LocPspsLct.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease AND MsWin.Build.Localization.IsBuildPs_Ps)}">
-      <Directory>{Propsheet_Pass3.Directories[BinRoot.Combine("loc\ps-ps\lct")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocSrcBin.__Content-->
-
-    <LibrarySetRunner Output="Propsheet_Bin_LocSrcBin.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Propsheet_Pass2.Directories[BinRoot.Combine("loc\src\bin")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_LocSrcLcg.__Content-->
-
-    <LibrarySetRunner Output="Propsheet_Bin_LocSrcLcg.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Propsheet_Pass2.Directories[BinRoot.Combine("loc\src\lcg")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_MsbuildpropsNmakeprops.__Content-->
-
-    <SdkCombineRunner Output="Propsheet_Bin_MsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
-      <OutputDirectory>{BinRoot}\msbuildprops\nmakeprops</OutputDirectory>
-      <Sources>
-        <Item>{Propsheet_Pass0.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-        <Item>{Propsheet_Pass1.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-        <Item>{Propsheet_Pass2.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-      </Sources>
-    </SdkCombineRunner>
-    <LibrarySetRunner Output="Propsheet_Bin_MsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Propsheet_Bin_MsbuildpropsNmakeprops.s__Content}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Propsheet_Bin_SymbolspriRetailDll.__Content-->
-
-    <LibrarySetRunner Output="Propsheet_Bin_SymbolspriRetailDll.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Propsheet_Pass2.Directories[BinRoot.Combine("symbols.pri\retail\dll")]}</Directory>
     </LibrarySetRunner>
   </Namespace>
 </DominoSpec>

@@ -535,7 +535,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             if (_fDebug)
             {
                 // Draw a frame shape around the last character of a wrapped row to identify where there are soft wraps versus hard newlines.
-                if (iRight == pRow->CharRow.Right && pRow->CharRow.WasWrapForced())
+                if (iRight == (size_t)pRow->CharRow.Right && pRow->CharRow.WasWrapForced())
                 {
                     IRenderEngine::GridLines lines = IRenderEngine::GridLines::Right | IRenderEngine::GridLines::Bottom;
                     COORD coordDebugTarget;

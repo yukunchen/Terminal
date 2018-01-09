@@ -186,60 +186,10 @@
       </Produces>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Bin_BlgMsbuildpropsNmakeprops.__Content-->
-
-    <SdkCombineRunner Output="Nihilist_Bin_BlgMsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
-      <OutputDirectory>{BinRoot}\blg\msbuildprops\nmakeprops</OutputDirectory>
-      <Sources>
-        <Item>{Nihilist_Pass1.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-        <Item>{Nihilist_Pass2.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-      </Sources>
-    </SdkCombineRunner>
-    <LibrarySetRunner Output="Nihilist_Bin_BlgMsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Nihilist_Bin_BlgMsbuildpropsNmakeprops.s__Content}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Bin_BlgPrebuiltTest.__Content-->
-
-    <LibrarySetRunner Output="Nihilist_Bin_BlgPrebuiltTest.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Nihilist_Pass3.Directories[BinRoot.Combine("blg\prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Bin_BlgUnittests.__Content-->
-
-    <LibrarySetRunner Output="Nihilist_Bin_BlgUnittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Nihilist_Pass2.Directories[BinRoot.Combine("blg\unittests")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Bin_MsbuildpropsNmakeprops.__Content-->
-
-    <SdkCombineRunner Output="Nihilist_Bin_MsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
-      <OutputDirectory>{BinRoot}\msbuildprops\nmakeprops</OutputDirectory>
-      <Sources>
-        <Item>{Nihilist_Pass1.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-        <Item>{Nihilist_Pass2.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-      </Sources>
-    </SdkCombineRunner>
-    <LibrarySetRunner Output="Nihilist_Bin_MsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Nihilist_Bin_MsbuildpropsNmakeprops.s__Content}</Directory>
-    </LibrarySetRunner>
-
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Bin_PrebuiltTest.__Content-->
 
     <LibrarySetRunner Output="Nihilist_Bin_PrebuiltTest.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Nihilist_Pass3.Directories[BinRoot.Combine("prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Bin_SymbolspriUnittestsExe.__Content-->
-
-    <LibrarySetRunner Output="Nihilist_Bin_SymbolspriUnittestsExe.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Nihilist_Pass2.Directories[BinRoot.Combine("symbols.pri\unittests\exe")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist_Bin_Unittests.__Content-->
-
-    <LibrarySetRunner Output="Nihilist_Bin_Unittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Nihilist_Pass2.Directories[BinRoot.Combine("unittests")]}</Directory>
     </LibrarySetRunner>
   </Namespace>
 </DominoSpec>

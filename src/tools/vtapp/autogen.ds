@@ -194,74 +194,10 @@
       </Produces>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_BlgMsbuildpropsNmakeprops.__Content-->
-
-    <SdkCombineRunner Output="Vtapp_Bin_BlgMsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
-      <OutputDirectory>{BinRoot}\blg\msbuildprops\nmakeprops</OutputDirectory>
-      <Sources>
-        <Item>{Vtapp_Pass0.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-        <Item>{Vtapp_Pass1.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-        <Item>{Vtapp_Pass2.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-      </Sources>
-    </SdkCombineRunner>
-    <LibrarySetRunner Output="Vtapp_Bin_BlgMsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Vtapp_Bin_BlgMsbuildpropsNmakeprops.s__Content}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_BlgPrebuiltTest.__Content-->
-
-    <LibrarySetRunner Output="Vtapp_Bin_BlgPrebuiltTest.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Vtapp_Pass3.Directories[BinRoot.Combine("blg\prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_BlgStrongnamesigning.__Content-->
-
-    <LibrarySetRunner Output="Vtapp_Bin_BlgStrongnamesigning.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Vtapp_Pass1.Directories[BinRoot.Combine("blg\strongnamesigning")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_BlgUnittests.__Content-->
-
-    <LibrarySetRunner Output="Vtapp_Bin_BlgUnittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Vtapp_Pass1.Directories[BinRoot.Combine("blg\unittests")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_MsbuildpropsNmakeprops.__Content-->
-
-    <SdkCombineRunner Output="Vtapp_Bin_MsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
-      <OutputDirectory>{BinRoot}\msbuildprops\nmakeprops</OutputDirectory>
-      <Sources>
-        <Item>{Vtapp_Pass0.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-        <Item>{Vtapp_Pass1.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-        <Item>{Vtapp_Pass2.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-      </Sources>
-    </SdkCombineRunner>
-    <LibrarySetRunner Output="Vtapp_Bin_MsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Vtapp_Bin_MsbuildpropsNmakeprops.s__Content}</Directory>
-    </LibrarySetRunner>
-
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_PrebuiltTest.__Content-->
 
     <LibrarySetRunner Output="Vtapp_Bin_PrebuiltTest.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Vtapp_Pass3.Directories[BinRoot.Combine("prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_Strongnamesigning.__Content-->
-
-    <LibrarySetRunner Output="Vtapp_Bin_Strongnamesigning.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Vtapp_Pass1.Directories[BinRoot.Combine("strongnamesigning")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_SymbolspriUnittestsExe.__Content-->
-
-    <LibrarySetRunner Output="Vtapp_Bin_SymbolspriUnittestsExe.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Vtapp_Pass1.Directories[BinRoot.Combine("symbols.pri\unittests\exe")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp_Bin_Unittests.__Content-->
-
-    <LibrarySetRunner Output="Vtapp_Bin_Unittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Vtapp_Pass1.Directories[BinRoot.Combine("unittests")]}</Directory>
     </LibrarySetRunner>
   </Namespace>
 </DominoSpec>
