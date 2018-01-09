@@ -280,50 +280,6 @@
       </Produces>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter_Bin_BlgMsbuildpropsNmakeprops.__Content-->
-
-    <SdkCombineRunner Output="Ut_adapter_Bin_BlgMsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
-      <OutputDirectory>{BinRoot}\blg\msbuildprops\nmakeprops</OutputDirectory>
-      <Sources>
-        <Item>{Ut_adapter_Pass1.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-        <Item>{Ut_adapter_Pass2.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-      </Sources>
-    </SdkCombineRunner>
-    <LibrarySetRunner Output="Ut_adapter_Bin_BlgMsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Ut_adapter_Bin_BlgMsbuildpropsNmakeprops.s__Content}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter_Bin_BlgPrebuiltTest.__Content-->
-
-    <LibrarySetRunner Output="Ut_adapter_Bin_BlgPrebuiltTest.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Ut_adapter_Pass2.Directories[BinRoot.Combine("blg\prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter_Bin_BlgPrebuiltWindows.__Content-->
-
-    <LibrarySetRunner Output="Ut_adapter_Bin_BlgPrebuiltWindows.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Ut_adapter_Pass2.Directories[BinRoot.Combine("blg\prebuilt\windows")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter_Bin_BlgUnittests.__Content-->
-
-    <LibrarySetRunner Output="Ut_adapter_Bin_BlgUnittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Ut_adapter_Pass2.Directories[BinRoot.Combine("blg\unittests")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter_Bin_MsbuildpropsNmakeprops.__Content-->
-
-    <SdkCombineRunner Output="Ut_adapter_Bin_MsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
-      <OutputDirectory>{BinRoot}\msbuildprops\nmakeprops</OutputDirectory>
-      <Sources>
-        <Item>{Ut_adapter_Pass1.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-        <Item>{Ut_adapter_Pass2.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-      </Sources>
-    </SdkCombineRunner>
-    <LibrarySetRunner Output="Ut_adapter_Bin_MsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Ut_adapter_Bin_MsbuildpropsNmakeprops.s__Content}</Directory>
-    </LibrarySetRunner>
-
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter_Bin_PrebuiltTest.__Content-->
 
     <SdkCombineRunner Output="Ut_adapter_Bin_PrebuiltTest.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
@@ -335,24 +291,6 @@
     </SdkCombineRunner>
     <LibrarySetRunner Output="Ut_adapter_Bin_PrebuiltTest.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
       <Directory>{Ut_adapter_Bin_PrebuiltTest.s__Content}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter_Bin_PrebuiltWindows.__Content-->
-
-    <LibrarySetRunner Output="Ut_adapter_Bin_PrebuiltWindows.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Ut_adapter_Pass2.Directories[BinRoot.Combine("prebuilt\windows")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter_Bin_SymbolspriUnittestsDll.__Content-->
-
-    <LibrarySetRunner Output="Ut_adapter_Bin_SymbolspriUnittestsDll.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Ut_adapter_Pass2.Directories[BinRoot.Combine("symbols.pri\unittests\dll")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter_Bin_Unittests.__Content-->
-
-    <LibrarySetRunner Output="Ut_adapter_Bin_Unittests.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Ut_adapter_Pass2.Directories[BinRoot.Combine("unittests")]}</Directory>
     </LibrarySetRunner>
   </Namespace>
 </DominoSpec>

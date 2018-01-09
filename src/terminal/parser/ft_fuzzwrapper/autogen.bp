@@ -126,10 +126,4 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Ft_fuzzwrapper {
             p`${o}\conterm.parser.fuzzwrapper.pdb`,
         ],
     });
-
-    export const bin_BlgUnittests_content = extractPart(pass2, p`${binRoot}\blg\unittests`);
-
-    export const bin_SymbolspriUnittestsExe_content = extractPart(pass2, p`${binRoot}\symbols.pri\unittests\exe`);
-
-    export const bin_Unittests_content = extractPart(pass2, p`${binRoot}\unittests`);
 }

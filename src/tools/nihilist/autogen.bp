@@ -174,31 +174,5 @@ namespace Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist {
         ],
     });
 
-    @@public
-    export const bin_BlgMsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\blg\msbuildprops\nmakeprops`,
-        sources: [
-            pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-        ],
-    });
-
-    export const bin_BlgUnittests_content = extractPart(pass2, p`${binRoot}\blg\unittests`);
-
-    @@public
-    export const bin_MsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\msbuildprops\nmakeprops`,
-        sources: [
-            pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-        ],
-    });
-
-    export const bin_SymbolspriUnittestsExe_content = extractPart(pass2, p`${binRoot}\symbols.pri\unittests\exe`);
-
-    export const bin_Unittests_content = extractPart(pass2, p`${binRoot}\unittests`);
-
-    export const bin_BlgPrebuiltTest_content = extractPart(pass3, p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`);
-
     export const bin_PrebuiltTest_content = extractPart(pass3, p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`);
 }

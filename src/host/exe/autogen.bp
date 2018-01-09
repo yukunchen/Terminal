@@ -271,17 +271,11 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Exe {
             Onecore.Windows.Moderncore.Apiset.Libs.Uiacore.Current.internalModerncorePriv_sdkLib17_library,
             Public.Sdk.Inc.idl,
 
-            ...addIf(isBuildRelease, () => [
-                    f`${objRoot}\${buildAlt}\pe_list\conhost.exe`,
-                ]),
             ...addIf(isBuildArm32 || isBuildArm64, () => [
                     MsWinCrts.Public.Sdk.Lib.library,
                 ]),
             ...addIf(isBuildDebug && isBuildCommonArchitecture, () => [
                     MsWinCrts.Public.Internal.Sdk.Lib.library,
-                ]),
-            ...addIf(isBuildRelease && (isBuildX64 || isBuildX86), () => [
-                    MsWinOnecoreMerged.Public.Internal.Onecoremerged.Lib.content,
                 ]),
         ],
         
@@ -315,8 +309,6 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Exe {
                     p`${binRoot}\blg\test_automation_bins\opt\pgo\pgulogs\conhost.exe.log.br`,
                     p`${binRoot}\pgo\pgulogs\conhost.exe.log`,
                     p`${binRoot}\test_automation_bins\opt\pgo\pgulogs\conhost.exe.log`,
-                    p`${o}\nopogo\conhost.exe`,
-                    p`${o}\nopogo\conhost.pdb`,
                 ]
             ),
             ...addIf(
@@ -391,57 +383,11 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Exe {
         ],
     });
 
-    export const bin_Blg_content = extractPart(pass2, p`${binRoot}\blg`);
-
-    export const bin_BlgLocSrcBin_content = extractPart(pass2, p`${binRoot}\blg\loc\src\bin`);
-
-    export const bin_BlgLocSrcLcg_content = extractPart(pass2, p`${binRoot}\blg\loc\src\lcg`);
-
-    @@public
-    export const bin_BlgMsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\blg\msbuildprops\nmakeprops`,
-        sources: [
-            pass0.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-        ],
-    });
-
-    export const bin_BlgPgoPgulogs_content = extractPart(pass2, p`${binRoot}\blg\pgo\pgulogs`);
-
-    export const bin_BlgTest_automation_binsOptPgoPgulogs_content = extractPart(pass2, p`${binRoot}\blg\test_automation_bins\opt\pgo\pgulogs`);
-
     export const bin_content = undefined;
-
-    export const bin_LocSrcBin_content = extractPart(pass2, p`${binRoot}\loc\src\bin`);
-
-    export const bin_LocSrcLcg_content = extractPart(pass2, p`${binRoot}\loc\src\lcg`);
-
-    @@public
-    export const bin_MsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\msbuildprops\nmakeprops`,
-        sources: [
-            pass0.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-        ],
-    });
-
-    export const bin_PgoPgulogs_content = extractPart(pass2, p`${binRoot}\pgo\pgulogs`);
-
-    export const bin_SymbolspriRetailExe_content = extractPart(pass2, p`${binRoot}\symbols.pri\retail\exe`);
-
-    export const bin_Test_automation_binsOptPgoPgulogs_content = extractPart(pass2, p`${binRoot}\test_automation_bins\opt\pgo\pgulogs`);
 
     export const bin_LocEnus_content = extractPart(pass3, p`${binRoot}\loc\en-us`);
 
-    export const bin_LocEnusLct_content = extractPart(pass3, p`${binRoot}\loc\en-us\lct`);
-
     export const bin_LocPsmi_content = extractPart(pass3, p`${binRoot}\loc\ps-mi`);
 
-    export const bin_LocPsmiLct_content = extractPart(pass3, p`${binRoot}\loc\ps-mi\lct`);
-
     export const bin_LocPsps_content = extractPart(pass3, p`${binRoot}\loc\ps-ps`);
-
-    export const bin_LocPspsLct_content = extractPart(pass3, p`${binRoot}\loc\ps-ps\lct`);
 }

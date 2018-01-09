@@ -231,8 +231,4 @@ namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
                 ]),
         ],
     });
-
-    export const bin_BlgMsbuildpropsNmakeprops_content = extractPart(pass1, p`${binRoot}\blg\msbuildprops\nmakeprops`);
-
-    export const bin_MsbuildpropsNmakeprops_content = extractPart(pass1, p`${binRoot}\msbuildprops\nmakeprops`);
 }

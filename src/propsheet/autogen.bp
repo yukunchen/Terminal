@@ -229,14 +229,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Propsheet {
             Onecore.Windows.Core.Console.Open.Src.Propslib.pass1,
             Public.Sdk.Inc.idl,
 
-            ...addIf(isBuildRelease, () => [
-                    f`${objRoot}\${buildAlt}\pe_list\console.dll`,
-                ]),
             ...addIf(isBuildArm32 || isBuildArm64, () => [
                     MsWinCrts.Public.Sdk.Lib.library,
-                ]),
-            ...addIf(isBuildRelease && (isBuildX64 || isBuildX86), () => [
-                    MsWinOnecoreMerged.Public.Internal.Onecoremerged.Lib.content,
                 ]),
         ],
         
@@ -322,49 +316,11 @@ namespace Onecore.Windows.Core.Console.Open.Src.Propsheet {
         ],
     });
 
-    export const bin_Blg_content = extractPart(pass2, p`${binRoot}\blg`);
-
-    export const bin_BlgLocSrcBin_content = extractPart(pass2, p`${binRoot}\blg\loc\src\bin`);
-
-    export const bin_BlgLocSrcLcg_content = extractPart(pass2, p`${binRoot}\blg\loc\src\lcg`);
-
-    @@public
-    export const bin_BlgMsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\blg\msbuildprops\nmakeprops`,
-        sources: [
-            pass0.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-        ],
-    });
-
     export const bin_content = undefined;
-
-    export const bin_LocSrcBin_content = extractPart(pass2, p`${binRoot}\loc\src\bin`);
-
-    export const bin_LocSrcLcg_content = extractPart(pass2, p`${binRoot}\loc\src\lcg`);
-
-    @@public
-    export const bin_MsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\msbuildprops\nmakeprops`,
-        sources: [
-            pass0.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-        ],
-    });
-
-    export const bin_SymbolspriRetailDll_content = extractPart(pass2, p`${binRoot}\symbols.pri\retail\dll`);
 
     export const bin_LocEnus_content = extractPart(pass3, p`${binRoot}\loc\en-us`);
 
-    export const bin_LocEnusLct_content = extractPart(pass3, p`${binRoot}\loc\en-us\lct`);
-
     export const bin_LocPsmi_content = extractPart(pass3, p`${binRoot}\loc\ps-mi`);
 
-    export const bin_LocPsmiLct_content = extractPart(pass3, p`${binRoot}\loc\ps-mi\lct`);
-
     export const bin_LocPsps_content = extractPart(pass3, p`${binRoot}\loc\ps-ps`);
-
-    export const bin_LocPspsLct_content = extractPart(pass3, p`${binRoot}\loc\ps-ps\lct`);
 }
