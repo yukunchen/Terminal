@@ -670,28 +670,24 @@ VOID UpdatePopups(IN WORD NewAttributes, IN WORD NewPopupAttributes, IN WORD Old
 NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attributes, _In_ WORD PopupAttributes, _In_ BOOL UpdateWholeScreen)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    WORD const DefaultAttributes = ScreenInfo->GetAttributes().GetLegacyAttributes();
-    WORD const DefaultPopupAttributes = ScreenInfo->GetPopupAttributes()->GetLegacyAttributes();
-    TextAttribute NewPrimaryAttributes = TextAttribute(Attributes);
-    TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
+
+    const TextAttribute oldPrimaryAttributes = ScreenInfo->GetAttributes();
+    const TextAttribute oldPopupAttributes = *ScreenInfo->GetPopupAttributes();
+    const WORD DefaultAttributes = oldPrimaryAttributes.GetLegacyAttributes();
+    const WORD DefaultPopupAttributes = oldPopupAttributes.GetLegacyAttributes();
+
+    const TextAttribute NewPrimaryAttributes = TextAttribute(Attributes);
+    const TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
+    
     ScreenInfo->SetDefaultAttributes(NewPrimaryAttributes, NewPopupAttributes);
     gci->ConsoleIme.RefreshAreaAttributes();
 
     if (UpdateWholeScreen)
     {
-        // TODO: MSFT 9354902: Fix this up to be clearer with less magic bit shifting and less magic numbers. http://osgvsowi/9354902
-        WORD const InvertedOldPopupAttributes = (WORD)(((DefaultPopupAttributes << 4) & 0xf0) | ((DefaultPopupAttributes >> 4) & 0x0f));
-        WORD const InvertedNewPopupAttributes = (WORD)(((PopupAttributes << 4) & 0xf0) | ((PopupAttributes >> 4) & 0x0f));
-
-        // change all chars with default color
-        const SHORT sScreenBufferSizeY = ScreenInfo->GetScreenBufferSize().Y;
-        for (SHORT i = 0; i < sScreenBufferSizeY; i++)
-        {
-            ROW* const Row = &ScreenInfo->TextInfo->Rows[i];
-            Row->AttrRow.ReplaceLegacyAttrs(DefaultAttributes, Attributes);
-            Row->AttrRow.ReplaceLegacyAttrs(DefaultPopupAttributes, PopupAttributes);
-            Row->AttrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
-        }
+        ScreenInfo->ReplaceDefaultAttributes(oldPrimaryAttributes,
+                                             oldPopupAttributes,
+                                             NewPrimaryAttributes,
+                                             NewPopupAttributes);
 
         if (gci->PopupCount)
         {

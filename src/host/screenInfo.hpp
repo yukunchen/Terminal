@@ -170,6 +170,11 @@ public:
     void SetPopupAttributes(_In_ const TextAttribute& popupAttributes);
     void SetDefaultAttributes(_In_ const TextAttribute& attributes,
                               _In_ const TextAttribute& popupAttributes);
+    void ReplaceDefaultAttributes(_In_ const TextAttribute& oldAttributes,
+                                  _In_ const TextAttribute& oldPopupAttributes,
+                                  _In_ const TextAttribute& newAttributes,
+                                  _In_ const TextAttribute& newPopupAttributes);
+
 
     HRESULT VtEraseAll();
     
