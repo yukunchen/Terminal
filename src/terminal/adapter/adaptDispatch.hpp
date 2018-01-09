@@ -90,7 +90,7 @@ namespace Microsoft
                                                           _In_ SHORT const sBottomMargin,
                                                           _In_ const bool fResetCursor); // DECSTBM
                 virtual bool ReverseLineFeed(); // RI
-                virtual bool SetWindowTitle(_In_ const wchar_t* const pwchWindowTitle,
+                virtual bool SetWindowTitle(_In_reads_(cchTitleLength) const wchar_t* const pwchWindowTitle,
                                             _In_ unsigned short cchTitleLength); // OscWindowTitle
                 virtual bool UseAlternateScreenBuffer(); // ASBSET
                 virtual bool UseMainScreenBuffer(); // ASBRST

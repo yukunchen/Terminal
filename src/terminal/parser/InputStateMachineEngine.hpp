@@ -53,10 +53,10 @@ public:
     bool ActionIgnore() override;
     bool ActionOscDispatch(_In_ wchar_t const wch,
                            _In_ const unsigned short sOscParam,
-                           _Inout_ wchar_t* const pwchOscStringBuffer,
+                           _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
                            _In_ const unsigned short cchOscString) override;
     bool ActionSs3Dispatch(_In_ wchar_t const wch,
-                           _In_ const unsigned short* const rgusParams,
+                           _In_reads_(cParams) const unsigned short* const rgusParams,
                            _In_ const unsigned short cParams) override;
 
     bool FlushAtEndOfString() const override;

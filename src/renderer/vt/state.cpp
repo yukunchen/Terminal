@@ -25,12 +25,14 @@ using namespace Microsoft::Console::Types;
 // - An instance of a Renderer.
 VtEngine::VtEngine(_In_ wil::unique_hfile pipe, _In_ const Viewport initialViewport) :
     _hFile(std::move(pipe)),
+    _LastFG(INVALID_COLOR),
+    _LastBG(INVALID_COLOR),
     _lastViewport(initialViewport),
     _invalidRect({0}),
     _lastText({0}),
     _scrollDelta({0}),
-    _LastFG(INVALID_COLOR),
-    _LastBG(INVALID_COLOR),
+    _quickReturn(false),
+    _fInvalidRectUsed(false),
     _clearedAllThisFrame(false)
 {
 #ifndef UNIT_TESTING

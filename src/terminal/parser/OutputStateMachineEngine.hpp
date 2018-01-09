@@ -45,10 +45,10 @@ namespace Microsoft
                 bool ActionIgnore() override;
                 bool ActionOscDispatch(_In_ wchar_t const wch,
                                        _In_ const unsigned short sOscParam,
-                                       _Inout_ wchar_t* const pwchOscStringBuffer,
+                                       _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
                                        _In_ const unsigned short cchOscString) override;
                 bool ActionSs3Dispatch(_In_ wchar_t const wch,
-                                       _In_ const unsigned short* const rgusParams,
+                                       _In_reads_(cParams) const unsigned short* const rgusParams,
                                        _In_ const unsigned short cParams) override;
 
                 bool FlushAtEndOfString() const override;
@@ -186,10 +186,10 @@ namespace Microsoft
                                           _Out_ SHORT* const psBottomMargin) const;
 
                 _Success_(return)
-                bool _GetOscTitle(_Inout_ wchar_t* const pwchOscStringBuffer,
+                bool _GetOscTitle(_Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
                                   _In_ const unsigned short cchOscString,
                                   _Outptr_result_buffer_(*pcchTitle) wchar_t** const ppwchTitle,
-                                  _Out_ unsigned short * pcchTitle);
+                                  _Out_ unsigned short * pcchTitle) const;
 
                 static const SHORT s_sDefaultTabDistance = 1;
                 _Success_(return)
@@ -218,10 +218,10 @@ namespace Microsoft
                                         _Out_ unsigned int * const puiValue);
                 static bool s_IsNumber(_In_ wchar_t const wch);
                 static bool s_IsHexNumber(_In_ wchar_t const wch);
-                bool _GetOscSetColorTable(_In_ const wchar_t* const pwchOscStringBuffer,
+                bool _GetOscSetColorTable(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
                                           _In_ const size_t cchOscString,
                                           _Out_ size_t* const pTableIndex,
-                                          _Out_ DWORD* const pRgb);
+                                          _Out_ DWORD* const pRgb) const;
             };
         }
     }

@@ -340,7 +340,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionSs3Dispatch(_In_ wchar_t const wch,
-                                                _In_ const unsigned short* const /*rgusParams*/,
+                                                _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
                                                 _In_ const unsigned short /*cParams*/)
 {
     // Ss3 sequence keys aren't modified.
@@ -394,7 +394,7 @@ bool InputStateMachineEngine::ActionIgnore()
 // - true if we handled the dsipatch.
 bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch,
                                                 _In_ const unsigned short sOscParam,
-                                                _Inout_ wchar_t* const pwchOscStringBuffer,
+                                                _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
                                                 _In_ const unsigned short cchOscString)
 {
     UNREFERENCED_PARAMETER(wch);
