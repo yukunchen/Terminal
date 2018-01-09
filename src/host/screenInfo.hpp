@@ -175,7 +175,6 @@ public:
                                   _In_ const TextAttribute& newAttributes,
                                   _In_ const TextAttribute& newPopupAttributes);
 
-
     HRESULT VtEraseAll();
     
 private:

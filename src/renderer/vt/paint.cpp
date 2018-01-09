@@ -12,6 +12,7 @@
 
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Prepares internal structures for a painting operation.
@@ -42,7 +43,7 @@ HRESULT VtEngine::StartPaint()
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::EndPaint()
 {
-    _srcInvalid = { 0 };
+    _invalidRect = Viewport({ 0 });
     _fInvalidRectUsed = false;
     _scrollDelta = {0};
     _clearedAllThisFrame = false;

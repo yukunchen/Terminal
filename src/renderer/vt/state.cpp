@@ -26,7 +26,7 @@ using namespace Microsoft::Console::Types;
 VtEngine::VtEngine(_In_ wil::unique_hfile pipe, _In_ const Viewport initialViewport) :
     _hFile(std::move(pipe)),
     _lastViewport(initialViewport),
-    _srcInvalid({0}),
+    _invalidRect({0}),
     _lastText({0}),
     _scrollDelta({0}),
     _LastFG(INVALID_COLOR),
@@ -216,7 +216,14 @@ void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t
 
 }
 
+// Method Description:
+// - Returns true if the entire viewport has been invalidated. That signals we
+//      should use a VT Clear Screen sequence as an optimization.
+// Arguments:
+// - <none>
+// Return Value:
+// - true if the entire viewport has been invalidated
 bool VtEngine::_AllIsInvalid() const
 {
-    return _lastViewport.ToOrigin().ToExclusive() == _srcInvalid;
+    return _lastViewport == _invalidRect;
 }
