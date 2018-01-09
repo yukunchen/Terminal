@@ -1,9 +1,6 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp {
 
-    export declare const qualifier: {
-        platform: WdgBuild.StandardPlatforms,
-        configuration: "release",
-    };
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\tools`;
 
@@ -131,34 +128,44 @@ namespace Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp {
         consumes: [
             f`autogen.bp`,
             f`autogen.bp`,
-            f`product.pbxproj`,
-            f`sources.pkg.xml`,
             f`vtapp.csproj`,
-            f`${binRoot}\msbuildprops\localization.txt`,
-            f`${objRoot}\${buildAlt}\modularbuildglobalbuildsession.props`,
-            f`${objRoot}\${buildAlt}\__bldlanguageoverride__.props`,
-            f`${objRoot}\${buildAlt}\__bldlanguage__.props`,
-            f`${srcRoot}\onecore\windows\project.props`,
-            f`${srcRoot}\public\sdk\inc\ntverp.h`,
-            MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata,
+            isBuildRelease && isBuildCommonArchitecture ? MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata : undefined,
             pass0,
             pass1,
             pass2,
             prePass,
             (isBuildRelease && isBuildArm32 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildArm64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX86 && MsWinBuild.isOfficialBuild) ? MsWinOnecore_Pkg.BinPublic.Imagingtools.content : undefined,
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    f`product.pbxproj`,
+                    f`sources.pkg.xml`,
+                    f`${binRoot}\msbuildprops\localization.txt`,
+                    f`${objRoot}\${buildAlt}\modularbuildglobalbuildsession.props`,
+                    f`${objRoot}\${buildAlt}\__bldlanguageoverride__.props`,
+                    f`${objRoot}\${buildAlt}\__bldlanguage__.props`,
+                    f`${srcRoot}\onecore\windows\project.props`,
+                    f`${srcRoot}\public\sdk\inc\ntverp.h`,
+                ]
+            ),
         ]
         .filter(e => e !== undefined),
         
         produces: [
-            p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.cab.br`,
-            p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.man.dsm.xml.br`,
-            p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.spkg.br`,
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.cab`,
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.man.dsm.xml`,
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.spkg`,
-            p`${o}\microsoft.console.tools.vtapp.cab`,
-            p`${o}\microsoft.console.tools.vtapp.man.dsm.xml`,
-            p`${o}\microsoft.console.tools.vtapp.spkg`,
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.cab.br`,
+                    p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.man.dsm.xml.br`,
+                    p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.spkg.br`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.cab`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.man.dsm.xml`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.spkg`,
+                    p`${o}\microsoft.console.tools.vtapp.cab`,
+                    p`${o}\microsoft.console.tools.vtapp.man.dsm.xml`,
+                    p`${o}\microsoft.console.tools.vtapp.spkg`,
+                ]
+            ),
         ],
     });
 

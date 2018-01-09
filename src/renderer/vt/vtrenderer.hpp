@@ -93,8 +93,8 @@ protected:
     COLORREF _LastBG;
 
     Microsoft::Console::Types::Viewport _lastViewport;
+    Microsoft::Console::Types::Viewport _invalidRect;
 
-    SMALL_RECT _srcInvalid;
     bool _fInvalidRectUsed;
     COORD _lastRealCursor;
     COORD _lastText;
@@ -109,7 +109,7 @@ protected:
     HRESULT _WriteFormattedString(_In_ const char* const pszFormat, ...);
     
     void _OrRect(_Inout_ SMALL_RECT* const pRectExisting, _In_ const SMALL_RECT* const pRectToOr) const;
-    HRESULT _InvalidCombine(_In_ const SMALL_RECT* const psrc);
+    HRESULT _InvalidCombine(_In_ const Microsoft::Console::Types::Viewport invalid);
     HRESULT _InvalidOffset(_In_ const COORD* const ppt);
     HRESULT _InvalidRestrict();
     bool _AllIsInvalid() const;

@@ -1,9 +1,6 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
 
-    export declare const qualifier: {
-        platform: WdgBuild.StandardPlatforms,
-        configuration: "release",
-    };
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter`;
 
@@ -35,17 +32,24 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
             f`inputtest.cpp`,
             f`mouseinputtest.cpp`,
             f`product.pbxproj`,
+            f`testmd.definition`,
             f`${dotDot}\adaptdefaults.hpp`,
             f`${dotDot}\adaptdispatch.cpp`,
             f`${dotDot}\adaptdispatch.hpp`,
             f`${dotDot}\adaptdispatchgraphics.cpp`,
             f`${dotDot}\congetset.hpp`,
+            f`${dotDot}\dispatchcommon.cpp`,
+            f`${dotDot}\dispatchcommon.hpp`,
+            f`${dotDot}\iinteractdispatch.hpp`,
+            f`${dotDot}\interactdispatch.cpp`,
+            f`${dotDot}\interactdispatch.hpp`,
             f`${dotDot}\mouseinput.cpp`,
             f`${dotDot}\mouseinput.hpp`,
             f`${dotDot}\precomp.cpp`,
             f`${dotDot}\precomp.h`,
             f`${dotDot}\telemetry.cpp`,
             f`${dotDot}\telemetry.hpp`,
+            f`${dotDot}\termdispatch.hpp`,
             f`${dotDot}\terminalinput.cpp`,
             f`${dotDot}\terminalinput.hpp`,
             f`${dotDot}\terminaloutput.cpp`,
@@ -58,8 +62,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
             f`${srcRoot}\onecore\windows\core\console\open\src\inc\consoletaeftemplates.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\inc\unicode.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\interactivity\inc\vtapiredirection.hpp`,
-            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\types\inc\viewport.hpp`,
 
             prePass,
 
@@ -100,7 +104,9 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
             p`${o}\adaptdispatch.obj`,
             p`${o}\adaptdispatchgraphics.obj`,
             p`${o}\adaptertest.obj`,
+            p`${o}\dispatchcommon.obj`,
             p`${o}\inputtest.obj`,
+            p`${o}\interactdispatch.obj`,
             p`${o}\microsoft.console.virtualterminal.adapter.unittests.exp`,
             p`${o}\microsoft.console.virtualterminal.adapter.unittests.lib`,
             p`${o}\microsoft.console.virtualterminal.adapter.unittests.testmd_metadata`,
@@ -131,8 +137,11 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
             f`inputtest.cpp`,
             f`mouseinputtest.cpp`,
             f`product.pbxproj`,
+            f`testmd.definition`,
             f`${dotDot}\adaptdispatch.cpp`,
             f`${dotDot}\adaptdispatchgraphics.cpp`,
+            f`${dotDot}\dispatchcommon.cpp`,
+            f`${dotDot}\interactdispatch.cpp`,
             f`${dotDot}\mouseinput.cpp`,
             f`${dotDot}\precomp.cpp`,
             f`${dotDot}\precomp.h`,
@@ -145,12 +154,13 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
             f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
             f`${srcRoot}\build\scripts\testmdgen.cmd`,
             MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
-            isBuildRelease && (isBuildArm32 || isBuildArm64) ? MsWinCrts.Public.Sdk.Lib.library : undefined,
-            MsWinOnecoreAvcore.Private.Internal.Moderncore.Priv_sdk.Lib.V1_6.library,
+            isBuildDebug && isBuildCommonArchitecture ? MsWinCrts.Public.Internal.Sdk.Lib.library : undefined,
+            isBuildArm32 || isBuildArm64 ? MsWinCrts.Public.Sdk.Lib.library : undefined,
+            MsWinOnecoreAvcore.Private.Internal.Moderncore.Priv_sdk.Lib.V1_7.library,
             MsWinOnecoreMerged.Private.Internal.Minwin.Priv_sdk.Lib.library,
-            MsWinOnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.V1_7.library,
+            MsWinOnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.V1_8.library,
             MsWinOnecoreMerged.Public.Internal.Sdk.Lib.library,
-            MsWinOnecoreMerged.Public.Sdk.Lib.Onecore.V1_7.library,
+            MsWinOnecoreMerged.Public.Sdk.Lib.Onecore.V1_8.library,
             MsWinOnecoreUapMerged.Public.Internal.Sdk.Lib.library,
             MsWinOnecoreUapShell.Public.Sdk.Lib.library,
             MsWinOnecoreUapWindows.Public.Internal.Onecoreuapwindows.Lib.library,
@@ -170,12 +180,12 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
             Onecore.Windows.Core.Console.Open.Src.Terminal.Parser.Lib.pass1,
             Onecore.Windows.Core.Console.Open.Src.Tsf.pass1,
             Onecore.Windows.Core.Console.Open.Src.Types.Lib.pass1,
-            Onecore.Windows.Moderncore.Apiset.Libs.Uiacore.Current.internalModerncorePriv_sdkLib16_library,
-            MsWinOnecore_ApiSet.Private.Internal.Mincore.Priv_sdk.Lib.V1_7.library,
+            Onecore.Windows.Moderncore.Apiset.Libs.Uiacore.Current.internalModerncorePriv_sdkLib17_library,
+            MsWinOnecore_ApiSet.Private.Internal.Mincore.Priv_sdk.Lib.V1_8.library,
             MsWinOnecore_MinCore.Private.Internal.Mincore.Priv_sdk.Lib.library,
-            MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Lib.V1_8.library,
+            MsWinOnecore_MinKernel.Private.Internal.Minwin.Priv_sdk.Lib.V1_9.library,
             MsWinOnecore_MinKernel.Public.Internal.Sdk.Lib.library,
-            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_8.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_9.library,
             MsWinOnecore_MinKernel.Public.Sdk.Lib.library,
             MsWinOnecore_Taef.Public.Internal.Sdktools.Lib.Wextest.Cue.tlb,
         ]
@@ -195,6 +205,7 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
             p`${o}\delayload_expansion.inc`,
             p`${o}\microsoft-console-virtualterminal-adapter-unittests.spkg.meta.xml`,
             p`${o}\microsoft.console.virtualterminal.adapter.unittests.dll`,
+            p`${o}\microsoft.console.virtualterminal.adapter.unittests.macros`,
             p`${o}\microsoft.console.virtualterminal.adapter.unittests.pdb`,
             p`${o}\microsoft.console.virtualterminal.adapter.unittests.testmd`,
             p`${o}\microsoft.console.virtualterminal.adapter.unittests.wm.xml`,
@@ -214,20 +225,30 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
             f`adapter.unittests.vcxproj`,
             f`autogen.bp`,
             f`autogen.bp`,
-            f`product.pbxproj`,
-            f`${srcRoot}\build\scripts\signer.cmd`,
-            f`${srcRoot}\onecore\windows\project.props`,
-            f`${srcRoot}\public\sdk\inc\ntverp.h`,
             pass1,
             pass2,
             prePass,
             (isBuildRelease && isBuildArm32 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildArm64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX86 && MsWinBuild.isOfficialBuild) ? MsWinOnecore_Pkg.BinPublic.Imagingtools.content : undefined,
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    f`product.pbxproj`,
+                    f`${srcRoot}\build\scripts\signer.cmd`,
+                    f`${srcRoot}\onecore\windows\project.props`,
+                    f`${srcRoot}\public\sdk\inc\ntverp.h`,
+                ]
+            ),
         ]
         .filter(e => e !== undefined),
         
         produces: [
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-virtualterminal-adapter-unittests.cab`,
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-virtualterminal-adapter-unittests.man.dsm.xml`,
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-virtualterminal-adapter-unittests.cab`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-virtualterminal-adapter-unittests.man.dsm.xml`,
+                ]
+            ),
         ],
     });
 
@@ -266,7 +287,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Terminal.Adapter.Ut_adapter {
         outputDirectory: d`${binRoot}\prebuilt\test\${buildArch}\${buildType}`,
         sources: [
             pass2.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`),
-            pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`),
-        ],
+            isBuildCommonArchitecture && isBuildRelease ? pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`) : undefined,
+        ]
+        .filter(e => e !== undefined),
     });
 }

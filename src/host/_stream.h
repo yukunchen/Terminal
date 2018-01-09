@@ -17,6 +17,7 @@ Revision History:
 #pragma once
 
 #include "..\server\IWaitRoutine.h"
+#include "writeData.hpp"
 
 /*++
 Routine Description:
@@ -91,4 +92,4 @@ NTSTATUS WriteChars(_In_ PSCREEN_INFORMATION pScreenInfo,
 NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
                         _In_ ULONG* const pcbBuffer,
                         _In_ PSCREEN_INFORMATION pScreenInfo,
-                        _Outptr_result_maybenull_ IWaitRoutine** const ppWaiter);
+                        _Outptr_result_maybenull_ WriteData** const ppWaiter);

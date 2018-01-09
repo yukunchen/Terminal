@@ -25,8 +25,14 @@ class WriteData : public IWaitRoutine
 public:
     WriteData(_In_ SCREEN_INFORMATION* const psiContext,
               _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
-              _In_ ULONG const cbContext);
+              _In_ ULONG const cbContext,
+              _In_ UINT const uiOutputCodepage);
     ~WriteData();
+
+    void SetLeadByteAdjustmentStatus(_In_ bool const fLeadByteCaptured,
+                                     _In_ bool const fLeadByteConsumed);
+
+    void SetUtf8ConsumedCharacters(_In_ size_t const cchUtf8Consumed);
 
     BOOL Notify(_In_ WaitTerminationReason const TerminationReason,
                 _In_ BOOLEAN const fIsUnicode,
@@ -39,4 +45,8 @@ private:
     SCREEN_INFORMATION* const _psiContext;
     wchar_t* const _pwchContext;
     ULONG const _cbContext;
+    UINT const _uiOutputCodepage;
+    bool _fLeadByteCaptured;
+    bool _fLeadByteConsumed;
+    size_t _cchUtf8Consumed;
 };

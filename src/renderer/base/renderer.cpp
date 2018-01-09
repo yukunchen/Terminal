@@ -530,6 +530,21 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
             // Now draw it.
             _PaintBufferOutputRasterFontHelper(pEngine, pRow, pwsLine, pbKAttrs, cchLine, iLeft, coordTarget);
+
+#if DBG
+            if (_fDebug)
+            {
+                // Draw a frame shape around the last character of a wrapped row to identify where there are soft wraps versus hard newlines.
+                if (iRight == pRow->CharRow.Right && pRow->CharRow.WasWrapForced())
+                {
+                    IRenderEngine::GridLines lines = IRenderEngine::GridLines::Right | IRenderEngine::GridLines::Bottom;
+                    COORD coordDebugTarget;
+                    coordDebugTarget.Y = iRow - view.Top();
+                    coordDebugTarget.X = (SHORT)iRight - view.Left() - 1;
+                    pEngine->PaintBufferGridLines(lines, RGB(0x99, 0x77, 0x31), 1, coordDebugTarget);
+                }
+            }
+#endif
         }
     }
 }

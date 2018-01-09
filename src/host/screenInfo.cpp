@@ -11,9 +11,11 @@
 #include "output.h"
 #include <math.h>
 #include "..\interactivity\inc\ServiceLocator.hpp"
+#include "..\types\inc\Viewport.hpp"
 #include "..\terminal\parser\OutputStateMachineEngine.hpp"
 
 #pragma hdrstop
+using namespace Microsoft::Console::Types;
 
 #pragma region Construct/Destruct
 
@@ -569,6 +571,12 @@ void SCREEN_INFORMATION::UpdateFont(_In_ const FontInfo* const pfiNewFont)
             pWindow->UpdateWindowSize(coordViewport);
         }
     }
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->UpdateFont(pfiNewFont);
+    }
 }
 
 // NOTE: This method was historically used to notify accessibility apps AND
@@ -696,6 +704,14 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 // - <none>
 void SCREEN_INFORMATION::SetViewportSize(_In_ const COORD* const pcoordSize)
 {
+    // If this is the alt buffer:
+    //      first resize ourselves to match the new viewport
+    //      then also make sure that the main buffer gets the same call.
+    if (_psiMainBuffer)
+    {
+        ResizeScreenBuffer(*pcoordSize, TRUE);
+        _psiMainBuffer->_InternalSetViewportSize(pcoordSize, false, false);
+    }
     _InternalSetViewportSize(pcoordSize, false, false);
 }
 
@@ -1212,7 +1228,28 @@ void SCREEN_INFORMATION::_AdjustViewportSize(_In_ const RECT* const prcClientNew
     bool const fResizeFromTop = prcClientNew->top != prcClientOld->top &&
                                 prcClientNew->bottom == prcClientOld->bottom;
 
+    Viewport oldViewport = Viewport::FromInclusive(_srBufferViewport);
+
     _InternalSetViewportSize(pcoordSize, fResizeFromLeft, fResizeFromTop);
+
+    // MSFT 13194969, related to 12092729.
+    // If we're in virtual terminal mode, and the viewport dimensions change, 
+    //      send a WindowBufferSizeEvent. If the client wants VT mode, then they
+    //      probably want the viewport resizes, not just the screen buffer 
+    //      resizes. This does change the behavior of the API for v2 callers, 
+    //      but only callers who've requested VT mode. In 12092729, we enabled 
+    //      sending notifications from window resizes in cases where the buffer 
+    //      didn't resize, so this applies the same expansion to resizes using 
+    //      the window, not the API.
+    if (IsInVirtualTerminalInputMode())
+    {
+        Viewport newViewport = Viewport::FromInclusive(_srBufferViewport);
+        if ((newViewport.Width() != oldViewport.Width()) || 
+            (newViewport.Height() != oldViewport.Height()))
+        {
+            ScreenBufferSizeChange(GetScreenBufferSize());
+        }
+    }
 }
 
 // Routine Description:
@@ -1437,6 +1474,41 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
                     if (iOldRow < cOldRowsTotal - 1)
                     {
                         status = pNewBuffer->NewlineCursor() ? status : STATUS_NO_MEMORY;
+                    }
+                    else 
+                    {
+                        // If we are on the final line of the buffer, we have one more check.
+                        // We got into this code path because we are at the right most column of a row in the old buffer
+                        // that had a hard return (no wrap was forced).
+                        // However, as we're inserting, the old row might have just barely fit into the new buffer and 
+                        // caused a new soft return (wrap was forced) putting the cursor at x=0 on the line just below.
+                        // We need to preserve the memory of the hard return at this point by inserting one additional 
+                        // hard newline, otherwise we've lost that information.
+                        // We only do this when the cursor has just barely poured over onto the next line so the hard return
+                        // isn't covered by the soft one. 
+                        // e.g.
+                        // The old line was:
+                        // |aaaaaaaaaaaaaaaaaaa | with no wrap which means there was a newline after that final a.
+                        // The cursor was here ^
+                        // And the new line will be:
+                        // |aaaaaaaaaaaaaaaaaaa| and show a wrap at the end
+                        // |                   |
+                        //  ^ and the cursor is now there.
+                        // If we leave it like this, we've lost the newline information.
+                        // So we insert one more newline so a continued reflow of this buffer by resizing larger will 
+                        // continue to look as the original output intended with the newline data.
+                        // After this fix, it looks like this:
+                        // |aaaaaaaaaaaaaaaaaaa| no wrap at the end (preserved hard newline)
+                        // |                   |
+                        //  ^ and the cursor is now here.
+                        const COORD coordNewCursor = pNewCursor->GetPosition();
+                        if (coordNewCursor.X == 0 && coordNewCursor.Y > 0)
+                        {
+                            if (pNewBuffer->GetRowByOffset(coordNewCursor.Y - 1)->CharRow.WasWrapForced())
+                            {
+                                status = pNewBuffer->NewlineCursor() ? status : STATUS_NO_MEMORY;
+                            }
+                        }
                     }
                 }
             }
@@ -1721,7 +1793,8 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSi
 // - DoScrollBarUpdate - indicates whether to update scroll bars at the end
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
-NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(_In_ const COORD coordNewScreenSize, _In_ const bool fDoScrollBarUpdate)
+NTSTATUS SCREEN_INFORMATION::ResizeScreenBuffer(_In_ const COORD coordNewScreenSize,
+                                                _In_ const bool fDoScrollBarUpdate)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;
@@ -1841,7 +1914,9 @@ void SCREEN_INFORMATION::MakeCurrentCursorVisible()
 }
 
 // Routine Description:
-// - This routine sets the cursor size and visibility both in the data structures and on the screen.
+// - This routine sets the cursor size and visibility both in the data 
+//      structures and on the screen. Also updates the cursor information of 
+//      this buffer's main buffer, if this buffer is an alt buffer.
 // Arguments:
 // - ScreenInfo - pointer to screen info structure.
 // - Size - cursor size
@@ -1855,6 +1930,13 @@ NTSTATUS SCREEN_INFORMATION::SetCursorInformation(_In_ ULONG const Size, _In_ BO
 
     pCursor->SetSize(Size);
     pCursor->SetIsVisible(Visible);
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetCursorInformation(Size, Visible);
+    }
+
     return STATUS_SUCCESS;
 }
 
@@ -1876,6 +1958,13 @@ NTSTATUS SCREEN_INFORMATION::SetCursorDBMode(_In_ BOOLEAN const DoubleCursor)
     {
         pCursor->SetIsDouble(DoubleCursor);
     }
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetCursorDBMode(DoubleCursor);
+    }
+
     return STATUS_SUCCESS;
 }
 
@@ -2379,7 +2468,7 @@ TextAttribute SCREEN_INFORMATION::GetAttributes() const
 // <none>
 // Return value:
 // - This screen buffer's popup attributes
-const TextAttribute* const  SCREEN_INFORMATION::GetPopupAttributes() const
+const TextAttribute* const SCREEN_INFORMATION::GetPopupAttributes() const
 {
     return &_PopupAttributes;
 }
@@ -2391,24 +2480,96 @@ const TextAttribute* const  SCREEN_INFORMATION::GetPopupAttributes() const
 // - attributes - The new value of the attributes to use.
 // Return value:
 // <none>
-void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute attributes)
+void SCREEN_INFORMATION::SetAttributes(_In_ const TextAttribute& attributes)
 {
     _Attributes.SetFrom(attributes);
 
     CHAR_INFO ciFill = TextInfo->GetFill();
     ciFill.Attributes = _Attributes.GetLegacyAttributes();
     TextInfo->SetFill(ciFill);
+
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetAttributes(attributes);
+    }
 }
 
-// Routine Description:
+// Method Description:
 // - Sets the value of the popup attributes on this screen buffer.
 // Parameters:
-// - wPopupAttributes - The new value of the popup attributes to use.
+// - popupAttributes - The new value of the popup attributes to use.
 // Return value:
 // <none>
-void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute* const pPopupAttributes)
+void SCREEN_INFORMATION::SetPopupAttributes(_In_ const TextAttribute& popupAttributes)
 {
-    _PopupAttributes = *pPopupAttributes;
+    _PopupAttributes.SetFrom(popupAttributes);
+    // If we're an alt buffer, also update our main buffer.
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->SetPopupAttributes(popupAttributes);
+    }
+}
+
+// Method Description:
+// - Sets the value of the attributes on this screen buffer. Also propagates
+//     the change down to the fill of the attached text buffer.
+// Parameters:
+// - attributes - The new value of the attributes to use.
+// - popupAttributes - The new value of the popup attributes to use.
+// Return value:
+// <none>
+void SCREEN_INFORMATION::SetDefaultAttributes(_In_ const TextAttribute& attributes,
+                                              _In_ const TextAttribute& popupAttributes)
+{
+    SetAttributes(attributes);
+    SetPopupAttributes(popupAttributes);
+    GetAdapterDispatch()->UpdateDefaultColor(attributes.GetLegacyAttributes());
+}
+
+// Method Description:
+// - Replaces the given oldAttributes and oldPopupAttributes with the 
+//      newAttributes thoughout the entirety of our buffer. 
+//   This is called when the default screen attributes change, (eg through the 
+//      propsheet or the API) and we want to replace all of the attributes of 
+//      characters that had the old default attributes with the new setting.
+// NOTE: Only replaces legacy style attributes. If a character had RGB 
+//      attributes, then we know that it wasn't using the default attributes.
+// Parameters:
+// - oldAttributes - The old attributes containing legacy attributes to replace.
+// - oldPopupAttributes - The old popoup attributes to replace.
+// - newAttributes - The new value of the attributes to use.
+// - newPopupAttributes - The new value of the popup attributes to use.
+// Return value:
+// <none>
+void SCREEN_INFORMATION::ReplaceDefaultAttributes(_In_ const TextAttribute& oldAttributes,
+                                                  _In_ const TextAttribute& oldPopupAttributes,
+                                                  _In_ const TextAttribute& newAttributes,
+                                                  _In_ const TextAttribute& newPopupAttributes)
+{        
+    const WORD oldLegacyAttributes = oldAttributes.GetLegacyAttributes();
+    const WORD oldLegacyPopupAttributes = oldPopupAttributes.GetLegacyAttributes();
+    const WORD newLegacyAttributes = newAttributes.GetLegacyAttributes();
+    const WORD newLegacyPopupAttributes = newPopupAttributes.GetLegacyAttributes();
+
+    // TODO: MSFT 9354902: Fix this up to be clearer with less magic bit shifting and less magic numbers. http://osgvsowi/9354902
+    const WORD InvertedOldPopupAttributes = (WORD)(((oldLegacyPopupAttributes << 4) & 0xf0) | ((oldLegacyPopupAttributes >> 4) & 0x0f));
+    const WORD InvertedNewPopupAttributes = (WORD)(((newLegacyPopupAttributes << 4) & 0xf0) | ((newLegacyPopupAttributes >> 4) & 0x0f));
+
+    // change all chars with default color
+    const SHORT sScreenBufferSizeY = GetScreenBufferSize().Y;
+    for (SHORT i = 0; i < sScreenBufferSizeY; i++)
+    {
+        ROW* const Row = &TextInfo->Rows[i];
+        Row->AttrRow.ReplaceLegacyAttrs(oldLegacyAttributes, newLegacyAttributes);
+        Row->AttrRow.ReplaceLegacyAttrs(oldLegacyPopupAttributes, newLegacyPopupAttributes);
+        Row->AttrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
+    }
+
+    if (_psiMainBuffer)
+    {
+        _psiMainBuffer->ReplaceDefaultAttributes(oldAttributes, oldPopupAttributes, newAttributes, newPopupAttributes);
+    }
 }
 
 // Method Description:

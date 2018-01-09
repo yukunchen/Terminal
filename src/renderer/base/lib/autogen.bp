@@ -43,16 +43,17 @@ namespace Onecore.Windows.Core.Console.Open.Src.Renderer.Base.Lib {
             f`${srcRoot}\onecore\windows\core\console\open\src\host\textbuffer.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\inc\conime.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\inc\operators.hpp`,
-            f`${srcRoot}\onecore\windows\core\console\open\src\inc\viewport.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iaccessibilitynotifier.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\interactivity\inc\iconsolewindow.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfo.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfobase.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfodesired.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\ifontdefaultlist.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irendercursor.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderdata.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\types\inc\viewport.hpp`,
 
             prePass,
 

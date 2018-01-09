@@ -1,9 +1,6 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist {
 
-    export declare const qualifier: {
-        platform: WdgBuild.StandardPlatforms,
-        configuration: "release",
-    };
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\tools`;
 
@@ -80,7 +77,8 @@ namespace Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist {
             f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
             f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
             MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
-            isBuildRelease && (isBuildArm32 || isBuildArm64) ? MsWinCrts.Public.Sdk.Lib.library : undefined,
+            isBuildDebug && isBuildCommonArchitecture ? MsWinCrts.Public.Internal.Sdk.Lib.library : undefined,
+            isBuildArm32 || isBuildArm64 ? MsWinCrts.Public.Sdk.Lib.library : undefined,
             MsWinOnecoreBase.Public.Shared.Inc.header,
             MsWinOnecoreMerged.Public.Sdk.Lib.Mincore.library,
             MsWinOnecoreShell.Public.Sdk.Inc.idl,
@@ -90,7 +88,7 @@ namespace Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist {
             MsWinOnecore_MinKernel.Public.Internal.Sdk.Lib.library,
             MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
             MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
-            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_8.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_9.library,
             MsWinOnecore_MinKernel.Public.Sdk.Lib.library,
             MsWinOnecore_MinKernel.Public.Shared.Inc.header,
         ]
@@ -121,32 +119,42 @@ namespace Onecore.Windows.Core.Console.Open.Src.Tools.Nihilist {
             f`autogen.bp`,
             f`autogen.bp`,
             f`nihilist.vcxproj`,
-            f`product.pbxproj`,
-            f`sources.pkg.xml`,
-            f`${binRoot}\msbuildprops\localization.txt`,
-            f`${objRoot}\${buildAlt}\modularbuildglobalbuildsession.props`,
-            f`${objRoot}\${buildAlt}\__bldlanguageoverride__.props`,
-            f`${objRoot}\${buildAlt}\__bldlanguage__.props`,
-            f`${srcRoot}\onecore\windows\project.props`,
-            f`${srcRoot}\public\sdk\inc\ntverp.h`,
-            MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata,
+            isBuildRelease && isBuildCommonArchitecture ? MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata : undefined,
             pass1,
             pass2,
             prePass,
             (isBuildRelease && isBuildArm32 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildArm64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX86 && MsWinBuild.isOfficialBuild) ? MsWinOnecore_Pkg.BinPublic.Imagingtools.content : undefined,
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    f`product.pbxproj`,
+                    f`sources.pkg.xml`,
+                    f`${binRoot}\msbuildprops\localization.txt`,
+                    f`${objRoot}\${buildAlt}\modularbuildglobalbuildsession.props`,
+                    f`${objRoot}\${buildAlt}\__bldlanguageoverride__.props`,
+                    f`${objRoot}\${buildAlt}\__bldlanguage__.props`,
+                    f`${srcRoot}\onecore\windows\project.props`,
+                    f`${srcRoot}\public\sdk\inc\ntverp.h`,
+                ]
+            ),
         ]
         .filter(e => e !== undefined),
         
         produces: [
-            p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.cab.br`,
-            p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.man.dsm.xml.br`,
-            p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.spkg.br`,
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.cab`,
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.man.dsm.xml`,
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.spkg`,
-            p`${o}\microsoft.console.tools.nihilist.cab`,
-            p`${o}\microsoft.console.tools.nihilist.man.dsm.xml`,
-            p`${o}\microsoft.console.tools.nihilist.spkg`,
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.cab.br`,
+                    p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.man.dsm.xml.br`,
+                    p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.spkg.br`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.cab`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.man.dsm.xml`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.nihilist.spkg`,
+                    p`${o}\microsoft.console.tools.nihilist.cab`,
+                    p`${o}\microsoft.console.tools.nihilist.man.dsm.xml`,
+                    p`${o}\microsoft.console.tools.nihilist.spkg`,
+                ]
+            ),
         ],
     });
 

@@ -123,6 +123,12 @@ namespace Microsoft
 
                 SMALL_RECT _RegionFromCoord(_In_ const COORD* const pcoord) const;
                 COLORREF _ConvertAttrToRGB(_In_ const BYTE bAttr);
+
+#ifdef DBG
+                // Helper functions to diagnose issues with painting and layout.
+                // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.
+                bool _fDebug = false;
+#endif
             };
         };
     };
