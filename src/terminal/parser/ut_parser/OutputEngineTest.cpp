@@ -1354,7 +1354,7 @@ class StateMachineExternalTest : public TermDispatch
 
         ClearState();
 
-        Log::Comment(L"Test 5.a: Test an empty param");
+        Log::Comment(L"Test 5.a: Test an empty param at the end of a sequence");
 
         std::wstring sequence = L"\x1b[1;m";
         mach.ProcessString(&sequence[0], sequence.length());
@@ -1366,7 +1366,7 @@ class StateMachineExternalTest : public TermDispatch
 
         ClearState();
 
-        Log::Comment(L"Test 5.b: Test an empty param");
+        Log::Comment(L"Test 5.b: Test an empty param in the middle of a sequence");
 
         sequence = L"\x1b[1;;1m";
         mach.ProcessString(&sequence[0], sequence.length());
@@ -1379,7 +1379,7 @@ class StateMachineExternalTest : public TermDispatch
 
         ClearState();
 
-        Log::Comment(L"Test 5.c: Test an empty param");
+        Log::Comment(L"Test 5.c: Test an empty param at the start of a sequence");
 
         sequence = L"\x1b[;31;1m";
         mach.ProcessString(&sequence[0], sequence.length());

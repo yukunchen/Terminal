@@ -1249,11 +1249,10 @@ void TextBufferTests::EmptySgrTest()
     const COLORREF defaultFg = psi->GetAttributes().GetRgbForeground();
     const COLORREF defaultBg = psi->GetAttributes().GetRgbBackground();
     
-    // Write '\E[32mX\E[33mX\n\E[34mX\E[35mX\E[H\E[M'
+    // Write '\x1b[0mX\x1b[31mX\x1b[31;m'
     // The first X should be default colors.
     // The second X should be (darkRed,default).
-    // The third X should be blue
-    // The fourth X should be magenta
+    // The third X should be default colors.
     std::wstring sequence = L"\x1b[0mX\x1b[31mX\x1b[31;mX";
     stateMachine->ProcessString(&sequence[0], sequence.length());
 

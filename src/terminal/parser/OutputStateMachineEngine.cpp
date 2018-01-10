@@ -609,7 +609,6 @@ bool OutputStateMachineEngine::_GetGraphicsOptions(_In_reads_(cParams) const uns
                                                    _Out_writes_(*pcOptions) TermDispatch::GraphicsOptions* const rgGraphicsOptions,
                                                    _Inout_ size_t* const pcOptions) const
 {
-
     bool fSuccess = false;
 
     if (cParams == 0)
