@@ -1263,7 +1263,6 @@ void StateMachine::ProcessCharacter(_In_ wchar_t const wch)
 void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, _In_ size_t const cch)
 {
     wchar_t* pwchCurr = rgwch;
-    wchar_t* pwchStart = rgwch;
     wchar_t* pwchSequenceStart = rgwch;
     size_t currRunLength = 0;
 
@@ -1280,7 +1279,6 @@ void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, _In
             if (_state == VTStates::Ground)  // Then check if we're back at ground. If we are, the next character (pwchCurr)
             {                                //   is the start of the next run of characters that might be printable.
                 s_fProcessIndividually = false;
-                pwchStart = pwchCurr;
                 pwchSequenceStart = pwchCurr;
                 currRunLength = 0;
             }
@@ -1289,8 +1287,12 @@ void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, _In
         {
             if (s_IsActionableFromGround(*pwchCurr))  // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
-                _pEngine->ActionPrintString(pwchStart, currRunLength); // ... print all the chars leading up to it as part of the run...
-                _trace.DispatchPrintRunTrace(pwchStart, currRunLength);
+                assert(pwchSequenceStart + currRunLength <= rgwch + cch);
+                #pragma prefast(push)
+                #pragma prefast(disable:__WARNING_BUFFER_OVERFLOW, "Not sure why prefast is getting confused here. Assert immediately above ensures this is fine.")
+                _pEngine->ActionPrintString(pwchSequenceStart, currRunLength); // ... print all the chars leading up to it as part of the run...
+                _trace.DispatchPrintRunTrace(pwchSequenceStart, currRunLength);
+                #pragma prefast(pop)
                 s_fProcessIndividually = true; // begin processing future characters individually... 
                 currRunLength = 0;
                 pwchSequenceStart = pwchCurr;
@@ -1298,7 +1300,6 @@ void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, _In
                 if (_state == VTStates::Ground)  // If the character took us right back to ground, start another run after it.
                 {                                
                     s_fProcessIndividually = false;
-                    pwchStart = pwchCurr + 1; // pwchCurr still points at the current that went to the state machine. The run starts after it. 
                     pwchSequenceStart = pwchCurr + 1;
                     currRunLength = 0;
                 }
@@ -1315,8 +1316,8 @@ void StateMachine::ProcessString(_Inout_updates_(cch) wchar_t * const rgwch, _In
     if (!s_fProcessIndividually && currRunLength > 0) 
     {
         // print the rest of the characters in the string
-        _pEngine->ActionPrintString(pwchStart, currRunLength);
-        _trace.DispatchPrintRunTrace(pwchStart, currRunLength);
+        _pEngine->ActionPrintString(pwchSequenceStart, currRunLength);
+        _trace.DispatchPrintRunTrace(pwchSequenceStart, currRunLength);
 
     }
     else if (s_fProcessIndividually)

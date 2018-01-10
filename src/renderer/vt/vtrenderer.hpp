@@ -82,7 +82,7 @@ public:
     SMALL_RECT GetDirtyRectInChars() override;
     HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
     HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
-            
+
     // See _PaintUtf8BufferLine for explanation of this value.
     static const size_t ERASE_CHARACTER_STRING_LENGTH = 8;
 
@@ -105,15 +105,14 @@ protected:
 
     HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);
     HRESULT _Write(_In_ const std::string& str);
-    HRESULT _Write(_In_ const char* const psz);
-    HRESULT _WriteFormattedString(_In_ const char* const pszFormat, ...);
-    
+    HRESULT _WriteFormattedString(_In_ const std::string* const pFormat, ...);
+
     void _OrRect(_Inout_ SMALL_RECT* const pRectExisting, _In_ const SMALL_RECT* const pRectToOr) const;
     HRESULT _InvalidCombine(_In_ const Microsoft::Console::Types::Viewport invalid);
     HRESULT _InvalidOffset(_In_ const COORD* const ppt);
     HRESULT _InvalidRestrict();
     bool _AllIsInvalid() const;
-    
+
     HRESULT _StopCursorBlinking();
     HRESULT _StartCursorBlinking();
     HRESULT _HideCursor();
@@ -132,7 +131,7 @@ protected:
     HRESULT _SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
                                           _In_ const bool fIsForeground);
     HRESULT _ResizeWindow(_In_ const short sWidth, _In_ const short sHeight);
-    
+
     virtual HRESULT _MoveCursor(_In_ const COORD coord) = 0;
     HRESULT _RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
                                      _In_ COLORREF const colorBackground,

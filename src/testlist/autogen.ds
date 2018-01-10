@@ -93,28 +93,10 @@
       </Produces>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_BlgPrebuiltTest.__Content-->
-
-    <LibrarySetRunner Output="Testlist_Bin_BlgPrebuiltTest.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Testlist_Pass2.Directories[BinRoot.Combine("blg\prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_BlgPrebuiltWindows.__Content-->
-
-    <LibrarySetRunner Output="Testlist_Bin_BlgPrebuiltWindows.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Testlist_Pass2.Directories[BinRoot.Combine("blg\prebuilt\windows")]}</Directory>
-    </LibrarySetRunner>
-
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_PrebuiltTest.__Content-->
 
     <LibrarySetRunner Output="Testlist_Bin_PrebuiltTest.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
       <Directory>{Testlist_Pass2.Directories[BinRoot.Combine("prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_PrebuiltWindows.__Content-->
-
-    <LibrarySetRunner Output="Testlist_Bin_PrebuiltWindows.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Testlist_Pass2.Directories[BinRoot.Combine("prebuilt\windows")]}</Directory>
     </LibrarySetRunner>
   </Namespace>
 </DominoSpec>

@@ -82,7 +82,6 @@ public:
     }
 };
 
-
 void InputTest::s_TerminalInputTestCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
 {
     size_t cInput = inEvents.size();
@@ -164,7 +163,7 @@ void InputTest::s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<
     }
     else
     {
-        VERIFY_FAIL(NoThrowString().Format(L"Expected either one or two inputs, got %d", cInput));
+        VERIFY_FAIL(NoThrowString().Format(L"Expected either one or two inputs, got %zu", cInput));
     }
 
 }

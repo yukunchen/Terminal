@@ -25,12 +25,14 @@ using namespace Microsoft::Console::Types;
 // - An instance of a Renderer.
 VtEngine::VtEngine(_In_ wil::unique_hfile pipe, _In_ const Viewport initialViewport) :
     _hFile(std::move(pipe)),
+    _LastFG(INVALID_COLOR),
+    _LastBG(INVALID_COLOR),
     _lastViewport(initialViewport),
     _invalidRect({0}),
     _lastText({0}),
     _scrollDelta({0}),
-    _LastFG(INVALID_COLOR),
-    _LastBG(INVALID_COLOR),
+    _quickReturn(false),
+    _fInvalidRectUsed(false),
     _clearedAllThisFrame(false)
 {
 #ifndef UNIT_TESTING
@@ -43,11 +45,11 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe, _In_ const Viewport initialViewp
 }
 
 // Method Description:
-// - Writes the characters to our file handle. If we're building the unit tests, 
-//      we can instead write to the test callback, in order to avoid needing to 
+// - Writes the characters to our file handle. If we're building the unit tests,
+//      we can instead write to the test callback, in order to avoid needing to
 //      set up pipes and threads for unit tests.
 // Arguments:
-// - psz: The buffer the write to the pipe. Might have nulls in it. 
+// - psz: The buffer the write to the pipe. Might have nulls in it.
 // - cch: size of psz
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
@@ -60,7 +62,7 @@ HRESULT VtEngine::_Write(_In_reads_(cch) const char* const psz, _In_ size_t cons
         return S_OK;
     }
 #endif
-    
+
     bool fSuccess = !!WriteFile(_hFile.get(), psz, static_cast<DWORD>(cch), nullptr, nullptr);
     RETURN_LAST_ERROR_IF_FALSE(fSuccess);
 
@@ -79,62 +81,29 @@ HRESULT VtEngine::_Write(_In_ const std::string& str)
 }
 
 // Method Description:
-// - Helper for calling _Write with just a PCSTR.
-// Arguments:
-// - str: the string of characters to write to the pipe.
-// Return Value:
-// - S_OK or suitable HRESULT error from writing pipe.
-HRESULT VtEngine::_Write(_In_ const char* const psz)
-{
-    try
-    {
-        std::string seq = std::string(psz);
-        _Write(seq.c_str(), seq.length());
-    }
-    catch (...) 
-    {
-        #ifdef UNIT_TESTING
-        if (_usingTestCallback)
-        {
-            // It's possiblee a TAEF exception can be thrown by the TestCallback.
-            // Let it bubble up.
-            THROW_NORMALIZED_CAUGHT_EXCEPTION();
-        }
-        else
-        {
-            RETURN_CAUGHT_EXCEPTION();
-        }
-        #else
-        RETURN_CAUGHT_EXCEPTION();
-        #endif
-    }
-
-    return S_OK;
-}
-
-// Method Description:
-// - Helper for calling _Write with a PCSTR for formatting a sequence. Used 
+// - Helper for calling _Write with a string for formatting a sequence. Used
 //      extensively by VtSequences.cpp
 // Arguments:
-// - pszFormat: the string of characters to write to the pipe.
+// - pFormat: the pointer to the string to write to the pipe.
 // - ...: a va_list of args to format the string with.
 // Return Value:
-// - S_OK, E_INVALIDARG for a invalid format string, or suitable HRESULT error 
+// - S_OK, E_INVALIDARG for a invalid format string, or suitable HRESULT error
 //      from writing pipe.
-HRESULT VtEngine::_WriteFormattedString(_In_ const char* const pszFormat, ...)
+HRESULT VtEngine::_WriteFormattedString(_In_ const std::string* const pFormat, ...)
 {
+
     HRESULT hr = E_FAIL;
     va_list argList;
-    va_start(argList, pszFormat);
+    va_start(argList, pFormat);
 
-    int cchNeeded = _scprintf(pszFormat, argList);
+    int cchNeeded = _scprintf(pFormat->c_str(), argList);
     // -1 is the _scprintf error case https://msdn.microsoft.com/en-us/library/t32cf9tb.aspx
     if (cchNeeded > -1)
     {
         wistd::unique_ptr<char[]> psz = wil::make_unique_nothrow<char[]>(cchNeeded + 1);
         RETURN_IF_NULL_ALLOC(psz);
 
-        int cchWritten = _vsnprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pszFormat, argList);
+        int cchWritten = _vsnprintf_s(psz.get(), cchNeeded + 1, cchNeeded, pFormat->c_str(), argList);
         hr = _Write(psz.get(), cchWritten);
     }
     else
@@ -148,7 +117,7 @@ HRESULT VtEngine::_WriteFormattedString(_In_ const char* const pszFormat, ...)
 
 // Method Description:
 // - This method will update the active font on the current device context
-//      Does nothing for vt, the font is handed by the terminal. 
+//      Does nothing for vt, the font is handed by the terminal.
 // Arguments:
 // - pfiFontDesired - Pointer to font information we should use while instantiating a font.
 // - pfiFont - Pointer to font information where the chosen font information will be populated.
@@ -162,9 +131,9 @@ HRESULT VtEngine::UpdateFont(_In_ FontInfoDesired const * const /*pfiFontDesired
 
 // Method Description:
 // - This method will modify the DPI we're using for scaling calculations.
-//      Does nothing for vt, the dpi is handed by the terminal. 
+//      Does nothing for vt, the dpi is handed by the terminal.
 // Arguments:
-// - iDpi - The Dots Per Inch to use for scaling. We will use this relative to 
+// - iDpi - The Dots Per Inch to use for scaling. We will use this relative to
 //      the system default DPI defined in Windows headers as a constant.
 // Return Value:
 // - HRESULT S_OK
@@ -174,8 +143,8 @@ HRESULT VtEngine::UpdateDpi(_In_ int const /*iDpi*/)
 }
 
 // Method Description:
-// - This method will update our internal reference for how big the viewport is. 
-//      If the viewport has changed size, then we'll need to send an update to 
+// - This method will update our internal reference for how big the viewport is.
+//      If the viewport has changed size, then we'll need to send an update to
 //      the terminal.
 // Arguments:
 // - srNewViewport - The bounds of the new viewport.
@@ -186,7 +155,7 @@ HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
     HRESULT hr = S_OK;
     const Viewport oldView = _lastViewport;
     const Viewport newView = Viewport::FromInclusive(srNewViewport);
-    
+
     _lastViewport = newView;
 
     if ((oldView.Height() != newView.Height()) || (oldView.Width() != newView.Width()))
@@ -202,7 +171,7 @@ HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 // - When the final font is determined, the FontInfo structure given will be updated with the actual resulting font chosen as the nearest match.
 // - NOTE: It is left up to the underling rendering system to choose the nearest font. Please ask for the font dimensions if they are required using the interface. Do not use the size you requested with this structure.
 // - If the intent is to immediately turn around and use this font, pass the optional handle parameter and use it immediately.
-//      Does nothing for vt, the font is handed by the terminal. 
+//      Does nothing for vt, the font is handed by the terminal.
 // Arguments:
 // - pfiFontDesired - Pointer to font information we should use while instantiating a font.
 // - pfiFont - Pointer to font information where the chosen font information will be populated.
@@ -229,7 +198,7 @@ HRESULT VtEngine::GetFontSize(_Out_ COORD* const pFontSize)
 }
 
 // Method Description:
-// - Sets the test callback for this instance. Instead of rendering to a pipe, 
+// - Sets the test callback for this instance. Instead of rendering to a pipe,
 //      this instance will instead render to a callback for testing.
 // Arguments:
 // - pfn: a callback to call instead of writing to the pipe.
