@@ -914,7 +914,6 @@ bool AdaptDispatch::_ScrollMovement(_In_ ScrollDirection const sdDirection, _In_
         if (fSuccess)
         {
             SMALL_RECT srScreen = csbiex.srWindow;
-            COORD Cursor = csbiex.dwCursorPosition;
 
             // Paste coordinate for cut text above
             COORD coordDestination;
@@ -1308,7 +1307,8 @@ bool AdaptDispatch::ReverseLineFeed()
 // - cchTitleLength - The length of the title string specified by pwchWindowTitle
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetWindowTitle(_In_ const wchar_t* const pwchWindowTitle, _In_ unsigned short cchTitleLength)
+bool AdaptDispatch::SetWindowTitle(_In_reads_(cchTitleLength) const wchar_t* const pwchWindowTitle,
+                                   _In_ unsigned short cchTitleLength)
 {
     return !!_pConApi->SetConsoleTitleW(pwchWindowTitle, cchTitleLength);
 }

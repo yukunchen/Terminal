@@ -18,6 +18,8 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>host.exe.vcxproj</Item>
         <Item>product.pbxproj</Item>
       </Consumes>
@@ -32,6 +34,8 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>conhost.man</Item>
         <Item>host.exe.vcxproj</Item>
         <Item>product.pbxproj</Item>
@@ -63,6 +67,8 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>conhost.exe.manifest</Item>
         <Item>host.exe.vcxproj</Item>
         <Item>product.pbxproj</Item>
@@ -228,6 +234,8 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>conhost.exe.manifest</Item>
         <Item>conhost.exe.mui.lci</Item>
         <Item>conhost.rcv</Item>
@@ -241,7 +249,6 @@
         <Item>{DotDot}\res.rc</Item>
         <Item>{DotDot}\resource.h</Item>
         <Item>{ObjRoot}\{BuildAlt}\onecorefeaturestaging.inc</Item>
-        <Item Condition="{IsBuildRelease}">{ObjRoot}\{BuildAlt}\pe_list\conhost.exe</Item>
         <Item>{SrcRoot}\build\scripts\expdelayload.cmd</Item>
         <Item>{SrcRoot}\build\scripts\fixtsversionstringappend.cmd</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\res\console.ico</Item>
@@ -255,7 +262,6 @@
         <Item>{MsWin.OnecoreBase.Public.Shared.Inc.__Header}</Item>
         <Item>{MsWin.OnecoreMerged.Private.Internal.Minwin.Priv_sdk.Lib.__Library}</Item>
         <Item>{MsWin.OnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.v1_8.__Library}</Item>
-        <Item Condition="{IsBuildRelease AND (IsBuildX64 OR IsBuildX86)}">{MsWin.OnecoreMerged.Public.Internal.Onecoremerged.Lib.__Content}</Item>
         <Item>{MsWin.OnecoreMerged.Public.Internal.Sdk.Lib.__Library}</Item>
         <Item>{MsWin.OnecoreShell.Public.Sdk.Inc.__Idl}</Item>
         <Item>{MsWin.OnecoreUapMerged.Public.Internal.Sdk.Lib.__Library}</Item>
@@ -331,8 +337,6 @@
           <Item>{BinRoot}\blg\test_automation_bins\opt\pgo\pgulogs\conhost.exe.log.br</Item>
           <Item>{BinRoot}\pgo\pgulogs\conhost.exe.log</Item>
           <Item>{BinRoot}\test_automation_bins\opt\pgo\pgulogs\conhost.exe.log</Item>
-          <Item>{O}\nopogo\conhost.exe</Item>
-          <Item>{O}\nopogo\conhost.pdb</Item>
         </If>
 
       </Produces>
@@ -347,6 +351,8 @@
       <!--Consumes-->
 
       <Consumes>
+        <Item>autogen.bp</Item>
+        <Item>autogen.ds</Item>
         <Item>host.exe.vcxproj</Item>
 
         <!--References-->
@@ -403,60 +409,10 @@
       <Directory>{Exe_Pass2.Directories[BinRoot]}</Directory>
     </LibrarySetRunner>
 
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_Blg.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_Blg.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Exe_Pass2.Directories[BinRoot.Combine("blg")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_BlgLocSrcBin.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_BlgLocSrcBin.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Exe_Pass2.Directories[BinRoot.Combine("blg\loc\src\bin")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_BlgLocSrcLcg.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_BlgLocSrcLcg.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Exe_Pass2.Directories[BinRoot.Combine("blg\loc\src\lcg")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_BlgMsbuildpropsNmakeprops.__Content-->
-
-    <SdkCombineRunner Output="Exe_Bin_BlgMsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
-      <OutputDirectory>{BinRoot}\blg\msbuildprops\nmakeprops</OutputDirectory>
-      <Sources>
-        <Item>{Exe_Pass0.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-        <Item>{Exe_Pass1.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-        <Item>{Exe_Pass2.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-      </Sources>
-    </SdkCombineRunner>
-    <LibrarySetRunner Output="Exe_Bin_BlgMsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Exe_Bin_BlgMsbuildpropsNmakeprops.s__Content}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_BlgPgoPgulogs.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_BlgPgoPgulogs.__Content" Visibility="Internal" Condition="{(IsBuildRelease AND MsWin.Build.IsLayerGatesEnabled) AND (IsBuildX86 OR IsBuildX64)}">
-      <Directory>{Exe_Pass2.Directories[BinRoot.Combine("blg\pgo\pgulogs")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_BlgTest_automation_binsOptPgoPgulogs.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_BlgTest_automation_binsOptPgoPgulogs.__Content" Visibility="Internal" Condition="{(IsBuildRelease AND MsWin.Build.IsLayerGatesEnabled) AND (IsBuildX86 OR IsBuildX64)}">
-      <Directory>{Exe_Pass2.Directories[BinRoot.Combine("blg\test_automation_bins\opt\pgo\pgulogs")]}</Directory>
-    </LibrarySetRunner>
-
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_LocEnus.__Content-->
 
     <LibrarySetRunner Output="Exe_Bin_LocEnus.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
       <Directory>{Exe_Pass3.Directories[BinRoot.Combine("loc\en-us")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_LocEnusLct.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_LocEnusLct.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Exe_Pass3.Directories[BinRoot.Combine("loc\en-us\lct")]}</Directory>
     </LibrarySetRunner>
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_LocPsmi.__Content-->
@@ -465,66 +421,10 @@
       <Directory>{Exe_Pass3.Directories[BinRoot.Combine("loc\ps-mi")]}</Directory>
     </LibrarySetRunner>
 
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_LocPsmiLct.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_LocPsmiLct.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease AND MsWin.Build.Localization.IsBuildPs_Mi)}">
-      <Directory>{Exe_Pass3.Directories[BinRoot.Combine("loc\ps-mi\lct")]}</Directory>
-    </LibrarySetRunner>
-
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_LocPsps.__Content-->
 
     <LibrarySetRunner Output="Exe_Bin_LocPsps.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease AND MsWin.Build.Localization.IsBuildPs_Ps)}">
       <Directory>{Exe_Pass3.Directories[BinRoot.Combine("loc\ps-ps")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_LocPspsLct.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_LocPspsLct.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease AND MsWin.Build.Localization.IsBuildPs_Ps)}">
-      <Directory>{Exe_Pass3.Directories[BinRoot.Combine("loc\ps-ps\lct")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_LocSrcBin.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_LocSrcBin.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Exe_Pass2.Directories[BinRoot.Combine("loc\src\bin")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_LocSrcLcg.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_LocSrcLcg.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Exe_Pass2.Directories[BinRoot.Combine("loc\src\lcg")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_MsbuildpropsNmakeprops.__Content-->
-
-    <SdkCombineRunner Output="Exe_Bin_MsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
-      <OutputDirectory>{BinRoot}\msbuildprops\nmakeprops</OutputDirectory>
-      <Sources>
-        <Item>{Exe_Pass0.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-        <Item>{Exe_Pass1.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-        <Item>{Exe_Pass2.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-      </Sources>
-    </SdkCombineRunner>
-    <LibrarySetRunner Output="Exe_Bin_MsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Exe_Bin_MsbuildpropsNmakeprops.s__Content}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_PgoPgulogs.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_PgoPgulogs.__Content" Visibility="Internal" Condition="{(IsBuildRelease AND MsWin.Build.IsLayerGatesEnabled) AND (IsBuildX86 OR IsBuildX64)}">
-      <Directory>{Exe_Pass2.Directories[BinRoot.Combine("pgo\pgulogs")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_SymbolspriRetailExe.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_SymbolspriRetailExe.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Exe_Pass2.Directories[BinRoot.Combine("symbols.pri\retail\exe")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Exe_Bin_Test_automation_binsOptPgoPgulogs.__Content-->
-
-    <LibrarySetRunner Output="Exe_Bin_Test_automation_binsOptPgoPgulogs.__Content" Visibility="Internal" Condition="{(IsBuildRelease AND MsWin.Build.IsLayerGatesEnabled) AND (IsBuildX86 OR IsBuildX64)}">
-      <Directory>{Exe_Pass2.Directories[BinRoot.Combine("test_automation_bins\opt\pgo\pgulogs")]}</Directory>
     </LibrarySetRunner>
   </Namespace>
 </DominoSpec>

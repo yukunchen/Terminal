@@ -5,7 +5,7 @@
 ********************************************************/
 #include "precomp.h"
 
-#include "cmdline.h"
+#include "history.h"
 
 #include "_output.h"
 #include "output.h"

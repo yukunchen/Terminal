@@ -246,17 +246,5 @@
 
       </Consumes>
     </LegacyBuilder>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib_Bin_BlgMsbuildpropsNmakeprops.__Content-->
-
-    <LibrarySetRunner Output="Lib_Bin_BlgMsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Lib_Pass1.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib_Bin_MsbuildpropsNmakeprops.__Content-->
-
-    <LibrarySetRunner Output="Lib_Bin_MsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Lib_Pass1.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Directory>
-    </LibrarySetRunner>
   </Namespace>
 </DominoSpec>

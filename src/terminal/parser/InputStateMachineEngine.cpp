@@ -88,7 +88,7 @@ InputStateMachineEngine::InputStateMachineEngine(_In_ std::unique_ptr<IInteractD
 }
 
 // Method Description:
-// - Triggers the Execute action to indicate that the listener should 
+// - Triggers the Execute action to indicate that the listener should
 //      immediately respond to a C0 control character.
 // Arguments:
 // - wch - Character to dispatch.
@@ -111,7 +111,7 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
 
         short vkey = 0;
         DWORD dwModifierState = 0;
-        
+
         switch(wch)
         {
         case L'\b':
@@ -145,21 +145,21 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
                 SetFlag(dwModifierState, LEFT_CTRL_PRESSED);
             }
 
-            fSuccess = _WriteSingleKey(actualChar, vkey, dwModifierState); 
+            fSuccess = _WriteSingleKey(actualChar, vkey, dwModifierState);
         }
     }
     else if (wch == '\x7f')
     {
         // Note:
         //  The windows telnet expects to send x7f as DELETE, not backspace.
-        //      However, the windows telnetd also wouldn't let you move the 
-        //      cursor back into the input line, so it wasn't possible to 
-        //      "delete" any input at all, only backspace. 
-        //  Because of this, we're treating x7f as backspace, like every sane 
+        //      However, the windows telnetd also wouldn't let you move the
+        //      cursor back into the input line, so it wasn't possible to
+        //      "delete" any input at all, only backspace.
+        //  Because of this, we're treating x7f as backspace, like every sane
         //      terminal does.
         fSuccess = _WriteSingleKey('\x8', VK_BACK, 0);
-    } 
-    else 
+    }
+    else
     {
         fSuccess = ActionPrint(wch);
     }
@@ -186,7 +186,7 @@ bool InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 }
 
 // Method Description:
-// - Triggers the Print action to indicate that the listener should render the 
+// - Triggers the Print action to indicate that the listener should render the
 //      string of characters given.
 // Arguments:
 // - rgwch - string to dispatch.
@@ -211,7 +211,7 @@ bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* co
 
 // Method Description:
 // - Triggers the EscDispatch action to indicate that the listener should handle
-//      a simple escape sequence. These sequences traditionally start with ESC 
+//      a simple escape sequence. These sequences traditionally start with ESC
 //      and a simple letter. No complicated parameters.
 // Arguments:
 // - wch - Character to dispatch.
@@ -219,7 +219,7 @@ bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* co
 // - wchIntermediate - Intermediate character in the sequence, if there was one.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch, 
+bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
                                                 _In_ const unsigned short cIntermediate,
                                                 _In_ const wchar_t wchIntermediate)
 {
@@ -233,16 +233,16 @@ bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
     {
         // Alt is definitely pressed in the esc+key case.
         dwModifierState = SetFlag(dwModifierState, LEFT_ALT_PRESSED);
-        
+
         fSuccess = _WriteSingleKey(wch, vk, dwModifierState);
-        
+
     }
     return fSuccess;
 }
 
 // Method Description:
 // - Triggers the CsiDispatch action to indicate that the listener should handle
-//      a control sequence. These sequences perform various API-type commands 
+//      a control sequence. These sequences perform various API-type commands
 //      that can include many parameters.
 // Arguments:
 // - wch - Character to dispatch.
@@ -255,7 +255,7 @@ bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
 bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
                                                 _In_ const unsigned short cIntermediate,
                                                 _In_ const wchar_t wchIntermediate,
-                                                _In_ const unsigned short* const rgusParams,
+                                                _In_reads_(cParams) const unsigned short* const rgusParams,
                                                 _In_ const unsigned short cParams)
 {
     UNREFERENCED_PARAMETER(cIntermediate);
@@ -336,7 +336,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
 
 // Routine Description:
 // - Triggers the Ss3Dispatch action to indicate that the listener should handle
-//      a control sequence. These sequences perform various API-type commands 
+//      a control sequence. These sequences perform various API-type commands
 //      that can include many parameters.
 // Arguments:
 // - wch - Character to dispatch.
@@ -345,7 +345,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionSs3Dispatch(_In_ wchar_t const wch,
-                                                _In_ const unsigned short* const /*rgusParams*/,
+                                                _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
                                                 _In_ const unsigned short /*cParams*/)
 {
     // Ss3 sequence keys aren't modified.
@@ -364,7 +364,7 @@ bool InputStateMachineEngine::ActionSs3Dispatch(_In_ wchar_t const wch,
 }
 
 // Method Description:
-// - Triggers the Clear action to indicate that the state machine should erase 
+// - Triggers the Clear action to indicate that the state machine should erase
 //      all internal state.
 // Arguments:
 // - <none>
@@ -376,7 +376,7 @@ bool InputStateMachineEngine::ActionClear()
 }
 
 // Method Description:
-// - Triggers the Ignore action to indicate that the state machine should eat 
+// - Triggers the Ignore action to indicate that the state machine should eat
 //      this character and say nothing.
 // Arguments:
 // - <none>
@@ -399,7 +399,7 @@ bool InputStateMachineEngine::ActionIgnore()
 // - true if we handled the dsipatch.
 bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch,
                                                 _In_ const unsigned short sOscParam,
-                                                _Inout_ wchar_t* const pwchOscStringBuffer,
+                                                _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
                                                 _In_ const unsigned short cchOscString)
 {
     UNREFERENCED_PARAMETER(wch);
@@ -410,9 +410,9 @@ bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch,
 }
 
 // Method Description:
-// - Writes a sequence of keypresses to the buffer based on the wch, 
+// - Writes a sequence of keypresses to the buffer based on the wch,
 //      vkey and modifiers passed in. Will create both the appropriate key downs
-//      and ups for that key for writing to the input. Will also generate 
+//      and ups for that key for writing to the input. Will also generate
 //      keypresses for pressing the modifier keys while typing that character.
 //  If rgInput isn't big enough, then it will stop writing when it's filled.
 // Arguments:
@@ -420,8 +420,8 @@ bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const wch,
 // - vkey - the VKEY of the key to write to the input callback.
 // - dwModifierState - the modifier state to write with the key.
 // - rgInput - the buffer of characters to write the keypresses to. Can write
-//      up to 8 records to this buffer. 
-// - cRecords - the size of rgInput. This should be at least WRAPPED_SEQUENCE_MAX_LENGTH
+//      up to 8 records to this buffer.
+// - cInput - the size of rgInput. This should be at least WRAPPED_SEQUENCE_MAX_LENGTH
 // Return Value:
 // - the number of records written, or 0 if the buffer wasn't big enough.
 size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
@@ -430,10 +430,10 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
                                                          _Inout_updates_(cInput) INPUT_RECORD* rgInput,
                                                          _In_ const size_t cInput)
 {
-    // TODO: Reuse the clipboard functions for generating input for characters 
+    // TODO: Reuse the clipboard functions for generating input for characters
     //       that aren't on the current keyboard.
     // MSFT:13994942
-    if (cInput < WRAPPED_SEQUENCE_MAX_LENGTH) 
+    if (cInput < WRAPPED_SEQUENCE_MAX_LENGTH)
     {
         return 0;
     }
@@ -487,7 +487,14 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
         index++;
     }
 
-    size_t added = _GetSingleKeypress(wch, vkey, dwCurrentModifiers, next, cInput-index);
+    size_t added = _GetSingleKeypress(wch, vkey, dwCurrentModifiers, next, cInput - index);
+
+    // if _GetSingleKeypress added more than two events we might overflow the buffer
+    if (added > 2)
+    {
+        return index;
+    }
+
     next += added;
     index += added;
 
@@ -536,26 +543,28 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
 }
 
 // Method Description:
-// - Writes a single character keypress to the input buffer. This writes both 
+// - Writes a single character keypress to the input buffer. This writes both
 //      the keydown and keyup events.
 // Arguments:
 // - wch - the character to write to the buffer.
 // - vkey - the VKEY of the key to write to the buffer.
 // - dwModifierState - the modifier state to write with the key.
-// - rgInput - the buffer of characters to write the keypress to. Will always 
+// - rgInput - the buffer of characters to write the keypress to. Will always
 //      write to the first two positions in the buffer.
 // - cRecords - the size of rgInput
 // Return Value:
 // - the number of input records written.
-size_t InputStateMachineEngine::_GetSingleKeypress(_In_ const wchar_t wch, 
+size_t InputStateMachineEngine::_GetSingleKeypress(_In_ const wchar_t wch,
                                                    _In_ const short vkey,
                                                    _In_ const DWORD dwModifierState,
                                                    _Inout_updates_(cRecords) INPUT_RECORD* const rgInput,
                                                    _In_ const size_t cRecords)
 {
-    // It's used by the assert, which is a no-op in release builds
-    UNREFERENCED_PARAMETER(cRecords);
     assert(cRecords >= 2);
+    if (cRecords < 2)
+    {
+        return 0;
+    }
 
     rgInput[0].EventType = KEY_EVENT;
     rgInput[0].Event.KeyEvent.bKeyDown = TRUE;
@@ -572,9 +581,9 @@ size_t InputStateMachineEngine::_GetSingleKeypress(_In_ const wchar_t wch,
 }
 
 // Method Description:
-// - Writes a sequence of keypresses to the input callback based on the wch, 
+// - Writes a sequence of keypresses to the input callback based on the wch,
 //      vkey and modifiers passed in. Will create both the appropriate key downs
-//      and ups for that key for writing to the input. Will also generate 
+//      and ups for that key for writing to the input. Will also generate
 //      keypresses for pressing the modifier keys while typing that character.
 // Arguments:
 // - wch - the character to write to the input callback.
@@ -608,7 +617,7 @@ bool InputStateMachineEngine::_WriteSingleKey(_In_ const short vkey, _In_ const 
 }
 
 // Method Description:
-// - Retrieves the modifier state from a set of parameters for a cursor keys 
+// - Retrieves the modifier state from a set of parameters for a cursor keys
 //      sequence. This is for Arrow keys, Home, End, etc.
 // Arguments:
 // - rgusParams - the set of parameters to get the modifier state from.
@@ -622,7 +631,7 @@ DWORD InputStateMachineEngine::_GetCursorKeysModifierState(_In_reads_(cParams) c
 }
 
 // Method Description:
-// - Retrieves the modifier state from a set of parameters for a "Generic" 
+// - Retrieves the modifier state from a set of parameters for a "Generic"
 //      keypress - one who's sequence is terminated with a '~'.
 // Arguments:
 // - rgusParams - the set of parameters to get the modifier state from.
@@ -642,7 +651,7 @@ DWORD InputStateMachineEngine::_GetGenericKeysModifierState(_In_reads_(cParams) 
 // Method Description:
 // - Determines if a set of parameters indicates a modified keypress
 // Arguments:
-// - cParams - the nummber of parameters we've collected in this sequence 
+// - cParams - the nummber of parameters we've collected in this sequence
 // Return Value:
 // - true iff the sequence is a modified sequence.
 bool InputStateMachineEngine::_IsModified(_In_ const unsigned short cParams)
@@ -675,7 +684,7 @@ DWORD InputStateMachineEngine::_GetModifier(_In_ const unsigned short modifierPa
 // - Gets the Vkey form the generic keys table associated with a particular
 //   identifier code. The identifier code will be the first param in rgusParams.
 // Arguments:
-// - rgusParams: an array of shorts where the first is the identifier of the key 
+// - rgusParams: an array of shorts where the first is the identifier of the key
 //      we're looking for.
 // - cParams: number of params in rgusParams
 // - pVkey: Recieves the vkey
@@ -684,7 +693,7 @@ DWORD InputStateMachineEngine::_GetModifier(_In_ const unsigned short modifierPa
 bool InputStateMachineEngine::_GetGenericVkey(_In_reads_(cParams) const unsigned short* const rgusParams, _In_ const unsigned short cParams, _Out_ short* const pVkey) const
 {
     *pVkey = 0;
-    if (cParams < 1) 
+    if (cParams < 1)
     {
         return false;
     }
@@ -756,11 +765,13 @@ bool InputStateMachineEngine::_GetSs3KeysVkey(_In_ const wchar_t wch, _Out_ shor
 // - pdwModifierState: Recieves the modifier state
 // Return Value:
 // <none>
-bool InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch, _Out_ short* const pVkey, _Out_ DWORD* const pdwModifierState)
+bool InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch,
+                                                   _Out_ short* const pVkey,
+                                                   _Out_ DWORD* const pdwModifierState)
 {
     // Low order byte is key, high order is modifiers
     short keyscan = VkKeyScan(wch);
-    
+
     short vkey = LOBYTE(keyscan);
 
     short keyscanModifiers = HIBYTE(keyscan);
@@ -772,25 +783,25 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch, _Out_
 
     // Because of course, these are not the same flags.
     short dwModifierState = 0 |
-        IsFlagSet(keyscanModifiers, KEYSCAN_SHIFT) ? SHIFT_PRESSED : 0 |
-        IsFlagSet(keyscanModifiers, KEYSCAN_CTRL) ? LEFT_CTRL_PRESSED : 0 |
-        IsFlagSet(keyscanModifiers, KEYSCAN_ALT) ? LEFT_ALT_PRESSED : 0 ;
+        (IsFlagSet(keyscanModifiers, KEYSCAN_SHIFT) ? SHIFT_PRESSED : 0) |
+        (IsFlagSet(keyscanModifiers, KEYSCAN_CTRL) ? LEFT_CTRL_PRESSED : 0) |
+        (IsFlagSet(keyscanModifiers, KEYSCAN_ALT) ? LEFT_ALT_PRESSED : 0);
 
-    if (pVkey != nullptr) 
+    if (pVkey != nullptr)
     {
         *pVkey = vkey;
     }
     if (pdwModifierState != nullptr)
     {
         *pdwModifierState = dwModifierState;
-    } 
+    }
     return true;
 }
 
 // Method Description:
-// - Returns true if the engine should dispatch on the last charater of a string 
+// - Returns true if the engine should dispatch on the last charater of a string
 //      always, even if the sequence hasn't normally dispatched.
-//   If this is false, the engine will persist it's state across calls to 
+//   If this is false, the engine will persist it's state across calls to
 //      ProcessString, and dispatch only at the end of the sequence.
 // Return Value:
 // - True iff we should manually dispatch on the last character of a string.

@@ -670,29 +670,24 @@ VOID UpdatePopups(IN WORD NewAttributes, IN WORD NewPopupAttributes, IN WORD Old
 NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attributes, _In_ WORD PopupAttributes, _In_ BOOL UpdateWholeScreen)
 {
     CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    WORD const DefaultAttributes = ScreenInfo->GetAttributes().GetLegacyAttributes();
-    WORD const DefaultPopupAttributes = ScreenInfo->GetPopupAttributes()->GetLegacyAttributes();
-    TextAttribute NewPrimaryAttributes = TextAttribute(Attributes);
-    TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
-    ScreenInfo->SetAttributes(NewPrimaryAttributes);
-    ScreenInfo->SetPopupAttributes(&NewPopupAttributes);
+
+    const TextAttribute oldPrimaryAttributes = ScreenInfo->GetAttributes();
+    const TextAttribute oldPopupAttributes = *ScreenInfo->GetPopupAttributes();
+    const WORD DefaultAttributes = oldPrimaryAttributes.GetLegacyAttributes();
+    const WORD DefaultPopupAttributes = oldPopupAttributes.GetLegacyAttributes();
+
+    const TextAttribute NewPrimaryAttributes = TextAttribute(Attributes);
+    const TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
+    
+    ScreenInfo->SetDefaultAttributes(NewPrimaryAttributes, NewPopupAttributes);
     gci->ConsoleIme.RefreshAreaAttributes();
 
     if (UpdateWholeScreen)
     {
-        // TODO: MSFT 9354902: Fix this up to be clearer with less magic bit shifting and less magic numbers. http://osgvsowi/9354902
-        WORD const InvertedOldPopupAttributes = (WORD)(((DefaultPopupAttributes << 4) & 0xf0) | ((DefaultPopupAttributes >> 4) & 0x0f));
-        WORD const InvertedNewPopupAttributes = (WORD)(((PopupAttributes << 4) & 0xf0) | ((PopupAttributes >> 4) & 0x0f));
-
-        // change all chars with default color
-        const SHORT sScreenBufferSizeY = ScreenInfo->GetScreenBufferSize().Y;
-        for (SHORT i = 0; i < sScreenBufferSizeY; i++)
-        {
-            ROW* const Row = &ScreenInfo->TextInfo->Rows[i];
-            Row->AttrRow.ReplaceLegacyAttrs(DefaultAttributes, Attributes);
-            Row->AttrRow.ReplaceLegacyAttrs(DefaultPopupAttributes, PopupAttributes);
-            Row->AttrRow.ReplaceLegacyAttrs(InvertedOldPopupAttributes, InvertedNewPopupAttributes);
-        }
+        ScreenInfo->ReplaceDefaultAttributes(oldPrimaryAttributes,
+                                             oldPopupAttributes,
+                                             NewPrimaryAttributes,
+                                             NewPopupAttributes);
 
         if (gci->PopupCount)
         {
@@ -746,7 +741,7 @@ HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo, _I
         UpdateFlagsInMask(wNewLegacy, META_ATTRS, Attribute);
     }
     NewAttributes.SetFromLegacy(wNewLegacy);
- 
+
     if (!OldAttributes.IsLegacy())
     {
         // The previous call to SetFromLegacy is going to trash our RGB.
@@ -879,7 +874,7 @@ HRESULT ApiRoutines::GetConsoleWindowImpl(_Out_ HWND* const pHwnd)
     LockConsole();
     auto Unlock = wil::ScopeExit([&] { UnlockConsole(); });
     IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
-    if (pWindow != nullptr) 
+    if (pWindow != nullptr)
     {
         *pHwnd = pWindow->GetWindowHandle();
     }
@@ -1103,7 +1098,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(_In_ SCREEN_INFORMATION* pScreenInfo)
         newCursorPosition.Y -= 1;
         Status = AdjustCursorPosition(pScreenInfo, newCursorPosition, TRUE, nullptr);
     }
-    else 
+    else
     {
         // Cursor is at the top of the viewport
         const COORD bufferSize = pScreenInfo->GetScreenBufferSize();
@@ -1365,9 +1360,9 @@ NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ SCREEN_INFORMATION* c
 }
 
 // Routine Description:
-// - A private API call for forcing the renderer to repaint the screen. If the 
+// - A private API call for forcing the renderer to repaint the screen. If the
 //      input screen buffer is not the active one, then just do nothing. We only
-//      want to redraw the screen buffer that requested the repaint, and 
+//      want to redraw the screen buffer that requested the repaint, and
 //      switching screen buffers will already force a repaint.
 // Parameters:
 //  The ScreenBuffer to perform the repaint for.
@@ -1384,7 +1379,7 @@ NTSTATUS DoSrvPrivateRefreshWindow(_In_ SCREEN_INFORMATION* const pScreenInfo)
     return STATUS_SUCCESS;
 }
 
-HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWrittenOrNeeded) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
+HRESULT GetConsoleTitleWImplHelper(_Out_writes_to_opt_(cchTitleBufferSize, *pcchTitleBufferWritten) _Always_(_Post_z_) wchar_t* const pwsTitleBuffer,
                                    _In_ size_t const cchTitleBufferSize,
                                    _Out_ size_t* const pcchTitleBufferWritten,
                                    _Out_ size_t* const pcchTitleBufferNeeded,

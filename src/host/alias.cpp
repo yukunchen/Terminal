@@ -5,7 +5,7 @@
 ********************************************************/
 #include "precomp.h"
 
-#include "cmdline.h"
+#include "alias.h"
 
 #include "_output.h"
 #include "output.h"

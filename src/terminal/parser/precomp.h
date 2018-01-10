@@ -33,3 +33,4 @@ Abstract:
 #include <vector>
 #include <memory>
 #include <deque>
+#include <assert.h>
