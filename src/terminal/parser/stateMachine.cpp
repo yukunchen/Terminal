@@ -370,24 +370,35 @@ void StateMachine::_ActionParam(_In_ wchar_t const wch)
 {
     _trace.TraceOnAction(L"Param");
 
-    // if we're past the end, this param is just ignored.
-    // verify both the count and that the pointer didn't run off the end of the array
-    if (_cParams < s_cParamsMax && _pusActiveParam < &_rgusParams[s_cParamsMax])
+    // Verify both the count and that the pointer didn't run off the end of the 
+    //      array. If we're past the end, this param is just ignored.
+    if (_cParams <= s_cParamsMax && _pusActiveParam < &_rgusParams[s_cParamsMax])
     {
-        if (_iParamAccumulatePos == 0)
+        // If we're adding a character to the first parameter, 
+        //      then we now have one parameter.
+        if (_iParamAccumulatePos == 0 && _cParams == 0)
         {
-            // if we've just started filling a new parameter, increment the total number of params we have.
             _cParams++;
         }
 
-        // store parameter data
+        // On a delimiter, increase the number of params we've seen.
+        // "Empty" params should still count as a param - 
+        //      eg "\x1b[0;;m" should be three "0" params
         if (wch == L';')
         {
-            // delimiter, move to next param
+            // Move to next param. 
+            //      If we're on the last param (_cParams == s_cParamsMax),
+            //      then _pusActiveParam will now be past the end of _rgusParams,
+            //      and any future params will be ignored.
             _pusActiveParam++;
 
             // clear out the accumulator count to prepare for the next one
             _iParamAccumulatePos = 0;
+
+            // Don't increment the _cParams to be greater than s_cParamsMax.
+            //      We're using _pusActiveParam to make sure we don't fill too 
+            //      many params.
+            if (_cParams < s_cParamsMax) _cParams++;
         }
         else
         {
