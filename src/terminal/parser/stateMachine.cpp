@@ -398,7 +398,10 @@ void StateMachine::_ActionParam(_In_ wchar_t const wch)
             // Don't increment the _cParams to be greater than s_cParamsMax.
             //      We're using _pusActiveParam to make sure we don't fill too 
             //      many params.
-            if (_cParams < s_cParamsMax) _cParams++;
+            if (_cParams < s_cParamsMax)
+            {
+                _cParams++;
+            }
         }
         else
         {
