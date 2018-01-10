@@ -307,6 +307,12 @@ NTSTATUS ReadPendingInput(_Inout_ InputBuffer* const pInputBuffer,
     ULONG NumToBytes = 0;
     wchar_t* pBuffer = pwchBuffer;
     DWORD bufferRemaining = static_cast<DWORD>(OutputBufferSize);
+    *pReadByteCount = 0;
+
+    if (OutputBufferSize < sizeof(wchar_t))
+    {
+        return STATUS_BUFFER_TOO_SMALL;
+    }
 
     if (IsFlagSet(pHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput))
     {
@@ -650,6 +656,12 @@ NTSTATUS ReadCharacterInput(_Inout_ InputBuffer* const pInputBuffer,
     NTSTATUS Status = STATUS_SUCCESS;
     wchar_t* pBuffer = pwchBuffer;
     size_t bufferRemaining = OutputBufferSize;
+    *pReadByteCount = 0;
+
+    if (OutputBufferSize < sizeof(wchar_t))
+    {
+        return STATUS_BUFFER_TOO_SMALL;
+    }
 
     if (*pReadByteCount < static_cast<ULONG>(bufferRemaining))
     {

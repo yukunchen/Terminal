@@ -53,7 +53,7 @@ namespace Microsoft
                 virtual bool EnableCursorBlinking(_In_ bool const /*fEnable*/) { return false; }  // ATT610
                 virtual bool SetTopBottomScrollingMargins(_In_ SHORT const /*sTopMargin*/, _In_ SHORT const /*sBottomMargin*/, _In_ const bool /*fResetCursor*/) { return false; } // DECSTBM
                 virtual bool ReverseLineFeed() { return false; } // RI
-                virtual bool SetWindowTitle(_In_ const wchar_t* const /*pwchWindowTitle*/, _In_ unsigned short /*sCchTitleLength*/) { return false; } // OscWindowTitle
+                virtual bool SetWindowTitle(_In_reads_(_Param_(2)) const wchar_t* const /*pwchWindowTitle*/, _In_ unsigned short /*sCchTitleLength*/) { return false; } // OscWindowTitle
                 virtual bool UseAlternateScreenBuffer() { return false; } // ASBSET
                 virtual bool UseMainScreenBuffer() { return false; } // ASBRST
                 virtual bool HorizontalTabSet() { return false; } // HTS
@@ -157,10 +157,10 @@ namespace Microsoft
                     USASCII = L'B'
                 };
 
-                virtual bool SetGraphicsRendition(_In_reads_(cOptions) const GraphicsOptions* const /*rgOptions*/, _In_ size_t const cOptions) { UNREFERENCED_PARAMETER(cOptions); return false; } // SGR
+                virtual bool SetGraphicsRendition(_In_reads_(_Param_(2)) const GraphicsOptions* const /*rgOptions*/, _In_ size_t const /*cOptions*/) { return false; } // SGR
 
-                virtual bool SetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const /*rgParams*/, _In_ size_t const cParams) { UNREFERENCED_PARAMETER(cParams); return false; } // DECSET
-                virtual bool ResetPrivateModes(_In_reads_(cParams) const PrivateModeParams* const /*rgParams*/, _In_ size_t const cParams) { UNREFERENCED_PARAMETER(cParams); return false; } // DECRST
+                virtual bool SetPrivateModes(_In_reads_(_Param_(2)) const PrivateModeParams* const /*rgParams*/, _In_ size_t const /*cParams*/) { return false; } // DECSET
+                virtual bool ResetPrivateModes(_In_reads_(_Param_(2)) const PrivateModeParams* const /*rgParams*/, _In_ size_t const /*cParams*/) { return false; } // DECRST
 
                 enum class AnsiStatusType : unsigned int
                 {
@@ -183,7 +183,7 @@ namespace Microsoft
 
                 // DTTERM_WindowManipulation
                 virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType /*uiFunction*/,
-                                                _In_reads_(cParams) const unsigned short* const /*rgusParams*/,
+                                                _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
                                                 _In_ size_t const /*cParams*/) { return false; } 
 
             };

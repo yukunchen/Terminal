@@ -37,7 +37,7 @@ class CONSOLE_INFORMATION;
 // - inEvents will contain unicode InputEvents
 // - partialEvent may contain a partial dbcs KeyEvent
 void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
-                     _Outref_result_maybenull_ std::unique_ptr<IInputEvent>& partialEvent)
+                     _Out_ std::unique_ptr<IInputEvent>& partialEvent)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
