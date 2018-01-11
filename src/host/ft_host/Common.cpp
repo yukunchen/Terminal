@@ -177,3 +177,29 @@ bool Common::TestBufferCleanup()
 
     return true;
 }
+
+static PCWSTR pwszConsoleKeyName = L"Console";
+static PCWSTR pwszForceV2ValueName = L"ForceV2";
+
+CommonV1V2Helper::CommonV1V2Helper(_In_ const ForceV2States ForceV2StateDesired)
+{
+    // Open console key
+
+    // This looks weird, but the success code for lStatus is 0 (ERROR_SUCCESS) which is equal to BOOL FALSE.
+    // If it is anything but FALSE (0), we need to GetLastError() and print it.
+    // This macro wraps all that up in one nice package, despite the misleading name.
+    VERIFY_WIN32_BOOL_FAILED(RegOpenKeyExW(HKEY_CURRENT_USER, pwszConsoleKeyName, 0, KEY_READ | KEY_WRITE, &_consoleKey));
+
+    Log::Comment(L"Backing up v1/v2 console state.");
+    DWORD cbForceV2Original = sizeof(_dwForceV2Original);
+    VERIFY_WIN32_BOOL_FAILED(RegQueryValueExW(_consoleKey.get(), pwszForceV2ValueName, nullptr, nullptr, (LPBYTE)&_dwForceV2Original, &cbForceV2Original));
+
+    Log::Comment(String().Format(L"Setting v1/v2 console state to desired '%d'", ForceV2StateDesired));
+    VERIFY_WIN32_BOOL_FAILED(RegSetValueExW(_consoleKey.get(), pwszForceV2ValueName, 0, REG_DWORD, (LPBYTE)&ForceV2StateDesired, sizeof(ForceV2StateDesired)));
+}
+
+CommonV1V2Helper::~CommonV1V2Helper()
+{
+    Log::Comment(String().Format(L"Restoring v1/v2 console state to original '%d'", _dwForceV2Original));
+    VERIFY_WIN32_BOOL_FAILED(RegSetValueExW(_consoleKey.get(), pwszForceV2ValueName, 0, REG_DWORD, (LPBYTE)&_dwForceV2Original, sizeof(_dwForceV2Original)));
+}
