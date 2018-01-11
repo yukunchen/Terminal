@@ -26,6 +26,23 @@ public:
     static HANDLE _hConsole;
 };
 
+class CommonV1V2Helper
+{
+public:
+    enum class ForceV2States : DWORD
+    {
+        V1 = 0,
+        V2 = 1
+    };
+
+    CommonV1V2Helper(_In_ const ForceV2States ForceV2StateDesired);
+    ~CommonV1V2Helper();
+
+private:
+    DWORD _dwForceV2Original;
+    wil::unique_hkey _consoleKey;
+};
+
 // Helper to cause a VERIFY_FAIL and get the last error code for functions that return null-like things.
 void VerifySucceededGLE(BOOL bResult);
 
@@ -47,4 +64,3 @@ BOOL UnadjustWindowRectEx(
 
 HANDLE GetStdInputHandle();
 HANDLE GetStdOutputHandle();
-

@@ -13,6 +13,7 @@
     <ClCompile Include="API_RgbColorTests.cpp" />
     <ClCompile Include="API_TitleTests.cpp" />
     <ClCompile Include="API_PolicyTests.cpp" />
+    <ClCompile Include="CanaryTests.cpp" />
     <ClCompile Include="CJK_DbcsTests.cpp" />
     <ClCompile Include="Common.cpp" />
     <ClCompile Include="InitTests.cpp" />
