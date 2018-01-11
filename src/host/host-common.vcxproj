@@ -58,6 +58,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\IIoProvider.hpp" />
+    <ClInclude Include="..\alias.h" />
     <ClInclude Include="..\ApiRoutines.h" />
     <ClInclude Include="..\cmdline.h" />
     <ClInclude Include="..\conapi.h" />
@@ -73,6 +74,7 @@
     <ClInclude Include="..\getset.h" />
     <ClInclude Include="..\globals.h" />
     <ClInclude Include="..\handle.h" />
+    <ClInclude Include="..\history.h" />
     <ClInclude Include="..\init.hpp" />
     <ClInclude Include="..\input.h" />
     <ClInclude Include="..\inputBuffer.hpp" />

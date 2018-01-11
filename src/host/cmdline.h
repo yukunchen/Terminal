@@ -11,7 +11,8 @@ Author:
 - Therese Stowell (ThereseS) 15-Nov-1991
 
 Revision History:
-
+- Mike Griese (migrie) Jan 2018:
+    Refactored the history and alias functionality into their own files.
 Notes:
     The input model for the command line editing popups is complex.
     Here is the relevant pseudocode:
@@ -54,34 +55,8 @@ Notes:
 #include "screenInfo.hpp"
 #include "server.h"
 
-// Disable warning about 0 length MSFT compiler struct extension.
-#pragma warning(disable:4200)
-typedef struct _COMMAND
-{
-    USHORT CommandLength;
-    WCHAR Command[0]; // TODO: refactor
-} COMMAND, *PCOMMAND;
-
-// COMMAND_HISTORY Flags
-#define CLE_ALLOCATED 0x00000001
-#define CLE_RESET     0x00000002
-
-#pragma warning(disable:4200)
-typedef struct _COMMAND_HISTORY
-{
-    LIST_ENTRY ListLink;
-    DWORD Flags;
-    PWCHAR AppName;
-    SHORT NumberOfCommands;
-    SHORT LastAdded;
-    SHORT LastDisplayed;
-    SHORT FirstCommand; // circular buffer
-    SHORT MaximumNumberOfCommands;
-    HANDLE ProcessHandle;
-    LIST_ENTRY PopupList;   // pointer to top-level popup
-    PCOMMAND Commands[0]; // TODO: refactor
-} COMMAND_HISTORY, *PCOMMAND_HISTORY;
-
+#include "history.h"
+#include "alias.h"
 #include "readDataCooked.hpp"
 
 #define DEFAULT_NUMBER_OF_COMMANDS 25
@@ -107,27 +82,6 @@ typedef struct _CLE_POPUP
 
 
 #define CLE_NO_POPUPS(COMMAND_HISTORY) (&(COMMAND_HISTORY)->PopupList == (COMMAND_HISTORY)->PopupList.Blink)
-
-//
-// aliases are grouped per console, per exe.
-//
-
-typedef struct _ALIAS
-{
-    LIST_ENTRY ListLink;
-    USHORT SourceLength;
-    USHORT TargetLength;
-    _Field_size_bytes_opt_(SourceLength) PWCHAR Source;
-    _Field_size_bytes_(TargetLength) PWCHAR Target;
-} ALIAS, *PALIAS;
-
-typedef struct _EXE_ALIAS_LIST
-{
-    LIST_ENTRY ListLink;
-    USHORT ExeLength;
-    _Field_size_bytes_opt_(ExeLength) PWCHAR ExeName;
-    LIST_ENTRY AliasList;
-} EXE_ALIAS_LIST, *PEXE_ALIAS_LIST;
 
 class CommandLine
 {
@@ -185,82 +139,8 @@ bool IsWordDelim(_In_ WCHAR const wch);
 HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pwsBuffer,
                               _In_ size_t const cchBuffer);
 
-NTSTATUS MatchAndCopyAlias(_In_reads_bytes_(cbSource) PWCHAR pwchSource,
-                           _In_ USHORT cbSource,
-                           _Out_writes_bytes_(*pcbTarget) PWCHAR pwchTarget,
-                           _Inout_ PUSHORT pcbTarget,
-                           _In_reads_bytes_(cbExe) PWCHAR pwchExe,
-                           _In_ USHORT cbExe,
-                           _Out_ PDWORD pcLines);
-
-void ClearCmdExeAliases();
-void FreeAliasBuffers();
-
 #define COMMAND_NUM_TO_INDEX(NUM, CMDHIST) (SHORT)(((NUM+(CMDHIST)->FirstCommand)%((CMDHIST)->MaximumNumberOfCommands)))
 #define COMMAND_INDEX_TO_NUM(INDEX, CMDHIST) (SHORT)(((INDEX+((CMDHIST)->MaximumNumberOfCommands)-(CMDHIST)->FirstCommand)%((CMDHIST)->MaximumNumberOfCommands)))
-
-NTSTATUS AddCommand(_In_ PCOMMAND_HISTORY pCmdHistory,
-                    _In_reads_bytes_(cbCommand) PCWCHAR pwchCommand,
-                    _In_ const USHORT cbCommand,
-                    _In_ const BOOL fHistoryNoDup);
-PCOMMAND_HISTORY AllocateCommandHistory(_In_reads_bytes_(cbAppName) PCWSTR pwszAppName, _In_ const DWORD cbAppName, _In_ HANDLE hProcess);
-void FreeCommandHistory(_In_ HANDLE const hProcess);
-void FreeCommandHistoryBuffers();
-void ResizeCommandHistoryBuffers(_In_ UINT const cCommands);
-void EmptyCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory);
-PCOMMAND_HISTORY ReallocCommandHistory(_In_opt_ PCOMMAND_HISTORY CurrentCommandHistory, _In_ DWORD const NumCommands);
-PCOMMAND_HISTORY FindExeCommandHistory(_In_reads_(AppNameLength) PVOID AppName, _In_ DWORD AppNameLength, _In_ BOOLEAN const UnicodeExe);
-BOOL AtFirstCommand(_In_ PCOMMAND_HISTORY CommandHistory);
-BOOL AtLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
-void EmptyCommandHistory(_In_opt_ PCOMMAND_HISTORY CommandHistory);
-PCOMMAND GetLastCommand(_In_ PCOMMAND_HISTORY CommandHistory);
-PCOMMAND RemoveCommand(_In_ PCOMMAND_HISTORY CommandHistory, _In_ SHORT iDel);
-SHORT FindMatchingCommand(_In_ PCOMMAND_HISTORY CommandHistory,
-                          _In_reads_bytes_(cbIn) PCWCHAR pwchIn,
-                          _In_ ULONG cbIn, 
-                          _In_ SHORT CommandIndex,
-                          _In_ DWORD Flags);
-NTSTATUS RetrieveNthCommand(_In_ PCOMMAND_HISTORY CommandHistory,
-                            _In_ SHORT Index,
-                            _In_reads_bytes_(BufferSize)
-                            PWCHAR Buffer,
-                            _In_ ULONG BufferSize, _Out_ PULONG CommandSize);
-
-// COMMAND_IND_NEXT and COMMAND_IND_PREV go to the next and prev command
-// COMMAND_IND_INC  and COMMAND_IND_DEC  go to the next and prev slots
-//
-// Don't get the two confused - it matters when the cmd history is not full!
-#define COMMAND_IND_PREV(IND, CMDHIST)               \
-{                                                    \
-    if (IND <= 0) {                                  \
-        IND = (CMDHIST)->NumberOfCommands;           \
-    }                                                \
-    IND--;                                           \
-}
-
-#define COMMAND_IND_NEXT(IND, CMDHIST)               \
-{                                                    \
-    ++IND;                                           \
-    if (IND >= (CMDHIST)->NumberOfCommands) {        \
-        IND = 0;                                     \
-    }                                                \
-}
-
-#define COMMAND_IND_DEC(IND, CMDHIST)                \
-{                                                    \
-    if (IND <= 0) {                                  \
-        IND = (CMDHIST)->MaximumNumberOfCommands;    \
-    }                                                \
-    IND--;                                           \
-}
-
-#define COMMAND_IND_INC(IND, CMDHIST)                \
-{                                                    \
-    ++IND;                                           \
-    if (IND >= (CMDHIST)->MaximumNumberOfCommands) { \
-        IND = 0;                                     \
-    }                                                \
-}
 
 #define FMCFL_EXACT_MATCH   1
 #define FMCFL_JUST_LOOKING  2
