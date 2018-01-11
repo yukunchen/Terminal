@@ -181,13 +181,42 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
 
     ASSERT(gci->IsConsoleLocked());
 
+    // MSFT:13994975 This is REALLY weird.
+    // When we're doing cooked reading for popups, we come through this method 
+    //   twice. Once when we press F7 to bring up the popup, then again when we 
+    //   press enter to input the selected command.
+    // The first time, there is no popup, and we go to CookedRead. We pass into 
+    //   CookedRead `pNumBytes`, which is passed to us as the address of the 
+    //   stack variable dwNumBytes, in ConsoleWaitBlock::Notify. 
+    // CookedRead sets this->pdwNumBytes to that value, and starts the popup,  
+    //   which returns all the way up, and pops the ConsoleWaitBlock::Notify  
+    //   stack frame containing the address we're pointing at. 
+    // Then on the second time  through this function, we hit this if block,  
+    //   because there is a popup to get input from. 
+    // However, pNumBytes is now the address of a different stack frame, and not  
+    //   necessarily the same as before (presumably not at all). The  
+    //   PopupInputRoutine would try and write the number of bytes read to the  
+    //   value in pdwNumBytes, and then we'd return up to ConsoleWaitBlock::Notify,  
+    //   who's dwNumBytes had nothing in it.
+    // To fix this, when we hit this with a popup, we're going to make sure to 
+    //   refresh the value of pdwNumBytes to the current address we want to put 
+    //   the out value into.
+    // It's still really weird, but limits the potential fallout of changing a 
+    //   piece of old spaghetti code.
     if (_CommandHistory)
     {
         PCLE_POPUP Popup;
         if (!CLE_NO_POPUPS(_CommandHistory))
         {
+            // (see above comment, MSFT:13994975)
+            // Make sure that the popup writes the dwNumBytes to the right place
+            if (pNumBytes)
+            {
+                pdwNumBytes = pNumBytes;
+            }
+
             Popup = CONTAINING_RECORD(_CommandHistory->PopupList.Flink, CLE_POPUP, ListLink);
-            *pReplyStatus = (Popup->PopupInputRoutine) (this, nullptr, TRUE);
+             *pReplyStatus = (Popup->PopupInputRoutine) (this, nullptr, TRUE);
             if (*pReplyStatus == CONSOLE_STATUS_READ_COMPLETE || (*pReplyStatus != CONSOLE_STATUS_WAIT && *pReplyStatus != CONSOLE_STATUS_WAIT_NO_BLOCK))
             {
                 *pReplyStatus = S_OK;
@@ -195,7 +224,7 @@ BOOL COOKED_READ_DATA::Notify(_In_ WaitTerminationReason const TerminationReason
                 delete[] ExeName;
                 gci->lpCookedReadData = nullptr;
                 _pTempHandle->CloseHandle();
-
+                
                 return TRUE;
             }
             return FALSE;
