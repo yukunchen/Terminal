@@ -117,6 +117,8 @@ class TextBufferTests
     TEST_METHOD(TestComplexUnBold);
     
     TEST_METHOD(CopyAttrs);
+
+    TEST_METHOD(EmptySgrTest);
     
     TEST_METHOD(TestReverseReset);
 
@@ -1231,6 +1233,80 @@ void TextBufferTests::CopyAttrs()
 
 }
 
+void TextBufferTests::EmptySgrTest()
+{
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
+    StateMachine* const stateMachine = psi->GetStateMachine();
+    Cursor* const cursor = tbi->GetCursor();
+
+    SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    VERIFY_IS_NOT_NULL(stateMachine);
+    VERIFY_IS_NOT_NULL(cursor);
+    cursor->SetXPosition(0);
+    cursor->SetYPosition(0);
+
+    std::wstring reset = L"\x1b[0m";
+    stateMachine->ProcessString(&reset[0], reset.length());
+    const COLORREF defaultFg = psi->GetAttributes().GetRgbForeground();
+    const COLORREF defaultBg = psi->GetAttributes().GetRgbBackground();
+
+    // Case 1 - 
+    //      Write '\x1b[0mX\x1b[31mX\x1b[31;m'
+    //      The first X should be default colors.
+    //      The second X should be (darkRed,default).
+    //      The third X should be default colors.
+    std::wstring sequence = L"\x1b[0mX\x1b[31mX\x1b[31;mX";
+    stateMachine->ProcessString(&sequence[0], sequence.length());
+
+    const auto x = cursor->GetPosition().X;
+    const auto y = cursor->GetPosition().Y;
+    const COLORREF darkRed = gci->GetColorTableEntry(4);
+    Log::Comment(NoThrowString().Format(
+        L"cursor={X:%d,Y:%d}", 
+        x, y
+    ));
+    VERIFY_IS_TRUE(x >= 3);
+
+    const auto row = tbi->GetRowByOffset(y);
+    const auto attrRow = &row->AttrRow;
+    const auto len = tbi->_coordBufferSize.X;
+    const auto attrs = new TextAttribute[len];
+    VERIFY_IS_NOT_NULL(attrs);
+    attrRow->UnpackAttrs(attrs, len);
+    const auto attrA = attrs[x-3];
+    const auto attrB = attrs[x-2];
+    const auto attrC = attrs[x-1];
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor={X:%d,Y:%d}", 
+        x, y
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"attrA={IsLegacy:%d, GetLegacyAttributes:0x%x, FG:0x%x, BG:0x%x}", 
+        attrA.IsLegacy(), attrA.GetLegacyAttributes(), attrA.GetRgbForeground(), attrA.GetRgbBackground()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"attrB={IsLegacy:%d, GetLegacyAttributes:0x%x, FG:0x%x, BG:0x%x}", 
+        attrB.IsLegacy(), attrB.GetLegacyAttributes(), attrB.GetRgbForeground(), attrB.GetRgbBackground()
+    ));
+    Log::Comment(NoThrowString().Format(
+        L"attrC={IsLegacy:%d, GetLegacyAttributes:0x%x, FG:0x%x, BG:0x%x}", 
+        attrC.IsLegacy(), attrC.GetLegacyAttributes(), attrC.GetRgbForeground(), attrC.GetRgbBackground()
+    ));
+    VERIFY_ARE_EQUAL(attrA.GetRgbForeground(), defaultFg);
+    VERIFY_ARE_EQUAL(attrA.GetRgbBackground(), defaultBg);
+    
+    VERIFY_ARE_EQUAL(attrB.GetRgbForeground(), darkRed);
+    VERIFY_ARE_EQUAL(attrB.GetRgbBackground(), defaultBg);
+
+    VERIFY_ARE_EQUAL(attrC.GetRgbForeground(), defaultFg);
+    VERIFY_ARE_EQUAL(attrC.GetRgbBackground(), defaultBg);
+
+    stateMachine->ProcessString(&reset[0], reset.length());
+}
+
 void TextBufferTests::TestReverseReset()
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
@@ -1243,6 +1319,14 @@ void TextBufferTests::TestReverseReset()
     VERIFY_IS_NOT_NULL(stateMachine);
     VERIFY_IS_NOT_NULL(cursor);
 
+    cursor->SetXPosition(0);
+    cursor->SetYPosition(0);
+
+    std::wstring reset = L"\x1b[0m";
+    stateMachine->ProcessString(&reset[0], reset.length());
+    const COLORREF defaultFg = psi->GetAttributes().GetRgbForeground();
+    const COLORREF defaultBg = psi->GetAttributes().GetRgbBackground();
+    
     // Case 1 - 
     //      Write '\E[42m\E[38;2;128;5;255mX\E[7mX\E[27mX'
     //      The first X should be (fg,bg) = (rgb(128;5;255), dark_green)
@@ -1298,6 +1382,5 @@ void TextBufferTests::TestReverseReset()
     VERIFY_ARE_EQUAL(attrC.GetRgbForeground(), rgbColor);
     VERIFY_ARE_EQUAL(attrC.GetRgbBackground(), dark_green);
 
-    std::wstring reset = L"\x1b[0m";
     stateMachine->ProcessString(&reset[0], reset.length());
 }
