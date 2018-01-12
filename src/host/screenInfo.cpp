@@ -69,7 +69,7 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
 // - This routine allocates and initializes the data associated with a screen buffer.
 // Arguments:
 // - ScreenInformation - the new screen buffer.
-// - dwWindowSize - the initial size of screen buffer's window (in rows/columns)
+// - coordWindowSize - the initial size of screen buffer's window (in rows/columns)
 // - nFont - the initial font to generate text with.
 // - dwScreenBufferSize - the initial size of the screen buffer (in rows/columns).
 // Return Value:
@@ -100,16 +100,13 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
     status = NT_TESTNULL(pScreen);
     if (NT_SUCCESS(status))
     {
-        pScreen->SetScreenBufferSize(coordScreenBufferSize);
+        pScreen->_InitializeBufferDimensions(coordScreenBufferSize, coordWindowSize);
 
-        pScreen->_srBufferViewport.Left = 0;
-        pScreen->_srBufferViewport.Top = 0;
-        pScreen->_srBufferViewport.Right = coordWindowSize.X - 1;
-        pScreen->_srBufferViewport.Bottom = coordWindowSize.Y - 1;
-
-        pScreen->SetScreenBufferSize(coordScreenBufferSize);
-
-        status = TEXT_BUFFER_INFO::CreateInstance(pfiFont, coordScreenBufferSize, ciFill, uiCursorSize, &pScreen->TextInfo);
+        status = TEXT_BUFFER_INFO::CreateInstance(pfiFont,
+                                                  pScreen->GetScreenBufferSize(), 
+                                                  ciFill,
+                                                  uiCursorSize,
+                                                  &pScreen->TextInfo);
 
         if (NT_SUCCESS(status))
         {
@@ -666,17 +663,17 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 
     this->ResizingWindow++;
 
-    // If this isn't the main buffer, make sure we enable both of the scroll bars.
-    //   The alt might come through and disable the scroll bars, this is the only way to re-enable it.
-    if(!_IsAltBuffer())
-    {
-        ServiceLocator::LocateConsoleWindow()->EnableBothScrollBars();
-    }
-
-    const COORD coordScreenBufferSize = GetScreenBufferSize();
-
     if (pWindow != nullptr)
     {
+        const COORD coordScreenBufferSize = GetScreenBufferSize();
+    
+        // If this isn't the main buffer, make sure we enable both of the scroll bars.
+        //   The alt might come through and disable the scroll bars, this is the only way to re-enable it.
+        if(_IsAltBuffer())
+        {
+            pWindow->EnableBothScrollBars();
+        }
+
         pWindow->UpdateScrollBar(true,
                                  this->_IsAltBuffer(),
                                  this->GetScreenWindowSizeY(),
@@ -961,7 +958,7 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(_In_ const RECT* const prcClient
     RETURN_IF_FAILED(_AdjustScreenBufferHelper(prcClientNew, coordBufferSizeNew, &coordClientNewCharacters));
 
     // Now reanalyze the buffer size and grow if we can fit more characters into the window no matter the console mode.
-    if (_IsAltBuffer())
+    if (_IsInPtyMode())
     {
         // The alt buffer always wants to be exactly the size of the screen, never more or less.
         // This prevents scrollbars when you increase the alt buffer size, then decrease it.
@@ -2236,6 +2233,18 @@ bool SCREEN_INFORMATION::_IsAltBuffer() const
 }
 
 // Routine Description:
+// - Helper indicating if the buffer has a main buffer, meaning that this is an alternate buffer.
+// Parameters:
+// - None
+// Return value:
+// - true iff this buffer has a main buffer.
+bool SCREEN_INFORMATION::_IsInPtyMode() const
+{
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return _IsAltBuffer() || gci->IsInVtIoMode();
+}
+
+// Routine Description:
 // - Sets a VT tab stop in the column sColumn. If there is already a tab there, it does nothing.
 // Parameters:
 // - sColumn: the column to add a tab stop to.
@@ -2624,4 +2633,14 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
     }
 
     return S_OK;
+}
+
+void SCREEN_INFORMATION::_InitializeBufferDimensions(_In_ const COORD coordScreenBufferSize,
+                                                     _In_ const COORD coordViewportSize)
+{
+    Viewport viewport = Viewport::FromDimensions({0, 0}, coordViewportSize);
+    _srBufferViewport = viewport.ToInclusive();
+
+    SetScreenBufferSize(_IsInPtyMode()? viewport.Dimensions() : coordScreenBufferSize);
+    
 }
