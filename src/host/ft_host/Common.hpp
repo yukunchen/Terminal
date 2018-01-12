@@ -39,7 +39,8 @@ public:
     ~CommonV1V2Helper();
 
 private:
-    DWORD _dwForceV2Original;
+    bool _fRestoreOnExit = false;
+    DWORD _dwForceV2Original = 0;
     wil::unique_hkey _consoleKey;
 };
 
