@@ -8,6 +8,7 @@
 #include "writeData.hpp"
 
 #include "_stream.h"
+#include "..\types\inc\convert.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -17,15 +18,24 @@
 // - psiContext - The output buffer to write text data to
 // - pwchContext - The string information that the client application sent us to be written
 // - cbContext - Byte count of the string above
+// - uiOutputCodepage - When the wait is completed, we *might* have to convert the byte count
+//                      back into a specific codepage if the initial call was an A call.
+//                      We need to remember what output codepage was set at the moment in time
+//                      when the write was delayed as it might change by the time it is serviced.
 // Return Value:
 // - THROW: Throws if space cannot be allocated to copy the given string
 WriteData::WriteData(_In_ SCREEN_INFORMATION* const psiContext,
                      _In_reads_bytes_(cbContext) wchar_t* const pwchContext,
-                     _In_ ULONG const cbContext) :
+                     _In_ ULONG const cbContext,
+                     _In_ UINT const uiOutputCodepage) :
     IWaitRoutine(ReplyDataType::Write),
     _psiContext(psiContext),
     _pwchContext(THROW_IF_NULL_ALLOC(reinterpret_cast<wchar_t*>(new byte[cbContext]))),
-    _cbContext(cbContext)
+    _cbContext(cbContext),
+    _uiOutputCodepage(uiOutputCodepage),
+    _fLeadByteCaptured(false),
+    _fLeadByteConsumed(false),
+    _cchUtf8Consumed(0)
 {
     memmove(_pwchContext, pwchContext, _cbContext);
 }
@@ -42,6 +52,41 @@ WriteData::~WriteData()
 }
 
 // Routine Description:
+// - Stores some additional information about lead byte adjustments from the conversion
+//   in WriteConsoleA before the real WriteConsole processing (always W) is reached
+//   so we can restore an accurate A byte count at the very end when the wait is serviced.
+// Arguments:
+// - fLeadByteCaptured - A lead byte was removed from the string before converted it and saved it.
+//                       We need to report to the original caller that we "wrote" the byte
+//                       even though it is held in escrow for the next call because it was 
+//                       the last character in the stream.
+// - fLeadByteConsumed - We had a lead byte in escrow from the previous call that we stitched onto the
+//                       front of the input string even though the caller didn't write it in this call.
+//                       We need to report the byte count back to the caller without including this byte
+//                       in the calculation as it wasn't a part of what was given in this exact call.
+// Return Value:
+// - <none>
+void WriteData::SetLeadByteAdjustmentStatus(_In_ bool const fLeadByteCaptured,
+                                            _In_ bool const fLeadByteConsumed)
+{
+    _fLeadByteCaptured = fLeadByteCaptured;
+    _fLeadByteConsumed = fLeadByteConsumed;
+}
+
+// Routine Description:
+// - For UTF-8 codepages, remembers how many bytes that the UTF-8 parser said it consumed from the input stream.
+//   This will allow us to give back the correct value after the wait routine Notify services the data later.
+// Arguments:
+// - cchUtf8Consumed - Count of characters consumed by the UTF-8 parser off the input stream to generate the
+//                     wide character string that is stowed in this object for consumption in the notify routine later.
+// Return Value:
+// - <none>
+void WriteData::SetUtf8ConsumedCharacters(_In_ size_t const cchUtf8Consumed)
+{
+    _cchUtf8Consumed = cchUtf8Consumed;
+}
+
+// Routine Description:
 // - Called back at a later time to resume the writing operation when the output object becomes unblocked.
 // Arguments:
 // - TerminationReason - if this routine is called because a ctrl-c or ctrl-break was seen, this argument
@@ -54,7 +99,7 @@ WriteData::~WriteData()
 // - TRUE if the wait is done and result buffer/status code can be sent back to the client.
 // - FALSE if we need to continue to wait because the output object blocked again
 BOOL WriteData::Notify(_In_ WaitTerminationReason const TerminationReason,
-                       _In_ BOOLEAN const /*fIsUnicode*/,
+                       _In_ BOOLEAN const fIsUnicode,
                        _Out_ NTSTATUS* const pReplyStatus,
                        _Out_ DWORD* const pNumBytes,
                        _Out_ DWORD* const pControlKeyState,
@@ -77,7 +122,7 @@ BOOL WriteData::Notify(_In_ WaitTerminationReason const TerminationReason,
 
     assert(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
-    IWaitRoutine* pWaiter = nullptr;
+    WriteData* pWaiter = nullptr;
     ULONG cbContext = _cbContext;
     NTSTATUS Status = DoWriteConsole(_pwchContext,
                                      &cbContext,
@@ -89,6 +134,51 @@ BOOL WriteData::Notify(_In_ WaitTerminationReason const TerminationReason,
         // an extra waiter will be created by DoWriteConsole, but we're already a waiter so discard it.
         delete pWaiter;
         return FALSE;
+    }
+
+    // There's extra work to do to correct the byte counts if the original call was an A-version call.
+    // We always process and hold text in the waiter as W-version text, but the A call is expecting
+    // a byte value in its own codepage of how much we have written in that codepage.
+    if (!fIsUnicode)
+    {
+        if (CP_UTF8 != _uiOutputCodepage)
+        {
+            // At this level with WriteConsole, everything is byte counts, so change back to char counts for 
+            // GetALengthFromW to work correctly.
+            const size_t cchContext = cbContext / sizeof(wchar_t);
+
+            // For non-UTF-8 codepages, we need to back convert the amount consumed and then
+            // correlate that with any lead bytes we may have kept for later or reintroduced
+            // from previous calls.
+            size_t cchTextBufferRead = 0;
+
+            // Start by counting the number of A bytes we used in printing our W string to the screen.
+            LOG_IF_FAILED(GetALengthFromW(_uiOutputCodepage, _pwchContext, cchContext, &cchTextBufferRead));
+
+            // If we captured a byte off the string this time around up above, it means we didn't feed
+            // it into the WriteConsoleW above, and therefore its consumption isn't accounted for
+            // in the count we just made. Add +1 to compensate.
+            if (_fLeadByteCaptured)
+            {
+                cchTextBufferRead++;
+            }
+
+            // If we consumed an internally-stored lead byte this time around up above, it means that we
+            // fed a byte into WriteConsoleW that wasn't a part of this particular call's request.
+            // We need to -1 to compensate and tell the caller the right number of bytes consumed this request.
+            if (_fLeadByteConsumed)
+            {
+                cchTextBufferRead--;
+            }
+
+            LOG_IF_FAILED(SizeTToULong(cchTextBufferRead, &cbContext));
+        }
+        else
+        {
+            // For UTF-8, we were told exactly how many valid bytes were consumed before we got into the wait state.
+            // Just give that value back now.
+            LOG_IF_FAILED(SizeTToULong(_cchUtf8Consumed, &cbContext));
+        }
     }
 
     *pNumBytes = cbContext;

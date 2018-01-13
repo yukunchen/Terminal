@@ -334,7 +334,7 @@ public:
         if (_fWriteConsoleInputWResult)
         {
             // move all the input events we were given into local storage so we can test against them
-            Log::Comment(NoThrowString().Format(L"Moving %d input events into local storage...", events.size()));
+            Log::Comment(NoThrowString().Format(L"Moving %zu input events into local storage...", events.size()));
 
             _events.clear();
             _events.swap(events);
@@ -352,7 +352,7 @@ public:
         if (_fPrivatePrependConsoleInputResult)
         {
             // move all the input events we were given into local storage so we can test against them
-            Log::Comment(NoThrowString().Format(L"Moving %d input events into local storage...", events.size()));
+            Log::Comment(NoThrowString().Format(L"Moving %zu input events into local storage...", events.size()));
 
             _events.clear();
             _events.swap(events);
@@ -420,7 +420,7 @@ public:
             CHAR_INFO* const ciBuffer = new CHAR_INFO[cch];
             size_t cciFilled = 0;
 
-            Log::Comment(NoThrowString().Format(L"\tCopy buffer size is %d chars", cch));
+            Log::Comment(NoThrowString().Format(L"\tCopy buffer size is %zu chars", cch));
 
             for (SHORT iCharY = pScrollRectangle->Top; iCharY <= pScrollRectangle->Bottom; iCharY++)
             {
@@ -446,7 +446,7 @@ public:
                 }
 
             }
-            Log::Comment(NoThrowString().Format(L"\tCopied a total %d chars", cciFilled));
+            Log::Comment(NoThrowString().Format(L"\tCopied a total %zu chars", cciFilled));
             Log::Comment(L"\tCopying chars back");
             for (SHORT iCharY = pScrollRectangle->Top; iCharY <= pScrollRectangle->Bottom; iCharY++)
             {
@@ -830,7 +830,7 @@ public:
             }
         }
 
-        Log::Comment(NoThrowString().Format(L"Wrote %d characters into buffer.", cchModified));
+        Log::Comment(NoThrowString().Format(L"Wrote %zu characters into buffer.", cchModified));
     }
 
     void FillRectangle(SMALL_RECT srRect, wchar_t wch, WORD wAttr)
@@ -851,7 +851,7 @@ public:
             }
         }
 
-        Log::Comment(NoThrowString().Format(L"Filled %d characters.", cchModified));
+        Log::Comment(NoThrowString().Format(L"Filled %zu characters.", cchModified));
     }
 
     void ValidateInputEvent(_In_ PCWSTR pwszExpectedResponse)
@@ -1011,12 +1011,12 @@ public:
     {
         bool fStateValid = true;
 
-        Log::Comment(NoThrowString().Format(L"The following %d regions are used as in-bounds for this test:", cRegions));
+        Log::Comment(NoThrowString().Format(L"The following %zu regions are used as in-bounds for this test:", cRegions));
         for (size_t iRegion = 0; iRegion < cRegions; iRegion++)
         {
             SMALL_RECT srRegion = rgsrRegions[iRegion];
 
-            Log::Comment(NoThrowString().Format(L"#%d - (T: %d, B: %d, L: %d, R:%d)", iRegion, srRegion.Top, srRegion.Bottom, srRegion.Left, srRegion.Right));
+            Log::Comment(NoThrowString().Format(L"#%zu - (T: %d, B: %d, L: %d, R:%d)", iRegion, srRegion.Top, srRegion.Bottom, srRegion.Left, srRegion.Right));
         }
 
         Log::Comment(L"Now checking every character within the buffer...");

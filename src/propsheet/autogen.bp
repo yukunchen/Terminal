@@ -200,37 +200,39 @@ namespace Onecore.Windows.Core.Console.Open.Src.Propsheet {
             f`util.cpp`,
             f`windowsshell.manifest`,
             f`${objRoot}\${buildAlt}\onecorefeaturestaging.inc`,
-            isBuildRelease ? f`${objRoot}\${buildAlt}\pe_list\console.dll` : undefined,
             f`${srcRoot}\build\scripts\fixtsversionstringappend.cmd`,
             f`${srcRoot}\onecore\windows\core\console\open\res\console.ico`,
             f`${srcRoot}\onecore\windows\core\console\open\res\truetype.bmp`,
-            MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
-            MsWinCrts.Public.Internal.Sdk.Lib.library,
-            isBuildArm32 || isBuildArm64 ? MsWinCrts.Public.Sdk.Lib.library : undefined,
-            MsWinOnecoreBase.Public.Shared.Inc.header,
-            MsWinOnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.V1_7.library,
-            isBuildRelease && (isBuildX64 || isBuildX86) ? MsWinOnecoreMerged.Public.Internal.Onecoremerged.Lib.content : undefined,
-            MsWinOnecoreMerged.Public.Sdk.Lib.Onecore.V1_7.library,
-            MsWinOnecoreShell.Public.Sdk.Inc.header,
-            MsWinOnecoreShell.Public.Sdk.Inc.idl,
-            MsWinOnecoreUapMerged.Private.Internal.Onecore.Priv_sdk.Lib.V1_7.library,
-            MsWinOnecoreUapMerged.Public.Internal.Sdk.Lib.library,
-            MsWinOnecoreUapMerged.Public.Sdk.Lib.Onecore.V1_7.library,
-            MsWinOnecoreUapWindows.Public.Internal.Onecoreuapwindows.Lib.library,
+
             pass0,
             pass1,
             prePass,
+
+            MsWinCrts.Public.Internal.Sdk.Lib.library,
+            MsWinCrts.Public.Internal.Sdk.Lib.Ucrt.library,
+            MsWinOnecoreBase.Public.Shared.Inc.header,
+            MsWinOnecoreMerged.Private.Internal.Onecore.Priv_sdk.Lib.V1_8.library,
+            MsWinOnecoreMerged.Public.Sdk.Lib.Onecore.V1_8.library,
+            MsWinOnecoreShell.Public.Sdk.Inc.header,
+            MsWinOnecoreShell.Public.Sdk.Inc.idl,
+            MsWinOnecoreUapMerged.Private.Internal.Onecore.Priv_sdk.Lib.V1_8.library,
+            MsWinOnecoreUapMerged.Public.Internal.Sdk.Lib.library,
+            MsWinOnecoreUapMerged.Public.Sdk.Lib.Onecore.V1_8.library,
+            MsWinOnecoreUapWindows.Public.Internal.Onecoreuapwindows.Lib.library,
+            MsWinOnecore_ApiSet.Private.Internal.Mincore.Priv_sdk.Lib.V1_8.library,
+            MsWinOnecore_MinKernel.Public.Internal.Sdk.Lib.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
+            MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.library,
+            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_9.library,
+            MsWinOnecore_MinKernel.Public.Shared.Inc.header,
             Onecore.Windows.Core.Console.Open.Src.Propslib.pass1,
             Public.Sdk.Inc.idl,
-            MsWinOnecore_ApiSet.Private.Internal.Mincore.Priv_sdk.Lib.V1_7.library,
-            MsWinOnecore_MinKernel.Public.Internal.Sdk.Lib.library,
-            MsWinOnecore_MinKernel.Public.Sdk.Inc.Minwin.header,
-            MsWinOnecore_MinKernel.Public.Sdk.Inc.idl,
-            MsWinOnecore_MinKernel.Public.Sdk.Lib.Minwin.V1_8.library,
-            MsWinOnecore_MinKernel.Public.Sdk.Lib.library,
-            MsWinOnecore_MinKernel.Public.Shared.Inc.header,
-        ]
-        .filter(e => e !== undefined),
+
+            ...addIf(isBuildArm32 || isBuildArm64, () => [
+                    MsWinCrts.Public.Sdk.Lib.library,
+                ]),
+        ],
         
         produces: [
             p`${binRoot}\console.dll`,
@@ -264,24 +266,27 @@ namespace Onecore.Windows.Core.Console.Open.Src.Propsheet {
             f`autogen.bp`,
             f`autogen.bp`,
             f`propsheet.vcxproj`,
-            isBuildRelease && isBuildCommonArchitecture ? MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata : undefined,
+
             pass0,
             pass1,
             pass2,
             prePass,
+
             ...addIf(
                 isBuildRelease,
                 () => [
                     f`product.pbxproj`,
                     f`${binRoot}\msbuildprops\localization.txt`,
-                    f`${objRoot}\${buildAlt}\modularbuildglobalbuildsession.props`,
-                    f`${objRoot}\${buildAlt}\__bldlanguageoverride__.props`,
                     f`${objRoot}\${buildAlt}\__bldlanguage__.props`,
+                    f`${objRoot}\${buildAlt}\__bldlanguageoverride__.props`,
+                    f`${objRoot}\${buildAlt}\modularbuildglobalbuildsession.props`,
                     f`${srcRoot}\onecore\windows\project.props`,
                 ]
             ),
-        ]
-        .filter(e => e !== undefined),
+            ...addIf(isBuildRelease && isBuildCommonArchitecture, () => [
+                    MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata,
+                ]),
+        ],
         
         produces: [
             ...addIf(
@@ -311,49 +316,11 @@ namespace Onecore.Windows.Core.Console.Open.Src.Propsheet {
         ],
     });
 
-    export const bin_Blg_content = pass2.directories.get(p`${binRoot}\blg`);
+    export const bin_content = undefined;
 
-    export const bin_BlgLocSrcBin_content = pass2.directories.get(p`${binRoot}\blg\loc\src\bin`);
+    export const bin_LocEnus_content = extractPart(pass3, p`${binRoot}\loc\en-us`);
 
-    export const bin_BlgLocSrcLcg_content = pass2.directories.get(p`${binRoot}\blg\loc\src\lcg`);
+    export const bin_LocPsmi_content = extractPart(pass3, p`${binRoot}\loc\ps-mi`);
 
-    @@public
-    export const bin_BlgMsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\blg\msbuildprops\nmakeprops`,
-        sources: [
-            pass0.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-        ],
-    });
-
-    export const bin_content = pass2.directories.get(binRoot.path);
-
-    export const bin_LocSrcBin_content = pass2.directories.get(p`${binRoot}\loc\src\bin`);
-
-    export const bin_LocSrcLcg_content = pass2.directories.get(p`${binRoot}\loc\src\lcg`);
-
-    @@public
-    export const bin_MsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\msbuildprops\nmakeprops`,
-        sources: [
-            pass0.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-        ],
-    });
-
-    export const bin_SymbolspriRetailDll_content = pass2.directories.get(p`${binRoot}\symbols.pri\retail\dll`);
-
-    export const bin_LocEnus_content = pass3.directories.get(p`${binRoot}\loc\en-us`);
-
-    export const bin_LocEnusLct_content = pass3.directories.get(p`${binRoot}\loc\en-us\lct`);
-
-    export const bin_LocPsmi_content = pass3.directories.get(p`${binRoot}\loc\ps-mi`);
-
-    export const bin_LocPsmiLct_content = pass3.directories.get(p`${binRoot}\loc\ps-mi\lct`);
-
-    export const bin_LocPsps_content = pass3.directories.get(p`${binRoot}\loc\ps-ps`);
-
-    export const bin_LocPspsLct_content = pass3.directories.get(p`${binRoot}\loc\ps-ps\lct`);
+    export const bin_LocPsps_content = extractPart(pass3, p`${binRoot}\loc\ps-ps`);
 }

@@ -44,6 +44,7 @@ namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
             f`${srcRoot}\onecore\windows\core\console\open\src\host\conapi.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\host\conddkrefs.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\host\conimeinfo.h`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\host\consolearguments.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\host\consrv.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\host\conv.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\host\conwinuserrefs.h`,
@@ -108,9 +109,12 @@ namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfobase.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfodesired.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\ifontdefaultlist.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irendercursor.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderdata.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\minimalcursor.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\vt\vtcursor.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\vt\vtrenderer.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\apimessage.h`,
             f`${srcRoot}\onecore\windows\core\console\open\src\server\apimessagestate.h`,
@@ -128,15 +132,17 @@ namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\adaptdefaults.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\adaptdispatch.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\congetset.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\dispatchcommon.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\mouseinput.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\termdispatch.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminalinput.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminaloutput.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\istatemachineengine.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\statemachine.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\telemetry.hpp`,
-            f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\terminal\parser\tracing.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\types\inc\viewport.hpp`,
 
             prePass,
 
@@ -205,25 +211,24 @@ namespace Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib {
             f`autogen.bp`,
             f`autogen.bp`,
             f`interactivitybase.vcxproj`,
-            isBuildRelease && isBuildCommonArchitecture ? MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata : undefined,
+
             pass1,
             prePass,
+
             ...addIf(
                 isBuildRelease,
                 () => [
                     f`product.pbxproj`,
                     f`${binRoot}\msbuildprops\localization.txt`,
-                    f`${objRoot}\${buildAlt}\modularbuildglobalbuildsession.props`,
-                    f`${objRoot}\${buildAlt}\__bldlanguageoverride__.props`,
                     f`${objRoot}\${buildAlt}\__bldlanguage__.props`,
+                    f`${objRoot}\${buildAlt}\__bldlanguageoverride__.props`,
+                    f`${objRoot}\${buildAlt}\modularbuildglobalbuildsession.props`,
                     f`${srcRoot}\onecore\windows\project.props`,
                 ]
             ),
-        ]
-        .filter(e => e !== undefined),
+            ...addIf(isBuildRelease && isBuildCommonArchitecture, () => [
+                    MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata,
+                ]),
+        ],
     });
-
-    export const bin_BlgMsbuildpropsNmakeprops_content = pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`);
-
-    export const bin_MsbuildpropsNmakeprops_content = pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`);
 }

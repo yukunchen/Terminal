@@ -177,3 +177,49 @@ bool Common::TestBufferCleanup()
 
     return true;
 }
+
+static PCWSTR pwszConsoleKeyName = L"Console";
+static PCWSTR pwszForceV2ValueName = L"ForceV2";
+
+CommonV1V2Helper::CommonV1V2Helper(_In_ const ForceV2States ForceV2StateDesired)
+{
+    // Open console key
+    if (!OneCoreDelay::IsIsWindowPresent())
+    {
+        Log::Comment(L"OneCore based systems don't have v1 state. Skipping.");
+        _fRestoreOnExit = false;
+        return;
+    }
+
+    // This looks weird, but the success code for lStatus is 0 (ERROR_SUCCESS) which is equal to BOOL FALSE.
+    // If it is anything but FALSE (0), we need to GetLastError() and print it.
+    // This macro wraps all that up in one nice package, despite the misleading name.
+    VERIFY_WIN32_BOOL_FAILED(RegOpenKeyExW(HKEY_CURRENT_USER, pwszConsoleKeyName, 0, KEY_READ | KEY_WRITE, &_consoleKey));
+
+    Log::Comment(L"Backing up v1/v2 console state.");
+    DWORD cbForceV2Original = sizeof(_dwForceV2Original);
+    const LSTATUS lstatus = RegQueryValueExW(_consoleKey.get(), pwszForceV2ValueName, nullptr, nullptr, (LPBYTE)&_dwForceV2Original, &cbForceV2Original);
+    if (ERROR_FILE_NOT_FOUND == lstatus)
+    {
+        Log::Comment(L"This machine doesn't have v1/v2 state. Skipping.");
+        _consoleKey.reset();
+        _fRestoreOnExit = false;
+    }
+    else
+    {
+        VERIFY_WIN32_BOOL_FAILED(lstatus, L"Assert querying ForceV2 key was successful.");
+        _fRestoreOnExit = true;
+
+        Log::Comment(String().Format(L"Setting v1/v2 console state to desired '%d'", ForceV2StateDesired));
+        VERIFY_WIN32_BOOL_FAILED(RegSetValueExW(_consoleKey.get(), pwszForceV2ValueName, 0, REG_DWORD, (LPBYTE)&ForceV2StateDesired, sizeof(ForceV2StateDesired)));
+    }
+}
+
+CommonV1V2Helper::~CommonV1V2Helper()
+{
+    if (_fRestoreOnExit)
+    {
+        Log::Comment(String().Format(L"Restoring v1/v2 console state to original '%d'", _dwForceV2Original));
+        VERIFY_WIN32_BOOL_FAILED(RegSetValueExW(_consoleKey.get(), pwszForceV2ValueName, 0, REG_DWORD, (LPBYTE)&_dwForceV2Original, sizeof(_dwForceV2Original)));
+    }
+}

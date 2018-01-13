@@ -1,9 +1,6 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp {
 
-    export declare const qualifier: {
-        platform: WdgBuild.StandardPlatforms,
-        configuration: "release",
-    };
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\tools`;
 
@@ -110,16 +107,6 @@ namespace Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp {
         ],
     });
 
-    export const bin_BlgStrongnamesigning_content = pass1.directories.get(p`${binRoot}\blg\strongnamesigning`);
-
-    export const bin_BlgUnittests_content = pass1.directories.get(p`${binRoot}\blg\unittests`);
-
-    export const bin_Strongnamesigning_content = pass1.directories.get(p`${binRoot}\strongnamesigning`);
-
-    export const bin_SymbolspriUnittestsExe_content = pass1.directories.get(p`${binRoot}\symbols.pri\unittests\exe`);
-
-    export const bin_Unittests_content = pass1.directories.get(p`${binRoot}\unittests`);
-
     const pass3 = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
@@ -131,58 +118,56 @@ namespace Onecore.Windows.Core.Console.Open.Src.Tools.Vtapp {
         consumes: [
             f`autogen.bp`,
             f`autogen.bp`,
-            f`product.pbxproj`,
-            f`sources.pkg.xml`,
             f`vtapp.csproj`,
-            f`${binRoot}\msbuildprops\localization.txt`,
-            f`${objRoot}\${buildAlt}\modularbuildglobalbuildsession.props`,
-            f`${objRoot}\${buildAlt}\__bldlanguageoverride__.props`,
-            f`${objRoot}\${buildAlt}\__bldlanguage__.props`,
-            f`${srcRoot}\onecore\windows\project.props`,
-            f`${srcRoot}\public\sdk\inc\ntverp.h`,
-            MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata,
+
             pass0,
             pass1,
             pass2,
             prePass,
-            (isBuildRelease && isBuildArm32 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildArm64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX86 && MsWinBuild.isOfficialBuild) ? MsWinOnecore_Pkg.BinPublic.Imagingtools.content : undefined,
-        ]
-        .filter(e => e !== undefined),
+
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    f`product.pbxproj`,
+                    f`sources.pkg.xml`,
+                    f`${binRoot}\msbuildprops\localization.txt`,
+                    f`${objRoot}\${buildAlt}\__bldlanguage__.props`,
+                    f`${objRoot}\${buildAlt}\__bldlanguageoverride__.props`,
+                    f`${objRoot}\${buildAlt}\modularbuildglobalbuildsession.props`,
+                    f`${srcRoot}\onecore\windows\project.props`,
+                    f`${srcRoot}\public\sdk\inc\ntverp.h`,
+                ]
+            ),
+            ...addIf(
+                (isBuildRelease && isBuildArm32 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildArm64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX86 && MsWinBuild.isOfficialBuild),
+                (
+                )
+                => [
+                    MsWinOnecore_Pkg.BinPublic.Imagingtools.content,
+                ]
+            ),
+            ...addIf(isBuildRelease && isBuildCommonArchitecture, () => [
+                    MsDevClr_Pkgv45.Clr_Pkg.V45.Public.Sdk.Ref.Clr45.metadata,
+                ]),
+        ],
         
         produces: [
-            p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.cab.br`,
-            p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.man.dsm.xml.br`,
-            p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.spkg.br`,
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.cab`,
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.man.dsm.xml`,
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.spkg`,
-            p`${o}\microsoft.console.tools.vtapp.cab`,
-            p`${o}\microsoft.console.tools.vtapp.man.dsm.xml`,
-            p`${o}\microsoft.console.tools.vtapp.spkg`,
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.cab.br`,
+                    p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.man.dsm.xml.br`,
+                    p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.spkg.br`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.cab`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.man.dsm.xml`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft.console.tools.vtapp.spkg`,
+                    p`${o}\microsoft.console.tools.vtapp.cab`,
+                    p`${o}\microsoft.console.tools.vtapp.man.dsm.xml`,
+                    p`${o}\microsoft.console.tools.vtapp.spkg`,
+                ]
+            ),
         ],
     });
 
-    @@public
-    export const bin_BlgMsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\blg\msbuildprops\nmakeprops`,
-        sources: [
-            pass0.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-        ],
-    });
-
-    @@public
-    export const bin_MsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\msbuildprops\nmakeprops`,
-        sources: [
-            pass0.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-        ],
-    });
-
-    export const bin_BlgPrebuiltTest_content = pass3.directories.get(p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`);
-
-    export const bin_PrebuiltTest_content = pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`);
+    export const bin_PrebuiltTest_content = extractPart(pass3, p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`);
 }

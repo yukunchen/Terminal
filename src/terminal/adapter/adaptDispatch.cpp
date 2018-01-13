@@ -914,7 +914,6 @@ bool AdaptDispatch::_ScrollMovement(_In_ ScrollDirection const sdDirection, _In_
         if (fSuccess)
         {
             SMALL_RECT srScreen = csbiex.srWindow;
-            COORD Cursor = csbiex.dwCursorPosition;
 
             // Paste coordinate for cut text above
             COORD coordDestination;
@@ -1308,7 +1307,8 @@ bool AdaptDispatch::ReverseLineFeed()
 // - cchTitleLength - The length of the title string specified by pwchWindowTitle
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetWindowTitle(_In_ const wchar_t* const pwchWindowTitle, _In_ unsigned short cchTitleLength)
+bool AdaptDispatch::SetWindowTitle(_In_reads_(cchTitleLength) const wchar_t* const pwchWindowTitle,
+                                   _In_ unsigned short cchTitleLength)
 {
     return !!_pConApi->SetConsoleTitleW(pwchWindowTitle, cchTitleLength);
 }
@@ -1565,9 +1565,11 @@ bool AdaptDispatch::_EraseScrollback()
         fSuccess = !!_pConApi->ScrollConsoleScreenBufferW(&srScroll, nullptr, coordDestination, &ciFill);
         if (fSuccess)
         {
-            // Clear everything after the viewport.
+            // Clear everything after the viewport. This is two regions:
+            // A. below the viewport
+            // B. to the right of the viewport.
 
-            // This is two regions, below the viewport and to the right of the viewport.
+            // First clear section A
             const DWORD dwTotalAreaBelow = csbiex.dwSize.X * (csbiex.dwSize.Y - sHeight);
             const COORD coordBelowStartPosition = {0, sHeight};
             // We don't use the _EraseAreaHelper here because _EraseSingleLineDistanceHelper does it all in one operation
@@ -1575,12 +1577,15 @@ bool AdaptDispatch::_EraseScrollback()
 
             if (fSuccess)
             {
+                // If there is a section B, clear it.
                 const COORD coordBottomRight = {csbiex.dwSize.X, coordBelowStartPosition.Y};
-
                 const COORD coordRightStartPosition = {sWidth, 0};
-                // We use the Area helper here because the Line helper would
-                //      erase the parts of the screen we want to keep too
-                fSuccess = _EraseAreaHelper(coordRightStartPosition, coordBottomRight, csbiex.wAttributes);
+                if (coordBottomRight.X > coordRightStartPosition.X)
+                {
+                    // We use the Area helper here because the Line helper would
+                    //      erase the parts of the screen we want to keep too
+                    fSuccess = _EraseAreaHelper(coordRightStartPosition, coordBottomRight, csbiex.wAttributes);
+                }
 
                 if (fSuccess)
                 {

@@ -53,7 +53,7 @@ namespace Microsoft
                 virtual bool EnableCursorBlinking(_In_ bool const /*fEnable*/) { return false; }  // ATT610
                 virtual bool SetTopBottomScrollingMargins(_In_ SHORT const /*sTopMargin*/, _In_ SHORT const /*sBottomMargin*/, _In_ const bool /*fResetCursor*/) { return false; } // DECSTBM
                 virtual bool ReverseLineFeed() { return false; } // RI
-                virtual bool SetWindowTitle(_In_ const wchar_t* const /*pwchWindowTitle*/, _In_ unsigned short /*sCchTitleLength*/) { return false; } // OscWindowTitle
+                virtual bool SetWindowTitle(_In_reads_(_Param_(2)) const wchar_t* const /*pwchWindowTitle*/, _In_ unsigned short /*sCchTitleLength*/) { return false; } // OscWindowTitle
                 virtual bool UseAlternateScreenBuffer() { return false; } // ASBSET
                 virtual bool UseMainScreenBuffer() { return false; } // ASBRST
                 virtual bool HorizontalTabSet() { return false; } // HTS
@@ -187,10 +187,10 @@ namespace Microsoft
 
                 // DTTERM_WindowManipulation
                 virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType /*uiFunction*/,
-                                                _In_reads_(cParams) const unsigned short* const /*rgusParams*/,
+                                                _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
                                                 _In_ size_t const /*cParams*/) { return false; }
 
             };
-        };
-    };
-};
+        }
+    }
+}

@@ -1,9 +1,6 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia {
 
-    export declare const qualifier: {
-        platform: WdgBuild.StandardPlatforms,
-        configuration: "release",
-    };
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src\host`;
 
@@ -151,16 +148,6 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia {
         ],
     });
 
-    export const bin_BlgStrongnamesigning_content = pass1.directories.get(p`${binRoot}\blg\strongnamesigning`);
-
-    export const bin_BlgUnittests_content = pass1.directories.get(p`${binRoot}\blg\unittests`);
-
-    export const bin_Strongnamesigning_content = pass1.directories.get(p`${binRoot}\strongnamesigning`);
-
-    export const bin_SymbolspriUnittestsDll_content = pass1.directories.get(p`${binRoot}\symbols.pri\unittests\dll`);
-
-    export const bin_Unittests_content = pass1.directories.get(p`${binRoot}\unittests`);
-
     const pass3 = LegacyBuild.build({
         template: template_NMake,
         classification: "test",
@@ -173,56 +160,50 @@ namespace Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia {
             f`autogen.bp`,
             f`autogen.bp`,
             f`host.tests.uia.csproj`,
-            f`product.pbxproj`,
-            f`${srcRoot}\build\scripts\signer.cmd`,
-            f`${srcRoot}\onecore\windows\project.props`,
-            f`${srcRoot}\public\sdk\inc\ntverp.h`,
+
             pass0,
             pass1,
             pass2,
             prePass,
-            (isBuildRelease && isBuildArm32 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildArm64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX86 && MsWinBuild.isOfficialBuild) ? MsWinOnecore_Pkg.BinPublic.Imagingtools.content : undefined,
-        ]
-        .filter(e => e !== undefined),
+
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    f`product.pbxproj`,
+                    f`${srcRoot}\build\scripts\signer.cmd`,
+                    f`${srcRoot}\onecore\windows\project.props`,
+                    f`${srcRoot}\public\sdk\inc\ntverp.h`,
+                ]
+            ),
+            ...addIf(
+                (isBuildRelease && isBuildArm32 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildArm64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX64 && MsWinBuild.isOfficialBuild) || (isBuildRelease && isBuildX86 && MsWinBuild.isOfficialBuild),
+                (
+                )
+                => [
+                    MsWinOnecore_Pkg.BinPublic.Imagingtools.content,
+                ]
+            ),
+        ],
         
         produces: [
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-uiautomationtests.cab`,
-            p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-uiautomationtests.man.dsm.xml`,
+            ...addIf(
+                isBuildRelease,
+                () => [
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-uiautomationtests.cab`,
+                    p`${binRoot}\prebuilt\test\${buildArch}\${buildType}\microsoft-console-host-uiautomationtests.man.dsm.xml`,
+                ]
+            ),
         ],
     });
-
-    @@public
-    export const bin_BlgMsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\blg\msbuildprops\nmakeprops`,
-        sources: [
-            pass0.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass1.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\blg\msbuildprops\nmakeprops`),
-        ],
-    });
-
-    export const bin_BlgPrebuiltTest_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`);
-
-    export const bin_BlgPrebuiltWindows_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\windows`);
-
-    @@public
-    export const bin_MsbuildpropsNmakeprops_content = WdgBuild.SdkCombine.evaluate({
-        outputDirectory: d`${binRoot}\msbuildprops\nmakeprops`,
-        sources: [
-            pass0.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass1.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-            pass2.directories.get(p`${binRoot}\msbuildprops\nmakeprops`),
-        ],
-    });
-
-    export const bin_PrebuiltWindows_content = pass2.directories.get(p`${binRoot}\prebuilt\windows`);
 
     @@public
     export const bin_PrebuiltTest_content = WdgBuild.SdkCombine.evaluate({
         outputDirectory: d`${binRoot}\prebuilt\test\${buildArch}\${buildType}`,
         sources: [
             pass2.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`),
-            pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`),
+            ...addIf(isBuildCommonArchitecture && isBuildRelease, () => [
+                    pass3.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`),
+                ]),
         ],
     });
 }

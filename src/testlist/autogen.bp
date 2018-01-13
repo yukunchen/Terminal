@@ -1,9 +1,6 @@
 namespace Onecore.Windows.Core.Console.Open.Src.Testlist {
 
-    export declare const qualifier: {
-        platform: WdgBuild.StandardPlatforms,
-        configuration: "release",
-    };
+    export declare const qualifier: WdgBuild.StandardPlatformsQualifier;
 
     const dotDot = d`${srcRoot}\onecore\windows\core\console\open\src`;
 
@@ -77,11 +74,5 @@ namespace Onecore.Windows.Core.Console.Open.Src.Testlist {
         ],
     });
 
-    export const bin_BlgPrebuiltTest_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\test\${buildArch}\${buildType}`);
-
-    export const bin_BlgPrebuiltWindows_content = pass2.directories.get(p`${binRoot}\blg\prebuilt\windows`);
-
-    export const bin_PrebuiltTest_content = pass2.directories.get(p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`);
-
-    export const bin_PrebuiltWindows_content = pass2.directories.get(p`${binRoot}\prebuilt\windows`);
+    export const bin_PrebuiltTest_content = extractPart(pass2, p`${binRoot}\prebuilt\test\${buildArch}\${buildType}`);
 }

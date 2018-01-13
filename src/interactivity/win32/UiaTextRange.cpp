@@ -597,11 +597,15 @@ IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttribut
                                                _Out_ VARIANT* pRetVal)
 {
     Tracing::s_TraceUia(this, ApiCall::GetAttributeValue, nullptr);
-    pRetVal->vt = VT_EMPTY;
     if (textAttributeId == UIA_IsReadOnlyAttributeId)
     {
         pRetVal->vt = VT_BOOL;
         pRetVal->boolVal = VARIANT_FALSE;
+    }
+    else
+    {
+        pRetVal->vt = VT_UNKNOWN;
+        UiaGetReservedNotSupportedValue(&pRetVal->punkVal);
     }
     return S_OK;
 }

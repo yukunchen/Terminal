@@ -183,7 +183,7 @@ bool OutputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
 bool OutputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
                                                  _In_ const unsigned short cIntermediate,
                                                  _In_ const wchar_t wchIntermediate,
-                                                 _In_ const unsigned short* const rgusParams,
+                                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                                  _In_ const unsigned short cParams)
 {
     bool fSuccess = false;
@@ -528,7 +528,7 @@ bool OutputStateMachineEngine::ActionIgnore()
 // - true if we handled the dsipatch.
 bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
                                                  _In_ const unsigned short sOscParam,
-                                                 _Inout_ wchar_t* const pwchOscStringBuffer,
+                                                 _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
                                                  _In_ const unsigned short cchOscString)
 {
     bool fSuccess = false;
@@ -587,7 +587,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionSs3Dispatch(_In_ wchar_t const /*wch*/,
-                                                 _In_ const unsigned short* const /*rgusParams*/,
+                                                 _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
                                                  _In_ const unsigned short /*cParams*/)
 {
     // The output engine doesn't handle any SS3 sequences.
@@ -983,15 +983,14 @@ bool OutputStateMachineEngine::_VerifyDeviceAttributesParams(_In_reads_(cParams)
 // Return Value:
 // - True if there was a title to output. (a title with length=0 is still valid)
 _Success_(return)
-bool OutputStateMachineEngine::_GetOscTitle(_Inout_ wchar_t* const pwchOscStringBuffer, _In_ const unsigned short cchOscString, _Outptr_result_buffer_(*pcchTitle) wchar_t** const ppwchTitle, _Out_ unsigned short * pcchTitle)
+bool OutputStateMachineEngine::_GetOscTitle(_Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
+                                            _In_ const unsigned short cchOscString,
+                                            _Outptr_result_buffer_(*pcchTitle) wchar_t** const ppwchTitle,
+                                            _Out_ unsigned short * pcchTitle) const
 {
     *ppwchTitle = pwchOscStringBuffer;
     *pcchTitle = cchOscString;
-    if (pwchOscStringBuffer != nullptr)
-    {
-        // null terminate the string on the current char
-        pwchOscStringBuffer[cchOscString] = L'\x0';
-    }
+
     return pwchOscStringBuffer != nullptr;
 }
 
@@ -1169,10 +1168,10 @@ bool OutputStateMachineEngine::s_IsHexNumber(_In_ wchar_t const wch)
 // - pcchTitleLength - a pointer place the length of ppwchTitle into.
 // Return Value:
 // - True if there was a title to output. (a title with length=0 is still valid)
-bool OutputStateMachineEngine::_GetOscSetColorTable(_In_ const wchar_t* const pwchOscStringBuffer,
+bool OutputStateMachineEngine::_GetOscSetColorTable(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
                                                     _In_ const size_t cchOscString,
                                                     _Out_ size_t* const pTableIndex,
-                                                    _Out_ DWORD* const pRgb)
+                                                    _Out_ DWORD* const pRgb) const
 {
     *pTableIndex = 0;
     *pRgb = 0;

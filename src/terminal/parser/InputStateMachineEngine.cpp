@@ -122,7 +122,12 @@ bool InputStateMachineEngine::ActionExecute(_In_ wchar_t const wch)
             fSuccess = _GenerateKeyFromChar(wch, &vkey, nullptr);
             break;
         case L'\x1b':
-            fSuccess = _GenerateKeyFromChar(wch+0x40, &vkey, nullptr);
+            // Translate escape as the ESC key, NOT C-[.
+            // This means that C-[ won't insert ^[ into the buffer anymore,
+            //      which isn't the worst tradeoff.
+            vkey = VK_ESCAPE;
+            writeCtrl = false;
+            fSuccess = true;
             break;
         case L'\t':
             writeCtrl = false;
@@ -247,7 +252,7 @@ bool InputStateMachineEngine::ActionEscDispatch(_In_ wchar_t const wch,
 bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
                                                 _In_ const unsigned short /*cIntermediate*/,
                                                 _In_ const wchar_t /*wchIntermediate*/,
-                                                _In_ const unsigned short* const rgusParams,
+                                                _In_reads_(cParams) const unsigned short* const rgusParams,
                                                 _In_ const unsigned short cParams)
 {
     DWORD dwModifierState = 0;
@@ -334,7 +339,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(_In_ wchar_t const wch,
 // Return Value:
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionSs3Dispatch(_In_ wchar_t const wch,
-                                                _In_ const unsigned short* const /*rgusParams*/,
+                                                _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
                                                 _In_ const unsigned short /*cParams*/)
 {
     // Ss3 sequence keys aren't modified.
@@ -388,7 +393,7 @@ bool InputStateMachineEngine::ActionIgnore()
 // - true if we handled the dsipatch.
 bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
                                                 _In_ const unsigned short /*sOscParam*/,
-                                                _Inout_ wchar_t* const /*pwchOscStringBuffer*/,
+                                                _Inout_updates_(_Param_(4)) wchar_t* const /*pwchOscStringBuffer*/,
                                                 _In_ const unsigned short /*cchOscString*/)
 {
     return false;
@@ -406,7 +411,7 @@ bool InputStateMachineEngine::ActionOscDispatch(_In_ wchar_t const /*wch*/,
 // - dwModifierState - the modifier state to write with the key.
 // - rgInput - the buffer of characters to write the keypresses to. Can write
 //      up to 8 records to this buffer.
-// - cRecords - the size of rgInput. This should be at least WRAPPED_SEQUENCE_MAX_LENGTH
+// - cInput - the size of rgInput. This should be at least WRAPPED_SEQUENCE_MAX_LENGTH
 // Return Value:
 // - the number of records written, or 0 if the buffer wasn't big enough.
 size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
@@ -472,7 +477,14 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(_In_ const wchar_t wch,
         index++;
     }
 
-    size_t added = _GetSingleKeypress(wch, vkey, dwCurrentModifiers, next, cInput-index);
+    size_t added = _GetSingleKeypress(wch, vkey, dwCurrentModifiers, next, cInput - index);
+
+    // if _GetSingleKeypress added more than two events we might overflow the buffer
+    if (added > 2)
+    {
+        return index;
+    }
+
     next += added;
     index += added;
 
@@ -538,9 +550,11 @@ size_t InputStateMachineEngine::_GetSingleKeypress(_In_ const wchar_t wch,
                                                    _Inout_updates_(cRecords) INPUT_RECORD* const rgInput,
                                                    _In_ const size_t cRecords)
 {
-    // It's used by the assert, which is a no-op in release builds
-    UNREFERENCED_PARAMETER(cRecords);
     assert(cRecords >= 2);
+    if (cRecords < 2)
+    {
+        return 0;
+    }
 
     rgInput[0].EventType = KEY_EVENT;
     rgInput[0].Event.KeyEvent.bKeyDown = TRUE;
@@ -741,7 +755,9 @@ bool InputStateMachineEngine::_GetSs3KeysVkey(_In_ const wchar_t wch, _Out_ shor
 // - pdwModifierState: Recieves the modifier state
 // Return Value:
 // <none>
-bool InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch, _Out_ short* const pVkey, _Out_ DWORD* const pdwModifierState)
+bool InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch,
+                                                   _Out_ short* const pVkey,
+                                                   _Out_ DWORD* const pdwModifierState)
 {
     // Low order byte is key, high order is modifiers
     short keyscan = VkKeyScan(wch);
@@ -757,9 +773,9 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(_In_ const wchar_t wch, _Out_
 
     // Because of course, these are not the same flags.
     short dwModifierState = 0 |
-        IsFlagSet(keyscanModifiers, KEYSCAN_SHIFT) ? SHIFT_PRESSED : 0 |
-        IsFlagSet(keyscanModifiers, KEYSCAN_CTRL) ? LEFT_CTRL_PRESSED : 0 |
-        IsFlagSet(keyscanModifiers, KEYSCAN_ALT) ? LEFT_ALT_PRESSED : 0 ;
+        (IsFlagSet(keyscanModifiers, KEYSCAN_SHIFT) ? SHIFT_PRESSED : 0) |
+        (IsFlagSet(keyscanModifiers, KEYSCAN_CTRL) ? LEFT_CTRL_PRESSED : 0) |
+        (IsFlagSet(keyscanModifiers, KEYSCAN_ALT) ? LEFT_ALT_PRESSED : 0);
 
     if (pVkey != nullptr)
     {

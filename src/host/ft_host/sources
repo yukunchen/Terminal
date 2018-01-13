@@ -20,6 +20,7 @@ C_DEFINES=$(C_DEFINES) -D__INSIDE_WINDOWS
 
 SOURCES                         =   \
                                     InitTests.cpp \
+                                    CanaryTests.cpp \
                                     Common.cpp \
                                     OneCoreDelay.cpp \
                                     API_AliasTests.cpp \

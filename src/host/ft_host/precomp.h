@@ -14,8 +14,6 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
-#include "common.hpp"
-
 #define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
 #include <wil\Common.h>
 #include <wil\Result.h>
@@ -34,3 +32,6 @@ using namespace WEX::TestExecution;
 #define CM_SET_KEYBOARD_LAYOUT (WM_USER+19)
 
 #include "OneCoreDelay.hpp"
+
+// Include our common helpers
+#include "common.hpp"

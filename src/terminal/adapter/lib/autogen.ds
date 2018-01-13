@@ -41,12 +41,18 @@
         <Item>{DotDot}\adaptdispatch.hpp</Item>
         <Item>{DotDot}\adaptdispatchgraphics.cpp</Item>
         <Item>{DotDot}\congetset.hpp</Item>
+        <Item>{DotDot}\dispatchcommon.cpp</Item>
+        <Item>{DotDot}\dispatchcommon.hpp</Item>
+        <Item>{DotDot}\iinteractdispatch.hpp</Item>
+        <Item>{DotDot}\interactdispatch.cpp</Item>
+        <Item>{DotDot}\interactdispatch.hpp</Item>
         <Item>{DotDot}\mouseinput.cpp</Item>
         <Item>{DotDot}\mouseinput.hpp</Item>
         <Item>{DotDot}\precomp.cpp</Item>
         <Item>{DotDot}\precomp.h</Item>
         <Item>{DotDot}\telemetry.cpp</Item>
         <Item>{DotDot}\telemetry.hpp</Item>
+        <Item>{DotDot}\termdispatch.hpp</Item>
         <Item>{DotDot}\terminalinput.cpp</Item>
         <Item>{DotDot}\terminalinput.hpp</Item>
         <Item>{DotDot}\terminaloutput.cpp</Item>
@@ -57,8 +63,8 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\conattrs.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\inc\unicode.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\interactivity\inc\vtapiredirection.hpp</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\viewport.hpp</Item>
 
         <!--References-->
 
@@ -98,6 +104,8 @@
         <Item>{O}\adaptdispatch.obj</Item>
         <Item>{O}\adaptdispatchgraphics.obj</Item>
         <Item>{O}\contermadapter.lib</Item>
+        <Item>{O}\dispatchcommon.obj</Item>
+        <Item>{O}\interactdispatch.obj</Item>
         <Item>{O}\mouseinput.obj</Item>
         <Item>{O}\pch_hdr.src</Item>
         <Item>{O}\precomp.obj</Item>

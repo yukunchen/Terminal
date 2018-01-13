@@ -1,5 +1,5 @@
 export const projects = [
-    f`dll/autogen.bp`,
+    f`exe/autogen.bp`,
     f`ft_host/autogen.bp`,
     f`ft_uia/autogen.bp`,
     f`lib/autogen.bp`,

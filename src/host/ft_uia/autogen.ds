@@ -11,7 +11,7 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_PrePass-->
 
-    <LegacyBuilder Output="Ft_uia_PrePass" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Ft_uia_PrePass" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>PrePass</TargetPass>
 
@@ -27,7 +27,7 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Pass0-->
 
-    <LegacyBuilder Output="Ft_uia_Pass0" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Ft_uia_Pass0" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass0</TargetPass>
 
@@ -59,7 +59,7 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Pass1-->
 
-    <LegacyBuilder Output="Ft_uia_Pass1" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Internal">
+    <LegacyBuilder Output="Ft_uia_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Internal">
       <Classification>Test</Classification>
       <TargetPass>Pass1</TargetPass>
 
@@ -135,7 +135,7 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Pass2-->
 
-    <LegacyBuilder Output="Ft_uia_Pass2" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Ft_uia_Pass2" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass2</TargetPass>
 
@@ -176,7 +176,7 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Pass3-->
 
-    <LegacyBuilder Output="Ft_uia_Pass3" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Ft_uia_Pass3" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass3</TargetPass>
       <d:Tags>
@@ -189,10 +189,6 @@
         <Item>autogen.bp</Item>
         <Item>autogen.ds</Item>
         <Item>host.tests.uia.csproj</Item>
-        <Item>product.pbxproj</Item>
-        <Item>{SrcRoot}\build\scripts\signer.cmd</Item>
-        <Item>{SrcRoot}\onecore\windows\project.props</Item>
-        <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
 
         <!--References-->
 
@@ -201,103 +197,43 @@
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Pass2}</Item>
         <Item>{MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_PrePass}</Item>
         <Item Condition="{(IsBuildRelease AND IsBuildArm32 AND MsWin.Build.IsOfficialBuild) OR (IsBuildRelease AND IsBuildArm64 AND MsWin.Build.IsOfficialBuild) OR (IsBuildRelease AND IsBuildX64 AND MsWin.Build.IsOfficialBuild) OR (IsBuildRelease AND IsBuildX86 AND MsWin.Build.IsOfficialBuild)}">{MsWin.Onecore_Pkg.BinPublic.Imagingtools.__Content}</Item>
+
+        <!--Conditional items-->
+
+        <If Condition="{IsBuildRelease}">
+          <Item>product.pbxproj</Item>
+          <Item>{SrcRoot}\build\scripts\signer.cmd</Item>
+          <Item>{SrcRoot}\onecore\windows\project.props</Item>
+          <Item>{SrcRoot}\public\sdk\inc\ntverp.h</Item>
+        </If>
+
       </Consumes>
 
       <!--Produces-->
 
       <Produces>
-        <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft-console-host-uiautomationtests.cab</Item>
-        <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft-console-host-uiautomationtests.man.dsm.xml</Item>
+
+        <!--Conditional items-->
+
+        <If Condition="{IsBuildRelease}">
+          <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft-console-host-uiautomationtests.cab</Item>
+          <Item>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}\microsoft-console-host-uiautomationtests.man.dsm.xml</Item>
+        </If>
+
       </Produces>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Bin_BlgMsbuildpropsNmakeprops.__Content-->
-
-    <SdkCombineRunner Output="Ft_uia_Bin_BlgMsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <OutputDirectory>{BinRoot}\blg\msbuildprops\nmakeprops</OutputDirectory>
-      <Sources>
-        <Item>{Ft_uia_Pass0.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-        <Item>{Ft_uia_Pass1.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-        <Item>{Ft_uia_Pass2.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Item>
-      </Sources>
-    </SdkCombineRunner>
-    <LibrarySetRunner Output="Ft_uia_Bin_BlgMsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Ft_uia_Bin_BlgMsbuildpropsNmakeprops.s__Content}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Bin_BlgPrebuiltTest.__Content-->
-
-    <LibrarySetRunner Output="Ft_uia_Bin_BlgPrebuiltTest.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Ft_uia_Pass2.Directories[BinRoot.Combine("blg\prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Bin_BlgPrebuiltWindows.__Content-->
-
-    <LibrarySetRunner Output="Ft_uia_Bin_BlgPrebuiltWindows.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Ft_uia_Pass2.Directories[BinRoot.Combine("blg\prebuilt\windows")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Bin_BlgStrongnamesigning.__Content-->
-
-    <LibrarySetRunner Output="Ft_uia_Bin_BlgStrongnamesigning.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Ft_uia_Pass1.Directories[BinRoot.Combine("blg\strongnamesigning")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Bin_BlgUnittests.__Content-->
-
-    <LibrarySetRunner Output="Ft_uia_Bin_BlgUnittests.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Ft_uia_Pass1.Directories[BinRoot.Combine("blg\unittests")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Bin_MsbuildpropsNmakeprops.__Content-->
-
-    <SdkCombineRunner Output="Ft_uia_Bin_MsbuildpropsNmakeprops.s__Content" Visibility="Private" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <OutputDirectory>{BinRoot}\msbuildprops\nmakeprops</OutputDirectory>
-      <Sources>
-        <Item>{Ft_uia_Pass0.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-        <Item>{Ft_uia_Pass1.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-        <Item>{Ft_uia_Pass2.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Item>
-      </Sources>
-    </SdkCombineRunner>
-    <LibrarySetRunner Output="Ft_uia_Bin_MsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Ft_uia_Bin_MsbuildpropsNmakeprops.s__Content}</Directory>
-    </LibrarySetRunner>
-
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Bin_PrebuiltTest.__Content-->
 
-    <SdkCombineRunner Output="Ft_uia_Bin_PrebuiltTest.s__Content" Visibility="Private" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
+    <SdkCombineRunner Output="Ft_uia_Bin_PrebuiltTest.s__Content" Visibility="Private" Condition="{IsBuildCommonArchitecture}">
       <OutputDirectory>{BinRoot}\prebuilt\test\{BuildArch}\{BuildType}</OutputDirectory>
       <Sources>
         <Item>{Ft_uia_Pass2.Directories[BinRoot.Combine("prebuilt\test\", BuildArch, "\", BuildType)]}</Item>
-        <Item>{Ft_uia_Pass3.Directories[BinRoot.Combine("prebuilt\test\", BuildArch, "\", BuildType)]}</Item>
+        <Item Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">{Ft_uia_Pass3.Directories[BinRoot.Combine("prebuilt\test\", BuildArch, "\", BuildType)]}</Item>
       </Sources>
     </SdkCombineRunner>
-    <LibrarySetRunner Output="Ft_uia_Bin_PrebuiltTest.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
+    <LibrarySetRunner Output="Ft_uia_Bin_PrebuiltTest.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
       <Directory>{Ft_uia_Bin_PrebuiltTest.s__Content}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Bin_PrebuiltWindows.__Content-->
-
-    <LibrarySetRunner Output="Ft_uia_Bin_PrebuiltWindows.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Ft_uia_Pass2.Directories[BinRoot.Combine("prebuilt\windows")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Bin_Strongnamesigning.__Content-->
-
-    <LibrarySetRunner Output="Ft_uia_Bin_Strongnamesigning.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Ft_uia_Pass1.Directories[BinRoot.Combine("strongnamesigning")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Bin_SymbolspriUnittestsDll.__Content-->
-
-    <LibrarySetRunner Output="Ft_uia_Bin_SymbolspriUnittestsDll.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Ft_uia_Pass1.Directories[BinRoot.Combine("symbols.pri\unittests\dll")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Host.Ft_uia_Bin_Unittests.__Content-->
-
-    <LibrarySetRunner Output="Ft_uia_Bin_Unittests.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Ft_uia_Pass1.Directories[BinRoot.Combine("unittests")]}</Directory>
     </LibrarySetRunner>
   </Namespace>
 </DominoSpec>

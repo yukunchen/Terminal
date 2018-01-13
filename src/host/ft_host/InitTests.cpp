@@ -8,6 +8,9 @@
 const DWORD _dwMaxMillisecondsToWaitOnStartup = 120 * 1000;
 const DWORD _dwStartupWaitPollingIntervalInMilliseconds = 200;
 
+static PCWSTR pwszConsoleKeyName = L"Console";
+static PCWSTR pwszForceV2ValueName = L"ForceV2";
+
 // This class is intended to set up the testing environment against the produced binary
 // instead of using the Windows-default copy of console host.
 
@@ -34,8 +37,13 @@ auto OnAppExitKillJob = wil::ScopeExit([&] {
     }
 });
 
+wistd::unique_ptr<CommonV1V2Helper> v2ModeHelper;
+
 MODULE_SETUP(ModuleSetup)
 {
+    // Ensure we are in v2 console mode.
+    v2ModeHelper.reset(new CommonV1V2Helper(CommonV1V2Helper::ForceV2States::V2));
+
     // Retrieve location of directory that the test was deployed to.
     // We're going to look for OpenConsole.exe in the same directory.
     String value;
@@ -61,6 +69,10 @@ MODULE_SETUP(ModuleSetup)
     // so we can terminate it easily when we exit.
     hJob.reset(CreateJobObjectW(nullptr, nullptr));
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(nullptr != hJob);
+
+    JOBOBJECT_EXTENDED_LIMIT_INFORMATION JobLimits = { 0 };
+    JobLimits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetInformationJobObject(hJob.get(), JobObjectExtendedLimitInformation, &JobLimits, sizeof(JobLimits)));
 
     // Setup and call create process.
     STARTUPINFOW si = { 0 };
@@ -179,5 +191,6 @@ MODULE_SETUP(ModuleSetup)
 
 MODULE_CLEANUP(ModuleCleanup)
 {
+    v2ModeHelper.reset();
     return true;
 }

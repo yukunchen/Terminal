@@ -34,8 +34,10 @@ namespace Onecore.Windows.Core.Console.Open.Src.Renderer.Wddmcon.Lib {
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfobase.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfodesired.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\ifontdefaultlist.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irendercursor.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp`,
             f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp`,
+            f`${srcRoot}\onecore\windows\core\console\open\src\renderer\inc\minimalcursor.hpp`,
 
             prePass,
 

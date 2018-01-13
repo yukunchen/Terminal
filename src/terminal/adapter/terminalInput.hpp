@@ -46,12 +46,19 @@ namespace Microsoft
                 {
                     WORD const wVirtualKey;
                     PCWSTR const pwszSequence;
+                    DWORD const dwModifiers;
 
                     static const size_t s_cchMaxSequenceLength;
 
                     _TermKeyMap(_In_ WORD const wVirtualKey, _In_ PCWSTR const pwszSequence) :
                         wVirtualKey(wVirtualKey),
-                        pwszSequence(pwszSequence) {};
+                        pwszSequence(pwszSequence),
+                        dwModifiers(0) {};
+
+                    _TermKeyMap(_In_ WORD const wVirtualKey, _In_ const DWORD dwModifiers, _In_ PCWSTR const pwszSequence) :
+                        wVirtualKey(wVirtualKey),
+                        pwszSequence(pwszSequence),
+                        dwModifiers(dwModifiers) {};
 
                     // C++11 syntax for prohibiting assignment
                     // We can't assign, everything here is const.
@@ -64,12 +71,14 @@ namespace Microsoft
                 static const _TermKeyMap s_rgKeypadNumericMapping[];
                 static const _TermKeyMap s_rgKeypadApplicationMapping[];
                 static const _TermKeyMap s_rgModifierKeyMapping[];
+                static const _TermKeyMap s_rgSimpleModifedKeyMapping[];
 
                 static const size_t s_cCursorKeysNormalMapping;
                 static const size_t s_cCursorKeysApplicationMapping;
                 static const size_t s_cKeypadNumericMapping;
                 static const size_t s_cKeypadApplicationMapping;
                 static const size_t s_cModifierKeyMapping;
+                static const size_t s_cSimpleModifedKeyMapping;
 
                 bool _SearchKeyMapping(_In_ const KeyEvent& keyEvent,
                                        _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
@@ -79,6 +88,7 @@ namespace Microsoft
                                               _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
                                               _In_ size_t const cKeyMapping) const;
                 bool _SearchWithModifier(_In_ const KeyEvent& keyEvent) const;
+
 
             public:
                 const size_t GetKeyMappingLength(_In_ const KeyEvent& keyEvent) const;

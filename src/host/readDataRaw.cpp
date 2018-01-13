@@ -27,7 +27,7 @@
 RAW_READ_DATA::RAW_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                              _In_ INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                              _In_ ULONG BufferSize,
-                             _In_ WCHAR* BufPtr) :
+                             _Inout_updates_bytes_(BufferSize) WCHAR* BufPtr) :
     ReadData(pInputBuffer, pInputReadHandleData),
     _BufferSize{ BufferSize },
     _BufPtr{ THROW_HR_IF_NULL(E_INVALIDARG, BufPtr) }

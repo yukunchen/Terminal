@@ -177,7 +177,7 @@ void InputEngineTest::RoundtripTerminalInputCallback(_In_ std::deque<std::unique
         }
     }
     Log::Comment(
-        NoThrowString().Format(L"\tvtseq: \"%s\"(%d)", vtseq.c_str(), vtseq.length())
+        NoThrowString().Format(L"\tvtseq: \"%s\"(%zu)", vtseq.c_str(), vtseq.length())
     );
 
     _stateMachine->ProcessString(&vtseq[0], vtseq.length());
@@ -253,6 +253,10 @@ void InputEngineTest::C0Test()
         switch(wch)
         {
             case L'\r': // Enter
+                expectedWch = wch;
+                writeCtrl = false;
+                break;
+            case L'\x1b': // Escape
                 expectedWch = wch;
                 writeCtrl = false;
                 break;
@@ -343,9 +347,9 @@ void InputEngineTest::AlphanumericTest()
         short keyscanModifiers = (keyscan >> 8) & 0xff;
         // Because of course, these are not the same flags.
         DWORD dwModifierState = 0 |
-            IsFlagSet(keyscanModifiers, 1) ? SHIFT_PRESSED : 0 |
-            IsFlagSet(keyscanModifiers, 2) ? LEFT_CTRL_PRESSED : 0 |
-            IsFlagSet(keyscanModifiers, 4) ? LEFT_ALT_PRESSED : 0 ;
+            (IsFlagSet(keyscanModifiers, 1) ? SHIFT_PRESSED : 0) |
+            (IsFlagSet(keyscanModifiers, 2) ? LEFT_CTRL_PRESSED : 0) |
+            (IsFlagSet(keyscanModifiers, 4) ? LEFT_ALT_PRESSED : 0) ;
 
         Log::Comment(NoThrowString().Format(L"Testing char 0x%x", wch));
         Log::Comment(NoThrowString().Format(L"Input Sequence=\"%s\"", inputSeq.c_str()));
@@ -397,10 +401,6 @@ void InputEngineTest::RoundTripTest()
             uiActualKeystate = SetFlag(uiActualKeystate, SHIFT_PRESSED);
         }
         else if (vkey == VK_CANCEL  || vkey == VK_PAUSE)
-        {
-            uiActualKeystate = SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
-        }
-        else if (vkey == VK_ESCAPE)
         {
             uiActualKeystate = SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
         }

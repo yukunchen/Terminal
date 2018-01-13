@@ -11,7 +11,7 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Testlist_PrePass-->
 
-    <LegacyBuilder Output="Testlist_PrePass" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Testlist_PrePass" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>PrePass</TargetPass>
 
@@ -25,7 +25,7 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Testlist_Pass1-->
 
-    <LegacyBuilder Output="Testlist_Pass1" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Testlist_Pass1" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass1</TargetPass>
 
@@ -54,7 +54,7 @@
 
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Testlist_Pass2-->
 
-    <LegacyBuilder Output="Testlist_Pass2" Condition="{IsBuildRelease AND IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
+    <LegacyBuilder Output="Testlist_Pass2" Condition="{IsBuildCommonArchitecture}" BasedOn="Template_NMake" Visibility="Private">
       <Classification>Test</Classification>
       <TargetPass>Pass2</TargetPass>
 
@@ -93,28 +93,10 @@
       </Produces>
     </LegacyBuilder>
 
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_BlgPrebuiltTest.__Content-->
-
-    <LibrarySetRunner Output="Testlist_Bin_BlgPrebuiltTest.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Testlist_Pass2.Directories[BinRoot.Combine("blg\prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_BlgPrebuiltWindows.__Content-->
-
-    <LibrarySetRunner Output="Testlist_Bin_BlgPrebuiltWindows.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Testlist_Pass2.Directories[BinRoot.Combine("blg\prebuilt\windows")]}</Directory>
-    </LibrarySetRunner>
-
     <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_PrebuiltTest.__Content-->
 
-    <LibrarySetRunner Output="Testlist_Bin_PrebuiltTest.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
+    <LibrarySetRunner Output="Testlist_Bin_PrebuiltTest.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
       <Directory>{Testlist_Pass2.Directories[BinRoot.Combine("prebuilt\test\", BuildArch, "\", BuildType)]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Testlist_Bin_PrebuiltWindows.__Content-->
-
-    <LibrarySetRunner Output="Testlist_Bin_PrebuiltWindows.__Content" Visibility="Internal" Condition="{(IsBuildCommonArchitecture AND IsBuildRelease)}">
-      <Directory>{Testlist_Pass2.Directories[BinRoot.Combine("prebuilt\windows")]}</Directory>
     </LibrarySetRunner>
   </Namespace>
 </DominoSpec>

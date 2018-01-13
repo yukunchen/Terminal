@@ -10,6 +10,7 @@
 
 #include "ApiRoutines.h"
 #include "getset.h"
+#include "dbcs.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
@@ -308,5 +309,162 @@ class ApiRoutinesTests
         VERIFY_ARE_EQUAL(wcslen(gci.OriginalTitle), cchWritten);
         VERIFY_ARE_EQUAL(wcslen(gci.OriginalTitle), cchNeeded);
         VERIFY_IS_TRUE(0 == wcscmp(gci.OriginalTitle, pwszTitle));
+    }
+
+    static void s_AdjustOutputWait(_In_ const bool fShouldBlock)
+    {
+        SetFlagIf(ServiceLocator::LocateGlobals().getConsoleInformation().Flags, CONSOLE_SELECTING, fShouldBlock);
+        ClearFlagIf(ServiceLocator::LocateGlobals().getConsoleInformation().Flags, CONSOLE_SELECTING, !fShouldBlock);
+    }
+
+    TEST_METHOD(ApiWriteConsoleA)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:fInduceWait", L"{false, true}")
+            TEST_METHOD_PROPERTY(L"Data:dwCodePage", L"{437, 932, 65001}")
+            TEST_METHOD_PROPERTY(L"Data:dwIncrement", L"{0, 1, 2}")
+        END_TEST_METHOD_PROPERTIES();
+
+        bool fInduceWait;
+        VERIFY_SUCCEEDED(TestData::TryGetValue(L"fInduceWait", fInduceWait), L"Get whether or not we should exercise this function off a wait state.");
+
+        DWORD dwCodePage;
+        VERIFY_SUCCEEDED(TestData::TryGetValue(L"dwCodePage", dwCodePage), L"Get the codepage for the test. Check a single byte, a double byte, and UTF-8.");
+
+        DWORD dwIncrement;
+        VERIFY_SUCCEEDED(TestData::TryGetValue(L"dwIncrement", dwIncrement),
+                         L"Get how many chars we should feed in at a time. This validates lead bytes and bytes held across calls.");
+
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        SCREEN_INFORMATION* const si = gci.CurrentScreenBuffer;
+
+        gci.LockConsole();
+        auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
+
+        PCSTR pszTestText;
+        switch (dwCodePage)
+        {
+        case CP_USA: // US English ANSI
+            pszTestText = "Test Text";
+            break;
+        case CP_JAPANESE: // Japanese Shift-JIS
+            pszTestText = "J\x82\xa0\x82\xa2";
+            break;
+        case CP_UTF8:
+            pszTestText = "Test \xe3\x82\xab Text";
+            break;
+        default:
+            VERIFY_FAIL(L"Test is not ready for this codepage.");
+            return;
+        }
+        size_t cchTestText = strlen(pszTestText);
+
+        // Set our increment value for the loop.
+        // 0 represents the special case of feeding the whole string in at at time.
+        // Otherwise, we try different segment sizes to ensure preservation across calls
+        // for appropriate handling of DBCS and UTF-8 sequences.
+        const size_t cchIncrement = dwIncrement == 0 ? cchTestText : dwIncrement;
+
+        for (size_t i = 0; i < cchTestText; i += cchIncrement)
+        {
+            Log::Comment(WEX::Common::String().Format(L"Iteration %d of loop with increment %d", i, cchIncrement));
+            if (fInduceWait)
+            {
+                Log::Comment(L"Blocking global output state to induce waits.");
+                s_AdjustOutputWait(true);
+            }
+
+            size_t cchRead = 0;
+            IWaitRoutine* pWaiter = nullptr;
+
+            // The increment is either the specified length or the remaining text in the string (if that is smaller).
+            const size_t cchWriteLength = min(cchIncrement, cchTestText - i);
+
+            // Run the test method
+            const HRESULT hr = _pApiRoutines->WriteConsoleAImpl(si, pszTestText + i, cchWriteLength, &cchRead, &pWaiter);
+
+            VERIFY_ARE_EQUAL(S_OK, hr, L"Successful result code from writing.");
+            if (!fInduceWait)
+            {
+                VERIFY_IS_NULL(pWaiter, L"We should have no waiter for this case.");
+                VERIFY_ARE_EQUAL(cchWriteLength, cchRead, L"We should have the same character count back as 'written' that we gave in.");
+            }
+            else
+            {
+                VERIFY_IS_NOT_NULL(pWaiter, L"We should have a waiter for this case.");
+                // The cchRead is irrelevant at this point as it's not going to be returned until we're off the wait.
+
+                Log::Comment(L"Unblocking global output state so the wait can be serviced.");
+                s_AdjustOutputWait(false);
+                Log::Comment(L"Dispatching the wait.");
+                NTSTATUS Status = STATUS_SUCCESS;
+                DWORD dwNumBytes = 0;
+                DWORD dwControlKeyState = 0; // unused but matches the pattern for read.
+                void* pOutputData = nullptr; // unused for writes but used for read.
+                const BOOL bNotifyResult = pWaiter->Notify(WaitTerminationReason::NoReason, FALSE, &Status, &dwNumBytes, &dwControlKeyState, &pOutputData);
+
+                VERIFY_IS_TRUE(!!bNotifyResult, L"Wait completion on notify should be successful.");
+                VERIFY_ARE_EQUAL(STATUS_SUCCESS, Status, L"We should have a successful return code to pass to the caller.");
+
+                const DWORD dwBytesExpected = (DWORD)cchWriteLength;
+                VERIFY_ARE_EQUAL(dwBytesExpected, dwNumBytes, L"We should have the byte length of the string we put in as the returned value.");
+            }
+        }
+    }
+
+    TEST_METHOD(ApiWriteConsoleW)
+    {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:fInduceWait", L"{false, true}")
+        END_TEST_METHOD_PROPERTIES();
+
+        bool fInduceWait;
+        VERIFY_SUCCEEDED(TestData::TryGetValue(L"fInduceWait", fInduceWait), L"Get whether or not we should exercise this function off a wait state.");
+
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        SCREEN_INFORMATION* const si = gci.CurrentScreenBuffer;
+
+        gci.LockConsole();
+        auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
+
+        PCWSTR pwszTestText = L"Test Text";
+        const size_t cchTestText = wcslen(pwszTestText);
+
+        if (fInduceWait)
+        {
+            Log::Comment(L"Blocking global output state to induce waits.");
+            s_AdjustOutputWait(true);
+        }
+
+        size_t cchRead = 0;
+        IWaitRoutine* pWaiter = nullptr;
+        const HRESULT hr = _pApiRoutines->WriteConsoleWImpl(si, pwszTestText, cchTestText, &cchRead, &pWaiter);
+
+        VERIFY_ARE_EQUAL(S_OK, hr, L"Successful result code from writing.");
+        if (!fInduceWait)
+        {
+            VERIFY_IS_NULL(pWaiter, L"We should have no waiter for this case.");
+            VERIFY_ARE_EQUAL(cchTestText, cchRead, L"We should have the same character count back as 'written' that we gave in.");
+        }
+        else
+        {
+            VERIFY_IS_NOT_NULL(pWaiter, L"We should have a waiter for this case.");
+            // The cchRead is irrelevant at this point as it's not going to be returned until we're off the wait.
+
+            Log::Comment(L"Unblocking global output state so the wait can be serviced.");
+            s_AdjustOutputWait(false);
+            Log::Comment(L"Dispatching the wait.");
+            NTSTATUS Status = STATUS_SUCCESS;
+            DWORD dwNumBytes = 0;
+            DWORD dwControlKeyState = 0; // unused but matches the pattern for read.
+            void* pOutputData = nullptr; // unused for writes but used for read.
+            const BOOL bNotifyResult = pWaiter->Notify(WaitTerminationReason::NoReason, TRUE, &Status, &dwNumBytes, &dwControlKeyState, &pOutputData);
+
+            VERIFY_IS_TRUE(!!bNotifyResult, L"Wait completion on notify should be successful.");
+            VERIFY_ARE_EQUAL(STATUS_SUCCESS, Status, L"We should have a successful return code to pass to the caller.");
+
+            const DWORD dwBytesExpected = (DWORD)(cchTestText * sizeof(wchar_t));
+            VERIFY_ARE_EQUAL(dwBytesExpected, dwNumBytes, L"We should have the byte length of the string we put in as the returned value.");
+        }
     }
 };

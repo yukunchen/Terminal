@@ -53,6 +53,7 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conapi.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conddkrefs.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conimeinfo.h</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\consolearguments.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\consrv.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conv.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\host\conwinuserrefs.h</Item>
@@ -117,9 +118,12 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfobase.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\fontinfodesired.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\ifontdefaultlist.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irendercursor.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderdata.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\irenderer.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\inc\minimalcursor.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\vtcursor.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\renderer\vt\vtrenderer.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\apimessage.h</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\server\apimessagestate.h</Item>
@@ -137,15 +141,17 @@
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\adaptdefaults.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\adaptdispatch.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\congetset.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\dispatchcommon.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\mouseinput.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\termdispatch.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminalinput.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\adapter\terminaloutput.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\istatemachineengine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\statemachine.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\telemetry.hpp</Item>
-        <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\termdispatch.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\terminal\parser\tracing.hpp</Item>
         <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\iinputevent.hpp</Item>
+        <Item>{SrcRoot}\onecore\windows\core\console\open\src\types\inc\viewport.hpp</Item>
 
         <!--References-->
 
@@ -240,17 +246,5 @@
 
       </Consumes>
     </LegacyBuilder>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib_Bin_BlgMsbuildpropsNmakeprops.__Content-->
-
-    <LibrarySetRunner Output="Lib_Bin_BlgMsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Lib_Pass1.Directories[BinRoot.Combine("blg\msbuildprops\nmakeprops")]}</Directory>
-    </LibrarySetRunner>
-
-    <!--DEF: MsWin.OnecoreWindows.Onecore.Windows.Core.Console.Open.Src.Interactivity.Base.Lib_Bin_MsbuildpropsNmakeprops.__Content-->
-
-    <LibrarySetRunner Output="Lib_Bin_MsbuildpropsNmakeprops.__Content" Visibility="Internal" Condition="{IsBuildCommonArchitecture}">
-      <Directory>{Lib_Pass1.Directories[BinRoot.Combine("msbuildprops\nmakeprops")]}</Directory>
-    </LibrarySetRunner>
   </Namespace>
 </DominoSpec>
