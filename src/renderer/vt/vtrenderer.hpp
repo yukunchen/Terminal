@@ -33,8 +33,12 @@ namespace Microsoft
 class Microsoft::Console::Render::VtEngine : public IRenderEngine
 {
 public:
+    // See _PaintUtf8BufferLine for explanation of this value.
+    static const size_t ERASE_CHARACTER_STRING_LENGTH = 8;
+
     VtEngine(_In_ wil::unique_hfile hPipe,
              _In_ const Microsoft::Console::Types::Viewport initialViewport);
+
     virtual ~VtEngine() override = default;
 
     HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
@@ -83,8 +87,7 @@ public:
     HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
     HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
 
-    // See _PaintUtf8BufferLine for explanation of this value.
-    static const size_t ERASE_CHARACTER_STRING_LENGTH = 8;
+    HRESULT SuppressResizeRepaint();
 
 protected:
     wil::unique_hfile _hFile;
@@ -102,6 +105,8 @@ protected:
 
     bool _quickReturn;
     bool _clearedAllThisFrame;
+
+    bool _suppressResizeRepaint;
 
     HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);
     HRESULT _Write(_In_ const std::string& str);

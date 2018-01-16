@@ -638,6 +638,12 @@ public:
         // We made it through the adapter, woo! Return true.
         return TRUE;
     }
+    virtual BOOL PrivateSuppressResizeRepaint()
+    {
+        Log::Comment(L"PrivateSuppressResizeRepaint MOCK called...");
+        // We made it through the adapter, woo! Return true.
+        return TRUE;
+    }
 
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {

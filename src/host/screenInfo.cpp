@@ -500,11 +500,23 @@ void SCREEN_INFORMATION::GetRequiredConsoleSizeInPixels(_Out_ PSIZE const pRequi
     pRequiredSize->cy = this->GetScreenWindowSizeY() * coordFontSize.Y;
 }
 
+// Method Description:
+// - Returns the width of the viewport, in characters.
+// Arguments:
+// - <none>
+// Return Value:
+// - the width of the viewport, in characters.
 SHORT SCREEN_INFORMATION::GetScreenWindowSizeX() const
 {
     return CalcWindowSizeX(&this->_srBufferViewport);
 }
 
+// Method Description:
+// - Returns the height of the viewport, in characters.
+// Arguments:
+// - <none>
+// Return Value:
+// - the height of the viewport, in characters.
 SHORT SCREEN_INFORMATION::GetScreenWindowSizeY() const
 {
     return CalcWindowSizeY(&this->_srBufferViewport);
@@ -701,14 +713,25 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 // - <none>
 void SCREEN_INFORMATION::SetViewportSize(_In_ const COORD* const pcoordSize)
 {
-    // If this is the alt buffer:
+    // If this is the alt buffer or a VT I/O buffer:
     //      first resize ourselves to match the new viewport
-    //      then also make sure that the main buffer gets the same call.
-    if (_psiMainBuffer)
+    //      then also make sure that the main buffer gets the same call 
+    //      (if necessary)
+    if (_IsInPtyMode())
     {
         ResizeScreenBuffer(*pcoordSize, TRUE);
-        _psiMainBuffer->_InternalSetViewportSize(pcoordSize, false, false);
+
+        if (_psiMainBuffer) 
+        {
+            this->SetViewportSize(&_coordScreenBufferSize);
+        }
     }
+
+    // if (_psiMainBuffer)
+    // {
+    //     ResizeScreenBuffer(*pcoordSize, TRUE);
+    //     _psiMainBuffer->_InternalSetViewportSize(pcoordSize, false, false);
+    // }
     _InternalSetViewportSize(pcoordSize, false, false);
 }
 
@@ -1786,7 +1809,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSi
 // Routine Description:
 // - This routine resizes the screen buffer.
 // Arguments:
-// - NewScreenSize - new size of screen.
+// - NewScreenSize - new size of screen in characters
 // - DoScrollBarUpdate - indicates whether to update scroll bars at the end
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
