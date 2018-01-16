@@ -48,7 +48,7 @@ public:
     HRESULT Invalidate(_In_ const SMALL_RECT* const psrRegion) override;
     HRESULT InvalidateAll() override;
     HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) override;
-    HRESULT _InvalidCombine(_In_ const Microsoft::Console::Types::Viewport invalid);
+
     virtual HRESULT StartPaint() override;
     virtual HRESULT EndPaint() override;
 

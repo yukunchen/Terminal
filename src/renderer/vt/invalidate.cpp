@@ -79,19 +79,6 @@ HRESULT VtEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
 
 // Routine Description:
 // - Helper to combine the given rectangle into the invalid region to be 
-//      updated on the next paint.
-// Arguments:
-// - invalid: rectangle describing the new invalid region, in characters.
-// Return Value:
-// - S_OK, else an appropriate HRESULT for failing to allocate or write.
-HRESULT VtEngine::_InvalidCombine(_In_ const Viewport invalid)
-{
-    SMALL_RECT sr = invalid.ToExclusive();
-    return _InvalidCombine(&sr);
-}
-
-// Routine Description:
-// - Helper to combine the given rectangle into the invalid region to be 
 //      updated on the next paint
 // Expects EXCLUSIVE rectangles.
 // Arguments:
