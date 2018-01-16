@@ -333,6 +333,8 @@ namespace Conhost.UIA.Tests.Elements
             // The driver will bind our calls to the Console APIs into the child process.
             // This will allow us to use the APIs to get/set the console state of the test window.
             NativeMethods.Win32BoolHelper(WinCon.FreeConsole(), "Free existing console bindings.");
+            // need to wait a bit or we might not be able to reliably attach
+            System.Threading.Thread.Sleep(Globals.Timeout);
             NativeMethods.Win32BoolHelper(WinCon.AttachConsole((uint)pid), "Bind to the new PID for console APIs.");
 
             // we need to wait here for a bit or else
