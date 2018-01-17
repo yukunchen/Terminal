@@ -51,12 +51,13 @@ HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const char* const charBuf
     gci->LockConsole();
     auto Unlock = wil::ScopeExit([&] { gci->UnlockConsole(); });
     
-    unsigned int const uiCodePage = gci->CP;
+    // unsigned int const uiCodePage = gci->CP;
     try
     {
         wistd::unique_ptr<wchar_t[]> pwsSequence;
         size_t cchSequence;
-        RETURN_IF_FAILED(ConvertToW(uiCodePage, charBuffer, cch, pwsSequence, cchSequence));
+        // TODO: This probably needs to use the utf8ToWideChar parser.
+        RETURN_IF_FAILED(ConvertToW(CP_UTF8, charBuffer, cch, pwsSequence, cchSequence));
 
         _pInputStateMachine->ProcessString(pwsSequence.get(), cchSequence);
     }

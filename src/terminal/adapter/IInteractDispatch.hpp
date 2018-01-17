@@ -37,6 +37,8 @@ public:
     
     virtual bool WriteCtrlC() = 0;
 
+    virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws, const size_t cch) = 0;
+
     virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
                                     _In_reads_(cParams) const unsigned short* const rgusParams,
                                     _In_ size_t const cParams) = 0;

@@ -9,6 +9,7 @@
 #include "InteractDispatch.hpp"
 #include "conGetSet.hpp"
 #include "../../types/inc/Viewport.hpp"
+#include "../../types/inc/convert.hpp"
 #include "../../inc/unicode.hpp"
 
 using namespace Microsoft::Console::Types;
@@ -48,6 +49,31 @@ bool InteractDispatch::WriteCtrlC()
 {
     KeyEvent key = KeyEvent(true, 1, 'C', 0, UNICODE_ETX, LEFT_CTRL_PRESSED);
     return !!_pConApi->PrivateWriteConsoleControlInput(key);
+}
+
+bool InteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
+                                   const size_t cch)
+{
+    unsigned int codepage = 0;
+    bool fSuccess = !!_pConApi->GetConsoleOutputCP(&codepage);
+    if (fSuccess)
+    {
+        std::deque<std::unique_ptr<IInputEvent>> keyEvents;
+        
+        for (int i = 0; i < cch; ++i)
+        {
+            const wchar_t wch = pws[i];
+            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, codepage);
+            while (!convertedEvents.empty())
+            {
+                keyEvents.push_back(std::move(convertedEvents.front()));
+                convertedEvents.pop_front();
+            }
+        }
+        
+        fSuccess = WriteInput(keyEvents);
+    }
+    return fSuccess;
 }
 
 //Method Description:

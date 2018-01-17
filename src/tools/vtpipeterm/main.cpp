@@ -21,6 +21,13 @@
 
 using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
+const int TEST_LANG_NONE = 0;
+const int TEST_LANG_CYRILLIC = 1;
+const int TEST_LANG_CHINESE = 2;
+const int TEST_LANG_JAPANESE = 3;
+const int TEST_LANG_KOREAN = 4;
+
+////////////////////////////////////////////////////////////////////////////////
 // State
 HANDLE hOut;
 HANDLE hIn;
@@ -30,6 +37,9 @@ std::deque<VtConsole*> consoles;
 VtConsole* debug;
 
 bool prefixPressed = false;
+bool doUnicode = false;
+int lang = TEST_LANG_NONE;
+
 bool g_headless = false;
 ////////////////////////////////////////////////////////////////////////////////
 // Forward decls
@@ -224,7 +234,6 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
     int bufferCch = 0;
     int printableCch = 0;
 
-
     for (int i = 0; i < cEvents; ++i)
     {
         INPUT_RECORD event = inputBuffer[i];
@@ -241,7 +250,28 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                     // This is a special keyboard key that was pressed, not actually NUL
                     continue;
                 }
-
+                if (doUnicode)
+                {
+                    switch(c)
+                    {
+                        case '1':
+                            lang = TEST_LANG_CYRILLIC;
+                            break;
+                        case '2':
+                            lang = TEST_LANG_CHINESE;
+                            break;
+                        case '3':
+                            lang = TEST_LANG_JAPANESE;
+                            break;
+                        case '4':
+                            lang = TEST_LANG_KOREAN;
+                            break;
+                        default:
+                            doUnicode = false;
+                            lang = TEST_LANG_NONE;
+                            break;
+                    }
+                }
                 if (!prefixPressed)
                 {
                     if (c == '\x2')
@@ -266,6 +296,9 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                         case 't':
                             newConsole();
                             nextConsole();
+                            break;
+                        case 'u':
+                            doUnicode = true;
                             break;
                         default:
                             *nextBuffer = c;
@@ -313,6 +346,30 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
 
         getConsole()->WriteInput(vtseq);
         PrintInputToDebug(vtseq);
+    }
+    if (doUnicode && lang != TEST_LANG_NONE)
+    {
+        std::string str;
+        switch(lang)
+        {
+            case TEST_LANG_CYRILLIC:
+                str = "Лорем ипсум долор сит амет, пер цлита поссит ех, ат мунере фабулас петентиум сит.";
+                break;
+            case TEST_LANG_CHINESE:
+                str = "側経意責家方家閉討店暖育田庁載社転線宇。";
+                break;
+            case TEST_LANG_JAPANESE:
+                str = "旅ロ京青利セムレ弱改フヨス波府かばぼ意送でぼ調掲察たス日西重ケアナ住橋ユムミク順待ふかんぼ人奨貯鏡すびそ。";
+                break;
+            case TEST_LANG_KOREAN:
+                str = "국민경제의 발전을 위한 중요정책의 수립에 관하여 대통령의 자문에 응하기 위하여 국민경제자문회의를 둘 수 있다.";
+                break;
+            default:
+                str = "";
+                break;
+        }
+        getConsole()->WriteInput(str);
+        PrintInputToDebug(str);
     }
 }
 
@@ -364,11 +421,14 @@ DWORD InputThread(LPVOID lpParameter)
     // Because the input thread ends up owning the lifetime of the application, 
     // Set/restore the CP here.
 
-    unsigned int launchCP = GetConsoleOutputCP();
+    unsigned int launchOutputCP = GetConsoleOutputCP();
+    unsigned int launchCP = GetConsoleCP();
     THROW_LAST_ERROR_IF_FALSE(SetConsoleOutputCP(CP_UTF8));
+    THROW_LAST_ERROR_IF_FALSE(SetConsoleCP(CP_UTF8));
     auto restore = wil::ScopeExit([&] 
     {
-        SetConsoleOutputCP(launchCP);
+        SetConsoleOutputCP(launchOutputCP);
+        SetConsoleCP(launchCP);
     });
 
     
@@ -376,7 +436,8 @@ DWORD InputThread(LPVOID lpParameter)
     {
         INPUT_RECORD rc[256];
         DWORD dwRead = 0;
-        bool fSuccess = !!ReadConsoleInputA(hIn, rc, 256, &dwRead);
+        // bool fSuccess = !!ReadConsoleInputA(hIn, rc, 256, &dwRead);
+        bool fSuccess = !!ReadConsoleInput(hIn, rc, 256, &dwRead);
         if (fSuccess)
         {
             handleManyEvents(rc, dwRead);

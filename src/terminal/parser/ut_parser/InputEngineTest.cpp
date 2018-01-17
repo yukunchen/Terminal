@@ -11,6 +11,7 @@
 #include "../adapter/terminalInput.hpp"
 #include "../../inc/consoletaeftemplates.hpp"
 #include "../../inc/unicode.hpp"
+#include "../../types/inc/convert.hpp"
 
 #include <vector>
 #include <functional>
@@ -20,6 +21,11 @@
 #ifdef BUILD_ONECORE_INTERACTIVITY
 #include "../../../interactivity/inc/VtApiRedirection.hpp"
 #endif
+
+// From dbcs.h:
+#define CP_USA                 437
+// From utf8ToWideCharParser.hpp
+#define CP_UTF8 65001
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -65,6 +71,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(AlphanumericTest);
     TEST_METHOD(RoundTripTest);
     TEST_METHOD(WindowManipulationTest);
+    TEST_METHOD(UTF8Test);
 
     StateMachine* _pStateMachine;
 
@@ -89,6 +96,8 @@ public:
     virtual bool WindowManipulation(_In_ const DispatchCommon::WindowManipulationType uiFunction,
                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                 _In_ size_t const cParams) override; // DTTERM_WindowManipulation
+    virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws,
+                             const size_t cch) override;
 private:
     std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteInputCallback;
     InputEngineTest* _testInstance;
@@ -129,6 +138,26 @@ bool TestInteractDispatch::WindowManipulation(_In_ const DispatchCommon::WindowM
     }
     return true;
 }
+
+bool TestInteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
+                                       const size_t cch)
+{
+    std::deque<std::unique_ptr<IInputEvent>> keyEvents;
+    
+    for (int i = 0; i < cch; ++i)
+    {
+        const wchar_t wch = pws[i];
+        std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, CP_UTF8);
+        while (!convertedEvents.empty())
+        {
+            keyEvents.push_back(std::move(convertedEvents.front()));
+            convertedEvents.pop_front();
+        }
+    }
+    
+    return WriteInput(keyEvents);
+}
+
 
 bool IsShiftPressed(const DWORD modifierState)
 {
@@ -499,4 +528,66 @@ void InputEngineTest::WindowManipulationTest()
         ));
         _pStateMachine->ProcessString(&seq[0], seq.length());
     }
+}
+
+void InputEngineTest::UTF8Test()
+{
+    auto pfn = std::bind(&InputEngineTest::TestInputCallback, this, std::placeholders::_1);
+    _pStateMachine = new StateMachine(
+            std::make_unique<InputStateMachineEngine>(
+                std::make_unique<TestInteractDispatch>(pfn, this)
+            )
+    );
+    VERIFY_IS_NOT_NULL(_pStateMachine);
+    
+    Log::Comment(L"Sending various utf-8 strings, and seeing what we get out");
+    std::wstring utf8Input = L"\x041B"; // "Л", UTF-16: 041B,  utf8: "\xd09b"
+    // std::string utf8Input = "Л"; //UTF-16: 041B
+
+    INPUT_RECORD proto = {0};
+    proto.EventType = KEY_EVENT;
+    proto.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED;
+    proto.Event.KeyEvent.wRepeatCount = 1;
+    proto.Event.KeyEvent.uChar.UnicodeChar = UNICODE_NULL;
+    // Fill these in for each char
+    proto.Event.KeyEvent.wVirtualKeyCode = 0;
+    proto.Event.KeyEvent.bKeyDown = TRUE;
+    proto.Event.KeyEvent.wVirtualScanCode = 0;
+
+    INPUT_RECORD altDown = proto;
+    altDown.Event.KeyEvent.wVirtualKeyCode = VK_MENU;
+    altDown.Event.KeyEvent.wVirtualScanCode = altScanCode;
+    INPUT_RECORD altUp = altDown;
+    altUp.Event.KeyEvent.bKeyDown = FALSE;
+    altUp.Event.KeyEvent.uChar.UnicodeChar = L'\x041B';
+
+
+    // So this whole thing might be fucked all the way from VtInputThread::_HandleRunInput
+    // VtInputThread::_HandleRunInput takes in the utf8 buffer, 
+    // then calls ConvertToW
+    INPUT_RECORD four = proto;
+    four.Event.KeyEvent.wVirtualKeyCode = VK_NUMPAD4;
+    four.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(four.Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC));
+
+    INPUT_RECORD one = proto;
+    one.Event.KeyEvent.wVirtualKeyCode = VK_NUMPAD1;
+    one.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(one.Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC));
+
+    INPUT_RECORD b = proto;
+    b.Event.KeyEvent.wVirtualKeyCode = static_cast<WORD>('B');
+    b.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(b.Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC));
+
+
+    vExpectedInput.clear();
+    vExpectedInput.push_back(altDown);
+    vExpectedInput.push_back(four);
+    vExpectedInput.push_back(one);
+    vExpectedInput.push_back(b);
+    vExpectedInput.push_back(altUp);
+
+    Log::Comment(NoThrowString().Format(
+        L"Processing \"%s\"", utf8Input.c_str()
+    ));
+    _pStateMachine->ProcessString(&utf8Input[0], utf8Input.length());
+
 }

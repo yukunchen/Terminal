@@ -183,6 +183,11 @@ bool InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
         fSuccess = _WriteSingleKey(wch, vkey, dwModifierState);
     }
     return fSuccess;
+    // const UINT codepage = ServiceLocator::LocateGlobals()->getConsoleInformation()->OutputCP;
+
+    // std::deque<std::unique_ptr<IInputEvent>> inputEvents = CharToKeyEvents(wch);
+
+    // return _pDispatch->WriteInput(inputEvents);
 }
 
 // Method Description:
@@ -195,18 +200,20 @@ bool InputStateMachineEngine::ActionPrint(_In_ wchar_t const wch)
 // - true iff we successfully dispatched the sequence.
 bool InputStateMachineEngine::ActionPrintString(_Inout_updates_(cch) wchar_t* const rgwch, _In_ size_t const cch)
 {
-    bool fSuccess = true;
-    for(size_t i = 0; i < cch; i++)
-    {
-        // Split into two steps so compiler doesn't optimize out the fn call.
-        bool result = ActionPrint(rgwch[i]);
-        fSuccess &= result;
-        if (!fSuccess)
-        {
-            break;
-        }
-    }
-    return fSuccess;
+    // bool fSuccess = true;
+    // for(size_t i = 0; i < cch; i++)
+    // {
+    //     // Split into two steps so compiler doesn't optimize out the fn call.
+    //     bool result = ActionPrint(rgwch[i]);
+    //     fSuccess &= result;
+    //     if (!fSuccess)
+    //     {
+    //         break;
+    //     }
+    // }
+    // return fSuccess;
+    // DebugBreak();
+    return _pDispatch->WriteString(rgwch,cch);
 }
 
 // Method Description:
