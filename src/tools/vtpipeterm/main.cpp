@@ -272,7 +272,7 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                             break;
                     }
                 }
-                if (!prefixPressed)
+                else if (!prefixPressed)
                 {
                     if (c == '\x2')
                     {
