@@ -35,6 +35,7 @@ namespace Microsoft
                 HRESULT InvalidateSystem(_In_ const RECT* const prcDirtyClient) override;
                 HRESULT Invalidate(_In_ const SMALL_RECT* const psrRegion) override;
                 HRESULT InvalidateAll() override;
+                HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) override;
 
                 HRESULT StartPaint() override;
                 HRESULT EndPaint() override;
