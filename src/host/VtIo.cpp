@@ -242,3 +242,21 @@ HRESULT VtIo::StartIfNeeded()
 
     return S_OK;
 }
+
+// Method Description:
+// - Prevent the renderer from emitting output on the next resize. This prevents
+//      the host from echoing a resize to the terminal that requested it.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK if the renderer successfully suppressed the next repaint, otherwise an 
+//      appropriate HRESULT indicating failure.
+HRESULT VtIo::SuppressResizeRepaint()
+{
+    HRESULT hr = S_OK;
+    if (_pVtRenderEngine)
+    {
+        hr = _pVtRenderEngine->SuppressResizeRepaint();
+    }
+    return hr;
+}

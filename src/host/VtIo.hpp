@@ -35,6 +35,8 @@ public:
 
     static HRESULT ParseIoMode(_In_ const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
     
+    HRESULT SuppressResizeRepaint();
+
 private:
     bool _usingVt;
     VtIoMode _IoMode;

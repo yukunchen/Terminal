@@ -69,7 +69,7 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
 // - This routine allocates and initializes the data associated with a screen buffer.
 // Arguments:
 // - ScreenInformation - the new screen buffer.
-// - dwWindowSize - the initial size of screen buffer's window (in rows/columns)
+// - coordWindowSize - the initial size of screen buffer's window (in rows/columns)
 // - nFont - the initial font to generate text with.
 // - dwScreenBufferSize - the initial size of the screen buffer (in rows/columns).
 // Return Value:
@@ -100,16 +100,13 @@ NTSTATUS SCREEN_INFORMATION::CreateInstance(_In_ COORD coordWindowSize,
     status = NT_TESTNULL(pScreen);
     if (NT_SUCCESS(status))
     {
-        pScreen->SetScreenBufferSize(coordScreenBufferSize);
+        pScreen->_InitializeBufferDimensions(coordScreenBufferSize, coordWindowSize);
 
-        pScreen->_srBufferViewport.Left = 0;
-        pScreen->_srBufferViewport.Top = 0;
-        pScreen->_srBufferViewport.Right = coordWindowSize.X - 1;
-        pScreen->_srBufferViewport.Bottom = coordWindowSize.Y - 1;
-
-        pScreen->SetScreenBufferSize(coordScreenBufferSize);
-
-        status = TEXT_BUFFER_INFO::CreateInstance(pfiFont, coordScreenBufferSize, ciFill, uiCursorSize, &pScreen->TextInfo);
+        status = TEXT_BUFFER_INFO::CreateInstance(pfiFont,
+                                                  pScreen->GetScreenBufferSize(), 
+                                                  ciFill,
+                                                  uiCursorSize,
+                                                  &pScreen->TextInfo);
 
         if (NT_SUCCESS(status))
         {
@@ -503,11 +500,23 @@ void SCREEN_INFORMATION::GetRequiredConsoleSizeInPixels(_Out_ PSIZE const pRequi
     pRequiredSize->cy = this->GetScreenWindowSizeY() * coordFontSize.Y;
 }
 
+// Method Description:
+// - Returns the width of the viewport, in characters.
+// Arguments:
+// - <none>
+// Return Value:
+// - the width of the viewport, in characters.
 SHORT SCREEN_INFORMATION::GetScreenWindowSizeX() const
 {
     return CalcWindowSizeX(&this->_srBufferViewport);
 }
 
+// Method Description:
+// - Returns the height of the viewport, in characters.
+// Arguments:
+// - <none>
+// Return Value:
+// - the height of the viewport, in characters.
 SHORT SCREEN_INFORMATION::GetScreenWindowSizeY() const
 {
     return CalcWindowSizeY(&this->_srBufferViewport);
@@ -666,17 +675,18 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 
     this->ResizingWindow++;
 
-    // If this isn't the main buffer, make sure we enable both of the scroll bars.
-    //   The alt might come through and disable the scroll bars, this is the only way to re-enable it.
-    if(!_IsAltBuffer())
-    {
-        ServiceLocator::LocateConsoleWindow()->EnableBothScrollBars();
-    }
-
-    const COORD coordScreenBufferSize = GetScreenBufferSize();
-
     if (pWindow != nullptr)
     {
+        const COORD coordScreenBufferSize = GetScreenBufferSize();
+    
+        // If this is the main buffer, make sure we enable both of the scroll bars.
+        //      The alt buffer likely disabled the scroll bars, this is the only 
+        //      way to re-enable it.
+        if(!_IsAltBuffer())
+        {
+            pWindow->EnableBothScrollBars();
+        }
+
         pWindow->UpdateScrollBar(true,
                                  this->_IsAltBuffer(),
                                  this->GetScreenWindowSizeY(),
@@ -704,13 +714,18 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
 // - <none>
 void SCREEN_INFORMATION::SetViewportSize(_In_ const COORD* const pcoordSize)
 {
-    // If this is the alt buffer:
+    // If this is the alt buffer or a VT I/O buffer:
     //      first resize ourselves to match the new viewport
-    //      then also make sure that the main buffer gets the same call.
-    if (_psiMainBuffer)
+    //      then also make sure that the main buffer gets the same call 
+    //      (if necessary)
+    if (_IsInPtyMode())
     {
         ResizeScreenBuffer(*pcoordSize, TRUE);
-        _psiMainBuffer->_InternalSetViewportSize(pcoordSize, false, false);
+
+        if (_psiMainBuffer) 
+        {
+            this->SetViewportSize(&_coordScreenBufferSize);
+        }
     }
     _InternalSetViewportSize(pcoordSize, false, false);
 }
@@ -961,7 +976,7 @@ HRESULT SCREEN_INFORMATION::_AdjustScreenBuffer(_In_ const RECT* const prcClient
     RETURN_IF_FAILED(_AdjustScreenBufferHelper(prcClientNew, coordBufferSizeNew, &coordClientNewCharacters));
 
     // Now reanalyze the buffer size and grow if we can fit more characters into the window no matter the console mode.
-    if (_IsAltBuffer())
+    if (_IsInPtyMode())
     {
         // The alt buffer always wants to be exactly the size of the screen, never more or less.
         // This prevents scrollbars when you increase the alt buffer size, then decrease it.
@@ -1789,7 +1804,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeTraditional(_In_ COORD const coordNewScreenSi
 // Routine Description:
 // - This routine resizes the screen buffer.
 // Arguments:
-// - NewScreenSize - new size of screen.
+// - NewScreenSize - new size of screen in characters
 // - DoScrollBarUpdate - indicates whether to update scroll bars at the end
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
@@ -2236,6 +2251,20 @@ bool SCREEN_INFORMATION::_IsAltBuffer() const
 }
 
 // Routine Description:
+// - Helper indicating if the buffer is acting as a pty - with the screenbuffer 
+//      clamped to the viewport size. This can be the case either when we're in 
+//      VT I/O mode, or when this buffer is an alt buffer.
+// Parameters:
+// - None
+// Return value:
+// - true iff this buffer has a main buffer.
+bool SCREEN_INFORMATION::_IsInPtyMode() const
+{
+    const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    return _IsAltBuffer() || gci->IsInVtIoMode();
+}
+
+// Routine Description:
 // - Sets a VT tab stop in the column sColumn. If there is already a tab there, it does nothing.
 // Parameters:
 // - sColumn: the column to add a tab stop to.
@@ -2624,4 +2653,25 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
     }
 
     return S_OK;
+}
+
+// Method Description:
+// - Initialize the dimensions of the screenbuffer. If we're in VT I/O mode, 
+//      then use the viewport dimensions as out initial size, not the given 
+//      screen buffer size.
+// TODO: MSFT:15438696 - reverse this, so that the viewport becomes the size of 
+//      the screenbuffer, and update the rest of CreateInstance to match.
+// Arguments:
+// - coordScreenBufferSize: The initial dimensions of the screen buffer, in characters.
+// - coordViewportSize: The initial dimensions of the viewport, in characters.
+// Return Value:
+// - <none>
+void SCREEN_INFORMATION::_InitializeBufferDimensions(_In_ const COORD coordScreenBufferSize,
+                                                     _In_ const COORD coordViewportSize)
+{
+    Viewport viewport = Viewport::FromDimensions({0, 0}, coordViewportSize);
+    _srBufferViewport = viewport.ToInclusive();
+
+    SetScreenBufferSize(_IsInPtyMode() ? viewport.Dimensions() : coordScreenBufferSize);
+    
 }

@@ -43,5 +43,7 @@ public:
                                _In_ const unsigned short usHeight);
 
     static bool s_RefreshWindow(_Inout_ ConGetSet* const pConApi);
+    
+    static bool s_SuppressResizeRepaint(_Inout_ ConGetSet* const pConApi);
 
 };

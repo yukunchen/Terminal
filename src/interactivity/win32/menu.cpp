@@ -431,7 +431,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
         if (gci->GetWrapText())
         {
-            // Then if wrap text is on, the buffer size gets fixed to the window size value.
+            // Then if wrap text is on, the buffer width gets fixed to the window width value.
             coordBuffer.X = coordWindow.X;
 
             // However, we're not done. The "max window size" is if we had no scroll bar.
