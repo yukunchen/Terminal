@@ -31,6 +31,15 @@ Globals                      *ServiceLocator::s_globals                     = ne
 
 void ServiceLocator::RundownAndExit(_In_ HRESULT const hr)
 {
+    // MSFT:15506250
+    // In VT I/O Mode, a client application might die before we've renderered 
+    //      the last bit of text they've emitted. So give the VtRenderer one 
+    //      last chance to paint before it is killed.
+    if (s_globals->getConsoleInformation()->IsInVtIoMode())
+    {
+        s_globals->pRender->TriggerCircling();
+    }
+
     // A History Lesson from MSFT: 13576341:
     // We introduced RundownAndExit to give services that hold onto important handles
     // an opportunity to let those go when we decide to exit from the console for various reasons.
@@ -47,6 +56,7 @@ void ServiceLocator::RundownAndExit(_In_ HRESULT const hr)
     // we head into TerminateProcess and tear everything else down less gracefully.
 
     // TODO: MSFT: 14397093 - Expand graceful rundown beyond just the Hot Bug input services case.
+
 
     if (s_inputServices != nullptr)
     {
