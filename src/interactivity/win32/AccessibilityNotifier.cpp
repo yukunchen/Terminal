@@ -47,14 +47,14 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
     // UIA event notification
     static COORD previousCursorLocation = { 0, 0 };
     IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
-    
+
     if (pWindow != nullptr)
     {
         NotifyWinEvent(EVENT_CONSOLE_CARET,
                        pWindow->GetWindowHandle(),
                        dwFlags,
                        position);
-        
+
         SCREEN_INFORMATION* const pScreenInfo = gci->CurrentScreenBuffer;
         if (pScreenInfo)
         {
@@ -67,7 +67,6 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
                     COORD currentCursorPosition = pCursor->GetPosition();
                     if (currentCursorPosition != previousCursorLocation)
                     {
-                        pWindow->UiaSetTextAreaFocus();
                         pWindow->SignalUia(UIA_Text_TextSelectionChangedEventId);
                     }
                     previousCursorLocation = currentCursorPosition;

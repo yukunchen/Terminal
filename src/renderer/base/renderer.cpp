@@ -344,10 +344,6 @@ void Renderer::TriggerCircling()
     {
         PaintFrame();   
     }
-    // if (_CheckViewportAndScroll())
-    // {
-    //     _NotifyPaintFrame();
-    // }
 }
 
 // Routine Description:

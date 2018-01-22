@@ -679,9 +679,10 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
     {
         const COORD coordScreenBufferSize = GetScreenBufferSize();
     
-        // If this isn't the main buffer, make sure we enable both of the scroll bars.
-        //   The alt might come through and disable the scroll bars, this is the only way to re-enable it.
-        if(_IsAltBuffer())
+        // If this is the main buffer, make sure we enable both of the scroll bars.
+        //      The alt buffer likely disabled the scroll bars, this is the only 
+        //      way to re-enable it.
+        if(!_IsAltBuffer())
         {
             pWindow->EnableBothScrollBars();
         }
@@ -2256,7 +2257,9 @@ bool SCREEN_INFORMATION::_IsAltBuffer() const
 }
 
 // Routine Description:
-// - Helper indicating if the buffer has a main buffer, meaning that this is an alternate buffer.
+// - Helper indicating if the buffer is acting as a pty - with the screenbuffer 
+//      clamped to the viewport size. This can be the case either when we're in 
+//      VT I/O mode, or when this buffer is an alt buffer.
 // Parameters:
 // - None
 // Return value:
@@ -2658,12 +2661,23 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
     return S_OK;
 }
 
+// Method Description:
+// - Initialize the dimensions of the screenbuffer. If we're in VT I/O mode, 
+//      then use the viewport dimensions as out initial size, not the given 
+//      screen buffer size.
+// TODO: MSFT:15438696 - reverse this, so that the viewport becomes the size of 
+//      the screenbuffer, and update the rest of CreateInstance to match.
+// Arguments:
+// - coordScreenBufferSize: The initial dimensions of the screen buffer, in characters.
+// - coordViewportSize: The initial dimensions of the viewport, in characters.
+// Return Value:
+// - <none>
 void SCREEN_INFORMATION::_InitializeBufferDimensions(_In_ const COORD coordScreenBufferSize,
                                                      _In_ const COORD coordViewportSize)
 {
     Viewport viewport = Viewport::FromDimensions({0, 0}, coordViewportSize);
     _srBufferViewport = viewport.ToInclusive();
 
-    SetScreenBufferSize(_IsInPtyMode()? viewport.Dimensions() : coordScreenBufferSize);
+    SetScreenBufferSize(_IsInPtyMode() ? viewport.Dimensions() : coordScreenBufferSize);
     
 }

@@ -102,6 +102,9 @@ public:
 
     bool InVTMode() const;
 
+    // TODO: MSFT 9358743 - http://osgvsowi/9358743
+    // TODO: WARNING. This currently relies on the ConsoleObjectHeader being the FIRST portion of the console object
+    //       structure or class. If it is not the first item, the cast back to the object won't work anymore.
     ConsoleObjectHeader Header;
 
     // TODO: MSFT 9355062 these methods should probably be a part of construction/destruction. http://osgvsowi/9355062
@@ -176,7 +179,7 @@ public:
                                   _In_ const TextAttribute& newPopupAttributes);
 
     HRESULT VtEraseAll();
-    
+
 private:
     SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
                        _In_ IAccessibilityNotifier *pNotifier,
