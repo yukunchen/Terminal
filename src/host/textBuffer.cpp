@@ -663,12 +663,12 @@ bool TEXT_BUFFER_INFO::IncrementCircularBuffer()
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
-    auto g = ServiceLocator::LocateGlobals();
-    if (g->pRender)
+    auto& g = ServiceLocator::LocateGlobals();
+    if (g.pRender)
     {
-        g->pRender->TriggerCircling();
+        g.pRender->TriggerCircling();
     }
-    
+
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     TextAttribute FillAttributes;
     FillAttributes.SetFromLegacy(_ciFill.Attributes);

@@ -423,7 +423,7 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo,
         NewSize.X = coordScreenBufferSize.X;
     }
 
-    if (NewSize.X != pScreenInfo->GetScreenWindowSizeX() || 
+    if (NewSize.X != pScreenInfo->GetScreenWindowSizeX() ||
         NewSize.Y != pScreenInfo->GetScreenWindowSizeY())
     {
         gci.CurrentScreenBuffer->SetViewportSize(&NewSize);
@@ -1669,8 +1669,7 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
 // - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
 NTSTATUS DoSrvPrivateSuppressResizeRepaint()
 {
-    Globals* const g = ServiceLocator::LocateGlobals();
-    CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
-    assert(gci->IsInVtIoMode());
-    return NTSTATUS_FROM_HRESULT(gci->GetVtIo()->SuppressResizeRepaint());
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    assert(gci.IsInVtIoMode());
+    return NTSTATUS_FROM_HRESULT(gci.GetVtIo()->SuppressResizeRepaint());
 }

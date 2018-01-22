@@ -1397,7 +1397,7 @@ void TextBufferTests::TestReverseReset()
 void LogTextAttribute(const TextAttribute& attr, const std::wstring& name)
 {
     Log::Comment(NoThrowString().Format(
-        L"%s={IsLegacy:%d, GetLegacyAttributes:0x%x, FG:0x%x, BG:0x%x}", 
+        L"%s={IsLegacy:%d, GetLegacyAttributes:0x%x, FG:0x%x, BG:0x%x}",
         name.c_str(),
         attr.IsLegacy(), attr.GetLegacyAttributes(), attr.GetRgbForeground(), attr.GetRgbBackground()
     ));
@@ -1407,8 +1407,8 @@ void TextBufferTests::CopyLastAttr()
 {
     DisableVerifyExceptions disable;
 
-    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
-    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci.CurrentScreenBuffer->GetActiveBuffer();
     const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
     StateMachine* const stateMachine = psi->GetStateMachine();
     Cursor* const cursor = tbi->GetCursor();
@@ -1424,7 +1424,7 @@ void TextBufferTests::CopyLastAttr()
     stateMachine->ProcessString(&reset[0], reset.length());
     const COLORREF defaultFg = psi->GetAttributes().GetRgbForeground();
     const COLORREF defaultBg = psi->GetAttributes().GetRgbBackground();
-    
+
     const COLORREF solFg = RGB(101, 123, 131);
     const COLORREF solBg = RGB(0, 43, 54);
     const COLORREF solCyan = RGB(42, 161, 152);
@@ -1438,9 +1438,9 @@ void TextBufferTests::CopyLastAttr()
     const COLORREF defaultBrightYellow = RGB(249, 241, 165);
     const COLORREF defaultBrightCyan = RGB(97, 214, 214);
 
-    gci->SetColorTableEntry(8, defaultBrightBlack); 
-    gci->SetColorTableEntry(14, defaultBrightYellow); 
-    gci->SetColorTableEntry(11, defaultBrightCyan); 
+    gci.SetColorTableEntry(8, defaultBrightBlack);
+    gci.SetColorTableEntry(14, defaultBrightYellow);
+    gci.SetColorTableEntry(11, defaultBrightCyan);
 
     // Write (solFg, solBG) X \n
     //       (solFg, solBG) X (solCyan, solBG) X \n
@@ -1477,13 +1477,13 @@ void TextBufferTests::CopyLastAttr()
     const auto y = cursor->GetPosition().Y;
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
 
-    const auto row1 = tbi->GetRowByOffset(y + 1);
-    const auto row2 = tbi->GetRowByOffset(y + 2);
-    const auto row3 = tbi->GetRowByOffset(y + 3);
+    const ROW& row1 = tbi->GetRowByOffset(y + 1);
+    const ROW& row2 = tbi->GetRowByOffset(y + 2);
+    const ROW& row3 = tbi->GetRowByOffset(y + 3);
     const auto len = tbi->_coordBufferSize.X;
     const auto attrs1 = new TextAttribute[len];
     const auto attrs2 = new TextAttribute[len];
@@ -1491,9 +1491,9 @@ void TextBufferTests::CopyLastAttr()
     VERIFY_IS_NOT_NULL(attrs1);
     VERIFY_IS_NOT_NULL(attrs2);
     VERIFY_IS_NOT_NULL(attrs3);
-    (&row1->AttrRow)->UnpackAttrs(attrs1, len);
-    (&row2->AttrRow)->UnpackAttrs(attrs2, len);
-    (&row3->AttrRow)->UnpackAttrs(attrs3, len);
+    row1.AttrRow.UnpackAttrs(attrs1, len);
+    row2.AttrRow.UnpackAttrs(attrs2, len);
+    row3.AttrRow.UnpackAttrs(attrs3, len);
 
     const auto attr1A = attrs1[0];
 
@@ -1505,18 +1505,18 @@ void TextBufferTests::CopyLastAttr()
     const auto attr3C = attrs3[2];
 
     Log::Comment(NoThrowString().Format(
-        L"cursor={X:%d,Y:%d}", 
+        L"cursor={X:%d,Y:%d}",
         x, y
     ));
     LogTextAttribute(attr1A, L"attr1A");
 
     LogTextAttribute(attr2A, L"attr2A");
     LogTextAttribute(attr2B, L"attr2B");
-    
+
     LogTextAttribute(attr3A, L"attr3A");
     LogTextAttribute(attr3B, L"attr3B");
     LogTextAttribute(attr3C, L"attr3C");
-    
+
 
     VERIFY_ARE_EQUAL(attr1A.GetRgbForeground(), solFg);
     VERIFY_ARE_EQUAL(attr1A.GetRgbBackground(), solBg);
