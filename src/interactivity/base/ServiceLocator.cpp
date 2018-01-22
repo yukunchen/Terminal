@@ -57,7 +57,6 @@ void ServiceLocator::RundownAndExit(_In_ HRESULT const hr)
 
     // TODO: MSFT: 14397093 - Expand graceful rundown beyond just the Hot Bug input services case.
 
-
     if (s_inputServices != nullptr)
     {
         delete s_inputServices;

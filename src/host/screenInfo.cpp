@@ -728,11 +728,6 @@ void SCREEN_INFORMATION::SetViewportSize(_In_ const COORD* const pcoordSize)
         }
     }
 
-    // if (_psiMainBuffer)
-    // {
-    //     ResizeScreenBuffer(*pcoordSize, TRUE);
-    //     _psiMainBuffer->_InternalSetViewportSize(pcoordSize, false, false);
-    // }
     _InternalSetViewportSize(pcoordSize, false, false);
 }
 
