@@ -1485,15 +1485,15 @@ void TextBufferTests::CopyLastAttr()
     const ROW& row2 = tbi->GetRowByOffset(y + 2);
     const ROW& row3 = tbi->GetRowByOffset(y + 3);
     const auto len = tbi->_coordBufferSize.X;
-    const auto attrs1 = new TextAttribute[len];
-    const auto attrs2 = new TextAttribute[len];
-    const auto attrs3 = new TextAttribute[len];
-    VERIFY_IS_NOT_NULL(attrs1);
-    VERIFY_IS_NOT_NULL(attrs2);
-    VERIFY_IS_NOT_NULL(attrs3);
-    row1.AttrRow.UnpackAttrs(attrs1, len);
-    row2.AttrRow.UnpackAttrs(attrs2, len);
-    row3.AttrRow.UnpackAttrs(attrs3, len);
+    const auto attrs1 = std::make_unique<TextAttribute[]>(len);
+    const auto attrs2 = std::make_unique<TextAttribute[]>(len);
+    const auto attrs3 = std::make_unique<TextAttribute[]>(len);
+    VERIFY_IS_NOT_NULL(attrs1.get());
+    VERIFY_IS_NOT_NULL(attrs2.get());
+    VERIFY_IS_NOT_NULL(attrs3.get());
+    row1.AttrRow.UnpackAttrs(attrs1.get(), len);
+    row2.AttrRow.UnpackAttrs(attrs2.get(), len);
+    row3.AttrRow.UnpackAttrs(attrs3.get(), len);
 
     const auto attr1A = attrs1[0];
 
