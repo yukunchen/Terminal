@@ -26,7 +26,7 @@ typedef void(*PipeReadCallback)(BYTE* buffer, DWORD dwRead);
 class VtConsole
 {
 public:
-    VtConsole(PipeReadCallback const pfnReadCallback, bool const fHeadless);
+    VtConsole(PipeReadCallback const pfnReadCallback, bool const fHeadless, COORD const initialSize);
     void spawn();
     void spawn(const std::wstring& command);
     
@@ -46,7 +46,12 @@ public:
 
     bool WriteInput(std::string& seq);
 
+    bool Repaint();
+    bool Resize(const unsigned int rows, const unsigned int cols);
+
 private:
+    COORD _lastDimensions;
+
     PROCESS_INFORMATION pi;
 
     HANDLE _outPipe;

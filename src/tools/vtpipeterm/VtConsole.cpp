@@ -13,10 +13,13 @@
 #include <sstream>
 #include <assert.h>
 
-VtConsole::VtConsole(PipeReadCallback const pfnReadCallback, bool const fHeadless)
+VtConsole::VtConsole(PipeReadCallback const pfnReadCallback,
+                     bool const fHeadless,
+                     COORD const initialSize)
 {
     _pfnReadCallback = pfnReadCallback;
     _fHeadless = fHeadless;
+    _lastDimensions = initialSize;
 
     int r = rand();
     std::wstringstream ss;
@@ -241,6 +244,13 @@ void VtConsole::_openConsole3(const std::wstring& command)
         si.wShowWindow = SW_MINIMIZE;
     }    
 
+    if(!(_lastDimensions.X == 0 && _lastDimensions.Y == 0))
+    {
+        si.dwFlags |= STARTF_USECOUNTCHARS;
+        si.dwXSize = _lastDimensions.X;
+        si.dwYSize = _lastDimensions.Y;
+    }
+
     bool fSuccess = !!CreateProcess(
         nullptr,
         &cmdline[0],
@@ -296,3 +306,18 @@ DWORD VtConsole::_OutputThread()
         }
     }
 }
+
+bool VtConsole::Repaint()
+{
+    std::string seq = "\x1b[7t";
+    return WriteInput(seq);
+}
+
+bool VtConsole::Resize(const unsigned int rows, const unsigned int cols)
+{
+    std::stringstream ss;
+    ss << "\x1b[8;" << rows << ";" << cols << "t";
+    std::string seq = ss.str();
+    return WriteInput(seq);
+}
+
