@@ -178,8 +178,20 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, _In_ const bool generateBreak
     }
 }
 
+#ifdef DBG
+// set to true with a debugger to temporarily disable focus events getting written to the InputBuffer
+volatile bool DisableFocusEvents = false;
+#endif
+
 void HandleFocusEvent(_In_ const BOOL fSetFocus)
 {
+#ifdef DBG
+    if (DisableFocusEvents)
+    {
+        return;
+    }
+#endif
+
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
 #pragma prefast(suppress:28931, "EventsWritten is not unused. Used by assertions.")

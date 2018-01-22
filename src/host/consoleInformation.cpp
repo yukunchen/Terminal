@@ -86,6 +86,11 @@ VtIo* CONSOLE_INFORMATION::GetVtIo()
     return &_vtIo;
 }
 
+bool CONSOLE_INFORMATION::IsInVtIoMode() const
+{
+    return _vtIo.IsUsingVt();
+}
+
 // Routine Description:
 // - Handler for inserting key sequences into the buffer when the terminal emulation layer
 //   has determined a key can be converted appropriately into a sequence of inputs

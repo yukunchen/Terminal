@@ -103,6 +103,9 @@ public:
 
     bool InVTMode() const;
 
+    // TODO: MSFT 9358743 - http://osgvsowi/9358743
+    // TODO: WARNING. This currently relies on the ConsoleObjectHeader being the FIRST portion of the console object
+    //       structure or class. If it is not the first item, the cast back to the object won't work anymore.
     ConsoleObjectHeader Header;
 
     // TODO: MSFT 9355062 these methods should probably be a part of construction/destruction. http://osgvsowi/9355062
@@ -213,6 +216,10 @@ private:
     NTSTATUS _CreateAltBuffer(_Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer);
 
     bool _IsAltBuffer() const;
+    bool _IsInPtyMode() const;
+
+    void _InitializeBufferDimensions(_In_ const COORD coordScreenBufferSize,
+                                     _In_ const COORD coordViewportSize);
 
     ConhostInternalGetSet* _pConApi;
     WriteBuffer* _pBufferWriter;
@@ -222,7 +229,11 @@ private:
     COORD _coordScreenBufferSize; // dimensions of buffer
 
     SMALL_RECT _srScrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
-    SMALL_RECT _srBufferViewport;  // specifies which coordinates of the screen buffer are visible in the window client (the "viewport" into the buffer)
+    
+    // specifies which coordinates of the screen buffer are visible in the 
+    //      window client (the "viewport" into the buffer)
+    // This is an Inclusive rectangle
+    SMALL_RECT _srBufferViewport;  
 
     SCREEN_INFORMATION* _psiAlternateBuffer = nullptr; // The VT "Alternate" screen buffer.
     SCREEN_INFORMATION* _psiMainBuffer = nullptr; // A pointer to the main buffer, if this is the alternate buffer.

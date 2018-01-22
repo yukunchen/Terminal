@@ -50,6 +50,7 @@ namespace Microsoft
                 virtual HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection, _In_ UINT const cRectangles) = 0;
                 virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) = 0;
                 virtual HRESULT InvalidateAll() = 0;
+                virtual HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) = 0;
                 
                 virtual HRESULT PaintBackground() = 0;
                 virtual HRESULT PaintBufferLine(_In_reads_(cchLine) PCWCHAR const pwsLine, _In_reads_(cchLine) const unsigned char* const rgWidths, _In_ size_t const cchLine, _In_ COORD const coord, _In_ bool const fTrimLeft) = 0;

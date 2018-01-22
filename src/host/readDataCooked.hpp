@@ -70,7 +70,8 @@ public:
     ULONG _BytesRead;
     ULONG _CurrentPosition;  // char position, not byte position
     PWCHAR _BufPtr;
-    PWCHAR _BackupLimit;
+    // should be const. the first char of the buffer
+    PWCHAR /*const*/ _BackupLimit;
     ULONG _UserBufferSize;   // doubled size in ansi case
     PWCHAR _UserBuffer;
     COORD _OriginalCursorPosition;

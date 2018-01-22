@@ -120,6 +120,8 @@ public:
     SCREEN_INFORMATION* const GetActiveOutputBuffer() const;
     InputBuffer* const GetActiveInputBuffer() const;
 
+    bool IsInVtIoMode() const;
+    
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this
 

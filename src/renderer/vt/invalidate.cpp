@@ -71,6 +71,20 @@ HRESULT VtEngine::InvalidateAll()
     return this->_InvalidCombine(_lastViewport.ToOrigin());
 }
 
+// Method Description:
+// - Notifies us that we're about to circle the buffer, giving us a chance to 
+//      force a repaint before the buffer contents are lost. The VT renderer 
+//      needs to be able to render all text before it's lost, so we return true.
+// Arguments:
+// - Recieves a bool indicating if we should force the repaint.
+// Return Value:
+// - S_OK
+HRESULT VtEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
+{
+    *pForcePaint = true;
+    return S_OK;
+}
+
 // Routine Description:
 // - Helper to combine the given rectangle into the invalid region to be 
 //      updated on the next paint

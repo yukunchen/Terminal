@@ -41,7 +41,9 @@ bool DispatchCommon::s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
         if (fSuccess)
         {
             const Viewport oldViewport = Viewport::FromInclusive(csbiex.srWindow);
-            
+            const Viewport newViewport = Viewport::FromDimensions(oldViewport.Origin(),
+                                                                  sColumns,
+                                                                  sRows);
             // Always resize the width of the console
             csbiex.dwSize.X = sColumns;
             // Only set the screen buffer's height if it's currently less than 
@@ -51,14 +53,17 @@ bool DispatchCommon::s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
                 csbiex.dwSize.Y = sRows;
             }
 
+            // SetConsoleWindowInfo expect inclusive rects
+            SMALL_RECT sri = newViewport.ToInclusive();
+
+            // SetConsoleScreenBufferInfoEx however expects exclusive rects
+            SMALL_RECT sre = newViewport.ToExclusive();
+            csbiex.srWindow = sre;
+
             fSuccess = !!pConApi->SetConsoleScreenBufferInfoEx(&csbiex);
             if (fSuccess)
             {
-                // SetConsoleWindowInfo expect inclusive rects
-                SMALL_RECT sr = Viewport::FromDimensions(oldViewport.Origin(),
-                                                         sColumns,
-                                                         sRows).ToInclusive();
-                fSuccess = !!pConApi->SetConsoleWindowInfo(true, &sr);
+                fSuccess = !!pConApi->SetConsoleWindowInfo(true, &sri);
             }
         }   
     }
@@ -74,4 +79,18 @@ bool DispatchCommon::s_ResizeWindow(_Inout_ ConGetSet* const pConApi,
 bool DispatchCommon::s_RefreshWindow(_Inout_ ConGetSet* const pConApi)
 {
     return !!pConApi->PrivateRefreshWindow();
+}
+
+// Routine Description:
+// - Force the host to tell the renderer to not emit anything in response to the 
+//      next resize event. This is used by VT I/O to prevent a terminal from 
+//      requesting a resize, then having the renderer echo that to the terminal,
+//      then having the terminal echo back to the host...
+// Arguments:
+// - pConApi: The ConGetSet implementation to call back into.
+// Return Value:
+// True if handled successfully. False othewise.
+bool DispatchCommon::s_SuppressResizeRepaint(_Inout_ ConGetSet* const pConApi)
+{
+    return !!pConApi->PrivateSuppressResizeRepaint();
 }

@@ -122,6 +122,8 @@ class TextBufferTests
 
     TEST_METHOD(TestReverseReset);
 
+    TEST_METHOD(CopyLastAttr);
+
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -1388,6 +1390,153 @@ void TextBufferTests::TestReverseReset()
 
     VERIFY_ARE_EQUAL(attrC.GetRgbForeground(), rgbColor);
     VERIFY_ARE_EQUAL(attrC.GetRgbBackground(), dark_green);
+
+    stateMachine->ProcessString(&reset[0], reset.length());
+}
+
+void LogTextAttribute(const TextAttribute& attr, const std::wstring& name)
+{
+    Log::Comment(NoThrowString().Format(
+        L"%s={IsLegacy:%d, GetLegacyAttributes:0x%x, FG:0x%x, BG:0x%x}", 
+        name.c_str(),
+        attr.IsLegacy(), attr.GetLegacyAttributes(), attr.GetRgbForeground(), attr.GetRgbBackground()
+    ));
+}
+
+void TextBufferTests::CopyLastAttr()
+{
+    DisableVerifyExceptions disable;
+
+    CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
+    SCREEN_INFORMATION* const psi = gci->CurrentScreenBuffer->GetActiveBuffer();
+    const TEXT_BUFFER_INFO* const tbi = psi->TextInfo;
+    StateMachine* const stateMachine = psi->GetStateMachine();
+    Cursor* const cursor = tbi->GetCursor();
+
+    SetFlag(psi->OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    VERIFY_IS_NOT_NULL(stateMachine);
+    VERIFY_IS_NOT_NULL(cursor);
+
+    cursor->SetXPosition(0);
+    cursor->SetYPosition(0);
+
+    std::wstring reset = L"\x1b[0m";
+    stateMachine->ProcessString(&reset[0], reset.length());
+    const COLORREF defaultFg = psi->GetAttributes().GetRgbForeground();
+    const COLORREF defaultBg = psi->GetAttributes().GetRgbBackground();
+    
+    const COLORREF solFg = RGB(101, 123, 131);
+    const COLORREF solBg = RGB(0, 43, 54);
+    const COLORREF solCyan = RGB(42, 161, 152);
+
+    std::wstring solFgSeq = L"\x1b[38;2;101;123;131m";
+    std::wstring solBgSeq = L"\x1b[48;2;0;43;54m";
+    std::wstring solCyanSeq = L"\x1b[38;2;42;161;152m";
+
+    // Make sure that the color table has certain values we expect
+    const COLORREF defaultBrightBlack = RGB(118, 118, 118);
+    const COLORREF defaultBrightYellow = RGB(249, 241, 165);
+    const COLORREF defaultBrightCyan = RGB(97, 214, 214);
+
+    gci->SetColorTableEntry(8, defaultBrightBlack); 
+    gci->SetColorTableEntry(14, defaultBrightYellow); 
+    gci->SetColorTableEntry(11, defaultBrightCyan); 
+
+    // Write (solFg, solBG) X \n
+    //       (solFg, solBG) X (solCyan, solBG) X \n
+    //       (solFg, solBG) X (solCyan, solBG) X (solFg, solBG) X
+    // then go home, and insert a line.
+
+    // Row 1
+    stateMachine->ProcessString(&solFgSeq[0], solFgSeq.length());
+    stateMachine->ProcessString(&solBgSeq[0], solBgSeq.length());
+    stateMachine->ProcessString(L"X", 1);
+    stateMachine->ProcessString(L"\n", 1);
+
+    // Row 2
+    // Remember that the colors from before persist here too, so we don't need
+    //      to emit both the FG and BG if they haven't changed.
+    stateMachine->ProcessString(L"X", 1);
+    stateMachine->ProcessString(&solCyanSeq[0], solCyanSeq.length());
+    stateMachine->ProcessString(L"X", 1);
+    stateMachine->ProcessString(L"\n", 1);
+
+    // Row 3
+    stateMachine->ProcessString(&solFgSeq[0], solFgSeq.length());
+    stateMachine->ProcessString(&solBgSeq[0], solBgSeq.length());
+    stateMachine->ProcessString(L"X", 1);
+    stateMachine->ProcessString(&solCyanSeq[0], solCyanSeq.length());
+    stateMachine->ProcessString(L"X", 1);
+    stateMachine->ProcessString(&solFgSeq[0], solFgSeq.length());
+    stateMachine->ProcessString(L"X", 1);
+
+    std::wstring insertLineAtHome = L"\x1b[H\x1b[L";
+    stateMachine->ProcessString(&insertLineAtHome[0], insertLineAtHome.length());
+
+    const auto x = cursor->GetPosition().X;
+    const auto y = cursor->GetPosition().Y;
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor={X:%d,Y:%d}", 
+        x, y
+    ));
+
+    const auto row1 = tbi->GetRowByOffset(y + 1);
+    const auto row2 = tbi->GetRowByOffset(y + 2);
+    const auto row3 = tbi->GetRowByOffset(y + 3);
+    const auto len = tbi->_coordBufferSize.X;
+    const auto attrs1 = new TextAttribute[len];
+    const auto attrs2 = new TextAttribute[len];
+    const auto attrs3 = new TextAttribute[len];
+    VERIFY_IS_NOT_NULL(attrs1);
+    VERIFY_IS_NOT_NULL(attrs2);
+    VERIFY_IS_NOT_NULL(attrs3);
+    (&row1->AttrRow)->UnpackAttrs(attrs1, len);
+    (&row2->AttrRow)->UnpackAttrs(attrs2, len);
+    (&row3->AttrRow)->UnpackAttrs(attrs3, len);
+
+    const auto attr1A = attrs1[0];
+
+    const auto attr2A = attrs2[0];
+    const auto attr2B = attrs2[1];
+
+    const auto attr3A = attrs3[0];
+    const auto attr3B = attrs3[1];
+    const auto attr3C = attrs3[2];
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor={X:%d,Y:%d}", 
+        x, y
+    ));
+    LogTextAttribute(attr1A, L"attr1A");
+
+    LogTextAttribute(attr2A, L"attr2A");
+    LogTextAttribute(attr2B, L"attr2B");
+    
+    LogTextAttribute(attr3A, L"attr3A");
+    LogTextAttribute(attr3B, L"attr3B");
+    LogTextAttribute(attr3C, L"attr3C");
+    
+
+    VERIFY_ARE_EQUAL(attr1A.GetRgbForeground(), solFg);
+    VERIFY_ARE_EQUAL(attr1A.GetRgbBackground(), solBg);
+
+
+    VERIFY_ARE_EQUAL(attr2A.GetRgbForeground(), solFg);
+    VERIFY_ARE_EQUAL(attr2A.GetRgbBackground(), solBg);
+
+    VERIFY_ARE_EQUAL(attr2B.GetRgbForeground(), solCyan);
+    VERIFY_ARE_EQUAL(attr2B.GetRgbBackground(), solBg);
+
+
+    VERIFY_ARE_EQUAL(attr3A.GetRgbForeground(), solFg);
+    VERIFY_ARE_EQUAL(attr3A.GetRgbBackground(), solBg);
+
+    VERIFY_ARE_EQUAL(attr3B.GetRgbForeground(), solCyan);
+    VERIFY_ARE_EQUAL(attr3B.GetRgbBackground(), solBg);
+
+    VERIFY_ARE_EQUAL(attr3C.GetRgbForeground(), solFg);
+    VERIFY_ARE_EQUAL(attr3C.GetRgbBackground(), solBg);
 
     stateMachine->ProcessString(&reset[0], reset.length());
 }
