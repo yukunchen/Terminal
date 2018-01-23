@@ -450,17 +450,28 @@ void Settings::ApplyStartupInfo(_In_ const Settings* const pStartupSettings)
     }
 }
 
+// Method Description:
+// - Applies settings passed on the commandline to this settings structure.
+//      Currently, the only settings that can be passed on the commandline are 
+//      the initial width and height of the screenbuffer/viewport.
+// Arguments:
+// - consoleArgs: A reference to a parsed command-line args object.
+// Return Value:
+// - <none>
 void Settings::ApplyCommandlineArguments(_In_ const ConsoleArguments& consoleArgs)
 {
-    if (consoleArgs.GetWidth() > 0)
+    const short width = consoleArgs.GetWidth();
+    const short height = consoleArgs.GetHeight();
+    
+    if (width > 0)
     {
-        _dwScreenBufferSize.X = consoleArgs.GetWidth();
-        _dwWindowSize.X = consoleArgs.GetWidth();
+        _dwScreenBufferSize.X = width;
+        _dwWindowSize.X = width;
     }
-    if (consoleArgs.GetHeight() > 0)
+    if (height > 0)
     {
-        _dwScreenBufferSize.Y = consoleArgs.GetHeight();
-        _dwWindowSize.Y = consoleArgs.GetHeight();
+        _dwScreenBufferSize.Y = height;
+        _dwWindowSize.Y = height;
     }
 }
 
