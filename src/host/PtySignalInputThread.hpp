@@ -14,7 +14,6 @@ Author(s):
 --*/
 #pragma once
 
-
 namespace Microsoft
 {
     namespace Console
@@ -32,11 +31,13 @@ namespace Microsoft
             PtySignalInputThread& operator=(const PtySignalInputThread&) = delete;
 
         private:
-            DWORD _InputThread();
+            HRESULT _InputThread();
+            void _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, _In_ const DWORD cbBuffer);
 
             wil::unique_hfile _hFile;
             wil::unique_handle _hThread;
             DWORD _dwThreadId;
+            std::unique_ptr<Microsoft::Console::VirtualTerminal::ConGetSet> _pConApi;
         };
     }
 };

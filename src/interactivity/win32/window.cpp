@@ -1064,8 +1064,9 @@ bool Window::IsInFullscreen() const
 
 void Window::SetIsFullscreen(_In_ bool const fFullscreenEnabled)
 {
-    // it shouldn't be possible to enter fullscreen while in fullscreen (and vice versa)
-    ASSERT(_fIsInFullscreen != fFullscreenEnabled);
+    // It is possible to enter SetIsFullScreen even if we're already in full screen.
+    // Use the old is in fullscreen flag to gate checks that rely on the current state.
+    bool fOldIsInFullscreen = _fIsInFullscreen;
     _fIsInFullscreen = fFullscreenEnabled;
 
     HWND const hWnd = GetWindowHandle();
@@ -1101,16 +1102,20 @@ void Window::SetIsFullscreen(_In_ bool const fFullscreenEnabled)
     }
     SetWindowLongW(hWnd, GWL_EXSTYLE, dwExWindowStyle);
 
-    _BackupWindowSizes();
+    _BackupWindowSizes(fOldIsInFullscreen);
     _ApplyWindowSize();
 }
 
-void Window::_BackupWindowSizes()
+void Window::_BackupWindowSizes(_In_ bool const fCurrentIsInFullscreen)
 {
     if (_fIsInFullscreen)
     {
-        // back up current window size
-        _rcNonFullscreenWindowSize = GetWindowRect();
+        // Note: the current window size depends on the current state of the window.
+        // So don't back it up if we're already in full screen.
+        if (!fCurrentIsInFullscreen)
+        {
+            _rcNonFullscreenWindowSize = GetWindowRect();
+        }
 
         // get and back up the current monitor's size
         HMONITOR const hCurrentMonitor = MonitorFromWindow(GetWindowHandle(), MONITOR_DEFAULTTONEAREST);

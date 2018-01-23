@@ -41,6 +41,8 @@ public:
 
     void activate();
     void deactivate();
+
+    void signalWindow(unsigned short sx, unsigned short sy);
     
     static DWORD StaticOutputThreadProc(LPVOID lpParameter);
 
@@ -56,6 +58,7 @@ private:
 
     HANDLE _outPipe;
     HANDLE _inPipe;
+    HANDLE _signalPipe;
     std::wstring _inPipeName;
     std::wstring _outPipeName;
     
