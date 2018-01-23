@@ -242,6 +242,20 @@ void Renderer::TriggerRedrawAll()
     _NotifyPaintFrame();
 }
 
+// Method Description:
+// - Called when the host is about to die, to give the renderer one last chance 
+//      to paint before the host exits. 
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerRedrawOnDie()
+{
+    // TriggerCircling is already used to try and give the renderer one last 
+    //      chance to paint before buffer contents are lost. So do that.
+    TriggerCircling();
+}
+
 // Routine Description:
 // - Called when the selected area in the console has changed.
 // Arguments:

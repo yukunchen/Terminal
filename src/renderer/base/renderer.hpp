@@ -50,6 +50,7 @@ namespace Microsoft
                 void TriggerRedraw(_In_ const SMALL_RECT* const psrRegion);
                 void TriggerRedraw(_In_ const COORD* const pcoord);
                 void TriggerRedrawAll();
+                void TriggerRedrawOnDie() override;
 
                 void TriggerSelection();
                 void TriggerScroll();
