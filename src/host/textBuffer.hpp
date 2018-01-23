@@ -167,6 +167,10 @@ private:
     bool _fUseRgbColor;
     COLORREF _rgbForeground;
     COLORREF _rgbBackground;
+
+#ifdef UNIT_TESTING
+    friend class TextBufferTests;
+#endif
 };
 
 class TextAttributeRun sealed

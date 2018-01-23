@@ -237,6 +237,7 @@ TextAttribute::TextAttribute(_In_ const WORD wLegacyAttr)
 
 TextAttribute::TextAttribute(_In_ const COLORREF rgbForeground, _In_ const COLORREF rgbBackground)
 {
+    _wAttrLegacy = 0;
     _rgbForeground = rgbForeground;
     _rgbBackground = rgbBackground;
     _fUseRgbColor = true;
