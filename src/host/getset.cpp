@@ -423,7 +423,7 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo,
         NewSize.X = coordScreenBufferSize.X;
     }
 
-    if (NewSize.X != pScreenInfo->GetScreenWindowSizeX() || 
+    if (NewSize.X != pScreenInfo->GetScreenWindowSizeX() ||
         NewSize.Y != pScreenInfo->GetScreenWindowSizeY())
     {
         pConsoleInfo->CurrentScreenBuffer->SetViewportSize(&NewSize);
@@ -687,7 +687,7 @@ NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attribut
 
     const TextAttribute NewPrimaryAttributes = TextAttribute(Attributes);
     const TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
-    
+
     ScreenInfo->SetDefaultAttributes(NewPrimaryAttributes, NewPopupAttributes);
     gci->ConsoleIme.RefreshAreaAttributes();
 
@@ -760,21 +760,21 @@ HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo,
         // The previous call to SetFromLegacy is going to trash our RGB.
         // Restore it.
         // If the old attributes were "reversed", and the new ones aren't,
-        //  then flip the colors back. 
+        //  then flip the colors back.
         bool resetReverse = fMeta &&
             (IsFlagClear(Attribute, COMMON_LVB_REVERSE_VIDEO)) &&
             (IsFlagSet(OldAttributes.GetLegacyAttributes(), COMMON_LVB_REVERSE_VIDEO));
         if (resetReverse)
         {
-            NewAttributes.SetForeground(OldAttributes.GetRgbBackground());
-            NewAttributes.SetBackground(OldAttributes.GetRgbForeground());
+            NewAttributes.SetForeground(OldAttributes.CalculateRgbBackground());
+            NewAttributes.SetBackground(OldAttributes.CalculateRgbForeground());
         }
         else
         {
-            NewAttributes.SetForeground(OldAttributes.GetRgbForeground());
-            NewAttributes.SetBackground(OldAttributes.GetRgbBackground());
+            NewAttributes.SetForeground(OldAttributes.CalculateRgbForeground());
+            NewAttributes.SetBackground(OldAttributes.CalculateRgbBackground());
         }
-        
+
         if (fForeground)
         {
             COLORREF rgbColor = gci->GetColorTableEntry(Attribute & FG_ATTRS);

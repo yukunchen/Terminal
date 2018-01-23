@@ -133,8 +133,8 @@ public:
 
     WORD GetLegacyAttributes() const;
 
-    COLORREF GetRgbForeground() const;
-    COLORREF GetRgbBackground() const;
+    COLORREF CalculateRgbForeground() const;
+    COLORREF CalculateRgbBackground() const;
 
     bool IsLeadingByte() const;
     bool IsTrailingByte() const;
