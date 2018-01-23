@@ -21,8 +21,9 @@ Revision History:
 #define MIN_WINDOW_OPACITY 0x4D // 0x4D is approximately 30% visible/opaque (70% transparent). Valid range is 0x00-0xff.
 #define COLOR_TABLE_SIZE (16)
 #define XTERM_COLOR_TABLE_SIZE (256)
+#include "ConsoleArguments.hpp"
+
 class TextAttribute;
-class ConsoleArguments;
 
 class Settings
 {

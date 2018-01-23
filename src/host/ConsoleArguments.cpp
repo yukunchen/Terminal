@@ -100,7 +100,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 //      failure.
 HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index, _Out_opt_ std::wstring* const pSetting)
 {
-    bool hasNext = (index+1) < args.size();
+    bool hasNext = (index + 1) < args.size();
     if (hasNext)
     {
         s_ConsumeArg(args, index);
@@ -130,7 +130,7 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
                                              _Inout_ size_t& index,
                                              _Out_opt_ short* const pSetting)
 {
-    bool succeeded = (index+1) < args.size();
+    bool succeeded = (index + 1) < args.size();
     if (succeeded)
     {
         s_ConsumeArg(args, index);
