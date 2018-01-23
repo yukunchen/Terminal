@@ -17,6 +17,8 @@ const std::wstring ConsoleArguments::SERVER_HANDLE_PREFIX = L"0x";
 const std::wstring ConsoleArguments::CLIENT_COMMANDLINE_ARG = L"--";
 const std::wstring ConsoleArguments::FORCE_V1_ARG = L"-ForceV1";
 const std::wstring ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
+const std::wstring ConsoleArguments::WIDTH_ARG = L"--width";
+const std::wstring ConsoleArguments::HEIGHT_ARG = L"--height";
 
 ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline,
                                    _In_ const HANDLE hStdIn,
@@ -33,6 +35,8 @@ ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline,
     _createServerHandle = true;
     _serverHandle = 0;
     _forceV1 = false;
+    _width = 0;
+    _height = 0;
 }
 
 ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments & other)
@@ -50,6 +54,8 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments & other)
         _createServerHandle = other._createServerHandle;
         _serverHandle = other._serverHandle;
         _forceV1 = other._forceV1;
+        _width = other._width;
+        _height = other._height;
     }
 
     return *this;
@@ -102,6 +108,53 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
         s_ConsumeArg(args, index);
     }
     return (hasNext) ? S_OK : E_INVALIDARG;
+}
+
+// Method Description:
+// Routine Description:
+//  Given the commandline of tokens `args`, tries to find the argument at 
+//      index+1, and places it's value into pSetting. See above for examples.
+//  This implementation attempts to parse a short from the argument.
+// Arguments:
+//  args: A collection of wstrings representing command-line arguments
+//  index: the index of the argument of which to get the value for. The value 
+//      should be at (index+1). index will be decremented by one on success.
+//  pSetting: recieves the short at index+1
+// Return Value:
+//  S_OK if we parsed the short successfully, otherwise E_INVALIDARG indicating
+//      failure. This could be the case for non-numeric arguments, or for >SHORT_MAX args.
+HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
+                                             _Inout_ size_t& index,
+                                             _Out_opt_ short* const pSetting)
+{
+    bool succeeded = (index+1) < args.size();
+    if (succeeded)
+    {
+        s_ConsumeArg(args, index);
+        if (pSetting != nullptr)
+        {
+            try
+            {
+                int value = std::stoi(args[index]);
+                if (value > SHORT_MAX) 
+                {
+                    succeeded = false;
+                }
+                else
+                {
+                    *pSetting = static_cast<short>(value);
+                    succeeded = true;
+                }
+            } 
+            catch (...)
+            {
+                succeeded = false;
+            }
+
+        }
+        s_ConsumeArg(args, index);
+    }
+    return (succeeded) ? S_OK : E_INVALIDARG;
 }
 
 // Routine Description:
@@ -275,6 +328,14 @@ HRESULT ConsoleArguments::ParseCommandline()
         {
             hr = s_GetArgumentValue(args, i, &_vtMode);
         }
+        else if (arg == WIDTH_ARG)
+        {
+            hr = s_GetArgumentValue(args, i, &_width);
+        }
+        else if (arg == HEIGHT_ARG)
+        {
+            hr = s_GetArgumentValue(args, i, &_height);
+        }
         else if (arg == HEADLESS_ARG)
         {
             _headless = true;
@@ -390,6 +451,16 @@ std::wstring ConsoleArguments::GetVtMode() const
 bool ConsoleArguments::GetForceV1() const
 {
     return _forceV1;
+}
+
+short ConsoleArguments::GetWidth() const
+{
+    return _width;
+}
+
+short ConsoleArguments::GetHeight() const
+{
+    return _height;
 }
 
 // Routine Description:

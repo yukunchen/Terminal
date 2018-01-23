@@ -2669,9 +2669,17 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
 void SCREEN_INFORMATION::_InitializeBufferDimensions(_In_ const COORD coordScreenBufferSize,
                                                      _In_ const COORD coordViewportSize)
 {
-    Viewport viewport = Viewport::FromDimensions({0, 0}, coordViewportSize);
-    _srBufferViewport = viewport.ToInclusive();
-
-    SetScreenBufferSize(_IsInPtyMode() ? viewport.Dimensions() : coordScreenBufferSize);
+    if (_IsInPtyMode())
+    {
+        Viewport viewport = Viewport::FromDimensions({0, 0}, coordScreenBufferSize);
+        _srBufferViewport = viewport.ToInclusive();
+        SetScreenBufferSize(coordScreenBufferSize);
+    }
+    else
+    {
+        Viewport viewport = Viewport::FromDimensions({0, 0}, coordViewportSize);
+        _srBufferViewport = viewport.ToInclusive();
+        SetScreenBufferSize(coordScreenBufferSize);
+    }
     
 }

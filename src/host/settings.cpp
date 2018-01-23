@@ -415,6 +415,10 @@ void Settings::ApplyStartupInfo(_In_ const Settings* const pStartupSettings)
 
     // See: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686331(v=vs.85).aspx
 
+    // Note: These attributes do not get sent to us if we started conhost 
+    //      directly.  See minkernel/console/client/dllinit for the 
+    //      initialization of these values for cmdline applications.
+
     if (IsFlagSet(dwFlags, STARTF_USECOUNTCHARS))
     {
         _dwScreenBufferSize = pStartupSettings->_dwScreenBufferSize;
@@ -443,6 +447,20 @@ void Settings::ApplyStartupInfo(_In_ const Settings* const pStartupSettings)
     if (IsFlagSet(dwFlags, STARTF_USESHOWWINDOW))
     {
         _wShowWindow = pStartupSettings->_wShowWindow;
+    }
+}
+
+void Settings::ApplyCommandlineArguments(_In_ const ConsoleArguments& consoleArgs)
+{
+    if (consoleArgs.GetWidth() != 0)
+    {
+        _dwScreenBufferSize.X = consoleArgs.GetWidth();
+        _dwWindowSize.X = consoleArgs.GetWidth();
+    }
+    if (consoleArgs.GetHeight() != 0)
+    {
+        _dwScreenBufferSize.Y = consoleArgs.GetHeight();
+        _dwWindowSize.Y = consoleArgs.GetHeight();
     }
 }
 

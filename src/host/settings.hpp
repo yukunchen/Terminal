@@ -15,7 +15,6 @@ Revision History:
 - From components of consrv.h
 - This is a reduced/de-duplicated version of settings that were stored in the registry, link files, and in the console information state.
 --*/
-
 #pragma once
 
 // To prevent invisible windows, set a lower threshold on window alpha channel.
@@ -23,6 +22,7 @@ Revision History:
 #define COLOR_TABLE_SIZE (16)
 #define XTERM_COLOR_TABLE_SIZE (256)
 class TextAttribute;
+class ConsoleArguments;
 
 class Settings
 {
@@ -32,6 +32,7 @@ public:
     void ApplyDesktopSpecificDefaults();
 
     void ApplyStartupInfo(_In_ const Settings* const pStartupSettings);
+    void ApplyCommandlineArguments(_In_ const ConsoleArguments& consoleArgs);
     void InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo);
     void Validate();
 

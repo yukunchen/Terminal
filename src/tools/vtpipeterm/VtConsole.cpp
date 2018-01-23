@@ -233,6 +233,18 @@ void VtConsole::_openConsole3(const std::wstring& command)
     si.hStdError = outPipeConhostSide.get();
     si.dwFlags |= STARTF_USESTDHANDLES;
 
+    if(!(_lastDimensions.X == 0 && _lastDimensions.Y == 0))
+    {
+        // STARTF_USECOUNTCHARS does not work. 
+        // minkernel/console/client/dllinit will write that value to conhost 
+        //  during init of a cmdline application, but because we're starting
+        //  conhost directly, that doesn't work for us.
+        std::wstringstream ss;
+        ss << L" --width " << _lastDimensions.X;
+        ss << L" --height " << _lastDimensions.Y;
+        cmdline += ss.str();
+    }
+
     if (command.length() > 0)
     {
         cmdline += L" -- ";
@@ -244,12 +256,6 @@ void VtConsole::_openConsole3(const std::wstring& command)
         si.wShowWindow = SW_MINIMIZE;
     }    
 
-    if(!(_lastDimensions.X == 0 && _lastDimensions.Y == 0))
-    {
-        si.dwFlags |= STARTF_USECOUNTCHARS;
-        si.dwXSize = _lastDimensions.X;
-        si.dwYSize = _lastDimensions.Y;
-    }
 
     bool fSuccess = !!CreateProcess(
         nullptr,

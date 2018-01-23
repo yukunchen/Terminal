@@ -27,6 +27,8 @@ public:
     TEST_METHOD(IsUsingVtHandleTests);
     TEST_METHOD(CombineVtPipeHandleTests);
     TEST_METHOD(IsVtHandleValidTests);
+    
+    TEST_METHOD(InitialSizeTests);
 
     TEST_METHOD(HeadlessArgTests);
     
@@ -74,6 +76,8 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"foo", // vtInPipe
                                     L"bar", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -92,6 +96,8 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"foo", // vtInPipe
                                     L"bar", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -110,6 +116,8 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"foo", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -128,6 +136,8 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"foo", // vtInPipe
                                     L"bar", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -146,6 +156,8 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"foo", // vtInPipe
                                     L"bar", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -164,6 +176,8 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -182,6 +196,8 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -200,6 +216,8 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"a\\\\b c", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -223,6 +241,8 @@ void ConsoleArgumentsTests::VtPipesTest()
                                    L"foo", // vtInPipe
                                    L"bar", // vtOutPipe
                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
                                    false, // forceV1
                                    false, // headless
                                    true, // createServerHandle
@@ -241,6 +261,8 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"foo", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -259,6 +281,8 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"", // vtInPipe
                                     L"foo", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -277,6 +301,8 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -295,6 +321,8 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"--outpipe", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -313,6 +341,8 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"--outpipe", // vtInPipe
                                     L"foo", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -331,6 +361,8 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -349,6 +381,8 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"foo", // vtInPipe
                                     L"foo", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -367,6 +401,8 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"foo", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -385,6 +421,8 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -408,6 +446,8 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -426,6 +466,8 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -444,6 +486,8 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -462,6 +506,8 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"foo", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -480,6 +526,8 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -498,6 +546,8 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -516,6 +566,8 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"foo", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -534,6 +586,8 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"--", // vtInPipe
                                     L"foo", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -552,6 +606,8 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -570,6 +626,8 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -593,6 +651,8 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     false, // createServerHandle
@@ -611,6 +671,8 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     false, // createServerHandle
@@ -629,6 +691,8 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     false, // createServerHandle
@@ -647,6 +711,8 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     false, // createServerHandle
@@ -665,6 +731,8 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     false, // createServerHandle
@@ -683,6 +751,8 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     false, // createServerHandle
@@ -701,6 +771,8 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     true, // forceV1
                                     false, // headless
                                     false, // createServerHandle
@@ -719,6 +791,8 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     true, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -785,6 +859,8 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -803,6 +879,8 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"telnet", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -821,6 +899,8 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -839,6 +919,8 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -857,6 +939,8 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
@@ -872,6 +956,11 @@ void ConsoleArgumentsTests::IsVtHandleValidTests()
     VERIFY_IS_FALSE(ConsoleArguments::s_IsValidHandle(0), L"Zero handle invalid.");
     VERIFY_IS_FALSE(ConsoleArguments::s_IsValidHandle(INVALID_HANDLE_VALUE), L"Invalid handle invalid.");
     VERIFY_IS_TRUE(ConsoleArguments::s_IsValidHandle(UlongToHandle(0x4)), L"0x4 is valid.");
+}
+
+void ConsoleArgumentsTests::InitialSizeTests()
+{
+    
 }
 
 void ConsoleArgumentsTests::HeadlessArgTests()
@@ -890,6 +979,8 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     true, // headless
                                     true, // createServerHandle
@@ -908,6 +999,8 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     true, // headless
                                     false, // createServerHandle
@@ -926,6 +1019,8 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     true, // headless
                                     true, // createServerHandle
@@ -944,6 +1039,8 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
