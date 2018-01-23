@@ -967,8 +967,8 @@ WORD Settings::GenerateLegacyAttributes(_In_ const TextAttribute attributes) con
     }
     // Get the Line drawing attributes and stash those, we'll need to preserve them.
     const WORD wNonColorAttributes = wLegacyOriginal & (~0xFF);
-    const COLORREF rgbForeground = attributes._GetRgbForeground();
-    const COLORREF rgbBackground = attributes._GetRgbBackground();
+    const COLORREF rgbForeground = attributes.GetRgbForeground();
+    const COLORREF rgbBackground = attributes.GetRgbBackground();
     const WORD wForegroundIndex = FindNearestTableIndex(rgbForeground);
     const WORD wBackgroundIndex = FindNearestTableIndex(rgbBackground);
     const WORD wCompleteAttr = (wNonColorAttributes) | (wBackgroundIndex << 4) | (wForegroundIndex);

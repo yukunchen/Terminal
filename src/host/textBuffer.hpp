@@ -136,6 +136,9 @@ public:
     COLORREF CalculateRgbForeground() const;
     COLORREF CalculateRgbBackground() const;
 
+    COLORREF GetRgbForeground() const;
+    COLORREF GetRgbBackground() const;
+
     bool IsLeadingByte() const;
     bool IsTrailingByte() const;
 
@@ -156,9 +159,6 @@ public:
     void SetForeground(_In_ const COLORREF rgbForeground);
     void SetBackground(_In_ const COLORREF rgbBackground);
     void SetColor(_In_ const COLORREF rgbColor, _In_ const bool fIsForeground);
-
-    COLORREF _GetRgbForeground() const;
-    COLORREF _GetRgbBackground() const;
 
 private:
     bool _IsReverseVideo() const;
