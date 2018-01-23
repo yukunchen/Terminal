@@ -11,7 +11,11 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <iomanip>
 #include <assert.h>
+
+// Defined inside the console host PTY signal thread.
+#define PTY_SIGNAL_RESIZE_WINDOW 8u
 
 VtConsole::VtConsole(PipeReadCallback const pfnReadCallback, bool const fHeadless)
 {
@@ -35,6 +39,16 @@ HANDLE VtConsole::inPipe()
 HANDLE VtConsole::outPipe()
 {
     return _outPipe;
+}
+
+void VtConsole::signalWindow(unsigned short sx, unsigned short sy)
+{
+    unsigned short signalPacket[3];
+    signalPacket[0] = PTY_SIGNAL_RESIZE_WINDOW;
+    signalPacket[1] = sx;
+    signalPacket[2] = sy;
+
+    WriteFile(_signalPipe, signalPacket, sizeof(signalPacket), nullptr, nullptr);
 }
 
 bool VtConsole::WriteInput(std::string& seq)
@@ -210,6 +224,7 @@ void VtConsole::_openConsole3(const std::wstring& command)
     //      closed automatically at the end of the method.
     wil::unique_hfile outPipeConhostSide;
     wil::unique_hfile inPipeConhostSide;
+    wil::unique_hfile signalPipeConhostSide;
 
     SECURITY_ATTRIBUTES sa;
     sa = { 0 };
@@ -220,6 +235,10 @@ void VtConsole::_openConsole3(const std::wstring& command)
     THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&inPipeConhostSide, &_inPipe, &sa, 0));
     THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&_outPipe, &outPipeConhostSide, &sa, 0));
 
+    // Mark inheritable for signal handle when creating. It'll have the same value on the other side.
+    sa.bInheritHandle = TRUE;
+    THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&signalPipeConhostSide, &_signalPipe, &sa, 0));
+
     THROW_IF_WIN32_BOOL_FALSE(SetHandleInformation(inPipeConhostSide.get(), HANDLE_FLAG_INHERIT, 1));
     THROW_IF_WIN32_BOOL_FALSE(SetHandleInformation(outPipeConhostSide.get(), HANDLE_FLAG_INHERIT, 1));
 
@@ -229,6 +248,11 @@ void VtConsole::_openConsole3(const std::wstring& command)
     si.hStdOutput = outPipeConhostSide.get();
     si.hStdError = outPipeConhostSide.get();
     si.dwFlags |= STARTF_USESTDHANDLES;
+
+    // Attach signal handle ID onto command line using string stream for formatting
+    std::wstringstream signalArg;
+    signalArg << L" --signal 0x" << std::hex << HandleToUlong(signalPipeConhostSide.get());
+    cmdline += signalArg.str();
 
     if (command.length() > 0)
     {
