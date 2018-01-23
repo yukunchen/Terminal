@@ -151,7 +151,7 @@ RECT WindowMetrics::GetMaxWindowRectInPixels(_In_ const RECT * const prcSuggeste
         }
         else
         {
-            *pDpiSuggested = ServiceLocator::LocateGlobals()->dpi;
+            *pDpiSuggested = ServiceLocator::LocateGlobals().dpi;
         }
     }
 

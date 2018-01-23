@@ -26,10 +26,10 @@ using namespace Microsoft::Console;
 // Constructor Description:
 // - Creates the PTY Signal Input Thread.
 // Arguments:
-// - hPipe - a handle to the file representing the read end of the VT pipe. 
+// - hPipe - a handle to the file representing the read end of the VT pipe.
 PtySignalInputThread::PtySignalInputThread(_In_ wil::unique_hfile hPipe) :
     _hFile(std::move(hPipe)),
-    _pConApi(new ConhostInternalGetSet(Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals()->getConsoleInformation()))
+    _pConApi(new ConhostInternalGetSet(&Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation()))
 {
     THROW_IF_HANDLE_INVALID(_hFile.get());
     THROW_IF_NULL_ALLOC(_pConApi.get());
@@ -48,7 +48,7 @@ DWORD PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 }
 
 // Method Description:
-// - The ThreadProc for the PTY Signal Input Thread. 
+// - The ThreadProc for the PTY Signal Input Thread.
 // Return Value:
 // - <none>
 HRESULT PtySignalInputThread::_InputThread()
@@ -119,7 +119,7 @@ void PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
 HRESULT PtySignalInputThread::Start()
 {
     RETURN_IF_HANDLE_INVALID(_hFile.get());
-    
+
     HANDLE hThread = nullptr;
     // 0 is the right value, https://blogs.msdn.microsoft.com/oldnewthing/20040223-00/?p=40503
     DWORD dwThreadId = 0;

@@ -457,7 +457,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
                 // for the DPI change, so we're likely to shrink the window too much.
                 // We'll get a WM_DPICHANGED, resize the window, and then process the restriction
                 // in a few window messages.
-                if (((int)suggestedDpi == g->dpi) || ((_sizeMaximum.cx == 0) && (_sizeMaximum.cy == 0)))
+                if (((int)suggestedDpi == g.dpi) || ((_sizeMaximum.cx == 0) && (_sizeMaximum.cy == 0)))
                 {
                     _sizeMaximum.cx = RECT_WIDTH(&rcMaximum);
                     _sizeMaximum.cy = RECT_HEIGHT(&rcMaximum);
