@@ -48,6 +48,8 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
     TEST_METHOD(DtorTestStackAllocMany);
     TEST_METHOD(DtorTestNonDuplexInModeTest);
     TEST_METHOD(DtorTestNonDuplexInModeTestModified);
+
+    TEST_METHOD(BasicAnonymousPipeOpeningWithSignalChannelTest);
 };
 
 using namespace Microsoft::Console::VirtualTerminal;
@@ -1012,4 +1014,31 @@ void VtIoTests::DtorTestNonDuplexInModeTestModified()
         }
         Log::Comment(L"Bottom of scope.");
     }
+}
+
+void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
+{
+    Log::Comment(L"Test using anonymous pipes for the input and adding a signal channel.");
+    
+    Log::Comment(L"\tcreating pipes");
+
+    wil::unique_handle inPipeReadSide;
+    wil::unique_handle inPipeWriteSide;
+    wil::unique_handle outPipeReadSide;
+    wil::unique_handle outPipeWriteSide;
+    wil::unique_handle signalPipeReadSide;
+    wil::unique_handle signalPipeWriteSide;
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(CreatePipe(&inPipeReadSide, &inPipeWriteSide, nullptr, 0), L"Create anonymous in pipe.");
+    VERIFY_WIN32_BOOL_SUCCEEDED(CreatePipe(&outPipeReadSide, &outPipeWriteSide, nullptr, 0), L"Create anonymous out pipe.");
+    VERIFY_WIN32_BOOL_SUCCEEDED(CreatePipe(&signalPipeReadSide, &signalPipeWriteSide, nullptr, 0), L"Create anonymous signal pipe.");
+
+    Log::Comment(L"\tinitializing vtio");
+
+    VtIo vtio = VtIo();
+    VERIFY_IS_FALSE(vtio.IsUsingVt());
+    VERIFY_IS_FALSE(vtio._hasSignalThread);
+    VERIFY_SUCCEEDED(vtio._Initialize(inPipeReadSide.release(), outPipeWriteSide.release(), L"", signalPipeReadSide.release()));
+    VERIFY_IS_TRUE(vtio.IsUsingVt());
+    VERIFY_IS_TRUE(vtio._hasSignalThread);
 }

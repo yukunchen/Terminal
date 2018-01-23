@@ -46,7 +46,6 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe)
 // - S_OK on success, otherwise an appropriate failure.
 HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const char* const charBuffer, _In_ const int cch)
 {
-
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
     auto Unlock = wil::ScopeExit([&] { gci.UnlockConsole(); });
@@ -92,7 +91,7 @@ DWORD VtInputThread::_InputThread()
     {
         dwRead = 0;
         bool fSuccess = !!ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
-        
+
         // If we failed to read because the terminal broke our pipe (usually due
         //      to dying itself), close gracefully with ERROR_BROKEN_PIPE.
         // Otherwise throw an exception. ERROR_BROKEN_PIPE is the only case that
@@ -110,7 +109,7 @@ DWORD VtInputThread::_InputThread()
                 THROW_WIN32(lastError);
             }
         }
-        
+
         THROW_IF_FAILED(_HandleRunInput(buffer, dwRead));
     }
 }

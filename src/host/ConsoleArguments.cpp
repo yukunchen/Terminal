@@ -13,7 +13,8 @@ const std::wstring ConsoleArguments::VT_OUT_PIPE_ARG = L"--outpipe";
 const std::wstring ConsoleArguments::VT_MODE_ARG = L"--vtmode";
 const std::wstring ConsoleArguments::HEADLESS_ARG = L"--headless";
 const std::wstring ConsoleArguments::SERVER_HANDLE_ARG = L"--server";
-const std::wstring ConsoleArguments::SERVER_HANDLE_PREFIX = L"0x";
+const std::wstring ConsoleArguments::SIGNAL_HANDLE_ARG = L"--signal";
+const std::wstring ConsoleArguments::HANDLE_PREFIX = L"0x";
 const std::wstring ConsoleArguments::CLIENT_COMMANDLINE_ARG = L"--";
 const std::wstring ConsoleArguments::FORCE_V1_ARG = L"-ForceV1";
 const std::wstring ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
@@ -32,6 +33,7 @@ ConsoleArguments::ConsoleArguments(_In_ const std::wstring& commandline,
     _headless = false;
     _createServerHandle = true;
     _serverHandle = 0;
+    _signalHandle = 0;
     _forceV1 = false;
 }
 
@@ -49,6 +51,7 @@ ConsoleArguments& ConsoleArguments::operator=(const ConsoleArguments & other)
         _headless = other._headless;
         _createServerHandle = other._createServerHandle;
         _serverHandle = other._serverHandle;
+        _signalHandle = other._signalHandle;
         _forceV1 = other._forceV1;
     }
 
@@ -102,6 +105,43 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
         s_ConsumeArg(args, index);
     }
     return (hasNext) ? S_OK : E_INVALIDARG;
+}
+
+// Routine Description:
+// - Parsing helper that will turn a string into a handle value if possible.
+// Arguments:
+// - handleAsText - The string representation of the handle that was passed in on the command line
+// - handleAsVal - The location to store the value if we can appropriately convert it.
+// Return Value:
+// - S_OK if we could successfully parse the given text and store it in the handle value location.
+// - E_INVALIDARG if we couldn't parse the text as a valid hex-encoded handle number OR
+//                if the handle value was already filled.
+HRESULT ConsoleArguments::s_ParseHandleArg(_In_ const std::wstring& handleAsText, _Inout_ DWORD& handleAsVal)
+{
+    HRESULT hr = S_OK;
+
+    // The handle should have a valid prefix.
+    if (handleAsText.substr(0, HANDLE_PREFIX.length()) != HANDLE_PREFIX)
+    {
+        hr = E_INVALIDARG;
+    }
+    else if (0 == handleAsVal)
+    {
+        handleAsVal = wcstoul(handleAsText.c_str(), nullptr /*endptr*/, 16 /*base*/);
+
+        // If the handle didn't parse into a reasonable handle ID, invalid.
+        if (handleAsVal == 0)
+        {
+            hr = E_INVALIDARG;
+        }
+    }
+    else
+    {
+        // If we're trying to set the handle a second time, invalid.
+        hr = E_INVALIDARG;
+    }   
+    
+    return hr;
 }
 
 // Routine Description:
@@ -190,7 +230,7 @@ HRESULT ConsoleArguments::ParseCommandline()
 
         std::wstring arg = args[i];
                
-        if (arg.substr(0, SERVER_HANDLE_PREFIX.length()) == SERVER_HANDLE_PREFIX ||
+        if (arg.substr(0, HANDLE_PREFIX.length()) == HANDLE_PREFIX ||
                  arg == SERVER_HANDLE_ARG)
         {
             // server handle token accepted two ways:
@@ -211,26 +251,21 @@ HRESULT ConsoleArguments::ParseCommandline()
 
             if (SUCCEEDED(hr))
             {
-                if (0 == _serverHandle)
+                hr = s_ParseHandleArg(serverHandleVal, _serverHandle);
+                if (SUCCEEDED(hr))
                 {
-                    _serverHandle = wcstoul(serverHandleVal.c_str(), nullptr /*endptr*/, 16 /*base*/);
-
-                    // If the handle didn't parse into a reasonable handle ID, invalid.
-                    if (_serverHandle == 0)
-                    {
-                        hr = E_INVALIDARG;
-                    }
-                    else
-                    {
-                        _createServerHandle = false;
-                        hr = S_OK;
-                    }
+                    _createServerHandle = false;
                 }
-                else
-                {
-                    // If we're trying to set the server handle a second time, invalid.
-                    hr = E_INVALIDARG;
-                }
+            }
+        }
+        else if (arg == SIGNAL_HANDLE_ARG)
+        {
+            std::wstring signalHandleVal;
+            hr = s_GetArgumentValue(args, i, &signalHandleVal);
+            
+            if (SUCCEEDED(hr))
+            {
+                hr = s_ParseHandleArg(signalHandleVal, _signalHandle);
             }
         }
         else if (arg == FORCE_V1_ARG)
@@ -329,6 +364,17 @@ bool ConsoleArguments::HasVtHandles() const
 }
 
 // Routine Description:
+// - Returns true if we were passed a seemingly valid signal handle on startup.
+// Arguments:
+// - <none> - uses internal state
+// Return Value:
+// - True or false (see description)
+bool ConsoleArguments::HasSignalHandle() const
+{
+    return s_IsValidHandle(GetSignalHandle());
+}
+
+// Routine Description:
 //  Returns true if according to the arguments parsed from _commandline we 
 //      should start with the VT pipe enabled. This is when we have both a VT
 //      input and output pipe name given. Guarentees nothing about the pipe 
@@ -355,6 +401,11 @@ bool ConsoleArguments::ShouldCreateServerHandle() const
 HANDLE ConsoleArguments::GetServerHandle() const
 {
     return ULongToHandle(_serverHandle);
+}
+
+HANDLE ConsoleArguments::GetSignalHandle() const
+{
+    return ULongToHandle(_signalHandle);
 }
 
 HANDLE ConsoleArguments::GetVtInHandle() const

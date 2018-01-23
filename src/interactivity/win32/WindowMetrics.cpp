@@ -73,7 +73,7 @@ RECT WindowMetrics::GetMaxWindowRectInPixels()
 {
     RECT rc;
     SetRectEmpty(&rc);
-    return GetMaxWindowRectInPixels(&rc);
+    return GetMaxWindowRectInPixels(&rc, nullptr);
 }
 
 // Routine Description:
@@ -81,9 +81,11 @@ RECT WindowMetrics::GetMaxWindowRectInPixels()
 // Arguments:
 // - prcSuggested - If we were given a suggested rectangle for where the window is going, we can pass it in here to find out the max size on that monitor.
 //                - If this value is zero and we had a valid window handle, we'll use that instead. Otherwise the value of 0 will make us use the primary monitor.
+// - pDpiSuggested - The dpi that matches the suggested rect. We will attempt to compute this during the function, but if we fail for some reason,
+//                 - the original value passed in will be left untouched.
 // Return Value:
 // - RECT containing the left, right, top, and bottom positions from the desktop origin in pixels. Measures the outer edges of the potential window.
-RECT WindowMetrics::GetMaxWindowRectInPixels(_In_ const RECT * const prcSuggested)
+RECT WindowMetrics::GetMaxWindowRectInPixels(_In_ const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested)
 {
     // prepare rectangle
     RECT rc = *prcSuggested;
@@ -137,6 +139,20 @@ RECT WindowMetrics::GetMaxWindowRectInPixels(_In_ const RECT * const prcSuggeste
         rc.bottom += wi.cyWindowBorders;
         rc.left -= wi.cxWindowBorders;
         rc.right += wi.cxWindowBorders;
+    }
+
+    if (pDpiSuggested != nullptr)
+    {
+        UINT monitorDpiX;
+        UINT monitorDpiY;
+        if (SUCCEEDED(GetDpiForMonitor(hMonitor, MDT_EFFECTIVE_DPI, &monitorDpiX, &monitorDpiY)))
+        {
+            *pDpiSuggested = monitorDpiX;
+        }
+        else
+        {
+            *pDpiSuggested = ServiceLocator::LocateGlobals()->dpi;
+        }
     }
 
     return rc;

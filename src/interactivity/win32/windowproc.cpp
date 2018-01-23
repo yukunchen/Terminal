@@ -240,10 +240,6 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         pSuggestionSize->cx = RECT_WIDTH(&rectProposed);
         pSuggestionSize->cy = RECT_HEIGHT(&rectProposed);
 
-        // Store the fact that we suggested this size to see if it's what WM_DPICHANGED gives us back later.
-        _iSuggestedDpi = dpiProposed;
-        _sizeSuggested = *pSuggestionSize;
-
         // Format our final suggestion for consumption.
         UnlockConsole();
         return TRUE;
@@ -251,28 +247,25 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_DPICHANGED:
     {
+        _fInDPIChange = true;
         ServiceLocator::LocateGlobals().dpi = HIWORD(wParam);
         _UpdateSystemMetrics();
         s_ReinitializeFontsForDPIChange();
 
-        // this is the RECT that the system suggests.
-        RECT* const prcNewScale = (RECT*)lParam;
-        SIZE szNewScale;
-        szNewScale.cx = RECT_WIDTH(prcNewScale);
-        szNewScale.cy = RECT_HEIGHT(prcNewScale);
-
         if (IsInFullscreen())
         {
             // If we're a full screen window, completely ignore what the DPICHANGED says as it will be bigger than the monitor and
-            // instead use the value that we were given back in the WM_WINDOWPOSCHANGED (that we had ignored at the time)
-            *prcNewScale = _rcWhenDpiChanges;
+            // instead just ensure that the window is still taking up the full screen.
+            SetIsFullscreen(true);
+        }
+        else
+        {
+            // this is the RECT that the system suggests.
+            RECT* const prcNewScale = (RECT*)lParam;
+            SetWindowPos(hWnd, HWND_TOP, prcNewScale->left, prcNewScale->top, RECT_WIDTH(prcNewScale), RECT_HEIGHT(prcNewScale), SWP_NOZORDER | SWP_NOACTIVATE);
         }
 
-        SetWindowPos(hWnd, HWND_TOP, prcNewScale->left, prcNewScale->top, RECT_WIDTH(prcNewScale), RECT_HEIGHT(prcNewScale), SWP_NOZORDER | SWP_NOACTIVATE);
-
-        // Reset the WM_GETDPISCALEDSIZE proposals if they exist. They only last for one DPI change attempt.
-        _iSuggestedDpi = 0;
-        _sizeSuggested = { 0 };
+        _fInDPIChange = false;
 
         break;
     }
@@ -440,32 +433,52 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
             // If not, then restrict it to our maximum possible window.
             if (!IsFlagSet(GetWindowStyle(hWnd), WS_MAXIMIZE))
             {
-                // Find the related monitor and get the maximum pixel size for the window
+                // Find the related monitor, the maximum pixel size,
+                // and the dpi for the suggested rect.
+                UINT suggestedDpi;
                 RECT rcMaximum;
 
                 if (fIsEdgeResize)
                 {
                     // If someone's dragging from the edge to resize in one direction, we want to make sure we never grow past the current monitor.
-                    rcMaximum = ServiceLocator::LocateWindowMetrics<WindowMetrics>()->GetMaxWindowRectInPixels(&rcCurrent);
+                    rcMaximum = ServiceLocator::LocateWindowMetrics<WindowMetrics>()->GetMaxWindowRectInPixels(&rcCurrent, &suggestedDpi);
                 }
                 else
                 {
                     // In other circumstances, assume we're snapping around or some other jump (TS).
                     // Just do whatever we're told using the new suggestion as the restriction monitor.
-                    rcMaximum = ServiceLocator::LocateWindowMetrics<WindowMetrics>()->GetMaxWindowRectInPixels(&rcSuggested);
+                    rcMaximum = ServiceLocator::LocateWindowMetrics<WindowMetrics>()->GetMaxWindowRectInPixels(&rcSuggested, &suggestedDpi);
                 }
 
-                // Make a size for comparison purposes.
-                SIZE szMaximum;
-                szMaximum.cx = RECT_WIDTH(&rcMaximum);
-                szMaximum.cy = RECT_HEIGHT(&rcMaximum);
-
-                // If the suggested rect is bigger in size than the maximum size, then prevent a move and restrict size to the appropriate monitor dimensions.
-                if (szSuggested.cx > szMaximum.cx || szSuggested.cy > szMaximum.cy)
+                // Update the current maximum IF the dpi of the suggested monitor matches the current dpi,
+                // or it's uninitialized. This keeps us from applying the wrong restriction if our
+                // monitor changed DPI but we've yet to get notified of that DPI change.
+                // If we do, then we'll restrict the console window BEFORE its been resized
+                // for the DPI change, so we're likely to shrink the window too much.
+                // We'll get a WM_DPICHANGED, resize the window, and then process the restriction
+                // in a few window messages.
+                if (((int)suggestedDpi == g->dpi) || ((_sizeMaximum.cx == 0) && (_sizeMaximum.cy == 0)))
                 {
-                    lpwpos->cx = min(szMaximum.cx, szSuggested.cx);
-                    lpwpos->cy = min(szMaximum.cy, szSuggested.cy);
-                    lpwpos->flags |= SWP_NOMOVE;
+                    _sizeMaximum.cx = RECT_WIDTH(&rcMaximum);
+                    _sizeMaximum.cy = RECT_HEIGHT(&rcMaximum);
+                }
+
+                // If the suggested rect is bigger in size than the maximum size,
+                // then prevent a move and restrict size to the appropriate monitor dimensions.
+                if ((szSuggested.cx > _sizeMaximum.cx) || (szSuggested.cy > _sizeMaximum.cy))
+                {
+                    lpwpos->cx = min(_sizeMaximum.cx, szSuggested.cx);
+                    lpwpos->cy = min(_sizeMaximum.cy, szSuggested.cy);
+
+                    // We usually add SWP_NOMOVE so that if the user is dragging the left or top edge
+                    // and hits the restriction, then the window just stops growing, it doesn't
+                    // move with the mouse. However during DPI changes, we need to allow a move
+                    // because the RECT from WM_DPICHANGED has been specially crafted by win32k
+                    // to keep the mouse cursor from jumping away from the caption bar.
+                    if (!_fInDPIChange)
+                    {
+                        lpwpos->flags |= SWP_NOMOVE;
+                    }
                 }
             }
 
@@ -479,28 +492,16 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case WM_WINDOWPOSCHANGED:
     {
-        LPWINDOWPOS lpwpos = (LPWINDOWPOS)lParam;
-
-        int const dpi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetWindowDPI(hWnd);
-
         // Only handle this if the DPI is the same as last time.
         // If the DPI is different, assume we're about to get a DPICHANGED notification
         // which will have a better suggested rectangle than this one.
+        // NOTE: This stopped being possible in RS4 as the DPI now changes when and only when
+        // we receive WM_DPICHANGED. We keep this check around so that we perform better downlevel.
+        int const dpi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->GetWindowDPI(hWnd);
         if (dpi == ServiceLocator::LocateGlobals().dpi)
         {
             _HandleWindowPosChanged(lParam);
         }
-        else
-        {
-            // Store what the rectangle is when the DPI is about to change
-            // because if the exact same one comes back in DPICHANGED, then we want to use it
-            // not adjust it like we normally would. (Aero snap case).
-            _rcWhenDpiChanges.left = lpwpos->x;
-            _rcWhenDpiChanges.top = lpwpos->y;
-            _rcWhenDpiChanges.right = _rcWhenDpiChanges.left + lpwpos->cx;
-            _rcWhenDpiChanges.bottom = _rcWhenDpiChanges.top + lpwpos->cy;
-        }
-
         break;
     }
 
@@ -833,8 +834,9 @@ void Window::_HandleWindowPosChanged(_In_ const LPARAM lParam)
         s_ConvertWindowPosToWindowRect(lpWindowPos, &rcNew);
         ServiceLocator::LocateWindowMetrics<WindowMetrics>()->ConvertWindowRectToClientRect(&rcNew);
 
-        // If the window is not being resized, don't do anything except update our windowrect
-        if (!IsFlagSet(lpWindowPos->flags, SWP_NOSIZE))
+        // If the window is not being resized, including a DPI change, then
+        // don't do anything except update our windowrect
+        if (!IsFlagSet(lpWindowPos->flags, SWP_NOSIZE) || _fInDPIChange)
         {
             pScreenInfo->ProcessResizeWindow(&rcNew, &_rcClientLast);
         }

@@ -31,7 +31,7 @@ namespace Microsoft
 
                     // Public Members
                     RECT GetMaxWindowRectInPixels();
-                    RECT GetMaxWindowRectInPixels(_In_ const RECT * const prcSuggested);
+                    RECT GetMaxWindowRectInPixels(_In_ const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested);
 
                     BOOL AdjustWindowRectEx(_Inout_ LPRECT prc,
                                             _In_ const DWORD dwStyle,
