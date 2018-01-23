@@ -195,8 +195,7 @@ namespace WEX {
                     expected.GetVtOutPipe() == actual.GetVtOutPipe() &&
                     expected.GetVtMode() == actual.GetVtMode() &&
                     expected.GetWidth() == actual.GetWidth() &&
-                    expected.GetHeight() == actual.GetWidth() &&
-                    expected.GetHeight() == actual.GetWidth() &&
+                    expected.GetHeight() == actual.GetHeight() &&
                     expected.GetForceV1() == actual.GetForceV1() &&
                     expected.IsHeadless() == actual.IsHeadless() &&
                     expected.ShouldCreateServerHandle() == actual.ShouldCreateServerHandle() &&

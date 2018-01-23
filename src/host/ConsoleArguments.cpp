@@ -135,8 +135,12 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
         {
             try
             {
-                int value = std::stoi(args[index]);
-                if (value > SHORT_MAX) 
+                size_t pos = 0;
+                int value = std::stoi(args[index], &pos);
+                // If the entire string was a number, pos will be equal to the 
+                //      length of the string. Otherwise, a string like 8foo will
+                //       be parsed as "8"
+                if (value > SHORT_MAX || pos != args[index].length()) 
                 {
                     succeeded = false;
                 }

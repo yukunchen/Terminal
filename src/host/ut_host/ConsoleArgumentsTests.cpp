@@ -960,7 +960,168 @@ void ConsoleArgumentsTests::IsVtHandleValidTests()
 
 void ConsoleArgumentsTests::InitialSizeTests()
 {
-    
+    std::wstring commandline;
+
+    commandline = L"conhost.exe --width 120 --height 30";
+    ArgTestsRunner(L"#1 look for a valid commandline with both width and height",
+                  commandline,
+                  INVALID_HANDLE_VALUE,
+                  INVALID_HANDLE_VALUE,
+                  ConsoleArguments(commandline,
+                                   L"", // clientCommandLine
+                                   INVALID_HANDLE_VALUE,
+                                   INVALID_HANDLE_VALUE, 
+                                   L"", // vtInPipe
+                                   L"", // vtOutPipe
+                                   L"", // vtMode
+                                   120, // width
+                                   30, // height
+                                   false, // forceV1
+                                   false, // headless
+                                   true, // createServerHandle
+                                   0), // serverHandle
+                  true); // successful parse?
+
+    commandline = L"conhost.exe --width 120";
+    ArgTestsRunner(L"#2 look for a valid commandline with only width",
+                  commandline,
+                  INVALID_HANDLE_VALUE,
+                  INVALID_HANDLE_VALUE,
+                  ConsoleArguments(commandline,
+                                   L"", // clientCommandLine
+                                   INVALID_HANDLE_VALUE,
+                                   INVALID_HANDLE_VALUE, 
+                                   L"", // vtInPipe
+                                   L"", // vtOutPipe
+                                   L"", // vtMode
+                                   120, // width
+                                   0, // height
+                                   false, // forceV1
+                                   false, // headless
+                                   true, // createServerHandle
+                                   0), // serverHandle
+                  true); // successful parse?
+
+    commandline = L"conhost.exe --height 30";
+    ArgTestsRunner(L"#3 look for a valid commandline with only height",
+                  commandline,
+                  INVALID_HANDLE_VALUE,
+                  INVALID_HANDLE_VALUE,
+                  ConsoleArguments(commandline,
+                                   L"", // clientCommandLine
+                                   INVALID_HANDLE_VALUE,
+                                   INVALID_HANDLE_VALUE, 
+                                   L"", // vtInPipe
+                                   L"", // vtOutPipe
+                                   L"", // vtMode
+                                   0, // width
+                                   30, // height
+                                   false, // forceV1
+                                   false, // headless
+                                   true, // createServerHandle
+                                   0), // serverHandle
+                  true); // successful parse?
+
+    commandline = L"conhost.exe --width 0";
+    ArgTestsRunner(L"#4 look for a valid commandline passing 0",
+                  commandline,
+                  INVALID_HANDLE_VALUE,
+                  INVALID_HANDLE_VALUE,
+                  ConsoleArguments(commandline,
+                                   L"", // clientCommandLine
+                                   INVALID_HANDLE_VALUE,
+                                   INVALID_HANDLE_VALUE, 
+                                   L"", // vtInPipe
+                                   L"", // vtOutPipe
+                                   L"", // vtMode
+                                   0, // width
+                                   0, // height
+                                   false, // forceV1
+                                   false, // headless
+                                   true, // createServerHandle
+                                   0), // serverHandle
+                  true); // successful parse?
+
+    commandline = L"conhost.exe --width -1";
+    ArgTestsRunner(L"#5 look for a valid commandline passing -1",
+                  commandline,
+                  INVALID_HANDLE_VALUE,
+                  INVALID_HANDLE_VALUE,
+                  ConsoleArguments(commandline,
+                                   L"", // clientCommandLine
+                                   INVALID_HANDLE_VALUE,
+                                   INVALID_HANDLE_VALUE, 
+                                   L"", // vtInPipe
+                                   L"", // vtOutPipe
+                                   L"", // vtMode
+                                   -1, // width
+                                   0, // height
+                                   false, // forceV1
+                                   false, // headless
+                                   true, // createServerHandle
+                                   0), // serverHandle
+                  true); // successful parse?
+
+    commandline = L"conhost.exe --width foo";
+    ArgTestsRunner(L"#6 look for an ivalid commandline passing a string",
+                  commandline,
+                  INVALID_HANDLE_VALUE,
+                  INVALID_HANDLE_VALUE,
+                  ConsoleArguments(commandline,
+                                   L"", // clientCommandLine
+                                   INVALID_HANDLE_VALUE,
+                                   INVALID_HANDLE_VALUE, 
+                                   L"", // vtInPipe
+                                   L"", // vtOutPipe
+                                   L"", // vtMode
+                                   0, // width
+                                   0, // height
+                                   false, // forceV1
+                                   false, // headless
+                                   true, // createServerHandle
+                                   0), // serverHandle
+                  false); // successful parse?
+
+    commandline = L"conhost.exe --width 2foo";
+    ArgTestsRunner(L"#7 look for an ivalid commandline passing a string with a number at the start",
+                  commandline,
+                  INVALID_HANDLE_VALUE,
+                  INVALID_HANDLE_VALUE,
+                  ConsoleArguments(commandline,
+                                   L"", // clientCommandLine
+                                   INVALID_HANDLE_VALUE,
+                                   INVALID_HANDLE_VALUE, 
+                                   L"", // vtInPipe
+                                   L"", // vtOutPipe
+                                   L"", // vtMode
+                                   0, // width
+                                   0, // height
+                                   false, // forceV1
+                                   false, // headless
+                                   true, // createServerHandle
+                                   0), // serverHandle
+                  false); // successful parse?
+
+    commandline = L"conhost.exe --width 65535";
+    ArgTestsRunner(L"#7 look for an ivalid commandline passing a value that's too big",
+                  commandline,
+                  INVALID_HANDLE_VALUE,
+                  INVALID_HANDLE_VALUE,
+                  ConsoleArguments(commandline,
+                                   L"", // clientCommandLine
+                                   INVALID_HANDLE_VALUE,
+                                   INVALID_HANDLE_VALUE, 
+                                   L"", // vtInPipe
+                                   L"", // vtOutPipe
+                                   L"", // vtMode
+                                   0, // width
+                                   0, // height
+                                   false, // forceV1
+                                   false, // headless
+                                   true, // createServerHandle
+                                   0), // serverHandle
+                  false); // successful parse?
+
 }
 
 void ConsoleArgumentsTests::HeadlessArgTests()

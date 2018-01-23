@@ -452,12 +452,12 @@ void Settings::ApplyStartupInfo(_In_ const Settings* const pStartupSettings)
 
 void Settings::ApplyCommandlineArguments(_In_ const ConsoleArguments& consoleArgs)
 {
-    if (consoleArgs.GetWidth() != 0)
+    if (consoleArgs.GetWidth() > 0)
     {
         _dwScreenBufferSize.X = consoleArgs.GetWidth();
         _dwWindowSize.X = consoleArgs.GetWidth();
     }
-    if (consoleArgs.GetHeight() != 0)
+    if (consoleArgs.GetHeight() > 0)
     {
         _dwScreenBufferSize.Y = consoleArgs.GetHeight();
         _dwWindowSize.Y = consoleArgs.GetHeight();
