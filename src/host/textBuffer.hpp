@@ -157,10 +157,10 @@ public:
     void SetBackground(_In_ const COLORREF rgbBackground);
     void SetColor(_In_ const COLORREF rgbColor, _In_ const bool fIsForeground);
 
-private:
     COLORREF _GetRgbForeground() const;
     COLORREF _GetRgbBackground() const;
 
+private:
     bool _IsReverseVideo() const;
 
     WORD _wAttrLegacy;

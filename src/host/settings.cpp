@@ -373,7 +373,7 @@ void Settings::_InitColorTable()
 //   are optimized for OneCore.
 // Arguments:
 // - <none>
-// Return Value: 
+// Return Value:
 // - <none> - Adjusts internal state only.
 void Settings::ApplyDesktopSpecificDefaults()
 {
@@ -730,7 +730,7 @@ void Settings::SetFillAttribute(_In_ const WORD wFillAttribute)
     _wFillAttribute = wFillAttribute;
 
     // Do not allow the default fill attribute to use any attrs other than fg/bg colors.
-    // This prevents us from accidentally inverting everything or suddenly drawing lines 
+    // This prevents us from accidentally inverting everything or suddenly drawing lines
     // everywhere by defualt.
     ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 }
@@ -744,7 +744,7 @@ void Settings::SetPopupFillAttribute(_In_ const WORD wPopupFillAttribute)
     _wPopupFillAttribute = wPopupFillAttribute;
 
     // Do not allow the default popup fill attribute to use any attrs other than fg/bg colors.
-    // This prevents us from accidentally inverting everything or suddenly drawing lines 
+    // This prevents us from accidentally inverting everything or suddenly drawing lines
     // everywhere by defualt.
     ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 }
@@ -996,8 +996,8 @@ WORD Settings::GenerateLegacyAttributes(_In_ const TextAttribute attributes) con
     }
     // Get the Line drawing attributes and stash those, we'll need to preserve them.
     const WORD wNonColorAttributes = wLegacyOriginal & (~0xFF);
-    const COLORREF rgbForeground = attributes.GetRgbForeground();
-    const COLORREF rgbBackground = attributes.GetRgbBackground();
+    const COLORREF rgbForeground = attributes._GetRgbForeground();
+    const COLORREF rgbBackground = attributes._GetRgbBackground();
     const WORD wForegroundIndex = FindNearestTableIndex(rgbForeground);
     const WORD wBackgroundIndex = FindNearestTableIndex(rgbBackground);
     const WORD wCompleteAttr = (wNonColorAttributes) | (wBackgroundIndex << 4) | (wForegroundIndex);
