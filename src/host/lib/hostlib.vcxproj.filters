@@ -165,6 +165,15 @@
     <ClCompile Include="..\ConsoleArguments.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\alias.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\history.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PtySignalInputThread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h">
@@ -318,6 +327,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\ConsoleArguments.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IIoProvider.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\alias.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\history.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PtySignalInputThread.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

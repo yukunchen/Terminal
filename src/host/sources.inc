@@ -65,6 +65,7 @@ SOURCES = \
     ..\history.cpp   \
     ..\VtIo.cpp   \
     ..\VtInputThread.cpp   \
+    ..\PtySignalInputThread.cpp \
     ..\consoleInformation.cpp \
     ..\cursor.cpp    \
     ..\search.cpp    \

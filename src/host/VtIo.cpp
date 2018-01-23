@@ -18,7 +18,8 @@ using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::Types;
 
 VtIo::VtIo() :
-    _usingVt(false)
+    _usingVt(false),
+    _hasSignalThread(false)
 {
 }
 
@@ -68,18 +69,39 @@ HRESULT VtIo::Initialize(const ConsoleArguments * const pArgs)
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->HasVtHandles())
     {
-        return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetVtMode());
+        return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetVtMode(), pArgs->GetSignalHandle());
     }
     // Otherwise, if we were given VT pipe names, try to open those.
     else if (pArgs->IsUsingVtPipe())
     {
-        return _Initialize(pArgs->GetVtInPipe(), pArgs->GetVtOutPipe(), pArgs->GetVtMode());
+        return _Initialize(pArgs->GetVtInPipe(), pArgs->GetVtOutPipe(), pArgs->GetVtMode(), pArgs->GetSignalHandle());
     }
     // Didn't need to initialize if we didn't have VT stuff. It's still OK, but report we did nothing.
     else
     {
         return S_FALSE;
     }
+}
+
+// Routine Description:
+// - See _Initialize with 4 parameters. This one is for back-compat with old function signatures that have no signal handle.
+//   It sets the signal handle to 0.
+// Arguments:
+//  InHandle: a valid file handle. The console will 
+//      read VT sequences from this pipe to generate INPUT_RECORDs and other 
+//      input events.
+//  OutHandle: a valid file handle. The console 
+//      will be "rendered" to this pipe using VT sequences
+//  VtIoMode: A string containing the console's requested VT mode. This can be 
+//      any of the strings in VtIoModes.hpp
+//  SignalHandle: an optional file handle that will be used to send signals into the console.
+//      This represents the ability to send signals to a *nix tty/pty.
+// Return Value:
+//  S_OK if we initialized successfully, otherwise an appropriate HRESULT
+//      indicating failure.
+HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandle, _In_ const std::wstring& VtMode)
+{
+    return _Initialize(InHandle, OutHandle, VtMode, INVALID_HANDLE_VALUE);
 }
 
 // Routine Description:
@@ -95,10 +117,12 @@ HRESULT VtIo::Initialize(const ConsoleArguments * const pArgs)
 //      will be "rendered" to this pipe using VT sequences
 //  VtIoMode: A string containing the console's requested VT mode. This can be 
 //      any of the strings in VtIoModes.hpp
+//  SignalHandle: an optional file handle that will be used to send signals into the console.
+//      This represents the ability to send signals to a *nix tty/pty.
 // Return Value:
 //  S_OK if we initialized successfully, otherwise an appropriate HRESULT
 //      indicating failure.
-HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandle, _In_ const std::wstring& VtMode)
+HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandle, _In_ const std::wstring& VtMode, _In_opt_ HANDLE SignalHandle)
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
@@ -156,8 +180,39 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
     }
     CATCH_RETURN();
 
+    // If we were passed a signal handle, try to open it and make a signal reading thread.
+    if (0 != SignalHandle && INVALID_HANDLE_VALUE != SignalHandle)
+    {
+        wil::unique_hfile hSignalFile(SignalHandle);
+        try
+        {
+            _pPtySignalInputThread = std::make_unique<PtySignalInputThread>(std::move(hSignalFile));
+            _hasSignalThread = true;
+        }
+        CATCH_RETURN();
+    }
+
     _usingVt = true;
     return S_OK;
+}
+
+// Routine Description:
+// - See _Initialize with 4 parameters. This one is for back-compat with old function signatures that have no signal handle.
+//   It sets the signal handle to 0.
+// Arguments:
+//  InPipeName: a wstring containing the vt input pipe's name. The console will 
+//      read VT sequences from this pipe to generate INPUT_RECORDs and other 
+//      input events.
+//  OutPipeName: a wstring containing the vt output pipe's name. The console 
+//      will be "rendered" to this pipe using VT sequences
+//  VtIoMode: A string containing the console's requested VT mode. This can be 
+//      any of the strings in VtIoModes.hpp
+// Return Value:
+//  S_OK if we initialized successfully, otherwise an appropriate HRESULT
+//      indicating failure.
+HRESULT VtIo::_Initialize(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode)
+{
+    return _Initialize(InPipeName, OutPipeName, VtMode, INVALID_HANDLE_VALUE);
 }
 
 // Routine Description:
@@ -176,7 +231,7 @@ HRESULT VtIo::_Initialize(_In_ const HANDLE InHandle, _In_ const HANDLE OutHandl
 // Return Value:
 //  S_OK if we initialized successfully, otherwise an appropriate HRESULT
 //      indicating failure.
-HRESULT VtIo::_Initialize(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode)
+HRESULT VtIo::_Initialize(_In_ const std::wstring& InPipeName, _In_ const std::wstring& OutPipeName, _In_ const std::wstring& VtMode, _In_opt_ HANDLE SignalHandle)
 {
     wil::unique_hfile hInputFile;
     hInputFile.reset(
@@ -202,7 +257,7 @@ HRESULT VtIo::_Initialize(_In_ const std::wstring& InPipeName, _In_ const std::w
     );
     RETURN_LAST_ERROR_IF(hOutputFile.get() == INVALID_HANDLE_VALUE);
 
-    return _Initialize(hInputFile.release(), hOutputFile.release(), VtMode);
+    return _Initialize(hInputFile.release(), hOutputFile.release(), VtMode, SignalHandle);
 }
 
 bool VtIo::IsUsingVt() const
@@ -239,6 +294,11 @@ HRESULT VtIo::StartIfNeeded()
     CATCH_RETURN();
 
     _pVtInputThread->Start();
+
+    if (_hasSignalThread)
+    {
+        _pPtySignalInputThread->Start();
+    }
 
     return S_OK;
 }
