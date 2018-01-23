@@ -31,8 +31,8 @@ namespace WEX {
                                                            tar.GetLength(),
                                                            tar.GetAttributes().IsLegacy(),
                                                            tar.GetAttributes().GetLegacyAttributes(),
-                                                           tar.GetAttributes().GetRgbForeground(),
-                                                           tar.GetAttributes().GetRgbBackground());
+                                                           tar.GetAttributes().CalculateRgbForeground(),
+                                                           tar.GetAttributes().CalculateRgbBackground());
             }
         };
 
@@ -174,12 +174,12 @@ class AttrRowTests
     // - pcAttrRun - Filled with length of newly allocated array.
     // Return Value:
     // - Success if success. Buffer too small if row length is incorrect.
-    HRESULT PackAttrs(_In_reads_(cRowLength) const TextAttribute* const rgAttrs, 
-                      _In_ UINT const cRowLength, 
+    HRESULT PackAttrs(_In_reads_(cRowLength) const TextAttribute* const rgAttrs,
+                      _In_ UINT const cRowLength,
                       _Out_writes_(*pcAttrRun) TextAttributeRun** const ppAttrRun,
                       _Out_ UINT* const pcAttrRun)
     {
-        
+
         NTSTATUS status = STATUS_SUCCESS;
 
         if (cRowLength == 0)
@@ -260,7 +260,7 @@ class AttrRowTests
                   _In_ size_t const cRun)
     {
         NoThrowString str(pwszPrefix);
-        
+
         if (cRun > 0)
         {
             str.Append(LogRunElement(rgRun[0]));
@@ -330,7 +330,7 @@ class AttrRowTests
 
         // Calculate our expected final/result run by unpacking original, laying our insertion on it at the index
         // then using our pack function to repack it.
-        // This method is easy to understand and very reliable, but its performance is bad. 
+        // This method is easy to understand and very reliable, but its performance is bad.
         // The InsertAttrRuns method we test against below is hard to understand but very high performance in production.
 
         // - 1. Unpack
@@ -445,7 +445,7 @@ class AttrRowTests
 
                     // When choosing the length of the second item, it can't be bigger than the remaining space in the run
                     // when accounting for the length of the first piece chosen.
-                    // For example if the total run length is 10 and the first piece chosen was 8 long, 
+                    // For example if the total run length is 10 and the first piece chosen was 8 long,
                     // the second piece can only be 1 or 2 long.
                     UINT const uiMaxCh2Length = uiTestRunLength - uiMaxCh1Length;
                     for (UINT iCh2Length = 1; iCh2Length <= uiMaxCh2Length; iCh2Length++)

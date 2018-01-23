@@ -252,14 +252,26 @@ bool TextAttribute::IsLegacy() const
     return _fUseRgbColor == false;
 }
 
-COLORREF TextAttribute::GetRgbForeground() const
+// Routine Description:
+// - Calculates rgb foreground color based off of current color table and active modification attributes
+// Arguments:
+// - None
+// Return Value:
+// - color that should be displayed as the foreground color
+COLORREF TextAttribute::CalculateRgbForeground() const
 {
-    return _IsReverseVideo()? _GetRgbBackground() : _GetRgbForeground();
+    return _IsReverseVideo() ? _GetRgbBackground() : _GetRgbForeground();
 }
 
-COLORREF TextAttribute::GetRgbBackground() const
+// Routine Description:
+// - Calculates rgb background color based off of current color table and active modification attributes
+// Arguments:
+// - None
+// Return Value:
+// - color that should be displayed as the background color
+COLORREF TextAttribute::CalculateRgbBackground() const
 {
-    return _IsReverseVideo()? _GetRgbForeground() : _GetRgbBackground();
+    return _IsReverseVideo() ? _GetRgbForeground() : _GetRgbBackground();
 }
 
 COLORREF TextAttribute::_GetRgbForeground() const
@@ -1670,7 +1682,7 @@ bool TEXT_BUFFER_INFO::IncrementCircularBuffer()
     {
         g->pRender->TriggerCircling();
     }
-    
+
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     TextAttribute FillAttributes;
     FillAttributes.SetFromLegacy(_ciFill.Attributes);
