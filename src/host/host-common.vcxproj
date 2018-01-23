@@ -30,6 +30,7 @@
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\PtySignalInputThread.cpp" />
     <ClCompile Include="..\readData.cpp" />
     <ClCompile Include="..\readDataDirect.cpp" />
     <ClCompile Include="..\readDataRaw.cpp" />

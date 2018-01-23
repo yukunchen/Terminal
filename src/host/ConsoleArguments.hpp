@@ -38,6 +38,9 @@ public:
     HANDLE GetServerHandle() const;
     HANDLE GetVtInHandle() const;
     HANDLE GetVtOutHandle() const;
+    
+    bool HasSignalHandle() const;
+    HANDLE GetSignalHandle() const;
 
     std::wstring GetClientCommandline() const;
     std::wstring GetVtInPipe() const;
@@ -50,7 +53,8 @@ public:
     static const std::wstring VT_MODE_ARG;
     static const std::wstring HEADLESS_ARG;
     static const std::wstring SERVER_HANDLE_ARG;
-    static const std::wstring SERVER_HANDLE_PREFIX;
+    static const std::wstring SIGNAL_HANDLE_ARG;
+    static const std::wstring HANDLE_PREFIX;
     static const std::wstring CLIENT_COMMANDLINE_ARG;
     static const std::wstring FORCE_V1_ARG;
     static const std::wstring FILEPATH_LEADER_PREFIX;
@@ -68,7 +72,8 @@ private:
                      _In_ const bool forceV1,
                      _In_ const bool headless,
                      _In_ const bool createServerHandle,
-                     _In_ const DWORD serverHandle) :
+                     _In_ const DWORD serverHandle,
+                     _In_ const DWORD signalHandle) :
         _commandline(commandline),
         _clientCommandline(clientCommandline),
         _vtInHandle(vtInHandle),
@@ -79,7 +84,8 @@ private:
         _forceV1(forceV1),
         _headless(headless),
         _createServerHandle(createServerHandle),
-        _serverHandle(serverHandle)
+        _serverHandle(serverHandle),
+        _signalHandle(signalHandle)
     {
 
     }
@@ -102,11 +108,14 @@ private:
 
     bool _createServerHandle;
     DWORD _serverHandle;
+    DWORD _signalHandle;
 
     HRESULT _GetClientCommandline(_In_ std::vector<std::wstring>& args, _In_ const size_t index, _In_ const bool skipFirst);
 
     static void s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In_ size_t& index);
     static HRESULT s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index, _Out_opt_ std::wstring* const pSetting);
+    
+    static HRESULT s_ParseHandleArg(_In_ const std::wstring& handleAsText, _Inout_ DWORD& handleAsVal);
 
     static bool s_IsValidHandle(_In_ const HANDLE handle);
 
@@ -135,7 +144,9 @@ namespace WEX {
                                                            L"ForceV1: '%ws',\r\n"
                                                            L"Headless: '%ws',\r\n"
                                                            L"Create Server Handle: '%ws',\r\n"
-                                                           L"Server Handle: '0x%x'\r\n",
+                                                           L"Server Handle: '0x%x'\r\n"
+                                                           L"Use Signal Handle: '%ws'\r\n"
+                                                           L"Signal Handle: '0x%x'\r\n",
                                                            ci.GetClientCommandline().c_str(),
                                                            s_ToBoolString(ci.HasVtHandles()),
                                                            ci.GetVtInHandle(),
@@ -147,7 +158,9 @@ namespace WEX {
                                                            s_ToBoolString(ci.GetForceV1()),
                                                            s_ToBoolString(ci.IsHeadless()),
                                                            s_ToBoolString(ci.ShouldCreateServerHandle()),
-                                                           ci.GetServerHandle());
+                                                           ci.GetServerHandle(),
+                                                           s_ToBoolString(ci.HasSignalHandle()),
+                                                           ci.GetSignalHandle());
             }
 
         private:
@@ -175,7 +188,9 @@ namespace WEX {
                     expected.GetForceV1() == actual.GetForceV1() &&
                     expected.IsHeadless() == actual.IsHeadless() &&
                     expected.ShouldCreateServerHandle() == actual.ShouldCreateServerHandle() &&
-                    expected.GetServerHandle() == actual.GetServerHandle();
+                    expected.GetServerHandle() == actual.GetServerHandle() &&
+                    expected.HasSignalHandle() == actual.HasSignalHandle() &&
+                    expected.GetSignalHandle() == actual.GetSignalHandle();
             }
 
             static bool AreSame(const ConsoleArguments& expected, const ConsoleArguments& actual)
@@ -199,7 +214,8 @@ namespace WEX {
                     !object.GetForceV1() &&
                     !object.IsHeadless() &&
                     !object.ShouldCreateServerHandle() &&
-                    object.GetServerHandle() == 0;
+                    object.GetServerHandle() == 0 &&
+                    (object.GetSignalHandle() == 0 || object.GetSignalHandle() == INVALID_HANDLE_VALUE);
             }
         };
     }
