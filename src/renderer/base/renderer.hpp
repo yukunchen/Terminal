@@ -50,7 +50,7 @@ namespace Microsoft
                 void TriggerRedraw(_In_ const SMALL_RECT* const psrRegion);
                 void TriggerRedraw(_In_ const COORD* const pcoord);
                 void TriggerRedrawAll();
-                void TriggerRedrawOnDie() override;
+                void TriggerTeardown() override;
 
                 void TriggerSelection();
                 void TriggerScroll();
@@ -79,6 +79,8 @@ namespace Microsoft
 
                 RenderThread* _pThread;
                 void _NotifyPaintFrame();
+
+                HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine);
 
                 bool _CheckViewportAndScroll();
 

@@ -123,6 +123,21 @@ HRESULT GdiEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
     return S_FALSE;
 }
 
+// Method Description:
+// - Notifies us that we're about to be torn down. This gives us a last chance 
+//      to force a repaint before the buffer contents are lost. The GDI renderer 
+//      doesn't care if we lose text - we're only painting visible text anyways,
+//      so we return false.
+// Arguments:
+// - Recieves a bool indicating if we should force the repaint.
+// Return Value:
+// - S_FALSE - we succeeded, but the result was false.
+HRESULT GdiEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
+{
+    *pForcePaint = false;
+    return S_FALSE;
+}
+
 // Routine Description:
 // - Helper to combine the given rectangle into the invalid region to be updated on the next paint
 // Arguments:

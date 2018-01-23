@@ -37,7 +37,7 @@ void ServiceLocator::RundownAndExit(_In_ HRESULT const hr)
     //      last chance to paint before it is killed.
     if (s_globals->pRender)
     {
-        s_globals->pRender->TriggerRedrawOnDie();
+        s_globals->pRender->TriggerTeardown();
     }
 
     // A History Lesson from MSFT: 13576341:

@@ -35,7 +35,7 @@ namespace Microsoft
                 virtual void TriggerRedraw(_In_ const COORD* const pcoord) = 0;
 
                 virtual void TriggerRedrawAll() = 0;
-                virtual void TriggerRedrawOnDie() = 0;
+                virtual void TriggerTeardown() = 0;
 
                 virtual void TriggerSelection() = 0;
                 virtual void TriggerScroll() = 0;
