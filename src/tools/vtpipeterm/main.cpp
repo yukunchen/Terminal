@@ -96,6 +96,13 @@ void newConsole()
     consoles.push_back(con);
 }
 
+void signalConsole()
+{
+    // The 0th console is always our active one.
+    // This is a test-only scenario to set the window to 30 wide by 10 tall.
+    consoles.at(0)->signalWindow(30, 10);
+}
+
 std::string csi(string seq)
 {
     // Note: This doesn't do anything for the debug console currently. 
@@ -266,6 +273,9 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                         case 't':
                             newConsole();
                             nextConsole();
+                            break;
+                        case 'r':
+                            signalConsole();
                             break;
                         default:
                             *nextBuffer = c;
