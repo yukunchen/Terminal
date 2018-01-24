@@ -15,13 +15,14 @@ Revision History:
 - From components of consrv.h
 - This is a reduced/de-duplicated version of settings that were stored in the registry, link files, and in the console information state.
 --*/
-
 #pragma once
 
 // To prevent invisible windows, set a lower threshold on window alpha channel.
 #define MIN_WINDOW_OPACITY 0x4D // 0x4D is approximately 30% visible/opaque (70% transparent). Valid range is 0x00-0xff.
 #define COLOR_TABLE_SIZE (16)
 #define XTERM_COLOR_TABLE_SIZE (256)
+#include "ConsoleArguments.hpp"
+
 class TextAttribute;
 
 class Settings
@@ -32,6 +33,7 @@ public:
     void ApplyDesktopSpecificDefaults();
 
     void ApplyStartupInfo(_In_ const Settings* const pStartupSettings);
+    void ApplyCommandlineArguments(_In_ const ConsoleArguments& consoleArgs);
     void InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo);
     void Validate();
 

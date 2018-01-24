@@ -30,14 +30,23 @@ typedef NTSTATUS *PNTSTATUS;
 #include <strsafe.h>
 #include <sal.h>
 
+// STL
+#include <string>
+#include <list>
+#include <memory>
+#include <utility>
+#include <vector>
+#include <memory>
+
+// WIL
+#include <wil\Common.h>
+#include <wil\Result.h>
+
 #include <winconp.h>
 #include "..\host\settings.hpp"
 #include <pathcch.h>
 
 #include "conpropsp.hpp"
-
-#include <wil\resource.h>
-#include <wil\result.h>
 
 #pragma region Definitions from DDK (wdm.h)
 FORCEINLINE

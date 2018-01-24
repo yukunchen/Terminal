@@ -13,14 +13,16 @@
 #include <sstream>
 #include <iomanip>
 #include <assert.h>
-
 // Defined inside the console host PTY signal thread.
 #define PTY_SIGNAL_RESIZE_WINDOW 8u
 
-VtConsole::VtConsole(PipeReadCallback const pfnReadCallback, bool const fHeadless)
+VtConsole::VtConsole(PipeReadCallback const pfnReadCallback,
+                     bool const fHeadless,
+                     COORD const initialSize)
 {
     _pfnReadCallback = pfnReadCallback;
     _fHeadless = fHeadless;
+    _lastDimensions = initialSize;
 
     int r = rand();
     std::wstringstream ss;
@@ -249,6 +251,18 @@ void VtConsole::_openConsole3(const std::wstring& command)
     si.hStdError = outPipeConhostSide.get();
     si.dwFlags |= STARTF_USESTDHANDLES;
 
+    if(!(_lastDimensions.X == 0 && _lastDimensions.Y == 0))
+    {
+        // STARTF_USECOUNTCHARS does not work. 
+        // minkernel/console/client/dllinit will write that value to conhost 
+        //  during init of a cmdline application, but because we're starting
+        //  conhost directly, that doesn't work for us.
+        std::wstringstream ss;
+        ss << L" --width " << _lastDimensions.X;
+        ss << L" --height " << _lastDimensions.Y;
+        cmdline += ss.str();
+    }
+
     // Attach signal handle ID onto command line using string stream for formatting
     std::wstringstream signalArg;
     signalArg << L" --signal 0x" << std::hex << HandleToUlong(signalPipeConhostSide.get());
@@ -320,3 +334,18 @@ DWORD VtConsole::_OutputThread()
         }
     }
 }
+
+bool VtConsole::Repaint()
+{
+    std::string seq = "\x1b[7t";
+    return WriteInput(seq);
+}
+
+bool VtConsole::Resize(const unsigned int rows, const unsigned int cols)
+{
+    std::stringstream ss;
+    ss << "\x1b[8;" << rows << ";" << cols << "t";
+    std::string seq = ss.str();
+    return WriteInput(seq);
+}
+
