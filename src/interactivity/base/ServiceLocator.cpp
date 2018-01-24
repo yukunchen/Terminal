@@ -30,12 +30,12 @@ Globals                      ServiceLocator::s_globals;
 void ServiceLocator::RundownAndExit(_In_ HRESULT const hr)
 {
     // MSFT:15506250
-    // In VT I/O Mode, a client application might die before we've rendered 
-    //      the last bit of text they've emitted. So give the VtRenderer one 
+    // In VT I/O Mode, a client application might die before we've rendered
+    //      the last bit of text they've emitted. So give the VtRenderer one
     //      last chance to paint before it is killed.
-    if (s_globals->pRender)
+    if (s_globals.pRender)
     {
-        s_globals->pRender->TriggerTeardown();
+        s_globals.pRender->TriggerTeardown();
     }
 
     // A History Lesson from MSFT: 13576341:

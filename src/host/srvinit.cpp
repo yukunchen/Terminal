@@ -141,7 +141,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
     settings.ApplyStartupInfo(pStartupSettings);
 
     // 0. The settings passed in via commandline arguments. These should override anything else.
-    settings->ApplyCommandlineArguments(ServiceLocator::LocateGlobals()->launchArgs);
+    settings.ApplyCommandlineArguments(ServiceLocator::LocateGlobals().launchArgs);
 
     // Validate all applied settings for correctness against final rules.
     settings.Validate();
