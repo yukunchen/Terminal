@@ -42,6 +42,7 @@ namespace Microsoft
 
                 virtual HRESULT StartPaint() = 0;
                 virtual HRESULT EndPaint() = 0;
+                virtual HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) = 0;
 
                 virtual HRESULT ScrollFrame() = 0;
 
