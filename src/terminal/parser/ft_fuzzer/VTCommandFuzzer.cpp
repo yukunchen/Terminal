@@ -148,11 +148,11 @@ CStringA GenerateFuzzedToken(
     {
         CFuzzType<CStringA> ft(map, cmap, CStringA(""));
         s.AppendFormat("%s%s%s%s%s",
-            GenerateTokenLowProbability(),
+            GenerateTokenLowProbability().GetString(),
             ((CStringA)ft).GetBuffer(),
-            GenerateTokenLowProbability(),
+            GenerateTokenLowProbability().GetString(),
             (i + 1 == manipulations) ? "" : ";",
-            GenerateTokenLowProbability());
+            GenerateTokenLowProbability().GetString());
     }
 
     s.Append(CFuzzChance::SelectOne(tokens, ctokens));
@@ -171,11 +171,11 @@ CStringA GenerateFuzzedOscToken(
     {
         CFuzzType<CStringA> ft(map, cmap, CStringA(""));
         s.AppendFormat("%s%s%s%s%s",
-            GenerateTokenLowProbability(),
+            GenerateTokenLowProbability().GetString(),
             ((CStringA)ft).GetBuffer(),
-            GenerateTokenLowProbability(),
+            GenerateTokenLowProbability().GetString(),
             (i + 1 == manipulations) ? "" : ";",
-            GenerateTokenLowProbability());
+            GenerateTokenLowProbability().GetString());
     }
 
     s.Append(CFuzzChance::SelectOne(tokens, ctokens));
@@ -227,9 +227,9 @@ CStringA GenerateCUXToken2()
     const LPSTR tokens[] = { "7", "8" };
     CStringA cux(ESC);
     cux.AppendFormat("%s%s%s",
-        GenerateTokenLowProbability(),
+        GenerateTokenLowProbability().GetString(),
         CFuzzChance::SelectOne(tokens, ARRAYSIZE(tokens)),
-        GenerateTokenLowProbability());
+        GenerateTokenLowProbability().GetString());
     return cux;
 }
 
@@ -256,9 +256,9 @@ CStringA GenerateHardResetToken()
     CStringA cux(ESC);
 
     cux.AppendFormat("%s%s%s",
-        GenerateTokenLowProbability(),
+        GenerateTokenLowProbability().GetString(),
         CFuzzChance::SelectOne(tokens, ARRAYSIZE(tokens)),
-        GenerateTokenLowProbability());
+        GenerateTokenLowProbability().GetString());
     return cux;
 }
 
@@ -269,9 +269,9 @@ CStringA GenerateSoftResetToken()
     CStringA cux(CSI);
 
     cux.AppendFormat("%s%s%s",
-        GenerateTokenLowProbability(),
+        GenerateTokenLowProbability().GetString(),
         CFuzzChance::SelectOne(tokens, ARRAYSIZE(tokens)),
-        GenerateTokenLowProbability());
+        GenerateTokenLowProbability().GetString());
     return cux;
 }
 
