@@ -279,7 +279,6 @@ void VtConsole::_openConsole3(const std::wstring& command)
         si.wShowWindow = SW_MINIMIZE;
     }    
 
-
     bool fSuccess = !!CreateProcess(
         nullptr,
         &cmdline[0],

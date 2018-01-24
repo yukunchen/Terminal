@@ -477,7 +477,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     SetupOutput();
     SetupInput();
 
-    // handleResize will get our inital terminal dimensions.
+    // handleResize will get our initial terminal dimensions.
     handleResize();
 
     newConsole();  

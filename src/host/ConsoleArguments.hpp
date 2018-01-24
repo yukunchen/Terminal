@@ -162,7 +162,7 @@ namespace WEX {
                                                            L"VT In Pipe: '%ws',\r\n"
                                                            L"VT Out Pipe: '%ws',\r\n"
                                                            L"Vt Mode: '%ws',\r\n"
-                                                           L"WxH: '%dx%d',\r\n"
+                                                           L"WidthxHeight: '%dx%d',\r\n"
                                                            L"ForceV1: '%ws',\r\n"
                                                            L"Headless: '%ws',\r\n"
                                                            L"Create Server Handle: '%ws',\r\n"
