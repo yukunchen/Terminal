@@ -26,6 +26,8 @@ Revision History:
 #include "..\server\ProcessList.h"
 #include "..\server\WaitQueue.h"
 
+#include "..\inc\IDefaultColorProvider.hpp"
+
 // Flags flags
 #define CONSOLE_IS_ICONIC               0x00000001
 #define CONSOLE_OUTPUT_SUSPENDED        0x00000002
@@ -65,11 +67,14 @@ Revision History:
 
 class COOKED_READ_DATA;
 
-class CONSOLE_INFORMATION : public Settings, public Microsoft::Console::IIoProvider
+class CONSOLE_INFORMATION : 
+    public Settings, 
+    public Microsoft::Console::IIoProvider, 
+    public Microsoft::Console::IDefaultColorProvider
 {
 public:
     CONSOLE_INFORMATION();
-    ~CONSOLE_INFORMATION();
+    virtual ~CONSOLE_INFORMATION();
 
     ConsoleProcessList ProcessHandleList;
     InputBuffer* pInputBuffer;
@@ -119,6 +124,9 @@ public:
     InputBuffer* const GetActiveInputBuffer() const;
 
     bool IsInVtIoMode() const;
+
+    COLORREF GetDefaultForeground() const;
+    COLORREF GetDefaultBackground() const;
     
 private:
     CRITICAL_SECTION _csConsoleLock;   // serialize input and output using this

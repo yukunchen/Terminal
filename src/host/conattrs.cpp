@@ -145,3 +145,41 @@ bool FindTableIndex(_In_ COLORREF const Color,
     }
     return false;
 }
+
+// Method Description:
+// - Get a COLORREF for the foreground component of the given legacy attributes.
+// Arguments:
+// - wLegacyAttrs - The legacy attributes to get the foreground color from.
+// - ColorTable - The array of colors to to get the color from.
+// - cColorTable - The number of elements in ColorTable
+// Return Value:
+// - the COLORREF for the foreground component
+COLORREF ForegroundColor(_In_ const WORD wLegacyAttrs,
+                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                         _In_ const size_t cColorTable)
+{
+    const byte iColorTableIndex = LOBYTE(wLegacyAttrs) & FG_ATTRS;
+
+    return (iColorTableIndex < cColorTable && iColorTableIndex >= 0) ?
+           ColorTable[iColorTableIndex] :
+           INVALID_COLOR;
+}
+
+// Method Description:
+// - Get a COLORREF for the background component of the given legacy attributes.
+// Arguments:
+// - wLegacyAttrs - The legacy attributes to get the background color from.
+// - ColorTable - The array of colors to to get the color from.
+// - cColorTable - The number of elements in ColorTable
+// Return Value:
+// - the COLORREF for the background component
+COLORREF BackgroundColor(_In_ const WORD wLegacyAttrs,
+                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                         _In_ const size_t cColorTable)
+{
+    const byte iColorTableIndex = (LOBYTE(wLegacyAttrs) & BG_ATTRS) >> 4;
+
+    return (iColorTableIndex < cColorTable && iColorTableIndex >= 0) ?
+           ColorTable[iColorTableIndex] :
+           INVALID_COLOR;
+}

@@ -165,7 +165,11 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
     WORD wFoundColor = 0;
     if (colorForeground != _LastFG)
     {
-        if (::FindTableIndex(colorForeground, ColorTable, cColorTable, &wFoundColor))
+        if (colorForeground == _colorProvider.GetDefaultForeground())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(true));
+        }
+        else if (::FindTableIndex(colorForeground, ColorTable, cColorTable, &wFoundColor))
         {
             RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, true));
         }
@@ -179,7 +183,11 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(_In_ COLORREF const colorForeground,
 
     if (colorBackground != _LastBG) 
     {
-        if (::FindTableIndex(colorBackground, ColorTable, cColorTable, &wFoundColor))
+        if (colorBackground == _colorProvider.GetDefaultBackground())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(false));
+        }
+        else if (::FindTableIndex(colorBackground, ColorTable, cColorTable, &wFoundColor))
         {
             RETURN_IF_FAILED(_SetGraphicsRendition16Color(wFoundColor, false));
         }
@@ -211,15 +219,29 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(_In_ COLORREF const colorForegrou
 {
     if (colorForeground != _LastFG)
     {
-        const WORD wNearestFg = ::FindNearestTableIndex(colorForeground, ColorTable, cColorTable);
-        RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestFg, true));
+        if (colorForeground == _colorProvider.GetDefaultForeground())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(true));
+        }
+        else
+        {
+            const WORD wNearestFg = ::FindNearestTableIndex(colorForeground, ColorTable, cColorTable);
+            RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestFg, true));
+        }
         _LastFG = colorForeground;
     }
 
     if (colorBackground != _LastBG) 
     {
-        const WORD wNearestBg = ::FindNearestTableIndex(colorBackground, ColorTable, cColorTable);
-        RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestBg, false));
+        if (colorBackground == _colorProvider.GetDefaultBackground())
+        {
+            RETURN_IF_FAILED(_SetGraphicsRenditionDefaultColor(false));
+        }
+        else
+        {
+            const WORD wNearestBg = ::FindNearestTableIndex(colorBackground, ColorTable, cColorTable);
+            RETURN_IF_FAILED(_SetGraphicsRendition16Color(wNearestBg, false));
+        }
         _LastBG = colorBackground;
     }
 
