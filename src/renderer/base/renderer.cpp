@@ -121,9 +121,10 @@ HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
 // - HRESULT S_OK, GDI error, Safe Math error, or state/argument errors.
 HRESULT Renderer::PaintFrame()
 {
-    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-        return _PaintFrameForEngine(pEngine);
-    });
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
+    }
 
     return S_OK;
 }
