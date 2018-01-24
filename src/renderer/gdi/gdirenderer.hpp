@@ -112,10 +112,8 @@ namespace Microsoft
                 RECT _rcInvalid;
                 bool _fInvalidRectUsed;
 
-                // NOTE: Valid COLORREFs are of the pattern 0x00bbggrr. 
-                //  Set the initial one in the static to -1 as the highest byte of a valid color is always 0.
-                COLORREF _lastFg = INVALID_COLOR;
-                COLORREF _lastBg = INVALID_COLOR;
+                COLORREF _lastFg;
+                COLORREF _lastBg;
 
                 HRESULT _InvalidCombine(_In_ const RECT* const prc);
                 HRESULT _InvalidOffset(_In_ const POINT* const ppt);

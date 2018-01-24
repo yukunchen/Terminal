@@ -7,15 +7,17 @@
 #include "precomp.h"
 #include "XtermEngine.hpp"
 #pragma hdrstop
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
+                         _In_ const IDefaultColorProvider& colorProvider,
                          _In_ const Viewport initialViewport,
                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
                          _In_ const WORD cColorTable,
                          _In_ const bool fUseAsciiOnly) :
-    VtEngine(std::move(hPipe), initialViewport),
+    VtEngine(std::move(hPipe), colorProvider, initialViewport),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
     _fUseAsciiOnly(fUseAsciiOnly)

@@ -197,7 +197,8 @@ HRESULT VtEngine::_CursorHome()
 // Method Description:
 // - Formats and writes a sequence to change the current text attributes.
 // Arguments:
-// - <none>
+// - wAttr: Windows color table index to emit as a VT sequence
+// - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_SetGraphicsRendition16Color(_In_ const WORD wAttr,
@@ -228,7 +229,8 @@ HRESULT VtEngine::_SetGraphicsRendition16Color(_In_ const WORD wAttr,
 // - Formats and writes a sequence to change the current text attributes to an
 //      RGB color.
 // Arguments:
-// - <none>
+// - color: The color to emit a VT sequence for
+// - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 HRESULT VtEngine::_SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
@@ -243,6 +245,19 @@ HRESULT VtEngine::_SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
     DWORD const b = GetBValue(color);
 
     return _WriteFormattedString(&fmt, r, g, b);
+}
+
+// Method Description:
+// - Formats and writes a sequence to change the current text attributes.
+// Arguments:
+// - fIsForeground: true if we should emit the foreground sequence, false for background
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+HRESULT VtEngine::_SetGraphicsRenditionDefaultColor(_In_ const bool fIsForeground)
+{
+    const std::string fmt = fIsForeground ? ("\x1b[39m") : ("\x1b[49m");
+
+    return _Write(fmt);
 }
 
 // Method Description:

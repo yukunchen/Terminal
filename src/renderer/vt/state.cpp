@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 #include "vtrenderer.hpp"
+#include "../../inc/conattrs.hpp"
 
 // For _vcprintf
 #include <conio.h>
@@ -13,6 +14,7 @@
 
 #pragma hdrstop
 
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
@@ -23,8 +25,11 @@ using namespace Microsoft::Console::Types;
 // - <none>
 // Return Value:
 // - An instance of a Renderer.
-VtEngine::VtEngine(_In_ wil::unique_hfile pipe, _In_ const Viewport initialViewport) :
+VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
+                   _In_ const IDefaultColorProvider& colorProvider,
+                   _In_ const Viewport initialViewport) :
     _hFile(std::move(pipe)),
+    _colorProvider(colorProvider),
     _LastFG(INVALID_COLOR),
     _LastBG(INVALID_COLOR),
     _lastViewport(initialViewport),

@@ -15,6 +15,7 @@ Author(s):
 #pragma once
 
 #include "../inc/IRenderEngine.hpp"
+#include "../../inc/IDefaultColorProvider.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include <string>
 #include <functional>
@@ -37,6 +38,7 @@ public:
     static const size_t ERASE_CHARACTER_STRING_LENGTH = 8;
 
     VtEngine(_In_ wil::unique_hfile hPipe,
+             _In_ const Microsoft::Console::IDefaultColorProvider& colorProvider,
              _In_ const Microsoft::Console::Types::Viewport initialViewport);
 
     virtual ~VtEngine() override = default;
@@ -94,6 +96,8 @@ public:
 protected:
     wil::unique_hfile _hFile;
 
+    const Microsoft::Console::IDefaultColorProvider& _colorProvider;
+
     COLORREF _LastFG;
     COLORREF _LastBG;
 
@@ -137,6 +141,7 @@ protected:
                                          _In_ const bool fIsForeground);
     HRESULT _SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
                                           _In_ const bool fIsForeground);
+    HRESULT _SetGraphicsRenditionDefaultColor(_In_ const bool fIsForeground);
     HRESULT _ResizeWindow(_In_ const short sWidth, _In_ const short sHeight);
 
     virtual HRESULT _MoveCursor(_In_ const COORD coord) = 0;

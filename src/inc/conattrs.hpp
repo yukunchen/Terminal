@@ -18,6 +18,14 @@ bool FindTableIndex(_In_ COLORREF const Color,
 
 WORD XtermToWindowsIndex(_In_ const size_t index);
 
+COLORREF ForegroundColor(_In_ const WORD wLegacyAttrs,
+                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                         _In_ const size_t cColorTable);
+
+COLORREF BackgroundColor(_In_ const WORD wLegacyAttrs,
+                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                         _In_ const size_t cColorTable);
+
 const WORD WINDOWS_RED_ATTR     = FOREGROUND_RED;
 const WORD WINDOWS_GREEN_ATTR   = FOREGROUND_GREEN;
 const WORD WINDOWS_BLUE_ATTR    = FOREGROUND_BLUE;
@@ -27,3 +35,7 @@ const WORD XTERM_RED_ATTR       = 0x01;
 const WORD XTERM_GREEN_ATTR     = 0x02;
 const WORD XTERM_BLUE_ATTR      = 0x04;
 const WORD XTERM_BRIGHT_ATTR    = 0x08;
+
+// Valid COLORREFs are of the pattern 0x00bbggrr. -1 works as an invalid color, 
+//      as the highest byte of a valid color is always 0.
+const COLORREF INVALID_COLOR = 0xffffffff;
