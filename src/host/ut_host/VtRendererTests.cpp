@@ -28,10 +28,27 @@ namespace Microsoft
         };
     };
 };
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
+class VtRenderTestColorProvider : public Microsoft::Console::IDefaultColorProvider
+{
+public:
+    virtual ~VtRenderTestColorProvider() = default;
+
+    COLORREF GetDefaultForeground() const
+    {
+        return RGB(0xff, 0xff, 0xff);
+    }
+    COLORREF GetDefaultBackground() const
+    {
+        return RGB(0, 0, 0);
+    }
+};
+
 COLORREF g_ColorTable[COLOR_TABLE_SIZE];
+VtRenderTestColorProvider p;
 
 // Sometimes when we're expecting the renderengine to not write anything,
 // we'll add this to the expected input, and manually write this to the callback
@@ -170,7 +187,7 @@ void VtRendererTest::TestPaintXterm(XtermEngine& engine, std::function<void()> p
 void VtRendererTest::VtSequenceHelperTests()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
 
     engine->SetTestCallback(pfn);
@@ -225,7 +242,7 @@ void VtRendererTest::VtSequenceHelperTests()
 void VtRendererTest::Xterm256TestInvalidate()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -373,7 +390,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 void VtRendererTest::Xterm256TestColors()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -446,7 +463,13 @@ void VtRendererTest::Xterm256TestColors()
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to something not in the table----"
         ));
-        qExpectedInput.push_back("\x1b[48;2;0;0;0m"); // Background DARK_BLACK
+        qExpectedInput.push_back("\x1b[48;2;1;1;1m"); // Background DARK_BLACK
+        engine->UpdateDrawingBrushes(g_ColorTable[7], 0x010101, 0, false);
+
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the BG to the 'Default' background----"
+        ));
+        qExpectedInput.push_back("\x1b[49m"); // Background DARK_BLACK
         engine->UpdateDrawingBrushes(g_ColorTable[7], 0x000000, 0, false);
 
 
@@ -473,7 +496,7 @@ void VtRendererTest::Xterm256TestColors()
 void VtRendererTest::Xterm256TestCursor()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    std::unique_ptr<Xterm256Engine> engine = std::make_unique<Xterm256Engine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -586,7 +609,7 @@ void VtRendererTest::Xterm256TestCursor()
 void VtRendererTest::XtermTestInvalidate()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE), false);
+    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -733,7 +756,7 @@ void VtRendererTest::XtermTestInvalidate()
 void VtRendererTest::XtermTestColors()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE), false);
+    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -768,6 +791,12 @@ void VtRendererTest::XtermTestColors()
             L"----Change only the BG to something not in the table----"
         ));
         qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
+        engine->UpdateDrawingBrushes(g_ColorTable[7], 0x010101, 0, false);
+
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the BG to the 'Default' background----"
+        ));
+        qExpectedInput.push_back("\x1b[49m"); // Background DARK_BLACK
         engine->UpdateDrawingBrushes(g_ColorTable[7], 0x000000, 0, false);
 
 
@@ -795,7 +824,7 @@ void VtRendererTest::XtermTestColors()
 void VtRendererTest::XtermTestCursor()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE), false);
+    std::unique_ptr<XtermEngine> engine = std::make_unique<XtermEngine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE), false);
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -909,7 +938,7 @@ void VtRendererTest::XtermTestCursor()
 void VtRendererTest::WinTelnetTestInvalidate()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<WinTelnetEngine> engine = std::make_unique<WinTelnetEngine>(std::move(hFile), SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    std::unique_ptr<WinTelnetEngine> engine = std::make_unique<WinTelnetEngine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -992,7 +1021,7 @@ void VtRendererTest::WinTelnetTestInvalidate()
 void VtRendererTest::WinTelnetTestColors()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<WinTelnetEngine> engine = std::make_unique<WinTelnetEngine>(std::move(hFile), SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    std::unique_ptr<WinTelnetEngine> engine = std::make_unique<WinTelnetEngine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 
@@ -1027,6 +1056,12 @@ void VtRendererTest::WinTelnetTestColors()
             L"----Change only the BG to something not in the table----"
         ));
         qExpectedInput.push_back("\x1b[40m"); // Background DARK_BLACK
+        engine->UpdateDrawingBrushes(g_ColorTable[7], 0x010101, 0, false);
+
+        Log::Comment(NoThrowString().Format(
+            L"----Change only the BG to the 'Default' background----"
+        ));
+        qExpectedInput.push_back("\x1b[49m"); // Background DARK_BLACK
         engine->UpdateDrawingBrushes(g_ColorTable[7], 0x000000, 0, false);
 
 
@@ -1053,7 +1088,7 @@ void VtRendererTest::WinTelnetTestColors()
 void VtRendererTest::WinTelnetTestCursor()
 {
     wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
-    std::unique_ptr<WinTelnetEngine> engine = std::make_unique<WinTelnetEngine>(std::move(hFile), SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    std::unique_ptr<WinTelnetEngine> engine = std::make_unique<WinTelnetEngine>(std::move(hFile), p, SetUpViewport(), g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
     auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
     engine->SetTestCallback(pfn);
 

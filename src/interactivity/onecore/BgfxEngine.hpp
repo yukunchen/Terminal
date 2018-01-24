@@ -42,6 +42,7 @@ namespace Microsoft
                 HRESULT InvalidateScroll(const COORD* const pcoordDelta);
                 HRESULT InvalidateAll();
                 HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) override;
+                HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) override;
 
                 HRESULT StartPaint();
                 HRESULT EndPaint();

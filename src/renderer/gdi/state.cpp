@@ -7,7 +7,7 @@
 #include "precomp.h"
 
 #include "gdirenderer.hpp"
-
+#include "../../inc/conattrs.hpp"
 #include <winuserp.h> // for GWL_CONSOLE_BKCOLOR
 
 #pragma hdrstop
@@ -27,6 +27,8 @@ GdiEngine::GdiEngine() :
     _hbitmapMemorySurface(nullptr),
     _cPolyText(0),
     _fInvalidRectUsed(false),
+    _lastFg(INVALID_COLOR),
+    _lastBg(INVALID_COLOR),
     _fPaintStarted(false)
 {
     ZeroMemory(_pPolyText, sizeof(POLYTEXTW) * s_cPolyTextCache);

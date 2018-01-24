@@ -2510,10 +2510,7 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
 
 // Method Description:
 // - Initialize the dimensions of the screenbuffer. If we're in VT I/O mode,
-//      then use the viewport dimensions as out initial size, not the given
-//      screen buffer size.
-// TODO: MSFT:15438696 - reverse this, so that the viewport becomes the size of
-//      the screenbuffer, and update the rest of CreateInstance to match.
+//      then use the screen buffer dimensions as the size of the viewport.
 // Arguments:
 // - coordScreenBufferSize: The initial dimensions of the screen buffer, in characters.
 // - coordViewportSize: The initial dimensions of the viewport, in characters.
@@ -2522,9 +2519,11 @@ HRESULT SCREEN_INFORMATION::VtEraseAll()
 void SCREEN_INFORMATION::_InitializeBufferDimensions(_In_ const COORD coordScreenBufferSize,
                                                      _In_ const COORD coordViewportSize)
 {
-    Viewport viewport = Viewport::FromDimensions({0, 0}, coordViewportSize);
+    Viewport viewport = Viewport::FromDimensions({0, 0},
+                                                 _IsInPtyMode() ?
+                                                    coordScreenBufferSize :
+                                                    coordViewportSize);
     _srBufferViewport = viewport.ToInclusive();
 
-    SetScreenBufferSize(_IsInPtyMode() ? viewport.Dimensions() : coordScreenBufferSize);
-
+    SetScreenBufferSize(coordScreenBufferSize);
 }

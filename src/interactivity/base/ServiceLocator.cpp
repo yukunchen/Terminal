@@ -29,6 +29,15 @@ Globals                      ServiceLocator::s_globals;
 
 void ServiceLocator::RundownAndExit(_In_ HRESULT const hr)
 {
+    // MSFT:15506250
+    // In VT I/O Mode, a client application might die before we've rendered 
+    //      the last bit of text they've emitted. So give the VtRenderer one 
+    //      last chance to paint before it is killed.
+    if (s_globals->pRender)
+    {
+        s_globals->pRender->TriggerTeardown();
+    }
+
     // A History Lesson from MSFT: 13576341:
     // We introduced RundownAndExit to give services that hold onto important handles
     // an opportunity to let those go when we decide to exit from the console for various reasons.

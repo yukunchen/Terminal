@@ -97,6 +97,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 {
     // We will find and locate all relevant preference settings and then create the console here.
     // The precedence order for settings is:
+    // 0. Launch arguments passed on the commandline.
     // 1. STARTUPINFO settings
     // 2a. Shortcut/Link settings
     // 2b. Registry specific settings
@@ -138,6 +139,9 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
 
     // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
     settings.ApplyStartupInfo(pStartupSettings);
+
+    // 0. The settings passed in via commandline arguments. These should override anything else.
+    settings->ApplyCommandlineArguments(ServiceLocator::LocateGlobals()->launchArgs);
 
     // Validate all applied settings for correctness against final rules.
     settings.Validate();
@@ -418,7 +422,6 @@ HRESULT ApiRoutines::GetConsoleLangIdImpl(_Out_ LANGID* const pLangId)
 NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONSOLE_API_CONNECTINFO Cac)
 {
     CONSOLE_SERVER_MSG Data = { 0 };
-
     // Try to receive the data sent by the client.
     NTSTATUS Status = NTSTATUS_FROM_HRESULT(Message->ReadMessageInput(0, &Data, sizeof(Data)));
     if (!NT_SUCCESS(Status))

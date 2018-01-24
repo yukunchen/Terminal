@@ -124,3 +124,25 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 {
     return pInputBuffer;
 }
+
+// Method Description:
+// - Return the default foreground color of the console.
+// Arguments:
+// - <none>
+// Return Value:
+// - the default foreground color of the console.
+COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const
+{
+    return ForegroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+}
+
+// Method Description:
+// - Return the default background color of the console.
+// Arguments:
+// - <none>
+// Return Value:
+// - the default background color of the console.
+COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const
+{
+    return BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+}

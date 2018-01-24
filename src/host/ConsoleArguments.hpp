@@ -48,6 +48,9 @@ public:
     std::wstring GetVtMode() const;
     bool GetForceV1() const;
 
+    short GetWidth() const;
+    short GetHeight() const;
+
     static const std::wstring VT_IN_PIPE_ARG;
     static const std::wstring VT_OUT_PIPE_ARG;
     static const std::wstring VT_MODE_ARG;
@@ -58,6 +61,8 @@ public:
     static const std::wstring CLIENT_COMMANDLINE_ARG;
     static const std::wstring FORCE_V1_ARG;
     static const std::wstring FILEPATH_LEADER_PREFIX;
+    static const std::wstring WIDTH_ARG;
+    static const std::wstring HEIGHT_ARG;
 
 private:
 #ifdef UNIT_TESTING
@@ -69,6 +74,8 @@ private:
                      _In_ const std::wstring vtInPipe,
                      _In_ const std::wstring vtOutPipe,
                      _In_ const std::wstring vtMode,
+                     _In_ const short width,
+                     _In_ const short height,
                      _In_ const bool forceV1,
                      _In_ const bool headless,
                      _In_ const bool createServerHandle,
@@ -81,6 +88,8 @@ private:
         _vtInPipe(vtInPipe),
         _vtOutPipe(vtOutPipe),
         _vtMode(vtMode),
+        _width(width),
+        _height(height),
         _forceV1(forceV1),
         _headless(headless),
         _createServerHandle(createServerHandle),
@@ -106,16 +115,28 @@ private:
     bool _forceV1;
     bool _headless;
 
+    short _width;
+    short _height;
+
     bool _createServerHandle;
     DWORD _serverHandle;
     DWORD _signalHandle;
 
-    HRESULT _GetClientCommandline(_In_ std::vector<std::wstring>& args, _In_ const size_t index, _In_ const bool skipFirst);
+    HRESULT _GetClientCommandline(_In_ std::vector<std::wstring>& args,
+                                  _In_ const size_t index,
+                                  _In_ const bool skipFirst);
 
-    static void s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In_ size_t& index);
-    static HRESULT s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args, _Inout_ size_t& index, _Out_opt_ std::wstring* const pSetting);
+    static void s_ConsumeArg(_Inout_ std::vector<std::wstring>& args,
+                             _In_ size_t& index);
+    static HRESULT s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
+                                      _Inout_ size_t& index,
+                                      _Out_opt_ std::wstring* const pSetting);
+    static HRESULT s_GetArgumentValue(_Inout_ std::vector<std::wstring>& args,
+                                      _Inout_ size_t& index,
+                                      _Out_opt_ short* const pSetting);
     
-    static HRESULT s_ParseHandleArg(_In_ const std::wstring& handleAsText, _Inout_ DWORD& handleAsVal);
+    static HRESULT s_ParseHandleArg(_In_ const std::wstring& handleAsText,
+                                    _Inout_ DWORD& handleAsVal);
 
     static bool s_IsValidHandle(_In_ const HANDLE handle);
 
@@ -141,6 +162,7 @@ namespace WEX {
                                                            L"VT In Pipe: '%ws',\r\n"
                                                            L"VT Out Pipe: '%ws',\r\n"
                                                            L"Vt Mode: '%ws',\r\n"
+                                                           L"WidthxHeight: '%dx%d',\r\n"
                                                            L"ForceV1: '%ws',\r\n"
                                                            L"Headless: '%ws',\r\n"
                                                            L"Create Server Handle: '%ws',\r\n"
@@ -155,6 +177,8 @@ namespace WEX {
                                                            ci.GetVtInPipe().c_str(),
                                                            ci.GetVtOutPipe().c_str(),
                                                            ci.GetVtMode().c_str(),
+                                                           ci.GetWidth(), 
+                                                           ci.GetHeight(),
                                                            s_ToBoolString(ci.GetForceV1()),
                                                            s_ToBoolString(ci.IsHeadless()),
                                                            s_ToBoolString(ci.ShouldCreateServerHandle()),
@@ -185,6 +209,8 @@ namespace WEX {
                     expected.GetVtInPipe() == actual.GetVtInPipe() &&
                     expected.GetVtOutPipe() == actual.GetVtOutPipe() &&
                     expected.GetVtMode() == actual.GetVtMode() &&
+                    expected.GetWidth() == actual.GetWidth() &&
+                    expected.GetHeight() == actual.GetHeight() &&
                     expected.GetForceV1() == actual.GetForceV1() &&
                     expected.IsHeadless() == actual.IsHeadless() &&
                     expected.ShouldCreateServerHandle() == actual.ShouldCreateServerHandle() &&
@@ -212,6 +238,8 @@ namespace WEX {
                     object.GetVtOutPipe().empty() &&
                     object.GetVtMode().empty() &&
                     !object.GetForceV1() &&
+                    (object.GetWidth() == 0) &&
+                    (object.GetHeight() == 0) &&
                     !object.IsHeadless() &&
                     !object.ShouldCreateServerHandle() &&
                     object.GetServerHandle() == 0 &&

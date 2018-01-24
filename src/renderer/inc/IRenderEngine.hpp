@@ -15,10 +15,6 @@ Author(s):
 
 #include "FontInfoDesired.hpp"
 
-// Valid COLORREFs are of the pattern 0x00bbggrr. -1 works as an invalid color, 
-//      as the highest byte of a valid color is always 0.
-const COLORREF INVALID_COLOR = 0xffffffff;
-
 namespace Microsoft
 {
     namespace Console
@@ -42,6 +38,7 @@ namespace Microsoft
 
                 virtual HRESULT StartPaint() = 0;
                 virtual HRESULT EndPaint() = 0;
+                virtual HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) = 0;
 
                 virtual HRESULT ScrollFrame() = 0;
 

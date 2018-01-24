@@ -52,6 +52,21 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
     TEST_METHOD(BasicAnonymousPipeOpeningWithSignalChannelTest);
 };
 
+class VtIoTestColorProvider : public Microsoft::Console::IDefaultColorProvider
+{
+public:
+    virtual ~VtIoTestColorProvider() = default;
+    COLORREF GetDefaultForeground() const
+    {
+        return RGB(0xff, 0xff, 0xff);
+    }
+    COLORREF GetDefaultBackground() const
+    {
+        return RGB(0, 0, 0);
+    }
+};
+
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
@@ -661,6 +676,7 @@ void VtIoTests::DtorTestJustEngine()
 
     const WORD colorTableSize = 16;
     COLORREF colorTable[colorTableSize];
+    VtIoTestColorProvider p;
 
     Log::Comment(NoThrowString().Format(
         L"New some engines and delete them"
@@ -673,28 +689,28 @@ void VtIoTests::DtorTestJustEngine()
 
         wil::unique_hfile hOutputFile;
         hOutputFile.reset(INVALID_HANDLE_VALUE);
-		auto pRenderer256 = new Xterm256Engine(std::move(hOutputFile), SetUpViewport(), colorTable, colorTableSize);
+        auto pRenderer256 = new Xterm256Engine(std::move(hOutputFile), p, SetUpViewport(), colorTable, colorTableSize);
         Log::Comment(NoThrowString().Format(L"Made Xterm256Engine"));
         delete pRenderer256;
         Log::Comment(NoThrowString().Format(L"Deleted."));
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
 
-        auto pRenderEngineXterm = new XtermEngine(std::move(hOutputFile), SetUpViewport(), colorTable, colorTableSize, false);
+        auto pRenderEngineXterm = new XtermEngine(std::move(hOutputFile), p, SetUpViewport(), colorTable, colorTableSize, false);
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
         delete pRenderEngineXterm;
         Log::Comment(NoThrowString().Format(L"Deleted."));
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
 
-        auto pRenderEngineXtermAscii = new XtermEngine(std::move(hOutputFile), SetUpViewport(), colorTable, colorTableSize, true);
+        auto pRenderEngineXtermAscii = new XtermEngine(std::move(hOutputFile), p, SetUpViewport(), colorTable, colorTableSize, true);
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
         delete pRenderEngineXtermAscii;
         Log::Comment(NoThrowString().Format(L"Deleted."));
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
 
-        auto pRenderEngineWinTelnet = new WinTelnetEngine(std::move(hOutputFile), SetUpViewport(), colorTable, colorTableSize);
+        auto pRenderEngineWinTelnet = new WinTelnetEngine(std::move(hOutputFile), p, SetUpViewport(), colorTable, colorTableSize);
         Log::Comment(NoThrowString().Format(L"Made WinTelnetEngine"));
         delete pRenderEngineWinTelnet;
         Log::Comment(NoThrowString().Format(L"Deleted."));
@@ -713,6 +729,7 @@ void VtIoTests::DtorTestDeleteVtio()
 
     const WORD colorTableSize = 16;
     COLORREF colorTable[colorTableSize];
+    VtIoTestColorProvider p;
 
     Log::Comment(NoThrowString().Format(
         L"New some engines and delete them"
@@ -730,6 +747,7 @@ void VtIoTests::DtorTestDeleteVtio()
         VtIo* vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
+                                                                  p,
                                                                   SetUpViewport(),
                                                                   colorTable,
                                                                   colorTableSize);
@@ -741,6 +759,7 @@ void VtIoTests::DtorTestDeleteVtio()
         vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                                                               p,
                                                                SetUpViewport(),
                                                                colorTable,
                                                                colorTableSize,
@@ -753,6 +772,7 @@ void VtIoTests::DtorTestDeleteVtio()
         vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                                                               p,
                                                                SetUpViewport(),
                                                                colorTable,
                                                                colorTableSize,
@@ -765,6 +785,7 @@ void VtIoTests::DtorTestDeleteVtio()
         vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
+                                                                   p,
                                                                    SetUpViewport(),
                                                                    colorTable,
                                                                    colorTableSize);
@@ -786,6 +807,7 @@ void VtIoTests::DtorTestStackAlloc()
 
     const WORD colorTableSize = 16;
     COLORREF colorTable[colorTableSize];
+    VtIoTestColorProvider p;
 
     Log::Comment(NoThrowString().Format(
         L"make some engines and let them fall out of scope"
@@ -802,6 +824,7 @@ void VtIoTests::DtorTestStackAlloc()
         {
             VtIo vtio = VtIo();
             vtio._pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
+                                                                     p,
                                                                      SetUpViewport(),
                                                                      colorTable,
                                                                      colorTableSize);
@@ -811,6 +834,7 @@ void VtIoTests::DtorTestStackAlloc()
         {
             VtIo vtio = VtIo();
             vtio._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                                                                  p,
                                                                   SetUpViewport(),
                                                                   colorTable,
                                                                   colorTableSize,
@@ -821,6 +845,7 @@ void VtIoTests::DtorTestStackAlloc()
         {
             VtIo vtio = VtIo();
             vtio._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                                                                  p,
                                                                   SetUpViewport(),
                                                                   colorTable,
                                                                   colorTableSize,
@@ -831,6 +856,7 @@ void VtIoTests::DtorTestStackAlloc()
         {
             VtIo vtio = VtIo();
             vtio._pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
+                                                                      p,
                                                                       SetUpViewport(),
                                                                       colorTable,
                                                                       colorTableSize);
@@ -850,6 +876,7 @@ void VtIoTests::DtorTestStackAllocMany()
 
     const WORD colorTableSize = 16;
     COLORREF colorTable[colorTableSize];
+    VtIoTestColorProvider p;
 
     Log::Comment(NoThrowString().Format(
         L"Try an make a whole bunch all at once, and have them all fall out of scope at once."
@@ -865,6 +892,7 @@ void VtIoTests::DtorTestStackAllocMany()
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio1 = VtIo();
             vtio1._pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
+                                                                      p,
                                                                       SetUpViewport(),
                                                                       colorTable,
                                                                       colorTableSize);
@@ -872,6 +900,7 @@ void VtIoTests::DtorTestStackAllocMany()
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio2 = VtIo();
             vtio2._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                                                                   p,
                                                                    SetUpViewport(),
                                                                    colorTable,
                                                                    colorTableSize,
@@ -880,6 +909,7 @@ void VtIoTests::DtorTestStackAllocMany()
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio3 = VtIo();
             vtio3._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                                                                   p,
                                                                    SetUpViewport(),
                                                                    colorTable,
                                                                    colorTableSize,
@@ -888,6 +918,7 @@ void VtIoTests::DtorTestStackAllocMany()
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio4 = VtIo();
             vtio4._pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
+                                                                       p,
                                                                        SetUpViewport(),
                                                                        colorTable,
                                                                        colorTableSize);
