@@ -373,7 +373,7 @@ void Settings::_InitColorTable()
 //   are optimized for OneCore.
 // Arguments:
 // - <none>
-// Return Value: 
+// Return Value:
 // - <none> - Adjusts internal state only.
 void Settings::ApplyDesktopSpecificDefaults()
 {
@@ -730,7 +730,7 @@ void Settings::SetFillAttribute(_In_ const WORD wFillAttribute)
     _wFillAttribute = wFillAttribute;
 
     // Do not allow the default fill attribute to use any attrs other than fg/bg colors.
-    // This prevents us from accidentally inverting everything or suddenly drawing lines 
+    // This prevents us from accidentally inverting everything or suddenly drawing lines
     // everywhere by defualt.
     ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 }
@@ -744,7 +744,7 @@ void Settings::SetPopupFillAttribute(_In_ const WORD wPopupFillAttribute)
     _wPopupFillAttribute = wPopupFillAttribute;
 
     // Do not allow the default popup fill attribute to use any attrs other than fg/bg colors.
-    // This prevents us from accidentally inverting everything or suddenly drawing lines 
+    // This prevents us from accidentally inverting everything or suddenly drawing lines
     // everywhere by defualt.
     ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 }
