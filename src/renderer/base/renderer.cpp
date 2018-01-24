@@ -121,53 +121,59 @@ HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
 // - HRESULT S_OK, GDI error, Safe Math error, or state/argument errors.
 HRESULT Renderer::PaintFrame()
 {
-    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-        THROW_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), pEngine);
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
+    }
 
-        // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
-        _CheckViewportAndScroll();
+    return S_OK;
+}
 
-        // Try to start painting a frame
-        HRESULT const hr = pEngine->StartPaint();
-        THROW_IF_FAILED(hr); // Return errors
-        RETURN_HR_IF(S_OK, S_FALSE == hr); // Return early if there's nothing to paint.
+HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
+{
+    THROW_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), pEngine);
 
-        auto endPaint = wil::ScopeExit([&]()
-        {
-            LOG_IF_FAILED(pEngine->EndPaint());
-        });
+    // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
+    _CheckViewportAndScroll();
 
-        // A. Prep Colors
-        RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData->GetDefaultBrushColors(), true));
+    // Try to start painting a frame
+    HRESULT const hr = pEngine->StartPaint();
+    THROW_IF_FAILED(hr); // Return errors
+    RETURN_HR_IF(S_OK, S_FALSE == hr); // Return early if there's nothing to paint.
 
-        // B. Clear Overlays
-        RETURN_IF_FAILED(_ClearOverlays(pEngine));
-
-        // C. Perform Scroll Operations
-        RETURN_IF_FAILED(_PerformScrolling(pEngine));
-
-        // 1. Paint Background
-        RETURN_IF_FAILED(_PaintBackground(pEngine));
-
-        // 2. Paint Rows of Text
-        _PaintBufferOutput(pEngine);
-
-        // 3. Paint Input
-        //_PaintCookedInput(); // unnecessary, input is also stored in the output buffer.
-
-        // 4. Paint IME composition area
-        _PaintImeCompositionString(pEngine);
-
-        // 5. Paint Selection
-        _PaintSelection(pEngine);
-
-        // 6. Paint Cursor
-        _PaintCursor(pEngine);
-
-        // As we leave the scope, EndPaint will be called (declared above)
-        return S_OK;
+    auto endPaint = wil::ScopeExit([&]()
+    {
+        LOG_IF_FAILED(pEngine->EndPaint());
     });
 
+    // A. Prep Colors
+    RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData->GetDefaultBrushColors(), true));
+
+    // B. Clear Overlays
+    RETURN_IF_FAILED(_ClearOverlays(pEngine));
+
+    // C. Perform Scroll Operations
+    RETURN_IF_FAILED(_PerformScrolling(pEngine));
+
+    // 1. Paint Background
+    RETURN_IF_FAILED(_PaintBackground(pEngine));
+
+    // 2. Paint Rows of Text
+    _PaintBufferOutput(pEngine);
+
+    // 3. Paint Input
+    //_PaintCookedInput(); // unnecessary, input is also stored in the output buffer.
+
+    // 4. Paint IME composition area
+    _PaintImeCompositionString(pEngine);
+
+    // 5. Paint Selection
+    _PaintSelection(pEngine);
+
+    // 6. Paint Cursor
+    _PaintCursor(pEngine);
+
+    // As we leave the scope, EndPaint will be called (declared above)
     return S_OK;
 }
 
@@ -240,6 +246,28 @@ void Renderer::TriggerRedrawAll()
     });
 
     _NotifyPaintFrame();
+}
+
+// Method Description:
+// - Called when the host is about to die, to give the renderer one last chance 
+//      to paint before the host exits. 
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerTeardown()
+{
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        bool fEngineRequestsRepaint = false;
+        HRESULT hr = pEngine->PrepareForTeardown(&fEngineRequestsRepaint);
+        LOG_IF_FAILED(hr);
+
+        if (SUCCEEDED(hr) && fEngineRequestsRepaint)
+        {
+            _PaintFrameForEngine(pEngine);
+        }
+    }
 }
 
 // Routine Description:
