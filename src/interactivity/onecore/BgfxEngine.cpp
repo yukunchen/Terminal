@@ -41,7 +41,7 @@ HRESULT BgfxEngine::Invalidate(const SMALL_RECT* const psrRegion)
     return S_OK;
 }
 
-HRESULT WddmConEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
+HRESULT BgfxEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/)
 {
     return S_OK;
 }
