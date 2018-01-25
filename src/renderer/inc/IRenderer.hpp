@@ -35,11 +35,12 @@ namespace Microsoft
                 virtual void TriggerRedraw(_In_ const COORD* const pcoord) = 0;
 
                 virtual void TriggerRedrawAll() = 0;
+                virtual void TriggerTeardown() = 0;
 
                 virtual void TriggerSelection() = 0;
                 virtual void TriggerScroll() = 0;
                 virtual void TriggerScroll(_In_ const COORD* const pcoordDelta) = 0;
-
+                virtual void TriggerCircling() = 0;
                 virtual void TriggerFontChange(_In_ int const iDpi,
                                                _In_ FontInfoDesired const * const pFontInfoDesired,
                                                _Out_ FontInfo* const pFontInfo) = 0;

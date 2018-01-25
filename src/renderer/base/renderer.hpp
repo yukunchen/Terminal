@@ -50,10 +50,13 @@ namespace Microsoft
                 void TriggerRedraw(_In_ const SMALL_RECT* const psrRegion);
                 void TriggerRedraw(_In_ const COORD* const pcoord);
                 void TriggerRedrawAll();
+                void TriggerTeardown() override;
 
                 void TriggerSelection();
                 void TriggerScroll();
                 void TriggerScroll(_In_ const COORD* const pcoordDelta);
+
+                void TriggerCircling() override;
 
                 void TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo);
 
@@ -76,6 +79,8 @@ namespace Microsoft
 
                 RenderThread* _pThread;
                 void _NotifyPaintFrame();
+
+                HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine);
 
                 bool _CheckViewportAndScroll();
 

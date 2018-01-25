@@ -41,6 +41,8 @@ namespace Microsoft
                 HRESULT InvalidateSelection(const SMALL_RECT* const rgsrSelection, UINT const cRectangles);
                 HRESULT InvalidateScroll(const COORD* const pcoordDelta);
                 HRESULT InvalidateAll();
+                HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) override;
+                HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) override;
 
                 HRESULT StartPaint();
                 HRESULT EndPaint();

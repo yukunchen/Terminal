@@ -15,6 +15,7 @@
 #include "handle.h"
 #include "misc.h"
 #include "../types/inc/convert.hpp"
+#include "../types/inc/viewport.hpp"
 
 #include "ApiRoutines.h"
 
@@ -28,6 +29,8 @@
 #define INPUT_MODES (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT)
 #define OUTPUT_MODES (ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN | ENABLE_LVB_GRID_WORLDWIDE)
 #define PRIVATE_MODES (ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_EXTENDED_FLAGS)
+
+using namespace Microsoft::Console::Types;
 
 HRESULT ApiRoutines::GetConsoleInputModeImpl(_In_ InputBuffer* const pContext, _Out_ ULONG* const pMode)
 {
@@ -386,12 +389,15 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(_In_ SCREEN_INFORMATION* c
     return DoSrvSetScreenBufferInfo(pContext->GetActiveBuffer(), pScreenBufferInfoEx);
 }
 
-HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
+HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo,
+                                 _In_ const CONSOLE_SCREEN_BUFFER_INFOEX* const pInfo)
 {
     CONSOLE_INFORMATION* const pConsoleInfo = ServiceLocator::LocateGlobals()->getConsoleInformation();
 
     COORD const coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
-    if (pInfo->dwSize.X != coordScreenBufferSize.X || (pInfo->dwSize.Y != coordScreenBufferSize.Y))
+    COORD const requestedBufferSize = pInfo->dwSize;
+    if (requestedBufferSize.X != coordScreenBufferSize.X ||
+        requestedBufferSize.Y != coordScreenBufferSize.Y)
     {
         CommandLine* const pCommandLine = &CommandLine::Instance();
 
@@ -405,9 +411,11 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
     pConsoleInfo->SetColorTable(pInfo->ColorTable, ARRAYSIZE(pInfo->ColorTable));
     SetScreenColors(pScreenInfo, pInfo->wAttributes, pInfo->wPopupAttributes, TRUE);
 
+    const Viewport requestedViewport = Viewport::FromExclusive(pInfo->srWindow);
+
     COORD NewSize;
-    NewSize.X = min((pInfo->srWindow.Right - pInfo->srWindow.Left), pInfo->dwMaximumWindowSize.X);
-    NewSize.Y = min((pInfo->srWindow.Bottom - pInfo->srWindow.Top), pInfo->dwMaximumWindowSize.Y);
+    NewSize.X = min(requestedViewport.Width(), pInfo->dwMaximumWindowSize.X);
+    NewSize.Y = min(requestedViewport.Height(), pInfo->dwMaximumWindowSize.Y);
 
     // If wrap text is on, then the window width must be the same size as the buffer width
     if (pConsoleInfo->GetWrapText())
@@ -415,7 +423,8 @@ HRESULT DoSrvSetScreenBufferInfo(_In_ SCREEN_INFORMATION* const pScreenInfo, _In
         NewSize.X = coordScreenBufferSize.X;
     }
 
-    if (NewSize.X != pScreenInfo->GetScreenWindowSizeX() || NewSize.Y != pScreenInfo->GetScreenWindowSizeY())
+    if (NewSize.X != pScreenInfo->GetScreenWindowSizeX() ||
+        NewSize.Y != pScreenInfo->GetScreenWindowSizeY())
     {
         pConsoleInfo->CurrentScreenBuffer->SetViewportSize(&NewSize);
 
@@ -678,7 +687,7 @@ NTSTATUS SetScreenColors(_In_ SCREEN_INFORMATION* ScreenInfo, _In_ WORD Attribut
 
     const TextAttribute NewPrimaryAttributes = TextAttribute(Attributes);
     const TextAttribute NewPopupAttributes = TextAttribute(PopupAttributes);
-    
+
     ScreenInfo->SetDefaultAttributes(NewPrimaryAttributes, NewPopupAttributes);
     gci->ConsoleIme.RefreshAreaAttributes();
 
@@ -751,21 +760,21 @@ HRESULT DoSrvPrivateSetLegacyAttributes(_In_ SCREEN_INFORMATION* pScreenInfo,
         // The previous call to SetFromLegacy is going to trash our RGB.
         // Restore it.
         // If the old attributes were "reversed", and the new ones aren't,
-        //  then flip the colors back. 
+        //  then flip the colors back.
         bool resetReverse = fMeta &&
             (IsFlagClear(Attribute, COMMON_LVB_REVERSE_VIDEO)) &&
             (IsFlagSet(OldAttributes.GetLegacyAttributes(), COMMON_LVB_REVERSE_VIDEO));
         if (resetReverse)
         {
-            NewAttributes.SetForeground(OldAttributes.GetRgbBackground());
-            NewAttributes.SetBackground(OldAttributes.GetRgbForeground());
+            NewAttributes.SetForeground(OldAttributes.CalculateRgbBackground());
+            NewAttributes.SetBackground(OldAttributes.CalculateRgbForeground());
         }
         else
         {
-            NewAttributes.SetForeground(OldAttributes.GetRgbForeground());
-            NewAttributes.SetBackground(OldAttributes.GetRgbBackground());
+            NewAttributes.SetForeground(OldAttributes.CalculateRgbForeground());
+            NewAttributes.SetBackground(OldAttributes.CalculateRgbBackground());
         }
-        
+
         if (fForeground)
         {
             COLORREF rgbColor = gci->GetColorTableEntry(Attribute & FG_ATTRS);
@@ -1654,4 +1663,20 @@ HRESULT DoSrvSetConsoleTitleW(_In_reads_or_z_(cchBuffer) const wchar_t* const pw
     }
 
     return S_OK;
+}
+
+// Routine Description:
+// - A private API call for forcing the VT Renderer to NOT paint the next resize
+//      event. This is used by InteractDispatch, to prevent resizes from echoing
+//      between terminal and host.
+// Parameters:
+//  The ScreenBuffer to perform the repaint for.
+// Return value:
+// - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
+NTSTATUS DoSrvPrivateSuppressResizeRepaint()
+{
+    Globals* const g = ServiceLocator::LocateGlobals();
+    CONSOLE_INFORMATION* const gci = g->getConsoleInformation();
+    assert(gci->IsInVtIoMode());
+    return NTSTATUS_FROM_HRESULT(gci->GetVtIo()->SuppressResizeRepaint());
 }

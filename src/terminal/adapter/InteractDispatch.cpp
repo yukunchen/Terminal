@@ -108,6 +108,10 @@ bool InteractDispatch::WindowManipulation(_In_ const DispatchCommon::WindowManip
             if (cParams == 2)
             {
                 fSuccess = DispatchCommon::s_ResizeWindow(_pConApi.get(), rgusParams[1], rgusParams[0]);
+                if (fSuccess)
+                {
+                    DispatchCommon::s_SuppressResizeRepaint(_pConApi.get());
+                }
             }
             break;
         default:

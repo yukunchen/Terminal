@@ -127,6 +127,8 @@ public:
 
     virtual BOOL PrivateRefreshWindow() override;
     
+    virtual BOOL PrivateSuppressResizeRepaint() override;
+    
     virtual BOOL PrivateWriteConsoleControlInput(_In_ KeyEvent key) override;
 
     virtual BOOL GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP) override;

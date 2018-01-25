@@ -190,6 +190,18 @@ HRESULT WddmConEngine::InvalidateAll()
     return S_OK;
 }
 
+HRESULT WddmConEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
+{
+    *pForcePaint = false;
+    return S_FALSE;
+}
+
+HRESULT WddmConEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
+{
+    *pForcePaint = false;
+    return S_FALSE;
+}
+
 HRESULT WddmConEngine::StartPaint()
 {
     RETURN_IF_HANDLE_INVALID(_hWddmConCtx);

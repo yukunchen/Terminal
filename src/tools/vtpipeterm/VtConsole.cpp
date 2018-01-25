@@ -11,12 +11,18 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <iomanip>
 #include <assert.h>
+// Defined inside the console host PTY signal thread.
+#define PTY_SIGNAL_RESIZE_WINDOW 8u
 
-VtConsole::VtConsole(PipeReadCallback const pfnReadCallback, bool const fHeadless)
+VtConsole::VtConsole(PipeReadCallback const pfnReadCallback,
+                     bool const fHeadless,
+                     COORD const initialSize)
 {
     _pfnReadCallback = pfnReadCallback;
     _fHeadless = fHeadless;
+    _lastDimensions = initialSize;
 
     int r = rand();
     std::wstringstream ss;
@@ -35,6 +41,16 @@ HANDLE VtConsole::inPipe()
 HANDLE VtConsole::outPipe()
 {
     return _outPipe;
+}
+
+void VtConsole::signalWindow(unsigned short sx, unsigned short sy)
+{
+    unsigned short signalPacket[3];
+    signalPacket[0] = PTY_SIGNAL_RESIZE_WINDOW;
+    signalPacket[1] = sx;
+    signalPacket[2] = sy;
+
+    WriteFile(_signalPipe, signalPacket, sizeof(signalPacket), nullptr, nullptr);
 }
 
 bool VtConsole::WriteInput(std::string& seq)
@@ -210,6 +226,7 @@ void VtConsole::_openConsole3(const std::wstring& command)
     //      closed automatically at the end of the method.
     wil::unique_hfile outPipeConhostSide;
     wil::unique_hfile inPipeConhostSide;
+    wil::unique_hfile signalPipeConhostSide;
 
     SECURITY_ATTRIBUTES sa;
     sa = { 0 };
@@ -220,6 +237,10 @@ void VtConsole::_openConsole3(const std::wstring& command)
     THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&inPipeConhostSide, &_inPipe, &sa, 0));
     THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&_outPipe, &outPipeConhostSide, &sa, 0));
 
+    // Mark inheritable for signal handle when creating. It'll have the same value on the other side.
+    sa.bInheritHandle = TRUE;
+    THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&signalPipeConhostSide, &_signalPipe, &sa, 0));
+
     THROW_IF_WIN32_BOOL_FALSE(SetHandleInformation(inPipeConhostSide.get(), HANDLE_FLAG_INHERIT, 1));
     THROW_IF_WIN32_BOOL_FALSE(SetHandleInformation(outPipeConhostSide.get(), HANDLE_FLAG_INHERIT, 1));
 
@@ -229,6 +250,23 @@ void VtConsole::_openConsole3(const std::wstring& command)
     si.hStdOutput = outPipeConhostSide.get();
     si.hStdError = outPipeConhostSide.get();
     si.dwFlags |= STARTF_USESTDHANDLES;
+
+    if(!(_lastDimensions.X == 0 && _lastDimensions.Y == 0))
+    {
+        // STARTF_USECOUNTCHARS does not work. 
+        // minkernel/console/client/dllinit will write that value to conhost 
+        //  during init of a cmdline application, but because we're starting
+        //  conhost directly, that doesn't work for us.
+        std::wstringstream ss;
+        ss << L" --width " << _lastDimensions.X;
+        ss << L" --height " << _lastDimensions.Y;
+        cmdline += ss.str();
+    }
+
+    // Attach signal handle ID onto command line using string stream for formatting
+    std::wstringstream signalArg;
+    signalArg << L" --signal 0x" << std::hex << HandleToUlong(signalPipeConhostSide.get());
+    cmdline += signalArg.str();
 
     if (command.length() > 0)
     {
@@ -296,3 +334,18 @@ DWORD VtConsole::_OutputThread()
         }
     }
 }
+
+bool VtConsole::Repaint()
+{
+    std::string seq = "\x1b[7t";
+    return WriteInput(seq);
+}
+
+bool VtConsole::Resize(const unsigned int rows, const unsigned int cols)
+{
+    std::stringstream ss;
+    ss << "\x1b[8;" << rows << ";" << cols << "t";
+    std::string seq = ss.str();
+    return WriteInput(seq);
+}
+

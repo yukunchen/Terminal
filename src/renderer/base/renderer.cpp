@@ -34,7 +34,7 @@ Renderer::Renderer(_In_ std::unique_ptr<IRenderData> pData,
     _pThread(nullptr)
 {
     THROW_IF_NULL_ALLOC(_pData);
-    
+
     _srViewportPrevious = { 0 };
 
     for (size_t i = 0; i < cEngines; i++)
@@ -63,14 +63,14 @@ Renderer::~Renderer()
     });
 }
 
-HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData, 
+HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
                                    _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
 {
     return Renderer::s_CreateInstance(std::move(pData), nullptr, 0,  ppRenderer);
 }
 
 HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
-                                   _In_reads_(cEngines) IRenderEngine** const rgpEngines, 
+                                   _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                                    _In_ size_t const cEngines,
                                    _Outptr_result_nullonfailure_ Renderer** const ppRenderer)
 {
@@ -121,53 +121,59 @@ HRESULT Renderer::s_CreateInstance(_In_ std::unique_ptr<IRenderData> pData,
 // - HRESULT S_OK, GDI error, Safe Math error, or state/argument errors.
 HRESULT Renderer::PaintFrame()
 {
-    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-        THROW_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), pEngine);
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
+    }
 
-        // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
-        _CheckViewportAndScroll();
+    return S_OK;
+}
 
-        // Try to start painting a frame
-        HRESULT const hr = pEngine->StartPaint();
-        THROW_IF_FAILED(hr); // Return errors
-        RETURN_HR_IF(S_OK, S_FALSE == hr); // Return early if there's nothing to paint.
+HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
+{
+    THROW_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), pEngine);
 
-        auto endPaint = wil::ScopeExit([&]()
-        {
-            LOG_IF_FAILED(pEngine->EndPaint());
-        });
+    // Last chance check if anything scrolled without an explicit invalidate notification since the last frame.
+    _CheckViewportAndScroll();
 
-        // A. Prep Colors
-        RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData->GetDefaultBrushColors(), true));
+    // Try to start painting a frame
+    HRESULT const hr = pEngine->StartPaint();
+    THROW_IF_FAILED(hr); // Return errors
+    RETURN_HR_IF(S_OK, S_FALSE == hr); // Return early if there's nothing to paint.
 
-        // B. Clear Overlays
-        RETURN_IF_FAILED(_ClearOverlays(pEngine));
-
-        // C. Perform Scroll Operations
-        RETURN_IF_FAILED(_PerformScrolling(pEngine));
-
-        // 1. Paint Background
-        RETURN_IF_FAILED(_PaintBackground(pEngine));
-
-        // 2. Paint Rows of Text
-        _PaintBufferOutput(pEngine);
-
-        // 3. Paint Input
-        //_PaintCookedInput(); // unnecessary, input is also stored in the output buffer.
-
-        // 4. Paint IME composition area
-        _PaintImeCompositionString(pEngine);
-
-        // 5. Paint Selection
-        _PaintSelection(pEngine);
-
-        // 6. Paint Cursor
-        _PaintCursor(pEngine);
-
-        // As we leave the scope, EndPaint will be called (declared above)
-        return S_OK;
+    auto endPaint = wil::ScopeExit([&]()
+    {
+        LOG_IF_FAILED(pEngine->EndPaint());
     });
 
+    // A. Prep Colors
+    RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData->GetDefaultBrushColors(), true));
+
+    // B. Clear Overlays
+    RETURN_IF_FAILED(_ClearOverlays(pEngine));
+
+    // C. Perform Scroll Operations
+    RETURN_IF_FAILED(_PerformScrolling(pEngine));
+
+    // 1. Paint Background
+    RETURN_IF_FAILED(_PaintBackground(pEngine));
+
+    // 2. Paint Rows of Text
+    _PaintBufferOutput(pEngine);
+
+    // 3. Paint Input
+    //_PaintCookedInput(); // unnecessary, input is also stored in the output buffer.
+
+    // 4. Paint IME composition area
+    _PaintImeCompositionString(pEngine);
+
+    // 5. Paint Selection
+    _PaintSelection(pEngine);
+
+    // 6. Paint Cursor
+    _PaintCursor(pEngine);
+
+    // As we leave the scope, EndPaint will be called (declared above)
     return S_OK;
 }
 
@@ -240,6 +246,28 @@ void Renderer::TriggerRedrawAll()
     });
 
     _NotifyPaintFrame();
+}
+
+// Method Description:
+// - Called when the host is about to die, to give the renderer one last chance 
+//      to paint before the host exits. 
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerTeardown()
+{
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        bool fEngineRequestsRepaint = false;
+        HRESULT hr = pEngine->PrepareForTeardown(&fEngineRequestsRepaint);
+        LOG_IF_FAILED(hr);
+
+        if (SUCCEEDED(hr) && fEngineRequestsRepaint)
+        {
+            _PaintFrameForEngine(pEngine);
+        }
+    }
 }
 
 // Routine Description:
@@ -324,6 +352,29 @@ void Renderer::TriggerScroll(_In_ const COORD* const pcoordDelta)
 }
 
 // Routine Description:
+// - Called when the text buffer is about to circle it's backing buffer.
+//      A renderer might want to get painted before that happens.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerCircling()
+{
+    bool fForcePaint = false;
+
+    for (IRenderEngine* const pEngine : _rgpEngines)
+    {
+        bool fEngineRequestsRepaint = false;
+        LOG_IF_FAILED(pEngine->InvalidateCircling(&fEngineRequestsRepaint));
+        fForcePaint |= fEngineRequestsRepaint;
+    }
+    if (fForcePaint)
+    {
+        PaintFrame();
+    }
+}
+
+// Routine Description:
 // - Called when a change in font or DPI has been detected.
 // Arguments:
 // - iDpi - New DPI value
@@ -352,7 +403,7 @@ void Renderer::TriggerFontChange(_In_ int const iDpi, _In_ FontInfoDesired const
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired const * const pFontInfoDesired, _Out_ FontInfo* const pFontInfo)
 {
-    // If there's no head, return E_FAIL. The caller should decide how to 
+    // If there's no head, return E_FAIL. The caller should decide how to
     //      handle this.
     // Currently, the only caller is the WindowProc:WM_GETDPISCALEDSIZE handler.
     //      It will assume that the proposed font is 1x1, regardless of DPI.
@@ -361,8 +412,8 @@ HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired cons
         return E_FAIL;
     }
 
-    // There will only every really be two engines - the real head and the VT 
-    //      renderer. We won't know which is which, so iterate over them. 
+    // There will only every really be two engines - the real head and the VT
+    //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
     assert(_rgpEngines.size() <= 2);
@@ -389,8 +440,8 @@ HRESULT Renderer::GetProposedFont(_In_ int const iDpi, _In_ FontInfoDesired cons
 COORD Renderer::GetFontSize()
 {
     COORD fontSize = {1, 1};
-    // There will only every really be two engines - the real head and the VT 
-    //      renderer. We won't know which is which, so iterate over them. 
+    // There will only every really be two engines - the real head and the VT
+    //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
     assert(_rgpEngines.size() <= 2);
@@ -420,8 +471,8 @@ bool Renderer::IsCharFullWidthByFont(_In_ WCHAR const wch)
 {
     bool fIsFullWidth = false;
 
-    // There will only every really be two engines - the real head and the VT 
-    //      renderer. We won't know which is which, so iterate over them. 
+    // There will only every really be two engines - the real head and the VT
+    //      renderer. We won't know which is which, so iterate over them.
     //      Only return the result of the successful one if it's not S_FALSE (which is the VT renderer)
     // TODO: 14560740 - The Window might be able to get at this info in a more sane manner
     assert(_rgpEngines.size() <= 2);
@@ -563,7 +614,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 // - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to.
 // Return Value:
 // - <none>
-void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine, 
+void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
                                                   _In_ const ROW* const pRow,
                                                   _In_reads_(cchLine) PCWCHAR const pwsLine,
                                                   _In_reads_(cchLine) PBYTE pbKAttrsLine,
@@ -650,12 +701,12 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
 // - coordTarget - The X/Y coordinate position on the screen which we're attempting to render to.
 // Return Value:
 // - <none>
-void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine, 
-                                             _In_ const ROW* const pRow, 
-                                             _In_reads_(cchLine) PCWCHAR const pwsLine, 
-                                             _In_reads_(cchLine) PBYTE pbKAttrsLine, 
-                                             _In_ size_t cchLine, 
-                                             _In_ size_t iFirstAttr, 
+void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
+                                             _In_ const ROW* const pRow,
+                                             _In_reads_(cchLine) PCWCHAR const pwsLine,
+                                             _In_reads_(cchLine) PBYTE pbKAttrsLine,
+                                             _In_ size_t cchLine,
+                                             _In_ size_t iFirstAttr,
                                              _In_ COORD const coordTarget)
 {
     // We may have to write this string in several pieces based on the colors.
@@ -722,10 +773,10 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
 // - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from. pwsLine[0] will be the character at position coordTarget within the original console buffer before it was prepared for this function.
 // Return Value:
 // - S_OK or memory allocation error
-HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine, 
-                                                     _In_reads_(cchLine) PCWCHAR const pwsLine, 
-                                                     _In_reads_(cchLine) PBYTE const pbKAttrsLine, 
-                                                     _In_ size_t const cchLine, 
+HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
+                                                     _In_reads_(cchLine) PCWCHAR const pwsLine,
+                                                     _In_reads_(cchLine) PBYTE const pbKAttrsLine,
+                                                     _In_ size_t const cchLine,
                                                      _In_ COORD const coordTarget)
 {
     // We need the ability to move the target back to the left slightly in case we start with a trailing byte character.
@@ -799,12 +850,12 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
 // - coordTarget - The X/Y coordinate position in the buffer which we're attempting to start rendering from.
 // Return Value:
 // - <none>
-void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, 
-                                                _In_ const TextAttribute textAttribute, 
-                                                _In_ size_t const cchLine, 
+void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine,
+                                                _In_ const TextAttribute textAttribute,
+                                                _In_ size_t const cchLine,
                                                 _In_ COORD const coordTarget)
 {
-    COLORREF rgb = textAttribute.GetRgbForeground();
+    COLORREF rgb = textAttribute.CalculateRgbForeground();
 
     // Convert console grid line representations into rendering engine enum representations.
     IRenderEngine::GridLines lines = IRenderEngine::GridLines::None;
@@ -1004,8 +1055,8 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // - <none>
 HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute textAttributes, _In_ bool const fIncludeBackground)
 {
-    COLORREF rgbForeground = textAttributes.GetRgbForeground();
-    COLORREF rgbBackground = textAttributes.GetRgbBackground();
+    COLORREF rgbForeground = textAttributes.CalculateRgbForeground();
+    COLORREF rgbBackground = textAttributes.CalculateRgbBackground();
     WORD legacyAttributes = textAttributes.GetLegacyAttributes();
 
     // The last color need's to be each engine's responsibility. If it's local to this function,
@@ -1079,7 +1130,7 @@ NTSTATUS Renderer::_GetSelectionRects(
 // - pEngine: The new render engine to be added
 // Return Value:
 // - <none>
-// Throws if we ran out of memory or there was some other error appending the 
+// Throws if we ran out of memory or there was some other error appending the
 //      engine to our collection.
 void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {

@@ -7,14 +7,16 @@
 #include "precomp.h"
 #include "Xterm256Engine.hpp"
 #pragma hdrstop
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
+                               _In_ const IDefaultColorProvider& colorProvider,
                                _In_ const Viewport initialViewport,
                                _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                _In_ const WORD cColorTable) :
-    XtermEngine(std::move(hPipe), initialViewport, ColorTable, cColorTable, false)
+    XtermEngine(std::move(hPipe), colorProvider, initialViewport, ColorTable, cColorTable, false)
 {
 }
 

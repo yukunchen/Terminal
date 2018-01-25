@@ -15,6 +15,7 @@ Author(s):
 #pragma once
 
 #include "../inc/IRenderEngine.hpp"
+#include "../../inc/IDefaultColorProvider.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include <string>
 #include <functional>
@@ -33,8 +34,13 @@ namespace Microsoft
 class Microsoft::Console::Render::VtEngine : public IRenderEngine
 {
 public:
+    // See _PaintUtf8BufferLine for explanation of this value.
+    static const size_t ERASE_CHARACTER_STRING_LENGTH = 8;
+
     VtEngine(_In_ wil::unique_hfile hPipe,
+             _In_ const Microsoft::Console::IDefaultColorProvider& colorProvider,
              _In_ const Microsoft::Console::Types::Viewport initialViewport);
+
     virtual ~VtEngine() override = default;
 
     HRESULT InvalidateSelection(_In_reads_(cRectangles) const SMALL_RECT* const rgsrSelection,
@@ -43,6 +49,8 @@ public:
     HRESULT InvalidateSystem(_In_ const RECT* const prcDirtyClient) override;
     HRESULT Invalidate(_In_ const SMALL_RECT* const psrRegion) override;
     HRESULT InvalidateAll() override;
+    HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) override;
+    HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) override;
 
     virtual HRESULT StartPaint() override;
     virtual HRESULT EndPaint() override;
@@ -83,11 +91,12 @@ public:
     HRESULT GetFontSize(_Out_ COORD* const pFontSize) override;
     HRESULT IsCharFullWidthByFont(_In_ WCHAR const wch, _Out_ bool* const pResult) override;
 
-    // See _PaintUtf8BufferLine for explanation of this value.
-    static const size_t ERASE_CHARACTER_STRING_LENGTH = 8;
+    HRESULT SuppressResizeRepaint();
 
 protected:
     wil::unique_hfile _hFile;
+
+    const Microsoft::Console::IDefaultColorProvider& _colorProvider;
 
     COLORREF _LastFG;
     COLORREF _LastBG;
@@ -102,6 +111,8 @@ protected:
 
     bool _quickReturn;
     bool _clearedAllThisFrame;
+
+    bool _suppressResizeRepaint;
 
     HRESULT _Write(_In_reads_(cch) const char* const psz, _In_ size_t const cch);
     HRESULT _Write(_In_ const std::string& str);
@@ -130,6 +141,7 @@ protected:
                                          _In_ const bool fIsForeground);
     HRESULT _SetGraphicsRenditionRGBColor(_In_ const COLORREF color,
                                           _In_ const bool fIsForeground);
+    HRESULT _SetGraphicsRenditionDefaultColor(_In_ const bool fIsForeground);
     HRESULT _ResizeWindow(_In_ const short sWidth, _In_ const short sHeight);
 
     virtual HRESULT _MoveCursor(_In_ const COORD coord) = 0;

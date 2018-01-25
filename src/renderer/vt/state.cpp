@@ -6,6 +6,7 @@
 
 #include "precomp.h"
 #include "vtrenderer.hpp"
+#include "../../inc/conattrs.hpp"
 
 // For _vcprintf
 #include <conio.h>
@@ -13,6 +14,7 @@
 
 #pragma hdrstop
 
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
@@ -23,8 +25,11 @@ using namespace Microsoft::Console::Types;
 // - <none>
 // Return Value:
 // - An instance of a Renderer.
-VtEngine::VtEngine(_In_ wil::unique_hfile pipe, _In_ const Viewport initialViewport) :
+VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
+                   _In_ const IDefaultColorProvider& colorProvider,
+                   _In_ const Viewport initialViewport) :
     _hFile(std::move(pipe)),
+    _colorProvider(colorProvider),
     _LastFG(INVALID_COLOR),
     _LastBG(INVALID_COLOR),
     _lastViewport(initialViewport),
@@ -33,7 +38,8 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe, _In_ const Viewport initialViewp
     _scrollDelta({0}),
     _quickReturn(false),
     _fInvalidRectUsed(false),
-    _clearedAllThisFrame(false)
+    _clearedAllThisFrame(false),
+    _suppressResizeRepaint(false)
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
@@ -160,7 +166,15 @@ HRESULT VtEngine::UpdateViewport(_In_ SMALL_RECT const srNewViewport)
 
     if ((oldView.Height() != newView.Height()) || (oldView.Width() != newView.Width()))
     {
-        hr = _ResizeWindow(newView.Width(), newView.Height());
+        // Don't emit a resize event if we've requested it be suppressed
+        if (_suppressResizeRepaint)
+        {
+            _suppressResizeRepaint = false;
+        }
+        else
+        {
+            hr = _ResizeWindow(newView.Width(), newView.Height());
+        }
     }
 
     return hr;
@@ -228,4 +242,17 @@ void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t
 bool VtEngine::_AllIsInvalid() const
 {
     return _lastViewport == _invalidRect;
+}
+
+// Method Description:
+// - Prevent the renderer from emitting output on the next resize. This prevents
+//      the host from echoing a resize to the terminal that requested it.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK
+HRESULT VtEngine::SuppressResizeRepaint()
+{
+    _suppressResizeRepaint = true;
+    return S_OK;
 }

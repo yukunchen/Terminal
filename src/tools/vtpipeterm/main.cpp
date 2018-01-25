@@ -31,6 +31,8 @@ const int TEST_LANG_KOREAN = 4;
 // State
 HANDLE hOut;
 HANDLE hIn;
+short lastTerminalWidth;
+short lastTerminalHeight;
 
 std::deque<VtConsole*> consoles;
 // A console for printing debug output to
@@ -101,9 +103,16 @@ HANDLE outPipe()
 
 void newConsole()
 {
-    auto con = new VtConsole(ReadCallback, g_headless);
+    auto con = new VtConsole(ReadCallback, g_headless, {lastTerminalWidth, lastTerminalHeight});
     con->spawn();
     consoles.push_back(con);
+}
+
+void signalConsole()
+{
+    // The 0th console is always our active one.
+    // This is a test-only scenario to set the window to 30 wide by 10 tall.
+    consoles.at(0)->signalWindow(30, 10);
 }
 
 std::string csi(string seq)
@@ -222,6 +231,38 @@ std::string toPrintableString(std::string& inString)
     return retval;
 }
 
+void doResize(const short width, const short height)
+{
+    lastTerminalWidth = width;
+    lastTerminalHeight = height;
+
+    for (auto console : consoles)
+    {
+        console->Resize(height, width);
+    }
+
+    std::stringstream ss;
+    ss << "\x1b[8;" << height << ";" << width << "t";
+    std::string seq = ss.str();
+    PrintInputToDebug(seq);
+}
+
+void handleResize()
+{
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    bool fSuccess = !!GetConsoleScreenBufferInfoEx(hOut, &csbiex);
+    if (fSuccess)
+    {
+        SMALL_RECT srViewport = csbiex.srWindow;
+        
+        short width = srViewport.Right - srViewport.Left + 1;
+        short height = srViewport.Bottom - srViewport.Top + 1;
+
+        doResize(width, height);        
+    }
+}
+
 void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
 {
     char* const buffer = new char[cEvents];
@@ -299,6 +340,8 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                             break;
                         case 'u':
                             doUnicode = true;
+                        case 'r':
+                            signalConsole();
                             break;
                         default:
                             *nextBuffer = c;
@@ -316,25 +359,7 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
         else if (event.EventType == WINDOW_BUFFER_SIZE_EVENT)
         {
             WINDOW_BUFFER_SIZE_RECORD resize = event.Event.WindowBufferSizeEvent;
-            // the resize event doesn't actually have the info we want.
-            CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-            csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
-            bool fSuccess = !!GetConsoleScreenBufferInfoEx(hOut, &csbiex);
-            if (fSuccess)
-            {
-                SMALL_RECT srViewport = csbiex.srWindow;
-                
-                std::stringstream ss;
-                
-                short width = srViewport.Right - srViewport.Left + 1;
-                short height = srViewport.Bottom - srViewport.Top + 1;
-                
-                ss << "\x1b[8;" << height << ";" << width << "t";
-                
-                std::string seq = ss.str();
-                getConsole()->WriteInput(seq);
-                PrintInputToDebug(seq);
-            }
+            handleResize();
         }
 
     }
@@ -512,6 +537,9 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     SetupOutput();
     SetupInput();
 
+    // handleResize will get our initial terminal dimensions.
+    handleResize();
+
     newConsole();  
     getConsole()->activate();
     CreateIOThreads();
@@ -519,7 +547,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     if (fUseDebug)
     {
         // Create a debug console for writting debugging output to.
-        debug = new VtConsole(DebugReadCallback, false);
+        debug = new VtConsole(DebugReadCallback, false, {0});
         // Echo stdin to stdout, but ignore newlines (so cat doesn't echo the input)
         debug->spawn(L"ubuntu run tr -d '\n' | cat -sA");
         debug->activate();

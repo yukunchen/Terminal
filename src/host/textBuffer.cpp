@@ -237,6 +237,7 @@ TextAttribute::TextAttribute(_In_ const WORD wLegacyAttr)
 
 TextAttribute::TextAttribute(_In_ const COLORREF rgbForeground, _In_ const COLORREF rgbBackground)
 {
+    _wAttrLegacy = 0;
     _rgbForeground = rgbForeground;
     _rgbBackground = rgbBackground;
     _fUseRgbColor = true;
@@ -252,17 +253,36 @@ bool TextAttribute::IsLegacy() const
     return _fUseRgbColor == false;
 }
 
+// Routine Description:
+// - Calculates rgb foreground color based off of current color table and active modification attributes
+// Arguments:
+// - None
+// Return Value:
+// - color that should be displayed as the foreground color
+COLORREF TextAttribute::CalculateRgbForeground() const
+{
+    return _IsReverseVideo() ? GetRgbBackground() : GetRgbForeground();
+}
+
+// Routine Description:
+// - Calculates rgb background color based off of current color table and active modification attributes
+// Arguments:
+// - None
+// Return Value:
+// - color that should be displayed as the background color
+COLORREF TextAttribute::CalculateRgbBackground() const
+{
+    return _IsReverseVideo() ? GetRgbForeground() : GetRgbBackground();
+}
+
+// Routine Description:
+// - gets rgb foreground color, possibly based off of current color table. Does not take active modification
+// attributes into account
+// Arguments:
+// - None
+// Return Value:
+// - color that is stored as the foreground color
 COLORREF TextAttribute::GetRgbForeground() const
-{
-    return _IsReverseVideo()? _GetRgbBackground() : _GetRgbForeground();
-}
-
-COLORREF TextAttribute::GetRgbBackground() const
-{
-    return _IsReverseVideo()? _GetRgbForeground() : _GetRgbBackground();
-}
-
-COLORREF TextAttribute::_GetRgbForeground() const
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     COLORREF rgbColor;
@@ -282,7 +302,14 @@ COLORREF TextAttribute::_GetRgbForeground() const
     return rgbColor;
 }
 
-COLORREF TextAttribute::_GetRgbBackground() const
+// Routine Description:
+// - gets rgb background color, possibly based off of current color table. Does not take active modification
+// attributes into account
+// Arguments:
+// - None
+// Return Value:
+// - color that is stored as the background color
+COLORREF TextAttribute::GetRgbBackground() const
 {
     const CONSOLE_INFORMATION* const gci = ServiceLocator::LocateGlobals()->getConsoleInformation();
     COLORREF rgbColor;
@@ -323,7 +350,7 @@ void TextAttribute::SetForeground(_In_ const COLORREF rgbForeground)
     _rgbForeground = rgbForeground;
     if (!_fUseRgbColor)
     {
-        _rgbBackground = _GetRgbBackground();
+        _rgbBackground = GetRgbBackground();
     }
     _fUseRgbColor = true;
 }
@@ -333,7 +360,7 @@ void TextAttribute::SetBackground(_In_ const COLORREF rgbBackground)
     _rgbBackground = rgbBackground;
     if (!_fUseRgbColor)
     {
-        _rgbForeground = _GetRgbForeground();
+        _rgbForeground = GetRgbForeground();
     }
     _fUseRgbColor = true;
 }
@@ -1665,6 +1692,11 @@ bool TEXT_BUFFER_INFO::IncrementCircularBuffer()
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
+    auto g = ServiceLocator::LocateGlobals();
+    if (g->pRender)
+    {
+        g->pRender->TriggerCircling();
+    }
 
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     TextAttribute FillAttributes;

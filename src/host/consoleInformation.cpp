@@ -87,6 +87,11 @@ VtIo* CONSOLE_INFORMATION::GetVtIo()
     return &_vtIo;
 }
 
+bool CONSOLE_INFORMATION::IsInVtIoMode() const
+{
+    return _vtIo.IsUsingVt();
+}
+
 // Routine Description:
 // - Handler for inserting key sequences into the buffer when the terminal emulation layer
 //   has determined a key can be converted appropriately into a sequence of inputs
@@ -119,4 +124,26 @@ SCREEN_INFORMATION* const CONSOLE_INFORMATION::GetActiveOutputBuffer() const
 InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 {
     return pInputBuffer;
+}
+
+// Method Description:
+// - Return the default foreground color of the console.
+// Arguments:
+// - <none>
+// Return Value:
+// - the default foreground color of the console.
+COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const
+{
+    return ForegroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+}
+
+// Method Description:
+// - Return the default background color of the console.
+// Arguments:
+// - <none>
+// Return Value:
+// - the default background color of the console.
+COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const
+{
+    return BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
 }

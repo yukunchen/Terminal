@@ -733,7 +733,9 @@ NTSTATUS ProcessCommandListInput(_In_ COOKED_READ_DATA* const pCookedReadData)
                     PWSTR Tmp;
                     SetFlag(pInputReadHandleData->InputHandleFlags, INPUT_READ_HANDLE_DATA::HandleFlags::MultiLineInput);
                     for (Tmp = pCookedReadData->_BackupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
+                    {
                         ASSERT(Tmp < (pCookedReadData->_BackupLimit + pCookedReadData->_BytesRead));
+                    }
                     dwNumBytes = (ULONG)(Tmp - pCookedReadData->_BackupLimit + 1) * sizeof(*Tmp);
                 }
                 else

@@ -638,6 +638,12 @@ public:
         // We made it through the adapter, woo! Return true.
         return TRUE;
     }
+    virtual BOOL PrivateSuppressResizeRepaint()
+    {
+        Log::Comment(L"PrivateSuppressResizeRepaint MOCK called...");
+        VERIFY_IS_TRUE(false, L"AdaptDispatch should never be calling this function.");
+        return FALSE;
+    }
 
     virtual BOOL GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP)
     {

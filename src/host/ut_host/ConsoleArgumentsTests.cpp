@@ -27,8 +27,11 @@ public:
     TEST_METHOD(IsUsingVtHandleTests);
     TEST_METHOD(CombineVtPipeHandleTests);
     TEST_METHOD(IsVtHandleValidTests);
+    
+    TEST_METHOD(InitialSizeTests);
 
     TEST_METHOD(HeadlessArgTests);
+    TEST_METHOD(SignalHandleTests);
     
 };
 
@@ -74,10 +77,13 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"foo", // vtInPipe
                                     L"bar", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --inpipe foo --outpipe bar \"this is the commandline\"";
@@ -92,10 +98,13 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"foo", // vtInPipe
                                     L"bar", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --inpipe foo \"--outpipe bar this is the commandline\"";
@@ -110,10 +119,13 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"foo", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --inpipe  foo   --outpipe    bar       this      is the    commandline";
@@ -128,10 +140,13 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"foo", // vtInPipe
                                     L"bar", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --inpipe\tfoo\t--outpipe\tbar\tthis\tis\tthe\tcommandline";
@@ -146,10 +161,13 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"foo", // vtInPipe
                                     L"bar", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --inpipe\\ foo\\ --outpipe\\ bar\\ this\\ is\\ the\\ commandline";
@@ -164,10 +182,13 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --inpipe\\\tfoo\\\t--outpipe\\\tbar\\\tthis\\\tis\\\tthe\\\tcommandline";
@@ -182,10 +203,13 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --inpipe a\\\\\\\\\"b c\" d e";
@@ -200,10 +224,13 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     L"a\\\\b c", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 }
 
@@ -223,10 +250,13 @@ void ConsoleArgumentsTests::VtPipesTest()
                                    L"foo", // vtInPipe
                                    L"bar", // vtOutPipe
                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
                                    false, // forceV1
                                    false, // headless
                                    true, // createServerHandle
-                                   0), // serverHandle
+                                   0, // serverHandle
+                                    0), // signalHandle
                   true); // successful parse?
 
     commandline = L"conhost.exe --inpipe foo bar";
@@ -241,10 +271,13 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"foo", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --outpipe foo";
@@ -259,10 +292,13 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"", // vtInPipe
                                     L"foo", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe foo";
@@ -277,10 +313,13 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --inpipe --outpipe foo";
@@ -295,10 +334,13 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"--outpipe", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --inpipe --outpipe --outpipe foo";
@@ -313,10 +355,13 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"--outpipe", // vtInPipe
                                     L"foo", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe -- --inpipe foo --outpipe bar";
@@ -331,10 +376,13 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --inpipe foo --outpipe foo";
@@ -349,10 +397,13 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"foo", // vtInPipe
                                     L"foo", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --inpipe foo --outpipe";
@@ -367,10 +418,13 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"foo", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    false); // successful parse?
     
     commandline = L"conhost.exe --inpipe";
@@ -385,10 +439,13 @@ void ConsoleArgumentsTests::VtPipesTest()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    false); // successful parse?
 }
 
@@ -408,10 +465,13 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe foo";
@@ -426,10 +486,13 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe foo -- bar";
@@ -444,10 +507,13 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --inpipe foo foo -- bar";
@@ -462,10 +528,13 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"foo", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe console --inpipe foo foo -- bar";
@@ -480,10 +549,13 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
    
     commandline = L"conhost.exe console --inpipe foo --outpipe foo -- bar";
@@ -498,10 +570,13 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --inpipe foo -- --outpipe foo bar";
@@ -516,10 +591,13 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"foo", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --inpipe -- --outpipe foo bar";
@@ -534,10 +612,13 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"--", // vtInPipe
                                     L"foo", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --";
@@ -552,10 +633,13 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe";
@@ -570,10 +654,13 @@ void ConsoleArgumentsTests::ClientCommandlineTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 }
 
@@ -593,10 +680,13 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     false, // createServerHandle
-                                    4ul), // serverHandle
+                                    4ul, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --server 0x4";
@@ -611,10 +701,13 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     false, // createServerHandle
-                                    4ul), // serverHandle
+                                    4ul, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe 0x4 0x8";
@@ -629,10 +722,13 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     false, // createServerHandle
-                                    4ul), // serverHandle
+                                    4ul, // serverHandle
+                                    0), // signalHandle
                    false); // successful parse?
 
     commandline = L"conhost.exe --server 0x4 0x8";
@@ -647,10 +743,13 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     false, // createServerHandle
-                                    4ul), // serverHandle
+                                    4ul, // serverHandle
+                                    0), // signalHandle
                    false); // successful parse?
 
     commandline = L"conhost.exe 0x4 --server 0x8";
@@ -665,10 +764,13 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     false, // createServerHandle
-                                    4ul), // serverHandle
+                                    4ul, // serverHandle
+                                    0), // signalHandle
                    false); // successful parse?
 
     commandline = L"conhost.exe --server 0x4 --server 0x8";
@@ -683,10 +785,13 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     false, // createServerHandle
-                                    4ul), // serverHandle
+                                    4ul, // serverHandle
+                                    0), // signalHandle
                    false); // successful parse?
 
     commandline = L"conhost.exe 0x4 -ForceV1";
@@ -701,10 +806,13 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     true, // forceV1
                                     false, // headless
                                     false, // createServerHandle
-                                    4ul), // serverHandle
+                                    4ul, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe -ForceV1";
@@ -719,10 +827,13 @@ void ConsoleArgumentsTests::LegacyFormatsTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     true, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 }
 
@@ -785,10 +896,13 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0ul), // serverHandle
+                                    0ul, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --vtmode telnet";
@@ -803,10 +917,13 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"telnet", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0ul), // serverHandle
+                                    0ul, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --inpipe input";
@@ -821,10 +938,13 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0ul), // serverHandle
+                                    0ul, // serverHandle
+                                    0), // signalHandle
                    false); // successful parse?
 
     commandline = L"conhost.exe --outpipe output";
@@ -839,10 +959,13 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0ul), // serverHandle
+                                    0ul, // serverHandle
+                                    0), // signalHandle
                    false); // successful parse?
 
     commandline = L"conhost.exe --outpipe output --inpipe input";
@@ -857,10 +980,13 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0ul), // serverHandle
+                                    0ul, // serverHandle
+                                    0), // signalHandle
                    false); // successful parse?
 }
 
@@ -872,6 +998,180 @@ void ConsoleArgumentsTests::IsVtHandleValidTests()
     VERIFY_IS_FALSE(ConsoleArguments::s_IsValidHandle(0), L"Zero handle invalid.");
     VERIFY_IS_FALSE(ConsoleArguments::s_IsValidHandle(INVALID_HANDLE_VALUE), L"Invalid handle invalid.");
     VERIFY_IS_TRUE(ConsoleArguments::s_IsValidHandle(UlongToHandle(0x4)), L"0x4 is valid.");
+}
+
+void ConsoleArgumentsTests::InitialSizeTests()
+{
+    std::wstring commandline;
+
+    commandline = L"conhost.exe --width 120 --height 30";
+    ArgTestsRunner(L"#1 look for a valid commandline with both width and height",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE, 
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    120, // width
+                                    30, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0ul, // serverHandle
+                                    0), // signalHandle
+                  true); // successful parse?
+
+    commandline = L"conhost.exe --width 120";
+    ArgTestsRunner(L"#2 look for a valid commandline with only width",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE, 
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    120, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0ul, // serverHandle
+                                    0), // signalHandle
+                   true); // successful parse?
+
+    commandline = L"conhost.exe --height 30";
+    ArgTestsRunner(L"#3 look for a valid commandline with only height",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE, 
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    0, // width
+                                    30, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0ul, // serverHandle
+                                    0), // signalHandle
+                   true); // successful parse?
+
+    commandline = L"conhost.exe --width 0";
+    ArgTestsRunner(L"#4 look for a valid commandline passing 0",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE, 
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0ul, // serverHandle
+                                    0), // signalHandle
+                   true); // successful parse?
+
+    commandline = L"conhost.exe --width -1";
+    ArgTestsRunner(L"#5 look for a valid commandline passing -1",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE, 
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    -1, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0ul, // serverHandle
+                                    0), // signalHandle
+                   true); // successful parse?
+
+    commandline = L"conhost.exe --width foo";
+    ArgTestsRunner(L"#6 look for an ivalid commandline passing a string",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE, 
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0ul, // serverHandle
+                                    0), // signalHandle
+                   false); // successful parse?
+
+    commandline = L"conhost.exe --width 2foo";
+    ArgTestsRunner(L"#7 look for an ivalid commandline passing a string with a number at the start",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE, 
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0ul, // serverHandle
+                                    0), // signalHandle
+                   false); // successful parse?
+
+    commandline = L"conhost.exe --width 65535";
+    ArgTestsRunner(L"#7 look for an ivalid commandline passing a value that's too big",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE, 
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0ul, // serverHandle
+                                    0), // signalHandle
+                   false); // successful parse?
+
 }
 
 void ConsoleArgumentsTests::HeadlessArgTests()
@@ -890,10 +1190,13 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     true, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --headless 0x4";
@@ -908,10 +1211,13 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     true, // headless
                                     false, // createServerHandle
-                                    4ul), // serverHandle
+                                    4ul, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe --headless --headless";
@@ -926,10 +1232,13 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     true, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
 
     commandline = L"conhost.exe -- foo.exe --headless";
@@ -944,9 +1253,84 @@ void ConsoleArgumentsTests::HeadlessArgTests()
                                     L"", // vtInPipe
                                     L"", // vtOutPipe
                                     L"", // vtMode
+                                    0, // width
+                                    0, // height
                                     false, // forceV1
                                     false, // headless
                                     true, // createServerHandle
-                                    0), // serverHandle
+                                    0, // serverHandle
+                                    0), // signalHandle
                    true); // successful parse?
+}
+
+void ConsoleArgumentsTests::SignalHandleTests()
+{
+    // Just some assorted positive values that could be valid handles. No specific correlation to anything.
+    HANDLE hInSample = UlongToHandle(0x10);
+    HANDLE hOutSample = UlongToHandle(0x24);
+
+    std::wstring commandline;
+    
+    commandline = L"conhost.exe --server 0x4 --signal 0x8";
+    ArgTestsRunner(L"#1 Normal case, pass both server and signal handle",
+                   commandline,
+                   hInSample,
+                   hOutSample,
+                   ConsoleArguments(commandline,
+                                    L"",
+                                    hInSample,
+                                    hOutSample,
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    false, // createServerHandle
+                                    4ul, // serverHandle
+                                    8ul), // signalHandle
+                   true); // successful parse?
+
+    commandline = L"conhost.exe --server 0x4 --signal ASDF";
+    ArgTestsRunner(L"#2 Pass bad signal handle",
+                   commandline,
+                   hInSample,
+                   hOutSample,
+                   ConsoleArguments(commandline,
+                                    L"",
+                                    hInSample,
+                                    hOutSample,
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    false, // createServerHandle
+                                    4ul, // serverHandle
+                                    0ul), // signalHandle
+                   false); // successful parse?
+
+    commandline = L"conhost.exe --signal --server 0x4";
+    ArgTestsRunner(L"#3 Pass null signal handle",
+                   commandline,
+                   hInSample,
+                   hOutSample,
+                   ConsoleArguments(commandline,
+                                    L"",
+                                    hInSample,
+                                    hOutSample,
+                                    L"", // vtInPipe
+                                    L"", // vtOutPipe
+                                    L"", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0ul, // serverHandle
+                                    0ul), // signalHandle
+                   false); // successful parse?
 }

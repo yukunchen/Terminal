@@ -594,11 +594,9 @@ BOOL ConhostInternalGetSet::PrivatePrependConsoleInput(_Inout_ std::deque<std::u
 // Routine Description:
 // - Connects the PrivatePrependConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
-// - events - the input events to be copied into the head of the input
-// buffer for the underlying attached process
-// - eventsWritten - on output, the number of events written
+// - <none>
 // Return Value:
-// - TRUE if successful (see DoSrvPrivatePrependConsoleInput). FALSE otherwise.
+// - TRUE if successful (see DoSrvPrivateRefreshWindow). FALSE otherwise.
 BOOL ConhostInternalGetSet::PrivateRefreshWindow()
 {
     return SUCCEEDED(DoSrvPrivateRefreshWindow(_pIo->GetActiveOutputBuffer()));
@@ -617,7 +615,7 @@ BOOL ConhostInternalGetSet::PrivateWriteConsoleControlInput(_In_ KeyEvent key)
 }
 
 // Routine Description:
-// - Connects the PrivateWriteConsoleControlInput API call directly into our Driver Message servicing call inside Conhost.exe
+// - Connects the GetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
 // - key - a KeyEvent representing a special type of keypress, typically Ctrl-C
 // Return Value:
@@ -625,4 +623,16 @@ BOOL ConhostInternalGetSet::PrivateWriteConsoleControlInput(_In_ KeyEvent key)
 BOOL ConhostInternalGetSet::GetConsoleOutputCP(_Out_ unsigned int* const puiOutputCP)
 {
     return SUCCEEDED(DoSrvGetConsoleOutputCodePage(puiOutputCP));
+}
+
+// Routine Description:
+// - Connects the PrivateSuppressResizeRepaint API call directly into our Driver
+//      Message servicing call inside Conhost.exe
+// Arguments:
+// - <none>
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateSuppressResizeRepaint). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateSuppressResizeRepaint()
+{
+    return SUCCEEDED(DoSrvPrivateSuppressResizeRepaint());
 }

@@ -165,7 +165,7 @@ namespace Microsoft
                     RECT _rcClientLast;
 
                     // Full screen
-                    void _BackupWindowSizes();
+                    void _BackupWindowSizes(_In_ bool const fCurrentIsInFullscreen);
                     void _ApplyWindowSize() const;
 
                     bool _fIsInFullscreen;
@@ -183,10 +183,9 @@ namespace Microsoft
                                                       _Inout_ RECT* const prectWindow);
 
                     static void s_ReinitializeFontsForDPIChange();
-                    RECT _rcWhenDpiChanges = { 0 };
 
-                    int _iSuggestedDpi = 0;
-                    SIZE _sizeSuggested = { 0 };
+                    bool _fInDPIChange = false;
+                    SIZE _sizeMaximum = { 0 };
 
 
                     static void s_ConvertWindowPosToWindowRect(_In_ LPWINDOWPOS const lpWindowPos,

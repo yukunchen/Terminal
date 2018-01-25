@@ -68,6 +68,18 @@ HRESULT BgfxEngine::InvalidateAll()
     return S_OK;
 }
 
+HRESULT BgfxEngine::InvalidateCircling(_Out_ bool* const pForcePaint)
+{
+    *pForcePaint = false;
+    return S_FALSE;
+}
+
+HRESULT BgfxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint)
+{
+    *pForcePaint = false;
+    return S_FALSE;
+}
+
 HRESULT BgfxEngine::StartPaint()
 {
     return S_OK;
