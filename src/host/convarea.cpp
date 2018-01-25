@@ -735,10 +735,11 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     }
 
     memmove(&Row.CharRow.Chars[TargetPoint.X], String, StringLength * sizeof(WCHAR));
-    for (size_t i = 0; i < StringLength; ++i)
+    try
     {
-        Row.CharRow.SetAttribute(TargetPoint.X + i, StringA[i]);
+        std::copy(StringA, StringA + StringLength, Row.CharRow.GetAttributeIterator(TargetPoint.X));
     }
+    CATCH_LOG();
 
     // recalculate first and last non-space char
     if (TargetPoint.X < Row.CharRow.Left)

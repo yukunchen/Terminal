@@ -106,34 +106,76 @@ void CHAR_ROW::swap(CHAR_ROW& other) noexcept
     swap(_attributes, other._attributes);
 }
 
+// Routine Description:
+// - gets the attribute at the specified column
+// Arguments:
+// - column - the column to get the attribute for
+// Return Value:
+// - the attribute
+// Note: will throw exception if column is out of bounds
 BYTE CHAR_ROW::GetAttribute(_In_ const size_t column) const
 {
     return _attributes.at(column);
 }
 
-// return an iterator to the data at specified column
+// Routine Description:
+// - returns an iterator to the data at specified column
+// Arguments:
+// - column - the column to start the iterator at (0-indexed)
+// Return Value:
+// - iterator starting at column
+// Note: will throw exception if column is out of bounds
 std::vector<BYTE>::iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column)
 {
     THROW_HR_IF(E_INVALIDARG, column >= _attributes.size());
     return std::next(_attributes.begin(), column);
 }
 
+// Routine Description:
+// - returns a const iterator to the data at specified column
+// Arguments:
+// - column - the column to start the const iterator at (0-indexed)
+// Return Value:
+// - const iterator starting at column
+// Note: will throw exception if column is out of bounds
 std::vector<BYTE>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column) const
 {
     THROW_HR_IF(E_INVALIDARG, column >= _attributes.size());
     return std::next(_attributes.cbegin(), column);
 }
 
+// Routine Description:
+// - resets attributes at specified column
+// Arguments:
+// - column - column to clear attribute at
+// Return Value:
+// - <none>
+// Note: will throw exception if column is out of bounds
 void CHAR_ROW::ClearAttribute(_In_ const size_t column)
 {
     _attributes.at(column) = PADDING_KATTR;
 }
 
+// Routine Description:
+// - sets the attribute at specified column to provided value
+// Arguments:
+// - column - column to set attribute for
+// - value - attribute value to set
+// Return Value:
+// - <none>
+// Note: will throw exception if column is out of bounds
 void CHAR_ROW::SetAttribute(_In_ const size_t column, _In_ const BYTE value)
 {
     _attributes.at(column) = value;
 }
 
+// Routine Description:
+// - checks if attribute at column indicates a trailing byte
+// Arguments:
+// - column - column to check
+// Return Value:
+// - true if column is a trailing byte, false otherwise
+// Note: will throw exception if column is out of bounds
 bool CHAR_ROW::IsTrailingByteAttribute(_In_ const size_t column) const
 {
     return IsFlagSet(_attributes.at(column), ATTR_TRAILING_BYTE);

@@ -121,9 +121,7 @@ NTSTATUS ReadRectFromScreenBuffer(_In_ const SCREEN_INFORMATION * const pScreenI
             for (short iCol = 0; iCol < sXSize; pciTargetPtr++)
             {
                 TextAttribute textAttr = rgUnpackedRowAttributes[coordSourcePoint.X + iCol];
-
-                const size_t currentDataAttributeIndex = coordSourcePoint.X + iCol;
-                BYTE currentDataAttribute = pRow->CharRow.GetAttribute(currentDataAttributeIndex);
+                BYTE currentDataAttribute = pRow->CharRow.GetAttribute(coordSourcePoint.X + iCol);
 
                 if (iCol == 0 && IsFlagSet(currentDataAttribute, CHAR_ROW::ATTR_TRAILING_BYTE))
                 {

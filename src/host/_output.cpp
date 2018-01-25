@@ -53,6 +53,11 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     }
 
     // copy chars
+    try
+    {
+        std::copy(pchBuffer, pchBuffer + cchBuffer, Row.CharRow.GetAttributeIterator(TargetPoint.X));
+    }
+    CATCH_LOG();
     for (size_t i = 0; i < cchBuffer; ++i)
     {
         pchBuffer[i] = Row.CharRow.GetAttribute(TargetPoint.X + i);
@@ -183,7 +188,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             }
 
             WCHAR* Char = &pRow->CharRow.Chars[coordDest.X];
-            // CJK Languages (FE)
+            // CJK Languages
             std::vector<BYTE>::iterator it = pRow->CharRow.GetAttributeIterator(coordDest.X);
 
             TextAttributeRun* pAttrRun = rAttrRunsBuff;

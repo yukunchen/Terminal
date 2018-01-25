@@ -571,7 +571,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
         {
             // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
             PWCHAR const pwsLine = Row.CharRow.Chars.get() + iLeft;
-            //PBYTE const pbKAttrs = Row.CharRow.KAttrs.get() + iLeft; // the double byte flags corresponding to the characters above.
+            // the double byte flags corresponding to the characters above.
             const std::vector<BYTE>::const_iterator itAttr = Row.CharRow.GetAttributeIterator(iLeft);
             size_t const cchLine = iRight - iLeft;
 
