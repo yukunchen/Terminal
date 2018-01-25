@@ -383,17 +383,16 @@ void Renderer::TriggerScroll(_In_ const COORD* const pcoordDelta)
 // - <none>
 void Renderer::TriggerCircling()
 {
-    bool fForcePaint = false;
-
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         bool fEngineRequestsRepaint = false;
-        LOG_IF_FAILED(pEngine->InvalidateCircling(&fEngineRequestsRepaint));
-        fForcePaint |= fEngineRequestsRepaint;
-    }
-    if (fForcePaint)
-    {
-        PaintFrame();
+        HRESULT hr = pEngine->InvalidateCircling(&fEngineRequestsRepaint);
+        LOG_IF_FAILED(hr);
+
+        if (SUCCEEDED(hr) && fEngineRequestsRepaint)
+        {
+            _PaintFrameForEngine(pEngine);
+        }
     }
 }
 
