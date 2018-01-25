@@ -924,42 +924,35 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 
         Viewport view(_pData->GetViewport());
 
-        SMALL_RECT srDirty = pEngine->GetDirtyRectInChars();
-        view.ConvertFromOrigin(&srDirty);
+        // Always attempt to paint the cursor, even if it's not within the 
+        //      "dirty" part of the viewport.
 
-        Viewport viewDirty(srDirty);
+        // Determine cursor height
+        ULONG ulHeight = pCursor->GetSize();
 
-        // Check if cursor is within dirty area
-        // if (viewDirty.IsWithinViewport(&coordCursor))
-        if (true)
+        // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
+        // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
+        // then we need to shrink it by half.
+        if (pCursor->IsDouble())
         {
-            // Determine cursor height
-            ULONG ulHeight = pCursor->GetSize();
-
-            // Now adjust the height for the overwrite/insert mode. If we're in overwrite mode, IsDouble will be set.
-            // When IsDouble is set, we either need to double the height of the cursor, or if it's already too big,
-            // then we need to shrink it by half.
-            if (pCursor->IsDouble())
+            if (ulHeight > 50) // 50 because 50 percent is half of 100 percent which is the max size.
             {
-                if (ulHeight > 50) // 50 because 50 percent is half of 100 percent which is the max size.
-                {
-                    ulHeight >>= 1;
-                }
-                else
-                {
-                    ulHeight <<= 1;
-                }
+                ulHeight >>= 1;
             }
-
-            // Determine cursor width
-            bool const fIsDoubleWidth = !!pCursor->IsDoubleWidth();
-
-            // Adjust cursor to viewport
-            view.ConvertToOrigin(&coordCursor);
-
-            // Draw it within the viewport
-            LOG_IF_FAILED(pEngine->PaintCursor(coordCursor, ulHeight, fIsDoubleWidth));
+            else
+            {
+                ulHeight <<= 1;
+            }
         }
+
+        // Determine cursor width
+        bool const fIsDoubleWidth = !!pCursor->IsDoubleWidth();
+
+        // Adjust cursor to viewport
+        view.ConvertToOrigin(&coordCursor);
+
+        // Draw it within the viewport
+        LOG_IF_FAILED(pEngine->PaintCursor(coordCursor, ulHeight, fIsDoubleWidth));
     }
 }
 

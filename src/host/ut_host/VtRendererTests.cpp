@@ -237,6 +237,8 @@ void VtRendererTest::VtSequenceHelperTests()
     qExpectedInput.push_back("\x1b[2J");
     engine->_ClearScreen();
 
+    qExpectedInput.push_back("\x1b[10C");
+    engine->_CursorForward(10);
 }
 
 void VtRendererTest::Xterm256TestInvalidate()
