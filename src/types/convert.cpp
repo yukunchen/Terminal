@@ -230,10 +230,6 @@ std::deque<char> ConvertToOem(_In_ const UINT codepage,
 std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(_In_ const wchar_t wch,
                                                       _In_ const unsigned int codepage)
 {
-    ////////////////////////////////////////////////////////////////////////
-    // Move this]
-    // to the convert cpp as a function
-    // Have PrintChar call into it
     const short invalidKey = -1;
     short keyState = VkKeyScanW(wch);
 

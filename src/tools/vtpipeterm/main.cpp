@@ -340,6 +340,7 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                             break;
                         case 'u':
                             doUnicode = true;
+                            break;
                         case 'r':
                             signalConsole();
                             break;
@@ -395,6 +396,9 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
         }
         getConsole()->WriteInput(str);
         PrintInputToDebug(str);
+        
+        doUnicode = false;
+        lang = TEST_LANG_NONE;
     }
 }
 

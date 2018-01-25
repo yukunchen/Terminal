@@ -142,12 +142,13 @@ bool TestInteractDispatch::WindowManipulation(_In_ const DispatchCommon::WindowM
 bool TestInteractDispatch::WriteString(_In_reads_(cch) const wchar_t* const pws,
                                        const size_t cch)
 {
+    DebugBreak();
     std::deque<std::unique_ptr<IInputEvent>> keyEvents;
     
     for (int i = 0; i < cch; ++i)
     {
         const wchar_t wch = pws[i];
-        std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, CP_UTF8);
+        std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, CP_USA);
         while (!convertedEvents.empty())
         {
             keyEvents.push_back(std::move(convertedEvents.front()));
@@ -539,7 +540,7 @@ void InputEngineTest::UTF8Test()
             )
     );
     VERIFY_IS_NOT_NULL(_pStateMachine);
-    
+    DisableVerifyExceptions disable;
     Log::Comment(L"Sending various utf-8 strings, and seeing what we get out");
     std::wstring utf8Input = L"\x041B"; // "Л", UTF-16: 041B,  utf8: "\xd09b"
     // std::string utf8Input = "Л"; //UTF-16: 041B
