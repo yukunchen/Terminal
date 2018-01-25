@@ -28,7 +28,6 @@ class CharRowTests
     TEST_METHOD_SETUP(MethodSetup)
     {
         pSingleByte = new CHAR_ROW(_sRowWidth);
-        pSingleByte->KAttrs.reset(nullptr);
         pSingleByte->Left = 5;
         pSingleByte->Right = 15;
         pSingleByte->SetWrapStatus(true);
@@ -73,11 +72,7 @@ class CharRowTests
             for (UINT iStrLength = 0; iStrLength < sRowWidth; iStrLength++)
             {
                 VERIFY_ARE_EQUAL(pUnderTest->Chars[iStrLength], UNICODE_SPACE);
-
-                if (pUnderTest->KAttrs != nullptr)
-                {
-                    VERIFY_ARE_EQUAL(pUnderTest->KAttrs[iStrLength], '\0');
-                }
+                VERIFY_ARE_EQUAL(pUnderTest->GetAttribute(iStrLength), '\0');
             }
         }
     }

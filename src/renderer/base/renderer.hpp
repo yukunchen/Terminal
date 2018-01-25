@@ -90,20 +90,20 @@ namespace Microsoft
                 void _PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
                                                         _In_ const ROW& pRow,
                                                         _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                        _In_reads_(cchLine) PBYTE pbKAttrsLine,
+                                                        _In_ const std::vector<BYTE>::const_iterator itAttr,
                                                         _In_ size_t cchLine,
                                                         _In_ size_t iFirstAttr,
                                                         _In_ COORD const coordTarget);
                 void _PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
                                                    _In_ const ROW& pRow,
                                                    _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                   _In_reads_(cchLine) PBYTE pbKAttrsLine,
+                                                   _In_ const std::vector<BYTE>::const_iterator itAttr,
                                                    _In_ size_t cchLine,
                                                    _In_ size_t iFirstAttr,
                                                    _In_ COORD const coordTarget);
                 HRESULT _PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
                                                            _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                           _In_reads_(cchLine) PBYTE const pbKAttrsLine,
+                                                           _In_ const std::vector<BYTE>::const_iterator itAttr,
                                                            _In_ size_t const cchLine,
                                                            _In_ COORD const coordTarget);
                 void _PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngine, _In_ const TextAttribute textAttribute, _In_ size_t const cchLine, _In_ COORD const coordTarget);

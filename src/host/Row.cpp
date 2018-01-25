@@ -122,7 +122,7 @@ HRESULT ROW::Resize(_In_ size_t const width)
 bool ROW::IsTrailingByteAtColumn(_In_ const size_t column) const
 {
     THROW_HR_IF(E_INVALIDARG, column >= CharRow.GetWidth());
-    return IsFlagSet(CharRow.KAttrs[column], CHAR_ROW::ATTR_TRAILING_BYTE);
+    return IsFlagSet(CharRow.GetAttribute(column), CHAR_ROW::ATTR_TRAILING_BYTE);
 }
 
 // Routine Description:
@@ -135,5 +135,5 @@ void ROW::ClearColumn(_In_ const size_t column)
 {
     THROW_HR_IF(E_INVALIDARG, column >= CharRow.GetWidth());
     CharRow.Chars[column] = UNICODE_SPACE;
-    CharRow.KAttrs[column] = 0;
+    CharRow.ClearAttribute(column);
 }

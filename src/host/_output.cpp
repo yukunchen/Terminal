@@ -53,7 +53,10 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     }
 
     // copy chars
-    memmove(&Row.CharRow.KAttrs[TargetPoint.X], pchBuffer, cchBuffer * sizeof(CHAR));
+    for (size_t i = 0; i < cchBuffer; ++i)
+    {
+        pchBuffer[i] = Row.CharRow.GetAttribute(TargetPoint.X + i);
+    }
 
     memmove(&Row.CharRow.Chars[TargetPoint.X], pwchBuffer, cchBuffer * sizeof(WCHAR));
 
@@ -180,7 +183,8 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
             }
 
             WCHAR* Char = &pRow->CharRow.Chars[coordDest.X];
-            CHAR* AttrP = (CHAR*)&pRow->CharRow.KAttrs[coordDest.X]; // CJK Languages (FE)
+            // CJK Languages (FE)
+            std::vector<BYTE>::iterator it = pRow->CharRow.GetAttributeIterator(coordDest.X);
 
             TextAttributeRun* pAttrRun = rAttrRunsBuff;
             pAttrRun->SetLength(0);
@@ -200,7 +204,9 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 
                 *Char++ = WCHAR_OF_PCI(SourcePtr);
                 // MSKK Apr.02.1993 V-HirotS For KAttr
-                *AttrP++ = (CHAR) ((ATTR_OF_PCI(SourcePtr) & COMMON_LVB_SBCSDBCS) >> 8);
+                *it = (CHAR) ((ATTR_OF_PCI(SourcePtr) & COMMON_LVB_SBCSDBCS) >> 8);
+                ++it;
+
 
                 if (pAttrRun->GetAttributes().IsEqualToLegacy((ATTR_OF_PCI(SourcePtr) & ~COMMON_LVB_SBCSDBCS)))
                 {
@@ -566,7 +572,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             // copy the chars into their arrays
             PWCHAR Char = &pRow->CharRow.Chars[X];
-            PBYTE AttrP = &pRow->CharRow.KAttrs[X];
+            std::vector<BYTE>::iterator it = pRow->CharRow.GetAttributeIterator(X);
             if ((ULONG)(coordScreenBufferSize.X - X) >= (*pcRecords - NumWritten))
             {
                 // The text will not hit the right hand edge, copy it all
@@ -591,7 +597,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                     }
                 }
 
-                memmove(AttrP, BufferA, (*pcRecords - NumWritten) * sizeof(CHAR));
+                std::copy(BufferA, BufferA + (*pcRecords - NumWritten), it);
                 #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "Code appears to be fine.")
                 memmove(Char, pvBuffer, (*pcRecords - NumWritten) * sizeof(WCHAR));
 
@@ -618,7 +624,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                         *((PCHAR)BufferA + coordScreenBufferSize.X - TPoint.X) = 0;
                     }
                 }
-                memmove(AttrP, BufferA, (coordScreenBufferSize.X - X) * sizeof(CHAR));
+                std::copy(BufferA, BufferA + (coordScreenBufferSize.X - X), it);
                 BufferA = (PBYTE)((PBYTE)BufferA + ((coordScreenBufferSize.X - X) * sizeof(CHAR)));
                 memmove(Char, pvBuffer, (coordScreenBufferSize.X - X) * sizeof(WCHAR));
                 pvBuffer = (PVOID)((PBYTE)pvBuffer + ((coordScreenBufferSize.X - X) * sizeof(WCHAR)));
@@ -880,7 +886,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             // copy the chars into their arrays
             SHORT LeftX = X;
             PWCHAR Char = &pRow->CharRow.Chars[X];
-            PCHAR AttrP = (PCHAR) & pRow->CharRow.KAttrs[X];
+            std::vector<BYTE>::iterator it = pRow->CharRow.GetAttributeIterator(X);
             if ((ULONG) (coordScreenBufferSize.X - X) >= (*pcElements - NumWritten))
             {
                 {
@@ -895,21 +901,22 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     for (SHORT j = 0; j < (SHORT)(*pcElements - NumWritten); j++)
                     {
                         *Char++ = (WCHAR)wElement;
-                        *AttrP &= ~CHAR_ROW::ATTR_DBCSSBCS_BYTE;
+                        ClearAllFlags(*it, CHAR_ROW::ATTR_DBCSSBCS_BYTE);
                         if (StartPosFlag++ & 1)
                         {
-                            *AttrP++ |= CHAR_ROW::ATTR_TRAILING_BYTE;
+                            SetFlag(*it, CHAR_ROW::ATTR_TRAILING_BYTE);
                         }
                         else
                         {
-                            *AttrP++ |= CHAR_ROW::ATTR_LEADING_BYTE;
+                            SetFlag(*it, CHAR_ROW::ATTR_LEADING_BYTE);
                         }
+                        ++it;
                     }
 
                     if (StartPosFlag & 1)
                     {
                         *(Char - 1) = UNICODE_SPACE;
-                        *(AttrP - 1) &= ~CHAR_ROW::ATTR_DBCSSBCS_BYTE;
+                        ClearAllFlags(*(it - 1), CHAR_ROW::ATTR_DBCSSBCS_BYTE);
                     }
                 }
                 else
@@ -917,7 +924,8 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     for (SHORT j = 0; j < (SHORT)(*pcElements - NumWritten); j++)
                     {
                         *Char++ = (WCHAR)wElement;
-                        *AttrP++ &= ~CHAR_ROW::ATTR_DBCSSBCS_BYTE;
+                        ClearAllFlags(*it, CHAR_ROW::ATTR_DBCSSBCS_BYTE);
+                        ++it;
                     }
                 }
                 X = (SHORT)(X + *pcElements - NumWritten - 1);
@@ -937,15 +945,16 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     for (SHORT j = 0; j < coordScreenBufferSize.X - X; j++)
                     {
                         *Char++ = (WCHAR)wElement;
-                        *AttrP &= ~CHAR_ROW::ATTR_DBCSSBCS_BYTE;
+                        ClearAllFlags(*it, CHAR_ROW::ATTR_DBCSSBCS_BYTE);
                         if (StartPosFlag++ & 1)
                         {
-                            *AttrP++ |= CHAR_ROW::ATTR_TRAILING_BYTE;
+                            SetFlag(*it, CHAR_ROW::ATTR_TRAILING_BYTE);
                         }
                         else
                         {
-                            *AttrP++ |= CHAR_ROW::ATTR_LEADING_BYTE;
+                            SetFlag(*it, CHAR_ROW::ATTR_LEADING_BYTE);
                         }
+                        ++it;
                     }
                 }
                 else
@@ -953,7 +962,8 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     for (SHORT j = 0; j < coordScreenBufferSize.X - X; j++)
                     {
                         *Char++ = (WCHAR)wElement;
-                        *AttrP++ &= ~CHAR_ROW::ATTR_DBCSSBCS_BYTE;
+                        ClearAllFlags(*it, CHAR_ROW::ATTR_DBCSSBCS_BYTE);
+                        ++it;
                     }
                 }
                 NumWritten += coordScreenBufferSize.X - X;
@@ -1159,7 +1169,7 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
         BisectWrite(XSize, TPoint, pScreenInfo);
         BOOL Width = IsCharFullWidth(pciFill->Char.UnicodeChar);
         PWCHAR Char = &pRow->CharRow.Chars[psrTarget->Left];
-        PCHAR AttrP = (PCHAR) & pRow->CharRow.KAttrs[psrTarget->Left];
+        std::vector<BYTE>::iterator it = pRow->CharRow.GetAttributeIterator(psrTarget->Left);
         for (SHORT j = 0; j < XSize; j++)
         {
             if (Width)
@@ -1168,20 +1178,24 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
                 {
                     *Char++ = pciFill->Char.UnicodeChar;
                     *Char++ = pciFill->Char.UnicodeChar;
-                    *AttrP++ = CHAR_ROW::ATTR_LEADING_BYTE;
-                    *AttrP++ = CHAR_ROW::ATTR_TRAILING_BYTE;
+                    *it = CHAR_ROW::ATTR_LEADING_BYTE;
+                    ++it;
+                    *it = CHAR_ROW::ATTR_TRAILING_BYTE;
+                    ++it;
                     j++;
                 }
                 else
                 {
                     *Char++ = UNICODE_NULL;
-                    *AttrP++ = 0;
+                    *it = PADDING_KATTR;
+                    ++it;
                 }
             }
             else
             {
                 *Char++ = pciFill->Char.UnicodeChar;
-                *AttrP++ = 0;
+                *it = PADDING_KATTR;
+                ++it;
             }
         }
 

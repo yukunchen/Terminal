@@ -380,7 +380,7 @@ void TextBufferTests::TestInsertCharacter()
 
     // ensure that the buffer didn't start with these fields
     VERIFY_ARE_NOT_EQUAL(Row.CharRow.Chars[coordCursorBefore.X], wchTest);
-    VERIFY_ARE_NOT_EQUAL(Row.CharRow.KAttrs[coordCursorBefore.X], bKAttrTest);
+    VERIFY_ARE_NOT_EQUAL(Row.CharRow.GetAttribute(coordCursorBefore.X), bKAttrTest);
 
     TextAttributeRun* pAttrRun;
     UINT cAttrApplies;
@@ -393,7 +393,7 @@ void TextBufferTests::TestInsertCharacter()
 
     // ensure that the buffer position where the cursor WAS contains the test items
     VERIFY_ARE_EQUAL(Row.CharRow.Chars[coordCursorBefore.X], wchTest);
-    VERIFY_ARE_EQUAL(Row.CharRow.KAttrs[coordCursorBefore.X], bKAttrTest);
+    VERIFY_ARE_EQUAL(Row.CharRow.GetAttribute(coordCursorBefore.X), bKAttrTest);
 
     Row.AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, &cAttrApplies);
     VERIFY_IS_TRUE(pAttrRun->GetAttributes().IsEqual(TestAttributes));

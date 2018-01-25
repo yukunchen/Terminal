@@ -82,37 +82,34 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
     {
         ROW& row = pTextInfo->GetRowAtIndex(rowIndex);
 
-        if (row.CharRow.KAttrs != nullptr)
+        // Check start position of strings
+        if (row.IsTrailingByteAtColumn(coordTarget.X))
         {
-            // Check start position of strings
-            if (row.IsTrailingByteAtColumn(coordTarget.X))
+            if (coordTarget.X == 0)
             {
-                if (coordTarget.X == 0)
-                {
-                    pTextInfo->GetPrevRow(row).ClearColumn(coordScreenBufferSize.X - 1);
-                }
-                else
-                {
-                    row.ClearColumn(coordTarget.X - 1);
-                }
+                pTextInfo->GetPrevRow(row).ClearColumn(coordScreenBufferSize.X - 1);
             }
+            else
+            {
+                row.ClearColumn(coordTarget.X - 1);
+            }
+        }
 
-            // Check end position of strings
-            if (coordTarget.X + sStringLen < coordScreenBufferSize.X)
+        // Check end position of strings
+        if (coordTarget.X + sStringLen < coordScreenBufferSize.X)
+        {
+            size_t column = coordTarget.X + sStringLen;
+            if (row.IsTrailingByteAtColumn(column))
             {
-                size_t column = coordTarget.X + sStringLen;
-                if (row.IsTrailingByteAtColumn(column))
-                {
-                    row.ClearColumn(column);
-                }
+                row.ClearColumn(column);
             }
-            else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
+        }
+        else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
+        {
+            ROW& rowNext = pTextInfo->GetNextRow(row);
+            if (rowNext.IsTrailingByteAtColumn(0))
             {
-                ROW& rowNext = pTextInfo->GetNextRow(row);
-                if (rowNext.IsTrailingByteAtColumn(0))
-                {
-                    rowNext.ClearColumn(0);
-                }
+                rowNext.ClearColumn(0);
             }
         }
     }
@@ -309,50 +306,6 @@ BOOL IsCharFullWidth(_In_ WCHAR wch)
 }
 
 // Routine Description:
-// - This routine remove DBCS padding code.
-// Arguments:
-// - Dst - Pointer to destination.
-// - Src - Pointer to source.
-// - NumBytes - Number of string.
-// Return Value:
-DWORD RemoveDbcsMark(_Inout_updates_(NumChars) PWCHAR Dst,
-                     _In_reads_(NumChars) PWCHAR Src,
-                     _In_ DWORD NumChars,
-                     _In_reads_opt_(NumChars) PCHAR SrcA)
-{
-    if (NumChars == 0 || NumChars == 0xFFFFFFFF)
-    {
-        return 0;
-    }
-
-    if (SrcA)
-    {
-        DWORD cTotalChars = NumChars;
-        PWCHAR const Tmp = Dst;
-        while (NumChars--)
-        {
-            if (Dst >= Tmp + cTotalChars)
-            {
-                ASSERT(false);
-                return 0;
-            }
-
-            if (!(*SrcA++ & CHAR_ROW::ATTR_TRAILING_BYTE))
-            {
-                *Dst++ = *Src;
-            }
-            Src++;
-        }
-        return (ULONG) (Dst - Tmp);
-    }
-    else
-    {
-        memmove(Dst, Src, NumChars * sizeof(WCHAR));
-        return NumChars;
-    }
-}
-
-// Routine Description:
 // - This routine removes the double copies of characters used when storing DBCS/Double-wide characters in the text buffer.
 // Arguments:
 // - pciDst - Pointer to destination.
@@ -398,43 +351,6 @@ DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) co
     ASSERT(iDst == cch);
 
     return iDst;
-}
-
-DWORD RemoveDbcsMarkAll(_In_ const SCREEN_INFORMATION * const pScreenInfo,
-                        _In_ ROW* pRow,
-                        _In_ SHORT * const psLeftChar,
-                        _In_ PRECT prcText,
-                        _Inout_opt_ int * const piTextLeft,
-                        _Inout_updates_(cchBuf) PWCHAR pwchBuf,
-                        _In_ const SHORT cchBuf)
-{
-    if (cchBuf <= 0)
-    {
-        return cchBuf;
-    }
-
-    if (*psLeftChar > pScreenInfo->GetBufferViewport().Left && pRow->CharRow.KAttrs[*psLeftChar] & CHAR_ROW::ATTR_TRAILING_BYTE)
-    {
-        prcText->left -= pScreenInfo->GetScreenFontSize().X;
-        --*psLeftChar;
-
-        if (nullptr != piTextLeft)
-        {
-            *piTextLeft = prcText->left;
-        }
-
-#pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "We're guaranteed to be able to make this access.")
-        return RemoveDbcsMark(pwchBuf, &pRow->CharRow.Chars[*psLeftChar], cchBuf + 1, (PCHAR) & pRow->CharRow.KAttrs[*psLeftChar]);
-    }
-    else if (*psLeftChar == pScreenInfo->GetBufferViewport().Left && pRow->CharRow.KAttrs[*psLeftChar] & CHAR_ROW::ATTR_TRAILING_BYTE)
-    {
-        *pwchBuf = UNICODE_SPACE;
-        return RemoveDbcsMark(pwchBuf + 1, &pRow->CharRow.Chars[*psLeftChar + 1], cchBuf - 1, (PCHAR) & pRow->CharRow.KAttrs[*psLeftChar + 1]) + 1;
-    }
-    else
-    {
-        return RemoveDbcsMark(pwchBuf, &pRow->CharRow.Chars[*psLeftChar], cchBuf, (PCHAR) & pRow->CharRow.KAttrs[*psLeftChar]);
-    }
 }
 
 // Routine Description:

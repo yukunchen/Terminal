@@ -733,8 +733,12 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
             }
         }
     }
+
     memmove(&Row.CharRow.Chars[TargetPoint.X], String, StringLength * sizeof(WCHAR));
-    memmove(&Row.CharRow.KAttrs[TargetPoint.X], StringA, StringLength * sizeof(CHAR));
+    for (size_t i = 0; i < StringLength; ++i)
+    {
+        Row.CharRow.SetAttribute(TargetPoint.X + i, StringA[i]);
+    }
 
     // recalculate first and last non-space char
     if (TargetPoint.X < Row.CharRow.Left)

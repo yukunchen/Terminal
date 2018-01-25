@@ -357,14 +357,8 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ BYTE const bKAttr)
 {
     // To figure out if the sequence is valid, we have to look at the character that comes before the current one
     const COORD coordPrevPosition = GetPreviousFromCursor();
-    const ROW& prevRow = GetRowByOffset(coordPrevPosition.Y);
-
-    // By default, assume it's a single byte character if no KAttrs data exists
-    BYTE bPrevKAttr = CHAR_ROW::ATTR_SINGLE_BYTE;
-    if (prevRow.CharRow.KAttrs != nullptr)
-    {
-        bPrevKAttr = prevRow.CharRow.KAttrs[coordPrevPosition.X];
-    }
+    ROW& prevRow = GetRowByOffset(coordPrevPosition.Y);
+    const BYTE bPrevKAttr = prevRow.CharRow.GetAttribute(coordPrevPosition.X);
 
     bool fValidSequence = true; // Valid until proven otherwise
     bool fCorrectableByErase = false; // Can't be corrected until proven otherwise
@@ -410,11 +404,7 @@ bool TEXT_BUFFER_INFO::AssertValidDoubleByteSequence(_In_ BYTE const bKAttr)
     {
         // Erase previous character into an N type.
         prevRow.CharRow.Chars[coordPrevPosition.X] = PADDING_CHAR;
-
-        if (prevRow.CharRow.KAttrs != nullptr)
-        {
-            prevRow.CharRow.KAttrs[coordPrevPosition.X] = PADDING_KATTR;
-        }
+        prevRow.CharRow.ClearAttribute(coordPrevPosition.X);
 
         // Sequence is now N N or N L, which are both okay. Set sequence back to valid.
         fValidSequence = true;
@@ -489,10 +479,7 @@ bool TEXT_BUFFER_INFO::InsertCharacter(_In_ wchar_t const wch, _In_ BYTE const b
         short const cBufferWidth = this->_coordBufferSize.X;
 
         pCharRow->Chars[iCol] = wch;
-        if (pCharRow->KAttrs != nullptr)
-        {
-            pCharRow->KAttrs[iCol] = bKAttr;
-        }
+        pCharRow->SetAttribute(iCol, bKAttr);
 
         // Update positioning
         if (wch == PADDING_CHAR)

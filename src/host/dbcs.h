@@ -33,13 +33,6 @@ bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, 
 void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_ PSCREEN_INFORMATION pScreenInfo);
 
 DWORD RemoveDbcsMarkCell(_Out_writes_(cch) PCHAR_INFO pciDst, _In_reads_(cch) const CHAR_INFO * pciSrc, _In_ DWORD cch);
-DWORD RemoveDbcsMarkAll(_In_ const SCREEN_INFORMATION * const pScreenInfo,
-                        _In_ ROW* pRow,
-                        _In_ SHORT * const psLeftChar,
-                        _In_ PRECT prcText,
-                        _Inout_opt_ int * const piTextLeft,
-                        _Inout_updates_(cchBuf) PWCHAR pwchBuf,
-                        _In_ const SHORT cchBuf);
 
 bool IsDBCSLeadByteConsole(_In_ const CHAR ch, _In_ const CPINFO * const pCPInfo);
 

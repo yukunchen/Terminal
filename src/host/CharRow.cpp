@@ -29,16 +29,12 @@ void swap(CHAR_ROW& a, CHAR_ROW& b) noexcept
 CHAR_ROW::CHAR_ROW(short rowWidth) :
     _rowWidth{ static_cast<size_t>(rowWidth) },
     Left{ rowWidth },
-    Right{ 0 }
+    Right{ 0 },
+    _attributes(rowWidth, PADDING_KATTR)
 {
     Chars = std::make_unique<wchar_t[]>(rowWidth);
     THROW_IF_NULL_ALLOC(Chars.get());
-
-    KAttrs = std::make_unique<BYTE[]>(rowWidth);
-    THROW_IF_NULL_ALLOC(KAttrs.get());
-
     wmemset(Chars.get(), PADDING_CHAR, rowWidth);
-    memset(KAttrs.get(), PADDING_KATTR, rowWidth);
 
     SetWrapStatus(false);
     SetDoubleBytePadded(false);
@@ -55,16 +51,12 @@ CHAR_ROW::CHAR_ROW(const CHAR_ROW& a) :
     Left{ a.Left },
     Right{ a.Right },
     bRowFlags{ a.bRowFlags },
-    _rowWidth{ a._rowWidth }
+    _rowWidth{ a._rowWidth },
+    _attributes{ a._attributes }
 {
     Chars = std::make_unique<wchar_t[]>(_rowWidth);
     THROW_IF_NULL_ALLOC(Chars.get());
-
-    KAttrs = std::make_unique<BYTE[]>(_rowWidth);
-    THROW_IF_NULL_ALLOC(KAttrs.get());
-
     std::copy(a.Chars.get(), a.Chars.get() + a._rowWidth, Chars.get());
-    std::copy(a.KAttrs.get(), a.KAttrs.get() + a._rowWidth, KAttrs.get());
 }
 
 // Routine Description:
@@ -109,9 +101,42 @@ void CHAR_ROW::swap(CHAR_ROW& other) noexcept
     swap(Left, other.Left);
     swap(Right, other.Right);
     swap(Chars, other.Chars);
-    swap(KAttrs, other.KAttrs);
     swap(bRowFlags, other.bRowFlags);
     swap(_rowWidth, other._rowWidth);
+    swap(_attributes, other._attributes);
+}
+
+BYTE CHAR_ROW::GetAttribute(_In_ const size_t column) const
+{
+    return _attributes.at(column);
+}
+
+// return an iterator to the data at specified column
+std::vector<BYTE>::iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column)
+{
+    THROW_HR_IF(E_INVALIDARG, column >= _attributes.size());
+    return std::next(_attributes.begin(), column);
+}
+
+std::vector<BYTE>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column) const
+{
+    THROW_HR_IF(E_INVALIDARG, column >= _attributes.size());
+    return std::next(_attributes.cbegin(), column);
+}
+
+void CHAR_ROW::ClearAttribute(_In_ const size_t column)
+{
+    _attributes.at(column) = PADDING_KATTR;
+}
+
+void CHAR_ROW::SetAttribute(_In_ const size_t column, _In_ const BYTE value)
+{
+    _attributes.at(column) = value;
+}
+
+bool CHAR_ROW::IsTrailingByteAttribute(_In_ const size_t column) const
+{
+    return IsFlagSet(_attributes.at(column), ATTR_TRAILING_BYTE);
 }
 
 // Routine Description:
@@ -139,11 +164,7 @@ void CHAR_ROW::Reset(_In_ short const sRowWidth)
     Right = 0;
 
     wmemset(Chars.get(), PADDING_CHAR, sRowWidth);
-
-    if (KAttrs.get() != nullptr)
-    {
-        memset(KAttrs.get(), PADDING_KATTR, sRowWidth);
-    }
+    std::fill(_attributes.begin(), _attributes.end(), PADDING_KATTR);
 
     SetWrapStatus(false);
     SetDoubleBytePadded(false);
@@ -175,18 +196,16 @@ HRESULT CHAR_ROW::Resize(_In_ size_t const newSize)
 
     const size_t copySize = min(newSize, _rowWidth);
     std::copy(Chars.get(), Chars.get() + copySize, charBuffer.get());
-    std::copy(KAttrs.get(), KAttrs.get() + copySize, attributesBuffer.get());
 
     if (newSize > _rowWidth)
     {
-        // last attribute in a row gets extended to the end
-        BYTE lastAttribute = attributesBuffer[copySize - 1];
-        std::fill(attributesBuffer.get() + copySize, attributesBuffer.get() + newSize, lastAttribute);
         std::fill(charBuffer.get() + copySize, charBuffer.get() + newSize, UNICODE_SPACE);
     }
 
+    // last attribute in a row gets extended to the end
+    _attributes.resize(newSize, _attributes.back());
+
     Chars.swap(charBuffer);
-    KAttrs.swap(attributesBuffer);
     Left = static_cast<short>(newSize);
     Right = 0;
     _rowWidth = newSize;

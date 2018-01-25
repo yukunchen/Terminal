@@ -20,6 +20,7 @@ Revision History:
 #pragma once
 
 #include <memory>
+#include <vector>
 
 // Characters used for padding out the buffer with invalid/empty space
 #define PADDING_CHAR UNICODE_SPACE
@@ -60,7 +61,13 @@ public:
     SHORT Right;    // one past rightmost bound of chars in Chars array (array will be full width)
     SHORT Left; // leftmost bound of chars in Chars array (array will be full width)
     std::unique_ptr<wchar_t[]> Chars; // all chars in row
-    std::unique_ptr<BYTE[]> KAttrs; // all DBCS lead & trail bit in row
+
+    BYTE GetAttribute(_In_ const size_t column) const;
+    std::vector<BYTE>::iterator GetAttributeIterator(_In_ const size_t column);
+    std::vector<BYTE>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column) const;
+    void ClearAttribute(_In_ const size_t column);
+    void SetAttribute(_In_ const size_t column, _In_ const BYTE value);
+    bool IsTrailingByteAttribute(_In_ const size_t column) const;
 
     void Reset(_In_ short const sRowWidth);
 
@@ -101,6 +108,7 @@ public:
 private:
     RowFlags bRowFlags;
     size_t _rowWidth;
+    std::vector<BYTE> _attributes; // all DBCS lead & trail bit in row
 
 #ifdef UNIT_TESTING
     friend class CharRowTests;
@@ -117,7 +125,7 @@ constexpr bool operator==(const CHAR_ROW& a, const CHAR_ROW& b) noexcept
             a.Right == b.Right &&
             a.Left == b.Left &&
             a.Chars == b.Chars &&
-            a.KAttrs == b.KAttrs);
+            a._attributes == b._attributes);
 }
 
 // this sticks specialization of swap() into the std::namespace for CHAR_ROW, so that callers that use

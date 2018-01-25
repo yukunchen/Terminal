@@ -228,10 +228,10 @@ private:
         pRow->CharRow.Right = 9; // 1 past the last valid character in the array
 
         // set double-byte/double-width attributes
-        pRow->CharRow.KAttrs[2] = CHAR_ROW::ATTR_LEADING_BYTE;
-        pRow->CharRow.KAttrs[3] = CHAR_ROW::ATTR_TRAILING_BYTE;
-        pRow->CharRow.KAttrs[5] = CHAR_ROW::ATTR_LEADING_BYTE;
-        pRow->CharRow.KAttrs[6] = CHAR_ROW::ATTR_TRAILING_BYTE;
+        pRow->CharRow.SetAttribute(2, CHAR_ROW::ATTR_LEADING_BYTE);
+        pRow->CharRow.SetAttribute(3, CHAR_ROW::ATTR_TRAILING_BYTE);
+        pRow->CharRow.SetAttribute(5, CHAR_ROW::ATTR_LEADING_BYTE);
+        pRow->CharRow.SetAttribute(6, CHAR_ROW::ATTR_TRAILING_BYTE);
 
         // set some colors
         TextAttribute Attr = TextAttribute(0);
@@ -287,14 +287,14 @@ private:
         pRow->CharRow.Right = 80; // 1 past the last valid character in the array
 
         // set double-byte/double-width attributes
-        pRow->CharRow.KAttrs[0] = CHAR_ROW::ATTR_TRAILING_BYTE;
-        pRow->CharRow.KAttrs[27] = CHAR_ROW::ATTR_LEADING_BYTE;
-        pRow->CharRow.KAttrs[28] = CHAR_ROW::ATTR_TRAILING_BYTE;
-        pRow->CharRow.KAttrs[39] = CHAR_ROW::ATTR_LEADING_BYTE;
-        pRow->CharRow.KAttrs[40] = CHAR_ROW::ATTR_TRAILING_BYTE;
-        pRow->CharRow.KAttrs[67] = CHAR_ROW::ATTR_LEADING_BYTE;
-        pRow->CharRow.KAttrs[68] = CHAR_ROW::ATTR_TRAILING_BYTE;
-        pRow->CharRow.KAttrs[79] = CHAR_ROW::ATTR_LEADING_BYTE;
+        pRow->CharRow.SetAttribute(0, CHAR_ROW::ATTR_TRAILING_BYTE);
+        pRow->CharRow.SetAttribute(27, CHAR_ROW::ATTR_LEADING_BYTE);
+        pRow->CharRow.SetAttribute(28, CHAR_ROW::ATTR_TRAILING_BYTE);
+        pRow->CharRow.SetAttribute(39, CHAR_ROW::ATTR_LEADING_BYTE);
+        pRow->CharRow.SetAttribute(40, CHAR_ROW::ATTR_TRAILING_BYTE);
+        pRow->CharRow.SetAttribute(67, CHAR_ROW::ATTR_LEADING_BYTE);
+        pRow->CharRow.SetAttribute(68, CHAR_ROW::ATTR_TRAILING_BYTE);
+        pRow->CharRow.SetAttribute(79, CHAR_ROW::ATTR_LEADING_BYTE);
 
         // everything gets default attributes
         pRow->AttrRow.Reset(80, gci.CurrentScreenBuffer->GetAttributes());

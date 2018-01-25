@@ -740,14 +740,13 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                 ROW& Row = pTextBuffer->GetRowByOffset(TargetPoint.Y);
 
                 PWCHAR const CharTmp = &Row.CharRow.Chars[TargetPoint.X];
-                PCHAR const AttrP = (PCHAR)&Row.CharRow.KAttrs[TargetPoint.X];
 
-                if (*AttrP & CHAR_ROW::ATTR_TRAILING_BYTE)
+                if (Row.CharRow.IsTrailingByteAttribute(TargetPoint.X))
                 {
                     *(CharTmp - 1) = UNICODE_SPACE;
                     *CharTmp = UNICODE_SPACE;
-                    *AttrP = 0;
-                    *(AttrP - 1) = 0;
+                    Row.CharRow.SetAttribute(TargetPoint.X, PADDING_KATTR);
+                    Row.CharRow.SetAttribute(TargetPoint.X - 1, PADDING_KATTR);
 
                     Region.Left = TargetPoint.X - 1;
                     Region.Right = (SHORT)(TargetPoint.X);

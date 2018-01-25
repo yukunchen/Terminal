@@ -354,7 +354,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
             Utils::s_DoIncrementScreenCoordinate(srectEdges, &coordSelPoint);
 
             const TEXT_BUFFER_INFO* const pTextInfo = gci.CurrentScreenBuffer->TextInfo;
-            const BYTE bAttr = pTextInfo->GetRowByOffset(coordSelPoint.Y).CharRow.KAttrs[coordSelPoint.X];
+            const BYTE bAttr = pTextInfo->GetRowByOffset(coordSelPoint.Y).CharRow.GetAttribute(coordSelPoint.X);
 
             // if we're about to split a character in half, keep moving right
             if (bAttr & CHAR_ROW::ATTR_TRAILING_BYTE)
@@ -575,9 +575,8 @@ bool Selection::HandleKeyboardLineSelectionEvent(_In_ const INPUT_KEY_INFO* cons
 
     // ensure we're not planting the cursor in the middle of a double-wide character.
     const TEXT_BUFFER_INFO* const pTextInfo = gci.CurrentScreenBuffer->TextInfo;
-    const BYTE bAttr = pTextInfo->GetRowByOffset(coordSelPoint.Y).CharRow.KAttrs[coordSelPoint.X];
 
-    if (bAttr & CHAR_ROW::ATTR_TRAILING_BYTE)
+    if (pTextInfo->GetRowByOffset(coordSelPoint.Y).CharRow.IsTrailingByteAttribute(coordSelPoint.X))
     {
         // try to move off by highlighting the lead half too.
         bool fSuccess = Utils::s_DoDecrementScreenCoordinate(srectEdges, &coordSelPoint);
@@ -730,7 +729,7 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
         const ROW& Row = pTextInfo->GetRowByOffset(cursorPos.Y);
 
 
-        BYTE bKAttrs = Row.CharRow.KAttrs[cursorPos.X];
+        BYTE bKAttrs = Row.CharRow.GetAttribute(cursorPos.X);
         if (bKAttrs & CHAR_ROW::ATTR_LEADING_BYTE)
         {
             iNextRightX = 2;
@@ -742,7 +741,7 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
 
         if (cursorPos.X > 0)
         {
-            bKAttrs = Row.CharRow.KAttrs[cursorPos.X - 1];
+            bKAttrs = Row.CharRow.GetAttribute(cursorPos.X - 1);
             if (bKAttrs & CHAR_ROW::ATTR_TRAILING_BYTE)
             {
                 iNextLeftX = 2;
@@ -751,7 +750,7 @@ bool Selection::_HandleMarkModeSelectionNav(_In_ const INPUT_KEY_INFO* const pIn
             {
                 if (cursorPos.X - 1 > 0)
                 {
-                    bKAttrs = Row.CharRow.KAttrs[cursorPos.X - 2];
+                    bKAttrs = Row.CharRow.GetAttribute(cursorPos.X - 2);
                     if (bKAttrs & CHAR_ROW::ATTR_TRAILING_BYTE)
                     {
                         iNextLeftX = 3;
