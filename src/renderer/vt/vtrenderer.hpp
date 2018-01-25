@@ -48,6 +48,7 @@ public:
     virtual HRESULT InvalidateScroll(_In_ const COORD* const pcoordDelta) = 0;
     HRESULT InvalidateSystem(_In_ const RECT* const prcDirtyClient) override;
     HRESULT Invalidate(_In_ const SMALL_RECT* const psrRegion) override;
+    HRESULT InvalidateCursor(_In_ const COORD* const pcoordCursor) override;
     HRESULT InvalidateAll() override;
     HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) override;
     HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) override;

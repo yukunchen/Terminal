@@ -233,6 +233,29 @@ void Renderer::TriggerRedraw(_In_ const COORD* const pcoord)
 }
 
 // Routine Description:
+// - Called when a particular coordinate within the console buffer has changed.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Renderer::TriggerRedrawCursor(_In_ const COORD* const pcoord)
+{
+    Viewport view(_pData->GetViewport());
+    COORD updateCoord = *pcoord;
+
+    if (view.IsWithinViewport(&updateCoord))
+    {
+        view.ConvertToOrigin(&updateCoord);
+        for (IRenderEngine* pEngine : _rgpEngines)
+        {
+            LOG_IF_FAILED(pEngine->InvalidateCursor(&updateCoord));
+        }
+
+        _NotifyPaintFrame();
+    }
+}
+
+// Routine Description:
 // - Called when something that changes the output state has occurred and the entire frame is now potentially invalid.
 // - NOTE: Use sparingly. Try to reduce the refresh region where possible. Only use when a global state change has occurred.
 // Arguments:
@@ -907,7 +930,8 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
         Viewport viewDirty(srDirty);
 
         // Check if cursor is within dirty area
-        if (viewDirty.IsWithinViewport(&coordCursor))
+        // if (viewDirty.IsWithinViewport(&coordCursor))
+        if (true)
         {
             // Determine cursor height
             ULONG ulHeight = pCursor->GetSize();
