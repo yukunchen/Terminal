@@ -98,7 +98,7 @@ HRESULT VtEngine::_EraseCharacter(_In_ const short chars)
 HRESULT VtEngine::_CursorForward(_In_ const short chars)
 {
 
-    static const std::string format = "\x1b[%dD";
+    static const std::string format = "\x1b[%dC";
 
     return _WriteFormattedString(&format, chars);
 }

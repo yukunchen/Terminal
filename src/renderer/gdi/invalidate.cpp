@@ -7,9 +7,11 @@
 #include "precomp.h"
 
 #include "gdirenderer.hpp"
+#include "../../types/inc/Viewport.hpp"
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
 
 // Routine Description:
@@ -92,6 +94,18 @@ HRESULT GdiEngine::Invalidate(const SMALL_RECT* const psrRegion)
     RECT rcRegion = { 0 };
     RETURN_IF_FAILED(_ScaleByFont(psrRegion, &rcRegion));
     RETURN_HR(_InvalidateRect(&rcRegion));
+}
+
+// Routine Description:
+// - Notifies us that the console has changed the position of the cursor.
+// Arguments:
+// - pcoordCursor - the new position of the cursor
+// Return Value:
+// - S_OK, else an appropriate HRESULT for failing to allocate or write.
+HRESULT GdiEngine::InvalidateCursor(const COORD* const pcoordCursor)
+{
+    SMALL_RECT sr = Viewport::FromCoord(*pcoordCursor).ToExclusive();
+    return this->Invalidate(&sr);
 }
 
 // Routine Description:
