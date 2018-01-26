@@ -83,7 +83,7 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
         ROW& row = pTextInfo->GetRowAtIndex(rowIndex);
 
         // Check start position of strings
-        if (row.IsTrailingByteAtColumn(coordTarget.X))
+        if (row.CharRow.GetAttribute(coordTarget.X).IsTrailing())
         {
             if (coordTarget.X == 0)
             {
@@ -99,7 +99,7 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
         if (coordTarget.X + sStringLen < coordScreenBufferSize.X)
         {
             size_t column = coordTarget.X + sStringLen;
-            if (row.IsTrailingByteAtColumn(column))
+            if (row.CharRow.GetAttribute(column).IsTrailing())
             {
                 row.ClearColumn(column);
             }
@@ -107,7 +107,7 @@ void BisectWrite(_In_ const SHORT sStringLen, _In_ const COORD coordTarget, _In_
         else if (coordTarget.Y + 1 < coordScreenBufferSize.Y)
         {
             ROW& rowNext = pTextInfo->GetNextRow(row);
-            if (rowNext.IsTrailingByteAtColumn(0))
+            if (rowNext.CharRow.GetAttribute(0).IsTrailing())
             {
                 rowNext.ClearColumn(0);
             }

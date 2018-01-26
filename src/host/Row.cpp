@@ -114,18 +114,6 @@ HRESULT ROW::Resize(_In_ size_t const width)
 }
 
 // Routine Description:
-// - checks if column in row is a trailing byte
-// Arguments:
-// - column - 0-indexed column index
-// Return Value:
-// - true if column is a trailing byte, false otherwise
-bool ROW::IsTrailingByteAtColumn(_In_ const size_t column) const
-{
-    THROW_HR_IF(E_INVALIDARG, column >= CharRow.GetWidth());
-    return CharRow.GetAttribute(column).IsTrailing();
-}
-
-// Routine Description:
 // - clears char data in column in row
 // Arguments:
 // - column - 0-indexed column index
