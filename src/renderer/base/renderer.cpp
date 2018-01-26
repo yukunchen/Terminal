@@ -572,7 +572,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
             PWCHAR const pwsLine = Row.CharRow.Chars.get() + iLeft;
             // the double byte flags corresponding to the characters above.
-            const std::vector<BYTE>::const_iterator itAttr = Row.CharRow.GetAttributeIterator(iLeft);
+            const std::vector<DbcsAttribute>::const_iterator itAttr = Row.CharRow.GetAttributeIterator(iLeft);
             size_t const cchLine = iRight - iLeft;
 
             // Calculate the target position in the buffer where we should start writing.
@@ -619,7 +619,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEngine,
                                                   _In_ const ROW& Row,
                                                   _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                  _In_ const std::vector<BYTE>::const_iterator itAttr,
+                                                  _In_ const std::vector<DbcsAttribute>::const_iterator itAttr,
                                                   _In_ size_t cchLine,
                                                   _In_ size_t iFirstAttr,
                                                   _In_ COORD const coordTarget)
@@ -706,7 +706,7 @@ void Renderer::_PaintBufferOutputRasterFontHelper(_In_ IRenderEngine* const pEng
 void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
                                              _In_ const ROW& Row,
                                              _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                             _In_ const std::vector<BYTE>::const_iterator itAttr,
+                                             _In_ const std::vector<DbcsAttribute>::const_iterator itAttr,
                                              _In_ size_t cchLine,
                                              _In_ size_t iFirstAttr,
                                              _In_ COORD const coordTarget)
@@ -723,7 +723,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
     // The line segment we'll write will start at the beginning of the text.
     PCWCHAR pwsSegment = pwsLine;
     // corresponding double byte flags pointer
-    std::vector<BYTE>::const_iterator itAttrSegment = itAttr;
+    std::vector<DbcsAttribute>::const_iterator itAttrSegment = itAttr;
 
     do
     {
@@ -778,7 +778,7 @@ void Renderer::_PaintBufferOutputColorHelper(_In_ IRenderEngine* const pEngine,
 // - S_OK or memory allocation error
 HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const pEngine,
                                                      _In_reads_(cchLine) PCWCHAR const pwsLine,
-                                                     _In_ const std::vector<BYTE>::const_iterator itAttr,
+                                                     _In_ const std::vector<DbcsAttribute>::const_iterator itAttr,
                                                      _In_ size_t const cchLine,
                                                      _In_ COORD const coordTarget)
 {
@@ -794,19 +794,19 @@ HRESULT Renderer::_PaintBufferOutputDoubleByteHelper(_In_ IRenderEngine* const p
     wistd::unique_ptr<unsigned char[]> rgSegmentWidth = wil::make_unique_nothrow<unsigned char[]>(cchLine);
     RETURN_IF_NULL_ALLOC(rgSegmentWidth);
 
-    std::vector<BYTE>::const_iterator it = itAttr;
+    std::vector<DbcsAttribute>::const_iterator it = itAttr;
     size_t cchSegment = 0;
     // Walk through the line given character by character and copy necessary items into our local array.
     for (size_t iLine = 0; iLine < cchLine; iLine++)
     {
         // skip copy of trailing bytes. we'll copy leading and single bytes into the final write array.
-        if (IsFlagClear(*it, CHAR_ROW::ATTR_TRAILING_BYTE))
+        if (!it->IsTrailing())
         {
             pwsSegment[cchSegment] = pwsLine[iLine];
             rgSegmentWidth[cchSegment] = 1;
 
             // If this is a leading byte, add 1 more to width as it is double wide
-            if (IsFlagSet(*it, CHAR_ROW::ATTR_LEADING_BYTE))
+            if (it->IsLeading())
             {
                 rgSegmentWidth[cchSegment] = 2;
             }
@@ -993,7 +993,7 @@ void Renderer::_PaintIme(_In_ IRenderEngine* const pEngine,
                 // Get the pointer to the beginning of the text and the maximum length of the line we'll be writing.
                 PWCHAR const pwsLine = Row.CharRow.Chars.get() + viewDirty.Left() - AreaInfo->CaInfo.coordConView.X;
                 // the double byte flags corresponding to the characters above.
-                const std::vector<BYTE>::const_iterator itAttr = Row.CharRow.GetAttributeIterator(viewDirty.Left() - AreaInfo->CaInfo.coordConView.X);
+                const std::vector<DbcsAttribute>::const_iterator itAttr = Row.CharRow.GetAttributeIterator(viewDirty.Left() - AreaInfo->CaInfo.coordConView.X);
                 size_t const cchLine = viewDirty.Width() - 1;
 
                 // Calculate the target position in the buffer where we should start writing.

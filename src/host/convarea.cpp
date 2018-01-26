@@ -26,7 +26,7 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr);
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
                                   _In_ USHORT StringLength,
                                   _In_ PSCREEN_INFORMATION ScreenInfo,
-                                  _In_reads_(StringLength) PCHAR StringA);
+                                  _In_reads_(StringLength) DbcsAttribute* const pDbcsAttributes);
 
 bool IsValidSmallRect(_In_ PSMALL_RECT const Rect)
 {
@@ -188,10 +188,9 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
         {
             ULONG i = 0;
             WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
-            BYTE LocalBufferA[LOCAL_BUFFER_SIZE];
+            DbcsAttribute dbcsAttributes[LOCAL_BUFFER_SIZE];
 
             PWCHAR LocalBufPtr = LocalBuffer;
-            PBYTE LocalBufPtrA = LocalBufferA;
 
             WCHAR Char = 0;
             WORD Attr = 0;
@@ -207,11 +206,12 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                         if (i < (LOCAL_BUFFER_SIZE - 1) && Position.X < ScreenInfo->GetScreenWindowSizeX() - 1)
                         {
                             *LocalBufPtr++ = Char;
-                            *LocalBufPtrA++ = CHAR_ROW::ATTR_LEADING_BYTE;
+                            dbcsAttributes[i].SetLeading();
                             *LocalBufPtr++ = Char;
-                            *LocalBufPtrA++ = CHAR_ROW::ATTR_TRAILING_BYTE;
+                            ++i;
+                            dbcsAttributes[i].SetTrailing();
                             Position.X += 2;
-                            i += 2;
+                            ++i;
                         }
                         else
                         {
@@ -222,7 +222,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                     else
                     {
                         *LocalBufPtr++ = Char;
-                        *LocalBufPtrA++ = 0;
+                        dbcsAttributes[i].SetSingle();
                         Position.X++;
                         i++;
                     }
@@ -251,7 +251,7 @@ NTSTATUS WriteUndetermineChars(_In_reads_(NumChars) LPWSTR lpString, _In_ PBYTE 
                 TextAttribute taAttribute = TextAttribute(wLegacyAttr);
                 ConvScreenInfo->SetAttributes(taAttribute);
 
-                StreamWriteToScreenBufferIME(LocalBuffer, (USHORT) i, ConvScreenInfo, (PCHAR) LocalBufferA);
+                StreamWriteToScreenBufferIME(LocalBuffer, (USHORT) i, ConvScreenInfo, dbcsAttributes);
 
                 ConvScreenInfo->TextInfo->GetCursor()->IncrementXPosition(i);
 
@@ -701,7 +701,7 @@ bool InsertConvertedString(_In_ LPCWSTR lpStr)
 void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
                                   _In_ USHORT StringLength,
                                   _In_ PSCREEN_INFORMATION ScreenInfo,
-                                  _In_reads_(StringLength) PCHAR StringA)
+                                  _In_reads_(StringLength) DbcsAttribute* const pDbcsAttributes)
 {
     DBGOUTPUT(("StreamWriteToScreenBuffer\n"));
 
@@ -722,14 +722,15 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     {
 
         if (TargetPoint.Y == coordScreenBufferSize.Y - 1 &&
-            TargetPoint.X + StringLength >= coordScreenBufferSize.X && *(StringA + ScreenEndOfString - 1) & CHAR_ROW::ATTR_LEADING_BYTE)
+            TargetPoint.X + StringLength >= coordScreenBufferSize.X &&
+            pDbcsAttributes[ScreenEndOfString - 1].IsLeading())
         {
             *(String + ScreenEndOfString - 1) = UNICODE_SPACE;
-            *(StringA + ScreenEndOfString - 1) = 0;
+            pDbcsAttributes[ScreenEndOfString - 1].SetSingle();
             if (StringLength > ScreenEndOfString - 1)
             {
                 *(String + ScreenEndOfString) = UNICODE_SPACE;
-                *(StringA + ScreenEndOfString) = 0;
+                pDbcsAttributes[ScreenEndOfString].SetSingle();
             }
         }
     }
@@ -737,7 +738,7 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
     memmove(&Row.CharRow.Chars[TargetPoint.X], String, StringLength * sizeof(WCHAR));
     try
     {
-        std::copy(StringA, StringA + StringLength, Row.CharRow.GetAttributeIterator(TargetPoint.X));
+        std::copy(pDbcsAttributes, pDbcsAttributes + StringLength, Row.CharRow.GetAttributeIterator(TargetPoint.X));
     }
     CATCH_LOG();
 
@@ -782,12 +783,12 @@ void StreamWriteToScreenBufferIME(_In_reads_(StringLength) PWCHAR String,
 
         if (fLVerticalSet || fRVerticalSet)
         {
-            const byte LeadOrTrailByte = fRVerticalSet? CHAR_ROW::ATTR_LEADING_BYTE : CHAR_ROW::ATTR_TRAILING_BYTE;
             const int iFlag = fRVerticalSet? COMMON_LVB_GRID_RVERTICAL : COMMON_LVB_GRID_LVERTICAL;
             for (short i = 0; i < StringLength; i++)
             {
                 InsertedRun.SetLength(1);
-                if (*(StringA + i) & LeadOrTrailByte)
+                const bool IsLeadingOrTrailing = fRVerticalSet ? pDbcsAttributes[i].IsLeading() : pDbcsAttributes[i].IsTrailing();
+                if (IsLeadingOrTrailing)
                 {
                     InsertedRun.SetAttributesFromLegacy(wScreenAttributes & ~(COMMON_LVB_GRID_SINGLEFLAG | iFlag));
                 }

@@ -30,7 +30,7 @@ CHAR_ROW::CHAR_ROW(short rowWidth) :
     _rowWidth{ static_cast<size_t>(rowWidth) },
     Left{ rowWidth },
     Right{ 0 },
-    _attributes(rowWidth, PADDING_KATTR)
+    _attributes(rowWidth)
 {
     Chars = std::make_unique<wchar_t[]>(rowWidth);
     THROW_IF_NULL_ALLOC(Chars.get());
@@ -113,9 +113,21 @@ void CHAR_ROW::swap(CHAR_ROW& other) noexcept
 // Return Value:
 // - the attribute
 // Note: will throw exception if column is out of bounds
-BYTE CHAR_ROW::GetAttribute(_In_ const size_t column) const
+const DbcsAttribute& CHAR_ROW::GetAttribute(_In_ const size_t column) const
 {
     return _attributes.at(column);
+}
+
+// Routine Description:
+// - gets the attribute at the specified column
+// Arguments:
+// - column - the column to get the attribute for
+// Return Value:
+// - the attribute
+// Note: will throw exception if column is out of bounds
+DbcsAttribute& CHAR_ROW::GetAttribute(_In_ const size_t column)
+{
+    return const_cast<DbcsAttribute&>(static_cast<const CHAR_ROW* const>(this)->GetAttribute(column));
 }
 
 // Routine Description:
@@ -125,7 +137,7 @@ BYTE CHAR_ROW::GetAttribute(_In_ const size_t column) const
 // Return Value:
 // - iterator starting at column
 // Note: will throw exception if column is out of bounds
-std::vector<BYTE>::iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column)
+std::vector<DbcsAttribute>::iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column)
 {
     THROW_HR_IF(E_INVALIDARG, column >= _attributes.size());
     return std::next(_attributes.begin(), column);
@@ -138,7 +150,7 @@ std::vector<BYTE>::iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t col
 // Return Value:
 // - const iterator starting at column
 // Note: will throw exception if column is out of bounds
-std::vector<BYTE>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column) const
+std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column) const
 {
     THROW_HR_IF(E_INVALIDARG, column >= _attributes.size());
     return std::next(_attributes.cbegin(), column);
@@ -153,32 +165,20 @@ std::vector<BYTE>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ const size
 // Note: will throw exception if column is out of bounds
 void CHAR_ROW::ClearAttribute(_In_ const size_t column)
 {
-    _attributes.at(column) = PADDING_KATTR;
+    _attributes.at(column).SetSingle();
 }
 
 // Routine Description:
 // - sets the attribute at specified column to provided value
 // Arguments:
 // - column - column to set attribute for
-// - value - attribute value to set
+// - DbcsAttribute - attribute value to set
 // Return Value:
 // - <none>
 // Note: will throw exception if column is out of bounds
-void CHAR_ROW::SetAttribute(_In_ const size_t column, _In_ const BYTE value)
+void CHAR_ROW::SetAttribute(_In_ const size_t column, _In_ const DbcsAttribute dbcsAttribute)
 {
-    _attributes.at(column) = value;
-}
-
-// Routine Description:
-// - checks if attribute at column indicates a trailing byte
-// Arguments:
-// - column - column to check
-// Return Value:
-// - true if column is a trailing byte, false otherwise
-// Note: will throw exception if column is out of bounds
-bool CHAR_ROW::IsTrailingByteAttribute(_In_ const size_t column) const
-{
-    return IsFlagSet(_attributes.at(column), ATTR_TRAILING_BYTE);
+    _attributes.at(column) = dbcsAttribute;
 }
 
 // Routine Description:
@@ -206,7 +206,10 @@ void CHAR_ROW::Reset(_In_ short const sRowWidth)
     Right = 0;
 
     wmemset(Chars.get(), PADDING_CHAR, sRowWidth);
-    std::fill(_attributes.begin(), _attributes.end(), PADDING_KATTR);
+    for (DbcsAttribute& attr : _attributes)
+    {
+        attr.SetSingle();
+    }
 
     SetWrapStatus(false);
     SetDoubleBytePadded(false);
@@ -394,38 +397,4 @@ void CHAR_ROW::MeasureAndSaveRight(_In_ short const sRowWidth)
 bool CHAR_ROW::ContainsText() const
 {
     return this->Right > this->Left;
-}
-
-// Routine Description:
-// - Tells whether the given KAttribute is a leading byte marker
-// Arguments:
-// - bKAttr - KAttr bit flag field
-// Return Value:
-// - True if leading byte. False if not.
-bool CHAR_ROW::IsLeadingByte(_In_ BYTE const bKAttr)
-{
-    return IsFlagSet((DWORD)bKAttr, (DWORD)CHAR_ROW::ATTR_LEADING_BYTE);
-}
-
-// Routine Description:
-// - Tells whether the given KAttribute is a trailing byte marker
-// Arguments:
-// - bKAttr - KAttr bit flag field
-// Return Value:
-// - True if trailing byte. False if not.
-bool CHAR_ROW::IsTrailingByte(_In_ BYTE const bKAttr)
-{
-    return IsFlagSet((DWORD)bKAttr, (DWORD)CHAR_ROW::ATTR_TRAILING_BYTE);
-}
-
-// Routine Description:
-// - Tells whether the given KAttribute has no leading/trailing specification
-// - e.g. Tells that this is a standalone, single-byte character
-// Arguments:
-// - bKAttr - KAttr bit flag field
-// Return Value:
-// - True if standalone single byte character. False otherwise.
-bool CHAR_ROW::IsSingleByte(_In_ BYTE const bKAttr)
-{
-    return !IsLeadingByte(bKAttr) && !IsTrailingByte(bKAttr);
 }

@@ -1478,7 +1478,7 @@ NTSTATUS SCREEN_INFORMATION::ResizeWithReflow(_In_ COORD const coordNewScreenSiz
         {
             // Retrieve old character and double-byte attributes
             const WCHAR wchChar = Row.CharRow.Chars[iOldCol];
-            const BYTE bKAttr = Row.CharRow.GetAttribute(iOldCol);
+            const DbcsAttribute bKAttr = Row.CharRow.GetAttribute(iOldCol);
 
             // Extract the color attribute that applies to this character
             TextAttributeRun* rAttrRun;

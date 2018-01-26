@@ -27,6 +27,107 @@ Revision History:
 #define PADDING_KATTR '\0'
 
 
+// TODO which methods can be made constexpr?
+// TODO should this have a constructor that rejects invalid byte sequences?
+class DbcsAttribute final
+{
+public:
+
+    bool IsSingle() const noexcept
+    {
+        return _attribute == Attribute::Single;
+    }
+
+    bool IsLeading() const noexcept
+    {
+        return _attribute == Attribute::Leading;
+    }
+
+    bool IsTrailing() const noexcept
+    {
+        return _attribute == Attribute::Trailing;
+    }
+
+    bool IsDbcs() const noexcept
+    {
+        return _attribute == Attribute::Dbcs;
+    }
+
+    void SetSingle() noexcept
+    {
+        _attribute = Attribute::Single;
+    }
+
+    void SetLeading() noexcept
+    {
+        _attribute = Attribute::Leading;
+    }
+
+    void SetTrailing() noexcept
+    {
+        _attribute = Attribute::Trailing;
+    }
+
+    WORD GeneratePublicApiAttributeFormat() const noexcept
+    {
+        WORD publicAttribute = 0;
+        if (IsLeading())
+        {
+            SetFlag(publicAttribute, COMMON_LVB_LEADING_BYTE);
+        }
+        if (IsTrailing())
+        {
+            SetFlag(publicAttribute, COMMON_LVB_TRAILING_BYTE);
+        }
+        return publicAttribute;
+    }
+
+    static DbcsAttribute FromPublicApiAttributeFormat(WORD publicAttribute)
+    {
+        // it's not valid to be both a leading and trailing byte
+        if (AreAllFlagsSet(publicAttribute, COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE))
+        {
+            THROW_HR(E_INVALIDARG);
+        }
+
+        DbcsAttribute attr;
+        if (IsFlagSet(publicAttribute, COMMON_LVB_LEADING_BYTE))
+        {
+            attr.SetLeading();
+        }
+        else if (IsFlagSet(publicAttribute, COMMON_LVB_TRAILING_BYTE))
+        {
+            attr.SetTrailing();
+        }
+        return attr;
+    }
+
+    friend constexpr bool operator==(const DbcsAttribute& a, const DbcsAttribute& b) noexcept;
+private:
+    enum class Attribute : BYTE
+    {
+        Single = 0x00,
+        Leading = 0x01,
+        Trailing = 0x02,
+        Dbcs = Leading | Trailing
+    };
+
+    Attribute _attribute = Attribute::Single;
+
+#ifdef UNIT_TESTING
+    friend class TextBufferTests;
+#endif
+};
+
+constexpr bool operator==(const DbcsAttribute& a, const DbcsAttribute& b) noexcept
+{
+    return a._attribute == b._attribute;
+}
+
+static_assert(sizeof(DbcsAttribute) == sizeof(BYTE), "DbcsAttribute should be one byte big. if this changes then it needs"
+    " either an implicit conversion to a BYTE or an update to all places that assume it's a byte big");
+
+
 // the characters of one row of screen buffer
 // we keep the following values so that we don't write
 // more pixels to the screen than we have to:
@@ -43,12 +144,14 @@ public:
     static const SHORT INVALID_OLD_LENGTH = -1;
 
     // for use with pbKAttrs
+    /*
     static const BYTE ATTR_SINGLE_BYTE = 0x00;
     static const BYTE ATTR_LEADING_BYTE = 0x01;
     static const BYTE ATTR_TRAILING_BYTE = 0x02;
     static const BYTE ATTR_DBCSSBCS_BYTE = 0x03;
     static const BYTE ATTR_SEPARATE_BYTE = 0x10;
     static const BYTE ATTR_EUDCFLAG_BYTE = 0x20;
+    */
 
     CHAR_ROW(short rowWidth);
     CHAR_ROW(const CHAR_ROW& a);
@@ -62,12 +165,13 @@ public:
     SHORT Left; // leftmost bound of chars in Chars array (array will be full width)
     std::unique_ptr<wchar_t[]> Chars; // all chars in row
 
-    BYTE GetAttribute(_In_ const size_t column) const;
-    std::vector<BYTE>::iterator GetAttributeIterator(_In_ const size_t column);
-    std::vector<BYTE>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column) const;
+    const DbcsAttribute& GetAttribute(_In_ const size_t column) const;
+    DbcsAttribute& GetAttribute(_In_ const size_t column);
+
+    std::vector<DbcsAttribute>::iterator GetAttributeIterator(_In_ const size_t column);
+    std::vector<DbcsAttribute>::const_iterator CHAR_ROW::GetAttributeIterator(_In_ const size_t column) const;
     void ClearAttribute(_In_ const size_t column);
-    void SetAttribute(_In_ const size_t column, _In_ const BYTE value);
-    bool IsTrailingByteAttribute(_In_ const size_t column) const;
+    void SetAttribute(_In_ const size_t column, _In_ const DbcsAttribute dbcsAttribute);
 
     void Reset(_In_ short const sRowWidth);
 
@@ -94,10 +198,6 @@ public:
     short MeasureLeft(_In_ short const sRowWidth) const;
     short MeasureRight(_In_ short const sRowWidth) const;
 
-    static bool IsLeadingByte(_In_ BYTE const bKAttr);
-    static bool IsTrailingByte(_In_ BYTE const bKAttr);
-    static bool IsSingleByte(_In_ BYTE const bKAttr);
-
     bool ContainsText() const;
 
     size_t GetWidth() const;
@@ -108,7 +208,7 @@ public:
 private:
     RowFlags bRowFlags;
     size_t _rowWidth;
-    std::vector<BYTE> _attributes; // all DBCS lead & trail bit in row
+    std::vector<DbcsAttribute> _attributes; // all DBCS lead & trail bit in row
 
 #ifdef UNIT_TESTING
     friend class CharRowTests;

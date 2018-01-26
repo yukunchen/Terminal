@@ -374,13 +374,16 @@ void TextBufferTests::TestInsertCharacter()
 
     // create some sample test data
     WCHAR const wchTest = L'Z';
-    BYTE const bKAttrTest = 0x80; // invalid flag, technically, for test only. see textBuffer.hpp's ATTR_LEADING_BYTE, etc
+    DbcsAttribute dbcsAttribute;
+    BYTE* pAttribute = reinterpret_cast<BYTE*>(&dbcsAttribute._attribute);
+    // invalid flag, technically, for test only.
+    *pAttribute = 0x80;
     WORD const wAttrTest = BACKGROUND_INTENSITY | FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE;
     TextAttribute TestAttributes = TextAttribute(wAttrTest);
 
     // ensure that the buffer didn't start with these fields
     VERIFY_ARE_NOT_EQUAL(Row.CharRow.Chars[coordCursorBefore.X], wchTest);
-    VERIFY_ARE_NOT_EQUAL(Row.CharRow.GetAttribute(coordCursorBefore.X), bKAttrTest);
+    VERIFY_ARE_NOT_EQUAL(Row.CharRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
 
     TextAttributeRun* pAttrRun;
     UINT cAttrApplies;
@@ -389,11 +392,11 @@ void TextBufferTests::TestInsertCharacter()
     VERIFY_IS_FALSE(pAttrRun->GetAttributes().IsEqual(TestAttributes));
 
     // now apply the new data to the buffer
-    pTbi->InsertCharacter(wchTest, bKAttrTest, TestAttributes);
+    pTbi->InsertCharacter(wchTest, dbcsAttribute, TestAttributes);
 
     // ensure that the buffer position where the cursor WAS contains the test items
     VERIFY_ARE_EQUAL(Row.CharRow.Chars[coordCursorBefore.X], wchTest);
-    VERIFY_ARE_EQUAL(Row.CharRow.GetAttribute(coordCursorBefore.X), bKAttrTest);
+    VERIFY_ARE_EQUAL(Row.CharRow.GetAttribute(coordCursorBefore.X), dbcsAttribute);
 
     Row.AttrRow.FindAttrIndex(coordCursorBefore.X, &pAttrRun, &cAttrApplies);
     VERIFY_IS_TRUE(pAttrRun->GetAttributes().IsEqual(TestAttributes));

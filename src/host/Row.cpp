@@ -122,7 +122,7 @@ HRESULT ROW::Resize(_In_ size_t const width)
 bool ROW::IsTrailingByteAtColumn(_In_ const size_t column) const
 {
     THROW_HR_IF(E_INVALIDARG, column >= CharRow.GetWidth());
-    return IsFlagSet(CharRow.GetAttribute(column), CHAR_ROW::ATTR_TRAILING_BYTE);
+    return CharRow.GetAttribute(column).IsTrailing();
 }
 
 // Routine Description:

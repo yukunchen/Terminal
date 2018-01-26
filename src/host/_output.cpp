@@ -27,7 +27,7 @@ using namespace Microsoft::Console::Types;
 void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
                                _In_ SHORT cchBuffer,
                                _In_ PSCREEN_INFORMATION pScreenInfo,
-                               _Inout_updates_(cchBuffer) PCHAR const pchBuffer,
+                               _Inout_updates_(cchBuffer) DbcsAttribute* const pDbcsAttributes,
                                _In_ const bool fWasLineWrapped)
 {
     DBGOUTPUT(("StreamWriteToScreenBuffer\n"));
@@ -41,28 +41,23 @@ void StreamWriteToScreenBuffer(_Inout_updates_(cchBuffer) PWCHAR pwchBuffer,
     const COORD coordScreenBufferSize = pScreenInfo->GetScreenBufferSize();
     if (TargetPoint.Y == coordScreenBufferSize.Y - 1 &&
         TargetPoint.X + cchBuffer >= coordScreenBufferSize.X &&
-        *(pchBuffer + coordScreenBufferSize.X - TargetPoint.X - 1) & CHAR_ROW::ATTR_LEADING_BYTE)
+        pDbcsAttributes[coordScreenBufferSize.X - TargetPoint.X - 1].IsLeading())
     {
         *(pwchBuffer + coordScreenBufferSize.X - TargetPoint.X - 1) = UNICODE_SPACE;
-        *(pchBuffer + coordScreenBufferSize.X - TargetPoint.X - 1) = 0;
+        pDbcsAttributes[coordScreenBufferSize.X - TargetPoint.X - 1].SetSingle();
         if (cchBuffer > coordScreenBufferSize.X - TargetPoint.X)
         {
             *(pwchBuffer + coordScreenBufferSize.X - TargetPoint.X) = UNICODE_SPACE;
-            *(pchBuffer + coordScreenBufferSize.X - TargetPoint.X) = 0;
+            pDbcsAttributes[coordScreenBufferSize.X - TargetPoint.X].SetSingle();
         }
     }
 
     // copy chars
     try
     {
-        std::copy(pchBuffer, pchBuffer + cchBuffer, Row.CharRow.GetAttributeIterator(TargetPoint.X));
+        std::copy(pDbcsAttributes, pDbcsAttributes + cchBuffer, Row.CharRow.GetAttributeIterator(TargetPoint.X));
     }
     CATCH_LOG();
-    for (size_t i = 0; i < cchBuffer; ++i)
-    {
-        pchBuffer[i] = Row.CharRow.GetAttribute(TargetPoint.X + i);
-    }
-
     memmove(&Row.CharRow.Chars[TargetPoint.X], pwchBuffer, cchBuffer * sizeof(WCHAR));
 
     // caller knows the wrap status as this func is called only for drawing one line at a time
@@ -189,7 +184,7 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
 
             WCHAR* Char = &pRow->CharRow.Chars[coordDest.X];
             // CJK Languages
-            std::vector<BYTE>::iterator it = pRow->CharRow.GetAttributeIterator(coordDest.X);
+            std::vector<DbcsAttribute>::iterator it = pRow->CharRow.GetAttributeIterator(coordDest.X);
 
             TextAttributeRun* pAttrRun = rAttrRunsBuff;
             pAttrRun->SetLength(0);
@@ -208,8 +203,14 @@ NTSTATUS WriteRectToScreenBuffer(_In_reads_(coordSrcDimensions.X * coordSrcDimen
                 }
 
                 *Char++ = WCHAR_OF_PCI(SourcePtr);
-                // MSKK Apr.02.1993 V-HirotS For KAttr
-                *it = (CHAR) ((ATTR_OF_PCI(SourcePtr) & COMMON_LVB_SBCSDBCS) >> 8);
+                try
+                {
+                    *it = DbcsAttribute::FromPublicApiAttributeFormat(reinterpret_cast<const CHAR_INFO* const>(SourcePtr)->Attributes);
+                }
+                catch (...)
+                {
+                    return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
+                }
                 ++it;
 
 
@@ -420,11 +421,11 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
     }
 
     WCHAR rgwchBuffer[128] = {0};
-    BYTE rgbBufferA[128] = {0};
+    DbcsAttribute rgbBufferA[128];
 
-    PBYTE BufferA = nullptr;
+    DbcsAttribute* BufferA = nullptr;
     PWCHAR TransBuffer = nullptr;
-    PBYTE TransBufferA = nullptr;
+    DbcsAttribute* TransBufferA = nullptr;
     BOOL fLocalHeap = FALSE;
     if (ulStringType == CONSOLE_ASCII)
     {
@@ -439,7 +440,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
             {
                 return STATUS_NO_MEMORY;
             }
-            TransBufferA = new BYTE[*pcRecords * 2];
+            TransBufferA = new DbcsAttribute[*pcRecords * 2];
             if (TransBufferA == nullptr)
             {
                 delete[] TransBuffer;
@@ -457,7 +458,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
         PCHAR TmpBuf = (PCHAR)pvBuffer;
         PCHAR pchTmpBufEnd = TmpBuf + *pcRecords;
         PWCHAR TmpTrans = TransBuffer;
-        PCHAR TmpTransA = (PCHAR)TransBufferA;   // MSKK Apr.02.1993 V-HirotS For KAttr
+        DbcsAttribute* TmpTransA = TransBufferA;
         for (ULONG i = 0; i < *pcRecords;)
         {
             if (TmpBuf >= pchTmpBufEnd)
@@ -471,7 +472,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 if (i + 1 >= *pcRecords)
                 {
                     *TmpTrans = UNICODE_SPACE;
-                    *TmpTransA = 0;
+                    TmpTransA->SetSingle();
                     i++;
                 }
                 else
@@ -486,8 +487,10 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                     *(TmpTrans + 1) = *TmpTrans;
                     TmpTrans += 2;
                     TmpBuf += 2;
-                    *TmpTransA++ = CHAR_ROW::ATTR_LEADING_BYTE;
-                    *TmpTransA++ = CHAR_ROW::ATTR_TRAILING_BYTE;
+                    TmpTransA->SetLeading();
+                    ++TmpTransA;
+                    TmpTransA->SetTrailing();
+                    ++TmpTransA;
                     i += 2;
                 }
             }
@@ -496,7 +499,8 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 ConvertOutputToUnicode(Codepage, TmpBuf, 1, TmpTrans, 1);
                 TmpTrans++;
                 TmpBuf++;
-                *TmpTransA++ = 0;   // MSKK APr.02.1993 V-HirotS For KAttr
+                TmpTransA->SetSingle();
+                ++TmpTransA;
                 i++;
             }
         }
@@ -508,7 +512,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
     {
         PWCHAR TmpBuf;
         PWCHAR TmpTrans;
-        PCHAR TmpTransA;
+        DbcsAttribute* TmpTransA;
         ULONG i, jTmp;
         WCHAR c;
 
@@ -523,7 +527,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 return STATUS_NO_MEMORY;
             }
 
-            TransBufferA = new BYTE[*pcRecords * 2];
+            TransBufferA = new DbcsAttribute[*pcRecords * 2];
             if (TransBufferA == nullptr)
             {
                 delete[] TransBuffer;
@@ -540,16 +544,17 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
         TmpBuf = (PWCHAR)pvBuffer;
         TmpTrans = TransBuffer;
-        TmpTransA = (PCHAR) TransBufferA;
+        TmpTransA = TransBufferA;
         for (i = 0, jTmp = 0; i < *pcRecords; i++, jTmp++)
         {
             *TmpTrans++ = c = *TmpBuf++;
-            *TmpTransA = 0;
+            TmpTransA->SetSingle();
             if (IsCharFullWidth(c))
             {
-                *TmpTransA++ = CHAR_ROW::ATTR_LEADING_BYTE;
+                TmpTransA->SetLeading();
+                ++TmpTransA;
                 *TmpTrans++ = c;
-                *TmpTransA = CHAR_ROW::ATTR_TRAILING_BYTE;
+                TmpTransA->SetTrailing();
                 jTmp++;
             }
 
@@ -577,7 +582,7 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
             // copy the chars into their arrays
             PWCHAR Char = &pRow->CharRow.Chars[X];
-            std::vector<BYTE>::iterator it = pRow->CharRow.GetAttributeIterator(X);
+            std::vector<DbcsAttribute>::iterator it = pRow->CharRow.GetAttributeIterator(X);
             if ((ULONG)(coordScreenBufferSize.X - X) >= (*pcRecords - NumWritten))
             {
                 // The text will not hit the right hand edge, copy it all
@@ -589,16 +594,16 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
                     (SHORT)(TPoint.X + *pcRecords - NumWritten) >= coordScreenBufferSize.X &&
-                    *((PCHAR)BufferA + coordScreenBufferSize.X - TPoint.X - 1) & CHAR_ROW::ATTR_LEADING_BYTE)
+                    BufferA[coordScreenBufferSize.X - TPoint.X - 1].IsLeading())
                 {
                     *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X - 1) = UNICODE_SPACE;
-                    *((PCHAR)BufferA + coordScreenBufferSize.X - TPoint.X - 1) = 0;
+                    BufferA[coordScreenBufferSize.X - TPoint.X - 1].SetSingle();
                     if ((SHORT)(*pcRecords - NumWritten) > (SHORT)(coordScreenBufferSize.X - TPoint.X - 1))
                     {
                         #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "ScreenBufferSize limits this, but it's very obtuse.")
                         *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X) = UNICODE_SPACE;
                         #pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "ScreenBufferSize limits this, but it's very obtuse.")
-                        *((PCHAR)BufferA + coordScreenBufferSize.X - TPoint.X) = 0;
+                        BufferA[coordScreenBufferSize.X - TPoint.X].SetSingle();
                     }
                 }
 
@@ -619,18 +624,18 @@ NTSTATUS WriteOutputString(_In_ PSCREEN_INFORMATION pScreenInfo,
                 BisectWrite((SHORT)(coordScreenBufferSize.X - X), TPoint, pScreenInfo);
                 if (TPoint.Y == coordScreenBufferSize.Y - 1 &&
                     TPoint.X + coordScreenBufferSize.X - X >= coordScreenBufferSize.X &&
-                    *((PCHAR)BufferA + coordScreenBufferSize.X - TPoint.X - 1) & CHAR_ROW::ATTR_LEADING_BYTE)
+                    BufferA[coordScreenBufferSize.X - TPoint.X - 1].IsLeading())
                 {
                     *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X - 1) = UNICODE_SPACE;
-                    *((PCHAR)BufferA + coordScreenBufferSize.X - TPoint.X - 1) = 0;
+                    BufferA[coordScreenBufferSize.X - TPoint.X - 1].SetSingle();
                     if (coordScreenBufferSize.X - X > coordScreenBufferSize.X - TPoint.X - 1)
                     {
                         *((PWCHAR)pvBuffer + coordScreenBufferSize.X - TPoint.X) = UNICODE_SPACE;
-                        *((PCHAR)BufferA + coordScreenBufferSize.X - TPoint.X) = 0;
+                        BufferA[coordScreenBufferSize.X - TPoint.X].SetSingle();
                     }
                 }
                 std::copy(BufferA, BufferA + (coordScreenBufferSize.X - X), it);
-                BufferA = (PBYTE)((PBYTE)BufferA + ((coordScreenBufferSize.X - X) * sizeof(CHAR)));
+                BufferA = BufferA + (coordScreenBufferSize.X - X);
                 memmove(Char, pvBuffer, (coordScreenBufferSize.X - X) * sizeof(WCHAR));
                 pvBuffer = (PVOID)((PBYTE)pvBuffer + ((coordScreenBufferSize.X - X) * sizeof(WCHAR)));
                 NumWritten += coordScreenBufferSize.X - X;
@@ -877,7 +882,9 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
     }
 
     ROW* pRow = &pScreenInfo->TextInfo->GetRowByOffset(coordWrite.Y);
-    if ((ulElementType == CONSOLE_ASCII) || (ulElementType == CONSOLE_REAL_UNICODE) || (ulElementType == CONSOLE_FALSE_UNICODE))
+    if (ulElementType == CONSOLE_ASCII ||
+        ulElementType == CONSOLE_REAL_UNICODE ||
+        ulElementType == CONSOLE_FALSE_UNICODE)
     {
         DWORD StartPosFlag = 0;
         for (;;)
@@ -891,7 +898,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
             // copy the chars into their arrays
             SHORT LeftX = X;
             PWCHAR Char = &pRow->CharRow.Chars[X];
-            std::vector<BYTE>::iterator it = pRow->CharRow.GetAttributeIterator(X);
+            std::vector<DbcsAttribute>::iterator it = pRow->CharRow.GetAttributeIterator(X);
             if ((ULONG) (coordScreenBufferSize.X - X) >= (*pcElements - NumWritten))
             {
                 {
@@ -906,14 +913,13 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     for (SHORT j = 0; j < (SHORT)(*pcElements - NumWritten); j++)
                     {
                         *Char++ = (WCHAR)wElement;
-                        ClearAllFlags(*it, CHAR_ROW::ATTR_DBCSSBCS_BYTE);
                         if (StartPosFlag++ & 1)
                         {
-                            SetFlag(*it, CHAR_ROW::ATTR_TRAILING_BYTE);
+                            it->SetTrailing();
                         }
                         else
                         {
-                            SetFlag(*it, CHAR_ROW::ATTR_LEADING_BYTE);
+                            it->SetLeading();
                         }
                         ++it;
                     }
@@ -921,7 +927,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     if (StartPosFlag & 1)
                     {
                         *(Char - 1) = UNICODE_SPACE;
-                        ClearAllFlags(*(it - 1), CHAR_ROW::ATTR_DBCSSBCS_BYTE);
+                        (it - 1)->SetSingle();
                     }
                 }
                 else
@@ -929,7 +935,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     for (SHORT j = 0; j < (SHORT)(*pcElements - NumWritten); j++)
                     {
                         *Char++ = (WCHAR)wElement;
-                        ClearAllFlags(*it, CHAR_ROW::ATTR_DBCSSBCS_BYTE);
+                        it->SetSingle();
                         ++it;
                     }
                 }
@@ -950,14 +956,13 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     for (SHORT j = 0; j < coordScreenBufferSize.X - X; j++)
                     {
                         *Char++ = (WCHAR)wElement;
-                        ClearAllFlags(*it, CHAR_ROW::ATTR_DBCSSBCS_BYTE);
                         if (StartPosFlag++ & 1)
                         {
-                            SetFlag(*it, CHAR_ROW::ATTR_TRAILING_BYTE);
+                            it->SetTrailing();
                         }
                         else
                         {
-                            SetFlag(*it, CHAR_ROW::ATTR_LEADING_BYTE);
+                            it->SetLeading();
                         }
                         ++it;
                     }
@@ -967,7 +972,7 @@ NTSTATUS FillOutput(_In_ PSCREEN_INFORMATION pScreenInfo,
                     for (SHORT j = 0; j < coordScreenBufferSize.X - X; j++)
                     {
                         *Char++ = (WCHAR)wElement;
-                        ClearAllFlags(*it, CHAR_ROW::ATTR_DBCSSBCS_BYTE);
+                        it->SetSingle();
                         ++it;
                     }
                 }
@@ -1174,7 +1179,7 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
         BisectWrite(XSize, TPoint, pScreenInfo);
         BOOL Width = IsCharFullWidth(pciFill->Char.UnicodeChar);
         PWCHAR Char = &pRow->CharRow.Chars[psrTarget->Left];
-        std::vector<BYTE>::iterator it = pRow->CharRow.GetAttributeIterator(psrTarget->Left);
+        std::vector<DbcsAttribute>::iterator it = pRow->CharRow.GetAttributeIterator(psrTarget->Left);
         for (SHORT j = 0; j < XSize; j++)
         {
             if (Width)
@@ -1183,23 +1188,26 @@ void FillRectangle(_In_ const CHAR_INFO * const pciFill,
                 {
                     *Char++ = pciFill->Char.UnicodeChar;
                     *Char++ = pciFill->Char.UnicodeChar;
-                    *it = CHAR_ROW::ATTR_LEADING_BYTE;
+
+                    it->SetLeading();
                     ++it;
-                    *it = CHAR_ROW::ATTR_TRAILING_BYTE;
+
+                    it->SetTrailing();
                     ++it;
+
                     j++;
                 }
                 else
                 {
                     *Char++ = UNICODE_NULL;
-                    *it = PADDING_KATTR;
+                    it->SetSingle();
                     ++it;
                 }
             }
             else
             {
                 *Char++ = pciFill->Char.UnicodeChar;
-                *it = PADDING_KATTR;
+                it->SetSingle();
                 ++it;
             }
         }

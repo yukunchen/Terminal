@@ -228,10 +228,10 @@ private:
         pRow->CharRow.Right = 9; // 1 past the last valid character in the array
 
         // set double-byte/double-width attributes
-        pRow->CharRow.SetAttribute(2, CHAR_ROW::ATTR_LEADING_BYTE);
-        pRow->CharRow.SetAttribute(3, CHAR_ROW::ATTR_TRAILING_BYTE);
-        pRow->CharRow.SetAttribute(5, CHAR_ROW::ATTR_LEADING_BYTE);
-        pRow->CharRow.SetAttribute(6, CHAR_ROW::ATTR_TRAILING_BYTE);
+        pRow->CharRow.GetAttribute(2).SetLeading();
+        pRow->CharRow.GetAttribute(3).SetTrailing();
+        pRow->CharRow.GetAttribute(5).SetLeading();
+        pRow->CharRow.GetAttribute(6).SetTrailing();
 
         // set some colors
         TextAttribute Attr = TextAttribute(0);
@@ -287,14 +287,14 @@ private:
         pRow->CharRow.Right = 80; // 1 past the last valid character in the array
 
         // set double-byte/double-width attributes
-        pRow->CharRow.SetAttribute(0, CHAR_ROW::ATTR_TRAILING_BYTE);
-        pRow->CharRow.SetAttribute(27, CHAR_ROW::ATTR_LEADING_BYTE);
-        pRow->CharRow.SetAttribute(28, CHAR_ROW::ATTR_TRAILING_BYTE);
-        pRow->CharRow.SetAttribute(39, CHAR_ROW::ATTR_LEADING_BYTE);
-        pRow->CharRow.SetAttribute(40, CHAR_ROW::ATTR_TRAILING_BYTE);
-        pRow->CharRow.SetAttribute(67, CHAR_ROW::ATTR_LEADING_BYTE);
-        pRow->CharRow.SetAttribute(68, CHAR_ROW::ATTR_TRAILING_BYTE);
-        pRow->CharRow.SetAttribute(79, CHAR_ROW::ATTR_LEADING_BYTE);
+        pRow->CharRow.GetAttribute(0).SetTrailing();
+        pRow->CharRow.GetAttribute(27).SetLeading();
+        pRow->CharRow.GetAttribute(28).SetTrailing();
+        pRow->CharRow.GetAttribute(39).SetLeading();
+        pRow->CharRow.GetAttribute(40).SetTrailing();
+        pRow->CharRow.GetAttribute(67).SetLeading();
+        pRow->CharRow.GetAttribute(68).SetTrailing();
+        pRow->CharRow.GetAttribute(79).SetLeading();
 
         // everything gets default attributes
         pRow->AttrRow.Reset(80, gci.CurrentScreenBuffer->GetAttributes());

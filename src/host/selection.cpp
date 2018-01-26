@@ -217,7 +217,7 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
     const ROW& Row = pTextInfo->GetRowByOffset(coordTargetPoint.Y);
 
     // Check start position of strings
-    if (Row.CharRow.IsTrailingByteAttribute(coordTargetPoint.X))
+    if (Row.CharRow.GetAttribute(coordTargetPoint.X).IsTrailing())
     {
         if (coordTargetPoint.X == 0)
         {
@@ -232,7 +232,7 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
     // Check end position of strings
     if (coordTargetPoint.X + sStringLength < pScreenInfo->GetScreenBufferSize().X)
     {
-        if (Row.CharRow.IsTrailingByteAttribute(coordTargetPoint.X + sStringLength))
+        if (Row.CharRow.GetAttribute(coordTargetPoint.X + sStringLength).IsTrailing())
         {
             pSmallRect->Right++;
         }
@@ -242,7 +242,7 @@ void Selection::s_BisectSelection(_In_ short const sStringLength,
         try
         {
             const ROW& RowNext = pTextInfo->GetNextRowNoWrap(Row);
-            if (RowNext.CharRow.IsTrailingByteAttribute(0))
+            if (RowNext.CharRow.GetAttribute(0).IsTrailing())
             {
                 pSmallRect->Right--;
             }

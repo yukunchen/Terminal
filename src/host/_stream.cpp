@@ -213,8 +213,8 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
     WCHAR Char;
     WCHAR RealUnicodeChar;
     BOOL fUnprocessed = ((pScreenInfo->OutputMode & ENABLE_PROCESSED_OUTPUT) == 0);
-    CHAR LocalBufferA[LOCAL_BUFFER_SIZE];
-    PCHAR LocalBufPtrA;
+    DbcsAttribute dbcsAttributes[LOCAL_BUFFER_SIZE];
+    DbcsAttribute* currentDbcsAttribute = nullptr;
 
     // Must not adjust cursor here. It has to stay on for many write scenarios. Consumers should call for the cursor to be turned off if they want that.
 
@@ -278,7 +278,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
         XPosition = pCursor->GetPosition().X;
         i = 0;
         LocalBufPtr = LocalBuffer;
-        LocalBufPtrA = LocalBufferA;
+        currentDbcsAttribute = dbcsAttributes;
         while (*pcb < BufferSize && i < LOCAL_BUFFER_SIZE && XPosition < coordScreenBufferSize.X)
         {
 #pragma prefast(suppress:26019, "Buffer is taken in multiples of 2. Validation is ok.")
@@ -291,9 +291,13 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     if (i < (LOCAL_BUFFER_SIZE - 1) && XPosition < (coordScreenBufferSize.X - 1))
                     {
                         *LocalBufPtr++ = Char;
-                        *LocalBufPtrA++ = CHAR_ROW::ATTR_LEADING_BYTE;
+                        currentDbcsAttribute->SetLeading();
+                        ++currentDbcsAttribute;
+
                         *LocalBufPtr++ = Char;
-                        *LocalBufPtrA++ = CHAR_ROW::ATTR_TRAILING_BYTE;
+                        currentDbcsAttribute->SetTrailing();
+                        ++currentDbcsAttribute;
+
                         XPosition += 2;
                         i += 2;
                         pwchBuffer++;
@@ -310,7 +314,8 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                     XPosition++;
                     i++;
                     pwchBuffer++;
-                    *LocalBufPtrA++ = 0;
+                    currentDbcsAttribute->SetSingle();
+                    ++currentDbcsAttribute;
                 }
             }
             else
@@ -357,7 +362,8 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                         {
                             *LocalBufPtr = (WCHAR)' ';
                             LocalBufPtr++;
-                            *LocalBufPtrA++ = 0;
+                            currentDbcsAttribute->SetSingle();
+                            ++currentDbcsAttribute;
                         }
                     }
 
@@ -383,8 +389,10 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                         XPosition++;
                         i++;
                         pwchBuffer++;
-                        *LocalBufPtrA++ = 0;
-                        *LocalBufPtrA++ = 0;
+                        currentDbcsAttribute->SetSingle();
+                        ++currentDbcsAttribute;
+                        currentDbcsAttribute->SetSingle();
+                        ++currentDbcsAttribute;
                     }
                                        else
                                        {
@@ -418,7 +426,8 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
                         XPosition++;
                         i++;
                         pwchBuffer++;
-                        *LocalBufPtrA++ = 0;
+                        currentDbcsAttribute->SetSingle();
+                        ++currentDbcsAttribute;
                     }
                 }
             }
@@ -438,7 +447,7 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
             // line was wrapped if we're writing up to the end of the current row
             bool fWasLineWrapped = XPosition >= coordScreenBufferSize.X;
 
-            StreamWriteToScreenBuffer(LocalBuffer, (SHORT)i, pScreenInfo, LocalBufferA, fWasLineWrapped);
+            StreamWriteToScreenBuffer(LocalBuffer, (SHORT)i, pScreenInfo, dbcsAttributes, fWasLineWrapped);
             Region.Left = pCursor->GetPosition().X;
             Region.Right = (SHORT)(pCursor->GetPosition().X + i - 1);
             Region.Top = pCursor->GetPosition().Y;
@@ -741,12 +750,12 @@ NTSTATUS WriteCharsLegacy(_In_ PSCREEN_INFORMATION pScreenInfo,
 
                 PWCHAR const CharTmp = &Row.CharRow.Chars[TargetPoint.X];
 
-                if (Row.CharRow.IsTrailingByteAttribute(TargetPoint.X))
+                if (Row.CharRow.GetAttribute(TargetPoint.X).IsTrailing())
                 {
                     *(CharTmp - 1) = UNICODE_SPACE;
                     *CharTmp = UNICODE_SPACE;
-                    Row.CharRow.SetAttribute(TargetPoint.X, PADDING_KATTR);
-                    Row.CharRow.SetAttribute(TargetPoint.X - 1, PADDING_KATTR);
+                    Row.CharRow.GetAttribute(TargetPoint.X).SetSingle();
+                    Row.CharRow.GetAttribute(TargetPoint.X - 1).SetSingle();
 
                     Region.Left = TargetPoint.X - 1;
                     Region.Right = (SHORT)(TargetPoint.X);

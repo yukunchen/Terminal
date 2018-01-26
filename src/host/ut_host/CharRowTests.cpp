@@ -72,7 +72,7 @@ class CharRowTests
             for (UINT iStrLength = 0; iStrLength < sRowWidth; iStrLength++)
             {
                 VERIFY_ARE_EQUAL(pUnderTest->Chars[iStrLength], UNICODE_SPACE);
-                VERIFY_ARE_EQUAL(pUnderTest->GetAttribute(iStrLength), '\0');
+                VERIFY_IS_TRUE(pUnderTest->GetAttribute(iStrLength).IsSingle());
             }
         }
     }
